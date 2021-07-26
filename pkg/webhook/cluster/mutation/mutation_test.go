@@ -223,12 +223,51 @@ func TestHandle(t *testing.T) {
 								IPVS:                     &kubermaticv1.IPVSConfiguration{StrictArp: pointer.BoolPtr(true)},
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 							},
+							Features: map[string]bool{
+								kubermaticv1.ApiserverNetworkPolicy: true,
+							},
 						}.Do(),
 					},
 				},
 			},
 			wantAllowed: true,
 			wantPatches: []jsonpatch.JsonPatchOperation{},
+		},
+		{
+			name: "Default features",
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Create,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   kubermaticv1.GroupName,
+						Version: kubermaticv1.GroupVersion,
+						Kind:    "Cluster",
+					},
+					Name: "foo",
+					Object: runtime.RawExtension{
+						Raw: rawClusterGen{
+							Name:      "foo",
+							CloudSpec: kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{}},
+							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
+								Type:    kubermaticv1.CNIPluginTypeCanal,
+								Version: "v3.19",
+							},
+							ExternalCloudProvider: true,
+							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
+								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+								DNSDomain:                "example.local",
+								ProxyMode:                resources.IPTablesProxyMode,
+								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+							},
+						}.Do(),
+					},
+				},
+			},
+			wantAllowed: true,
+			wantPatches: []jsonpatch.JsonPatchOperation{
+				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
+			},
 		},
 		{
 			name: "Default CNI plugin annotation added",
@@ -253,6 +292,9 @@ func TestHandle(t *testing.T) {
 								ProxyMode:                resources.IPTablesProxyMode,
 								IPVS:                     &kubermaticv1.IPVSConfiguration{StrictArp: pointer.BoolPtr(true)},
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+							},
+							Features: map[string]bool{
+								kubermaticv1.ApiserverNetworkPolicy: true,
 							},
 						}.Do(),
 					},
@@ -285,6 +327,9 @@ func TestHandle(t *testing.T) {
 								Type:    kubermaticv1.CNIPluginTypeCanal,
 								Version: "v3.19",
 							},
+							Features: map[string]bool{
+								kubermaticv1.ApiserverNetworkPolicy: true,
+							},
 						}.Do(),
 					},
 				},
@@ -316,6 +361,9 @@ func TestHandle(t *testing.T) {
 							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
 								Type:    kubermaticv1.CNIPluginTypeCanal,
 								Version: "v3.19",
+							},
+							Features: map[string]bool{
+								kubermaticv1.ApiserverNetworkPolicy: true,
 							},
 						}.Do(),
 					},
@@ -494,6 +542,7 @@ type rawClusterGen struct {
 	CNIPluginSpec         *kubermaticv1.CNIPluginSettings
 	ExternalCloudProvider bool
 	NetworkConfig         kubermaticv1.ClusterNetworkingConfig
+	Features              map[string]bool
 }
 
 func (r rawClusterGen) Do() []byte {
@@ -513,6 +562,10 @@ func (r rawClusterGen) Do() []byte {
 			ClusterNetwork: r.NetworkConfig,
 			CNIPlugin:      r.CNIPluginSpec,
 		},
+	}
+
+	for k, v := range r.Features {
+		c.Spec.Features[k] = v
 	}
 	s := json.NewSerializerWithOptions(json.DefaultMetaFactory, testScheme, testScheme, json.SerializerOptions{Pretty: true})
 	buff := bytes.NewBuffer([]byte{})
