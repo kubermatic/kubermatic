@@ -142,6 +142,11 @@ func (h *AdmissionHandler) applyDefaults(c *kubermaticv1.Cluster) {
 		}
 	}
 
+	// Network policies for Apiserver are deployed by default
+	if ok, _ := c.Spec.Features[kubermaticv1.ApiserverNetworkPolicy]; !ok {
+		c.Spec.Features[kubermaticv1.ApiserverNetworkPolicy] = true
+	}
+
 	if c.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled == nil {
 		c.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled = pointer.BoolPtr(true)
 	}
