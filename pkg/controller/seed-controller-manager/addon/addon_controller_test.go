@@ -27,6 +27,8 @@ import (
 	"strings"
 	"testing"
 
+	"k8s.io/utils/pointer"
+
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -166,6 +168,9 @@ func setupTestCluster(cidrBlock string) *kubermaticv1.Cluster {
 				},
 				DNSDomain: "cluster.local",
 				ProxyMode: resources.IPVSProxyMode,
+				IPVS:      kubermaticv1.IPVSConfiguration{
+					StrictArp: pointer.BoolPtr(true),
+				},
 			},
 			Cloud: kubermaticv1.CloudSpec{
 				Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{
