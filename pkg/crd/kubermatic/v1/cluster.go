@@ -762,12 +762,12 @@ type ExtendedClusterHealth struct {
 // crucial for cluster functioning
 func (h *ExtendedClusterHealth) AllHealthy() bool {
 	return h.Etcd == HealthStatusUp &&
-			h.MachineController == HealthStatusUp &&
-			h.Controller == HealthStatusUp &&
-			h.Apiserver == HealthStatusUp &&
-			h.Scheduler == HealthStatusUp &&
-			h.CloudProviderInfrastructure == HealthStatusUp &&
-			h.UserClusterControllerManager == HealthStatusUp
+		h.MachineController == HealthStatusUp &&
+		h.Controller == HealthStatusUp &&
+		h.Apiserver == HealthStatusUp &&
+		h.Scheduler == HealthStatusUp &&
+		h.CloudProviderInfrastructure == HealthStatusUp &&
+		h.UserClusterControllerManager == HealthStatusUp
 }
 
 // MarshalJSON adds base64 json encoding to the Bytes type.

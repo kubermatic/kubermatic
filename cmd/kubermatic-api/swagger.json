@@ -18696,7 +18696,7 @@
       "title": "IPVSConfiguration contains ipvs-related configuration details for kube-proxy.",
       "properties": {
         "strictArp": {
-          "description": "StrictArp configure arp_ignore and arp_announce to avoid answering ARP queries from kube-ipvs0 interface.",
+          "description": "StrictArp configure arp_ignore and arp_announce to avoid answering ARP queries from kube-ipvs0 interface.\nDefaults to true.",
           "type": "boolean",
           "x-go-name": "StrictArp"
         }

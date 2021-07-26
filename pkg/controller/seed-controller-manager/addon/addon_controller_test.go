@@ -168,7 +168,7 @@ func setupTestCluster(cidrBlock string) *kubermaticv1.Cluster {
 				},
 				DNSDomain: "cluster.local",
 				ProxyMode: resources.IPVSProxyMode,
-				IPVS:      kubermaticv1.IPVSConfiguration{
+				IPVS: kubermaticv1.IPVSConfiguration{
 					StrictArp: pointer.BoolPtr(true),
 				},
 			},

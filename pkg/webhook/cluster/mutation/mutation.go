@@ -185,7 +185,7 @@ func (h *AdmissionHandler) mutateUpdate(ctx context.Context, oldCluster, newClus
 	switch {
 	case newCluster.Spec.Cloud.Openstack != nil:
 		if v, oldV := newCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider],
-				oldCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; v && !oldV {
+			oldCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; v && !oldV {
 			if newCluster.ObjectMeta.Annotations == nil {
 				newCluster.ObjectMeta.Annotations = map[string]string{}
 			}

@@ -469,7 +469,6 @@ func getTemplateData(clusterVersion *kubermaticversion.Version, kubermaticVersio
 
 	fakeDynamicClient := fake.NewClientBuilder().WithRuntimeObjects(objects...).Build()
 
-
 	return resources.NewTemplateDataBuilder().
 		WithContext(context.Background()).
 		WithClient(fakeDynamicClient).

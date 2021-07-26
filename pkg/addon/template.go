@@ -69,19 +69,19 @@ type TemplateData struct {
 }
 
 func NewTemplateData(
-		cluster *kubermaticv1.Cluster,
-		credentials resources.Credentials,
-		kubeconfig string,
-		dnsClusterIP string,
-		dnsResolverIP string,
-		variables map[string]interface{},
+	cluster *kubermaticv1.Cluster,
+	credentials resources.Credentials,
+	kubeconfig string,
+	dnsClusterIP string,
+	dnsResolverIP string,
+	variables map[string]interface{},
 ) (*TemplateData, error) {
 	providerName, err := provider.ClusterCloudProviderName(cluster.Spec.Cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to determine cloud provider name: %v", err)
 	}
 
-	//value is set by the mutating AdmissionHandler
+	// value is set by the mutating AdmissionHandler
 	if cluster.Spec.ClusterNetwork.IPVS.StrictArp == nil {
 		return nil, errors.New("no value for .spec.clusterNetwork.ipvs.strictArp")
 	}
@@ -89,7 +89,6 @@ func NewTemplateData(
 	if variables == nil {
 		variables = make(map[string]interface{})
 	}
-
 
 	var cniPlugin CNIPlugin
 	if cluster.Spec.CNIPlugin == nil {
