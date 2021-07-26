@@ -208,6 +208,27 @@ func (s *awsScenario) NodeDeployments(ctx context.Context, num int, secrets secr
 				},
 			},
 		},
+		// arm machine test
+		{
+			Spec: &apimodels.NodeDeploymentSpec{
+				Template: &apimodels.NodeSpec{
+					Cloud: &apimodels.NodeCloudSpec{
+						Aws: &apimodels.AWSNodeSpec{
+							InstanceType:     utilpointer.StringPtr("t4g.medium"),
+							VolumeType:       &volumeType,
+							VolumeSize:       &volumeSize,
+							AvailabilityZone: subnets[2].AvailabilityZone,
+							SubnetID:         subnets[2].ID,
+							AMI:              "ami-0489277f0e9a94f8d",
+						},
+					},
+					Versions: &apimodels.NodeVersionInfo{
+						Kubelet: s.version.String(),
+					},
+					OperatingSystem: &s.nodeOsSpec,
+				},
+			},
+		},
 	}
 
 	// evenly distribute the nodes among deployments
