@@ -77,6 +77,7 @@ func TestHandle(t *testing.T) {
 								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 								DNSDomain:                "example.local",
 								ProxyMode:                resources.IPTablesProxyMode,
+								IPVS:                     kubermaticv1.IPVSConfiguration{StrictArp: pointer.BoolPtr(true)},
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 							},
 						}.Do(),
@@ -107,6 +108,7 @@ func TestHandle(t *testing.T) {
 								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 								DNSDomain:                "example.local",
 								ProxyMode:                resources.IPTablesProxyMode,
+								IPVS:                     kubermaticv1.IPVSConfiguration{StrictArp: pointer.BoolPtr(true)},
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 							},
 						}.Do(),
@@ -151,6 +153,7 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", "ipvs"),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/dnsDomain", "cluster.local"),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", true),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/ipvs/strictArp", true),
 			},
 		},
 		{
@@ -183,6 +186,7 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", "ipvs"),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/dnsDomain", "cluster.local"),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", true),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/ipvs/strictArp", true),
 			},
 		},
 		{
