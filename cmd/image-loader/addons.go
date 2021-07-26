@@ -45,7 +45,7 @@ func getImagesFromAddons(log *zap.SugaredLogger, addonsPath string, cluster *kub
 		return nil, fmt.Errorf("unable to list addons: %v", err)
 	}
 
-	serializer := json.NewSerializer(&json.SimpleMetaFactory{}, scheme.Scheme, scheme.Scheme, false)
+	serializer := json.NewSerializerWithOptions(&json.SimpleMetaFactory{}, scheme.Scheme, scheme.Scheme, json.SerializerOptions{} )
 	var images []string
 	for _, info := range infos {
 		if !info.IsDir() {
