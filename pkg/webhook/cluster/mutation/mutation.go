@@ -144,6 +144,9 @@ func (h *AdmissionHandler) applyDefaults(c *kubermaticv1.Cluster) {
 
 	// Network policies for Apiserver are deployed by default
 	if ok, _ := c.Spec.Features[kubermaticv1.ApiserverNetworkPolicy]; !ok {
+		if c.Spec.Features == nil {
+			c.Spec.Features = map[string]bool{}
+		}
 		c.Spec.Features[kubermaticv1.ApiserverNetworkPolicy] = true
 	}
 
