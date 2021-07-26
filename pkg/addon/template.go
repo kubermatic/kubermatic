@@ -19,6 +19,7 @@ package addon
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"path"
@@ -80,9 +81,15 @@ func NewTemplateData(
 		return nil, fmt.Errorf("failed to determine cloud provider name: %v", err)
 	}
 
+	//value is set by the mutating AdmissionHandler
+	if cluster.Spec.ClusterNetwork.IPVS.StrictArp == nil {
+		return nil, errors.New("no value for .spec.clusterNetwork.ipvs.strictArp")
+	}
+
 	if variables == nil {
 		variables = make(map[string]interface{})
 	}
+
 
 	var cniPlugin CNIPlugin
 	if cluster.Spec.CNIPlugin == nil {

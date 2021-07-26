@@ -24,6 +24,7 @@ import (
 	"testing"
 
 	"go.uber.org/zap"
+	"k8s.io/utils/pointer"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -108,6 +109,11 @@ func TestNewTemplateData(t *testing.T) {
 	feature := "myfeature"
 	cluster := kubermaticv1.Cluster{
 		Spec: kubermaticv1.ClusterSpec{
+			ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+				IPVS: kubermaticv1.IPVSConfiguration{
+					StrictArp: pointer.BoolPtr(true),
+				},
+			},
 			Version: *version,
 			Features: map[string]bool{
 				feature: true,
