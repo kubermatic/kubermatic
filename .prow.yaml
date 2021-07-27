@@ -1309,6 +1309,42 @@ presubmits:
             memory: 6Gi
 
   #########################################################
+  # external ccm migration e2e tests
+  #########################################################
+
+  - name: pre-kubermatic-ccm-migration-e2e
+    run_if_changed: "(|pkg/|.prow.yaml)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-openstack: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.16-node-14-kind-0.8-0
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ce
+            - name: HELM_BINARY
+              value: helm3
+          command:
+            - make
+          args:
+            - run-ccm-migration-e2e-test-in-kind
+          # docker-in-docker needs privileged mode
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 3.5
+            limits:
+              memory: 4Gi
+
+  #########################################################
   # misc
   #########################################################
 
