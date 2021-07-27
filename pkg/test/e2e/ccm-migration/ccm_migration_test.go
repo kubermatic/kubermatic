@@ -21,21 +21,24 @@ package ccmmigration
 import (
 	"context"
 	"fmt"
-	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	types2 "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	"strings"
+	"time"
+
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
+
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	types2 "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
-	"time"
 )
 
 const (

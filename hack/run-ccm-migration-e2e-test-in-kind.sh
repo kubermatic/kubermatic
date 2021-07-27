@@ -16,7 +16,7 @@
 
 ### This script sets up a local KKP installation in kind, deploys a
 ### couple of test Presets and Users and then runs the e2e tests for the
-### nodeport-proxy.
+### external ccm-migration.
 
 set -euo pipefail
 
@@ -26,28 +26,6 @@ source hack/lib.sh
 function generate_secret {
   cat /dev/urandom | LC_ALL=C tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1
   echo ''
-}
-
-function apply_api_server_nodeport {
-  cat << EOF > "${API_SERVER_NODEPORT_MANIFEST}"
-apiVersion: v1
-kind: Service
-metadata:
-  name: apiserver-external-nodeport
-  namespace: cluster-${USER_CLUSTER_NAME}
-spec:
-  ports:
-  - name: secure
-    port: 6443
-    protocol: TCP
-    nodePort: ${KIND_PORT}
-  selector:
-    app: apiserver
-  type: NodePort
-EOF
-
-  time retry 10 kubectl apply -f apiserver_nodeport.yaml
-  echo "user cluster API server nodeport created"
 }
 
 DOCKER_REPO="${DOCKER_REPO:-quay.io/kubermatic}"
@@ -270,7 +248,24 @@ echodate "Waiting for Kubermatic Operator to deploy Seed components..."
 retry 8 check_all_deployments_ready kubermatic
 echodate "Kubermatic Seed is ready."
 
-apply_api_server_nodeport &
+cat << EOF > "${API_SERVER_NODEPORT_MANIFEST}"
+apiVersion: v1
+kind: Service
+metadata:
+  name: apiserver-external-nodeport
+  namespace: cluster-${USER_CLUSTER_NAME}
+spec:
+  ports:
+  - name: secure
+    port: 6443
+    protocol: TCP
+    nodePort: ${KIND_PORT}
+  selector:
+    app: apiserver
+  type: NodePort
+EOF
+
+time retry 10 kubectl apply -f "${API_SERVER_NODEPORT_MANIFEST}" &
 
 EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
     -openstack-tenant=${OS_TENANT_NAME}
