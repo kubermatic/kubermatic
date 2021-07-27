@@ -225,3 +225,7 @@ type EtcdBackupConfigSpec struct {
 	// If not set, defaults to DefaultKeptBackupsCount. Only used if Schedule is set.
 	Keep *int `json:"keep,omitempty"`
 }
+
+// KubeloginCommand contains parametrized kubectl oidc-login command that allows logging into user cluster.
+// swagger:model KubeloginCommand
+type KubeloginCommand string

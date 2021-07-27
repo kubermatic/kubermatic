@@ -145,6 +145,8 @@ type ClientService interface {
 
 	GetOidcClusterKubeconfigV2(params *GetOidcClusterKubeconfigV2Params, authInfo runtime.ClientAuthInfoWriter) (*GetOidcClusterKubeconfigV2OK, error)
 
+	GetOidcClusterKubeloginCmd(params *GetOidcClusterKubeloginCmdParams, authInfo runtime.ClientAuthInfoWriter) (*GetOidcClusterKubeloginCmdOK, error)
+
 	GetProject(params *GetProjectParams, authInfo runtime.ClientAuthInfoWriter) (*GetProjectOK, error)
 
 	GetRole(params *GetRoleParams, authInfo runtime.ClientAuthInfoWriter) (*GetRoleOK, error)
@@ -2311,6 +2313,40 @@ func (a *Client) GetOidcClusterKubeconfigV2(params *GetOidcClusterKubeconfigV2Pa
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*GetOidcClusterKubeconfigV2Default)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  GetOidcClusterKubeloginCmd gets the kubelogin command for the specified cluster with oidc authentication
+*/
+func (a *Client) GetOidcClusterKubeloginCmd(params *GetOidcClusterKubeloginCmdParams, authInfo runtime.ClientAuthInfoWriter) (*GetOidcClusterKubeloginCmdOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetOidcClusterKubeloginCmdParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getOidcClusterKubeloginCmd",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/kubelogincmd",
+		ProducesMediaTypes: []string{"application/octet-stream"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetOidcClusterKubeloginCmdReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetOidcClusterKubeloginCmdOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetOidcClusterKubeloginCmdDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

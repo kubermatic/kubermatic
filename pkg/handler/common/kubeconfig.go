@@ -29,6 +29,7 @@ import (
 	"github.com/gorilla/securecookie"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/auth"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
@@ -122,6 +123,21 @@ func GetOidcKubeconfigEndpoint(ctx context.Context, userInfoGetter provider.User
 	adminClientCfg.AuthInfos["default"] = clientCmdAuth
 
 	return &encodeKubeConifgResponse{clientCfg: adminClientCfg, filePrefix: "oidc"}, nil
+}
+
+func GetKubeloginCmdEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID string, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider) (interface{}, error) {
+	cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Check client secret availability.
+	cmd := fmt.Sprintf("kubectl oidc-login setup --oidc-issuer-url=%s --oidc-client-id=%s --oidc-client-secret=%s",
+		cluster.Spec.OIDC.IssuerURL,
+		cluster.Spec.OIDC.ClientID,
+		cluster.Spec.OIDC.ClientSecret)
+
+	return apiv2.KubeloginCommand(cmd), nil
 }
 
 func CreateOIDCKubeconfigEndpoint(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, oidcIssuerVerifier auth.OIDCIssuerVerifier, oidcCfg common.OIDCConfiguration, req CreateOIDCKubeconfigReq) (interface{}, error) {

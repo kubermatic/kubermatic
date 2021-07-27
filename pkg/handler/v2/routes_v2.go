@@ -97,6 +97,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.getOidcClusterKubeconfig())
 
 	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clusters/{cluster_id}/kubelogincmd").
+		Handler(r.getOidcClusterKubeloginCmd())
+
+	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/clusters/{cluster_id}/metrics").
 		Handler(r.getClusterMetrics())
 
@@ -851,6 +855,33 @@ func (r Routing) getOidcClusterKubeconfig() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.GetOidcKubeconfigEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
+		cluster.DecodeGetClusterReq,
+		cluster.EncodeKubeconfig,
+		r.defaultServerOptions()...,
+	)
+}
+
+// getOidcClusterKubeloginCmd returns the kubelogin command for the cluster.
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/kubelogincmd project getOidcClusterKubeloginCmd
+//
+//     Gets the kubelogin command for the specified cluster with oidc authentication.
+//
+//     Produces:
+//     - application/octet-stream
+//
+//     Responses:
+//       default: errorResponse
+//       200: KubeloginCommand
+//       401: empty
+//       403: empty
+func (r Routing) getOidcClusterKubeloginCmd() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.GetKubeloginCmdEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		cluster.DecodeGetClusterReq,
 		cluster.EncodeKubeconfig,
 		r.defaultServerOptions()...,
