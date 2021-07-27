@@ -18683,23 +18683,23 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
-    "ImageList": {
-      "description": "ImageList defines a map of operating system and the image to use",
-      "type": "object",
-      "additionalProperties": {
-        "type": "string"
-      },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-    },
     "IPVSConfiguration": {
       "type": "object",
       "title": "IPVSConfiguration contains ipvs-related configuration details for kube-proxy.",
       "properties": {
         "strictArp": {
-          "description": "StrictArp configure arp_ignore and arp_announce to avoid answering ARP queries from kube-ipvs0 interface.\nDefaults to true.",
+          "description": "StrictArp configure arp_ignore and arp_announce to avoid answering ARP queries from kube-ipvs0 interface.\ndefaults to true.",
           "type": "boolean",
           "x-go-name": "StrictArp"
         }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
+    "ImageList": {
+      "description": "ImageList defines a map of operating system and the image to use",
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },

@@ -30,6 +30,9 @@ type ClusterNetworkingConfig struct {
 	// Defaults to ipvs.
 	ProxyMode string `json:"proxyMode,omitempty"`
 
+	// ipvs
+	Ipvs *IPVSConfiguration `json:"ipvs,omitempty"`
+
 	// pods
 	Pods *NetworkRanges `json:"pods,omitempty"`
 
@@ -40,6 +43,10 @@ type ClusterNetworkingConfig struct {
 // Validate validates this cluster networking config
 func (m *ClusterNetworkingConfig) Validate(formats strfmt.Registry) error {
 	var res []error
+
+	if err := m.validateIpvs(formats); err != nil {
+		res = append(res, err)
+	}
 
 	if err := m.validatePods(formats); err != nil {
 		res = append(res, err)
@@ -52,6 +59,24 @@ func (m *ClusterNetworkingConfig) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ClusterNetworkingConfig) validateIpvs(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Ipvs) { // not required
+		return nil
+	}
+
+	if m.Ipvs != nil {
+		if err := m.Ipvs.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("ipvs")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 
