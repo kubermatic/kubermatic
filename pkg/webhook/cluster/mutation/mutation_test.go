@@ -193,6 +193,7 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/diskSize", "1G"),
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/resources", map[string]interface{}{"requests": map[string]interface{}{"memory": "500M"}}),
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/prometheus/resources", map[string]interface{}{"requests": map[string]interface{}{"memory": "500M"}}),
+				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
 			},
 		},
 		{
@@ -399,6 +400,9 @@ func TestHandle(t *testing.T) {
 							},
 							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 								IPVS: &kubermaticv1.IPVSConfiguration{},
+							},
+							Features: map[string]bool{
+								kubermaticv1.ApiserverNetworkPolicy: true,
 							},
 						}.Do(),
 					},
