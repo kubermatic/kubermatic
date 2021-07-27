@@ -112,7 +112,7 @@ type KubermaticUIConfiguration struct {
 	// ---
 	//nolint:staticcheck
 	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
-	DockerTag string `json:"dockerTag,omitempty,omitgenyaml"`
+	DockerTag string `json:"dockerTag,omitempty,omitempty"`
 	// Config sets flags for various dashboard features.
 	Config string `json:"config,omitempty"`
 	// Resources describes the requested and maximum allowed CPU/memory usage.
@@ -322,13 +322,13 @@ type Update struct {
 	// ---
 	//nolint:staticcheck
 	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
-	Automatic *bool `json:"automatic,omitempty,omitgenyaml"`
+	Automatic *bool `json:"automatic,omitempty,omitempty"`
 	// Automatic controls whether this update is executed automatically
 	// for the worker nodes of all matching user clusters.
 	// ---
 	//nolint:staticcheck
 	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
-	AutomaticNodeUpdate *bool `json:"automaticNodeUpdate,omitempty,omitgenyaml"`
+	AutomaticNodeUpdate *bool `json:"automaticNodeUpdate,omitempty,omitempty"`
 }
 
 // KubermaticVPAConfiguration configures the Kubernetes VPA.

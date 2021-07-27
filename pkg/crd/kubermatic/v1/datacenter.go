@@ -154,7 +154,7 @@ type DatacenterSpec struct {
 
 	//nolint:staticcheck
 	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
-	Fake *DatacenterSpecFake `json:"fake,omitempty,omitgenyaml"`
+	Fake *DatacenterSpecFake `json:"fake,omitempty,omitempty"`
 
 	// Optional: When defined, only users with an e-mail address on the
 	// given domains can make use of this datacenter. You can define multiple
@@ -259,6 +259,8 @@ type DatacenterSpecVSphere struct {
 	// The cluster hosting the VMs will be the same VM used as a template is
 	// located.
 	Cluster string `json:"cluster"`
+	// The name of the storage policy to use for the storage class created in the user cluster.
+	DefaultStoragePolicy string `json:"storage_policy"`
 	// Optional: The root path for cluster specific VM folders. Each cluster gets its own
 	// folder below the root folder. Must be the FQDN (for example
 	// "/datacenter-1/vm/all-kubermatic-vms-in-here") and defaults to the root VM
@@ -268,7 +270,6 @@ type DatacenterSpecVSphere struct {
 	// define at least one template.
 	// See: https://github.com/kubermatic/machine-controller/blob/master/docs/vsphere.md#template-vms-preparation
 	Templates ImageList `json:"templates"`
-
 	// Optional: Infra management user is the user that will be used for everything
 	// except the cloud provider functionality, which will still use the credentials
 	// passed in via the Kubermatic dashboard/API.

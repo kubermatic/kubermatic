@@ -43,6 +43,9 @@ type VSphereCloudSpec struct {
 	// +optional
 	ResourcePool string `json:"resourcePool,omitempty"`
 
+	// StoragePolicy to be used for storage provisioning
+	StoragePolicy string `json:"storagePolicy,omitempty"`
+
 	// Username is the vSphere user name.
 	// +optional
 	Username string `json:"username,omitempty"`

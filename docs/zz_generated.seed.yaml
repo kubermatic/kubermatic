@@ -81,6 +81,7 @@ spec:
         # EnforcePodSecurityPolicy enforces pod security policy plugin on every clusters within the DC,
         # ignoring cluster-specific settings
         enforcePodSecurityPolicy: false
+        fake: null
         gcp:
           # Region to use, for example "europe-west3", for a full list of regions see
           # https://cloud.google.com/compute/docs/regions-zones/
@@ -199,6 +200,8 @@ spec:
           # "/datacenter-1/vm/all-kubermatic-vms-in-here") and defaults to the root VM
           # folder: "/datacenter-1/vm"
           root_path: ""
+          # The name of the storage policy to use for the storage class created in the user cluster.
+          storage_policy: ""
           # A list of VM templates to use for a given operating system. You must
           # define at least one template.
           # See: https://github.com/kubermatic/machine-controller/blob/master/docs/vsphere.md#template-vms-preparation

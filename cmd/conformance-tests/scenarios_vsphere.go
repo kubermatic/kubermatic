@@ -85,9 +85,10 @@ func (s *vSphereScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec 
 				Cloud: &apimodels.CloudSpec{
 					DatacenterName: "vsphere-ger",
 					Vsphere: &apimodels.VSphereCloudSpec{
-						Username:  secrets.VSphere.Username,
-						Password:  secrets.VSphere.Password,
-						Datastore: "exsi-nas",
+						Username:      secrets.VSphere.Username,
+						Password:      secrets.VSphere.Password,
+						Datastore:     "exsi-nas",
+						StoragePolicy: "e2e-test-policy",
 					},
 				},
 				Version: s.version.String(),
@@ -117,7 +118,7 @@ func (s *vSphereScenario) NodeDeployments(_ context.Context, num int, _ secrets)
 				Template: &apimodels.NodeSpec{
 					Cloud: &apimodels.NodeCloudSpec{
 						Vsphere: &apimodels.VSphereNodeSpec{
-							Template: fmt.Sprintf("machine-controller-e2e-%s", osName),
+							Template: fmt.Sprintf("machine-controller-e2e-%s-updated", osName),
 							CPUs:     2,
 							Memory:   4096,
 						},
