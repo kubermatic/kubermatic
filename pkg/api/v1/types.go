@@ -1322,6 +1322,8 @@ type AzureNodeSpec struct {
 	// ImageID represents the ID of the image that should be used to run the node
 	// required: false
 	ImageID string `json:"imageID"`
+	// AssignAvailabilitySet is used to check if an availability set should be created adn assigned to the cluster.
+	AssignAvailabilitySet bool `json:"assignAvailabilitySet"`
 }
 
 func (spec *AzureNodeSpec) MarshalJSON() ([]byte, error) {
@@ -1336,21 +1338,23 @@ func (spec *AzureNodeSpec) MarshalJSON() ([]byte, error) {
 	}
 
 	res := struct {
-		Size           string            `json:"size"`
-		AssignPublicIP bool              `json:"assignPublicIP"`
-		Tags           map[string]string `json:"tags,omitempty"`
-		OSDiskSize     int32             `json:"osDiskSize"`
-		DataDiskSize   int32             `json:"dataDiskSize"`
-		Zones          []string          `json:"zones"`
-		ImageID        string            `json:"imageID"`
+		Size                  string            `json:"size"`
+		AssignPublicIP        bool              `json:"assignPublicIP"`
+		Tags                  map[string]string `json:"tags,omitempty"`
+		OSDiskSize            int32             `json:"osDiskSize"`
+		DataDiskSize          int32             `json:"dataDiskSize"`
+		Zones                 []string          `json:"zones"`
+		ImageID               string            `json:"imageID"`
+		AssignAvailabilitySet bool              `json:"assignAvailabilitySet"`
 	}{
-		Size:           spec.Size,
-		AssignPublicIP: spec.AssignPublicIP,
-		Tags:           spec.Tags,
-		OSDiskSize:     spec.OSDiskSize,
-		DataDiskSize:   spec.DataDiskSize,
-		Zones:          spec.Zones,
-		ImageID:        spec.ImageID,
+		Size:                  spec.Size,
+		AssignPublicIP:        spec.AssignPublicIP,
+		Tags:                  spec.Tags,
+		OSDiskSize:            spec.OSDiskSize,
+		DataDiskSize:          spec.DataDiskSize,
+		Zones:                 spec.Zones,
+		ImageID:               spec.ImageID,
+		AssignAvailabilitySet: spec.AssignAvailabilitySet,
 	}
 
 	return json.Marshal(&res)
