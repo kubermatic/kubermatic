@@ -10343,7 +10343,7 @@
         }
       },
       "post": {
-        "description": "Creates a etcd backup config that will belong to the given cluster",
+        "description": "Creates a etcd backup restore for a given cluster",
         "consumes": [
           "application/json"
         ],
@@ -10351,9 +10351,9 @@
           "application/json"
         ],
         "tags": [
-          "etcdbackupconfig"
+          "etcdrestore"
         ],
-        "operationId": "createEtcdBackupConfig",
+        "operationId": "createEtcdRestore",
         "parameters": [
           {
             "type": "string",
@@ -10373,7 +10373,7 @@
             "name": "Body",
             "in": "body",
             "schema": {
-              "$ref": "#/definitions/ebcBody"
+              "$ref": "#/definitions/erBody"
             }
           }
         ],
@@ -17907,6 +17907,62 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
+    "EtcdRestore": {
+      "description": "EtcdRestore represents an object holding the configuration for etcd backup restore",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "spec": {
+          "$ref": "#/definitions/EtcdRestoreSpec"
+        },
+        "status": {
+          "$ref": "#/definitions/EtcdRestoreStatus"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EtcdRestorePhase": {
+      "type": "string",
+      "title": "EtcdRestorePhase represents the lifecycle phase of an EtcdRestore.",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
+    "EtcdRestoreSpec": {
+      "description": "EtcdRestoreSpec represents an object holding the etcd backup restore configuration specification",
+      "type": "object",
+      "properties": {
+        "backupDownloadCredentialsSecret": {
+          "description": "BackupDownloadCredentialsSecret is the name of a secret in the cluster-xxx namespace containing\ncredentials needed to download the backup",
+          "type": "string",
+          "x-go-name": "BackupDownloadCredentialsSecret"
+        },
+        "backupName": {
+          "description": "BackupName is the name of the backup to restore from",
+          "type": "string",
+          "x-go-name": "BackupName"
+        },
+        "clusterId": {
+          "description": "ClusterID is the id of the cluster which will be restored from the backup",
+          "type": "string",
+          "x-go-name": "ClusterID"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EtcdRestoreStatus": {
+      "type": "object",
+      "properties": {
+        "phase": {
+          "$ref": "#/definitions/EtcdRestorePhase"
+        },
+        "restoreTime": {
+          "$ref": "#/definitions/Time"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
     "Event": {
       "type": "object",
       "title": "Event is a report of an event somewhere in the cluster.",
@@ -21612,6 +21668,20 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/handler/v2/etcdbackupconfig"
+    },
+    "erBody": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "Name of the etcd backup config",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "spec": {
+          "$ref": "#/definitions/EtcdRestoreSpec"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/handler/v2/etcdrestore"
     },
     "errorResponse": {
       "description": "ErrorResponse is the default representation of an error",

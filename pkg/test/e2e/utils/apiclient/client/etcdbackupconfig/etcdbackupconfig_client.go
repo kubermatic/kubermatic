@@ -25,8 +25,6 @@ type Client struct {
 
 // ClientService is the interface for Client methods
 type ClientService interface {
-	CreateEtcdBackupConfig(params *CreateEtcdBackupConfigParams, authInfo runtime.ClientAuthInfoWriter) (*CreateEtcdBackupConfigCreated, error)
-
 	DeleteEtcdBackupConfig(params *DeleteEtcdBackupConfigParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteEtcdBackupConfigOK, error)
 
 	GetEtcdBackupConfig(params *GetEtcdBackupConfigParams, authInfo runtime.ClientAuthInfoWriter) (*GetEtcdBackupConfigOK, error)
@@ -36,40 +34,6 @@ type ClientService interface {
 	PatchEtcdBackupConfig(params *PatchEtcdBackupConfigParams, authInfo runtime.ClientAuthInfoWriter) (*PatchEtcdBackupConfigOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
-}
-
-/*
-  CreateEtcdBackupConfig Creates a etcd backup config that will belong to the given cluster
-*/
-func (a *Client) CreateEtcdBackupConfig(params *CreateEtcdBackupConfigParams, authInfo runtime.ClientAuthInfoWriter) (*CreateEtcdBackupConfigCreated, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewCreateEtcdBackupConfigParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "createEtcdBackupConfig",
-		Method:             "POST",
-		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &CreateEtcdBackupConfigReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*CreateEtcdBackupConfigCreated)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*CreateEtcdBackupConfigDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
