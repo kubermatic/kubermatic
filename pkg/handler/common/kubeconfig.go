@@ -125,19 +125,17 @@ func GetOidcKubeconfigEndpoint(ctx context.Context, userInfoGetter provider.User
 	return &encodeKubeConifgResponse{clientCfg: adminClientCfg, filePrefix: "oidc"}, nil
 }
 
-func GetKubeloginCmdEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID string, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider) (interface{}, error) {
+func GetClusterOidcEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID string, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider) (interface{}, error) {
 	cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: Check client secret availability.
-	cmd := fmt.Sprintf("kubectl oidc-login setup --oidc-issuer-url=%s --oidc-client-id=%s --oidc-client-secret=%s",
-		cluster.Spec.OIDC.IssuerURL,
-		cluster.Spec.OIDC.ClientID,
-		cluster.Spec.OIDC.ClientSecret)
-
-	return apiv2.KubeloginCommand(cmd), nil
+	return apiv2.OIDCSpec{
+		IssuerURL:    cluster.Spec.OIDC.IssuerURL,
+		ClientID:     cluster.Spec.OIDC.ClientID,
+		ClientSecret: cluster.Spec.OIDC.ClientSecret,
+	}, nil
 }
 
 func CreateOIDCKubeconfigEndpoint(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, oidcIssuerVerifier auth.OIDCIssuerVerifier, oidcCfg common.OIDCConfiguration, req CreateOIDCKubeconfigReq) (interface{}, error) {

@@ -97,8 +97,8 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.getOidcClusterKubeconfig())
 
 	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/clusters/{cluster_id}/kubelogincmd").
-		Handler(r.getOidcClusterKubeloginCmd())
+		Path("/projects/{project_id}/clusters/{cluster_id}/oidc").
+		Handler(r.getClusterOidc())
 
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/clusters/{cluster_id}/metrics").
@@ -861,27 +861,27 @@ func (r Routing) getOidcClusterKubeconfig() http.Handler {
 	)
 }
 
-// getOidcClusterKubeloginCmd returns the kubelogin command for the cluster.
-// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/kubelogincmd project getOidcClusterKubeloginCmd
+// getClusterOidc returns the OIDC spec for the user cluster.
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/oidc project getClusterOidc
 //
-//     Gets the kubelogin command for the specified cluster with oidc authentication.
+//     Gets the OIDC params for the specified cluster with OIDC authentication.
 //
 //     Produces:
-//     - application/octet-stream
+//     - application/json
 //
 //     Responses:
 //       default: errorResponse
-//       200: KubeloginCommand
+//       200: OIDCSpec
 //       401: empty
 //       403: empty
-func (r Routing) getOidcClusterKubeloginCmd() http.Handler {
+func (r Routing) getClusterOidc() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(cluster.GetKubeloginCmdEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
+		)(cluster.GetClusterOidcEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		cluster.DecodeGetClusterReq,
 		cluster.EncodeKubeconfig,
 		r.defaultServerOptions()...,

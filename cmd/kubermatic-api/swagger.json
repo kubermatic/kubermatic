@@ -11006,54 +11006,6 @@
         }
       }
     },
-    "/api/v2/projects/{project_id}/clusters/{cluster_id}/kubelogincmd": {
-      "get": {
-        "produces": [
-          "application/octet-stream"
-        ],
-        "tags": [
-          "project"
-        ],
-        "summary": "Gets the kubelogin command for the specified cluster with oidc authentication.",
-        "operationId": "getOidcClusterKubeloginCmd",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "ProjectID",
-            "name": "project_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterID",
-            "name": "cluster_id",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "KubeloginCommand",
-            "schema": {
-              "$ref": "#/definitions/KubeloginCommand"
-            }
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      }
-    },
     "/api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments": {
       "get": {
         "description": "Lists machine deployments that belong to the given cluster",
@@ -11816,6 +11768,54 @@
         "responses": {
           "200": {
             "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/oidc": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Gets the OIDC params for the specified cluster with OIDC authentication.",
+        "operationId": "getClusterOidc",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OIDCSpec",
+            "schema": {
+              "$ref": "#/definitions/OIDCSpec"
+            }
           },
           "401": {
             "$ref": "#/responses/empty"
@@ -18784,11 +18784,6 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
-    "KubeloginCommand": {
-      "type": "string",
-      "title": "KubeloginCommand contains parametrized kubectl oidc-login command that allows logging into user cluster.",
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
-    },
     "KubermaticVersions": {
       "type": "object",
       "title": "KubermaticVersions describes the versions of running Kubermatic components.",
@@ -19646,6 +19641,25 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
+    "OIDCSpec": {
+      "type": "object",
+      "title": "OIDCSpec contains OIDC params that can be used to access user cluster.",
+      "properties": {
+        "clientId": {
+          "type": "string",
+          "x-go-name": "ClientID"
+        },
+        "clientSecret": {
+          "type": "string",
+          "x-go-name": "ClientSecret"
+        },
+        "issuerUrl": {
+          "type": "string",
+          "x-go-name": "IssuerURL"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "OPAIntegrationSettings": {
       "type": "object",

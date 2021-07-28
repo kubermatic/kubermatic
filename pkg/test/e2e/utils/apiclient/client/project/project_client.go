@@ -115,6 +115,8 @@ type ClientService interface {
 
 	GetClusterMetricsV2(params *GetClusterMetricsV2Params, authInfo runtime.ClientAuthInfoWriter) (*GetClusterMetricsV2OK, error)
 
+	GetClusterOidc(params *GetClusterOidcParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterOidcOK, error)
+
 	GetClusterRole(params *GetClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterRoleOK, error)
 
 	GetClusterTemplate(params *GetClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterTemplateOK, error)
@@ -144,8 +146,6 @@ type ClientService interface {
 	GetOidcClusterKubeconfig(params *GetOidcClusterKubeconfigParams, authInfo runtime.ClientAuthInfoWriter) (*GetOidcClusterKubeconfigOK, error)
 
 	GetOidcClusterKubeconfigV2(params *GetOidcClusterKubeconfigV2Params, authInfo runtime.ClientAuthInfoWriter) (*GetOidcClusterKubeconfigV2OK, error)
-
-	GetOidcClusterKubeloginCmd(params *GetOidcClusterKubeloginCmdParams, authInfo runtime.ClientAuthInfoWriter) (*GetOidcClusterKubeloginCmdOK, error)
 
 	GetProject(params *GetProjectParams, authInfo runtime.ClientAuthInfoWriter) (*GetProjectOK, error)
 
@@ -1807,6 +1807,40 @@ func (a *Client) GetClusterMetricsV2(params *GetClusterMetricsV2Params, authInfo
 }
 
 /*
+  GetClusterOidc gets the o ID c params for the specified cluster with o ID c authentication
+*/
+func (a *Client) GetClusterOidc(params *GetClusterOidcParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterOidcOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetClusterOidcParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getClusterOidc",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/oidc",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetClusterOidcReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetClusterOidcOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetClusterOidcDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   GetClusterRole Gets the cluster role with the given name
 */
 func (a *Client) GetClusterRole(params *GetClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterRoleOK, error) {
@@ -2313,40 +2347,6 @@ func (a *Client) GetOidcClusterKubeconfigV2(params *GetOidcClusterKubeconfigV2Pa
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*GetOidcClusterKubeconfigV2Default)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
-}
-
-/*
-  GetOidcClusterKubeloginCmd gets the kubelogin command for the specified cluster with oidc authentication
-*/
-func (a *Client) GetOidcClusterKubeloginCmd(params *GetOidcClusterKubeloginCmdParams, authInfo runtime.ClientAuthInfoWriter) (*GetOidcClusterKubeloginCmdOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewGetOidcClusterKubeloginCmdParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "getOidcClusterKubeloginCmd",
-		Method:             "GET",
-		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/kubelogincmd",
-		ProducesMediaTypes: []string{"application/octet-stream"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &GetOidcClusterKubeloginCmdReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*GetOidcClusterKubeloginCmdOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetOidcClusterKubeloginCmdDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
