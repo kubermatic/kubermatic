@@ -10343,7 +10343,7 @@
         }
       },
       "post": {
-        "description": "Creates a etcd backup restore for a given cluster",
+        "description": "Creates a etcd backup config that will belong to the given cluster",
         "consumes": [
           "application/json"
         ],
@@ -10351,9 +10351,9 @@
           "application/json"
         ],
         "tags": [
-          "etcdrestore"
+          "etcdbackupconfig"
         ],
-        "operationId": "createEtcdRestore",
+        "operationId": "createEtcdBackupConfig",
         "parameters": [
           {
             "type": "string",
@@ -10373,7 +10373,7 @@
             "name": "Body",
             "in": "body",
             "schema": {
-              "$ref": "#/definitions/erBody"
+              "$ref": "#/definitions/ebcBody"
             }
           }
         ],
@@ -10545,6 +10545,64 @@
         ],
         "responses": {
           "200": {
+            "description": "EtcdBackupConfig",
+            "schema": {
+              "$ref": "#/definitions/EtcdBackupConfig"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores": {
+      "post": {
+        "description": "Creates a etcd backup restore for a given cluster",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "etcdrestore"
+        ],
+        "operationId": "createEtcdRestore",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/erBody"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
             "description": "EtcdBackupConfig",
             "schema": {
               "$ref": "#/definitions/EtcdBackupConfig"
@@ -21659,7 +21717,7 @@
       "type": "object",
       "properties": {
         "name": {
-          "description": "Name of the etcd backup config",
+          "description": "Name of the etcd backup restore",
           "type": "string",
           "x-go-name": "Name"
         },

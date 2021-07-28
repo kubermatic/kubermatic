@@ -42,7 +42,7 @@ func (a *Client) CreateEtcdRestore(params *CreateEtcdRestoreParams, authInfo run
 	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "createEtcdRestore",
 		Method:             "POST",
-		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},

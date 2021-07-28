@@ -67,7 +67,7 @@ type CreateEtcdRestoreCreated struct {
 }
 
 func (o *CreateEtcdRestoreCreated) Error() string {
-	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs][%d] createEtcdRestoreCreated  %+v", 201, o.Payload)
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores][%d] createEtcdRestoreCreated  %+v", 201, o.Payload)
 }
 
 func (o *CreateEtcdRestoreCreated) GetPayload() *models.EtcdBackupConfig {
@@ -99,7 +99,7 @@ type CreateEtcdRestoreUnauthorized struct {
 }
 
 func (o *CreateEtcdRestoreUnauthorized) Error() string {
-	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs][%d] createEtcdRestoreUnauthorized ", 401)
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores][%d] createEtcdRestoreUnauthorized ", 401)
 }
 
 func (o *CreateEtcdRestoreUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -120,7 +120,7 @@ type CreateEtcdRestoreForbidden struct {
 }
 
 func (o *CreateEtcdRestoreForbidden) Error() string {
-	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs][%d] createEtcdRestoreForbidden ", 403)
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores][%d] createEtcdRestoreForbidden ", 403)
 }
 
 func (o *CreateEtcdRestoreForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -151,7 +151,7 @@ func (o *CreateEtcdRestoreDefault) Code() int {
 }
 
 func (o *CreateEtcdRestoreDefault) Error() string {
-	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs][%d] createEtcdRestore default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores][%d] createEtcdRestore default  %+v", o._statusCode, o.Payload)
 }
 
 func (o *CreateEtcdRestoreDefault) GetPayload() *models.ErrorResponse {

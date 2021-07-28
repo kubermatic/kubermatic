@@ -16,7 +16,7 @@ import (
 // swagger:model erBody
 type ErBody struct {
 
-	// Name of the etcd backup config
+	// Name of the etcd backup restore
 	Name string `json:"name,omitempty"`
 
 	// spec
