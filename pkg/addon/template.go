@@ -19,7 +19,6 @@ package addon
 import (
 	"bufio"
 	"bytes"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"path"
@@ -37,6 +36,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/utils/pointer"
 )
 
 const (
@@ -81,9 +81,8 @@ func NewTemplateData(
 		return nil, fmt.Errorf("failed to determine cloud provider name: %v", err)
 	}
 
-	// value is set by the mutating AdmissionHandler
 	if cluster.Spec.ClusterNetwork.IPVS.StrictArp == nil {
-		return nil, errors.New("no value for .spec.clusterNetwork.ipvs.strictArp")
+		cluster.Spec.ClusterNetwork.IPVS.StrictArp = pointer.BoolPtr(resources.IPVSStrictArp)
 	}
 
 	if variables == nil {
