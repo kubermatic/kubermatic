@@ -225,3 +225,11 @@ type EtcdBackupConfigSpec struct {
 	// If not set, defaults to DefaultKeptBackupsCount. Only used if Schedule is set.
 	Keep *int `json:"keep,omitempty"`
 }
+
+// OIDCSpec contains OIDC params that can be used to access user cluster.
+// swagger:model OIDCSpec
+type OIDCSpec struct {
+	IssuerURL    string `json:"issuerUrl,omitempty"`
+	ClientID     string `json:"clientId,omitempty"`
+	ClientSecret string `json:"clientSecret,omitempty"`
+}
