@@ -196,6 +196,7 @@ type newRoutingFunc func(
 	defaultConstraintProvider provider.DefaultConstraintProvider,
 	privilegedAllowedRegistryProvider provider.PrivilegedAllowedRegistryProvider,
 	etcdBackupConfigProviderGetter provider.EtcdBackupConfigProviderGetter,
+	etcdRestoreProviderGetter provider.EtcdRestoreProviderGetter,
 ) http.Handler
 
 func getRuntimeObjects(objs ...ctrlruntimeclient.Object) []runtime.Object {
@@ -421,6 +422,15 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		return nil, fmt.Errorf("can not find etcdBackupConfigProvider for cluster %q", seed.Name)
 	}
 
+	etcdRestoreProvider := kubernetes.NewEtcdRestoreProvider(fakeImpersonationClient, fakeClient)
+	etcdRestoreProviders := map[string]provider.EtcdRestoreProvider{"us-central1": etcdRestoreProvider}
+	etcdRestoreProviderGetter := func(seed *kubermaticv1.Seed) (provider.EtcdRestoreProvider, error) {
+		if etcdRestore, exists := etcdRestoreProviders[seed.Name]; exists {
+			return etcdRestore, nil
+		}
+		return nil, fmt.Errorf("can not find etcdRestoreProvider for cluster %q", seed.Name)
+	}
+
 	eventRecorderProvider := kubernetes.NewEventRecorder()
 
 	settingsWatcher, err := kuberneteswatcher.NewSettingsWatcher(settingsProvider)
@@ -481,6 +491,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		fakeDefaultConstraintProvider,
 		fakePrivilegedAllowedRegistryProvider,
 		etcdBackupConfigProviderGetter,
+		etcdRestoreProviderGetter,
 	)
 
 	return mainRouter, &ClientsSets{kubermaticClient, fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil
@@ -1815,6 +1826,37 @@ func GenEtcdBackupConfig(name string, cluster *kubermaticv1.Cluster) *kubermatic
 			Cluster:  *clusterObjectRef,
 			Schedule: "5 * * * * *",
 			Keep:     &keep,
+		},
+	}
+}
+
+func GenAPIEtcdRestore(name, clusterID string) *apiv2.EtcdRestore {
+	return &apiv2.EtcdRestore{
+		Name: name,
+		Spec: apiv2.EtcdRestoreSpec{
+			ClusterID:                       clusterID,
+			BackupName:                      "backup-1",
+			BackupDownloadCredentialsSecret: "secret",
+		},
+	}
+}
+
+func GenEtcdRestore(name string, cluster *kubermaticv1.Cluster) *kubermaticv1.EtcdRestore {
+	clusterObjectRef, _ := reference.GetReference(scheme.Scheme, cluster)
+
+	return &kubermaticv1.EtcdRestore{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: cluster.Status.NamespaceName,
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(cluster, kubermaticv1.SchemeGroupVersion.WithKind("Cluster")),
+			},
+		},
+		Spec: kubermaticv1.EtcdRestoreSpec{
+			Name:                            name,
+			Cluster:                         *clusterObjectRef,
+			BackupName:                      "backup-1",
+			BackupDownloadCredentialsSecret: "secret",
 		},
 	}
 }

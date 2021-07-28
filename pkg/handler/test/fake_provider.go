@@ -313,3 +313,12 @@ func (p *FakeEtcdBackupConfigProvider) Delete(userInfo *provider.UserInfo, clust
 func (p *FakeEtcdBackupConfigProvider) Patch(userInfo *provider.UserInfo, old, new *kubermaticapiv1.EtcdBackupConfig) (*kubermaticapiv1.EtcdBackupConfig, error) {
 	return p.Provider.Patch(userInfo, old, new)
 }
+
+type FakeEtcdRestoreProvider struct {
+	Provider   *kubernetes.EtcdRestoreProvider
+	FakeClient ctrlruntimeclient.Client
+}
+
+func (p *FakeEtcdRestoreProvider) Create(userInfo *provider.UserInfo, ebc *kubermaticapiv1.EtcdRestore) (*kubermaticapiv1.EtcdRestore, error) {
+	return p.Provider.Create(userInfo, ebc)
+}

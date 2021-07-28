@@ -226,6 +226,27 @@ type EtcdBackupConfigSpec struct {
 	Keep *int `json:"keep,omitempty"`
 }
 
+// EtcdRestore represents an object holding the configuration for etcd backup restore
+// swagger:model EtcdRestore
+type EtcdRestore struct {
+	Name string `json:"name"`
+
+	Spec   EtcdRestoreSpec            `json:"spec"`
+	Status crdapiv1.EtcdRestoreStatus `json:"status"`
+}
+
+// EtcdRestoreSpec represents an object holding the etcd backup restore configuration specification
+// swagger:model EtcdRestoreSpec
+type EtcdRestoreSpec struct {
+	// ClusterID is the id of the cluster which will be restored from the backup
+	ClusterID string `json:"clusterId"`
+	// BackupName is the name of the backup to restore from
+	BackupName string `json:"backupName"`
+	// BackupDownloadCredentialsSecret is the name of a secret in the cluster-xxx namespace containing
+	// credentials needed to download the backup
+	BackupDownloadCredentialsSecret string `json:"backupDownloadCredentialsSecret,omitempty"`
+}
+
 // OIDCSpec contains OIDC params that can be used to access user cluster.
 // swagger:model OIDCSpec
 type OIDCSpec struct {

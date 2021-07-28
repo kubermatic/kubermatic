@@ -179,4 +179,5 @@ type providers struct {
 	ruleGroupProviderGetter               provider.RuleGroupProviderGetter
 	privilegedAllowedRegistryProvider     provider.PrivilegedAllowedRegistryProvider
 	etcdBackupConfigProviderGetter        provider.EtcdBackupConfigProviderGetter
+	etcdRestoreProviderGetter             provider.EtcdRestoreProviderGetter
 }

@@ -76,6 +76,9 @@ type ClusterTemplateInstanceProviderGetter = func(seed *kubermaticv1.Seed) (Clus
 // EtcdBackupConfigProviderGetter is used to get a EtcdBackupConfigProvider
 type EtcdBackupConfigProviderGetter = func(seed *kubermaticv1.Seed) (EtcdBackupConfigProvider, error)
 
+// EtcdRestoreProviderGetter is used to get a EtcdRestoreProvider
+type EtcdRestoreProviderGetter = func(seed *kubermaticv1.Seed) (EtcdRestoreProvider, error)
+
 // SeedGetterFactory returns a SeedGetter. It has validation of all its arguments
 func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, seedName string, namespace string) (SeedGetter, error) {
 	return func() (*kubermaticv1.Seed, error) {
