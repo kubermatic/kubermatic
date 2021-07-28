@@ -4307,7 +4307,7 @@ func (r Routing) patchEtcdBackupConfig() http.Handler {
 	)
 }
 
-// swagger:route POST /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs etcdrestore createEtcdRestore
+// swagger:route POST /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores etcdrestore createEtcdRestore
 //
 //     Creates a etcd backup restore for a given cluster
 //

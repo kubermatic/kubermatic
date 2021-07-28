@@ -66,7 +66,7 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 	}
 }
 
-// createEtcdRestoreReq represents a request for creating a cluster etcd backup configuration
+// createEtcdRestoreReq represents a request for creating a cluster etcd backup restore
 // swagger:parameters createEtcdRestore
 type createEtcdRestoreReq struct {
 	cluster.GetClusterReq
@@ -75,9 +75,9 @@ type createEtcdRestoreReq struct {
 }
 
 type erBody struct {
-	// Name of the etcd backup config
+	// Name of the etcd backup restore
 	Name string `json:"name"`
-	// EtcdRestoreSpec Spec of the etcd backup config
+	// EtcdRestoreSpec Spec of the etcd backup restore
 	Spec apiv2.EtcdRestoreSpec `json:"spec"`
 }
 

@@ -608,11 +608,11 @@ func PrivilegedEtcdBackupConfig(clusterProviderGetter provider.ClusterProviderGe
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			seedCluster := request.(seedClusterGetter).GetSeedCluster()
-			ruleGroupProvider, err := getEtcdBackupConfigProvider(clusterProviderGetter, etcdBackupConfigProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			ebcProvider, err := getEtcdBackupConfigProvider(clusterProviderGetter, etcdBackupConfigProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
 			if err != nil {
 				return nil, err
 			}
-			privilegedEtcdBackupConfigProvider := ruleGroupProvider.(provider.PrivilegedEtcdBackupConfigProvider)
+			privilegedEtcdBackupConfigProvider := ebcProvider.(provider.PrivilegedEtcdBackupConfigProvider)
 			ctx = context.WithValue(ctx, PrivilegedEtcdBackupConfigProviderContextKey, privilegedEtcdBackupConfigProvider)
 			return next(ctx, request)
 		}
@@ -667,11 +667,11 @@ func PrivilegedEtcdRestore(clusterProviderGetter provider.ClusterProviderGetter,
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			seedCluster := request.(seedClusterGetter).GetSeedCluster()
-			ruleGroupProvider, err := getEtcdRestoreProvider(clusterProviderGetter, etcdRestoreProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			erProvider, err := getEtcdRestoreProvider(clusterProviderGetter, etcdRestoreProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
 			if err != nil {
 				return nil, err
 			}
-			privilegedEtcdRestoreProvider := ruleGroupProvider.(provider.PrivilegedEtcdRestoreProvider)
+			privilegedEtcdRestoreProvider := erProvider.(provider.PrivilegedEtcdRestoreProvider)
 			ctx = context.WithValue(ctx, PrivilegedEtcdRestoreProviderContextKey, privilegedEtcdRestoreProvider)
 			return next(ctx, request)
 		}
