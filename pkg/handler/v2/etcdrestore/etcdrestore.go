@@ -23,7 +23,7 @@ import (
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
-	"k8s.io/client-go/kubernetes/scheme"
+	"github.com/gorilla/mux"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -35,6 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/reference"
 )
 
@@ -103,6 +104,92 @@ func DecodeCreateEtcdRestoreReq(c context.Context, r *http.Request) (interface{}
 	return req, nil
 }
 
+func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(getEtcdRestoreReq)
+
+		c, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		ebc, err := getEtcdRestore(ctx, userInfoGetter, c, req.ProjectID, req.EtcdRestoreName)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return convertInternalToAPIEtcdRestore(ebc), nil
+	}
+}
+
+// getEtcdRestoreReq represents a request for getting a cluster etcd restore configuration
+// swagger:parameters getEtcdRestore deleteEtcdRestore
+type getEtcdRestoreReq struct {
+	cluster.GetClusterReq
+	// in: path
+	// required: true
+	EtcdRestoreName string `json:"ebc_name"`
+}
+
+func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(listEtcdRestoreReq)
+
+		c, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		ebcList, err := listEtcdRestore(ctx, userInfoGetter, c, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		var ebcAPIList []*apiv2.EtcdRestore
+		for _, ebc := range ebcList.Items {
+			ebcAPIList = append(ebcAPIList, convertInternalToAPIEtcdRestore(&ebc))
+		}
+
+		return ebcAPIList, nil
+	}
+}
+
+// listEtcdRestoreReq represents a request for listing cluster etcd restore configurations
+// swagger:parameters listEtcdRestore
+type listEtcdRestoreReq struct {
+	cluster.GetClusterReq
+}
+
+func DecodeListEtcdRestoreReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req listEtcdRestoreReq
+
+	cr, err := cluster.DecodeGetClusterReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.GetClusterReq = cr.(cluster.GetClusterReq)
+	return req, nil
+}
+
+func DecodeGetEtcdRestoreReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req getEtcdRestoreReq
+	cr, err := cluster.DecodeGetClusterReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.GetClusterReq = cr.(cluster.GetClusterReq)
+
+	req.EtcdRestoreName = mux.Vars(r)["er_name"]
+	if req.EtcdRestoreName == "" {
+		return "", fmt.Errorf("'er_name' parameter is required but was not provided")
+	}
+
+	return req, nil
+}
+
 func convertInternalToAPIEtcdRestore(er *kubermaticv1.EtcdRestore) *apiv2.EtcdRestore {
 	return &apiv2.EtcdRestore{
 		Name: er.Name,
@@ -152,6 +239,36 @@ func createEtcdRestore(ctx context.Context, userInfoGetter provider.UserInfoGett
 		return nil, err
 	}
 	return etcdRestoreProvider.Create(userInfo, etcdRestore)
+}
+
+func getEtcdRestore(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID, etcdRestoreName string) (*kubermaticv1.EtcdRestore, error) {
+	adminUserInfo, privilegedEtcdRestoreProvider, err := getAdminUserInfoPrivilegedEtcdRestoreProvider(ctx, userInfoGetter)
+	if err != nil {
+		return nil, err
+	}
+	if adminUserInfo.IsAdmin {
+		return privilegedEtcdRestoreProvider.GetUnsecured(cluster, etcdRestoreName)
+	}
+	userInfo, etcdRestoreProvider, err := getUserInfoEtcdRestoreProvider(ctx, userInfoGetter, projectID)
+	if err != nil {
+		return nil, err
+	}
+	return etcdRestoreProvider.Get(userInfo, cluster, etcdRestoreName)
+}
+
+func listEtcdRestore(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID string) (*kubermaticv1.EtcdRestoreList, error) {
+	adminUserInfo, privilegedEtcdRestoreProvider, err := getAdminUserInfoPrivilegedEtcdRestoreProvider(ctx, userInfoGetter)
+	if err != nil {
+		return nil, err
+	}
+	if adminUserInfo.IsAdmin {
+		return privilegedEtcdRestoreProvider.ListUnsecured(cluster)
+	}
+	userInfo, etcdRestoreProvider, err := getUserInfoEtcdRestoreProvider(ctx, userInfoGetter, projectID)
+	if err != nil {
+		return nil, err
+	}
+	return etcdRestoreProvider.List(userInfo, cluster)
 }
 
 func getAdminUserInfoPrivilegedEtcdRestoreProvider(ctx context.Context, userInfoGetter provider.UserInfoGetter) (*provider.UserInfo, provider.PrivilegedEtcdRestoreProvider, error) {

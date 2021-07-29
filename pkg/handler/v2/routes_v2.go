@@ -625,6 +625,14 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/clusters/{cluster_id}/etcdrestores").
 		Handler(r.createEtcdRestore())
 
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{er_name}").
+		Handler(r.getEtcdRestore())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clusters/{cluster_id}/etcdrestores").
+		Handler(r.listEtcdRestore())
+
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -4334,6 +4342,62 @@ func (r Routing) createEtcdRestore() http.Handler {
 		)(etcdrestore.CreateEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
 		etcdrestore.DecodeCreateEtcdRestoreReq,
 		handler.SetStatusCreatedHeader(handler.EncodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{er_name} etcdrestore getEtcdRestore
+//
+//     Gets a etcd backup restore for a given cluster based on its name
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: EtcdRestore
+//       401: empty
+//       403: empty
+func (r Routing) getEtcdRestore() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.EtcdRestore(r.clusterProviderGetter, r.etcdRestoreProviderGetter, r.seedsGetter),
+			middleware.PrivilegedEtcdRestore(r.clusterProviderGetter, r.etcdRestoreProviderGetter, r.seedsGetter),
+		)(etcdrestore.GetEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
+		etcdrestore.DecodeGetEtcdRestoreReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores etcdrestore listEtcdRestore
+//
+//     List etcd backup restores for a given cluster
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []EtcdRestore
+//       401: empty
+//       403: empty
+func (r Routing) listEtcdRestore() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.EtcdRestore(r.clusterProviderGetter, r.etcdRestoreProviderGetter, r.seedsGetter),
+			middleware.PrivilegedEtcdRestore(r.clusterProviderGetter, r.etcdRestoreProviderGetter, r.seedsGetter),
+		)(etcdrestore.ListEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
+		etcdrestore.DecodeListEtcdRestoreReq,
+		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }

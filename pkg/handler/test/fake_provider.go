@@ -322,3 +322,11 @@ type FakeEtcdRestoreProvider struct {
 func (p *FakeEtcdRestoreProvider) Create(userInfo *provider.UserInfo, ebc *kubermaticapiv1.EtcdRestore) (*kubermaticapiv1.EtcdRestore, error) {
 	return p.Provider.Create(userInfo, ebc)
 }
+
+func (p *FakeEtcdRestoreProvider) Get(userInfo *provider.UserInfo, cluster *kubermaticapiv1.Cluster, name string) (*kubermaticapiv1.EtcdRestore, error) {
+	return p.Provider.Get(userInfo, cluster, name)
+}
+
+func (p *FakeEtcdRestoreProvider) List(userInfo *provider.UserInfo, cluster *kubermaticapiv1.Cluster) (*kubermaticapiv1.EtcdRestoreList, error) {
+	return p.Provider.List(userInfo, cluster)
+}
