@@ -27,6 +27,10 @@ type Client struct {
 type ClientService interface {
 	CreateEtcdRestore(params *CreateEtcdRestoreParams, authInfo runtime.ClientAuthInfoWriter) (*CreateEtcdRestoreCreated, error)
 
+	GetEtcdRestore(params *GetEtcdRestoreParams, authInfo runtime.ClientAuthInfoWriter) (*GetEtcdRestoreOK, error)
+
+	ListEtcdRestore(params *ListEtcdRestoreParams, authInfo runtime.ClientAuthInfoWriter) (*ListEtcdRestoreOK, error)
+
 	SetTransport(transport runtime.ClientTransport)
 }
 
@@ -61,6 +65,74 @@ func (a *Client) CreateEtcdRestore(params *CreateEtcdRestoreParams, authInfo run
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*CreateEtcdRestoreDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  GetEtcdRestore Gets a etcd backup restore for a given cluster based on its name
+*/
+func (a *Client) GetEtcdRestore(params *GetEtcdRestoreParams, authInfo runtime.ClientAuthInfoWriter) (*GetEtcdRestoreOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetEtcdRestoreParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getEtcdRestore",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{er_name}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetEtcdRestoreReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetEtcdRestoreOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetEtcdRestoreDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListEtcdRestore List etcd backup restores for a given cluster
+*/
+func (a *Client) ListEtcdRestore(params *ListEtcdRestoreParams, authInfo runtime.ClientAuthInfoWriter) (*ListEtcdRestoreOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListEtcdRestoreParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listEtcdRestore",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListEtcdRestoreReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListEtcdRestoreOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListEtcdRestoreDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
