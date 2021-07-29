@@ -23,6 +23,7 @@ import (
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/etcdbackupconfig"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/etcdrestore"
 
 	"k8c.io/kubermatic/v2/pkg/handler"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
@@ -618,6 +619,11 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodPatch).
 		Path("/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_name}").
 		Handler(r.patchEtcdBackupConfig())
+
+	// Defines a set of HTTP endpoints for managing etcd backup restores
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/clusters/{cluster_id}/etcdrestores").
+		Handler(r.createEtcdRestore())
 
 }
 
@@ -4297,6 +4303,37 @@ func (r Routing) patchEtcdBackupConfig() http.Handler {
 		)(etcdbackupconfig.PatchEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
 		etcdbackupconfig.DecodePatchEtcdBackupConfigReq,
 		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores etcdrestore createEtcdRestore
+//
+//     Creates a etcd backup restore for a given cluster
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: EtcdBackupConfig
+//       401: empty
+//       403: empty
+func (r Routing) createEtcdRestore() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.EtcdRestore(r.clusterProviderGetter, r.etcdRestoreProviderGetter, r.seedsGetter),
+			middleware.PrivilegedEtcdRestore(r.clusterProviderGetter, r.etcdRestoreProviderGetter, r.seedsGetter),
+		)(etcdrestore.CreateEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
+		etcdrestore.DecodeCreateEtcdRestoreReq,
+		handler.SetStatusCreatedHeader(handler.EncodeJSON),
 		r.defaultServerOptions()...,
 	)
 }

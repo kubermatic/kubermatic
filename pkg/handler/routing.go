@@ -178,6 +178,7 @@ type RoutingParams struct {
 	RuleGroupProviderGetter               provider.RuleGroupProviderGetter
 	PrivilegedAllowedRegistryProvider     provider.PrivilegedAllowedRegistryProvider
 	EtcdBackupConfigProviderGetter        provider.EtcdBackupConfigProviderGetter
+	EtcdRestoreProviderGetter             provider.EtcdRestoreProviderGetter
 	Versions                              kubermatic.Versions
 	CABundle                              *x509.CertPool
 }
