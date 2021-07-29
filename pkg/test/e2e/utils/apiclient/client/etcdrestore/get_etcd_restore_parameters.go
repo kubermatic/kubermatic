@@ -62,7 +62,7 @@ type GetEtcdRestoreParams struct {
 
 	/*ClusterID*/
 	ClusterID string
-	/*EbcName*/
+	/*ErName*/
 	EtcdRestoreName string
 	/*ProjectID*/
 	ProjectID string
@@ -116,15 +116,15 @@ func (o *GetEtcdRestoreParams) SetClusterID(clusterID string) {
 	o.ClusterID = clusterID
 }
 
-// WithEtcdRestoreName adds the ebcName to the get etcd restore params
-func (o *GetEtcdRestoreParams) WithEtcdRestoreName(ebcName string) *GetEtcdRestoreParams {
-	o.SetEtcdRestoreName(ebcName)
+// WithEtcdRestoreName adds the erName to the get etcd restore params
+func (o *GetEtcdRestoreParams) WithEtcdRestoreName(erName string) *GetEtcdRestoreParams {
+	o.SetEtcdRestoreName(erName)
 	return o
 }
 
-// SetEtcdRestoreName adds the ebcName to the get etcd restore params
-func (o *GetEtcdRestoreParams) SetEtcdRestoreName(ebcName string) {
-	o.EtcdRestoreName = ebcName
+// SetEtcdRestoreName adds the erName to the get etcd restore params
+func (o *GetEtcdRestoreParams) SetEtcdRestoreName(erName string) {
+	o.EtcdRestoreName = erName
 }
 
 // WithProjectID adds the projectID to the get etcd restore params
@@ -151,8 +151,8 @@ func (o *GetEtcdRestoreParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 		return err
 	}
 
-	// path param ebc_name
-	if err := r.SetPathParam("ebc_name", o.EtcdRestoreName); err != nil {
+	// path param er_name
+	if err := r.SetPathParam("er_name", o.EtcdRestoreName); err != nil {
 		return err
 	}
 

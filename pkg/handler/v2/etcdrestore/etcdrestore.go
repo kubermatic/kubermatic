@@ -114,12 +114,12 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 			return nil, err
 		}
 
-		ebc, err := getEtcdRestore(ctx, userInfoGetter, c, req.ProjectID, req.EtcdRestoreName)
+		er, err := getEtcdRestore(ctx, userInfoGetter, c, req.ProjectID, req.EtcdRestoreName)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		return convertInternalToAPIEtcdRestore(ebc), nil
+		return convertInternalToAPIEtcdRestore(er), nil
 	}
 }
 
@@ -129,7 +129,7 @@ type getEtcdRestoreReq struct {
 	cluster.GetClusterReq
 	// in: path
 	// required: true
-	EtcdRestoreName string `json:"ebc_name"`
+	EtcdRestoreName string `json:"er_name"`
 }
 
 func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
@@ -142,17 +142,17 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 			return nil, err
 		}
 
-		ebcList, err := listEtcdRestore(ctx, userInfoGetter, c, req.ProjectID)
+		erList, err := listEtcdRestore(ctx, userInfoGetter, c, req.ProjectID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		var ebcAPIList []*apiv2.EtcdRestore
-		for _, ebc := range ebcList.Items {
-			ebcAPIList = append(ebcAPIList, convertInternalToAPIEtcdRestore(&ebc))
+		var erAPIList []*apiv2.EtcdRestore
+		for _, er := range erList.Items {
+			erAPIList = append(erAPIList, convertInternalToAPIEtcdRestore(&er))
 		}
 
-		return ebcAPIList, nil
+		return erAPIList, nil
 	}
 }
 

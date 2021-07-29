@@ -10700,7 +10700,7 @@
           {
             "type": "string",
             "x-go-name": "EtcdRestoreName",
-            "name": "ebc_name",
+            "name": "er_name",
             "in": "path",
             "required": true
           }
