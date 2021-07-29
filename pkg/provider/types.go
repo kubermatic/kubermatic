@@ -1118,3 +1118,18 @@ type PrivilegedEtcdBackupConfigProvider interface {
 	// is unsafe in a sense that it uses privileged account to patch the resource
 	PatchUnsecured(old, new *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
 }
+
+// EtcdRestoreProvider declares the set of method for interacting with etcd backup restores
+type EtcdRestoreProvider interface {
+	// Create creates the given etcdRestore
+	Create(userInfo *UserInfo, etcdBackupConfig *kubermaticv1.EtcdRestore) (*kubermaticv1.EtcdRestore, error)
+}
+
+// PrivilegedEtcdBackupConfigProvider declares the set of method for interacting with etcd backup configs using a privileged client
+type PrivilegedEtcdRestoreProvider interface {
+	// CreateUnsecured creates the given etcdRestore
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to create the resource
+	CreateUnsecured(etcdBackupConfig *kubermaticv1.EtcdRestore) (*kubermaticv1.EtcdRestore, error)
+}

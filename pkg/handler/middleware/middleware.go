@@ -92,6 +92,12 @@ const (
 	// PrivilegedEtcdBackupConfigProviderContextKey key under which the current PrivilegedEtcdBackupConfigProvider is kept in the ctx
 	PrivilegedEtcdBackupConfigProviderContextKey kubermaticcontext.Key = "privileged-etcdbackupconfig-provider"
 
+	// EtcdRestoreProviderContextKey key under which the current EtcdRestoreProvider is kept in the ctx
+	EtcdRestoreProviderContextKey kubermaticcontext.Key = "etcdbrestore-provider"
+
+	// PrivilegedEtcdRestoreProviderContextKey key under which the current PrivilegedEtcdRestoreProvider is kept in the ctx
+	PrivilegedEtcdRestoreProviderContextKey kubermaticcontext.Key = "privileged-etcdrestore-provider"
+
 	UserCRContextKey                            = kubermaticcontext.UserCRContextKey
 	SeedsGetterContextKey kubermaticcontext.Key = "seeds-getter"
 )
@@ -602,11 +608,11 @@ func PrivilegedEtcdBackupConfig(clusterProviderGetter provider.ClusterProviderGe
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			seedCluster := request.(seedClusterGetter).GetSeedCluster()
-			ruleGroupProvider, err := getEtcdBackupConfigProvider(clusterProviderGetter, etcdBackupConfigProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			ebcProvider, err := getEtcdBackupConfigProvider(clusterProviderGetter, etcdBackupConfigProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
 			if err != nil {
 				return nil, err
 			}
-			privilegedEtcdBackupConfigProvider := ruleGroupProvider.(provider.PrivilegedEtcdBackupConfigProvider)
+			privilegedEtcdBackupConfigProvider := ebcProvider.(provider.PrivilegedEtcdBackupConfigProvider)
 			ctx = context.WithValue(ctx, PrivilegedEtcdBackupConfigProviderContextKey, privilegedEtcdBackupConfigProvider)
 			return next(ctx, request)
 		}
@@ -638,4 +644,63 @@ func getEtcdBackupConfigProvider(clusterProviderGetter provider.ClusterProviderG
 	}
 
 	return etcdBackupConfigProviderGetter(seed)
+}
+
+// EtcdRestore is a middleware that injects the current EtcdRestoreProvider into the ctx
+func EtcdRestore(clusterProviderGetter provider.ClusterProviderGetter, etcdRestoreProviderGetter provider.EtcdRestoreProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			seedCluster := request.(seedClusterGetter).GetSeedCluster()
+
+			etcdRestoreProvider, err := getEtcdRestoreProvider(clusterProviderGetter, etcdRestoreProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			if err != nil {
+				return nil, err
+			}
+			ctx = context.WithValue(ctx, EtcdRestoreProviderContextKey, etcdRestoreProvider)
+			return next(ctx, request)
+		}
+	}
+}
+
+// PrivilegedEtcdRestore is a middleware that injects the current PrivilegedEtcdRestoreProvider into the ctx
+func PrivilegedEtcdRestore(clusterProviderGetter provider.ClusterProviderGetter, etcdRestoreProviderGetter provider.EtcdRestoreProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			seedCluster := request.(seedClusterGetter).GetSeedCluster()
+			erProvider, err := getEtcdRestoreProvider(clusterProviderGetter, etcdRestoreProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			if err != nil {
+				return nil, err
+			}
+			privilegedEtcdRestoreProvider := erProvider.(provider.PrivilegedEtcdRestoreProvider)
+			ctx = context.WithValue(ctx, PrivilegedEtcdRestoreProviderContextKey, privilegedEtcdRestoreProvider)
+			return next(ctx, request)
+		}
+	}
+}
+
+func getEtcdRestoreProvider(clusterProviderGetter provider.ClusterProviderGetter, etcdRestoreProviderGetter provider.EtcdRestoreProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.EtcdRestoreProvider, error) {
+	seeds, err := seedsGetter()
+	if err != nil {
+		return nil, err
+	}
+
+	if clusterID != "" {
+		for _, seed := range seeds {
+			clusterProvider, err := clusterProviderGetter(seed)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			if clusterProvider.IsCluster(clusterID) {
+				seedName = seed.Name
+				break
+			}
+		}
+	}
+
+	seed, found := seeds[seedName]
+	if !found {
+		return nil, fmt.Errorf("couldn't find seed %q", seedName)
+	}
+
+	return etcdRestoreProviderGetter(seed)
 }
