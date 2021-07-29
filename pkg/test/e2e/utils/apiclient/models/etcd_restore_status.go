@@ -20,6 +20,7 @@ type EtcdRestoreStatus struct {
 	Phase EtcdRestorePhase `json:"phase,omitempty"`
 
 	// restore time
+	// Format: date-time
 	RestoreTime Time `json:"restoreTime,omitempty"`
 }
 
@@ -28,6 +29,10 @@ func (m *EtcdRestoreStatus) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validatePhase(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateRestoreTime(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -46,6 +51,22 @@ func (m *EtcdRestoreStatus) validatePhase(formats strfmt.Registry) error {
 	if err := m.Phase.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("phase")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *EtcdRestoreStatus) validateRestoreTime(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.RestoreTime) { // not required
+		return nil
+	}
+
+	if err := m.RestoreTime.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("restoreTime")
 		}
 		return err
 	}
