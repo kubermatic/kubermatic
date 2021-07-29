@@ -18,6 +18,7 @@ import (
 	networkingv1beta1 "k8s.io/api/networking/v1beta1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	storagev1 "k8s.io/api/storage/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
@@ -761,6 +762,80 @@ func ReconcileIngresses(ctx context.Context, namedGetters []NamedIngressCreatorG
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &networkingv1beta1.Ingress{}, false); err != nil {
 			return fmt.Errorf("failed to ensure Ingress %s/%s: %v", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
+// StorageClassCreator defines an interface to create/update StorageClasss
+type StorageClassCreator = func(existing *storagev1.StorageClass) (*storagev1.StorageClass, error)
+
+// NamedStorageClassCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedStorageClassCreatorGetter = func() (name string, create StorageClassCreator)
+
+// StorageClassObjectWrapper adds a wrapper so the StorageClassCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func StorageClassObjectWrapper(create StorageClassCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*storagev1.StorageClass))
+		}
+		return create(&storagev1.StorageClass{})
+	}
+}
+
+// ReconcileStorageClasss will create and update the StorageClasss coming from the passed StorageClassCreator slice
+func ReconcileStorageClasss(ctx context.Context, namedGetters []NamedStorageClassCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := StorageClassObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &storagev1.StorageClass{}, false); err != nil {
+			return fmt.Errorf("failed to ensure StorageClass %s/%s: %v", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
+// CSIDriverCreator defines an interface to create/update CSIDrivers
+type CSIDriverCreator = func(existing *storagev1.CSIDriver) (*storagev1.CSIDriver, error)
+
+// NamedCSIDriverCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedCSIDriverCreatorGetter = func() (name string, create CSIDriverCreator)
+
+// CSIDriverObjectWrapper adds a wrapper so the CSIDriverCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func CSIDriverObjectWrapper(create CSIDriverCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*storagev1.CSIDriver))
+		}
+		return create(&storagev1.CSIDriver{})
+	}
+}
+
+// ReconcileCSIDrivers will create and update the CSIDrivers coming from the passed CSIDriverCreator slice
+func ReconcileCSIDrivers(ctx context.Context, namedGetters []NamedCSIDriverCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := CSIDriverObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &storagev1.CSIDriver{}, false); err != nil {
+			return fmt.Errorf("failed to ensure CSIDriver %s/%s: %v", namespace, name, err)
 		}
 	}
 

@@ -142,6 +142,16 @@ func main() {
 				ResourceImportPath: "k8s.io/api/networking/v1beta1",
 			},
 			{
+				ResourceName:       "StorageClass",
+				ImportAlias:        "storagev1",
+				ResourceImportPath: "k8s.io/api/storage/v1",
+			},
+			{
+				ResourceName: "CSIDriver",
+				ImportAlias:  "storagev1",
+				// Don't specify ResourceImportPath so this block does not create a new import line in the generated code
+			},
+			{
 				ResourceName:       "Seed",
 				ImportAlias:        "kubermaticv1",
 				ResourceImportPath: "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1",
