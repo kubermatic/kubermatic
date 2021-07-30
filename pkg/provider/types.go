@@ -1159,5 +1159,4 @@ type PrivilegedEtcdRestoreProvider interface {
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to delete the resource
 	DeleteUnsecured(cluster *kubermaticv1.Cluster, name string) error
-
 }
