@@ -72,7 +72,7 @@ type DeleteRestoreOK struct {
 }
 
 func (o *DeleteRestoreOK) Error() string {
-	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{ebc_name}][%d] deleteRestoreOK ", 200)
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{er_name}][%d] deleteRestoreOK ", 200)
 }
 
 func (o *DeleteRestoreOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -93,7 +93,7 @@ type DeleteRestoreUnauthorized struct {
 }
 
 func (o *DeleteRestoreUnauthorized) Error() string {
-	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{ebc_name}][%d] deleteRestoreUnauthorized ", 401)
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{er_name}][%d] deleteRestoreUnauthorized ", 401)
 }
 
 func (o *DeleteRestoreUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -114,7 +114,7 @@ type DeleteRestoreForbidden struct {
 }
 
 func (o *DeleteRestoreForbidden) Error() string {
-	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{ebc_name}][%d] deleteRestoreForbidden ", 403)
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{er_name}][%d] deleteRestoreForbidden ", 403)
 }
 
 func (o *DeleteRestoreForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -136,7 +136,7 @@ type DeleteRestoreConflict struct {
 }
 
 func (o *DeleteRestoreConflict) Error() string {
-	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{ebc_name}][%d] deleteRestoreConflict  %+v", 409, o.Payload)
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{er_name}][%d] deleteRestoreConflict  %+v", 409, o.Payload)
 }
 func (o *DeleteRestoreConflict) GetPayload() *models.ErrorResponse {
 	return o.Payload
@@ -177,7 +177,7 @@ func (o *DeleteRestoreDefault) Code() int {
 }
 
 func (o *DeleteRestoreDefault) Error() string {
-	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{ebc_name}][%d] deleteRestore default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{er_name}][%d] deleteRestore default  %+v", o._statusCode, o.Payload)
 }
 func (o *DeleteRestoreDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload

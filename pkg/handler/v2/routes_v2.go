@@ -4406,7 +4406,7 @@ func (r Routing) listEtcdRestore() http.Handler {
 	)
 }
 
-// swagger:route DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{ebc_name} etcdrestore deleteRestore
+// swagger:route DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{er_name} etcdrestore deleteRestore
 //
 //     Deletes a etcd restore config for a given cluster based on its name
 //

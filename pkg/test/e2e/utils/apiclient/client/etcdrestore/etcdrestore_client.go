@@ -88,7 +88,7 @@ func (a *Client) DeleteRestore(params *DeleteRestoreParams, authInfo runtime.Cli
 	op := &runtime.ClientOperation{
 		ID:                 "deleteRestore",
 		Method:             "DELETE",
-		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{ebc_name}",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{er_name}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
