@@ -10672,6 +10672,38 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{ebc_name}": {
+      "delete": {
+        "description": "Deletes a etcd restore config for a given cluster based on its name",
+        "tags": [
+          "etcdrestore"
+        ],
+        "operationId": "deleteRestore",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "409": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{er_name}": {
       "get": {
         "description": "Gets a etcd backup restore for a given cluster based on its name",
