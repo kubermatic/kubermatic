@@ -1122,13 +1122,16 @@ type PrivilegedEtcdBackupConfigProvider interface {
 // EtcdRestoreProvider declares the set of method for interacting with etcd backup restores
 type EtcdRestoreProvider interface {
 	// Create creates the given etcdRestore
-	Create(userInfo *UserInfo, etcdBackupConfig *kubermaticv1.EtcdRestore) (*kubermaticv1.EtcdRestore, error)
+	Create(userInfo *UserInfo, etcdRestore *kubermaticv1.EtcdRestore) (*kubermaticv1.EtcdRestore, error)
 
 	// Get gets the given etcdRestore
 	Get(userInfo *UserInfo, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdRestore, error)
 
 	// List gets a list of etcdRestore for a given cluster
 	List(userInfo *UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdRestoreList, error)
+
+	// Delete deletes the given etcdRestore
+	Delete(userInfo *UserInfo, cluster *kubermaticv1.Cluster, name string) error
 }
 
 // PrivilegedEtcdRestoreProvider declares the set of method for interacting with etcd backup configs using a privileged client
@@ -1150,4 +1153,11 @@ type PrivilegedEtcdRestoreProvider interface {
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to list the resources
 	ListUnsecured(cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdRestoreList, error)
+
+	// DeleteUnsecured deletes the given etcdRestore
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to delete the resource
+	DeleteUnsecured(cluster *kubermaticv1.Cluster, name string) error
+
 }
