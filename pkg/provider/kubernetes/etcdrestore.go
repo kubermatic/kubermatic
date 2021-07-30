@@ -23,6 +23,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -74,4 +75,40 @@ func (p *EtcdRestoreProvider) Create(userInfo *provider.UserInfo, etcdRestore *k
 func (p *EtcdRestoreProvider) CreateUnsecured(etcdRestore *kubermaticv1.EtcdRestore) (*kubermaticv1.EtcdRestore, error) {
 	err := p.clientPrivileged.Create(context.Background(), etcdRestore)
 	return etcdRestore, err
+}
+
+func (p *EtcdRestoreProvider) Get(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdRestore, error) {
+
+	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
+	if err != nil {
+		return nil, err
+	}
+
+	er := &kubermaticv1.EtcdRestore{}
+	err = impersonationClient.Get(context.Background(), types.NamespacedName{Name: name, Namespace: cluster.Status.NamespaceName}, er)
+	return er, err
+}
+
+func (p *EtcdRestoreProvider) GetUnsecured(cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdRestore, error) {
+	er := &kubermaticv1.EtcdRestore{}
+	err := p.clientPrivileged.Get(context.Background(), types.NamespacedName{Name: name, Namespace: cluster.Status.NamespaceName}, er)
+	return er, err
+}
+
+func (p *EtcdRestoreProvider) List(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdRestoreList, error) {
+
+	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
+	if err != nil {
+		return nil, err
+	}
+
+	erList := &kubermaticv1.EtcdRestoreList{}
+	err = impersonationClient.List(context.Background(), erList, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName))
+	return erList, err
+}
+
+func (p *EtcdRestoreProvider) ListUnsecured(cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdRestoreList, error) {
+	erList := &kubermaticv1.EtcdRestoreList{}
+	err := p.clientPrivileged.List(context.Background(), erList, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName))
+	return erList, err
 }

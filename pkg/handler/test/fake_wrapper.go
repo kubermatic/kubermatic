@@ -511,3 +511,33 @@ func (k NewEtcdBackupConfigSliceWrapper) EqualOrDie(expected NewEtcdBackupConfig
 		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
 	}
 }
+
+// NewEtcdRestoreSliceWrapper wraps []apiv2.EtcdRestore
+// to provide convenient methods for tests
+type NewEtcdRestoreSliceWrapper []*apiv2.EtcdRestore
+
+// DecodeOrDie reads and decodes json data from the reader
+func (k *NewEtcdRestoreSliceWrapper) DecodeOrDie(r io.Reader, t *testing.T) *NewEtcdRestoreSliceWrapper {
+	t.Helper()
+	dec := json.NewDecoder(r)
+	err := dec.Decode(k)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return k
+}
+
+// Sort sorts the collection by Name
+func (k NewEtcdRestoreSliceWrapper) Sort() {
+	sort.Slice(k, func(i, j int) bool {
+		return k[i].Name < k[j].Name
+	})
+}
+
+// EqualOrDie compares whether expected collection is equal to the actual one
+func (k NewEtcdRestoreSliceWrapper) EqualOrDie(expected NewEtcdRestoreSliceWrapper, t *testing.T) {
+	t.Helper()
+	if diff := deep.Equal(k, expected); diff != nil {
+		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+	}
+}
