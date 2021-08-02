@@ -15,7 +15,7 @@
 alertmanager:
   image:
     repository: quay.io/prometheus/alertmanager
-    tag: v0.21.0
+    tag: v0.22.2
     pullPolicy: IfNotPresent
   configReloaderImage:
     repository: docker.io/jimmidyson/configmap-reload
@@ -104,4 +104,4 @@ alertmanager:
     enabled: false
     image:
       repository: quay.io/kubermatic/util
-      tag: 1.4.1
+      tag: 1.5.0
