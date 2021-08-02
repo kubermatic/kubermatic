@@ -37,7 +37,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	kyaml "k8s.io/apimachinery/pkg/util/yaml"
-	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -167,9 +166,6 @@ func setupTestCluster(cidrBlock string) *kubermaticv1.Cluster {
 				},
 				DNSDomain: "cluster.local",
 				ProxyMode: resources.IPVSProxyMode,
-				IPVS: kubermaticv1.IPVSConfiguration{
-					StrictArp: pointer.BoolPtr(true),
-				},
 			},
 			Cloud: kubermaticv1.CloudSpec{
 				Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{

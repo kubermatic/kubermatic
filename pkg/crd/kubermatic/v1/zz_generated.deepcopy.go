@@ -944,7 +944,11 @@ func (in *ClusterNetworkingConfig) DeepCopyInto(out *ClusterNetworkingConfig) {
 	*out = *in
 	in.Services.DeepCopyInto(&out.Services)
 	in.Pods.DeepCopyInto(&out.Pods)
-	in.IPVS.DeepCopyInto(&out.IPVS)
+	if in.IPVS != nil {
+		in, out := &in.IPVS, &out.IPVS
+		*out = new(IPVSConfiguration)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.NodeLocalDNSCacheEnabled != nil {
 		in, out := &in.NodeLocalDNSCacheEnabled, &out.NodeLocalDNSCacheEnabled
 		*out = new(bool)

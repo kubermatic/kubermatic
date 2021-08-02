@@ -466,7 +466,7 @@ type ClusterNetworkingConfig struct {
 	ProxyMode string `json:"proxyMode"`
 
 	// IPVS defines kube-proxy ipvs configuration options
-	IPVS IPVSConfiguration `json:"ipvs"`
+	IPVS *IPVSConfiguration `json:"ipvs,omitempty"`
 
 	// NodeLocalDNSCacheEnabled controls whether the NodeLocal DNS Cache feature is enabled.
 	// Defaults to true.

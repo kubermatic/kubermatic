@@ -81,7 +81,10 @@ func NewTemplateData(
 		return nil, fmt.Errorf("failed to determine cloud provider name: %v", err)
 	}
 
-	if cluster.Spec.ClusterNetwork.IPVS.StrictArp == nil {
+	//Ensure IPVS configuration is set
+	if cluster.Spec.ClusterNetwork.IPVS == nil {
+		cluster.Spec.ClusterNetwork.IPVS = &kubermaticv1.IPVSConfiguration{StrictArp: pointer.BoolPtr(resources.IPVSStrictArp)}
+	} else if cluster.Spec.ClusterNetwork.IPVS.StrictArp == nil {
 		cluster.Spec.ClusterNetwork.IPVS.StrictArp = pointer.BoolPtr(resources.IPVSStrictArp)
 	}
 

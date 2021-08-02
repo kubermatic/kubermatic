@@ -110,7 +110,7 @@ func TestNewTemplateData(t *testing.T) {
 	cluster := kubermaticv1.Cluster{
 		Spec: kubermaticv1.ClusterSpec{
 			ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
-				IPVS: kubermaticv1.IPVSConfiguration{
+				IPVS: &kubermaticv1.IPVSConfiguration{
 					StrictArp: pointer.BoolPtr(true),
 				},
 			},
