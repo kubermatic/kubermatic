@@ -25,79 +25,78 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
-// Needed because the cloud providers are initialized once during startup and get all
-// DCs.
-// We need to change the cloud providers to by dynamically initialized when needed instead
-// once we support datacenters as CRDs.
-// TODO: Find a way to lift the current requirement of unique nodeDatacenter names. It is needed
-// only because we put the nodeDatacenter name on the cluster but not the seed
+// DatacenterFromSeedMap is needed because the cloud providers are initialized once during startup and get all DCs.
+// We need to change the cloud providers to by dynamically initialized when needed instead once we support datacenters
+// as CRDs.
+// TODO: Find a way to lift the current requirement of unique datacenter names. It is needed only because we put
+// 	 the datacenter name in the cluster object but not the seed name.
 func DatacenterFromSeedMap(userInfo *UserInfo, seedsGetter SeedsGetter, datacenterName string) (*kubermaticv1.Seed, *kubermaticv1.Datacenter, error) {
 	seeds, err := seedsGetter()
 	if err != nil {
 		return nil, nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 	}
 
-	var foundDatacenters []kubermaticv1.Datacenter
-	var foundSeeds []*kubermaticv1.Seed
-
-iterateOverSeeds:
+	var datacenters []kubermaticv1.Datacenter
 	for _, seed := range seeds {
-		datacenter, exists := seed.Spec.Datacenters[datacenterName]
-		if !exists {
-			continue
-		}
-
-		requiredEmailDomain := datacenter.Spec.RequiredEmailDomain
-		requiredEmailDomains := datacenter.Spec.RequiredEmailDomains
-
-		if skipFilterByDomain(userInfo, datacenter) {
-			// find datacenter for "all" without RequiredEmailDomain(s) field
-			foundSeeds = append(foundSeeds, seed)
-			foundDatacenters = append(foundDatacenters, datacenter)
-			continue iterateOverSeeds
-		} else {
-			// find datacenter for specific email domain
-			split := strings.Split(userInfo.Email, "@")
-			if len(split) != 2 {
-				return nil, nil, fmt.Errorf("invalid email address")
-			}
-			userDomain := split[1]
-
-			if requiredEmailDomain != "" && strings.EqualFold(userDomain, requiredEmailDomain) {
-				foundSeeds = append(foundSeeds, seed)
-				foundDatacenters = append(foundDatacenters, datacenter)
-				continue iterateOverSeeds
-			}
-
-			for _, whitelistedDomain := range requiredEmailDomains {
-				if whitelistedDomain != "" && strings.EqualFold(userDomain, whitelistedDomain) {
-					foundSeeds = append(foundSeeds, seed)
-					foundDatacenters = append(foundDatacenters, datacenter)
-					continue iterateOverSeeds
-				}
-			}
+		if dc, exists := seed.Spec.Datacenters[datacenterName]; exists {
+			datacenters = append(datacenters, dc)
 		}
 	}
 
-	if len(foundDatacenters) == 0 {
+	if len(datacenters) == 0 {
 		return nil, nil, errors.New(http.StatusNotFound, fmt.Sprintf("datacenter %q not found", datacenterName))
 	}
-	if n := len(foundDatacenters); n > 1 {
-		return nil, nil, fmt.Errorf("expected to find exactly one datacenter with name %q, got %d", datacenterName, n)
+
+	if count := len(datacenters); count > 1 {
+		return nil, nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("expected to find exactly one datacenter with name %q, got %d", datacenterName, count))
 	}
 
-	return foundSeeds[0], &foundDatacenters[0], nil
+	matchingDatacenter := datacenters[0]
+
+	if !userInfo.IsAdmin {
+		emailDomain, err := getUserEmailDomain(userInfo)
+		if err != nil {
+			return nil, nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("invalid email domain: %v", err))
+		}
+
+		if !canAccessDatacenter(matchingDatacenter, emailDomain) {
+			return nil, nil, errors.New(http.StatusUnauthorized, fmt.Sprintf("cannot access %s datacenter due to email domain requirements", datacenterName))
+		}
+	}
+
+	// TODO: Get seed.
+	return nil, &matchingDatacenter, nil
 }
 
-func skipFilterByDomain(userInfo *UserInfo, datacenter kubermaticv1.Datacenter) bool {
-	requiredEmailDomain := datacenter.Spec.RequiredEmailDomain
-	requiredEmailDomains := datacenter.Spec.RequiredEmailDomains
+// canAccessDatacenter returns information if user with provided email domain can access given datacenter
+// based on the required email domains that are set on it.
+func canAccessDatacenter(dc kubermaticv1.Datacenter, emailDomain string) bool {
+	// Return false if required email domain is set, but it is different from user email domain.
+	if dc.Spec.RequiredEmailDomain != "" && !strings.EqualFold(emailDomain, dc.Spec.RequiredEmailDomain) {
+		return false
+	}
 
-	if userInfo.IsAdmin {
-		return true
+	// Return false if required email domains are set, but all of them are different from user email domain.
+	if len(dc.Spec.RequiredEmailDomains) > 0 {
+		isMatching := false
+		for _, domain := range dc.Spec.RequiredEmailDomains {
+			if domain != "" && strings.EqualFold(emailDomain, domain) {
+				isMatching = true
+				break
+			}
+		}
+		if !isMatching {
+			return false
+		}
 	}
-	if requiredEmailDomain == "" && len(requiredEmailDomains) == 0 {
-		return true
+
+	return true
+}
+
+func getUserEmailDomain(userInfo *UserInfo) (string, error) {
+	split := strings.Split(userInfo.Email, "@")
+	if len(split) != 2 {
+		return "", fmt.Errorf("invalid email address")
 	}
-	return false
+	return split[1], nil
 }
