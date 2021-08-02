@@ -897,7 +897,7 @@ func (r Routing) getClusterOidc() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.GetClusterOidcEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		cluster.DecodeGetClusterReq,
-		cluster.EncodeKubeconfig,
+		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
