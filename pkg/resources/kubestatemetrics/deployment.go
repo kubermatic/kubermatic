@@ -48,7 +48,7 @@ var (
 
 const (
 	name    = "kube-state-metrics"
-	version = "v1.9.7"
+	version = "v2.1.1"
 )
 
 // DeploymentCreator returns the function to create and update the kube-state-metrics deployment
@@ -85,7 +85,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    name,
-					Image:   data.ImageRegistry(resources.RegistryQuay) + "/coreos/kube-state-metrics:" + version,
+					Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/kube-state-metrics/kube-state-metrics:" + version,
 					Command: []string{"/kube-state-metrics"},
 					Args: []string{
 						"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
