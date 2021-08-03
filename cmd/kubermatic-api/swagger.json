@@ -16352,6 +16352,10 @@
       "type": "object",
       "title": "AzureCloudSpec specifies access credentials to Azure cloud.",
       "properties": {
+        "assignAvailabilitySet": {
+          "type": "boolean",
+          "x-go-name": "AssignAvailabilitySet"
+        },
         "availabilitySet": {
           "type": "string",
           "x-go-name": "AvailabilitySet"
@@ -16412,6 +16416,11 @@
         "size"
       ],
       "properties": {
+        "assignAvailabilitySet": {
+          "description": "AssignAvailabilitySet is used to check if an availability set should be created and assigned to the cluster.",
+          "type": "boolean",
+          "x-go-name": "AssignAvailabilitySet"
+        },
         "assignPublicIP": {
           "description": "should the machine have a publicly accessible IP address",
           "type": "boolean",

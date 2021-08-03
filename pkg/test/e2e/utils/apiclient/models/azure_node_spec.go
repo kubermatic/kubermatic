@@ -19,6 +19,9 @@ import (
 // swagger:model AzureNodeSpec
 type AzureNodeSpec struct {
 
+	// AssignAvailabilitySet is used to check if an availability set should be created and assigned to the cluster.
+	AssignAvailabilitySet bool `json:"assignAvailabilitySet,omitempty"`
+
 	// should the machine have a publicly accessible IP address
 	AssignPublicIP bool `json:"assignPublicIP,omitempty"`
 

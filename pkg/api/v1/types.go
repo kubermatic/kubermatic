@@ -1322,7 +1322,7 @@ type AzureNodeSpec struct {
 	// ImageID represents the ID of the image that should be used to run the node
 	// required: false
 	ImageID string `json:"imageID"`
-	// AssignAvailabilitySet is used to check if an availability set should be created adn assigned to the cluster.
+	// AssignAvailabilitySet is used to check if an availability set should be created and assigned to the cluster.
 	AssignAvailabilitySet bool `json:"assignAvailabilitySet"`
 }
 

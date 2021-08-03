@@ -18,6 +18,9 @@ import (
 // swagger:model AzureCloudSpec
 type AzureCloudSpec struct {
 
+	// assign availability set
+	AssignAvailabilitySet bool `json:"assignAvailabilitySet,omitempty"`
+
 	// availability set
 	AvailabilitySet string `json:"availabilitySet,omitempty"`
 
