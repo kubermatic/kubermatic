@@ -13,6 +13,7 @@
 # limitations under the License.
 
 prometheus:
+  replicas: 2
   image:
     repository: quay.io/prometheus/prometheus
     tag: v2.25.0
