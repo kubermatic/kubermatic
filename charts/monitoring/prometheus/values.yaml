@@ -128,6 +128,10 @@ prometheus:
   remoteWrite:
   #- url: http://host.example.com:12345/api/v1/receive
 
+  ## Additional Prometheus server container arguments
+  ##
+  extraArgs: {}
+
   # Thanos can be used to handle long-term storage of metrics by
   # shipping the data blocks into an object storage like Minio. Note that
   # this is considered EXPERIMENTAL and can be removed or significantly
