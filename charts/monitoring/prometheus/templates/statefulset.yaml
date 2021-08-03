@@ -18,7 +18,7 @@ kind: StatefulSet
 metadata:
   name: '{{ template "name" . }}'
 spec:
-  replicas: 2
+  replicas: {{ .Values.prometheus.replicas }}
   revisionHistoryLimit: 10
   selector:
     matchLabels:
@@ -86,6 +86,9 @@ spec:
             --web.enable-lifecycle \
             --web.external-url=https://{{ .Values.prometheus.host | trim }} \
             --web.enable-admin-api
+          {{- range $key, $value := .Values.prometheus.extraArgs }}
+            - --{{ $key }}={{ $value }}
+          {{- end }}
           {{- else }}
           echo "Starting Prometheus..."
           exec /bin/prometheus \
@@ -101,6 +104,9 @@ spec:
             --web.enable-admin-api \
             {{- end }}
             --web.external-url=https://{{ .Values.prometheus.host | trim }}
+            {{- range $key, $value := .Values.prometheus.extraArgs }}
+            --{{ $key }}={{ $value }}
+            {{- end }}
           {{- end }}
         ports:
         - containerPort: 9090
