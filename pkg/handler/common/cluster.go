@@ -265,6 +265,10 @@ func GetClusters(ctx context.Context, userInfoGetter provider.UserInfoGetter, cl
 	for i, internalCluster := range clusters.Items {
 		_, dc, err := provider.DatacenterFromSeedMap(adminUserInfo, seedsGetter, internalCluster.Spec.Cloud.DatacenterName)
 		if err != nil {
+			// Ignore 403 errors and omit clusters with not accessible datacenters in the result.
+			if asserted, ok := err.(errors.HTTPError); ok && asserted.StatusCode() == http.StatusForbidden {
+				continue
+			}
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
