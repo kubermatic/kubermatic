@@ -19,6 +19,7 @@ package common_test
 import (
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 
@@ -82,7 +83,7 @@ func equal(a, b []v1.Event) bool {
 		return false
 	}
 	for i, v := range a {
-		if v != b[i] {
+		if !cmp.Equal(v, b[i]) {
 			return false
 		}
 	}

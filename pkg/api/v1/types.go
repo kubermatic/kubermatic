@@ -42,6 +42,9 @@ type ObjectMeta struct {
 	// Name represents human readable name for the resource
 	Name string `json:"name"`
 
+	// Annotations that can be added to the resource
+	Annotations map[string]string `json:"annotations,omitempty"`
+
 	// DeletionTimestamp is a timestamp representing the server time when this object was deleted.
 	// swagger:strfmt date-time
 	DeletionTimestamp *Time `json:"deletionTimestamp,omitempty"`
