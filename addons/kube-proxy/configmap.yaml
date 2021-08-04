@@ -32,7 +32,6 @@ data:
     clusterCIDR: "{{ first .Cluster.Network.PodCIDRBlocks }}"
     configSyncPeriod: 15m0s
     conntrack:
-      max: null
       maxPerCore: 0
       # Following the recommendation from thz #3026
       min: 524288
