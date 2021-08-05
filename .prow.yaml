@@ -1313,7 +1313,7 @@ presubmits:
   #########################################################
 
   - name: pre-kubermatic-ccm-migration-e2e
-    run_if_changed: "(|pkg/|.prow.yaml)"
+    run_if_changed: "(pkg/|.prow.yaml)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
