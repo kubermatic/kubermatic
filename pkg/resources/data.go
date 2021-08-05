@@ -650,6 +650,7 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 			if cluster.Spec.Cloud.Openstack != nil {
 				featureFlags = append(featureFlags, "CSIMigrationOpenStackComplete=true")
 			}
+			// TODO: This feature flag was removed in k8s 1.22
 			if cluster.Spec.Cloud.VSphere != nil {
 				featureFlags = append(featureFlags, "CSIMigrationvSphereComplete=true")
 			}

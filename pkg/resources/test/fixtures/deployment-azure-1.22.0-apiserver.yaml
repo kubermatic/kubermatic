@@ -335,7 +335,7 @@ spec:
           --dial-timeout=2s --endpoints='https://etcd-0.etcd.cluster-de-test-01.svc.cluster.local.:2379,https://etcd-1.etcd.cluster-de-test-01.svc.cluster.local.:2379,https://etcd-2.etcd.cluster-de-test-01.svc.cluster.local.:2379'
           put kubermatic/quorum-check something; do echo waiting for etcd; sleep 2;
           done;
-        image: gcr.io/etcd-development/etcd:v3.4.3
+        image: gcr.io/etcd-development/etcd:v3.5.0
         name: etcd-running
         resources: {}
         volumeMounts:
