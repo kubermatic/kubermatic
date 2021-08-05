@@ -21,6 +21,8 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	crdapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 // ConstraintTemplate represents a gatekeeper ConstraintTemplate
@@ -208,8 +210,52 @@ type AllowedRegistry struct {
 type EtcdBackupConfig struct {
 	Name string `json:"name"`
 
-	Spec   EtcdBackupConfigSpec            `json:"spec"`
-	Status crdapiv1.EtcdBackupConfigStatus `json:"status"`
+	Spec   EtcdBackupConfigSpec   `json:"spec"`
+	Status EtcdBackupConfigStatus `json:"status"`
+}
+
+type EtcdBackupConfigStatus struct {
+	// CurrentBackups tracks the creation and deletion progress if all backups managed by the EtcdBackupConfig
+	CurrentBackups []BackupStatus `json:"lastBackups,omitempty"`
+	// Conditions contains conditions of the EtcdBackupConfig
+	Conditions []EtcdBackupConfigCondition `json:"conditions,omitempty"`
+	// If the controller was configured with a cleanupContainer, CleanupRunning keeps track of the corresponding job
+	CleanupRunning bool `json:"cleanupRunning,omitempty"`
+}
+
+type BackupStatus struct {
+	// ScheduledTime will always be set when the BackupStatus is created, so it'll never be nil
+	ScheduledTime      *apiv1.Time                `json:"scheduledTime,omitempty"`
+	BackupName         string                     `json:"backupName,omitempty"`
+	JobName            string                     `json:"jobName,omitempty"`
+	BackupStartTime    *apiv1.Time                `json:"backupStartTime,omitempty"`
+	BackupFinishedTime *apiv1.Time                `json:"backupFinishedTime,omitempty"`
+	BackupPhase        crdapiv1.BackupStatusPhase `json:"backupPhase,omitempty"`
+	BackupMessage      string                     `json:"backupMessage,omitempty"`
+	DeleteJobName      string                     `json:"deleteJobName,omitempty"`
+	DeleteStartTime    *apiv1.Time                `json:"deleteStartTime,omitempty"`
+	DeleteFinishedTime *apiv1.Time                `json:"deleteFinishedTime,omitempty"`
+	DeletePhase        crdapiv1.BackupStatusPhase `json:"deletePhase,omitempty"`
+	DeleteMessage      string                     `json:"deleteMessage,omitempty"`
+}
+
+type EtcdBackupConfigCondition struct {
+	// Type of EtcdBackupConfig condition.
+	Type crdapiv1.EtcdBackupConfigConditionType `json:"type"`
+	// Status of the condition, one of True, False, Unknown.
+	Status corev1.ConditionStatus `json:"status"`
+	// Last time we got an update on a given condition.
+	// +optional
+	LastHeartbeatTime apiv1.Time `json:"lastHeartbeatTime,omitempty"`
+	// Last time the condition transit from one status to another.
+	// +optional
+	LastTransitionTime apiv1.Time `json:"lastTransitionTime,omitempty"`
+	// (brief) reason for the condition's last transition.
+	// +optional
+	Reason string `json:"reason,omitempty"`
+	// Human readable message indicating details about last transition.
+	// +optional
+	Message string `json:"message,omitempty"`
 }
 
 // EtcdBackupConfigSpec represents an object holding the etcd backup configuration specification
@@ -231,8 +277,13 @@ type EtcdBackupConfigSpec struct {
 type EtcdRestore struct {
 	Name string `json:"name"`
 
-	Spec   EtcdRestoreSpec            `json:"spec"`
-	Status crdapiv1.EtcdRestoreStatus `json:"status"`
+	Spec   EtcdRestoreSpec   `json:"spec"`
+	Status EtcdRestoreStatus `json:"status"`
+}
+
+type EtcdRestoreStatus struct {
+	Phase       crdapiv1.EtcdRestorePhase `json:"phase"`
+	RestoreTime *apiv1.Time               `json:"restoreTime,omitempty"`
 }
 
 // EtcdRestoreSpec represents an object holding the etcd backup restore configuration specification
