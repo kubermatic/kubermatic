@@ -25,6 +25,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
@@ -281,15 +282,75 @@ func (r *patchEtcdBackupConfigReq) validate() error {
 }
 
 func convertInternalToAPIEtcdBackupConfig(ebc *kubermaticv1.EtcdBackupConfig) *apiv2.EtcdBackupConfig {
-	return &apiv2.EtcdBackupConfig{
+	etcdBackupConfig := &apiv2.EtcdBackupConfig{
 		Name: ebc.Name,
 		Spec: apiv2.EtcdBackupConfigSpec{
 			ClusterID: ebc.Spec.Cluster.Name,
 			Schedule:  ebc.Spec.Schedule,
 			Keep:      ebc.Spec.Keep,
 		},
-		Status: ebc.Status,
+		Status: apiv2.EtcdBackupConfigStatus{
+			CurrentBackups: []apiv2.BackupStatus{},
+			Conditions:     []apiv2.EtcdBackupConfigCondition{},
+			CleanupRunning: ebc.Status.CleanupRunning,
+		},
 	}
+
+	for _, backupStatus := range ebc.Status.CurrentBackups {
+		scheduledTime := apiv1.Time{}
+		backupStartTime := apiv1.Time{}
+		backupFinishedTime := apiv1.Time{}
+		deleteStartTime := apiv1.Time{}
+		deleteFinishedTime := apiv1.Time{}
+		if backupStatus.ScheduledTime != nil {
+			scheduledTime = apiv1.NewTime(backupStatus.ScheduledTime.Time)
+		}
+		if backupStatus.BackupStartTime != nil {
+			backupStartTime = apiv1.NewTime(backupStatus.BackupStartTime.Time)
+		}
+		if backupStatus.BackupFinishedTime != nil {
+			backupFinishedTime = apiv1.NewTime(backupStatus.BackupFinishedTime.Time)
+		}
+		if backupStatus.DeleteStartTime != nil {
+			deleteStartTime = apiv1.NewTime(backupStatus.DeleteStartTime.Time)
+		}
+		if backupStatus.DeleteFinishedTime != nil {
+			deleteFinishedTime = apiv1.NewTime(backupStatus.DeleteFinishedTime.Time)
+		}
+
+		apiBackupStatus := apiv2.BackupStatus{
+			ScheduledTime:      &scheduledTime,
+			BackupName:         backupStatus.BackupName,
+			JobName:            backupStatus.JobName,
+			BackupStartTime:    &backupStartTime,
+			BackupFinishedTime: &backupFinishedTime,
+			BackupPhase:        backupStatus.BackupPhase,
+			BackupMessage:      backupStatus.BackupMessage,
+			DeleteJobName:      backupStatus.DeleteJobName,
+			DeleteStartTime:    &deleteStartTime,
+			DeleteFinishedTime: &deleteFinishedTime,
+			DeletePhase:        backupStatus.DeletePhase,
+			DeleteMessage:      backupStatus.DeleteMessage,
+		}
+		etcdBackupConfig.Status.CurrentBackups = append(etcdBackupConfig.Status.CurrentBackups, apiBackupStatus)
+	}
+
+	for _, condition := range ebc.Status.Conditions {
+		lastHeartbeatTime := apiv1.NewTime(condition.LastHeartbeatTime.Time)
+		lastTransitionTime := apiv1.NewTime(condition.LastTransitionTime.Time)
+
+		apiCondition := apiv2.EtcdBackupConfigCondition{
+			Type:               condition.Type,
+			Status:             condition.Status,
+			LastHeartbeatTime:  lastHeartbeatTime,
+			LastTransitionTime: lastTransitionTime,
+			Reason:             condition.Reason,
+			Message:            condition.Message,
+		}
+		etcdBackupConfig.Status.Conditions = append(etcdBackupConfig.Status.Conditions, apiCondition)
+	}
+
+	return etcdBackupConfig
 }
 
 func convertAPIToInternalEtcdBackupConfig(name string, ebcSpec *apiv2.EtcdBackupConfigSpec, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdBackupConfig, error) {
