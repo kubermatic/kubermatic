@@ -50,10 +50,6 @@ var (
 // source: https://github.com/kubernetes/kubernetes/blob/vX.YY.0/cmd/kubeadm/app/constants/constants.go
 func GetCoreDNSImage(kubernetesVersion *semver.Version) string {
 	switch fmt.Sprintf("%d.%d", kubernetesVersion.Major(), kubernetesVersion.Minor()) {
-	case "1.19":
-		return "coredns/coredns:v1.7.0"
-	case "1.20":
-		return "coredns/coredns:v1.7.0"
 	case "1.21":
 		return "coredns/coredns:v1.8.4"
 	case "1.22":
