@@ -96,7 +96,9 @@ hetzner)
   ;;
 
 kubevirt)
-  extraArgs="-kubevirt-kubeconfig=${KUBEVIRT_KUBECONFIG}"
+  tmpFile="$(mktemp)"
+  echo "$KUBEVIRT_KUBECONFIG" > "$tmpFile"
+  extraArgs="-kubevirt-kubeconfig=$tmpFile"
   ;;
 
 openstack)
