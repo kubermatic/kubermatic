@@ -54,7 +54,6 @@ import (
 	appsv1beta2 "k8s.io/api/apps/v1beta2"
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
-	batchv2alpha1 "k8s.io/api/batch/v2alpha1"
 	corev1 "k8s.io/api/core/v1"
 	extensionv1beta1 "k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -613,9 +612,9 @@ func getImagesFromObject(obj runtime.Object) []string {
 		return getImagesFromPodSpec(obj.Spec)
 
 	// CronJob
-	case *batchv1beta1.CronJob:
+	case *batchv1.CronJob:
 		return getImagesFromPodSpec(obj.Spec.JobTemplate.Spec.Template.Spec)
-	case *batchv2alpha1.CronJob:
+	case *batchv1beta1.CronJob:
 		return getImagesFromPodSpec(obj.Spec.JobTemplate.Spec.Template.Spec)
 
 	// Job
