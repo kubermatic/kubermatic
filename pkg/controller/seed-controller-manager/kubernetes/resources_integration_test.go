@@ -43,17 +43,8 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 	env := &envtest.Environment{
 		// Uncomment this to get the logs from etcd+apiserver
 		// AttachControlPlaneOutput: true,
-		KubeAPIServerFlags: []string{
-			"--etcd-servers={{ if .EtcdURL }}{{ .EtcdURL.String }}{{ end }}",
-			"--cert-dir={{ .CertDir }}",
-			"--insecure-port={{ if .URL }}{{ .URL.Port }}{{ end }}",
-			"--insecure-bind-address={{ if .URL }}{{ .URL.Hostname }}{{ end }}",
-			"--secure-port={{ if .SecurePort }}{{ .SecurePort }}{{ end }}",
-			"--admission-control=AlwaysAdmit",
-			// Upstream does not have `--allow-privileged`,
-			"--allow-privileged",
-		},
 	}
+
 	cfg, err := env.Start()
 	if err != nil {
 		t.Fatalf("failed to start testenv: %v", err)
