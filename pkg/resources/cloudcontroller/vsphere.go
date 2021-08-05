@@ -18,6 +18,7 @@ package cloudcontroller
 
 import (
 	"fmt"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -138,18 +139,14 @@ func getCPIContainer(version string, data *resources.TemplateData) corev1.Contai
 const latestVsphereCPIVersion = "1.21.0"
 
 func getVsphereCPIVersion(version semver.Semver) (string, error) {
-	if version.Minor() < 18 {
-		return "", fmt.Errorf("kubernetes version %s is not supported", version.String())
-	}
-
 	switch version.Minor() {
-	case 18:
-		return "1.18.2", nil
 	case 19:
 		return "1.19.1", nil
 	case 20:
 		return "1.20.0", nil
 	case 21:
+		return latestVsphereCPIVersion, nil
+	case 22:
 		return latestVsphereCPIVersion, nil
 	default:
 		return latestVsphereCPIVersion, nil

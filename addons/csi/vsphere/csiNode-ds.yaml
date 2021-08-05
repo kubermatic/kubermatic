@@ -16,9 +16,6 @@
 
 {{ if eq .Cluster.CloudProviderName "vsphere" }}
 {{ $version := "UNSUPPORTED" }}
-{{ if eq .Cluster.MajorMinorVersion "1.18" }}
-{{ $version = "v2.2.1 "}}
-{{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.19" }}
 {{ $version = "v2.2.1 "}}
 {{ end }}
@@ -26,6 +23,9 @@
 {{ $version = "v2.2.1 "}}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.21" }}
+{{ $version = "v2.2.1 "}}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.22" }}
 {{ $version = "v2.2.1 "}}
 {{ end }}
 

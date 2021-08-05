@@ -148,12 +148,6 @@ func (tc testCase) fixturePath(resType, resName string) string {
 func TestLoadFiles(t *testing.T) {
 	versions := []*version.Version{
 		{
-			Version: semver.MustParse("1.17.0"),
-		},
-		{
-			Version: semver.MustParse("1.18.0"),
-		},
-		{
 			Version: semver.MustParse("1.19.0"),
 		},
 		{
@@ -161,6 +155,9 @@ func TestLoadFiles(t *testing.T) {
 		},
 		{
 			Version: semver.MustParse("1.21.0"),
+		},
+		{
+			Version: semver.MustParse("1.22.0"),
 		},
 	}
 
@@ -337,7 +334,7 @@ func TestLoadFiles(t *testing.T) {
 					}
 
 					if features[kubermaticv1.ClusterFeatureExternalCloudProvider] && !cloudcontroller.ExternalCloudControllerFeatureSupported(dc, cluster) {
-						t.Logf("Unsupported configuration")
+						t.Log("Unsupported configuration")
 						return
 					}
 

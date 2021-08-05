@@ -53,7 +53,7 @@ func TestEnsureBackupCronJob(t *testing.T) {
 			Name: "test-cluster",
 		},
 		Spec: kubermaticv1.ClusterSpec{
-			Version: *semver.NewSemverOrDie("1.18.9"),
+			Version: *semver.NewSemverOrDie("1.22.0"),
 		},
 		Status: kubermaticv1.ClusterStatus{
 			NamespaceName: "testnamespace",

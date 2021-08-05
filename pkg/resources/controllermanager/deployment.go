@@ -374,8 +374,6 @@ func GetEnvVars(data kubeControllerManagerEnvData) ([]corev1.EnvVar, error) {
 	cluster := data.Cluster()
 
 	vars := []corev1.EnvVar{
-		// Kubernetes <1.19 did not ship any certificates in their Docker images,
-		// so this not only injects _our_ CA bundle, it injects _the only_ CA bundle for 1.17/1.18 clusters.
 		{
 			Name:  "SSL_CERT_FILE",
 			Value: "/etc/kubernetes/pki/ca-bundle/ca-bundle.pem",

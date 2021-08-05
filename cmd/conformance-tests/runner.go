@@ -1139,7 +1139,7 @@ func (r *testRunner) getGinkgoRuns(
 	nodeNumberTotal := int32(r.nodeCount)
 
 	ginkgoSkipParallel := `\[Serial\]`
-	if minor := cluster.Spec.Version.Minor(); minor >= 16 && minor <= 21 {
+	if minor := cluster.Spec.Version.Minor(); minor >= 19 && minor <= 22 {
 		// These require the nodes NodePort to be available from the tester, which is not the case for us.
 		// TODO: Maybe add an option to allow the NodePorts in the SecurityGroup?
 		ginkgoSkipParallel = strings.Join([]string{
@@ -1345,7 +1345,7 @@ func supportsLBs(cluster *kubermaticv1.Cluster) bool {
 	return cluster.Spec.Cloud.Azure != nil ||
 		cluster.Spec.Cloud.AWS != nil ||
 		cluster.Spec.Cloud.GCP != nil ||
-		(cluster.Spec.Cloud.Hetzner != nil && cluster.Spec.Version.Minor() >= 18)
+		cluster.Spec.Cloud.Hetzner != nil
 }
 
 func (r *testRunner) printAllControlPlaneLogs(ctx context.Context, log *zap.SugaredLogger, clusterName string) {
