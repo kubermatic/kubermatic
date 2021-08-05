@@ -158,11 +158,12 @@ type secrets struct {
 }
 
 var (
-	providers             string
-	pubKeyPath            string
-	sversions             string
-	sdistributions        string
-	sexcludeDistributions string
+	providers              string
+	pubKeyPath             string
+	sversions              string
+	sdistributions         string
+	sexcludeDistributions  string
+	kubevirtKubeconfigFile string
 )
 
 //nolint:gocritic,exitAfterDefer
@@ -241,7 +242,7 @@ func main() {
 	flag.StringVar(&opts.secrets.GCP.Zone, "gcp-zone", "europe-west3-c", "GCP: Zone")
 	flag.StringVar(&opts.secrets.GCP.Network, "gcp-network", "", "GCP: Network")
 	flag.StringVar(&opts.secrets.GCP.Subnetwork, "gcp-subnetwork", "", "GCP: Subnetwork")
-	flag.StringVar(&opts.secrets.Kubevirt.Kubeconfig, "kubevirt-kubeconfig", "", "Kubevirt: Cluster Kubeconfig")
+	flag.StringVar(&kubevirtKubeconfigFile, "kubevirt-kubeconfig", "", "Kubevirt: Cluster Kubeconfig filename")
 	flag.StringVar(&opts.secrets.Alibaba.AccessKeyID, "alibaba-access-key-id", "", "Alibaba: AccessKeyID")
 	flag.StringVar(&opts.secrets.Alibaba.AccessKeySecret, "alibaba-access-key-secret", "", "Alibaba: AccessKeySecret")
 
@@ -264,6 +265,15 @@ func main() {
 
 	if opts.existingClusterLabel != "" && opts.clusterParallelCount != 1 {
 		log.Fatal("-cluster-parallel-count must be 1 when testing an existing cluster")
+	}
+
+	if kubevirtKubeconfigFile != "" {
+		content, err := ioutil.ReadFile(kubevirtKubeconfigFile)
+		if err != nil {
+			log.Fatalw("Failed to read kubevirt kubeconfig file", zap.Error(err))
+		}
+
+		opts.secrets.Kubevirt.Kubeconfig = string(content)
 	}
 
 	opts.distributions, err = getEffectiveDistributions(sdistributions, sexcludeDistributions)

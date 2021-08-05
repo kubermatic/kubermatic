@@ -67,7 +67,9 @@ elif [[ $provider == "vsphere" ]]; then
   EXTRA_ARGS="-vsphere-username=${VSPHERE_E2E_USERNAME}
     -vsphere-password=${VSPHERE_E2E_PASSWORD}"
 elif [[ $provider == "kubevirt" ]]; then
-  EXTRA_ARGS="-kubevirt-kubeconfig=${KUBEVIRT_E2E_TESTS_KUBECONFIG}"
+  tmpFile="$(mktemp)"
+  echo "$KUBEVIRT_E2E_TESTS_KUBECONFIG" > "$tmpFile"
+  EXTRA_ARGS="-kubevirt-kubeconfig=$tmpFile"
 elif [[ $provider == "alibaba" ]]; then
   EXTRA_ARGS="-alibaba-access-key-id=${ALIBABA_E2E_TESTS_KEY_ID}
     -alibaba-secret-access-key=${ALIBABA_E2E_TESTS_SECRET}"
