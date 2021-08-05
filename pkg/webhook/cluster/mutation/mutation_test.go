@@ -21,7 +21,7 @@ import (
 	"context"
 	"testing"
 
-	logrtesting "github.com/go-logr/logr/testing"
+	"github.com/go-logr/logr"
 	"github.com/go-test/deep"
 	jsonpatch "gomodules.xyz/jsonpatch/v2"
 
@@ -462,7 +462,7 @@ func TestHandle(t *testing.T) {
 		}
 		t.Run(tt.name, func(t *testing.T) {
 			handler := AdmissionHandler{
-				log:                      &logrtesting.NullLogger{},
+				log:                      logr.Discard(),
 				decoder:                  d,
 				defaultComponentSettings: tt.componentSettings,
 			}
