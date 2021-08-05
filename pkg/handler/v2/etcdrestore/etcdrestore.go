@@ -25,6 +25,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
@@ -191,15 +192,22 @@ func DecodeGetEtcdRestoreReq(c context.Context, r *http.Request) (interface{}, e
 }
 
 func convertInternalToAPIEtcdRestore(er *kubermaticv1.EtcdRestore) *apiv2.EtcdRestore {
-	return &apiv2.EtcdRestore{
+	etcdRestore := &apiv2.EtcdRestore{
 		Name: er.Name,
 		Spec: apiv2.EtcdRestoreSpec{
 			ClusterID:                       er.Spec.Cluster.Name,
 			BackupName:                      er.Spec.BackupName,
 			BackupDownloadCredentialsSecret: er.Spec.BackupDownloadCredentialsSecret,
 		},
-		Status: er.Status,
+		Status: apiv2.EtcdRestoreStatus{
+			Phase: er.Status.Phase,
+		},
 	}
+	if er.Status.RestoreTime != nil {
+		restoreTime := apiv1.NewTime(er.Status.RestoreTime.Time)
+		etcdRestore.Status.RestoreTime = &restoreTime
+	}
+	return etcdRestore
 }
 
 func convertAPIToInternalEtcdRestore(name string, erSpec *apiv2.EtcdRestoreSpec, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdRestore, error) {

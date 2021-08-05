@@ -16622,7 +16622,7 @@
           "$ref": "#/definitions/Time"
         }
       },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "BackupStatusPhase": {
       "type": "string",
@@ -18012,7 +18012,7 @@
           "$ref": "#/definitions/EtcdBackupConfigConditionType"
         }
       },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "EtcdBackupConfigConditionType": {
       "description": "EtcdBackupConfigConditionType is used to indicate the type of a EtcdBackupConfig condition. For all condition\ntypes, the `true` value must indicate success. All condition types must be registered within\nthe `AllClusterConditionTypes` variable.",
@@ -18067,7 +18067,7 @@
           "x-go-name": "CurrentBackups"
         }
       },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "EtcdRestore": {
       "description": "EtcdRestore represents an object holding the configuration for etcd backup restore",
@@ -18123,7 +18123,7 @@
           "$ref": "#/definitions/Time"
         }
       },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "Event": {
       "type": "object",
@@ -21453,7 +21453,7 @@
       "type": "string",
       "format": "date-time",
       "title": "A Time represents an instant in time with nanosecond precision.",
-      "x-go-package": "k8s.io/apimachinery/pkg/apis/meta/v1"
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "Trace": {
       "type": "object",
