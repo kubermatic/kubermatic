@@ -108,6 +108,12 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 
 	// This is used as basis to sync the clusters address which we in turn do
 	// before creating any deployments.
+	namespace := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: testCluster.Status.NamespaceName,
+		},
+	}
+
 	lbService := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testCluster.Status.NamespaceName,
@@ -129,6 +135,9 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		},
 	}
 
+	if err := mgr.GetClient().Create(ctx, namespace); err != nil {
+		t.Fatalf("failed to create namespace: %v", err)
+	}
 	if err := mgr.GetClient().Create(ctx, testCluster); err != nil {
 		t.Fatalf("failed to create testcluster: %v", err)
 	}
