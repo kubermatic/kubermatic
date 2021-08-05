@@ -329,6 +329,11 @@ func generateCluster(name string, monitoringEnabled, loggingEnabled, deleted boo
 	if deleted {
 		deleteTime := metav1.NewTime(time.Now())
 		cluster.DeletionTimestamp = &deleteTime
+
+		// to validate objects after reconciling, we want to prevent the fakeclient
+		// from deleting them once all finalizers are gone; we achieve this by
+		// attached a dummy finalizer
+		kubernetes.AddFinalizer(cluster, "just-a-test-do-not-delete-thanks")
 	}
 	return cluster
 }
