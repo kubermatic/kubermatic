@@ -83,6 +83,9 @@ spec:
           - name: pods
             mountPath: /var/log/pods
             readOnly: true
+          {{- with .Values.promtail.extraVolumeMounts }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
           env:
           - name: HOSTNAME
             valueFrom:
@@ -121,3 +124,6 @@ spec:
         - name: pods
           hostPath:
             path: /var/log/pods
+        {{- with .Values.promtail.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
