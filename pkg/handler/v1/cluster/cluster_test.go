@@ -700,8 +700,8 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		// scenario 2
 		{
 			Name:             "scenario 2: cluster is created when valid spec and ssh key are passed",
-			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.15.0","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
-			ExpectedResponse: `{"id":"%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.15.0","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd","clusterNetwork":{"services":{"cidrBlocks":null},"pods":{"cidrBlocks":null},"dnsDomain":"","proxyMode":""}},"status":{"version":"1.15.0","url":"","externalCCMMigration":"Unsupported"}}`,
+			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.22.0","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
+			ExpectedResponse: `{"id":"%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.22.0","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd","clusterNetwork":{"services":{"cidrBlocks":null},"pods":{"cidrBlocks":null},"dnsDomain":"","proxyMode":""}},"status":{"version":"1.22.0","url":"","externalCCMMigration":"Unsupported"}}`,
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated, ProjectToSync: test.GenDefaultProject().Name,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -726,7 +726,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		// scenario 3
 		{
 			Name:             "scenario 3: unable to create a cluster when the user doesn't belong to the project",
-			Body:             `{"cluster":{"name":"keen-snyder","pause":false,"spec":{"version":"1.15.0","cloud":{"version":"1.15.0","fake":{"token":"dummy_token"},"dc":"fake-dc"}}},"sshKeys":["key-c08aa5c7abf34504f18552846485267d-yafn"]}`,
+			Body:             `{"cluster":{"name":"keen-snyder","pause":false,"spec":{"version":"1.22.0","cloud":{"version":"1.22.0","fake":{"token":"dummy_token"},"dc":"fake-dc"}}},"sshKeys":["key-c08aa5c7abf34504f18552846485267d-yafn"]}`,
 			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
 			HTTPStatus:       http.StatusForbidden,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -743,7 +743,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		// scenario 4
 		{
 			Name:             "scenario 4: unable to create a cluster when project is not ready",
-			Body:             `{"cluster":{"name":"keen-snyder","pause":false,"spec":{"version":"1.15.0","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}},"sshKeys":["key-c08aa5c7abf34504f18552846485267d-yafn"]}`,
+			Body:             `{"cluster":{"name":"keen-snyder","pause":false,"spec":{"version":"1.22.0","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}},"sshKeys":["key-c08aa5c7abf34504f18552846485267d-yafn"]}`,
 			ExpectedResponse: `{"error":{"code":503,"message":"Project is not initialized yet"}}`,
 			HTTPStatus:       http.StatusServiceUnavailable,
 			ExistingProject: func() *kubermaticv1.Project {
@@ -761,7 +761,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		},
 		{
 			Name:             "scenario 9a: rejected an attempt to create a cluster in email-restricted datacenter - legacy single domain restriction with requiredEmailDomains",
-			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.15.0","cloud":{"fake":{"token":"dummy_token"},"dc":"restricted-fake-dc"}}}}`,
+			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.22.0","cloud":{"fake":{"token":"dummy_token"},"dc":"restricted-fake-dc"}}}}`,
 			ExpectedResponse: `{"error":{"code":403,"message":"cannot access restricted-fake-dc datacenter due to email domain requirements"}}`,
 			RewriteClusterID: false,
 			HTTPStatus:       http.StatusForbidden,
@@ -773,7 +773,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		},
 		{
 			Name:             "scenario 9b: rejected an attempt to create a cluster in email-restricted datacenter - domain array restriction with `requiredEmailDomains`",
-			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.15.0","cloud":{"fake":{"token":"dummy_token"},"dc":"restricted-fake-dc2"}}}}`,
+			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.22.0","cloud":{"fake":{"token":"dummy_token"},"dc":"restricted-fake-dc2"}}}}`,
 			ExpectedResponse: `{"error":{"code":403,"message":"cannot access restricted-fake-dc2 datacenter due to email domain requirements"}}`,
 			RewriteClusterID: false,
 			HTTPStatus:       http.StatusForbidden,
@@ -785,8 +785,8 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		},
 		{
 			Name:             "scenario 10a: create a cluster in email-restricted datacenter, to which the user does have access - legacy single domain restriction with requiredEmailDomains",
-			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.15.0","cloud":{"fake":{"token":"dummy_token"},"dc":"restricted-fake-dc"}}}}`,
-			ExpectedResponse: `{"id":"%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"restricted-fake-dc","fake":{}},"version":"1.15.0","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd","clusterNetwork":{"services":{"cidrBlocks":null},"pods":{"cidrBlocks":null},"dnsDomain":"","proxyMode":""}},"status":{"version":"1.15.0","url":"","externalCCMMigration":"Unsupported"}}`,
+			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.22.0","cloud":{"fake":{"token":"dummy_token"},"dc":"restricted-fake-dc"}}}}`,
+			ExpectedResponse: `{"id":"%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"restricted-fake-dc","fake":{}},"version":"1.22.0","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd","clusterNetwork":{"services":{"cidrBlocks":null},"pods":{"cidrBlocks":null},"dnsDomain":"","proxyMode":""}},"status":{"version":"1.22.0","url":"","externalCCMMigration":"Unsupported"}}`,
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -799,8 +799,8 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		},
 		{
 			Name:             "scenario 10b: create a cluster in email-restricted datacenter, to which the user does have access - domain array restriction with `requiredEmailDomains`",
-			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.15.0","cloud":{"fake":{"token":"dummy_token"},"dc":"restricted-fake-dc2"}}}}`,
-			ExpectedResponse: `{"id":"%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"restricted-fake-dc2","fake":{}},"version":"1.15.0","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd","clusterNetwork":{"services":{"cidrBlocks":null},"pods":{"cidrBlocks":null},"dnsDomain":"","proxyMode":""}},"status":{"version":"1.15.0","url":"","externalCCMMigration":"Unsupported"}}`,
+			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.22.0","cloud":{"fake":{"token":"dummy_token"},"dc":"restricted-fake-dc2"}}}}`,
+			ExpectedResponse: `{"id":"%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"restricted-fake-dc2","fake":{}},"version":"1.22.0","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd","clusterNetwork":{"services":{"cidrBlocks":null},"pods":{"cidrBlocks":null},"dnsDomain":"","proxyMode":""}},"status":{"version":"1.22.0","url":"","externalCCMMigration":"Unsupported"}}`,
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -813,8 +813,8 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		},
 		{
 			Name:             "scenario 11: create a cluster in audit-logging-enforced datacenter, without explicitly enabling audit logging",
-			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.15.0","cloud":{"fake":{"token":"dummy_token"},"dc":"audited-dc"}}}}`,
-			ExpectedResponse: `{"id":"%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"audited-dc","fake":{}},"version":"1.15.0","oidc":{},"enableUserSSHKeyAgent":true,"auditLogging":{"enabled":true},"containerRuntime":"containerd","clusterNetwork":{"services":{"cidrBlocks":null},"pods":{"cidrBlocks":null},"dnsDomain":"","proxyMode":""}},"status":{"version":"1.15.0","url":"","externalCCMMigration":"Unsupported"}}`,
+			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.22.0","cloud":{"fake":{"token":"dummy_token"},"dc":"audited-dc"}}}}`,
+			ExpectedResponse: `{"id":"%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"audited-dc","fake":{}},"version":"1.22.0","oidc":{},"enableUserSSHKeyAgent":true,"auditLogging":{"enabled":true},"containerRuntime":"containerd","clusterNetwork":{"services":{"cidrBlocks":null},"pods":{"cidrBlocks":null},"dnsDomain":"","proxyMode":""}},"status":{"version":"1.22.0","url":"","externalCCMMigration":"Unsupported"}}`,
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -827,8 +827,8 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		},
 		{
 			Name:             "scenario 12: the admin user can create cluster for any project",
-			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.15.0","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
-			ExpectedResponse: `{"id":"%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.15.0","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd","clusterNetwork":{"services":{"cidrBlocks":null},"pods":{"cidrBlocks":null},"dnsDomain":"","proxyMode":""}},"status":{"version":"1.15.0","url":"","externalCCMMigration":"Unsupported"}}`,
+			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.22.0","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
+			ExpectedResponse: `{"id":"%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.22.0","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd","clusterNetwork":{"services":{"cidrBlocks":null},"pods":{"cidrBlocks":null},"dnsDomain":"","proxyMode":""}},"status":{"version":"1.22.0","url":"","externalCCMMigration":"Unsupported"}}`,
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -1293,7 +1293,7 @@ func TestGetCluster(t *testing.T) {
 		{
 			Name:             "scenario 2: gets cluster for Openstack and no sensitive data (credentials) are returned",
 			Body:             ``,
-			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"OpenstackDatacenter","openstack":{"floatingIpPool":"floatingIPPool","tenant":"tenant","domain":"domain","network":"network","securityGroups":"securityGroups","routerID":"routerID","subnetID":"subnetID"}},"version":"9.9.9","oidc":{},"enableUserSSHKeyAgent":false,"clusterNetwork":{"services":{"cidrBlocks":null},"pods":{"cidrBlocks":null},"dnsDomain":"","proxyMode":""}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
+			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"OpenstackDatacenter","openstack":{"floatingIpPool":"floatingIPPool","tenant":"tenant","domain":"domain","network":"network","securityGroups":"securityGroups","routerID":"routerID","subnetID":"subnetID"}},"version":"9.9.9","oidc":{},"enableUserSSHKeyAgent":false,"clusterNetwork":{"services":{"cidrBlocks":null},"pods":{"cidrBlocks":null},"dnsDomain":"","proxyMode":""}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Supported"}}`,
 			ClusterToGet:     test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -1313,7 +1313,7 @@ func TestGetCluster(t *testing.T) {
 		{
 			Name:             "scenario 3: the admin John can get Bob's cluster",
 			Body:             ``,
-			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"OpenstackDatacenter","openstack":{"floatingIpPool":"floatingIPPool","tenant":"tenant","domain":"domain","network":"network","securityGroups":"securityGroups","routerID":"routerID","subnetID":"subnetID"}},"version":"9.9.9","oidc":{},"enableUserSSHKeyAgent":false,"clusterNetwork":{"services":{"cidrBlocks":null},"pods":{"cidrBlocks":null},"dnsDomain":"","proxyMode":""}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
+			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"OpenstackDatacenter","openstack":{"floatingIpPool":"floatingIPPool","tenant":"tenant","domain":"domain","network":"network","securityGroups":"securityGroups","routerID":"routerID","subnetID":"subnetID"}},"version":"9.9.9","oidc":{},"enableUserSSHKeyAgent":false,"clusterNetwork":{"services":{"cidrBlocks":null},"pods":{"cidrBlocks":null},"dnsDomain":"","proxyMode":""}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Supported"}}`,
 			ClusterToGet:     test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -1471,7 +1471,7 @@ func TestListClusters(t *testing.T) {
 					Status: apiv1.ClusterStatus{
 						Version:              *semver.NewSemverOrDie("9.9.9"),
 						URL:                  "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
-						ExternalCCMMigration: apiv1.ExternalCCMMigrationUnsupported,
+						ExternalCCMMigration: apiv1.ExternalCCMMigrationSupported,
 					},
 					Type: "kubernetes",
 				},
@@ -1580,7 +1580,7 @@ func TestListClusters(t *testing.T) {
 					Status: apiv1.ClusterStatus{
 						Version:              *semver.NewSemverOrDie("9.9.9"),
 						URL:                  "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
-						ExternalCCMMigration: apiv1.ExternalCCMMigrationUnsupported,
+						ExternalCCMMigration: apiv1.ExternalCCMMigrationSupported,
 					},
 					Type: "kubernetes",
 				},
@@ -1702,7 +1702,7 @@ func TestListClustersForProject(t *testing.T) {
 					Status: apiv1.ClusterStatus{
 						Version:              *semver.NewSemverOrDie("9.9.9"),
 						URL:                  "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
-						ExternalCCMMigration: apiv1.ExternalCCMMigrationUnsupported,
+						ExternalCCMMigration: apiv1.ExternalCCMMigrationSupported,
 					},
 					Type: "kubernetes",
 				},
@@ -1781,7 +1781,7 @@ func TestListClustersForProject(t *testing.T) {
 					Status: apiv1.ClusterStatus{
 						Version:              *semver.NewSemverOrDie("9.9.9"),
 						URL:                  "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
-						ExternalCCMMigration: apiv1.ExternalCCMMigrationUnsupported,
+						ExternalCCMMigration: apiv1.ExternalCCMMigrationSupported,
 					},
 					Type: "kubernetes",
 				},
