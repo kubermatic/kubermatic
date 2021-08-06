@@ -261,8 +261,8 @@ func GetClusters(ctx context.Context, userInfoGetter provider.UserInfoGetter, cl
 		return nil, err
 	}
 
-	apiClusters := make([]*apiv1.Cluster, len(clusters.Items))
-	for i, internalCluster := range clusters.Items {
+	apiClusters := make([]*apiv1.Cluster, 0, len(clusters.Items))
+	for _, internalCluster := range clusters.Items {
 		_, dc, err := provider.DatacenterFromSeedMap(adminUserInfo, seedsGetter, internalCluster.Spec.Cloud.DatacenterName)
 		if err != nil {
 			// Ignore 403 errors and omit clusters with not accessible datacenters in the result.
@@ -272,7 +272,7 @@ func GetClusters(ctx context.Context, userInfoGetter provider.UserInfoGetter, cl
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		apiClusters[i] = ConvertInternalClusterToExternal(internalCluster.DeepCopy(), dc, true)
+		apiClusters = append(apiClusters, ConvertInternalClusterToExternal(internalCluster.DeepCopy(), dc, true))
 	}
 
 	return apiClusters, nil
