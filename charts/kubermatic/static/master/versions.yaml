@@ -19,6 +19,8 @@ versions:
   version: 1.20.5
 - type: kubernetes
   version: 1.20.9
+- type: kubernetes
+  version: 1.21.0
 - default: true
   type: kubernetes
   version: 1.21.3

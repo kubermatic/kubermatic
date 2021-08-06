@@ -204,6 +204,7 @@ var (
 			semver.MustParse("v1.20.5"),
 			semver.MustParse("v1.20.9"),
 			// Kubernetes 1.21
+			semver.MustParse("v1.21.0"),
 			semver.MustParse("v1.21.3"),
 			// Kubernetes 1.22
 			semver.MustParse("v1.22.0"),
