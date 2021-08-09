@@ -58,7 +58,7 @@ func NewDeleteNodeForClusterLegacyOK() *DeleteNodeForClusterLegacyOK {
 	return &DeleteNodeForClusterLegacyOK{}
 }
 
-/*DeleteNodeForClusterLegacyOK handles this case with default header values.
+/* DeleteNodeForClusterLegacyOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -79,7 +79,7 @@ func NewDeleteNodeForClusterLegacyUnauthorized() *DeleteNodeForClusterLegacyUnau
 	return &DeleteNodeForClusterLegacyUnauthorized{}
 }
 
-/*DeleteNodeForClusterLegacyUnauthorized handles this case with default header values.
+/* DeleteNodeForClusterLegacyUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -100,7 +100,7 @@ func NewDeleteNodeForClusterLegacyForbidden() *DeleteNodeForClusterLegacyForbidd
 	return &DeleteNodeForClusterLegacyForbidden{}
 }
 
-/*DeleteNodeForClusterLegacyForbidden handles this case with default header values.
+/* DeleteNodeForClusterLegacyForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -123,7 +123,7 @@ func NewDeleteNodeForClusterLegacyDefault(code int) *DeleteNodeForClusterLegacyD
 	}
 }
 
-/*DeleteNodeForClusterLegacyDefault handles this case with default header values.
+/* DeleteNodeForClusterLegacyDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -141,7 +141,6 @@ func (o *DeleteNodeForClusterLegacyDefault) Code() int {
 func (o *DeleteNodeForClusterLegacyDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id}][%d] deleteNodeForClusterLegacy default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *DeleteNodeForClusterLegacyDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

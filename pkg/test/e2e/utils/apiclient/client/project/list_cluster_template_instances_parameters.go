@@ -16,58 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListClusterTemplateInstancesParams creates a new ListClusterTemplateInstancesParams object
-// with the default values initialized.
+// NewListClusterTemplateInstancesParams creates a new ListClusterTemplateInstancesParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListClusterTemplateInstancesParams() *ListClusterTemplateInstancesParams {
-	var ()
 	return &ListClusterTemplateInstancesParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListClusterTemplateInstancesParamsWithTimeout creates a new ListClusterTemplateInstancesParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListClusterTemplateInstancesParamsWithTimeout(timeout time.Duration) *ListClusterTemplateInstancesParams {
-	var ()
 	return &ListClusterTemplateInstancesParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListClusterTemplateInstancesParamsWithContext creates a new ListClusterTemplateInstancesParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListClusterTemplateInstancesParamsWithContext(ctx context.Context) *ListClusterTemplateInstancesParams {
-	var ()
 	return &ListClusterTemplateInstancesParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListClusterTemplateInstancesParamsWithHTTPClient creates a new ListClusterTemplateInstancesParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListClusterTemplateInstancesParamsWithHTTPClient(client *http.Client) *ListClusterTemplateInstancesParams {
-	var ()
 	return &ListClusterTemplateInstancesParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListClusterTemplateInstancesParams contains all the parameters to send to the API endpoint
-for the list cluster template instances operation typically these are written to a http.Request
+/* ListClusterTemplateInstancesParams contains all the parameters to send to the API endpoint
+   for the list cluster template instances operation.
+
+   Typically these are written to a http.Request.
 */
 type ListClusterTemplateInstancesParams struct {
 
-	/*ProjectID*/
+	// ProjectID.
 	ProjectID string
-	/*TemplateID*/
+
+	// TemplateID.
 	ClusterTemplateID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list cluster template instances params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListClusterTemplateInstancesParams) WithDefaults() *ListClusterTemplateInstancesParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list cluster template instances params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListClusterTemplateInstancesParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list cluster template instances params

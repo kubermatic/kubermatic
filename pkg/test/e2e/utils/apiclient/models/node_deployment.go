@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -65,7 +67,6 @@ func (m *NodeDeployment) Validate(formats strfmt.Registry) error {
 }
 
 func (m *NodeDeployment) validateCreationTimestamp(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.CreationTimestamp) { // not required
 		return nil
 	}
@@ -78,7 +79,6 @@ func (m *NodeDeployment) validateCreationTimestamp(formats strfmt.Registry) erro
 }
 
 func (m *NodeDeployment) validateDeletionTimestamp(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.DeletionTimestamp) { // not required
 		return nil
 	}
@@ -91,7 +91,6 @@ func (m *NodeDeployment) validateDeletionTimestamp(formats strfmt.Registry) erro
 }
 
 func (m *NodeDeployment) validateSpec(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Spec) { // not required
 		return nil
 	}
@@ -109,13 +108,58 @@ func (m *NodeDeployment) validateSpec(formats strfmt.Registry) error {
 }
 
 func (m *NodeDeployment) validateStatus(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Status) { // not required
 		return nil
 	}
 
 	if m.Status != nil {
 		if err := m.Status.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("status")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this node deployment based on the context it is used
+func (m *NodeDeployment) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateSpec(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateStatus(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *NodeDeployment) contextValidateSpec(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Spec != nil {
+		if err := m.Spec.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("spec")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *NodeDeployment) contextValidateStatus(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Status != nil {
+		if err := m.Status.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("status")
 			}

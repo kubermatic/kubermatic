@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -21,6 +23,11 @@ type OpenstackAvailabilityZone struct {
 
 // Validate validates this openstack availability zone
 func (m *OpenstackAvailabilityZone) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this openstack availability zone based on context it is used
+func (m *OpenstackAvailabilityZone) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

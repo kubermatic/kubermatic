@@ -23,19 +23,22 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	AddUserToProject(params *AddUserToProjectParams, authInfo runtime.ClientAuthInfoWriter) (*AddUserToProjectCreated, error)
+	AddUserToProject(params *AddUserToProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddUserToProjectCreated, error)
 
-	DeleteUserFromProject(params *DeleteUserFromProjectParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteUserFromProjectOK, error)
+	DeleteUserFromProject(params *DeleteUserFromProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteUserFromProjectOK, error)
 
-	EditUserInProject(params *EditUserInProjectParams, authInfo runtime.ClientAuthInfoWriter) (*EditUserInProjectOK, error)
+	EditUserInProject(params *EditUserInProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*EditUserInProjectOK, error)
 
-	GetCurrentUser(params *GetCurrentUserParams, authInfo runtime.ClientAuthInfoWriter) (*GetCurrentUserOK, error)
+	GetCurrentUser(params *GetCurrentUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCurrentUserOK, error)
 
-	GetUsersForProject(params *GetUsersForProjectParams, authInfo runtime.ClientAuthInfoWriter) (*GetUsersForProjectOK, error)
+	GetUsersForProject(params *GetUsersForProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetUsersForProjectOK, error)
 
-	LogoutCurrentUser(params *LogoutCurrentUserParams, authInfo runtime.ClientAuthInfoWriter) (*LogoutCurrentUserOK, error)
+	LogoutCurrentUser(params *LogoutCurrentUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LogoutCurrentUserOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -43,13 +46,12 @@ type ClientService interface {
 /*
   AddUserToProject Adds the given user to the given project
 */
-func (a *Client) AddUserToProject(params *AddUserToProjectParams, authInfo runtime.ClientAuthInfoWriter) (*AddUserToProjectCreated, error) {
+func (a *Client) AddUserToProject(params *AddUserToProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddUserToProjectCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddUserToProjectParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "addUserToProject",
 		Method:             "POST",
 		PathPattern:        "/api/v1/projects/{project_id}/users",
@@ -61,7 +63,12 @@ func (a *Client) AddUserToProject(params *AddUserToProjectParams, authInfo runti
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -77,13 +84,12 @@ func (a *Client) AddUserToProject(params *AddUserToProjectParams, authInfo runti
 /*
   DeleteUserFromProject Removes the given member from the project
 */
-func (a *Client) DeleteUserFromProject(params *DeleteUserFromProjectParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteUserFromProjectOK, error) {
+func (a *Client) DeleteUserFromProject(params *DeleteUserFromProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteUserFromProjectOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewDeleteUserFromProjectParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "deleteUserFromProject",
 		Method:             "DELETE",
 		PathPattern:        "/api/v1/projects/{project_id}/users/{user_id}",
@@ -95,7 +101,12 @@ func (a *Client) DeleteUserFromProject(params *DeleteUserFromProjectParams, auth
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -111,13 +122,12 @@ func (a *Client) DeleteUserFromProject(params *DeleteUserFromProjectParams, auth
 /*
   EditUserInProject Changes membership of the given user for the given project
 */
-func (a *Client) EditUserInProject(params *EditUserInProjectParams, authInfo runtime.ClientAuthInfoWriter) (*EditUserInProjectOK, error) {
+func (a *Client) EditUserInProject(params *EditUserInProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*EditUserInProjectOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewEditUserInProjectParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "editUserInProject",
 		Method:             "PUT",
 		PathPattern:        "/api/v1/projects/{project_id}/users/{user_id}",
@@ -129,7 +139,12 @@ func (a *Client) EditUserInProject(params *EditUserInProjectParams, authInfo run
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -145,13 +160,12 @@ func (a *Client) EditUserInProject(params *EditUserInProjectParams, authInfo run
 /*
   GetCurrentUser returns information about the current user
 */
-func (a *Client) GetCurrentUser(params *GetCurrentUserParams, authInfo runtime.ClientAuthInfoWriter) (*GetCurrentUserOK, error) {
+func (a *Client) GetCurrentUser(params *GetCurrentUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCurrentUserOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetCurrentUserParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getCurrentUser",
 		Method:             "GET",
 		PathPattern:        "/api/v1/me",
@@ -163,7 +177,12 @@ func (a *Client) GetCurrentUser(params *GetCurrentUserParams, authInfo runtime.C
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -179,13 +198,12 @@ func (a *Client) GetCurrentUser(params *GetCurrentUserParams, authInfo runtime.C
 /*
   GetUsersForProject Get list of users for the given project
 */
-func (a *Client) GetUsersForProject(params *GetUsersForProjectParams, authInfo runtime.ClientAuthInfoWriter) (*GetUsersForProjectOK, error) {
+func (a *Client) GetUsersForProject(params *GetUsersForProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetUsersForProjectOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetUsersForProjectParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getUsersForProject",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/users",
@@ -197,7 +215,12 @@ func (a *Client) GetUsersForProject(params *GetUsersForProjectParams, authInfo r
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -215,13 +238,12 @@ func (a *Client) GetUsersForProject(params *GetUsersForProjectParams, authInfo r
 
   Enforces user to login again with the new token.
 */
-func (a *Client) LogoutCurrentUser(params *LogoutCurrentUserParams, authInfo runtime.ClientAuthInfoWriter) (*LogoutCurrentUserOK, error) {
+func (a *Client) LogoutCurrentUser(params *LogoutCurrentUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LogoutCurrentUserOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewLogoutCurrentUserParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "logoutCurrentUser",
 		Method:             "POST",
 		PathPattern:        "/api/v1/me/logout",
@@ -233,7 +255,12 @@ func (a *Client) LogoutCurrentUser(params *LogoutCurrentUserParams, authInfo run
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

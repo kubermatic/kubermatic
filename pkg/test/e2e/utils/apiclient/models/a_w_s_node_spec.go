@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -28,6 +30,7 @@ type AWSNodeSpec struct {
 	AvailabilityZone string `json:"availabilityZone,omitempty"`
 
 	// instance type
+	// Example: t2.micro
 	// Required: true
 	InstanceType *string `json:"instanceType"`
 
@@ -57,6 +60,7 @@ type AWSNodeSpec struct {
 	VolumeSize *int64 `json:"diskSize"`
 
 	// volume type
+	// Example: gp2, io1, st1, sc1, standard
 	// Required: true
 	VolumeType *string `json:"volumeType"`
 }
@@ -107,6 +111,11 @@ func (m *AWSNodeSpec) validateVolumeType(formats strfmt.Registry) error {
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this a w s node spec based on context it is used
+func (m *AWSNodeSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

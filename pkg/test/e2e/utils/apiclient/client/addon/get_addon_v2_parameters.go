@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetAddonV2Params creates a new GetAddonV2Params object
-// with the default values initialized.
+// NewGetAddonV2Params creates a new GetAddonV2Params object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetAddonV2Params() *GetAddonV2Params {
-	var ()
 	return &GetAddonV2Params{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetAddonV2ParamsWithTimeout creates a new GetAddonV2Params object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetAddonV2ParamsWithTimeout(timeout time.Duration) *GetAddonV2Params {
-	var ()
 	return &GetAddonV2Params{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetAddonV2ParamsWithContext creates a new GetAddonV2Params object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetAddonV2ParamsWithContext(ctx context.Context) *GetAddonV2Params {
-	var ()
 	return &GetAddonV2Params{
-
 		Context: ctx,
 	}
 }
 
 // NewGetAddonV2ParamsWithHTTPClient creates a new GetAddonV2Params object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetAddonV2ParamsWithHTTPClient(client *http.Client) *GetAddonV2Params {
-	var ()
 	return &GetAddonV2Params{
 		HTTPClient: client,
 	}
 }
 
-/*GetAddonV2Params contains all the parameters to send to the API endpoint
-for the get addon v2 operation typically these are written to a http.Request
+/* GetAddonV2Params contains all the parameters to send to the API endpoint
+   for the get addon v2 operation.
+
+   Typically these are written to a http.Request.
 */
 type GetAddonV2Params struct {
 
-	/*AddonID*/
+	// AddonID.
 	AddonID string
-	/*ClusterID*/
+
+	// ClusterID.
 	ClusterID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get addon v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetAddonV2Params) WithDefaults() *GetAddonV2Params {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get addon v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetAddonV2Params) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get addon v2 params

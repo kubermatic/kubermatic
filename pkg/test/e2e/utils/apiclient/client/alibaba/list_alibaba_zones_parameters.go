@@ -16,62 +16,79 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListAlibabaZonesParams creates a new ListAlibabaZonesParams object
-// with the default values initialized.
+// NewListAlibabaZonesParams creates a new ListAlibabaZonesParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListAlibabaZonesParams() *ListAlibabaZonesParams {
-	var ()
 	return &ListAlibabaZonesParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListAlibabaZonesParamsWithTimeout creates a new ListAlibabaZonesParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListAlibabaZonesParamsWithTimeout(timeout time.Duration) *ListAlibabaZonesParams {
-	var ()
 	return &ListAlibabaZonesParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListAlibabaZonesParamsWithContext creates a new ListAlibabaZonesParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListAlibabaZonesParamsWithContext(ctx context.Context) *ListAlibabaZonesParams {
-	var ()
 	return &ListAlibabaZonesParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListAlibabaZonesParamsWithHTTPClient creates a new ListAlibabaZonesParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListAlibabaZonesParamsWithHTTPClient(client *http.Client) *ListAlibabaZonesParams {
-	var ()
 	return &ListAlibabaZonesParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListAlibabaZonesParams contains all the parameters to send to the API endpoint
-for the list alibaba zones operation typically these are written to a http.Request
+/* ListAlibabaZonesParams contains all the parameters to send to the API endpoint
+   for the list alibaba zones operation.
+
+   Typically these are written to a http.Request.
 */
 type ListAlibabaZonesParams struct {
 
-	/*AccessKeyID*/
+	// AccessKeyID.
 	AccessKeyID *string
-	/*AccessKeySecret*/
+
+	// AccessKeySecret.
 	AccessKeySecret *string
-	/*Credential*/
+
+	// Credential.
 	Credential *string
-	/*Region*/
+
+	// Region.
 	Region *string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list alibaba zones params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAlibabaZonesParams) WithDefaults() *ListAlibabaZonesParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list alibaba zones params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAlibabaZonesParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list alibaba zones params
@@ -165,7 +182,6 @@ func (o *ListAlibabaZonesParams) WriteToRequest(r runtime.ClientRequest, reg str
 		if err := r.SetHeaderParam("AccessKeyID", *o.AccessKeyID); err != nil {
 			return err
 		}
-
 	}
 
 	if o.AccessKeySecret != nil {
@@ -174,7 +190,6 @@ func (o *ListAlibabaZonesParams) WriteToRequest(r runtime.ClientRequest, reg str
 		if err := r.SetHeaderParam("AccessKeySecret", *o.AccessKeySecret); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Credential != nil {
@@ -183,7 +198,6 @@ func (o *ListAlibabaZonesParams) WriteToRequest(r runtime.ClientRequest, reg str
 		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Region != nil {
@@ -192,7 +206,6 @@ func (o *ListAlibabaZonesParams) WriteToRequest(r runtime.ClientRequest, reg str
 		if err := r.SetHeaderParam("Region", *o.Region); err != nil {
 			return err
 		}
-
 	}
 
 	if len(res) > 0 {

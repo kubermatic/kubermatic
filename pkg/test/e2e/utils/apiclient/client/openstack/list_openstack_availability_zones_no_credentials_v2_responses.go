@@ -46,7 +46,7 @@ func NewListOpenstackAvailabilityZonesNoCredentialsV2OK() *ListOpenstackAvailabi
 	return &ListOpenstackAvailabilityZonesNoCredentialsV2OK{}
 }
 
-/*ListOpenstackAvailabilityZonesNoCredentialsV2OK handles this case with default header values.
+/* ListOpenstackAvailabilityZonesNoCredentialsV2OK describes a response with status code 200, with default header values.
 
 OpenstackAvailabilityZone
 */
@@ -57,7 +57,6 @@ type ListOpenstackAvailabilityZonesNoCredentialsV2OK struct {
 func (o *ListOpenstackAvailabilityZonesNoCredentialsV2OK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/openstack/availabilityzones][%d] listOpenstackAvailabilityZonesNoCredentialsV2OK  %+v", 200, o.Payload)
 }
-
 func (o *ListOpenstackAvailabilityZonesNoCredentialsV2OK) GetPayload() []*models.OpenstackAvailabilityZone {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListOpenstackAvailabilityZonesNoCredentialsV2Default(code int) *ListOpen
 	}
 }
 
-/*ListOpenstackAvailabilityZonesNoCredentialsV2Default handles this case with default header values.
+/* ListOpenstackAvailabilityZonesNoCredentialsV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListOpenstackAvailabilityZonesNoCredentialsV2Default) Code() int {
 func (o *ListOpenstackAvailabilityZonesNoCredentialsV2Default) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/openstack/availabilityzones][%d] listOpenstackAvailabilityZonesNoCredentialsV2 default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListOpenstackAvailabilityZonesNoCredentialsV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

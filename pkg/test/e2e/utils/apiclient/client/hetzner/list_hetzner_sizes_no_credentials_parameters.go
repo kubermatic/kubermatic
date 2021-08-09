@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListHetznerSizesNoCredentialsParams creates a new ListHetznerSizesNoCredentialsParams object
-// with the default values initialized.
+// NewListHetznerSizesNoCredentialsParams creates a new ListHetznerSizesNoCredentialsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListHetznerSizesNoCredentialsParams() *ListHetznerSizesNoCredentialsParams {
-	var ()
 	return &ListHetznerSizesNoCredentialsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListHetznerSizesNoCredentialsParamsWithTimeout creates a new ListHetznerSizesNoCredentialsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListHetznerSizesNoCredentialsParamsWithTimeout(timeout time.Duration) *ListHetznerSizesNoCredentialsParams {
-	var ()
 	return &ListHetznerSizesNoCredentialsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListHetznerSizesNoCredentialsParamsWithContext creates a new ListHetznerSizesNoCredentialsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListHetznerSizesNoCredentialsParamsWithContext(ctx context.Context) *ListHetznerSizesNoCredentialsParams {
-	var ()
 	return &ListHetznerSizesNoCredentialsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListHetznerSizesNoCredentialsParamsWithHTTPClient creates a new ListHetznerSizesNoCredentialsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListHetznerSizesNoCredentialsParamsWithHTTPClient(client *http.Client) *ListHetznerSizesNoCredentialsParams {
-	var ()
 	return &ListHetznerSizesNoCredentialsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListHetznerSizesNoCredentialsParams contains all the parameters to send to the API endpoint
-for the list hetzner sizes no credentials operation typically these are written to a http.Request
+/* ListHetznerSizesNoCredentialsParams contains all the parameters to send to the API endpoint
+   for the list hetzner sizes no credentials operation.
+
+   Typically these are written to a http.Request.
 */
 type ListHetznerSizesNoCredentialsParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list hetzner sizes no credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListHetznerSizesNoCredentialsParams) WithDefaults() *ListHetznerSizesNoCredentialsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list hetzner sizes no credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListHetznerSizesNoCredentialsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list hetzner sizes no credentials params

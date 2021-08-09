@@ -16,58 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListEtcdBackupConfigParams creates a new ListEtcdBackupConfigParams object
-// with the default values initialized.
+// NewListEtcdBackupConfigParams creates a new ListEtcdBackupConfigParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListEtcdBackupConfigParams() *ListEtcdBackupConfigParams {
-	var ()
 	return &ListEtcdBackupConfigParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListEtcdBackupConfigParamsWithTimeout creates a new ListEtcdBackupConfigParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListEtcdBackupConfigParamsWithTimeout(timeout time.Duration) *ListEtcdBackupConfigParams {
-	var ()
 	return &ListEtcdBackupConfigParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListEtcdBackupConfigParamsWithContext creates a new ListEtcdBackupConfigParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListEtcdBackupConfigParamsWithContext(ctx context.Context) *ListEtcdBackupConfigParams {
-	var ()
 	return &ListEtcdBackupConfigParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListEtcdBackupConfigParamsWithHTTPClient creates a new ListEtcdBackupConfigParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListEtcdBackupConfigParamsWithHTTPClient(client *http.Client) *ListEtcdBackupConfigParams {
-	var ()
 	return &ListEtcdBackupConfigParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListEtcdBackupConfigParams contains all the parameters to send to the API endpoint
-for the list etcd backup config operation typically these are written to a http.Request
+/* ListEtcdBackupConfigParams contains all the parameters to send to the API endpoint
+   for the list etcd backup config operation.
+
+   Typically these are written to a http.Request.
 */
 type ListEtcdBackupConfigParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list etcd backup config params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListEtcdBackupConfigParams) WithDefaults() *ListEtcdBackupConfigParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list etcd backup config params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListEtcdBackupConfigParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list etcd backup config params

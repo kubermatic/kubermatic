@@ -58,7 +58,7 @@ func NewListNodeDeploymentNodesOK() *ListNodeDeploymentNodesOK {
 	return &ListNodeDeploymentNodesOK{}
 }
 
-/*ListNodeDeploymentNodesOK handles this case with default header values.
+/* ListNodeDeploymentNodesOK describes a response with status code 200, with default header values.
 
 Node
 */
@@ -69,7 +69,6 @@ type ListNodeDeploymentNodesOK struct {
 func (o *ListNodeDeploymentNodesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes][%d] listNodeDeploymentNodesOK  %+v", 200, o.Payload)
 }
-
 func (o *ListNodeDeploymentNodesOK) GetPayload() []*models.Node {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListNodeDeploymentNodesUnauthorized() *ListNodeDeploymentNodesUnauthoriz
 	return &ListNodeDeploymentNodesUnauthorized{}
 }
 
-/*ListNodeDeploymentNodesUnauthorized handles this case with default header values.
+/* ListNodeDeploymentNodesUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListNodeDeploymentNodesForbidden() *ListNodeDeploymentNodesForbidden {
 	return &ListNodeDeploymentNodesForbidden{}
 }
 
-/*ListNodeDeploymentNodesForbidden handles this case with default header values.
+/* ListNodeDeploymentNodesForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListNodeDeploymentNodesDefault(code int) *ListNodeDeploymentNodesDefault
 	}
 }
 
-/*ListNodeDeploymentNodesDefault handles this case with default header values.
+/* ListNodeDeploymentNodesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListNodeDeploymentNodesDefault) Code() int {
 func (o *ListNodeDeploymentNodesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes][%d] listNodeDeploymentNodes default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListNodeDeploymentNodesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

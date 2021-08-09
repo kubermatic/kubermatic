@@ -46,7 +46,7 @@ func NewListAnexiaTemplatesNoCredentialsV2OK() *ListAnexiaTemplatesNoCredentials
 	return &ListAnexiaTemplatesNoCredentialsV2OK{}
 }
 
-/*ListAnexiaTemplatesNoCredentialsV2OK handles this case with default header values.
+/* ListAnexiaTemplatesNoCredentialsV2OK describes a response with status code 200, with default header values.
 
 AnexiaTemplateList
 */
@@ -57,7 +57,6 @@ type ListAnexiaTemplatesNoCredentialsV2OK struct {
 func (o *ListAnexiaTemplatesNoCredentialsV2OK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/anexia/templates][%d] listAnexiaTemplatesNoCredentialsV2OK  %+v", 200, o.Payload)
 }
-
 func (o *ListAnexiaTemplatesNoCredentialsV2OK) GetPayload() models.AnexiaTemplateList {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListAnexiaTemplatesNoCredentialsV2Default(code int) *ListAnexiaTemplates
 	}
 }
 
-/*ListAnexiaTemplatesNoCredentialsV2Default handles this case with default header values.
+/* ListAnexiaTemplatesNoCredentialsV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListAnexiaTemplatesNoCredentialsV2Default) Code() int {
 func (o *ListAnexiaTemplatesNoCredentialsV2Default) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/anexia/templates][%d] listAnexiaTemplatesNoCredentialsV2 default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListAnexiaTemplatesNoCredentialsV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

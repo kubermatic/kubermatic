@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListGCPZonesParams creates a new ListGCPZonesParams object
-// with the default values initialized.
+// NewListGCPZonesParams creates a new ListGCPZonesParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListGCPZonesParams() *ListGCPZonesParams {
-	var ()
 	return &ListGCPZonesParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListGCPZonesParamsWithTimeout creates a new ListGCPZonesParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListGCPZonesParamsWithTimeout(timeout time.Duration) *ListGCPZonesParams {
-	var ()
 	return &ListGCPZonesParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListGCPZonesParamsWithContext creates a new ListGCPZonesParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListGCPZonesParamsWithContext(ctx context.Context) *ListGCPZonesParams {
-	var ()
 	return &ListGCPZonesParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListGCPZonesParamsWithHTTPClient creates a new ListGCPZonesParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListGCPZonesParamsWithHTTPClient(client *http.Client) *ListGCPZonesParams {
-	var ()
 	return &ListGCPZonesParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListGCPZonesParams contains all the parameters to send to the API endpoint
-for the list g c p zones operation typically these are written to a http.Request
+/* ListGCPZonesParams contains all the parameters to send to the API endpoint
+   for the list g c p zones operation.
+
+   Typically these are written to a http.Request.
 */
 type ListGCPZonesParams struct {
 
-	/*Credential*/
+	// Credential.
 	Credential *string
-	/*ServiceAccount*/
+
+	// ServiceAccount.
 	ServiceAccount *string
-	/*Dc*/
+
+	// Dc.
 	DC string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list g c p zones params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListGCPZonesParams) WithDefaults() *ListGCPZonesParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list g c p zones params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListGCPZonesParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list g c p zones params
@@ -152,7 +168,6 @@ func (o *ListGCPZonesParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.
 		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
 			return err
 		}
-
 	}
 
 	if o.ServiceAccount != nil {
@@ -161,7 +176,6 @@ func (o *ListGCPZonesParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.
 		if err := r.SetHeaderParam("ServiceAccount", *o.ServiceAccount); err != nil {
 			return err
 		}
-
 	}
 
 	// path param dc

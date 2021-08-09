@@ -46,7 +46,7 @@ func NewListGCPSubnetworksOK() *ListGCPSubnetworksOK {
 	return &ListGCPSubnetworksOK{}
 }
 
-/*ListGCPSubnetworksOK handles this case with default header values.
+/* ListGCPSubnetworksOK describes a response with status code 200, with default header values.
 
 GCPSubnetworkList
 */
@@ -57,7 +57,6 @@ type ListGCPSubnetworksOK struct {
 func (o *ListGCPSubnetworksOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/gcp/{dc}/subnetworks][%d] listGCPSubnetworksOK  %+v", 200, o.Payload)
 }
-
 func (o *ListGCPSubnetworksOK) GetPayload() models.GCPSubnetworkList {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListGCPSubnetworksDefault(code int) *ListGCPSubnetworksDefault {
 	}
 }
 
-/*ListGCPSubnetworksDefault handles this case with default header values.
+/* ListGCPSubnetworksDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListGCPSubnetworksDefault) Code() int {
 func (o *ListGCPSubnetworksDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/gcp/{dc}/subnetworks][%d] listGCPSubnetworks default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListGCPSubnetworksDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

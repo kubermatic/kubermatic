@@ -58,7 +58,7 @@ func NewListExternalClusterNodesMetricsOK() *ListExternalClusterNodesMetricsOK {
 	return &ListExternalClusterNodesMetricsOK{}
 }
 
-/*ListExternalClusterNodesMetricsOK handles this case with default header values.
+/* ListExternalClusterNodesMetricsOK describes a response with status code 200, with default header values.
 
 NodeMetric
 */
@@ -69,7 +69,6 @@ type ListExternalClusterNodesMetricsOK struct {
 func (o *ListExternalClusterNodesMetricsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/nodesmetrics][%d] listExternalClusterNodesMetricsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListExternalClusterNodesMetricsOK) GetPayload() []*models.NodeMetric {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListExternalClusterNodesMetricsUnauthorized() *ListExternalClusterNodesM
 	return &ListExternalClusterNodesMetricsUnauthorized{}
 }
 
-/*ListExternalClusterNodesMetricsUnauthorized handles this case with default header values.
+/* ListExternalClusterNodesMetricsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListExternalClusterNodesMetricsForbidden() *ListExternalClusterNodesMetr
 	return &ListExternalClusterNodesMetricsForbidden{}
 }
 
-/*ListExternalClusterNodesMetricsForbidden handles this case with default header values.
+/* ListExternalClusterNodesMetricsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListExternalClusterNodesMetricsDefault(code int) *ListExternalClusterNod
 	}
 }
 
-/*ListExternalClusterNodesMetricsDefault handles this case with default header values.
+/* ListExternalClusterNodesMetricsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListExternalClusterNodesMetricsDefault) Code() int {
 func (o *ListExternalClusterNodesMetricsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/nodesmetrics][%d] listExternalClusterNodesMetrics default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListExternalClusterNodesMetricsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

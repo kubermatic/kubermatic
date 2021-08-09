@@ -46,7 +46,7 @@ func NewListOpenstackSecurityGroupsNoCredentialsOK() *ListOpenstackSecurityGroup
 	return &ListOpenstackSecurityGroupsNoCredentialsOK{}
 }
 
-/*ListOpenstackSecurityGroupsNoCredentialsOK handles this case with default header values.
+/* ListOpenstackSecurityGroupsNoCredentialsOK describes a response with status code 200, with default header values.
 
 OpenstackSecurityGroup
 */
@@ -57,7 +57,6 @@ type ListOpenstackSecurityGroupsNoCredentialsOK struct {
 func (o *ListOpenstackSecurityGroupsNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/securitygroups][%d] listOpenstackSecurityGroupsNoCredentialsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListOpenstackSecurityGroupsNoCredentialsOK) GetPayload() []*models.OpenstackSecurityGroup {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListOpenstackSecurityGroupsNoCredentialsDefault(code int) *ListOpenstack
 	}
 }
 
-/*ListOpenstackSecurityGroupsNoCredentialsDefault handles this case with default header values.
+/* ListOpenstackSecurityGroupsNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListOpenstackSecurityGroupsNoCredentialsDefault) Code() int {
 func (o *ListOpenstackSecurityGroupsNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/securitygroups][%d] listOpenstackSecurityGroupsNoCredentials default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListOpenstackSecurityGroupsNoCredentialsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

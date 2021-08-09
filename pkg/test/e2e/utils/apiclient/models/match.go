@@ -6,6 +6,7 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -61,7 +62,6 @@ func (m *Match) Validate(formats strfmt.Registry) error {
 }
 
 func (m *Match) validateKinds(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Kinds) { // not required
 		return nil
 	}
@@ -86,7 +86,6 @@ func (m *Match) validateKinds(formats strfmt.Registry) error {
 }
 
 func (m *Match) validateLabelSelector(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.LabelSelector) { // not required
 		return nil
 	}
@@ -104,13 +103,80 @@ func (m *Match) validateLabelSelector(formats strfmt.Registry) error {
 }
 
 func (m *Match) validateNamespaceSelector(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.NamespaceSelector) { // not required
 		return nil
 	}
 
 	if m.NamespaceSelector != nil {
 		if err := m.NamespaceSelector.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("namespaceSelector")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this match based on the context it is used
+func (m *Match) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateKinds(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateLabelSelector(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateNamespaceSelector(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *Match) contextValidateKinds(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Kinds); i++ {
+
+		if m.Kinds[i] != nil {
+			if err := m.Kinds[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("kinds" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *Match) contextValidateLabelSelector(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.LabelSelector != nil {
+		if err := m.LabelSelector.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("labelSelector")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *Match) contextValidateNamespaceSelector(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.NamespaceSelector != nil {
+		if err := m.NamespaceSelector.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("namespaceSelector")
 			}

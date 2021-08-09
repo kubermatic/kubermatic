@@ -16,62 +16,79 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetClusterRoleParams creates a new GetClusterRoleParams object
-// with the default values initialized.
+// NewGetClusterRoleParams creates a new GetClusterRoleParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetClusterRoleParams() *GetClusterRoleParams {
-	var ()
 	return &GetClusterRoleParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetClusterRoleParamsWithTimeout creates a new GetClusterRoleParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetClusterRoleParamsWithTimeout(timeout time.Duration) *GetClusterRoleParams {
-	var ()
 	return &GetClusterRoleParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetClusterRoleParamsWithContext creates a new GetClusterRoleParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetClusterRoleParamsWithContext(ctx context.Context) *GetClusterRoleParams {
-	var ()
 	return &GetClusterRoleParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetClusterRoleParamsWithHTTPClient creates a new GetClusterRoleParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetClusterRoleParamsWithHTTPClient(client *http.Client) *GetClusterRoleParams {
-	var ()
 	return &GetClusterRoleParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetClusterRoleParams contains all the parameters to send to the API endpoint
-for the get cluster role operation typically these are written to a http.Request
+/* GetClusterRoleParams contains all the parameters to send to the API endpoint
+   for the get cluster role operation.
+
+   Typically these are written to a http.Request.
 */
 type GetClusterRoleParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
-	/*RoleID*/
+
+	// RoleID.
 	RoleID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get cluster role params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetClusterRoleParams) WithDefaults() *GetClusterRoleParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get cluster role params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetClusterRoleParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get cluster role params

@@ -16,56 +16,70 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetConstraintTemplateParams creates a new GetConstraintTemplateParams object
-// with the default values initialized.
+// NewGetConstraintTemplateParams creates a new GetConstraintTemplateParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetConstraintTemplateParams() *GetConstraintTemplateParams {
-	var ()
 	return &GetConstraintTemplateParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetConstraintTemplateParamsWithTimeout creates a new GetConstraintTemplateParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetConstraintTemplateParamsWithTimeout(timeout time.Duration) *GetConstraintTemplateParams {
-	var ()
 	return &GetConstraintTemplateParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetConstraintTemplateParamsWithContext creates a new GetConstraintTemplateParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetConstraintTemplateParamsWithContext(ctx context.Context) *GetConstraintTemplateParams {
-	var ()
 	return &GetConstraintTemplateParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetConstraintTemplateParamsWithHTTPClient creates a new GetConstraintTemplateParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetConstraintTemplateParamsWithHTTPClient(client *http.Client) *GetConstraintTemplateParams {
-	var ()
 	return &GetConstraintTemplateParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetConstraintTemplateParams contains all the parameters to send to the API endpoint
-for the get constraint template operation typically these are written to a http.Request
+/* GetConstraintTemplateParams contains all the parameters to send to the API endpoint
+   for the get constraint template operation.
+
+   Typically these are written to a http.Request.
 */
 type GetConstraintTemplateParams struct {
 
-	/*CtName*/
+	// CtName.
 	Name string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get constraint template params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetConstraintTemplateParams) WithDefaults() *GetConstraintTemplateParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get constraint template params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetConstraintTemplateParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get constraint template params

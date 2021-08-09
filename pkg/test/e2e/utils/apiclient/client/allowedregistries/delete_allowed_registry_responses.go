@@ -58,7 +58,7 @@ func NewDeleteAllowedRegistryOK() *DeleteAllowedRegistryOK {
 	return &DeleteAllowedRegistryOK{}
 }
 
-/*DeleteAllowedRegistryOK handles this case with default header values.
+/* DeleteAllowedRegistryOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -79,7 +79,7 @@ func NewDeleteAllowedRegistryUnauthorized() *DeleteAllowedRegistryUnauthorized {
 	return &DeleteAllowedRegistryUnauthorized{}
 }
 
-/*DeleteAllowedRegistryUnauthorized handles this case with default header values.
+/* DeleteAllowedRegistryUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -100,7 +100,7 @@ func NewDeleteAllowedRegistryForbidden() *DeleteAllowedRegistryForbidden {
 	return &DeleteAllowedRegistryForbidden{}
 }
 
-/*DeleteAllowedRegistryForbidden handles this case with default header values.
+/* DeleteAllowedRegistryForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -123,7 +123,7 @@ func NewDeleteAllowedRegistryDefault(code int) *DeleteAllowedRegistryDefault {
 	}
 }
 
-/*DeleteAllowedRegistryDefault handles this case with default header values.
+/* DeleteAllowedRegistryDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -141,7 +141,6 @@ func (o *DeleteAllowedRegistryDefault) Code() int {
 func (o *DeleteAllowedRegistryDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v2/allowedregistries/{allowed_registry}][%d] deleteAllowedRegistry default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *DeleteAllowedRegistryDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

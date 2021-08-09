@@ -23,15 +23,18 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	AddServiceAccountToProject(params *AddServiceAccountToProjectParams, authInfo runtime.ClientAuthInfoWriter) (*AddServiceAccountToProjectCreated, error)
+	AddServiceAccountToProject(params *AddServiceAccountToProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddServiceAccountToProjectCreated, error)
 
-	DeleteServiceAccount(params *DeleteServiceAccountParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteServiceAccountOK, error)
+	DeleteServiceAccount(params *DeleteServiceAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteServiceAccountOK, error)
 
-	ListServiceAccounts(params *ListServiceAccountsParams, authInfo runtime.ClientAuthInfoWriter) (*ListServiceAccountsOK, error)
+	ListServiceAccounts(params *ListServiceAccountsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListServiceAccountsOK, error)
 
-	UpdateServiceAccount(params *UpdateServiceAccountParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateServiceAccountOK, error)
+	UpdateServiceAccount(params *UpdateServiceAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateServiceAccountOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -39,13 +42,12 @@ type ClientService interface {
 /*
   AddServiceAccountToProject Adds the given service account to the given project
 */
-func (a *Client) AddServiceAccountToProject(params *AddServiceAccountToProjectParams, authInfo runtime.ClientAuthInfoWriter) (*AddServiceAccountToProjectCreated, error) {
+func (a *Client) AddServiceAccountToProject(params *AddServiceAccountToProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddServiceAccountToProjectCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddServiceAccountToProjectParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "addServiceAccountToProject",
 		Method:             "POST",
 		PathPattern:        "/api/v1/projects/{project_id}/serviceaccounts",
@@ -57,7 +59,12 @@ func (a *Client) AddServiceAccountToProject(params *AddServiceAccountToProjectPa
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -73,13 +80,12 @@ func (a *Client) AddServiceAccountToProject(params *AddServiceAccountToProjectPa
 /*
   DeleteServiceAccount Deletes service account for the given project
 */
-func (a *Client) DeleteServiceAccount(params *DeleteServiceAccountParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteServiceAccountOK, error) {
+func (a *Client) DeleteServiceAccount(params *DeleteServiceAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteServiceAccountOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewDeleteServiceAccountParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "deleteServiceAccount",
 		Method:             "DELETE",
 		PathPattern:        "/api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}",
@@ -91,7 +97,12 @@ func (a *Client) DeleteServiceAccount(params *DeleteServiceAccountParams, authIn
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -107,13 +118,12 @@ func (a *Client) DeleteServiceAccount(params *DeleteServiceAccountParams, authIn
 /*
   ListServiceAccounts List Service Accounts for the given project
 */
-func (a *Client) ListServiceAccounts(params *ListServiceAccountsParams, authInfo runtime.ClientAuthInfoWriter) (*ListServiceAccountsOK, error) {
+func (a *Client) ListServiceAccounts(params *ListServiceAccountsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListServiceAccountsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListServiceAccountsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listServiceAccounts",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/serviceaccounts",
@@ -125,7 +135,12 @@ func (a *Client) ListServiceAccounts(params *ListServiceAccountsParams, authInfo
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -141,13 +156,12 @@ func (a *Client) ListServiceAccounts(params *ListServiceAccountsParams, authInfo
 /*
   UpdateServiceAccount Updates service account for the given project
 */
-func (a *Client) UpdateServiceAccount(params *UpdateServiceAccountParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateServiceAccountOK, error) {
+func (a *Client) UpdateServiceAccount(params *UpdateServiceAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateServiceAccountOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewUpdateServiceAccountParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "updateServiceAccount",
 		Method:             "PUT",
 		PathPattern:        "/api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}",
@@ -159,7 +173,12 @@ func (a *Client) UpdateServiceAccount(params *UpdateServiceAccountParams, authIn
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

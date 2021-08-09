@@ -16,56 +16,70 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewPatchCurrentUserSettingsParams creates a new PatchCurrentUserSettingsParams object
-// with the default values initialized.
+// NewPatchCurrentUserSettingsParams creates a new PatchCurrentUserSettingsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewPatchCurrentUserSettingsParams() *PatchCurrentUserSettingsParams {
-	var ()
 	return &PatchCurrentUserSettingsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewPatchCurrentUserSettingsParamsWithTimeout creates a new PatchCurrentUserSettingsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewPatchCurrentUserSettingsParamsWithTimeout(timeout time.Duration) *PatchCurrentUserSettingsParams {
-	var ()
 	return &PatchCurrentUserSettingsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewPatchCurrentUserSettingsParamsWithContext creates a new PatchCurrentUserSettingsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewPatchCurrentUserSettingsParamsWithContext(ctx context.Context) *PatchCurrentUserSettingsParams {
-	var ()
 	return &PatchCurrentUserSettingsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewPatchCurrentUserSettingsParamsWithHTTPClient creates a new PatchCurrentUserSettingsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewPatchCurrentUserSettingsParamsWithHTTPClient(client *http.Client) *PatchCurrentUserSettingsParams {
-	var ()
 	return &PatchCurrentUserSettingsParams{
 		HTTPClient: client,
 	}
 }
 
-/*PatchCurrentUserSettingsParams contains all the parameters to send to the API endpoint
-for the patch current user settings operation typically these are written to a http.Request
+/* PatchCurrentUserSettingsParams contains all the parameters to send to the API endpoint
+   for the patch current user settings operation.
+
+   Typically these are written to a http.Request.
 */
 type PatchCurrentUserSettingsParams struct {
 
-	/*Patch*/
+	// Patch.
 	Patch interface{}
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the patch current user settings params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *PatchCurrentUserSettingsParams) WithDefaults() *PatchCurrentUserSettingsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the patch current user settings params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *PatchCurrentUserSettingsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the patch current user settings params
@@ -119,7 +133,6 @@ func (o *PatchCurrentUserSettingsParams) WriteToRequest(r runtime.ClientRequest,
 		return err
 	}
 	var res []error
-
 	if o.Patch != nil {
 		if err := r.SetBodyParam(o.Patch); err != nil {
 			return err

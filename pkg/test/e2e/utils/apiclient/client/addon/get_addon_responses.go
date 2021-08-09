@@ -58,7 +58,7 @@ func NewGetAddonOK() *GetAddonOK {
 	return &GetAddonOK{}
 }
 
-/*GetAddonOK handles this case with default header values.
+/* GetAddonOK describes a response with status code 200, with default header values.
 
 Addon
 */
@@ -69,7 +69,6 @@ type GetAddonOK struct {
 func (o *GetAddonOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons/{addon_id}][%d] getAddonOK  %+v", 200, o.Payload)
 }
-
 func (o *GetAddonOK) GetPayload() *models.Addon {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewGetAddonUnauthorized() *GetAddonUnauthorized {
 	return &GetAddonUnauthorized{}
 }
 
-/*GetAddonUnauthorized handles this case with default header values.
+/* GetAddonUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewGetAddonForbidden() *GetAddonForbidden {
 	return &GetAddonForbidden{}
 }
 
-/*GetAddonForbidden handles this case with default header values.
+/* GetAddonForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewGetAddonDefault(code int) *GetAddonDefault {
 	}
 }
 
-/*GetAddonDefault handles this case with default header values.
+/* GetAddonDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *GetAddonDefault) Code() int {
 func (o *GetAddonDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons/{addon_id}][%d] getAddon default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetAddonDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -58,7 +58,7 @@ func NewDetachSSHKeyFromClusterV2OK() *DetachSSHKeyFromClusterV2OK {
 	return &DetachSSHKeyFromClusterV2OK{}
 }
 
-/*DetachSSHKeyFromClusterV2OK handles this case with default header values.
+/* DetachSSHKeyFromClusterV2OK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -79,7 +79,7 @@ func NewDetachSSHKeyFromClusterV2Unauthorized() *DetachSSHKeyFromClusterV2Unauth
 	return &DetachSSHKeyFromClusterV2Unauthorized{}
 }
 
-/*DetachSSHKeyFromClusterV2Unauthorized handles this case with default header values.
+/* DetachSSHKeyFromClusterV2Unauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -100,7 +100,7 @@ func NewDetachSSHKeyFromClusterV2Forbidden() *DetachSSHKeyFromClusterV2Forbidden
 	return &DetachSSHKeyFromClusterV2Forbidden{}
 }
 
-/*DetachSSHKeyFromClusterV2Forbidden handles this case with default header values.
+/* DetachSSHKeyFromClusterV2Forbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -123,7 +123,7 @@ func NewDetachSSHKeyFromClusterV2Default(code int) *DetachSSHKeyFromClusterV2Def
 	}
 }
 
-/*DetachSSHKeyFromClusterV2Default handles this case with default header values.
+/* DetachSSHKeyFromClusterV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -141,7 +141,6 @@ func (o *DetachSSHKeyFromClusterV2Default) Code() int {
 func (o *DetachSSHKeyFromClusterV2Default) Error() string {
 	return fmt.Sprintf("[DELETE /api/projects/{project_id}/clusters/{cluster_id}/sshkeys/{key_id}][%d] detachSSHKeyFromClusterV2 default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *DetachSSHKeyFromClusterV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

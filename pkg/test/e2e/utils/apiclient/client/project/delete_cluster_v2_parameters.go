@@ -17,62 +17,79 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// NewDeleteClusterV2Params creates a new DeleteClusterV2Params object
-// with the default values initialized.
+// NewDeleteClusterV2Params creates a new DeleteClusterV2Params object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewDeleteClusterV2Params() *DeleteClusterV2Params {
-	var ()
 	return &DeleteClusterV2Params{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewDeleteClusterV2ParamsWithTimeout creates a new DeleteClusterV2Params object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewDeleteClusterV2ParamsWithTimeout(timeout time.Duration) *DeleteClusterV2Params {
-	var ()
 	return &DeleteClusterV2Params{
-
 		timeout: timeout,
 	}
 }
 
 // NewDeleteClusterV2ParamsWithContext creates a new DeleteClusterV2Params object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewDeleteClusterV2ParamsWithContext(ctx context.Context) *DeleteClusterV2Params {
-	var ()
 	return &DeleteClusterV2Params{
-
 		Context: ctx,
 	}
 }
 
 // NewDeleteClusterV2ParamsWithHTTPClient creates a new DeleteClusterV2Params object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewDeleteClusterV2ParamsWithHTTPClient(client *http.Client) *DeleteClusterV2Params {
-	var ()
 	return &DeleteClusterV2Params{
 		HTTPClient: client,
 	}
 }
 
-/*DeleteClusterV2Params contains all the parameters to send to the API endpoint
-for the delete cluster v2 operation typically these are written to a http.Request
+/* DeleteClusterV2Params contains all the parameters to send to the API endpoint
+   for the delete cluster v2 operation.
+
+   Typically these are written to a http.Request.
 */
 type DeleteClusterV2Params struct {
 
-	/*DeleteLoadBalancers*/
+	// DeleteLoadBalancers.
 	DeleteLoadBalancers *bool
-	/*DeleteVolumes*/
+
+	// DeleteVolumes.
 	DeleteVolumes *bool
-	/*ClusterID*/
+
+	// ClusterID.
 	ClusterID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the delete cluster v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DeleteClusterV2Params) WithDefaults() *DeleteClusterV2Params {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the delete cluster v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DeleteClusterV2Params) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the delete cluster v2 params
@@ -166,7 +183,6 @@ func (o *DeleteClusterV2Params) WriteToRequest(r runtime.ClientRequest, reg strf
 		if err := r.SetHeaderParam("DeleteLoadBalancers", swag.FormatBool(*o.DeleteLoadBalancers)); err != nil {
 			return err
 		}
-
 	}
 
 	if o.DeleteVolumes != nil {
@@ -175,7 +191,6 @@ func (o *DeleteClusterV2Params) WriteToRequest(r runtime.ClientRequest, reg strf
 		if err := r.SetHeaderParam("DeleteVolumes", swag.FormatBool(*o.DeleteVolumes)); err != nil {
 			return err
 		}
-
 	}
 
 	// path param cluster_id

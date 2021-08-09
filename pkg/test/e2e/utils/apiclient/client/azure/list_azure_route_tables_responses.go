@@ -46,7 +46,7 @@ func NewListAzureRouteTablesOK() *ListAzureRouteTablesOK {
 	return &ListAzureRouteTablesOK{}
 }
 
-/*ListAzureRouteTablesOK handles this case with default header values.
+/* ListAzureRouteTablesOK describes a response with status code 200, with default header values.
 
 AzureRouteTablesList
 */
@@ -57,7 +57,6 @@ type ListAzureRouteTablesOK struct {
 func (o *ListAzureRouteTablesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/azure/routetables][%d] listAzureRouteTablesOK  %+v", 200, o.Payload)
 }
-
 func (o *ListAzureRouteTablesOK) GetPayload() *models.AzureRouteTablesList {
 	return o.Payload
 }
@@ -81,7 +80,7 @@ func NewListAzureRouteTablesDefault(code int) *ListAzureRouteTablesDefault {
 	}
 }
 
-/*ListAzureRouteTablesDefault handles this case with default header values.
+/* ListAzureRouteTablesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -99,7 +98,6 @@ func (o *ListAzureRouteTablesDefault) Code() int {
 func (o *ListAzureRouteTablesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/azure/routetables][%d] listAzureRouteTables default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListAzureRouteTablesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

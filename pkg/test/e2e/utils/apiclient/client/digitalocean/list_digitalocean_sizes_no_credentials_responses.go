@@ -46,7 +46,7 @@ func NewListDigitaloceanSizesNoCredentialsOK() *ListDigitaloceanSizesNoCredentia
 	return &ListDigitaloceanSizesNoCredentialsOK{}
 }
 
-/*ListDigitaloceanSizesNoCredentialsOK handles this case with default header values.
+/* ListDigitaloceanSizesNoCredentialsOK describes a response with status code 200, with default header values.
 
 DigitaloceanSizeList
 */
@@ -57,7 +57,6 @@ type ListDigitaloceanSizesNoCredentialsOK struct {
 func (o *ListDigitaloceanSizesNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/digitalocean/sizes][%d] listDigitaloceanSizesNoCredentialsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListDigitaloceanSizesNoCredentialsOK) GetPayload() *models.DigitaloceanSizeList {
 	return o.Payload
 }
@@ -81,7 +80,7 @@ func NewListDigitaloceanSizesNoCredentialsDefault(code int) *ListDigitaloceanSiz
 	}
 }
 
-/*ListDigitaloceanSizesNoCredentialsDefault handles this case with default header values.
+/* ListDigitaloceanSizesNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -99,7 +98,6 @@ func (o *ListDigitaloceanSizesNoCredentialsDefault) Code() int {
 func (o *ListDigitaloceanSizesNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/digitalocean/sizes][%d] listDigitaloceanSizesNoCredentials default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListDigitaloceanSizesNoCredentialsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

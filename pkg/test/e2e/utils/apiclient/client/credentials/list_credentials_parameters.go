@@ -16,58 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListCredentialsParams creates a new ListCredentialsParams object
-// with the default values initialized.
+// NewListCredentialsParams creates a new ListCredentialsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListCredentialsParams() *ListCredentialsParams {
-	var ()
 	return &ListCredentialsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListCredentialsParamsWithTimeout creates a new ListCredentialsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListCredentialsParamsWithTimeout(timeout time.Duration) *ListCredentialsParams {
-	var ()
 	return &ListCredentialsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListCredentialsParamsWithContext creates a new ListCredentialsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListCredentialsParamsWithContext(ctx context.Context) *ListCredentialsParams {
-	var ()
 	return &ListCredentialsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListCredentialsParamsWithHTTPClient creates a new ListCredentialsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListCredentialsParamsWithHTTPClient(client *http.Client) *ListCredentialsParams {
-	var ()
 	return &ListCredentialsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListCredentialsParams contains all the parameters to send to the API endpoint
-for the list credentials operation typically these are written to a http.Request
+/* ListCredentialsParams contains all the parameters to send to the API endpoint
+   for the list credentials operation.
+
+   Typically these are written to a http.Request.
 */
 type ListCredentialsParams struct {
 
-	/*Datacenter*/
+	// Datacenter.
 	Datacenter *string
-	/*ProviderName*/
+
+	// ProviderName.
 	ProviderName string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListCredentialsParams) WithDefaults() *ListCredentialsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListCredentialsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list credentials params
@@ -137,16 +152,17 @@ func (o *ListCredentialsParams) WriteToRequest(r runtime.ClientRequest, reg strf
 
 		// query param datacenter
 		var qrDatacenter string
+
 		if o.Datacenter != nil {
 			qrDatacenter = *o.Datacenter
 		}
 		qDatacenter := qrDatacenter
 		if qDatacenter != "" {
+
 			if err := r.SetQueryParam("datacenter", qDatacenter); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	// path param provider_name

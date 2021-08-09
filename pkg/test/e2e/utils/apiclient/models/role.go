@@ -6,6 +6,7 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -63,7 +64,6 @@ func (m *Role) Validate(formats strfmt.Registry) error {
 }
 
 func (m *Role) validateCreationTimestamp(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.CreationTimestamp) { // not required
 		return nil
 	}
@@ -76,7 +76,6 @@ func (m *Role) validateCreationTimestamp(formats strfmt.Registry) error {
 }
 
 func (m *Role) validateDeletionTimestamp(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.DeletionTimestamp) { // not required
 		return nil
 	}
@@ -89,7 +88,6 @@ func (m *Role) validateDeletionTimestamp(formats strfmt.Registry) error {
 }
 
 func (m *Role) validateRules(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Rules) { // not required
 		return nil
 	}
@@ -101,6 +99,38 @@ func (m *Role) validateRules(formats strfmt.Registry) error {
 
 		if m.Rules[i] != nil {
 			if err := m.Rules[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("rules" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+// ContextValidate validate this role based on the context it is used
+func (m *Role) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateRules(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *Role) contextValidateRules(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Rules); i++ {
+
+		if m.Rules[i] != nil {
+			if err := m.Rules[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("rules" + "." + strconv.Itoa(i))
 				}

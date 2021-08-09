@@ -46,7 +46,7 @@ func NewListCredentialsOK() *ListCredentialsOK {
 	return &ListCredentialsOK{}
 }
 
-/*ListCredentialsOK handles this case with default header values.
+/* ListCredentialsOK describes a response with status code 200, with default header values.
 
 CredentialList
 */
@@ -57,7 +57,6 @@ type ListCredentialsOK struct {
 func (o *ListCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/{provider_name}/presets/credentials][%d] listCredentialsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListCredentialsOK) GetPayload() *models.CredentialList {
 	return o.Payload
 }
@@ -81,7 +80,7 @@ func NewListCredentialsDefault(code int) *ListCredentialsDefault {
 	}
 }
 
-/*ListCredentialsDefault handles this case with default header values.
+/* ListCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -99,7 +98,6 @@ func (o *ListCredentialsDefault) Code() int {
 func (o *ListCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/{provider_name}/presets/credentials][%d] listCredentials default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListCredentialsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

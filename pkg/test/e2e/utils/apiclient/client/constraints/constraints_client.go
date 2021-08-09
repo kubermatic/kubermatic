@@ -23,9 +23,12 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	DeleteDefaultConstraint(params *DeleteDefaultConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteDefaultConstraintOK, error)
+	DeleteDefaultConstraint(params *DeleteDefaultConstraintParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteDefaultConstraintOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -33,13 +36,12 @@ type ClientService interface {
 /*
   DeleteDefaultConstraint deletes a specified default constraint
 */
-func (a *Client) DeleteDefaultConstraint(params *DeleteDefaultConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteDefaultConstraintOK, error) {
+func (a *Client) DeleteDefaultConstraint(params *DeleteDefaultConstraintParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteDefaultConstraintOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewDeleteDefaultConstraintParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "deleteDefaultConstraint",
 		Method:             "DELETE",
 		PathPattern:        "/api/v2/constraints/{constraint_name}",
@@ -51,7 +53,12 @@ func (a *Client) DeleteDefaultConstraint(params *DeleteDefaultConstraintParams, 
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

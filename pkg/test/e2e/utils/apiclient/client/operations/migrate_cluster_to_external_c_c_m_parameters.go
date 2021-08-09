@@ -16,58 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewMigrateClusterToExternalCCMParams creates a new MigrateClusterToExternalCCMParams object
-// with the default values initialized.
+// NewMigrateClusterToExternalCCMParams creates a new MigrateClusterToExternalCCMParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewMigrateClusterToExternalCCMParams() *MigrateClusterToExternalCCMParams {
-	var ()
 	return &MigrateClusterToExternalCCMParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewMigrateClusterToExternalCCMParamsWithTimeout creates a new MigrateClusterToExternalCCMParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewMigrateClusterToExternalCCMParamsWithTimeout(timeout time.Duration) *MigrateClusterToExternalCCMParams {
-	var ()
 	return &MigrateClusterToExternalCCMParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewMigrateClusterToExternalCCMParamsWithContext creates a new MigrateClusterToExternalCCMParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewMigrateClusterToExternalCCMParamsWithContext(ctx context.Context) *MigrateClusterToExternalCCMParams {
-	var ()
 	return &MigrateClusterToExternalCCMParams{
-
 		Context: ctx,
 	}
 }
 
 // NewMigrateClusterToExternalCCMParamsWithHTTPClient creates a new MigrateClusterToExternalCCMParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewMigrateClusterToExternalCCMParamsWithHTTPClient(client *http.Client) *MigrateClusterToExternalCCMParams {
-	var ()
 	return &MigrateClusterToExternalCCMParams{
 		HTTPClient: client,
 	}
 }
 
-/*MigrateClusterToExternalCCMParams contains all the parameters to send to the API endpoint
-for the migrate cluster to external c c m operation typically these are written to a http.Request
+/* MigrateClusterToExternalCCMParams contains all the parameters to send to the API endpoint
+   for the migrate cluster to external c c m operation.
+
+   Typically these are written to a http.Request.
 */
 type MigrateClusterToExternalCCMParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the migrate cluster to external c c m params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *MigrateClusterToExternalCCMParams) WithDefaults() *MigrateClusterToExternalCCMParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the migrate cluster to external c c m params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *MigrateClusterToExternalCCMParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the migrate cluster to external c c m params

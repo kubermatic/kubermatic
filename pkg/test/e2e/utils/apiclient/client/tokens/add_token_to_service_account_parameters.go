@@ -18,60 +18,76 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
-// NewAddTokenToServiceAccountParams creates a new AddTokenToServiceAccountParams object
-// with the default values initialized.
+// NewAddTokenToServiceAccountParams creates a new AddTokenToServiceAccountParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewAddTokenToServiceAccountParams() *AddTokenToServiceAccountParams {
-	var ()
 	return &AddTokenToServiceAccountParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddTokenToServiceAccountParamsWithTimeout creates a new AddTokenToServiceAccountParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewAddTokenToServiceAccountParamsWithTimeout(timeout time.Duration) *AddTokenToServiceAccountParams {
-	var ()
 	return &AddTokenToServiceAccountParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewAddTokenToServiceAccountParamsWithContext creates a new AddTokenToServiceAccountParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewAddTokenToServiceAccountParamsWithContext(ctx context.Context) *AddTokenToServiceAccountParams {
-	var ()
 	return &AddTokenToServiceAccountParams{
-
 		Context: ctx,
 	}
 }
 
 // NewAddTokenToServiceAccountParamsWithHTTPClient creates a new AddTokenToServiceAccountParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewAddTokenToServiceAccountParamsWithHTTPClient(client *http.Client) *AddTokenToServiceAccountParams {
-	var ()
 	return &AddTokenToServiceAccountParams{
 		HTTPClient: client,
 	}
 }
 
-/*AddTokenToServiceAccountParams contains all the parameters to send to the API endpoint
-for the add token to service account operation typically these are written to a http.Request
+/* AddTokenToServiceAccountParams contains all the parameters to send to the API endpoint
+   for the add token to service account operation.
+
+   Typically these are written to a http.Request.
 */
 type AddTokenToServiceAccountParams struct {
 
-	/*Body*/
+	// Body.
 	Body *models.ServiceAccountToken
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
-	/*ServiceaccountID*/
+
+	// ServiceaccountID.
 	ServiceAccountID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the add token to service account params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddTokenToServiceAccountParams) WithDefaults() *AddTokenToServiceAccountParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the add token to service account params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddTokenToServiceAccountParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add token to service account params
@@ -147,7 +163,6 @@ func (o *AddTokenToServiceAccountParams) WriteToRequest(r runtime.ClientRequest,
 		return err
 	}
 	var res []error
-
 	if o.Body != nil {
 		if err := r.SetBodyParam(o.Body); err != nil {
 			return err

@@ -46,7 +46,7 @@ func NewListGCPDiskTypesNoCredentialsOK() *ListGCPDiskTypesNoCredentialsOK {
 	return &ListGCPDiskTypesNoCredentialsOK{}
 }
 
-/*ListGCPDiskTypesNoCredentialsOK handles this case with default header values.
+/* ListGCPDiskTypesNoCredentialsOK describes a response with status code 200, with default header values.
 
 GCPDiskTypeList
 */
@@ -57,7 +57,6 @@ type ListGCPDiskTypesNoCredentialsOK struct {
 func (o *ListGCPDiskTypesNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/disktypes][%d] listGCPDiskTypesNoCredentialsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListGCPDiskTypesNoCredentialsOK) GetPayload() models.GCPDiskTypeList {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListGCPDiskTypesNoCredentialsDefault(code int) *ListGCPDiskTypesNoCreden
 	}
 }
 
-/*ListGCPDiskTypesNoCredentialsDefault handles this case with default header values.
+/* ListGCPDiskTypesNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListGCPDiskTypesNoCredentialsDefault) Code() int {
 func (o *ListGCPDiskTypesNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/disktypes][%d] listGCPDiskTypesNoCredentials default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListGCPDiskTypesNoCredentialsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetOidcClusterKubeconfigParams creates a new GetOidcClusterKubeconfigParams object
-// with the default values initialized.
+// NewGetOidcClusterKubeconfigParams creates a new GetOidcClusterKubeconfigParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetOidcClusterKubeconfigParams() *GetOidcClusterKubeconfigParams {
-	var ()
 	return &GetOidcClusterKubeconfigParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetOidcClusterKubeconfigParamsWithTimeout creates a new GetOidcClusterKubeconfigParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetOidcClusterKubeconfigParamsWithTimeout(timeout time.Duration) *GetOidcClusterKubeconfigParams {
-	var ()
 	return &GetOidcClusterKubeconfigParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetOidcClusterKubeconfigParamsWithContext creates a new GetOidcClusterKubeconfigParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetOidcClusterKubeconfigParamsWithContext(ctx context.Context) *GetOidcClusterKubeconfigParams {
-	var ()
 	return &GetOidcClusterKubeconfigParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetOidcClusterKubeconfigParamsWithHTTPClient creates a new GetOidcClusterKubeconfigParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetOidcClusterKubeconfigParamsWithHTTPClient(client *http.Client) *GetOidcClusterKubeconfigParams {
-	var ()
 	return &GetOidcClusterKubeconfigParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetOidcClusterKubeconfigParams contains all the parameters to send to the API endpoint
-for the get oidc cluster kubeconfig operation typically these are written to a http.Request
+/* GetOidcClusterKubeconfigParams contains all the parameters to send to the API endpoint
+   for the get oidc cluster kubeconfig operation.
+
+   Typically these are written to a http.Request.
 */
 type GetOidcClusterKubeconfigParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get oidc cluster kubeconfig params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetOidcClusterKubeconfigParams) WithDefaults() *GetOidcClusterKubeconfigParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get oidc cluster kubeconfig params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetOidcClusterKubeconfigParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get oidc cluster kubeconfig params

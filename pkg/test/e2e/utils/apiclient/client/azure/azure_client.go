@@ -23,29 +23,32 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	ListAzureAvailabilityZones(params *ListAzureAvailabilityZonesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureAvailabilityZonesOK, error)
+	ListAzureAvailabilityZones(params *ListAzureAvailabilityZonesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAzureAvailabilityZonesOK, error)
 
-	ListAzureAvailabilityZonesNoCredentials(params *ListAzureAvailabilityZonesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureAvailabilityZonesNoCredentialsOK, error)
+	ListAzureAvailabilityZonesNoCredentials(params *ListAzureAvailabilityZonesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAzureAvailabilityZonesNoCredentialsOK, error)
 
-	ListAzureAvailabilityZonesNoCredentialsV2(params *ListAzureAvailabilityZonesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListAzureAvailabilityZonesNoCredentialsV2OK, error)
+	ListAzureAvailabilityZonesNoCredentialsV2(params *ListAzureAvailabilityZonesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAzureAvailabilityZonesNoCredentialsV2OK, error)
 
-	ListAzureResourceGroups(params *ListAzureResourceGroupsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureResourceGroupsOK, error)
+	ListAzureResourceGroups(params *ListAzureResourceGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAzureResourceGroupsOK, error)
 
-	ListAzureRouteTables(params *ListAzureRouteTablesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureRouteTablesOK, error)
+	ListAzureRouteTables(params *ListAzureRouteTablesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAzureRouteTablesOK, error)
 
-	ListAzureSecurityGroups(params *ListAzureSecurityGroupsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureSecurityGroupsOK, error)
+	ListAzureSecurityGroups(params *ListAzureSecurityGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAzureSecurityGroupsOK, error)
 
-	ListAzureSizes(params *ListAzureSizesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureSizesOK, error)
+	ListAzureSizes(params *ListAzureSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAzureSizesOK, error)
 
-	ListAzureSizesNoCredentials(params *ListAzureSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureSizesNoCredentialsOK, error)
+	ListAzureSizesNoCredentials(params *ListAzureSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAzureSizesNoCredentialsOK, error)
 
-	ListAzureSizesNoCredentialsV2(params *ListAzureSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListAzureSizesNoCredentialsV2OK, error)
+	ListAzureSizesNoCredentialsV2(params *ListAzureSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAzureSizesNoCredentialsV2OK, error)
 
-	ListAzureSubnets(params *ListAzureSubnetsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureSubnetsOK, error)
+	ListAzureSubnets(params *ListAzureSubnetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAzureSubnetsOK, error)
 
-	ListAzureVnets(params *ListAzureVnetsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureVnetsOK, error)
+	ListAzureVnets(params *ListAzureVnetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAzureVnetsOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -53,13 +56,12 @@ type ClientService interface {
 /*
   ListAzureAvailabilityZones Lists VM availability zones in an Azure region
 */
-func (a *Client) ListAzureAvailabilityZones(params *ListAzureAvailabilityZonesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureAvailabilityZonesOK, error) {
+func (a *Client) ListAzureAvailabilityZones(params *ListAzureAvailabilityZonesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAzureAvailabilityZonesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListAzureAvailabilityZonesParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listAzureAvailabilityZones",
 		Method:             "GET",
 		PathPattern:        "/api/v1/providers/azure/availabilityzones",
@@ -71,7 +73,12 @@ func (a *Client) ListAzureAvailabilityZones(params *ListAzureAvailabilityZonesPa
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -87,13 +94,12 @@ func (a *Client) ListAzureAvailabilityZones(params *ListAzureAvailabilityZonesPa
 /*
   ListAzureAvailabilityZonesNoCredentials Lists available VM availability zones in an Azure region
 */
-func (a *Client) ListAzureAvailabilityZonesNoCredentials(params *ListAzureAvailabilityZonesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureAvailabilityZonesNoCredentialsOK, error) {
+func (a *Client) ListAzureAvailabilityZonesNoCredentials(params *ListAzureAvailabilityZonesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAzureAvailabilityZonesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListAzureAvailabilityZonesNoCredentialsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listAzureAvailabilityZonesNoCredentials",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/azure/availabilityzones",
@@ -105,7 +111,12 @@ func (a *Client) ListAzureAvailabilityZonesNoCredentials(params *ListAzureAvaila
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -121,13 +132,12 @@ func (a *Client) ListAzureAvailabilityZonesNoCredentials(params *ListAzureAvaila
 /*
   ListAzureAvailabilityZonesNoCredentialsV2 Lists available VM availability zones in an Azure region
 */
-func (a *Client) ListAzureAvailabilityZonesNoCredentialsV2(params *ListAzureAvailabilityZonesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListAzureAvailabilityZonesNoCredentialsV2OK, error) {
+func (a *Client) ListAzureAvailabilityZonesNoCredentialsV2(params *ListAzureAvailabilityZonesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAzureAvailabilityZonesNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListAzureAvailabilityZonesNoCredentialsV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listAzureAvailabilityZonesNoCredentialsV2",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/azure/availabilityzones",
@@ -139,7 +149,12 @@ func (a *Client) ListAzureAvailabilityZonesNoCredentialsV2(params *ListAzureAvai
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -155,13 +170,12 @@ func (a *Client) ListAzureAvailabilityZonesNoCredentialsV2(params *ListAzureAvai
 /*
   ListAzureResourceGroups Lists available VM resource groups
 */
-func (a *Client) ListAzureResourceGroups(params *ListAzureResourceGroupsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureResourceGroupsOK, error) {
+func (a *Client) ListAzureResourceGroups(params *ListAzureResourceGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAzureResourceGroupsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListAzureResourceGroupsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listAzureResourceGroups",
 		Method:             "GET",
 		PathPattern:        "/api/v2/providers/azure/resourcegroups",
@@ -173,7 +187,12 @@ func (a *Client) ListAzureResourceGroups(params *ListAzureResourceGroupsParams, 
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -189,13 +208,12 @@ func (a *Client) ListAzureResourceGroups(params *ListAzureResourceGroupsParams, 
 /*
   ListAzureRouteTables Lists available VM route tables
 */
-func (a *Client) ListAzureRouteTables(params *ListAzureRouteTablesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureRouteTablesOK, error) {
+func (a *Client) ListAzureRouteTables(params *ListAzureRouteTablesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAzureRouteTablesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListAzureRouteTablesParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listAzureRouteTables",
 		Method:             "GET",
 		PathPattern:        "/api/v2/providers/azure/routetables",
@@ -207,7 +225,12 @@ func (a *Client) ListAzureRouteTables(params *ListAzureRouteTablesParams, authIn
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -223,13 +246,12 @@ func (a *Client) ListAzureRouteTables(params *ListAzureRouteTablesParams, authIn
 /*
   ListAzureSecurityGroups Lists available VM security groups
 */
-func (a *Client) ListAzureSecurityGroups(params *ListAzureSecurityGroupsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureSecurityGroupsOK, error) {
+func (a *Client) ListAzureSecurityGroups(params *ListAzureSecurityGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAzureSecurityGroupsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListAzureSecurityGroupsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listAzureSecurityGroups",
 		Method:             "GET",
 		PathPattern:        "/api/v2/providers/azure/securitygroups",
@@ -241,7 +263,12 @@ func (a *Client) ListAzureSecurityGroups(params *ListAzureSecurityGroupsParams, 
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -257,13 +284,12 @@ func (a *Client) ListAzureSecurityGroups(params *ListAzureSecurityGroupsParams, 
 /*
   ListAzureSizes Lists available VM sizes in an Azure region
 */
-func (a *Client) ListAzureSizes(params *ListAzureSizesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureSizesOK, error) {
+func (a *Client) ListAzureSizes(params *ListAzureSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAzureSizesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListAzureSizesParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listAzureSizes",
 		Method:             "GET",
 		PathPattern:        "/api/v1/providers/azure/sizes",
@@ -275,7 +301,12 @@ func (a *Client) ListAzureSizes(params *ListAzureSizesParams, authInfo runtime.C
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -291,13 +322,12 @@ func (a *Client) ListAzureSizes(params *ListAzureSizesParams, authInfo runtime.C
 /*
   ListAzureSizesNoCredentials Lists available VM sizes in an Azure region
 */
-func (a *Client) ListAzureSizesNoCredentials(params *ListAzureSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureSizesNoCredentialsOK, error) {
+func (a *Client) ListAzureSizesNoCredentials(params *ListAzureSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAzureSizesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListAzureSizesNoCredentialsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listAzureSizesNoCredentials",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/azure/sizes",
@@ -309,7 +339,12 @@ func (a *Client) ListAzureSizesNoCredentials(params *ListAzureSizesNoCredentials
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -325,13 +360,12 @@ func (a *Client) ListAzureSizesNoCredentials(params *ListAzureSizesNoCredentials
 /*
   ListAzureSizesNoCredentialsV2 Lists available VM sizes in an Azure region
 */
-func (a *Client) ListAzureSizesNoCredentialsV2(params *ListAzureSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListAzureSizesNoCredentialsV2OK, error) {
+func (a *Client) ListAzureSizesNoCredentialsV2(params *ListAzureSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAzureSizesNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListAzureSizesNoCredentialsV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listAzureSizesNoCredentialsV2",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/azure/sizes",
@@ -343,7 +377,12 @@ func (a *Client) ListAzureSizesNoCredentialsV2(params *ListAzureSizesNoCredentia
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -359,13 +398,12 @@ func (a *Client) ListAzureSizesNoCredentialsV2(params *ListAzureSizesNoCredentia
 /*
   ListAzureSubnets Lists available VM subnets
 */
-func (a *Client) ListAzureSubnets(params *ListAzureSubnetsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureSubnetsOK, error) {
+func (a *Client) ListAzureSubnets(params *ListAzureSubnetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAzureSubnetsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListAzureSubnetsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listAzureSubnets",
 		Method:             "GET",
 		PathPattern:        "/api/v2/providers/azure/subnets",
@@ -377,7 +415,12 @@ func (a *Client) ListAzureSubnets(params *ListAzureSubnetsParams, authInfo runti
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -393,13 +436,12 @@ func (a *Client) ListAzureSubnets(params *ListAzureSubnetsParams, authInfo runti
 /*
   ListAzureVnets Lists available VM virtual networks
 */
-func (a *Client) ListAzureVnets(params *ListAzureVnetsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureVnetsOK, error) {
+func (a *Client) ListAzureVnets(params *ListAzureVnetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAzureVnetsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListAzureVnetsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listAzureVnets",
 		Method:             "GET",
 		PathPattern:        "/api/v2/providers/azure/vnets",
@@ -411,7 +453,12 @@ func (a *Client) ListAzureVnets(params *ListAzureVnetsParams, authInfo runtime.C
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

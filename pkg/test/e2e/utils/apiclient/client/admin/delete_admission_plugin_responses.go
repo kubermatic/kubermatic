@@ -58,7 +58,7 @@ func NewDeleteAdmissionPluginOK() *DeleteAdmissionPluginOK {
 	return &DeleteAdmissionPluginOK{}
 }
 
-/*DeleteAdmissionPluginOK handles this case with default header values.
+/* DeleteAdmissionPluginOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -79,7 +79,7 @@ func NewDeleteAdmissionPluginUnauthorized() *DeleteAdmissionPluginUnauthorized {
 	return &DeleteAdmissionPluginUnauthorized{}
 }
 
-/*DeleteAdmissionPluginUnauthorized handles this case with default header values.
+/* DeleteAdmissionPluginUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -100,7 +100,7 @@ func NewDeleteAdmissionPluginForbidden() *DeleteAdmissionPluginForbidden {
 	return &DeleteAdmissionPluginForbidden{}
 }
 
-/*DeleteAdmissionPluginForbidden handles this case with default header values.
+/* DeleteAdmissionPluginForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -123,7 +123,7 @@ func NewDeleteAdmissionPluginDefault(code int) *DeleteAdmissionPluginDefault {
 	}
 }
 
-/*DeleteAdmissionPluginDefault handles this case with default header values.
+/* DeleteAdmissionPluginDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -141,7 +141,6 @@ func (o *DeleteAdmissionPluginDefault) Code() int {
 func (o *DeleteAdmissionPluginDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/admin/admission/plugins/{name}][%d] deleteAdmissionPlugin default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *DeleteAdmissionPluginDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

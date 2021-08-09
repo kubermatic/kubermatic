@@ -58,7 +58,7 @@ func NewUpgradeClusterNodeDeploymentsV2OK() *UpgradeClusterNodeDeploymentsV2OK {
 	return &UpgradeClusterNodeDeploymentsV2OK{}
 }
 
-/*UpgradeClusterNodeDeploymentsV2OK handles this case with default header values.
+/* UpgradeClusterNodeDeploymentsV2OK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -79,7 +79,7 @@ func NewUpgradeClusterNodeDeploymentsV2Unauthorized() *UpgradeClusterNodeDeploym
 	return &UpgradeClusterNodeDeploymentsV2Unauthorized{}
 }
 
-/*UpgradeClusterNodeDeploymentsV2Unauthorized handles this case with default header values.
+/* UpgradeClusterNodeDeploymentsV2Unauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -100,7 +100,7 @@ func NewUpgradeClusterNodeDeploymentsV2Forbidden() *UpgradeClusterNodeDeployment
 	return &UpgradeClusterNodeDeploymentsV2Forbidden{}
 }
 
-/*UpgradeClusterNodeDeploymentsV2Forbidden handles this case with default header values.
+/* UpgradeClusterNodeDeploymentsV2Forbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -123,7 +123,7 @@ func NewUpgradeClusterNodeDeploymentsV2Default(code int) *UpgradeClusterNodeDepl
 	}
 }
 
-/*UpgradeClusterNodeDeploymentsV2Default handles this case with default header values.
+/* UpgradeClusterNodeDeploymentsV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -141,7 +141,6 @@ func (o *UpgradeClusterNodeDeploymentsV2Default) Code() int {
 func (o *UpgradeClusterNodeDeploymentsV2Default) Error() string {
 	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/nodes/upgrades][%d] upgradeClusterNodeDeploymentsV2 default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *UpgradeClusterNodeDeploymentsV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

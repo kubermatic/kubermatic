@@ -16,58 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewPatchConstraintTemplateParams creates a new PatchConstraintTemplateParams object
-// with the default values initialized.
+// NewPatchConstraintTemplateParams creates a new PatchConstraintTemplateParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewPatchConstraintTemplateParams() *PatchConstraintTemplateParams {
-	var ()
 	return &PatchConstraintTemplateParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewPatchConstraintTemplateParamsWithTimeout creates a new PatchConstraintTemplateParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewPatchConstraintTemplateParamsWithTimeout(timeout time.Duration) *PatchConstraintTemplateParams {
-	var ()
 	return &PatchConstraintTemplateParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewPatchConstraintTemplateParamsWithContext creates a new PatchConstraintTemplateParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewPatchConstraintTemplateParamsWithContext(ctx context.Context) *PatchConstraintTemplateParams {
-	var ()
 	return &PatchConstraintTemplateParams{
-
 		Context: ctx,
 	}
 }
 
 // NewPatchConstraintTemplateParamsWithHTTPClient creates a new PatchConstraintTemplateParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewPatchConstraintTemplateParamsWithHTTPClient(client *http.Client) *PatchConstraintTemplateParams {
-	var ()
 	return &PatchConstraintTemplateParams{
 		HTTPClient: client,
 	}
 }
 
-/*PatchConstraintTemplateParams contains all the parameters to send to the API endpoint
-for the patch constraint template operation typically these are written to a http.Request
+/* PatchConstraintTemplateParams contains all the parameters to send to the API endpoint
+   for the patch constraint template operation.
+
+   Typically these are written to a http.Request.
 */
 type PatchConstraintTemplateParams struct {
 
-	/*Patch*/
+	// Patch.
 	Patch interface{}
-	/*CtName*/
+
+	// CtName.
 	Name string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the patch constraint template params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *PatchConstraintTemplateParams) WithDefaults() *PatchConstraintTemplateParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the patch constraint template params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *PatchConstraintTemplateParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the patch constraint template params
@@ -132,7 +147,6 @@ func (o *PatchConstraintTemplateParams) WriteToRequest(r runtime.ClientRequest, 
 		return err
 	}
 	var res []error
-
 	if o.Patch != nil {
 		if err := r.SetBodyParam(o.Patch); err != nil {
 			return err

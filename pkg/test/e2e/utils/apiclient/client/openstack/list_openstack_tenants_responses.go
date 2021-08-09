@@ -46,7 +46,7 @@ func NewListOpenstackTenantsOK() *ListOpenstackTenantsOK {
 	return &ListOpenstackTenantsOK{}
 }
 
-/*ListOpenstackTenantsOK handles this case with default header values.
+/* ListOpenstackTenantsOK describes a response with status code 200, with default header values.
 
 OpenstackTenant
 */
@@ -57,7 +57,6 @@ type ListOpenstackTenantsOK struct {
 func (o *ListOpenstackTenantsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/openstack/tenants][%d] listOpenstackTenantsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListOpenstackTenantsOK) GetPayload() []*models.OpenstackTenant {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListOpenstackTenantsDefault(code int) *ListOpenstackTenantsDefault {
 	}
 }
 
-/*ListOpenstackTenantsDefault handles this case with default header values.
+/* ListOpenstackTenantsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListOpenstackTenantsDefault) Code() int {
 func (o *ListOpenstackTenantsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/openstack/tenants][%d] listOpenstackTenants default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListOpenstackTenantsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

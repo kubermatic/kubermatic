@@ -46,7 +46,7 @@ func NewListAWSSecurityGroupsOK() *ListAWSSecurityGroupsOK {
 	return &ListAWSSecurityGroupsOK{}
 }
 
-/*ListAWSSecurityGroupsOK handles this case with default header values.
+/* ListAWSSecurityGroupsOK describes a response with status code 200, with default header values.
 
 AWSSecurityGroupList
 */
@@ -57,7 +57,6 @@ type ListAWSSecurityGroupsOK struct {
 func (o *ListAWSSecurityGroupsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/aws/{dc}/securitygroups][%d] listAWSSecurityGroupsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListAWSSecurityGroupsOK) GetPayload() *models.AWSSecurityGroupList {
 	return o.Payload
 }
@@ -81,7 +80,7 @@ func NewListAWSSecurityGroupsDefault(code int) *ListAWSSecurityGroupsDefault {
 	}
 }
 
-/*ListAWSSecurityGroupsDefault handles this case with default header values.
+/* ListAWSSecurityGroupsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -99,7 +98,6 @@ func (o *ListAWSSecurityGroupsDefault) Code() int {
 func (o *ListAWSSecurityGroupsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/aws/{dc}/securitygroups][%d] listAWSSecurityGroups default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListAWSSecurityGroupsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

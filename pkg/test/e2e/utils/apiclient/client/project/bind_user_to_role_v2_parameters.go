@@ -18,64 +18,82 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
-// NewBindUserToRoleV2Params creates a new BindUserToRoleV2Params object
-// with the default values initialized.
+// NewBindUserToRoleV2Params creates a new BindUserToRoleV2Params object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewBindUserToRoleV2Params() *BindUserToRoleV2Params {
-	var ()
 	return &BindUserToRoleV2Params{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewBindUserToRoleV2ParamsWithTimeout creates a new BindUserToRoleV2Params object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewBindUserToRoleV2ParamsWithTimeout(timeout time.Duration) *BindUserToRoleV2Params {
-	var ()
 	return &BindUserToRoleV2Params{
-
 		timeout: timeout,
 	}
 }
 
 // NewBindUserToRoleV2ParamsWithContext creates a new BindUserToRoleV2Params object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewBindUserToRoleV2ParamsWithContext(ctx context.Context) *BindUserToRoleV2Params {
-	var ()
 	return &BindUserToRoleV2Params{
-
 		Context: ctx,
 	}
 }
 
 // NewBindUserToRoleV2ParamsWithHTTPClient creates a new BindUserToRoleV2Params object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewBindUserToRoleV2ParamsWithHTTPClient(client *http.Client) *BindUserToRoleV2Params {
-	var ()
 	return &BindUserToRoleV2Params{
 		HTTPClient: client,
 	}
 }
 
-/*BindUserToRoleV2Params contains all the parameters to send to the API endpoint
-for the bind user to role v2 operation typically these are written to a http.Request
+/* BindUserToRoleV2Params contains all the parameters to send to the API endpoint
+   for the bind user to role v2 operation.
+
+   Typically these are written to a http.Request.
 */
 type BindUserToRoleV2Params struct {
 
-	/*Body*/
+	// Body.
 	Body *models.RoleUser
-	/*ClusterID*/
+
+	// ClusterID.
 	ClusterID string
-	/*Namespace*/
+
+	// Namespace.
 	Namespace string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
-	/*RoleID*/
+
+	// RoleID.
 	RoleID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the bind user to role v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *BindUserToRoleV2Params) WithDefaults() *BindUserToRoleV2Params {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the bind user to role v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *BindUserToRoleV2Params) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the bind user to role v2 params
@@ -173,7 +191,6 @@ func (o *BindUserToRoleV2Params) WriteToRequest(r runtime.ClientRequest, reg str
 		return err
 	}
 	var res []error
-
 	if o.Body != nil {
 		if err := r.SetBodyParam(o.Body); err != nil {
 			return err

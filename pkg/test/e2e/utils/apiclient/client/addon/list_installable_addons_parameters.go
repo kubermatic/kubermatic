@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListInstallableAddonsParams creates a new ListInstallableAddonsParams object
-// with the default values initialized.
+// NewListInstallableAddonsParams creates a new ListInstallableAddonsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListInstallableAddonsParams() *ListInstallableAddonsParams {
-	var ()
 	return &ListInstallableAddonsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListInstallableAddonsParamsWithTimeout creates a new ListInstallableAddonsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListInstallableAddonsParamsWithTimeout(timeout time.Duration) *ListInstallableAddonsParams {
-	var ()
 	return &ListInstallableAddonsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListInstallableAddonsParamsWithContext creates a new ListInstallableAddonsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListInstallableAddonsParamsWithContext(ctx context.Context) *ListInstallableAddonsParams {
-	var ()
 	return &ListInstallableAddonsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListInstallableAddonsParamsWithHTTPClient creates a new ListInstallableAddonsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListInstallableAddonsParamsWithHTTPClient(client *http.Client) *ListInstallableAddonsParams {
-	var ()
 	return &ListInstallableAddonsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListInstallableAddonsParams contains all the parameters to send to the API endpoint
-for the list installable addons operation typically these are written to a http.Request
+/* ListInstallableAddonsParams contains all the parameters to send to the API endpoint
+   for the list installable addons operation.
+
+   Typically these are written to a http.Request.
 */
 type ListInstallableAddonsParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list installable addons params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListInstallableAddonsParams) WithDefaults() *ListInstallableAddonsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list installable addons params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListInstallableAddonsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list installable addons params

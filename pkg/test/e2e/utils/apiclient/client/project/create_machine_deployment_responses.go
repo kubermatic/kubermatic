@@ -58,7 +58,7 @@ func NewCreateMachineDeploymentCreated() *CreateMachineDeploymentCreated {
 	return &CreateMachineDeploymentCreated{}
 }
 
-/*CreateMachineDeploymentCreated handles this case with default header values.
+/* CreateMachineDeploymentCreated describes a response with status code 201, with default header values.
 
 NodeDeployment
 */
@@ -69,7 +69,6 @@ type CreateMachineDeploymentCreated struct {
 func (o *CreateMachineDeploymentCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments][%d] createMachineDeploymentCreated  %+v", 201, o.Payload)
 }
-
 func (o *CreateMachineDeploymentCreated) GetPayload() *models.NodeDeployment {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewCreateMachineDeploymentUnauthorized() *CreateMachineDeploymentUnauthoriz
 	return &CreateMachineDeploymentUnauthorized{}
 }
 
-/*CreateMachineDeploymentUnauthorized handles this case with default header values.
+/* CreateMachineDeploymentUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewCreateMachineDeploymentForbidden() *CreateMachineDeploymentForbidden {
 	return &CreateMachineDeploymentForbidden{}
 }
 
-/*CreateMachineDeploymentForbidden handles this case with default header values.
+/* CreateMachineDeploymentForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewCreateMachineDeploymentDefault(code int) *CreateMachineDeploymentDefault
 	}
 }
 
-/*CreateMachineDeploymentDefault handles this case with default header values.
+/* CreateMachineDeploymentDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *CreateMachineDeploymentDefault) Code() int {
 func (o *CreateMachineDeploymentDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments][%d] createMachineDeployment default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *CreateMachineDeploymentDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

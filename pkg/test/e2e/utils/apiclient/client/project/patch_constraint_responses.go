@@ -58,7 +58,7 @@ func NewPatchConstraintOK() *PatchConstraintOK {
 	return &PatchConstraintOK{}
 }
 
-/*PatchConstraintOK handles this case with default header values.
+/* PatchConstraintOK describes a response with status code 200, with default header values.
 
 Constraint
 */
@@ -69,7 +69,6 @@ type PatchConstraintOK struct {
 func (o *PatchConstraintOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints/{constraint_name}][%d] patchConstraintOK  %+v", 200, o.Payload)
 }
-
 func (o *PatchConstraintOK) GetPayload() *models.Constraint {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewPatchConstraintUnauthorized() *PatchConstraintUnauthorized {
 	return &PatchConstraintUnauthorized{}
 }
 
-/*PatchConstraintUnauthorized handles this case with default header values.
+/* PatchConstraintUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewPatchConstraintForbidden() *PatchConstraintForbidden {
 	return &PatchConstraintForbidden{}
 }
 
-/*PatchConstraintForbidden handles this case with default header values.
+/* PatchConstraintForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewPatchConstraintDefault(code int) *PatchConstraintDefault {
 	}
 }
 
-/*PatchConstraintDefault handles this case with default header values.
+/* PatchConstraintDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *PatchConstraintDefault) Code() int {
 func (o *PatchConstraintDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints/{constraint_name}][%d] patchConstraint default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *PatchConstraintDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

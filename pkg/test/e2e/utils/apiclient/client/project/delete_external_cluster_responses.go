@@ -58,7 +58,7 @@ func NewDeleteExternalClusterOK() *DeleteExternalClusterOK {
 	return &DeleteExternalClusterOK{}
 }
 
-/*DeleteExternalClusterOK handles this case with default header values.
+/* DeleteExternalClusterOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -79,7 +79,7 @@ func NewDeleteExternalClusterUnauthorized() *DeleteExternalClusterUnauthorized {
 	return &DeleteExternalClusterUnauthorized{}
 }
 
-/*DeleteExternalClusterUnauthorized handles this case with default header values.
+/* DeleteExternalClusterUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -100,7 +100,7 @@ func NewDeleteExternalClusterForbidden() *DeleteExternalClusterForbidden {
 	return &DeleteExternalClusterForbidden{}
 }
 
-/*DeleteExternalClusterForbidden handles this case with default header values.
+/* DeleteExternalClusterForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -123,7 +123,7 @@ func NewDeleteExternalClusterDefault(code int) *DeleteExternalClusterDefault {
 	}
 }
 
-/*DeleteExternalClusterDefault handles this case with default header values.
+/* DeleteExternalClusterDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -141,7 +141,6 @@ func (o *DeleteExternalClusterDefault) Code() int {
 func (o *DeleteExternalClusterDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}][%d] deleteExternalCluster default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *DeleteExternalClusterDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

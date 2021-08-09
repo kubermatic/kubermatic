@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -54,7 +56,6 @@ func (m *ClusterNetworkingConfig) Validate(formats strfmt.Registry) error {
 }
 
 func (m *ClusterNetworkingConfig) validatePods(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Pods) { // not required
 		return nil
 	}
@@ -72,13 +73,58 @@ func (m *ClusterNetworkingConfig) validatePods(formats strfmt.Registry) error {
 }
 
 func (m *ClusterNetworkingConfig) validateServices(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Services) { // not required
 		return nil
 	}
 
 	if m.Services != nil {
 		if err := m.Services.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("services")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this cluster networking config based on the context it is used
+func (m *ClusterNetworkingConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidatePods(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateServices(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *ClusterNetworkingConfig) contextValidatePods(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Pods != nil {
+		if err := m.Pods.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("pods")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ClusterNetworkingConfig) contextValidateServices(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Services != nil {
+		if err := m.Services.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("services")
 			}

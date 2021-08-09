@@ -16,58 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewResetAlertmanagerParams creates a new ResetAlertmanagerParams object
-// with the default values initialized.
+// NewResetAlertmanagerParams creates a new ResetAlertmanagerParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewResetAlertmanagerParams() *ResetAlertmanagerParams {
-	var ()
 	return &ResetAlertmanagerParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewResetAlertmanagerParamsWithTimeout creates a new ResetAlertmanagerParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewResetAlertmanagerParamsWithTimeout(timeout time.Duration) *ResetAlertmanagerParams {
-	var ()
 	return &ResetAlertmanagerParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewResetAlertmanagerParamsWithContext creates a new ResetAlertmanagerParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewResetAlertmanagerParamsWithContext(ctx context.Context) *ResetAlertmanagerParams {
-	var ()
 	return &ResetAlertmanagerParams{
-
 		Context: ctx,
 	}
 }
 
 // NewResetAlertmanagerParamsWithHTTPClient creates a new ResetAlertmanagerParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewResetAlertmanagerParamsWithHTTPClient(client *http.Client) *ResetAlertmanagerParams {
-	var ()
 	return &ResetAlertmanagerParams{
 		HTTPClient: client,
 	}
 }
 
-/*ResetAlertmanagerParams contains all the parameters to send to the API endpoint
-for the reset alertmanager operation typically these are written to a http.Request
+/* ResetAlertmanagerParams contains all the parameters to send to the API endpoint
+   for the reset alertmanager operation.
+
+   Typically these are written to a http.Request.
 */
 type ResetAlertmanagerParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the reset alertmanager params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ResetAlertmanagerParams) WithDefaults() *ResetAlertmanagerParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the reset alertmanager params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ResetAlertmanagerParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the reset alertmanager params

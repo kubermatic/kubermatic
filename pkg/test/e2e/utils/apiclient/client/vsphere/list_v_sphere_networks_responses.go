@@ -46,7 +46,7 @@ func NewListVSphereNetworksOK() *ListVSphereNetworksOK {
 	return &ListVSphereNetworksOK{}
 }
 
-/*ListVSphereNetworksOK handles this case with default header values.
+/* ListVSphereNetworksOK describes a response with status code 200, with default header values.
 
 VSphereNetwork
 */
@@ -57,7 +57,6 @@ type ListVSphereNetworksOK struct {
 func (o *ListVSphereNetworksOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/vsphere/networks][%d] listVSphereNetworksOK  %+v", 200, o.Payload)
 }
-
 func (o *ListVSphereNetworksOK) GetPayload() []*models.VSphereNetwork {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListVSphereNetworksDefault(code int) *ListVSphereNetworksDefault {
 	}
 }
 
-/*ListVSphereNetworksDefault handles this case with default header values.
+/* ListVSphereNetworksDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListVSphereNetworksDefault) Code() int {
 func (o *ListVSphereNetworksDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/vsphere/networks][%d] listVSphereNetworks default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListVSphereNetworksDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

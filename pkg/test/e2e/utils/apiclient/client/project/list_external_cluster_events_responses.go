@@ -58,7 +58,7 @@ func NewListExternalClusterEventsOK() *ListExternalClusterEventsOK {
 	return &ListExternalClusterEventsOK{}
 }
 
-/*ListExternalClusterEventsOK handles this case with default header values.
+/* ListExternalClusterEventsOK describes a response with status code 200, with default header values.
 
 Event
 */
@@ -69,7 +69,6 @@ type ListExternalClusterEventsOK struct {
 func (o *ListExternalClusterEventsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/events][%d] listExternalClusterEventsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListExternalClusterEventsOK) GetPayload() []*models.Event {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListExternalClusterEventsUnauthorized() *ListExternalClusterEventsUnauth
 	return &ListExternalClusterEventsUnauthorized{}
 }
 
-/*ListExternalClusterEventsUnauthorized handles this case with default header values.
+/* ListExternalClusterEventsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListExternalClusterEventsForbidden() *ListExternalClusterEventsForbidden
 	return &ListExternalClusterEventsForbidden{}
 }
 
-/*ListExternalClusterEventsForbidden handles this case with default header values.
+/* ListExternalClusterEventsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListExternalClusterEventsDefault(code int) *ListExternalClusterEventsDef
 	}
 }
 
-/*ListExternalClusterEventsDefault handles this case with default header values.
+/* ListExternalClusterEventsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListExternalClusterEventsDefault) Code() int {
 func (o *ListExternalClusterEventsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/events][%d] listExternalClusterEvents default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListExternalClusterEventsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

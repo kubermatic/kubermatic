@@ -46,7 +46,7 @@ func NewListGCPSizesNoCredentialsOK() *ListGCPSizesNoCredentialsOK {
 	return &ListGCPSizesNoCredentialsOK{}
 }
 
-/*ListGCPSizesNoCredentialsOK handles this case with default header values.
+/* ListGCPSizesNoCredentialsOK describes a response with status code 200, with default header values.
 
 GCPMachineSizeList
 */
@@ -57,7 +57,6 @@ type ListGCPSizesNoCredentialsOK struct {
 func (o *ListGCPSizesNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/sizes][%d] listGCPSizesNoCredentialsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListGCPSizesNoCredentialsOK) GetPayload() models.GCPMachineSizeList {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListGCPSizesNoCredentialsDefault(code int) *ListGCPSizesNoCredentialsDef
 	}
 }
 
-/*ListGCPSizesNoCredentialsDefault handles this case with default header values.
+/* ListGCPSizesNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListGCPSizesNoCredentialsDefault) Code() int {
 func (o *ListGCPSizesNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/sizes][%d] listGCPSizesNoCredentials default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListGCPSizesNoCredentialsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

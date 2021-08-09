@@ -58,7 +58,7 @@ func NewListMachineDeploymentNodesEventsOK() *ListMachineDeploymentNodesEventsOK
 	return &ListMachineDeploymentNodesEventsOK{}
 }
 
-/*ListMachineDeploymentNodesEventsOK handles this case with default header values.
+/* ListMachineDeploymentNodesEventsOK describes a response with status code 200, with default header values.
 
 Event
 */
@@ -69,7 +69,6 @@ type ListMachineDeploymentNodesEventsOK struct {
 func (o *ListMachineDeploymentNodesEventsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/events][%d] listMachineDeploymentNodesEventsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListMachineDeploymentNodesEventsOK) GetPayload() []*models.Event {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListMachineDeploymentNodesEventsUnauthorized() *ListMachineDeploymentNod
 	return &ListMachineDeploymentNodesEventsUnauthorized{}
 }
 
-/*ListMachineDeploymentNodesEventsUnauthorized handles this case with default header values.
+/* ListMachineDeploymentNodesEventsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListMachineDeploymentNodesEventsForbidden() *ListMachineDeploymentNodesE
 	return &ListMachineDeploymentNodesEventsForbidden{}
 }
 
-/*ListMachineDeploymentNodesEventsForbidden handles this case with default header values.
+/* ListMachineDeploymentNodesEventsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListMachineDeploymentNodesEventsDefault(code int) *ListMachineDeployment
 	}
 }
 
-/*ListMachineDeploymentNodesEventsDefault handles this case with default header values.
+/* ListMachineDeploymentNodesEventsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListMachineDeploymentNodesEventsDefault) Code() int {
 func (o *ListMachineDeploymentNodesEventsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/events][%d] listMachineDeploymentNodesEvents default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListMachineDeploymentNodesEventsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -58,7 +60,6 @@ func (m *AddonConfig) Validate(formats strfmt.Registry) error {
 }
 
 func (m *AddonConfig) validateCreationTimestamp(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.CreationTimestamp) { // not required
 		return nil
 	}
@@ -71,7 +72,6 @@ func (m *AddonConfig) validateCreationTimestamp(formats strfmt.Registry) error {
 }
 
 func (m *AddonConfig) validateDeletionTimestamp(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.DeletionTimestamp) { // not required
 		return nil
 	}
@@ -84,13 +84,40 @@ func (m *AddonConfig) validateDeletionTimestamp(formats strfmt.Registry) error {
 }
 
 func (m *AddonConfig) validateSpec(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Spec) { // not required
 		return nil
 	}
 
 	if m.Spec != nil {
 		if err := m.Spec.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("spec")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this addon config based on the context it is used
+func (m *AddonConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateSpec(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *AddonConfig) contextValidateSpec(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Spec != nil {
+		if err := m.Spec.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("spec")
 			}

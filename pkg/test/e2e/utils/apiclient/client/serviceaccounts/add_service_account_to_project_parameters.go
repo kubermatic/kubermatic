@@ -18,58 +18,73 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
-// NewAddServiceAccountToProjectParams creates a new AddServiceAccountToProjectParams object
-// with the default values initialized.
+// NewAddServiceAccountToProjectParams creates a new AddServiceAccountToProjectParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewAddServiceAccountToProjectParams() *AddServiceAccountToProjectParams {
-	var ()
 	return &AddServiceAccountToProjectParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddServiceAccountToProjectParamsWithTimeout creates a new AddServiceAccountToProjectParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewAddServiceAccountToProjectParamsWithTimeout(timeout time.Duration) *AddServiceAccountToProjectParams {
-	var ()
 	return &AddServiceAccountToProjectParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewAddServiceAccountToProjectParamsWithContext creates a new AddServiceAccountToProjectParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewAddServiceAccountToProjectParamsWithContext(ctx context.Context) *AddServiceAccountToProjectParams {
-	var ()
 	return &AddServiceAccountToProjectParams{
-
 		Context: ctx,
 	}
 }
 
 // NewAddServiceAccountToProjectParamsWithHTTPClient creates a new AddServiceAccountToProjectParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewAddServiceAccountToProjectParamsWithHTTPClient(client *http.Client) *AddServiceAccountToProjectParams {
-	var ()
 	return &AddServiceAccountToProjectParams{
 		HTTPClient: client,
 	}
 }
 
-/*AddServiceAccountToProjectParams contains all the parameters to send to the API endpoint
-for the add service account to project operation typically these are written to a http.Request
+/* AddServiceAccountToProjectParams contains all the parameters to send to the API endpoint
+   for the add service account to project operation.
+
+   Typically these are written to a http.Request.
 */
 type AddServiceAccountToProjectParams struct {
 
-	/*Body*/
+	// Body.
 	Body *models.ServiceAccount
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the add service account to project params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddServiceAccountToProjectParams) WithDefaults() *AddServiceAccountToProjectParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the add service account to project params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddServiceAccountToProjectParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add service account to project params
@@ -134,7 +149,6 @@ func (o *AddServiceAccountToProjectParams) WriteToRequest(r runtime.ClientReques
 		return err
 	}
 	var res []error
-
 	if o.Body != nil {
 		if err := r.SetBodyParam(o.Body); err != nil {
 			return err

@@ -58,7 +58,7 @@ func NewCreateClusterRoleCreated() *CreateClusterRoleCreated {
 	return &CreateClusterRoleCreated{}
 }
 
-/*CreateClusterRoleCreated handles this case with default header values.
+/* CreateClusterRoleCreated describes a response with status code 201, with default header values.
 
 ClusterRole
 */
@@ -69,7 +69,6 @@ type CreateClusterRoleCreated struct {
 func (o *CreateClusterRoleCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles][%d] createClusterRoleCreated  %+v", 201, o.Payload)
 }
-
 func (o *CreateClusterRoleCreated) GetPayload() *models.ClusterRole {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewCreateClusterRoleUnauthorized() *CreateClusterRoleUnauthorized {
 	return &CreateClusterRoleUnauthorized{}
 }
 
-/*CreateClusterRoleUnauthorized handles this case with default header values.
+/* CreateClusterRoleUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewCreateClusterRoleForbidden() *CreateClusterRoleForbidden {
 	return &CreateClusterRoleForbidden{}
 }
 
-/*CreateClusterRoleForbidden handles this case with default header values.
+/* CreateClusterRoleForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewCreateClusterRoleDefault(code int) *CreateClusterRoleDefault {
 	}
 }
 
-/*CreateClusterRoleDefault handles this case with default header values.
+/* CreateClusterRoleDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *CreateClusterRoleDefault) Code() int {
 func (o *CreateClusterRoleDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles][%d] createClusterRole default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *CreateClusterRoleDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

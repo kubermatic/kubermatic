@@ -6,6 +6,7 @@ package project
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"fmt"
 	"io"
 
@@ -59,7 +60,7 @@ func NewPatchClusterTemplateInstanceOK() *PatchClusterTemplateInstanceOK {
 	return &PatchClusterTemplateInstanceOK{}
 }
 
-/*PatchClusterTemplateInstanceOK handles this case with default header values.
+/* PatchClusterTemplateInstanceOK describes a response with status code 200, with default header values.
 
 ClusterTemplateInstance
 */
@@ -70,7 +71,6 @@ type PatchClusterTemplateInstanceOK struct {
 func (o *PatchClusterTemplateInstanceOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clustertemplates/{template_id}/instances/{instance_id}][%d] patchClusterTemplateInstanceOK  %+v", 200, o.Payload)
 }
-
 func (o *PatchClusterTemplateInstanceOK) GetPayload() *models.ClusterTemplateInstance {
 	return o.Payload
 }
@@ -92,7 +92,7 @@ func NewPatchClusterTemplateInstanceUnauthorized() *PatchClusterTemplateInstance
 	return &PatchClusterTemplateInstanceUnauthorized{}
 }
 
-/*PatchClusterTemplateInstanceUnauthorized handles this case with default header values.
+/* PatchClusterTemplateInstanceUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -113,7 +113,7 @@ func NewPatchClusterTemplateInstanceForbidden() *PatchClusterTemplateInstanceFor
 	return &PatchClusterTemplateInstanceForbidden{}
 }
 
-/*PatchClusterTemplateInstanceForbidden handles this case with default header values.
+/* PatchClusterTemplateInstanceForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -136,7 +136,7 @@ func NewPatchClusterTemplateInstanceDefault(code int) *PatchClusterTemplateInsta
 	}
 }
 
-/*PatchClusterTemplateInstanceDefault handles this case with default header values.
+/* PatchClusterTemplateInstanceDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -154,7 +154,6 @@ func (o *PatchClusterTemplateInstanceDefault) Code() int {
 func (o *PatchClusterTemplateInstanceDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clustertemplates/{template_id}/instances/{instance_id}][%d] patchClusterTemplateInstance default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *PatchClusterTemplateInstanceDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }
@@ -182,6 +181,11 @@ type PatchClusterTemplateInstanceBody struct {
 
 // Validate validates this patch cluster template instance body
 func (o *PatchClusterTemplateInstanceBody) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this patch cluster template instance body based on context it is used
+func (o *PatchClusterTemplateInstanceBody) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

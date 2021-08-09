@@ -58,7 +58,7 @@ func NewGetAdmissionPluginOK() *GetAdmissionPluginOK {
 	return &GetAdmissionPluginOK{}
 }
 
-/*GetAdmissionPluginOK handles this case with default header values.
+/* GetAdmissionPluginOK describes a response with status code 200, with default header values.
 
 AdmissionPlugin
 */
@@ -69,7 +69,6 @@ type GetAdmissionPluginOK struct {
 func (o *GetAdmissionPluginOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/admin/admission/plugins/{name}][%d] getAdmissionPluginOK  %+v", 200, o.Payload)
 }
-
 func (o *GetAdmissionPluginOK) GetPayload() *models.AdmissionPlugin {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewGetAdmissionPluginUnauthorized() *GetAdmissionPluginUnauthorized {
 	return &GetAdmissionPluginUnauthorized{}
 }
 
-/*GetAdmissionPluginUnauthorized handles this case with default header values.
+/* GetAdmissionPluginUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewGetAdmissionPluginForbidden() *GetAdmissionPluginForbidden {
 	return &GetAdmissionPluginForbidden{}
 }
 
-/*GetAdmissionPluginForbidden handles this case with default header values.
+/* GetAdmissionPluginForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewGetAdmissionPluginDefault(code int) *GetAdmissionPluginDefault {
 	}
 }
 
-/*GetAdmissionPluginDefault handles this case with default header values.
+/* GetAdmissionPluginDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *GetAdmissionPluginDefault) Code() int {
 func (o *GetAdmissionPluginDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/admin/admission/plugins/{name}][%d] getAdmissionPlugin default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetAdmissionPluginDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

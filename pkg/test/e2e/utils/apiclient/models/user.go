@@ -6,6 +6,7 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -74,7 +75,6 @@ func (m *User) Validate(formats strfmt.Registry) error {
 }
 
 func (m *User) validateCreationTimestamp(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.CreationTimestamp) { // not required
 		return nil
 	}
@@ -87,7 +87,6 @@ func (m *User) validateCreationTimestamp(formats strfmt.Registry) error {
 }
 
 func (m *User) validateDeletionTimestamp(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.DeletionTimestamp) { // not required
 		return nil
 	}
@@ -100,7 +99,6 @@ func (m *User) validateDeletionTimestamp(formats strfmt.Registry) error {
 }
 
 func (m *User) validateProjects(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Projects) { // not required
 		return nil
 	}
@@ -125,13 +123,62 @@ func (m *User) validateProjects(formats strfmt.Registry) error {
 }
 
 func (m *User) validateUserSettings(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.UserSettings) { // not required
 		return nil
 	}
 
 	if m.UserSettings != nil {
 		if err := m.UserSettings.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("userSettings")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this user based on the context it is used
+func (m *User) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateProjects(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateUserSettings(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *User) contextValidateProjects(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Projects); i++ {
+
+		if m.Projects[i] != nil {
+			if err := m.Projects[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("projects" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *User) contextValidateUserSettings(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.UserSettings != nil {
+		if err := m.UserSettings.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("userSettings")
 			}

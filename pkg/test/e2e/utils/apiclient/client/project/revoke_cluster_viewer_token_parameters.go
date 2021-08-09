@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewRevokeClusterViewerTokenParams creates a new RevokeClusterViewerTokenParams object
-// with the default values initialized.
+// NewRevokeClusterViewerTokenParams creates a new RevokeClusterViewerTokenParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewRevokeClusterViewerTokenParams() *RevokeClusterViewerTokenParams {
-	var ()
 	return &RevokeClusterViewerTokenParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewRevokeClusterViewerTokenParamsWithTimeout creates a new RevokeClusterViewerTokenParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewRevokeClusterViewerTokenParamsWithTimeout(timeout time.Duration) *RevokeClusterViewerTokenParams {
-	var ()
 	return &RevokeClusterViewerTokenParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewRevokeClusterViewerTokenParamsWithContext creates a new RevokeClusterViewerTokenParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewRevokeClusterViewerTokenParamsWithContext(ctx context.Context) *RevokeClusterViewerTokenParams {
-	var ()
 	return &RevokeClusterViewerTokenParams{
-
 		Context: ctx,
 	}
 }
 
 // NewRevokeClusterViewerTokenParamsWithHTTPClient creates a new RevokeClusterViewerTokenParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewRevokeClusterViewerTokenParamsWithHTTPClient(client *http.Client) *RevokeClusterViewerTokenParams {
-	var ()
 	return &RevokeClusterViewerTokenParams{
 		HTTPClient: client,
 	}
 }
 
-/*RevokeClusterViewerTokenParams contains all the parameters to send to the API endpoint
-for the revoke cluster viewer token operation typically these are written to a http.Request
+/* RevokeClusterViewerTokenParams contains all the parameters to send to the API endpoint
+   for the revoke cluster viewer token operation.
+
+   Typically these are written to a http.Request.
 */
 type RevokeClusterViewerTokenParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the revoke cluster viewer token params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *RevokeClusterViewerTokenParams) WithDefaults() *RevokeClusterViewerTokenParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the revoke cluster viewer token params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *RevokeClusterViewerTokenParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the revoke cluster viewer token params

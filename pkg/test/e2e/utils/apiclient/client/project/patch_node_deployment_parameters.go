@@ -16,64 +16,82 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewPatchNodeDeploymentParams creates a new PatchNodeDeploymentParams object
-// with the default values initialized.
+// NewPatchNodeDeploymentParams creates a new PatchNodeDeploymentParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewPatchNodeDeploymentParams() *PatchNodeDeploymentParams {
-	var ()
 	return &PatchNodeDeploymentParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewPatchNodeDeploymentParamsWithTimeout creates a new PatchNodeDeploymentParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewPatchNodeDeploymentParamsWithTimeout(timeout time.Duration) *PatchNodeDeploymentParams {
-	var ()
 	return &PatchNodeDeploymentParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewPatchNodeDeploymentParamsWithContext creates a new PatchNodeDeploymentParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewPatchNodeDeploymentParamsWithContext(ctx context.Context) *PatchNodeDeploymentParams {
-	var ()
 	return &PatchNodeDeploymentParams{
-
 		Context: ctx,
 	}
 }
 
 // NewPatchNodeDeploymentParamsWithHTTPClient creates a new PatchNodeDeploymentParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewPatchNodeDeploymentParamsWithHTTPClient(client *http.Client) *PatchNodeDeploymentParams {
-	var ()
 	return &PatchNodeDeploymentParams{
 		HTTPClient: client,
 	}
 }
 
-/*PatchNodeDeploymentParams contains all the parameters to send to the API endpoint
-for the patch node deployment operation typically these are written to a http.Request
+/* PatchNodeDeploymentParams contains all the parameters to send to the API endpoint
+   for the patch node deployment operation.
+
+   Typically these are written to a http.Request.
 */
 type PatchNodeDeploymentParams struct {
 
-	/*Patch*/
+	// Patch.
 	Patch interface{}
-	/*ClusterID*/
+
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*NodedeploymentID*/
+
+	// NodedeploymentID.
 	NodeDeploymentID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the patch node deployment params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *PatchNodeDeploymentParams) WithDefaults() *PatchNodeDeploymentParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the patch node deployment params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *PatchNodeDeploymentParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the patch node deployment params
@@ -171,7 +189,6 @@ func (o *PatchNodeDeploymentParams) WriteToRequest(r runtime.ClientRequest, reg 
 		return err
 	}
 	var res []error
-
 	if o.Patch != nil {
 		if err := r.SetBodyParam(o.Patch); err != nil {
 			return err

@@ -16,62 +16,79 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewPatchMachineDeploymentParams creates a new PatchMachineDeploymentParams object
-// with the default values initialized.
+// NewPatchMachineDeploymentParams creates a new PatchMachineDeploymentParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewPatchMachineDeploymentParams() *PatchMachineDeploymentParams {
-	var ()
 	return &PatchMachineDeploymentParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewPatchMachineDeploymentParamsWithTimeout creates a new PatchMachineDeploymentParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewPatchMachineDeploymentParamsWithTimeout(timeout time.Duration) *PatchMachineDeploymentParams {
-	var ()
 	return &PatchMachineDeploymentParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewPatchMachineDeploymentParamsWithContext creates a new PatchMachineDeploymentParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewPatchMachineDeploymentParamsWithContext(ctx context.Context) *PatchMachineDeploymentParams {
-	var ()
 	return &PatchMachineDeploymentParams{
-
 		Context: ctx,
 	}
 }
 
 // NewPatchMachineDeploymentParamsWithHTTPClient creates a new PatchMachineDeploymentParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewPatchMachineDeploymentParamsWithHTTPClient(client *http.Client) *PatchMachineDeploymentParams {
-	var ()
 	return &PatchMachineDeploymentParams{
 		HTTPClient: client,
 	}
 }
 
-/*PatchMachineDeploymentParams contains all the parameters to send to the API endpoint
-for the patch machine deployment operation typically these are written to a http.Request
+/* PatchMachineDeploymentParams contains all the parameters to send to the API endpoint
+   for the patch machine deployment operation.
+
+   Typically these are written to a http.Request.
 */
 type PatchMachineDeploymentParams struct {
 
-	/*Patch*/
+	// Patch.
 	Patch interface{}
-	/*ClusterID*/
+
+	// ClusterID.
 	ClusterID string
-	/*MachinedeploymentID*/
+
+	// MachinedeploymentID.
 	MachineDeploymentID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the patch machine deployment params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *PatchMachineDeploymentParams) WithDefaults() *PatchMachineDeploymentParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the patch machine deployment params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *PatchMachineDeploymentParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the patch machine deployment params
@@ -158,7 +175,6 @@ func (o *PatchMachineDeploymentParams) WriteToRequest(r runtime.ClientRequest, r
 		return err
 	}
 	var res []error
-
 	if o.Patch != nil {
 		if err := r.SetBodyParam(o.Patch); err != nil {
 			return err

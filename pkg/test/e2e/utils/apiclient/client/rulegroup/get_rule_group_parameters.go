@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetRuleGroupParams creates a new GetRuleGroupParams object
-// with the default values initialized.
+// NewGetRuleGroupParams creates a new GetRuleGroupParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetRuleGroupParams() *GetRuleGroupParams {
-	var ()
 	return &GetRuleGroupParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetRuleGroupParamsWithTimeout creates a new GetRuleGroupParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetRuleGroupParamsWithTimeout(timeout time.Duration) *GetRuleGroupParams {
-	var ()
 	return &GetRuleGroupParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetRuleGroupParamsWithContext creates a new GetRuleGroupParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetRuleGroupParamsWithContext(ctx context.Context) *GetRuleGroupParams {
-	var ()
 	return &GetRuleGroupParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetRuleGroupParamsWithHTTPClient creates a new GetRuleGroupParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetRuleGroupParamsWithHTTPClient(client *http.Client) *GetRuleGroupParams {
-	var ()
 	return &GetRuleGroupParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetRuleGroupParams contains all the parameters to send to the API endpoint
-for the get rule group operation typically these are written to a http.Request
+/* GetRuleGroupParams contains all the parameters to send to the API endpoint
+   for the get rule group operation.
+
+   Typically these are written to a http.Request.
 */
 type GetRuleGroupParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
-	/*RulegroupID*/
+
+	// RulegroupID.
 	RuleGroupID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get rule group params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetRuleGroupParams) WithDefaults() *GetRuleGroupParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get rule group params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetRuleGroupParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get rule group params

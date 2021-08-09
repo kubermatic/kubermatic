@@ -16,62 +16,79 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListGCPSubnetworksParams creates a new ListGCPSubnetworksParams object
-// with the default values initialized.
+// NewListGCPSubnetworksParams creates a new ListGCPSubnetworksParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListGCPSubnetworksParams() *ListGCPSubnetworksParams {
-	var ()
 	return &ListGCPSubnetworksParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListGCPSubnetworksParamsWithTimeout creates a new ListGCPSubnetworksParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListGCPSubnetworksParamsWithTimeout(timeout time.Duration) *ListGCPSubnetworksParams {
-	var ()
 	return &ListGCPSubnetworksParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListGCPSubnetworksParamsWithContext creates a new ListGCPSubnetworksParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListGCPSubnetworksParamsWithContext(ctx context.Context) *ListGCPSubnetworksParams {
-	var ()
 	return &ListGCPSubnetworksParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListGCPSubnetworksParamsWithHTTPClient creates a new ListGCPSubnetworksParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListGCPSubnetworksParamsWithHTTPClient(client *http.Client) *ListGCPSubnetworksParams {
-	var ()
 	return &ListGCPSubnetworksParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListGCPSubnetworksParams contains all the parameters to send to the API endpoint
-for the list g c p subnetworks operation typically these are written to a http.Request
+/* ListGCPSubnetworksParams contains all the parameters to send to the API endpoint
+   for the list g c p subnetworks operation.
+
+   Typically these are written to a http.Request.
 */
 type ListGCPSubnetworksParams struct {
 
-	/*Credential*/
+	// Credential.
 	Credential *string
-	/*Network*/
+
+	// Network.
 	Network *string
-	/*ServiceAccount*/
+
+	// ServiceAccount.
 	ServiceAccount *string
-	/*Dc*/
+
+	// Dc.
 	DC string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list g c p subnetworks params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListGCPSubnetworksParams) WithDefaults() *ListGCPSubnetworksParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list g c p subnetworks params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListGCPSubnetworksParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list g c p subnetworks params
@@ -165,7 +182,6 @@ func (o *ListGCPSubnetworksParams) WriteToRequest(r runtime.ClientRequest, reg s
 		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Network != nil {
@@ -174,7 +190,6 @@ func (o *ListGCPSubnetworksParams) WriteToRequest(r runtime.ClientRequest, reg s
 		if err := r.SetHeaderParam("Network", *o.Network); err != nil {
 			return err
 		}
-
 	}
 
 	if o.ServiceAccount != nil {
@@ -183,7 +198,6 @@ func (o *ListGCPSubnetworksParams) WriteToRequest(r runtime.ClientRequest, reg s
 		if err := r.SetHeaderParam("ServiceAccount", *o.ServiceAccount); err != nil {
 			return err
 		}
-
 	}
 
 	// path param dc

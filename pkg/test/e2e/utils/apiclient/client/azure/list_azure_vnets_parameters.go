@@ -16,68 +16,88 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListAzureVnetsParams creates a new ListAzureVnetsParams object
-// with the default values initialized.
+// NewListAzureVnetsParams creates a new ListAzureVnetsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListAzureVnetsParams() *ListAzureVnetsParams {
-	var ()
 	return &ListAzureVnetsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListAzureVnetsParamsWithTimeout creates a new ListAzureVnetsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListAzureVnetsParamsWithTimeout(timeout time.Duration) *ListAzureVnetsParams {
-	var ()
 	return &ListAzureVnetsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListAzureVnetsParamsWithContext creates a new ListAzureVnetsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListAzureVnetsParamsWithContext(ctx context.Context) *ListAzureVnetsParams {
-	var ()
 	return &ListAzureVnetsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListAzureVnetsParamsWithHTTPClient creates a new ListAzureVnetsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListAzureVnetsParamsWithHTTPClient(client *http.Client) *ListAzureVnetsParams {
-	var ()
 	return &ListAzureVnetsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListAzureVnetsParams contains all the parameters to send to the API endpoint
-for the list azure vnets operation typically these are written to a http.Request
+/* ListAzureVnetsParams contains all the parameters to send to the API endpoint
+   for the list azure vnets operation.
+
+   Typically these are written to a http.Request.
 */
 type ListAzureVnetsParams struct {
 
-	/*ClientID*/
+	// ClientID.
 	ClientID *string
-	/*ClientSecret*/
+
+	// ClientSecret.
 	ClientSecret *string
-	/*Credential*/
+
+	// Credential.
 	Credential *string
-	/*Location*/
+
+	// Location.
 	Location *string
-	/*ResourceGroup*/
+
+	// ResourceGroup.
 	ResourceGroup *string
-	/*SubscriptionID*/
+
+	// SubscriptionID.
 	SubscriptionID *string
-	/*TenantID*/
+
+	// TenantID.
 	TenantID *string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list azure vnets params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAzureVnetsParams) WithDefaults() *ListAzureVnetsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list azure vnets params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAzureVnetsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list azure vnets params
@@ -204,7 +224,6 @@ func (o *ListAzureVnetsParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 		if err := r.SetHeaderParam("ClientID", *o.ClientID); err != nil {
 			return err
 		}
-
 	}
 
 	if o.ClientSecret != nil {
@@ -213,7 +232,6 @@ func (o *ListAzureVnetsParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 		if err := r.SetHeaderParam("ClientSecret", *o.ClientSecret); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Credential != nil {
@@ -222,7 +240,6 @@ func (o *ListAzureVnetsParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Location != nil {
@@ -231,7 +248,6 @@ func (o *ListAzureVnetsParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 		if err := r.SetHeaderParam("Location", *o.Location); err != nil {
 			return err
 		}
-
 	}
 
 	if o.ResourceGroup != nil {
@@ -240,7 +256,6 @@ func (o *ListAzureVnetsParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 		if err := r.SetHeaderParam("ResourceGroup", *o.ResourceGroup); err != nil {
 			return err
 		}
-
 	}
 
 	if o.SubscriptionID != nil {
@@ -249,7 +264,6 @@ func (o *ListAzureVnetsParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 		if err := r.SetHeaderParam("SubscriptionID", *o.SubscriptionID); err != nil {
 			return err
 		}
-
 	}
 
 	if o.TenantID != nil {
@@ -258,7 +272,6 @@ func (o *ListAzureVnetsParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 		if err := r.SetHeaderParam("TenantID", *o.TenantID); err != nil {
 			return err
 		}
-
 	}
 
 	if len(res) > 0 {

@@ -58,7 +58,7 @@ func NewDeleteConstraintTemplateOK() *DeleteConstraintTemplateOK {
 	return &DeleteConstraintTemplateOK{}
 }
 
-/*DeleteConstraintTemplateOK handles this case with default header values.
+/* DeleteConstraintTemplateOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -79,7 +79,7 @@ func NewDeleteConstraintTemplateUnauthorized() *DeleteConstraintTemplateUnauthor
 	return &DeleteConstraintTemplateUnauthorized{}
 }
 
-/*DeleteConstraintTemplateUnauthorized handles this case with default header values.
+/* DeleteConstraintTemplateUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -100,7 +100,7 @@ func NewDeleteConstraintTemplateForbidden() *DeleteConstraintTemplateForbidden {
 	return &DeleteConstraintTemplateForbidden{}
 }
 
-/*DeleteConstraintTemplateForbidden handles this case with default header values.
+/* DeleteConstraintTemplateForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -123,7 +123,7 @@ func NewDeleteConstraintTemplateDefault(code int) *DeleteConstraintTemplateDefau
 	}
 }
 
-/*DeleteConstraintTemplateDefault handles this case with default header values.
+/* DeleteConstraintTemplateDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -141,7 +141,6 @@ func (o *DeleteConstraintTemplateDefault) Code() int {
 func (o *DeleteConstraintTemplateDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v2/constrainttemplates/{ct_name}][%d] deleteConstraintTemplate default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *DeleteConstraintTemplateDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

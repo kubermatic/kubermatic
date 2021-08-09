@@ -16,52 +16,66 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListGCPNetworksParams creates a new ListGCPNetworksParams object
-// with the default values initialized.
+// NewListGCPNetworksParams creates a new ListGCPNetworksParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListGCPNetworksParams() *ListGCPNetworksParams {
-
 	return &ListGCPNetworksParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListGCPNetworksParamsWithTimeout creates a new ListGCPNetworksParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListGCPNetworksParamsWithTimeout(timeout time.Duration) *ListGCPNetworksParams {
-
 	return &ListGCPNetworksParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListGCPNetworksParamsWithContext creates a new ListGCPNetworksParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListGCPNetworksParamsWithContext(ctx context.Context) *ListGCPNetworksParams {
-
 	return &ListGCPNetworksParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListGCPNetworksParamsWithHTTPClient creates a new ListGCPNetworksParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListGCPNetworksParamsWithHTTPClient(client *http.Client) *ListGCPNetworksParams {
-
 	return &ListGCPNetworksParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListGCPNetworksParams contains all the parameters to send to the API endpoint
-for the list g c p networks operation typically these are written to a http.Request
+/* ListGCPNetworksParams contains all the parameters to send to the API endpoint
+   for the list g c p networks operation.
+
+   Typically these are written to a http.Request.
 */
 type ListGCPNetworksParams struct {
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list g c p networks params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListGCPNetworksParams) WithDefaults() *ListGCPNetworksParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list g c p networks params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListGCPNetworksParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list g c p networks params

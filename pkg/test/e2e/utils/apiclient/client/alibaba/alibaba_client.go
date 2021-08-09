@@ -23,23 +23,26 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	ListAlibabaInstanceTypes(params *ListAlibabaInstanceTypesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAlibabaInstanceTypesOK, error)
+	ListAlibabaInstanceTypes(params *ListAlibabaInstanceTypesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAlibabaInstanceTypesOK, error)
 
-	ListAlibabaInstanceTypesNoCredentials(params *ListAlibabaInstanceTypesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAlibabaInstanceTypesNoCredentialsOK, error)
+	ListAlibabaInstanceTypesNoCredentials(params *ListAlibabaInstanceTypesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAlibabaInstanceTypesNoCredentialsOK, error)
 
-	ListAlibabaInstanceTypesNoCredentialsV2(params *ListAlibabaInstanceTypesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListAlibabaInstanceTypesNoCredentialsV2OK, error)
+	ListAlibabaInstanceTypesNoCredentialsV2(params *ListAlibabaInstanceTypesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAlibabaInstanceTypesNoCredentialsV2OK, error)
 
-	ListAlibabaVSwitches(params *ListAlibabaVSwitchesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAlibabaVSwitchesOK, error)
+	ListAlibabaVSwitches(params *ListAlibabaVSwitchesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAlibabaVSwitchesOK, error)
 
-	ListAlibabaVSwitchesNoCredentialsV2(params *ListAlibabaVSwitchesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListAlibabaVSwitchesNoCredentialsV2OK, error)
+	ListAlibabaVSwitchesNoCredentialsV2(params *ListAlibabaVSwitchesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAlibabaVSwitchesNoCredentialsV2OK, error)
 
-	ListAlibabaZones(params *ListAlibabaZonesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAlibabaZonesOK, error)
+	ListAlibabaZones(params *ListAlibabaZonesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAlibabaZonesOK, error)
 
-	ListAlibabaZonesNoCredentials(params *ListAlibabaZonesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAlibabaZonesNoCredentialsOK, error)
+	ListAlibabaZonesNoCredentials(params *ListAlibabaZonesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAlibabaZonesNoCredentialsOK, error)
 
-	ListAlibabaZonesNoCredentialsV2(params *ListAlibabaZonesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListAlibabaZonesNoCredentialsV2OK, error)
+	ListAlibabaZonesNoCredentialsV2(params *ListAlibabaZonesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAlibabaZonesNoCredentialsV2OK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -47,13 +50,12 @@ type ClientService interface {
 /*
   ListAlibabaInstanceTypes lists available alibaba instance types
 */
-func (a *Client) ListAlibabaInstanceTypes(params *ListAlibabaInstanceTypesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAlibabaInstanceTypesOK, error) {
+func (a *Client) ListAlibabaInstanceTypes(params *ListAlibabaInstanceTypesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAlibabaInstanceTypesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListAlibabaInstanceTypesParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listAlibabaInstanceTypes",
 		Method:             "GET",
 		PathPattern:        "/api/v1/providers/alibaba/instancetypes",
@@ -65,7 +67,12 @@ func (a *Client) ListAlibabaInstanceTypes(params *ListAlibabaInstanceTypesParams
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -81,13 +88,12 @@ func (a *Client) ListAlibabaInstanceTypes(params *ListAlibabaInstanceTypesParams
 /*
   ListAlibabaInstanceTypesNoCredentials Lists available Alibaba Instance Types
 */
-func (a *Client) ListAlibabaInstanceTypesNoCredentials(params *ListAlibabaInstanceTypesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAlibabaInstanceTypesNoCredentialsOK, error) {
+func (a *Client) ListAlibabaInstanceTypesNoCredentials(params *ListAlibabaInstanceTypesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAlibabaInstanceTypesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListAlibabaInstanceTypesNoCredentialsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listAlibabaInstanceTypesNoCredentials",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/alibaba/instancetypes",
@@ -99,7 +105,12 @@ func (a *Client) ListAlibabaInstanceTypesNoCredentials(params *ListAlibabaInstan
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -115,13 +126,12 @@ func (a *Client) ListAlibabaInstanceTypesNoCredentials(params *ListAlibabaInstan
 /*
   ListAlibabaInstanceTypesNoCredentialsV2 Lists available Alibaba Instance Types
 */
-func (a *Client) ListAlibabaInstanceTypesNoCredentialsV2(params *ListAlibabaInstanceTypesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListAlibabaInstanceTypesNoCredentialsV2OK, error) {
+func (a *Client) ListAlibabaInstanceTypesNoCredentialsV2(params *ListAlibabaInstanceTypesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAlibabaInstanceTypesNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListAlibabaInstanceTypesNoCredentialsV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listAlibabaInstanceTypesNoCredentialsV2",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/alibaba/instancetypes",
@@ -133,7 +143,12 @@ func (a *Client) ListAlibabaInstanceTypesNoCredentialsV2(params *ListAlibabaInst
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -149,13 +164,12 @@ func (a *Client) ListAlibabaInstanceTypesNoCredentialsV2(params *ListAlibabaInst
 /*
   ListAlibabaVSwitches lists available alibaba v switches
 */
-func (a *Client) ListAlibabaVSwitches(params *ListAlibabaVSwitchesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAlibabaVSwitchesOK, error) {
+func (a *Client) ListAlibabaVSwitches(params *ListAlibabaVSwitchesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAlibabaVSwitchesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListAlibabaVSwitchesParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listAlibabaVSwitches",
 		Method:             "GET",
 		PathPattern:        "/api/v1/providers/alibaba/vswitches",
@@ -167,7 +181,12 @@ func (a *Client) ListAlibabaVSwitches(params *ListAlibabaVSwitchesParams, authIn
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -183,13 +202,12 @@ func (a *Client) ListAlibabaVSwitches(params *ListAlibabaVSwitchesParams, authIn
 /*
   ListAlibabaVSwitchesNoCredentialsV2 Lists available Alibaba vSwitches
 */
-func (a *Client) ListAlibabaVSwitchesNoCredentialsV2(params *ListAlibabaVSwitchesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListAlibabaVSwitchesNoCredentialsV2OK, error) {
+func (a *Client) ListAlibabaVSwitchesNoCredentialsV2(params *ListAlibabaVSwitchesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAlibabaVSwitchesNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListAlibabaVSwitchesNoCredentialsV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listAlibabaVSwitchesNoCredentialsV2",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/alibaba/vswitches",
@@ -201,7 +219,12 @@ func (a *Client) ListAlibabaVSwitchesNoCredentialsV2(params *ListAlibabaVSwitche
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -217,13 +240,12 @@ func (a *Client) ListAlibabaVSwitchesNoCredentialsV2(params *ListAlibabaVSwitche
 /*
   ListAlibabaZones lists available alibaba zones
 */
-func (a *Client) ListAlibabaZones(params *ListAlibabaZonesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAlibabaZonesOK, error) {
+func (a *Client) ListAlibabaZones(params *ListAlibabaZonesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAlibabaZonesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListAlibabaZonesParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listAlibabaZones",
 		Method:             "GET",
 		PathPattern:        "/api/v1/providers/alibaba/zones",
@@ -235,7 +257,12 @@ func (a *Client) ListAlibabaZones(params *ListAlibabaZonesParams, authInfo runti
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -251,13 +278,12 @@ func (a *Client) ListAlibabaZones(params *ListAlibabaZonesParams, authInfo runti
 /*
   ListAlibabaZonesNoCredentials Lists available Alibaba Instance Types
 */
-func (a *Client) ListAlibabaZonesNoCredentials(params *ListAlibabaZonesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAlibabaZonesNoCredentialsOK, error) {
+func (a *Client) ListAlibabaZonesNoCredentials(params *ListAlibabaZonesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAlibabaZonesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListAlibabaZonesNoCredentialsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listAlibabaZonesNoCredentials",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/alibaba/zones",
@@ -269,7 +295,12 @@ func (a *Client) ListAlibabaZonesNoCredentials(params *ListAlibabaZonesNoCredent
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -285,13 +316,12 @@ func (a *Client) ListAlibabaZonesNoCredentials(params *ListAlibabaZonesNoCredent
 /*
   ListAlibabaZonesNoCredentialsV2 Lists available Alibaba Instance Types
 */
-func (a *Client) ListAlibabaZonesNoCredentialsV2(params *ListAlibabaZonesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListAlibabaZonesNoCredentialsV2OK, error) {
+func (a *Client) ListAlibabaZonesNoCredentialsV2(params *ListAlibabaZonesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAlibabaZonesNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListAlibabaZonesNoCredentialsV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listAlibabaZonesNoCredentialsV2",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/alibaba/zones",
@@ -303,7 +333,12 @@ func (a *Client) ListAlibabaZonesNoCredentialsV2(params *ListAlibabaZonesNoCrede
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

@@ -16,66 +16,85 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListAzureSizesParams creates a new ListAzureSizesParams object
-// with the default values initialized.
+// NewListAzureSizesParams creates a new ListAzureSizesParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListAzureSizesParams() *ListAzureSizesParams {
-	var ()
 	return &ListAzureSizesParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListAzureSizesParamsWithTimeout creates a new ListAzureSizesParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListAzureSizesParamsWithTimeout(timeout time.Duration) *ListAzureSizesParams {
-	var ()
 	return &ListAzureSizesParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListAzureSizesParamsWithContext creates a new ListAzureSizesParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListAzureSizesParamsWithContext(ctx context.Context) *ListAzureSizesParams {
-	var ()
 	return &ListAzureSizesParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListAzureSizesParamsWithHTTPClient creates a new ListAzureSizesParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListAzureSizesParamsWithHTTPClient(client *http.Client) *ListAzureSizesParams {
-	var ()
 	return &ListAzureSizesParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListAzureSizesParams contains all the parameters to send to the API endpoint
-for the list azure sizes operation typically these are written to a http.Request
+/* ListAzureSizesParams contains all the parameters to send to the API endpoint
+   for the list azure sizes operation.
+
+   Typically these are written to a http.Request.
 */
 type ListAzureSizesParams struct {
 
-	/*ClientID*/
+	// ClientID.
 	ClientID *string
-	/*ClientSecret*/
+
+	// ClientSecret.
 	ClientSecret *string
-	/*Credential*/
+
+	// Credential.
 	Credential *string
-	/*Location*/
+
+	// Location.
 	Location *string
-	/*SubscriptionID*/
+
+	// SubscriptionID.
 	SubscriptionID *string
-	/*TenantID*/
+
+	// TenantID.
 	TenantID *string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list azure sizes params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAzureSizesParams) WithDefaults() *ListAzureSizesParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list azure sizes params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAzureSizesParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list azure sizes params
@@ -191,7 +210,6 @@ func (o *ListAzureSizesParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 		if err := r.SetHeaderParam("ClientID", *o.ClientID); err != nil {
 			return err
 		}
-
 	}
 
 	if o.ClientSecret != nil {
@@ -200,7 +218,6 @@ func (o *ListAzureSizesParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 		if err := r.SetHeaderParam("ClientSecret", *o.ClientSecret); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Credential != nil {
@@ -209,7 +226,6 @@ func (o *ListAzureSizesParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Location != nil {
@@ -218,7 +234,6 @@ func (o *ListAzureSizesParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 		if err := r.SetHeaderParam("Location", *o.Location); err != nil {
 			return err
 		}
-
 	}
 
 	if o.SubscriptionID != nil {
@@ -227,7 +242,6 @@ func (o *ListAzureSizesParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 		if err := r.SetHeaderParam("SubscriptionID", *o.SubscriptionID); err != nil {
 			return err
 		}
-
 	}
 
 	if o.TenantID != nil {
@@ -236,7 +250,6 @@ func (o *ListAzureSizesParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 		if err := r.SetHeaderParam("TenantID", *o.TenantID); err != nil {
 			return err
 		}
-
 	}
 
 	if len(res) > 0 {

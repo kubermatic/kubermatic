@@ -16,58 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewPatchAllowedRegistryParams creates a new PatchAllowedRegistryParams object
-// with the default values initialized.
+// NewPatchAllowedRegistryParams creates a new PatchAllowedRegistryParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewPatchAllowedRegistryParams() *PatchAllowedRegistryParams {
-	var ()
 	return &PatchAllowedRegistryParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewPatchAllowedRegistryParamsWithTimeout creates a new PatchAllowedRegistryParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewPatchAllowedRegistryParamsWithTimeout(timeout time.Duration) *PatchAllowedRegistryParams {
-	var ()
 	return &PatchAllowedRegistryParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewPatchAllowedRegistryParamsWithContext creates a new PatchAllowedRegistryParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewPatchAllowedRegistryParamsWithContext(ctx context.Context) *PatchAllowedRegistryParams {
-	var ()
 	return &PatchAllowedRegistryParams{
-
 		Context: ctx,
 	}
 }
 
 // NewPatchAllowedRegistryParamsWithHTTPClient creates a new PatchAllowedRegistryParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewPatchAllowedRegistryParamsWithHTTPClient(client *http.Client) *PatchAllowedRegistryParams {
-	var ()
 	return &PatchAllowedRegistryParams{
 		HTTPClient: client,
 	}
 }
 
-/*PatchAllowedRegistryParams contains all the parameters to send to the API endpoint
-for the patch allowed registry operation typically these are written to a http.Request
+/* PatchAllowedRegistryParams contains all the parameters to send to the API endpoint
+   for the patch allowed registry operation.
+
+   Typically these are written to a http.Request.
 */
 type PatchAllowedRegistryParams struct {
 
-	/*Patch*/
+	// Patch.
 	Patch interface{}
-	/*AllowedRegistry*/
+
+	// AllowedRegistry.
 	AllowedRegistryName string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the patch allowed registry params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *PatchAllowedRegistryParams) WithDefaults() *PatchAllowedRegistryParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the patch allowed registry params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *PatchAllowedRegistryParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the patch allowed registry params
@@ -132,7 +147,6 @@ func (o *PatchAllowedRegistryParams) WriteToRequest(r runtime.ClientRequest, reg
 		return err
 	}
 	var res []error
-
 	if o.Patch != nil {
 		if err := r.SetBodyParam(o.Patch); err != nil {
 			return err

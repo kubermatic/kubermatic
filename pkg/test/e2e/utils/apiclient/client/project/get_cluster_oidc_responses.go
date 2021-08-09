@@ -58,7 +58,7 @@ func NewGetClusterOidcOK() *GetClusterOidcOK {
 	return &GetClusterOidcOK{}
 }
 
-/*GetClusterOidcOK handles this case with default header values.
+/* GetClusterOidcOK describes a response with status code 200, with default header values.
 
 OIDCSpec
 */
@@ -69,7 +69,6 @@ type GetClusterOidcOK struct {
 func (o *GetClusterOidcOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/oidc][%d] getClusterOidcOK  %+v", 200, o.Payload)
 }
-
 func (o *GetClusterOidcOK) GetPayload() *models.OIDCSpec {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewGetClusterOidcUnauthorized() *GetClusterOidcUnauthorized {
 	return &GetClusterOidcUnauthorized{}
 }
 
-/*GetClusterOidcUnauthorized handles this case with default header values.
+/* GetClusterOidcUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewGetClusterOidcForbidden() *GetClusterOidcForbidden {
 	return &GetClusterOidcForbidden{}
 }
 
-/*GetClusterOidcForbidden handles this case with default header values.
+/* GetClusterOidcForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewGetClusterOidcDefault(code int) *GetClusterOidcDefault {
 	}
 }
 
-/*GetClusterOidcDefault handles this case with default header values.
+/* GetClusterOidcDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *GetClusterOidcDefault) Code() int {
 func (o *GetClusterOidcDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/oidc][%d] getClusterOidc default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetClusterOidcDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

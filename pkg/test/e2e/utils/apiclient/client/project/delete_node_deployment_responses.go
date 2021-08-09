@@ -58,7 +58,7 @@ func NewDeleteNodeDeploymentOK() *DeleteNodeDeploymentOK {
 	return &DeleteNodeDeploymentOK{}
 }
 
-/*DeleteNodeDeploymentOK handles this case with default header values.
+/* DeleteNodeDeploymentOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -79,7 +79,7 @@ func NewDeleteNodeDeploymentUnauthorized() *DeleteNodeDeploymentUnauthorized {
 	return &DeleteNodeDeploymentUnauthorized{}
 }
 
-/*DeleteNodeDeploymentUnauthorized handles this case with default header values.
+/* DeleteNodeDeploymentUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -100,7 +100,7 @@ func NewDeleteNodeDeploymentForbidden() *DeleteNodeDeploymentForbidden {
 	return &DeleteNodeDeploymentForbidden{}
 }
 
-/*DeleteNodeDeploymentForbidden handles this case with default header values.
+/* DeleteNodeDeploymentForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -123,7 +123,7 @@ func NewDeleteNodeDeploymentDefault(code int) *DeleteNodeDeploymentDefault {
 	}
 }
 
-/*DeleteNodeDeploymentDefault handles this case with default header values.
+/* DeleteNodeDeploymentDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -141,7 +141,6 @@ func (o *DeleteNodeDeploymentDefault) Code() int {
 func (o *DeleteNodeDeploymentDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}][%d] deleteNodeDeployment default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *DeleteNodeDeploymentDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

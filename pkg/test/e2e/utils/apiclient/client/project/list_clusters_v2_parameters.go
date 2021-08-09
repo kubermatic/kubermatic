@@ -16,56 +16,70 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListClustersV2Params creates a new ListClustersV2Params object
-// with the default values initialized.
+// NewListClustersV2Params creates a new ListClustersV2Params object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListClustersV2Params() *ListClustersV2Params {
-	var ()
 	return &ListClustersV2Params{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListClustersV2ParamsWithTimeout creates a new ListClustersV2Params object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListClustersV2ParamsWithTimeout(timeout time.Duration) *ListClustersV2Params {
-	var ()
 	return &ListClustersV2Params{
-
 		timeout: timeout,
 	}
 }
 
 // NewListClustersV2ParamsWithContext creates a new ListClustersV2Params object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListClustersV2ParamsWithContext(ctx context.Context) *ListClustersV2Params {
-	var ()
 	return &ListClustersV2Params{
-
 		Context: ctx,
 	}
 }
 
 // NewListClustersV2ParamsWithHTTPClient creates a new ListClustersV2Params object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListClustersV2ParamsWithHTTPClient(client *http.Client) *ListClustersV2Params {
-	var ()
 	return &ListClustersV2Params{
 		HTTPClient: client,
 	}
 }
 
-/*ListClustersV2Params contains all the parameters to send to the API endpoint
-for the list clusters v2 operation typically these are written to a http.Request
+/* ListClustersV2Params contains all the parameters to send to the API endpoint
+   for the list clusters v2 operation.
+
+   Typically these are written to a http.Request.
 */
 type ListClustersV2Params struct {
 
-	/*ProjectID*/
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list clusters v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListClustersV2Params) WithDefaults() *ListClustersV2Params {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list clusters v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListClustersV2Params) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list clusters v2 params

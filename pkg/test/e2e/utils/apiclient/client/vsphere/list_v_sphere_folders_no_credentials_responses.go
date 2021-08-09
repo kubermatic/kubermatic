@@ -46,7 +46,7 @@ func NewListVSphereFoldersNoCredentialsOK() *ListVSphereFoldersNoCredentialsOK {
 	return &ListVSphereFoldersNoCredentialsOK{}
 }
 
-/*ListVSphereFoldersNoCredentialsOK handles this case with default header values.
+/* ListVSphereFoldersNoCredentialsOK describes a response with status code 200, with default header values.
 
 VSphereFolder
 */
@@ -57,7 +57,6 @@ type ListVSphereFoldersNoCredentialsOK struct {
 func (o *ListVSphereFoldersNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/vsphere/folders][%d] listVSphereFoldersNoCredentialsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListVSphereFoldersNoCredentialsOK) GetPayload() []*models.VSphereFolder {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListVSphereFoldersNoCredentialsDefault(code int) *ListVSphereFoldersNoCr
 	}
 }
 
-/*ListVSphereFoldersNoCredentialsDefault handles this case with default header values.
+/* ListVSphereFoldersNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListVSphereFoldersNoCredentialsDefault) Code() int {
 func (o *ListVSphereFoldersNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/vsphere/folders][%d] listVSphereFoldersNoCredentials default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListVSphereFoldersNoCredentialsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

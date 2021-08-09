@@ -58,7 +58,7 @@ func NewGetEtcdRestoreOK() *GetEtcdRestoreOK {
 	return &GetEtcdRestoreOK{}
 }
 
-/*GetEtcdRestoreOK handles this case with default header values.
+/* GetEtcdRestoreOK describes a response with status code 200, with default header values.
 
 EtcdRestore
 */
@@ -69,7 +69,6 @@ type GetEtcdRestoreOK struct {
 func (o *GetEtcdRestoreOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{er_name}][%d] getEtcdRestoreOK  %+v", 200, o.Payload)
 }
-
 func (o *GetEtcdRestoreOK) GetPayload() *models.EtcdRestore {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewGetEtcdRestoreUnauthorized() *GetEtcdRestoreUnauthorized {
 	return &GetEtcdRestoreUnauthorized{}
 }
 
-/*GetEtcdRestoreUnauthorized handles this case with default header values.
+/* GetEtcdRestoreUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewGetEtcdRestoreForbidden() *GetEtcdRestoreForbidden {
 	return &GetEtcdRestoreForbidden{}
 }
 
-/*GetEtcdRestoreForbidden handles this case with default header values.
+/* GetEtcdRestoreForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewGetEtcdRestoreDefault(code int) *GetEtcdRestoreDefault {
 	}
 }
 
-/*GetEtcdRestoreDefault handles this case with default header values.
+/* GetEtcdRestoreDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *GetEtcdRestoreDefault) Code() int {
 func (o *GetEtcdRestoreDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{er_name}][%d] getEtcdRestore default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetEtcdRestoreDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

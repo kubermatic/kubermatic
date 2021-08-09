@@ -58,7 +58,7 @@ func NewGetConstraintTemplateOK() *GetConstraintTemplateOK {
 	return &GetConstraintTemplateOK{}
 }
 
-/*GetConstraintTemplateOK handles this case with default header values.
+/* GetConstraintTemplateOK describes a response with status code 200, with default header values.
 
 ConstraintTemplate
 */
@@ -69,7 +69,6 @@ type GetConstraintTemplateOK struct {
 func (o *GetConstraintTemplateOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/constrainttemplates/{ct_name}][%d] getConstraintTemplateOK  %+v", 200, o.Payload)
 }
-
 func (o *GetConstraintTemplateOK) GetPayload() *models.ConstraintTemplate {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewGetConstraintTemplateUnauthorized() *GetConstraintTemplateUnauthorized {
 	return &GetConstraintTemplateUnauthorized{}
 }
 
-/*GetConstraintTemplateUnauthorized handles this case with default header values.
+/* GetConstraintTemplateUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewGetConstraintTemplateForbidden() *GetConstraintTemplateForbidden {
 	return &GetConstraintTemplateForbidden{}
 }
 
-/*GetConstraintTemplateForbidden handles this case with default header values.
+/* GetConstraintTemplateForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewGetConstraintTemplateDefault(code int) *GetConstraintTemplateDefault {
 	}
 }
 
-/*GetConstraintTemplateDefault handles this case with default header values.
+/* GetConstraintTemplateDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *GetConstraintTemplateDefault) Code() int {
 func (o *GetConstraintTemplateDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/constrainttemplates/{ct_name}][%d] getConstraintTemplate default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetConstraintTemplateDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

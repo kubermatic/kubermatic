@@ -23,15 +23,18 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	CreateDefaultConstraint(params *CreateDefaultConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*CreateDefaultConstraintOK, error)
+	CreateDefaultConstraint(params *CreateDefaultConstraintParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateDefaultConstraintOK, error)
 
-	GetDefaultConstraint(params *GetDefaultConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*GetDefaultConstraintOK, error)
+	GetDefaultConstraint(params *GetDefaultConstraintParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetDefaultConstraintOK, error)
 
-	ListDefaultConstraint(params *ListDefaultConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*ListDefaultConstraintOK, error)
+	ListDefaultConstraint(params *ListDefaultConstraintParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListDefaultConstraintOK, error)
 
-	PatchDefaultConstraint(params *PatchDefaultConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*PatchDefaultConstraintOK, error)
+	PatchDefaultConstraint(params *PatchDefaultConstraintParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchDefaultConstraintOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -39,13 +42,12 @@ type ClientService interface {
 /*
   CreateDefaultConstraint Creates default constraint
 */
-func (a *Client) CreateDefaultConstraint(params *CreateDefaultConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*CreateDefaultConstraintOK, error) {
+func (a *Client) CreateDefaultConstraint(params *CreateDefaultConstraintParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateDefaultConstraintOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewCreateDefaultConstraintParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "createDefaultConstraint",
 		Method:             "POST",
 		PathPattern:        "/api/v2/constraints",
@@ -57,7 +59,12 @@ func (a *Client) CreateDefaultConstraint(params *CreateDefaultConstraintParams, 
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -73,13 +80,12 @@ func (a *Client) CreateDefaultConstraint(params *CreateDefaultConstraintParams, 
 /*
   GetDefaultConstraint Gets an specified default constraint
 */
-func (a *Client) GetDefaultConstraint(params *GetDefaultConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*GetDefaultConstraintOK, error) {
+func (a *Client) GetDefaultConstraint(params *GetDefaultConstraintParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetDefaultConstraintOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetDefaultConstraintParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getDefaultConstraint",
 		Method:             "GET",
 		PathPattern:        "/api/v2/constraints/{constraint_name}",
@@ -91,7 +97,12 @@ func (a *Client) GetDefaultConstraint(params *GetDefaultConstraintParams, authIn
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -107,13 +118,12 @@ func (a *Client) GetDefaultConstraint(params *GetDefaultConstraintParams, authIn
 /*
   ListDefaultConstraint lists default constraint
 */
-func (a *Client) ListDefaultConstraint(params *ListDefaultConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*ListDefaultConstraintOK, error) {
+func (a *Client) ListDefaultConstraint(params *ListDefaultConstraintParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListDefaultConstraintOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListDefaultConstraintParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listDefaultConstraint",
 		Method:             "GET",
 		PathPattern:        "/api/v2/constraints",
@@ -125,7 +135,12 @@ func (a *Client) ListDefaultConstraint(params *ListDefaultConstraintParams, auth
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -141,13 +156,12 @@ func (a *Client) ListDefaultConstraint(params *ListDefaultConstraintParams, auth
 /*
   PatchDefaultConstraint Patch a specified default constraint
 */
-func (a *Client) PatchDefaultConstraint(params *PatchDefaultConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*PatchDefaultConstraintOK, error) {
+func (a *Client) PatchDefaultConstraint(params *PatchDefaultConstraintParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchDefaultConstraintOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewPatchDefaultConstraintParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "patchDefaultConstraint",
 		Method:             "PATCH",
 		PathPattern:        "/api/v2/constraints/{constraint_name}",
@@ -159,7 +173,12 @@ func (a *Client) PatchDefaultConstraint(params *PatchDefaultConstraintParams, au
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

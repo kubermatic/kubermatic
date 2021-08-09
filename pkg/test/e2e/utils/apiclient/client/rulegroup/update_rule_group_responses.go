@@ -58,7 +58,7 @@ func NewUpdateRuleGroupOK() *UpdateRuleGroupOK {
 	return &UpdateRuleGroupOK{}
 }
 
-/*UpdateRuleGroupOK handles this case with default header values.
+/* UpdateRuleGroupOK describes a response with status code 200, with default header values.
 
 RuleGroup
 */
@@ -69,7 +69,6 @@ type UpdateRuleGroupOK struct {
 func (o *UpdateRuleGroupOK) Error() string {
 	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}][%d] updateRuleGroupOK  %+v", 200, o.Payload)
 }
-
 func (o *UpdateRuleGroupOK) GetPayload() *models.RuleGroup {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewUpdateRuleGroupUnauthorized() *UpdateRuleGroupUnauthorized {
 	return &UpdateRuleGroupUnauthorized{}
 }
 
-/*UpdateRuleGroupUnauthorized handles this case with default header values.
+/* UpdateRuleGroupUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewUpdateRuleGroupForbidden() *UpdateRuleGroupForbidden {
 	return &UpdateRuleGroupForbidden{}
 }
 
-/*UpdateRuleGroupForbidden handles this case with default header values.
+/* UpdateRuleGroupForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewUpdateRuleGroupDefault(code int) *UpdateRuleGroupDefault {
 	}
 }
 
-/*UpdateRuleGroupDefault handles this case with default header values.
+/* UpdateRuleGroupDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *UpdateRuleGroupDefault) Code() int {
 func (o *UpdateRuleGroupDefault) Error() string {
 	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}][%d] updateRuleGroup default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *UpdateRuleGroupDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

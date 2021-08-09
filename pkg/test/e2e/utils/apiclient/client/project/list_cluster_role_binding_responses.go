@@ -58,7 +58,7 @@ func NewListClusterRoleBindingOK() *ListClusterRoleBindingOK {
 	return &ListClusterRoleBindingOK{}
 }
 
-/*ListClusterRoleBindingOK handles this case with default header values.
+/* ListClusterRoleBindingOK describes a response with status code 200, with default header values.
 
 ClusterRoleBinding
 */
@@ -69,7 +69,6 @@ type ListClusterRoleBindingOK struct {
 func (o *ListClusterRoleBindingOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterbindings][%d] listClusterRoleBindingOK  %+v", 200, o.Payload)
 }
-
 func (o *ListClusterRoleBindingOK) GetPayload() []*models.ClusterRoleBinding {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListClusterRoleBindingUnauthorized() *ListClusterRoleBindingUnauthorized
 	return &ListClusterRoleBindingUnauthorized{}
 }
 
-/*ListClusterRoleBindingUnauthorized handles this case with default header values.
+/* ListClusterRoleBindingUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListClusterRoleBindingForbidden() *ListClusterRoleBindingForbidden {
 	return &ListClusterRoleBindingForbidden{}
 }
 
-/*ListClusterRoleBindingForbidden handles this case with default header values.
+/* ListClusterRoleBindingForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListClusterRoleBindingDefault(code int) *ListClusterRoleBindingDefault {
 	}
 }
 
-/*ListClusterRoleBindingDefault handles this case with default header values.
+/* ListClusterRoleBindingDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListClusterRoleBindingDefault) Code() int {
 func (o *ListClusterRoleBindingDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterbindings][%d] listClusterRoleBinding default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListClusterRoleBindingDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

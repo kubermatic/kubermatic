@@ -16,58 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListServiceAccountTokensParams creates a new ListServiceAccountTokensParams object
-// with the default values initialized.
+// NewListServiceAccountTokensParams creates a new ListServiceAccountTokensParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListServiceAccountTokensParams() *ListServiceAccountTokensParams {
-	var ()
 	return &ListServiceAccountTokensParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListServiceAccountTokensParamsWithTimeout creates a new ListServiceAccountTokensParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListServiceAccountTokensParamsWithTimeout(timeout time.Duration) *ListServiceAccountTokensParams {
-	var ()
 	return &ListServiceAccountTokensParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListServiceAccountTokensParamsWithContext creates a new ListServiceAccountTokensParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListServiceAccountTokensParamsWithContext(ctx context.Context) *ListServiceAccountTokensParams {
-	var ()
 	return &ListServiceAccountTokensParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListServiceAccountTokensParamsWithHTTPClient creates a new ListServiceAccountTokensParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListServiceAccountTokensParamsWithHTTPClient(client *http.Client) *ListServiceAccountTokensParams {
-	var ()
 	return &ListServiceAccountTokensParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListServiceAccountTokensParams contains all the parameters to send to the API endpoint
-for the list service account tokens operation typically these are written to a http.Request
+/* ListServiceAccountTokensParams contains all the parameters to send to the API endpoint
+   for the list service account tokens operation.
+
+   Typically these are written to a http.Request.
 */
 type ListServiceAccountTokensParams struct {
 
-	/*ProjectID*/
+	// ProjectID.
 	ProjectID string
-	/*ServiceaccountID*/
+
+	// ServiceaccountID.
 	ServiceAccountID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list service account tokens params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListServiceAccountTokensParams) WithDefaults() *ListServiceAccountTokensParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list service account tokens params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListServiceAccountTokensParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list service account tokens params

@@ -58,7 +58,7 @@ func NewRevokeClusterViewerTokenV2OK() *RevokeClusterViewerTokenV2OK {
 	return &RevokeClusterViewerTokenV2OK{}
 }
 
-/*RevokeClusterViewerTokenV2OK handles this case with default header values.
+/* RevokeClusterViewerTokenV2OK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -79,7 +79,7 @@ func NewRevokeClusterViewerTokenV2Unauthorized() *RevokeClusterViewerTokenV2Unau
 	return &RevokeClusterViewerTokenV2Unauthorized{}
 }
 
-/*RevokeClusterViewerTokenV2Unauthorized handles this case with default header values.
+/* RevokeClusterViewerTokenV2Unauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -100,7 +100,7 @@ func NewRevokeClusterViewerTokenV2Forbidden() *RevokeClusterViewerTokenV2Forbidd
 	return &RevokeClusterViewerTokenV2Forbidden{}
 }
 
-/*RevokeClusterViewerTokenV2Forbidden handles this case with default header values.
+/* RevokeClusterViewerTokenV2Forbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -123,7 +123,7 @@ func NewRevokeClusterViewerTokenV2Default(code int) *RevokeClusterViewerTokenV2D
 	}
 }
 
-/*RevokeClusterViewerTokenV2Default handles this case with default header values.
+/* RevokeClusterViewerTokenV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -141,7 +141,6 @@ func (o *RevokeClusterViewerTokenV2Default) Code() int {
 func (o *RevokeClusterViewerTokenV2Default) Error() string {
 	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/viewertoken][%d] revokeClusterViewerTokenV2 default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *RevokeClusterViewerTokenV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

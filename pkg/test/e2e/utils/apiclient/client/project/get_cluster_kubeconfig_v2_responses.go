@@ -58,7 +58,7 @@ func NewGetClusterKubeconfigV2OK() *GetClusterKubeconfigV2OK {
 	return &GetClusterKubeconfigV2OK{}
 }
 
-/*GetClusterKubeconfigV2OK handles this case with default header values.
+/* GetClusterKubeconfigV2OK describes a response with status code 200, with default header values.
 
 Kubeconfig is a clusters kubeconfig
 */
@@ -69,7 +69,6 @@ type GetClusterKubeconfigV2OK struct {
 func (o *GetClusterKubeconfigV2OK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/kubeconfig][%d] getClusterKubeconfigV2OK  %+v", 200, o.Payload)
 }
-
 func (o *GetClusterKubeconfigV2OK) GetPayload() []uint8 {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewGetClusterKubeconfigV2Unauthorized() *GetClusterKubeconfigV2Unauthorized
 	return &GetClusterKubeconfigV2Unauthorized{}
 }
 
-/*GetClusterKubeconfigV2Unauthorized handles this case with default header values.
+/* GetClusterKubeconfigV2Unauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewGetClusterKubeconfigV2Forbidden() *GetClusterKubeconfigV2Forbidden {
 	return &GetClusterKubeconfigV2Forbidden{}
 }
 
-/*GetClusterKubeconfigV2Forbidden handles this case with default header values.
+/* GetClusterKubeconfigV2Forbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewGetClusterKubeconfigV2Default(code int) *GetClusterKubeconfigV2Default {
 	}
 }
 
-/*GetClusterKubeconfigV2Default handles this case with default header values.
+/* GetClusterKubeconfigV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *GetClusterKubeconfigV2Default) Code() int {
 func (o *GetClusterKubeconfigV2Default) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/kubeconfig][%d] getClusterKubeconfigV2 default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetClusterKubeconfigV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

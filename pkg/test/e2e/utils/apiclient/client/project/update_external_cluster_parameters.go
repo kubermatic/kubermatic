@@ -18,60 +18,76 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
-// NewUpdateExternalClusterParams creates a new UpdateExternalClusterParams object
-// with the default values initialized.
+// NewUpdateExternalClusterParams creates a new UpdateExternalClusterParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewUpdateExternalClusterParams() *UpdateExternalClusterParams {
-	var ()
 	return &UpdateExternalClusterParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewUpdateExternalClusterParamsWithTimeout creates a new UpdateExternalClusterParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewUpdateExternalClusterParamsWithTimeout(timeout time.Duration) *UpdateExternalClusterParams {
-	var ()
 	return &UpdateExternalClusterParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewUpdateExternalClusterParamsWithContext creates a new UpdateExternalClusterParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewUpdateExternalClusterParamsWithContext(ctx context.Context) *UpdateExternalClusterParams {
-	var ()
 	return &UpdateExternalClusterParams{
-
 		Context: ctx,
 	}
 }
 
 // NewUpdateExternalClusterParamsWithHTTPClient creates a new UpdateExternalClusterParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewUpdateExternalClusterParamsWithHTTPClient(client *http.Client) *UpdateExternalClusterParams {
-	var ()
 	return &UpdateExternalClusterParams{
 		HTTPClient: client,
 	}
 }
 
-/*UpdateExternalClusterParams contains all the parameters to send to the API endpoint
-for the update external cluster operation typically these are written to a http.Request
+/* UpdateExternalClusterParams contains all the parameters to send to the API endpoint
+   for the update external cluster operation.
+
+   Typically these are written to a http.Request.
 */
 type UpdateExternalClusterParams struct {
 
-	/*Body*/
+	// Body.
 	Body *models.Body
-	/*ClusterID*/
+
+	// ClusterID.
 	ClusterID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the update external cluster params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *UpdateExternalClusterParams) WithDefaults() *UpdateExternalClusterParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the update external cluster params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *UpdateExternalClusterParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the update external cluster params
@@ -147,7 +163,6 @@ func (o *UpdateExternalClusterParams) WriteToRequest(r runtime.ClientRequest, re
 		return err
 	}
 	var res []error
-
 	if o.Body != nil {
 		if err := r.SetBodyParam(o.Body); err != nil {
 			return err

@@ -58,7 +58,7 @@ func NewListServiceAccountsOK() *ListServiceAccountsOK {
 	return &ListServiceAccountsOK{}
 }
 
-/*ListServiceAccountsOK handles this case with default header values.
+/* ListServiceAccountsOK describes a response with status code 200, with default header values.
 
 ServiceAccount
 */
@@ -69,7 +69,6 @@ type ListServiceAccountsOK struct {
 func (o *ListServiceAccountsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/serviceaccounts][%d] listServiceAccountsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListServiceAccountsOK) GetPayload() []*models.ServiceAccount {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListServiceAccountsUnauthorized() *ListServiceAccountsUnauthorized {
 	return &ListServiceAccountsUnauthorized{}
 }
 
-/*ListServiceAccountsUnauthorized handles this case with default header values.
+/* ListServiceAccountsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListServiceAccountsForbidden() *ListServiceAccountsForbidden {
 	return &ListServiceAccountsForbidden{}
 }
 
-/*ListServiceAccountsForbidden handles this case with default header values.
+/* ListServiceAccountsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListServiceAccountsDefault(code int) *ListServiceAccountsDefault {
 	}
 }
 
-/*ListServiceAccountsDefault handles this case with default header values.
+/* ListServiceAccountsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListServiceAccountsDefault) Code() int {
 func (o *ListServiceAccountsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/serviceaccounts][%d] listServiceAccounts default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListServiceAccountsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

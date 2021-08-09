@@ -46,7 +46,7 @@ func NewListOpenstackSizesOK() *ListOpenstackSizesOK {
 	return &ListOpenstackSizesOK{}
 }
 
-/*ListOpenstackSizesOK handles this case with default header values.
+/* ListOpenstackSizesOK describes a response with status code 200, with default header values.
 
 OpenstackSize
 */
@@ -57,7 +57,6 @@ type ListOpenstackSizesOK struct {
 func (o *ListOpenstackSizesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/openstack/sizes][%d] listOpenstackSizesOK  %+v", 200, o.Payload)
 }
-
 func (o *ListOpenstackSizesOK) GetPayload() []*models.OpenstackSize {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListOpenstackSizesDefault(code int) *ListOpenstackSizesDefault {
 	}
 }
 
-/*ListOpenstackSizesDefault handles this case with default header values.
+/* ListOpenstackSizesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListOpenstackSizesDefault) Code() int {
 func (o *ListOpenstackSizesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/openstack/sizes][%d] listOpenstackSizes default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListOpenstackSizesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

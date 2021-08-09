@@ -58,7 +58,7 @@ func NewPatchDefaultConstraintOK() *PatchDefaultConstraintOK {
 	return &PatchDefaultConstraintOK{}
 }
 
-/*PatchDefaultConstraintOK handles this case with default header values.
+/* PatchDefaultConstraintOK describes a response with status code 200, with default header values.
 
 Constraint
 */
@@ -69,7 +69,6 @@ type PatchDefaultConstraintOK struct {
 func (o *PatchDefaultConstraintOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/constraints/{constraint_name}][%d] patchDefaultConstraintOK  %+v", 200, o.Payload)
 }
-
 func (o *PatchDefaultConstraintOK) GetPayload() *models.Constraint {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewPatchDefaultConstraintUnauthorized() *PatchDefaultConstraintUnauthorized
 	return &PatchDefaultConstraintUnauthorized{}
 }
 
-/*PatchDefaultConstraintUnauthorized handles this case with default header values.
+/* PatchDefaultConstraintUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewPatchDefaultConstraintForbidden() *PatchDefaultConstraintForbidden {
 	return &PatchDefaultConstraintForbidden{}
 }
 
-/*PatchDefaultConstraintForbidden handles this case with default header values.
+/* PatchDefaultConstraintForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewPatchDefaultConstraintDefault(code int) *PatchDefaultConstraintDefault {
 	}
 }
 
-/*PatchDefaultConstraintDefault handles this case with default header values.
+/* PatchDefaultConstraintDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *PatchDefaultConstraintDefault) Code() int {
 func (o *PatchDefaultConstraintDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/constraints/{constraint_name}][%d] patchDefaultConstraint default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *PatchDefaultConstraintDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -46,7 +46,7 @@ func NewListAnexiaVlansNoCredentialsV2OK() *ListAnexiaVlansNoCredentialsV2OK {
 	return &ListAnexiaVlansNoCredentialsV2OK{}
 }
 
-/*ListAnexiaVlansNoCredentialsV2OK handles this case with default header values.
+/* ListAnexiaVlansNoCredentialsV2OK describes a response with status code 200, with default header values.
 
 AnexiaVlanList
 */
@@ -57,7 +57,6 @@ type ListAnexiaVlansNoCredentialsV2OK struct {
 func (o *ListAnexiaVlansNoCredentialsV2OK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/anexia/vlans][%d] listAnexiaVlansNoCredentialsV2OK  %+v", 200, o.Payload)
 }
-
 func (o *ListAnexiaVlansNoCredentialsV2OK) GetPayload() models.AnexiaVlanList {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListAnexiaVlansNoCredentialsV2Default(code int) *ListAnexiaVlansNoCreden
 	}
 }
 
-/*ListAnexiaVlansNoCredentialsV2Default handles this case with default header values.
+/* ListAnexiaVlansNoCredentialsV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListAnexiaVlansNoCredentialsV2Default) Code() int {
 func (o *ListAnexiaVlansNoCredentialsV2Default) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/anexia/vlans][%d] listAnexiaVlansNoCredentialsV2 default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListAnexiaVlansNoCredentialsV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

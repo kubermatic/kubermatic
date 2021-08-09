@@ -23,23 +23,26 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	ListAWSSecurityGroups(params *ListAWSSecurityGroupsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSecurityGroupsOK, error)
+	ListAWSSecurityGroups(params *ListAWSSecurityGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAWSSecurityGroupsOK, error)
 
-	ListAWSSizes(params *ListAWSSizesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSizesOK, error)
+	ListAWSSizes(params *ListAWSSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAWSSizesOK, error)
 
-	ListAWSSizesNoCredentials(params *ListAWSSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSizesNoCredentialsOK, error)
+	ListAWSSizesNoCredentials(params *ListAWSSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAWSSizesNoCredentialsOK, error)
 
-	ListAWSSizesNoCredentialsV2(params *ListAWSSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSizesNoCredentialsV2OK, error)
+	ListAWSSizesNoCredentialsV2(params *ListAWSSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAWSSizesNoCredentialsV2OK, error)
 
-	ListAWSSubnets(params *ListAWSSubnetsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSubnetsOK, error)
+	ListAWSSubnets(params *ListAWSSubnetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAWSSubnetsOK, error)
 
-	ListAWSSubnetsNoCredentials(params *ListAWSSubnetsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSubnetsNoCredentialsOK, error)
+	ListAWSSubnetsNoCredentials(params *ListAWSSubnetsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAWSSubnetsNoCredentialsOK, error)
 
-	ListAWSSubnetsNoCredentialsV2(params *ListAWSSubnetsNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSubnetsNoCredentialsV2OK, error)
+	ListAWSSubnetsNoCredentialsV2(params *ListAWSSubnetsNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAWSSubnetsNoCredentialsV2OK, error)
 
-	ListAWSVPCS(params *ListAWSVPCSParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSVPCSOK, error)
+	ListAWSVPCS(params *ListAWSVPCSParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAWSVPCSOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -47,13 +50,12 @@ type ClientService interface {
 /*
   ListAWSSecurityGroups Lists available AWS Security Groups
 */
-func (a *Client) ListAWSSecurityGroups(params *ListAWSSecurityGroupsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSecurityGroupsOK, error) {
+func (a *Client) ListAWSSecurityGroups(params *ListAWSSecurityGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAWSSecurityGroupsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListAWSSecurityGroupsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listAWSSecurityGroups",
 		Method:             "GET",
 		PathPattern:        "/api/v1/providers/aws/{dc}/securitygroups",
@@ -65,7 +67,12 @@ func (a *Client) ListAWSSecurityGroups(params *ListAWSSecurityGroupsParams, auth
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -81,13 +88,12 @@ func (a *Client) ListAWSSecurityGroups(params *ListAWSSecurityGroupsParams, auth
 /*
   ListAWSSizes lists available a w s sizes
 */
-func (a *Client) ListAWSSizes(params *ListAWSSizesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSizesOK, error) {
+func (a *Client) ListAWSSizes(params *ListAWSSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAWSSizesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListAWSSizesParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listAWSSizes",
 		Method:             "GET",
 		PathPattern:        "/api/v1/providers/aws/sizes",
@@ -99,7 +105,12 @@ func (a *Client) ListAWSSizes(params *ListAWSSizesParams, authInfo runtime.Clien
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -115,13 +126,12 @@ func (a *Client) ListAWSSizes(params *ListAWSSizesParams, authInfo runtime.Clien
 /*
   ListAWSSizesNoCredentials Lists available AWS sizes
 */
-func (a *Client) ListAWSSizesNoCredentials(params *ListAWSSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSizesNoCredentialsOK, error) {
+func (a *Client) ListAWSSizesNoCredentials(params *ListAWSSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAWSSizesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListAWSSizesNoCredentialsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listAWSSizesNoCredentials",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/sizes",
@@ -133,7 +143,12 @@ func (a *Client) ListAWSSizesNoCredentials(params *ListAWSSizesNoCredentialsPara
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -149,13 +164,12 @@ func (a *Client) ListAWSSizesNoCredentials(params *ListAWSSizesNoCredentialsPara
 /*
   ListAWSSizesNoCredentialsV2 Lists available AWS sizes
 */
-func (a *Client) ListAWSSizesNoCredentialsV2(params *ListAWSSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSizesNoCredentialsV2OK, error) {
+func (a *Client) ListAWSSizesNoCredentialsV2(params *ListAWSSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAWSSizesNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListAWSSizesNoCredentialsV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listAWSSizesNoCredentialsV2",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/aws/sizes",
@@ -167,7 +181,12 @@ func (a *Client) ListAWSSizesNoCredentialsV2(params *ListAWSSizesNoCredentialsV2
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -183,13 +202,12 @@ func (a *Client) ListAWSSizesNoCredentialsV2(params *ListAWSSizesNoCredentialsV2
 /*
   ListAWSSubnets Lists available AWS subnets
 */
-func (a *Client) ListAWSSubnets(params *ListAWSSubnetsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSubnetsOK, error) {
+func (a *Client) ListAWSSubnets(params *ListAWSSubnetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAWSSubnetsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListAWSSubnetsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listAWSSubnets",
 		Method:             "GET",
 		PathPattern:        "/api/v1/providers/aws/{dc}/subnets",
@@ -201,7 +219,12 @@ func (a *Client) ListAWSSubnets(params *ListAWSSubnetsParams, authInfo runtime.C
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -217,13 +240,12 @@ func (a *Client) ListAWSSubnets(params *ListAWSSubnetsParams, authInfo runtime.C
 /*
   ListAWSSubnetsNoCredentials Lists available AWS subnets
 */
-func (a *Client) ListAWSSubnetsNoCredentials(params *ListAWSSubnetsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSubnetsNoCredentialsOK, error) {
+func (a *Client) ListAWSSubnetsNoCredentials(params *ListAWSSubnetsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAWSSubnetsNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListAWSSubnetsNoCredentialsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listAWSSubnetsNoCredentials",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/subnets",
@@ -235,7 +257,12 @@ func (a *Client) ListAWSSubnetsNoCredentials(params *ListAWSSubnetsNoCredentials
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -251,13 +278,12 @@ func (a *Client) ListAWSSubnetsNoCredentials(params *ListAWSSubnetsNoCredentials
 /*
   ListAWSSubnetsNoCredentialsV2 Lists available AWS subnets
 */
-func (a *Client) ListAWSSubnetsNoCredentialsV2(params *ListAWSSubnetsNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSubnetsNoCredentialsV2OK, error) {
+func (a *Client) ListAWSSubnetsNoCredentialsV2(params *ListAWSSubnetsNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAWSSubnetsNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListAWSSubnetsNoCredentialsV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listAWSSubnetsNoCredentialsV2",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/aws/subnets",
@@ -269,7 +295,12 @@ func (a *Client) ListAWSSubnetsNoCredentialsV2(params *ListAWSSubnetsNoCredentia
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -285,13 +316,12 @@ func (a *Client) ListAWSSubnetsNoCredentialsV2(params *ListAWSSubnetsNoCredentia
 /*
   ListAWSVPCS Lists available AWS vpc's
 */
-func (a *Client) ListAWSVPCS(params *ListAWSVPCSParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSVPCSOK, error) {
+func (a *Client) ListAWSVPCS(params *ListAWSVPCSParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAWSVPCSOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListAWSVPCSParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listAWSVPCS",
 		Method:             "GET",
 		PathPattern:        "/api/v1/providers/aws/{dc}/vpcs",
@@ -303,7 +333,12 @@ func (a *Client) ListAWSVPCS(params *ListAWSVPCSParams, authInfo runtime.ClientA
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

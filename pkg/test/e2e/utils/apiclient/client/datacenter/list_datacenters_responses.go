@@ -46,7 +46,7 @@ func NewListDatacentersOK() *ListDatacentersOK {
 	return &ListDatacentersOK{}
 }
 
-/*ListDatacentersOK handles this case with default header values.
+/* ListDatacentersOK describes a response with status code 200, with default header values.
 
 DatacenterList
 */
@@ -57,7 +57,6 @@ type ListDatacentersOK struct {
 func (o *ListDatacentersOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/dc][%d] listDatacentersOK  %+v", 200, o.Payload)
 }
-
 func (o *ListDatacentersOK) GetPayload() models.DatacenterList {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListDatacentersDefault(code int) *ListDatacentersDefault {
 	}
 }
 
-/*ListDatacentersDefault handles this case with default header values.
+/* ListDatacentersDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListDatacentersDefault) Code() int {
 func (o *ListDatacentersDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/dc][%d] listDatacenters default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListDatacentersDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -22,6 +24,11 @@ type AllowedRegistrySpec struct {
 
 // Validate validates this allowed registry spec
 func (m *AllowedRegistrySpec) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this allowed registry spec based on context it is used
+func (m *AllowedRegistrySpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

@@ -58,7 +58,7 @@ func NewGetGatekeeperConfigOK() *GetGatekeeperConfigOK {
 	return &GetGatekeeperConfigOK{}
 }
 
-/*GetGatekeeperConfigOK handles this case with default header values.
+/* GetGatekeeperConfigOK describes a response with status code 200, with default header values.
 
 GatekeeperConfig
 */
@@ -69,7 +69,6 @@ type GetGatekeeperConfigOK struct {
 func (o *GetGatekeeperConfigOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] getGatekeeperConfigOK  %+v", 200, o.Payload)
 }
-
 func (o *GetGatekeeperConfigOK) GetPayload() *models.GatekeeperConfig {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewGetGatekeeperConfigUnauthorized() *GetGatekeeperConfigUnauthorized {
 	return &GetGatekeeperConfigUnauthorized{}
 }
 
-/*GetGatekeeperConfigUnauthorized handles this case with default header values.
+/* GetGatekeeperConfigUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewGetGatekeeperConfigForbidden() *GetGatekeeperConfigForbidden {
 	return &GetGatekeeperConfigForbidden{}
 }
 
-/*GetGatekeeperConfigForbidden handles this case with default header values.
+/* GetGatekeeperConfigForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewGetGatekeeperConfigDefault(code int) *GetGatekeeperConfigDefault {
 	}
 }
 
-/*GetGatekeeperConfigDefault handles this case with default header values.
+/* GetGatekeeperConfigDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *GetGatekeeperConfigDefault) Code() int {
 func (o *GetGatekeeperConfigDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] getGatekeeperConfig default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetGatekeeperConfigDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -6,6 +6,7 @@ package preset
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"fmt"
 	"io"
 
@@ -59,7 +60,7 @@ func NewUpdatePresetStatusOK() *UpdatePresetStatusOK {
 	return &UpdatePresetStatusOK{}
 }
 
-/*UpdatePresetStatusOK handles this case with default header values.
+/* UpdatePresetStatusOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -80,7 +81,7 @@ func NewUpdatePresetStatusUnauthorized() *UpdatePresetStatusUnauthorized {
 	return &UpdatePresetStatusUnauthorized{}
 }
 
-/*UpdatePresetStatusUnauthorized handles this case with default header values.
+/* UpdatePresetStatusUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -101,7 +102,7 @@ func NewUpdatePresetStatusForbidden() *UpdatePresetStatusForbidden {
 	return &UpdatePresetStatusForbidden{}
 }
 
-/*UpdatePresetStatusForbidden handles this case with default header values.
+/* UpdatePresetStatusForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -124,7 +125,7 @@ func NewUpdatePresetStatusDefault(code int) *UpdatePresetStatusDefault {
 	}
 }
 
-/*UpdatePresetStatusDefault handles this case with default header values.
+/* UpdatePresetStatusDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -142,7 +143,6 @@ func (o *UpdatePresetStatusDefault) Code() int {
 func (o *UpdatePresetStatusDefault) Error() string {
 	return fmt.Sprintf("[PUT /api/v2/presets/{preset_name}/status][%d] updatePresetStatus default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *UpdatePresetStatusDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }
@@ -170,6 +170,11 @@ type UpdatePresetStatusBody struct {
 
 // Validate validates this update preset status body
 func (o *UpdatePresetStatusBody) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this update preset status body based on context it is used
+func (o *UpdatePresetStatusBody) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

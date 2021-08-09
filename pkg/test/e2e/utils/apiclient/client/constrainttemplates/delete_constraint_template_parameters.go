@@ -16,56 +16,70 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewDeleteConstraintTemplateParams creates a new DeleteConstraintTemplateParams object
-// with the default values initialized.
+// NewDeleteConstraintTemplateParams creates a new DeleteConstraintTemplateParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewDeleteConstraintTemplateParams() *DeleteConstraintTemplateParams {
-	var ()
 	return &DeleteConstraintTemplateParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewDeleteConstraintTemplateParamsWithTimeout creates a new DeleteConstraintTemplateParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewDeleteConstraintTemplateParamsWithTimeout(timeout time.Duration) *DeleteConstraintTemplateParams {
-	var ()
 	return &DeleteConstraintTemplateParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewDeleteConstraintTemplateParamsWithContext creates a new DeleteConstraintTemplateParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewDeleteConstraintTemplateParamsWithContext(ctx context.Context) *DeleteConstraintTemplateParams {
-	var ()
 	return &DeleteConstraintTemplateParams{
-
 		Context: ctx,
 	}
 }
 
 // NewDeleteConstraintTemplateParamsWithHTTPClient creates a new DeleteConstraintTemplateParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewDeleteConstraintTemplateParamsWithHTTPClient(client *http.Client) *DeleteConstraintTemplateParams {
-	var ()
 	return &DeleteConstraintTemplateParams{
 		HTTPClient: client,
 	}
 }
 
-/*DeleteConstraintTemplateParams contains all the parameters to send to the API endpoint
-for the delete constraint template operation typically these are written to a http.Request
+/* DeleteConstraintTemplateParams contains all the parameters to send to the API endpoint
+   for the delete constraint template operation.
+
+   Typically these are written to a http.Request.
 */
 type DeleteConstraintTemplateParams struct {
 
-	/*CtName*/
+	// CtName.
 	Name string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the delete constraint template params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DeleteConstraintTemplateParams) WithDefaults() *DeleteConstraintTemplateParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the delete constraint template params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DeleteConstraintTemplateParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the delete constraint template params

@@ -58,7 +58,7 @@ func NewBindUserToRoleOK() *BindUserToRoleOK {
 	return &BindUserToRoleOK{}
 }
 
-/*BindUserToRoleOK handles this case with default header values.
+/* BindUserToRoleOK describes a response with status code 200, with default header values.
 
 RoleBinding
 */
@@ -69,7 +69,6 @@ type BindUserToRoleOK struct {
 func (o *BindUserToRoleOK) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings][%d] bindUserToRoleOK  %+v", 200, o.Payload)
 }
-
 func (o *BindUserToRoleOK) GetPayload() *models.RoleBinding {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewBindUserToRoleUnauthorized() *BindUserToRoleUnauthorized {
 	return &BindUserToRoleUnauthorized{}
 }
 
-/*BindUserToRoleUnauthorized handles this case with default header values.
+/* BindUserToRoleUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewBindUserToRoleForbidden() *BindUserToRoleForbidden {
 	return &BindUserToRoleForbidden{}
 }
 
-/*BindUserToRoleForbidden handles this case with default header values.
+/* BindUserToRoleForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewBindUserToRoleDefault(code int) *BindUserToRoleDefault {
 	}
 }
 
-/*BindUserToRoleDefault handles this case with default header values.
+/* BindUserToRoleDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *BindUserToRoleDefault) Code() int {
 func (o *BindUserToRoleDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings][%d] bindUserToRole default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *BindUserToRoleDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListGCPDiskTypesParams creates a new ListGCPDiskTypesParams object
-// with the default values initialized.
+// NewListGCPDiskTypesParams creates a new ListGCPDiskTypesParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListGCPDiskTypesParams() *ListGCPDiskTypesParams {
-	var ()
 	return &ListGCPDiskTypesParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListGCPDiskTypesParamsWithTimeout creates a new ListGCPDiskTypesParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListGCPDiskTypesParamsWithTimeout(timeout time.Duration) *ListGCPDiskTypesParams {
-	var ()
 	return &ListGCPDiskTypesParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListGCPDiskTypesParamsWithContext creates a new ListGCPDiskTypesParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListGCPDiskTypesParamsWithContext(ctx context.Context) *ListGCPDiskTypesParams {
-	var ()
 	return &ListGCPDiskTypesParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListGCPDiskTypesParamsWithHTTPClient creates a new ListGCPDiskTypesParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListGCPDiskTypesParamsWithHTTPClient(client *http.Client) *ListGCPDiskTypesParams {
-	var ()
 	return &ListGCPDiskTypesParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListGCPDiskTypesParams contains all the parameters to send to the API endpoint
-for the list g c p disk types operation typically these are written to a http.Request
+/* ListGCPDiskTypesParams contains all the parameters to send to the API endpoint
+   for the list g c p disk types operation.
+
+   Typically these are written to a http.Request.
 */
 type ListGCPDiskTypesParams struct {
 
-	/*Credential*/
+	// Credential.
 	Credential *string
-	/*ServiceAccount*/
+
+	// ServiceAccount.
 	ServiceAccount *string
-	/*Zone*/
+
+	// Zone.
 	Zone *string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list g c p disk types params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListGCPDiskTypesParams) WithDefaults() *ListGCPDiskTypesParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list g c p disk types params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListGCPDiskTypesParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list g c p disk types params
@@ -152,7 +168,6 @@ func (o *ListGCPDiskTypesParams) WriteToRequest(r runtime.ClientRequest, reg str
 		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
 			return err
 		}
-
 	}
 
 	if o.ServiceAccount != nil {
@@ -161,7 +176,6 @@ func (o *ListGCPDiskTypesParams) WriteToRequest(r runtime.ClientRequest, reg str
 		if err := r.SetHeaderParam("ServiceAccount", *o.ServiceAccount); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Zone != nil {
@@ -170,7 +184,6 @@ func (o *ListGCPDiskTypesParams) WriteToRequest(r runtime.ClientRequest, reg str
 		if err := r.SetHeaderParam("Zone", *o.Zone); err != nil {
 			return err
 		}
-
 	}
 
 	if len(res) > 0 {

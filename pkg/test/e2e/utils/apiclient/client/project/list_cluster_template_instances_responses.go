@@ -58,7 +58,7 @@ func NewListClusterTemplateInstancesOK() *ListClusterTemplateInstancesOK {
 	return &ListClusterTemplateInstancesOK{}
 }
 
-/*ListClusterTemplateInstancesOK handles this case with default header values.
+/* ListClusterTemplateInstancesOK describes a response with status code 200, with default header values.
 
 ClusterTemplateInstance
 */
@@ -69,7 +69,6 @@ type ListClusterTemplateInstancesOK struct {
 func (o *ListClusterTemplateInstancesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clustertemplates/{template_id}/instances][%d] listClusterTemplateInstancesOK  %+v", 200, o.Payload)
 }
-
 func (o *ListClusterTemplateInstancesOK) GetPayload() []*models.ClusterTemplateInstance {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListClusterTemplateInstancesUnauthorized() *ListClusterTemplateInstances
 	return &ListClusterTemplateInstancesUnauthorized{}
 }
 
-/*ListClusterTemplateInstancesUnauthorized handles this case with default header values.
+/* ListClusterTemplateInstancesUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListClusterTemplateInstancesForbidden() *ListClusterTemplateInstancesFor
 	return &ListClusterTemplateInstancesForbidden{}
 }
 
-/*ListClusterTemplateInstancesForbidden handles this case with default header values.
+/* ListClusterTemplateInstancesForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListClusterTemplateInstancesDefault(code int) *ListClusterTemplateInstan
 	}
 }
 
-/*ListClusterTemplateInstancesDefault handles this case with default header values.
+/* ListClusterTemplateInstancesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListClusterTemplateInstancesDefault) Code() int {
 func (o *ListClusterTemplateInstancesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clustertemplates/{template_id}/instances][%d] listClusterTemplateInstances default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListClusterTemplateInstancesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }
