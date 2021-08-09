@@ -24,10 +24,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	envoyaccesslogv3 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
 	envoyclusterv3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
@@ -188,7 +189,7 @@ func makeAccessLog() []*envoyaccesslogv3.AccessLog {
 		Path: "/dev/stdout",
 	}
 
-	stdoutAccessLog, err := ptypes.MarshalAny(f)
+	stdoutAccessLog, err := anypb.New(f)
 	if err != nil {
 		panic(err)
 	}
@@ -220,7 +221,7 @@ func makeSNIFilterChains(service *corev1.Service, p portHostMapping) []*envoylis
 				AccessLog: makeAccessLog(),
 			}
 
-			tcpProxyConfigMarshalled, err := ptypes.MarshalAny(tcpProxyConfig)
+			tcpProxyConfigMarshalled, err := anypb.New(tcpProxyConfig)
 			if err != nil {
 				panic(errors.Wrap(err, "failed to marshal tcpProxyConfig"))
 			}
@@ -343,7 +344,7 @@ func (sb *snapshotBuilder) makeTunnelingListener(vhs ...*envoyroutev3.VirtualHos
 			},
 		},
 	}
-	httpManagerConfigMarshalled, err := ptypes.MarshalAny(hcm)
+	httpManagerConfigMarshalled, err := anypb.New(hcm)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to marshal HTTP Connection Manager"))
 	}
@@ -398,7 +399,7 @@ func (sb *snapshotBuilder) makeClusters(service *corev1.Service, endpoints *core
 
 		cluster := &envoyclusterv3.Cluster{
 			Name:           servicePortKey,
-			ConnectTimeout: ptypes.DurationProto(clusterConnectTimeout),
+			ConnectTimeout: durationpb.New(clusterConnectTimeout),
 			ClusterDiscoveryType: &envoyclusterv3.Cluster_Type{
 				Type: envoyclusterv3.Cluster_STATIC,
 			},
@@ -435,7 +436,7 @@ func (sb *snapshotBuilder) makeListenersForNodePortService(service *corev1.Servi
 			},
 		}
 
-		tcpProxyConfigMarshalled, err := ptypes.MarshalAny(tcpProxyConfig)
+		tcpProxyConfigMarshalled, err := anypb.New(tcpProxyConfig)
 		if err != nil {
 			panic(errors.Wrap(err, "failed to marshal tcpProxyConfig"))
 		}
@@ -476,7 +477,7 @@ func (sb *snapshotBuilder) makeListenersForNodePortService(service *corev1.Servi
 func (sb *snapshotBuilder) makeInitialResources() (listeners []envoycachetype.Resource, clusters []envoycachetype.Resource) {
 	adminCluster := &envoyclusterv3.Cluster{
 		Name:           "service_stats",
-		ConnectTimeout: ptypes.DurationProto(50 * time.Millisecond),
+		ConnectTimeout: durationpb.New(50 * time.Millisecond),
 		ClusterDiscoveryType: &envoyclusterv3.Cluster_Type{
 			Type: envoyclusterv3.Cluster_STATIC,
 		},
@@ -511,7 +512,7 @@ func (sb *snapshotBuilder) makeInitialResources() (listeners []envoycachetype.Re
 	clusters = append(clusters, adminCluster)
 
 	healthCheck := &envoyhealthv3.HealthCheck{
-		PassThroughMode: &wrappers.BoolValue{Value: false},
+		PassThroughMode: wrapperspb.Bool(false),
 		Headers: []*envoyroutev3.HeaderMatcher{
 			{
 				Name: ":path",
@@ -522,7 +523,7 @@ func (sb *snapshotBuilder) makeInitialResources() (listeners []envoycachetype.Re
 		},
 	}
 
-	healthCheckMarshalled, err := ptypes.MarshalAny(healthCheck)
+	healthCheckMarshalled, err := anypb.New(healthCheck)
 	if err != nil {
 		// panic as this either never occurs or cannot recover
 		panic(errors.Wrap(err, "failed to marshal HealthCheck"))
@@ -570,7 +571,7 @@ func (sb *snapshotBuilder) makeInitialResources() (listeners []envoycachetype.Re
 		},
 	}
 
-	httpConnectionManagerMarshalled, err := ptypes.MarshalAny(httpConnectionManager)
+	httpConnectionManagerMarshalled, err := anypb.New(httpConnectionManager)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to marshal HTTPConnectionManager"))
 	}

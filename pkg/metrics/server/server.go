@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -38,8 +39,8 @@ import (
 // becomes configurable
 func init() {
 	ctrlruntimemetrics.Registry.Unregister(
-		prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
-	ctrlruntimemetrics.Registry.Unregister(prometheus.NewGoCollector())
+		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
+	ctrlruntimemetrics.Registry.Unregister(collectors.NewGoCollector())
 }
 
 // New returns a brand new *MetricsServer that gathers the metrics
