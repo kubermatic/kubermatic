@@ -58,7 +58,7 @@ func NewListRoleBindingOK() *ListRoleBindingOK {
 	return &ListRoleBindingOK{}
 }
 
-/*ListRoleBindingOK handles this case with default header values.
+/* ListRoleBindingOK describes a response with status code 200, with default header values.
 
 RoleBinding
 */
@@ -69,7 +69,6 @@ type ListRoleBindingOK struct {
 func (o *ListRoleBindingOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/bindings][%d] listRoleBindingOK  %+v", 200, o.Payload)
 }
-
 func (o *ListRoleBindingOK) GetPayload() []*models.RoleBinding {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListRoleBindingUnauthorized() *ListRoleBindingUnauthorized {
 	return &ListRoleBindingUnauthorized{}
 }
 
-/*ListRoleBindingUnauthorized handles this case with default header values.
+/* ListRoleBindingUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListRoleBindingForbidden() *ListRoleBindingForbidden {
 	return &ListRoleBindingForbidden{}
 }
 
-/*ListRoleBindingForbidden handles this case with default header values.
+/* ListRoleBindingForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListRoleBindingDefault(code int) *ListRoleBindingDefault {
 	}
 }
 
-/*ListRoleBindingDefault handles this case with default header values.
+/* ListRoleBindingDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListRoleBindingDefault) Code() int {
 func (o *ListRoleBindingDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/bindings][%d] listRoleBinding default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListRoleBindingDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

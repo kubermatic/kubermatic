@@ -58,7 +58,7 @@ func NewResetAlertmanagerOK() *ResetAlertmanagerOK {
 	return &ResetAlertmanagerOK{}
 }
 
-/*ResetAlertmanagerOK handles this case with default header values.
+/* ResetAlertmanagerOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -79,7 +79,7 @@ func NewResetAlertmanagerUnauthorized() *ResetAlertmanagerUnauthorized {
 	return &ResetAlertmanagerUnauthorized{}
 }
 
-/*ResetAlertmanagerUnauthorized handles this case with default header values.
+/* ResetAlertmanagerUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -100,7 +100,7 @@ func NewResetAlertmanagerForbidden() *ResetAlertmanagerForbidden {
 	return &ResetAlertmanagerForbidden{}
 }
 
-/*ResetAlertmanagerForbidden handles this case with default header values.
+/* ResetAlertmanagerForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -123,7 +123,7 @@ func NewResetAlertmanagerDefault(code int) *ResetAlertmanagerDefault {
 	}
 }
 
-/*ResetAlertmanagerDefault handles this case with default header values.
+/* ResetAlertmanagerDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -141,7 +141,6 @@ func (o *ResetAlertmanagerDefault) Code() int {
 func (o *ResetAlertmanagerDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config][%d] resetAlertmanager default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ResetAlertmanagerDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

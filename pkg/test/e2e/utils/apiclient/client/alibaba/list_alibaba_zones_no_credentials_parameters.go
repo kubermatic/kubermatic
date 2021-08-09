@@ -16,62 +16,79 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListAlibabaZonesNoCredentialsParams creates a new ListAlibabaZonesNoCredentialsParams object
-// with the default values initialized.
+// NewListAlibabaZonesNoCredentialsParams creates a new ListAlibabaZonesNoCredentialsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListAlibabaZonesNoCredentialsParams() *ListAlibabaZonesNoCredentialsParams {
-	var ()
 	return &ListAlibabaZonesNoCredentialsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListAlibabaZonesNoCredentialsParamsWithTimeout creates a new ListAlibabaZonesNoCredentialsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListAlibabaZonesNoCredentialsParamsWithTimeout(timeout time.Duration) *ListAlibabaZonesNoCredentialsParams {
-	var ()
 	return &ListAlibabaZonesNoCredentialsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListAlibabaZonesNoCredentialsParamsWithContext creates a new ListAlibabaZonesNoCredentialsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListAlibabaZonesNoCredentialsParamsWithContext(ctx context.Context) *ListAlibabaZonesNoCredentialsParams {
-	var ()
 	return &ListAlibabaZonesNoCredentialsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListAlibabaZonesNoCredentialsParamsWithHTTPClient creates a new ListAlibabaZonesNoCredentialsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListAlibabaZonesNoCredentialsParamsWithHTTPClient(client *http.Client) *ListAlibabaZonesNoCredentialsParams {
-	var ()
 	return &ListAlibabaZonesNoCredentialsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListAlibabaZonesNoCredentialsParams contains all the parameters to send to the API endpoint
-for the list alibaba zones no credentials operation typically these are written to a http.Request
+/* ListAlibabaZonesNoCredentialsParams contains all the parameters to send to the API endpoint
+   for the list alibaba zones no credentials operation.
+
+   Typically these are written to a http.Request.
 */
 type ListAlibabaZonesNoCredentialsParams struct {
 
-	/*Region*/
+	// Region.
 	Region *string
-	/*ClusterID*/
+
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list alibaba zones no credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAlibabaZonesNoCredentialsParams) WithDefaults() *ListAlibabaZonesNoCredentialsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list alibaba zones no credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAlibabaZonesNoCredentialsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list alibaba zones no credentials params
@@ -165,7 +182,6 @@ func (o *ListAlibabaZonesNoCredentialsParams) WriteToRequest(r runtime.ClientReq
 		if err := r.SetHeaderParam("Region", *o.Region); err != nil {
 			return err
 		}
-
 	}
 
 	// path param cluster_id

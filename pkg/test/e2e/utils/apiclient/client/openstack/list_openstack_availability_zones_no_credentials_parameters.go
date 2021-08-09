@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListOpenstackAvailabilityZonesNoCredentialsParams creates a new ListOpenstackAvailabilityZonesNoCredentialsParams object
-// with the default values initialized.
+// NewListOpenstackAvailabilityZonesNoCredentialsParams creates a new ListOpenstackAvailabilityZonesNoCredentialsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListOpenstackAvailabilityZonesNoCredentialsParams() *ListOpenstackAvailabilityZonesNoCredentialsParams {
-	var ()
 	return &ListOpenstackAvailabilityZonesNoCredentialsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListOpenstackAvailabilityZonesNoCredentialsParamsWithTimeout creates a new ListOpenstackAvailabilityZonesNoCredentialsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListOpenstackAvailabilityZonesNoCredentialsParamsWithTimeout(timeout time.Duration) *ListOpenstackAvailabilityZonesNoCredentialsParams {
-	var ()
 	return &ListOpenstackAvailabilityZonesNoCredentialsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListOpenstackAvailabilityZonesNoCredentialsParamsWithContext creates a new ListOpenstackAvailabilityZonesNoCredentialsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListOpenstackAvailabilityZonesNoCredentialsParamsWithContext(ctx context.Context) *ListOpenstackAvailabilityZonesNoCredentialsParams {
-	var ()
 	return &ListOpenstackAvailabilityZonesNoCredentialsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListOpenstackAvailabilityZonesNoCredentialsParamsWithHTTPClient creates a new ListOpenstackAvailabilityZonesNoCredentialsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListOpenstackAvailabilityZonesNoCredentialsParamsWithHTTPClient(client *http.Client) *ListOpenstackAvailabilityZonesNoCredentialsParams {
-	var ()
 	return &ListOpenstackAvailabilityZonesNoCredentialsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListOpenstackAvailabilityZonesNoCredentialsParams contains all the parameters to send to the API endpoint
-for the list openstack availability zones no credentials operation typically these are written to a http.Request
+/* ListOpenstackAvailabilityZonesNoCredentialsParams contains all the parameters to send to the API endpoint
+   for the list openstack availability zones no credentials operation.
+
+   Typically these are written to a http.Request.
 */
 type ListOpenstackAvailabilityZonesNoCredentialsParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list openstack availability zones no credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListOpenstackAvailabilityZonesNoCredentialsParams) WithDefaults() *ListOpenstackAvailabilityZonesNoCredentialsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list openstack availability zones no credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListOpenstackAvailabilityZonesNoCredentialsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list openstack availability zones no credentials params

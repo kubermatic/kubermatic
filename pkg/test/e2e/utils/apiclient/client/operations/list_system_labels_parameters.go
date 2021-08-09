@@ -16,52 +16,66 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListSystemLabelsParams creates a new ListSystemLabelsParams object
-// with the default values initialized.
+// NewListSystemLabelsParams creates a new ListSystemLabelsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListSystemLabelsParams() *ListSystemLabelsParams {
-
 	return &ListSystemLabelsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListSystemLabelsParamsWithTimeout creates a new ListSystemLabelsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListSystemLabelsParamsWithTimeout(timeout time.Duration) *ListSystemLabelsParams {
-
 	return &ListSystemLabelsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListSystemLabelsParamsWithContext creates a new ListSystemLabelsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListSystemLabelsParamsWithContext(ctx context.Context) *ListSystemLabelsParams {
-
 	return &ListSystemLabelsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListSystemLabelsParamsWithHTTPClient creates a new ListSystemLabelsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListSystemLabelsParamsWithHTTPClient(client *http.Client) *ListSystemLabelsParams {
-
 	return &ListSystemLabelsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListSystemLabelsParams contains all the parameters to send to the API endpoint
-for the list system labels operation typically these are written to a http.Request
+/* ListSystemLabelsParams contains all the parameters to send to the API endpoint
+   for the list system labels operation.
+
+   Typically these are written to a http.Request.
 */
 type ListSystemLabelsParams struct {
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list system labels params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListSystemLabelsParams) WithDefaults() *ListSystemLabelsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list system labels params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListSystemLabelsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list system labels params

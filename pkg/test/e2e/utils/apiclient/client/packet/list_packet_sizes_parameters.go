@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListPacketSizesParams creates a new ListPacketSizesParams object
-// with the default values initialized.
+// NewListPacketSizesParams creates a new ListPacketSizesParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListPacketSizesParams() *ListPacketSizesParams {
-	var ()
 	return &ListPacketSizesParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListPacketSizesParamsWithTimeout creates a new ListPacketSizesParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListPacketSizesParamsWithTimeout(timeout time.Duration) *ListPacketSizesParams {
-	var ()
 	return &ListPacketSizesParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListPacketSizesParamsWithContext creates a new ListPacketSizesParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListPacketSizesParamsWithContext(ctx context.Context) *ListPacketSizesParams {
-	var ()
 	return &ListPacketSizesParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListPacketSizesParamsWithHTTPClient creates a new ListPacketSizesParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListPacketSizesParamsWithHTTPClient(client *http.Client) *ListPacketSizesParams {
-	var ()
 	return &ListPacketSizesParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListPacketSizesParams contains all the parameters to send to the API endpoint
-for the list packet sizes operation typically these are written to a http.Request
+/* ListPacketSizesParams contains all the parameters to send to the API endpoint
+   for the list packet sizes operation.
+
+   Typically these are written to a http.Request.
 */
 type ListPacketSizesParams struct {
 
-	/*APIKey*/
+	// APIKey.
 	APIKey *string
-	/*Credential*/
+
+	// Credential.
 	Credential *string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID *string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list packet sizes params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListPacketSizesParams) WithDefaults() *ListPacketSizesParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list packet sizes params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListPacketSizesParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list packet sizes params
@@ -152,7 +168,6 @@ func (o *ListPacketSizesParams) WriteToRequest(r runtime.ClientRequest, reg strf
 		if err := r.SetHeaderParam("apiKey", *o.APIKey); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Credential != nil {
@@ -161,7 +176,6 @@ func (o *ListPacketSizesParams) WriteToRequest(r runtime.ClientRequest, reg strf
 		if err := r.SetHeaderParam("credential", *o.Credential); err != nil {
 			return err
 		}
-
 	}
 
 	if o.ProjectID != nil {
@@ -170,7 +184,6 @@ func (o *ListPacketSizesParams) WriteToRequest(r runtime.ClientRequest, reg strf
 		if err := r.SetHeaderParam("projectID", *o.ProjectID); err != nil {
 			return err
 		}
-
 	}
 
 	if len(res) > 0 {

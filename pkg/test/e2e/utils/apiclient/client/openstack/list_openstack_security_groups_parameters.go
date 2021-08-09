@@ -17,74 +17,97 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// NewListOpenstackSecurityGroupsParams creates a new ListOpenstackSecurityGroupsParams object
-// with the default values initialized.
+// NewListOpenstackSecurityGroupsParams creates a new ListOpenstackSecurityGroupsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListOpenstackSecurityGroupsParams() *ListOpenstackSecurityGroupsParams {
-	var ()
 	return &ListOpenstackSecurityGroupsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListOpenstackSecurityGroupsParamsWithTimeout creates a new ListOpenstackSecurityGroupsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListOpenstackSecurityGroupsParamsWithTimeout(timeout time.Duration) *ListOpenstackSecurityGroupsParams {
-	var ()
 	return &ListOpenstackSecurityGroupsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListOpenstackSecurityGroupsParamsWithContext creates a new ListOpenstackSecurityGroupsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListOpenstackSecurityGroupsParamsWithContext(ctx context.Context) *ListOpenstackSecurityGroupsParams {
-	var ()
 	return &ListOpenstackSecurityGroupsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListOpenstackSecurityGroupsParamsWithHTTPClient creates a new ListOpenstackSecurityGroupsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListOpenstackSecurityGroupsParamsWithHTTPClient(client *http.Client) *ListOpenstackSecurityGroupsParams {
-	var ()
 	return &ListOpenstackSecurityGroupsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListOpenstackSecurityGroupsParams contains all the parameters to send to the API endpoint
-for the list openstack security groups operation typically these are written to a http.Request
+/* ListOpenstackSecurityGroupsParams contains all the parameters to send to the API endpoint
+   for the list openstack security groups operation.
+
+   Typically these are written to a http.Request.
 */
 type ListOpenstackSecurityGroupsParams struct {
 
-	/*ApplicationCredentialID*/
+	// ApplicationCredentialID.
 	ApplicationCredentialID *string
-	/*ApplicationCredentialSecret*/
+
+	// ApplicationCredentialSecret.
 	ApplicationCredentialSecret *string
-	/*Credential*/
+
+	// Credential.
 	Credential *string
-	/*DatacenterName*/
+
+	// DatacenterName.
 	DatacenterName *string
-	/*Domain*/
+
+	// Domain.
 	Domain *string
-	/*OIDCAuthentication*/
+
+	// OIDCAuthentication.
 	OIDCAuthentication *bool
-	/*Password*/
+
+	// Password.
 	Password *string
-	/*Tenant*/
+
+	// Tenant.
 	Tenant *string
-	/*TenantID*/
+
+	// TenantID.
 	TenantID *string
-	/*Username*/
+
+	// Username.
 	Username *string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list openstack security groups params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListOpenstackSecurityGroupsParams) WithDefaults() *ListOpenstackSecurityGroupsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list openstack security groups params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListOpenstackSecurityGroupsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list openstack security groups params
@@ -244,7 +267,6 @@ func (o *ListOpenstackSecurityGroupsParams) WriteToRequest(r runtime.ClientReque
 		if err := r.SetHeaderParam("ApplicationCredentialID", *o.ApplicationCredentialID); err != nil {
 			return err
 		}
-
 	}
 
 	if o.ApplicationCredentialSecret != nil {
@@ -253,7 +275,6 @@ func (o *ListOpenstackSecurityGroupsParams) WriteToRequest(r runtime.ClientReque
 		if err := r.SetHeaderParam("ApplicationCredentialSecret", *o.ApplicationCredentialSecret); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Credential != nil {
@@ -262,7 +283,6 @@ func (o *ListOpenstackSecurityGroupsParams) WriteToRequest(r runtime.ClientReque
 		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
 			return err
 		}
-
 	}
 
 	if o.DatacenterName != nil {
@@ -271,7 +291,6 @@ func (o *ListOpenstackSecurityGroupsParams) WriteToRequest(r runtime.ClientReque
 		if err := r.SetHeaderParam("DatacenterName", *o.DatacenterName); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Domain != nil {
@@ -280,7 +299,6 @@ func (o *ListOpenstackSecurityGroupsParams) WriteToRequest(r runtime.ClientReque
 		if err := r.SetHeaderParam("Domain", *o.Domain); err != nil {
 			return err
 		}
-
 	}
 
 	if o.OIDCAuthentication != nil {
@@ -289,7 +307,6 @@ func (o *ListOpenstackSecurityGroupsParams) WriteToRequest(r runtime.ClientReque
 		if err := r.SetHeaderParam("OIDCAuthentication", swag.FormatBool(*o.OIDCAuthentication)); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Password != nil {
@@ -298,7 +315,6 @@ func (o *ListOpenstackSecurityGroupsParams) WriteToRequest(r runtime.ClientReque
 		if err := r.SetHeaderParam("Password", *o.Password); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Tenant != nil {
@@ -307,7 +323,6 @@ func (o *ListOpenstackSecurityGroupsParams) WriteToRequest(r runtime.ClientReque
 		if err := r.SetHeaderParam("Tenant", *o.Tenant); err != nil {
 			return err
 		}
-
 	}
 
 	if o.TenantID != nil {
@@ -316,7 +331,6 @@ func (o *ListOpenstackSecurityGroupsParams) WriteToRequest(r runtime.ClientReque
 		if err := r.SetHeaderParam("TenantID", *o.TenantID); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Username != nil {
@@ -325,7 +339,6 @@ func (o *ListOpenstackSecurityGroupsParams) WriteToRequest(r runtime.ClientReque
 		if err := r.SetHeaderParam("Username", *o.Username); err != nil {
 			return err
 		}
-
 	}
 
 	if len(res) > 0 {

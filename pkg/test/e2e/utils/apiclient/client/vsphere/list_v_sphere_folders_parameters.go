@@ -16,62 +16,79 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListVSphereFoldersParams creates a new ListVSphereFoldersParams object
-// with the default values initialized.
+// NewListVSphereFoldersParams creates a new ListVSphereFoldersParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListVSphereFoldersParams() *ListVSphereFoldersParams {
-	var ()
 	return &ListVSphereFoldersParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListVSphereFoldersParamsWithTimeout creates a new ListVSphereFoldersParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListVSphereFoldersParamsWithTimeout(timeout time.Duration) *ListVSphereFoldersParams {
-	var ()
 	return &ListVSphereFoldersParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListVSphereFoldersParamsWithContext creates a new ListVSphereFoldersParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListVSphereFoldersParamsWithContext(ctx context.Context) *ListVSphereFoldersParams {
-	var ()
 	return &ListVSphereFoldersParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListVSphereFoldersParamsWithHTTPClient creates a new ListVSphereFoldersParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListVSphereFoldersParamsWithHTTPClient(client *http.Client) *ListVSphereFoldersParams {
-	var ()
 	return &ListVSphereFoldersParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListVSphereFoldersParams contains all the parameters to send to the API endpoint
-for the list v sphere folders operation typically these are written to a http.Request
+/* ListVSphereFoldersParams contains all the parameters to send to the API endpoint
+   for the list v sphere folders operation.
+
+   Typically these are written to a http.Request.
 */
 type ListVSphereFoldersParams struct {
 
-	/*Credential*/
+	// Credential.
 	Credential *string
-	/*DatacenterName*/
+
+	// DatacenterName.
 	DatacenterName *string
-	/*Password*/
+
+	// Password.
 	Password *string
-	/*Username*/
+
+	// Username.
 	Username *string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list v sphere folders params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListVSphereFoldersParams) WithDefaults() *ListVSphereFoldersParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list v sphere folders params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListVSphereFoldersParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list v sphere folders params
@@ -165,7 +182,6 @@ func (o *ListVSphereFoldersParams) WriteToRequest(r runtime.ClientRequest, reg s
 		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
 			return err
 		}
-
 	}
 
 	if o.DatacenterName != nil {
@@ -174,7 +190,6 @@ func (o *ListVSphereFoldersParams) WriteToRequest(r runtime.ClientRequest, reg s
 		if err := r.SetHeaderParam("DatacenterName", *o.DatacenterName); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Password != nil {
@@ -183,7 +198,6 @@ func (o *ListVSphereFoldersParams) WriteToRequest(r runtime.ClientRequest, reg s
 		if err := r.SetHeaderParam("Password", *o.Password); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Username != nil {
@@ -192,7 +206,6 @@ func (o *ListVSphereFoldersParams) WriteToRequest(r runtime.ClientRequest, reg s
 		if err := r.SetHeaderParam("Username", *o.Username); err != nil {
 			return err
 		}
-
 	}
 
 	if len(res) > 0 {

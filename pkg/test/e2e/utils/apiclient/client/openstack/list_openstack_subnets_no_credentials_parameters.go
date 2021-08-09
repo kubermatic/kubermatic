@@ -16,62 +16,79 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListOpenstackSubnetsNoCredentialsParams creates a new ListOpenstackSubnetsNoCredentialsParams object
-// with the default values initialized.
+// NewListOpenstackSubnetsNoCredentialsParams creates a new ListOpenstackSubnetsNoCredentialsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListOpenstackSubnetsNoCredentialsParams() *ListOpenstackSubnetsNoCredentialsParams {
-	var ()
 	return &ListOpenstackSubnetsNoCredentialsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListOpenstackSubnetsNoCredentialsParamsWithTimeout creates a new ListOpenstackSubnetsNoCredentialsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListOpenstackSubnetsNoCredentialsParamsWithTimeout(timeout time.Duration) *ListOpenstackSubnetsNoCredentialsParams {
-	var ()
 	return &ListOpenstackSubnetsNoCredentialsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListOpenstackSubnetsNoCredentialsParamsWithContext creates a new ListOpenstackSubnetsNoCredentialsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListOpenstackSubnetsNoCredentialsParamsWithContext(ctx context.Context) *ListOpenstackSubnetsNoCredentialsParams {
-	var ()
 	return &ListOpenstackSubnetsNoCredentialsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListOpenstackSubnetsNoCredentialsParamsWithHTTPClient creates a new ListOpenstackSubnetsNoCredentialsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListOpenstackSubnetsNoCredentialsParamsWithHTTPClient(client *http.Client) *ListOpenstackSubnetsNoCredentialsParams {
-	var ()
 	return &ListOpenstackSubnetsNoCredentialsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListOpenstackSubnetsNoCredentialsParams contains all the parameters to send to the API endpoint
-for the list openstack subnets no credentials operation typically these are written to a http.Request
+/* ListOpenstackSubnetsNoCredentialsParams contains all the parameters to send to the API endpoint
+   for the list openstack subnets no credentials operation.
+
+   Typically these are written to a http.Request.
 */
 type ListOpenstackSubnetsNoCredentialsParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*NetworkID*/
+
+	// NetworkID.
 	NetworkID *string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list openstack subnets no credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListOpenstackSubnetsNoCredentialsParams) WithDefaults() *ListOpenstackSubnetsNoCredentialsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list openstack subnets no credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListOpenstackSubnetsNoCredentialsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list openstack subnets no credentials params
@@ -173,16 +190,17 @@ func (o *ListOpenstackSubnetsNoCredentialsParams) WriteToRequest(r runtime.Clien
 
 		// query param network_id
 		var qrNetworkID string
+
 		if o.NetworkID != nil {
 			qrNetworkID = *o.NetworkID
 		}
 		qNetworkID := qrNetworkID
 		if qNetworkID != "" {
+
 			if err := r.SetQueryParam("network_id", qNetworkID); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	// path param project_id

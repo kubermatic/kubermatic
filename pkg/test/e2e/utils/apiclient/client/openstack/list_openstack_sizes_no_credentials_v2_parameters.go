@@ -16,58 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListOpenstackSizesNoCredentialsV2Params creates a new ListOpenstackSizesNoCredentialsV2Params object
-// with the default values initialized.
+// NewListOpenstackSizesNoCredentialsV2Params creates a new ListOpenstackSizesNoCredentialsV2Params object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListOpenstackSizesNoCredentialsV2Params() *ListOpenstackSizesNoCredentialsV2Params {
-	var ()
 	return &ListOpenstackSizesNoCredentialsV2Params{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListOpenstackSizesNoCredentialsV2ParamsWithTimeout creates a new ListOpenstackSizesNoCredentialsV2Params object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListOpenstackSizesNoCredentialsV2ParamsWithTimeout(timeout time.Duration) *ListOpenstackSizesNoCredentialsV2Params {
-	var ()
 	return &ListOpenstackSizesNoCredentialsV2Params{
-
 		timeout: timeout,
 	}
 }
 
 // NewListOpenstackSizesNoCredentialsV2ParamsWithContext creates a new ListOpenstackSizesNoCredentialsV2Params object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListOpenstackSizesNoCredentialsV2ParamsWithContext(ctx context.Context) *ListOpenstackSizesNoCredentialsV2Params {
-	var ()
 	return &ListOpenstackSizesNoCredentialsV2Params{
-
 		Context: ctx,
 	}
 }
 
 // NewListOpenstackSizesNoCredentialsV2ParamsWithHTTPClient creates a new ListOpenstackSizesNoCredentialsV2Params object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListOpenstackSizesNoCredentialsV2ParamsWithHTTPClient(client *http.Client) *ListOpenstackSizesNoCredentialsV2Params {
-	var ()
 	return &ListOpenstackSizesNoCredentialsV2Params{
 		HTTPClient: client,
 	}
 }
 
-/*ListOpenstackSizesNoCredentialsV2Params contains all the parameters to send to the API endpoint
-for the list openstack sizes no credentials v2 operation typically these are written to a http.Request
+/* ListOpenstackSizesNoCredentialsV2Params contains all the parameters to send to the API endpoint
+   for the list openstack sizes no credentials v2 operation.
+
+   Typically these are written to a http.Request.
 */
 type ListOpenstackSizesNoCredentialsV2Params struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list openstack sizes no credentials v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListOpenstackSizesNoCredentialsV2Params) WithDefaults() *ListOpenstackSizesNoCredentialsV2Params {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list openstack sizes no credentials v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListOpenstackSizesNoCredentialsV2Params) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list openstack sizes no credentials v2 params

@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -45,7 +47,6 @@ func (m *ClusterMetrics) Validate(formats strfmt.Registry) error {
 }
 
 func (m *ClusterMetrics) validateControlPlane(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ControlPlane) { // not required
 		return nil
 	}
@@ -63,13 +64,58 @@ func (m *ClusterMetrics) validateControlPlane(formats strfmt.Registry) error {
 }
 
 func (m *ClusterMetrics) validateNodes(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Nodes) { // not required
 		return nil
 	}
 
 	if m.Nodes != nil {
 		if err := m.Nodes.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("nodes")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this cluster metrics based on the context it is used
+func (m *ClusterMetrics) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateControlPlane(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateNodes(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *ClusterMetrics) contextValidateControlPlane(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.ControlPlane != nil {
+		if err := m.ControlPlane.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("controlPlane")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ClusterMetrics) contextValidateNodes(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Nodes != nil {
+		if err := m.Nodes.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("nodes")
 			}

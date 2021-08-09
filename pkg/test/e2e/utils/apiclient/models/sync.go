@@ -6,6 +6,7 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -37,7 +38,6 @@ func (m *Sync) Validate(formats strfmt.Registry) error {
 }
 
 func (m *Sync) validateSyncOnly(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.SyncOnly) { // not required
 		return nil
 	}
@@ -49,6 +49,38 @@ func (m *Sync) validateSyncOnly(formats strfmt.Registry) error {
 
 		if m.SyncOnly[i] != nil {
 			if err := m.SyncOnly[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("syncOnly" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+// ContextValidate validate this sync based on the context it is used
+func (m *Sync) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateSyncOnly(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *Sync) contextValidateSyncOnly(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.SyncOnly); i++ {
+
+		if m.SyncOnly[i] != nil {
+			if err := m.SyncOnly[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("syncOnly" + "." + strconv.Itoa(i))
 				}

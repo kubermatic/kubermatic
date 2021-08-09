@@ -58,7 +58,7 @@ func NewListClustersOK() *ListClustersOK {
 	return &ListClustersOK{}
 }
 
-/*ListClustersOK handles this case with default header values.
+/* ListClustersOK describes a response with status code 200, with default header values.
 
 ClusterList
 */
@@ -69,7 +69,6 @@ type ListClustersOK struct {
 func (o *ListClustersOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters][%d] listClustersOK  %+v", 200, o.Payload)
 }
-
 func (o *ListClustersOK) GetPayload() models.ClusterList {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListClustersUnauthorized() *ListClustersUnauthorized {
 	return &ListClustersUnauthorized{}
 }
 
-/*ListClustersUnauthorized handles this case with default header values.
+/* ListClustersUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListClustersForbidden() *ListClustersForbidden {
 	return &ListClustersForbidden{}
 }
 
-/*ListClustersForbidden handles this case with default header values.
+/* ListClustersForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListClustersDefault(code int) *ListClustersDefault {
 	}
 }
 
-/*ListClustersDefault handles this case with default header values.
+/* ListClustersDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListClustersDefault) Code() int {
 func (o *ListClustersDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters][%d] listClusters default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListClustersDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

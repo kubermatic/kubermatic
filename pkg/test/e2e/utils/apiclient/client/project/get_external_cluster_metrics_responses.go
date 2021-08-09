@@ -58,7 +58,7 @@ func NewGetExternalClusterMetricsOK() *GetExternalClusterMetricsOK {
 	return &GetExternalClusterMetricsOK{}
 }
 
-/*GetExternalClusterMetricsOK handles this case with default header values.
+/* GetExternalClusterMetricsOK describes a response with status code 200, with default header values.
 
 ClusterMetrics
 */
@@ -69,7 +69,6 @@ type GetExternalClusterMetricsOK struct {
 func (o *GetExternalClusterMetricsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/metrics][%d] getExternalClusterMetricsOK  %+v", 200, o.Payload)
 }
-
 func (o *GetExternalClusterMetricsOK) GetPayload() *models.ClusterMetrics {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewGetExternalClusterMetricsUnauthorized() *GetExternalClusterMetricsUnauth
 	return &GetExternalClusterMetricsUnauthorized{}
 }
 
-/*GetExternalClusterMetricsUnauthorized handles this case with default header values.
+/* GetExternalClusterMetricsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewGetExternalClusterMetricsForbidden() *GetExternalClusterMetricsForbidden
 	return &GetExternalClusterMetricsForbidden{}
 }
 
-/*GetExternalClusterMetricsForbidden handles this case with default header values.
+/* GetExternalClusterMetricsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewGetExternalClusterMetricsDefault(code int) *GetExternalClusterMetricsDef
 	}
 }
 
-/*GetExternalClusterMetricsDefault handles this case with default header values.
+/* GetExternalClusterMetricsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *GetExternalClusterMetricsDefault) Code() int {
 func (o *GetExternalClusterMetricsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/metrics][%d] getExternalClusterMetrics default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetExternalClusterMetricsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

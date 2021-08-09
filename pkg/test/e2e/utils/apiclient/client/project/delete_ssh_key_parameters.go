@@ -16,58 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewDeleteSSHKeyParams creates a new DeleteSSHKeyParams object
-// with the default values initialized.
+// NewDeleteSSHKeyParams creates a new DeleteSSHKeyParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewDeleteSSHKeyParams() *DeleteSSHKeyParams {
-	var ()
 	return &DeleteSSHKeyParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewDeleteSSHKeyParamsWithTimeout creates a new DeleteSSHKeyParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewDeleteSSHKeyParamsWithTimeout(timeout time.Duration) *DeleteSSHKeyParams {
-	var ()
 	return &DeleteSSHKeyParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewDeleteSSHKeyParamsWithContext creates a new DeleteSSHKeyParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewDeleteSSHKeyParamsWithContext(ctx context.Context) *DeleteSSHKeyParams {
-	var ()
 	return &DeleteSSHKeyParams{
-
 		Context: ctx,
 	}
 }
 
 // NewDeleteSSHKeyParamsWithHTTPClient creates a new DeleteSSHKeyParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewDeleteSSHKeyParamsWithHTTPClient(client *http.Client) *DeleteSSHKeyParams {
-	var ()
 	return &DeleteSSHKeyParams{
 		HTTPClient: client,
 	}
 }
 
-/*DeleteSSHKeyParams contains all the parameters to send to the API endpoint
-for the delete SSH key operation typically these are written to a http.Request
+/* DeleteSSHKeyParams contains all the parameters to send to the API endpoint
+   for the delete SSH key operation.
+
+   Typically these are written to a http.Request.
 */
 type DeleteSSHKeyParams struct {
 
-	/*KeyID*/
+	// KeyID.
 	SSHKeyID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the delete SSH key params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DeleteSSHKeyParams) WithDefaults() *DeleteSSHKeyParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the delete SSH key params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DeleteSSHKeyParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the delete SSH key params

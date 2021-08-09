@@ -58,7 +58,7 @@ func NewListInstallableAddonsOK() *ListInstallableAddonsOK {
 	return &ListInstallableAddonsOK{}
 }
 
-/*ListInstallableAddonsOK handles this case with default header values.
+/* ListInstallableAddonsOK describes a response with status code 200, with default header values.
 
 AccessibleAddons
 */
@@ -69,7 +69,6 @@ type ListInstallableAddonsOK struct {
 func (o *ListInstallableAddonsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/installableaddons][%d] listInstallableAddonsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListInstallableAddonsOK) GetPayload() models.AccessibleAddons {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListInstallableAddonsUnauthorized() *ListInstallableAddonsUnauthorized {
 	return &ListInstallableAddonsUnauthorized{}
 }
 
-/*ListInstallableAddonsUnauthorized handles this case with default header values.
+/* ListInstallableAddonsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListInstallableAddonsForbidden() *ListInstallableAddonsForbidden {
 	return &ListInstallableAddonsForbidden{}
 }
 
-/*ListInstallableAddonsForbidden handles this case with default header values.
+/* ListInstallableAddonsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListInstallableAddonsDefault(code int) *ListInstallableAddonsDefault {
 	}
 }
 
-/*ListInstallableAddonsDefault handles this case with default header values.
+/* ListInstallableAddonsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListInstallableAddonsDefault) Code() int {
 func (o *ListInstallableAddonsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/installableaddons][%d] listInstallableAddons default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListInstallableAddonsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

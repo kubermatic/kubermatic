@@ -58,7 +58,7 @@ func NewListDCForSeedOK() *ListDCForSeedOK {
 	return &ListDCForSeedOK{}
 }
 
-/*ListDCForSeedOK handles this case with default header values.
+/* ListDCForSeedOK describes a response with status code 200, with default header values.
 
 Datacenter
 */
@@ -69,7 +69,6 @@ type ListDCForSeedOK struct {
 func (o *ListDCForSeedOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/seed/{seed_name}/dc][%d] listDCForSeedOK  %+v", 200, o.Payload)
 }
-
 func (o *ListDCForSeedOK) GetPayload() []*models.Datacenter {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListDCForSeedUnauthorized() *ListDCForSeedUnauthorized {
 	return &ListDCForSeedUnauthorized{}
 }
 
-/*ListDCForSeedUnauthorized handles this case with default header values.
+/* ListDCForSeedUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListDCForSeedForbidden() *ListDCForSeedForbidden {
 	return &ListDCForSeedForbidden{}
 }
 
-/*ListDCForSeedForbidden handles this case with default header values.
+/* ListDCForSeedForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListDCForSeedDefault(code int) *ListDCForSeedDefault {
 	}
 }
 
-/*ListDCForSeedDefault handles this case with default header values.
+/* ListDCForSeedDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListDCForSeedDefault) Code() int {
 func (o *ListDCForSeedDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/seed/{seed_name}/dc][%d] listDCForSeed default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListDCForSeedDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

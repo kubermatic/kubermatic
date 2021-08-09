@@ -18,62 +18,79 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
-// NewCreateNodeDeploymentParams creates a new CreateNodeDeploymentParams object
-// with the default values initialized.
+// NewCreateNodeDeploymentParams creates a new CreateNodeDeploymentParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewCreateNodeDeploymentParams() *CreateNodeDeploymentParams {
-	var ()
 	return &CreateNodeDeploymentParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewCreateNodeDeploymentParamsWithTimeout creates a new CreateNodeDeploymentParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewCreateNodeDeploymentParamsWithTimeout(timeout time.Duration) *CreateNodeDeploymentParams {
-	var ()
 	return &CreateNodeDeploymentParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewCreateNodeDeploymentParamsWithContext creates a new CreateNodeDeploymentParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewCreateNodeDeploymentParamsWithContext(ctx context.Context) *CreateNodeDeploymentParams {
-	var ()
 	return &CreateNodeDeploymentParams{
-
 		Context: ctx,
 	}
 }
 
 // NewCreateNodeDeploymentParamsWithHTTPClient creates a new CreateNodeDeploymentParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewCreateNodeDeploymentParamsWithHTTPClient(client *http.Client) *CreateNodeDeploymentParams {
-	var ()
 	return &CreateNodeDeploymentParams{
 		HTTPClient: client,
 	}
 }
 
-/*CreateNodeDeploymentParams contains all the parameters to send to the API endpoint
-for the create node deployment operation typically these are written to a http.Request
+/* CreateNodeDeploymentParams contains all the parameters to send to the API endpoint
+   for the create node deployment operation.
+
+   Typically these are written to a http.Request.
 */
 type CreateNodeDeploymentParams struct {
 
-	/*Body*/
+	// Body.
 	Body *models.NodeDeployment
-	/*ClusterID*/
+
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the create node deployment params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *CreateNodeDeploymentParams) WithDefaults() *CreateNodeDeploymentParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the create node deployment params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *CreateNodeDeploymentParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the create node deployment params
@@ -160,7 +177,6 @@ func (o *CreateNodeDeploymentParams) WriteToRequest(r runtime.ClientRequest, reg
 		return err
 	}
 	var res []error
-
 	if o.Body != nil {
 		if err := r.SetBodyParam(o.Body); err != nil {
 			return err

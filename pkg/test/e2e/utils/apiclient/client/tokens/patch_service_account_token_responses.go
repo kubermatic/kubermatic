@@ -58,7 +58,7 @@ func NewPatchServiceAccountTokenOK() *PatchServiceAccountTokenOK {
 	return &PatchServiceAccountTokenOK{}
 }
 
-/*PatchServiceAccountTokenOK handles this case with default header values.
+/* PatchServiceAccountTokenOK describes a response with status code 200, with default header values.
 
 PublicServiceAccountToken
 */
@@ -69,7 +69,6 @@ type PatchServiceAccountTokenOK struct {
 func (o *PatchServiceAccountTokenOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id}][%d] patchServiceAccountTokenOK  %+v", 200, o.Payload)
 }
-
 func (o *PatchServiceAccountTokenOK) GetPayload() *models.PublicServiceAccountToken {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewPatchServiceAccountTokenUnauthorized() *PatchServiceAccountTokenUnauthor
 	return &PatchServiceAccountTokenUnauthorized{}
 }
 
-/*PatchServiceAccountTokenUnauthorized handles this case with default header values.
+/* PatchServiceAccountTokenUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewPatchServiceAccountTokenForbidden() *PatchServiceAccountTokenForbidden {
 	return &PatchServiceAccountTokenForbidden{}
 }
 
-/*PatchServiceAccountTokenForbidden handles this case with default header values.
+/* PatchServiceAccountTokenForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewPatchServiceAccountTokenDefault(code int) *PatchServiceAccountTokenDefau
 	}
 }
 
-/*PatchServiceAccountTokenDefault handles this case with default header values.
+/* PatchServiceAccountTokenDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *PatchServiceAccountTokenDefault) Code() int {
 func (o *PatchServiceAccountTokenDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id}][%d] patchServiceAccountToken default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *PatchServiceAccountTokenDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

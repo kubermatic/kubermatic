@@ -46,7 +46,7 @@ func NewListPacketSizesNoCredentialsV2OK() *ListPacketSizesNoCredentialsV2OK {
 	return &ListPacketSizesNoCredentialsV2OK{}
 }
 
-/*ListPacketSizesNoCredentialsV2OK handles this case with default header values.
+/* ListPacketSizesNoCredentialsV2OK describes a response with status code 200, with default header values.
 
 PacketSizeList
 */
@@ -57,7 +57,6 @@ type ListPacketSizesNoCredentialsV2OK struct {
 func (o *ListPacketSizesNoCredentialsV2OK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/packet/sizes][%d] listPacketSizesNoCredentialsV2OK  %+v", 200, o.Payload)
 }
-
 func (o *ListPacketSizesNoCredentialsV2OK) GetPayload() []models.PacketSizeList {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListPacketSizesNoCredentialsV2Default(code int) *ListPacketSizesNoCreden
 	}
 }
 
-/*ListPacketSizesNoCredentialsV2Default handles this case with default header values.
+/* ListPacketSizesNoCredentialsV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListPacketSizesNoCredentialsV2Default) Code() int {
 func (o *ListPacketSizesNoCredentialsV2Default) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/packet/sizes][%d] listPacketSizesNoCredentialsV2 default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListPacketSizesNoCredentialsV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

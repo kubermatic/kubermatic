@@ -6,6 +6,7 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -46,7 +47,6 @@ func (m *ConstraintStatus) Validate(formats strfmt.Registry) error {
 }
 
 func (m *ConstraintStatus) validateViolations(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Violations) { // not required
 		return nil
 	}
@@ -58,6 +58,38 @@ func (m *ConstraintStatus) validateViolations(formats strfmt.Registry) error {
 
 		if m.Violations[i] != nil {
 			if err := m.Violations[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("violations" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+// ContextValidate validate this constraint status based on the context it is used
+func (m *ConstraintStatus) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateViolations(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *ConstraintStatus) contextValidateViolations(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Violations); i++ {
+
+		if m.Violations[i] != nil {
+			if err := m.Violations[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("violations" + "." + strconv.Itoa(i))
 				}

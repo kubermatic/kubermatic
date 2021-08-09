@@ -58,7 +58,7 @@ func NewDeleteServiceAccountOK() *DeleteServiceAccountOK {
 	return &DeleteServiceAccountOK{}
 }
 
-/*DeleteServiceAccountOK handles this case with default header values.
+/* DeleteServiceAccountOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -79,7 +79,7 @@ func NewDeleteServiceAccountUnauthorized() *DeleteServiceAccountUnauthorized {
 	return &DeleteServiceAccountUnauthorized{}
 }
 
-/*DeleteServiceAccountUnauthorized handles this case with default header values.
+/* DeleteServiceAccountUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -100,7 +100,7 @@ func NewDeleteServiceAccountForbidden() *DeleteServiceAccountForbidden {
 	return &DeleteServiceAccountForbidden{}
 }
 
-/*DeleteServiceAccountForbidden handles this case with default header values.
+/* DeleteServiceAccountForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -123,7 +123,7 @@ func NewDeleteServiceAccountDefault(code int) *DeleteServiceAccountDefault {
 	}
 }
 
-/*DeleteServiceAccountDefault handles this case with default header values.
+/* DeleteServiceAccountDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -141,7 +141,6 @@ func (o *DeleteServiceAccountDefault) Code() int {
 func (o *DeleteServiceAccountDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}][%d] deleteServiceAccount default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *DeleteServiceAccountDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

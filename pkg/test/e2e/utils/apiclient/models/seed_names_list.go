@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/strfmt"
 )
 
@@ -16,5 +18,10 @@ type SeedNamesList []string
 
 // Validate validates this seed names list
 func (m SeedNamesList) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this seed names list based on context it is used
+func (m SeedNamesList) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }

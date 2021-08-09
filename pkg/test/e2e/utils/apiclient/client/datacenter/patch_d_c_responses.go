@@ -58,7 +58,7 @@ func NewPatchDCOK() *PatchDCOK {
 	return &PatchDCOK{}
 }
 
-/*PatchDCOK handles this case with default header values.
+/* PatchDCOK describes a response with status code 200, with default header values.
 
 Datacenter
 */
@@ -69,7 +69,6 @@ type PatchDCOK struct {
 func (o *PatchDCOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/seed/{seed_name}/dc/{dc}][%d] patchDCOK  %+v", 200, o.Payload)
 }
-
 func (o *PatchDCOK) GetPayload() *models.Datacenter {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewPatchDCUnauthorized() *PatchDCUnauthorized {
 	return &PatchDCUnauthorized{}
 }
 
-/*PatchDCUnauthorized handles this case with default header values.
+/* PatchDCUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewPatchDCForbidden() *PatchDCForbidden {
 	return &PatchDCForbidden{}
 }
 
-/*PatchDCForbidden handles this case with default header values.
+/* PatchDCForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewPatchDCDefault(code int) *PatchDCDefault {
 	}
 }
 
-/*PatchDCDefault handles this case with default header values.
+/* PatchDCDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *PatchDCDefault) Code() int {
 func (o *PatchDCDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/seed/{seed_name}/dc/{dc}][%d] patchDC default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *PatchDCDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

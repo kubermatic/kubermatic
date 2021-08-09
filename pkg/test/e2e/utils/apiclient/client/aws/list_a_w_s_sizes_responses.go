@@ -46,7 +46,7 @@ func NewListAWSSizesOK() *ListAWSSizesOK {
 	return &ListAWSSizesOK{}
 }
 
-/*ListAWSSizesOK handles this case with default header values.
+/* ListAWSSizesOK describes a response with status code 200, with default header values.
 
 AWSSizeList
 */
@@ -57,7 +57,6 @@ type ListAWSSizesOK struct {
 func (o *ListAWSSizesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/aws/sizes][%d] listAWSSizesOK  %+v", 200, o.Payload)
 }
-
 func (o *ListAWSSizesOK) GetPayload() models.AWSSizeList {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListAWSSizesDefault(code int) *ListAWSSizesDefault {
 	}
 }
 
-/*ListAWSSizesDefault handles this case with default header values.
+/* ListAWSSizesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListAWSSizesDefault) Code() int {
 func (o *ListAWSSizesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/aws/sizes][%d] listAWSSizes default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListAWSSizesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

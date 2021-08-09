@@ -58,7 +58,7 @@ func NewGetClusterUpgradesOK() *GetClusterUpgradesOK {
 	return &GetClusterUpgradesOK{}
 }
 
-/*GetClusterUpgradesOK handles this case with default header values.
+/* GetClusterUpgradesOK describes a response with status code 200, with default header values.
 
 MasterVersion
 */
@@ -69,7 +69,6 @@ type GetClusterUpgradesOK struct {
 func (o *GetClusterUpgradesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/upgrades][%d] getClusterUpgradesOK  %+v", 200, o.Payload)
 }
-
 func (o *GetClusterUpgradesOK) GetPayload() []*models.MasterVersion {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewGetClusterUpgradesUnauthorized() *GetClusterUpgradesUnauthorized {
 	return &GetClusterUpgradesUnauthorized{}
 }
 
-/*GetClusterUpgradesUnauthorized handles this case with default header values.
+/* GetClusterUpgradesUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewGetClusterUpgradesForbidden() *GetClusterUpgradesForbidden {
 	return &GetClusterUpgradesForbidden{}
 }
 
-/*GetClusterUpgradesForbidden handles this case with default header values.
+/* GetClusterUpgradesForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewGetClusterUpgradesDefault(code int) *GetClusterUpgradesDefault {
 	}
 }
 
-/*GetClusterUpgradesDefault handles this case with default header values.
+/* GetClusterUpgradesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *GetClusterUpgradesDefault) Code() int {
 func (o *GetClusterUpgradesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/upgrades][%d] getClusterUpgrades default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetClusterUpgradesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

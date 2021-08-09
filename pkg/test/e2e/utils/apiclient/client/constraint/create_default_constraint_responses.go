@@ -58,7 +58,7 @@ func NewCreateDefaultConstraintOK() *CreateDefaultConstraintOK {
 	return &CreateDefaultConstraintOK{}
 }
 
-/*CreateDefaultConstraintOK handles this case with default header values.
+/* CreateDefaultConstraintOK describes a response with status code 200, with default header values.
 
 Constraint
 */
@@ -69,7 +69,6 @@ type CreateDefaultConstraintOK struct {
 func (o *CreateDefaultConstraintOK) Error() string {
 	return fmt.Sprintf("[POST /api/v2/constraints][%d] createDefaultConstraintOK  %+v", 200, o.Payload)
 }
-
 func (o *CreateDefaultConstraintOK) GetPayload() *models.Constraint {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewCreateDefaultConstraintUnauthorized() *CreateDefaultConstraintUnauthoriz
 	return &CreateDefaultConstraintUnauthorized{}
 }
 
-/*CreateDefaultConstraintUnauthorized handles this case with default header values.
+/* CreateDefaultConstraintUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewCreateDefaultConstraintForbidden() *CreateDefaultConstraintForbidden {
 	return &CreateDefaultConstraintForbidden{}
 }
 
-/*CreateDefaultConstraintForbidden handles this case with default header values.
+/* CreateDefaultConstraintForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewCreateDefaultConstraintDefault(code int) *CreateDefaultConstraintDefault
 	}
 }
 
-/*CreateDefaultConstraintDefault handles this case with default header values.
+/* CreateDefaultConstraintDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *CreateDefaultConstraintDefault) Code() int {
 func (o *CreateDefaultConstraintDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v2/constraints][%d] createDefaultConstraint default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *CreateDefaultConstraintDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

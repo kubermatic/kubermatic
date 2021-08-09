@@ -6,6 +6,7 @@ package project
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"fmt"
 	"io"
 
@@ -60,7 +61,7 @@ func NewCreateClusterTemplateCreated() *CreateClusterTemplateCreated {
 	return &CreateClusterTemplateCreated{}
 }
 
-/*CreateClusterTemplateCreated handles this case with default header values.
+/* CreateClusterTemplateCreated describes a response with status code 201, with default header values.
 
 ClusterTemplate
 */
@@ -71,7 +72,6 @@ type CreateClusterTemplateCreated struct {
 func (o *CreateClusterTemplateCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clustertemplates][%d] createClusterTemplateCreated  %+v", 201, o.Payload)
 }
-
 func (o *CreateClusterTemplateCreated) GetPayload() *models.ClusterTemplate {
 	return o.Payload
 }
@@ -93,7 +93,7 @@ func NewCreateClusterTemplateUnauthorized() *CreateClusterTemplateUnauthorized {
 	return &CreateClusterTemplateUnauthorized{}
 }
 
-/*CreateClusterTemplateUnauthorized handles this case with default header values.
+/* CreateClusterTemplateUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -114,7 +114,7 @@ func NewCreateClusterTemplateForbidden() *CreateClusterTemplateForbidden {
 	return &CreateClusterTemplateForbidden{}
 }
 
-/*CreateClusterTemplateForbidden handles this case with default header values.
+/* CreateClusterTemplateForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -137,7 +137,7 @@ func NewCreateClusterTemplateDefault(code int) *CreateClusterTemplateDefault {
 	}
 }
 
-/*CreateClusterTemplateDefault handles this case with default header values.
+/* CreateClusterTemplateDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -155,7 +155,6 @@ func (o *CreateClusterTemplateDefault) Code() int {
 func (o *CreateClusterTemplateDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clustertemplates][%d] createClusterTemplate default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *CreateClusterTemplateDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }
@@ -209,7 +208,6 @@ func (o *CreateClusterTemplateBody) Validate(formats strfmt.Registry) error {
 }
 
 func (o *CreateClusterTemplateBody) validateCluster(formats strfmt.Registry) error {
-
 	if swag.IsZero(o.Cluster) { // not required
 		return nil
 	}
@@ -227,13 +225,58 @@ func (o *CreateClusterTemplateBody) validateCluster(formats strfmt.Registry) err
 }
 
 func (o *CreateClusterTemplateBody) validateNodeDeployment(formats strfmt.Registry) error {
-
 	if swag.IsZero(o.NodeDeployment) { // not required
 		return nil
 	}
 
 	if o.NodeDeployment != nil {
 		if err := o.NodeDeployment.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("Body" + "." + "nodeDeployment")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this create cluster template body based on the context it is used
+func (o *CreateClusterTemplateBody) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := o.contextValidateCluster(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := o.contextValidateNodeDeployment(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (o *CreateClusterTemplateBody) contextValidateCluster(ctx context.Context, formats strfmt.Registry) error {
+
+	if o.Cluster != nil {
+		if err := o.Cluster.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("Body" + "." + "cluster")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (o *CreateClusterTemplateBody) contextValidateNodeDeployment(ctx context.Context, formats strfmt.Registry) error {
+
+	if o.NodeDeployment != nil {
+		if err := o.NodeDeployment.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("Body" + "." + "nodeDeployment")
 			}

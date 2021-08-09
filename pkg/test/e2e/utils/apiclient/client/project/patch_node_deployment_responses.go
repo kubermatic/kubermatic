@@ -58,7 +58,7 @@ func NewPatchNodeDeploymentOK() *PatchNodeDeploymentOK {
 	return &PatchNodeDeploymentOK{}
 }
 
-/*PatchNodeDeploymentOK handles this case with default header values.
+/* PatchNodeDeploymentOK describes a response with status code 200, with default header values.
 
 NodeDeployment
 */
@@ -69,7 +69,6 @@ type PatchNodeDeploymentOK struct {
 func (o *PatchNodeDeploymentOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}][%d] patchNodeDeploymentOK  %+v", 200, o.Payload)
 }
-
 func (o *PatchNodeDeploymentOK) GetPayload() *models.NodeDeployment {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewPatchNodeDeploymentUnauthorized() *PatchNodeDeploymentUnauthorized {
 	return &PatchNodeDeploymentUnauthorized{}
 }
 
-/*PatchNodeDeploymentUnauthorized handles this case with default header values.
+/* PatchNodeDeploymentUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewPatchNodeDeploymentForbidden() *PatchNodeDeploymentForbidden {
 	return &PatchNodeDeploymentForbidden{}
 }
 
-/*PatchNodeDeploymentForbidden handles this case with default header values.
+/* PatchNodeDeploymentForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewPatchNodeDeploymentDefault(code int) *PatchNodeDeploymentDefault {
 	}
 }
 
-/*PatchNodeDeploymentDefault handles this case with default header values.
+/* PatchNodeDeploymentDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *PatchNodeDeploymentDefault) Code() int {
 func (o *PatchNodeDeploymentDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}][%d] patchNodeDeployment default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *PatchNodeDeploymentDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

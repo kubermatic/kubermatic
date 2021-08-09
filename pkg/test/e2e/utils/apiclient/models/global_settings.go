@@ -6,6 +6,9 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -43,5 +46,20 @@ func (m GlobalSettings) MarshalJSON() ([]byte, error) {
 
 // Validate validates this global settings
 func (m *GlobalSettings) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validate this global settings based on the context it is used
+func (m *GlobalSettings) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	// validation for a type composition with SettingSpec
+	if err := m.SettingSpec.ContextValidate(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }

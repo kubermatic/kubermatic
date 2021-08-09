@@ -58,7 +58,7 @@ func NewGetUsersForProjectOK() *GetUsersForProjectOK {
 	return &GetUsersForProjectOK{}
 }
 
-/*GetUsersForProjectOK handles this case with default header values.
+/* GetUsersForProjectOK describes a response with status code 200, with default header values.
 
 User
 */
@@ -69,7 +69,6 @@ type GetUsersForProjectOK struct {
 func (o *GetUsersForProjectOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/users][%d] getUsersForProjectOK  %+v", 200, o.Payload)
 }
-
 func (o *GetUsersForProjectOK) GetPayload() []*models.User {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewGetUsersForProjectUnauthorized() *GetUsersForProjectUnauthorized {
 	return &GetUsersForProjectUnauthorized{}
 }
 
-/*GetUsersForProjectUnauthorized handles this case with default header values.
+/* GetUsersForProjectUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewGetUsersForProjectForbidden() *GetUsersForProjectForbidden {
 	return &GetUsersForProjectForbidden{}
 }
 
-/*GetUsersForProjectForbidden handles this case with default header values.
+/* GetUsersForProjectForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewGetUsersForProjectDefault(code int) *GetUsersForProjectDefault {
 	}
 }
 
-/*GetUsersForProjectDefault handles this case with default header values.
+/* GetUsersForProjectDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *GetUsersForProjectDefault) Code() int {
 func (o *GetUsersForProjectDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/users][%d] getUsersForProject default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetUsersForProjectDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -58,7 +58,7 @@ func NewPatchEtcdBackupConfigOK() *PatchEtcdBackupConfigOK {
 	return &PatchEtcdBackupConfigOK{}
 }
 
-/*PatchEtcdBackupConfigOK handles this case with default header values.
+/* PatchEtcdBackupConfigOK describes a response with status code 200, with default header values.
 
 EtcdBackupConfig
 */
@@ -69,7 +69,6 @@ type PatchEtcdBackupConfigOK struct {
 func (o *PatchEtcdBackupConfigOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_name}][%d] patchEtcdBackupConfigOK  %+v", 200, o.Payload)
 }
-
 func (o *PatchEtcdBackupConfigOK) GetPayload() *models.EtcdBackupConfig {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewPatchEtcdBackupConfigUnauthorized() *PatchEtcdBackupConfigUnauthorized {
 	return &PatchEtcdBackupConfigUnauthorized{}
 }
 
-/*PatchEtcdBackupConfigUnauthorized handles this case with default header values.
+/* PatchEtcdBackupConfigUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewPatchEtcdBackupConfigForbidden() *PatchEtcdBackupConfigForbidden {
 	return &PatchEtcdBackupConfigForbidden{}
 }
 
-/*PatchEtcdBackupConfigForbidden handles this case with default header values.
+/* PatchEtcdBackupConfigForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewPatchEtcdBackupConfigDefault(code int) *PatchEtcdBackupConfigDefault {
 	}
 }
 
-/*PatchEtcdBackupConfigDefault handles this case with default header values.
+/* PatchEtcdBackupConfigDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *PatchEtcdBackupConfigDefault) Code() int {
 func (o *PatchEtcdBackupConfigDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_name}][%d] patchEtcdBackupConfig default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *PatchEtcdBackupConfigDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

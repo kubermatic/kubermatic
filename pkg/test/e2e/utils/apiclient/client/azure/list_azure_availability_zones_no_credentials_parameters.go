@@ -16,62 +16,79 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListAzureAvailabilityZonesNoCredentialsParams creates a new ListAzureAvailabilityZonesNoCredentialsParams object
-// with the default values initialized.
+// NewListAzureAvailabilityZonesNoCredentialsParams creates a new ListAzureAvailabilityZonesNoCredentialsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListAzureAvailabilityZonesNoCredentialsParams() *ListAzureAvailabilityZonesNoCredentialsParams {
-	var ()
 	return &ListAzureAvailabilityZonesNoCredentialsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListAzureAvailabilityZonesNoCredentialsParamsWithTimeout creates a new ListAzureAvailabilityZonesNoCredentialsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListAzureAvailabilityZonesNoCredentialsParamsWithTimeout(timeout time.Duration) *ListAzureAvailabilityZonesNoCredentialsParams {
-	var ()
 	return &ListAzureAvailabilityZonesNoCredentialsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListAzureAvailabilityZonesNoCredentialsParamsWithContext creates a new ListAzureAvailabilityZonesNoCredentialsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListAzureAvailabilityZonesNoCredentialsParamsWithContext(ctx context.Context) *ListAzureAvailabilityZonesNoCredentialsParams {
-	var ()
 	return &ListAzureAvailabilityZonesNoCredentialsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListAzureAvailabilityZonesNoCredentialsParamsWithHTTPClient creates a new ListAzureAvailabilityZonesNoCredentialsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListAzureAvailabilityZonesNoCredentialsParamsWithHTTPClient(client *http.Client) *ListAzureAvailabilityZonesNoCredentialsParams {
-	var ()
 	return &ListAzureAvailabilityZonesNoCredentialsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListAzureAvailabilityZonesNoCredentialsParams contains all the parameters to send to the API endpoint
-for the list azure availability zones no credentials operation typically these are written to a http.Request
+/* ListAzureAvailabilityZonesNoCredentialsParams contains all the parameters to send to the API endpoint
+   for the list azure availability zones no credentials operation.
+
+   Typically these are written to a http.Request.
 */
 type ListAzureAvailabilityZonesNoCredentialsParams struct {
 
-	/*SKUName*/
+	// SKUName.
 	SKUName *string
-	/*ClusterID*/
+
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list azure availability zones no credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAzureAvailabilityZonesNoCredentialsParams) WithDefaults() *ListAzureAvailabilityZonesNoCredentialsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list azure availability zones no credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAzureAvailabilityZonesNoCredentialsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list azure availability zones no credentials params
@@ -165,7 +182,6 @@ func (o *ListAzureAvailabilityZonesNoCredentialsParams) WriteToRequest(r runtime
 		if err := r.SetHeaderParam("SKUName", *o.SKUName); err != nil {
 			return err
 		}
-
 	}
 
 	// path param cluster_id

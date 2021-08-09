@@ -58,7 +58,7 @@ func NewCreateNodeDeploymentCreated() *CreateNodeDeploymentCreated {
 	return &CreateNodeDeploymentCreated{}
 }
 
-/*CreateNodeDeploymentCreated handles this case with default header values.
+/* CreateNodeDeploymentCreated describes a response with status code 201, with default header values.
 
 NodeDeployment
 */
@@ -69,7 +69,6 @@ type CreateNodeDeploymentCreated struct {
 func (o *CreateNodeDeploymentCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments][%d] createNodeDeploymentCreated  %+v", 201, o.Payload)
 }
-
 func (o *CreateNodeDeploymentCreated) GetPayload() *models.NodeDeployment {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewCreateNodeDeploymentUnauthorized() *CreateNodeDeploymentUnauthorized {
 	return &CreateNodeDeploymentUnauthorized{}
 }
 
-/*CreateNodeDeploymentUnauthorized handles this case with default header values.
+/* CreateNodeDeploymentUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewCreateNodeDeploymentForbidden() *CreateNodeDeploymentForbidden {
 	return &CreateNodeDeploymentForbidden{}
 }
 
-/*CreateNodeDeploymentForbidden handles this case with default header values.
+/* CreateNodeDeploymentForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewCreateNodeDeploymentDefault(code int) *CreateNodeDeploymentDefault {
 	}
 }
 
-/*CreateNodeDeploymentDefault handles this case with default header values.
+/* CreateNodeDeploymentDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *CreateNodeDeploymentDefault) Code() int {
 func (o *CreateNodeDeploymentDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments][%d] createNodeDeployment default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *CreateNodeDeploymentDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

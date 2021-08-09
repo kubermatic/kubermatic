@@ -23,13 +23,16 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	ListPacketSizes(params *ListPacketSizesParams, authInfo runtime.ClientAuthInfoWriter) (*ListPacketSizesOK, error)
+	ListPacketSizes(params *ListPacketSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListPacketSizesOK, error)
 
-	ListPacketSizesNoCredentials(params *ListPacketSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListPacketSizesNoCredentialsOK, error)
+	ListPacketSizesNoCredentials(params *ListPacketSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListPacketSizesNoCredentialsOK, error)
 
-	ListPacketSizesNoCredentialsV2(params *ListPacketSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListPacketSizesNoCredentialsV2OK, error)
+	ListPacketSizesNoCredentialsV2(params *ListPacketSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListPacketSizesNoCredentialsV2OK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -37,13 +40,12 @@ type ClientService interface {
 /*
   ListPacketSizes Lists sizes from packet
 */
-func (a *Client) ListPacketSizes(params *ListPacketSizesParams, authInfo runtime.ClientAuthInfoWriter) (*ListPacketSizesOK, error) {
+func (a *Client) ListPacketSizes(params *ListPacketSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListPacketSizesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListPacketSizesParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listPacketSizes",
 		Method:             "GET",
 		PathPattern:        "/api/v1/providers/packet/sizes",
@@ -55,7 +57,12 @@ func (a *Client) ListPacketSizes(params *ListPacketSizesParams, authInfo runtime
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -71,13 +78,12 @@ func (a *Client) ListPacketSizes(params *ListPacketSizesParams, authInfo runtime
 /*
   ListPacketSizesNoCredentials Lists sizes from packet
 */
-func (a *Client) ListPacketSizesNoCredentials(params *ListPacketSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListPacketSizesNoCredentialsOK, error) {
+func (a *Client) ListPacketSizesNoCredentials(params *ListPacketSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListPacketSizesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListPacketSizesNoCredentialsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listPacketSizesNoCredentials",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/packet/sizes",
@@ -89,7 +95,12 @@ func (a *Client) ListPacketSizesNoCredentials(params *ListPacketSizesNoCredentia
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -105,13 +116,12 @@ func (a *Client) ListPacketSizesNoCredentials(params *ListPacketSizesNoCredentia
 /*
   ListPacketSizesNoCredentialsV2 Lists sizes from packet
 */
-func (a *Client) ListPacketSizesNoCredentialsV2(params *ListPacketSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListPacketSizesNoCredentialsV2OK, error) {
+func (a *Client) ListPacketSizesNoCredentialsV2(params *ListPacketSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListPacketSizesNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListPacketSizesNoCredentialsV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listPacketSizesNoCredentialsV2",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/packet/sizes",
@@ -123,7 +133,12 @@ func (a *Client) ListPacketSizesNoCredentialsV2(params *ListPacketSizesNoCredent
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

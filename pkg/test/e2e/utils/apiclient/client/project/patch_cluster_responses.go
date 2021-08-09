@@ -58,7 +58,7 @@ func NewPatchClusterOK() *PatchClusterOK {
 	return &PatchClusterOK{}
 }
 
-/*PatchClusterOK handles this case with default header values.
+/* PatchClusterOK describes a response with status code 200, with default header values.
 
 Cluster
 */
@@ -69,7 +69,6 @@ type PatchClusterOK struct {
 func (o *PatchClusterOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}][%d] patchClusterOK  %+v", 200, o.Payload)
 }
-
 func (o *PatchClusterOK) GetPayload() *models.Cluster {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewPatchClusterUnauthorized() *PatchClusterUnauthorized {
 	return &PatchClusterUnauthorized{}
 }
 
-/*PatchClusterUnauthorized handles this case with default header values.
+/* PatchClusterUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewPatchClusterForbidden() *PatchClusterForbidden {
 	return &PatchClusterForbidden{}
 }
 
-/*PatchClusterForbidden handles this case with default header values.
+/* PatchClusterForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewPatchClusterDefault(code int) *PatchClusterDefault {
 	}
 }
 
-/*PatchClusterDefault handles this case with default header values.
+/* PatchClusterDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *PatchClusterDefault) Code() int {
 func (o *PatchClusterDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}][%d] patchCluster default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *PatchClusterDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

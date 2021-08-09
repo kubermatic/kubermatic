@@ -46,7 +46,7 @@ func NewListAlibabaVSwitchesOK() *ListAlibabaVSwitchesOK {
 	return &ListAlibabaVSwitchesOK{}
 }
 
-/*ListAlibabaVSwitchesOK handles this case with default header values.
+/* ListAlibabaVSwitchesOK describes a response with status code 200, with default header values.
 
 AlibabaVSwitchList
 */
@@ -57,7 +57,6 @@ type ListAlibabaVSwitchesOK struct {
 func (o *ListAlibabaVSwitchesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/alibaba/vswitches][%d] listAlibabaVSwitchesOK  %+v", 200, o.Payload)
 }
-
 func (o *ListAlibabaVSwitchesOK) GetPayload() models.AlibabaVSwitchList {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListAlibabaVSwitchesDefault(code int) *ListAlibabaVSwitchesDefault {
 	}
 }
 
-/*ListAlibabaVSwitchesDefault handles this case with default header values.
+/* ListAlibabaVSwitchesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListAlibabaVSwitchesDefault) Code() int {
 func (o *ListAlibabaVSwitchesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/alibaba/vswitches][%d] listAlibabaVSwitches default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListAlibabaVSwitchesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

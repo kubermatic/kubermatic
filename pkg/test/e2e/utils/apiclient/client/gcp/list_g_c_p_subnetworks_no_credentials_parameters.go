@@ -16,62 +16,79 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListGCPSubnetworksNoCredentialsParams creates a new ListGCPSubnetworksNoCredentialsParams object
-// with the default values initialized.
+// NewListGCPSubnetworksNoCredentialsParams creates a new ListGCPSubnetworksNoCredentialsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListGCPSubnetworksNoCredentialsParams() *ListGCPSubnetworksNoCredentialsParams {
-	var ()
 	return &ListGCPSubnetworksNoCredentialsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListGCPSubnetworksNoCredentialsParamsWithTimeout creates a new ListGCPSubnetworksNoCredentialsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListGCPSubnetworksNoCredentialsParamsWithTimeout(timeout time.Duration) *ListGCPSubnetworksNoCredentialsParams {
-	var ()
 	return &ListGCPSubnetworksNoCredentialsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListGCPSubnetworksNoCredentialsParamsWithContext creates a new ListGCPSubnetworksNoCredentialsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListGCPSubnetworksNoCredentialsParamsWithContext(ctx context.Context) *ListGCPSubnetworksNoCredentialsParams {
-	var ()
 	return &ListGCPSubnetworksNoCredentialsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListGCPSubnetworksNoCredentialsParamsWithHTTPClient creates a new ListGCPSubnetworksNoCredentialsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListGCPSubnetworksNoCredentialsParamsWithHTTPClient(client *http.Client) *ListGCPSubnetworksNoCredentialsParams {
-	var ()
 	return &ListGCPSubnetworksNoCredentialsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListGCPSubnetworksNoCredentialsParams contains all the parameters to send to the API endpoint
-for the list g c p subnetworks no credentials operation typically these are written to a http.Request
+/* ListGCPSubnetworksNoCredentialsParams contains all the parameters to send to the API endpoint
+   for the list g c p subnetworks no credentials operation.
+
+   Typically these are written to a http.Request.
 */
 type ListGCPSubnetworksNoCredentialsParams struct {
 
-	/*Network*/
+	// Network.
 	Network *string
-	/*ClusterID*/
+
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list g c p subnetworks no credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListGCPSubnetworksNoCredentialsParams) WithDefaults() *ListGCPSubnetworksNoCredentialsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list g c p subnetworks no credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListGCPSubnetworksNoCredentialsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list g c p subnetworks no credentials params
@@ -165,7 +182,6 @@ func (o *ListGCPSubnetworksNoCredentialsParams) WriteToRequest(r runtime.ClientR
 		if err := r.SetHeaderParam("Network", *o.Network); err != nil {
 			return err
 		}
-
 	}
 
 	// path param cluster_id

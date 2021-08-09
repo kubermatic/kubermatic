@@ -58,7 +58,7 @@ func NewCreateEtcdBackupConfigCreated() *CreateEtcdBackupConfigCreated {
 	return &CreateEtcdBackupConfigCreated{}
 }
 
-/*CreateEtcdBackupConfigCreated handles this case with default header values.
+/* CreateEtcdBackupConfigCreated describes a response with status code 201, with default header values.
 
 EtcdBackupConfig
 */
@@ -69,7 +69,6 @@ type CreateEtcdBackupConfigCreated struct {
 func (o *CreateEtcdBackupConfigCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs][%d] createEtcdBackupConfigCreated  %+v", 201, o.Payload)
 }
-
 func (o *CreateEtcdBackupConfigCreated) GetPayload() *models.EtcdBackupConfig {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewCreateEtcdBackupConfigUnauthorized() *CreateEtcdBackupConfigUnauthorized
 	return &CreateEtcdBackupConfigUnauthorized{}
 }
 
-/*CreateEtcdBackupConfigUnauthorized handles this case with default header values.
+/* CreateEtcdBackupConfigUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewCreateEtcdBackupConfigForbidden() *CreateEtcdBackupConfigForbidden {
 	return &CreateEtcdBackupConfigForbidden{}
 }
 
-/*CreateEtcdBackupConfigForbidden handles this case with default header values.
+/* CreateEtcdBackupConfigForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewCreateEtcdBackupConfigDefault(code int) *CreateEtcdBackupConfigDefault {
 	}
 }
 
-/*CreateEtcdBackupConfigDefault handles this case with default header values.
+/* CreateEtcdBackupConfigDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *CreateEtcdBackupConfigDefault) Code() int {
 func (o *CreateEtcdBackupConfigDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs][%d] createEtcdBackupConfig default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *CreateEtcdBackupConfigDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

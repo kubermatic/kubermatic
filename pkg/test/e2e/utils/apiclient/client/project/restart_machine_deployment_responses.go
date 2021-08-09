@@ -58,7 +58,7 @@ func NewRestartMachineDeploymentOK() *RestartMachineDeploymentOK {
 	return &RestartMachineDeploymentOK{}
 }
 
-/*RestartMachineDeploymentOK handles this case with default header values.
+/* RestartMachineDeploymentOK describes a response with status code 200, with default header values.
 
 NodeDeployment
 */
@@ -69,7 +69,6 @@ type RestartMachineDeploymentOK struct {
 func (o *RestartMachineDeploymentOK) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}][%d] restartMachineDeploymentOK  %+v", 200, o.Payload)
 }
-
 func (o *RestartMachineDeploymentOK) GetPayload() *models.NodeDeployment {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewRestartMachineDeploymentUnauthorized() *RestartMachineDeploymentUnauthor
 	return &RestartMachineDeploymentUnauthorized{}
 }
 
-/*RestartMachineDeploymentUnauthorized handles this case with default header values.
+/* RestartMachineDeploymentUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewRestartMachineDeploymentForbidden() *RestartMachineDeploymentForbidden {
 	return &RestartMachineDeploymentForbidden{}
 }
 
-/*RestartMachineDeploymentForbidden handles this case with default header values.
+/* RestartMachineDeploymentForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewRestartMachineDeploymentDefault(code int) *RestartMachineDeploymentDefau
 	}
 }
 
-/*RestartMachineDeploymentDefault handles this case with default header values.
+/* RestartMachineDeploymentDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *RestartMachineDeploymentDefault) Code() int {
 func (o *RestartMachineDeploymentDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}][%d] restartMachineDeployment default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *RestartMachineDeploymentDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

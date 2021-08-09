@@ -23,17 +23,20 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	AddTokenToServiceAccount(params *AddTokenToServiceAccountParams, authInfo runtime.ClientAuthInfoWriter) (*AddTokenToServiceAccountCreated, error)
+	AddTokenToServiceAccount(params *AddTokenToServiceAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddTokenToServiceAccountCreated, error)
 
-	DeleteServiceAccountToken(params *DeleteServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteServiceAccountTokenOK, error)
+	DeleteServiceAccountToken(params *DeleteServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteServiceAccountTokenOK, error)
 
-	ListServiceAccountTokens(params *ListServiceAccountTokensParams, authInfo runtime.ClientAuthInfoWriter) (*ListServiceAccountTokensOK, error)
+	ListServiceAccountTokens(params *ListServiceAccountTokensParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListServiceAccountTokensOK, error)
 
-	PatchServiceAccountToken(params *PatchServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter) (*PatchServiceAccountTokenOK, error)
+	PatchServiceAccountToken(params *PatchServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchServiceAccountTokenOK, error)
 
-	UpdateServiceAccountToken(params *UpdateServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateServiceAccountTokenOK, error)
+	UpdateServiceAccountToken(params *UpdateServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateServiceAccountTokenOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -41,13 +44,12 @@ type ClientService interface {
 /*
   AddTokenToServiceAccount Generates a token for the given service account
 */
-func (a *Client) AddTokenToServiceAccount(params *AddTokenToServiceAccountParams, authInfo runtime.ClientAuthInfoWriter) (*AddTokenToServiceAccountCreated, error) {
+func (a *Client) AddTokenToServiceAccount(params *AddTokenToServiceAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddTokenToServiceAccountCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddTokenToServiceAccountParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "addTokenToServiceAccount",
 		Method:             "POST",
 		PathPattern:        "/api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens",
@@ -59,7 +61,12 @@ func (a *Client) AddTokenToServiceAccount(params *AddTokenToServiceAccountParams
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -75,13 +82,12 @@ func (a *Client) AddTokenToServiceAccount(params *AddTokenToServiceAccountParams
 /*
   DeleteServiceAccountToken Deletes the token
 */
-func (a *Client) DeleteServiceAccountToken(params *DeleteServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteServiceAccountTokenOK, error) {
+func (a *Client) DeleteServiceAccountToken(params *DeleteServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteServiceAccountTokenOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewDeleteServiceAccountTokenParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "deleteServiceAccountToken",
 		Method:             "DELETE",
 		PathPattern:        "/api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id}",
@@ -93,7 +99,12 @@ func (a *Client) DeleteServiceAccountToken(params *DeleteServiceAccountTokenPara
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -109,13 +120,12 @@ func (a *Client) DeleteServiceAccountToken(params *DeleteServiceAccountTokenPara
 /*
   ListServiceAccountTokens List tokens for the given service account
 */
-func (a *Client) ListServiceAccountTokens(params *ListServiceAccountTokensParams, authInfo runtime.ClientAuthInfoWriter) (*ListServiceAccountTokensOK, error) {
+func (a *Client) ListServiceAccountTokens(params *ListServiceAccountTokensParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListServiceAccountTokensOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListServiceAccountTokensParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listServiceAccountTokens",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens",
@@ -127,7 +137,12 @@ func (a *Client) ListServiceAccountTokens(params *ListServiceAccountTokensParams
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -143,13 +158,12 @@ func (a *Client) ListServiceAccountTokens(params *ListServiceAccountTokensParams
 /*
   PatchServiceAccountToken Patches the token name
 */
-func (a *Client) PatchServiceAccountToken(params *PatchServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter) (*PatchServiceAccountTokenOK, error) {
+func (a *Client) PatchServiceAccountToken(params *PatchServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchServiceAccountTokenOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewPatchServiceAccountTokenParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "patchServiceAccountToken",
 		Method:             "PATCH",
 		PathPattern:        "/api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id}",
@@ -161,7 +175,12 @@ func (a *Client) PatchServiceAccountToken(params *PatchServiceAccountTokenParams
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -177,13 +196,12 @@ func (a *Client) PatchServiceAccountToken(params *PatchServiceAccountTokenParams
 /*
   UpdateServiceAccountToken Updates and regenerates the token
 */
-func (a *Client) UpdateServiceAccountToken(params *UpdateServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateServiceAccountTokenOK, error) {
+func (a *Client) UpdateServiceAccountToken(params *UpdateServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateServiceAccountTokenOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewUpdateServiceAccountTokenParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "updateServiceAccountToken",
 		Method:             "PUT",
 		PathPattern:        "/api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id}",
@@ -195,7 +213,12 @@ func (a *Client) UpdateServiceAccountToken(params *UpdateServiceAccountTokenPara
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

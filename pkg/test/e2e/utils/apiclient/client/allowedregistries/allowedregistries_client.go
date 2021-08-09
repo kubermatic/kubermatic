@@ -23,13 +23,16 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	DeleteAllowedRegistry(params *DeleteAllowedRegistryParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteAllowedRegistryOK, error)
+	DeleteAllowedRegistry(params *DeleteAllowedRegistryParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAllowedRegistryOK, error)
 
-	GetAllowedRegistry(params *GetAllowedRegistryParams, authInfo runtime.ClientAuthInfoWriter) (*GetAllowedRegistryOK, error)
+	GetAllowedRegistry(params *GetAllowedRegistryParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAllowedRegistryOK, error)
 
-	PatchAllowedRegistry(params *PatchAllowedRegistryParams, authInfo runtime.ClientAuthInfoWriter) (*PatchAllowedRegistryOK, error)
+	PatchAllowedRegistry(params *PatchAllowedRegistryParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchAllowedRegistryOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -37,13 +40,12 @@ type ClientService interface {
 /*
   DeleteAllowedRegistry deletes the given allowed registry
 */
-func (a *Client) DeleteAllowedRegistry(params *DeleteAllowedRegistryParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteAllowedRegistryOK, error) {
+func (a *Client) DeleteAllowedRegistry(params *DeleteAllowedRegistryParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAllowedRegistryOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewDeleteAllowedRegistryParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "deleteAllowedRegistry",
 		Method:             "DELETE",
 		PathPattern:        "/api/v2/allowedregistries/{allowed_registry}",
@@ -55,7 +57,12 @@ func (a *Client) DeleteAllowedRegistry(params *DeleteAllowedRegistryParams, auth
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -71,13 +78,12 @@ func (a *Client) DeleteAllowedRegistry(params *DeleteAllowedRegistryParams, auth
 /*
   GetAllowedRegistry Get allowed registries specified by name
 */
-func (a *Client) GetAllowedRegistry(params *GetAllowedRegistryParams, authInfo runtime.ClientAuthInfoWriter) (*GetAllowedRegistryOK, error) {
+func (a *Client) GetAllowedRegistry(params *GetAllowedRegistryParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAllowedRegistryOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetAllowedRegistryParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getAllowedRegistry",
 		Method:             "GET",
 		PathPattern:        "/api/v2/allowedregistries/{allowed_registry}",
@@ -89,7 +95,12 @@ func (a *Client) GetAllowedRegistry(params *GetAllowedRegistryParams, authInfo r
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -105,13 +116,12 @@ func (a *Client) GetAllowedRegistry(params *GetAllowedRegistryParams, authInfo r
 /*
   PatchAllowedRegistry Patch a specified allowed registry
 */
-func (a *Client) PatchAllowedRegistry(params *PatchAllowedRegistryParams, authInfo runtime.ClientAuthInfoWriter) (*PatchAllowedRegistryOK, error) {
+func (a *Client) PatchAllowedRegistry(params *PatchAllowedRegistryParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchAllowedRegistryOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewPatchAllowedRegistryParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "patchAllowedRegistry",
 		Method:             "PATCH",
 		PathPattern:        "/api/v2/allowedregistries/{allowed_registry}",
@@ -123,7 +133,12 @@ func (a *Client) PatchAllowedRegistry(params *PatchAllowedRegistryParams, authIn
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

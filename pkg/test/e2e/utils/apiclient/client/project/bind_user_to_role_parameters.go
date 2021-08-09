@@ -18,66 +18,85 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
-// NewBindUserToRoleParams creates a new BindUserToRoleParams object
-// with the default values initialized.
+// NewBindUserToRoleParams creates a new BindUserToRoleParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewBindUserToRoleParams() *BindUserToRoleParams {
-	var ()
 	return &BindUserToRoleParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewBindUserToRoleParamsWithTimeout creates a new BindUserToRoleParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewBindUserToRoleParamsWithTimeout(timeout time.Duration) *BindUserToRoleParams {
-	var ()
 	return &BindUserToRoleParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewBindUserToRoleParamsWithContext creates a new BindUserToRoleParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewBindUserToRoleParamsWithContext(ctx context.Context) *BindUserToRoleParams {
-	var ()
 	return &BindUserToRoleParams{
-
 		Context: ctx,
 	}
 }
 
 // NewBindUserToRoleParamsWithHTTPClient creates a new BindUserToRoleParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewBindUserToRoleParamsWithHTTPClient(client *http.Client) *BindUserToRoleParams {
-	var ()
 	return &BindUserToRoleParams{
 		HTTPClient: client,
 	}
 }
 
-/*BindUserToRoleParams contains all the parameters to send to the API endpoint
-for the bind user to role operation typically these are written to a http.Request
+/* BindUserToRoleParams contains all the parameters to send to the API endpoint
+   for the bind user to role operation.
+
+   Typically these are written to a http.Request.
 */
 type BindUserToRoleParams struct {
 
-	/*Body*/
+	// Body.
 	Body *models.RoleUser
-	/*ClusterID*/
+
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*Namespace*/
+
+	// Namespace.
 	Namespace string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
-	/*RoleID*/
+
+	// RoleID.
 	RoleID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the bind user to role params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *BindUserToRoleParams) WithDefaults() *BindUserToRoleParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the bind user to role params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *BindUserToRoleParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the bind user to role params
@@ -186,7 +205,6 @@ func (o *BindUserToRoleParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 		return err
 	}
 	var res []error
-
 	if o.Body != nil {
 		if err := r.SetBodyParam(o.Body); err != nil {
 			return err

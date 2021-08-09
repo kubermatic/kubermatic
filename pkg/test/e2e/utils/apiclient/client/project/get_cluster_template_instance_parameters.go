@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetClusterTemplateInstanceParams creates a new GetClusterTemplateInstanceParams object
-// with the default values initialized.
+// NewGetClusterTemplateInstanceParams creates a new GetClusterTemplateInstanceParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetClusterTemplateInstanceParams() *GetClusterTemplateInstanceParams {
-	var ()
 	return &GetClusterTemplateInstanceParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetClusterTemplateInstanceParamsWithTimeout creates a new GetClusterTemplateInstanceParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetClusterTemplateInstanceParamsWithTimeout(timeout time.Duration) *GetClusterTemplateInstanceParams {
-	var ()
 	return &GetClusterTemplateInstanceParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetClusterTemplateInstanceParamsWithContext creates a new GetClusterTemplateInstanceParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetClusterTemplateInstanceParamsWithContext(ctx context.Context) *GetClusterTemplateInstanceParams {
-	var ()
 	return &GetClusterTemplateInstanceParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetClusterTemplateInstanceParamsWithHTTPClient creates a new GetClusterTemplateInstanceParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetClusterTemplateInstanceParamsWithHTTPClient(client *http.Client) *GetClusterTemplateInstanceParams {
-	var ()
 	return &GetClusterTemplateInstanceParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetClusterTemplateInstanceParams contains all the parameters to send to the API endpoint
-for the get cluster template instance operation typically these are written to a http.Request
+/* GetClusterTemplateInstanceParams contains all the parameters to send to the API endpoint
+   for the get cluster template instance operation.
+
+   Typically these are written to a http.Request.
 */
 type GetClusterTemplateInstanceParams struct {
 
-	/*InstanceID*/
+	// InstanceID.
 	ClusterTemplateInstanceID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
-	/*TemplateID*/
+
+	// TemplateID.
 	ClusterTemplateID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get cluster template instance params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetClusterTemplateInstanceParams) WithDefaults() *GetClusterTemplateInstanceParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get cluster template instance params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetClusterTemplateInstanceParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get cluster template instance params

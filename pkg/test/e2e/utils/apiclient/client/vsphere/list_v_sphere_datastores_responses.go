@@ -46,7 +46,7 @@ func NewListVSphereDatastoresOK() *ListVSphereDatastoresOK {
 	return &ListVSphereDatastoresOK{}
 }
 
-/*ListVSphereDatastoresOK handles this case with default header values.
+/* ListVSphereDatastoresOK describes a response with status code 200, with default header values.
 
 VSphereDatastoreList
 */
@@ -57,7 +57,6 @@ type ListVSphereDatastoresOK struct {
 func (o *ListVSphereDatastoresOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/vsphere/datastores][%d] listVSphereDatastoresOK  %+v", 200, o.Payload)
 }
-
 func (o *ListVSphereDatastoresOK) GetPayload() []*models.VSphereDatastoreList {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListVSphereDatastoresDefault(code int) *ListVSphereDatastoresDefault {
 	}
 }
 
-/*ListVSphereDatastoresDefault handles this case with default header values.
+/* ListVSphereDatastoresDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListVSphereDatastoresDefault) Code() int {
 func (o *ListVSphereDatastoresDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/vsphere/datastores][%d] listVSphereDatastores default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListVSphereDatastoresDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

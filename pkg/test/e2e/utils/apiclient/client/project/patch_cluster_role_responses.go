@@ -58,7 +58,7 @@ func NewPatchClusterRoleOK() *PatchClusterRoleOK {
 	return &PatchClusterRoleOK{}
 }
 
-/*PatchClusterRoleOK handles this case with default header values.
+/* PatchClusterRoleOK describes a response with status code 200, with default header values.
 
 ClusterRole
 */
@@ -69,7 +69,6 @@ type PatchClusterRoleOK struct {
 func (o *PatchClusterRoleOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}][%d] patchClusterRoleOK  %+v", 200, o.Payload)
 }
-
 func (o *PatchClusterRoleOK) GetPayload() *models.ClusterRole {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewPatchClusterRoleUnauthorized() *PatchClusterRoleUnauthorized {
 	return &PatchClusterRoleUnauthorized{}
 }
 
-/*PatchClusterRoleUnauthorized handles this case with default header values.
+/* PatchClusterRoleUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewPatchClusterRoleForbidden() *PatchClusterRoleForbidden {
 	return &PatchClusterRoleForbidden{}
 }
 
-/*PatchClusterRoleForbidden handles this case with default header values.
+/* PatchClusterRoleForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewPatchClusterRoleDefault(code int) *PatchClusterRoleDefault {
 	}
 }
 
-/*PatchClusterRoleDefault handles this case with default header values.
+/* PatchClusterRoleDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *PatchClusterRoleDefault) Code() int {
 func (o *PatchClusterRoleDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}][%d] patchClusterRole default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *PatchClusterRoleDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

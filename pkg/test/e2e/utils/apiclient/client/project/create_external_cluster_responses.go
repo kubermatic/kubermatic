@@ -58,7 +58,7 @@ func NewCreateExternalClusterCreated() *CreateExternalClusterCreated {
 	return &CreateExternalClusterCreated{}
 }
 
-/*CreateExternalClusterCreated handles this case with default header values.
+/* CreateExternalClusterCreated describes a response with status code 201, with default header values.
 
 Cluster
 */
@@ -69,7 +69,6 @@ type CreateExternalClusterCreated struct {
 func (o *CreateExternalClusterCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/kubernetes/clusters][%d] createExternalClusterCreated  %+v", 201, o.Payload)
 }
-
 func (o *CreateExternalClusterCreated) GetPayload() *models.Cluster {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewCreateExternalClusterUnauthorized() *CreateExternalClusterUnauthorized {
 	return &CreateExternalClusterUnauthorized{}
 }
 
-/*CreateExternalClusterUnauthorized handles this case with default header values.
+/* CreateExternalClusterUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewCreateExternalClusterForbidden() *CreateExternalClusterForbidden {
 	return &CreateExternalClusterForbidden{}
 }
 
-/*CreateExternalClusterForbidden handles this case with default header values.
+/* CreateExternalClusterForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewCreateExternalClusterDefault(code int) *CreateExternalClusterDefault {
 	}
 }
 
-/*CreateExternalClusterDefault handles this case with default header values.
+/* CreateExternalClusterDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *CreateExternalClusterDefault) Code() int {
 func (o *CreateExternalClusterDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/kubernetes/clusters][%d] createExternalCluster default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *CreateExternalClusterDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

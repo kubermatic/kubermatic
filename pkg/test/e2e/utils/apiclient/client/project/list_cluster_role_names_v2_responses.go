@@ -58,7 +58,7 @@ func NewListClusterRoleNamesV2OK() *ListClusterRoleNamesV2OK {
 	return &ListClusterRoleNamesV2OK{}
 }
 
-/*ListClusterRoleNamesV2OK handles this case with default header values.
+/* ListClusterRoleNamesV2OK describes a response with status code 200, with default header values.
 
 ClusterRoleName
 */
@@ -69,7 +69,6 @@ type ListClusterRoleNamesV2OK struct {
 func (o *ListClusterRoleNamesV2OK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/clusterrolenames][%d] listClusterRoleNamesV2OK  %+v", 200, o.Payload)
 }
-
 func (o *ListClusterRoleNamesV2OK) GetPayload() []*models.ClusterRoleName {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListClusterRoleNamesV2Unauthorized() *ListClusterRoleNamesV2Unauthorized
 	return &ListClusterRoleNamesV2Unauthorized{}
 }
 
-/*ListClusterRoleNamesV2Unauthorized handles this case with default header values.
+/* ListClusterRoleNamesV2Unauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListClusterRoleNamesV2Forbidden() *ListClusterRoleNamesV2Forbidden {
 	return &ListClusterRoleNamesV2Forbidden{}
 }
 
-/*ListClusterRoleNamesV2Forbidden handles this case with default header values.
+/* ListClusterRoleNamesV2Forbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListClusterRoleNamesV2Default(code int) *ListClusterRoleNamesV2Default {
 	}
 }
 
-/*ListClusterRoleNamesV2Default handles this case with default header values.
+/* ListClusterRoleNamesV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListClusterRoleNamesV2Default) Code() int {
 func (o *ListClusterRoleNamesV2Default) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/clusterrolenames][%d] listClusterRoleNamesV2 default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListClusterRoleNamesV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

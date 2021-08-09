@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -59,7 +61,6 @@ func (m *PublicServiceAccountToken) Validate(formats strfmt.Registry) error {
 }
 
 func (m *PublicServiceAccountToken) validateCreationTimestamp(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.CreationTimestamp) { // not required
 		return nil
 	}
@@ -72,7 +73,6 @@ func (m *PublicServiceAccountToken) validateCreationTimestamp(formats strfmt.Reg
 }
 
 func (m *PublicServiceAccountToken) validateDeletionTimestamp(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.DeletionTimestamp) { // not required
 		return nil
 	}
@@ -85,7 +85,6 @@ func (m *PublicServiceAccountToken) validateDeletionTimestamp(formats strfmt.Reg
 }
 
 func (m *PublicServiceAccountToken) validateExpiry(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Expiry) { // not required
 		return nil
 	}
@@ -94,6 +93,11 @@ func (m *PublicServiceAccountToken) validateExpiry(formats strfmt.Registry) erro
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this public service account token based on context it is used
+func (m *PublicServiceAccountToken) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewCreateOIDCKubeconfigParams creates a new CreateOIDCKubeconfigParams object
-// with the default values initialized.
+// NewCreateOIDCKubeconfigParams creates a new CreateOIDCKubeconfigParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewCreateOIDCKubeconfigParams() *CreateOIDCKubeconfigParams {
-	var ()
 	return &CreateOIDCKubeconfigParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewCreateOIDCKubeconfigParamsWithTimeout creates a new CreateOIDCKubeconfigParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewCreateOIDCKubeconfigParamsWithTimeout(timeout time.Duration) *CreateOIDCKubeconfigParams {
-	var ()
 	return &CreateOIDCKubeconfigParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewCreateOIDCKubeconfigParamsWithContext creates a new CreateOIDCKubeconfigParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewCreateOIDCKubeconfigParamsWithContext(ctx context.Context) *CreateOIDCKubeconfigParams {
-	var ()
 	return &CreateOIDCKubeconfigParams{
-
 		Context: ctx,
 	}
 }
 
 // NewCreateOIDCKubeconfigParamsWithHTTPClient creates a new CreateOIDCKubeconfigParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewCreateOIDCKubeconfigParamsWithHTTPClient(client *http.Client) *CreateOIDCKubeconfigParams {
-	var ()
 	return &CreateOIDCKubeconfigParams{
 		HTTPClient: client,
 	}
 }
 
-/*CreateOIDCKubeconfigParams contains all the parameters to send to the API endpoint
-for the create o ID c kubeconfig operation typically these are written to a http.Request
+/* CreateOIDCKubeconfigParams contains all the parameters to send to the API endpoint
+   for the create o ID c kubeconfig operation.
+
+   Typically these are written to a http.Request.
 */
 type CreateOIDCKubeconfigParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID *string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID *string
-	/*UserID*/
+
+	// UserID.
 	UserID *string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the create o ID c kubeconfig params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *CreateOIDCKubeconfigParams) WithDefaults() *CreateOIDCKubeconfigParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the create o ID c kubeconfig params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *CreateOIDCKubeconfigParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the create o ID c kubeconfig params
@@ -150,48 +166,51 @@ func (o *CreateOIDCKubeconfigParams) WriteToRequest(r runtime.ClientRequest, reg
 
 		// query param cluster_id
 		var qrClusterID string
+
 		if o.ClusterID != nil {
 			qrClusterID = *o.ClusterID
 		}
 		qClusterID := qrClusterID
 		if qClusterID != "" {
+
 			if err := r.SetQueryParam("cluster_id", qClusterID); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if o.ProjectID != nil {
 
 		// query param project_id
 		var qrProjectID string
+
 		if o.ProjectID != nil {
 			qrProjectID = *o.ProjectID
 		}
 		qProjectID := qrProjectID
 		if qProjectID != "" {
+
 			if err := r.SetQueryParam("project_id", qProjectID); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if o.UserID != nil {
 
 		// query param user_id
 		var qrUserID string
+
 		if o.UserID != nil {
 			qrUserID = *o.UserID
 		}
 		qUserID := qrUserID
 		if qUserID != "" {
+
 			if err := r.SetQueryParam("user_id", qUserID); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if len(res) > 0 {

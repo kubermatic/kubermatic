@@ -16,62 +16,79 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListAWSVPCSParams creates a new ListAWSVPCSParams object
-// with the default values initialized.
+// NewListAWSVPCSParams creates a new ListAWSVPCSParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListAWSVPCSParams() *ListAWSVPCSParams {
-	var ()
 	return &ListAWSVPCSParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListAWSVPCSParamsWithTimeout creates a new ListAWSVPCSParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListAWSVPCSParamsWithTimeout(timeout time.Duration) *ListAWSVPCSParams {
-	var ()
 	return &ListAWSVPCSParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListAWSVPCSParamsWithContext creates a new ListAWSVPCSParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListAWSVPCSParamsWithContext(ctx context.Context) *ListAWSVPCSParams {
-	var ()
 	return &ListAWSVPCSParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListAWSVPCSParamsWithHTTPClient creates a new ListAWSVPCSParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListAWSVPCSParamsWithHTTPClient(client *http.Client) *ListAWSVPCSParams {
-	var ()
 	return &ListAWSVPCSParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListAWSVPCSParams contains all the parameters to send to the API endpoint
-for the list a w s v p c s operation typically these are written to a http.Request
+/* ListAWSVPCSParams contains all the parameters to send to the API endpoint
+   for the list a w s v p c s operation.
+
+   Typically these are written to a http.Request.
 */
 type ListAWSVPCSParams struct {
 
-	/*AccessKeyID*/
+	// AccessKeyID.
 	AccessKeyID *string
-	/*Credential*/
+
+	// Credential.
 	Credential *string
-	/*SecretAccessKey*/
+
+	// SecretAccessKey.
 	SecretAccessKey *string
-	/*Dc*/
+
+	// Dc.
 	DC string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list a w s v p c s params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAWSVPCSParams) WithDefaults() *ListAWSVPCSParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list a w s v p c s params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAWSVPCSParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list a w s v p c s params
@@ -165,7 +182,6 @@ func (o *ListAWSVPCSParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.R
 		if err := r.SetHeaderParam("AccessKeyID", *o.AccessKeyID); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Credential != nil {
@@ -174,7 +190,6 @@ func (o *ListAWSVPCSParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.R
 		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
 			return err
 		}
-
 	}
 
 	if o.SecretAccessKey != nil {
@@ -183,7 +198,6 @@ func (o *ListAWSVPCSParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.R
 		if err := r.SetHeaderParam("SecretAccessKey", *o.SecretAccessKey); err != nil {
 			return err
 		}
-
 	}
 
 	// path param dc

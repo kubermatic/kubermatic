@@ -16,62 +16,79 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewAssignSSHKeyToClusterParams creates a new AssignSSHKeyToClusterParams object
-// with the default values initialized.
+// NewAssignSSHKeyToClusterParams creates a new AssignSSHKeyToClusterParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewAssignSSHKeyToClusterParams() *AssignSSHKeyToClusterParams {
-	var ()
 	return &AssignSSHKeyToClusterParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAssignSSHKeyToClusterParamsWithTimeout creates a new AssignSSHKeyToClusterParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewAssignSSHKeyToClusterParamsWithTimeout(timeout time.Duration) *AssignSSHKeyToClusterParams {
-	var ()
 	return &AssignSSHKeyToClusterParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewAssignSSHKeyToClusterParamsWithContext creates a new AssignSSHKeyToClusterParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewAssignSSHKeyToClusterParamsWithContext(ctx context.Context) *AssignSSHKeyToClusterParams {
-	var ()
 	return &AssignSSHKeyToClusterParams{
-
 		Context: ctx,
 	}
 }
 
 // NewAssignSSHKeyToClusterParamsWithHTTPClient creates a new AssignSSHKeyToClusterParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewAssignSSHKeyToClusterParamsWithHTTPClient(client *http.Client) *AssignSSHKeyToClusterParams {
-	var ()
 	return &AssignSSHKeyToClusterParams{
 		HTTPClient: client,
 	}
 }
 
-/*AssignSSHKeyToClusterParams contains all the parameters to send to the API endpoint
-for the assign SSH key to cluster operation typically these are written to a http.Request
+/* AssignSSHKeyToClusterParams contains all the parameters to send to the API endpoint
+   for the assign SSH key to cluster operation.
+
+   Typically these are written to a http.Request.
 */
 type AssignSSHKeyToClusterParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*KeyID*/
+
+	// KeyID.
 	KeyID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the assign SSH key to cluster params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AssignSSHKeyToClusterParams) WithDefaults() *AssignSSHKeyToClusterParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the assign SSH key to cluster params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AssignSSHKeyToClusterParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the assign SSH key to cluster params

@@ -58,7 +58,7 @@ func NewMigrateClusterToExternalCCMOK() *MigrateClusterToExternalCCMOK {
 	return &MigrateClusterToExternalCCMOK{}
 }
 
-/*MigrateClusterToExternalCCMOK handles this case with default header values.
+/* MigrateClusterToExternalCCMOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -79,7 +79,7 @@ func NewMigrateClusterToExternalCCMUnauthorized() *MigrateClusterToExternalCCMUn
 	return &MigrateClusterToExternalCCMUnauthorized{}
 }
 
-/*MigrateClusterToExternalCCMUnauthorized handles this case with default header values.
+/* MigrateClusterToExternalCCMUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -100,7 +100,7 @@ func NewMigrateClusterToExternalCCMForbidden() *MigrateClusterToExternalCCMForbi
 	return &MigrateClusterToExternalCCMForbidden{}
 }
 
-/*MigrateClusterToExternalCCMForbidden handles this case with default header values.
+/* MigrateClusterToExternalCCMForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -123,7 +123,7 @@ func NewMigrateClusterToExternalCCMDefault(code int) *MigrateClusterToExternalCC
 	}
 }
 
-/*MigrateClusterToExternalCCMDefault handles this case with default header values.
+/* MigrateClusterToExternalCCMDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -141,7 +141,6 @@ func (o *MigrateClusterToExternalCCMDefault) Code() int {
 func (o *MigrateClusterToExternalCCMDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/externalccmmigration][%d] migrateClusterToExternalCCM default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *MigrateClusterToExternalCCMDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

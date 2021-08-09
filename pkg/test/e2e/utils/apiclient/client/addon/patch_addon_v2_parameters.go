@@ -18,62 +18,79 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
-// NewPatchAddonV2Params creates a new PatchAddonV2Params object
-// with the default values initialized.
+// NewPatchAddonV2Params creates a new PatchAddonV2Params object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewPatchAddonV2Params() *PatchAddonV2Params {
-	var ()
 	return &PatchAddonV2Params{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewPatchAddonV2ParamsWithTimeout creates a new PatchAddonV2Params object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewPatchAddonV2ParamsWithTimeout(timeout time.Duration) *PatchAddonV2Params {
-	var ()
 	return &PatchAddonV2Params{
-
 		timeout: timeout,
 	}
 }
 
 // NewPatchAddonV2ParamsWithContext creates a new PatchAddonV2Params object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewPatchAddonV2ParamsWithContext(ctx context.Context) *PatchAddonV2Params {
-	var ()
 	return &PatchAddonV2Params{
-
 		Context: ctx,
 	}
 }
 
 // NewPatchAddonV2ParamsWithHTTPClient creates a new PatchAddonV2Params object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewPatchAddonV2ParamsWithHTTPClient(client *http.Client) *PatchAddonV2Params {
-	var ()
 	return &PatchAddonV2Params{
 		HTTPClient: client,
 	}
 }
 
-/*PatchAddonV2Params contains all the parameters to send to the API endpoint
-for the patch addon v2 operation typically these are written to a http.Request
+/* PatchAddonV2Params contains all the parameters to send to the API endpoint
+   for the patch addon v2 operation.
+
+   Typically these are written to a http.Request.
 */
 type PatchAddonV2Params struct {
 
-	/*Body*/
+	// Body.
 	Body *models.Addon
-	/*AddonID*/
+
+	// AddonID.
 	AddonID string
-	/*ClusterID*/
+
+	// ClusterID.
 	ClusterID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the patch addon v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *PatchAddonV2Params) WithDefaults() *PatchAddonV2Params {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the patch addon v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *PatchAddonV2Params) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the patch addon v2 params
@@ -160,7 +177,6 @@ func (o *PatchAddonV2Params) WriteToRequest(r runtime.ClientRequest, reg strfmt.
 		return err
 	}
 	var res []error
-
 	if o.Body != nil {
 		if err := r.SetBodyParam(o.Body); err != nil {
 			return err

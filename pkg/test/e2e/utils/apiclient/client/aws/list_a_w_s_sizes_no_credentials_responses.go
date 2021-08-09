@@ -46,7 +46,7 @@ func NewListAWSSizesNoCredentialsOK() *ListAWSSizesNoCredentialsOK {
 	return &ListAWSSizesNoCredentialsOK{}
 }
 
-/*ListAWSSizesNoCredentialsOK handles this case with default header values.
+/* ListAWSSizesNoCredentialsOK describes a response with status code 200, with default header values.
 
 AWSSizeList
 */
@@ -57,7 +57,6 @@ type ListAWSSizesNoCredentialsOK struct {
 func (o *ListAWSSizesNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/sizes][%d] listAWSSizesNoCredentialsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListAWSSizesNoCredentialsOK) GetPayload() models.AWSSizeList {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListAWSSizesNoCredentialsDefault(code int) *ListAWSSizesNoCredentialsDef
 	}
 }
 
-/*ListAWSSizesNoCredentialsDefault handles this case with default header values.
+/* ListAWSSizesNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListAWSSizesNoCredentialsDefault) Code() int {
 func (o *ListAWSSizesNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/sizes][%d] listAWSSizesNoCredentials default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListAWSSizesNoCredentialsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

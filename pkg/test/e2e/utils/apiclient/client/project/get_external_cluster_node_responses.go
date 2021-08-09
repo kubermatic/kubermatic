@@ -58,7 +58,7 @@ func NewGetExternalClusterNodeOK() *GetExternalClusterNodeOK {
 	return &GetExternalClusterNodeOK{}
 }
 
-/*GetExternalClusterNodeOK handles this case with default header values.
+/* GetExternalClusterNodeOK describes a response with status code 200, with default header values.
 
 Node
 */
@@ -69,7 +69,6 @@ type GetExternalClusterNodeOK struct {
 func (o *GetExternalClusterNodeOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/nodes/{node_id}][%d] getExternalClusterNodeOK  %+v", 200, o.Payload)
 }
-
 func (o *GetExternalClusterNodeOK) GetPayload() *models.Node {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewGetExternalClusterNodeUnauthorized() *GetExternalClusterNodeUnauthorized
 	return &GetExternalClusterNodeUnauthorized{}
 }
 
-/*GetExternalClusterNodeUnauthorized handles this case with default header values.
+/* GetExternalClusterNodeUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewGetExternalClusterNodeForbidden() *GetExternalClusterNodeForbidden {
 	return &GetExternalClusterNodeForbidden{}
 }
 
-/*GetExternalClusterNodeForbidden handles this case with default header values.
+/* GetExternalClusterNodeForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewGetExternalClusterNodeDefault(code int) *GetExternalClusterNodeDefault {
 	}
 }
 
-/*GetExternalClusterNodeDefault handles this case with default header values.
+/* GetExternalClusterNodeDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *GetExternalClusterNodeDefault) Code() int {
 func (o *GetExternalClusterNodeDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/nodes/{node_id}][%d] getExternalClusterNode default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetExternalClusterNodeDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

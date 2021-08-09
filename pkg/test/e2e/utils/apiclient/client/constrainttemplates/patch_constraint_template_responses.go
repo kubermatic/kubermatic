@@ -58,7 +58,7 @@ func NewPatchConstraintTemplateOK() *PatchConstraintTemplateOK {
 	return &PatchConstraintTemplateOK{}
 }
 
-/*PatchConstraintTemplateOK handles this case with default header values.
+/* PatchConstraintTemplateOK describes a response with status code 200, with default header values.
 
 ConstraintTemplate
 */
@@ -69,7 +69,6 @@ type PatchConstraintTemplateOK struct {
 func (o *PatchConstraintTemplateOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/constrainttemplates/{ct_name}][%d] patchConstraintTemplateOK  %+v", 200, o.Payload)
 }
-
 func (o *PatchConstraintTemplateOK) GetPayload() *models.ConstraintTemplate {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewPatchConstraintTemplateUnauthorized() *PatchConstraintTemplateUnauthoriz
 	return &PatchConstraintTemplateUnauthorized{}
 }
 
-/*PatchConstraintTemplateUnauthorized handles this case with default header values.
+/* PatchConstraintTemplateUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewPatchConstraintTemplateForbidden() *PatchConstraintTemplateForbidden {
 	return &PatchConstraintTemplateForbidden{}
 }
 
-/*PatchConstraintTemplateForbidden handles this case with default header values.
+/* PatchConstraintTemplateForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewPatchConstraintTemplateDefault(code int) *PatchConstraintTemplateDefault
 	}
 }
 
-/*PatchConstraintTemplateDefault handles this case with default header values.
+/* PatchConstraintTemplateDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *PatchConstraintTemplateDefault) Code() int {
 func (o *PatchConstraintTemplateDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/constrainttemplates/{ct_name}][%d] patchConstraintTemplate default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *PatchConstraintTemplateDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

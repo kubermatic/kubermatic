@@ -58,7 +58,7 @@ func NewUpdateServiceAccountTokenOK() *UpdateServiceAccountTokenOK {
 	return &UpdateServiceAccountTokenOK{}
 }
 
-/*UpdateServiceAccountTokenOK handles this case with default header values.
+/* UpdateServiceAccountTokenOK describes a response with status code 200, with default header values.
 
 ServiceAccountToken
 */
@@ -69,7 +69,6 @@ type UpdateServiceAccountTokenOK struct {
 func (o *UpdateServiceAccountTokenOK) Error() string {
 	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id}][%d] updateServiceAccountTokenOK  %+v", 200, o.Payload)
 }
-
 func (o *UpdateServiceAccountTokenOK) GetPayload() *models.ServiceAccountToken {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewUpdateServiceAccountTokenUnauthorized() *UpdateServiceAccountTokenUnauth
 	return &UpdateServiceAccountTokenUnauthorized{}
 }
 
-/*UpdateServiceAccountTokenUnauthorized handles this case with default header values.
+/* UpdateServiceAccountTokenUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewUpdateServiceAccountTokenForbidden() *UpdateServiceAccountTokenForbidden
 	return &UpdateServiceAccountTokenForbidden{}
 }
 
-/*UpdateServiceAccountTokenForbidden handles this case with default header values.
+/* UpdateServiceAccountTokenForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewUpdateServiceAccountTokenDefault(code int) *UpdateServiceAccountTokenDef
 	}
 }
 
-/*UpdateServiceAccountTokenDefault handles this case with default header values.
+/* UpdateServiceAccountTokenDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *UpdateServiceAccountTokenDefault) Code() int {
 func (o *UpdateServiceAccountTokenDefault) Error() string {
 	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id}][%d] updateServiceAccountToken default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *UpdateServiceAccountTokenDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -58,7 +58,7 @@ func NewCreateConstraintOK() *CreateConstraintOK {
 	return &CreateConstraintOK{}
 }
 
-/*CreateConstraintOK handles this case with default header values.
+/* CreateConstraintOK describes a response with status code 200, with default header values.
 
 Constraint
 */
@@ -69,7 +69,6 @@ type CreateConstraintOK struct {
 func (o *CreateConstraintOK) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints][%d] createConstraintOK  %+v", 200, o.Payload)
 }
-
 func (o *CreateConstraintOK) GetPayload() *models.Constraint {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewCreateConstraintUnauthorized() *CreateConstraintUnauthorized {
 	return &CreateConstraintUnauthorized{}
 }
 
-/*CreateConstraintUnauthorized handles this case with default header values.
+/* CreateConstraintUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewCreateConstraintForbidden() *CreateConstraintForbidden {
 	return &CreateConstraintForbidden{}
 }
 
-/*CreateConstraintForbidden handles this case with default header values.
+/* CreateConstraintForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewCreateConstraintDefault(code int) *CreateConstraintDefault {
 	}
 }
 
-/*CreateConstraintDefault handles this case with default header values.
+/* CreateConstraintDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *CreateConstraintDefault) Code() int {
 func (o *CreateConstraintDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints][%d] createConstraint default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *CreateConstraintDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

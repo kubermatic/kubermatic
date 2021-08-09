@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -66,7 +68,6 @@ func (m *EtcdBackupConfigCondition) Validate(formats strfmt.Registry) error {
 }
 
 func (m *EtcdBackupConfigCondition) validateLastHeartbeatTime(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.LastHeartbeatTime) { // not required
 		return nil
 	}
@@ -82,7 +83,6 @@ func (m *EtcdBackupConfigCondition) validateLastHeartbeatTime(formats strfmt.Reg
 }
 
 func (m *EtcdBackupConfigCondition) validateLastTransitionTime(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.LastTransitionTime) { // not required
 		return nil
 	}
@@ -98,7 +98,6 @@ func (m *EtcdBackupConfigCondition) validateLastTransitionTime(formats strfmt.Re
 }
 
 func (m *EtcdBackupConfigCondition) validateStatus(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Status) { // not required
 		return nil
 	}
@@ -114,12 +113,85 @@ func (m *EtcdBackupConfigCondition) validateStatus(formats strfmt.Registry) erro
 }
 
 func (m *EtcdBackupConfigCondition) validateType(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Type) { // not required
 		return nil
 	}
 
 	if err := m.Type.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("type")
+		}
+		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this etcd backup config condition based on the context it is used
+func (m *EtcdBackupConfigCondition) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateLastHeartbeatTime(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateLastTransitionTime(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateStatus(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateType(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *EtcdBackupConfigCondition) contextValidateLastHeartbeatTime(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.LastHeartbeatTime.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("lastHeartbeatTime")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *EtcdBackupConfigCondition) contextValidateLastTransitionTime(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.LastTransitionTime.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("lastTransitionTime")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *EtcdBackupConfigCondition) contextValidateStatus(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.Status.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("status")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *EtcdBackupConfigCondition) contextValidateType(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.Type.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("type")
 		}

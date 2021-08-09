@@ -46,7 +46,7 @@ func NewListAzureSizesOK() *ListAzureSizesOK {
 	return &ListAzureSizesOK{}
 }
 
-/*ListAzureSizesOK handles this case with default header values.
+/* ListAzureSizesOK describes a response with status code 200, with default header values.
 
 AzureSizeList
 */
@@ -57,7 +57,6 @@ type ListAzureSizesOK struct {
 func (o *ListAzureSizesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/azure/sizes][%d] listAzureSizesOK  %+v", 200, o.Payload)
 }
-
 func (o *ListAzureSizesOK) GetPayload() models.AzureSizeList {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListAzureSizesDefault(code int) *ListAzureSizesDefault {
 	}
 }
 
-/*ListAzureSizesDefault handles this case with default header values.
+/* ListAzureSizesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListAzureSizesDefault) Code() int {
 func (o *ListAzureSizesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/azure/sizes][%d] listAzureSizes default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListAzureSizesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

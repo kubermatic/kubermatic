@@ -16,62 +16,79 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewDeleteAddonParams creates a new DeleteAddonParams object
-// with the default values initialized.
+// NewDeleteAddonParams creates a new DeleteAddonParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewDeleteAddonParams() *DeleteAddonParams {
-	var ()
 	return &DeleteAddonParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewDeleteAddonParamsWithTimeout creates a new DeleteAddonParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewDeleteAddonParamsWithTimeout(timeout time.Duration) *DeleteAddonParams {
-	var ()
 	return &DeleteAddonParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewDeleteAddonParamsWithContext creates a new DeleteAddonParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewDeleteAddonParamsWithContext(ctx context.Context) *DeleteAddonParams {
-	var ()
 	return &DeleteAddonParams{
-
 		Context: ctx,
 	}
 }
 
 // NewDeleteAddonParamsWithHTTPClient creates a new DeleteAddonParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewDeleteAddonParamsWithHTTPClient(client *http.Client) *DeleteAddonParams {
-	var ()
 	return &DeleteAddonParams{
 		HTTPClient: client,
 	}
 }
 
-/*DeleteAddonParams contains all the parameters to send to the API endpoint
-for the delete addon operation typically these are written to a http.Request
+/* DeleteAddonParams contains all the parameters to send to the API endpoint
+   for the delete addon operation.
+
+   Typically these are written to a http.Request.
 */
 type DeleteAddonParams struct {
 
-	/*AddonID*/
+	// AddonID.
 	AddonID string
-	/*ClusterID*/
+
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the delete addon params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DeleteAddonParams) WithDefaults() *DeleteAddonParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the delete addon params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DeleteAddonParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the delete addon params

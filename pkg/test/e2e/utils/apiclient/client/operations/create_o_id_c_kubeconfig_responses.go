@@ -46,7 +46,7 @@ func NewCreateOIDCKubeconfigOK() *CreateOIDCKubeconfigOK {
 	return &CreateOIDCKubeconfigOK{}
 }
 
-/*CreateOIDCKubeconfigOK handles this case with default header values.
+/* CreateOIDCKubeconfigOK describes a response with status code 200, with default header values.
 
 Kubeconfig is a clusters kubeconfig
 */
@@ -57,7 +57,6 @@ type CreateOIDCKubeconfigOK struct {
 func (o *CreateOIDCKubeconfigOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/kubeconfig][%d] createOIdCKubeconfigOK  %+v", 200, o.Payload)
 }
-
 func (o *CreateOIDCKubeconfigOK) GetPayload() []uint8 {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewCreateOIDCKubeconfigDefault(code int) *CreateOIDCKubeconfigDefault {
 	}
 }
 
-/*CreateOIDCKubeconfigDefault handles this case with default header values.
+/* CreateOIDCKubeconfigDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *CreateOIDCKubeconfigDefault) Code() int {
 func (o *CreateOIDCKubeconfigDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/kubeconfig][%d] createOIDCKubeconfig default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *CreateOIDCKubeconfigDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

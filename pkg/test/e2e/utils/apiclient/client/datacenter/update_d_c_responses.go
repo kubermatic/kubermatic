@@ -6,6 +6,7 @@ package datacenter
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"fmt"
 	"io"
 
@@ -60,7 +61,7 @@ func NewUpdateDCOK() *UpdateDCOK {
 	return &UpdateDCOK{}
 }
 
-/*UpdateDCOK handles this case with default header values.
+/* UpdateDCOK describes a response with status code 200, with default header values.
 
 Datacenter
 */
@@ -71,7 +72,6 @@ type UpdateDCOK struct {
 func (o *UpdateDCOK) Error() string {
 	return fmt.Sprintf("[PUT /api/v1/seed/{seed_name}/dc/{dc}][%d] updateDCOK  %+v", 200, o.Payload)
 }
-
 func (o *UpdateDCOK) GetPayload() *models.Datacenter {
 	return o.Payload
 }
@@ -93,7 +93,7 @@ func NewUpdateDCUnauthorized() *UpdateDCUnauthorized {
 	return &UpdateDCUnauthorized{}
 }
 
-/*UpdateDCUnauthorized handles this case with default header values.
+/* UpdateDCUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -114,7 +114,7 @@ func NewUpdateDCForbidden() *UpdateDCForbidden {
 	return &UpdateDCForbidden{}
 }
 
-/*UpdateDCForbidden handles this case with default header values.
+/* UpdateDCForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -137,7 +137,7 @@ func NewUpdateDCDefault(code int) *UpdateDCDefault {
 	}
 }
 
-/*UpdateDCDefault handles this case with default header values.
+/* UpdateDCDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -155,7 +155,6 @@ func (o *UpdateDCDefault) Code() int {
 func (o *UpdateDCDefault) Error() string {
 	return fmt.Sprintf("[PUT /api/v1/seed/{seed_name}/dc/{dc}][%d] updateDC default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *UpdateDCDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }
@@ -199,13 +198,40 @@ func (o *UpdateDCBody) Validate(formats strfmt.Registry) error {
 }
 
 func (o *UpdateDCBody) validateSpec(formats strfmt.Registry) error {
-
 	if swag.IsZero(o.Spec) { // not required
 		return nil
 	}
 
 	if o.Spec != nil {
 		if err := o.Spec.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("Body" + "." + "spec")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this update d c body based on the context it is used
+func (o *UpdateDCBody) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := o.contextValidateSpec(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (o *UpdateDCBody) contextValidateSpec(ctx context.Context, formats strfmt.Registry) error {
+
+	if o.Spec != nil {
+		if err := o.Spec.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("Body" + "." + "spec")
 			}

@@ -6,6 +6,7 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -40,7 +41,6 @@ func (m *ConstraintTemplateStatus) Validate(formats strfmt.Registry) error {
 }
 
 func (m *ConstraintTemplateStatus) validateByPod(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ByPod) { // not required
 		return nil
 	}
@@ -52,6 +52,38 @@ func (m *ConstraintTemplateStatus) validateByPod(formats strfmt.Registry) error 
 
 		if m.ByPod[i] != nil {
 			if err := m.ByPod[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("byPod" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+// ContextValidate validate this constraint template status based on the context it is used
+func (m *ConstraintTemplateStatus) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateByPod(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *ConstraintTemplateStatus) contextValidateByPod(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.ByPod); i++ {
+
+		if m.ByPod[i] != nil {
+			if err := m.ByPod[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("byPod" + "." + strconv.Itoa(i))
 				}

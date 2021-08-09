@@ -23,37 +23,40 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	ListGCPDiskTypes(params *ListGCPDiskTypesParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPDiskTypesOK, error)
+	ListGCPDiskTypes(params *ListGCPDiskTypesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPDiskTypesOK, error)
 
-	ListGCPDiskTypesNoCredentials(params *ListGCPDiskTypesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPDiskTypesNoCredentialsOK, error)
+	ListGCPDiskTypesNoCredentials(params *ListGCPDiskTypesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPDiskTypesNoCredentialsOK, error)
 
-	ListGCPDiskTypesNoCredentialsV2(params *ListGCPDiskTypesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListGCPDiskTypesNoCredentialsV2OK, error)
+	ListGCPDiskTypesNoCredentialsV2(params *ListGCPDiskTypesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPDiskTypesNoCredentialsV2OK, error)
 
-	ListGCPNetworks(params *ListGCPNetworksParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPNetworksOK, error)
+	ListGCPNetworks(params *ListGCPNetworksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPNetworksOK, error)
 
-	ListGCPNetworksNoCredentials(params *ListGCPNetworksNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPNetworksNoCredentialsOK, error)
+	ListGCPNetworksNoCredentials(params *ListGCPNetworksNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPNetworksNoCredentialsOK, error)
 
-	ListGCPNetworksNoCredentialsV2(params *ListGCPNetworksNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListGCPNetworksNoCredentialsV2OK, error)
+	ListGCPNetworksNoCredentialsV2(params *ListGCPNetworksNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPNetworksNoCredentialsV2OK, error)
 
-	ListGCPSizes(params *ListGCPSizesParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPSizesOK, error)
+	ListGCPSizes(params *ListGCPSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPSizesOK, error)
 
-	ListGCPSizesNoCredentials(params *ListGCPSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPSizesNoCredentialsOK, error)
+	ListGCPSizesNoCredentials(params *ListGCPSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPSizesNoCredentialsOK, error)
 
-	ListGCPSizesNoCredentialsV2(params *ListGCPSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListGCPSizesNoCredentialsV2OK, error)
+	ListGCPSizesNoCredentialsV2(params *ListGCPSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPSizesNoCredentialsV2OK, error)
 
-	ListGCPSubnetworks(params *ListGCPSubnetworksParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPSubnetworksOK, error)
+	ListGCPSubnetworks(params *ListGCPSubnetworksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPSubnetworksOK, error)
 
-	ListGCPSubnetworksNoCredentials(params *ListGCPSubnetworksNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPSubnetworksNoCredentialsOK, error)
+	ListGCPSubnetworksNoCredentials(params *ListGCPSubnetworksNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPSubnetworksNoCredentialsOK, error)
 
-	ListGCPSubnetworksNoCredentialsV2(params *ListGCPSubnetworksNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListGCPSubnetworksNoCredentialsV2OK, error)
+	ListGCPSubnetworksNoCredentialsV2(params *ListGCPSubnetworksNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPSubnetworksNoCredentialsV2OK, error)
 
-	ListGCPZones(params *ListGCPZonesParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPZonesOK, error)
+	ListGCPZones(params *ListGCPZonesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPZonesOK, error)
 
-	ListGCPZonesNoCredentials(params *ListGCPZonesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPZonesNoCredentialsOK, error)
+	ListGCPZonesNoCredentials(params *ListGCPZonesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPZonesNoCredentialsOK, error)
 
-	ListGCPZonesNoCredentialsV2(params *ListGCPZonesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListGCPZonesNoCredentialsV2OK, error)
+	ListGCPZonesNoCredentialsV2(params *ListGCPZonesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPZonesNoCredentialsV2OK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -61,13 +64,12 @@ type ClientService interface {
 /*
   ListGCPDiskTypes Lists disk types from GCP
 */
-func (a *Client) ListGCPDiskTypes(params *ListGCPDiskTypesParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPDiskTypesOK, error) {
+func (a *Client) ListGCPDiskTypes(params *ListGCPDiskTypesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPDiskTypesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListGCPDiskTypesParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listGCPDiskTypes",
 		Method:             "GET",
 		PathPattern:        "/api/v1/providers/gcp/disktypes",
@@ -79,7 +81,12 @@ func (a *Client) ListGCPDiskTypes(params *ListGCPDiskTypesParams, authInfo runti
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -95,13 +102,12 @@ func (a *Client) ListGCPDiskTypes(params *ListGCPDiskTypesParams, authInfo runti
 /*
   ListGCPDiskTypesNoCredentials Lists disk types from GCP
 */
-func (a *Client) ListGCPDiskTypesNoCredentials(params *ListGCPDiskTypesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPDiskTypesNoCredentialsOK, error) {
+func (a *Client) ListGCPDiskTypesNoCredentials(params *ListGCPDiskTypesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPDiskTypesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListGCPDiskTypesNoCredentialsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listGCPDiskTypesNoCredentials",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/disktypes",
@@ -113,7 +119,12 @@ func (a *Client) ListGCPDiskTypesNoCredentials(params *ListGCPDiskTypesNoCredent
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -129,13 +140,12 @@ func (a *Client) ListGCPDiskTypesNoCredentials(params *ListGCPDiskTypesNoCredent
 /*
   ListGCPDiskTypesNoCredentialsV2 Lists disk types from GCP
 */
-func (a *Client) ListGCPDiskTypesNoCredentialsV2(params *ListGCPDiskTypesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListGCPDiskTypesNoCredentialsV2OK, error) {
+func (a *Client) ListGCPDiskTypesNoCredentialsV2(params *ListGCPDiskTypesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPDiskTypesNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListGCPDiskTypesNoCredentialsV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listGCPDiskTypesNoCredentialsV2",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/gcp/disktypes",
@@ -147,7 +157,12 @@ func (a *Client) ListGCPDiskTypesNoCredentialsV2(params *ListGCPDiskTypesNoCrede
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -163,13 +178,12 @@ func (a *Client) ListGCPDiskTypesNoCredentialsV2(params *ListGCPDiskTypesNoCrede
 /*
   ListGCPNetworks Lists networks from GCP
 */
-func (a *Client) ListGCPNetworks(params *ListGCPNetworksParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPNetworksOK, error) {
+func (a *Client) ListGCPNetworks(params *ListGCPNetworksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPNetworksOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListGCPNetworksParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listGCPNetworks",
 		Method:             "GET",
 		PathPattern:        "/api/v1/providers/gcp/networks",
@@ -181,7 +195,12 @@ func (a *Client) ListGCPNetworks(params *ListGCPNetworksParams, authInfo runtime
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -197,13 +216,12 @@ func (a *Client) ListGCPNetworks(params *ListGCPNetworksParams, authInfo runtime
 /*
   ListGCPNetworksNoCredentials Lists available GCP networks
 */
-func (a *Client) ListGCPNetworksNoCredentials(params *ListGCPNetworksNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPNetworksNoCredentialsOK, error) {
+func (a *Client) ListGCPNetworksNoCredentials(params *ListGCPNetworksNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPNetworksNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListGCPNetworksNoCredentialsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listGCPNetworksNoCredentials",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/networks",
@@ -215,7 +233,12 @@ func (a *Client) ListGCPNetworksNoCredentials(params *ListGCPNetworksNoCredentia
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -231,13 +254,12 @@ func (a *Client) ListGCPNetworksNoCredentials(params *ListGCPNetworksNoCredentia
 /*
   ListGCPNetworksNoCredentialsV2 Lists available GCP networks
 */
-func (a *Client) ListGCPNetworksNoCredentialsV2(params *ListGCPNetworksNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListGCPNetworksNoCredentialsV2OK, error) {
+func (a *Client) ListGCPNetworksNoCredentialsV2(params *ListGCPNetworksNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPNetworksNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListGCPNetworksNoCredentialsV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listGCPNetworksNoCredentialsV2",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/gcp/networks",
@@ -249,7 +271,12 @@ func (a *Client) ListGCPNetworksNoCredentialsV2(params *ListGCPNetworksNoCredent
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -265,13 +292,12 @@ func (a *Client) ListGCPNetworksNoCredentialsV2(params *ListGCPNetworksNoCredent
 /*
   ListGCPSizes Lists machine sizes from GCP
 */
-func (a *Client) ListGCPSizes(params *ListGCPSizesParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPSizesOK, error) {
+func (a *Client) ListGCPSizes(params *ListGCPSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPSizesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListGCPSizesParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listGCPSizes",
 		Method:             "GET",
 		PathPattern:        "/api/v1/providers/gcp/sizes",
@@ -283,7 +309,12 @@ func (a *Client) ListGCPSizes(params *ListGCPSizesParams, authInfo runtime.Clien
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -299,13 +330,12 @@ func (a *Client) ListGCPSizes(params *ListGCPSizesParams, authInfo runtime.Clien
 /*
   ListGCPSizesNoCredentials Lists machine sizes from GCP
 */
-func (a *Client) ListGCPSizesNoCredentials(params *ListGCPSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPSizesNoCredentialsOK, error) {
+func (a *Client) ListGCPSizesNoCredentials(params *ListGCPSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPSizesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListGCPSizesNoCredentialsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listGCPSizesNoCredentials",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/sizes",
@@ -317,7 +347,12 @@ func (a *Client) ListGCPSizesNoCredentials(params *ListGCPSizesNoCredentialsPara
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -333,13 +368,12 @@ func (a *Client) ListGCPSizesNoCredentials(params *ListGCPSizesNoCredentialsPara
 /*
   ListGCPSizesNoCredentialsV2 Lists machine sizes from GCP
 */
-func (a *Client) ListGCPSizesNoCredentialsV2(params *ListGCPSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListGCPSizesNoCredentialsV2OK, error) {
+func (a *Client) ListGCPSizesNoCredentialsV2(params *ListGCPSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPSizesNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListGCPSizesNoCredentialsV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listGCPSizesNoCredentialsV2",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/gcp/sizes",
@@ -351,7 +385,12 @@ func (a *Client) ListGCPSizesNoCredentialsV2(params *ListGCPSizesNoCredentialsV2
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -367,13 +406,12 @@ func (a *Client) ListGCPSizesNoCredentialsV2(params *ListGCPSizesNoCredentialsV2
 /*
   ListGCPSubnetworks Lists subnetworks from GCP
 */
-func (a *Client) ListGCPSubnetworks(params *ListGCPSubnetworksParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPSubnetworksOK, error) {
+func (a *Client) ListGCPSubnetworks(params *ListGCPSubnetworksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPSubnetworksOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListGCPSubnetworksParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listGCPSubnetworks",
 		Method:             "GET",
 		PathPattern:        "/api/v1/providers/gcp/{dc}/subnetworks",
@@ -385,7 +423,12 @@ func (a *Client) ListGCPSubnetworks(params *ListGCPSubnetworksParams, authInfo r
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -401,13 +444,12 @@ func (a *Client) ListGCPSubnetworks(params *ListGCPSubnetworksParams, authInfo r
 /*
   ListGCPSubnetworksNoCredentials Lists available GCP subnetworks
 */
-func (a *Client) ListGCPSubnetworksNoCredentials(params *ListGCPSubnetworksNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPSubnetworksNoCredentialsOK, error) {
+func (a *Client) ListGCPSubnetworksNoCredentials(params *ListGCPSubnetworksNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPSubnetworksNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListGCPSubnetworksNoCredentialsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listGCPSubnetworksNoCredentials",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/subnetworks",
@@ -419,7 +461,12 @@ func (a *Client) ListGCPSubnetworksNoCredentials(params *ListGCPSubnetworksNoCre
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -435,13 +482,12 @@ func (a *Client) ListGCPSubnetworksNoCredentials(params *ListGCPSubnetworksNoCre
 /*
   ListGCPSubnetworksNoCredentialsV2 Lists available GCP subnetworks
 */
-func (a *Client) ListGCPSubnetworksNoCredentialsV2(params *ListGCPSubnetworksNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListGCPSubnetworksNoCredentialsV2OK, error) {
+func (a *Client) ListGCPSubnetworksNoCredentialsV2(params *ListGCPSubnetworksNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPSubnetworksNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListGCPSubnetworksNoCredentialsV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listGCPSubnetworksNoCredentialsV2",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/gcp/subnetworks",
@@ -453,7 +499,12 @@ func (a *Client) ListGCPSubnetworksNoCredentialsV2(params *ListGCPSubnetworksNoC
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -469,13 +520,12 @@ func (a *Client) ListGCPSubnetworksNoCredentialsV2(params *ListGCPSubnetworksNoC
 /*
   ListGCPZones Lists available GCP zones
 */
-func (a *Client) ListGCPZones(params *ListGCPZonesParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPZonesOK, error) {
+func (a *Client) ListGCPZones(params *ListGCPZonesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPZonesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListGCPZonesParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listGCPZones",
 		Method:             "GET",
 		PathPattern:        "/api/v1/providers/gcp/{dc}/zones",
@@ -487,7 +537,12 @@ func (a *Client) ListGCPZones(params *ListGCPZonesParams, authInfo runtime.Clien
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -503,13 +558,12 @@ func (a *Client) ListGCPZones(params *ListGCPZonesParams, authInfo runtime.Clien
 /*
   ListGCPZonesNoCredentials Lists available GCP zones
 */
-func (a *Client) ListGCPZonesNoCredentials(params *ListGCPZonesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPZonesNoCredentialsOK, error) {
+func (a *Client) ListGCPZonesNoCredentials(params *ListGCPZonesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPZonesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListGCPZonesNoCredentialsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listGCPZonesNoCredentials",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/zones",
@@ -521,7 +575,12 @@ func (a *Client) ListGCPZonesNoCredentials(params *ListGCPZonesNoCredentialsPara
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -537,13 +596,12 @@ func (a *Client) ListGCPZonesNoCredentials(params *ListGCPZonesNoCredentialsPara
 /*
   ListGCPZonesNoCredentialsV2 Lists available GCP zones
 */
-func (a *Client) ListGCPZonesNoCredentialsV2(params *ListGCPZonesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListGCPZonesNoCredentialsV2OK, error) {
+func (a *Client) ListGCPZonesNoCredentialsV2(params *ListGCPZonesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPZonesNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListGCPZonesNoCredentialsV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listGCPZonesNoCredentialsV2",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/gcp/zones",
@@ -555,7 +613,12 @@ func (a *Client) ListGCPZonesNoCredentialsV2(params *ListGCPZonesNoCredentialsV2
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

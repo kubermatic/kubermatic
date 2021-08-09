@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListPacketSizesNoCredentialsParams creates a new ListPacketSizesNoCredentialsParams object
-// with the default values initialized.
+// NewListPacketSizesNoCredentialsParams creates a new ListPacketSizesNoCredentialsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListPacketSizesNoCredentialsParams() *ListPacketSizesNoCredentialsParams {
-	var ()
 	return &ListPacketSizesNoCredentialsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListPacketSizesNoCredentialsParamsWithTimeout creates a new ListPacketSizesNoCredentialsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListPacketSizesNoCredentialsParamsWithTimeout(timeout time.Duration) *ListPacketSizesNoCredentialsParams {
-	var ()
 	return &ListPacketSizesNoCredentialsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListPacketSizesNoCredentialsParamsWithContext creates a new ListPacketSizesNoCredentialsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListPacketSizesNoCredentialsParamsWithContext(ctx context.Context) *ListPacketSizesNoCredentialsParams {
-	var ()
 	return &ListPacketSizesNoCredentialsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListPacketSizesNoCredentialsParamsWithHTTPClient creates a new ListPacketSizesNoCredentialsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListPacketSizesNoCredentialsParamsWithHTTPClient(client *http.Client) *ListPacketSizesNoCredentialsParams {
-	var ()
 	return &ListPacketSizesNoCredentialsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListPacketSizesNoCredentialsParams contains all the parameters to send to the API endpoint
-for the list packet sizes no credentials operation typically these are written to a http.Request
+/* ListPacketSizesNoCredentialsParams contains all the parameters to send to the API endpoint
+   for the list packet sizes no credentials operation.
+
+   Typically these are written to a http.Request.
 */
 type ListPacketSizesNoCredentialsParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list packet sizes no credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListPacketSizesNoCredentialsParams) WithDefaults() *ListPacketSizesNoCredentialsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list packet sizes no credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListPacketSizesNoCredentialsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list packet sizes no credentials params

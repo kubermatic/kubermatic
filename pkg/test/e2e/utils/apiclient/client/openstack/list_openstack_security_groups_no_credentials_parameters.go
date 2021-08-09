@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListOpenstackSecurityGroupsNoCredentialsParams creates a new ListOpenstackSecurityGroupsNoCredentialsParams object
-// with the default values initialized.
+// NewListOpenstackSecurityGroupsNoCredentialsParams creates a new ListOpenstackSecurityGroupsNoCredentialsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListOpenstackSecurityGroupsNoCredentialsParams() *ListOpenstackSecurityGroupsNoCredentialsParams {
-	var ()
 	return &ListOpenstackSecurityGroupsNoCredentialsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListOpenstackSecurityGroupsNoCredentialsParamsWithTimeout creates a new ListOpenstackSecurityGroupsNoCredentialsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListOpenstackSecurityGroupsNoCredentialsParamsWithTimeout(timeout time.Duration) *ListOpenstackSecurityGroupsNoCredentialsParams {
-	var ()
 	return &ListOpenstackSecurityGroupsNoCredentialsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListOpenstackSecurityGroupsNoCredentialsParamsWithContext creates a new ListOpenstackSecurityGroupsNoCredentialsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListOpenstackSecurityGroupsNoCredentialsParamsWithContext(ctx context.Context) *ListOpenstackSecurityGroupsNoCredentialsParams {
-	var ()
 	return &ListOpenstackSecurityGroupsNoCredentialsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListOpenstackSecurityGroupsNoCredentialsParamsWithHTTPClient creates a new ListOpenstackSecurityGroupsNoCredentialsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListOpenstackSecurityGroupsNoCredentialsParamsWithHTTPClient(client *http.Client) *ListOpenstackSecurityGroupsNoCredentialsParams {
-	var ()
 	return &ListOpenstackSecurityGroupsNoCredentialsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListOpenstackSecurityGroupsNoCredentialsParams contains all the parameters to send to the API endpoint
-for the list openstack security groups no credentials operation typically these are written to a http.Request
+/* ListOpenstackSecurityGroupsNoCredentialsParams contains all the parameters to send to the API endpoint
+   for the list openstack security groups no credentials operation.
+
+   Typically these are written to a http.Request.
 */
 type ListOpenstackSecurityGroupsNoCredentialsParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list openstack security groups no credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListOpenstackSecurityGroupsNoCredentialsParams) WithDefaults() *ListOpenstackSecurityGroupsNoCredentialsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list openstack security groups no credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListOpenstackSecurityGroupsNoCredentialsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list openstack security groups no credentials params

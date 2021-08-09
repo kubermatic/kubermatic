@@ -46,7 +46,7 @@ func NewListHetznerSizesNoCredentialsV2OK() *ListHetznerSizesNoCredentialsV2OK {
 	return &ListHetznerSizesNoCredentialsV2OK{}
 }
 
-/*ListHetznerSizesNoCredentialsV2OK handles this case with default header values.
+/* ListHetznerSizesNoCredentialsV2OK describes a response with status code 200, with default header values.
 
 HetznerSizeList
 */
@@ -57,7 +57,6 @@ type ListHetznerSizesNoCredentialsV2OK struct {
 func (o *ListHetznerSizesNoCredentialsV2OK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/hetzner/sizes][%d] listHetznerSizesNoCredentialsV2OK  %+v", 200, o.Payload)
 }
-
 func (o *ListHetznerSizesNoCredentialsV2OK) GetPayload() *models.HetznerSizeList {
 	return o.Payload
 }
@@ -81,7 +80,7 @@ func NewListHetznerSizesNoCredentialsV2Default(code int) *ListHetznerSizesNoCred
 	}
 }
 
-/*ListHetznerSizesNoCredentialsV2Default handles this case with default header values.
+/* ListHetznerSizesNoCredentialsV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -99,7 +98,6 @@ func (o *ListHetznerSizesNoCredentialsV2Default) Code() int {
 func (o *ListHetznerSizesNoCredentialsV2Default) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/hetzner/sizes][%d] listHetznerSizesNoCredentialsV2 default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListHetznerSizesNoCredentialsV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -46,7 +46,7 @@ func NewListGCPZonesNoCredentialsV2OK() *ListGCPZonesNoCredentialsV2OK {
 	return &ListGCPZonesNoCredentialsV2OK{}
 }
 
-/*ListGCPZonesNoCredentialsV2OK handles this case with default header values.
+/* ListGCPZonesNoCredentialsV2OK describes a response with status code 200, with default header values.
 
 GCPZoneList
 */
@@ -57,7 +57,6 @@ type ListGCPZonesNoCredentialsV2OK struct {
 func (o *ListGCPZonesNoCredentialsV2OK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/gcp/zones][%d] listGCPZonesNoCredentialsV2OK  %+v", 200, o.Payload)
 }
-
 func (o *ListGCPZonesNoCredentialsV2OK) GetPayload() models.GCPZoneList {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListGCPZonesNoCredentialsV2Default(code int) *ListGCPZonesNoCredentialsV
 	}
 }
 
-/*ListGCPZonesNoCredentialsV2Default handles this case with default header values.
+/* ListGCPZonesNoCredentialsV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListGCPZonesNoCredentialsV2Default) Code() int {
 func (o *ListGCPZonesNoCredentialsV2Default) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/gcp/zones][%d] listGCPZonesNoCredentialsV2 default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListGCPZonesNoCredentialsV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -16,58 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetClusterV2Params creates a new GetClusterV2Params object
-// with the default values initialized.
+// NewGetClusterV2Params creates a new GetClusterV2Params object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetClusterV2Params() *GetClusterV2Params {
-	var ()
 	return &GetClusterV2Params{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetClusterV2ParamsWithTimeout creates a new GetClusterV2Params object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetClusterV2ParamsWithTimeout(timeout time.Duration) *GetClusterV2Params {
-	var ()
 	return &GetClusterV2Params{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetClusterV2ParamsWithContext creates a new GetClusterV2Params object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetClusterV2ParamsWithContext(ctx context.Context) *GetClusterV2Params {
-	var ()
 	return &GetClusterV2Params{
-
 		Context: ctx,
 	}
 }
 
 // NewGetClusterV2ParamsWithHTTPClient creates a new GetClusterV2Params object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetClusterV2ParamsWithHTTPClient(client *http.Client) *GetClusterV2Params {
-	var ()
 	return &GetClusterV2Params{
 		HTTPClient: client,
 	}
 }
 
-/*GetClusterV2Params contains all the parameters to send to the API endpoint
-for the get cluster v2 operation typically these are written to a http.Request
+/* GetClusterV2Params contains all the parameters to send to the API endpoint
+   for the get cluster v2 operation.
+
+   Typically these are written to a http.Request.
 */
 type GetClusterV2Params struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get cluster v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetClusterV2Params) WithDefaults() *GetClusterV2Params {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get cluster v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetClusterV2Params) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get cluster v2 params

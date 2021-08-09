@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListAnexiaTemplatesParams creates a new ListAnexiaTemplatesParams object
-// with the default values initialized.
+// NewListAnexiaTemplatesParams creates a new ListAnexiaTemplatesParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListAnexiaTemplatesParams() *ListAnexiaTemplatesParams {
-	var ()
 	return &ListAnexiaTemplatesParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListAnexiaTemplatesParamsWithTimeout creates a new ListAnexiaTemplatesParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListAnexiaTemplatesParamsWithTimeout(timeout time.Duration) *ListAnexiaTemplatesParams {
-	var ()
 	return &ListAnexiaTemplatesParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListAnexiaTemplatesParamsWithContext creates a new ListAnexiaTemplatesParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListAnexiaTemplatesParamsWithContext(ctx context.Context) *ListAnexiaTemplatesParams {
-	var ()
 	return &ListAnexiaTemplatesParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListAnexiaTemplatesParamsWithHTTPClient creates a new ListAnexiaTemplatesParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListAnexiaTemplatesParamsWithHTTPClient(client *http.Client) *ListAnexiaTemplatesParams {
-	var ()
 	return &ListAnexiaTemplatesParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListAnexiaTemplatesParams contains all the parameters to send to the API endpoint
-for the list anexia templates operation typically these are written to a http.Request
+/* ListAnexiaTemplatesParams contains all the parameters to send to the API endpoint
+   for the list anexia templates operation.
+
+   Typically these are written to a http.Request.
 */
 type ListAnexiaTemplatesParams struct {
 
-	/*Credential*/
+	// Credential.
 	Credential *string
-	/*Location*/
+
+	// Location.
 	Location *string
-	/*Token*/
+
+	// Token.
 	Token *string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list anexia templates params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAnexiaTemplatesParams) WithDefaults() *ListAnexiaTemplatesParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list anexia templates params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAnexiaTemplatesParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list anexia templates params
@@ -152,7 +168,6 @@ func (o *ListAnexiaTemplatesParams) WriteToRequest(r runtime.ClientRequest, reg 
 		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Location != nil {
@@ -161,7 +176,6 @@ func (o *ListAnexiaTemplatesParams) WriteToRequest(r runtime.ClientRequest, reg 
 		if err := r.SetHeaderParam("Location", *o.Location); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Token != nil {
@@ -170,7 +184,6 @@ func (o *ListAnexiaTemplatesParams) WriteToRequest(r runtime.ClientRequest, reg 
 		if err := r.SetHeaderParam("Token", *o.Token); err != nil {
 			return err
 		}
-
 	}
 
 	if len(res) > 0 {

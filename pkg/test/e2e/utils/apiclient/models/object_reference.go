@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -85,12 +87,37 @@ func (m *ObjectReference) Validate(formats strfmt.Registry) error {
 }
 
 func (m *ObjectReference) validateUID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.UID) { // not required
 		return nil
 	}
 
 	if err := m.UID.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("uid")
+		}
+		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this object reference based on the context it is used
+func (m *ObjectReference) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateUID(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *ObjectReference) contextValidateUID(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.UID.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("uid")
 		}

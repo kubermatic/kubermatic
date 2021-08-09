@@ -6,6 +6,7 @@ package datacenter
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"fmt"
 	"io"
 
@@ -60,7 +61,7 @@ func NewCreateDCCreated() *CreateDCCreated {
 	return &CreateDCCreated{}
 }
 
-/*CreateDCCreated handles this case with default header values.
+/* CreateDCCreated describes a response with status code 201, with default header values.
 
 Datacenter
 */
@@ -71,7 +72,6 @@ type CreateDCCreated struct {
 func (o *CreateDCCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v1/seed/{seed_name}/dc][%d] createDCCreated  %+v", 201, o.Payload)
 }
-
 func (o *CreateDCCreated) GetPayload() *models.Datacenter {
 	return o.Payload
 }
@@ -93,7 +93,7 @@ func NewCreateDCUnauthorized() *CreateDCUnauthorized {
 	return &CreateDCUnauthorized{}
 }
 
-/*CreateDCUnauthorized handles this case with default header values.
+/* CreateDCUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -114,7 +114,7 @@ func NewCreateDCForbidden() *CreateDCForbidden {
 	return &CreateDCForbidden{}
 }
 
-/*CreateDCForbidden handles this case with default header values.
+/* CreateDCForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -137,7 +137,7 @@ func NewCreateDCDefault(code int) *CreateDCDefault {
 	}
 }
 
-/*CreateDCDefault handles this case with default header values.
+/* CreateDCDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -155,7 +155,6 @@ func (o *CreateDCDefault) Code() int {
 func (o *CreateDCDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v1/seed/{seed_name}/dc][%d] createDC default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *CreateDCDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }
@@ -199,13 +198,40 @@ func (o *CreateDCBody) Validate(formats strfmt.Registry) error {
 }
 
 func (o *CreateDCBody) validateSpec(formats strfmt.Registry) error {
-
 	if swag.IsZero(o.Spec) { // not required
 		return nil
 	}
 
 	if o.Spec != nil {
 		if err := o.Spec.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("Body" + "." + "spec")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this create d c body based on the context it is used
+func (o *CreateDCBody) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := o.contextValidateSpec(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (o *CreateDCBody) contextValidateSpec(ctx context.Context, formats strfmt.Registry) error {
+
+	if o.Spec != nil {
+		if err := o.Spec.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("Body" + "." + "spec")
 			}

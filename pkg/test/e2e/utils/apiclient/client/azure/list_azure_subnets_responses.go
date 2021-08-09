@@ -46,7 +46,7 @@ func NewListAzureSubnetsOK() *ListAzureSubnetsOK {
 	return &ListAzureSubnetsOK{}
 }
 
-/*ListAzureSubnetsOK handles this case with default header values.
+/* ListAzureSubnetsOK describes a response with status code 200, with default header values.
 
 AzureSubnetsList
 */
@@ -57,7 +57,6 @@ type ListAzureSubnetsOK struct {
 func (o *ListAzureSubnetsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/azure/subnets][%d] listAzureSubnetsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListAzureSubnetsOK) GetPayload() *models.AzureSubnetsList {
 	return o.Payload
 }
@@ -81,7 +80,7 @@ func NewListAzureSubnetsDefault(code int) *ListAzureSubnetsDefault {
 	}
 }
 
-/*ListAzureSubnetsDefault handles this case with default header values.
+/* ListAzureSubnetsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -99,7 +98,6 @@ func (o *ListAzureSubnetsDefault) Code() int {
 func (o *ListAzureSubnetsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/azure/subnets][%d] listAzureSubnets default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListAzureSubnetsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

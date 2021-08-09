@@ -58,7 +58,7 @@ func NewCreateRoleCreated() *CreateRoleCreated {
 	return &CreateRoleCreated{}
 }
 
-/*CreateRoleCreated handles this case with default header values.
+/* CreateRoleCreated describes a response with status code 201, with default header values.
 
 Role
 */
@@ -69,7 +69,6 @@ type CreateRoleCreated struct {
 func (o *CreateRoleCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles][%d] createRoleCreated  %+v", 201, o.Payload)
 }
-
 func (o *CreateRoleCreated) GetPayload() *models.Role {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewCreateRoleUnauthorized() *CreateRoleUnauthorized {
 	return &CreateRoleUnauthorized{}
 }
 
-/*CreateRoleUnauthorized handles this case with default header values.
+/* CreateRoleUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewCreateRoleForbidden() *CreateRoleForbidden {
 	return &CreateRoleForbidden{}
 }
 
-/*CreateRoleForbidden handles this case with default header values.
+/* CreateRoleForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewCreateRoleDefault(code int) *CreateRoleDefault {
 	}
 }
 
-/*CreateRoleDefault handles this case with default header values.
+/* CreateRoleDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *CreateRoleDefault) Code() int {
 func (o *CreateRoleDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles][%d] createRole default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *CreateRoleDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

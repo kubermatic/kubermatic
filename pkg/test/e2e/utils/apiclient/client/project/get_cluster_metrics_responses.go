@@ -58,7 +58,7 @@ func NewGetClusterMetricsOK() *GetClusterMetricsOK {
 	return &GetClusterMetricsOK{}
 }
 
-/*GetClusterMetricsOK handles this case with default header values.
+/* GetClusterMetricsOK describes a response with status code 200, with default header values.
 
 ClusterMetrics
 */
@@ -69,7 +69,6 @@ type GetClusterMetricsOK struct {
 func (o *GetClusterMetricsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics][%d] getClusterMetricsOK  %+v", 200, o.Payload)
 }
-
 func (o *GetClusterMetricsOK) GetPayload() *models.ClusterMetrics {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewGetClusterMetricsUnauthorized() *GetClusterMetricsUnauthorized {
 	return &GetClusterMetricsUnauthorized{}
 }
 
-/*GetClusterMetricsUnauthorized handles this case with default header values.
+/* GetClusterMetricsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewGetClusterMetricsForbidden() *GetClusterMetricsForbidden {
 	return &GetClusterMetricsForbidden{}
 }
 
-/*GetClusterMetricsForbidden handles this case with default header values.
+/* GetClusterMetricsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewGetClusterMetricsDefault(code int) *GetClusterMetricsDefault {
 	}
 }
 
-/*GetClusterMetricsDefault handles this case with default header values.
+/* GetClusterMetricsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *GetClusterMetricsDefault) Code() int {
 func (o *GetClusterMetricsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics][%d] getClusterMetrics default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetClusterMetricsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

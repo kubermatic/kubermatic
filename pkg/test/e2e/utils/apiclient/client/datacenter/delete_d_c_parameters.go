@@ -16,58 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewDeleteDCParams creates a new DeleteDCParams object
-// with the default values initialized.
+// NewDeleteDCParams creates a new DeleteDCParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewDeleteDCParams() *DeleteDCParams {
-	var ()
 	return &DeleteDCParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewDeleteDCParamsWithTimeout creates a new DeleteDCParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewDeleteDCParamsWithTimeout(timeout time.Duration) *DeleteDCParams {
-	var ()
 	return &DeleteDCParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewDeleteDCParamsWithContext creates a new DeleteDCParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewDeleteDCParamsWithContext(ctx context.Context) *DeleteDCParams {
-	var ()
 	return &DeleteDCParams{
-
 		Context: ctx,
 	}
 }
 
 // NewDeleteDCParamsWithHTTPClient creates a new DeleteDCParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewDeleteDCParamsWithHTTPClient(client *http.Client) *DeleteDCParams {
-	var ()
 	return &DeleteDCParams{
 		HTTPClient: client,
 	}
 }
 
-/*DeleteDCParams contains all the parameters to send to the API endpoint
-for the delete d c operation typically these are written to a http.Request
+/* DeleteDCParams contains all the parameters to send to the API endpoint
+   for the delete d c operation.
+
+   Typically these are written to a http.Request.
 */
 type DeleteDCParams struct {
 
-	/*Dc*/
+	// Dc.
 	DC string
-	/*SeedName*/
+
+	// SeedName.
 	Seed string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the delete d c params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DeleteDCParams) WithDefaults() *DeleteDCParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the delete d c params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DeleteDCParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the delete d c params

@@ -58,7 +58,7 @@ func NewListRuleGroupsOK() *ListRuleGroupsOK {
 	return &ListRuleGroupsOK{}
 }
 
-/*ListRuleGroupsOK handles this case with default header values.
+/* ListRuleGroupsOK describes a response with status code 200, with default header values.
 
 RuleGroup
 */
@@ -69,7 +69,6 @@ type ListRuleGroupsOK struct {
 func (o *ListRuleGroupsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups][%d] listRuleGroupsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListRuleGroupsOK) GetPayload() []*models.RuleGroup {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListRuleGroupsUnauthorized() *ListRuleGroupsUnauthorized {
 	return &ListRuleGroupsUnauthorized{}
 }
 
-/*ListRuleGroupsUnauthorized handles this case with default header values.
+/* ListRuleGroupsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListRuleGroupsForbidden() *ListRuleGroupsForbidden {
 	return &ListRuleGroupsForbidden{}
 }
 
-/*ListRuleGroupsForbidden handles this case with default header values.
+/* ListRuleGroupsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListRuleGroupsDefault(code int) *ListRuleGroupsDefault {
 	}
 }
 
-/*ListRuleGroupsDefault handles this case with default header values.
+/* ListRuleGroupsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListRuleGroupsDefault) Code() int {
 func (o *ListRuleGroupsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups][%d] listRuleGroups default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListRuleGroupsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

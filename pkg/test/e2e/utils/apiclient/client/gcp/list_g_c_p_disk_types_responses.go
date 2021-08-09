@@ -46,7 +46,7 @@ func NewListGCPDiskTypesOK() *ListGCPDiskTypesOK {
 	return &ListGCPDiskTypesOK{}
 }
 
-/*ListGCPDiskTypesOK handles this case with default header values.
+/* ListGCPDiskTypesOK describes a response with status code 200, with default header values.
 
 GCPDiskTypeList
 */
@@ -57,7 +57,6 @@ type ListGCPDiskTypesOK struct {
 func (o *ListGCPDiskTypesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/gcp/disktypes][%d] listGCPDiskTypesOK  %+v", 200, o.Payload)
 }
-
 func (o *ListGCPDiskTypesOK) GetPayload() models.GCPDiskTypeList {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListGCPDiskTypesDefault(code int) *ListGCPDiskTypesDefault {
 	}
 }
 
-/*ListGCPDiskTypesDefault handles this case with default header values.
+/* ListGCPDiskTypesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListGCPDiskTypesDefault) Code() int {
 func (o *ListGCPDiskTypesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/gcp/disktypes][%d] listGCPDiskTypes default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListGCPDiskTypesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

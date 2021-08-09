@@ -58,7 +58,7 @@ func NewCreatePresetOK() *CreatePresetOK {
 	return &CreatePresetOK{}
 }
 
-/*CreatePresetOK handles this case with default header values.
+/* CreatePresetOK describes a response with status code 200, with default header values.
 
 Preset
 */
@@ -69,7 +69,6 @@ type CreatePresetOK struct {
 func (o *CreatePresetOK) Error() string {
 	return fmt.Sprintf("[POST /api/v2/providers/{provider_name}/presets][%d] createPresetOK  %+v", 200, o.Payload)
 }
-
 func (o *CreatePresetOK) GetPayload() *models.Preset {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewCreatePresetUnauthorized() *CreatePresetUnauthorized {
 	return &CreatePresetUnauthorized{}
 }
 
-/*CreatePresetUnauthorized handles this case with default header values.
+/* CreatePresetUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewCreatePresetForbidden() *CreatePresetForbidden {
 	return &CreatePresetForbidden{}
 }
 
-/*CreatePresetForbidden handles this case with default header values.
+/* CreatePresetForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewCreatePresetDefault(code int) *CreatePresetDefault {
 	}
 }
 
-/*CreatePresetDefault handles this case with default header values.
+/* CreatePresetDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *CreatePresetDefault) Code() int {
 func (o *CreatePresetDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v2/providers/{provider_name}/presets][%d] createPreset default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *CreatePresetDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

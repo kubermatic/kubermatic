@@ -16,58 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewDeleteServiceAccountParams creates a new DeleteServiceAccountParams object
-// with the default values initialized.
+// NewDeleteServiceAccountParams creates a new DeleteServiceAccountParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewDeleteServiceAccountParams() *DeleteServiceAccountParams {
-	var ()
 	return &DeleteServiceAccountParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewDeleteServiceAccountParamsWithTimeout creates a new DeleteServiceAccountParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewDeleteServiceAccountParamsWithTimeout(timeout time.Duration) *DeleteServiceAccountParams {
-	var ()
 	return &DeleteServiceAccountParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewDeleteServiceAccountParamsWithContext creates a new DeleteServiceAccountParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewDeleteServiceAccountParamsWithContext(ctx context.Context) *DeleteServiceAccountParams {
-	var ()
 	return &DeleteServiceAccountParams{
-
 		Context: ctx,
 	}
 }
 
 // NewDeleteServiceAccountParamsWithHTTPClient creates a new DeleteServiceAccountParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewDeleteServiceAccountParamsWithHTTPClient(client *http.Client) *DeleteServiceAccountParams {
-	var ()
 	return &DeleteServiceAccountParams{
 		HTTPClient: client,
 	}
 }
 
-/*DeleteServiceAccountParams contains all the parameters to send to the API endpoint
-for the delete service account operation typically these are written to a http.Request
+/* DeleteServiceAccountParams contains all the parameters to send to the API endpoint
+   for the delete service account operation.
+
+   Typically these are written to a http.Request.
 */
 type DeleteServiceAccountParams struct {
 
-	/*ProjectID*/
+	// ProjectID.
 	ProjectID string
-	/*ServiceaccountID*/
+
+	// ServiceaccountID.
 	ServiceAccountID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the delete service account params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DeleteServiceAccountParams) WithDefaults() *DeleteServiceAccountParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the delete service account params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DeleteServiceAccountParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the delete service account params

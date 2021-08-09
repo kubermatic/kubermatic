@@ -16,64 +16,82 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListAWSSubnetsParams creates a new ListAWSSubnetsParams object
-// with the default values initialized.
+// NewListAWSSubnetsParams creates a new ListAWSSubnetsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListAWSSubnetsParams() *ListAWSSubnetsParams {
-	var ()
 	return &ListAWSSubnetsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListAWSSubnetsParamsWithTimeout creates a new ListAWSSubnetsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListAWSSubnetsParamsWithTimeout(timeout time.Duration) *ListAWSSubnetsParams {
-	var ()
 	return &ListAWSSubnetsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListAWSSubnetsParamsWithContext creates a new ListAWSSubnetsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListAWSSubnetsParamsWithContext(ctx context.Context) *ListAWSSubnetsParams {
-	var ()
 	return &ListAWSSubnetsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListAWSSubnetsParamsWithHTTPClient creates a new ListAWSSubnetsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListAWSSubnetsParamsWithHTTPClient(client *http.Client) *ListAWSSubnetsParams {
-	var ()
 	return &ListAWSSubnetsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListAWSSubnetsParams contains all the parameters to send to the API endpoint
-for the list a w s subnets operation typically these are written to a http.Request
+/* ListAWSSubnetsParams contains all the parameters to send to the API endpoint
+   for the list a w s subnets operation.
+
+   Typically these are written to a http.Request.
 */
 type ListAWSSubnetsParams struct {
 
-	/*AccessKeyID*/
+	// AccessKeyID.
 	AccessKeyID *string
-	/*Credential*/
+
+	// Credential.
 	Credential *string
-	/*SecretAccessKey*/
+
+	// SecretAccessKey.
 	SecretAccessKey *string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*Vpc*/
+
+	// Vpc.
 	VPC *string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list a w s subnets params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAWSSubnetsParams) WithDefaults() *ListAWSSubnetsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list a w s subnets params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAWSSubnetsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list a w s subnets params
@@ -178,7 +196,6 @@ func (o *ListAWSSubnetsParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 		if err := r.SetHeaderParam("AccessKeyID", *o.AccessKeyID); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Credential != nil {
@@ -187,7 +204,6 @@ func (o *ListAWSSubnetsParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
 			return err
 		}
-
 	}
 
 	if o.SecretAccessKey != nil {
@@ -196,7 +212,6 @@ func (o *ListAWSSubnetsParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 		if err := r.SetHeaderParam("SecretAccessKey", *o.SecretAccessKey); err != nil {
 			return err
 		}
-
 	}
 
 	// path param dc
@@ -210,7 +225,6 @@ func (o *ListAWSSubnetsParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 		if err := r.SetHeaderParam("vpc", *o.VPC); err != nil {
 			return err
 		}
-
 	}
 
 	if len(res) > 0 {

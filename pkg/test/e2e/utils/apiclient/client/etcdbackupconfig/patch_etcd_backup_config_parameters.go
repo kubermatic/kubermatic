@@ -18,62 +18,79 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
-// NewPatchEtcdBackupConfigParams creates a new PatchEtcdBackupConfigParams object
-// with the default values initialized.
+// NewPatchEtcdBackupConfigParams creates a new PatchEtcdBackupConfigParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewPatchEtcdBackupConfigParams() *PatchEtcdBackupConfigParams {
-	var ()
 	return &PatchEtcdBackupConfigParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewPatchEtcdBackupConfigParamsWithTimeout creates a new PatchEtcdBackupConfigParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewPatchEtcdBackupConfigParamsWithTimeout(timeout time.Duration) *PatchEtcdBackupConfigParams {
-	var ()
 	return &PatchEtcdBackupConfigParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewPatchEtcdBackupConfigParamsWithContext creates a new PatchEtcdBackupConfigParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewPatchEtcdBackupConfigParamsWithContext(ctx context.Context) *PatchEtcdBackupConfigParams {
-	var ()
 	return &PatchEtcdBackupConfigParams{
-
 		Context: ctx,
 	}
 }
 
 // NewPatchEtcdBackupConfigParamsWithHTTPClient creates a new PatchEtcdBackupConfigParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewPatchEtcdBackupConfigParamsWithHTTPClient(client *http.Client) *PatchEtcdBackupConfigParams {
-	var ()
 	return &PatchEtcdBackupConfigParams{
 		HTTPClient: client,
 	}
 }
 
-/*PatchEtcdBackupConfigParams contains all the parameters to send to the API endpoint
-for the patch etcd backup config operation typically these are written to a http.Request
+/* PatchEtcdBackupConfigParams contains all the parameters to send to the API endpoint
+   for the patch etcd backup config operation.
+
+   Typically these are written to a http.Request.
 */
 type PatchEtcdBackupConfigParams struct {
 
-	/*Body*/
+	// Body.
 	Body *models.EtcdBackupConfigSpec
-	/*ClusterID*/
+
+	// ClusterID.
 	ClusterID string
-	/*EbcName*/
+
+	// EbcName.
 	EtcdBackupConfigName string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the patch etcd backup config params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *PatchEtcdBackupConfigParams) WithDefaults() *PatchEtcdBackupConfigParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the patch etcd backup config params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *PatchEtcdBackupConfigParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the patch etcd backup config params
@@ -160,7 +177,6 @@ func (o *PatchEtcdBackupConfigParams) WriteToRequest(r runtime.ClientRequest, re
 		return err
 	}
 	var res []error
-
 	if o.Body != nil {
 		if err := r.SetBodyParam(o.Body); err != nil {
 			return err

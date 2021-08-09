@@ -18,56 +18,70 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
-// NewCreateAllowedRegistryParams creates a new CreateAllowedRegistryParams object
-// with the default values initialized.
+// NewCreateAllowedRegistryParams creates a new CreateAllowedRegistryParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewCreateAllowedRegistryParams() *CreateAllowedRegistryParams {
-	var ()
 	return &CreateAllowedRegistryParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewCreateAllowedRegistryParamsWithTimeout creates a new CreateAllowedRegistryParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewCreateAllowedRegistryParamsWithTimeout(timeout time.Duration) *CreateAllowedRegistryParams {
-	var ()
 	return &CreateAllowedRegistryParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewCreateAllowedRegistryParamsWithContext creates a new CreateAllowedRegistryParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewCreateAllowedRegistryParamsWithContext(ctx context.Context) *CreateAllowedRegistryParams {
-	var ()
 	return &CreateAllowedRegistryParams{
-
 		Context: ctx,
 	}
 }
 
 // NewCreateAllowedRegistryParamsWithHTTPClient creates a new CreateAllowedRegistryParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewCreateAllowedRegistryParamsWithHTTPClient(client *http.Client) *CreateAllowedRegistryParams {
-	var ()
 	return &CreateAllowedRegistryParams{
 		HTTPClient: client,
 	}
 }
 
-/*CreateAllowedRegistryParams contains all the parameters to send to the API endpoint
-for the create allowed registry operation typically these are written to a http.Request
+/* CreateAllowedRegistryParams contains all the parameters to send to the API endpoint
+   for the create allowed registry operation.
+
+   Typically these are written to a http.Request.
 */
 type CreateAllowedRegistryParams struct {
 
-	/*Body*/
+	// Body.
 	Body *models.WrBody
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the create allowed registry params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *CreateAllowedRegistryParams) WithDefaults() *CreateAllowedRegistryParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the create allowed registry params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *CreateAllowedRegistryParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the create allowed registry params
@@ -121,7 +135,6 @@ func (o *CreateAllowedRegistryParams) WriteToRequest(r runtime.ClientRequest, re
 		return err
 	}
 	var res []error
-
 	if o.Body != nil {
 		if err := r.SetBodyParam(o.Body); err != nil {
 			return err

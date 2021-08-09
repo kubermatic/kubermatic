@@ -58,7 +58,7 @@ func NewUpdatePresetOK() *UpdatePresetOK {
 	return &UpdatePresetOK{}
 }
 
-/*UpdatePresetOK handles this case with default header values.
+/* UpdatePresetOK describes a response with status code 200, with default header values.
 
 Preset
 */
@@ -69,7 +69,6 @@ type UpdatePresetOK struct {
 func (o *UpdatePresetOK) Error() string {
 	return fmt.Sprintf("[PUT /api/v2/providers/{provider_name}/presets][%d] updatePresetOK  %+v", 200, o.Payload)
 }
-
 func (o *UpdatePresetOK) GetPayload() *models.Preset {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewUpdatePresetUnauthorized() *UpdatePresetUnauthorized {
 	return &UpdatePresetUnauthorized{}
 }
 
-/*UpdatePresetUnauthorized handles this case with default header values.
+/* UpdatePresetUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewUpdatePresetForbidden() *UpdatePresetForbidden {
 	return &UpdatePresetForbidden{}
 }
 
-/*UpdatePresetForbidden handles this case with default header values.
+/* UpdatePresetForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewUpdatePresetDefault(code int) *UpdatePresetDefault {
 	}
 }
 
-/*UpdatePresetDefault handles this case with default header values.
+/* UpdatePresetDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *UpdatePresetDefault) Code() int {
 func (o *UpdatePresetDefault) Error() string {
 	return fmt.Sprintf("[PUT /api/v2/providers/{provider_name}/presets][%d] updatePreset default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *UpdatePresetDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

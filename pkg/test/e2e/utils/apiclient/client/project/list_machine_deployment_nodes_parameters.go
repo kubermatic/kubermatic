@@ -17,62 +17,79 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// NewListMachineDeploymentNodesParams creates a new ListMachineDeploymentNodesParams object
-// with the default values initialized.
+// NewListMachineDeploymentNodesParams creates a new ListMachineDeploymentNodesParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListMachineDeploymentNodesParams() *ListMachineDeploymentNodesParams {
-	var ()
 	return &ListMachineDeploymentNodesParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListMachineDeploymentNodesParamsWithTimeout creates a new ListMachineDeploymentNodesParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListMachineDeploymentNodesParamsWithTimeout(timeout time.Duration) *ListMachineDeploymentNodesParams {
-	var ()
 	return &ListMachineDeploymentNodesParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListMachineDeploymentNodesParamsWithContext creates a new ListMachineDeploymentNodesParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListMachineDeploymentNodesParamsWithContext(ctx context.Context) *ListMachineDeploymentNodesParams {
-	var ()
 	return &ListMachineDeploymentNodesParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListMachineDeploymentNodesParamsWithHTTPClient creates a new ListMachineDeploymentNodesParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListMachineDeploymentNodesParamsWithHTTPClient(client *http.Client) *ListMachineDeploymentNodesParams {
-	var ()
 	return &ListMachineDeploymentNodesParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListMachineDeploymentNodesParams contains all the parameters to send to the API endpoint
-for the list machine deployment nodes operation typically these are written to a http.Request
+/* ListMachineDeploymentNodesParams contains all the parameters to send to the API endpoint
+   for the list machine deployment nodes operation.
+
+   Typically these are written to a http.Request.
 */
 type ListMachineDeploymentNodesParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*HideInitialConditions*/
+
+	// HideInitialConditions.
 	HideInitialConditions *bool
-	/*MachinedeploymentID*/
+
+	// MachinedeploymentID.
 	MachineDeploymentID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list machine deployment nodes params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListMachineDeploymentNodesParams) WithDefaults() *ListMachineDeploymentNodesParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list machine deployment nodes params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListMachineDeploymentNodesParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list machine deployment nodes params
@@ -169,16 +186,17 @@ func (o *ListMachineDeploymentNodesParams) WriteToRequest(r runtime.ClientReques
 
 		// query param hideInitialConditions
 		var qrHideInitialConditions bool
+
 		if o.HideInitialConditions != nil {
 			qrHideInitialConditions = *o.HideInitialConditions
 		}
 		qHideInitialConditions := swag.FormatBool(qrHideInitialConditions)
 		if qHideInitialConditions != "" {
+
 			if err := r.SetQueryParam("hideInitialConditions", qHideInitialConditions); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	// path param machinedeployment_id

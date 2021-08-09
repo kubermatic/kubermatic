@@ -58,7 +58,7 @@ func NewListAllowedRegistriesOK() *ListAllowedRegistriesOK {
 	return &ListAllowedRegistriesOK{}
 }
 
-/*ListAllowedRegistriesOK handles this case with default header values.
+/* ListAllowedRegistriesOK describes a response with status code 200, with default header values.
 
 AllowedRegistry
 */
@@ -69,7 +69,6 @@ type ListAllowedRegistriesOK struct {
 func (o *ListAllowedRegistriesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/allowedregistries][%d] listAllowedRegistriesOK  %+v", 200, o.Payload)
 }
-
 func (o *ListAllowedRegistriesOK) GetPayload() []*models.AllowedRegistry {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListAllowedRegistriesUnauthorized() *ListAllowedRegistriesUnauthorized {
 	return &ListAllowedRegistriesUnauthorized{}
 }
 
-/*ListAllowedRegistriesUnauthorized handles this case with default header values.
+/* ListAllowedRegistriesUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListAllowedRegistriesForbidden() *ListAllowedRegistriesForbidden {
 	return &ListAllowedRegistriesForbidden{}
 }
 
-/*ListAllowedRegistriesForbidden handles this case with default header values.
+/* ListAllowedRegistriesForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListAllowedRegistriesDefault(code int) *ListAllowedRegistriesDefault {
 	}
 }
 
-/*ListAllowedRegistriesDefault handles this case with default header values.
+/* ListAllowedRegistriesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListAllowedRegistriesDefault) Code() int {
 func (o *ListAllowedRegistriesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/allowedregistries][%d] listAllowedRegistries default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListAllowedRegistriesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

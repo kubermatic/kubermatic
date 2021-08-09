@@ -46,7 +46,7 @@ func NewListGCPSubnetworksNoCredentialsV2OK() *ListGCPSubnetworksNoCredentialsV2
 	return &ListGCPSubnetworksNoCredentialsV2OK{}
 }
 
-/*ListGCPSubnetworksNoCredentialsV2OK handles this case with default header values.
+/* ListGCPSubnetworksNoCredentialsV2OK describes a response with status code 200, with default header values.
 
 GCPSubnetworkList
 */
@@ -57,7 +57,6 @@ type ListGCPSubnetworksNoCredentialsV2OK struct {
 func (o *ListGCPSubnetworksNoCredentialsV2OK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/gcp/subnetworks][%d] listGCPSubnetworksNoCredentialsV2OK  %+v", 200, o.Payload)
 }
-
 func (o *ListGCPSubnetworksNoCredentialsV2OK) GetPayload() models.GCPSubnetworkList {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListGCPSubnetworksNoCredentialsV2Default(code int) *ListGCPSubnetworksNo
 	}
 }
 
-/*ListGCPSubnetworksNoCredentialsV2Default handles this case with default header values.
+/* ListGCPSubnetworksNoCredentialsV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListGCPSubnetworksNoCredentialsV2Default) Code() int {
 func (o *ListGCPSubnetworksNoCredentialsV2Default) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/gcp/subnetworks][%d] listGCPSubnetworksNoCredentialsV2 default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListGCPSubnetworksNoCredentialsV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

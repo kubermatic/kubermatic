@@ -46,7 +46,7 @@ func NewListGCPNetworksOK() *ListGCPNetworksOK {
 	return &ListGCPNetworksOK{}
 }
 
-/*ListGCPNetworksOK handles this case with default header values.
+/* ListGCPNetworksOK describes a response with status code 200, with default header values.
 
 GCPNetworkList
 */
@@ -57,7 +57,6 @@ type ListGCPNetworksOK struct {
 func (o *ListGCPNetworksOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/gcp/networks][%d] listGCPNetworksOK  %+v", 200, o.Payload)
 }
-
 func (o *ListGCPNetworksOK) GetPayload() models.GCPNetworkList {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListGCPNetworksDefault(code int) *ListGCPNetworksDefault {
 	}
 }
 
-/*ListGCPNetworksDefault handles this case with default header values.
+/* ListGCPNetworksDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListGCPNetworksDefault) Code() int {
 func (o *ListGCPNetworksDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/gcp/networks][%d] listGCPNetworks default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListGCPNetworksDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

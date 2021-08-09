@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListRoleBindingParams creates a new ListRoleBindingParams object
-// with the default values initialized.
+// NewListRoleBindingParams creates a new ListRoleBindingParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListRoleBindingParams() *ListRoleBindingParams {
-	var ()
 	return &ListRoleBindingParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListRoleBindingParamsWithTimeout creates a new ListRoleBindingParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListRoleBindingParamsWithTimeout(timeout time.Duration) *ListRoleBindingParams {
-	var ()
 	return &ListRoleBindingParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListRoleBindingParamsWithContext creates a new ListRoleBindingParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListRoleBindingParamsWithContext(ctx context.Context) *ListRoleBindingParams {
-	var ()
 	return &ListRoleBindingParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListRoleBindingParamsWithHTTPClient creates a new ListRoleBindingParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListRoleBindingParamsWithHTTPClient(client *http.Client) *ListRoleBindingParams {
-	var ()
 	return &ListRoleBindingParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListRoleBindingParams contains all the parameters to send to the API endpoint
-for the list role binding operation typically these are written to a http.Request
+/* ListRoleBindingParams contains all the parameters to send to the API endpoint
+   for the list role binding operation.
+
+   Typically these are written to a http.Request.
 */
 type ListRoleBindingParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list role binding params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListRoleBindingParams) WithDefaults() *ListRoleBindingParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list role binding params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListRoleBindingParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list role binding params

@@ -46,7 +46,7 @@ func NewGetDatacenterOK() *GetDatacenterOK {
 	return &GetDatacenterOK{}
 }
 
-/*GetDatacenterOK handles this case with default header values.
+/* GetDatacenterOK describes a response with status code 200, with default header values.
 
 Datacenter
 */
@@ -57,7 +57,6 @@ type GetDatacenterOK struct {
 func (o *GetDatacenterOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/dc/{dc}][%d] getDatacenterOK  %+v", 200, o.Payload)
 }
-
 func (o *GetDatacenterOK) GetPayload() *models.Datacenter {
 	return o.Payload
 }
@@ -81,7 +80,7 @@ func NewGetDatacenterDefault(code int) *GetDatacenterDefault {
 	}
 }
 
-/*GetDatacenterDefault handles this case with default header values.
+/* GetDatacenterDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -99,7 +98,6 @@ func (o *GetDatacenterDefault) Code() int {
 func (o *GetDatacenterDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/dc/{dc}][%d] getDatacenter default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetDatacenterDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

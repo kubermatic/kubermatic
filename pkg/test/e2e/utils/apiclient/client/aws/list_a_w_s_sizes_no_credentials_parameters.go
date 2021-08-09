@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListAWSSizesNoCredentialsParams creates a new ListAWSSizesNoCredentialsParams object
-// with the default values initialized.
+// NewListAWSSizesNoCredentialsParams creates a new ListAWSSizesNoCredentialsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListAWSSizesNoCredentialsParams() *ListAWSSizesNoCredentialsParams {
-	var ()
 	return &ListAWSSizesNoCredentialsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListAWSSizesNoCredentialsParamsWithTimeout creates a new ListAWSSizesNoCredentialsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListAWSSizesNoCredentialsParamsWithTimeout(timeout time.Duration) *ListAWSSizesNoCredentialsParams {
-	var ()
 	return &ListAWSSizesNoCredentialsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListAWSSizesNoCredentialsParamsWithContext creates a new ListAWSSizesNoCredentialsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListAWSSizesNoCredentialsParamsWithContext(ctx context.Context) *ListAWSSizesNoCredentialsParams {
-	var ()
 	return &ListAWSSizesNoCredentialsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListAWSSizesNoCredentialsParamsWithHTTPClient creates a new ListAWSSizesNoCredentialsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListAWSSizesNoCredentialsParamsWithHTTPClient(client *http.Client) *ListAWSSizesNoCredentialsParams {
-	var ()
 	return &ListAWSSizesNoCredentialsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListAWSSizesNoCredentialsParams contains all the parameters to send to the API endpoint
-for the list a w s sizes no credentials operation typically these are written to a http.Request
+/* ListAWSSizesNoCredentialsParams contains all the parameters to send to the API endpoint
+   for the list a w s sizes no credentials operation.
+
+   Typically these are written to a http.Request.
 */
 type ListAWSSizesNoCredentialsParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list a w s sizes no credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAWSSizesNoCredentialsParams) WithDefaults() *ListAWSSizesNoCredentialsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list a w s sizes no credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAWSSizesNoCredentialsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list a w s sizes no credentials params

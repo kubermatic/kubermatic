@@ -58,7 +58,7 @@ func NewDeleteUserFromProjectOK() *DeleteUserFromProjectOK {
 	return &DeleteUserFromProjectOK{}
 }
 
-/*DeleteUserFromProjectOK handles this case with default header values.
+/* DeleteUserFromProjectOK describes a response with status code 200, with default header values.
 
 User
 */
@@ -69,7 +69,6 @@ type DeleteUserFromProjectOK struct {
 func (o *DeleteUserFromProjectOK) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/users/{user_id}][%d] deleteUserFromProjectOK  %+v", 200, o.Payload)
 }
-
 func (o *DeleteUserFromProjectOK) GetPayload() *models.User {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewDeleteUserFromProjectUnauthorized() *DeleteUserFromProjectUnauthorized {
 	return &DeleteUserFromProjectUnauthorized{}
 }
 
-/*DeleteUserFromProjectUnauthorized handles this case with default header values.
+/* DeleteUserFromProjectUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewDeleteUserFromProjectForbidden() *DeleteUserFromProjectForbidden {
 	return &DeleteUserFromProjectForbidden{}
 }
 
-/*DeleteUserFromProjectForbidden handles this case with default header values.
+/* DeleteUserFromProjectForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewDeleteUserFromProjectDefault(code int) *DeleteUserFromProjectDefault {
 	}
 }
 
-/*DeleteUserFromProjectDefault handles this case with default header values.
+/* DeleteUserFromProjectDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *DeleteUserFromProjectDefault) Code() int {
 func (o *DeleteUserFromProjectDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/users/{user_id}][%d] deleteUserFromProject default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *DeleteUserFromProjectDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -78,12 +80,60 @@ func (m *DatacenterSpecOpenstack) Validate(formats strfmt.Registry) error {
 }
 
 func (m *DatacenterSpecOpenstack) validateImages(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Images) { // not required
 		return nil
 	}
 
-	if err := m.Images.Validate(formats); err != nil {
+	if m.Images != nil {
+		if err := m.Images.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("images")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *DatacenterSpecOpenstack) validateNodeSizeRequirements(formats strfmt.Registry) error {
+	if swag.IsZero(m.NodeSizeRequirements) { // not required
+		return nil
+	}
+
+	if m.NodeSizeRequirements != nil {
+		if err := m.NodeSizeRequirements.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("node_size_requirements")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this datacenter spec openstack based on the context it is used
+func (m *DatacenterSpecOpenstack) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateImages(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateNodeSizeRequirements(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *DatacenterSpecOpenstack) contextValidateImages(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.Images.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("images")
 		}
@@ -93,14 +143,10 @@ func (m *DatacenterSpecOpenstack) validateImages(formats strfmt.Registry) error 
 	return nil
 }
 
-func (m *DatacenterSpecOpenstack) validateNodeSizeRequirements(formats strfmt.Registry) error {
-
-	if swag.IsZero(m.NodeSizeRequirements) { // not required
-		return nil
-	}
+func (m *DatacenterSpecOpenstack) contextValidateNodeSizeRequirements(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.NodeSizeRequirements != nil {
-		if err := m.NodeSizeRequirements.Validate(formats); err != nil {
+		if err := m.NodeSizeRequirements.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("node_size_requirements")
 			}

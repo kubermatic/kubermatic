@@ -58,7 +58,7 @@ func NewGetClusterMetricsV2OK() *GetClusterMetricsV2OK {
 	return &GetClusterMetricsV2OK{}
 }
 
-/*GetClusterMetricsV2OK handles this case with default header values.
+/* GetClusterMetricsV2OK describes a response with status code 200, with default header values.
 
 ClusterMetrics
 */
@@ -69,7 +69,6 @@ type GetClusterMetricsV2OK struct {
 func (o *GetClusterMetricsV2OK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/metrics][%d] getClusterMetricsV2OK  %+v", 200, o.Payload)
 }
-
 func (o *GetClusterMetricsV2OK) GetPayload() *models.ClusterMetrics {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewGetClusterMetricsV2Unauthorized() *GetClusterMetricsV2Unauthorized {
 	return &GetClusterMetricsV2Unauthorized{}
 }
 
-/*GetClusterMetricsV2Unauthorized handles this case with default header values.
+/* GetClusterMetricsV2Unauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewGetClusterMetricsV2Forbidden() *GetClusterMetricsV2Forbidden {
 	return &GetClusterMetricsV2Forbidden{}
 }
 
-/*GetClusterMetricsV2Forbidden handles this case with default header values.
+/* GetClusterMetricsV2Forbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewGetClusterMetricsV2Default(code int) *GetClusterMetricsV2Default {
 	}
 }
 
-/*GetClusterMetricsV2Default handles this case with default header values.
+/* GetClusterMetricsV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *GetClusterMetricsV2Default) Code() int {
 func (o *GetClusterMetricsV2Default) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/metrics][%d] getClusterMetricsV2 default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetClusterMetricsV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

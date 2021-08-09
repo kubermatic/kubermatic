@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -74,13 +76,40 @@ func (m *PublicCloudSpec) Validate(formats strfmt.Registry) error {
 }
 
 func (m *PublicCloudSpec) validateOpenstack(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Openstack) { // not required
 		return nil
 	}
 
 	if m.Openstack != nil {
 		if err := m.Openstack.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("openstack")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this public cloud spec based on the context it is used
+func (m *PublicCloudSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateOpenstack(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *PublicCloudSpec) contextValidateOpenstack(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Openstack != nil {
+		if err := m.Openstack.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("openstack")
 			}

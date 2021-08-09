@@ -58,7 +58,7 @@ func NewListClustersForProjectOK() *ListClustersForProjectOK {
 	return &ListClustersForProjectOK{}
 }
 
-/*ListClustersForProjectOK handles this case with default header values.
+/* ListClustersForProjectOK describes a response with status code 200, with default header values.
 
 ClusterList
 */
@@ -69,7 +69,6 @@ type ListClustersForProjectOK struct {
 func (o *ListClustersForProjectOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/clusters][%d] listClustersForProjectOK  %+v", 200, o.Payload)
 }
-
 func (o *ListClustersForProjectOK) GetPayload() models.ClusterList {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListClustersForProjectUnauthorized() *ListClustersForProjectUnauthorized
 	return &ListClustersForProjectUnauthorized{}
 }
 
-/*ListClustersForProjectUnauthorized handles this case with default header values.
+/* ListClustersForProjectUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListClustersForProjectForbidden() *ListClustersForProjectForbidden {
 	return &ListClustersForProjectForbidden{}
 }
 
-/*ListClustersForProjectForbidden handles this case with default header values.
+/* ListClustersForProjectForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListClustersForProjectDefault(code int) *ListClustersForProjectDefault {
 	}
 }
 
-/*ListClustersForProjectDefault handles this case with default header values.
+/* ListClustersForProjectDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListClustersForProjectDefault) Code() int {
 func (o *ListClustersForProjectDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/clusters][%d] listClustersForProject default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListClustersForProjectDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

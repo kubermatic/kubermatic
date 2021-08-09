@@ -46,7 +46,7 @@ func NewListOpenstackSecurityGroupsOK() *ListOpenstackSecurityGroupsOK {
 	return &ListOpenstackSecurityGroupsOK{}
 }
 
-/*ListOpenstackSecurityGroupsOK handles this case with default header values.
+/* ListOpenstackSecurityGroupsOK describes a response with status code 200, with default header values.
 
 OpenstackSecurityGroup
 */
@@ -57,7 +57,6 @@ type ListOpenstackSecurityGroupsOK struct {
 func (o *ListOpenstackSecurityGroupsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/openstack/securitygroups][%d] listOpenstackSecurityGroupsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListOpenstackSecurityGroupsOK) GetPayload() []*models.OpenstackSecurityGroup {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListOpenstackSecurityGroupsDefault(code int) *ListOpenstackSecurityGroup
 	}
 }
 
-/*ListOpenstackSecurityGroupsDefault handles this case with default header values.
+/* ListOpenstackSecurityGroupsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListOpenstackSecurityGroupsDefault) Code() int {
 func (o *ListOpenstackSecurityGroupsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/openstack/securitygroups][%d] listOpenstackSecurityGroups default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListOpenstackSecurityGroupsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

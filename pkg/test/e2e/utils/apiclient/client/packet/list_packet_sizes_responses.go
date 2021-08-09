@@ -46,7 +46,7 @@ func NewListPacketSizesOK() *ListPacketSizesOK {
 	return &ListPacketSizesOK{}
 }
 
-/*ListPacketSizesOK handles this case with default header values.
+/* ListPacketSizesOK describes a response with status code 200, with default header values.
 
 PacketSizeList
 */
@@ -57,7 +57,6 @@ type ListPacketSizesOK struct {
 func (o *ListPacketSizesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/packet/sizes][%d] listPacketSizesOK  %+v", 200, o.Payload)
 }
-
 func (o *ListPacketSizesOK) GetPayload() []models.PacketSizeList {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListPacketSizesDefault(code int) *ListPacketSizesDefault {
 	}
 }
 
-/*ListPacketSizesDefault handles this case with default header values.
+/* ListPacketSizesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListPacketSizesDefault) Code() int {
 func (o *ListPacketSizesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/packet/sizes][%d] listPacketSizes default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListPacketSizesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

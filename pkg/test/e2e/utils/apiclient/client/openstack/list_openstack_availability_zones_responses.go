@@ -46,7 +46,7 @@ func NewListOpenstackAvailabilityZonesOK() *ListOpenstackAvailabilityZonesOK {
 	return &ListOpenstackAvailabilityZonesOK{}
 }
 
-/*ListOpenstackAvailabilityZonesOK handles this case with default header values.
+/* ListOpenstackAvailabilityZonesOK describes a response with status code 200, with default header values.
 
 OpenstackAvailabilityZone
 */
@@ -57,7 +57,6 @@ type ListOpenstackAvailabilityZonesOK struct {
 func (o *ListOpenstackAvailabilityZonesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/openstack/availabilityzones][%d] listOpenstackAvailabilityZonesOK  %+v", 200, o.Payload)
 }
-
 func (o *ListOpenstackAvailabilityZonesOK) GetPayload() []*models.OpenstackAvailabilityZone {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListOpenstackAvailabilityZonesDefault(code int) *ListOpenstackAvailabili
 	}
 }
 
-/*ListOpenstackAvailabilityZonesDefault handles this case with default header values.
+/* ListOpenstackAvailabilityZonesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListOpenstackAvailabilityZonesDefault) Code() int {
 func (o *ListOpenstackAvailabilityZonesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/openstack/availabilityzones][%d] listOpenstackAvailabilityZones default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListOpenstackAvailabilityZonesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

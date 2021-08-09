@@ -23,15 +23,18 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	ListAnexiaTemplates(params *ListAnexiaTemplatesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAnexiaTemplatesOK, error)
+	ListAnexiaTemplates(params *ListAnexiaTemplatesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAnexiaTemplatesOK, error)
 
-	ListAnexiaTemplatesNoCredentialsV2(params *ListAnexiaTemplatesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListAnexiaTemplatesNoCredentialsV2OK, error)
+	ListAnexiaTemplatesNoCredentialsV2(params *ListAnexiaTemplatesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAnexiaTemplatesNoCredentialsV2OK, error)
 
-	ListAnexiaVlans(params *ListAnexiaVlansParams, authInfo runtime.ClientAuthInfoWriter) (*ListAnexiaVlansOK, error)
+	ListAnexiaVlans(params *ListAnexiaVlansParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAnexiaVlansOK, error)
 
-	ListAnexiaVlansNoCredentialsV2(params *ListAnexiaVlansNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListAnexiaVlansNoCredentialsV2OK, error)
+	ListAnexiaVlansNoCredentialsV2(params *ListAnexiaVlansNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAnexiaVlansNoCredentialsV2OK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -39,13 +42,12 @@ type ClientService interface {
 /*
   ListAnexiaTemplates Lists templates from anexia
 */
-func (a *Client) ListAnexiaTemplates(params *ListAnexiaTemplatesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAnexiaTemplatesOK, error) {
+func (a *Client) ListAnexiaTemplates(params *ListAnexiaTemplatesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAnexiaTemplatesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListAnexiaTemplatesParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listAnexiaTemplates",
 		Method:             "GET",
 		PathPattern:        "/api/v1/providers/anexia/templates",
@@ -57,7 +59,12 @@ func (a *Client) ListAnexiaTemplates(params *ListAnexiaTemplatesParams, authInfo
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -73,13 +80,12 @@ func (a *Client) ListAnexiaTemplates(params *ListAnexiaTemplatesParams, authInfo
 /*
   ListAnexiaTemplatesNoCredentialsV2 Lists templates from Anexia
 */
-func (a *Client) ListAnexiaTemplatesNoCredentialsV2(params *ListAnexiaTemplatesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListAnexiaTemplatesNoCredentialsV2OK, error) {
+func (a *Client) ListAnexiaTemplatesNoCredentialsV2(params *ListAnexiaTemplatesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAnexiaTemplatesNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListAnexiaTemplatesNoCredentialsV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listAnexiaTemplatesNoCredentialsV2",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/anexia/templates",
@@ -91,7 +97,12 @@ func (a *Client) ListAnexiaTemplatesNoCredentialsV2(params *ListAnexiaTemplatesN
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -107,13 +118,12 @@ func (a *Client) ListAnexiaTemplatesNoCredentialsV2(params *ListAnexiaTemplatesN
 /*
   ListAnexiaVlans Lists vlans from anexia
 */
-func (a *Client) ListAnexiaVlans(params *ListAnexiaVlansParams, authInfo runtime.ClientAuthInfoWriter) (*ListAnexiaVlansOK, error) {
+func (a *Client) ListAnexiaVlans(params *ListAnexiaVlansParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAnexiaVlansOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListAnexiaVlansParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listAnexiaVlans",
 		Method:             "GET",
 		PathPattern:        "/api/v1/providers/anexia/vlans",
@@ -125,7 +135,12 @@ func (a *Client) ListAnexiaVlans(params *ListAnexiaVlansParams, authInfo runtime
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -141,13 +156,12 @@ func (a *Client) ListAnexiaVlans(params *ListAnexiaVlansParams, authInfo runtime
 /*
   ListAnexiaVlansNoCredentialsV2 Lists vlans from Anexia
 */
-func (a *Client) ListAnexiaVlansNoCredentialsV2(params *ListAnexiaVlansNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListAnexiaVlansNoCredentialsV2OK, error) {
+func (a *Client) ListAnexiaVlansNoCredentialsV2(params *ListAnexiaVlansNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAnexiaVlansNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListAnexiaVlansNoCredentialsV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listAnexiaVlansNoCredentialsV2",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/anexia/vlans",
@@ -159,7 +173,12 @@ func (a *Client) ListAnexiaVlansNoCredentialsV2(params *ListAnexiaVlansNoCredent
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

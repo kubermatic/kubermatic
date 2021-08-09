@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListGCPDiskTypesNoCredentialsV2Params creates a new ListGCPDiskTypesNoCredentialsV2Params object
-// with the default values initialized.
+// NewListGCPDiskTypesNoCredentialsV2Params creates a new ListGCPDiskTypesNoCredentialsV2Params object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListGCPDiskTypesNoCredentialsV2Params() *ListGCPDiskTypesNoCredentialsV2Params {
-	var ()
 	return &ListGCPDiskTypesNoCredentialsV2Params{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListGCPDiskTypesNoCredentialsV2ParamsWithTimeout creates a new ListGCPDiskTypesNoCredentialsV2Params object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListGCPDiskTypesNoCredentialsV2ParamsWithTimeout(timeout time.Duration) *ListGCPDiskTypesNoCredentialsV2Params {
-	var ()
 	return &ListGCPDiskTypesNoCredentialsV2Params{
-
 		timeout: timeout,
 	}
 }
 
 // NewListGCPDiskTypesNoCredentialsV2ParamsWithContext creates a new ListGCPDiskTypesNoCredentialsV2Params object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListGCPDiskTypesNoCredentialsV2ParamsWithContext(ctx context.Context) *ListGCPDiskTypesNoCredentialsV2Params {
-	var ()
 	return &ListGCPDiskTypesNoCredentialsV2Params{
-
 		Context: ctx,
 	}
 }
 
 // NewListGCPDiskTypesNoCredentialsV2ParamsWithHTTPClient creates a new ListGCPDiskTypesNoCredentialsV2Params object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListGCPDiskTypesNoCredentialsV2ParamsWithHTTPClient(client *http.Client) *ListGCPDiskTypesNoCredentialsV2Params {
-	var ()
 	return &ListGCPDiskTypesNoCredentialsV2Params{
 		HTTPClient: client,
 	}
 }
 
-/*ListGCPDiskTypesNoCredentialsV2Params contains all the parameters to send to the API endpoint
-for the list g c p disk types no credentials v2 operation typically these are written to a http.Request
+/* ListGCPDiskTypesNoCredentialsV2Params contains all the parameters to send to the API endpoint
+   for the list g c p disk types no credentials v2 operation.
+
+   Typically these are written to a http.Request.
 */
 type ListGCPDiskTypesNoCredentialsV2Params struct {
 
-	/*Zone*/
+	// Zone.
 	Zone *string
-	/*ClusterID*/
+
+	// ClusterID.
 	ClusterID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list g c p disk types no credentials v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListGCPDiskTypesNoCredentialsV2Params) WithDefaults() *ListGCPDiskTypesNoCredentialsV2Params {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list g c p disk types no credentials v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListGCPDiskTypesNoCredentialsV2Params) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list g c p disk types no credentials v2 params
@@ -152,7 +168,6 @@ func (o *ListGCPDiskTypesNoCredentialsV2Params) WriteToRequest(r runtime.ClientR
 		if err := r.SetHeaderParam("Zone", *o.Zone); err != nil {
 			return err
 		}
-
 	}
 
 	// path param cluster_id

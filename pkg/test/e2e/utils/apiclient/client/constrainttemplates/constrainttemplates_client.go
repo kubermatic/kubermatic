@@ -23,17 +23,20 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	CreateConstraintTemplate(params *CreateConstraintTemplateParams, authInfo runtime.ClientAuthInfoWriter) (*CreateConstraintTemplateOK, error)
+	CreateConstraintTemplate(params *CreateConstraintTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateConstraintTemplateOK, error)
 
-	DeleteConstraintTemplate(params *DeleteConstraintTemplateParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteConstraintTemplateOK, error)
+	DeleteConstraintTemplate(params *DeleteConstraintTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteConstraintTemplateOK, error)
 
-	GetConstraintTemplate(params *GetConstraintTemplateParams, authInfo runtime.ClientAuthInfoWriter) (*GetConstraintTemplateOK, error)
+	GetConstraintTemplate(params *GetConstraintTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetConstraintTemplateOK, error)
 
-	ListConstraintTemplates(params *ListConstraintTemplatesParams, authInfo runtime.ClientAuthInfoWriter) (*ListConstraintTemplatesOK, error)
+	ListConstraintTemplates(params *ListConstraintTemplatesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListConstraintTemplatesOK, error)
 
-	PatchConstraintTemplate(params *PatchConstraintTemplateParams, authInfo runtime.ClientAuthInfoWriter) (*PatchConstraintTemplateOK, error)
+	PatchConstraintTemplate(params *PatchConstraintTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchConstraintTemplateOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -41,13 +44,12 @@ type ClientService interface {
 /*
   CreateConstraintTemplate Create constraint template
 */
-func (a *Client) CreateConstraintTemplate(params *CreateConstraintTemplateParams, authInfo runtime.ClientAuthInfoWriter) (*CreateConstraintTemplateOK, error) {
+func (a *Client) CreateConstraintTemplate(params *CreateConstraintTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateConstraintTemplateOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewCreateConstraintTemplateParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "createConstraintTemplate",
 		Method:             "POST",
 		PathPattern:        "/api/v2/constrainttemplates",
@@ -59,7 +61,12 @@ func (a *Client) CreateConstraintTemplate(params *CreateConstraintTemplateParams
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -75,13 +82,12 @@ func (a *Client) CreateConstraintTemplate(params *CreateConstraintTemplateParams
 /*
   DeleteConstraintTemplate Deletes the specified cluster
 */
-func (a *Client) DeleteConstraintTemplate(params *DeleteConstraintTemplateParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteConstraintTemplateOK, error) {
+func (a *Client) DeleteConstraintTemplate(params *DeleteConstraintTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteConstraintTemplateOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewDeleteConstraintTemplateParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "deleteConstraintTemplate",
 		Method:             "DELETE",
 		PathPattern:        "/api/v2/constrainttemplates/{ct_name}",
@@ -93,7 +99,12 @@ func (a *Client) DeleteConstraintTemplate(params *DeleteConstraintTemplateParams
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -109,13 +120,12 @@ func (a *Client) DeleteConstraintTemplate(params *DeleteConstraintTemplateParams
 /*
   GetConstraintTemplate Get constraint templates specified by name
 */
-func (a *Client) GetConstraintTemplate(params *GetConstraintTemplateParams, authInfo runtime.ClientAuthInfoWriter) (*GetConstraintTemplateOK, error) {
+func (a *Client) GetConstraintTemplate(params *GetConstraintTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetConstraintTemplateOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetConstraintTemplateParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getConstraintTemplate",
 		Method:             "GET",
 		PathPattern:        "/api/v2/constrainttemplates/{ct_name}",
@@ -127,7 +137,12 @@ func (a *Client) GetConstraintTemplate(params *GetConstraintTemplateParams, auth
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -143,13 +158,12 @@ func (a *Client) GetConstraintTemplate(params *GetConstraintTemplateParams, auth
 /*
   ListConstraintTemplates lists constraint templates
 */
-func (a *Client) ListConstraintTemplates(params *ListConstraintTemplatesParams, authInfo runtime.ClientAuthInfoWriter) (*ListConstraintTemplatesOK, error) {
+func (a *Client) ListConstraintTemplates(params *ListConstraintTemplatesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListConstraintTemplatesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListConstraintTemplatesParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listConstraintTemplates",
 		Method:             "GET",
 		PathPattern:        "/api/v2/constrainttemplates",
@@ -161,7 +175,12 @@ func (a *Client) ListConstraintTemplates(params *ListConstraintTemplatesParams, 
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -177,13 +196,12 @@ func (a *Client) ListConstraintTemplates(params *ListConstraintTemplatesParams, 
 /*
   PatchConstraintTemplate Patch a specified constraint template
 */
-func (a *Client) PatchConstraintTemplate(params *PatchConstraintTemplateParams, authInfo runtime.ClientAuthInfoWriter) (*PatchConstraintTemplateOK, error) {
+func (a *Client) PatchConstraintTemplate(params *PatchConstraintTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchConstraintTemplateOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewPatchConstraintTemplateParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "patchConstraintTemplate",
 		Method:             "PATCH",
 		PathPattern:        "/api/v2/constrainttemplates/{ct_name}",
@@ -195,7 +213,12 @@ func (a *Client) PatchConstraintTemplate(params *PatchConstraintTemplateParams, 
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

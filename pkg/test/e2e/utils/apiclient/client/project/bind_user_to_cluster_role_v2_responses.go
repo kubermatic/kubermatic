@@ -58,7 +58,7 @@ func NewBindUserToClusterRoleV2OK() *BindUserToClusterRoleV2OK {
 	return &BindUserToClusterRoleV2OK{}
 }
 
-/*BindUserToClusterRoleV2OK handles this case with default header values.
+/* BindUserToClusterRoleV2OK describes a response with status code 200, with default header values.
 
 ClusterRoleBinding
 */
@@ -69,7 +69,6 @@ type BindUserToClusterRoleV2OK struct {
 func (o *BindUserToClusterRoleV2OK) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] bindUserToClusterRoleV2OK  %+v", 200, o.Payload)
 }
-
 func (o *BindUserToClusterRoleV2OK) GetPayload() *models.ClusterRoleBinding {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewBindUserToClusterRoleV2Unauthorized() *BindUserToClusterRoleV2Unauthoriz
 	return &BindUserToClusterRoleV2Unauthorized{}
 }
 
-/*BindUserToClusterRoleV2Unauthorized handles this case with default header values.
+/* BindUserToClusterRoleV2Unauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewBindUserToClusterRoleV2Forbidden() *BindUserToClusterRoleV2Forbidden {
 	return &BindUserToClusterRoleV2Forbidden{}
 }
 
-/*BindUserToClusterRoleV2Forbidden handles this case with default header values.
+/* BindUserToClusterRoleV2Forbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewBindUserToClusterRoleV2Default(code int) *BindUserToClusterRoleV2Default
 	}
 }
 
-/*BindUserToClusterRoleV2Default handles this case with default header values.
+/* BindUserToClusterRoleV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *BindUserToClusterRoleV2Default) Code() int {
 func (o *BindUserToClusterRoleV2Default) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] bindUserToClusterRoleV2 default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *BindUserToClusterRoleV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }
