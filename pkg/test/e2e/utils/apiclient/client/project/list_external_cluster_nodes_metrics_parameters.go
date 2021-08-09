@@ -16,58 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListExternalClusterNodesMetricsParams creates a new ListExternalClusterNodesMetricsParams object
-// with the default values initialized.
+// NewListExternalClusterNodesMetricsParams creates a new ListExternalClusterNodesMetricsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListExternalClusterNodesMetricsParams() *ListExternalClusterNodesMetricsParams {
-	var ()
 	return &ListExternalClusterNodesMetricsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListExternalClusterNodesMetricsParamsWithTimeout creates a new ListExternalClusterNodesMetricsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListExternalClusterNodesMetricsParamsWithTimeout(timeout time.Duration) *ListExternalClusterNodesMetricsParams {
-	var ()
 	return &ListExternalClusterNodesMetricsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListExternalClusterNodesMetricsParamsWithContext creates a new ListExternalClusterNodesMetricsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListExternalClusterNodesMetricsParamsWithContext(ctx context.Context) *ListExternalClusterNodesMetricsParams {
-	var ()
 	return &ListExternalClusterNodesMetricsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListExternalClusterNodesMetricsParamsWithHTTPClient creates a new ListExternalClusterNodesMetricsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListExternalClusterNodesMetricsParamsWithHTTPClient(client *http.Client) *ListExternalClusterNodesMetricsParams {
-	var ()
 	return &ListExternalClusterNodesMetricsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListExternalClusterNodesMetricsParams contains all the parameters to send to the API endpoint
-for the list external cluster nodes metrics operation typically these are written to a http.Request
+/* ListExternalClusterNodesMetricsParams contains all the parameters to send to the API endpoint
+   for the list external cluster nodes metrics operation.
+
+   Typically these are written to a http.Request.
 */
 type ListExternalClusterNodesMetricsParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list external cluster nodes metrics params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListExternalClusterNodesMetricsParams) WithDefaults() *ListExternalClusterNodesMetricsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list external cluster nodes metrics params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListExternalClusterNodesMetricsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list external cluster nodes metrics params

@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -49,7 +51,7 @@ type VSphereCloudSpec struct {
 	VMNetName string `json:"vmNetName,omitempty"`
 
 	// credentials reference
-	CredentialsReference GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+	CredentialsReference *GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
 	// infra management user
 	InfraManagementUser *VSphereCredentials `json:"infraManagementUser,omitempty"`
@@ -74,29 +76,75 @@ func (m *VSphereCloudSpec) Validate(formats strfmt.Registry) error {
 }
 
 func (m *VSphereCloudSpec) validateCredentialsReference(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.CredentialsReference) { // not required
 		return nil
 	}
 
-	if err := m.CredentialsReference.Validate(formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("credentialsReference")
+	if m.CredentialsReference != nil {
+		if err := m.CredentialsReference.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("credentialsReference")
+			}
+			return err
 		}
-		return err
 	}
 
 	return nil
 }
 
 func (m *VSphereCloudSpec) validateInfraManagementUser(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.InfraManagementUser) { // not required
 		return nil
 	}
 
 	if m.InfraManagementUser != nil {
 		if err := m.InfraManagementUser.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("infraManagementUser")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this v sphere cloud spec based on the context it is used
+func (m *VSphereCloudSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateCredentialsReference(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateInfraManagementUser(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *VSphereCloudSpec) contextValidateCredentialsReference(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.CredentialsReference != nil {
+		if err := m.CredentialsReference.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("credentialsReference")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *VSphereCloudSpec) contextValidateInfraManagementUser(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.InfraManagementUser != nil {
+		if err := m.InfraManagementUser.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("infraManagementUser")
 			}

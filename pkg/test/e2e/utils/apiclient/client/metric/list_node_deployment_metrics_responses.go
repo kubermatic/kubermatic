@@ -58,7 +58,7 @@ func NewListNodeDeploymentMetricsOK() *ListNodeDeploymentMetricsOK {
 	return &ListNodeDeploymentMetricsOK{}
 }
 
-/*ListNodeDeploymentMetricsOK handles this case with default header values.
+/* ListNodeDeploymentMetricsOK describes a response with status code 200, with default header values.
 
 NodeMetric
 */
@@ -69,7 +69,6 @@ type ListNodeDeploymentMetricsOK struct {
 func (o *ListNodeDeploymentMetricsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes/metrics][%d] listNodeDeploymentMetricsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListNodeDeploymentMetricsOK) GetPayload() []*models.NodeMetric {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListNodeDeploymentMetricsUnauthorized() *ListNodeDeploymentMetricsUnauth
 	return &ListNodeDeploymentMetricsUnauthorized{}
 }
 
-/*ListNodeDeploymentMetricsUnauthorized handles this case with default header values.
+/* ListNodeDeploymentMetricsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListNodeDeploymentMetricsForbidden() *ListNodeDeploymentMetricsForbidden
 	return &ListNodeDeploymentMetricsForbidden{}
 }
 
-/*ListNodeDeploymentMetricsForbidden handles this case with default header values.
+/* ListNodeDeploymentMetricsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListNodeDeploymentMetricsDefault(code int) *ListNodeDeploymentMetricsDef
 	}
 }
 
-/*ListNodeDeploymentMetricsDefault handles this case with default header values.
+/* ListNodeDeploymentMetricsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListNodeDeploymentMetricsDefault) Code() int {
 func (o *ListNodeDeploymentMetricsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes/metrics][%d] listNodeDeploymentMetrics default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListNodeDeploymentMetricsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

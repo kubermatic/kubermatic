@@ -23,13 +23,16 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	GetKubermaticVersion(params *GetKubermaticVersionParams, authInfo runtime.ClientAuthInfoWriter) (*GetKubermaticVersionOK, error)
+	GetKubermaticVersion(params *GetKubermaticVersionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetKubermaticVersionOK, error)
 
-	GetMasterVersions(params *GetMasterVersionsParams, authInfo runtime.ClientAuthInfoWriter) (*GetMasterVersionsOK, error)
+	GetMasterVersions(params *GetMasterVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetMasterVersionsOK, error)
 
-	GetNodeUpgrades(params *GetNodeUpgradesParams, authInfo runtime.ClientAuthInfoWriter) (*GetNodeUpgradesOK, error)
+	GetNodeUpgrades(params *GetNodeUpgradesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNodeUpgradesOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -37,13 +40,12 @@ type ClientService interface {
 /*
   GetKubermaticVersion gets versions of running kubermatic components
 */
-func (a *Client) GetKubermaticVersion(params *GetKubermaticVersionParams, authInfo runtime.ClientAuthInfoWriter) (*GetKubermaticVersionOK, error) {
+func (a *Client) GetKubermaticVersion(params *GetKubermaticVersionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetKubermaticVersionOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetKubermaticVersionParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getKubermaticVersion",
 		Method:             "GET",
 		PathPattern:        "/api/v1/version",
@@ -55,7 +57,12 @@ func (a *Client) GetKubermaticVersion(params *GetKubermaticVersionParams, authIn
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -71,13 +78,12 @@ func (a *Client) GetKubermaticVersion(params *GetKubermaticVersionParams, authIn
 /*
   GetMasterVersions Lists all versions which don't result in automatic updates
 */
-func (a *Client) GetMasterVersions(params *GetMasterVersionsParams, authInfo runtime.ClientAuthInfoWriter) (*GetMasterVersionsOK, error) {
+func (a *Client) GetMasterVersions(params *GetMasterVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetMasterVersionsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetMasterVersionsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getMasterVersions",
 		Method:             "GET",
 		PathPattern:        "/api/v1/upgrades/cluster",
@@ -89,7 +95,12 @@ func (a *Client) GetMasterVersions(params *GetMasterVersionsParams, authInfo run
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -105,13 +116,12 @@ func (a *Client) GetMasterVersions(params *GetMasterVersionsParams, authInfo run
 /*
   GetNodeUpgrades Gets possible node upgrades for a specific control plane version
 */
-func (a *Client) GetNodeUpgrades(params *GetNodeUpgradesParams, authInfo runtime.ClientAuthInfoWriter) (*GetNodeUpgradesOK, error) {
+func (a *Client) GetNodeUpgrades(params *GetNodeUpgradesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNodeUpgradesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetNodeUpgradesParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getNodeUpgrades",
 		Method:             "GET",
 		PathPattern:        "/api/v1/upgrades/node",
@@ -123,7 +133,12 @@ func (a *Client) GetNodeUpgrades(params *GetNodeUpgradesParams, authInfo runtime
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

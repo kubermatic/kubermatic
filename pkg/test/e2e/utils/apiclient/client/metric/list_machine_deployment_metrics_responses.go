@@ -58,7 +58,7 @@ func NewListMachineDeploymentMetricsOK() *ListMachineDeploymentMetricsOK {
 	return &ListMachineDeploymentMetricsOK{}
 }
 
-/*ListMachineDeploymentMetricsOK handles this case with default header values.
+/* ListMachineDeploymentMetricsOK describes a response with status code 200, with default header values.
 
 NodeMetric
 */
@@ -69,7 +69,6 @@ type ListMachineDeploymentMetricsOK struct {
 func (o *ListMachineDeploymentMetricsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/metrics][%d] listMachineDeploymentMetricsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListMachineDeploymentMetricsOK) GetPayload() []*models.NodeMetric {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListMachineDeploymentMetricsUnauthorized() *ListMachineDeploymentMetrics
 	return &ListMachineDeploymentMetricsUnauthorized{}
 }
 
-/*ListMachineDeploymentMetricsUnauthorized handles this case with default header values.
+/* ListMachineDeploymentMetricsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListMachineDeploymentMetricsForbidden() *ListMachineDeploymentMetricsFor
 	return &ListMachineDeploymentMetricsForbidden{}
 }
 
-/*ListMachineDeploymentMetricsForbidden handles this case with default header values.
+/* ListMachineDeploymentMetricsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListMachineDeploymentMetricsDefault(code int) *ListMachineDeploymentMetr
 	}
 }
 
-/*ListMachineDeploymentMetricsDefault handles this case with default header values.
+/* ListMachineDeploymentMetricsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListMachineDeploymentMetricsDefault) Code() int {
 func (o *ListMachineDeploymentMetricsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/metrics][%d] listMachineDeploymentMetrics default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListMachineDeploymentMetricsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

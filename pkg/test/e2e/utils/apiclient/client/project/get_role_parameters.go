@@ -16,64 +16,82 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetRoleParams creates a new GetRoleParams object
-// with the default values initialized.
+// NewGetRoleParams creates a new GetRoleParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetRoleParams() *GetRoleParams {
-	var ()
 	return &GetRoleParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetRoleParamsWithTimeout creates a new GetRoleParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetRoleParamsWithTimeout(timeout time.Duration) *GetRoleParams {
-	var ()
 	return &GetRoleParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetRoleParamsWithContext creates a new GetRoleParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetRoleParamsWithContext(ctx context.Context) *GetRoleParams {
-	var ()
 	return &GetRoleParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetRoleParamsWithHTTPClient creates a new GetRoleParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetRoleParamsWithHTTPClient(client *http.Client) *GetRoleParams {
-	var ()
 	return &GetRoleParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetRoleParams contains all the parameters to send to the API endpoint
-for the get role operation typically these are written to a http.Request
+/* GetRoleParams contains all the parameters to send to the API endpoint
+   for the get role operation.
+
+   Typically these are written to a http.Request.
 */
 type GetRoleParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*Namespace*/
+
+	// Namespace.
 	Namespace string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
-	/*RoleID*/
+
+	// RoleID.
 	RoleID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get role params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetRoleParams) WithDefaults() *GetRoleParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get role params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetRoleParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get role params

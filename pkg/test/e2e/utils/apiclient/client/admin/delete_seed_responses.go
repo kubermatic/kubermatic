@@ -58,7 +58,7 @@ func NewDeleteSeedOK() *DeleteSeedOK {
 	return &DeleteSeedOK{}
 }
 
-/*DeleteSeedOK handles this case with default header values.
+/* DeleteSeedOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -79,7 +79,7 @@ func NewDeleteSeedUnauthorized() *DeleteSeedUnauthorized {
 	return &DeleteSeedUnauthorized{}
 }
 
-/*DeleteSeedUnauthorized handles this case with default header values.
+/* DeleteSeedUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -100,7 +100,7 @@ func NewDeleteSeedForbidden() *DeleteSeedForbidden {
 	return &DeleteSeedForbidden{}
 }
 
-/*DeleteSeedForbidden handles this case with default header values.
+/* DeleteSeedForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -123,7 +123,7 @@ func NewDeleteSeedDefault(code int) *DeleteSeedDefault {
 	}
 }
 
-/*DeleteSeedDefault handles this case with default header values.
+/* DeleteSeedDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -141,7 +141,6 @@ func (o *DeleteSeedDefault) Code() int {
 func (o *DeleteSeedDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/admin/seeds/{seed_name}][%d] deleteSeed default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *DeleteSeedDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

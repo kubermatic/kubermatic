@@ -58,7 +58,7 @@ func NewAddServiceAccountToProjectCreated() *AddServiceAccountToProjectCreated {
 	return &AddServiceAccountToProjectCreated{}
 }
 
-/*AddServiceAccountToProjectCreated handles this case with default header values.
+/* AddServiceAccountToProjectCreated describes a response with status code 201, with default header values.
 
 ServiceAccount
 */
@@ -69,7 +69,6 @@ type AddServiceAccountToProjectCreated struct {
 func (o *AddServiceAccountToProjectCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/serviceaccounts][%d] addServiceAccountToProjectCreated  %+v", 201, o.Payload)
 }
-
 func (o *AddServiceAccountToProjectCreated) GetPayload() *models.ServiceAccount {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewAddServiceAccountToProjectUnauthorized() *AddServiceAccountToProjectUnau
 	return &AddServiceAccountToProjectUnauthorized{}
 }
 
-/*AddServiceAccountToProjectUnauthorized handles this case with default header values.
+/* AddServiceAccountToProjectUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewAddServiceAccountToProjectForbidden() *AddServiceAccountToProjectForbidd
 	return &AddServiceAccountToProjectForbidden{}
 }
 
-/*AddServiceAccountToProjectForbidden handles this case with default header values.
+/* AddServiceAccountToProjectForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewAddServiceAccountToProjectDefault(code int) *AddServiceAccountToProjectD
 	}
 }
 
-/*AddServiceAccountToProjectDefault handles this case with default header values.
+/* AddServiceAccountToProjectDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *AddServiceAccountToProjectDefault) Code() int {
 func (o *AddServiceAccountToProjectDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/serviceaccounts][%d] addServiceAccountToProject default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *AddServiceAccountToProjectDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

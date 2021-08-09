@@ -16,62 +16,79 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListAlibabaInstanceTypesNoCredentialsParams creates a new ListAlibabaInstanceTypesNoCredentialsParams object
-// with the default values initialized.
+// NewListAlibabaInstanceTypesNoCredentialsParams creates a new ListAlibabaInstanceTypesNoCredentialsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListAlibabaInstanceTypesNoCredentialsParams() *ListAlibabaInstanceTypesNoCredentialsParams {
-	var ()
 	return &ListAlibabaInstanceTypesNoCredentialsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListAlibabaInstanceTypesNoCredentialsParamsWithTimeout creates a new ListAlibabaInstanceTypesNoCredentialsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListAlibabaInstanceTypesNoCredentialsParamsWithTimeout(timeout time.Duration) *ListAlibabaInstanceTypesNoCredentialsParams {
-	var ()
 	return &ListAlibabaInstanceTypesNoCredentialsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListAlibabaInstanceTypesNoCredentialsParamsWithContext creates a new ListAlibabaInstanceTypesNoCredentialsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListAlibabaInstanceTypesNoCredentialsParamsWithContext(ctx context.Context) *ListAlibabaInstanceTypesNoCredentialsParams {
-	var ()
 	return &ListAlibabaInstanceTypesNoCredentialsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListAlibabaInstanceTypesNoCredentialsParamsWithHTTPClient creates a new ListAlibabaInstanceTypesNoCredentialsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListAlibabaInstanceTypesNoCredentialsParamsWithHTTPClient(client *http.Client) *ListAlibabaInstanceTypesNoCredentialsParams {
-	var ()
 	return &ListAlibabaInstanceTypesNoCredentialsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListAlibabaInstanceTypesNoCredentialsParams contains all the parameters to send to the API endpoint
-for the list alibaba instance types no credentials operation typically these are written to a http.Request
+/* ListAlibabaInstanceTypesNoCredentialsParams contains all the parameters to send to the API endpoint
+   for the list alibaba instance types no credentials operation.
+
+   Typically these are written to a http.Request.
 */
 type ListAlibabaInstanceTypesNoCredentialsParams struct {
 
-	/*Region*/
+	// Region.
 	Region *string
-	/*ClusterID*/
+
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list alibaba instance types no credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAlibabaInstanceTypesNoCredentialsParams) WithDefaults() *ListAlibabaInstanceTypesNoCredentialsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list alibaba instance types no credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAlibabaInstanceTypesNoCredentialsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list alibaba instance types no credentials params
@@ -165,7 +182,6 @@ func (o *ListAlibabaInstanceTypesNoCredentialsParams) WriteToRequest(r runtime.C
 		if err := r.SetHeaderParam("Region", *o.Region); err != nil {
 			return err
 		}
-
 	}
 
 	// path param cluster_id

@@ -58,7 +58,7 @@ func NewDeleteClusterRoleOK() *DeleteClusterRoleOK {
 	return &DeleteClusterRoleOK{}
 }
 
-/*DeleteClusterRoleOK handles this case with default header values.
+/* DeleteClusterRoleOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -79,7 +79,7 @@ func NewDeleteClusterRoleUnauthorized() *DeleteClusterRoleUnauthorized {
 	return &DeleteClusterRoleUnauthorized{}
 }
 
-/*DeleteClusterRoleUnauthorized handles this case with default header values.
+/* DeleteClusterRoleUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -100,7 +100,7 @@ func NewDeleteClusterRoleForbidden() *DeleteClusterRoleForbidden {
 	return &DeleteClusterRoleForbidden{}
 }
 
-/*DeleteClusterRoleForbidden handles this case with default header values.
+/* DeleteClusterRoleForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -123,7 +123,7 @@ func NewDeleteClusterRoleDefault(code int) *DeleteClusterRoleDefault {
 	}
 }
 
-/*DeleteClusterRoleDefault handles this case with default header values.
+/* DeleteClusterRoleDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -141,7 +141,6 @@ func (o *DeleteClusterRoleDefault) Code() int {
 func (o *DeleteClusterRoleDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}][%d] deleteClusterRole default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *DeleteClusterRoleDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

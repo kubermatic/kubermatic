@@ -6,6 +6,7 @@ package project
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"fmt"
 	"io"
 
@@ -59,7 +60,7 @@ func NewCreateClusterTemplateInstanceCreated() *CreateClusterTemplateInstanceCre
 	return &CreateClusterTemplateInstanceCreated{}
 }
 
-/*CreateClusterTemplateInstanceCreated handles this case with default header values.
+/* CreateClusterTemplateInstanceCreated describes a response with status code 201, with default header values.
 
 ClusterTemplateInstance
 */
@@ -70,7 +71,6 @@ type CreateClusterTemplateInstanceCreated struct {
 func (o *CreateClusterTemplateInstanceCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clustertemplates/{template_id}/instances][%d] createClusterTemplateInstanceCreated  %+v", 201, o.Payload)
 }
-
 func (o *CreateClusterTemplateInstanceCreated) GetPayload() *models.ClusterTemplateInstance {
 	return o.Payload
 }
@@ -92,7 +92,7 @@ func NewCreateClusterTemplateInstanceUnauthorized() *CreateClusterTemplateInstan
 	return &CreateClusterTemplateInstanceUnauthorized{}
 }
 
-/*CreateClusterTemplateInstanceUnauthorized handles this case with default header values.
+/* CreateClusterTemplateInstanceUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -113,7 +113,7 @@ func NewCreateClusterTemplateInstanceForbidden() *CreateClusterTemplateInstanceF
 	return &CreateClusterTemplateInstanceForbidden{}
 }
 
-/*CreateClusterTemplateInstanceForbidden handles this case with default header values.
+/* CreateClusterTemplateInstanceForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -136,7 +136,7 @@ func NewCreateClusterTemplateInstanceDefault(code int) *CreateClusterTemplateIns
 	}
 }
 
-/*CreateClusterTemplateInstanceDefault handles this case with default header values.
+/* CreateClusterTemplateInstanceDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -154,7 +154,6 @@ func (o *CreateClusterTemplateInstanceDefault) Code() int {
 func (o *CreateClusterTemplateInstanceDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clustertemplates/{template_id}/instances][%d] createClusterTemplateInstance default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *CreateClusterTemplateInstanceDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }
@@ -182,6 +181,11 @@ type CreateClusterTemplateInstanceBody struct {
 
 // Validate validates this create cluster template instance body
 func (o *CreateClusterTemplateInstanceBody) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this create cluster template instance body based on context it is used
+func (o *CreateClusterTemplateInstanceBody) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

@@ -58,7 +58,7 @@ func NewCreateGatekeeperConfigCreated() *CreateGatekeeperConfigCreated {
 	return &CreateGatekeeperConfigCreated{}
 }
 
-/*CreateGatekeeperConfigCreated handles this case with default header values.
+/* CreateGatekeeperConfigCreated describes a response with status code 201, with default header values.
 
 GatekeeperConfig
 */
@@ -69,7 +69,6 @@ type CreateGatekeeperConfigCreated struct {
 func (o *CreateGatekeeperConfigCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] createGatekeeperConfigCreated  %+v", 201, o.Payload)
 }
-
 func (o *CreateGatekeeperConfigCreated) GetPayload() *models.GatekeeperConfig {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewCreateGatekeeperConfigUnauthorized() *CreateGatekeeperConfigUnauthorized
 	return &CreateGatekeeperConfigUnauthorized{}
 }
 
-/*CreateGatekeeperConfigUnauthorized handles this case with default header values.
+/* CreateGatekeeperConfigUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewCreateGatekeeperConfigForbidden() *CreateGatekeeperConfigForbidden {
 	return &CreateGatekeeperConfigForbidden{}
 }
 
-/*CreateGatekeeperConfigForbidden handles this case with default header values.
+/* CreateGatekeeperConfigForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewCreateGatekeeperConfigDefault(code int) *CreateGatekeeperConfigDefault {
 	}
 }
 
-/*CreateGatekeeperConfigDefault handles this case with default header values.
+/* CreateGatekeeperConfigDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *CreateGatekeeperConfigDefault) Code() int {
 func (o *CreateGatekeeperConfigDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] createGatekeeperConfig default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *CreateGatekeeperConfigDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

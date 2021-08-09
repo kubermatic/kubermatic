@@ -58,7 +58,7 @@ func NewDeleteRoleOK() *DeleteRoleOK {
 	return &DeleteRoleOK{}
 }
 
-/*DeleteRoleOK handles this case with default header values.
+/* DeleteRoleOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -79,7 +79,7 @@ func NewDeleteRoleUnauthorized() *DeleteRoleUnauthorized {
 	return &DeleteRoleUnauthorized{}
 }
 
-/*DeleteRoleUnauthorized handles this case with default header values.
+/* DeleteRoleUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -100,7 +100,7 @@ func NewDeleteRoleForbidden() *DeleteRoleForbidden {
 	return &DeleteRoleForbidden{}
 }
 
-/*DeleteRoleForbidden handles this case with default header values.
+/* DeleteRoleForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -123,7 +123,7 @@ func NewDeleteRoleDefault(code int) *DeleteRoleDefault {
 	}
 }
 
-/*DeleteRoleDefault handles this case with default header values.
+/* DeleteRoleDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -141,7 +141,6 @@ func (o *DeleteRoleDefault) Code() int {
 func (o *DeleteRoleDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}][%d] deleteRole default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *DeleteRoleDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

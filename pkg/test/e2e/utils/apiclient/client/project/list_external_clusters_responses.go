@@ -58,7 +58,7 @@ func NewListExternalClustersOK() *ListExternalClustersOK {
 	return &ListExternalClustersOK{}
 }
 
-/*ListExternalClustersOK handles this case with default header values.
+/* ListExternalClustersOK describes a response with status code 200, with default header values.
 
 ClusterList
 */
@@ -69,7 +69,6 @@ type ListExternalClustersOK struct {
 func (o *ListExternalClustersOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters][%d] listExternalClustersOK  %+v", 200, o.Payload)
 }
-
 func (o *ListExternalClustersOK) GetPayload() models.ClusterList {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListExternalClustersUnauthorized() *ListExternalClustersUnauthorized {
 	return &ListExternalClustersUnauthorized{}
 }
 
-/*ListExternalClustersUnauthorized handles this case with default header values.
+/* ListExternalClustersUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListExternalClustersForbidden() *ListExternalClustersForbidden {
 	return &ListExternalClustersForbidden{}
 }
 
-/*ListExternalClustersForbidden handles this case with default header values.
+/* ListExternalClustersForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListExternalClustersDefault(code int) *ListExternalClustersDefault {
 	}
 }
 
-/*ListExternalClustersDefault handles this case with default header values.
+/* ListExternalClustersDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListExternalClustersDefault) Code() int {
 func (o *ListExternalClustersDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters][%d] listExternalClusters default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListExternalClustersDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

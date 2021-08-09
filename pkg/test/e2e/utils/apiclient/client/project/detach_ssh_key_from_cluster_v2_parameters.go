@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewDetachSSHKeyFromClusterV2Params creates a new DetachSSHKeyFromClusterV2Params object
-// with the default values initialized.
+// NewDetachSSHKeyFromClusterV2Params creates a new DetachSSHKeyFromClusterV2Params object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewDetachSSHKeyFromClusterV2Params() *DetachSSHKeyFromClusterV2Params {
-	var ()
 	return &DetachSSHKeyFromClusterV2Params{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewDetachSSHKeyFromClusterV2ParamsWithTimeout creates a new DetachSSHKeyFromClusterV2Params object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewDetachSSHKeyFromClusterV2ParamsWithTimeout(timeout time.Duration) *DetachSSHKeyFromClusterV2Params {
-	var ()
 	return &DetachSSHKeyFromClusterV2Params{
-
 		timeout: timeout,
 	}
 }
 
 // NewDetachSSHKeyFromClusterV2ParamsWithContext creates a new DetachSSHKeyFromClusterV2Params object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewDetachSSHKeyFromClusterV2ParamsWithContext(ctx context.Context) *DetachSSHKeyFromClusterV2Params {
-	var ()
 	return &DetachSSHKeyFromClusterV2Params{
-
 		Context: ctx,
 	}
 }
 
 // NewDetachSSHKeyFromClusterV2ParamsWithHTTPClient creates a new DetachSSHKeyFromClusterV2Params object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewDetachSSHKeyFromClusterV2ParamsWithHTTPClient(client *http.Client) *DetachSSHKeyFromClusterV2Params {
-	var ()
 	return &DetachSSHKeyFromClusterV2Params{
 		HTTPClient: client,
 	}
 }
 
-/*DetachSSHKeyFromClusterV2Params contains all the parameters to send to the API endpoint
-for the detach SSH key from cluster v2 operation typically these are written to a http.Request
+/* DetachSSHKeyFromClusterV2Params contains all the parameters to send to the API endpoint
+   for the detach SSH key from cluster v2 operation.
+
+   Typically these are written to a http.Request.
 */
 type DetachSSHKeyFromClusterV2Params struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*KeyID*/
+
+	// KeyID.
 	KeyID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the detach SSH key from cluster v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DetachSSHKeyFromClusterV2Params) WithDefaults() *DetachSSHKeyFromClusterV2Params {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the detach SSH key from cluster v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DetachSSHKeyFromClusterV2Params) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the detach SSH key from cluster v2 params

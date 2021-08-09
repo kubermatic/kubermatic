@@ -23,27 +23,30 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	CreateDC(params *CreateDCParams, authInfo runtime.ClientAuthInfoWriter) (*CreateDCCreated, error)
+	CreateDC(params *CreateDCParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateDCCreated, error)
 
-	DeleteDC(params *DeleteDCParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteDCOK, error)
+	DeleteDC(params *DeleteDCParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteDCOK, error)
 
-	GetDCForProvider(params *GetDCForProviderParams, authInfo runtime.ClientAuthInfoWriter) (*GetDCForProviderOK, error)
+	GetDCForProvider(params *GetDCForProviderParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetDCForProviderOK, error)
 
-	GetDCForSeed(params *GetDCForSeedParams, authInfo runtime.ClientAuthInfoWriter) (*GetDCForSeedOK, error)
+	GetDCForSeed(params *GetDCForSeedParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetDCForSeedOK, error)
 
-	GetDatacenter(params *GetDatacenterParams, authInfo runtime.ClientAuthInfoWriter) (*GetDatacenterOK, error)
+	GetDatacenter(params *GetDatacenterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetDatacenterOK, error)
 
-	ListDCForProvider(params *ListDCForProviderParams, authInfo runtime.ClientAuthInfoWriter) (*ListDCForProviderOK, error)
+	ListDCForProvider(params *ListDCForProviderParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListDCForProviderOK, error)
 
-	ListDCForSeed(params *ListDCForSeedParams, authInfo runtime.ClientAuthInfoWriter) (*ListDCForSeedOK, error)
+	ListDCForSeed(params *ListDCForSeedParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListDCForSeedOK, error)
 
-	ListDatacenters(params *ListDatacentersParams, authInfo runtime.ClientAuthInfoWriter) (*ListDatacentersOK, error)
+	ListDatacenters(params *ListDatacentersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListDatacentersOK, error)
 
-	PatchDC(params *PatchDCParams, authInfo runtime.ClientAuthInfoWriter) (*PatchDCOK, error)
+	PatchDC(params *PatchDCParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchDCOK, error)
 
-	UpdateDC(params *UpdateDCParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateDCOK, error)
+	UpdateDC(params *UpdateDCParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateDCOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -51,13 +54,12 @@ type ClientService interface {
 /*
   CreateDC creates the datacenter for a specified seed
 */
-func (a *Client) CreateDC(params *CreateDCParams, authInfo runtime.ClientAuthInfoWriter) (*CreateDCCreated, error) {
+func (a *Client) CreateDC(params *CreateDCParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateDCCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewCreateDCParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "createDC",
 		Method:             "POST",
 		PathPattern:        "/api/v1/seed/{seed_name}/dc",
@@ -69,7 +71,12 @@ func (a *Client) CreateDC(params *CreateDCParams, authInfo runtime.ClientAuthInf
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -85,13 +92,12 @@ func (a *Client) CreateDC(params *CreateDCParams, authInfo runtime.ClientAuthInf
 /*
   DeleteDC deletes the datacenter
 */
-func (a *Client) DeleteDC(params *DeleteDCParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteDCOK, error) {
+func (a *Client) DeleteDC(params *DeleteDCParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteDCOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewDeleteDCParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "deleteDC",
 		Method:             "DELETE",
 		PathPattern:        "/api/v1/seed/{seed_name}/dc/{dc}",
@@ -103,7 +109,12 @@ func (a *Client) DeleteDC(params *DeleteDCParams, authInfo runtime.ClientAuthInf
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -119,13 +130,12 @@ func (a *Client) DeleteDC(params *DeleteDCParams, authInfo runtime.ClientAuthInf
 /*
   GetDCForProvider gets the datacenter for the specified provider
 */
-func (a *Client) GetDCForProvider(params *GetDCForProviderParams, authInfo runtime.ClientAuthInfoWriter) (*GetDCForProviderOK, error) {
+func (a *Client) GetDCForProvider(params *GetDCForProviderParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetDCForProviderOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetDCForProviderParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getDCForProvider",
 		Method:             "GET",
 		PathPattern:        "/api/v1/providers/{provider_name}/dc/{dc}",
@@ -137,7 +147,12 @@ func (a *Client) GetDCForProvider(params *GetDCForProviderParams, authInfo runti
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -153,13 +168,12 @@ func (a *Client) GetDCForProvider(params *GetDCForProviderParams, authInfo runti
 /*
   GetDCForSeed returns the specified datacenter for the specified seed
 */
-func (a *Client) GetDCForSeed(params *GetDCForSeedParams, authInfo runtime.ClientAuthInfoWriter) (*GetDCForSeedOK, error) {
+func (a *Client) GetDCForSeed(params *GetDCForSeedParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetDCForSeedOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetDCForSeedParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getDCForSeed",
 		Method:             "GET",
 		PathPattern:        "/api/v1/seed/{seed_name}/dc/{dc}",
@@ -171,7 +185,12 @@ func (a *Client) GetDCForSeed(params *GetDCForSeedParams, authInfo runtime.Clien
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -187,13 +206,12 @@ func (a *Client) GetDCForSeed(params *GetDCForSeedParams, authInfo runtime.Clien
 /*
   GetDatacenter get datacenter API
 */
-func (a *Client) GetDatacenter(params *GetDatacenterParams, authInfo runtime.ClientAuthInfoWriter) (*GetDatacenterOK, error) {
+func (a *Client) GetDatacenter(params *GetDatacenterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetDatacenterOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetDatacenterParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getDatacenter",
 		Method:             "GET",
 		PathPattern:        "/api/v1/dc/{dc}",
@@ -205,7 +223,12 @@ func (a *Client) GetDatacenter(params *GetDatacenterParams, authInfo runtime.Cli
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -221,13 +244,12 @@ func (a *Client) GetDatacenter(params *GetDatacenterParams, authInfo runtime.Cli
 /*
   ListDCForProvider returns all datacenters for the specified provider
 */
-func (a *Client) ListDCForProvider(params *ListDCForProviderParams, authInfo runtime.ClientAuthInfoWriter) (*ListDCForProviderOK, error) {
+func (a *Client) ListDCForProvider(params *ListDCForProviderParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListDCForProviderOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListDCForProviderParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listDCForProvider",
 		Method:             "GET",
 		PathPattern:        "/api/v1/providers/{provider_name}/dc",
@@ -239,7 +261,12 @@ func (a *Client) ListDCForProvider(params *ListDCForProviderParams, authInfo run
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -255,13 +282,12 @@ func (a *Client) ListDCForProvider(params *ListDCForProviderParams, authInfo run
 /*
   ListDCForSeed returns all datacenters for the specified seed
 */
-func (a *Client) ListDCForSeed(params *ListDCForSeedParams, authInfo runtime.ClientAuthInfoWriter) (*ListDCForSeedOK, error) {
+func (a *Client) ListDCForSeed(params *ListDCForSeedParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListDCForSeedOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListDCForSeedParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listDCForSeed",
 		Method:             "GET",
 		PathPattern:        "/api/v1/seed/{seed_name}/dc",
@@ -273,7 +299,12 @@ func (a *Client) ListDCForSeed(params *ListDCForSeedParams, authInfo runtime.Cli
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -289,13 +320,12 @@ func (a *Client) ListDCForSeed(params *ListDCForSeedParams, authInfo runtime.Cli
 /*
   ListDatacenters list datacenters API
 */
-func (a *Client) ListDatacenters(params *ListDatacentersParams, authInfo runtime.ClientAuthInfoWriter) (*ListDatacentersOK, error) {
+func (a *Client) ListDatacenters(params *ListDatacentersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListDatacentersOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListDatacentersParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listDatacenters",
 		Method:             "GET",
 		PathPattern:        "/api/v1/dc",
@@ -307,7 +337,12 @@ func (a *Client) ListDatacenters(params *ListDatacentersParams, authInfo runtime
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -323,13 +358,12 @@ func (a *Client) ListDatacenters(params *ListDatacentersParams, authInfo runtime
 /*
   PatchDC patches the datacenter
 */
-func (a *Client) PatchDC(params *PatchDCParams, authInfo runtime.ClientAuthInfoWriter) (*PatchDCOK, error) {
+func (a *Client) PatchDC(params *PatchDCParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchDCOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewPatchDCParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "patchDC",
 		Method:             "PATCH",
 		PathPattern:        "/api/v1/seed/{seed_name}/dc/{dc}",
@@ -341,7 +375,12 @@ func (a *Client) PatchDC(params *PatchDCParams, authInfo runtime.ClientAuthInfoW
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -357,13 +396,12 @@ func (a *Client) PatchDC(params *PatchDCParams, authInfo runtime.ClientAuthInfoW
 /*
   UpdateDC updates the datacenter the datacenter spec will be overwritten with the one provided in the request
 */
-func (a *Client) UpdateDC(params *UpdateDCParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateDCOK, error) {
+func (a *Client) UpdateDC(params *UpdateDCParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateDCOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewUpdateDCParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "updateDC",
 		Method:             "PUT",
 		PathPattern:        "/api/v1/seed/{seed_name}/dc/{dc}",
@@ -375,7 +413,12 @@ func (a *Client) UpdateDC(params *UpdateDCParams, authInfo runtime.ClientAuthInf
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

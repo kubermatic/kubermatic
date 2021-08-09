@@ -16,56 +16,70 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListDCForSeedParams creates a new ListDCForSeedParams object
-// with the default values initialized.
+// NewListDCForSeedParams creates a new ListDCForSeedParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListDCForSeedParams() *ListDCForSeedParams {
-	var ()
 	return &ListDCForSeedParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListDCForSeedParamsWithTimeout creates a new ListDCForSeedParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListDCForSeedParamsWithTimeout(timeout time.Duration) *ListDCForSeedParams {
-	var ()
 	return &ListDCForSeedParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListDCForSeedParamsWithContext creates a new ListDCForSeedParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListDCForSeedParamsWithContext(ctx context.Context) *ListDCForSeedParams {
-	var ()
 	return &ListDCForSeedParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListDCForSeedParamsWithHTTPClient creates a new ListDCForSeedParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListDCForSeedParamsWithHTTPClient(client *http.Client) *ListDCForSeedParams {
-	var ()
 	return &ListDCForSeedParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListDCForSeedParams contains all the parameters to send to the API endpoint
-for the list d c for seed operation typically these are written to a http.Request
+/* ListDCForSeedParams contains all the parameters to send to the API endpoint
+   for the list d c for seed operation.
+
+   Typically these are written to a http.Request.
 */
 type ListDCForSeedParams struct {
 
-	/*SeedName*/
+	// SeedName.
 	Seed string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list d c for seed params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListDCForSeedParams) WithDefaults() *ListDCForSeedParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list d c for seed params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListDCForSeedParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list d c for seed params

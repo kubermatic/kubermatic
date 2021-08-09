@@ -46,7 +46,7 @@ func NewListVSphereFoldersOK() *ListVSphereFoldersOK {
 	return &ListVSphereFoldersOK{}
 }
 
-/*ListVSphereFoldersOK handles this case with default header values.
+/* ListVSphereFoldersOK describes a response with status code 200, with default header values.
 
 VSphereFolder
 */
@@ -57,7 +57,6 @@ type ListVSphereFoldersOK struct {
 func (o *ListVSphereFoldersOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/vsphere/folders][%d] listVSphereFoldersOK  %+v", 200, o.Payload)
 }
-
 func (o *ListVSphereFoldersOK) GetPayload() []*models.VSphereFolder {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListVSphereFoldersDefault(code int) *ListVSphereFoldersDefault {
 	}
 }
 
-/*ListVSphereFoldersDefault handles this case with default header values.
+/* ListVSphereFoldersDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListVSphereFoldersDefault) Code() int {
 func (o *ListVSphereFoldersDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/vsphere/folders][%d] listVSphereFolders default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListVSphereFoldersDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -46,7 +46,7 @@ func NewListAlibabaInstanceTypesOK() *ListAlibabaInstanceTypesOK {
 	return &ListAlibabaInstanceTypesOK{}
 }
 
-/*ListAlibabaInstanceTypesOK handles this case with default header values.
+/* ListAlibabaInstanceTypesOK describes a response with status code 200, with default header values.
 
 AlibabaInstanceTypeList
 */
@@ -57,7 +57,6 @@ type ListAlibabaInstanceTypesOK struct {
 func (o *ListAlibabaInstanceTypesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/alibaba/instancetypes][%d] listAlibabaInstanceTypesOK  %+v", 200, o.Payload)
 }
-
 func (o *ListAlibabaInstanceTypesOK) GetPayload() models.AlibabaInstanceTypeList {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListAlibabaInstanceTypesDefault(code int) *ListAlibabaInstanceTypesDefau
 	}
 }
 
-/*ListAlibabaInstanceTypesDefault handles this case with default header values.
+/* ListAlibabaInstanceTypesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListAlibabaInstanceTypesDefault) Code() int {
 func (o *ListAlibabaInstanceTypesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/alibaba/instancetypes][%d] listAlibabaInstanceTypes default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListAlibabaInstanceTypesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

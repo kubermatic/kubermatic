@@ -46,7 +46,7 @@ func NewListHetznerSizesOK() *ListHetznerSizesOK {
 	return &ListHetznerSizesOK{}
 }
 
-/*ListHetznerSizesOK handles this case with default header values.
+/* ListHetznerSizesOK describes a response with status code 200, with default header values.
 
 HetznerSizeList
 */
@@ -57,7 +57,6 @@ type ListHetznerSizesOK struct {
 func (o *ListHetznerSizesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/hetzner/sizes][%d] listHetznerSizesOK  %+v", 200, o.Payload)
 }
-
 func (o *ListHetznerSizesOK) GetPayload() *models.HetznerSizeList {
 	return o.Payload
 }
@@ -81,7 +80,7 @@ func NewListHetznerSizesDefault(code int) *ListHetznerSizesDefault {
 	}
 }
 
-/*ListHetznerSizesDefault handles this case with default header values.
+/* ListHetznerSizesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -99,7 +98,6 @@ func (o *ListHetznerSizesDefault) Code() int {
 func (o *ListHetznerSizesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/hetzner/sizes][%d] listHetznerSizes default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListHetznerSizesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

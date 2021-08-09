@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListOpenstackTenantsNoCredentialsParams creates a new ListOpenstackTenantsNoCredentialsParams object
-// with the default values initialized.
+// NewListOpenstackTenantsNoCredentialsParams creates a new ListOpenstackTenantsNoCredentialsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListOpenstackTenantsNoCredentialsParams() *ListOpenstackTenantsNoCredentialsParams {
-	var ()
 	return &ListOpenstackTenantsNoCredentialsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListOpenstackTenantsNoCredentialsParamsWithTimeout creates a new ListOpenstackTenantsNoCredentialsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListOpenstackTenantsNoCredentialsParamsWithTimeout(timeout time.Duration) *ListOpenstackTenantsNoCredentialsParams {
-	var ()
 	return &ListOpenstackTenantsNoCredentialsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListOpenstackTenantsNoCredentialsParamsWithContext creates a new ListOpenstackTenantsNoCredentialsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListOpenstackTenantsNoCredentialsParamsWithContext(ctx context.Context) *ListOpenstackTenantsNoCredentialsParams {
-	var ()
 	return &ListOpenstackTenantsNoCredentialsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListOpenstackTenantsNoCredentialsParamsWithHTTPClient creates a new ListOpenstackTenantsNoCredentialsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListOpenstackTenantsNoCredentialsParamsWithHTTPClient(client *http.Client) *ListOpenstackTenantsNoCredentialsParams {
-	var ()
 	return &ListOpenstackTenantsNoCredentialsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListOpenstackTenantsNoCredentialsParams contains all the parameters to send to the API endpoint
-for the list openstack tenants no credentials operation typically these are written to a http.Request
+/* ListOpenstackTenantsNoCredentialsParams contains all the parameters to send to the API endpoint
+   for the list openstack tenants no credentials operation.
+
+   Typically these are written to a http.Request.
 */
 type ListOpenstackTenantsNoCredentialsParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list openstack tenants no credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListOpenstackTenantsNoCredentialsParams) WithDefaults() *ListOpenstackTenantsNoCredentialsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list openstack tenants no credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListOpenstackTenantsNoCredentialsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list openstack tenants no credentials params

@@ -46,7 +46,7 @@ func NewListAzureAvailabilityZonesNoCredentialsOK() *ListAzureAvailabilityZonesN
 	return &ListAzureAvailabilityZonesNoCredentialsOK{}
 }
 
-/*ListAzureAvailabilityZonesNoCredentialsOK handles this case with default header values.
+/* ListAzureAvailabilityZonesNoCredentialsOK describes a response with status code 200, with default header values.
 
 AzureAvailabilityZonesList
 */
@@ -57,7 +57,6 @@ type ListAzureAvailabilityZonesNoCredentialsOK struct {
 func (o *ListAzureAvailabilityZonesNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/azure/availabilityzones][%d] listAzureAvailabilityZonesNoCredentialsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListAzureAvailabilityZonesNoCredentialsOK) GetPayload() *models.AzureAvailabilityZonesList {
 	return o.Payload
 }
@@ -81,7 +80,7 @@ func NewListAzureAvailabilityZonesNoCredentialsDefault(code int) *ListAzureAvail
 	}
 }
 
-/*ListAzureAvailabilityZonesNoCredentialsDefault handles this case with default header values.
+/* ListAzureAvailabilityZonesNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -99,7 +98,6 @@ func (o *ListAzureAvailabilityZonesNoCredentialsDefault) Code() int {
 func (o *ListAzureAvailabilityZonesNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/azure/availabilityzones][%d] listAzureAvailabilityZonesNoCredentials default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListAzureAvailabilityZonesNoCredentialsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

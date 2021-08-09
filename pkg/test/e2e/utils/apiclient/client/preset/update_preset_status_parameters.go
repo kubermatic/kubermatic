@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewUpdatePresetStatusParams creates a new UpdatePresetStatusParams object
-// with the default values initialized.
+// NewUpdatePresetStatusParams creates a new UpdatePresetStatusParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewUpdatePresetStatusParams() *UpdatePresetStatusParams {
-	var ()
 	return &UpdatePresetStatusParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewUpdatePresetStatusParamsWithTimeout creates a new UpdatePresetStatusParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewUpdatePresetStatusParamsWithTimeout(timeout time.Duration) *UpdatePresetStatusParams {
-	var ()
 	return &UpdatePresetStatusParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewUpdatePresetStatusParamsWithContext creates a new UpdatePresetStatusParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewUpdatePresetStatusParamsWithContext(ctx context.Context) *UpdatePresetStatusParams {
-	var ()
 	return &UpdatePresetStatusParams{
-
 		Context: ctx,
 	}
 }
 
 // NewUpdatePresetStatusParamsWithHTTPClient creates a new UpdatePresetStatusParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewUpdatePresetStatusParamsWithHTTPClient(client *http.Client) *UpdatePresetStatusParams {
-	var ()
 	return &UpdatePresetStatusParams{
 		HTTPClient: client,
 	}
 }
 
-/*UpdatePresetStatusParams contains all the parameters to send to the API endpoint
-for the update preset status operation typically these are written to a http.Request
+/* UpdatePresetStatusParams contains all the parameters to send to the API endpoint
+   for the update preset status operation.
+
+   Typically these are written to a http.Request.
 */
 type UpdatePresetStatusParams struct {
 
-	/*Body*/
+	// Body.
 	Body UpdatePresetStatusBody
-	/*PresetName*/
+
+	// PresetName.
 	PresetName string
-	/*Provider*/
+
+	// Provider.
 	Provider *string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the update preset status params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *UpdatePresetStatusParams) WithDefaults() *UpdatePresetStatusParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the update preset status params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *UpdatePresetStatusParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the update preset status params
@@ -145,7 +161,6 @@ func (o *UpdatePresetStatusParams) WriteToRequest(r runtime.ClientRequest, reg s
 		return err
 	}
 	var res []error
-
 	if err := r.SetBodyParam(o.Body); err != nil {
 		return err
 	}
@@ -159,16 +174,17 @@ func (o *UpdatePresetStatusParams) WriteToRequest(r runtime.ClientRequest, reg s
 
 		// query param provider
 		var qrProvider string
+
 		if o.Provider != nil {
 			qrProvider = *o.Provider
 		}
 		qProvider := qrProvider
 		if qProvider != "" {
+
 			if err := r.SetQueryParam("provider", qProvider); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if len(res) > 0 {

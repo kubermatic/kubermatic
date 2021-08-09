@@ -58,7 +58,7 @@ func NewUpdateExternalClusterOK() *UpdateExternalClusterOK {
 	return &UpdateExternalClusterOK{}
 }
 
-/*UpdateExternalClusterOK handles this case with default header values.
+/* UpdateExternalClusterOK describes a response with status code 200, with default header values.
 
 Cluster
 */
@@ -69,7 +69,6 @@ type UpdateExternalClusterOK struct {
 func (o *UpdateExternalClusterOK) Error() string {
 	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}][%d] updateExternalClusterOK  %+v", 200, o.Payload)
 }
-
 func (o *UpdateExternalClusterOK) GetPayload() *models.Cluster {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewUpdateExternalClusterUnauthorized() *UpdateExternalClusterUnauthorized {
 	return &UpdateExternalClusterUnauthorized{}
 }
 
-/*UpdateExternalClusterUnauthorized handles this case with default header values.
+/* UpdateExternalClusterUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewUpdateExternalClusterForbidden() *UpdateExternalClusterForbidden {
 	return &UpdateExternalClusterForbidden{}
 }
 
-/*UpdateExternalClusterForbidden handles this case with default header values.
+/* UpdateExternalClusterForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewUpdateExternalClusterDefault(code int) *UpdateExternalClusterDefault {
 	}
 }
 
-/*UpdateExternalClusterDefault handles this case with default header values.
+/* UpdateExternalClusterDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *UpdateExternalClusterDefault) Code() int {
 func (o *UpdateExternalClusterDefault) Error() string {
 	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}][%d] updateExternalCluster default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *UpdateExternalClusterDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

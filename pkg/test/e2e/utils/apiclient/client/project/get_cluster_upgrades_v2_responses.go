@@ -58,7 +58,7 @@ func NewGetClusterUpgradesV2OK() *GetClusterUpgradesV2OK {
 	return &GetClusterUpgradesV2OK{}
 }
 
-/*GetClusterUpgradesV2OK handles this case with default header values.
+/* GetClusterUpgradesV2OK describes a response with status code 200, with default header values.
 
 MasterVersion
 */
@@ -69,7 +69,6 @@ type GetClusterUpgradesV2OK struct {
 func (o *GetClusterUpgradesV2OK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/upgrades][%d] getClusterUpgradesV2OK  %+v", 200, o.Payload)
 }
-
 func (o *GetClusterUpgradesV2OK) GetPayload() []*models.MasterVersion {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewGetClusterUpgradesV2Unauthorized() *GetClusterUpgradesV2Unauthorized {
 	return &GetClusterUpgradesV2Unauthorized{}
 }
 
-/*GetClusterUpgradesV2Unauthorized handles this case with default header values.
+/* GetClusterUpgradesV2Unauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewGetClusterUpgradesV2Forbidden() *GetClusterUpgradesV2Forbidden {
 	return &GetClusterUpgradesV2Forbidden{}
 }
 
-/*GetClusterUpgradesV2Forbidden handles this case with default header values.
+/* GetClusterUpgradesV2Forbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewGetClusterUpgradesV2Default(code int) *GetClusterUpgradesV2Default {
 	}
 }
 
-/*GetClusterUpgradesV2Default handles this case with default header values.
+/* GetClusterUpgradesV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *GetClusterUpgradesV2Default) Code() int {
 func (o *GetClusterUpgradesV2Default) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/upgrades][%d] getClusterUpgradesV2 default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetClusterUpgradesV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

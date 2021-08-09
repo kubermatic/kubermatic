@@ -6,6 +6,7 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -47,7 +48,6 @@ func (m *EtcdBackupConfigStatus) Validate(formats strfmt.Registry) error {
 }
 
 func (m *EtcdBackupConfigStatus) validateConditions(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Conditions) { // not required
 		return nil
 	}
@@ -72,7 +72,6 @@ func (m *EtcdBackupConfigStatus) validateConditions(formats strfmt.Registry) err
 }
 
 func (m *EtcdBackupConfigStatus) validateCurrentBackups(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.CurrentBackups) { // not required
 		return nil
 	}
@@ -84,6 +83,60 @@ func (m *EtcdBackupConfigStatus) validateCurrentBackups(formats strfmt.Registry)
 
 		if m.CurrentBackups[i] != nil {
 			if err := m.CurrentBackups[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("lastBackups" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+// ContextValidate validate this etcd backup config status based on the context it is used
+func (m *EtcdBackupConfigStatus) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateConditions(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateCurrentBackups(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *EtcdBackupConfigStatus) contextValidateConditions(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Conditions); i++ {
+
+		if m.Conditions[i] != nil {
+			if err := m.Conditions[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("conditions" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *EtcdBackupConfigStatus) contextValidateCurrentBackups(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.CurrentBackups); i++ {
+
+		if m.CurrentBackups[i] != nil {
+			if err := m.CurrentBackups[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("lastBackups" + "." + strconv.Itoa(i))
 				}

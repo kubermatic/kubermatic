@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -21,6 +23,11 @@ type AzureSubnetsList struct {
 
 // Validate validates this azure subnets list
 func (m *AzureSubnetsList) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this azure subnets list based on context it is used
+func (m *AzureSubnetsList) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

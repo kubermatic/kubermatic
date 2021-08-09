@@ -16,61 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListAWSSizesParams creates a new ListAWSSizesParams object
-// with the default values initialized.
+// NewListAWSSizesParams creates a new ListAWSSizesParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListAWSSizesParams() *ListAWSSizesParams {
-	var ()
 	return &ListAWSSizesParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListAWSSizesParamsWithTimeout creates a new ListAWSSizesParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListAWSSizesParamsWithTimeout(timeout time.Duration) *ListAWSSizesParams {
-	var ()
 	return &ListAWSSizesParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListAWSSizesParamsWithContext creates a new ListAWSSizesParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListAWSSizesParamsWithContext(ctx context.Context) *ListAWSSizesParams {
-	var ()
 	return &ListAWSSizesParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListAWSSizesParamsWithHTTPClient creates a new ListAWSSizesParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListAWSSizesParamsWithHTTPClient(client *http.Client) *ListAWSSizesParams {
-	var ()
 	return &ListAWSSizesParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListAWSSizesParams contains all the parameters to send to the API endpoint
-for the list a w s sizes operation typically these are written to a http.Request
+/* ListAWSSizesParams contains all the parameters to send to the API endpoint
+   for the list a w s sizes operation.
+
+   Typically these are written to a http.Request.
 */
 type ListAWSSizesParams struct {
 
-	/*Region*/
+	// Region.
 	Region *string
-	/*Architecture
-	  architecture query parameter. Supports: arm64 and x64 types.
 
+	/* Architecture.
+
+	   architecture query parameter. Supports: arm64 and x64 types.
 	*/
 	Architecture *string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list a w s sizes params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAWSSizesParams) WithDefaults() *ListAWSSizesParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list a w s sizes params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAWSSizesParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list a w s sizes params
@@ -142,23 +157,23 @@ func (o *ListAWSSizesParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.
 		if err := r.SetHeaderParam("Region", *o.Region); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Architecture != nil {
 
 		// query param architecture
 		var qrArchitecture string
+
 		if o.Architecture != nil {
 			qrArchitecture = *o.Architecture
 		}
 		qArchitecture := qrArchitecture
 		if qArchitecture != "" {
+
 			if err := r.SetQueryParam("architecture", qArchitecture); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if len(res) > 0 {

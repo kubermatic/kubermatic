@@ -16,58 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListNamespaceV2Params creates a new ListNamespaceV2Params object
-// with the default values initialized.
+// NewListNamespaceV2Params creates a new ListNamespaceV2Params object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListNamespaceV2Params() *ListNamespaceV2Params {
-	var ()
 	return &ListNamespaceV2Params{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListNamespaceV2ParamsWithTimeout creates a new ListNamespaceV2Params object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListNamespaceV2ParamsWithTimeout(timeout time.Duration) *ListNamespaceV2Params {
-	var ()
 	return &ListNamespaceV2Params{
-
 		timeout: timeout,
 	}
 }
 
 // NewListNamespaceV2ParamsWithContext creates a new ListNamespaceV2Params object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListNamespaceV2ParamsWithContext(ctx context.Context) *ListNamespaceV2Params {
-	var ()
 	return &ListNamespaceV2Params{
-
 		Context: ctx,
 	}
 }
 
 // NewListNamespaceV2ParamsWithHTTPClient creates a new ListNamespaceV2Params object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListNamespaceV2ParamsWithHTTPClient(client *http.Client) *ListNamespaceV2Params {
-	var ()
 	return &ListNamespaceV2Params{
 		HTTPClient: client,
 	}
 }
 
-/*ListNamespaceV2Params contains all the parameters to send to the API endpoint
-for the list namespace v2 operation typically these are written to a http.Request
+/* ListNamespaceV2Params contains all the parameters to send to the API endpoint
+   for the list namespace v2 operation.
+
+   Typically these are written to a http.Request.
 */
 type ListNamespaceV2Params struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list namespace v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListNamespaceV2Params) WithDefaults() *ListNamespaceV2Params {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list namespace v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListNamespaceV2Params) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list namespace v2 params

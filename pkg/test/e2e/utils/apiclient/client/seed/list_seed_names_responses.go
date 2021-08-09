@@ -46,7 +46,7 @@ func NewListSeedNamesOK() *ListSeedNamesOK {
 	return &ListSeedNamesOK{}
 }
 
-/*ListSeedNamesOK handles this case with default header values.
+/* ListSeedNamesOK describes a response with status code 200, with default header values.
 
 SeedNamesList
 */
@@ -57,7 +57,6 @@ type ListSeedNamesOK struct {
 func (o *ListSeedNamesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/seed][%d] listSeedNamesOK  %+v", 200, o.Payload)
 }
-
 func (o *ListSeedNamesOK) GetPayload() models.SeedNamesList {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListSeedNamesDefault(code int) *ListSeedNamesDefault {
 	}
 }
 
-/*ListSeedNamesDefault handles this case with default header values.
+/* ListSeedNamesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListSeedNamesDefault) Code() int {
 func (o *ListSeedNamesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/seed][%d] listSeedNames default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListSeedNamesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

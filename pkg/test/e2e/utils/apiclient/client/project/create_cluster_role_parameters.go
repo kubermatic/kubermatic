@@ -18,62 +18,79 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
-// NewCreateClusterRoleParams creates a new CreateClusterRoleParams object
-// with the default values initialized.
+// NewCreateClusterRoleParams creates a new CreateClusterRoleParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewCreateClusterRoleParams() *CreateClusterRoleParams {
-	var ()
 	return &CreateClusterRoleParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewCreateClusterRoleParamsWithTimeout creates a new CreateClusterRoleParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewCreateClusterRoleParamsWithTimeout(timeout time.Duration) *CreateClusterRoleParams {
-	var ()
 	return &CreateClusterRoleParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewCreateClusterRoleParamsWithContext creates a new CreateClusterRoleParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewCreateClusterRoleParamsWithContext(ctx context.Context) *CreateClusterRoleParams {
-	var ()
 	return &CreateClusterRoleParams{
-
 		Context: ctx,
 	}
 }
 
 // NewCreateClusterRoleParamsWithHTTPClient creates a new CreateClusterRoleParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewCreateClusterRoleParamsWithHTTPClient(client *http.Client) *CreateClusterRoleParams {
-	var ()
 	return &CreateClusterRoleParams{
 		HTTPClient: client,
 	}
 }
 
-/*CreateClusterRoleParams contains all the parameters to send to the API endpoint
-for the create cluster role operation typically these are written to a http.Request
+/* CreateClusterRoleParams contains all the parameters to send to the API endpoint
+   for the create cluster role operation.
+
+   Typically these are written to a http.Request.
 */
 type CreateClusterRoleParams struct {
 
-	/*Body*/
+	// Body.
 	Body *models.ClusterRole
-	/*ClusterID*/
+
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the create cluster role params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *CreateClusterRoleParams) WithDefaults() *CreateClusterRoleParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the create cluster role params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *CreateClusterRoleParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the create cluster role params
@@ -160,7 +177,6 @@ func (o *CreateClusterRoleParams) WriteToRequest(r runtime.ClientRequest, reg st
 		return err
 	}
 	var res []error
-
 	if o.Body != nil {
 		if err := r.SetBodyParam(o.Body); err != nil {
 			return err

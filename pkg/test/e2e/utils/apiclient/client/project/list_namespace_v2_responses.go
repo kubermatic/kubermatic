@@ -58,7 +58,7 @@ func NewListNamespaceV2OK() *ListNamespaceV2OK {
 	return &ListNamespaceV2OK{}
 }
 
-/*ListNamespaceV2OK handles this case with default header values.
+/* ListNamespaceV2OK describes a response with status code 200, with default header values.
 
 Namespace
 */
@@ -69,7 +69,6 @@ type ListNamespaceV2OK struct {
 func (o *ListNamespaceV2OK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/namespaces][%d] listNamespaceV2OK  %+v", 200, o.Payload)
 }
-
 func (o *ListNamespaceV2OK) GetPayload() []*models.Namespace {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListNamespaceV2Unauthorized() *ListNamespaceV2Unauthorized {
 	return &ListNamespaceV2Unauthorized{}
 }
 
-/*ListNamespaceV2Unauthorized handles this case with default header values.
+/* ListNamespaceV2Unauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListNamespaceV2Forbidden() *ListNamespaceV2Forbidden {
 	return &ListNamespaceV2Forbidden{}
 }
 
-/*ListNamespaceV2Forbidden handles this case with default header values.
+/* ListNamespaceV2Forbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListNamespaceV2Default(code int) *ListNamespaceV2Default {
 	}
 }
 
-/*ListNamespaceV2Default handles this case with default header values.
+/* ListNamespaceV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListNamespaceV2Default) Code() int {
 func (o *ListNamespaceV2Default) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/namespaces][%d] listNamespaceV2 default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListNamespaceV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -16,62 +16,79 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListNodeDeploymentMetricsParams creates a new ListNodeDeploymentMetricsParams object
-// with the default values initialized.
+// NewListNodeDeploymentMetricsParams creates a new ListNodeDeploymentMetricsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListNodeDeploymentMetricsParams() *ListNodeDeploymentMetricsParams {
-	var ()
 	return &ListNodeDeploymentMetricsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListNodeDeploymentMetricsParamsWithTimeout creates a new ListNodeDeploymentMetricsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListNodeDeploymentMetricsParamsWithTimeout(timeout time.Duration) *ListNodeDeploymentMetricsParams {
-	var ()
 	return &ListNodeDeploymentMetricsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListNodeDeploymentMetricsParamsWithContext creates a new ListNodeDeploymentMetricsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListNodeDeploymentMetricsParamsWithContext(ctx context.Context) *ListNodeDeploymentMetricsParams {
-	var ()
 	return &ListNodeDeploymentMetricsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListNodeDeploymentMetricsParamsWithHTTPClient creates a new ListNodeDeploymentMetricsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListNodeDeploymentMetricsParamsWithHTTPClient(client *http.Client) *ListNodeDeploymentMetricsParams {
-	var ()
 	return &ListNodeDeploymentMetricsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListNodeDeploymentMetricsParams contains all the parameters to send to the API endpoint
-for the list node deployment metrics operation typically these are written to a http.Request
+/* ListNodeDeploymentMetricsParams contains all the parameters to send to the API endpoint
+   for the list node deployment metrics operation.
+
+   Typically these are written to a http.Request.
 */
 type ListNodeDeploymentMetricsParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*NodedeploymentID*/
+
+	// NodedeploymentID.
 	NodeDeploymentID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list node deployment metrics params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListNodeDeploymentMetricsParams) WithDefaults() *ListNodeDeploymentMetricsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list node deployment metrics params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListNodeDeploymentMetricsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list node deployment metrics params

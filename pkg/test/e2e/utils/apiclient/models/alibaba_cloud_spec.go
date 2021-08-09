@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -23,7 +25,7 @@ type AlibabaCloudSpec struct {
 	AccessKeySecret string `json:"accessKeySecret,omitempty"`
 
 	// credentials reference
-	CredentialsReference GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+	CredentialsReference *GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 }
 
 // Validate validates this alibaba cloud spec
@@ -41,16 +43,45 @@ func (m *AlibabaCloudSpec) Validate(formats strfmt.Registry) error {
 }
 
 func (m *AlibabaCloudSpec) validateCredentialsReference(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.CredentialsReference) { // not required
 		return nil
 	}
 
-	if err := m.CredentialsReference.Validate(formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("credentialsReference")
+	if m.CredentialsReference != nil {
+		if err := m.CredentialsReference.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("credentialsReference")
+			}
+			return err
 		}
-		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this alibaba cloud spec based on the context it is used
+func (m *AlibabaCloudSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateCredentialsReference(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *AlibabaCloudSpec) contextValidateCredentialsReference(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.CredentialsReference != nil {
+		if err := m.CredentialsReference.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("credentialsReference")
+			}
+			return err
+		}
 	}
 
 	return nil

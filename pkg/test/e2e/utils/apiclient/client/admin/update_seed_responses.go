@@ -6,6 +6,7 @@ package admin
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"fmt"
 	"io"
 
@@ -60,7 +61,7 @@ func NewUpdateSeedOK() *UpdateSeedOK {
 	return &UpdateSeedOK{}
 }
 
-/*UpdateSeedOK handles this case with default header values.
+/* UpdateSeedOK describes a response with status code 200, with default header values.
 
 Seed
 */
@@ -71,7 +72,6 @@ type UpdateSeedOK struct {
 func (o *UpdateSeedOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/admin/seeds/{seed_name}][%d] updateSeedOK  %+v", 200, o.Payload)
 }
-
 func (o *UpdateSeedOK) GetPayload() *models.Seed {
 	return o.Payload
 }
@@ -93,7 +93,7 @@ func NewUpdateSeedUnauthorized() *UpdateSeedUnauthorized {
 	return &UpdateSeedUnauthorized{}
 }
 
-/*UpdateSeedUnauthorized handles this case with default header values.
+/* UpdateSeedUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -114,7 +114,7 @@ func NewUpdateSeedForbidden() *UpdateSeedForbidden {
 	return &UpdateSeedForbidden{}
 }
 
-/*UpdateSeedForbidden handles this case with default header values.
+/* UpdateSeedForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -137,7 +137,7 @@ func NewUpdateSeedDefault(code int) *UpdateSeedDefault {
 	}
 }
 
-/*UpdateSeedDefault handles this case with default header values.
+/* UpdateSeedDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -155,7 +155,6 @@ func (o *UpdateSeedDefault) Code() int {
 func (o *UpdateSeedDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/admin/seeds/{seed_name}][%d] updateSeed default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *UpdateSeedDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }
@@ -199,13 +198,40 @@ func (o *UpdateSeedBody) Validate(formats strfmt.Registry) error {
 }
 
 func (o *UpdateSeedBody) validateSpec(formats strfmt.Registry) error {
-
 	if swag.IsZero(o.Spec) { // not required
 		return nil
 	}
 
 	if o.Spec != nil {
 		if err := o.Spec.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("Body" + "." + "spec")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this update seed body based on the context it is used
+func (o *UpdateSeedBody) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := o.contextValidateSpec(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (o *UpdateSeedBody) contextValidateSpec(ctx context.Context, formats strfmt.Registry) error {
+
+	if o.Spec != nil {
+		if err := o.Spec.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("Body" + "." + "spec")
 			}

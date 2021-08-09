@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewPatchDCParams creates a new PatchDCParams object
-// with the default values initialized.
+// NewPatchDCParams creates a new PatchDCParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewPatchDCParams() *PatchDCParams {
-	var ()
 	return &PatchDCParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewPatchDCParamsWithTimeout creates a new PatchDCParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewPatchDCParamsWithTimeout(timeout time.Duration) *PatchDCParams {
-	var ()
 	return &PatchDCParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewPatchDCParamsWithContext creates a new PatchDCParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewPatchDCParamsWithContext(ctx context.Context) *PatchDCParams {
-	var ()
 	return &PatchDCParams{
-
 		Context: ctx,
 	}
 }
 
 // NewPatchDCParamsWithHTTPClient creates a new PatchDCParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewPatchDCParamsWithHTTPClient(client *http.Client) *PatchDCParams {
-	var ()
 	return &PatchDCParams{
 		HTTPClient: client,
 	}
 }
 
-/*PatchDCParams contains all the parameters to send to the API endpoint
-for the patch d c operation typically these are written to a http.Request
+/* PatchDCParams contains all the parameters to send to the API endpoint
+   for the patch d c operation.
+
+   Typically these are written to a http.Request.
 */
 type PatchDCParams struct {
 
-	/*Patch*/
+	// Patch.
 	Patch interface{}
-	/*Dc*/
+
+	// Dc.
 	DCToPatch string
-	/*SeedName*/
+
+	// SeedName.
 	Seed string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the patch d c params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *PatchDCParams) WithDefaults() *PatchDCParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the patch d c params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *PatchDCParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the patch d c params
@@ -145,7 +161,6 @@ func (o *PatchDCParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Regis
 		return err
 	}
 	var res []error
-
 	if o.Patch != nil {
 		if err := r.SetBodyParam(o.Patch); err != nil {
 			return err

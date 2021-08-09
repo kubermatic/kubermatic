@@ -58,7 +58,7 @@ func NewListSSHKeysOK() *ListSSHKeysOK {
 	return &ListSSHKeysOK{}
 }
 
-/*ListSSHKeysOK handles this case with default header values.
+/* ListSSHKeysOK describes a response with status code 200, with default header values.
 
 SSHKey
 */
@@ -69,7 +69,6 @@ type ListSSHKeysOK struct {
 func (o *ListSSHKeysOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/sshkeys][%d] listSshKeysOK  %+v", 200, o.Payload)
 }
-
 func (o *ListSSHKeysOK) GetPayload() []*models.SSHKey {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListSSHKeysUnauthorized() *ListSSHKeysUnauthorized {
 	return &ListSSHKeysUnauthorized{}
 }
 
-/*ListSSHKeysUnauthorized handles this case with default header values.
+/* ListSSHKeysUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListSSHKeysForbidden() *ListSSHKeysForbidden {
 	return &ListSSHKeysForbidden{}
 }
 
-/*ListSSHKeysForbidden handles this case with default header values.
+/* ListSSHKeysForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListSSHKeysDefault(code int) *ListSSHKeysDefault {
 	}
 }
 
-/*ListSSHKeysDefault handles this case with default header values.
+/* ListSSHKeysDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListSSHKeysDefault) Code() int {
 func (o *ListSSHKeysDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/sshkeys][%d] listSSHKeys default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListSSHKeysDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

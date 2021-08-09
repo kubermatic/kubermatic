@@ -16,52 +16,66 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetCurrentUserSettingsParams creates a new GetCurrentUserSettingsParams object
-// with the default values initialized.
+// NewGetCurrentUserSettingsParams creates a new GetCurrentUserSettingsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetCurrentUserSettingsParams() *GetCurrentUserSettingsParams {
-
 	return &GetCurrentUserSettingsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetCurrentUserSettingsParamsWithTimeout creates a new GetCurrentUserSettingsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetCurrentUserSettingsParamsWithTimeout(timeout time.Duration) *GetCurrentUserSettingsParams {
-
 	return &GetCurrentUserSettingsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetCurrentUserSettingsParamsWithContext creates a new GetCurrentUserSettingsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetCurrentUserSettingsParamsWithContext(ctx context.Context) *GetCurrentUserSettingsParams {
-
 	return &GetCurrentUserSettingsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetCurrentUserSettingsParamsWithHTTPClient creates a new GetCurrentUserSettingsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetCurrentUserSettingsParamsWithHTTPClient(client *http.Client) *GetCurrentUserSettingsParams {
-
 	return &GetCurrentUserSettingsParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetCurrentUserSettingsParams contains all the parameters to send to the API endpoint
-for the get current user settings operation typically these are written to a http.Request
+/* GetCurrentUserSettingsParams contains all the parameters to send to the API endpoint
+   for the get current user settings operation.
+
+   Typically these are written to a http.Request.
 */
 type GetCurrentUserSettingsParams struct {
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get current user settings params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetCurrentUserSettingsParams) WithDefaults() *GetCurrentUserSettingsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get current user settings params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetCurrentUserSettingsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get current user settings params

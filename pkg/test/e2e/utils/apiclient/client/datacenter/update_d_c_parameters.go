@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewUpdateDCParams creates a new UpdateDCParams object
-// with the default values initialized.
+// NewUpdateDCParams creates a new UpdateDCParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewUpdateDCParams() *UpdateDCParams {
-	var ()
 	return &UpdateDCParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewUpdateDCParamsWithTimeout creates a new UpdateDCParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewUpdateDCParamsWithTimeout(timeout time.Duration) *UpdateDCParams {
-	var ()
 	return &UpdateDCParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewUpdateDCParamsWithContext creates a new UpdateDCParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewUpdateDCParamsWithContext(ctx context.Context) *UpdateDCParams {
-	var ()
 	return &UpdateDCParams{
-
 		Context: ctx,
 	}
 }
 
 // NewUpdateDCParamsWithHTTPClient creates a new UpdateDCParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewUpdateDCParamsWithHTTPClient(client *http.Client) *UpdateDCParams {
-	var ()
 	return &UpdateDCParams{
 		HTTPClient: client,
 	}
 }
 
-/*UpdateDCParams contains all the parameters to send to the API endpoint
-for the update d c operation typically these are written to a http.Request
+/* UpdateDCParams contains all the parameters to send to the API endpoint
+   for the update d c operation.
+
+   Typically these are written to a http.Request.
 */
 type UpdateDCParams struct {
 
-	/*Body*/
+	// Body.
 	Body UpdateDCBody
-	/*Dc*/
+
+	// Dc.
 	DCToUpdate string
-	/*SeedName*/
+
+	// SeedName.
 	Seed string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the update d c params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *UpdateDCParams) WithDefaults() *UpdateDCParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the update d c params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *UpdateDCParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the update d c params
@@ -145,7 +161,6 @@ func (o *UpdateDCParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Regi
 		return err
 	}
 	var res []error
-
 	if err := r.SetBodyParam(o.Body); err != nil {
 		return err
 	}

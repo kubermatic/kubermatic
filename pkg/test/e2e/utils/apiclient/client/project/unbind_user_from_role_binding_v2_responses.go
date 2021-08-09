@@ -58,7 +58,7 @@ func NewUnbindUserFromRoleBindingV2OK() *UnbindUserFromRoleBindingV2OK {
 	return &UnbindUserFromRoleBindingV2OK{}
 }
 
-/*UnbindUserFromRoleBindingV2OK handles this case with default header values.
+/* UnbindUserFromRoleBindingV2OK describes a response with status code 200, with default header values.
 
 RoleBinding
 */
@@ -69,7 +69,6 @@ type UnbindUserFromRoleBindingV2OK struct {
 func (o *UnbindUserFromRoleBindingV2OK) Error() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings][%d] unbindUserFromRoleBindingV2OK  %+v", 200, o.Payload)
 }
-
 func (o *UnbindUserFromRoleBindingV2OK) GetPayload() *models.RoleBinding {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewUnbindUserFromRoleBindingV2Unauthorized() *UnbindUserFromRoleBindingV2Un
 	return &UnbindUserFromRoleBindingV2Unauthorized{}
 }
 
-/*UnbindUserFromRoleBindingV2Unauthorized handles this case with default header values.
+/* UnbindUserFromRoleBindingV2Unauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewUnbindUserFromRoleBindingV2Forbidden() *UnbindUserFromRoleBindingV2Forbi
 	return &UnbindUserFromRoleBindingV2Forbidden{}
 }
 
-/*UnbindUserFromRoleBindingV2Forbidden handles this case with default header values.
+/* UnbindUserFromRoleBindingV2Forbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewUnbindUserFromRoleBindingV2Default(code int) *UnbindUserFromRoleBindingV
 	}
 }
 
-/*UnbindUserFromRoleBindingV2Default handles this case with default header values.
+/* UnbindUserFromRoleBindingV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *UnbindUserFromRoleBindingV2Default) Code() int {
 func (o *UnbindUserFromRoleBindingV2Default) Error() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings][%d] unbindUserFromRoleBindingV2 default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *UnbindUserFromRoleBindingV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

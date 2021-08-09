@@ -16,56 +16,70 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewDeleteAllowedRegistryParams creates a new DeleteAllowedRegistryParams object
-// with the default values initialized.
+// NewDeleteAllowedRegistryParams creates a new DeleteAllowedRegistryParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewDeleteAllowedRegistryParams() *DeleteAllowedRegistryParams {
-	var ()
 	return &DeleteAllowedRegistryParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewDeleteAllowedRegistryParamsWithTimeout creates a new DeleteAllowedRegistryParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewDeleteAllowedRegistryParamsWithTimeout(timeout time.Duration) *DeleteAllowedRegistryParams {
-	var ()
 	return &DeleteAllowedRegistryParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewDeleteAllowedRegistryParamsWithContext creates a new DeleteAllowedRegistryParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewDeleteAllowedRegistryParamsWithContext(ctx context.Context) *DeleteAllowedRegistryParams {
-	var ()
 	return &DeleteAllowedRegistryParams{
-
 		Context: ctx,
 	}
 }
 
 // NewDeleteAllowedRegistryParamsWithHTTPClient creates a new DeleteAllowedRegistryParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewDeleteAllowedRegistryParamsWithHTTPClient(client *http.Client) *DeleteAllowedRegistryParams {
-	var ()
 	return &DeleteAllowedRegistryParams{
 		HTTPClient: client,
 	}
 }
 
-/*DeleteAllowedRegistryParams contains all the parameters to send to the API endpoint
-for the delete allowed registry operation typically these are written to a http.Request
+/* DeleteAllowedRegistryParams contains all the parameters to send to the API endpoint
+   for the delete allowed registry operation.
+
+   Typically these are written to a http.Request.
 */
 type DeleteAllowedRegistryParams struct {
 
-	/*AllowedRegistry*/
+	// AllowedRegistry.
 	AllowedRegistryName string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the delete allowed registry params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DeleteAllowedRegistryParams) WithDefaults() *DeleteAllowedRegistryParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the delete allowed registry params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DeleteAllowedRegistryParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the delete allowed registry params

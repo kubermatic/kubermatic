@@ -52,7 +52,7 @@ func NewGetCurrentUserOK() *GetCurrentUserOK {
 	return &GetCurrentUserOK{}
 }
 
-/*GetCurrentUserOK handles this case with default header values.
+/* GetCurrentUserOK describes a response with status code 200, with default header values.
 
 User
 */
@@ -63,7 +63,6 @@ type GetCurrentUserOK struct {
 func (o *GetCurrentUserOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/me][%d] getCurrentUserOK  %+v", 200, o.Payload)
 }
-
 func (o *GetCurrentUserOK) GetPayload() *models.User {
 	return o.Payload
 }
@@ -85,7 +84,7 @@ func NewGetCurrentUserUnauthorized() *GetCurrentUserUnauthorized {
 	return &GetCurrentUserUnauthorized{}
 }
 
-/*GetCurrentUserUnauthorized handles this case with default header values.
+/* GetCurrentUserUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +107,7 @@ func NewGetCurrentUserDefault(code int) *GetCurrentUserDefault {
 	}
 }
 
-/*GetCurrentUserDefault handles this case with default header values.
+/* GetCurrentUserDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -126,7 +125,6 @@ func (o *GetCurrentUserDefault) Code() int {
 func (o *GetCurrentUserDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/me][%d] getCurrentUser default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetCurrentUserDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

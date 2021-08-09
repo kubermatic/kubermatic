@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -24,6 +26,11 @@ type CleanupOptions struct {
 
 // Validate validates this cleanup options
 func (m *CleanupOptions) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this cleanup options based on context it is used
+func (m *CleanupOptions) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

@@ -58,7 +58,7 @@ func NewPatchKubermaticSettingsOK() *PatchKubermaticSettingsOK {
 	return &PatchKubermaticSettingsOK{}
 }
 
-/*PatchKubermaticSettingsOK handles this case with default header values.
+/* PatchKubermaticSettingsOK describes a response with status code 200, with default header values.
 
 GlobalSettings
 */
@@ -69,7 +69,6 @@ type PatchKubermaticSettingsOK struct {
 func (o *PatchKubermaticSettingsOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/admin/settings][%d] patchKubermaticSettingsOK  %+v", 200, o.Payload)
 }
-
 func (o *PatchKubermaticSettingsOK) GetPayload() *models.GlobalSettings {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewPatchKubermaticSettingsUnauthorized() *PatchKubermaticSettingsUnauthoriz
 	return &PatchKubermaticSettingsUnauthorized{}
 }
 
-/*PatchKubermaticSettingsUnauthorized handles this case with default header values.
+/* PatchKubermaticSettingsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewPatchKubermaticSettingsForbidden() *PatchKubermaticSettingsForbidden {
 	return &PatchKubermaticSettingsForbidden{}
 }
 
-/*PatchKubermaticSettingsForbidden handles this case with default header values.
+/* PatchKubermaticSettingsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewPatchKubermaticSettingsDefault(code int) *PatchKubermaticSettingsDefault
 	}
 }
 
-/*PatchKubermaticSettingsDefault handles this case with default header values.
+/* PatchKubermaticSettingsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *PatchKubermaticSettingsDefault) Code() int {
 func (o *PatchKubermaticSettingsDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/admin/settings][%d] patchKubermaticSettings default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *PatchKubermaticSettingsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

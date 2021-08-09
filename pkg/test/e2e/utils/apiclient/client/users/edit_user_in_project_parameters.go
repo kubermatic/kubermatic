@@ -18,60 +18,76 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
-// NewEditUserInProjectParams creates a new EditUserInProjectParams object
-// with the default values initialized.
+// NewEditUserInProjectParams creates a new EditUserInProjectParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewEditUserInProjectParams() *EditUserInProjectParams {
-	var ()
 	return &EditUserInProjectParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewEditUserInProjectParamsWithTimeout creates a new EditUserInProjectParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewEditUserInProjectParamsWithTimeout(timeout time.Duration) *EditUserInProjectParams {
-	var ()
 	return &EditUserInProjectParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewEditUserInProjectParamsWithContext creates a new EditUserInProjectParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewEditUserInProjectParamsWithContext(ctx context.Context) *EditUserInProjectParams {
-	var ()
 	return &EditUserInProjectParams{
-
 		Context: ctx,
 	}
 }
 
 // NewEditUserInProjectParamsWithHTTPClient creates a new EditUserInProjectParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewEditUserInProjectParamsWithHTTPClient(client *http.Client) *EditUserInProjectParams {
-	var ()
 	return &EditUserInProjectParams{
 		HTTPClient: client,
 	}
 }
 
-/*EditUserInProjectParams contains all the parameters to send to the API endpoint
-for the edit user in project operation typically these are written to a http.Request
+/* EditUserInProjectParams contains all the parameters to send to the API endpoint
+   for the edit user in project operation.
+
+   Typically these are written to a http.Request.
 */
 type EditUserInProjectParams struct {
 
-	/*Body*/
+	// Body.
 	Body *models.User
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
-	/*UserID*/
+
+	// UserID.
 	UserID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the edit user in project params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *EditUserInProjectParams) WithDefaults() *EditUserInProjectParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the edit user in project params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *EditUserInProjectParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the edit user in project params
@@ -147,7 +163,6 @@ func (o *EditUserInProjectParams) WriteToRequest(r runtime.ClientRequest, reg st
 		return err
 	}
 	var res []error
-
 	if o.Body != nil {
 		if err := r.SetBodyParam(o.Body); err != nil {
 			return err

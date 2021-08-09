@@ -58,7 +58,7 @@ func NewDeleteAddonOK() *DeleteAddonOK {
 	return &DeleteAddonOK{}
 }
 
-/*DeleteAddonOK handles this case with default header values.
+/* DeleteAddonOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -79,7 +79,7 @@ func NewDeleteAddonUnauthorized() *DeleteAddonUnauthorized {
 	return &DeleteAddonUnauthorized{}
 }
 
-/*DeleteAddonUnauthorized handles this case with default header values.
+/* DeleteAddonUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -100,7 +100,7 @@ func NewDeleteAddonForbidden() *DeleteAddonForbidden {
 	return &DeleteAddonForbidden{}
 }
 
-/*DeleteAddonForbidden handles this case with default header values.
+/* DeleteAddonForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -123,7 +123,7 @@ func NewDeleteAddonDefault(code int) *DeleteAddonDefault {
 	}
 }
 
-/*DeleteAddonDefault handles this case with default header values.
+/* DeleteAddonDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -141,7 +141,6 @@ func (o *DeleteAddonDefault) Code() int {
 func (o *DeleteAddonDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons/{addon_id}][%d] deleteAddon default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *DeleteAddonDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

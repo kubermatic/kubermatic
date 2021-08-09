@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -27,6 +29,11 @@ type PacketDrive struct {
 
 // Validate validates this packet drive
 func (m *PacketDrive) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this packet drive based on context it is used
+func (m *PacketDrive) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

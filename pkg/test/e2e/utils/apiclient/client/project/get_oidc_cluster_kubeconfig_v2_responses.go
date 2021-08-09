@@ -58,7 +58,7 @@ func NewGetOidcClusterKubeconfigV2OK() *GetOidcClusterKubeconfigV2OK {
 	return &GetOidcClusterKubeconfigV2OK{}
 }
 
-/*GetOidcClusterKubeconfigV2OK handles this case with default header values.
+/* GetOidcClusterKubeconfigV2OK describes a response with status code 200, with default header values.
 
 Kubeconfig is a clusters kubeconfig
 */
@@ -69,7 +69,6 @@ type GetOidcClusterKubeconfigV2OK struct {
 func (o *GetOidcClusterKubeconfigV2OK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/oidckubeconfig][%d] getOidcClusterKubeconfigV2OK  %+v", 200, o.Payload)
 }
-
 func (o *GetOidcClusterKubeconfigV2OK) GetPayload() []uint8 {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewGetOidcClusterKubeconfigV2Unauthorized() *GetOidcClusterKubeconfigV2Unau
 	return &GetOidcClusterKubeconfigV2Unauthorized{}
 }
 
-/*GetOidcClusterKubeconfigV2Unauthorized handles this case with default header values.
+/* GetOidcClusterKubeconfigV2Unauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewGetOidcClusterKubeconfigV2Forbidden() *GetOidcClusterKubeconfigV2Forbidd
 	return &GetOidcClusterKubeconfigV2Forbidden{}
 }
 
-/*GetOidcClusterKubeconfigV2Forbidden handles this case with default header values.
+/* GetOidcClusterKubeconfigV2Forbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewGetOidcClusterKubeconfigV2Default(code int) *GetOidcClusterKubeconfigV2D
 	}
 }
 
-/*GetOidcClusterKubeconfigV2Default handles this case with default header values.
+/* GetOidcClusterKubeconfigV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *GetOidcClusterKubeconfigV2Default) Code() int {
 func (o *GetOidcClusterKubeconfigV2Default) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/oidckubeconfig][%d] getOidcClusterKubeconfigV2 default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetOidcClusterKubeconfigV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

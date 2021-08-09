@@ -6,6 +6,7 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -44,7 +45,6 @@ func (m *HetznerSizeList) Validate(formats strfmt.Registry) error {
 }
 
 func (m *HetznerSizeList) validateDedicated(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Dedicated) { // not required
 		return nil
 	}
@@ -69,7 +69,6 @@ func (m *HetznerSizeList) validateDedicated(formats strfmt.Registry) error {
 }
 
 func (m *HetznerSizeList) validateStandard(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Standard) { // not required
 		return nil
 	}
@@ -81,6 +80,60 @@ func (m *HetznerSizeList) validateStandard(formats strfmt.Registry) error {
 
 		if m.Standard[i] != nil {
 			if err := m.Standard[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("standard" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+// ContextValidate validate this hetzner size list based on the context it is used
+func (m *HetznerSizeList) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateDedicated(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateStandard(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *HetznerSizeList) contextValidateDedicated(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Dedicated); i++ {
+
+		if m.Dedicated[i] != nil {
+			if err := m.Dedicated[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("dedicated" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *HetznerSizeList) contextValidateStandard(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Standard); i++ {
+
+		if m.Standard[i] != nil {
+			if err := m.Standard[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("standard" + "." + strconv.Itoa(i))
 				}

@@ -23,11 +23,14 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	CreateAllowedRegistry(params *CreateAllowedRegistryParams, authInfo runtime.ClientAuthInfoWriter) (*CreateAllowedRegistryCreated, error)
+	CreateAllowedRegistry(params *CreateAllowedRegistryParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAllowedRegistryCreated, error)
 
-	ListAllowedRegistries(params *ListAllowedRegistriesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAllowedRegistriesOK, error)
+	ListAllowedRegistries(params *ListAllowedRegistriesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAllowedRegistriesOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -35,13 +38,12 @@ type ClientService interface {
 /*
   CreateAllowedRegistry Creates a allowed registry
 */
-func (a *Client) CreateAllowedRegistry(params *CreateAllowedRegistryParams, authInfo runtime.ClientAuthInfoWriter) (*CreateAllowedRegistryCreated, error) {
+func (a *Client) CreateAllowedRegistry(params *CreateAllowedRegistryParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAllowedRegistryCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewCreateAllowedRegistryParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "createAllowedRegistry",
 		Method:             "POST",
 		PathPattern:        "/api/v2/allowedregistries",
@@ -53,7 +55,12 @@ func (a *Client) CreateAllowedRegistry(params *CreateAllowedRegistryParams, auth
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -69,13 +76,12 @@ func (a *Client) CreateAllowedRegistry(params *CreateAllowedRegistryParams, auth
 /*
   ListAllowedRegistries lists allowed registries
 */
-func (a *Client) ListAllowedRegistries(params *ListAllowedRegistriesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAllowedRegistriesOK, error) {
+func (a *Client) ListAllowedRegistries(params *ListAllowedRegistriesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAllowedRegistriesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListAllowedRegistriesParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listAllowedRegistries",
 		Method:             "GET",
 		PathPattern:        "/api/v2/allowedregistries",
@@ -87,7 +93,12 @@ func (a *Client) ListAllowedRegistries(params *ListAllowedRegistriesParams, auth
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

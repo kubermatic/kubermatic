@@ -58,7 +58,7 @@ func NewAddTokenToServiceAccountCreated() *AddTokenToServiceAccountCreated {
 	return &AddTokenToServiceAccountCreated{}
 }
 
-/*AddTokenToServiceAccountCreated handles this case with default header values.
+/* AddTokenToServiceAccountCreated describes a response with status code 201, with default header values.
 
 ServiceAccountToken
 */
@@ -69,7 +69,6 @@ type AddTokenToServiceAccountCreated struct {
 func (o *AddTokenToServiceAccountCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens][%d] addTokenToServiceAccountCreated  %+v", 201, o.Payload)
 }
-
 func (o *AddTokenToServiceAccountCreated) GetPayload() *models.ServiceAccountToken {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewAddTokenToServiceAccountUnauthorized() *AddTokenToServiceAccountUnauthor
 	return &AddTokenToServiceAccountUnauthorized{}
 }
 
-/*AddTokenToServiceAccountUnauthorized handles this case with default header values.
+/* AddTokenToServiceAccountUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewAddTokenToServiceAccountForbidden() *AddTokenToServiceAccountForbidden {
 	return &AddTokenToServiceAccountForbidden{}
 }
 
-/*AddTokenToServiceAccountForbidden handles this case with default header values.
+/* AddTokenToServiceAccountForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewAddTokenToServiceAccountDefault(code int) *AddTokenToServiceAccountDefau
 	}
 }
 
-/*AddTokenToServiceAccountDefault handles this case with default header values.
+/* AddTokenToServiceAccountDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *AddTokenToServiceAccountDefault) Code() int {
 func (o *AddTokenToServiceAccountDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens][%d] addTokenToServiceAccount default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *AddTokenToServiceAccountDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

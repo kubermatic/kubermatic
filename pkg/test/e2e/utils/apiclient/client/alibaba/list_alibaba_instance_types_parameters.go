@@ -16,62 +16,79 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListAlibabaInstanceTypesParams creates a new ListAlibabaInstanceTypesParams object
-// with the default values initialized.
+// NewListAlibabaInstanceTypesParams creates a new ListAlibabaInstanceTypesParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListAlibabaInstanceTypesParams() *ListAlibabaInstanceTypesParams {
-	var ()
 	return &ListAlibabaInstanceTypesParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListAlibabaInstanceTypesParamsWithTimeout creates a new ListAlibabaInstanceTypesParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListAlibabaInstanceTypesParamsWithTimeout(timeout time.Duration) *ListAlibabaInstanceTypesParams {
-	var ()
 	return &ListAlibabaInstanceTypesParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListAlibabaInstanceTypesParamsWithContext creates a new ListAlibabaInstanceTypesParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListAlibabaInstanceTypesParamsWithContext(ctx context.Context) *ListAlibabaInstanceTypesParams {
-	var ()
 	return &ListAlibabaInstanceTypesParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListAlibabaInstanceTypesParamsWithHTTPClient creates a new ListAlibabaInstanceTypesParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListAlibabaInstanceTypesParamsWithHTTPClient(client *http.Client) *ListAlibabaInstanceTypesParams {
-	var ()
 	return &ListAlibabaInstanceTypesParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListAlibabaInstanceTypesParams contains all the parameters to send to the API endpoint
-for the list alibaba instance types operation typically these are written to a http.Request
+/* ListAlibabaInstanceTypesParams contains all the parameters to send to the API endpoint
+   for the list alibaba instance types operation.
+
+   Typically these are written to a http.Request.
 */
 type ListAlibabaInstanceTypesParams struct {
 
-	/*AccessKeyID*/
+	// AccessKeyID.
 	AccessKeyID *string
-	/*AccessKeySecret*/
+
+	// AccessKeySecret.
 	AccessKeySecret *string
-	/*Credential*/
+
+	// Credential.
 	Credential *string
-	/*Region*/
+
+	// Region.
 	Region *string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list alibaba instance types params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAlibabaInstanceTypesParams) WithDefaults() *ListAlibabaInstanceTypesParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list alibaba instance types params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAlibabaInstanceTypesParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list alibaba instance types params
@@ -165,7 +182,6 @@ func (o *ListAlibabaInstanceTypesParams) WriteToRequest(r runtime.ClientRequest,
 		if err := r.SetHeaderParam("AccessKeyID", *o.AccessKeyID); err != nil {
 			return err
 		}
-
 	}
 
 	if o.AccessKeySecret != nil {
@@ -174,7 +190,6 @@ func (o *ListAlibabaInstanceTypesParams) WriteToRequest(r runtime.ClientRequest,
 		if err := r.SetHeaderParam("AccessKeySecret", *o.AccessKeySecret); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Credential != nil {
@@ -183,7 +198,6 @@ func (o *ListAlibabaInstanceTypesParams) WriteToRequest(r runtime.ClientRequest,
 		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Region != nil {
@@ -192,7 +206,6 @@ func (o *ListAlibabaInstanceTypesParams) WriteToRequest(r runtime.ClientRequest,
 		if err := r.SetHeaderParam("Region", *o.Region); err != nil {
 			return err
 		}
-
 	}
 
 	if len(res) > 0 {

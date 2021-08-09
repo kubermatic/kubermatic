@@ -58,7 +58,7 @@ func NewPatchMachineDeploymentOK() *PatchMachineDeploymentOK {
 	return &PatchMachineDeploymentOK{}
 }
 
-/*PatchMachineDeploymentOK handles this case with default header values.
+/* PatchMachineDeploymentOK describes a response with status code 200, with default header values.
 
 NodeDeployment
 */
@@ -69,7 +69,6 @@ type PatchMachineDeploymentOK struct {
 func (o *PatchMachineDeploymentOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}][%d] patchMachineDeploymentOK  %+v", 200, o.Payload)
 }
-
 func (o *PatchMachineDeploymentOK) GetPayload() *models.NodeDeployment {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewPatchMachineDeploymentUnauthorized() *PatchMachineDeploymentUnauthorized
 	return &PatchMachineDeploymentUnauthorized{}
 }
 
-/*PatchMachineDeploymentUnauthorized handles this case with default header values.
+/* PatchMachineDeploymentUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewPatchMachineDeploymentForbidden() *PatchMachineDeploymentForbidden {
 	return &PatchMachineDeploymentForbidden{}
 }
 
-/*PatchMachineDeploymentForbidden handles this case with default header values.
+/* PatchMachineDeploymentForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewPatchMachineDeploymentDefault(code int) *PatchMachineDeploymentDefault {
 	}
 }
 
-/*PatchMachineDeploymentDefault handles this case with default header values.
+/* PatchMachineDeploymentDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *PatchMachineDeploymentDefault) Code() int {
 func (o *PatchMachineDeploymentDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}][%d] patchMachineDeployment default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *PatchMachineDeploymentDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

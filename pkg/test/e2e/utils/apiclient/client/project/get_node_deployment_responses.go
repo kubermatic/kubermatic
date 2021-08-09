@@ -58,7 +58,7 @@ func NewGetNodeDeploymentOK() *GetNodeDeploymentOK {
 	return &GetNodeDeploymentOK{}
 }
 
-/*GetNodeDeploymentOK handles this case with default header values.
+/* GetNodeDeploymentOK describes a response with status code 200, with default header values.
 
 NodeDeployment
 */
@@ -69,7 +69,6 @@ type GetNodeDeploymentOK struct {
 func (o *GetNodeDeploymentOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}][%d] getNodeDeploymentOK  %+v", 200, o.Payload)
 }
-
 func (o *GetNodeDeploymentOK) GetPayload() *models.NodeDeployment {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewGetNodeDeploymentUnauthorized() *GetNodeDeploymentUnauthorized {
 	return &GetNodeDeploymentUnauthorized{}
 }
 
-/*GetNodeDeploymentUnauthorized handles this case with default header values.
+/* GetNodeDeploymentUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewGetNodeDeploymentForbidden() *GetNodeDeploymentForbidden {
 	return &GetNodeDeploymentForbidden{}
 }
 
-/*GetNodeDeploymentForbidden handles this case with default header values.
+/* GetNodeDeploymentForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewGetNodeDeploymentDefault(code int) *GetNodeDeploymentDefault {
 	}
 }
 
-/*GetNodeDeploymentDefault handles this case with default header values.
+/* GetNodeDeploymentDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *GetNodeDeploymentDefault) Code() int {
 func (o *GetNodeDeploymentDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}][%d] getNodeDeployment default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetNodeDeploymentDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

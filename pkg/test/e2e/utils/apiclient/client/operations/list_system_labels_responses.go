@@ -58,7 +58,7 @@ func NewListSystemLabelsOK() *ListSystemLabelsOK {
 	return &ListSystemLabelsOK{}
 }
 
-/*ListSystemLabelsOK handles this case with default header values.
+/* ListSystemLabelsOK describes a response with status code 200, with default header values.
 
 ResourceLabelMap
 */
@@ -69,7 +69,6 @@ type ListSystemLabelsOK struct {
 func (o *ListSystemLabelsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/labels/system][%d] listSystemLabelsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListSystemLabelsOK) GetPayload() models.ResourceLabelMap {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListSystemLabelsUnauthorized() *ListSystemLabelsUnauthorized {
 	return &ListSystemLabelsUnauthorized{}
 }
 
-/*ListSystemLabelsUnauthorized handles this case with default header values.
+/* ListSystemLabelsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListSystemLabelsForbidden() *ListSystemLabelsForbidden {
 	return &ListSystemLabelsForbidden{}
 }
 
-/*ListSystemLabelsForbidden handles this case with default header values.
+/* ListSystemLabelsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListSystemLabelsDefault(code int) *ListSystemLabelsDefault {
 	}
 }
 
-/*ListSystemLabelsDefault handles this case with default header values.
+/* ListSystemLabelsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListSystemLabelsDefault) Code() int {
 func (o *ListSystemLabelsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/labels/system][%d] listSystemLabels default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListSystemLabelsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

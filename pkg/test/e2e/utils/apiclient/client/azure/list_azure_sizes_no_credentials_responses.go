@@ -46,7 +46,7 @@ func NewListAzureSizesNoCredentialsOK() *ListAzureSizesNoCredentialsOK {
 	return &ListAzureSizesNoCredentialsOK{}
 }
 
-/*ListAzureSizesNoCredentialsOK handles this case with default header values.
+/* ListAzureSizesNoCredentialsOK describes a response with status code 200, with default header values.
 
 AzureSizeList
 */
@@ -57,7 +57,6 @@ type ListAzureSizesNoCredentialsOK struct {
 func (o *ListAzureSizesNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/azure/sizes][%d] listAzureSizesNoCredentialsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListAzureSizesNoCredentialsOK) GetPayload() models.AzureSizeList {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListAzureSizesNoCredentialsDefault(code int) *ListAzureSizesNoCredential
 	}
 }
 
-/*ListAzureSizesNoCredentialsDefault handles this case with default header values.
+/* ListAzureSizesNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListAzureSizesNoCredentialsDefault) Code() int {
 func (o *ListAzureSizesNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/azure/sizes][%d] listAzureSizesNoCredentials default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListAzureSizesNoCredentialsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

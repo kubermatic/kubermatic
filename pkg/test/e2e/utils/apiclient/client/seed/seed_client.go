@@ -23,11 +23,14 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	GetSeedSettings(params *GetSeedSettingsParams, authInfo runtime.ClientAuthInfoWriter) (*GetSeedSettingsOK, error)
+	GetSeedSettings(params *GetSeedSettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetSeedSettingsOK, error)
 
-	ListSeedNames(params *ListSeedNamesParams, authInfo runtime.ClientAuthInfoWriter) (*ListSeedNamesOK, error)
+	ListSeedNames(params *ListSeedNamesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListSeedNamesOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -35,13 +38,12 @@ type ClientService interface {
 /*
   GetSeedSettings gets the seed settings
 */
-func (a *Client) GetSeedSettings(params *GetSeedSettingsParams, authInfo runtime.ClientAuthInfoWriter) (*GetSeedSettingsOK, error) {
+func (a *Client) GetSeedSettings(params *GetSeedSettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetSeedSettingsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetSeedSettingsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getSeedSettings",
 		Method:             "GET",
 		PathPattern:        "/api/v2/seeds/{seed_name}/settings",
@@ -53,7 +55,12 @@ func (a *Client) GetSeedSettings(params *GetSeedSettingsParams, authInfo runtime
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -69,13 +76,12 @@ func (a *Client) GetSeedSettings(params *GetSeedSettingsParams, authInfo runtime
 /*
   ListSeedNames list seed names API
 */
-func (a *Client) ListSeedNames(params *ListSeedNamesParams, authInfo runtime.ClientAuthInfoWriter) (*ListSeedNamesOK, error) {
+func (a *Client) ListSeedNames(params *ListSeedNamesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListSeedNamesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListSeedNamesParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listSeedNames",
 		Method:             "GET",
 		PathPattern:        "/api/v1/seed",
@@ -87,7 +93,12 @@ func (a *Client) ListSeedNames(params *ListSeedNamesParams, authInfo runtime.Cli
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

@@ -17,70 +17,91 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// NewListOpenstackTenantsParams creates a new ListOpenstackTenantsParams object
-// with the default values initialized.
+// NewListOpenstackTenantsParams creates a new ListOpenstackTenantsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListOpenstackTenantsParams() *ListOpenstackTenantsParams {
-	var ()
 	return &ListOpenstackTenantsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListOpenstackTenantsParamsWithTimeout creates a new ListOpenstackTenantsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListOpenstackTenantsParamsWithTimeout(timeout time.Duration) *ListOpenstackTenantsParams {
-	var ()
 	return &ListOpenstackTenantsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListOpenstackTenantsParamsWithContext creates a new ListOpenstackTenantsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListOpenstackTenantsParamsWithContext(ctx context.Context) *ListOpenstackTenantsParams {
-	var ()
 	return &ListOpenstackTenantsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListOpenstackTenantsParamsWithHTTPClient creates a new ListOpenstackTenantsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListOpenstackTenantsParamsWithHTTPClient(client *http.Client) *ListOpenstackTenantsParams {
-	var ()
 	return &ListOpenstackTenantsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListOpenstackTenantsParams contains all the parameters to send to the API endpoint
-for the list openstack tenants operation typically these are written to a http.Request
+/* ListOpenstackTenantsParams contains all the parameters to send to the API endpoint
+   for the list openstack tenants operation.
+
+   Typically these are written to a http.Request.
 */
 type ListOpenstackTenantsParams struct {
 
-	/*ApplicationCredentialID*/
+	// ApplicationCredentialID.
 	ApplicationCredentialID *string
-	/*ApplicationCredentialSecret*/
+
+	// ApplicationCredentialSecret.
 	ApplicationCredentialSecret *string
-	/*Credential*/
+
+	// Credential.
 	Credential *string
-	/*DatacenterName*/
+
+	// DatacenterName.
 	DatacenterName *string
-	/*Domain*/
+
+	// Domain.
 	Domain *string
-	/*OIDCAuthentication*/
+
+	// OIDCAuthentication.
 	OIDCAuthentication *bool
-	/*Password*/
+
+	// Password.
 	Password *string
-	/*Username*/
+
+	// Username.
 	Username *string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list openstack tenants params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListOpenstackTenantsParams) WithDefaults() *ListOpenstackTenantsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list openstack tenants params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListOpenstackTenantsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list openstack tenants params
@@ -218,7 +239,6 @@ func (o *ListOpenstackTenantsParams) WriteToRequest(r runtime.ClientRequest, reg
 		if err := r.SetHeaderParam("ApplicationCredentialID", *o.ApplicationCredentialID); err != nil {
 			return err
 		}
-
 	}
 
 	if o.ApplicationCredentialSecret != nil {
@@ -227,7 +247,6 @@ func (o *ListOpenstackTenantsParams) WriteToRequest(r runtime.ClientRequest, reg
 		if err := r.SetHeaderParam("ApplicationCredentialSecret", *o.ApplicationCredentialSecret); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Credential != nil {
@@ -236,7 +255,6 @@ func (o *ListOpenstackTenantsParams) WriteToRequest(r runtime.ClientRequest, reg
 		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
 			return err
 		}
-
 	}
 
 	if o.DatacenterName != nil {
@@ -245,7 +263,6 @@ func (o *ListOpenstackTenantsParams) WriteToRequest(r runtime.ClientRequest, reg
 		if err := r.SetHeaderParam("DatacenterName", *o.DatacenterName); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Domain != nil {
@@ -254,7 +271,6 @@ func (o *ListOpenstackTenantsParams) WriteToRequest(r runtime.ClientRequest, reg
 		if err := r.SetHeaderParam("Domain", *o.Domain); err != nil {
 			return err
 		}
-
 	}
 
 	if o.OIDCAuthentication != nil {
@@ -263,7 +279,6 @@ func (o *ListOpenstackTenantsParams) WriteToRequest(r runtime.ClientRequest, reg
 		if err := r.SetHeaderParam("OIDCAuthentication", swag.FormatBool(*o.OIDCAuthentication)); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Password != nil {
@@ -272,7 +287,6 @@ func (o *ListOpenstackTenantsParams) WriteToRequest(r runtime.ClientRequest, reg
 		if err := r.SetHeaderParam("Password", *o.Password); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Username != nil {
@@ -281,7 +295,6 @@ func (o *ListOpenstackTenantsParams) WriteToRequest(r runtime.ClientRequest, reg
 		if err := r.SetHeaderParam("Username", *o.Username); err != nil {
 			return err
 		}
-
 	}
 
 	if len(res) > 0 {

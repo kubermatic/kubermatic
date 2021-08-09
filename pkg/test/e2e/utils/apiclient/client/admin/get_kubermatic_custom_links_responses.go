@@ -58,7 +58,7 @@ func NewGetKubermaticCustomLinksOK() *GetKubermaticCustomLinksOK {
 	return &GetKubermaticCustomLinksOK{}
 }
 
-/*GetKubermaticCustomLinksOK handles this case with default header values.
+/* GetKubermaticCustomLinksOK describes a response with status code 200, with default header values.
 
 GlobalCustomLinks
 */
@@ -69,7 +69,6 @@ type GetKubermaticCustomLinksOK struct {
 func (o *GetKubermaticCustomLinksOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/admin/settings/customlinks][%d] getKubermaticCustomLinksOK  %+v", 200, o.Payload)
 }
-
 func (o *GetKubermaticCustomLinksOK) GetPayload() models.GlobalCustomLinks {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewGetKubermaticCustomLinksUnauthorized() *GetKubermaticCustomLinksUnauthor
 	return &GetKubermaticCustomLinksUnauthorized{}
 }
 
-/*GetKubermaticCustomLinksUnauthorized handles this case with default header values.
+/* GetKubermaticCustomLinksUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewGetKubermaticCustomLinksForbidden() *GetKubermaticCustomLinksForbidden {
 	return &GetKubermaticCustomLinksForbidden{}
 }
 
-/*GetKubermaticCustomLinksForbidden handles this case with default header values.
+/* GetKubermaticCustomLinksForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewGetKubermaticCustomLinksDefault(code int) *GetKubermaticCustomLinksDefau
 	}
 }
 
-/*GetKubermaticCustomLinksDefault handles this case with default header values.
+/* GetKubermaticCustomLinksDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *GetKubermaticCustomLinksDefault) Code() int {
 func (o *GetKubermaticCustomLinksDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/admin/settings/customlinks][%d] getKubermaticCustomLinks default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetKubermaticCustomLinksDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

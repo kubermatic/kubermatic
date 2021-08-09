@@ -58,7 +58,7 @@ func NewUpdateAlertmanagerOK() *UpdateAlertmanagerOK {
 	return &UpdateAlertmanagerOK{}
 }
 
-/*UpdateAlertmanagerOK handles this case with default header values.
+/* UpdateAlertmanagerOK describes a response with status code 200, with default header values.
 
 Alertmanager
 */
@@ -69,7 +69,6 @@ type UpdateAlertmanagerOK struct {
 func (o *UpdateAlertmanagerOK) Error() string {
 	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config][%d] updateAlertmanagerOK  %+v", 200, o.Payload)
 }
-
 func (o *UpdateAlertmanagerOK) GetPayload() *models.Alertmanager {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewUpdateAlertmanagerUnauthorized() *UpdateAlertmanagerUnauthorized {
 	return &UpdateAlertmanagerUnauthorized{}
 }
 
-/*UpdateAlertmanagerUnauthorized handles this case with default header values.
+/* UpdateAlertmanagerUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewUpdateAlertmanagerForbidden() *UpdateAlertmanagerForbidden {
 	return &UpdateAlertmanagerForbidden{}
 }
 
-/*UpdateAlertmanagerForbidden handles this case with default header values.
+/* UpdateAlertmanagerForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewUpdateAlertmanagerDefault(code int) *UpdateAlertmanagerDefault {
 	}
 }
 
-/*UpdateAlertmanagerDefault handles this case with default header values.
+/* UpdateAlertmanagerDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *UpdateAlertmanagerDefault) Code() int {
 func (o *UpdateAlertmanagerDefault) Error() string {
 	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config][%d] updateAlertmanager default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *UpdateAlertmanagerDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

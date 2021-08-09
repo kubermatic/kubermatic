@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListAzureSizesNoCredentialsParams creates a new ListAzureSizesNoCredentialsParams object
-// with the default values initialized.
+// NewListAzureSizesNoCredentialsParams creates a new ListAzureSizesNoCredentialsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListAzureSizesNoCredentialsParams() *ListAzureSizesNoCredentialsParams {
-	var ()
 	return &ListAzureSizesNoCredentialsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListAzureSizesNoCredentialsParamsWithTimeout creates a new ListAzureSizesNoCredentialsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListAzureSizesNoCredentialsParamsWithTimeout(timeout time.Duration) *ListAzureSizesNoCredentialsParams {
-	var ()
 	return &ListAzureSizesNoCredentialsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListAzureSizesNoCredentialsParamsWithContext creates a new ListAzureSizesNoCredentialsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListAzureSizesNoCredentialsParamsWithContext(ctx context.Context) *ListAzureSizesNoCredentialsParams {
-	var ()
 	return &ListAzureSizesNoCredentialsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListAzureSizesNoCredentialsParamsWithHTTPClient creates a new ListAzureSizesNoCredentialsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListAzureSizesNoCredentialsParamsWithHTTPClient(client *http.Client) *ListAzureSizesNoCredentialsParams {
-	var ()
 	return &ListAzureSizesNoCredentialsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListAzureSizesNoCredentialsParams contains all the parameters to send to the API endpoint
-for the list azure sizes no credentials operation typically these are written to a http.Request
+/* ListAzureSizesNoCredentialsParams contains all the parameters to send to the API endpoint
+   for the list azure sizes no credentials operation.
+
+   Typically these are written to a http.Request.
 */
 type ListAzureSizesNoCredentialsParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list azure sizes no credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAzureSizesNoCredentialsParams) WithDefaults() *ListAzureSizesNoCredentialsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list azure sizes no credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAzureSizesNoCredentialsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list azure sizes no credentials params

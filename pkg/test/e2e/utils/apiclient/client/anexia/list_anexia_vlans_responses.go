@@ -46,7 +46,7 @@ func NewListAnexiaVlansOK() *ListAnexiaVlansOK {
 	return &ListAnexiaVlansOK{}
 }
 
-/*ListAnexiaVlansOK handles this case with default header values.
+/* ListAnexiaVlansOK describes a response with status code 200, with default header values.
 
 AnexiaVlanList
 */
@@ -57,7 +57,6 @@ type ListAnexiaVlansOK struct {
 func (o *ListAnexiaVlansOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/anexia/vlans][%d] listAnexiaVlansOK  %+v", 200, o.Payload)
 }
-
 func (o *ListAnexiaVlansOK) GetPayload() models.AnexiaVlanList {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListAnexiaVlansDefault(code int) *ListAnexiaVlansDefault {
 	}
 }
 
-/*ListAnexiaVlansDefault handles this case with default header values.
+/* ListAnexiaVlansDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListAnexiaVlansDefault) Code() int {
 func (o *ListAnexiaVlansDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/anexia/vlans][%d] listAnexiaVlans default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListAnexiaVlansDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

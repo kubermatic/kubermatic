@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -48,12 +50,37 @@ func (m *LabelSelectorRequirement) Validate(formats strfmt.Registry) error {
 }
 
 func (m *LabelSelectorRequirement) validateOperator(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Operator) { // not required
 		return nil
 	}
 
 	if err := m.Operator.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("operator")
+		}
+		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this label selector requirement based on the context it is used
+func (m *LabelSelectorRequirement) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateOperator(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *LabelSelectorRequirement) contextValidateOperator(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.Operator.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("operator")
 		}

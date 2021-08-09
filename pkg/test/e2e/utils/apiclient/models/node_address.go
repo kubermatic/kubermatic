@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -16,14 +18,21 @@ import (
 type NodeAddress struct {
 
 	// address
+	// Example: 192.168.1.1, node1.my.dns
 	Address string `json:"address,omitempty"`
 
 	// type
+	// Example: ExternalIP, InternalIP, InternalDNS, ExternalDNS
 	Type string `json:"type,omitempty"`
 }
 
 // Validate validates this node address
 func (m *NodeAddress) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this node address based on context it is used
+func (m *NodeAddress) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

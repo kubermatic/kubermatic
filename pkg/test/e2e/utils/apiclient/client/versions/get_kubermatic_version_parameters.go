@@ -16,52 +16,66 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetKubermaticVersionParams creates a new GetKubermaticVersionParams object
-// with the default values initialized.
+// NewGetKubermaticVersionParams creates a new GetKubermaticVersionParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetKubermaticVersionParams() *GetKubermaticVersionParams {
-
 	return &GetKubermaticVersionParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetKubermaticVersionParamsWithTimeout creates a new GetKubermaticVersionParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetKubermaticVersionParamsWithTimeout(timeout time.Duration) *GetKubermaticVersionParams {
-
 	return &GetKubermaticVersionParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetKubermaticVersionParamsWithContext creates a new GetKubermaticVersionParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetKubermaticVersionParamsWithContext(ctx context.Context) *GetKubermaticVersionParams {
-
 	return &GetKubermaticVersionParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetKubermaticVersionParamsWithHTTPClient creates a new GetKubermaticVersionParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetKubermaticVersionParamsWithHTTPClient(client *http.Client) *GetKubermaticVersionParams {
-
 	return &GetKubermaticVersionParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetKubermaticVersionParams contains all the parameters to send to the API endpoint
-for the get kubermatic version operation typically these are written to a http.Request
+/* GetKubermaticVersionParams contains all the parameters to send to the API endpoint
+   for the get kubermatic version operation.
+
+   Typically these are written to a http.Request.
 */
 type GetKubermaticVersionParams struct {
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get kubermatic version params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetKubermaticVersionParams) WithDefaults() *GetKubermaticVersionParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get kubermatic version params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetKubermaticVersionParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get kubermatic version params

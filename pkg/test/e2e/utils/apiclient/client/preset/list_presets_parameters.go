@@ -17,56 +17,70 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// NewListPresetsParams creates a new ListPresetsParams object
-// with the default values initialized.
+// NewListPresetsParams creates a new ListPresetsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListPresetsParams() *ListPresetsParams {
-	var ()
 	return &ListPresetsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListPresetsParamsWithTimeout creates a new ListPresetsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListPresetsParamsWithTimeout(timeout time.Duration) *ListPresetsParams {
-	var ()
 	return &ListPresetsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListPresetsParamsWithContext creates a new ListPresetsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListPresetsParamsWithContext(ctx context.Context) *ListPresetsParams {
-	var ()
 	return &ListPresetsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListPresetsParamsWithHTTPClient creates a new ListPresetsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListPresetsParamsWithHTTPClient(client *http.Client) *ListPresetsParams {
-	var ()
 	return &ListPresetsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListPresetsParams contains all the parameters to send to the API endpoint
-for the list presets operation typically these are written to a http.Request
+/* ListPresetsParams contains all the parameters to send to the API endpoint
+   for the list presets operation.
+
+   Typically these are written to a http.Request.
 */
 type ListPresetsParams struct {
 
-	/*Disabled*/
+	// Disabled.
 	Disabled *bool
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list presets params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListPresetsParams) WithDefaults() *ListPresetsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list presets params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListPresetsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list presets params
@@ -125,16 +139,17 @@ func (o *ListPresetsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.R
 
 		// query param disabled
 		var qrDisabled bool
+
 		if o.Disabled != nil {
 			qrDisabled = *o.Disabled
 		}
 		qDisabled := swag.FormatBool(qrDisabled)
 		if qDisabled != "" {
+
 			if err := r.SetQueryParam("disabled", qDisabled); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if len(res) > 0 {

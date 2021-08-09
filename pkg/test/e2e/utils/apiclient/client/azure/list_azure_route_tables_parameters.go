@@ -16,68 +16,88 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListAzureRouteTablesParams creates a new ListAzureRouteTablesParams object
-// with the default values initialized.
+// NewListAzureRouteTablesParams creates a new ListAzureRouteTablesParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListAzureRouteTablesParams() *ListAzureRouteTablesParams {
-	var ()
 	return &ListAzureRouteTablesParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListAzureRouteTablesParamsWithTimeout creates a new ListAzureRouteTablesParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListAzureRouteTablesParamsWithTimeout(timeout time.Duration) *ListAzureRouteTablesParams {
-	var ()
 	return &ListAzureRouteTablesParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListAzureRouteTablesParamsWithContext creates a new ListAzureRouteTablesParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListAzureRouteTablesParamsWithContext(ctx context.Context) *ListAzureRouteTablesParams {
-	var ()
 	return &ListAzureRouteTablesParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListAzureRouteTablesParamsWithHTTPClient creates a new ListAzureRouteTablesParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListAzureRouteTablesParamsWithHTTPClient(client *http.Client) *ListAzureRouteTablesParams {
-	var ()
 	return &ListAzureRouteTablesParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListAzureRouteTablesParams contains all the parameters to send to the API endpoint
-for the list azure route tables operation typically these are written to a http.Request
+/* ListAzureRouteTablesParams contains all the parameters to send to the API endpoint
+   for the list azure route tables operation.
+
+   Typically these are written to a http.Request.
 */
 type ListAzureRouteTablesParams struct {
 
-	/*ClientID*/
+	// ClientID.
 	ClientID *string
-	/*ClientSecret*/
+
+	// ClientSecret.
 	ClientSecret *string
-	/*Credential*/
+
+	// Credential.
 	Credential *string
-	/*Location*/
+
+	// Location.
 	Location *string
-	/*ResourceGroup*/
+
+	// ResourceGroup.
 	ResourceGroup *string
-	/*SubscriptionID*/
+
+	// SubscriptionID.
 	SubscriptionID *string
-	/*TenantID*/
+
+	// TenantID.
 	TenantID *string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list azure route tables params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAzureRouteTablesParams) WithDefaults() *ListAzureRouteTablesParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list azure route tables params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAzureRouteTablesParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list azure route tables params
@@ -204,7 +224,6 @@ func (o *ListAzureRouteTablesParams) WriteToRequest(r runtime.ClientRequest, reg
 		if err := r.SetHeaderParam("ClientID", *o.ClientID); err != nil {
 			return err
 		}
-
 	}
 
 	if o.ClientSecret != nil {
@@ -213,7 +232,6 @@ func (o *ListAzureRouteTablesParams) WriteToRequest(r runtime.ClientRequest, reg
 		if err := r.SetHeaderParam("ClientSecret", *o.ClientSecret); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Credential != nil {
@@ -222,7 +240,6 @@ func (o *ListAzureRouteTablesParams) WriteToRequest(r runtime.ClientRequest, reg
 		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Location != nil {
@@ -231,7 +248,6 @@ func (o *ListAzureRouteTablesParams) WriteToRequest(r runtime.ClientRequest, reg
 		if err := r.SetHeaderParam("Location", *o.Location); err != nil {
 			return err
 		}
-
 	}
 
 	if o.ResourceGroup != nil {
@@ -240,7 +256,6 @@ func (o *ListAzureRouteTablesParams) WriteToRequest(r runtime.ClientRequest, reg
 		if err := r.SetHeaderParam("ResourceGroup", *o.ResourceGroup); err != nil {
 			return err
 		}
-
 	}
 
 	if o.SubscriptionID != nil {
@@ -249,7 +264,6 @@ func (o *ListAzureRouteTablesParams) WriteToRequest(r runtime.ClientRequest, reg
 		if err := r.SetHeaderParam("SubscriptionID", *o.SubscriptionID); err != nil {
 			return err
 		}
-
 	}
 
 	if o.TenantID != nil {
@@ -258,7 +272,6 @@ func (o *ListAzureRouteTablesParams) WriteToRequest(r runtime.ClientRequest, reg
 		if err := r.SetHeaderParam("TenantID", *o.TenantID); err != nil {
 			return err
 		}
-
 	}
 
 	if len(res) > 0 {

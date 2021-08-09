@@ -58,7 +58,7 @@ func NewListClusterRoleV2OK() *ListClusterRoleV2OK {
 	return &ListClusterRoleV2OK{}
 }
 
-/*ListClusterRoleV2OK handles this case with default header values.
+/* ListClusterRoleV2OK describes a response with status code 200, with default header values.
 
 ClusterRole
 */
@@ -69,7 +69,6 @@ type ListClusterRoleV2OK struct {
 func (o *ListClusterRoleV2OK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/clusterroles][%d] listClusterRoleV2OK  %+v", 200, o.Payload)
 }
-
 func (o *ListClusterRoleV2OK) GetPayload() []*models.ClusterRole {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListClusterRoleV2Unauthorized() *ListClusterRoleV2Unauthorized {
 	return &ListClusterRoleV2Unauthorized{}
 }
 
-/*ListClusterRoleV2Unauthorized handles this case with default header values.
+/* ListClusterRoleV2Unauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListClusterRoleV2Forbidden() *ListClusterRoleV2Forbidden {
 	return &ListClusterRoleV2Forbidden{}
 }
 
-/*ListClusterRoleV2Forbidden handles this case with default header values.
+/* ListClusterRoleV2Forbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListClusterRoleV2Default(code int) *ListClusterRoleV2Default {
 	}
 }
 
-/*ListClusterRoleV2Default handles this case with default header values.
+/* ListClusterRoleV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListClusterRoleV2Default) Code() int {
 func (o *ListClusterRoleV2Default) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/clusterroles][%d] listClusterRoleV2 default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListClusterRoleV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

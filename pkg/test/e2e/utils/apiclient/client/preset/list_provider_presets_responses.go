@@ -58,7 +58,7 @@ func NewListProviderPresetsOK() *ListProviderPresetsOK {
 	return &ListProviderPresetsOK{}
 }
 
-/*ListProviderPresetsOK handles this case with default header values.
+/* ListProviderPresetsOK describes a response with status code 200, with default header values.
 
 PresetList
 */
@@ -69,7 +69,6 @@ type ListProviderPresetsOK struct {
 func (o *ListProviderPresetsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/{provider_name}/presets][%d] listProviderPresetsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListProviderPresetsOK) GetPayload() *models.PresetList {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewListProviderPresetsUnauthorized() *ListProviderPresetsUnauthorized {
 	return &ListProviderPresetsUnauthorized{}
 }
 
-/*ListProviderPresetsUnauthorized handles this case with default header values.
+/* ListProviderPresetsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewListProviderPresetsForbidden() *ListProviderPresetsForbidden {
 	return &ListProviderPresetsForbidden{}
 }
 
-/*ListProviderPresetsForbidden handles this case with default header values.
+/* ListProviderPresetsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewListProviderPresetsDefault(code int) *ListProviderPresetsDefault {
 	}
 }
 
-/*ListProviderPresetsDefault handles this case with default header values.
+/* ListProviderPresetsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *ListProviderPresetsDefault) Code() int {
 func (o *ListProviderPresetsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/{provider_name}/presets][%d] listProviderPresets default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListProviderPresetsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

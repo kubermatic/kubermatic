@@ -17,74 +17,97 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// NewListOpenstackSizesParams creates a new ListOpenstackSizesParams object
-// with the default values initialized.
+// NewListOpenstackSizesParams creates a new ListOpenstackSizesParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListOpenstackSizesParams() *ListOpenstackSizesParams {
-	var ()
 	return &ListOpenstackSizesParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListOpenstackSizesParamsWithTimeout creates a new ListOpenstackSizesParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListOpenstackSizesParamsWithTimeout(timeout time.Duration) *ListOpenstackSizesParams {
-	var ()
 	return &ListOpenstackSizesParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListOpenstackSizesParamsWithContext creates a new ListOpenstackSizesParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListOpenstackSizesParamsWithContext(ctx context.Context) *ListOpenstackSizesParams {
-	var ()
 	return &ListOpenstackSizesParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListOpenstackSizesParamsWithHTTPClient creates a new ListOpenstackSizesParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListOpenstackSizesParamsWithHTTPClient(client *http.Client) *ListOpenstackSizesParams {
-	var ()
 	return &ListOpenstackSizesParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListOpenstackSizesParams contains all the parameters to send to the API endpoint
-for the list openstack sizes operation typically these are written to a http.Request
+/* ListOpenstackSizesParams contains all the parameters to send to the API endpoint
+   for the list openstack sizes operation.
+
+   Typically these are written to a http.Request.
 */
 type ListOpenstackSizesParams struct {
 
-	/*ApplicationCredentialID*/
+	// ApplicationCredentialID.
 	ApplicationCredentialID *string
-	/*ApplicationCredentialSecret*/
+
+	// ApplicationCredentialSecret.
 	ApplicationCredentialSecret *string
-	/*Credential*/
+
+	// Credential.
 	Credential *string
-	/*DatacenterName*/
+
+	// DatacenterName.
 	DatacenterName *string
-	/*Domain*/
+
+	// Domain.
 	Domain *string
-	/*OIDCAuthentication*/
+
+	// OIDCAuthentication.
 	OIDCAuthentication *bool
-	/*Password*/
+
+	// Password.
 	Password *string
-	/*Tenant*/
+
+	// Tenant.
 	Tenant *string
-	/*TenantID*/
+
+	// TenantID.
 	TenantID *string
-	/*Username*/
+
+	// Username.
 	Username *string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list openstack sizes params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListOpenstackSizesParams) WithDefaults() *ListOpenstackSizesParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list openstack sizes params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListOpenstackSizesParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list openstack sizes params
@@ -244,7 +267,6 @@ func (o *ListOpenstackSizesParams) WriteToRequest(r runtime.ClientRequest, reg s
 		if err := r.SetHeaderParam("ApplicationCredentialID", *o.ApplicationCredentialID); err != nil {
 			return err
 		}
-
 	}
 
 	if o.ApplicationCredentialSecret != nil {
@@ -253,7 +275,6 @@ func (o *ListOpenstackSizesParams) WriteToRequest(r runtime.ClientRequest, reg s
 		if err := r.SetHeaderParam("ApplicationCredentialSecret", *o.ApplicationCredentialSecret); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Credential != nil {
@@ -262,7 +283,6 @@ func (o *ListOpenstackSizesParams) WriteToRequest(r runtime.ClientRequest, reg s
 		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
 			return err
 		}
-
 	}
 
 	if o.DatacenterName != nil {
@@ -271,7 +291,6 @@ func (o *ListOpenstackSizesParams) WriteToRequest(r runtime.ClientRequest, reg s
 		if err := r.SetHeaderParam("DatacenterName", *o.DatacenterName); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Domain != nil {
@@ -280,7 +299,6 @@ func (o *ListOpenstackSizesParams) WriteToRequest(r runtime.ClientRequest, reg s
 		if err := r.SetHeaderParam("Domain", *o.Domain); err != nil {
 			return err
 		}
-
 	}
 
 	if o.OIDCAuthentication != nil {
@@ -289,7 +307,6 @@ func (o *ListOpenstackSizesParams) WriteToRequest(r runtime.ClientRequest, reg s
 		if err := r.SetHeaderParam("OIDCAuthentication", swag.FormatBool(*o.OIDCAuthentication)); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Password != nil {
@@ -298,7 +315,6 @@ func (o *ListOpenstackSizesParams) WriteToRequest(r runtime.ClientRequest, reg s
 		if err := r.SetHeaderParam("Password", *o.Password); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Tenant != nil {
@@ -307,7 +323,6 @@ func (o *ListOpenstackSizesParams) WriteToRequest(r runtime.ClientRequest, reg s
 		if err := r.SetHeaderParam("Tenant", *o.Tenant); err != nil {
 			return err
 		}
-
 	}
 
 	if o.TenantID != nil {
@@ -316,7 +331,6 @@ func (o *ListOpenstackSizesParams) WriteToRequest(r runtime.ClientRequest, reg s
 		if err := r.SetHeaderParam("TenantID", *o.TenantID); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Username != nil {
@@ -325,7 +339,6 @@ func (o *ListOpenstackSizesParams) WriteToRequest(r runtime.ClientRequest, reg s
 		if err := r.SetHeaderParam("Username", *o.Username); err != nil {
 			return err
 		}
-
 	}
 
 	if len(res) > 0 {

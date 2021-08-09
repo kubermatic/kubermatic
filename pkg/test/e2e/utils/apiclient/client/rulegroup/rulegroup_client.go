@@ -23,17 +23,20 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	CreateRuleGroup(params *CreateRuleGroupParams, authInfo runtime.ClientAuthInfoWriter) (*CreateRuleGroupCreated, error)
+	CreateRuleGroup(params *CreateRuleGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRuleGroupCreated, error)
 
-	DeleteRuleGroup(params *DeleteRuleGroupParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteRuleGroupOK, error)
+	DeleteRuleGroup(params *DeleteRuleGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteRuleGroupOK, error)
 
-	GetRuleGroup(params *GetRuleGroupParams, authInfo runtime.ClientAuthInfoWriter) (*GetRuleGroupOK, error)
+	GetRuleGroup(params *GetRuleGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRuleGroupOK, error)
 
-	ListRuleGroups(params *ListRuleGroupsParams, authInfo runtime.ClientAuthInfoWriter) (*ListRuleGroupsOK, error)
+	ListRuleGroups(params *ListRuleGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRuleGroupsOK, error)
 
-	UpdateRuleGroup(params *UpdateRuleGroupParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateRuleGroupOK, error)
+	UpdateRuleGroup(params *UpdateRuleGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRuleGroupOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -41,13 +44,12 @@ type ClientService interface {
 /*
   CreateRuleGroup Creates a rule group that will belong to the given cluster
 */
-func (a *Client) CreateRuleGroup(params *CreateRuleGroupParams, authInfo runtime.ClientAuthInfoWriter) (*CreateRuleGroupCreated, error) {
+func (a *Client) CreateRuleGroup(params *CreateRuleGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRuleGroupCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewCreateRuleGroupParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "createRuleGroup",
 		Method:             "POST",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups",
@@ -59,7 +61,12 @@ func (a *Client) CreateRuleGroup(params *CreateRuleGroupParams, authInfo runtime
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -75,13 +82,12 @@ func (a *Client) CreateRuleGroup(params *CreateRuleGroupParams, authInfo runtime
 /*
   DeleteRuleGroup deletes the given rule group that belongs to the cluster
 */
-func (a *Client) DeleteRuleGroup(params *DeleteRuleGroupParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteRuleGroupOK, error) {
+func (a *Client) DeleteRuleGroup(params *DeleteRuleGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteRuleGroupOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewDeleteRuleGroupParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "deleteRuleGroup",
 		Method:             "DELETE",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}",
@@ -93,7 +99,12 @@ func (a *Client) DeleteRuleGroup(params *DeleteRuleGroupParams, authInfo runtime
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -109,13 +120,12 @@ func (a *Client) DeleteRuleGroup(params *DeleteRuleGroupParams, authInfo runtime
 /*
   GetRuleGroup gets a specified rule group for the given cluster
 */
-func (a *Client) GetRuleGroup(params *GetRuleGroupParams, authInfo runtime.ClientAuthInfoWriter) (*GetRuleGroupOK, error) {
+func (a *Client) GetRuleGroup(params *GetRuleGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRuleGroupOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetRuleGroupParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getRuleGroup",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}",
@@ -127,7 +137,12 @@ func (a *Client) GetRuleGroup(params *GetRuleGroupParams, authInfo runtime.Clien
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -143,13 +158,12 @@ func (a *Client) GetRuleGroup(params *GetRuleGroupParams, authInfo runtime.Clien
 /*
   ListRuleGroups Lists rule groups that belong to the given cluster
 */
-func (a *Client) ListRuleGroups(params *ListRuleGroupsParams, authInfo runtime.ClientAuthInfoWriter) (*ListRuleGroupsOK, error) {
+func (a *Client) ListRuleGroups(params *ListRuleGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRuleGroupsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListRuleGroupsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listRuleGroups",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups",
@@ -161,7 +175,12 @@ func (a *Client) ListRuleGroups(params *ListRuleGroupsParams, authInfo runtime.C
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -177,13 +196,12 @@ func (a *Client) ListRuleGroups(params *ListRuleGroupsParams, authInfo runtime.C
 /*
   UpdateRuleGroup updates the specified rule group for the given cluster
 */
-func (a *Client) UpdateRuleGroup(params *UpdateRuleGroupParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateRuleGroupOK, error) {
+func (a *Client) UpdateRuleGroup(params *UpdateRuleGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRuleGroupOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewUpdateRuleGroupParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "updateRuleGroup",
 		Method:             "PUT",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}",
@@ -195,7 +213,12 @@ func (a *Client) UpdateRuleGroup(params *UpdateRuleGroupParams, authInfo runtime
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

@@ -16,56 +16,70 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewPatchKubermaticSettingsParams creates a new PatchKubermaticSettingsParams object
-// with the default values initialized.
+// NewPatchKubermaticSettingsParams creates a new PatchKubermaticSettingsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewPatchKubermaticSettingsParams() *PatchKubermaticSettingsParams {
-	var ()
 	return &PatchKubermaticSettingsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewPatchKubermaticSettingsParamsWithTimeout creates a new PatchKubermaticSettingsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewPatchKubermaticSettingsParamsWithTimeout(timeout time.Duration) *PatchKubermaticSettingsParams {
-	var ()
 	return &PatchKubermaticSettingsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewPatchKubermaticSettingsParamsWithContext creates a new PatchKubermaticSettingsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewPatchKubermaticSettingsParamsWithContext(ctx context.Context) *PatchKubermaticSettingsParams {
-	var ()
 	return &PatchKubermaticSettingsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewPatchKubermaticSettingsParamsWithHTTPClient creates a new PatchKubermaticSettingsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewPatchKubermaticSettingsParamsWithHTTPClient(client *http.Client) *PatchKubermaticSettingsParams {
-	var ()
 	return &PatchKubermaticSettingsParams{
 		HTTPClient: client,
 	}
 }
 
-/*PatchKubermaticSettingsParams contains all the parameters to send to the API endpoint
-for the patch kubermatic settings operation typically these are written to a http.Request
+/* PatchKubermaticSettingsParams contains all the parameters to send to the API endpoint
+   for the patch kubermatic settings operation.
+
+   Typically these are written to a http.Request.
 */
 type PatchKubermaticSettingsParams struct {
 
-	/*Patch*/
+	// Patch.
 	Patch interface{}
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the patch kubermatic settings params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *PatchKubermaticSettingsParams) WithDefaults() *PatchKubermaticSettingsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the patch kubermatic settings params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *PatchKubermaticSettingsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the patch kubermatic settings params
@@ -119,7 +133,6 @@ func (o *PatchKubermaticSettingsParams) WriteToRequest(r runtime.ClientRequest, 
 		return err
 	}
 	var res []error
-
 	if o.Patch != nil {
 		if err := r.SetBodyParam(o.Patch); err != nil {
 			return err

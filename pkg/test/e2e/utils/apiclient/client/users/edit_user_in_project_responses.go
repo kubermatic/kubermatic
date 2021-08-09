@@ -58,7 +58,7 @@ func NewEditUserInProjectOK() *EditUserInProjectOK {
 	return &EditUserInProjectOK{}
 }
 
-/*EditUserInProjectOK handles this case with default header values.
+/* EditUserInProjectOK describes a response with status code 200, with default header values.
 
 User
 */
@@ -69,7 +69,6 @@ type EditUserInProjectOK struct {
 func (o *EditUserInProjectOK) Error() string {
 	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/users/{user_id}][%d] editUserInProjectOK  %+v", 200, o.Payload)
 }
-
 func (o *EditUserInProjectOK) GetPayload() *models.User {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewEditUserInProjectUnauthorized() *EditUserInProjectUnauthorized {
 	return &EditUserInProjectUnauthorized{}
 }
 
-/*EditUserInProjectUnauthorized handles this case with default header values.
+/* EditUserInProjectUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewEditUserInProjectForbidden() *EditUserInProjectForbidden {
 	return &EditUserInProjectForbidden{}
 }
 
-/*EditUserInProjectForbidden handles this case with default header values.
+/* EditUserInProjectForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewEditUserInProjectDefault(code int) *EditUserInProjectDefault {
 	}
 }
 
-/*EditUserInProjectDefault handles this case with default header values.
+/* EditUserInProjectDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *EditUserInProjectDefault) Code() int {
 func (o *EditUserInProjectDefault) Error() string {
 	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/users/{user_id}][%d] editUserInProject default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *EditUserInProjectDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

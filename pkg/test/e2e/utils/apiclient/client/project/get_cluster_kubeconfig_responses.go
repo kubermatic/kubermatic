@@ -58,7 +58,7 @@ func NewGetClusterKubeconfigOK() *GetClusterKubeconfigOK {
 	return &GetClusterKubeconfigOK{}
 }
 
-/*GetClusterKubeconfigOK handles this case with default header values.
+/* GetClusterKubeconfigOK describes a response with status code 200, with default header values.
 
 Kubeconfig is a clusters kubeconfig
 */
@@ -69,7 +69,6 @@ type GetClusterKubeconfigOK struct {
 func (o *GetClusterKubeconfigOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/kubeconfig][%d] getClusterKubeconfigOK  %+v", 200, o.Payload)
 }
-
 func (o *GetClusterKubeconfigOK) GetPayload() []uint8 {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewGetClusterKubeconfigUnauthorized() *GetClusterKubeconfigUnauthorized {
 	return &GetClusterKubeconfigUnauthorized{}
 }
 
-/*GetClusterKubeconfigUnauthorized handles this case with default header values.
+/* GetClusterKubeconfigUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewGetClusterKubeconfigForbidden() *GetClusterKubeconfigForbidden {
 	return &GetClusterKubeconfigForbidden{}
 }
 
-/*GetClusterKubeconfigForbidden handles this case with default header values.
+/* GetClusterKubeconfigForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewGetClusterKubeconfigDefault(code int) *GetClusterKubeconfigDefault {
 	}
 }
 
-/*GetClusterKubeconfigDefault handles this case with default header values.
+/* GetClusterKubeconfigDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *GetClusterKubeconfigDefault) Code() int {
 func (o *GetClusterKubeconfigDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/kubeconfig][%d] getClusterKubeconfig default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetClusterKubeconfigDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

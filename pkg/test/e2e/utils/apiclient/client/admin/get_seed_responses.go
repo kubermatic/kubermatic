@@ -58,7 +58,7 @@ func NewGetSeedOK() *GetSeedOK {
 	return &GetSeedOK{}
 }
 
-/*GetSeedOK handles this case with default header values.
+/* GetSeedOK describes a response with status code 200, with default header values.
 
 Seed
 */
@@ -69,7 +69,6 @@ type GetSeedOK struct {
 func (o *GetSeedOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/admin/seeds/{seed_name}][%d] getSeedOK  %+v", 200, o.Payload)
 }
-
 func (o *GetSeedOK) GetPayload() *models.Seed {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewGetSeedUnauthorized() *GetSeedUnauthorized {
 	return &GetSeedUnauthorized{}
 }
 
-/*GetSeedUnauthorized handles this case with default header values.
+/* GetSeedUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewGetSeedForbidden() *GetSeedForbidden {
 	return &GetSeedForbidden{}
 }
 
-/*GetSeedForbidden handles this case with default header values.
+/* GetSeedForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewGetSeedDefault(code int) *GetSeedDefault {
 	}
 }
 
-/*GetSeedDefault handles this case with default header values.
+/* GetSeedDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *GetSeedDefault) Code() int {
 func (o *GetSeedDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/admin/seeds/{seed_name}][%d] getSeed default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetSeedDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

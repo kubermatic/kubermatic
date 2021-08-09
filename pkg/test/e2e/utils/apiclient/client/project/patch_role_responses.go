@@ -58,7 +58,7 @@ func NewPatchRoleOK() *PatchRoleOK {
 	return &PatchRoleOK{}
 }
 
-/*PatchRoleOK handles this case with default header values.
+/* PatchRoleOK describes a response with status code 200, with default header values.
 
 Role
 */
@@ -69,7 +69,6 @@ type PatchRoleOK struct {
 func (o *PatchRoleOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}][%d] patchRoleOK  %+v", 200, o.Payload)
 }
-
 func (o *PatchRoleOK) GetPayload() *models.Role {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewPatchRoleUnauthorized() *PatchRoleUnauthorized {
 	return &PatchRoleUnauthorized{}
 }
 
-/*PatchRoleUnauthorized handles this case with default header values.
+/* PatchRoleUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewPatchRoleForbidden() *PatchRoleForbidden {
 	return &PatchRoleForbidden{}
 }
 
-/*PatchRoleForbidden handles this case with default header values.
+/* PatchRoleForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewPatchRoleDefault(code int) *PatchRoleDefault {
 	}
 }
 
-/*PatchRoleDefault handles this case with default header values.
+/* PatchRoleDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *PatchRoleDefault) Code() int {
 func (o *PatchRoleDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}][%d] patchRole default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *PatchRoleDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

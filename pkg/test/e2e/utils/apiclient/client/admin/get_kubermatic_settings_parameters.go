@@ -16,52 +16,66 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetKubermaticSettingsParams creates a new GetKubermaticSettingsParams object
-// with the default values initialized.
+// NewGetKubermaticSettingsParams creates a new GetKubermaticSettingsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetKubermaticSettingsParams() *GetKubermaticSettingsParams {
-
 	return &GetKubermaticSettingsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetKubermaticSettingsParamsWithTimeout creates a new GetKubermaticSettingsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetKubermaticSettingsParamsWithTimeout(timeout time.Duration) *GetKubermaticSettingsParams {
-
 	return &GetKubermaticSettingsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetKubermaticSettingsParamsWithContext creates a new GetKubermaticSettingsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetKubermaticSettingsParamsWithContext(ctx context.Context) *GetKubermaticSettingsParams {
-
 	return &GetKubermaticSettingsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetKubermaticSettingsParamsWithHTTPClient creates a new GetKubermaticSettingsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetKubermaticSettingsParamsWithHTTPClient(client *http.Client) *GetKubermaticSettingsParams {
-
 	return &GetKubermaticSettingsParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetKubermaticSettingsParams contains all the parameters to send to the API endpoint
-for the get kubermatic settings operation typically these are written to a http.Request
+/* GetKubermaticSettingsParams contains all the parameters to send to the API endpoint
+   for the get kubermatic settings operation.
+
+   Typically these are written to a http.Request.
 */
 type GetKubermaticSettingsParams struct {
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get kubermatic settings params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetKubermaticSettingsParams) WithDefaults() *GetKubermaticSettingsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get kubermatic settings params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetKubermaticSettingsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get kubermatic settings params

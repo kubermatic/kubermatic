@@ -23,33 +23,36 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	DeleteAdmissionPlugin(params *DeleteAdmissionPluginParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteAdmissionPluginOK, error)
+	DeleteAdmissionPlugin(params *DeleteAdmissionPluginParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAdmissionPluginOK, error)
 
-	DeleteSeed(params *DeleteSeedParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteSeedOK, error)
+	DeleteSeed(params *DeleteSeedParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteSeedOK, error)
 
-	GetAdmins(params *GetAdminsParams, authInfo runtime.ClientAuthInfoWriter) (*GetAdminsOK, error)
+	GetAdmins(params *GetAdminsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAdminsOK, error)
 
-	GetAdmissionPlugin(params *GetAdmissionPluginParams, authInfo runtime.ClientAuthInfoWriter) (*GetAdmissionPluginOK, error)
+	GetAdmissionPlugin(params *GetAdmissionPluginParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAdmissionPluginOK, error)
 
-	GetKubermaticCustomLinks(params *GetKubermaticCustomLinksParams, authInfo runtime.ClientAuthInfoWriter) (*GetKubermaticCustomLinksOK, error)
+	GetKubermaticCustomLinks(params *GetKubermaticCustomLinksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetKubermaticCustomLinksOK, error)
 
-	GetKubermaticSettings(params *GetKubermaticSettingsParams, authInfo runtime.ClientAuthInfoWriter) (*GetKubermaticSettingsOK, error)
+	GetKubermaticSettings(params *GetKubermaticSettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetKubermaticSettingsOK, error)
 
-	GetSeed(params *GetSeedParams, authInfo runtime.ClientAuthInfoWriter) (*GetSeedOK, error)
+	GetSeed(params *GetSeedParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetSeedOK, error)
 
-	ListAdmissionPlugins(params *ListAdmissionPluginsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAdmissionPluginsOK, error)
+	ListAdmissionPlugins(params *ListAdmissionPluginsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAdmissionPluginsOK, error)
 
-	ListSeeds(params *ListSeedsParams, authInfo runtime.ClientAuthInfoWriter) (*ListSeedsOK, error)
+	ListSeeds(params *ListSeedsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListSeedsOK, error)
 
-	PatchKubermaticSettings(params *PatchKubermaticSettingsParams, authInfo runtime.ClientAuthInfoWriter) (*PatchKubermaticSettingsOK, error)
+	PatchKubermaticSettings(params *PatchKubermaticSettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchKubermaticSettingsOK, error)
 
-	SetAdmin(params *SetAdminParams, authInfo runtime.ClientAuthInfoWriter) (*SetAdminOK, error)
+	SetAdmin(params *SetAdminParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SetAdminOK, error)
 
-	UpdateAdmissionPlugin(params *UpdateAdmissionPluginParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateAdmissionPluginOK, error)
+	UpdateAdmissionPlugin(params *UpdateAdmissionPluginParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateAdmissionPluginOK, error)
 
-	UpdateSeed(params *UpdateSeedParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateSeedOK, error)
+	UpdateSeed(params *UpdateSeedParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateSeedOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -57,13 +60,12 @@ type ClientService interface {
 /*
   DeleteAdmissionPlugin deletes the admission plugin
 */
-func (a *Client) DeleteAdmissionPlugin(params *DeleteAdmissionPluginParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteAdmissionPluginOK, error) {
+func (a *Client) DeleteAdmissionPlugin(params *DeleteAdmissionPluginParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAdmissionPluginOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewDeleteAdmissionPluginParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "deleteAdmissionPlugin",
 		Method:             "DELETE",
 		PathPattern:        "/api/v1/admin/admission/plugins/{name}",
@@ -75,7 +77,12 @@ func (a *Client) DeleteAdmissionPlugin(params *DeleteAdmissionPluginParams, auth
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -91,13 +98,12 @@ func (a *Client) DeleteAdmissionPlugin(params *DeleteAdmissionPluginParams, auth
 /*
   DeleteSeed deletes the seed c r d object from the kubermatic
 */
-func (a *Client) DeleteSeed(params *DeleteSeedParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteSeedOK, error) {
+func (a *Client) DeleteSeed(params *DeleteSeedParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteSeedOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewDeleteSeedParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "deleteSeed",
 		Method:             "DELETE",
 		PathPattern:        "/api/v1/admin/seeds/{seed_name}",
@@ -109,7 +115,12 @@ func (a *Client) DeleteSeed(params *DeleteSeedParams, authInfo runtime.ClientAut
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -125,13 +136,12 @@ func (a *Client) DeleteSeed(params *DeleteSeedParams, authInfo runtime.ClientAut
 /*
   GetAdmins returns list of admin users
 */
-func (a *Client) GetAdmins(params *GetAdminsParams, authInfo runtime.ClientAuthInfoWriter) (*GetAdminsOK, error) {
+func (a *Client) GetAdmins(params *GetAdminsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAdminsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetAdminsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getAdmins",
 		Method:             "GET",
 		PathPattern:        "/api/v1/admin",
@@ -143,7 +153,12 @@ func (a *Client) GetAdmins(params *GetAdminsParams, authInfo runtime.ClientAuthI
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -159,13 +174,12 @@ func (a *Client) GetAdmins(params *GetAdminsParams, authInfo runtime.ClientAuthI
 /*
   GetAdmissionPlugin gets the admission plugin
 */
-func (a *Client) GetAdmissionPlugin(params *GetAdmissionPluginParams, authInfo runtime.ClientAuthInfoWriter) (*GetAdmissionPluginOK, error) {
+func (a *Client) GetAdmissionPlugin(params *GetAdmissionPluginParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAdmissionPluginOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetAdmissionPluginParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getAdmissionPlugin",
 		Method:             "GET",
 		PathPattern:        "/api/v1/admin/admission/plugins/{name}",
@@ -177,7 +191,12 @@ func (a *Client) GetAdmissionPlugin(params *GetAdmissionPluginParams, authInfo r
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -193,13 +212,12 @@ func (a *Client) GetAdmissionPlugin(params *GetAdmissionPluginParams, authInfo r
 /*
   GetKubermaticCustomLinks gets the custom links
 */
-func (a *Client) GetKubermaticCustomLinks(params *GetKubermaticCustomLinksParams, authInfo runtime.ClientAuthInfoWriter) (*GetKubermaticCustomLinksOK, error) {
+func (a *Client) GetKubermaticCustomLinks(params *GetKubermaticCustomLinksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetKubermaticCustomLinksOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetKubermaticCustomLinksParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getKubermaticCustomLinks",
 		Method:             "GET",
 		PathPattern:        "/api/v1/admin/settings/customlinks",
@@ -211,7 +229,12 @@ func (a *Client) GetKubermaticCustomLinks(params *GetKubermaticCustomLinksParams
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -227,13 +250,12 @@ func (a *Client) GetKubermaticCustomLinks(params *GetKubermaticCustomLinksParams
 /*
   GetKubermaticSettings gets the global settings
 */
-func (a *Client) GetKubermaticSettings(params *GetKubermaticSettingsParams, authInfo runtime.ClientAuthInfoWriter) (*GetKubermaticSettingsOK, error) {
+func (a *Client) GetKubermaticSettings(params *GetKubermaticSettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetKubermaticSettingsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetKubermaticSettingsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getKubermaticSettings",
 		Method:             "GET",
 		PathPattern:        "/api/v1/admin/settings",
@@ -245,7 +267,12 @@ func (a *Client) GetKubermaticSettings(params *GetKubermaticSettingsParams, auth
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -261,13 +288,12 @@ func (a *Client) GetKubermaticSettings(params *GetKubermaticSettingsParams, auth
 /*
   GetSeed returns the seed object
 */
-func (a *Client) GetSeed(params *GetSeedParams, authInfo runtime.ClientAuthInfoWriter) (*GetSeedOK, error) {
+func (a *Client) GetSeed(params *GetSeedParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetSeedOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetSeedParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getSeed",
 		Method:             "GET",
 		PathPattern:        "/api/v1/admin/seeds/{seed_name}",
@@ -279,7 +305,12 @@ func (a *Client) GetSeed(params *GetSeedParams, authInfo runtime.ClientAuthInfoW
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -295,13 +326,12 @@ func (a *Client) GetSeed(params *GetSeedParams, authInfo runtime.ClientAuthInfoW
 /*
   ListAdmissionPlugins returns all admission plugins from the c r ds
 */
-func (a *Client) ListAdmissionPlugins(params *ListAdmissionPluginsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAdmissionPluginsOK, error) {
+func (a *Client) ListAdmissionPlugins(params *ListAdmissionPluginsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAdmissionPluginsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListAdmissionPluginsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listAdmissionPlugins",
 		Method:             "GET",
 		PathPattern:        "/api/v1/admin/admission/plugins",
@@ -313,7 +343,12 @@ func (a *Client) ListAdmissionPlugins(params *ListAdmissionPluginsParams, authIn
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -329,13 +364,12 @@ func (a *Client) ListAdmissionPlugins(params *ListAdmissionPluginsParams, authIn
 /*
   ListSeeds returns all seeds from the c r ds
 */
-func (a *Client) ListSeeds(params *ListSeedsParams, authInfo runtime.ClientAuthInfoWriter) (*ListSeedsOK, error) {
+func (a *Client) ListSeeds(params *ListSeedsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListSeedsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListSeedsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listSeeds",
 		Method:             "GET",
 		PathPattern:        "/api/v1/admin/seeds",
@@ -347,7 +381,12 @@ func (a *Client) ListSeeds(params *ListSeedsParams, authInfo runtime.ClientAuthI
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -363,13 +402,12 @@ func (a *Client) ListSeeds(params *ListSeedsParams, authInfo runtime.ClientAuthI
 /*
   PatchKubermaticSettings patches the global settings
 */
-func (a *Client) PatchKubermaticSettings(params *PatchKubermaticSettingsParams, authInfo runtime.ClientAuthInfoWriter) (*PatchKubermaticSettingsOK, error) {
+func (a *Client) PatchKubermaticSettings(params *PatchKubermaticSettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchKubermaticSettingsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewPatchKubermaticSettingsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "patchKubermaticSettings",
 		Method:             "PATCH",
 		PathPattern:        "/api/v1/admin/settings",
@@ -381,7 +419,12 @@ func (a *Client) PatchKubermaticSettings(params *PatchKubermaticSettingsParams, 
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -397,13 +440,12 @@ func (a *Client) PatchKubermaticSettings(params *PatchKubermaticSettingsParams, 
 /*
   SetAdmin allows setting and clearing admin role for users
 */
-func (a *Client) SetAdmin(params *SetAdminParams, authInfo runtime.ClientAuthInfoWriter) (*SetAdminOK, error) {
+func (a *Client) SetAdmin(params *SetAdminParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SetAdminOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewSetAdminParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "setAdmin",
 		Method:             "PUT",
 		PathPattern:        "/api/v1/admin",
@@ -415,7 +457,12 @@ func (a *Client) SetAdmin(params *SetAdminParams, authInfo runtime.ClientAuthInf
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -431,13 +478,12 @@ func (a *Client) SetAdmin(params *SetAdminParams, authInfo runtime.ClientAuthInf
 /*
   UpdateAdmissionPlugin updates the admission plugin
 */
-func (a *Client) UpdateAdmissionPlugin(params *UpdateAdmissionPluginParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateAdmissionPluginOK, error) {
+func (a *Client) UpdateAdmissionPlugin(params *UpdateAdmissionPluginParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateAdmissionPluginOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewUpdateAdmissionPluginParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "updateAdmissionPlugin",
 		Method:             "PATCH",
 		PathPattern:        "/api/v1/admin/admission/plugins/{name}",
@@ -449,7 +495,12 @@ func (a *Client) UpdateAdmissionPlugin(params *UpdateAdmissionPluginParams, auth
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -465,13 +516,12 @@ func (a *Client) UpdateAdmissionPlugin(params *UpdateAdmissionPluginParams, auth
 /*
   UpdateSeed updates the seed
 */
-func (a *Client) UpdateSeed(params *UpdateSeedParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateSeedOK, error) {
+func (a *Client) UpdateSeed(params *UpdateSeedParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateSeedOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewUpdateSeedParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "updateSeed",
 		Method:             "PATCH",
 		PathPattern:        "/api/v1/admin/seeds/{seed_name}",
@@ -483,7 +533,12 @@ func (a *Client) UpdateSeed(params *UpdateSeedParams, authInfo runtime.ClientAut
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

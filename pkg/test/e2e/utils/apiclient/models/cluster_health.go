@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -91,7 +93,6 @@ func (m *ClusterHealth) Validate(formats strfmt.Registry) error {
 }
 
 func (m *ClusterHealth) validateApiserver(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Apiserver) { // not required
 		return nil
 	}
@@ -107,7 +108,6 @@ func (m *ClusterHealth) validateApiserver(formats strfmt.Registry) error {
 }
 
 func (m *ClusterHealth) validateCloudProviderInfrastructure(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.CloudProviderInfrastructure) { // not required
 		return nil
 	}
@@ -123,7 +123,6 @@ func (m *ClusterHealth) validateCloudProviderInfrastructure(formats strfmt.Regis
 }
 
 func (m *ClusterHealth) validateController(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Controller) { // not required
 		return nil
 	}
@@ -139,7 +138,6 @@ func (m *ClusterHealth) validateController(formats strfmt.Registry) error {
 }
 
 func (m *ClusterHealth) validateEtcd(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Etcd) { // not required
 		return nil
 	}
@@ -155,7 +153,6 @@ func (m *ClusterHealth) validateEtcd(formats strfmt.Registry) error {
 }
 
 func (m *ClusterHealth) validateGatekeeperAudit(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.GatekeeperAudit) { // not required
 		return nil
 	}
@@ -171,7 +168,6 @@ func (m *ClusterHealth) validateGatekeeperAudit(formats strfmt.Registry) error {
 }
 
 func (m *ClusterHealth) validateGatekeeperController(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.GatekeeperController) { // not required
 		return nil
 	}
@@ -187,7 +183,6 @@ func (m *ClusterHealth) validateGatekeeperController(formats strfmt.Registry) er
 }
 
 func (m *ClusterHealth) validateMachineController(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.MachineController) { // not required
 		return nil
 	}
@@ -203,7 +198,6 @@ func (m *ClusterHealth) validateMachineController(formats strfmt.Registry) error
 }
 
 func (m *ClusterHealth) validateScheduler(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Scheduler) { // not required
 		return nil
 	}
@@ -219,12 +213,165 @@ func (m *ClusterHealth) validateScheduler(formats strfmt.Registry) error {
 }
 
 func (m *ClusterHealth) validateUserClusterControllerManager(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.UserClusterControllerManager) { // not required
 		return nil
 	}
 
 	if err := m.UserClusterControllerManager.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("userClusterControllerManager")
+		}
+		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this cluster health based on the context it is used
+func (m *ClusterHealth) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateApiserver(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateCloudProviderInfrastructure(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateController(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateEtcd(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateGatekeeperAudit(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateGatekeeperController(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateMachineController(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateScheduler(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateUserClusterControllerManager(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *ClusterHealth) contextValidateApiserver(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.Apiserver.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("apiserver")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) contextValidateCloudProviderInfrastructure(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.CloudProviderInfrastructure.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("cloudProviderInfrastructure")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) contextValidateController(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.Controller.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("controller")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) contextValidateEtcd(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.Etcd.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("etcd")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) contextValidateGatekeeperAudit(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.GatekeeperAudit.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("gatekeeperAudit")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) contextValidateGatekeeperController(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.GatekeeperController.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("gatekeeperController")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) contextValidateMachineController(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.MachineController.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("machineController")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) contextValidateScheduler(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.Scheduler.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("scheduler")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) contextValidateUserClusterControllerManager(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.UserClusterControllerManager.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("userClusterControllerManager")
 		}

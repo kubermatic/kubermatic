@@ -58,7 +58,7 @@ func NewGetAlertmanagerOK() *GetAlertmanagerOK {
 	return &GetAlertmanagerOK{}
 }
 
-/*GetAlertmanagerOK handles this case with default header values.
+/* GetAlertmanagerOK describes a response with status code 200, with default header values.
 
 Alertmanager
 */
@@ -69,7 +69,6 @@ type GetAlertmanagerOK struct {
 func (o *GetAlertmanagerOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config][%d] getAlertmanagerOK  %+v", 200, o.Payload)
 }
-
 func (o *GetAlertmanagerOK) GetPayload() *models.Alertmanager {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewGetAlertmanagerUnauthorized() *GetAlertmanagerUnauthorized {
 	return &GetAlertmanagerUnauthorized{}
 }
 
-/*GetAlertmanagerUnauthorized handles this case with default header values.
+/* GetAlertmanagerUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewGetAlertmanagerForbidden() *GetAlertmanagerForbidden {
 	return &GetAlertmanagerForbidden{}
 }
 
-/*GetAlertmanagerForbidden handles this case with default header values.
+/* GetAlertmanagerForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewGetAlertmanagerDefault(code int) *GetAlertmanagerDefault {
 	}
 }
 
-/*GetAlertmanagerDefault handles this case with default header values.
+/* GetAlertmanagerDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *GetAlertmanagerDefault) Code() int {
 func (o *GetAlertmanagerDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config][%d] getAlertmanager default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetAlertmanagerDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

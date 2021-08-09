@@ -70,7 +70,7 @@ func NewUpdateProjectOK() *UpdateProjectOK {
 	return &UpdateProjectOK{}
 }
 
-/*UpdateProjectOK handles this case with default header values.
+/* UpdateProjectOK describes a response with status code 200, with default header values.
 
 Project
 */
@@ -81,7 +81,6 @@ type UpdateProjectOK struct {
 func (o *UpdateProjectOK) Error() string {
 	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}][%d] updateProjectOK  %+v", 200, o.Payload)
 }
-
 func (o *UpdateProjectOK) GetPayload() *models.Project {
 	return o.Payload
 }
@@ -103,7 +102,7 @@ func NewUpdateProjectBadRequest() *UpdateProjectBadRequest {
 	return &UpdateProjectBadRequest{}
 }
 
-/*UpdateProjectBadRequest handles this case with default header values.
+/* UpdateProjectBadRequest describes a response with status code 400, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -124,7 +123,7 @@ func NewUpdateProjectNotFound() *UpdateProjectNotFound {
 	return &UpdateProjectNotFound{}
 }
 
-/*UpdateProjectNotFound handles this case with default header values.
+/* UpdateProjectNotFound describes a response with status code 404, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -145,7 +144,7 @@ func NewUpdateProjectInternalServerError() *UpdateProjectInternalServerError {
 	return &UpdateProjectInternalServerError{}
 }
 
-/*UpdateProjectInternalServerError handles this case with default header values.
+/* UpdateProjectInternalServerError describes a response with status code 500, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -166,7 +165,7 @@ func NewUpdateProjectNotImplemented() *UpdateProjectNotImplemented {
 	return &UpdateProjectNotImplemented{}
 }
 
-/*UpdateProjectNotImplemented handles this case with default header values.
+/* UpdateProjectNotImplemented describes a response with status code 501, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -189,7 +188,7 @@ func NewUpdateProjectDefault(code int) *UpdateProjectDefault {
 	}
 }
 
-/*UpdateProjectDefault handles this case with default header values.
+/* UpdateProjectDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -207,7 +206,6 @@ func (o *UpdateProjectDefault) Code() int {
 func (o *UpdateProjectDefault) Error() string {
 	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}][%d] updateProject default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *UpdateProjectDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

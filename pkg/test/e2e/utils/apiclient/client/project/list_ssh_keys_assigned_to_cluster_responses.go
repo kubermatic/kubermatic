@@ -58,7 +58,7 @@ func NewListSSHKeysAssignedToClusterOK() *ListSSHKeysAssignedToClusterOK {
 	return &ListSSHKeysAssignedToClusterOK{}
 }
 
-/*ListSSHKeysAssignedToClusterOK handles this case with default header values.
+/* ListSSHKeysAssignedToClusterOK describes a response with status code 200, with default header values.
 
 SSHKey
 */
@@ -69,7 +69,6 @@ type ListSSHKeysAssignedToClusterOK struct {
 func (o *ListSSHKeysAssignedToClusterOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys][%d] listSshKeysAssignedToClusterOK  %+v", 200, o.Payload)
 }
-
 func (o *ListSSHKeysAssignedToClusterOK) GetPayload() []*models.SSHKey {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListSSHKeysAssignedToClusterUnauthorized() *ListSSHKeysAssignedToCluster
 	return &ListSSHKeysAssignedToClusterUnauthorized{}
 }
 
-/*ListSSHKeysAssignedToClusterUnauthorized handles this case with default header values.
+/* ListSSHKeysAssignedToClusterUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListSSHKeysAssignedToClusterForbidden() *ListSSHKeysAssignedToClusterFor
 	return &ListSSHKeysAssignedToClusterForbidden{}
 }
 
-/*ListSSHKeysAssignedToClusterForbidden handles this case with default header values.
+/* ListSSHKeysAssignedToClusterForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListSSHKeysAssignedToClusterDefault(code int) *ListSSHKeysAssignedToClus
 	}
 }
 
-/*ListSSHKeysAssignedToClusterDefault handles this case with default header values.
+/* ListSSHKeysAssignedToClusterDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListSSHKeysAssignedToClusterDefault) Code() int {
 func (o *ListSSHKeysAssignedToClusterDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys][%d] listSSHKeysAssignedToCluster default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListSSHKeysAssignedToClusterDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

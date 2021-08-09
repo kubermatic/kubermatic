@@ -16,66 +16,85 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewPatchRoleParams creates a new PatchRoleParams object
-// with the default values initialized.
+// NewPatchRoleParams creates a new PatchRoleParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewPatchRoleParams() *PatchRoleParams {
-	var ()
 	return &PatchRoleParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewPatchRoleParamsWithTimeout creates a new PatchRoleParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewPatchRoleParamsWithTimeout(timeout time.Duration) *PatchRoleParams {
-	var ()
 	return &PatchRoleParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewPatchRoleParamsWithContext creates a new PatchRoleParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewPatchRoleParamsWithContext(ctx context.Context) *PatchRoleParams {
-	var ()
 	return &PatchRoleParams{
-
 		Context: ctx,
 	}
 }
 
 // NewPatchRoleParamsWithHTTPClient creates a new PatchRoleParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewPatchRoleParamsWithHTTPClient(client *http.Client) *PatchRoleParams {
-	var ()
 	return &PatchRoleParams{
 		HTTPClient: client,
 	}
 }
 
-/*PatchRoleParams contains all the parameters to send to the API endpoint
-for the patch role operation typically these are written to a http.Request
+/* PatchRoleParams contains all the parameters to send to the API endpoint
+   for the patch role operation.
+
+   Typically these are written to a http.Request.
 */
 type PatchRoleParams struct {
 
-	/*Patch*/
+	// Patch.
 	Patch interface{}
-	/*ClusterID*/
+
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*Namespace*/
+
+	// Namespace.
 	Namespace string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
-	/*RoleID*/
+
+	// RoleID.
 	RoleID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the patch role params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *PatchRoleParams) WithDefaults() *PatchRoleParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the patch role params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *PatchRoleParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the patch role params
@@ -184,7 +203,6 @@ func (o *PatchRoleParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Reg
 		return err
 	}
 	var res []error
-
 	if o.Patch != nil {
 		if err := r.SetBodyParam(o.Patch); err != nil {
 			return err

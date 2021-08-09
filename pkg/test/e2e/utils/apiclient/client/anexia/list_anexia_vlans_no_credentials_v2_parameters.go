@@ -16,58 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListAnexiaVlansNoCredentialsV2Params creates a new ListAnexiaVlansNoCredentialsV2Params object
-// with the default values initialized.
+// NewListAnexiaVlansNoCredentialsV2Params creates a new ListAnexiaVlansNoCredentialsV2Params object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListAnexiaVlansNoCredentialsV2Params() *ListAnexiaVlansNoCredentialsV2Params {
-	var ()
 	return &ListAnexiaVlansNoCredentialsV2Params{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListAnexiaVlansNoCredentialsV2ParamsWithTimeout creates a new ListAnexiaVlansNoCredentialsV2Params object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListAnexiaVlansNoCredentialsV2ParamsWithTimeout(timeout time.Duration) *ListAnexiaVlansNoCredentialsV2Params {
-	var ()
 	return &ListAnexiaVlansNoCredentialsV2Params{
-
 		timeout: timeout,
 	}
 }
 
 // NewListAnexiaVlansNoCredentialsV2ParamsWithContext creates a new ListAnexiaVlansNoCredentialsV2Params object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListAnexiaVlansNoCredentialsV2ParamsWithContext(ctx context.Context) *ListAnexiaVlansNoCredentialsV2Params {
-	var ()
 	return &ListAnexiaVlansNoCredentialsV2Params{
-
 		Context: ctx,
 	}
 }
 
 // NewListAnexiaVlansNoCredentialsV2ParamsWithHTTPClient creates a new ListAnexiaVlansNoCredentialsV2Params object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListAnexiaVlansNoCredentialsV2ParamsWithHTTPClient(client *http.Client) *ListAnexiaVlansNoCredentialsV2Params {
-	var ()
 	return &ListAnexiaVlansNoCredentialsV2Params{
 		HTTPClient: client,
 	}
 }
 
-/*ListAnexiaVlansNoCredentialsV2Params contains all the parameters to send to the API endpoint
-for the list anexia vlans no credentials v2 operation typically these are written to a http.Request
+/* ListAnexiaVlansNoCredentialsV2Params contains all the parameters to send to the API endpoint
+   for the list anexia vlans no credentials v2 operation.
+
+   Typically these are written to a http.Request.
 */
 type ListAnexiaVlansNoCredentialsV2Params struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list anexia vlans no credentials v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAnexiaVlansNoCredentialsV2Params) WithDefaults() *ListAnexiaVlansNoCredentialsV2Params {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list anexia vlans no credentials v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAnexiaVlansNoCredentialsV2Params) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list anexia vlans no credentials v2 params

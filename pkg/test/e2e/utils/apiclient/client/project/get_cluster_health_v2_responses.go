@@ -58,7 +58,7 @@ func NewGetClusterHealthV2OK() *GetClusterHealthV2OK {
 	return &GetClusterHealthV2OK{}
 }
 
-/*GetClusterHealthV2OK handles this case with default header values.
+/* GetClusterHealthV2OK describes a response with status code 200, with default header values.
 
 ClusterHealth
 */
@@ -69,7 +69,6 @@ type GetClusterHealthV2OK struct {
 func (o *GetClusterHealthV2OK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/health][%d] getClusterHealthV2OK  %+v", 200, o.Payload)
 }
-
 func (o *GetClusterHealthV2OK) GetPayload() *models.ClusterHealth {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewGetClusterHealthV2Unauthorized() *GetClusterHealthV2Unauthorized {
 	return &GetClusterHealthV2Unauthorized{}
 }
 
-/*GetClusterHealthV2Unauthorized handles this case with default header values.
+/* GetClusterHealthV2Unauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewGetClusterHealthV2Forbidden() *GetClusterHealthV2Forbidden {
 	return &GetClusterHealthV2Forbidden{}
 }
 
-/*GetClusterHealthV2Forbidden handles this case with default header values.
+/* GetClusterHealthV2Forbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewGetClusterHealthV2Default(code int) *GetClusterHealthV2Default {
 	}
 }
 
-/*GetClusterHealthV2Default handles this case with default header values.
+/* GetClusterHealthV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *GetClusterHealthV2Default) Code() int {
 func (o *GetClusterHealthV2Default) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/health][%d] getClusterHealthV2 default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetClusterHealthV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

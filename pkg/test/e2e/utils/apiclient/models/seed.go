@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -81,7 +83,6 @@ func (m *Seed) Validate(formats strfmt.Registry) error {
 }
 
 func (m *Seed) validateSeedDatacenters(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.SeedDatacenters) { // not required
 		return nil
 	}
@@ -103,7 +104,6 @@ func (m *Seed) validateSeedDatacenters(formats strfmt.Registry) error {
 }
 
 func (m *Seed) validateExposeStrategy(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ExposeStrategy) { // not required
 		return nil
 	}
@@ -119,7 +119,6 @@ func (m *Seed) validateExposeStrategy(formats strfmt.Registry) error {
 }
 
 func (m *Seed) validateKubeconfig(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Kubeconfig) { // not required
 		return nil
 	}
@@ -137,7 +136,6 @@ func (m *Seed) validateKubeconfig(formats strfmt.Registry) error {
 }
 
 func (m *Seed) validateMla(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Mla) { // not required
 		return nil
 	}
@@ -155,13 +153,111 @@ func (m *Seed) validateMla(formats strfmt.Registry) error {
 }
 
 func (m *Seed) validateProxySettings(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ProxySettings) { // not required
 		return nil
 	}
 
 	if m.ProxySettings != nil {
 		if err := m.ProxySettings.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("proxy_settings")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this seed based on the context it is used
+func (m *Seed) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateSeedDatacenters(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateExposeStrategy(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateKubeconfig(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateMla(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateProxySettings(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *Seed) contextValidateSeedDatacenters(ctx context.Context, formats strfmt.Registry) error {
+
+	for k := range m.SeedDatacenters {
+
+		if val, ok := m.SeedDatacenters[k]; ok {
+			if err := val.ContextValidate(ctx, formats); err != nil {
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *Seed) contextValidateExposeStrategy(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.ExposeStrategy.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("expose_strategy")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *Seed) contextValidateKubeconfig(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Kubeconfig != nil {
+		if err := m.Kubeconfig.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("kubeconfig")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *Seed) contextValidateMla(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Mla != nil {
+		if err := m.Mla.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("mla")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *Seed) contextValidateProxySettings(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.ProxySettings != nil {
+		if err := m.ProxySettings.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("proxy_settings")
 			}

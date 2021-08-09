@@ -16,56 +16,70 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetAdmissionPluginParams creates a new GetAdmissionPluginParams object
-// with the default values initialized.
+// NewGetAdmissionPluginParams creates a new GetAdmissionPluginParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetAdmissionPluginParams() *GetAdmissionPluginParams {
-	var ()
 	return &GetAdmissionPluginParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetAdmissionPluginParamsWithTimeout creates a new GetAdmissionPluginParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetAdmissionPluginParamsWithTimeout(timeout time.Duration) *GetAdmissionPluginParams {
-	var ()
 	return &GetAdmissionPluginParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetAdmissionPluginParamsWithContext creates a new GetAdmissionPluginParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetAdmissionPluginParamsWithContext(ctx context.Context) *GetAdmissionPluginParams {
-	var ()
 	return &GetAdmissionPluginParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetAdmissionPluginParamsWithHTTPClient creates a new GetAdmissionPluginParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetAdmissionPluginParamsWithHTTPClient(client *http.Client) *GetAdmissionPluginParams {
-	var ()
 	return &GetAdmissionPluginParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetAdmissionPluginParams contains all the parameters to send to the API endpoint
-for the get admission plugin operation typically these are written to a http.Request
+/* GetAdmissionPluginParams contains all the parameters to send to the API endpoint
+   for the get admission plugin operation.
+
+   Typically these are written to a http.Request.
 */
 type GetAdmissionPluginParams struct {
 
-	/*Name*/
+	// Name.
 	Name string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get admission plugin params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetAdmissionPluginParams) WithDefaults() *GetAdmissionPluginParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get admission plugin params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetAdmissionPluginParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get admission plugin params

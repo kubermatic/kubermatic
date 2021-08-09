@@ -58,7 +58,7 @@ func NewDeleteDCOK() *DeleteDCOK {
 	return &DeleteDCOK{}
 }
 
-/*DeleteDCOK handles this case with default header values.
+/* DeleteDCOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -79,7 +79,7 @@ func NewDeleteDCUnauthorized() *DeleteDCUnauthorized {
 	return &DeleteDCUnauthorized{}
 }
 
-/*DeleteDCUnauthorized handles this case with default header values.
+/* DeleteDCUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -100,7 +100,7 @@ func NewDeleteDCForbidden() *DeleteDCForbidden {
 	return &DeleteDCForbidden{}
 }
 
-/*DeleteDCForbidden handles this case with default header values.
+/* DeleteDCForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -123,7 +123,7 @@ func NewDeleteDCDefault(code int) *DeleteDCDefault {
 	}
 }
 
-/*DeleteDCDefault handles this case with default header values.
+/* DeleteDCDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -141,7 +141,6 @@ func (o *DeleteDCDefault) Code() int {
 func (o *DeleteDCDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/seed/{seed_name}/dc/{dc}][%d] deleteDC default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *DeleteDCDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

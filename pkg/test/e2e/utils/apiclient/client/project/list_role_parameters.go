@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListRoleParams creates a new ListRoleParams object
-// with the default values initialized.
+// NewListRoleParams creates a new ListRoleParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListRoleParams() *ListRoleParams {
-	var ()
 	return &ListRoleParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListRoleParamsWithTimeout creates a new ListRoleParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListRoleParamsWithTimeout(timeout time.Duration) *ListRoleParams {
-	var ()
 	return &ListRoleParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListRoleParamsWithContext creates a new ListRoleParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListRoleParamsWithContext(ctx context.Context) *ListRoleParams {
-	var ()
 	return &ListRoleParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListRoleParamsWithHTTPClient creates a new ListRoleParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListRoleParamsWithHTTPClient(client *http.Client) *ListRoleParams {
-	var ()
 	return &ListRoleParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListRoleParams contains all the parameters to send to the API endpoint
-for the list role operation typically these are written to a http.Request
+/* ListRoleParams contains all the parameters to send to the API endpoint
+   for the list role operation.
+
+   Typically these are written to a http.Request.
 */
 type ListRoleParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list role params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListRoleParams) WithDefaults() *ListRoleParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list role params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListRoleParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list role params

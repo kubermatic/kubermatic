@@ -16,58 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewDeleteUserFromProjectParams creates a new DeleteUserFromProjectParams object
-// with the default values initialized.
+// NewDeleteUserFromProjectParams creates a new DeleteUserFromProjectParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewDeleteUserFromProjectParams() *DeleteUserFromProjectParams {
-	var ()
 	return &DeleteUserFromProjectParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewDeleteUserFromProjectParamsWithTimeout creates a new DeleteUserFromProjectParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewDeleteUserFromProjectParamsWithTimeout(timeout time.Duration) *DeleteUserFromProjectParams {
-	var ()
 	return &DeleteUserFromProjectParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewDeleteUserFromProjectParamsWithContext creates a new DeleteUserFromProjectParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewDeleteUserFromProjectParamsWithContext(ctx context.Context) *DeleteUserFromProjectParams {
-	var ()
 	return &DeleteUserFromProjectParams{
-
 		Context: ctx,
 	}
 }
 
 // NewDeleteUserFromProjectParamsWithHTTPClient creates a new DeleteUserFromProjectParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewDeleteUserFromProjectParamsWithHTTPClient(client *http.Client) *DeleteUserFromProjectParams {
-	var ()
 	return &DeleteUserFromProjectParams{
 		HTTPClient: client,
 	}
 }
 
-/*DeleteUserFromProjectParams contains all the parameters to send to the API endpoint
-for the delete user from project operation typically these are written to a http.Request
+/* DeleteUserFromProjectParams contains all the parameters to send to the API endpoint
+   for the delete user from project operation.
+
+   Typically these are written to a http.Request.
 */
 type DeleteUserFromProjectParams struct {
 
-	/*ProjectID*/
+	// ProjectID.
 	ProjectID string
-	/*UserID*/
+
+	// UserID.
 	UserID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the delete user from project params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DeleteUserFromProjectParams) WithDefaults() *DeleteUserFromProjectParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the delete user from project params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DeleteUserFromProjectParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the delete user from project params

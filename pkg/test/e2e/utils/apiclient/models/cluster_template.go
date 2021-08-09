@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -57,7 +59,6 @@ func (m *ClusterTemplate) Validate(formats strfmt.Registry) error {
 }
 
 func (m *ClusterTemplate) validateCluster(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Cluster) { // not required
 		return nil
 	}
@@ -75,13 +76,58 @@ func (m *ClusterTemplate) validateCluster(formats strfmt.Registry) error {
 }
 
 func (m *ClusterTemplate) validateNodeDeployment(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.NodeDeployment) { // not required
 		return nil
 	}
 
 	if m.NodeDeployment != nil {
 		if err := m.NodeDeployment.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("nodeDeployment")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this cluster template based on the context it is used
+func (m *ClusterTemplate) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateCluster(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateNodeDeployment(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *ClusterTemplate) contextValidateCluster(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Cluster != nil {
+		if err := m.Cluster.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("cluster")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ClusterTemplate) contextValidateNodeDeployment(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.NodeDeployment != nil {
+		if err := m.NodeDeployment.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("nodeDeployment")
 			}

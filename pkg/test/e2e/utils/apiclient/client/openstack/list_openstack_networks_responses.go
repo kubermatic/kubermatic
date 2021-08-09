@@ -46,7 +46,7 @@ func NewListOpenstackNetworksOK() *ListOpenstackNetworksOK {
 	return &ListOpenstackNetworksOK{}
 }
 
-/*ListOpenstackNetworksOK handles this case with default header values.
+/* ListOpenstackNetworksOK describes a response with status code 200, with default header values.
 
 OpenstackNetwork
 */
@@ -57,7 +57,6 @@ type ListOpenstackNetworksOK struct {
 func (o *ListOpenstackNetworksOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/openstack/networks][%d] listOpenstackNetworksOK  %+v", 200, o.Payload)
 }
-
 func (o *ListOpenstackNetworksOK) GetPayload() []*models.OpenstackNetwork {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListOpenstackNetworksDefault(code int) *ListOpenstackNetworksDefault {
 	}
 }
 
-/*ListOpenstackNetworksDefault handles this case with default header values.
+/* ListOpenstackNetworksDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListOpenstackNetworksDefault) Code() int {
 func (o *ListOpenstackNetworksDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/openstack/networks][%d] listOpenstackNetworks default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListOpenstackNetworksDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -58,7 +58,7 @@ func NewGetAdminsOK() *GetAdminsOK {
 	return &GetAdminsOK{}
 }
 
-/*GetAdminsOK handles this case with default header values.
+/* GetAdminsOK describes a response with status code 200, with default header values.
 
 Admin
 */
@@ -69,7 +69,6 @@ type GetAdminsOK struct {
 func (o *GetAdminsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/admin][%d] getAdminsOK  %+v", 200, o.Payload)
 }
-
 func (o *GetAdminsOK) GetPayload() []*models.Admin {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewGetAdminsUnauthorized() *GetAdminsUnauthorized {
 	return &GetAdminsUnauthorized{}
 }
 
-/*GetAdminsUnauthorized handles this case with default header values.
+/* GetAdminsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewGetAdminsForbidden() *GetAdminsForbidden {
 	return &GetAdminsForbidden{}
 }
 
-/*GetAdminsForbidden handles this case with default header values.
+/* GetAdminsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewGetAdminsDefault(code int) *GetAdminsDefault {
 	}
 }
 
-/*GetAdminsDefault handles this case with default header values.
+/* GetAdminsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *GetAdminsDefault) Code() int {
 func (o *GetAdminsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/admin][%d] getAdmins default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetAdminsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

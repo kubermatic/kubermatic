@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListClusterRoleBindingParams creates a new ListClusterRoleBindingParams object
-// with the default values initialized.
+// NewListClusterRoleBindingParams creates a new ListClusterRoleBindingParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListClusterRoleBindingParams() *ListClusterRoleBindingParams {
-	var ()
 	return &ListClusterRoleBindingParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListClusterRoleBindingParamsWithTimeout creates a new ListClusterRoleBindingParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListClusterRoleBindingParamsWithTimeout(timeout time.Duration) *ListClusterRoleBindingParams {
-	var ()
 	return &ListClusterRoleBindingParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListClusterRoleBindingParamsWithContext creates a new ListClusterRoleBindingParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListClusterRoleBindingParamsWithContext(ctx context.Context) *ListClusterRoleBindingParams {
-	var ()
 	return &ListClusterRoleBindingParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListClusterRoleBindingParamsWithHTTPClient creates a new ListClusterRoleBindingParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListClusterRoleBindingParamsWithHTTPClient(client *http.Client) *ListClusterRoleBindingParams {
-	var ()
 	return &ListClusterRoleBindingParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListClusterRoleBindingParams contains all the parameters to send to the API endpoint
-for the list cluster role binding operation typically these are written to a http.Request
+/* ListClusterRoleBindingParams contains all the parameters to send to the API endpoint
+   for the list cluster role binding operation.
+
+   Typically these are written to a http.Request.
 */
 type ListClusterRoleBindingParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list cluster role binding params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListClusterRoleBindingParams) WithDefaults() *ListClusterRoleBindingParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list cluster role binding params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListClusterRoleBindingParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list cluster role binding params

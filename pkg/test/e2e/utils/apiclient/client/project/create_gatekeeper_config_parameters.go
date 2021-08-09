@@ -18,60 +18,76 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
-// NewCreateGatekeeperConfigParams creates a new CreateGatekeeperConfigParams object
-// with the default values initialized.
+// NewCreateGatekeeperConfigParams creates a new CreateGatekeeperConfigParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewCreateGatekeeperConfigParams() *CreateGatekeeperConfigParams {
-	var ()
 	return &CreateGatekeeperConfigParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewCreateGatekeeperConfigParamsWithTimeout creates a new CreateGatekeeperConfigParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewCreateGatekeeperConfigParamsWithTimeout(timeout time.Duration) *CreateGatekeeperConfigParams {
-	var ()
 	return &CreateGatekeeperConfigParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewCreateGatekeeperConfigParamsWithContext creates a new CreateGatekeeperConfigParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewCreateGatekeeperConfigParamsWithContext(ctx context.Context) *CreateGatekeeperConfigParams {
-	var ()
 	return &CreateGatekeeperConfigParams{
-
 		Context: ctx,
 	}
 }
 
 // NewCreateGatekeeperConfigParamsWithHTTPClient creates a new CreateGatekeeperConfigParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewCreateGatekeeperConfigParamsWithHTTPClient(client *http.Client) *CreateGatekeeperConfigParams {
-	var ()
 	return &CreateGatekeeperConfigParams{
 		HTTPClient: client,
 	}
 }
 
-/*CreateGatekeeperConfigParams contains all the parameters to send to the API endpoint
-for the create gatekeeper config operation typically these are written to a http.Request
+/* CreateGatekeeperConfigParams contains all the parameters to send to the API endpoint
+   for the create gatekeeper config operation.
+
+   Typically these are written to a http.Request.
 */
 type CreateGatekeeperConfigParams struct {
 
-	/*Body*/
+	// Body.
 	Body *models.GatekeeperConfig
-	/*ClusterID*/
+
+	// ClusterID.
 	ClusterID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the create gatekeeper config params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *CreateGatekeeperConfigParams) WithDefaults() *CreateGatekeeperConfigParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the create gatekeeper config params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *CreateGatekeeperConfigParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the create gatekeeper config params
@@ -147,7 +163,6 @@ func (o *CreateGatekeeperConfigParams) WriteToRequest(r runtime.ClientRequest, r
 		return err
 	}
 	var res []error
-
 	if o.Body != nil {
 		if err := r.SetBodyParam(o.Body); err != nil {
 			return err

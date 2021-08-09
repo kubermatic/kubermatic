@@ -58,7 +58,7 @@ func NewGetClusterTemplateOK() *GetClusterTemplateOK {
 	return &GetClusterTemplateOK{}
 }
 
-/*GetClusterTemplateOK handles this case with default header values.
+/* GetClusterTemplateOK describes a response with status code 200, with default header values.
 
 ClusterTemplate
 */
@@ -69,7 +69,6 @@ type GetClusterTemplateOK struct {
 func (o *GetClusterTemplateOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clustertemplates/{template_id}][%d] getClusterTemplateOK  %+v", 200, o.Payload)
 }
-
 func (o *GetClusterTemplateOK) GetPayload() *models.ClusterTemplate {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewGetClusterTemplateUnauthorized() *GetClusterTemplateUnauthorized {
 	return &GetClusterTemplateUnauthorized{}
 }
 
-/*GetClusterTemplateUnauthorized handles this case with default header values.
+/* GetClusterTemplateUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewGetClusterTemplateForbidden() *GetClusterTemplateForbidden {
 	return &GetClusterTemplateForbidden{}
 }
 
-/*GetClusterTemplateForbidden handles this case with default header values.
+/* GetClusterTemplateForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewGetClusterTemplateDefault(code int) *GetClusterTemplateDefault {
 	}
 }
 
-/*GetClusterTemplateDefault handles this case with default header values.
+/* GetClusterTemplateDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *GetClusterTemplateDefault) Code() int {
 func (o *GetClusterTemplateDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clustertemplates/{template_id}][%d] getClusterTemplate default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetClusterTemplateDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

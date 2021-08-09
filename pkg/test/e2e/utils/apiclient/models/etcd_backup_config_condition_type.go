@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/strfmt"
 )
 
@@ -18,5 +20,10 @@ type EtcdBackupConfigConditionType string
 
 // Validate validates this etcd backup config condition type
 func (m EtcdBackupConfigConditionType) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this etcd backup config condition type based on context it is used
+func (m EtcdBackupConfigConditionType) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }

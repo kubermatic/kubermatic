@@ -46,7 +46,7 @@ func NewListAzureAvailabilityZonesOK() *ListAzureAvailabilityZonesOK {
 	return &ListAzureAvailabilityZonesOK{}
 }
 
-/*ListAzureAvailabilityZonesOK handles this case with default header values.
+/* ListAzureAvailabilityZonesOK describes a response with status code 200, with default header values.
 
 AzureAvailabilityZonesList
 */
@@ -57,7 +57,6 @@ type ListAzureAvailabilityZonesOK struct {
 func (o *ListAzureAvailabilityZonesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/azure/availabilityzones][%d] listAzureAvailabilityZonesOK  %+v", 200, o.Payload)
 }
-
 func (o *ListAzureAvailabilityZonesOK) GetPayload() *models.AzureAvailabilityZonesList {
 	return o.Payload
 }
@@ -81,7 +80,7 @@ func NewListAzureAvailabilityZonesDefault(code int) *ListAzureAvailabilityZonesD
 	}
 }
 
-/*ListAzureAvailabilityZonesDefault handles this case with default header values.
+/* ListAzureAvailabilityZonesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -99,7 +98,6 @@ func (o *ListAzureAvailabilityZonesDefault) Code() int {
 func (o *ListAzureAvailabilityZonesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/azure/availabilityzones][%d] listAzureAvailabilityZones default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListAzureAvailabilityZonesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

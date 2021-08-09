@@ -58,7 +58,7 @@ func NewGetKubermaticSettingsOK() *GetKubermaticSettingsOK {
 	return &GetKubermaticSettingsOK{}
 }
 
-/*GetKubermaticSettingsOK handles this case with default header values.
+/* GetKubermaticSettingsOK describes a response with status code 200, with default header values.
 
 GlobalSettings
 */
@@ -69,7 +69,6 @@ type GetKubermaticSettingsOK struct {
 func (o *GetKubermaticSettingsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/admin/settings][%d] getKubermaticSettingsOK  %+v", 200, o.Payload)
 }
-
 func (o *GetKubermaticSettingsOK) GetPayload() *models.GlobalSettings {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewGetKubermaticSettingsUnauthorized() *GetKubermaticSettingsUnauthorized {
 	return &GetKubermaticSettingsUnauthorized{}
 }
 
-/*GetKubermaticSettingsUnauthorized handles this case with default header values.
+/* GetKubermaticSettingsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewGetKubermaticSettingsForbidden() *GetKubermaticSettingsForbidden {
 	return &GetKubermaticSettingsForbidden{}
 }
 
-/*GetKubermaticSettingsForbidden handles this case with default header values.
+/* GetKubermaticSettingsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewGetKubermaticSettingsDefault(code int) *GetKubermaticSettingsDefault {
 	}
 }
 
-/*GetKubermaticSettingsDefault handles this case with default header values.
+/* GetKubermaticSettingsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *GetKubermaticSettingsDefault) Code() int {
 func (o *GetKubermaticSettingsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/admin/settings][%d] getKubermaticSettings default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetKubermaticSettingsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

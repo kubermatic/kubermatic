@@ -22,10 +22,10 @@ import (
 	"time"
 
 	"github.com/go-test/deep"
-	"github.com/gogo/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/any"
 	"go.uber.org/zap/zaptest"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	envoyclusterv3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoycorev3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
@@ -437,7 +437,7 @@ func makeSNIListener(t *testing.T, portValue uint32, hostClusterNames ...hostClu
 			AccessLog: makeAccessLog(),
 		}
 
-		tcpProxyConfigMarshalled, err := ptypes.MarshalAny(tcpProxyConfig)
+		tcpProxyConfigMarshalled, err := anypb.New(tcpProxyConfig)
 		if err != nil {
 			t.Fatalf("failed to marshal tcpProxyConfig: %v", err)
 		}
@@ -522,7 +522,7 @@ func makeCluster(t *testing.T, name string, portValue uint32, addresses ...strin
 	}
 	return &envoyclusterv3.Cluster{
 		Name:           name,
-		ConnectTimeout: ptypes.DurationProto(clusterConnectTimeout),
+		ConnectTimeout: durationpb.New(clusterConnectTimeout),
 		ClusterDiscoveryType: &envoyclusterv3.Cluster_Type{
 			Type: envoyclusterv3.Cluster_STATIC,
 		},
@@ -670,8 +670,8 @@ func TestExposeAnnotationPredicate(t *testing.T) {
 	}
 }
 
-func marshalMessage(t *testing.T, msg proto.Message) *any.Any {
-	marshalled, err := ptypes.MarshalAny(msg)
+func marshalMessage(t *testing.T, msg proto.Message) *anypb.Any {
+	marshalled, err := anypb.New(msg)
 	if err != nil {
 		t.Fatalf("failed to marshal from message to any: %v", err)
 	}

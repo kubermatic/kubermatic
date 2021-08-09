@@ -16,52 +16,66 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListDatacentersParams creates a new ListDatacentersParams object
-// with the default values initialized.
+// NewListDatacentersParams creates a new ListDatacentersParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListDatacentersParams() *ListDatacentersParams {
-
 	return &ListDatacentersParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListDatacentersParamsWithTimeout creates a new ListDatacentersParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListDatacentersParamsWithTimeout(timeout time.Duration) *ListDatacentersParams {
-
 	return &ListDatacentersParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListDatacentersParamsWithContext creates a new ListDatacentersParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListDatacentersParamsWithContext(ctx context.Context) *ListDatacentersParams {
-
 	return &ListDatacentersParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListDatacentersParamsWithHTTPClient creates a new ListDatacentersParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListDatacentersParamsWithHTTPClient(client *http.Client) *ListDatacentersParams {
-
 	return &ListDatacentersParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListDatacentersParams contains all the parameters to send to the API endpoint
-for the list datacenters operation typically these are written to a http.Request
+/* ListDatacentersParams contains all the parameters to send to the API endpoint
+   for the list datacenters operation.
+
+   Typically these are written to a http.Request.
 */
 type ListDatacentersParams struct {
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list datacenters params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListDatacentersParams) WithDefaults() *ListDatacentersParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list datacenters params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListDatacentersParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list datacenters params

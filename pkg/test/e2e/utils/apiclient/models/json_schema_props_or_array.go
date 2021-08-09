@@ -6,6 +6,7 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -45,7 +46,6 @@ func (m *JSONSchemaPropsOrArray) Validate(formats strfmt.Registry) error {
 }
 
 func (m *JSONSchemaPropsOrArray) validateJSONSchemas(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.JSONSchemas) { // not required
 		return nil
 	}
@@ -70,13 +70,62 @@ func (m *JSONSchemaPropsOrArray) validateJSONSchemas(formats strfmt.Registry) er
 }
 
 func (m *JSONSchemaPropsOrArray) validateSchema(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Schema) { // not required
 		return nil
 	}
 
 	if m.Schema != nil {
 		if err := m.Schema.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("Schema")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this JSON schema props or array based on the context it is used
+func (m *JSONSchemaPropsOrArray) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateJSONSchemas(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateSchema(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *JSONSchemaPropsOrArray) contextValidateJSONSchemas(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.JSONSchemas); i++ {
+
+		if m.JSONSchemas[i] != nil {
+			if err := m.JSONSchemas[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("JSONSchemas" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *JSONSchemaPropsOrArray) contextValidateSchema(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Schema != nil {
+		if err := m.Schema.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("Schema")
 			}

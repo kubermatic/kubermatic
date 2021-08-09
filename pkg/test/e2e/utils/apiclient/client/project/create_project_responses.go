@@ -6,6 +6,7 @@ package project
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"fmt"
 	"io"
 
@@ -59,7 +60,7 @@ func NewCreateProjectCreated() *CreateProjectCreated {
 	return &CreateProjectCreated{}
 }
 
-/*CreateProjectCreated handles this case with default header values.
+/* CreateProjectCreated describes a response with status code 201, with default header values.
 
 Project
 */
@@ -70,7 +71,6 @@ type CreateProjectCreated struct {
 func (o *CreateProjectCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects][%d] createProjectCreated  %+v", 201, o.Payload)
 }
-
 func (o *CreateProjectCreated) GetPayload() *models.Project {
 	return o.Payload
 }
@@ -92,7 +92,7 @@ func NewCreateProjectUnauthorized() *CreateProjectUnauthorized {
 	return &CreateProjectUnauthorized{}
 }
 
-/*CreateProjectUnauthorized handles this case with default header values.
+/* CreateProjectUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -113,7 +113,7 @@ func NewCreateProjectConflict() *CreateProjectConflict {
 	return &CreateProjectConflict{}
 }
 
-/*CreateProjectConflict handles this case with default header values.
+/* CreateProjectConflict describes a response with status code 409, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -136,7 +136,7 @@ func NewCreateProjectDefault(code int) *CreateProjectDefault {
 	}
 }
 
-/*CreateProjectDefault handles this case with default header values.
+/* CreateProjectDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -154,7 +154,6 @@ func (o *CreateProjectDefault) Code() int {
 func (o *CreateProjectDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects][%d] createProject default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *CreateProjectDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }
@@ -188,6 +187,11 @@ type CreateProjectBody struct {
 
 // Validate validates this create project body
 func (o *CreateProjectBody) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this create project body based on context it is used
+func (o *CreateProjectBody) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

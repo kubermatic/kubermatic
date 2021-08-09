@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListVSphereNetworksNoCredentialsParams creates a new ListVSphereNetworksNoCredentialsParams object
-// with the default values initialized.
+// NewListVSphereNetworksNoCredentialsParams creates a new ListVSphereNetworksNoCredentialsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListVSphereNetworksNoCredentialsParams() *ListVSphereNetworksNoCredentialsParams {
-	var ()
 	return &ListVSphereNetworksNoCredentialsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListVSphereNetworksNoCredentialsParamsWithTimeout creates a new ListVSphereNetworksNoCredentialsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListVSphereNetworksNoCredentialsParamsWithTimeout(timeout time.Duration) *ListVSphereNetworksNoCredentialsParams {
-	var ()
 	return &ListVSphereNetworksNoCredentialsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListVSphereNetworksNoCredentialsParamsWithContext creates a new ListVSphereNetworksNoCredentialsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListVSphereNetworksNoCredentialsParamsWithContext(ctx context.Context) *ListVSphereNetworksNoCredentialsParams {
-	var ()
 	return &ListVSphereNetworksNoCredentialsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListVSphereNetworksNoCredentialsParamsWithHTTPClient creates a new ListVSphereNetworksNoCredentialsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListVSphereNetworksNoCredentialsParamsWithHTTPClient(client *http.Client) *ListVSphereNetworksNoCredentialsParams {
-	var ()
 	return &ListVSphereNetworksNoCredentialsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListVSphereNetworksNoCredentialsParams contains all the parameters to send to the API endpoint
-for the list v sphere networks no credentials operation typically these are written to a http.Request
+/* ListVSphereNetworksNoCredentialsParams contains all the parameters to send to the API endpoint
+   for the list v sphere networks no credentials operation.
+
+   Typically these are written to a http.Request.
 */
 type ListVSphereNetworksNoCredentialsParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list v sphere networks no credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListVSphereNetworksNoCredentialsParams) WithDefaults() *ListVSphereNetworksNoCredentialsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list v sphere networks no credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListVSphereNetworksNoCredentialsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list v sphere networks no credentials params

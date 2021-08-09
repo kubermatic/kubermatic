@@ -17,60 +17,76 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// NewListNodesForClusterParams creates a new ListNodesForClusterParams object
-// with the default values initialized.
+// NewListNodesForClusterParams creates a new ListNodesForClusterParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListNodesForClusterParams() *ListNodesForClusterParams {
-	var ()
 	return &ListNodesForClusterParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListNodesForClusterParamsWithTimeout creates a new ListNodesForClusterParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListNodesForClusterParamsWithTimeout(timeout time.Duration) *ListNodesForClusterParams {
-	var ()
 	return &ListNodesForClusterParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListNodesForClusterParamsWithContext creates a new ListNodesForClusterParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListNodesForClusterParamsWithContext(ctx context.Context) *ListNodesForClusterParams {
-	var ()
 	return &ListNodesForClusterParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListNodesForClusterParamsWithHTTPClient creates a new ListNodesForClusterParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListNodesForClusterParamsWithHTTPClient(client *http.Client) *ListNodesForClusterParams {
-	var ()
 	return &ListNodesForClusterParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListNodesForClusterParams contains all the parameters to send to the API endpoint
-for the list nodes for cluster operation typically these are written to a http.Request
+/* ListNodesForClusterParams contains all the parameters to send to the API endpoint
+   for the list nodes for cluster operation.
+
+   Typically these are written to a http.Request.
 */
 type ListNodesForClusterParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*HideInitialConditions*/
+
+	// HideInitialConditions.
 	HideInitialConditions *bool
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list nodes for cluster params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListNodesForClusterParams) WithDefaults() *ListNodesForClusterParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list nodes for cluster params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListNodesForClusterParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list nodes for cluster params
@@ -156,16 +172,17 @@ func (o *ListNodesForClusterParams) WriteToRequest(r runtime.ClientRequest, reg 
 
 		// query param hideInitialConditions
 		var qrHideInitialConditions bool
+
 		if o.HideInitialConditions != nil {
 			qrHideInitialConditions = *o.HideInitialConditions
 		}
 		qHideInitialConditions := swag.FormatBool(qrHideInitialConditions)
 		if qHideInitialConditions != "" {
+
 			if err := r.SetQueryParam("hideInitialConditions", qHideInitialConditions); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	// path param project_id

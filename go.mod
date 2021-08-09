@@ -36,8 +36,6 @@ require (
 	github.com/go-openapi/validate v0.20.2
 	github.com/go-swagger/go-swagger v0.27.0
 	github.com/go-test/deep v1.0.7
-	github.com/gogo/protobuf v1.3.1
-	github.com/golang/protobuf v1.5.2
 	github.com/google/go-cmp v0.5.5
 	github.com/gophercloud/gophercloud v0.14.0
 	github.com/gorilla/handlers v1.5.1
@@ -63,7 +61,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/poy/onpar v1.0.1 // indirect
-	github.com/prometheus/client_golang v1.8.0
+	github.com/prometheus/client_golang v1.11.0
 	github.com/robfig/cron v1.2.0
 	github.com/sirupsen/logrus v1.7.0
 	github.com/spf13/cobra v1.1.3
@@ -81,6 +79,7 @@ require (
 	google.golang.org/api v0.36.0
 	google.golang.org/genproto v0.0.0-20201203001206-6486ece9c497
 	google.golang.org/grpc v1.33.2
+	google.golang.org/protobuf v1.26.0
 	gopkg.in/fsnotify.v1 v1.4.7
 	gopkg.in/gcfg.v1 v1.2.3
 	gopkg.in/square/go-jose.v2 v2.5.1

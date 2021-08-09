@@ -58,7 +58,7 @@ func NewUpdateServiceAccountOK() *UpdateServiceAccountOK {
 	return &UpdateServiceAccountOK{}
 }
 
-/*UpdateServiceAccountOK handles this case with default header values.
+/* UpdateServiceAccountOK describes a response with status code 200, with default header values.
 
 ServiceAccount
 */
@@ -69,7 +69,6 @@ type UpdateServiceAccountOK struct {
 func (o *UpdateServiceAccountOK) Error() string {
 	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}][%d] updateServiceAccountOK  %+v", 200, o.Payload)
 }
-
 func (o *UpdateServiceAccountOK) GetPayload() *models.ServiceAccount {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewUpdateServiceAccountUnauthorized() *UpdateServiceAccountUnauthorized {
 	return &UpdateServiceAccountUnauthorized{}
 }
 
-/*UpdateServiceAccountUnauthorized handles this case with default header values.
+/* UpdateServiceAccountUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewUpdateServiceAccountForbidden() *UpdateServiceAccountForbidden {
 	return &UpdateServiceAccountForbidden{}
 }
 
-/*UpdateServiceAccountForbidden handles this case with default header values.
+/* UpdateServiceAccountForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewUpdateServiceAccountDefault(code int) *UpdateServiceAccountDefault {
 	}
 }
 
-/*UpdateServiceAccountDefault handles this case with default header values.
+/* UpdateServiceAccountDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *UpdateServiceAccountDefault) Code() int {
 func (o *UpdateServiceAccountDefault) Error() string {
 	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}][%d] updateServiceAccount default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *UpdateServiceAccountDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

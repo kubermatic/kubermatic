@@ -58,7 +58,7 @@ func NewListRoleV2OK() *ListRoleV2OK {
 	return &ListRoleV2OK{}
 }
 
-/*ListRoleV2OK handles this case with default header values.
+/* ListRoleV2OK describes a response with status code 200, with default header values.
 
 Role
 */
@@ -69,7 +69,6 @@ type ListRoleV2OK struct {
 func (o *ListRoleV2OK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/roles][%d] listRoleV2OK  %+v", 200, o.Payload)
 }
-
 func (o *ListRoleV2OK) GetPayload() []*models.Role {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListRoleV2Unauthorized() *ListRoleV2Unauthorized {
 	return &ListRoleV2Unauthorized{}
 }
 
-/*ListRoleV2Unauthorized handles this case with default header values.
+/* ListRoleV2Unauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListRoleV2Forbidden() *ListRoleV2Forbidden {
 	return &ListRoleV2Forbidden{}
 }
 
-/*ListRoleV2Forbidden handles this case with default header values.
+/* ListRoleV2Forbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListRoleV2Default(code int) *ListRoleV2Default {
 	}
 }
 
-/*ListRoleV2Default handles this case with default header values.
+/* ListRoleV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListRoleV2Default) Code() int {
 func (o *ListRoleV2Default) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/roles][%d] listRoleV2 default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListRoleV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

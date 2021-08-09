@@ -16,56 +16,70 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetSeedSettingsParams creates a new GetSeedSettingsParams object
-// with the default values initialized.
+// NewGetSeedSettingsParams creates a new GetSeedSettingsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetSeedSettingsParams() *GetSeedSettingsParams {
-	var ()
 	return &GetSeedSettingsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetSeedSettingsParamsWithTimeout creates a new GetSeedSettingsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetSeedSettingsParamsWithTimeout(timeout time.Duration) *GetSeedSettingsParams {
-	var ()
 	return &GetSeedSettingsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetSeedSettingsParamsWithContext creates a new GetSeedSettingsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetSeedSettingsParamsWithContext(ctx context.Context) *GetSeedSettingsParams {
-	var ()
 	return &GetSeedSettingsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetSeedSettingsParamsWithHTTPClient creates a new GetSeedSettingsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetSeedSettingsParamsWithHTTPClient(client *http.Client) *GetSeedSettingsParams {
-	var ()
 	return &GetSeedSettingsParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetSeedSettingsParams contains all the parameters to send to the API endpoint
-for the get seed settings operation typically these are written to a http.Request
+/* GetSeedSettingsParams contains all the parameters to send to the API endpoint
+   for the get seed settings operation.
+
+   Typically these are written to a http.Request.
 */
 type GetSeedSettingsParams struct {
 
-	/*SeedName*/
+	// SeedName.
 	Name string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get seed settings params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetSeedSettingsParams) WithDefaults() *GetSeedSettingsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get seed settings params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetSeedSettingsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get seed settings params

@@ -46,7 +46,7 @@ func NewGetKubermaticVersionOK() *GetKubermaticVersionOK {
 	return &GetKubermaticVersionOK{}
 }
 
-/*GetKubermaticVersionOK handles this case with default header values.
+/* GetKubermaticVersionOK describes a response with status code 200, with default header values.
 
 KubermaticVersions
 */
@@ -57,7 +57,6 @@ type GetKubermaticVersionOK struct {
 func (o *GetKubermaticVersionOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/version][%d] getKubermaticVersionOK  %+v", 200, o.Payload)
 }
-
 func (o *GetKubermaticVersionOK) GetPayload() *models.KubermaticVersions {
 	return o.Payload
 }
@@ -81,7 +80,7 @@ func NewGetKubermaticVersionDefault(code int) *GetKubermaticVersionDefault {
 	}
 }
 
-/*GetKubermaticVersionDefault handles this case with default header values.
+/* GetKubermaticVersionDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -99,7 +98,6 @@ func (o *GetKubermaticVersionDefault) Code() int {
 func (o *GetKubermaticVersionDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/version][%d] getKubermaticVersion default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetKubermaticVersionDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

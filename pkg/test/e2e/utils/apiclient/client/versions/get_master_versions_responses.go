@@ -46,7 +46,7 @@ func NewGetMasterVersionsOK() *GetMasterVersionsOK {
 	return &GetMasterVersionsOK{}
 }
 
-/*GetMasterVersionsOK handles this case with default header values.
+/* GetMasterVersionsOK describes a response with status code 200, with default header values.
 
 MasterVersion
 */
@@ -57,7 +57,6 @@ type GetMasterVersionsOK struct {
 func (o *GetMasterVersionsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/upgrades/cluster][%d] getMasterVersionsOK  %+v", 200, o.Payload)
 }
-
 func (o *GetMasterVersionsOK) GetPayload() []*models.MasterVersion {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewGetMasterVersionsDefault(code int) *GetMasterVersionsDefault {
 	}
 }
 
-/*GetMasterVersionsDefault handles this case with default header values.
+/* GetMasterVersionsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *GetMasterVersionsDefault) Code() int {
 func (o *GetMasterVersionsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/upgrades/cluster][%d] getMasterVersions default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetMasterVersionsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }
