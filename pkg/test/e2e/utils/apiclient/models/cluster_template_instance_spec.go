@@ -23,6 +23,9 @@ type ClusterTemplateInstanceSpec struct {
 	// cluster template name
 	ClusterTemplateName string `json:"clusterTemplateName,omitempty"`
 
+	// machine deployment replicas
+	MachineDeploymentReplicas int64 `json:"machineDeploymentReplicas,omitempty"`
+
 	// project ID
 	ProjectID string `json:"projectID,omitempty"`
 

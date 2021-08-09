@@ -40,10 +40,11 @@ type ClusterTemplateInstance struct {
 
 // ClusterTemplateInstanceSpec specifies the data for cluster instances.
 type ClusterTemplateInstanceSpec struct {
-	ProjectID           string `json:"projectID"`
-	ClusterTemplateID   string `json:"clusterTemplateID"`
-	ClusterTemplateName string `json:"clusterTemplateName"`
-	Replicas            int64  `json:"replicas"`
+	ProjectID                 string `json:"projectID"`
+	ClusterTemplateID         string `json:"clusterTemplateID"`
+	ClusterTemplateName       string `json:"clusterTemplateName"`
+	Replicas                  int64  `json:"replicas"`
+	MachineDeploymentReplicas int64  `json:"machineDeploymentReplicas"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

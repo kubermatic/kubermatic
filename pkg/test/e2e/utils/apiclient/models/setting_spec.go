@@ -51,6 +51,9 @@ type SettingSpec struct {
 	// cleanup options
 	CleanupOptions *CleanupOptions `json:"cleanupOptions,omitempty"`
 
+	// cluster template options
+	ClusterTemplateOptions *ClusterTemplateOptions `json:"clusterTemplateOptions,omitempty"`
+
 	// cluster type options
 	ClusterTypeOptions ClusterType `json:"clusterTypeOptions,omitempty"`
 
@@ -72,6 +75,10 @@ func (m *SettingSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateCleanupOptions(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateClusterTemplateOptions(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -110,6 +117,23 @@ func (m *SettingSpec) validateCleanupOptions(formats strfmt.Registry) error {
 		if err := m.CleanupOptions.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("cleanupOptions")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *SettingSpec) validateClusterTemplateOptions(formats strfmt.Registry) error {
+	if swag.IsZero(m.ClusterTemplateOptions) { // not required
+		return nil
+	}
+
+	if m.ClusterTemplateOptions != nil {
+		if err := m.ClusterTemplateOptions.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("clusterTemplateOptions")
 			}
 			return err
 		}
@@ -207,6 +231,10 @@ func (m *SettingSpec) ContextValidate(ctx context.Context, formats strfmt.Regist
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateClusterTemplateOptions(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateClusterTypeOptions(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -239,6 +267,20 @@ func (m *SettingSpec) contextValidateCleanupOptions(ctx context.Context, formats
 		if err := m.CleanupOptions.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("cleanupOptions")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *SettingSpec) contextValidateClusterTemplateOptions(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.ClusterTemplateOptions != nil {
+		if err := m.ClusterTemplateOptions.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("clusterTemplateOptions")
 			}
 			return err
 		}

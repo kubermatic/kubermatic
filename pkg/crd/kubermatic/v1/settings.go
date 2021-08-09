@@ -42,21 +42,22 @@ type KubermaticSetting struct {
 }
 
 type SettingSpec struct {
-	CustomLinks                 CustomLinks    `json:"customLinks"`
-	CleanupOptions              CleanupOptions `json:"cleanupOptions"`
-	DefaultNodeCount            int8           `json:"defaultNodeCount"`
-	ClusterTypeOptions          ClusterType    `json:"clusterTypeOptions"`
-	DisplayDemoInfo             bool           `json:"displayDemoInfo"`
-	DisplayAPIDocs              bool           `json:"displayAPIDocs"`
-	DisplayTermsOfService       bool           `json:"displayTermsOfService"`
-	EnableDashboard             bool           `json:"enableDashboard"`
-	EnableOIDCKubeconfig        bool           `json:"enableOIDCKubeconfig"`
-	UserProjectsLimit           int64          `json:"userProjectsLimit"`
-	RestrictProjectCreation     bool           `json:"restrictProjectCreation"`
-	EnableExternalClusterImport bool           `json:"enableExternalClusterImport"`
-	OpaOptions                  OpaOptions     `json:"opaOptions"`
-	MlaOptions                  MlaOptions     `json:"mlaOptions"`
-	MlaAlertmanagerDomain       string         `json:"mlaAlertmanagerDomain"`
+	CustomLinks                 CustomLinks            `json:"customLinks"`
+	CleanupOptions              CleanupOptions         `json:"cleanupOptions"`
+	DefaultNodeCount            int8                   `json:"defaultNodeCount"`
+	ClusterTypeOptions          ClusterType            `json:"clusterTypeOptions"`
+	DisplayDemoInfo             bool                   `json:"displayDemoInfo"`
+	DisplayAPIDocs              bool                   `json:"displayAPIDocs"`
+	DisplayTermsOfService       bool                   `json:"displayTermsOfService"`
+	EnableDashboard             bool                   `json:"enableDashboard"`
+	EnableOIDCKubeconfig        bool                   `json:"enableOIDCKubeconfig"`
+	UserProjectsLimit           int64                  `json:"userProjectsLimit"`
+	RestrictProjectCreation     bool                   `json:"restrictProjectCreation"`
+	EnableExternalClusterImport bool                   `json:"enableExternalClusterImport"`
+	OpaOptions                  OpaOptions             `json:"opaOptions"`
+	MlaOptions                  MlaOptions             `json:"mlaOptions"`
+	ClusterTemplateOptions      ClusterTemplateOptions `json:"clusterTemplateOptions"`
+	MlaAlertmanagerDomain       string                 `json:"mlaAlertmanagerDomain"`
 
 	MachineDeploymentVMResourceQuota MachineDeploymentVMResourceQuota `json:"machineDeploymentVMResourceQuota"`
 
@@ -100,6 +101,20 @@ type MlaOptions struct {
 	LoggingEnforced    bool `json:"loggingEnforced"`
 	MonitoringEnabled  bool `json:"monitoringEnabled"`
 	MonitoringEnforced bool `json:"monitoringEnforced"`
+}
+
+type ClusterTemplateOptions struct {
+	// Predefined cluster template sizes
+	Sizes []ClusterTemplateSize `json:"clusterTemplateSizes"`
+}
+
+type ClusterTemplateSize struct {
+	// Size name. Can be for example: small, large, L, XL
+	Name string `json:"name"`
+	// Number of clusters
+	NumberOfClusters int64 `json:"numberOfClusters"`
+	// Number od machine deployments
+	NumberOfMachineDeployments int64 `json:"numberOfMachineDeployments"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

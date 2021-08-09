@@ -99,6 +99,9 @@ func (s *SettingsProvider) createDefaultGlobalSettings() (*kubermaticv1.Kubermat
 				MaxRAM:    128,
 				EnableGPU: false,
 			},
+			ClusterTemplateOptions: kubermaticv1.ClusterTemplateOptions{
+				Sizes: []kubermaticv1.ClusterTemplateSize{},
+			},
 		},
 	}
 	if err := s.runtimeClient.Create(context.Background(), defaultSettings); err != nil {

@@ -467,7 +467,7 @@ func TestCreateClusterTemplateInstance(t *testing.T) {
 			Name:             "scenario 1: create cluster template instance from global template",
 			Body:             `{"replicas":1}`,
 			TemplateToSync:   "ctID2",
-			ExpectedResponse: `{"name":"my-first-project-ID-ctID2","spec":{"projectID":"my-first-project-ID","clusterTemplateID":"ctID2","clusterTemplateName":"ct2","replicas":1}}`,
+			ExpectedResponse: `{"name":"my-first-project-ID-ctID2","spec":{"projectID":"my-first-project-ID","clusterTemplateID":"ctID2","clusterTemplateName":"ct2","replicas":1,"machineDeploymentReplicas":0}}`,
 			HTTPStatus:       http.StatusCreated,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
@@ -519,7 +519,7 @@ func TestGetClusterTemplateInstance(t *testing.T) {
 			Name:             "scenario 1: get template instance for global template",
 			TemplateID:       "ctID2",
 			InstanceID:       "my-first-project-ID-ctID2",
-			ExpectedResponse: `{"name":"my-first-project-ID-ctID2","spec":{"projectID":"my-first-project-ID","clusterTemplateID":"ctID2","clusterTemplateName":"","replicas":10}}`,
+			ExpectedResponse: `{"name":"my-first-project-ID-ctID2","spec":{"projectID":"my-first-project-ID","clusterTemplateID":"ctID2","clusterTemplateName":"","replicas":10,"machineDeploymentReplicas":0}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
@@ -592,7 +592,7 @@ func TestListClusterTemplateInstances(t *testing.T) {
 		{
 			Name:             "scenario 1: get template instance for global template",
 			TemplateID:       "ctID2",
-			ExpectedResponse: `[{"name":"my-first-project-ID-ctID2","spec":{"projectID":"my-first-project-ID","clusterTemplateID":"ctID2","clusterTemplateName":"","replicas":10}}]`,
+			ExpectedResponse: `[{"name":"my-first-project-ID-ctID2","spec":{"projectID":"my-first-project-ID","clusterTemplateID":"ctID2","clusterTemplateName":"","replicas":10,"machineDeploymentReplicas":0}}]`,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
@@ -650,7 +650,7 @@ func TestPatchClusterTemplateInstance(t *testing.T) {
 			Body:             `{"replicas":1}`,
 			TemplateID:       "ctID2",
 			InstanceID:       "my-first-project-ID-ctID2",
-			ExpectedResponse: `{"name":"my-first-project-ID-ctID2","spec":{"projectID":"my-first-project-ID","clusterTemplateID":"ctID2","clusterTemplateName":"","replicas":1}}`,
+			ExpectedResponse: `{"name":"my-first-project-ID-ctID2","spec":{"projectID":"my-first-project-ID","clusterTemplateID":"ctID2","clusterTemplateName":"","replicas":1,"machineDeploymentReplicas":0}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),

@@ -17136,6 +17136,11 @@
           "type": "string",
           "x-go-name": "ClusterTemplateName"
         },
+        "machineDeploymentReplicas": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MachineDeploymentReplicas"
+        },
         "projectID": {
           "type": "string",
           "x-go-name": "ProjectID"
@@ -17155,6 +17160,43 @@
         "$ref": "#/definitions/ClusterTemplate"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "ClusterTemplateOptions": {
+      "type": "object",
+      "properties": {
+        "clusterTemplateSizes": {
+          "description": "Predefined cluster template sizes",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ClusterTemplateSize"
+          },
+          "x-go-name": "Sizes"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
+    "ClusterTemplateSize": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name",
+          "example": "small, large, L, XL"
+        },
+        "numberOfClusters": {
+          "description": "Number of clusters",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "NumberOfClusters"
+        },
+        "numberOfMachineDeployments": {
+          "description": "Number od machine deployments",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "NumberOfMachineDeployments"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "ClusterType": {
       "type": "integer",
@@ -21305,6 +21347,9 @@
       "properties": {
         "cleanupOptions": {
           "$ref": "#/definitions/CleanupOptions"
+        },
+        "clusterTemplateOptions": {
+          "$ref": "#/definitions/ClusterTemplateOptions"
         },
         "clusterTypeOptions": {
           "$ref": "#/definitions/ClusterType"
