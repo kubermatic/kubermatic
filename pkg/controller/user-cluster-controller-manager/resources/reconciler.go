@@ -501,7 +501,6 @@ func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Contex
 
 func (r *reconciler) reconcileServices(ctx context.Context) error {
 	creatorsKubeSystem := []reconciling.NamedServiceCreatorGetter{
-		metricsserver.ExternalNameServiceCreator(r.namespace),
 		coredns.ServiceCreator(r.dnsClusterIP),
 	}
 

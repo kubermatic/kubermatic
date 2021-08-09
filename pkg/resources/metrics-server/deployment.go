@@ -74,7 +74,6 @@ func TLSServingCertSecretCreator(caGetter servingcerthelper.CAGetter) reconcilin
 	dnsName := "metrics-server.kube-system.svc"
 	return servingcerthelper.ServingCertSecretCreator(caGetter,
 		ServingCertSecretName,
-		// Must match what's configured in the apiservice in pkg/controller/usercluster/resources/metrics-server/external-name-service.go.
 		// Can unfortunately not have a trailing dot, as that's only allowed in Kube 1.16+
 		dnsName,
 		[]string{dnsName},
