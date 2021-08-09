@@ -22,6 +22,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/flatcar/resources"
 	nodelabelerapi "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/node-labeler/api"
+	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/util"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -44,14 +45,16 @@ type Reconciler struct {
 	ctrlruntimeclient.Client
 	overwriteRegistry string
 	updateWindow      kubermaticv1.UpdateWindow
+	clusterIsPaused   util.IsPausedChecker
 }
 
-func Add(mgr manager.Manager, overwriteRegistry string, updateWindow kubermaticv1.UpdateWindow) error {
+func Add(mgr manager.Manager, overwriteRegistry string, updateWindow kubermaticv1.UpdateWindow, clusterIsPaused util.IsPausedChecker) error {
 
 	reconciler := &Reconciler{
 		Client:            mgr.GetClient(),
 		overwriteRegistry: overwriteRegistry,
 		updateWindow:      updateWindow,
+		clusterIsPaused:   clusterIsPaused,
 	}
 
 	ctrlOptions := controller.Options{Reconciler: reconciler}
@@ -68,6 +71,14 @@ func Add(mgr manager.Manager, overwriteRegistry string, updateWindow kubermaticv
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile.Result, error) {
+	paused, err := r.clusterIsPaused(ctx)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to check cluster pause status: %w", err)
+	}
+	if paused {
+		return reconcile.Result{}, nil
+	}
+
 	if err := r.reconcileUpdateOperatorResources(ctx); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to reconcile the UpdateOperator resources: %v", err)
 	}

@@ -22,6 +22,7 @@ import (
 
 	"go.uber.org/zap"
 
+	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/util"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 
@@ -43,18 +44,20 @@ const (
 )
 
 type reconciler struct {
-	log      *zap.SugaredLogger
-	client   ctrlruntimeclient.Client
-	recorder record.EventRecorder
+	log             *zap.SugaredLogger
+	client          ctrlruntimeclient.Client
+	recorder        record.EventRecorder
+	clusterIsPaused util.IsPausedChecker
 }
 
-func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager) error {
+func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager, clusterIsPaused util.IsPausedChecker) error {
 	log = log.Named(controllerName)
 
 	r := &reconciler{
-		log:      log,
-		client:   mgr.GetClient(),
-		recorder: mgr.GetEventRecorderFor(controllerName),
+		log:             log,
+		client:          mgr.GetClient(),
+		recorder:        mgr.GetEventRecorderFor(controllerName),
+		clusterIsPaused: clusterIsPaused,
 	}
 	c, err := controller.New(controllerName, mgr, controller.Options{
 		Reconciler: r,
@@ -72,6 +75,14 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager) error
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	paused, err := r.clusterIsPaused(ctx)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to check cluster pause status: %w", err)
+	}
+	if paused {
+		return reconcile.Result{}, nil
+	}
+
 	log := r.log.With("ClusterRole", request.Name)
 	log.Debug("Reconciling")
 
@@ -84,7 +95,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, fmt.Errorf("failed to get cluster role: %v", err)
 	}
 
-	err := r.reconcile(ctx, log, clusterRole)
+	err = r.reconcile(ctx, log, clusterRole)
 	if err != nil {
 		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Event(clusterRole, corev1.EventTypeWarning, "AddingLabelFailed", err.Error())

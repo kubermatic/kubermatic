@@ -22,6 +22,7 @@ import (
 
 	"go.uber.org/zap"
 
+	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/util"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 
@@ -46,20 +47,22 @@ const (
 )
 
 type reconciler struct {
-	log        *zap.SugaredLogger
-	client     ctrlruntimeclient.Client
-	recorder   record.EventRecorder
-	ownerEmail string
+	log             *zap.SugaredLogger
+	client          ctrlruntimeclient.Client
+	recorder        record.EventRecorder
+	ownerEmail      string
+	clusterIsPaused util.IsPausedChecker
 }
 
-func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager, ownerEmail string) error {
+func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager, ownerEmail string, clusterIsPaused util.IsPausedChecker) error {
 	log = log.Named(controllerName)
 
 	r := &reconciler{
-		log:        log,
-		client:     mgr.GetClient(),
-		recorder:   mgr.GetEventRecorderFor(controllerName),
-		ownerEmail: ownerEmail,
+		log:             log,
+		client:          mgr.GetClient(),
+		recorder:        mgr.GetEventRecorderFor(controllerName),
+		ownerEmail:      ownerEmail,
+		clusterIsPaused: clusterIsPaused,
 	}
 	c, err := controller.New(controllerName, mgr, controller.Options{
 		Reconciler: r,
@@ -81,10 +84,18 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager, owner
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	paused, err := r.clusterIsPaused(ctx)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to check cluster pause status: %w", err)
+	}
+	if paused {
+		return reconcile.Result{}, nil
+	}
+
 	log := r.log.With("ClusterRole", request.Name)
 	log.Debug("Reconciling")
 
-	err := r.reconcile(ctx, log, request.Name)
+	err = r.reconcile(ctx, log, request.Name)
 	if err != nil {
 		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Event(&rbacv1.ClusterRole{ObjectMeta: metav1.ObjectMeta{Name: request.Name}}, corev1.EventTypeWarning, "AddingBindingFailed", err.Error())
