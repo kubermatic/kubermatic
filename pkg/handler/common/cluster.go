@@ -246,7 +246,7 @@ func GenerateCluster(ctx context.Context, projectID string, body apiv1.CreateClu
 	return partialCluster, nil
 }
 
-func GetExternalClusters(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID string) ([]*apiv1.Cluster, error) {
+func GetClusters(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID string) ([]*apiv1.Cluster, error) {
 	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID, nil)
 	if err != nil {
 		return nil, err
@@ -261,7 +261,21 @@ func GetExternalClusters(ctx context.Context, userInfoGetter provider.UserInfoGe
 		return nil, err
 	}
 
-	return convertInternalClustersToExternal(clusters.Items, adminUserInfo, seedsGetter)
+	apiClusters := make([]*apiv1.Cluster, 0, len(clusters.Items))
+	for _, internalCluster := range clusters.Items {
+		_, dc, err := provider.DatacenterFromSeedMap(adminUserInfo, seedsGetter, internalCluster.Spec.Cloud.DatacenterName)
+		if err != nil {
+			// Ignore 403 errors and omit clusters with not accessible datacenters in the result.
+			if asserted, ok := err.(errors.HTTPError); ok && asserted.StatusCode() == http.StatusForbidden {
+				continue
+			}
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		apiClusters = append(apiClusters, ConvertInternalClusterToExternal(internalCluster.DeepCopy(), dc, true))
+	}
+
+	return apiClusters, nil
 }
 
 // GetCluster returns the cluster for a given request
@@ -828,18 +842,6 @@ func updateAndDeleteClusterForRegularUser(ctx context.Context, userInfoGetter pr
 		return common.KubernetesErrorToHTTPError(err)
 	}
 	return nil
-}
-
-func convertInternalClustersToExternal(internalClusters []kubermaticv1.Cluster, adminUserInfo *provider.UserInfo, seedsGetter provider.SeedsGetter) ([]*apiv1.Cluster, error) {
-	apiClusters := make([]*apiv1.Cluster, len(internalClusters))
-	for index, cluster := range internalClusters {
-		_, dc, err := provider.DatacenterFromSeedMap(adminUserInfo, seedsGetter, cluster.Spec.Cloud.DatacenterName)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		apiClusters[index] = ConvertInternalClusterToExternal(cluster.DeepCopy(), dc, true)
-	}
-	return apiClusters, nil
 }
 
 func createNewCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, privilegedClusterProvider provider.PrivilegedClusterProvider, project *kubermaticv1.Project, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
