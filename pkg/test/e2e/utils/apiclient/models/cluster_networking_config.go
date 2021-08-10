@@ -63,7 +63,6 @@ func (m *ClusterNetworkingConfig) Validate(formats strfmt.Registry) error {
 }
 
 func (m *ClusterNetworkingConfig) validateIpvs(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Ipvs) { // not required
 		return nil
 	}
@@ -118,6 +117,10 @@ func (m *ClusterNetworkingConfig) validateServices(formats strfmt.Registry) erro
 func (m *ClusterNetworkingConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateIpvs(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidatePods(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -129,6 +132,20 @@ func (m *ClusterNetworkingConfig) ContextValidate(ctx context.Context, formats s
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ClusterNetworkingConfig) contextValidateIpvs(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Ipvs != nil {
+		if err := m.Ipvs.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("ipvs")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 
