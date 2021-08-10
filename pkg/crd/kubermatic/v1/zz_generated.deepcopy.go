@@ -645,6 +645,11 @@ func (in *AzureCloudSpec) DeepCopyInto(out *AzureCloudSpec) {
 		*out = new(types.GlobalSecretKeySelector)
 		**out = **in
 	}
+	if in.AssignAvailabilitySet != nil {
+		in, out := &in.AssignAvailabilitySet, &out.AssignAvailabilitySet
+		*out = new(bool)
+		**out = **in
+	}
 	return
 }
 
