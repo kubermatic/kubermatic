@@ -522,7 +522,7 @@
           "step": 10
         },
         {
-          "expr": "sum(kube_pod_container_resource_requests_cpu_cores{namespace=\"$namespace\", pod=\"$pod\"}) by (container)",
+          "expr": "sum(kube_pod_container_resource_requests{resource=\"cpu\", namespace=\"$namespace\", pod=\"$pod\"}) by (container)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -531,7 +531,7 @@
           "step": 10
         },
         {
-          "expr": "sum(namespace_pod_container:container_cpu_usage_seconds_total:sum_rate{namespace=\"$namespace\", pod=\"$pod\"}) by (container) / sum(kube_pod_container_resource_requests_cpu_cores{namespace=\"$namespace\", pod=\"$pod\"}) by (container)",
+          "expr": "sum(namespace_pod_container:container_cpu_usage_seconds_total:sum_rate{namespace=\"$namespace\", pod=\"$pod\"}) by (container) / sum(kube_pod_container_resource_requests{resource=\"cpu\", namespace=\"$namespace\", pod=\"$pod\"}) by (container)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -933,7 +933,7 @@
           "step": 10
         },
         {
-          "expr": "sum(kube_pod_container_resource_requests_memory_bytes{namespace=\"$namespace\", pod=\"$pod\"}) by (container)",
+          "expr": "sum(kube_pod_container_resource_requests{resource=\"memory\", namespace=\"$namespace\", pod=\"$pod\"}) by (container)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -942,7 +942,7 @@
           "step": 10
         },
         {
-          "expr": "sum(container_memory_usage_bytes{namespace=\"$namespace\", pod=\"$pod\"}) by (container) / sum(kube_pod_container_resource_requests_memory_bytes{namespace=\"$namespace\", pod=\"$pod\"}) by (container)",
+          "expr": "sum(container_memory_usage_bytes{namespace=\"$namespace\", pod=\"$pod\"}) by (container) / sum(kube_pod_container_resource_requests{resource=\"memory\", namespace=\"$namespace\", pod=\"$pod\"}) by (container)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,

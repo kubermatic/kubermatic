@@ -57,7 +57,7 @@
           "refId": "A"
         },
         {
-          "expr": "sum (kube_pod_container_resource_requests_memory_bytes{job=\"kube-state-metrics\", namespace=\"$namespace\", pod=\"$pod\"})",
+          "expr": "sum (kube_pod_container_resource_requests{resource=\"memory\", job=\"kube-state-metrics\", namespace=\"$namespace\", pod=\"$pod\"})",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "Requested",
@@ -160,7 +160,7 @@
           "refId": "A"
         },
         {
-          "expr": "sum by(container) (kube_pod_container_resource_requests_memory_bytes{job=\"kube-state-metrics\", namespace=\"$namespace\", pod=\"$pod\", container=~\"$container\"})",
+          "expr": "sum by(container) (kube_pod_container_resource_requests{resource=\"memory\", job=\"kube-state-metrics\", namespace=\"$namespace\", pod=\"$pod\", container=~\"$container\"})",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "Requested: {{ container }}",

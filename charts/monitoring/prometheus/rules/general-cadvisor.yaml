@@ -25,6 +25,19 @@ groups:
         for: 15m
         labels:
           severity: critical
+      - record: namespace:container_memory_usage_bytes:sum
+        expr: |
+          sum by (namespace) (
+            container_memory_usage_bytes{job="cadvisor", image!="", container!=""}
+          )
+      - record: namespace:container_cpu_usage_seconds_total:sum_rate
+        expr: |
+          sum(rate(container_cpu_usage_seconds_total{job="cadvisor", image!="", container!=""}[5m])) by (namespace)
+      - record: namespace_pod_container:container_cpu_usage_seconds_total:sum_rate
+        expr: |
+          sum by (namespace, pod, container) (
+            rate(container_cpu_usage_seconds_total{job="cadvisor", image!="", container!=""}[5m])
+          )
 
 # triggered by kernel bug, see issue kubermatic#2367
 
