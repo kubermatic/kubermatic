@@ -16,6 +16,7 @@ import (
 
 // ByPodStatus ByPodStatus defines the observed state of ConstraintTemplate as seen by
 // an individual controller
+// +kubebuilder:pruning:PreserveUnknownFields
 //
 // swagger:model ByPodStatus
 type ByPodStatus struct {
