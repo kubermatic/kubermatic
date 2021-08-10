@@ -566,13 +566,14 @@ type AzureCloudSpec struct {
 	ClientID       string `json:"clientID,omitempty"`
 	ClientSecret   string `json:"clientSecret,omitempty"`
 
-	ResourceGroup     string `json:"resourceGroup"`
-	VNetResourceGroup string `json:"vnetResourceGroup"`
-	VNetName          string `json:"vnet"`
-	SubnetName        string `json:"subnet"`
-	RouteTableName    string `json:"routeTable"`
-	SecurityGroup     string `json:"securityGroup"`
-	AvailabilitySet   string `json:"availabilitySet"`
+	ResourceGroup         string `json:"resourceGroup"`
+	VNetResourceGroup     string `json:"vnetResourceGroup"`
+	VNetName              string `json:"vnet"`
+	SubnetName            string `json:"subnet"`
+	RouteTableName        string `json:"routeTable"`
+	SecurityGroup         string `json:"securityGroup"`
+	AssignAvailabilitySet *bool  `json:"assignAvailabilitySet"`
+	AvailabilitySet       string `json:"availabilitySet"`
 	// LoadBalancerSKU sets the LB type that will be used for the Azure cluster, possible values are "basic" and "standard", if empty, "basic" will be used
 	LoadBalancerSKU LBSKU `json:"loadBalancerSKU"`
 }

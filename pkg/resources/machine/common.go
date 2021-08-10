@@ -138,19 +138,20 @@ func getAWSProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *ku
 
 func getAzureProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
 	config := azure.RawConfig{
-		Location:          providerconfig.ConfigVarString{Value: dc.Spec.Azure.Location},
-		ResourceGroup:     providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.ResourceGroup},
-		VNetResourceGroup: providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.VNetResourceGroup},
-		VMSize:            providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Azure.Size},
-		OSDiskSize:        nodeSpec.Cloud.Azure.OSDiskSize,
-		DataDiskSize:      nodeSpec.Cloud.Azure.DataDiskSize,
-		VNetName:          providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.VNetName},
-		SubnetName:        providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.SubnetName},
-		RouteTableName:    providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.RouteTableName},
-		AvailabilitySet:   providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.AvailabilitySet},
-		SecurityGroupName: providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.SecurityGroup},
-		Zones:             nodeSpec.Cloud.Azure.Zones,
-		ImageID:           providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Azure.ImageID},
+		Location:              providerconfig.ConfigVarString{Value: dc.Spec.Azure.Location},
+		ResourceGroup:         providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.ResourceGroup},
+		VNetResourceGroup:     providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.VNetResourceGroup},
+		VMSize:                providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Azure.Size},
+		OSDiskSize:            nodeSpec.Cloud.Azure.OSDiskSize,
+		DataDiskSize:          nodeSpec.Cloud.Azure.DataDiskSize,
+		VNetName:              providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.VNetName},
+		SubnetName:            providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.SubnetName},
+		RouteTableName:        providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.RouteTableName},
+		AvailabilitySet:       providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.AvailabilitySet},
+		AssignAvailabilitySet: c.Spec.Cloud.Azure.AssignAvailabilitySet,
+		SecurityGroupName:     providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.SecurityGroup},
+		Zones:                 nodeSpec.Cloud.Azure.Zones,
+		ImageID:               providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Azure.ImageID},
 
 		// https://github.com/kubermatic/kubermatic/issues/5013#issuecomment-580357280
 		AssignPublicIP: providerconfig.ConfigVarBool{Value: nodeSpec.Cloud.Azure.AssignPublicIP},

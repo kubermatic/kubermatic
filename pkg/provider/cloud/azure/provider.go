@@ -627,19 +627,22 @@ func (a *Azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 	}
 
 	if cluster.Spec.Cloud.Azure.AvailabilitySet == "" {
-		asName := resourceNamePrefix + cluster.Name
-		logger.Infow("ensuring AvailabilitySet", "availabilitySet", asName)
+		if cluster.Spec.Cloud.Azure.AssignAvailabilitySet == nil ||
+			*cluster.Spec.Cloud.Azure.AssignAvailabilitySet {
+			asName := resourceNamePrefix + cluster.Name
+			logger.Infow("ensuring AvailabilitySet", "availabilitySet", asName)
 
-		if err := ensureAvailabilitySet(a.ctx, asName, location, cluster.Spec.Cloud, credentials); err != nil {
-			return nil, fmt.Errorf("failed to ensure AvailabilitySet exists: %v", err)
-		}
+			if err := ensureAvailabilitySet(a.ctx, asName, location, cluster.Spec.Cloud, credentials); err != nil {
+				return nil, fmt.Errorf("failed to ensure AvailabilitySet exists: %v", err)
+			}
 
-		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
-			updatedCluster.Spec.Cloud.Azure.AvailabilitySet = asName
-			kuberneteshelper.AddFinalizer(updatedCluster, FinalizerAvailabilitySet)
-		})
-		if err != nil {
-			return nil, err
+			cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+				updatedCluster.Spec.Cloud.Azure.AvailabilitySet = asName
+				kuberneteshelper.AddFinalizer(updatedCluster, FinalizerAvailabilitySet)
+			})
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
