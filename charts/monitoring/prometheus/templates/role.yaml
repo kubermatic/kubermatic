@@ -49,6 +49,7 @@ rules:
   - list
   - watch
 
+{{ if and (ne .Release.Namespace "default") (ne .Release.Namespace "kube-system") }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -67,3 +68,5 @@ rules:
   - get
   - list
   - watch
+
+{{- end }}
