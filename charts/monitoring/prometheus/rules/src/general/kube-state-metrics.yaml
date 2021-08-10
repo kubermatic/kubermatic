@@ -23,22 +23,6 @@ groups:
     expr: |
       max(kube_pod_info{job="kube-state-metrics"}) by (node, namespace, pod)
 
-  - record: namespace:container_cpu_usage_seconds_total:sum_rate
-    expr: |
-      sum(rate(container_cpu_usage_seconds_total{job="cadvisor", image!="", container!=""}[5m])) by (namespace)
-
-  - record: namespace_pod_container:container_cpu_usage_seconds_total:sum_rate
-    expr: |
-      sum by (namespace, pod, container) (
-        rate(container_cpu_usage_seconds_total{job="cadvisor", image!="", container!=""}[5m])
-      )
-
-  - record: namespace:container_memory_usage_bytes:sum
-    expr: |
-      sum by (namespace) (
-        container_memory_usage_bytes{job="cadvisor", image!="", container!=""}
-      )
-
   - record: namespace_name:container_cpu_usage_seconds_total:sum_rate
     expr: |
       sum by (namespace, label_name) (
@@ -58,7 +42,7 @@ groups:
   - record: namespace_name:kube_pod_container_resource_requests_memory_bytes:sum
     expr: |
       sum by (namespace, label_name) (
-          sum(kube_pod_container_resource_requests_memory_bytes{job="kube-state-metrics"}) by (namespace, pod)
+          sum(kube_pod_container_resource_requests{job="kube-state-metrics",resource="memory"}) by (namespace, pod)
         * on (namespace, pod) group_left (label_name)
           kube_pod_labels{job="kube-state-metrics"}
       )
@@ -66,7 +50,7 @@ groups:
   - record: namespace_name:kube_pod_container_resource_requests_cpu_cores:sum
     expr: |
       sum by (namespace, label_name) (
-          sum(kube_pod_container_resource_requests_cpu_cores{job="kube-state-metrics"} and on(pod) kube_pod_status_scheduled{condition="true"}) by (namespace, pod)
+          sum(kube_pod_container_resource_requests{job="kube-state-metrics",resource="cpu"} and on(pod) kube_pod_status_scheduled{condition="true"}) by (namespace, pod)
         * on (namespace, pod) group_left (label_name)
           kube_pod_labels{job="kube-state-metrics"}
       )
