@@ -852,7 +852,7 @@ func (r *reconciler) ensureMLAIsRemoved(ctx context.Context) error {
 }
 
 func (r *reconciler) getUserClusterPrometheusCustomScrapeConfigs(ctx context.Context) (string, error) {
-	if r.userClusterMLA.PrometheusCustomScrapeConfigsConfigMapPrefix == "" {
+	if r.userClusterMLA.PrometheusCustomScrapeConfigMapPrefix == "" {
 		return "", nil
 	}
 	configMapList := &corev1.ConfigMapList{}
@@ -861,7 +861,7 @@ func (r *reconciler) getUserClusterPrometheusCustomScrapeConfigs(ctx context.Con
 	}
 	customScrapeConfigs := ""
 	for _, configMap := range configMapList.Items {
-		if !strings.HasPrefix(configMap.GetName(), r.userClusterMLA.PrometheusCustomScrapeConfigsConfigMapPrefix) {
+		if !strings.HasPrefix(configMap.GetName(), r.userClusterMLA.PrometheusCustomScrapeConfigMapPrefix) {
 			continue
 		}
 		for _, v := range configMap.Data {
