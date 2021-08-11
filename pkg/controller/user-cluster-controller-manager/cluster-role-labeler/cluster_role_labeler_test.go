@@ -86,6 +86,9 @@ func TestReconcile(t *testing.T) {
 				log:      kubermaticlog.Logger,
 				client:   client,
 				recorder: record.NewFakeRecorder(10),
+				clusterIsPaused: func(c context.Context) (bool, error) {
+					return false, nil
+				},
 			}
 
 			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: tc.requestName}}

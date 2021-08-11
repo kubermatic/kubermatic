@@ -24,6 +24,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
@@ -48,18 +49,20 @@ const (
 )
 
 type reconciler struct {
-	log      *zap.SugaredLogger
-	client   ctrlruntimeclient.Client
-	recorder record.EventRecorder
+	log             *zap.SugaredLogger
+	client          ctrlruntimeclient.Client
+	recorder        record.EventRecorder
+	clusterIsPaused userclustercontrollermanager.IsPausedChecker
 }
 
-func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager) error {
+func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager, clusterIsPaused userclustercontrollermanager.IsPausedChecker) error {
 	log = log.Named(controllerName)
 
 	r := &reconciler{
-		log:      log,
-		client:   mgr.GetClient(),
-		recorder: mgr.GetEventRecorderFor(controllerName),
+		log:             log,
+		client:          mgr.GetClient(),
+		recorder:        mgr.GetEventRecorderFor(controllerName),
+		clusterIsPaused: clusterIsPaused,
 	}
 	c, err := controller.New(controllerName, mgr, controller.Options{
 		Reconciler: r,
@@ -80,6 +83,14 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager) error
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	paused, err := r.clusterIsPaused(ctx)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to check cluster pause status: %w", err)
+	}
+	if paused {
+		return reconcile.Result{}, nil
+	}
+
 	log := r.log.With("Role", request.Name)
 	log.Debug("Reconciling")
 
@@ -92,7 +103,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, fmt.Errorf("failed to get role: %v", err)
 	}
 
-	err := r.reconcile(ctx, log, role)
+	err = r.reconcile(ctx, log, role)
 	if err != nil {
 		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Event(role, corev1.EventTypeWarning, "CloningRoleFailed", err.Error())

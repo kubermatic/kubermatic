@@ -212,6 +212,9 @@ func TestReconcile(t *testing.T) {
 				recorder:   &record.FakeRecorder{},
 				seedClient: tc.seedClient,
 				userClient: tc.userClient,
+				clusterIsPaused: func(c context.Context) (bool, error) {
+					return false, nil
+				},
 			}
 
 			request := reconcile.Request{NamespacedName: tc.namespacedName}
