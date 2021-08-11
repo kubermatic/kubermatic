@@ -852,6 +852,9 @@ func (r *reconciler) ensureMLAIsRemoved(ctx context.Context) error {
 }
 
 func (r *reconciler) getUserClusterPrometheusCustomScrapeConfigs(ctx context.Context) (string, error) {
+	if r.userClusterMLA.PrometheusCustomScrapeConfigsConfigMapName == "" {
+		return "", nil
+	}
 	configMap := &corev1.ConfigMap{}
 	if err := r.Get(ctx, types.NamespacedName{
 		Name:      r.userClusterMLA.PrometheusCustomScrapeConfigsConfigMapName,
