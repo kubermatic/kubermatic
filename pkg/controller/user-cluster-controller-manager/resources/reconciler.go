@@ -852,19 +852,21 @@ func (r *reconciler) ensureMLAIsRemoved(ctx context.Context) error {
 }
 
 func (r *reconciler) getUserClusterPrometheusCustomScrapeConfigs(ctx context.Context) (string, error) {
-	if r.userClusterMLA.PrometheusCustomScrapeConfigsConfigMapName == "" {
+	if r.userClusterMLA.PrometheusCustomScrapeConfigsConfigMapPrefix == "" {
 		return "", nil
 	}
-	configMap := &corev1.ConfigMap{}
-	if err := r.Get(ctx, types.NamespacedName{
-		Name:      r.userClusterMLA.PrometheusCustomScrapeConfigsConfigMapName,
-		Namespace: resources.UserClusterMLANamespace,
-	}, configMap); err != nil && !errors.IsNotFound(err) {
-		return "", fmt.Errorf("failed to get the configmap %s: %w", r.userClusterMLA.PrometheusCustomScrapeConfigsConfigMapName, err)
+	configMapList := &corev1.ConfigMapList{}
+	if err := r.List(ctx, configMapList, ctrlruntimeclient.InNamespace(resources.UserClusterMLANamespace)); err != nil {
+		return "", fmt.Errorf("failed to list the configmap: %w", err)
 	}
 	customScrapeConfigs := ""
-	for _, v := range configMap.Data {
-		customScrapeConfigs += strings.TrimSpace(v) + "\n"
+	for _, configMap := range configMapList.Items {
+		if !strings.HasPrefix(configMap.GetName(), r.userClusterMLA.PrometheusCustomScrapeConfigsConfigMapPrefix) {
+			continue
+		}
+		for _, v := range configMap.Data {
+			customScrapeConfigs += strings.TrimSpace(v) + "\n"
+		}
 	}
 	return customScrapeConfigs, nil
 }
