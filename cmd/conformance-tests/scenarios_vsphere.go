@@ -118,7 +118,7 @@ func (s *vSphereScenario) NodeDeployments(_ context.Context, num int, _ secrets)
 				Template: &apimodels.NodeSpec{
 					Cloud: &apimodels.NodeCloudSpec{
 						Vsphere: &apimodels.VSphereNodeSpec{
-							Template: fmt.Sprintf("machine-controller-e2e-%s-updated", osName),
+							Template: fmt.Sprintf("machine-controller-e2e-%s", osName),
 							CPUs:     2,
 							Memory:   4096,
 						},

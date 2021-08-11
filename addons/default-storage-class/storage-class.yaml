@@ -54,6 +54,10 @@ metadata:
     kubernetes.io/cluster-service: "true"
   name: vsphere-csi
 provisioner: csi.vsphere.vmware.com
+{{ if .Cluster.VsphereStoragePolicy }}
+parameters:
+  storagepolicyname: {{ .Cluster.VsphereStoragePolicy }}
+{{ end }}
 {{ else }}
 apiVersion: storage.k8s.io/v1
 kind: StorageClass

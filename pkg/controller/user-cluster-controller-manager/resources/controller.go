@@ -215,7 +215,6 @@ type reconciler struct {
 	openvpnServerPort uint32
 	kasSecurePort     uint32
 	tunnelingAgentIP  net.IP
-	platform          string
 	dnsClusterIP      string
 	nodeLocalDNSCache bool
 	opaIntegration    bool
