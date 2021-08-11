@@ -24,6 +24,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	constrainthandler "k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
@@ -52,20 +53,22 @@ const (
 )
 
 type reconciler struct {
-	log        *zap.SugaredLogger
-	seedClient ctrlruntimeclient.Client
-	userClient ctrlruntimeclient.Client
-	recorder   record.EventRecorder
+	log             *zap.SugaredLogger
+	seedClient      ctrlruntimeclient.Client
+	userClient      ctrlruntimeclient.Client
+	recorder        record.EventRecorder
+	clusterIsPaused userclustercontrollermanager.IsPausedChecker
 }
 
-func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.Manager, namespace string) error {
+func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.Manager, namespace string, clusterIsPaused userclustercontrollermanager.IsPausedChecker) error {
 	log = log.Named(controllerName)
 
 	r := &reconciler{
-		log:        log,
-		seedClient: seedMgr.GetClient(),
-		userClient: userMgr.GetClient(),
-		recorder:   userMgr.GetEventRecorderFor(controllerName),
+		log:             log,
+		seedClient:      seedMgr.GetClient(),
+		userClient:      userMgr.GetClient(),
+		recorder:        userMgr.GetEventRecorderFor(controllerName),
+		clusterIsPaused: clusterIsPaused,
 	}
 	c, err := controller.New(controllerName, seedMgr, controller.Options{
 		Reconciler: r,
@@ -84,6 +87,14 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	paused, err := r.clusterIsPaused(ctx)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to check cluster pause status: %w", err)
+	}
+	if paused {
+		return reconcile.Result{}, nil
+	}
+
 	log := r.log.With("resource", request)
 	log.Debug("Reconciling")
 
@@ -96,7 +107,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, fmt.Errorf("failed to get constraint: %v", err)
 	}
 
-	err := r.reconcile(ctx, constraint)
+	err = r.reconcile(ctx, constraint)
 	if err != nil {
 		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Event(constraint, corev1.EventTypeWarning, "ConstraintReconcileFailed", err.Error())
