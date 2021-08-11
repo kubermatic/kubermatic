@@ -159,6 +159,9 @@ func TestReconcile(t *testing.T) {
 				seedRecorder: record.NewFakeRecorder(10),
 				versions:     kubermatic.Versions{},
 				clusterName:  tc.userCluster.Name,
+				clusterIsPaused: func(c context.Context) (bool, error) {
+					return false, nil
+				},
 			}
 
 			for range tc.machines {
