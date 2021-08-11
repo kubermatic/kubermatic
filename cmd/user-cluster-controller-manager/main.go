@@ -125,7 +125,7 @@ func main() {
 	flag.StringVar(&runOp.mlaGatewayURL, "mla-gateway-url", "", "The URL of MLA (Monitoring, Logging, and Alerting) gateway endpoint.")
 	flag.BoolVar(&runOp.userClusterLogging, "user-cluster-logging", false, "Enable logging in user cluster.")
 	flag.BoolVar(&runOp.userClusterMonitoring, "user-cluster-monitoring", false, "Enable monitoring in user cluster.")
-	flag.StringVar(&runOp.userClusterPrometheusCustomScrapeConfigsConfigMapPrefix, "user-cluster-prometheus-custom-scrape-configs-configmap-name", "prometheus-custom-scrape-configs", fmt.Sprintf("The name prefix of ConfigMaps in namespace %s, which will be used to add customized scrape configs for user cluster Prometheus.", resources.UserClusterMLANamespace))
+	flag.StringVar(&runOp.userClusterPrometheusCustomScrapeConfigsConfigMapPrefix, "user-cluster-prometheus-custom-scrape-configs-configmap-prefix", "prometheus-custom-scrape-configs", fmt.Sprintf("The name prefix of ConfigMaps in namespace %s, which will be used to add customized scrape configs for user cluster Prometheus.", resources.UserClusterMLANamespace))
 	flag.BoolVar(&runOp.ccmMigration, "ccm-migration", false, "Enable ccm migration in user cluster.")
 
 	flag.Parse()
