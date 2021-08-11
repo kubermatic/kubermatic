@@ -423,7 +423,7 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 
 // GetConfigMapCreators returns all ConfigMapCreators that are currently in use
 func GetConfigMapCreators(data *resources.TemplateData) []reconciling.NamedConfigMapCreatorGetter {
-	return []reconciling.NamedConfigMapCreatorGetter{
+	creators := []reconciling.NamedConfigMapCreatorGetter{
 		cloudconfig.ConfigMapCreator(data),
 		openvpn.ServerClientConfigsConfigMapCreator(data),
 		dns.ConfigMapCreator(data),
@@ -431,6 +431,12 @@ func GetConfigMapCreators(data *resources.TemplateData) []reconciling.NamedConfi
 		apiserver.AdmissionControlCreator(data),
 		apiserver.CABundleCreator(data),
 	}
+
+	if data.Cluster().Spec.Cloud.VSphere != nil {
+		creators = append(creators, cloudconfig.ConfigmapVsphereCSICreator(data))
+	}
+
+	return creators
 }
 
 func (r *Reconciler) ensureConfigMaps(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {

@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	types2 "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"net"
 	"net/http"
 	"net/url"
@@ -98,7 +99,6 @@ func Add(
 		kasSecurePort:     kasSecurePort,
 		tunnelingAgentIP:  tunnelingAgentIP,
 		log:               log,
-		platform:          cloudProviderName,
 		dnsClusterIP:      dnsClusterIP,
 		nodeLocalDNSCache: nodeLocalDNSCache,
 		opaIntegration:    opaIntegration,
@@ -107,6 +107,7 @@ func Add(
 		versions:          versions,
 		caBundle:          caBundle,
 		userClusterMLA:    userClusterMLA,
+		cloudProvider:     types2.CloudProvider(cloudProviderName),
 	}
 
 	var err error
@@ -223,6 +224,7 @@ type reconciler struct {
 	versions          kubermatic.Versions
 	caBundle          resources.CABundle
 	userClusterMLA    UserClusterMLA
+	cloudProvider     types2.CloudProvider
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool
@@ -279,9 +281,9 @@ func (r *reconciler) userSSHKeys(ctx context.Context) (map[string][]byte, error)
 	return secret.Data, nil
 }
 
-func (r *reconciler) cloudConfig(ctx context.Context) ([]byte, error) {
+func (r *reconciler) cloudConfig(ctx context.Context, cloudConfigConfigmapName string) ([]byte, error) {
 	configmap := &corev1.ConfigMap{}
-	name := types.NamespacedName{Namespace: r.namespace, Name: resources.CloudConfigConfigMapName}
+	name := types.NamespacedName{Namespace: r.namespace, Name: cloudConfigConfigmapName}
 	if err := r.seedClient.Get(ctx, name, configmap); err != nil {
 		return nil, fmt.Errorf("failed to get cloud-config: %v", err)
 	}

@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	vsphere2 "k8c.io/kubermatic/v2/pkg/resources/cloudconfig/vsphere"
 	"net/url"
 
 	aws "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
@@ -63,6 +64,36 @@ func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreat
 			cloudConfig, err := CloudConfig(data.Cluster(), data.DC(), credentials)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create cloud-config: %v", err)
+			}
+
+			cm.Labels = resources.BaseAppLabels(name, nil)
+			cm.Data[resources.CloudConfigConfigMapKey] = cloudConfig
+			cm.Data[FakeVMWareUUIDKeyName] = fakeVMWareUUID
+
+			return cm, nil
+		}
+	}
+}
+
+func ConfigmapVsphereCSICreator(data configMapCreatorData) reconciling.NamedConfigMapCreatorGetter {
+	return func() (string, reconciling.ConfigMapCreator) {
+		return resources.VsphereCSICloudConfigConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+			if cm.Data == nil {
+				cm.Data = map[string]string{}
+			}
+
+			credentials, err := resources.GetCredentials(data)
+			if err != nil {
+				return nil, err
+			}
+
+			vsphereCloudConfig, err := getVsphereCloudConfig(data.Cluster(), data.DC(), credentials)
+			if err != nil {
+				return nil, err
+			}
+			cloudConfig, err := vsphere2.CloudConfigCSIToString(vsphereCloudConfig)
+			if err != nil {
+				return nil, err
 			}
 
 			cm.Labels = resources.BaseAppLabels(name, nil)

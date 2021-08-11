@@ -181,7 +181,7 @@ spec:
       volumes:
         - name: vsphere-config-volume
           secret:
-            secretName: cloud-config
+            secretName: cloud-config-csi
         - name: socket-dir
           emptyDir: {}
 ---

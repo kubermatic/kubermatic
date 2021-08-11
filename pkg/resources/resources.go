@@ -524,6 +524,8 @@ const (
 
 	KubevirtKubeConfig = "kubeConfig"
 
+	VsphereCSICloudConfigConfigMapName = "cloud-config-csi"
+	VsphereCSICloudConfigSecretName    = "cloud-config-csi"
 	VsphereUsername                    = "username"
 	VspherePassword                    = "password"
 	VsphereInfraManagementUserUsername = "infraManagementUserUsername"
