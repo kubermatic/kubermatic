@@ -23,7 +23,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/util"
+	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	constrainthandler "k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
@@ -55,10 +55,10 @@ type reconciler struct {
 	seedClient      ctrlruntimeclient.Client
 	userClient      ctrlruntimeclient.Client
 	recorder        record.EventRecorder
-	clusterIsPaused util.IsPausedChecker
+	clusterIsPaused userclustercontrollermanager.IsPausedChecker
 }
 
-func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.Manager, namespace string, clusterIsPaused util.IsPausedChecker) error {
+func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.Manager, namespace string, clusterIsPaused userclustercontrollermanager.IsPausedChecker) error {
 	log = log.Named(controllerName)
 
 	r := &reconciler{

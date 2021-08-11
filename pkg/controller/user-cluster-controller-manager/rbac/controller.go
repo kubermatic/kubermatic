@@ -23,7 +23,7 @@ import (
 	"net/http"
 	"sync"
 
-	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/util"
+	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog"
@@ -62,7 +62,7 @@ var mapFn = handler.EnqueueRequestsFromMapFunc(func(o ctrlruntimeclient.Object) 
 
 // Add creates a new RBAC generator controller that is responsible for creating Cluster Roles and Cluster Role Bindings
 // for groups: `owners`, `editors` and `viewers``
-func Add(mgr manager.Manager, registerReconciledCheck func(name string, check healthz.Checker) error, clusterIsPaused util.IsPausedChecker) error {
+func Add(mgr manager.Manager, registerReconciledCheck func(name string, check healthz.Checker) error, clusterIsPaused userclustercontrollermanager.IsPausedChecker) error {
 	reconcile := &reconcileRBAC{Client: mgr.GetClient(), rLock: &sync.Mutex{}, clusterIsPaused: clusterIsPaused}
 
 	// Create a new controller
@@ -97,7 +97,7 @@ type reconcileRBAC struct {
 	ctrlruntimeclient.Client
 
 	rLock                      *sync.Mutex
-	clusterIsPaused            util.IsPausedChecker
+	clusterIsPaused            userclustercontrollermanager.IsPausedChecker
 	reconciledSuccessfullyOnce bool
 }
 

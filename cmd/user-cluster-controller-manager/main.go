@@ -26,6 +26,7 @@ import (
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	ccmcsimigrator "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/ccm-csi-migrator"
 	clusterrolelabeler "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/cluster-role-labeler"
 	constraintsyncer "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/constraint-syncer"
@@ -37,7 +38,6 @@ import (
 	usercluster "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources"
 	machinecontrolerresources "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
 	rolecloner "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/role-cloner"
-	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/util"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/pprof"
@@ -233,7 +233,7 @@ func main() {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", clusterv1alpha1.SchemeGroupVersion), zap.Error(err))
 	}
 
-	isPausedChecker := util.NewClusterPausedChecker(seedMgr.GetClient(), runOp.clusterName)
+	isPausedChecker := userclustercontrollermanager.NewClusterPausedChecker(seedMgr.GetClient(), runOp.clusterName)
 
 	// Setup all Controllers
 	log.Info("registering controllers")

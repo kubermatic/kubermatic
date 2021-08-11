@@ -28,7 +28,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
-	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/util"
+	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -73,7 +73,7 @@ func Add(
 	namespace string,
 	cloudProviderName string,
 	clusterURL *url.URL,
-	clusterIsPaused util.IsPausedChecker,
+	clusterIsPaused userclustercontrollermanager.IsPausedChecker,
 	openvpnServerPort uint32,
 	kasSecurePort uint32,
 	tunnelingAgentIP net.IP,
@@ -209,7 +209,7 @@ type reconciler struct {
 	cache             cache.Cache
 	namespace         string
 	clusterURL        *url.URL
-	clusterIsPaused   util.IsPausedChecker
+	clusterIsPaused   userclustercontrollermanager.IsPausedChecker
 	openvpnServerPort uint32
 	kasSecurePort     uint32
 	tunnelingAgentIP  net.IP

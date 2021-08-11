@@ -25,7 +25,7 @@ import (
 
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/common"
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/util"
+	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -53,10 +53,10 @@ type reconciler struct {
 	seedRecorder    record.EventRecorder
 	versions        kubermatic.Versions
 	clusterName     string
-	clusterIsPaused util.IsPausedChecker
+	clusterIsPaused userclustercontrollermanager.IsPausedChecker
 }
 
-func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.Manager, versions kubermatic.Versions, clusterName string, clusterIsPaused util.IsPausedChecker) error {
+func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.Manager, versions kubermatic.Versions, clusterName string, clusterIsPaused userclustercontrollermanager.IsPausedChecker) error {
 	log = log.Named(controllerName)
 
 	r := &reconciler{

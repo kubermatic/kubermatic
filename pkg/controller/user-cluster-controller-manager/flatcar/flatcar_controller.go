@@ -20,9 +20,9 @@ import (
 	"context"
 	"fmt"
 
+	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/flatcar/resources"
 	nodelabelerapi "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/node-labeler/api"
-	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/util"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -45,10 +45,10 @@ type Reconciler struct {
 	ctrlruntimeclient.Client
 	overwriteRegistry string
 	updateWindow      kubermaticv1.UpdateWindow
-	clusterIsPaused   util.IsPausedChecker
+	clusterIsPaused   userclustercontrollermanager.IsPausedChecker
 }
 
-func Add(mgr manager.Manager, overwriteRegistry string, updateWindow kubermaticv1.UpdateWindow, clusterIsPaused util.IsPausedChecker) error {
+func Add(mgr manager.Manager, overwriteRegistry string, updateWindow kubermaticv1.UpdateWindow, clusterIsPaused userclustercontrollermanager.IsPausedChecker) error {
 
 	reconciler := &Reconciler{
 		Client:            mgr.GetClient(),
