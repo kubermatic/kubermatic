@@ -37,7 +37,7 @@ func NewClusterPausedChecker(seedClient client.Client, clusterName string) IsPau
 				return false, nil
 			}
 
-			return false, fmt.Errorf("failed to get cluster %q: %v", clusterName, err)
+			return false, fmt.Errorf("failed to get cluster %q: %w", clusterName, err)
 		}
 
 		return cluster.Spec.Pause, nil
