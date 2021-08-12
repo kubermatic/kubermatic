@@ -85,10 +85,9 @@ func (s *vSphereScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec 
 				Cloud: &apimodels.CloudSpec{
 					DatacenterName: "vsphere-ger",
 					Vsphere: &apimodels.VSphereCloudSpec{
-						Username:      secrets.VSphere.Username,
-						Password:      secrets.VSphere.Password,
-						Datastore:     "exsi-nas",
-						StoragePolicy: "e2e-test-policy",
+						Username:  secrets.VSphere.Username,
+						Password:  secrets.VSphere.Password,
+						Datastore: "exsi-nas",
 					},
 				},
 				Version: s.version.String(),
