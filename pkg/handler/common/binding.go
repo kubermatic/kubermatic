@@ -19,6 +19,7 @@ package common
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
@@ -75,7 +76,7 @@ func BindUserToRoleEndpoint(ctx context.Context, userInfoGetter provider.UserInf
 
 	oldBinding := existingRoleBinding.DeepCopy()
 	for _, subject := range existingRoleBinding.Subjects {
-		if roleUser.UserEmail != "" && subject.Name == roleUser.UserEmail {
+		if roleUser.UserEmail != "" && strings.EqualFold(subject.Name, roleUser.UserEmail) {
 			return nil, errors.NewBadRequest("user %s already connected to role %s", roleUser.UserEmail, roleID)
 		}
 		if roleUser.Group != "" && subject.Name == roleUser.Group {
@@ -143,7 +144,7 @@ func BindUserToClusterRoleEndpoint(ctx context.Context, userInfoGetter provider.
 
 	oldBinding := existingClusterRoleBinding.DeepCopy()
 	for _, subject := range existingClusterRoleBinding.Subjects {
-		if clusterRoleUser.UserEmail != "" && subject.Name == clusterRoleUser.UserEmail {
+		if clusterRoleUser.UserEmail != "" && strings.EqualFold(subject.Name, clusterRoleUser.UserEmail) {
 			return nil, errors.NewBadRequest("user %s already connected to the cluster role %s", clusterRoleUser.UserEmail, roleID)
 		}
 		if clusterRoleUser.Group != "" && subject.Name == clusterRoleUser.Group {
