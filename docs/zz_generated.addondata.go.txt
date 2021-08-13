@@ -56,6 +56,8 @@ type ClusterData struct {
 	Features sets.String
 	// CNIPlugin contains the CNIPlugin settings
 	CNIPlugin CNIPlugin
+	// MLA contains monitoring, logging and alerting related settings for the user cluster.
+	MLA MLASettings
 }
 
 type ClusterNetwork struct {
@@ -70,6 +72,13 @@ type ClusterNetwork struct {
 type CNIPlugin struct {
 	Type    string
 	Version string
+}
+
+type MLASettings struct {
+	// MonitoringEnabled is the flag for enabling monitoring in user cluster.
+	MonitoringEnabled bool
+	// LoggingEnabled is the flag for enabling logging in user cluster.
+	LoggingEnabled bool
 }
 
 type Credentials struct {
