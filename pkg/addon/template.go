@@ -129,6 +129,10 @@ func NewTemplateData(
 				ProxyMode:         cluster.Spec.ClusterNetwork.ProxyMode,
 			},
 			CNIPlugin: cniPlugin,
+			MLA: MLASettings{
+				MonitoringEnabled: cluster.Spec.MLA != nil && cluster.Spec.MLA.MonitoringEnabled,
+				LoggingEnabled:    cluster.Spec.MLA != nil && cluster.Spec.MLA.LoggingEnabled,
+			},
 		},
 	}, nil
 }
@@ -182,6 +186,8 @@ type ClusterData struct {
 	Features sets.String
 	// CNIPlugin contains the CNIPlugin settings
 	CNIPlugin CNIPlugin
+	// MLA contains monitoring, logging and alerting related settings for the user cluster.
+	MLA MLASettings
 }
 
 type ClusterNetwork struct {
@@ -196,6 +202,13 @@ type ClusterNetwork struct {
 type CNIPlugin struct {
 	Type    string
 	Version string
+}
+
+type MLASettings struct {
+	// MonitoringEnabled is the flag for enabling monitoring in user cluster.
+	MonitoringEnabled bool
+	// LoggingEnabled is the flag for enabling logging in user cluster.
+	LoggingEnabled bool
 }
 
 func ParseFromFolder(log *zap.SugaredLogger, overwriteRegistry string, manifestPath string, data *TemplateData) ([]runtime.RawExtension, error) {
