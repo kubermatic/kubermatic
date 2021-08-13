@@ -136,6 +136,12 @@ func (h *AdmissionHandler) applyDefaults(c *kubermaticv1.Cluster) {
 		}
 	}
 
+	if c.Spec.ClusterNetwork.IPVS != nil {
+		if c.Spec.ClusterNetwork.IPVS.StrictArp == nil {
+			c.Spec.ClusterNetwork.IPVS.StrictArp = pointer.BoolPtr(resources.IPVSStrictArp)
+		}
+	}
+
 	if c.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled == nil {
 		c.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled = pointer.BoolPtr(true)
 	}
