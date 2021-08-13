@@ -111,6 +111,9 @@ func TestReconcile(t *testing.T) {
 				client:     client,
 				recorder:   record.NewFakeRecorder(10),
 				ownerEmail: tc.ownerEmail,
+				clusterIsPaused: func(c context.Context) (bool, error) {
+					return false, nil
+				},
 			}
 
 			ctx := context.Background()

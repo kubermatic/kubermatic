@@ -25,6 +25,7 @@ import (
 
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/common"
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -46,24 +47,26 @@ const (
 )
 
 type reconciler struct {
-	log          *zap.SugaredLogger
-	seedClient   ctrlruntimeclient.Client
-	userClient   ctrlruntimeclient.Client
-	seedRecorder record.EventRecorder
-	versions     kubermatic.Versions
-	clusterName  string
+	log             *zap.SugaredLogger
+	seedClient      ctrlruntimeclient.Client
+	userClient      ctrlruntimeclient.Client
+	seedRecorder    record.EventRecorder
+	versions        kubermatic.Versions
+	clusterName     string
+	clusterIsPaused userclustercontrollermanager.IsPausedChecker
 }
 
-func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.Manager, versions kubermatic.Versions, clusterName string) error {
+func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.Manager, versions kubermatic.Versions, clusterName string, clusterIsPaused userclustercontrollermanager.IsPausedChecker) error {
 	log = log.Named(controllerName)
 
 	r := &reconciler{
-		log:          log,
-		seedClient:   seedMgr.GetClient(),
-		userClient:   userMgr.GetClient(),
-		seedRecorder: seedMgr.GetEventRecorderFor(controllerName),
-		versions:     versions,
-		clusterName:  clusterName,
+		log:             log,
+		seedClient:      seedMgr.GetClient(),
+		userClient:      userMgr.GetClient(),
+		seedRecorder:    seedMgr.GetEventRecorderFor(controllerName),
+		versions:        versions,
+		clusterName:     clusterName,
+		clusterIsPaused: clusterIsPaused,
 	}
 	c, err := controller.New(controllerName, userMgr, controller.Options{
 		Reconciler: r,
@@ -92,6 +95,14 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	paused, err := r.clusterIsPaused(ctx)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to check cluster pause status: %w", err)
+	}
+	if paused {
+		return reconcile.Result{}, nil
+	}
+
 	log := r.log.With("Request", request.NamespacedName.String())
 	log.Debug("Reconciling")
 
@@ -104,7 +115,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, fmt.Errorf("failed to get cluster: %v", err)
 	}
 
-	err := r.reconcile(ctx, log, cluster)
+	err = r.reconcile(ctx, log, cluster)
 	if err != nil {
 		log.Errorw("Reconciling failed", zap.Error(err))
 		r.seedRecorder.Event(cluster, corev1.EventTypeWarning, "CCMCSIMigrationFailed", err.Error())

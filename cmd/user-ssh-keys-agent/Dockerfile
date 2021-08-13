@@ -14,13 +14,21 @@
 
 FROM docker.io/golang:1.16.4 as builder
 
+ARG HOST_GOCACHE
 WORKDIR /go/src/github.com/kubermatic/kubermatic
-COPY . .
+
+COPY ./cmd/user-ssh-keys-agent ./cmd/user-ssh-keys-agent
+COPY ./cmd/http-prober/api ./cmd/http-prober/api
+COPY ./pkg ./pkg
+COPY ./go.mod ./go.mod
+COPY ./go.sum ./go.sum
+
 ENV CGO_ENABLED=0
-RUN go build ./cmd/user-ssh-keys-agent
+ENV GOCACHE=/go/src/github.com/kubermatic/kubermatic/cmd/user-ssh-keys-agent/$HOST_GOCACHE
+RUN go build -v -o ./_build/user-ssh-keys-agent ./cmd/user-ssh-keys-agent
 
 FROM docker.io/alpine:3.13
 LABEL maintainer="support@kubermatic.com"
 
-COPY --from=builder /go/src/github.com/kubermatic/kubermatic/user-ssh-keys-agent /usr/local/bin/user-ssh-keys-agent
+COPY --from=builder /go/src/github.com/kubermatic/kubermatic/_build/user-ssh-keys-agent /usr/local/bin/user-ssh-keys-agent
 ENTRYPOINT ["/usr/local/bin/user-ssh-keys-agent"]

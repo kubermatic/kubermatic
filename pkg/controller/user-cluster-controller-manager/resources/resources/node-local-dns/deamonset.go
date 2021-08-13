@@ -59,12 +59,8 @@ func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 			ds.Spec.Template.Spec.HostNetwork = true
 			ds.Spec.Template.Spec.DNSPolicy = corev1.DNSDefault
 			ds.Spec.Template.Spec.TerminationGracePeriodSeconds = pointer.Int64Ptr(0)
-			ds.Spec.Template.Spec.Tolerations = []corev1.Toleration{
-				{
-					Key:      "CriticalAddonsOnly",
-					Operator: corev1.TolerationOpExists,
-				},
-			}
+
+			patchTolerations(&ds.Spec.Template.Spec)
 
 			hostPathType := corev1.HostPathFileOrCreate
 			ds.Spec.Template.Spec.Containers = []corev1.Container{
@@ -163,5 +159,27 @@ func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 
 			return ds, nil
 		}
+	}
+}
+
+// patchTolerations ensures that a toleration for the CriticalAddonsOnly taint
+// exists, but pays attention to not overwrite any potential changes the user
+// has made.
+func patchTolerations(podSpec *corev1.PodSpec) {
+	exists := false
+	defaultTolerationKey := "CriticalAddonsOnly"
+
+	for _, toleration := range podSpec.Tolerations {
+		if toleration.Key == defaultTolerationKey {
+			exists = true
+			break
+		}
+	}
+
+	if !exists {
+		podSpec.Tolerations = append(podSpec.Tolerations, corev1.Toleration{
+			Key:      defaultTolerationKey,
+			Operator: corev1.TolerationOpExists,
+		})
 	}
 }
