@@ -31,17 +31,22 @@ spec:
   - secretName: dex-tls
     hosts:
     - {{ .Values.dex.ingress.host }}
-  backend:
-    serviceName: dex
-    servicePort: 5556
+  defaultBackend:
+    service:
+      name: dex
+      port:
+        number: 5556
   rules:
   - host: {{ .Values.dex.ingress.host }}
     http:
       paths:
       - path: {{ .Values.dex.ingress.path }}
+        pathType: Prefix
         backend:
-          serviceName: dex
-          servicePort: 5556
+          service:
+            name: dex
+            port:
+              number: 5556
 {{ if .Values.dex.grpc }}{{ toYaml .Values.dex.grpc.ingress | trim | indent 6 }}
 {{- end }}
 {{ end }}
