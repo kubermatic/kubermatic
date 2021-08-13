@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-{{ if not .Values.alertmanager.migration.enabled }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -147,4 +146,3 @@ spec:
       resources:
         requests:
           storage: {{ .Values.alertmanager.resources.storage | default .Values.alertmanager.storageSize }}
-{{ end }}
