@@ -25,6 +25,12 @@ COPY ./go.sum ./go.sum
 
 ENV CGO_ENABLED=0
 ENV GOCACHE=/go/src/github.com/kubermatic/kubermatic/cmd/user-ssh-keys-agent/$HOST_GOCACHE
+
+# test
+RUN echo $GOCACHE
+RUN ls $GOCACHE
+# end test
+
 RUN go build -v -o ./_build/user-ssh-keys-agent ./cmd/user-ssh-keys-agent
 
 FROM docker.io/alpine:3.13
