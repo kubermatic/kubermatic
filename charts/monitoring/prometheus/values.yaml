@@ -214,20 +214,6 @@ prometheus:
       # type:
       # config:
 
-  # When upgrading the chart from 1.x => 2.0, the naming for volumes
-  # has changed and without a migration your existing Prometheus database
-  # would not be used anymore. Set the enabled flag to true to let an
-  # init container copy the data over. A lockfile is created so that when
-  # the pod for whatever reason restarts the migration is not executed
-  # again.
-  # Once the migration has finished and you set the flag to false again,
-  # you can safely remove the old `prometheus-kubermatic-db-...` PVCs.
-  migration:
-    enabled: false
-    image:
-      repository: quay.io/kubermatic/util
-      tag: 1.4.1
-
   containers:
     prometheus:
       resources:
@@ -245,14 +231,6 @@ prometheus:
         limits:
           cpu: 500m
           memory: 10Gi
-    migration:
-      resources:
-        requests:
-          cpu: 100m
-          memory: 64Mi
-        limits:
-          cpu: 200m
-          memory: 128Mi
     reloader:
       resources:
         requests:
