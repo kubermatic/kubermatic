@@ -14,8 +14,8 @@
 
 dex:
   image:
-    repository: "ghcr.io/dexidp/dex"
-    tag: "v2.30.0"
+    repository: "docker.io/dexidp/dex"
+    tag: "v2.27.0"
   replicas: 2
   # this options allows setting custom envvars in the dex container
   # this list is directly handed to the container spec
