@@ -465,6 +465,9 @@ type ClusterNetworkingConfig struct {
 	// Defaults to ipvs.
 	ProxyMode string `json:"proxyMode"`
 
+	// IPVS defines kube-proxy ipvs configuration options
+	IPVS *IPVSConfiguration `json:"ipvs,omitempty"`
+
 	// NodeLocalDNSCacheEnabled controls whether the NodeLocal DNS Cache feature is enabled.
 	// Defaults to true.
 	NodeLocalDNSCacheEnabled *bool `json:"nodeLocalDNSCacheEnabled,omitempty"`
@@ -496,6 +499,13 @@ type ClusterAddress struct {
 	AdminToken string `json:"adminToken"`
 	// IP is the external IP under which the apiserver is available
 	IP string `json:"ip"`
+}
+
+// IPVSConfiguration contains ipvs-related configuration details for kube-proxy.
+type IPVSConfiguration struct {
+	// StrictArp configure arp_ignore and arp_announce to avoid answering ARP queries from kube-ipvs0 interface.
+	// defaults to true.
+	StrictArp *bool `json:"strictArp,omitempty"`
 }
 
 // CloudSpec mutually stores access data to a cloud provider.

@@ -16888,6 +16888,9 @@
           "type": "string",
           "x-go-name": "DNSDomain"
         },
+        "ipvs": {
+          "$ref": "#/definitions/IPVSConfiguration"
+        },
         "nodeLocalDNSCacheEnabled": {
           "description": "NodeLocalDNSCacheEnabled controls whether the NodeLocal DNS Cache feature is enabled.\nDefaults to true.",
           "type": "boolean",
@@ -18688,6 +18691,18 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "IPVSConfiguration": {
+      "type": "object",
+      "title": "IPVSConfiguration contains ipvs-related configuration details for kube-proxy.",
+      "properties": {
+        "strictArp": {
+          "description": "StrictArp configure arp_ignore and arp_announce to avoid answering ARP queries from kube-ipvs0 interface.\ndefaults to true.",
+          "type": "boolean",
+          "x-go-name": "StrictArp"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "ImageList": {
       "description": "ImageList defines a map of operating system and the image to use",
