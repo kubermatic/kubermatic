@@ -72,6 +72,8 @@ for ARCH in ${ARCHITECTURES}; do
   # arm64 stuff. We might need to change this once we run e2e tests on arm64.
   buildah bud \
     --tag "${DOCKER_REPO}/user-ssh-keys-agent-${ARCH}:${PRIMARY_TAG}" \
+    --build-arg "GOPROXY=${GOPROXY:-}" \
+    --build-arg "KUBEMATIC_EDITION=${KUBEMATIC_EDITION:-}" \
     --arch "$ARCH" \
     --override-arch "$ARCH" \
     --format=docker \

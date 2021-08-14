@@ -369,13 +369,9 @@ presubmits:
   - name: pre-kubermatic-test-user-ssh-key-agent-multiarch
     decorate: true
     always_run: false
-    optional: true
+    run_if_changed: "cmd/user-ssh-key-agent/"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
-      preset-vault: "true"
-      preset-docker-pull: "true"
-      preset-kubeconfig-ci: "true"
-      preset-kind-volume-mounts: "true"
       preset-goproxy: "true"
     spec:
       containers:
