@@ -369,7 +369,7 @@ presubmits:
   - name: pre-kubermatic-test-user-ssh-key-agent-multiarch
     decorate: true
     always_run: false
-    run_if_changed: "cmd/user-ssh-key-agent/"
+    run_if_changed: "cmd/user-ssh-keys-agent/"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-goproxy: "true"
@@ -387,9 +387,10 @@ presubmits:
         resources:
           requests:
             memory: 4Gi
-            cpu: 3.5
+            cpu: 3
           limits:
             memory: 4Gi
+            cpu: 3
 
   #########################################################
   # Base Kubernetes Tests (AWS, Flatcar)

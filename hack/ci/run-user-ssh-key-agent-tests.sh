@@ -31,14 +31,16 @@ export TAG_NAME=test
 # build multi-arch images
 buildah manifest create "${DOCKER_REPO}/user-ssh-keys-agent:${TAG_NAME}"
 for ARCH in ${ARCHITECTURES}; do
+  echodate "Building image for $ARCH..."
+
   # Building via buildah does not use the gocache, but that's okay, because we
   # wouldn't want to cache arm64 stuff anyway, as it would just blow up the
   # cache size and force every e2e test to download gigabytes worth of unneeded
   # arm64 stuff. We might need to change this once we run e2e tests on arm64.
-  buildah bud \
+  time buildah bud \
     --tag "${DOCKER_REPO}/user-ssh-keys-agent-${ARCH}:${TAG_NAME}" \
     --build-arg "GOPROXY=${GOPROXY:-}" \
-    --build-arg "KUBEMATIC_EDITION=${KUBEMATIC_EDITION}" \
+    --build-arg "KUBERMATIC_EDITION=${KUBERMATIC_EDITION}" \
     --arch "$ARCH" \
     --override-arch "$ARCH" \
     --format=docker \
@@ -46,3 +48,5 @@ for ARCH in ${ARCHITECTURES}; do
     .
   buildah manifest add "${DOCKER_REPO}/user-ssh-keys-agent:${TAG_NAME}" "${DOCKER_REPO}/user-ssh-keys-agent-${ARCH}:${TAG_NAME}"
 done
+
+echodate "Successfully built for all architectures."

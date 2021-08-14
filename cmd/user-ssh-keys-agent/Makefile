@@ -17,7 +17,7 @@ GOOS ?= $(shell go env GOOS)
 
 .PHONY: build
 build:
-	GOOS=$(GOOS) CGO_ENABLED=0 go build -o ./_build/user-ssh-keys-agent
+	GOOS=$(GOOS) CGO_ENABLED=0 go build -v -o ./_build/user-ssh-keys-agent
 
 .PHONY: docker
 docker: build

@@ -66,6 +66,8 @@ docker build -t "${DOCKER_REPO}/etcd-launcher:${PRIMARY_TAG}" -f cmd/etcd-launch
 # build multi-arch images
 buildah manifest create "${DOCKER_REPO}/user-ssh-keys-agent:${PRIMARY_TAG}"
 for ARCH in ${ARCHITECTURES}; do
+  echodate "Building user-ssh-keys-agent image for $ARCH..."
+
   # Building via buildah does not use the gocache, but that's okay, because we
   # wouldn't want to cache arm64 stuff anyway, as it would just blow up the
   # cache size and force every e2e test to download gigabytes worth of unneeded
@@ -73,7 +75,7 @@ for ARCH in ${ARCHITECTURES}; do
   buildah bud \
     --tag "${DOCKER_REPO}/user-ssh-keys-agent-${ARCH}:${PRIMARY_TAG}" \
     --build-arg "GOPROXY=${GOPROXY:-}" \
-    --build-arg "KUBEMATIC_EDITION=${KUBEMATIC_EDITION:-}" \
+    --build-arg "KUBERMATIC_EDITION=${KUBERMATIC_EDITION}" \
     --arch "$ARCH" \
     --override-arch "$ARCH" \
     --format=docker \

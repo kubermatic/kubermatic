@@ -29,5 +29,5 @@ RUN make -C ./cmd/user-ssh-keys-agent build
 FROM docker.io/alpine:3.13
 LABEL maintainer="support@kubermatic.com"
 
-COPY --from=builder /go/src/k8c.io/kubermatic/_build/user-ssh-keys-agent /usr/local/bin/user-ssh-keys-agent
+COPY --from=builder /go/src/k8c.io/kubermatic/cmd/user-ssh-keys-agent/_build/user-ssh-keys-agent /usr/local/bin/user-ssh-keys-agent
 ENTRYPOINT ["/usr/local/bin/user-ssh-keys-agent"]
