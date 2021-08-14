@@ -14,7 +14,7 @@
 
 apiVersion: v1
 name: oauth
-version: 1.5.6
+version: 1.5.7
 appVersion: v2.27.0
 description: Dex
 keywords:
