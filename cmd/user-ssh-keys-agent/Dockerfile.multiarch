@@ -12,13 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-DOCKER_REPO ?= "quay.io/kubermatic"
-GOOS ?= $(shell go env GOOS)
+FROM docker.io/golang:1.16.1 as builder
 
-.PHONY: build
-build:
-	GOOS=$(GOOS) CGO_ENABLED=0 go build -o ./_build/user-ssh-keys-agent
+WORKDIR /go/src/github.com/kubermatic/kubermatic
+COPY . .
+RUN make -C /cmd/user-ssh-keys-agent build
 
-.PHONY: docker
-docker: build
-	docker build -t $(DOCKER_REPO)/user-ssh-keys-agent:$(TAG) .
+FROM docker.io/alpine:3.13
+LABEL maintainer="support@kubermatic.com"
+
+COPY --from=builder /go/src/github.com/kubermatic/kubermatic/_build/user-ssh-keys-agent /usr/local/bin/user-ssh-keys-agent
+ENTRYPOINT ["/usr/local/bin/user-ssh-keys-agent"]
