@@ -12,9 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM alpine:3.13
+FROM docker.io/golang:1.16.1 as builder
+
+# import the GOPROXY variable from Buildah via an arg and then use
+# that arg to define the environment variable later on
+ARG GOPROXY=
+ARG KUBERMATIC_EDITION=ce
+
+ENV GOPROXY=$GOPROXY
+ENV KUBERMATIC_EDITION=$KUBERMATIC_EDITION
+
+WORKDIR /go/src/k8c.io/kubermatic
+COPY . .
+RUN make -C ./cmd/user-ssh-keys-agent build
+
+FROM docker.io/alpine:3.13
 LABEL maintainer="support@kubermatic.com"
 
-COPY ./_build/user-ssh-keys-agent /usr/local/bin/user-ssh-keys-agent
-
+COPY --from=builder /go/src/k8c.io/kubermatic/cmd/user-ssh-keys-agent/_build/user-ssh-keys-agent /usr/local/bin/user-ssh-keys-agent
 ENTRYPOINT ["/usr/local/bin/user-ssh-keys-agent"]

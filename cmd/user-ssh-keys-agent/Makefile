@@ -14,24 +14,11 @@
 
 DOCKER_REPO ?= "quay.io/kubermatic"
 GOOS ?= $(shell go env GOOS)
-GOPATH ?= $(shell go env GOPATH)
-GOCACHE ?= $(shell go env GOCACHE)
 
 .PHONY: build
 build:
-	docker run \
-		-e GOCACHE=/go/.cache/go-build \
- 		-e CGO_ENABLED=0 \
-		-v $(GOPATH)/src/github.com/kubermatic/kubermatic/:/go/src/github.com/kubermatic/kubermatic \
-		-v $(GOCACHE):/go/.cache/go-build \
-		-w /go/src/github.com/kubermatic/kubermatic/cmd/user-ssh-keys-agent \
-		docker.io/golang:1.16.4 \
-		go build -v -o ./_build/
+	GOOS=$(GOOS) CGO_ENABLED=0 go build -v -o ./_build/user-ssh-keys-agent
 
 .PHONY: docker
-docker:
-	cd ../.. && cp -r $(GOCACHE) cmd/user-ssh-keys-agent && \
-	docker build \
-		-t $(DOCKER_REPO)/user-ssh-keys-agent:$(TAG) \
-		--build-arg HOST_GOCACHE=$(shell basename $$GOCACHE) \
-		-f cmd/user-ssh-keys-agent/Dockerfile .
+docker: build
+	docker build -t $(DOCKER_REPO)/user-ssh-keys-agent:$(TAG) .
