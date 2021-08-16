@@ -19,10 +19,11 @@ package ccmmigration
 import (
 	"context"
 	"fmt"
+	"time"
+
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8s.io/apimachinery/pkg/runtime"
-	"time"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -183,7 +184,7 @@ func (c *ClusterJig) createCluster(cloudSpec kubermaticv1.CloudSpec) error {
 					},
 				},
 				Etcd: kubermaticv1.EtcdStatefulSetSettings{
-					ClusterSize: 1,
+					ClusterSize: pointer.Int32Ptr(1),
 				},
 				Scheduler: kubermaticv1.ControllerSettings{
 					DeploymentSettings: kubermaticv1.DeploymentSettings{
