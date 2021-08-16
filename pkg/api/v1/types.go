@@ -914,14 +914,18 @@ func newPublicHetznerCloudSpec(internal *kubermaticv1.HetznerCloudSpec) (public 
 }
 
 // PublicAzureCloudSpec is a public counterpart of apiv1.AzureCloudSpec.
-type PublicAzureCloudSpec struct{}
+type PublicAzureCloudSpec struct {
+	AssignAvailabilitySet *bool `json:"assignAvailabilitySet"`
+}
 
 func newPublicAzureCloudSpec(internal *kubermaticv1.AzureCloudSpec) (public *PublicAzureCloudSpec) {
 	if internal == nil {
 		return nil
 	}
 
-	return &PublicAzureCloudSpec{}
+	return &PublicAzureCloudSpec{
+		AssignAvailabilitySet: internal.AssignAvailabilitySet,
+	}
 }
 
 // PublicVSphereCloudSpec is a public counterpart of apiv1.VSphereCloudSpec.
