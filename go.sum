@@ -2683,6 +2683,7 @@ k8s.io/apimachinery v0.21.3/go.mod h1:H/IM+5vH9kZRNJ4l3x/fXP/5bOPJaVP/guptnZPeCF
 k8s.io/apiserver v0.17.0/go.mod h1:ABM+9x/prjINN6iiffRVNCBR2Wk7uY4z+EtEGZD48cg=
 k8s.io/apiserver v0.17.4/go.mod h1:5ZDQ6Xr5MNBxyi3iUZXS84QOhZl+W7Oq2us/29c0j9I=
 k8s.io/apiserver v0.19.0/go.mod h1:XvzqavYj73931x7FLtyagh8WibHpePJ1QwWrSJs2CLk=
+k8s.io/apiserver v0.21.3 h1:QxAgE1ZPQG5cPlHScHTnLxP9H/kU3zjH1Vnd8G+n5OI=
 k8s.io/apiserver v0.21.3/go.mod h1:eDPWlZG6/cCCMj/JBcEpDoK+I+6i3r9GsChYBHSbAzU=
 k8s.io/autoscaler v0.0.0-20190218140445-7f77136aeea4 h1:My/qvGX4p7+3wWSGZO/QQ4mZq9ly5zoNsMUaec1b/30=
 k8s.io/autoscaler v0.0.0-20190218140445-7f77136aeea4/go.mod h1:QEXezc9uKPT91dwqhSJq3GNI3B1HxFRQHiku9kmrsSA=

@@ -69,7 +69,7 @@ set -x
   -updates=charts/kubermatic/static/master/updates.yaml \
   -kubernetes-addons-path=addons \
   -kubernetes-addons-file=charts/kubermatic/static/master/kubernetes-addons.yaml \
-  -feature-gates=OpenIDAuthPlugin=true \
+  -feature-gates=OpenIDAuthPlugin=true,KonnectivityService=true \
   -worker-name="$(worker_name)" \
   -external-url=dev.kubermatic.io \
   -backup-container=charts/kubermatic/static/store-container.yaml \

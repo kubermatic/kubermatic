@@ -85,6 +85,7 @@ require (
 	k8s.io/api v0.21.3
 	k8s.io/apiextensions-apiserver v0.21.3
 	k8s.io/apimachinery v0.21.3
+	k8s.io/apiserver v0.21.3
 	k8s.io/autoscaler v0.0.0-20190218140445-7f77136aeea4 // git digest for VPA v0.4.0
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/code-generator v0.21.3
