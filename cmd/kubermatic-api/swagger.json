@@ -10731,7 +10731,30 @@
         "tags": [
           "etcdrestore"
         ],
-        "operationId": "deleteRestore",
+        "operationId": "deleteEtcdRestore",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "EtcdRestoreName",
+            "name": "er_name",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "$ref": "#/responses/empty"

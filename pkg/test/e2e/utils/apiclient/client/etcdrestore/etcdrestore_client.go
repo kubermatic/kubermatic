@@ -30,7 +30,7 @@ type ClientOption func(*runtime.ClientOperation)
 type ClientService interface {
 	CreateEtcdRestore(params *CreateEtcdRestoreParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateEtcdRestoreCreated, error)
 
-	DeleteRestore(params *DeleteRestoreParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteRestoreOK, error)
+	DeleteEtcdRestore(params *DeleteEtcdRestoreParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteEtcdRestoreOK, error)
 
 	GetEtcdRestore(params *GetEtcdRestoreParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetEtcdRestoreOK, error)
 
@@ -78,22 +78,22 @@ func (a *Client) CreateEtcdRestore(params *CreateEtcdRestoreParams, authInfo run
 }
 
 /*
-  DeleteRestore Deletes a etcd restore config for a given cluster based on its name
+  DeleteEtcdRestore Deletes a etcd restore config for a given cluster based on its name
 */
-func (a *Client) DeleteRestore(params *DeleteRestoreParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteRestoreOK, error) {
+func (a *Client) DeleteEtcdRestore(params *DeleteEtcdRestoreParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteEtcdRestoreOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewDeleteRestoreParams()
+		params = NewDeleteEtcdRestoreParams()
 	}
 	op := &runtime.ClientOperation{
-		ID:                 "deleteRestore",
+		ID:                 "deleteEtcdRestore",
 		Method:             "DELETE",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{er_name}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
 		Params:             params,
-		Reader:             &DeleteRestoreReader{formats: a.formats},
+		Reader:             &DeleteEtcdRestoreReader{formats: a.formats},
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
@@ -106,12 +106,12 @@ func (a *Client) DeleteRestore(params *DeleteRestoreParams, authInfo runtime.Cli
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*DeleteRestoreOK)
+	success, ok := result.(*DeleteEtcdRestoreOK)
 	if ok {
 		return success, nil
 	}
 	// unexpected success response
-	unexpectedSuccess := result.(*DeleteRestoreDefault)
+	unexpectedSuccess := result.(*DeleteEtcdRestoreDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
