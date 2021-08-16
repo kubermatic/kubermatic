@@ -426,7 +426,7 @@ type StatefulSetSettings struct {
 }
 
 type EtcdStatefulSetSettings struct {
-	ClusterSize  int                          `json:"clusterSize,omitempty"`
+	ClusterSize  *int32                       `json:"clusterSize,omitempty"`
 	StorageClass string                       `json:"storageClass,omitempty"`
 	DiskSize     *resource.Quantity           `json:"diskSize,omitempty"`
 	Resources    *corev1.ResourceRequirements `json:"resources,omitempty"`
