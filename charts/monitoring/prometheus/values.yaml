@@ -16,7 +16,7 @@ prometheus:
   replicas: 2
   image:
     repository: quay.io/prometheus/prometheus
-    tag: v2.25.0
+    tag: v2.29.1
     pullPolicy: IfNotPresent
 
   host: ''
@@ -42,7 +42,7 @@ prometheus:
     enabled: true
     image:
       repository: quay.io/kubermatic/util
-      tag: 1.4.1
+      tag: 1.5.0
     timeout: 60m
 
   # Specify additional external labels which will be added to all
