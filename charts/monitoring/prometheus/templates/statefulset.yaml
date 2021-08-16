@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-{{ if not .Values.prometheus.migration.enabled }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -305,10 +304,13 @@ spec:
       {{- with .Values.prometheus.storageClass }}
       storageClassName: {{ . }}
       {{- end }}
-{{ end }}
 
 ---
+{{ if .Capabilities.APIVersions.Has "policy/v1" }}
+apiVersion: policy/v1
+{{ else }}
 apiVersion: policy/v1beta1
+{{ end }}
 kind: PodDisruptionBudget
 metadata:
   name: '{{ template "name" . }}'

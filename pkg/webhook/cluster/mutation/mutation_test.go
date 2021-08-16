@@ -77,6 +77,7 @@ func TestHandle(t *testing.T) {
 								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 								DNSDomain:                "example.local",
 								ProxyMode:                resources.IPTablesProxyMode,
+								IPVS:                     &kubermaticv1.IPVSConfiguration{StrictArp: pointer.BoolPtr(true)},
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 							},
 						}.Do(),
@@ -107,6 +108,7 @@ func TestHandle(t *testing.T) {
 								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 								DNSDomain:                "example.local",
 								ProxyMode:                resources.IPTablesProxyMode,
+								IPVS:                     &kubermaticv1.IPVSConfiguration{StrictArp: pointer.BoolPtr(true)},
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 							},
 						}.Do(),
@@ -183,6 +185,42 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", "ipvs"),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/dnsDomain", "cluster.local"),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", true),
+			},
+		},
+		{
+			name: "Default network configuration with IPVS Settings",
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Create,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   kubermaticv1.GroupName,
+						Version: kubermaticv1.GroupVersion,
+						Kind:    "Cluster",
+					},
+					Name: "foo",
+					Object: runtime.RawExtension{
+						Raw: rawClusterGen{
+							Name:      "foo",
+							CloudSpec: kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{}},
+							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
+								Type:    kubermaticv1.CNIPluginTypeCanal,
+								Version: "v3.19",
+							},
+							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+								IPVS: &kubermaticv1.IPVSConfiguration{},
+							},
+						}.Do(),
+					},
+				},
+			},
+			wantAllowed: true,
+			wantPatches: []jsonpatch.JsonPatchOperation{
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/services/cidrBlocks", []interface{}{"10.240.16.0/20"}),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/pods/cidrBlocks", []interface{}{"172.25.0.0/16"}),
+				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", "ipvs"),
+				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/dnsDomain", "cluster.local"),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", true),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/ipvs/strictArp", true),
 			},
 		},
 		{

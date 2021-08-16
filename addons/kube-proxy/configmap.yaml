@@ -50,6 +50,7 @@ data:
       minSyncPeriod: 0s
       scheduler: ""
       syncPeriod: 30s
+      strictARP: {{ .Cluster.Network.StrictArp }}
     kind: KubeProxyConfiguration
     metricsBindAddress: 127.0.0.1:10249
     mode: {{ .Cluster.Network.ProxyMode }}

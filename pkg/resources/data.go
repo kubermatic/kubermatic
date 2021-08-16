@@ -232,61 +232,6 @@ func (td TemplateDataBuilder) Build() *TemplateData {
 	return &td.data
 }
 
-// NewTemplateData returns an instance of TemplateData
-// Deprecated: Use NewTemplateDataBuilder instead.
-func NewTemplateData(
-	ctx context.Context,
-	client ctrlruntimeclient.Client,
-	cluster *kubermaticv1.Cluster,
-	dc *kubermaticv1.Datacenter,
-	seed *kubermaticv1.Seed,
-	overwriteRegistry string,
-	nodePortRange string,
-	nodeAccessNetwork string,
-	etcdDiskSize resource.Quantity,
-	monitoringScrapeAnnotationPrefix string,
-	inClusterPrometheusRulesFile string,
-	inClusterPrometheusDisableDefaultRules bool,
-	inClusterPrometheusDisableDefaultScrapingConfigs bool,
-	inClusterPrometheusScrapingConfigsFile string,
-	oidcURL string,
-	oidcIssuerClientID string,
-	kubermaticImage string,
-	etcdLauncherImage string,
-	dnatControllerImage string,
-	backupSchedule time.Duration,
-	supportsFailureDomainZoneAntiAffinity bool,
-	versions kubermatic.Versions,
-	caBundle CABundle) *TemplateData {
-	return &TemplateData{
-		ctx:                 ctx,
-		client:              client,
-		cluster:             cluster,
-		dc:                  dc,
-		seed:                seed,
-		OverwriteRegistry:   overwriteRegistry,
-		nodePortRange:       nodePortRange,
-		nodeAccessNetwork:   nodeAccessNetwork,
-		etcdDiskSize:        etcdDiskSize,
-		oidcIssuerURL:       oidcURL,
-		oidcIssuerClientID:  oidcIssuerClientID,
-		kubermaticImage:     kubermaticImage,
-		etcdLauncherImage:   etcdLauncherImage,
-		dnatControllerImage: dnatControllerImage,
-		backupSchedule:      backupSchedule,
-		versions:            versions,
-		caBundle:            caBundle,
-
-		supportsFailureDomainZoneAntiAffinity: supportsFailureDomainZoneAntiAffinity,
-
-		monitoringScrapeAnnotationPrefix:                 monitoringScrapeAnnotationPrefix,
-		inClusterPrometheusRulesFile:                     inClusterPrometheusRulesFile,
-		inClusterPrometheusDisableDefaultRules:           inClusterPrometheusDisableDefaultRules,
-		inClusterPrometheusDisableDefaultScrapingConfigs: inClusterPrometheusDisableDefaultScrapingConfigs,
-		inClusterPrometheusScrapingConfigsFile:           inClusterPrometheusScrapingConfigsFile,
-	}
-}
-
 // GetViewerToken returns the viewer token
 func (d *TemplateData) GetViewerToken() (string, error) {
 	viewerTokenSecret := &corev1.Secret{}
@@ -296,7 +241,7 @@ func (d *TemplateData) GetViewerToken() (string, error) {
 	return string(viewerTokenSecret.Data[ViewerTokenSecretKey]), nil
 }
 
-// GetCABundle returns the set of CA certificates that should be used
+// CABundle returns the set of CA certificates that should be used
 // for all outgoing communication.
 func (d *TemplateData) CABundle() CABundle {
 	return d.caBundle

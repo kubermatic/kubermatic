@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: "v1"
+apiVersion: v1
 name: promtail
-version: 0.2.1
+version: 0.2.2
 appVersion: v2.1.0
 description: "Responsible for gathering logs and sending them to Loki"
 keywords:

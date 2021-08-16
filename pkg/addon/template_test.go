@@ -30,6 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/yaml"
 )
 
@@ -108,6 +109,11 @@ func TestNewTemplateData(t *testing.T) {
 	feature := "myfeature"
 	cluster := kubermaticv1.Cluster{
 		Spec: kubermaticv1.ClusterSpec{
+			ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+				IPVS: &kubermaticv1.IPVSConfiguration{
+					StrictArp: pointer.BoolPtr(true),
+				},
+			},
 			Version: *version,
 			Features: map[string]bool{
 				feature: true,
