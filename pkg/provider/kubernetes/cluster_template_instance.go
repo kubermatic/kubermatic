@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/rand"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -188,7 +189,7 @@ func (r ClusterTemplateInstanceProvider) PatchUnsecured(instance *kubermaticv1.C
 }
 
 func GetClusterTemplateInstanceName(projectID, templateID string) string {
-	return fmt.Sprintf("%s-%s", projectID, templateID)
+	return fmt.Sprintf("%s-%s-%s", projectID, templateID, rand.String(10))
 }
 
 func addProjectReferenceForClusterTemplateInstance(project *kubermaticv1.Project, templateInstance *kubermaticv1.ClusterTemplateInstance) {
