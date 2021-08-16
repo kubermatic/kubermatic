@@ -31,7 +31,7 @@ type PublicCloudSpec struct {
 	Aws PublicAWSCloudSpec `json:"aws,omitempty"`
 
 	// azure
-	Azure PublicAzureCloudSpec `json:"azure,omitempty"`
+	Azure *PublicAzureCloudSpec `json:"azure,omitempty"`
 
 	// bringyourown
 	Bringyourown PublicBringYourOwnCloudSpec `json:"bringyourown,omitempty"`
@@ -65,6 +65,10 @@ type PublicCloudSpec struct {
 func (m *PublicCloudSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateAzure(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateOpenstack(formats); err != nil {
 		res = append(res, err)
 	}
@@ -72,6 +76,23 @@ func (m *PublicCloudSpec) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *PublicCloudSpec) validateAzure(formats strfmt.Registry) error {
+	if swag.IsZero(m.Azure) { // not required
+		return nil
+	}
+
+	if m.Azure != nil {
+		if err := m.Azure.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("azure")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -96,6 +117,10 @@ func (m *PublicCloudSpec) validateOpenstack(formats strfmt.Registry) error {
 func (m *PublicCloudSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateAzure(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateOpenstack(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -103,6 +128,20 @@ func (m *PublicCloudSpec) ContextValidate(ctx context.Context, formats strfmt.Re
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *PublicCloudSpec) contextValidateAzure(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Azure != nil {
+		if err := m.Azure.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("azure")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 
