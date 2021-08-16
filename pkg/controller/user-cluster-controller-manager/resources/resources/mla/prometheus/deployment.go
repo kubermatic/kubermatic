@@ -24,6 +24,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
@@ -33,6 +34,9 @@ const (
 	imageName = "prometheus/prometheus"
 	tag       = "v2.26.0"
 	appName   = "mla-prometheus"
+
+	reloaderImageName = "prometheus-operator/prometheus-config-reloader"
+	reloaderTag       = "v0.49.0"
 
 	configVolumeName       = "config-volume"
 	configPath             = "/etc/config"
@@ -72,7 +76,7 @@ func DeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 			}
 			deployment.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:            "prometheus-server-configmap-reload",
+					Name:            "prometheus",
 					Image:           fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, imageName, tag),
 					ImagePullPolicy: corev1.PullAlways,
 					Args: []string{
@@ -130,6 +134,49 @@ func DeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 								Port:   intstr.FromInt(containerPort),
 								Scheme: corev1.URISchemeHTTP,
 							},
+						},
+					},
+				},
+				{
+					Name:            "prometheus-config-reloader",
+					Image:           fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, reloaderImageName, reloaderTag),
+					ImagePullPolicy: corev1.PullAlways,
+					Args: []string{
+						// Full usage of prometheus-config-reloader:
+						// https://github.com/prometheus-operator/prometheus-operator/blob/v0.49.0/cmd/prometheus-config-reloader/main.go#L72-L108
+						"--listen-address=:8080",
+						"--watch-interval=10s",
+						fmt.Sprintf("--config-file=%s/prometheus.yaml", configPath),
+						fmt.Sprintf("--reload-url=http://localhost:%d/-/reload", containerPort),
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name: "POD_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "metadata.name",
+								},
+							},
+						},
+						{
+							Name:  "SHARD",
+							Value: "0",
+						},
+					},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      configVolumeName,
+							MountPath: configPath,
+						},
+					},
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceMemory: resource.MustParse("50Mi"),
+							corev1.ResourceCPU:    resource.MustParse("100m"),
+						},
+						Limits: corev1.ResourceList{
+							corev1.ResourceMemory: resource.MustParse("100Mi"),
+							corev1.ResourceCPU:    resource.MustParse("200m"),
 						},
 					},
 				},
