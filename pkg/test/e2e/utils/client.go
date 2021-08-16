@@ -1012,7 +1012,11 @@ func (r *TestClient) BindUserToRole(projectID, dc, clusterID, roleName, namespac
 
 func (r *TestClient) GetClusterRoles(projectID, dc, clusterID string) ([]apiv1.ClusterRoleName, error) {
 	params := &project.ListClusterRoleNamesParams{DC: dc, ProjectID: projectID, ClusterID: clusterID}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
 
 	response, err := r.client.Project.ListClusterRoleNames(params, r.bearerToken)
 	if err != nil {
