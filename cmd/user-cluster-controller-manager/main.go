@@ -62,34 +62,34 @@ import (
 )
 
 type controllerRunOptions struct {
-	metricsListenAddr               string
-	healthListenAddr                string
-	version                         string
-	networks                        networkFlags
-	namespace                       string
-	clusterURL                      string
-	clusterName                     string
-	openvpnServerPort               int
-	kasSecurePort                   int
-	tunnelingAgentIP                flagopts.IPValue
-	overwriteRegistry               string
-	cloudProviderName               string
-	nodelabels                      string
-	seedKubeconfig                  string
-	ownerEmail                      string
-	updateWindowStart               string
-	updateWindowLength              string
-	dnsClusterIP                    string
-	nodeLocalDNSCache               bool
-	opaIntegration                  bool
-	opaWebhookTimeout               int
-	useSSHKeyAgent                  bool
-	caBundleFile                    string
-	mlaGatewayURL                   string
-	userClusterLogging              bool
-	userClusterMonitoring           bool
-	prometheusScrapeConfigMapPrefix string
-	ccmMigration                    bool
+	metricsListenAddr            string
+	healthListenAddr             string
+	version                      string
+	networks                     networkFlags
+	namespace                    string
+	clusterURL                   string
+	clusterName                  string
+	openvpnServerPort            int
+	kasSecurePort                int
+	tunnelingAgentIP             flagopts.IPValue
+	overwriteRegistry            string
+	cloudProviderName            string
+	nodelabels                   string
+	seedKubeconfig               string
+	ownerEmail                   string
+	updateWindowStart            string
+	updateWindowLength           string
+	dnsClusterIP                 string
+	nodeLocalDNSCache            bool
+	opaIntegration               bool
+	opaWebhookTimeout            int
+	useSSHKeyAgent               bool
+	caBundleFile                 string
+	mlaGatewayURL                string
+	userClusterLogging           bool
+	userClusterMonitoring        bool
+	prometheusScrapeConfigPrefix string
+	ccmMigration                 bool
 }
 
 func main() {
@@ -126,7 +126,7 @@ func main() {
 	flag.StringVar(&runOp.mlaGatewayURL, "mla-gateway-url", "", "The URL of MLA (Monitoring, Logging, and Alerting) gateway endpoint.")
 	flag.BoolVar(&runOp.userClusterLogging, "user-cluster-logging", false, "Enable logging in user cluster.")
 	flag.BoolVar(&runOp.userClusterMonitoring, "user-cluster-monitoring", false, "Enable monitoring in user cluster.")
-	flag.StringVar(&runOp.prometheusScrapeConfigMapPrefix, "prometheus-scrape-configmap-prefix", "prometheus-custom-scrape-configs", fmt.Sprintf("The name prefix of ConfigMaps in namespace %s, which will be used to add customized scrape configs for user cluster Prometheus.", resources.UserClusterMLANamespace))
+	flag.StringVar(&runOp.prometheusScrapeConfigPrefix, "prometheus-scrape-config-prefix", "prometheus-scraping", fmt.Sprintf("The name prefix of ConfigMaps in namespace %s, which will be used to add customized scrape configs for user cluster Prometheus.", resources.UserClusterMLANamespace))
 	flag.BoolVar(&runOp.ccmMigration, "ccm-migration", false, "Enable ccm migration in user cluster.")
 
 	flag.Parse()
@@ -260,10 +260,10 @@ func main() {
 		runOp.opaWebhookTimeout,
 		caBundle,
 		usercluster.UserClusterMLA{
-			Logging:                               runOp.userClusterLogging,
-			Monitoring:                            runOp.userClusterMonitoring,
-			MLAGatewayURL:                         runOp.mlaGatewayURL,
-			PrometheusCustomScrapeConfigMapPrefix: runOp.prometheusScrapeConfigMapPrefix,
+			Logging:                      runOp.userClusterLogging,
+			Monitoring:                   runOp.userClusterMonitoring,
+			MLAGatewayURL:                runOp.mlaGatewayURL,
+			PrometheusScrapeConfigPrefix: runOp.prometheusScrapeConfigPrefix,
 		},
 		log,
 	); err != nil {
