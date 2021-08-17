@@ -21,6 +21,7 @@ import (
 
 	"go.uber.org/zap"
 
+	"k8c.io/kubermatic/v2/pkg/resources"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/resources/kubernetes-dashboard"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -37,7 +38,9 @@ var (
 		metav1.NamespaceSystem,
 		metav1.NamespacePublic,
 		corev1.NamespaceNodeLease,
-		kubernetesdashboard.Namespace)
+		kubernetesdashboard.Namespace,
+		resources.CloudInitSettingsNamespace,
+	)
 )
 
 func (r *testRunner) cleanupBeforeGinkgo(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client) error {
