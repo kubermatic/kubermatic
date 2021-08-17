@@ -94,7 +94,7 @@ var _ = ginkgo.Describe("CCM migration", func() {
 		})
 
 		ginkgo.AfterEach(func() {
-			gomega.Expect(clusterJig.SeedClient.Delete(context.TODO(), clusterJig.Cluster)).NotTo(gomega.HaveOccurred())
+			gomega.Expect(clusterJig.CleanUp()).NotTo(gomega.HaveOccurred())
 		})
 
 		ginkgo.It("migrating cluster to external CCM", func() {
