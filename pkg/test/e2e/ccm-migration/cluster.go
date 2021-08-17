@@ -217,19 +217,21 @@ func (c *ClusterJig) createCluster(cloudSpec kubermaticv1.CloudSpec) error {
 
 // CleanUp deletes the cluster.
 func (c *ClusterJig) CleanUp() error {
+	ctx := context.TODO()
+
 	clusterClientProvider, err := clusterclient.NewExternal(c.SeedClient)
 	if err != nil {
 		return errors.Wrap(err, "failed to get user cluster client provider")
 	}
 
-	userClient, err := clusterClientProvider.GetClient(context.TODO(), c.Cluster)
+	userClient, err := clusterClientProvider.GetClient(ctx, c.Cluster)
 	if err != nil {
 		return errors.Wrap(err, "failed to get user cluster client")
 	}
 
 	// Skip eviction to speed up the clean up process
 	nodes := &corev1.NodeList{}
-	if err := userClient.List(context.TODO(), nodes); err != nil {
+	if err := userClient.List(ctx, nodes); err != nil {
 		return errors.Wrap(err, "failed to list user cluster nodes")
 	}
 
@@ -238,7 +240,7 @@ func (c *ClusterJig) CleanUp() error {
 
 		retErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			n := corev1.Node{}
-			if err := userClient.Get(context.TODO(), nodeKey, &n); err != nil {
+			if err := userClient.Get(ctx, nodeKey, &n); err != nil {
 				return err
 			}
 
@@ -246,7 +248,7 @@ func (c *ClusterJig) CleanUp() error {
 				n.Annotations = map[string]string{}
 			}
 			n.Annotations["kubermatic.io/skip-eviction"] = "true"
-			return userClient.Update(context.TODO(), &n)
+			return userClient.Update(ctx, &n)
 		})
 		if retErr != nil {
 			return errors.Wrapf(retErr, "failed to annotate node %s", node.Name)
@@ -259,12 +261,12 @@ func (c *ClusterJig) CleanUp() error {
 		mdKey := ctrlruntimeclient.ObjectKey{Name: machineDeploymentName, Namespace: machineDeploymentNamespace}
 
 		md := &clusterv1alpha1.MachineDeployment{}
-		err := userClient.Get(context.TODO(), mdKey, md)
+		err := userClient.Get(ctx, mdKey, md)
 		if err == nil {
 			if md.DeletionTimestamp != nil {
 				return false, nil
 			}
-			err := userClient.Delete(context.TODO(), md)
+			err := userClient.Delete(ctx, md)
 			if err != nil {
 				return false, errors.Wrap(err, "failed to delete user cluster machinedeployment")
 			}
@@ -274,7 +276,7 @@ func (c *ClusterJig) CleanUp() error {
 		}
 
 		clusters := &kubermaticv1.ClusterList{}
-		err = c.SeedClient.List(context.TODO(), clusters)
+		err = c.SeedClient.List(ctx, clusters)
 		if err != nil {
 			return false, errors.Wrap(err, "failed to list user clusters")
 		}
@@ -287,7 +289,7 @@ func (c *ClusterJig) CleanUp() error {
 		}
 
 		if clusters.Items[0].DeletionTimestamp == nil {
-			err := c.SeedClient.Delete(context.TODO(), c.Cluster)
+			err := c.SeedClient.Delete(ctx, c.Cluster)
 			if err != nil {
 				return false, errors.Wrap(err, "failed to delete user cluster")
 			}
