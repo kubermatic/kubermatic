@@ -46,7 +46,7 @@ const (
 	clusterReadinessCheckPeriod = 10 * time.Second
 	clusterReadinessTimeout     = 10 * time.Minute
 
-	machineDeploymentName      = "ccm-test-machine"
+	machineDeploymentName      = "ccm-migration-e2e"
 	machineDeploymentNamespace = "kube-system"
 )
 
@@ -106,13 +106,13 @@ func (c *ClusterJig) CreateMachineDeployment(userClient ctrlruntimeclient.Client
 		Spec: clusterv1alpha1.MachineDeploymentSpec{
 			Selector: metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"name": "test-machine",
+					"name": machineDeploymentName,
 				},
 			},
 			Template: clusterv1alpha1.MachineTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"name": "test-machine",
+						"name": machineDeploymentName,
 					},
 				},
 				Spec: clusterv1alpha1.MachineSpec{
