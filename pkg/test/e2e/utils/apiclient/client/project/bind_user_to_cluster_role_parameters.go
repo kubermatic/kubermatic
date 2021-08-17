@@ -18,64 +18,82 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
-// NewBindUserToClusterRoleParams creates a new BindUserToClusterRoleParams object
-// with the default values initialized.
+// NewBindUserToClusterRoleParams creates a new BindUserToClusterRoleParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewBindUserToClusterRoleParams() *BindUserToClusterRoleParams {
-	var ()
 	return &BindUserToClusterRoleParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewBindUserToClusterRoleParamsWithTimeout creates a new BindUserToClusterRoleParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewBindUserToClusterRoleParamsWithTimeout(timeout time.Duration) *BindUserToClusterRoleParams {
-	var ()
 	return &BindUserToClusterRoleParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewBindUserToClusterRoleParamsWithContext creates a new BindUserToClusterRoleParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewBindUserToClusterRoleParamsWithContext(ctx context.Context) *BindUserToClusterRoleParams {
-	var ()
 	return &BindUserToClusterRoleParams{
-
 		Context: ctx,
 	}
 }
 
 // NewBindUserToClusterRoleParamsWithHTTPClient creates a new BindUserToClusterRoleParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewBindUserToClusterRoleParamsWithHTTPClient(client *http.Client) *BindUserToClusterRoleParams {
-	var ()
 	return &BindUserToClusterRoleParams{
 		HTTPClient: client,
 	}
 }
 
-/*BindUserToClusterRoleParams contains all the parameters to send to the API endpoint
-for the bind user to cluster role operation typically these are written to a http.Request
+/* BindUserToClusterRoleParams contains all the parameters to send to the API endpoint
+   for the bind user to cluster role operation.
+
+   Typically these are written to a http.Request.
 */
 type BindUserToClusterRoleParams struct {
 
-	/*Body*/
+	// Body.
 	Body *models.ClusterRoleUser
-	/*ClusterID*/
+
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
-	/*RoleID*/
+
+	// RoleID.
 	RoleID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the bind user to cluster role params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *BindUserToClusterRoleParams) WithDefaults() *BindUserToClusterRoleParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the bind user to cluster role params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *BindUserToClusterRoleParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the bind user to cluster role params
@@ -173,7 +191,6 @@ func (o *BindUserToClusterRoleParams) WriteToRequest(r runtime.ClientRequest, re
 		return err
 	}
 	var res []error
-
 	if o.Body != nil {
 		if err := r.SetBodyParam(o.Body); err != nil {
 			return err

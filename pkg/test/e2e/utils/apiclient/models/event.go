@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -16,6 +18,9 @@ import (
 //
 // swagger:model Event
 type Event struct {
+
+	// Annotations that can be added to the resource
+	Annotations map[string]string `json:"annotations,omitempty"`
 
 	// The number of times this event has occurred.
 	Count int32 `json:"count,omitempty"`
@@ -75,7 +80,6 @@ func (m *Event) Validate(formats strfmt.Registry) error {
 }
 
 func (m *Event) validateCreationTimestamp(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.CreationTimestamp) { // not required
 		return nil
 	}
@@ -88,7 +92,6 @@ func (m *Event) validateCreationTimestamp(formats strfmt.Registry) error {
 }
 
 func (m *Event) validateDeletionTimestamp(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.DeletionTimestamp) { // not required
 		return nil
 	}
@@ -101,7 +104,6 @@ func (m *Event) validateDeletionTimestamp(formats strfmt.Registry) error {
 }
 
 func (m *Event) validateLastTimestamp(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.LastTimestamp) { // not required
 		return nil
 	}
@@ -114,13 +116,40 @@ func (m *Event) validateLastTimestamp(formats strfmt.Registry) error {
 }
 
 func (m *Event) validateInvolvedObject(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.InvolvedObject) { // not required
 		return nil
 	}
 
 	if m.InvolvedObject != nil {
 		if err := m.InvolvedObject.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("involvedObject")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this event based on the context it is used
+func (m *Event) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateInvolvedObject(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *Event) contextValidateInvolvedObject(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.InvolvedObject != nil {
+		if err := m.InvolvedObject.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("involvedObject")
 			}

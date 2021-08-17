@@ -58,7 +58,7 @@ func NewCreateAllowedRegistryCreated() *CreateAllowedRegistryCreated {
 	return &CreateAllowedRegistryCreated{}
 }
 
-/*CreateAllowedRegistryCreated handles this case with default header values.
+/* CreateAllowedRegistryCreated describes a response with status code 201, with default header values.
 
 AllowedRegistry
 */
@@ -69,7 +69,6 @@ type CreateAllowedRegistryCreated struct {
 func (o *CreateAllowedRegistryCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v2/allowedregistries][%d] createAllowedRegistryCreated  %+v", 201, o.Payload)
 }
-
 func (o *CreateAllowedRegistryCreated) GetPayload() *models.AllowedRegistry {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewCreateAllowedRegistryUnauthorized() *CreateAllowedRegistryUnauthorized {
 	return &CreateAllowedRegistryUnauthorized{}
 }
 
-/*CreateAllowedRegistryUnauthorized handles this case with default header values.
+/* CreateAllowedRegistryUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewCreateAllowedRegistryForbidden() *CreateAllowedRegistryForbidden {
 	return &CreateAllowedRegistryForbidden{}
 }
 
-/*CreateAllowedRegistryForbidden handles this case with default header values.
+/* CreateAllowedRegistryForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewCreateAllowedRegistryDefault(code int) *CreateAllowedRegistryDefault {
 	}
 }
 
-/*CreateAllowedRegistryDefault handles this case with default header values.
+/* CreateAllowedRegistryDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *CreateAllowedRegistryDefault) Code() int {
 func (o *CreateAllowedRegistryDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v2/allowedregistries][%d] createAllowedRegistry default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *CreateAllowedRegistryDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

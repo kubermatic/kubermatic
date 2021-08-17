@@ -58,7 +58,7 @@ func NewListConstraintsOK() *ListConstraintsOK {
 	return &ListConstraintsOK{}
 }
 
-/*ListConstraintsOK handles this case with default header values.
+/* ListConstraintsOK describes a response with status code 200, with default header values.
 
 Constraint
 */
@@ -69,7 +69,6 @@ type ListConstraintsOK struct {
 func (o *ListConstraintsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints][%d] listConstraintsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListConstraintsOK) GetPayload() []*models.Constraint {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListConstraintsUnauthorized() *ListConstraintsUnauthorized {
 	return &ListConstraintsUnauthorized{}
 }
 
-/*ListConstraintsUnauthorized handles this case with default header values.
+/* ListConstraintsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListConstraintsForbidden() *ListConstraintsForbidden {
 	return &ListConstraintsForbidden{}
 }
 
-/*ListConstraintsForbidden handles this case with default header values.
+/* ListConstraintsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListConstraintsDefault(code int) *ListConstraintsDefault {
 	}
 }
 
-/*ListConstraintsDefault handles this case with default header values.
+/* ListConstraintsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListConstraintsDefault) Code() int {
 func (o *ListConstraintsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints][%d] listConstraints default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListConstraintsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

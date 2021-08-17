@@ -52,6 +52,9 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *kubermati
 		md.GenerateName = fmt.Sprintf("%s-worker-", c.Spec.HumanReadableName)
 	}
 
+	// Add Annotations to Machine Deployment
+	md.Annotations = nd.Annotations
+
 	md.Namespace = metav1.NamespaceSystem
 	md.Finalizers = []string{metav1.FinalizerDeleteDependents}
 

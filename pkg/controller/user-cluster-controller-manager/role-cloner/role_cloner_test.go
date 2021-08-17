@@ -314,6 +314,9 @@ func TestReconcile(t *testing.T) {
 				log:      kubermaticlog.Logger,
 				client:   clientBuilder.Build(),
 				recorder: record.NewFakeRecorder(10),
+				clusterIsPaused: func(c context.Context) (bool, error) {
+					return false, nil
+				},
 			}
 
 			ctx := context.Background()

@@ -16,58 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListDigitaloceanSizesParams creates a new ListDigitaloceanSizesParams object
-// with the default values initialized.
+// NewListDigitaloceanSizesParams creates a new ListDigitaloceanSizesParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListDigitaloceanSizesParams() *ListDigitaloceanSizesParams {
-	var ()
 	return &ListDigitaloceanSizesParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListDigitaloceanSizesParamsWithTimeout creates a new ListDigitaloceanSizesParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListDigitaloceanSizesParamsWithTimeout(timeout time.Duration) *ListDigitaloceanSizesParams {
-	var ()
 	return &ListDigitaloceanSizesParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListDigitaloceanSizesParamsWithContext creates a new ListDigitaloceanSizesParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListDigitaloceanSizesParamsWithContext(ctx context.Context) *ListDigitaloceanSizesParams {
-	var ()
 	return &ListDigitaloceanSizesParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListDigitaloceanSizesParamsWithHTTPClient creates a new ListDigitaloceanSizesParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListDigitaloceanSizesParamsWithHTTPClient(client *http.Client) *ListDigitaloceanSizesParams {
-	var ()
 	return &ListDigitaloceanSizesParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListDigitaloceanSizesParams contains all the parameters to send to the API endpoint
-for the list digitalocean sizes operation typically these are written to a http.Request
+/* ListDigitaloceanSizesParams contains all the parameters to send to the API endpoint
+   for the list digitalocean sizes operation.
+
+   Typically these are written to a http.Request.
 */
 type ListDigitaloceanSizesParams struct {
 
-	/*Credential*/
+	// Credential.
 	Credential *string
-	/*DoToken*/
+
+	// DoToken.
 	DoToken *string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list digitalocean sizes params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListDigitaloceanSizesParams) WithDefaults() *ListDigitaloceanSizesParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list digitalocean sizes params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListDigitaloceanSizesParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list digitalocean sizes params
@@ -139,7 +154,6 @@ func (o *ListDigitaloceanSizesParams) WriteToRequest(r runtime.ClientRequest, re
 		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
 			return err
 		}
-
 	}
 
 	if o.DoToken != nil {
@@ -148,7 +162,6 @@ func (o *ListDigitaloceanSizesParams) WriteToRequest(r runtime.ClientRequest, re
 		if err := r.SetHeaderParam("DoToken", *o.DoToken); err != nil {
 			return err
 		}
-
 	}
 
 	if len(res) > 0 {

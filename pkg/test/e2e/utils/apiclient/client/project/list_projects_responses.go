@@ -58,7 +58,7 @@ func NewListProjectsOK() *ListProjectsOK {
 	return &ListProjectsOK{}
 }
 
-/*ListProjectsOK handles this case with default header values.
+/* ListProjectsOK describes a response with status code 200, with default header values.
 
 Project
 */
@@ -69,7 +69,6 @@ type ListProjectsOK struct {
 func (o *ListProjectsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects][%d] listProjectsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListProjectsOK) GetPayload() []*models.Project {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListProjectsUnauthorized() *ListProjectsUnauthorized {
 	return &ListProjectsUnauthorized{}
 }
 
-/*ListProjectsUnauthorized handles this case with default header values.
+/* ListProjectsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListProjectsConflict() *ListProjectsConflict {
 	return &ListProjectsConflict{}
 }
 
-/*ListProjectsConflict handles this case with default header values.
+/* ListProjectsConflict describes a response with status code 409, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListProjectsDefault(code int) *ListProjectsDefault {
 	}
 }
 
-/*ListProjectsDefault handles this case with default header values.
+/* ListProjectsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListProjectsDefault) Code() int {
 func (o *ListProjectsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects][%d] listProjects default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListProjectsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

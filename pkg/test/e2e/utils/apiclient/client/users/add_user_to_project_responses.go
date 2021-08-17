@@ -58,7 +58,7 @@ func NewAddUserToProjectCreated() *AddUserToProjectCreated {
 	return &AddUserToProjectCreated{}
 }
 
-/*AddUserToProjectCreated handles this case with default header values.
+/* AddUserToProjectCreated describes a response with status code 201, with default header values.
 
 User
 */
@@ -69,7 +69,6 @@ type AddUserToProjectCreated struct {
 func (o *AddUserToProjectCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/users][%d] addUserToProjectCreated  %+v", 201, o.Payload)
 }
-
 func (o *AddUserToProjectCreated) GetPayload() *models.User {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewAddUserToProjectUnauthorized() *AddUserToProjectUnauthorized {
 	return &AddUserToProjectUnauthorized{}
 }
 
-/*AddUserToProjectUnauthorized handles this case with default header values.
+/* AddUserToProjectUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewAddUserToProjectForbidden() *AddUserToProjectForbidden {
 	return &AddUserToProjectForbidden{}
 }
 
-/*AddUserToProjectForbidden handles this case with default header values.
+/* AddUserToProjectForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewAddUserToProjectDefault(code int) *AddUserToProjectDefault {
 	}
 }
 
-/*AddUserToProjectDefault handles this case with default header values.
+/* AddUserToProjectDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *AddUserToProjectDefault) Code() int {
 func (o *AddUserToProjectDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/users][%d] addUserToProject default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *AddUserToProjectDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

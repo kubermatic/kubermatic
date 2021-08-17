@@ -18,56 +18,70 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
-// NewCreateDefaultConstraintParams creates a new CreateDefaultConstraintParams object
-// with the default values initialized.
+// NewCreateDefaultConstraintParams creates a new CreateDefaultConstraintParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewCreateDefaultConstraintParams() *CreateDefaultConstraintParams {
-	var ()
 	return &CreateDefaultConstraintParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewCreateDefaultConstraintParamsWithTimeout creates a new CreateDefaultConstraintParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewCreateDefaultConstraintParamsWithTimeout(timeout time.Duration) *CreateDefaultConstraintParams {
-	var ()
 	return &CreateDefaultConstraintParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewCreateDefaultConstraintParamsWithContext creates a new CreateDefaultConstraintParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewCreateDefaultConstraintParamsWithContext(ctx context.Context) *CreateDefaultConstraintParams {
-	var ()
 	return &CreateDefaultConstraintParams{
-
 		Context: ctx,
 	}
 }
 
 // NewCreateDefaultConstraintParamsWithHTTPClient creates a new CreateDefaultConstraintParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewCreateDefaultConstraintParamsWithHTTPClient(client *http.Client) *CreateDefaultConstraintParams {
-	var ()
 	return &CreateDefaultConstraintParams{
 		HTTPClient: client,
 	}
 }
 
-/*CreateDefaultConstraintParams contains all the parameters to send to the API endpoint
-for the create default constraint operation typically these are written to a http.Request
+/* CreateDefaultConstraintParams contains all the parameters to send to the API endpoint
+   for the create default constraint operation.
+
+   Typically these are written to a http.Request.
 */
 type CreateDefaultConstraintParams struct {
 
-	/*Body*/
+	// Body.
 	Body *models.ConstraintBody
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the create default constraint params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *CreateDefaultConstraintParams) WithDefaults() *CreateDefaultConstraintParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the create default constraint params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *CreateDefaultConstraintParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the create default constraint params
@@ -121,7 +135,6 @@ func (o *CreateDefaultConstraintParams) WriteToRequest(r runtime.ClientRequest, 
 		return err
 	}
 	var res []error
-
 	if o.Body != nil {
 		if err := r.SetBodyParam(o.Body); err != nil {
 			return err

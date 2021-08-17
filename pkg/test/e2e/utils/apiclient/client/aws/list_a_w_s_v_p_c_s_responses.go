@@ -46,7 +46,7 @@ func NewListAWSVPCSOK() *ListAWSVPCSOK {
 	return &ListAWSVPCSOK{}
 }
 
-/*ListAWSVPCSOK handles this case with default header values.
+/* ListAWSVPCSOK describes a response with status code 200, with default header values.
 
 AWSVPCList
 */
@@ -57,7 +57,6 @@ type ListAWSVPCSOK struct {
 func (o *ListAWSVPCSOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/aws/{dc}/vpcs][%d] listAWSVPCSOK  %+v", 200, o.Payload)
 }
-
 func (o *ListAWSVPCSOK) GetPayload() models.AWSVPCList {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListAWSVPCSDefault(code int) *ListAWSVPCSDefault {
 	}
 }
 
-/*ListAWSVPCSDefault handles this case with default header values.
+/* ListAWSVPCSDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListAWSVPCSDefault) Code() int {
 func (o *ListAWSVPCSDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/aws/{dc}/vpcs][%d] listAWSVPCS default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListAWSVPCSDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

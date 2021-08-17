@@ -547,15 +547,6 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/clustertemplates/{template_id}/instances").
 		Handler(r.createClusterTemplateInstance())
-	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/clustertemplates/{template_id}/instances/{instance_id}").
-		Handler(r.getClusterTemplateInstance())
-	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/clustertemplates/{template_id}/instances").
-		Handler(r.listClusterTemplateInstances())
-	mux.Methods(http.MethodPatch).
-		Path("/projects/{project_id}/clustertemplates/{template_id}/instances/{instance_id}").
-		Handler(r.patchClusterTemplateInstance())
 
 	// Defines a set of HTTP endpoints for managing rule groups
 	mux.Methods(http.MethodGet).
@@ -632,6 +623,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/clusters/{cluster_id}/etcdrestores").
 		Handler(r.listEtcdRestore())
+
+	mux.Methods(http.MethodDelete).
+		Path("/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{er_name}").
+		Handler(r.deleteEtcdRestore())
 
 }
 
@@ -897,7 +892,7 @@ func (r Routing) getClusterOidc() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.GetClusterOidcEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		cluster.DecodeGetClusterReq,
-		cluster.EncodeKubeconfig,
+		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3791,87 +3786,6 @@ func (r Routing) createClusterTemplateInstance() http.Handler {
 	)
 }
 
-// swagger:route POST /api/v2/projects/{project_id}/clustertemplates/{template_id}/instances/{instance_id} project getClusterTemplateInstance
-//
-//     Get cluster template instance.
-//
-//     Consumes:
-//     - application/json
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: ClusterTemplateInstance
-//       401: empty
-//       403: empty
-func (r Routing) getClusterTemplateInstance() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
-			middleware.UserSaver(r.userProvider),
-		)(clustertemplate.GetInstanceEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.clusterTemplateProvider, r.seedsGetter, r.clusterTemplateInstanceProviderGetter)),
-		clustertemplate.DecodeGetInstanceReq,
-		handler.EncodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route GET /api/v2/projects/{project_id}/clustertemplates/{template_id}/instances project listClusterTemplateInstances
-//
-//     List cluster template instances.
-//
-//     Consumes:
-//     - application/json
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: []ClusterTemplateInstance
-//       401: empty
-//       403: empty
-func (r Routing) listClusterTemplateInstances() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
-			middleware.UserSaver(r.userProvider),
-		)(clustertemplate.ListInstanceEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.clusterTemplateProvider, r.seedsGetter, r.clusterTemplateInstanceProviderGetter)),
-		clustertemplate.DecodeListInstancesReq,
-		handler.EncodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route PATCH /api/v2/projects/{project_id}/clustertemplates/{template_id}/instances/{instance_id} project patchClusterTemplateInstance
-//
-//     Patch cluster template instances.
-//
-//     Consumes:
-//     - application/json
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: ClusterTemplateInstance
-//       401: empty
-//       403: empty
-func (r Routing) patchClusterTemplateInstance() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
-			middleware.UserSaver(r.userProvider),
-		)(clustertemplate.PatchInstanceEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.clusterTemplateProvider, r.seedsGetter, r.clusterTemplateInstanceProviderGetter)),
-		clustertemplate.DecodePatchInstanceReq,
-		handler.EncodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
 // swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id} rulegroup getRuleGroup
 //
 //     Gets a specified rule group for the given cluster.
@@ -4397,6 +4311,32 @@ func (r Routing) listEtcdRestore() http.Handler {
 			middleware.PrivilegedEtcdRestore(r.clusterProviderGetter, r.etcdRestoreProviderGetter, r.seedsGetter),
 		)(etcdrestore.ListEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
 		etcdrestore.DecodeListEtcdRestoreReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{er_name} etcdrestore deleteEtcdRestore
+//
+//     Deletes a etcd restore config for a given cluster based on its name
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+//       409: errorResponse
+func (r Routing) deleteEtcdRestore() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.EtcdRestore(r.clusterProviderGetter, r.etcdRestoreProviderGetter, r.seedsGetter),
+			middleware.PrivilegedEtcdRestore(r.clusterProviderGetter, r.etcdRestoreProviderGetter, r.seedsGetter),
+		)(etcdrestore.DeleteEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
+		etcdrestore.DecodeGetEtcdRestoreReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

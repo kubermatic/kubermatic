@@ -12,15 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM docker.io/golang:1.16.4 as builder
-
-WORKDIR /go/src/github.com/kubermatic/kubermatic
-COPY . .
-ENV CGO_ENABLED=0
-RUN go build ./cmd/user-ssh-keys-agent
-
-FROM docker.io/alpine:3.13
+FROM alpine:3.13
 LABEL maintainer="support@kubermatic.com"
 
-COPY --from=builder /go/src/github.com/kubermatic/kubermatic/user-ssh-keys-agent /usr/local/bin/user-ssh-keys-agent
+COPY ./_build/user-ssh-keys-agent /usr/local/bin/user-ssh-keys-agent
+
 ENTRYPOINT ["/usr/local/bin/user-ssh-keys-agent"]

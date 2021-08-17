@@ -58,7 +58,7 @@ func NewListClusterRoleNamesOK() *ListClusterRoleNamesOK {
 	return &ListClusterRoleNamesOK{}
 }
 
-/*ListClusterRoleNamesOK handles this case with default header values.
+/* ListClusterRoleNamesOK describes a response with status code 200, with default header values.
 
 ClusterRoleName
 */
@@ -69,7 +69,6 @@ type ListClusterRoleNamesOK struct {
 func (o *ListClusterRoleNamesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterrolenames][%d] listClusterRoleNamesOK  %+v", 200, o.Payload)
 }
-
 func (o *ListClusterRoleNamesOK) GetPayload() []*models.ClusterRoleName {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListClusterRoleNamesUnauthorized() *ListClusterRoleNamesUnauthorized {
 	return &ListClusterRoleNamesUnauthorized{}
 }
 
-/*ListClusterRoleNamesUnauthorized handles this case with default header values.
+/* ListClusterRoleNamesUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListClusterRoleNamesForbidden() *ListClusterRoleNamesForbidden {
 	return &ListClusterRoleNamesForbidden{}
 }
 
-/*ListClusterRoleNamesForbidden handles this case with default header values.
+/* ListClusterRoleNamesForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListClusterRoleNamesDefault(code int) *ListClusterRoleNamesDefault {
 	}
 }
 
-/*ListClusterRoleNamesDefault handles this case with default header values.
+/* ListClusterRoleNamesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListClusterRoleNamesDefault) Code() int {
 func (o *ListClusterRoleNamesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterrolenames][%d] listClusterRoleNames default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListClusterRoleNamesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

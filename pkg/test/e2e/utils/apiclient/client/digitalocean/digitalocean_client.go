@@ -23,13 +23,16 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	ListDigitaloceanSizes(params *ListDigitaloceanSizesParams, authInfo runtime.ClientAuthInfoWriter) (*ListDigitaloceanSizesOK, error)
+	ListDigitaloceanSizes(params *ListDigitaloceanSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListDigitaloceanSizesOK, error)
 
-	ListDigitaloceanSizesNoCredentials(params *ListDigitaloceanSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListDigitaloceanSizesNoCredentialsOK, error)
+	ListDigitaloceanSizesNoCredentials(params *ListDigitaloceanSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListDigitaloceanSizesNoCredentialsOK, error)
 
-	ListDigitaloceanSizesNoCredentialsV2(params *ListDigitaloceanSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListDigitaloceanSizesNoCredentialsV2OK, error)
+	ListDigitaloceanSizesNoCredentialsV2(params *ListDigitaloceanSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListDigitaloceanSizesNoCredentialsV2OK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -37,13 +40,12 @@ type ClientService interface {
 /*
   ListDigitaloceanSizes Lists sizes from digitalocean
 */
-func (a *Client) ListDigitaloceanSizes(params *ListDigitaloceanSizesParams, authInfo runtime.ClientAuthInfoWriter) (*ListDigitaloceanSizesOK, error) {
+func (a *Client) ListDigitaloceanSizes(params *ListDigitaloceanSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListDigitaloceanSizesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListDigitaloceanSizesParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listDigitaloceanSizes",
 		Method:             "GET",
 		PathPattern:        "/api/v1/providers/digitalocean/sizes",
@@ -55,7 +57,12 @@ func (a *Client) ListDigitaloceanSizes(params *ListDigitaloceanSizesParams, auth
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -71,13 +78,12 @@ func (a *Client) ListDigitaloceanSizes(params *ListDigitaloceanSizesParams, auth
 /*
   ListDigitaloceanSizesNoCredentials Lists sizes from digitalocean
 */
-func (a *Client) ListDigitaloceanSizesNoCredentials(params *ListDigitaloceanSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListDigitaloceanSizesNoCredentialsOK, error) {
+func (a *Client) ListDigitaloceanSizesNoCredentials(params *ListDigitaloceanSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListDigitaloceanSizesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListDigitaloceanSizesNoCredentialsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listDigitaloceanSizesNoCredentials",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/digitalocean/sizes",
@@ -89,7 +95,12 @@ func (a *Client) ListDigitaloceanSizesNoCredentials(params *ListDigitaloceanSize
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -105,13 +116,12 @@ func (a *Client) ListDigitaloceanSizesNoCredentials(params *ListDigitaloceanSize
 /*
   ListDigitaloceanSizesNoCredentialsV2 Lists sizes from digitalocean
 */
-func (a *Client) ListDigitaloceanSizesNoCredentialsV2(params *ListDigitaloceanSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListDigitaloceanSizesNoCredentialsV2OK, error) {
+func (a *Client) ListDigitaloceanSizesNoCredentialsV2(params *ListDigitaloceanSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListDigitaloceanSizesNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListDigitaloceanSizesNoCredentialsV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listDigitaloceanSizesNoCredentialsV2",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/digitalocean/sizes",
@@ -123,7 +133,12 @@ func (a *Client) ListDigitaloceanSizesNoCredentialsV2(params *ListDigitaloceanSi
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

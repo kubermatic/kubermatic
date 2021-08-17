@@ -58,7 +58,7 @@ func NewDeleteClusterTemplateOK() *DeleteClusterTemplateOK {
 	return &DeleteClusterTemplateOK{}
 }
 
-/*DeleteClusterTemplateOK handles this case with default header values.
+/* DeleteClusterTemplateOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -79,7 +79,7 @@ func NewDeleteClusterTemplateUnauthorized() *DeleteClusterTemplateUnauthorized {
 	return &DeleteClusterTemplateUnauthorized{}
 }
 
-/*DeleteClusterTemplateUnauthorized handles this case with default header values.
+/* DeleteClusterTemplateUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -100,7 +100,7 @@ func NewDeleteClusterTemplateForbidden() *DeleteClusterTemplateForbidden {
 	return &DeleteClusterTemplateForbidden{}
 }
 
-/*DeleteClusterTemplateForbidden handles this case with default header values.
+/* DeleteClusterTemplateForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -123,7 +123,7 @@ func NewDeleteClusterTemplateDefault(code int) *DeleteClusterTemplateDefault {
 	}
 }
 
-/*DeleteClusterTemplateDefault handles this case with default header values.
+/* DeleteClusterTemplateDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -141,7 +141,6 @@ func (o *DeleteClusterTemplateDefault) Code() int {
 func (o *DeleteClusterTemplateDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clustertemplates/{template_id}][%d] deleteClusterTemplate default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *DeleteClusterTemplateDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -16,62 +16,79 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewDeleteClusterRoleParams creates a new DeleteClusterRoleParams object
-// with the default values initialized.
+// NewDeleteClusterRoleParams creates a new DeleteClusterRoleParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewDeleteClusterRoleParams() *DeleteClusterRoleParams {
-	var ()
 	return &DeleteClusterRoleParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewDeleteClusterRoleParamsWithTimeout creates a new DeleteClusterRoleParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewDeleteClusterRoleParamsWithTimeout(timeout time.Duration) *DeleteClusterRoleParams {
-	var ()
 	return &DeleteClusterRoleParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewDeleteClusterRoleParamsWithContext creates a new DeleteClusterRoleParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewDeleteClusterRoleParamsWithContext(ctx context.Context) *DeleteClusterRoleParams {
-	var ()
 	return &DeleteClusterRoleParams{
-
 		Context: ctx,
 	}
 }
 
 // NewDeleteClusterRoleParamsWithHTTPClient creates a new DeleteClusterRoleParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewDeleteClusterRoleParamsWithHTTPClient(client *http.Client) *DeleteClusterRoleParams {
-	var ()
 	return &DeleteClusterRoleParams{
 		HTTPClient: client,
 	}
 }
 
-/*DeleteClusterRoleParams contains all the parameters to send to the API endpoint
-for the delete cluster role operation typically these are written to a http.Request
+/* DeleteClusterRoleParams contains all the parameters to send to the API endpoint
+   for the delete cluster role operation.
+
+   Typically these are written to a http.Request.
 */
 type DeleteClusterRoleParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
-	/*RoleID*/
+
+	// RoleID.
 	RoleID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the delete cluster role params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DeleteClusterRoleParams) WithDefaults() *DeleteClusterRoleParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the delete cluster role params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DeleteClusterRoleParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the delete cluster role params

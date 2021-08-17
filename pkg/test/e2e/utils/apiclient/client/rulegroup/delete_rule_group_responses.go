@@ -58,7 +58,7 @@ func NewDeleteRuleGroupOK() *DeleteRuleGroupOK {
 	return &DeleteRuleGroupOK{}
 }
 
-/*DeleteRuleGroupOK handles this case with default header values.
+/* DeleteRuleGroupOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -79,7 +79,7 @@ func NewDeleteRuleGroupUnauthorized() *DeleteRuleGroupUnauthorized {
 	return &DeleteRuleGroupUnauthorized{}
 }
 
-/*DeleteRuleGroupUnauthorized handles this case with default header values.
+/* DeleteRuleGroupUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -100,7 +100,7 @@ func NewDeleteRuleGroupForbidden() *DeleteRuleGroupForbidden {
 	return &DeleteRuleGroupForbidden{}
 }
 
-/*DeleteRuleGroupForbidden handles this case with default header values.
+/* DeleteRuleGroupForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -123,7 +123,7 @@ func NewDeleteRuleGroupDefault(code int) *DeleteRuleGroupDefault {
 	}
 }
 
-/*DeleteRuleGroupDefault handles this case with default header values.
+/* DeleteRuleGroupDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -141,7 +141,6 @@ func (o *DeleteRuleGroupDefault) Code() int {
 func (o *DeleteRuleGroupDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}][%d] deleteRuleGroup default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *DeleteRuleGroupDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

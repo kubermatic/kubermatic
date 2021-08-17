@@ -58,7 +58,7 @@ func NewListEtcdBackupConfigOK() *ListEtcdBackupConfigOK {
 	return &ListEtcdBackupConfigOK{}
 }
 
-/*ListEtcdBackupConfigOK handles this case with default header values.
+/* ListEtcdBackupConfigOK describes a response with status code 200, with default header values.
 
 EtcdBackupConfig
 */
@@ -69,7 +69,6 @@ type ListEtcdBackupConfigOK struct {
 func (o *ListEtcdBackupConfigOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs][%d] listEtcdBackupConfigOK  %+v", 200, o.Payload)
 }
-
 func (o *ListEtcdBackupConfigOK) GetPayload() []*models.EtcdBackupConfig {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListEtcdBackupConfigUnauthorized() *ListEtcdBackupConfigUnauthorized {
 	return &ListEtcdBackupConfigUnauthorized{}
 }
 
-/*ListEtcdBackupConfigUnauthorized handles this case with default header values.
+/* ListEtcdBackupConfigUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListEtcdBackupConfigForbidden() *ListEtcdBackupConfigForbidden {
 	return &ListEtcdBackupConfigForbidden{}
 }
 
-/*ListEtcdBackupConfigForbidden handles this case with default header values.
+/* ListEtcdBackupConfigForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListEtcdBackupConfigDefault(code int) *ListEtcdBackupConfigDefault {
 	}
 }
 
-/*ListEtcdBackupConfigDefault handles this case with default header values.
+/* ListEtcdBackupConfigDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListEtcdBackupConfigDefault) Code() int {
 func (o *ListEtcdBackupConfigDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs][%d] listEtcdBackupConfig default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListEtcdBackupConfigDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

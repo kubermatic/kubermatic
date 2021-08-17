@@ -58,7 +58,7 @@ func NewCreateRuleGroupCreated() *CreateRuleGroupCreated {
 	return &CreateRuleGroupCreated{}
 }
 
-/*CreateRuleGroupCreated handles this case with default header values.
+/* CreateRuleGroupCreated describes a response with status code 201, with default header values.
 
 RuleGroup
 */
@@ -69,7 +69,6 @@ type CreateRuleGroupCreated struct {
 func (o *CreateRuleGroupCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups][%d] createRuleGroupCreated  %+v", 201, o.Payload)
 }
-
 func (o *CreateRuleGroupCreated) GetPayload() *models.RuleGroup {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewCreateRuleGroupUnauthorized() *CreateRuleGroupUnauthorized {
 	return &CreateRuleGroupUnauthorized{}
 }
 
-/*CreateRuleGroupUnauthorized handles this case with default header values.
+/* CreateRuleGroupUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewCreateRuleGroupForbidden() *CreateRuleGroupForbidden {
 	return &CreateRuleGroupForbidden{}
 }
 
-/*CreateRuleGroupForbidden handles this case with default header values.
+/* CreateRuleGroupForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewCreateRuleGroupDefault(code int) *CreateRuleGroupDefault {
 	}
 }
 
-/*CreateRuleGroupDefault handles this case with default header values.
+/* CreateRuleGroupDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *CreateRuleGroupDefault) Code() int {
 func (o *CreateRuleGroupDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups][%d] createRuleGroup default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *CreateRuleGroupDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

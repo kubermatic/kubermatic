@@ -23,11 +23,14 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	ListMachineDeploymentMetrics(params *ListMachineDeploymentMetricsParams, authInfo runtime.ClientAuthInfoWriter) (*ListMachineDeploymentMetricsOK, error)
+	ListMachineDeploymentMetrics(params *ListMachineDeploymentMetricsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListMachineDeploymentMetricsOK, error)
 
-	ListNodeDeploymentMetrics(params *ListNodeDeploymentMetricsParams, authInfo runtime.ClientAuthInfoWriter) (*ListNodeDeploymentMetricsOK, error)
+	ListNodeDeploymentMetrics(params *ListNodeDeploymentMetricsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNodeDeploymentMetricsOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -35,13 +38,12 @@ type ClientService interface {
 /*
   ListMachineDeploymentMetrics lists metrics that belong to the given machine deployment
 */
-func (a *Client) ListMachineDeploymentMetrics(params *ListMachineDeploymentMetricsParams, authInfo runtime.ClientAuthInfoWriter) (*ListMachineDeploymentMetricsOK, error) {
+func (a *Client) ListMachineDeploymentMetrics(params *ListMachineDeploymentMetricsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListMachineDeploymentMetricsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListMachineDeploymentMetricsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listMachineDeploymentMetrics",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/metrics",
@@ -53,7 +55,12 @@ func (a *Client) ListMachineDeploymentMetrics(params *ListMachineDeploymentMetri
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -69,13 +76,12 @@ func (a *Client) ListMachineDeploymentMetrics(params *ListMachineDeploymentMetri
 /*
   ListNodeDeploymentMetrics lists metrics that belong to the given node deployment
 */
-func (a *Client) ListNodeDeploymentMetrics(params *ListNodeDeploymentMetricsParams, authInfo runtime.ClientAuthInfoWriter) (*ListNodeDeploymentMetricsOK, error) {
+func (a *Client) ListNodeDeploymentMetrics(params *ListNodeDeploymentMetricsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNodeDeploymentMetricsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListNodeDeploymentMetricsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listNodeDeploymentMetrics",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes/metrics",
@@ -87,7 +93,12 @@ func (a *Client) ListNodeDeploymentMetrics(params *ListNodeDeploymentMetricsPara
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

@@ -46,7 +46,7 @@ func NewListOpenstackTenantsNoCredentialsV2OK() *ListOpenstackTenantsNoCredentia
 	return &ListOpenstackTenantsNoCredentialsV2OK{}
 }
 
-/*ListOpenstackTenantsNoCredentialsV2OK handles this case with default header values.
+/* ListOpenstackTenantsNoCredentialsV2OK describes a response with status code 200, with default header values.
 
 OpenstackTenant
 */
@@ -57,7 +57,6 @@ type ListOpenstackTenantsNoCredentialsV2OK struct {
 func (o *ListOpenstackTenantsNoCredentialsV2OK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/openstack/tenants][%d] listOpenstackTenantsNoCredentialsV2OK  %+v", 200, o.Payload)
 }
-
 func (o *ListOpenstackTenantsNoCredentialsV2OK) GetPayload() []*models.OpenstackTenant {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListOpenstackTenantsNoCredentialsV2Default(code int) *ListOpenstackTenan
 	}
 }
 
-/*ListOpenstackTenantsNoCredentialsV2Default handles this case with default header values.
+/* ListOpenstackTenantsNoCredentialsV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListOpenstackTenantsNoCredentialsV2Default) Code() int {
 func (o *ListOpenstackTenantsNoCredentialsV2Default) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/openstack/tenants][%d] listOpenstackTenantsNoCredentialsV2 default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListOpenstackTenantsNoCredentialsV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -16,68 +16,88 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListAzureSubnetsParams creates a new ListAzureSubnetsParams object
-// with the default values initialized.
+// NewListAzureSubnetsParams creates a new ListAzureSubnetsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListAzureSubnetsParams() *ListAzureSubnetsParams {
-	var ()
 	return &ListAzureSubnetsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListAzureSubnetsParamsWithTimeout creates a new ListAzureSubnetsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListAzureSubnetsParamsWithTimeout(timeout time.Duration) *ListAzureSubnetsParams {
-	var ()
 	return &ListAzureSubnetsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListAzureSubnetsParamsWithContext creates a new ListAzureSubnetsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListAzureSubnetsParamsWithContext(ctx context.Context) *ListAzureSubnetsParams {
-	var ()
 	return &ListAzureSubnetsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListAzureSubnetsParamsWithHTTPClient creates a new ListAzureSubnetsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListAzureSubnetsParamsWithHTTPClient(client *http.Client) *ListAzureSubnetsParams {
-	var ()
 	return &ListAzureSubnetsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListAzureSubnetsParams contains all the parameters to send to the API endpoint
-for the list azure subnets operation typically these are written to a http.Request
+/* ListAzureSubnetsParams contains all the parameters to send to the API endpoint
+   for the list azure subnets operation.
+
+   Typically these are written to a http.Request.
 */
 type ListAzureSubnetsParams struct {
 
-	/*ClientID*/
+	// ClientID.
 	ClientID *string
-	/*ClientSecret*/
+
+	// ClientSecret.
 	ClientSecret *string
-	/*Credential*/
+
+	// Credential.
 	Credential *string
-	/*ResourceGroup*/
+
+	// ResourceGroup.
 	ResourceGroup *string
-	/*SubscriptionID*/
+
+	// SubscriptionID.
 	SubscriptionID *string
-	/*TenantID*/
+
+	// TenantID.
 	TenantID *string
-	/*VirtualNetwork*/
+
+	// VirtualNetwork.
 	VirtualNetwork *string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list azure subnets params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAzureSubnetsParams) WithDefaults() *ListAzureSubnetsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list azure subnets params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAzureSubnetsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list azure subnets params
@@ -204,7 +224,6 @@ func (o *ListAzureSubnetsParams) WriteToRequest(r runtime.ClientRequest, reg str
 		if err := r.SetHeaderParam("ClientID", *o.ClientID); err != nil {
 			return err
 		}
-
 	}
 
 	if o.ClientSecret != nil {
@@ -213,7 +232,6 @@ func (o *ListAzureSubnetsParams) WriteToRequest(r runtime.ClientRequest, reg str
 		if err := r.SetHeaderParam("ClientSecret", *o.ClientSecret); err != nil {
 			return err
 		}
-
 	}
 
 	if o.Credential != nil {
@@ -222,7 +240,6 @@ func (o *ListAzureSubnetsParams) WriteToRequest(r runtime.ClientRequest, reg str
 		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
 			return err
 		}
-
 	}
 
 	if o.ResourceGroup != nil {
@@ -231,7 +248,6 @@ func (o *ListAzureSubnetsParams) WriteToRequest(r runtime.ClientRequest, reg str
 		if err := r.SetHeaderParam("ResourceGroup", *o.ResourceGroup); err != nil {
 			return err
 		}
-
 	}
 
 	if o.SubscriptionID != nil {
@@ -240,7 +256,6 @@ func (o *ListAzureSubnetsParams) WriteToRequest(r runtime.ClientRequest, reg str
 		if err := r.SetHeaderParam("SubscriptionID", *o.SubscriptionID); err != nil {
 			return err
 		}
-
 	}
 
 	if o.TenantID != nil {
@@ -249,7 +264,6 @@ func (o *ListAzureSubnetsParams) WriteToRequest(r runtime.ClientRequest, reg str
 		if err := r.SetHeaderParam("TenantID", *o.TenantID); err != nil {
 			return err
 		}
-
 	}
 
 	if o.VirtualNetwork != nil {
@@ -258,7 +272,6 @@ func (o *ListAzureSubnetsParams) WriteToRequest(r runtime.ClientRequest, reg str
 		if err := r.SetHeaderParam("VirtualNetwork", *o.VirtualNetwork); err != nil {
 			return err
 		}
-
 	}
 
 	if len(res) > 0 {

@@ -58,7 +58,7 @@ func NewPatchAddonOK() *PatchAddonOK {
 	return &PatchAddonOK{}
 }
 
-/*PatchAddonOK handles this case with default header values.
+/* PatchAddonOK describes a response with status code 200, with default header values.
 
 Addon
 */
@@ -69,7 +69,6 @@ type PatchAddonOK struct {
 func (o *PatchAddonOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons/{addon_id}][%d] patchAddonOK  %+v", 200, o.Payload)
 }
-
 func (o *PatchAddonOK) GetPayload() *models.Addon {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewPatchAddonUnauthorized() *PatchAddonUnauthorized {
 	return &PatchAddonUnauthorized{}
 }
 
-/*PatchAddonUnauthorized handles this case with default header values.
+/* PatchAddonUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewPatchAddonForbidden() *PatchAddonForbidden {
 	return &PatchAddonForbidden{}
 }
 
-/*PatchAddonForbidden handles this case with default header values.
+/* PatchAddonForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewPatchAddonDefault(code int) *PatchAddonDefault {
 	}
 }
 
-/*PatchAddonDefault handles this case with default header values.
+/* PatchAddonDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *PatchAddonDefault) Code() int {
 func (o *PatchAddonDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons/{addon_id}][%d] patchAddon default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *PatchAddonDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

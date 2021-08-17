@@ -46,7 +46,7 @@ func NewListGCPSizesOK() *ListGCPSizesOK {
 	return &ListGCPSizesOK{}
 }
 
-/*ListGCPSizesOK handles this case with default header values.
+/* ListGCPSizesOK describes a response with status code 200, with default header values.
 
 GCPMachineSizeList
 */
@@ -57,7 +57,6 @@ type ListGCPSizesOK struct {
 func (o *ListGCPSizesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/gcp/sizes][%d] listGCPSizesOK  %+v", 200, o.Payload)
 }
-
 func (o *ListGCPSizesOK) GetPayload() models.GCPMachineSizeList {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListGCPSizesDefault(code int) *ListGCPSizesDefault {
 	}
 }
 
-/*ListGCPSizesDefault handles this case with default header values.
+/* ListGCPSizesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListGCPSizesDefault) Code() int {
 func (o *ListGCPSizesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/gcp/sizes][%d] listGCPSizes default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListGCPSizesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

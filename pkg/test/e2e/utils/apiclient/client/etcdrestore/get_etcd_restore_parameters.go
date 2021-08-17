@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetEtcdRestoreParams creates a new GetEtcdRestoreParams object
-// with the default values initialized.
+// NewGetEtcdRestoreParams creates a new GetEtcdRestoreParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetEtcdRestoreParams() *GetEtcdRestoreParams {
-	var ()
 	return &GetEtcdRestoreParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetEtcdRestoreParamsWithTimeout creates a new GetEtcdRestoreParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetEtcdRestoreParamsWithTimeout(timeout time.Duration) *GetEtcdRestoreParams {
-	var ()
 	return &GetEtcdRestoreParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetEtcdRestoreParamsWithContext creates a new GetEtcdRestoreParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetEtcdRestoreParamsWithContext(ctx context.Context) *GetEtcdRestoreParams {
-	var ()
 	return &GetEtcdRestoreParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetEtcdRestoreParamsWithHTTPClient creates a new GetEtcdRestoreParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetEtcdRestoreParamsWithHTTPClient(client *http.Client) *GetEtcdRestoreParams {
-	var ()
 	return &GetEtcdRestoreParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetEtcdRestoreParams contains all the parameters to send to the API endpoint
-for the get etcd restore operation typically these are written to a http.Request
+/* GetEtcdRestoreParams contains all the parameters to send to the API endpoint
+   for the get etcd restore operation.
+
+   Typically these are written to a http.Request.
 */
 type GetEtcdRestoreParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*ErName*/
+
+	// ErName.
 	EtcdRestoreName string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get etcd restore params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetEtcdRestoreParams) WithDefaults() *GetEtcdRestoreParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get etcd restore params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetEtcdRestoreParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get etcd restore params

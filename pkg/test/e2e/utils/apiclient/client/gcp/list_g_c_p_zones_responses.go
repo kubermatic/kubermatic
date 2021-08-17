@@ -46,7 +46,7 @@ func NewListGCPZonesOK() *ListGCPZonesOK {
 	return &ListGCPZonesOK{}
 }
 
-/*ListGCPZonesOK handles this case with default header values.
+/* ListGCPZonesOK describes a response with status code 200, with default header values.
 
 GCPZoneList
 */
@@ -57,7 +57,6 @@ type ListGCPZonesOK struct {
 func (o *ListGCPZonesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/gcp/{dc}/zones][%d] listGCPZonesOK  %+v", 200, o.Payload)
 }
-
 func (o *ListGCPZonesOK) GetPayload() models.GCPZoneList {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListGCPZonesDefault(code int) *ListGCPZonesDefault {
 	}
 }
 
-/*ListGCPZonesDefault handles this case with default header values.
+/* ListGCPZonesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListGCPZonesDefault) Code() int {
 func (o *ListGCPZonesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/gcp/{dc}/zones][%d] listGCPZones default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListGCPZonesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

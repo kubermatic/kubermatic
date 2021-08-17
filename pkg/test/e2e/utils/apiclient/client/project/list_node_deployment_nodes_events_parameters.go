@@ -16,64 +16,82 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListNodeDeploymentNodesEventsParams creates a new ListNodeDeploymentNodesEventsParams object
-// with the default values initialized.
+// NewListNodeDeploymentNodesEventsParams creates a new ListNodeDeploymentNodesEventsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListNodeDeploymentNodesEventsParams() *ListNodeDeploymentNodesEventsParams {
-	var ()
 	return &ListNodeDeploymentNodesEventsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListNodeDeploymentNodesEventsParamsWithTimeout creates a new ListNodeDeploymentNodesEventsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListNodeDeploymentNodesEventsParamsWithTimeout(timeout time.Duration) *ListNodeDeploymentNodesEventsParams {
-	var ()
 	return &ListNodeDeploymentNodesEventsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListNodeDeploymentNodesEventsParamsWithContext creates a new ListNodeDeploymentNodesEventsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListNodeDeploymentNodesEventsParamsWithContext(ctx context.Context) *ListNodeDeploymentNodesEventsParams {
-	var ()
 	return &ListNodeDeploymentNodesEventsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListNodeDeploymentNodesEventsParamsWithHTTPClient creates a new ListNodeDeploymentNodesEventsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListNodeDeploymentNodesEventsParamsWithHTTPClient(client *http.Client) *ListNodeDeploymentNodesEventsParams {
-	var ()
 	return &ListNodeDeploymentNodesEventsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListNodeDeploymentNodesEventsParams contains all the parameters to send to the API endpoint
-for the list node deployment nodes events operation typically these are written to a http.Request
+/* ListNodeDeploymentNodesEventsParams contains all the parameters to send to the API endpoint
+   for the list node deployment nodes events operation.
+
+   Typically these are written to a http.Request.
 */
 type ListNodeDeploymentNodesEventsParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*NodedeploymentID*/
+
+	// NodedeploymentID.
 	NodeDeploymentID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
-	/*Type*/
+
+	// Type.
 	Type *string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list node deployment nodes events params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListNodeDeploymentNodesEventsParams) WithDefaults() *ListNodeDeploymentNodesEventsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list node deployment nodes events params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListNodeDeploymentNodesEventsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list node deployment nodes events params
@@ -196,16 +214,17 @@ func (o *ListNodeDeploymentNodesEventsParams) WriteToRequest(r runtime.ClientReq
 
 		// query param type
 		var qrType string
+
 		if o.Type != nil {
 			qrType = *o.Type
 		}
 		qType := qrType
 		if qType != "" {
+
 			if err := r.SetQueryParam("type", qType); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if len(res) > 0 {

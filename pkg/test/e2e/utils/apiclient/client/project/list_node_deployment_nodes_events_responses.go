@@ -58,7 +58,7 @@ func NewListNodeDeploymentNodesEventsOK() *ListNodeDeploymentNodesEventsOK {
 	return &ListNodeDeploymentNodesEventsOK{}
 }
 
-/*ListNodeDeploymentNodesEventsOK handles this case with default header values.
+/* ListNodeDeploymentNodesEventsOK describes a response with status code 200, with default header values.
 
 Event
 */
@@ -69,7 +69,6 @@ type ListNodeDeploymentNodesEventsOK struct {
 func (o *ListNodeDeploymentNodesEventsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes/events][%d] listNodeDeploymentNodesEventsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListNodeDeploymentNodesEventsOK) GetPayload() []*models.Event {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListNodeDeploymentNodesEventsUnauthorized() *ListNodeDeploymentNodesEven
 	return &ListNodeDeploymentNodesEventsUnauthorized{}
 }
 
-/*ListNodeDeploymentNodesEventsUnauthorized handles this case with default header values.
+/* ListNodeDeploymentNodesEventsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListNodeDeploymentNodesEventsForbidden() *ListNodeDeploymentNodesEventsF
 	return &ListNodeDeploymentNodesEventsForbidden{}
 }
 
-/*ListNodeDeploymentNodesEventsForbidden handles this case with default header values.
+/* ListNodeDeploymentNodesEventsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListNodeDeploymentNodesEventsDefault(code int) *ListNodeDeploymentNodesE
 	}
 }
 
-/*ListNodeDeploymentNodesEventsDefault handles this case with default header values.
+/* ListNodeDeploymentNodesEventsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListNodeDeploymentNodesEventsDefault) Code() int {
 func (o *ListNodeDeploymentNodesEventsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes/events][%d] listNodeDeploymentNodesEvents default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListNodeDeploymentNodesEventsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

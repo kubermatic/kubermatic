@@ -16,58 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewRevokeClusterAdminTokenV2Params creates a new RevokeClusterAdminTokenV2Params object
-// with the default values initialized.
+// NewRevokeClusterAdminTokenV2Params creates a new RevokeClusterAdminTokenV2Params object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewRevokeClusterAdminTokenV2Params() *RevokeClusterAdminTokenV2Params {
-	var ()
 	return &RevokeClusterAdminTokenV2Params{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewRevokeClusterAdminTokenV2ParamsWithTimeout creates a new RevokeClusterAdminTokenV2Params object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewRevokeClusterAdminTokenV2ParamsWithTimeout(timeout time.Duration) *RevokeClusterAdminTokenV2Params {
-	var ()
 	return &RevokeClusterAdminTokenV2Params{
-
 		timeout: timeout,
 	}
 }
 
 // NewRevokeClusterAdminTokenV2ParamsWithContext creates a new RevokeClusterAdminTokenV2Params object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewRevokeClusterAdminTokenV2ParamsWithContext(ctx context.Context) *RevokeClusterAdminTokenV2Params {
-	var ()
 	return &RevokeClusterAdminTokenV2Params{
-
 		Context: ctx,
 	}
 }
 
 // NewRevokeClusterAdminTokenV2ParamsWithHTTPClient creates a new RevokeClusterAdminTokenV2Params object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewRevokeClusterAdminTokenV2ParamsWithHTTPClient(client *http.Client) *RevokeClusterAdminTokenV2Params {
-	var ()
 	return &RevokeClusterAdminTokenV2Params{
 		HTTPClient: client,
 	}
 }
 
-/*RevokeClusterAdminTokenV2Params contains all the parameters to send to the API endpoint
-for the revoke cluster admin token v2 operation typically these are written to a http.Request
+/* RevokeClusterAdminTokenV2Params contains all the parameters to send to the API endpoint
+   for the revoke cluster admin token v2 operation.
+
+   Typically these are written to a http.Request.
 */
 type RevokeClusterAdminTokenV2Params struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the revoke cluster admin token v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *RevokeClusterAdminTokenV2Params) WithDefaults() *RevokeClusterAdminTokenV2Params {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the revoke cluster admin token v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *RevokeClusterAdminTokenV2Params) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the revoke cluster admin token v2 params

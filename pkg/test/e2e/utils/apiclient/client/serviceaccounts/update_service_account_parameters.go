@@ -18,60 +18,76 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
-// NewUpdateServiceAccountParams creates a new UpdateServiceAccountParams object
-// with the default values initialized.
+// NewUpdateServiceAccountParams creates a new UpdateServiceAccountParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewUpdateServiceAccountParams() *UpdateServiceAccountParams {
-	var ()
 	return &UpdateServiceAccountParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewUpdateServiceAccountParamsWithTimeout creates a new UpdateServiceAccountParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewUpdateServiceAccountParamsWithTimeout(timeout time.Duration) *UpdateServiceAccountParams {
-	var ()
 	return &UpdateServiceAccountParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewUpdateServiceAccountParamsWithContext creates a new UpdateServiceAccountParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewUpdateServiceAccountParamsWithContext(ctx context.Context) *UpdateServiceAccountParams {
-	var ()
 	return &UpdateServiceAccountParams{
-
 		Context: ctx,
 	}
 }
 
 // NewUpdateServiceAccountParamsWithHTTPClient creates a new UpdateServiceAccountParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewUpdateServiceAccountParamsWithHTTPClient(client *http.Client) *UpdateServiceAccountParams {
-	var ()
 	return &UpdateServiceAccountParams{
 		HTTPClient: client,
 	}
 }
 
-/*UpdateServiceAccountParams contains all the parameters to send to the API endpoint
-for the update service account operation typically these are written to a http.Request
+/* UpdateServiceAccountParams contains all the parameters to send to the API endpoint
+   for the update service account operation.
+
+   Typically these are written to a http.Request.
 */
 type UpdateServiceAccountParams struct {
 
-	/*Body*/
+	// Body.
 	Body *models.ServiceAccount
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
-	/*ServiceaccountID*/
+
+	// ServiceaccountID.
 	ServiceAccountID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the update service account params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *UpdateServiceAccountParams) WithDefaults() *UpdateServiceAccountParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the update service account params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *UpdateServiceAccountParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the update service account params
@@ -147,7 +163,6 @@ func (o *UpdateServiceAccountParams) WriteToRequest(r runtime.ClientRequest, reg
 		return err
 	}
 	var res []error
-
 	if o.Body != nil {
 		if err := r.SetBodyParam(o.Body); err != nil {
 			return err

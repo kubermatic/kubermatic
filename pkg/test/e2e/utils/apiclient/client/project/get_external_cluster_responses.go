@@ -58,7 +58,7 @@ func NewGetExternalClusterOK() *GetExternalClusterOK {
 	return &GetExternalClusterOK{}
 }
 
-/*GetExternalClusterOK handles this case with default header values.
+/* GetExternalClusterOK describes a response with status code 200, with default header values.
 
 Cluster
 */
@@ -69,7 +69,6 @@ type GetExternalClusterOK struct {
 func (o *GetExternalClusterOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}][%d] getExternalClusterOK  %+v", 200, o.Payload)
 }
-
 func (o *GetExternalClusterOK) GetPayload() *models.Cluster {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewGetExternalClusterUnauthorized() *GetExternalClusterUnauthorized {
 	return &GetExternalClusterUnauthorized{}
 }
 
-/*GetExternalClusterUnauthorized handles this case with default header values.
+/* GetExternalClusterUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewGetExternalClusterForbidden() *GetExternalClusterForbidden {
 	return &GetExternalClusterForbidden{}
 }
 
-/*GetExternalClusterForbidden handles this case with default header values.
+/* GetExternalClusterForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewGetExternalClusterDefault(code int) *GetExternalClusterDefault {
 	}
 }
 
-/*GetExternalClusterDefault handles this case with default header values.
+/* GetExternalClusterDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *GetExternalClusterDefault) Code() int {
 func (o *GetExternalClusterDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}][%d] getExternalCluster default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetExternalClusterDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -16,58 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListGCPNetworksNoCredentialsV2Params creates a new ListGCPNetworksNoCredentialsV2Params object
-// with the default values initialized.
+// NewListGCPNetworksNoCredentialsV2Params creates a new ListGCPNetworksNoCredentialsV2Params object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListGCPNetworksNoCredentialsV2Params() *ListGCPNetworksNoCredentialsV2Params {
-	var ()
 	return &ListGCPNetworksNoCredentialsV2Params{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListGCPNetworksNoCredentialsV2ParamsWithTimeout creates a new ListGCPNetworksNoCredentialsV2Params object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListGCPNetworksNoCredentialsV2ParamsWithTimeout(timeout time.Duration) *ListGCPNetworksNoCredentialsV2Params {
-	var ()
 	return &ListGCPNetworksNoCredentialsV2Params{
-
 		timeout: timeout,
 	}
 }
 
 // NewListGCPNetworksNoCredentialsV2ParamsWithContext creates a new ListGCPNetworksNoCredentialsV2Params object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListGCPNetworksNoCredentialsV2ParamsWithContext(ctx context.Context) *ListGCPNetworksNoCredentialsV2Params {
-	var ()
 	return &ListGCPNetworksNoCredentialsV2Params{
-
 		Context: ctx,
 	}
 }
 
 // NewListGCPNetworksNoCredentialsV2ParamsWithHTTPClient creates a new ListGCPNetworksNoCredentialsV2Params object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListGCPNetworksNoCredentialsV2ParamsWithHTTPClient(client *http.Client) *ListGCPNetworksNoCredentialsV2Params {
-	var ()
 	return &ListGCPNetworksNoCredentialsV2Params{
 		HTTPClient: client,
 	}
 }
 
-/*ListGCPNetworksNoCredentialsV2Params contains all the parameters to send to the API endpoint
-for the list g c p networks no credentials v2 operation typically these are written to a http.Request
+/* ListGCPNetworksNoCredentialsV2Params contains all the parameters to send to the API endpoint
+   for the list g c p networks no credentials v2 operation.
+
+   Typically these are written to a http.Request.
 */
 type ListGCPNetworksNoCredentialsV2Params struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list g c p networks no credentials v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListGCPNetworksNoCredentialsV2Params) WithDefaults() *ListGCPNetworksNoCredentialsV2Params {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list g c p networks no credentials v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListGCPNetworksNoCredentialsV2Params) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list g c p networks no credentials v2 params

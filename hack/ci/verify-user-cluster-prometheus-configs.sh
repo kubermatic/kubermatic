@@ -32,13 +32,15 @@ mkdir -p /etc/kubernetes
 touch /etc/kubernetes/prometheus-client.crt
 touch /etc/kubernetes/prometheus-client.key
 
-for CM in pkg/resources/test/fixtures/configmap-*-prometheus.yaml; do
-  echodate "Checking ${CM} ..."
-  cat ${CM} | yaml2json | jq -r '.data["rules.yaml"]' > rules.yaml
-  promtool check rules rules.yaml
-  rm rules.yaml
+for configMap in pkg/resources/test/fixtures/configmap-*-prometheus.yaml; do
+  echodate "Checking $configMap ..."
 
-  cat ${CM} | yaml2json | jq -r '.data["prometheus.yaml"]' > prometheus.yaml
+  yq read "$configMap" 'data."rules.yaml"' > rules.yaml
+  yq read "$configMap" 'data."prometheus.yaml"' > prometheus.yaml
+
+  promtool check rules rules.yaml
   promtool check config prometheus.yaml
+
+  rm rules.yaml
   rm prometheus.yaml
 done

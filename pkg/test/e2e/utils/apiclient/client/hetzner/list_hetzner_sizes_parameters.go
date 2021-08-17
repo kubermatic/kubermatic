@@ -16,58 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListHetznerSizesParams creates a new ListHetznerSizesParams object
-// with the default values initialized.
+// NewListHetznerSizesParams creates a new ListHetznerSizesParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListHetznerSizesParams() *ListHetznerSizesParams {
-	var ()
 	return &ListHetznerSizesParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListHetznerSizesParamsWithTimeout creates a new ListHetznerSizesParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListHetznerSizesParamsWithTimeout(timeout time.Duration) *ListHetznerSizesParams {
-	var ()
 	return &ListHetznerSizesParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListHetznerSizesParamsWithContext creates a new ListHetznerSizesParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListHetznerSizesParamsWithContext(ctx context.Context) *ListHetznerSizesParams {
-	var ()
 	return &ListHetznerSizesParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListHetznerSizesParamsWithHTTPClient creates a new ListHetznerSizesParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListHetznerSizesParamsWithHTTPClient(client *http.Client) *ListHetznerSizesParams {
-	var ()
 	return &ListHetznerSizesParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListHetznerSizesParams contains all the parameters to send to the API endpoint
-for the list hetzner sizes operation typically these are written to a http.Request
+/* ListHetznerSizesParams contains all the parameters to send to the API endpoint
+   for the list hetzner sizes operation.
+
+   Typically these are written to a http.Request.
 */
 type ListHetznerSizesParams struct {
 
-	/*Credential*/
+	// Credential.
 	Credential *string
-	/*HetznerToken*/
+
+	// HetznerToken.
 	HetznerToken *string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list hetzner sizes params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListHetznerSizesParams) WithDefaults() *ListHetznerSizesParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list hetzner sizes params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListHetznerSizesParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list hetzner sizes params
@@ -139,7 +154,6 @@ func (o *ListHetznerSizesParams) WriteToRequest(r runtime.ClientRequest, reg str
 		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
 			return err
 		}
-
 	}
 
 	if o.HetznerToken != nil {
@@ -148,7 +162,6 @@ func (o *ListHetznerSizesParams) WriteToRequest(r runtime.ClientRequest, reg str
 		if err := r.SetHeaderParam("HetznerToken", *o.HetznerToken); err != nil {
 			return err
 		}
-
 	}
 
 	if len(res) > 0 {

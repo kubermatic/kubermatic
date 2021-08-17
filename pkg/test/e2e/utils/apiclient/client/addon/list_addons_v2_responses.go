@@ -58,7 +58,7 @@ func NewListAddonsV2OK() *ListAddonsV2OK {
 	return &ListAddonsV2OK{}
 }
 
-/*ListAddonsV2OK handles this case with default header values.
+/* ListAddonsV2OK describes a response with status code 200, with default header values.
 
 Addon
 */
@@ -69,7 +69,6 @@ type ListAddonsV2OK struct {
 func (o *ListAddonsV2OK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/addons][%d] listAddonsV2OK  %+v", 200, o.Payload)
 }
-
 func (o *ListAddonsV2OK) GetPayload() []*models.Addon {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListAddonsV2Unauthorized() *ListAddonsV2Unauthorized {
 	return &ListAddonsV2Unauthorized{}
 }
 
-/*ListAddonsV2Unauthorized handles this case with default header values.
+/* ListAddonsV2Unauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListAddonsV2Forbidden() *ListAddonsV2Forbidden {
 	return &ListAddonsV2Forbidden{}
 }
 
-/*ListAddonsV2Forbidden handles this case with default header values.
+/* ListAddonsV2Forbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListAddonsV2Default(code int) *ListAddonsV2Default {
 	}
 }
 
-/*ListAddonsV2Default handles this case with default header values.
+/* ListAddonsV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListAddonsV2Default) Code() int {
 func (o *ListAddonsV2Default) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/addons][%d] listAddonsV2 default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListAddonsV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

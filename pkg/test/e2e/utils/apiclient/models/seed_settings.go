@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -35,13 +37,40 @@ func (m *SeedSettings) Validate(formats strfmt.Registry) error {
 }
 
 func (m *SeedSettings) validateMla(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Mla) { // not required
 		return nil
 	}
 
 	if m.Mla != nil {
 		if err := m.Mla.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("mla")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this seed settings based on the context it is used
+func (m *SeedSettings) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateMla(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *SeedSettings) contextValidateMla(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Mla != nil {
+		if err := m.Mla.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("mla")
 			}

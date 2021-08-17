@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListDigitaloceanSizesNoCredentialsParams creates a new ListDigitaloceanSizesNoCredentialsParams object
-// with the default values initialized.
+// NewListDigitaloceanSizesNoCredentialsParams creates a new ListDigitaloceanSizesNoCredentialsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListDigitaloceanSizesNoCredentialsParams() *ListDigitaloceanSizesNoCredentialsParams {
-	var ()
 	return &ListDigitaloceanSizesNoCredentialsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListDigitaloceanSizesNoCredentialsParamsWithTimeout creates a new ListDigitaloceanSizesNoCredentialsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListDigitaloceanSizesNoCredentialsParamsWithTimeout(timeout time.Duration) *ListDigitaloceanSizesNoCredentialsParams {
-	var ()
 	return &ListDigitaloceanSizesNoCredentialsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListDigitaloceanSizesNoCredentialsParamsWithContext creates a new ListDigitaloceanSizesNoCredentialsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListDigitaloceanSizesNoCredentialsParamsWithContext(ctx context.Context) *ListDigitaloceanSizesNoCredentialsParams {
-	var ()
 	return &ListDigitaloceanSizesNoCredentialsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListDigitaloceanSizesNoCredentialsParamsWithHTTPClient creates a new ListDigitaloceanSizesNoCredentialsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListDigitaloceanSizesNoCredentialsParamsWithHTTPClient(client *http.Client) *ListDigitaloceanSizesNoCredentialsParams {
-	var ()
 	return &ListDigitaloceanSizesNoCredentialsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListDigitaloceanSizesNoCredentialsParams contains all the parameters to send to the API endpoint
-for the list digitalocean sizes no credentials operation typically these are written to a http.Request
+/* ListDigitaloceanSizesNoCredentialsParams contains all the parameters to send to the API endpoint
+   for the list digitalocean sizes no credentials operation.
+
+   Typically these are written to a http.Request.
 */
 type ListDigitaloceanSizesNoCredentialsParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list digitalocean sizes no credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListDigitaloceanSizesNoCredentialsParams) WithDefaults() *ListDigitaloceanSizesNoCredentialsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list digitalocean sizes no credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListDigitaloceanSizesNoCredentialsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list digitalocean sizes no credentials params

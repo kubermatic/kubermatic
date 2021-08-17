@@ -46,7 +46,7 @@ func NewListDigitaloceanSizesOK() *ListDigitaloceanSizesOK {
 	return &ListDigitaloceanSizesOK{}
 }
 
-/*ListDigitaloceanSizesOK handles this case with default header values.
+/* ListDigitaloceanSizesOK describes a response with status code 200, with default header values.
 
 DigitaloceanSizeList
 */
@@ -57,7 +57,6 @@ type ListDigitaloceanSizesOK struct {
 func (o *ListDigitaloceanSizesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/digitalocean/sizes][%d] listDigitaloceanSizesOK  %+v", 200, o.Payload)
 }
-
 func (o *ListDigitaloceanSizesOK) GetPayload() *models.DigitaloceanSizeList {
 	return o.Payload
 }
@@ -81,7 +80,7 @@ func NewListDigitaloceanSizesDefault(code int) *ListDigitaloceanSizesDefault {
 	}
 }
 
-/*ListDigitaloceanSizesDefault handles this case with default header values.
+/* ListDigitaloceanSizesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -99,7 +98,6 @@ func (o *ListDigitaloceanSizesDefault) Code() int {
 func (o *ListDigitaloceanSizesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/digitalocean/sizes][%d] listDigitaloceanSizes default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListDigitaloceanSizesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

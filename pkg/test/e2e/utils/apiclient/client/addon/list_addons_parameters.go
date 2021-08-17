@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListAddonsParams creates a new ListAddonsParams object
-// with the default values initialized.
+// NewListAddonsParams creates a new ListAddonsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListAddonsParams() *ListAddonsParams {
-	var ()
 	return &ListAddonsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListAddonsParamsWithTimeout creates a new ListAddonsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListAddonsParamsWithTimeout(timeout time.Duration) *ListAddonsParams {
-	var ()
 	return &ListAddonsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListAddonsParamsWithContext creates a new ListAddonsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListAddonsParamsWithContext(ctx context.Context) *ListAddonsParams {
-	var ()
 	return &ListAddonsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListAddonsParamsWithHTTPClient creates a new ListAddonsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListAddonsParamsWithHTTPClient(client *http.Client) *ListAddonsParams {
-	var ()
 	return &ListAddonsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListAddonsParams contains all the parameters to send to the API endpoint
-for the list addons operation typically these are written to a http.Request
+/* ListAddonsParams contains all the parameters to send to the API endpoint
+   for the list addons operation.
+
+   Typically these are written to a http.Request.
 */
 type ListAddonsParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list addons params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAddonsParams) WithDefaults() *ListAddonsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list addons params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAddonsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list addons params

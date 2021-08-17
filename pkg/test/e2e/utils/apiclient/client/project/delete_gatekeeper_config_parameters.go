@@ -16,58 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewDeleteGatekeeperConfigParams creates a new DeleteGatekeeperConfigParams object
-// with the default values initialized.
+// NewDeleteGatekeeperConfigParams creates a new DeleteGatekeeperConfigParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewDeleteGatekeeperConfigParams() *DeleteGatekeeperConfigParams {
-	var ()
 	return &DeleteGatekeeperConfigParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewDeleteGatekeeperConfigParamsWithTimeout creates a new DeleteGatekeeperConfigParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewDeleteGatekeeperConfigParamsWithTimeout(timeout time.Duration) *DeleteGatekeeperConfigParams {
-	var ()
 	return &DeleteGatekeeperConfigParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewDeleteGatekeeperConfigParamsWithContext creates a new DeleteGatekeeperConfigParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewDeleteGatekeeperConfigParamsWithContext(ctx context.Context) *DeleteGatekeeperConfigParams {
-	var ()
 	return &DeleteGatekeeperConfigParams{
-
 		Context: ctx,
 	}
 }
 
 // NewDeleteGatekeeperConfigParamsWithHTTPClient creates a new DeleteGatekeeperConfigParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewDeleteGatekeeperConfigParamsWithHTTPClient(client *http.Client) *DeleteGatekeeperConfigParams {
-	var ()
 	return &DeleteGatekeeperConfigParams{
 		HTTPClient: client,
 	}
 }
 
-/*DeleteGatekeeperConfigParams contains all the parameters to send to the API endpoint
-for the delete gatekeeper config operation typically these are written to a http.Request
+/* DeleteGatekeeperConfigParams contains all the parameters to send to the API endpoint
+   for the delete gatekeeper config operation.
+
+   Typically these are written to a http.Request.
 */
 type DeleteGatekeeperConfigParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the delete gatekeeper config params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DeleteGatekeeperConfigParams) WithDefaults() *DeleteGatekeeperConfigParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the delete gatekeeper config params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DeleteGatekeeperConfigParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the delete gatekeeper config params

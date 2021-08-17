@@ -46,7 +46,7 @@ func NewListVSphereNetworksNoCredentialsV2OK() *ListVSphereNetworksNoCredentials
 	return &ListVSphereNetworksNoCredentialsV2OK{}
 }
 
-/*ListVSphereNetworksNoCredentialsV2OK handles this case with default header values.
+/* ListVSphereNetworksNoCredentialsV2OK describes a response with status code 200, with default header values.
 
 VSphereNetwork
 */
@@ -57,7 +57,6 @@ type ListVSphereNetworksNoCredentialsV2OK struct {
 func (o *ListVSphereNetworksNoCredentialsV2OK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/vsphere/networks][%d] listVSphereNetworksNoCredentialsV2OK  %+v", 200, o.Payload)
 }
-
 func (o *ListVSphereNetworksNoCredentialsV2OK) GetPayload() []*models.VSphereNetwork {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListVSphereNetworksNoCredentialsV2Default(code int) *ListVSphereNetworks
 	}
 }
 
-/*ListVSphereNetworksNoCredentialsV2Default handles this case with default header values.
+/* ListVSphereNetworksNoCredentialsV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListVSphereNetworksNoCredentialsV2Default) Code() int {
 func (o *ListVSphereNetworksNoCredentialsV2Default) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/vsphere/networks][%d] listVSphereNetworksNoCredentialsV2 default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListVSphereNetworksNoCredentialsV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

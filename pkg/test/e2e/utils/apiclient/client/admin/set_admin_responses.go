@@ -58,7 +58,7 @@ func NewSetAdminOK() *SetAdminOK {
 	return &SetAdminOK{}
 }
 
-/*SetAdminOK handles this case with default header values.
+/* SetAdminOK describes a response with status code 200, with default header values.
 
 Admin
 */
@@ -69,7 +69,6 @@ type SetAdminOK struct {
 func (o *SetAdminOK) Error() string {
 	return fmt.Sprintf("[PUT /api/v1/admin][%d] setAdminOK  %+v", 200, o.Payload)
 }
-
 func (o *SetAdminOK) GetPayload() *models.Admin {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewSetAdminUnauthorized() *SetAdminUnauthorized {
 	return &SetAdminUnauthorized{}
 }
 
-/*SetAdminUnauthorized handles this case with default header values.
+/* SetAdminUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewSetAdminForbidden() *SetAdminForbidden {
 	return &SetAdminForbidden{}
 }
 
-/*SetAdminForbidden handles this case with default header values.
+/* SetAdminForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewSetAdminDefault(code int) *SetAdminDefault {
 	}
 }
 
-/*SetAdminDefault handles this case with default header values.
+/* SetAdminDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *SetAdminDefault) Code() int {
 func (o *SetAdminDefault) Error() string {
 	return fmt.Sprintf("[PUT /api/v1/admin][%d] setAdmin default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *SetAdminDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

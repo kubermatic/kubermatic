@@ -28,6 +28,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
+	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -59,9 +60,10 @@ const (
 )
 
 type UserClusterMLA struct {
-	Logging       bool
-	Monitoring    bool
-	MLAGatewayURL string
+	Logging                      bool
+	Monitoring                   bool
+	MLAGatewayURL                string
+	PrometheusScrapeConfigPrefix string
 }
 
 // Add creates a new user cluster controller.
@@ -72,6 +74,7 @@ func Add(
 	namespace string,
 	cloudProviderName string,
 	clusterURL *url.URL,
+	clusterIsPaused userclustercontrollermanager.IsPausedChecker,
 	openvpnServerPort uint32,
 	kasSecurePort uint32,
 	tunnelingAgentIP net.IP,
@@ -90,6 +93,7 @@ func Add(
 		rLock:             &sync.Mutex{},
 		namespace:         namespace,
 		clusterURL:        clusterURL,
+		clusterIsPaused:   clusterIsPaused,
 		openvpnServerPort: openvpnServerPort,
 		kasSecurePort:     kasSecurePort,
 		tunnelingAgentIP:  tunnelingAgentIP,
@@ -206,6 +210,7 @@ type reconciler struct {
 	cache             cache.Cache
 	namespace         string
 	clusterURL        *url.URL
+	clusterIsPaused   userclustercontrollermanager.IsPausedChecker
 	openvpnServerPort uint32
 	kasSecurePort     uint32
 	tunnelingAgentIP  net.IP
@@ -227,6 +232,15 @@ type reconciler struct {
 
 // Reconcile makes changes in response to objects in the user cluster.
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	paused, err := r.clusterIsPaused(ctx)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to check cluster pause status: %w", err)
+	}
+	if paused {
+		r.log.Debug("Cluster is paused, not reconciling.")
+		return reconcile.Result{}, nil
+	}
+
 	if err := r.reconcile(ctx); err != nil {
 		r.log.Errorw("Reconciling failed", zap.Error(err))
 		return reconcile.Result{}, err

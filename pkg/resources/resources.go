@@ -402,6 +402,9 @@ const (
 	// IPTablesProxyMode defines the iptables kube-proxy mode.
 	IPTablesProxyMode = "iptables"
 
+	// IPVSStrictArp defines IPVS configuration strictArp setting.
+	IPVSStrictArp = true
+
 	// PodNodeSelectorAdmissionPlugin defines PodNodeSelector admission plugin
 	PodNodeSelectorAdmissionPlugin = "PodNodeSelector"
 )

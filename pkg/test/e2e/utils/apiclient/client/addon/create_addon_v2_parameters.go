@@ -18,60 +18,76 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
-// NewCreateAddonV2Params creates a new CreateAddonV2Params object
-// with the default values initialized.
+// NewCreateAddonV2Params creates a new CreateAddonV2Params object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewCreateAddonV2Params() *CreateAddonV2Params {
-	var ()
 	return &CreateAddonV2Params{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewCreateAddonV2ParamsWithTimeout creates a new CreateAddonV2Params object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewCreateAddonV2ParamsWithTimeout(timeout time.Duration) *CreateAddonV2Params {
-	var ()
 	return &CreateAddonV2Params{
-
 		timeout: timeout,
 	}
 }
 
 // NewCreateAddonV2ParamsWithContext creates a new CreateAddonV2Params object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewCreateAddonV2ParamsWithContext(ctx context.Context) *CreateAddonV2Params {
-	var ()
 	return &CreateAddonV2Params{
-
 		Context: ctx,
 	}
 }
 
 // NewCreateAddonV2ParamsWithHTTPClient creates a new CreateAddonV2Params object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewCreateAddonV2ParamsWithHTTPClient(client *http.Client) *CreateAddonV2Params {
-	var ()
 	return &CreateAddonV2Params{
 		HTTPClient: client,
 	}
 }
 
-/*CreateAddonV2Params contains all the parameters to send to the API endpoint
-for the create addon v2 operation typically these are written to a http.Request
+/* CreateAddonV2Params contains all the parameters to send to the API endpoint
+   for the create addon v2 operation.
+
+   Typically these are written to a http.Request.
 */
 type CreateAddonV2Params struct {
 
-	/*Body*/
+	// Body.
 	Body *models.Addon
-	/*ClusterID*/
+
+	// ClusterID.
 	ClusterID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the create addon v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *CreateAddonV2Params) WithDefaults() *CreateAddonV2Params {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the create addon v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *CreateAddonV2Params) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the create addon v2 params
@@ -147,7 +163,6 @@ func (o *CreateAddonV2Params) WriteToRequest(r runtime.ClientRequest, reg strfmt
 		return err
 	}
 	var res []error
-
 	if o.Body != nil {
 		if err := r.SetBodyParam(o.Body); err != nil {
 			return err

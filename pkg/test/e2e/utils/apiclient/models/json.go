@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -23,6 +25,11 @@ type JSON struct {
 
 // Validate validates this JSON
 func (m *JSON) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this JSON based on context it is used
+func (m *JSON) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

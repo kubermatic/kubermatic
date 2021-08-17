@@ -58,7 +58,7 @@ func NewDeleteConstraintOK() *DeleteConstraintOK {
 	return &DeleteConstraintOK{}
 }
 
-/*DeleteConstraintOK handles this case with default header values.
+/* DeleteConstraintOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -79,7 +79,7 @@ func NewDeleteConstraintUnauthorized() *DeleteConstraintUnauthorized {
 	return &DeleteConstraintUnauthorized{}
 }
 
-/*DeleteConstraintUnauthorized handles this case with default header values.
+/* DeleteConstraintUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -100,7 +100,7 @@ func NewDeleteConstraintForbidden() *DeleteConstraintForbidden {
 	return &DeleteConstraintForbidden{}
 }
 
-/*DeleteConstraintForbidden handles this case with default header values.
+/* DeleteConstraintForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -123,7 +123,7 @@ func NewDeleteConstraintDefault(code int) *DeleteConstraintDefault {
 	}
 }
 
-/*DeleteConstraintDefault handles this case with default header values.
+/* DeleteConstraintDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -141,7 +141,6 @@ func (o *DeleteConstraintDefault) Code() int {
 func (o *DeleteConstraintDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints/{constraint_name}][%d] deleteConstraint default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *DeleteConstraintDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

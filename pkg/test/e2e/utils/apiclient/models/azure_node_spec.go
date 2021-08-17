@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -16,6 +18,9 @@ import (
 //
 // swagger:model AzureNodeSpec
 type AzureNodeSpec struct {
+
+	// AssignAvailabilitySet is used to check if an availability set should be created and assigned to the cluster.
+	AssignAvailabilitySet bool `json:"assignAvailabilitySet,omitempty"`
 
 	// should the machine have a publicly accessible IP address
 	AssignPublicIP bool `json:"assignPublicIP,omitempty"`
@@ -60,6 +65,11 @@ func (m *AzureNodeSpec) validateSize(formats strfmt.Registry) error {
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this azure node spec based on context it is used
+func (m *AzureNodeSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

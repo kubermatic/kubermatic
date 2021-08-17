@@ -16,58 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewDeleteExternalClusterParams creates a new DeleteExternalClusterParams object
-// with the default values initialized.
+// NewDeleteExternalClusterParams creates a new DeleteExternalClusterParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewDeleteExternalClusterParams() *DeleteExternalClusterParams {
-	var ()
 	return &DeleteExternalClusterParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewDeleteExternalClusterParamsWithTimeout creates a new DeleteExternalClusterParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewDeleteExternalClusterParamsWithTimeout(timeout time.Duration) *DeleteExternalClusterParams {
-	var ()
 	return &DeleteExternalClusterParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewDeleteExternalClusterParamsWithContext creates a new DeleteExternalClusterParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewDeleteExternalClusterParamsWithContext(ctx context.Context) *DeleteExternalClusterParams {
-	var ()
 	return &DeleteExternalClusterParams{
-
 		Context: ctx,
 	}
 }
 
 // NewDeleteExternalClusterParamsWithHTTPClient creates a new DeleteExternalClusterParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewDeleteExternalClusterParamsWithHTTPClient(client *http.Client) *DeleteExternalClusterParams {
-	var ()
 	return &DeleteExternalClusterParams{
 		HTTPClient: client,
 	}
 }
 
-/*DeleteExternalClusterParams contains all the parameters to send to the API endpoint
-for the delete external cluster operation typically these are written to a http.Request
+/* DeleteExternalClusterParams contains all the parameters to send to the API endpoint
+   for the delete external cluster operation.
+
+   Typically these are written to a http.Request.
 */
 type DeleteExternalClusterParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the delete external cluster params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DeleteExternalClusterParams) WithDefaults() *DeleteExternalClusterParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the delete external cluster params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DeleteExternalClusterParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the delete external cluster params

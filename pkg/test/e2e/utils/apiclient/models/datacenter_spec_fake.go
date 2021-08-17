@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -21,6 +23,11 @@ type DatacenterSpecFake struct {
 
 // Validate validates this datacenter spec fake
 func (m *DatacenterSpecFake) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this datacenter spec fake based on context it is used
+func (m *DatacenterSpecFake) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

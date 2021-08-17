@@ -153,7 +153,7 @@ func LoadSeed(path, datacenterName string) (*kubermaticv1.Seed, error) {
 
 type EESeedGetter func() (*kubermaticv1.Seed, error)
 
-func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dcFile string, seedName string) (EESeedGetter, error) {
+func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader, dcFile string, seedName string) (EESeedGetter, error) {
 	if dcFile == "" {
 		return nil, errors.New("--datacenters is required")
 	}

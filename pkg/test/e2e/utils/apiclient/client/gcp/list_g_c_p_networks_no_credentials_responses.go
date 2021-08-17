@@ -46,7 +46,7 @@ func NewListGCPNetworksNoCredentialsOK() *ListGCPNetworksNoCredentialsOK {
 	return &ListGCPNetworksNoCredentialsOK{}
 }
 
-/*ListGCPNetworksNoCredentialsOK handles this case with default header values.
+/* ListGCPNetworksNoCredentialsOK describes a response with status code 200, with default header values.
 
 GCPNetworkList
 */
@@ -57,7 +57,6 @@ type ListGCPNetworksNoCredentialsOK struct {
 func (o *ListGCPNetworksNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/networks][%d] listGCPNetworksNoCredentialsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListGCPNetworksNoCredentialsOK) GetPayload() models.GCPNetworkList {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListGCPNetworksNoCredentialsDefault(code int) *ListGCPNetworksNoCredenti
 	}
 }
 
-/*ListGCPNetworksNoCredentialsDefault handles this case with default header values.
+/* ListGCPNetworksNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListGCPNetworksNoCredentialsDefault) Code() int {
 func (o *ListGCPNetworksNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/networks][%d] listGCPNetworksNoCredentials default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListGCPNetworksNoCredentialsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

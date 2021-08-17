@@ -46,7 +46,7 @@ func NewListAzureVnetsOK() *ListAzureVnetsOK {
 	return &ListAzureVnetsOK{}
 }
 
-/*ListAzureVnetsOK handles this case with default header values.
+/* ListAzureVnetsOK describes a response with status code 200, with default header values.
 
 AzureVirtualNetworksList
 */
@@ -57,7 +57,6 @@ type ListAzureVnetsOK struct {
 func (o *ListAzureVnetsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/azure/vnets][%d] listAzureVnetsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListAzureVnetsOK) GetPayload() *models.AzureVirtualNetworksList {
 	return o.Payload
 }
@@ -81,7 +80,7 @@ func NewListAzureVnetsDefault(code int) *ListAzureVnetsDefault {
 	}
 }
 
-/*ListAzureVnetsDefault handles this case with default header values.
+/* ListAzureVnetsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -99,7 +98,6 @@ func (o *ListAzureVnetsDefault) Code() int {
 func (o *ListAzureVnetsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/azure/vnets][%d] listAzureVnets default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListAzureVnetsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -18,56 +18,70 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
-// NewSetAdminParams creates a new SetAdminParams object
-// with the default values initialized.
+// NewSetAdminParams creates a new SetAdminParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewSetAdminParams() *SetAdminParams {
-	var ()
 	return &SetAdminParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewSetAdminParamsWithTimeout creates a new SetAdminParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewSetAdminParamsWithTimeout(timeout time.Duration) *SetAdminParams {
-	var ()
 	return &SetAdminParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewSetAdminParamsWithContext creates a new SetAdminParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewSetAdminParamsWithContext(ctx context.Context) *SetAdminParams {
-	var ()
 	return &SetAdminParams{
-
 		Context: ctx,
 	}
 }
 
 // NewSetAdminParamsWithHTTPClient creates a new SetAdminParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewSetAdminParamsWithHTTPClient(client *http.Client) *SetAdminParams {
-	var ()
 	return &SetAdminParams{
 		HTTPClient: client,
 	}
 }
 
-/*SetAdminParams contains all the parameters to send to the API endpoint
-for the set admin operation typically these are written to a http.Request
+/* SetAdminParams contains all the parameters to send to the API endpoint
+   for the set admin operation.
+
+   Typically these are written to a http.Request.
 */
 type SetAdminParams struct {
 
-	/*Body*/
+	// Body.
 	Body *models.Admin
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the set admin params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *SetAdminParams) WithDefaults() *SetAdminParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the set admin params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *SetAdminParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the set admin params
@@ -121,7 +135,6 @@ func (o *SetAdminParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Regi
 		return err
 	}
 	var res []error
-
 	if o.Body != nil {
 		if err := r.SetBodyParam(o.Body); err != nil {
 			return err

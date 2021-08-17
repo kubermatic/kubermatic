@@ -23,13 +23,18 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	CreateEtcdRestore(params *CreateEtcdRestoreParams, authInfo runtime.ClientAuthInfoWriter) (*CreateEtcdRestoreCreated, error)
+	CreateEtcdRestore(params *CreateEtcdRestoreParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateEtcdRestoreCreated, error)
 
-	GetEtcdRestore(params *GetEtcdRestoreParams, authInfo runtime.ClientAuthInfoWriter) (*GetEtcdRestoreOK, error)
+	DeleteEtcdRestore(params *DeleteEtcdRestoreParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteEtcdRestoreOK, error)
 
-	ListEtcdRestore(params *ListEtcdRestoreParams, authInfo runtime.ClientAuthInfoWriter) (*ListEtcdRestoreOK, error)
+	GetEtcdRestore(params *GetEtcdRestoreParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetEtcdRestoreOK, error)
+
+	ListEtcdRestore(params *ListEtcdRestoreParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEtcdRestoreOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -37,13 +42,12 @@ type ClientService interface {
 /*
   CreateEtcdRestore Creates a etcd backup restore for a given cluster
 */
-func (a *Client) CreateEtcdRestore(params *CreateEtcdRestoreParams, authInfo runtime.ClientAuthInfoWriter) (*CreateEtcdRestoreCreated, error) {
+func (a *Client) CreateEtcdRestore(params *CreateEtcdRestoreParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateEtcdRestoreCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewCreateEtcdRestoreParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "createEtcdRestore",
 		Method:             "POST",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores",
@@ -55,7 +59,12 @@ func (a *Client) CreateEtcdRestore(params *CreateEtcdRestoreParams, authInfo run
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -69,15 +78,52 @@ func (a *Client) CreateEtcdRestore(params *CreateEtcdRestoreParams, authInfo run
 }
 
 /*
+  DeleteEtcdRestore Deletes a etcd restore config for a given cluster based on its name
+*/
+func (a *Client) DeleteEtcdRestore(params *DeleteEtcdRestoreParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteEtcdRestoreOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewDeleteEtcdRestoreParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "deleteEtcdRestore",
+		Method:             "DELETE",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{er_name}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteEtcdRestoreReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*DeleteEtcdRestoreOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DeleteEtcdRestoreDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   GetEtcdRestore Gets a etcd backup restore for a given cluster based on its name
 */
-func (a *Client) GetEtcdRestore(params *GetEtcdRestoreParams, authInfo runtime.ClientAuthInfoWriter) (*GetEtcdRestoreOK, error) {
+func (a *Client) GetEtcdRestore(params *GetEtcdRestoreParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetEtcdRestoreOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetEtcdRestoreParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getEtcdRestore",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{er_name}",
@@ -89,7 +135,12 @@ func (a *Client) GetEtcdRestore(params *GetEtcdRestoreParams, authInfo runtime.C
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -105,13 +156,12 @@ func (a *Client) GetEtcdRestore(params *GetEtcdRestoreParams, authInfo runtime.C
 /*
   ListEtcdRestore List etcd backup restores for a given cluster
 */
-func (a *Client) ListEtcdRestore(params *ListEtcdRestoreParams, authInfo runtime.ClientAuthInfoWriter) (*ListEtcdRestoreOK, error) {
+func (a *Client) ListEtcdRestore(params *ListEtcdRestoreParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEtcdRestoreOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListEtcdRestoreParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listEtcdRestore",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores",
@@ -123,7 +173,12 @@ func (a *Client) ListEtcdRestore(params *ListEtcdRestoreParams, authInfo runtime
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

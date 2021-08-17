@@ -58,7 +58,7 @@ func NewPatchAllowedRegistryOK() *PatchAllowedRegistryOK {
 	return &PatchAllowedRegistryOK{}
 }
 
-/*PatchAllowedRegistryOK handles this case with default header values.
+/* PatchAllowedRegistryOK describes a response with status code 200, with default header values.
 
 ConstraintTemplate
 */
@@ -69,7 +69,6 @@ type PatchAllowedRegistryOK struct {
 func (o *PatchAllowedRegistryOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/allowedregistries/{allowed_registry}][%d] patchAllowedRegistryOK  %+v", 200, o.Payload)
 }
-
 func (o *PatchAllowedRegistryOK) GetPayload() *models.ConstraintTemplate {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewPatchAllowedRegistryUnauthorized() *PatchAllowedRegistryUnauthorized {
 	return &PatchAllowedRegistryUnauthorized{}
 }
 
-/*PatchAllowedRegistryUnauthorized handles this case with default header values.
+/* PatchAllowedRegistryUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewPatchAllowedRegistryForbidden() *PatchAllowedRegistryForbidden {
 	return &PatchAllowedRegistryForbidden{}
 }
 
-/*PatchAllowedRegistryForbidden handles this case with default header values.
+/* PatchAllowedRegistryForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewPatchAllowedRegistryDefault(code int) *PatchAllowedRegistryDefault {
 	}
 }
 
-/*PatchAllowedRegistryDefault handles this case with default header values.
+/* PatchAllowedRegistryDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *PatchAllowedRegistryDefault) Code() int {
 func (o *PatchAllowedRegistryDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/allowedregistries/{allowed_registry}][%d] patchAllowedRegistry default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *PatchAllowedRegistryDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

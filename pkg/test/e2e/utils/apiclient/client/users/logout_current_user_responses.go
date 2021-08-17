@@ -52,7 +52,7 @@ func NewLogoutCurrentUserOK() *LogoutCurrentUserOK {
 	return &LogoutCurrentUserOK{}
 }
 
-/*LogoutCurrentUserOK handles this case with default header values.
+/* LogoutCurrentUserOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -73,7 +73,7 @@ func NewLogoutCurrentUserUnauthorized() *LogoutCurrentUserUnauthorized {
 	return &LogoutCurrentUserUnauthorized{}
 }
 
-/*LogoutCurrentUserUnauthorized handles this case with default header values.
+/* LogoutCurrentUserUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -96,7 +96,7 @@ func NewLogoutCurrentUserDefault(code int) *LogoutCurrentUserDefault {
 	}
 }
 
-/*LogoutCurrentUserDefault handles this case with default header values.
+/* LogoutCurrentUserDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -114,7 +114,6 @@ func (o *LogoutCurrentUserDefault) Code() int {
 func (o *LogoutCurrentUserDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v1/me/logout][%d] logoutCurrentUser default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *LogoutCurrentUserDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

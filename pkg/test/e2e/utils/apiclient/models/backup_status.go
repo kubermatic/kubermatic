@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -97,7 +99,6 @@ func (m *BackupStatus) Validate(formats strfmt.Registry) error {
 }
 
 func (m *BackupStatus) validateBackupFinishedTime(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.BackupFinishedTime) { // not required
 		return nil
 	}
@@ -113,7 +114,6 @@ func (m *BackupStatus) validateBackupFinishedTime(formats strfmt.Registry) error
 }
 
 func (m *BackupStatus) validateBackupPhase(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.BackupPhase) { // not required
 		return nil
 	}
@@ -129,7 +129,6 @@ func (m *BackupStatus) validateBackupPhase(formats strfmt.Registry) error {
 }
 
 func (m *BackupStatus) validateBackupStartTime(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.BackupStartTime) { // not required
 		return nil
 	}
@@ -145,7 +144,6 @@ func (m *BackupStatus) validateBackupStartTime(formats strfmt.Registry) error {
 }
 
 func (m *BackupStatus) validateDeleteFinishedTime(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.DeleteFinishedTime) { // not required
 		return nil
 	}
@@ -161,7 +159,6 @@ func (m *BackupStatus) validateDeleteFinishedTime(formats strfmt.Registry) error
 }
 
 func (m *BackupStatus) validateDeletePhase(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.DeletePhase) { // not required
 		return nil
 	}
@@ -177,7 +174,6 @@ func (m *BackupStatus) validateDeletePhase(formats strfmt.Registry) error {
 }
 
 func (m *BackupStatus) validateDeleteStartTime(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.DeleteStartTime) { // not required
 		return nil
 	}
@@ -193,12 +189,133 @@ func (m *BackupStatus) validateDeleteStartTime(formats strfmt.Registry) error {
 }
 
 func (m *BackupStatus) validateScheduledTime(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ScheduledTime) { // not required
 		return nil
 	}
 
 	if err := m.ScheduledTime.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("scheduledTime")
+		}
+		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this backup status based on the context it is used
+func (m *BackupStatus) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateBackupFinishedTime(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateBackupPhase(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateBackupStartTime(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateDeleteFinishedTime(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateDeletePhase(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateDeleteStartTime(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateScheduledTime(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *BackupStatus) contextValidateBackupFinishedTime(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.BackupFinishedTime.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("backupFinishedTime")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *BackupStatus) contextValidateBackupPhase(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.BackupPhase.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("backupPhase")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *BackupStatus) contextValidateBackupStartTime(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.BackupStartTime.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("backupStartTime")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *BackupStatus) contextValidateDeleteFinishedTime(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.DeleteFinishedTime.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("deleteFinishedTime")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *BackupStatus) contextValidateDeletePhase(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.DeletePhase.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("deletePhase")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *BackupStatus) contextValidateDeleteStartTime(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.DeleteStartTime.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("deleteStartTime")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *BackupStatus) contextValidateScheduledTime(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.ScheduledTime.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("scheduledTime")
 		}

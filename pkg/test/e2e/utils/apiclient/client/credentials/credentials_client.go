@@ -23,9 +23,12 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	ListCredentials(params *ListCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListCredentialsOK, error)
+	ListCredentials(params *ListCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListCredentialsOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -33,13 +36,12 @@ type ClientService interface {
 /*
   ListCredentials Lists credential names for the provider
 */
-func (a *Client) ListCredentials(params *ListCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListCredentialsOK, error) {
+func (a *Client) ListCredentials(params *ListCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListCredentialsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListCredentialsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listCredentials",
 		Method:             "GET",
 		PathPattern:        "/api/v1/providers/{provider_name}/presets/credentials",
@@ -51,7 +53,12 @@ func (a *Client) ListCredentials(params *ListCredentialsParams, authInfo runtime
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

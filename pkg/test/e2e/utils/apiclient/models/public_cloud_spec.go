@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -29,7 +31,7 @@ type PublicCloudSpec struct {
 	Aws PublicAWSCloudSpec `json:"aws,omitempty"`
 
 	// azure
-	Azure PublicAzureCloudSpec `json:"azure,omitempty"`
+	Azure *PublicAzureCloudSpec `json:"azure,omitempty"`
 
 	// bringyourown
 	Bringyourown PublicBringYourOwnCloudSpec `json:"bringyourown,omitempty"`
@@ -63,6 +65,10 @@ type PublicCloudSpec struct {
 func (m *PublicCloudSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateAzure(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateOpenstack(formats); err != nil {
 		res = append(res, err)
 	}
@@ -73,14 +79,76 @@ func (m *PublicCloudSpec) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *PublicCloudSpec) validateOpenstack(formats strfmt.Registry) error {
+func (m *PublicCloudSpec) validateAzure(formats strfmt.Registry) error {
+	if swag.IsZero(m.Azure) { // not required
+		return nil
+	}
 
+	if m.Azure != nil {
+		if err := m.Azure.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("azure")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PublicCloudSpec) validateOpenstack(formats strfmt.Registry) error {
 	if swag.IsZero(m.Openstack) { // not required
 		return nil
 	}
 
 	if m.Openstack != nil {
 		if err := m.Openstack.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("openstack")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this public cloud spec based on the context it is used
+func (m *PublicCloudSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateAzure(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateOpenstack(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *PublicCloudSpec) contextValidateAzure(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Azure != nil {
+		if err := m.Azure.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("azure")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PublicCloudSpec) contextValidateOpenstack(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Openstack != nil {
+		if err := m.Openstack.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("openstack")
 			}

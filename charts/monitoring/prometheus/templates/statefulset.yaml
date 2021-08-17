@@ -12,13 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-{{ if not .Values.prometheus.migration.enabled }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: '{{ template "name" . }}'
 spec:
-  replicas: 2
+  replicas: {{ .Values.prometheus.replicas }}
   revisionHistoryLimit: 10
   selector:
     matchLabels:
@@ -86,6 +85,9 @@ spec:
             --web.enable-lifecycle \
             --web.external-url=https://{{ .Values.prometheus.host | trim }} \
             --web.enable-admin-api
+          {{- range $key, $value := .Values.prometheus.extraArgs }}
+            - --{{ $key }}={{ $value }}
+          {{- end }}
           {{- else }}
           echo "Starting Prometheus..."
           exec /bin/prometheus \
@@ -101,6 +103,9 @@ spec:
             --web.enable-admin-api \
             {{- end }}
             --web.external-url=https://{{ .Values.prometheus.host | trim }}
+            {{- range $key, $value := .Values.prometheus.extraArgs }}
+            --{{ $key }}={{ $value }}
+            {{- end }}
           {{- end }}
         ports:
         - containerPort: 9090
@@ -299,10 +304,13 @@ spec:
       {{- with .Values.prometheus.storageClass }}
       storageClassName: {{ . }}
       {{- end }}
-{{ end }}
 
 ---
+{{ if .Capabilities.APIVersions.Has "policy/v1" }}
+apiVersion: policy/v1
+{{ else }}
 apiVersion: policy/v1beta1
+{{ end }}
 kind: PodDisruptionBudget
 metadata:
   name: '{{ template "name" . }}'

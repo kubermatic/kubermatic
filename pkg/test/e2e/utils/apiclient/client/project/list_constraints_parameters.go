@@ -16,58 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListConstraintsParams creates a new ListConstraintsParams object
-// with the default values initialized.
+// NewListConstraintsParams creates a new ListConstraintsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListConstraintsParams() *ListConstraintsParams {
-	var ()
 	return &ListConstraintsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListConstraintsParamsWithTimeout creates a new ListConstraintsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListConstraintsParamsWithTimeout(timeout time.Duration) *ListConstraintsParams {
-	var ()
 	return &ListConstraintsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListConstraintsParamsWithContext creates a new ListConstraintsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListConstraintsParamsWithContext(ctx context.Context) *ListConstraintsParams {
-	var ()
 	return &ListConstraintsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListConstraintsParamsWithHTTPClient creates a new ListConstraintsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListConstraintsParamsWithHTTPClient(client *http.Client) *ListConstraintsParams {
-	var ()
 	return &ListConstraintsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListConstraintsParams contains all the parameters to send to the API endpoint
-for the list constraints operation typically these are written to a http.Request
+/* ListConstraintsParams contains all the parameters to send to the API endpoint
+   for the list constraints operation.
+
+   Typically these are written to a http.Request.
 */
 type ListConstraintsParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list constraints params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListConstraintsParams) WithDefaults() *ListConstraintsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list constraints params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListConstraintsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list constraints params

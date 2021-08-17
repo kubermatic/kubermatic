@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/strfmt"
 )
 
@@ -16,5 +18,10 @@ type AdmissionPluginList []string
 
 // Validate validates this admission plugin list
 func (m AdmissionPluginList) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this admission plugin list based on context it is used
+func (m AdmissionPluginList) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }

@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListVSphereFoldersNoCredentialsParams creates a new ListVSphereFoldersNoCredentialsParams object
-// with the default values initialized.
+// NewListVSphereFoldersNoCredentialsParams creates a new ListVSphereFoldersNoCredentialsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListVSphereFoldersNoCredentialsParams() *ListVSphereFoldersNoCredentialsParams {
-	var ()
 	return &ListVSphereFoldersNoCredentialsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListVSphereFoldersNoCredentialsParamsWithTimeout creates a new ListVSphereFoldersNoCredentialsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListVSphereFoldersNoCredentialsParamsWithTimeout(timeout time.Duration) *ListVSphereFoldersNoCredentialsParams {
-	var ()
 	return &ListVSphereFoldersNoCredentialsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListVSphereFoldersNoCredentialsParamsWithContext creates a new ListVSphereFoldersNoCredentialsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListVSphereFoldersNoCredentialsParamsWithContext(ctx context.Context) *ListVSphereFoldersNoCredentialsParams {
-	var ()
 	return &ListVSphereFoldersNoCredentialsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListVSphereFoldersNoCredentialsParamsWithHTTPClient creates a new ListVSphereFoldersNoCredentialsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListVSphereFoldersNoCredentialsParamsWithHTTPClient(client *http.Client) *ListVSphereFoldersNoCredentialsParams {
-	var ()
 	return &ListVSphereFoldersNoCredentialsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListVSphereFoldersNoCredentialsParams contains all the parameters to send to the API endpoint
-for the list v sphere folders no credentials operation typically these are written to a http.Request
+/* ListVSphereFoldersNoCredentialsParams contains all the parameters to send to the API endpoint
+   for the list v sphere folders no credentials operation.
+
+   Typically these are written to a http.Request.
 */
 type ListVSphereFoldersNoCredentialsParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list v sphere folders no credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListVSphereFoldersNoCredentialsParams) WithDefaults() *ListVSphereFoldersNoCredentialsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list v sphere folders no credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListVSphereFoldersNoCredentialsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list v sphere folders no credentials params

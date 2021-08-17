@@ -23,17 +23,20 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	CreatePreset(params *CreatePresetParams, authInfo runtime.ClientAuthInfoWriter) (*CreatePresetOK, error)
+	CreatePreset(params *CreatePresetParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreatePresetOK, error)
 
-	ListPresets(params *ListPresetsParams, authInfo runtime.ClientAuthInfoWriter) (*ListPresetsOK, error)
+	ListPresets(params *ListPresetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListPresetsOK, error)
 
-	ListProviderPresets(params *ListProviderPresetsParams, authInfo runtime.ClientAuthInfoWriter) (*ListProviderPresetsOK, error)
+	ListProviderPresets(params *ListProviderPresetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProviderPresetsOK, error)
 
-	UpdatePreset(params *UpdatePresetParams, authInfo runtime.ClientAuthInfoWriter) (*UpdatePresetOK, error)
+	UpdatePreset(params *UpdatePresetParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdatePresetOK, error)
 
-	UpdatePresetStatus(params *UpdatePresetStatusParams, authInfo runtime.ClientAuthInfoWriter) (*UpdatePresetStatusOK, error)
+	UpdatePresetStatus(params *UpdatePresetStatusParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdatePresetStatusOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -41,13 +44,12 @@ type ClientService interface {
 /*
   CreatePreset Creates the preset
 */
-func (a *Client) CreatePreset(params *CreatePresetParams, authInfo runtime.ClientAuthInfoWriter) (*CreatePresetOK, error) {
+func (a *Client) CreatePreset(params *CreatePresetParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreatePresetOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewCreatePresetParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "createPreset",
 		Method:             "POST",
 		PathPattern:        "/api/v2/providers/{provider_name}/presets",
@@ -59,7 +61,12 @@ func (a *Client) CreatePreset(params *CreatePresetParams, authInfo runtime.Clien
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -75,13 +82,12 @@ func (a *Client) CreatePreset(params *CreatePresetParams, authInfo runtime.Clien
 /*
   ListPresets Lists presets
 */
-func (a *Client) ListPresets(params *ListPresetsParams, authInfo runtime.ClientAuthInfoWriter) (*ListPresetsOK, error) {
+func (a *Client) ListPresets(params *ListPresetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListPresetsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListPresetsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listPresets",
 		Method:             "GET",
 		PathPattern:        "/api/v2/presets",
@@ -93,7 +99,12 @@ func (a *Client) ListPresets(params *ListPresetsParams, authInfo runtime.ClientA
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -109,13 +120,12 @@ func (a *Client) ListPresets(params *ListPresetsParams, authInfo runtime.ClientA
 /*
   ListProviderPresets Lists presets for the provider
 */
-func (a *Client) ListProviderPresets(params *ListProviderPresetsParams, authInfo runtime.ClientAuthInfoWriter) (*ListProviderPresetsOK, error) {
+func (a *Client) ListProviderPresets(params *ListProviderPresetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProviderPresetsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListProviderPresetsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listProviderPresets",
 		Method:             "GET",
 		PathPattern:        "/api/v2/providers/{provider_name}/presets",
@@ -127,7 +137,12 @@ func (a *Client) ListProviderPresets(params *ListProviderPresetsParams, authInfo
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -143,13 +158,12 @@ func (a *Client) ListProviderPresets(params *ListProviderPresetsParams, authInfo
 /*
   UpdatePreset Updates provider preset
 */
-func (a *Client) UpdatePreset(params *UpdatePresetParams, authInfo runtime.ClientAuthInfoWriter) (*UpdatePresetOK, error) {
+func (a *Client) UpdatePreset(params *UpdatePresetParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdatePresetOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewUpdatePresetParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "updatePreset",
 		Method:             "PUT",
 		PathPattern:        "/api/v2/providers/{provider_name}/presets",
@@ -161,7 +175,12 @@ func (a *Client) UpdatePreset(params *UpdatePresetParams, authInfo runtime.Clien
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -177,13 +196,12 @@ func (a *Client) UpdatePreset(params *UpdatePresetParams, authInfo runtime.Clien
 /*
   UpdatePresetStatus updates the status of a preset it can enable or disable it so that it won t be listed by the list endpoints
 */
-func (a *Client) UpdatePresetStatus(params *UpdatePresetStatusParams, authInfo runtime.ClientAuthInfoWriter) (*UpdatePresetStatusOK, error) {
+func (a *Client) UpdatePresetStatus(params *UpdatePresetStatusParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdatePresetStatusOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewUpdatePresetStatusParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "updatePresetStatus",
 		Method:             "PUT",
 		PathPattern:        "/api/v2/presets/{preset_name}/status",
@@ -195,7 +213,12 @@ func (a *Client) UpdatePresetStatus(params *UpdatePresetStatusParams, authInfo r
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

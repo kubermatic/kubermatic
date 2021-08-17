@@ -16,58 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListAWSSubnetsNoCredentialsV2Params creates a new ListAWSSubnetsNoCredentialsV2Params object
-// with the default values initialized.
+// NewListAWSSubnetsNoCredentialsV2Params creates a new ListAWSSubnetsNoCredentialsV2Params object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListAWSSubnetsNoCredentialsV2Params() *ListAWSSubnetsNoCredentialsV2Params {
-	var ()
 	return &ListAWSSubnetsNoCredentialsV2Params{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListAWSSubnetsNoCredentialsV2ParamsWithTimeout creates a new ListAWSSubnetsNoCredentialsV2Params object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListAWSSubnetsNoCredentialsV2ParamsWithTimeout(timeout time.Duration) *ListAWSSubnetsNoCredentialsV2Params {
-	var ()
 	return &ListAWSSubnetsNoCredentialsV2Params{
-
 		timeout: timeout,
 	}
 }
 
 // NewListAWSSubnetsNoCredentialsV2ParamsWithContext creates a new ListAWSSubnetsNoCredentialsV2Params object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListAWSSubnetsNoCredentialsV2ParamsWithContext(ctx context.Context) *ListAWSSubnetsNoCredentialsV2Params {
-	var ()
 	return &ListAWSSubnetsNoCredentialsV2Params{
-
 		Context: ctx,
 	}
 }
 
 // NewListAWSSubnetsNoCredentialsV2ParamsWithHTTPClient creates a new ListAWSSubnetsNoCredentialsV2Params object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListAWSSubnetsNoCredentialsV2ParamsWithHTTPClient(client *http.Client) *ListAWSSubnetsNoCredentialsV2Params {
-	var ()
 	return &ListAWSSubnetsNoCredentialsV2Params{
 		HTTPClient: client,
 	}
 }
 
-/*ListAWSSubnetsNoCredentialsV2Params contains all the parameters to send to the API endpoint
-for the list a w s subnets no credentials v2 operation typically these are written to a http.Request
+/* ListAWSSubnetsNoCredentialsV2Params contains all the parameters to send to the API endpoint
+   for the list a w s subnets no credentials v2 operation.
+
+   Typically these are written to a http.Request.
 */
 type ListAWSSubnetsNoCredentialsV2Params struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list a w s subnets no credentials v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAWSSubnetsNoCredentialsV2Params) WithDefaults() *ListAWSSubnetsNoCredentialsV2Params {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list a w s subnets no credentials v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAWSSubnetsNoCredentialsV2Params) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list a w s subnets no credentials v2 params

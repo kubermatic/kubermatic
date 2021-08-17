@@ -18,62 +18,79 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
-// NewUnbindUserFromClusterRoleBindingV2Params creates a new UnbindUserFromClusterRoleBindingV2Params object
-// with the default values initialized.
+// NewUnbindUserFromClusterRoleBindingV2Params creates a new UnbindUserFromClusterRoleBindingV2Params object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewUnbindUserFromClusterRoleBindingV2Params() *UnbindUserFromClusterRoleBindingV2Params {
-	var ()
 	return &UnbindUserFromClusterRoleBindingV2Params{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewUnbindUserFromClusterRoleBindingV2ParamsWithTimeout creates a new UnbindUserFromClusterRoleBindingV2Params object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewUnbindUserFromClusterRoleBindingV2ParamsWithTimeout(timeout time.Duration) *UnbindUserFromClusterRoleBindingV2Params {
-	var ()
 	return &UnbindUserFromClusterRoleBindingV2Params{
-
 		timeout: timeout,
 	}
 }
 
 // NewUnbindUserFromClusterRoleBindingV2ParamsWithContext creates a new UnbindUserFromClusterRoleBindingV2Params object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewUnbindUserFromClusterRoleBindingV2ParamsWithContext(ctx context.Context) *UnbindUserFromClusterRoleBindingV2Params {
-	var ()
 	return &UnbindUserFromClusterRoleBindingV2Params{
-
 		Context: ctx,
 	}
 }
 
 // NewUnbindUserFromClusterRoleBindingV2ParamsWithHTTPClient creates a new UnbindUserFromClusterRoleBindingV2Params object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewUnbindUserFromClusterRoleBindingV2ParamsWithHTTPClient(client *http.Client) *UnbindUserFromClusterRoleBindingV2Params {
-	var ()
 	return &UnbindUserFromClusterRoleBindingV2Params{
 		HTTPClient: client,
 	}
 }
 
-/*UnbindUserFromClusterRoleBindingV2Params contains all the parameters to send to the API endpoint
-for the unbind user from cluster role binding v2 operation typically these are written to a http.Request
+/* UnbindUserFromClusterRoleBindingV2Params contains all the parameters to send to the API endpoint
+   for the unbind user from cluster role binding v2 operation.
+
+   Typically these are written to a http.Request.
 */
 type UnbindUserFromClusterRoleBindingV2Params struct {
 
-	/*Body*/
+	// Body.
 	Body *models.ClusterRoleUser
-	/*ClusterID*/
+
+	// ClusterID.
 	ClusterID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
-	/*RoleID*/
+
+	// RoleID.
 	RoleID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the unbind user from cluster role binding v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *UnbindUserFromClusterRoleBindingV2Params) WithDefaults() *UnbindUserFromClusterRoleBindingV2Params {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the unbind user from cluster role binding v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *UnbindUserFromClusterRoleBindingV2Params) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the unbind user from cluster role binding v2 params
@@ -160,7 +177,6 @@ func (o *UnbindUserFromClusterRoleBindingV2Params) WriteToRequest(r runtime.Clie
 		return err
 	}
 	var res []error
-
 	if o.Body != nil {
 		if err := r.SetBodyParam(o.Body); err != nil {
 			return err

@@ -16,62 +16,79 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewDetachSSHKeyFromClusterParams creates a new DetachSSHKeyFromClusterParams object
-// with the default values initialized.
+// NewDetachSSHKeyFromClusterParams creates a new DetachSSHKeyFromClusterParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewDetachSSHKeyFromClusterParams() *DetachSSHKeyFromClusterParams {
-	var ()
 	return &DetachSSHKeyFromClusterParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewDetachSSHKeyFromClusterParamsWithTimeout creates a new DetachSSHKeyFromClusterParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewDetachSSHKeyFromClusterParamsWithTimeout(timeout time.Duration) *DetachSSHKeyFromClusterParams {
-	var ()
 	return &DetachSSHKeyFromClusterParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewDetachSSHKeyFromClusterParamsWithContext creates a new DetachSSHKeyFromClusterParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewDetachSSHKeyFromClusterParamsWithContext(ctx context.Context) *DetachSSHKeyFromClusterParams {
-	var ()
 	return &DetachSSHKeyFromClusterParams{
-
 		Context: ctx,
 	}
 }
 
 // NewDetachSSHKeyFromClusterParamsWithHTTPClient creates a new DetachSSHKeyFromClusterParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewDetachSSHKeyFromClusterParamsWithHTTPClient(client *http.Client) *DetachSSHKeyFromClusterParams {
-	var ()
 	return &DetachSSHKeyFromClusterParams{
 		HTTPClient: client,
 	}
 }
 
-/*DetachSSHKeyFromClusterParams contains all the parameters to send to the API endpoint
-for the detach SSH key from cluster operation typically these are written to a http.Request
+/* DetachSSHKeyFromClusterParams contains all the parameters to send to the API endpoint
+   for the detach SSH key from cluster operation.
+
+   Typically these are written to a http.Request.
 */
 type DetachSSHKeyFromClusterParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*KeyID*/
+
+	// KeyID.
 	KeyID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the detach SSH key from cluster params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DetachSSHKeyFromClusterParams) WithDefaults() *DetachSSHKeyFromClusterParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the detach SSH key from cluster params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DetachSSHKeyFromClusterParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the detach SSH key from cluster params

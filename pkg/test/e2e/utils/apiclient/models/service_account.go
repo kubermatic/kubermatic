@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -16,6 +18,9 @@ import (
 //
 // swagger:model ServiceAccount
 type ServiceAccount struct {
+
+	// Annotations that can be added to the resource
+	Annotations map[string]string `json:"annotations,omitempty"`
 
 	// CreationTimestamp is a timestamp representing the server time when this object was created.
 	// Format: date-time
@@ -57,7 +62,6 @@ func (m *ServiceAccount) Validate(formats strfmt.Registry) error {
 }
 
 func (m *ServiceAccount) validateCreationTimestamp(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.CreationTimestamp) { // not required
 		return nil
 	}
@@ -70,7 +74,6 @@ func (m *ServiceAccount) validateCreationTimestamp(formats strfmt.Registry) erro
 }
 
 func (m *ServiceAccount) validateDeletionTimestamp(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.DeletionTimestamp) { // not required
 		return nil
 	}
@@ -79,6 +82,11 @@ func (m *ServiceAccount) validateDeletionTimestamp(formats strfmt.Registry) erro
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this service account based on context it is used
+func (m *ServiceAccount) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

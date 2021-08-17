@@ -58,7 +58,7 @@ func NewUpdateAdmissionPluginOK() *UpdateAdmissionPluginOK {
 	return &UpdateAdmissionPluginOK{}
 }
 
-/*UpdateAdmissionPluginOK handles this case with default header values.
+/* UpdateAdmissionPluginOK describes a response with status code 200, with default header values.
 
 AdmissionPlugin
 */
@@ -69,7 +69,6 @@ type UpdateAdmissionPluginOK struct {
 func (o *UpdateAdmissionPluginOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/admin/admission/plugins/{name}][%d] updateAdmissionPluginOK  %+v", 200, o.Payload)
 }
-
 func (o *UpdateAdmissionPluginOK) GetPayload() *models.AdmissionPlugin {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewUpdateAdmissionPluginUnauthorized() *UpdateAdmissionPluginUnauthorized {
 	return &UpdateAdmissionPluginUnauthorized{}
 }
 
-/*UpdateAdmissionPluginUnauthorized handles this case with default header values.
+/* UpdateAdmissionPluginUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewUpdateAdmissionPluginForbidden() *UpdateAdmissionPluginForbidden {
 	return &UpdateAdmissionPluginForbidden{}
 }
 
-/*UpdateAdmissionPluginForbidden handles this case with default header values.
+/* UpdateAdmissionPluginForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewUpdateAdmissionPluginDefault(code int) *UpdateAdmissionPluginDefault {
 	}
 }
 
-/*UpdateAdmissionPluginDefault handles this case with default header values.
+/* UpdateAdmissionPluginDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *UpdateAdmissionPluginDefault) Code() int {
 func (o *UpdateAdmissionPluginDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/admin/admission/plugins/{name}][%d] updateAdmissionPlugin default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *UpdateAdmissionPluginDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

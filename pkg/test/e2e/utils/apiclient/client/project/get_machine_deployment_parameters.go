@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetMachineDeploymentParams creates a new GetMachineDeploymentParams object
-// with the default values initialized.
+// NewGetMachineDeploymentParams creates a new GetMachineDeploymentParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetMachineDeploymentParams() *GetMachineDeploymentParams {
-	var ()
 	return &GetMachineDeploymentParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetMachineDeploymentParamsWithTimeout creates a new GetMachineDeploymentParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetMachineDeploymentParamsWithTimeout(timeout time.Duration) *GetMachineDeploymentParams {
-	var ()
 	return &GetMachineDeploymentParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetMachineDeploymentParamsWithContext creates a new GetMachineDeploymentParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetMachineDeploymentParamsWithContext(ctx context.Context) *GetMachineDeploymentParams {
-	var ()
 	return &GetMachineDeploymentParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetMachineDeploymentParamsWithHTTPClient creates a new GetMachineDeploymentParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetMachineDeploymentParamsWithHTTPClient(client *http.Client) *GetMachineDeploymentParams {
-	var ()
 	return &GetMachineDeploymentParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetMachineDeploymentParams contains all the parameters to send to the API endpoint
-for the get machine deployment operation typically these are written to a http.Request
+/* GetMachineDeploymentParams contains all the parameters to send to the API endpoint
+   for the get machine deployment operation.
+
+   Typically these are written to a http.Request.
 */
 type GetMachineDeploymentParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*MachinedeploymentID*/
+
+	// MachinedeploymentID.
 	MachineDeploymentID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get machine deployment params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetMachineDeploymentParams) WithDefaults() *GetMachineDeploymentParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get machine deployment params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetMachineDeploymentParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get machine deployment params

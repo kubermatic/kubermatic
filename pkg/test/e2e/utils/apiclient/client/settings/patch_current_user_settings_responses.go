@@ -52,7 +52,7 @@ func NewPatchCurrentUserSettingsOK() *PatchCurrentUserSettingsOK {
 	return &PatchCurrentUserSettingsOK{}
 }
 
-/*PatchCurrentUserSettingsOK handles this case with default header values.
+/* PatchCurrentUserSettingsOK describes a response with status code 200, with default header values.
 
 UserSettings
 */
@@ -63,7 +63,6 @@ type PatchCurrentUserSettingsOK struct {
 func (o *PatchCurrentUserSettingsOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/me/settings][%d] patchCurrentUserSettingsOK  %+v", 200, o.Payload)
 }
-
 func (o *PatchCurrentUserSettingsOK) GetPayload() *models.UserSettings {
 	return o.Payload
 }
@@ -85,7 +84,7 @@ func NewPatchCurrentUserSettingsUnauthorized() *PatchCurrentUserSettingsUnauthor
 	return &PatchCurrentUserSettingsUnauthorized{}
 }
 
-/*PatchCurrentUserSettingsUnauthorized handles this case with default header values.
+/* PatchCurrentUserSettingsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +107,7 @@ func NewPatchCurrentUserSettingsDefault(code int) *PatchCurrentUserSettingsDefau
 	}
 }
 
-/*PatchCurrentUserSettingsDefault handles this case with default header values.
+/* PatchCurrentUserSettingsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -126,7 +125,6 @@ func (o *PatchCurrentUserSettingsDefault) Code() int {
 func (o *PatchCurrentUserSettingsDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/me/settings][%d] patchCurrentUserSettings default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *PatchCurrentUserSettingsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

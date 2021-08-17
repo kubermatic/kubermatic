@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListNodeDeploymentsParams creates a new ListNodeDeploymentsParams object
-// with the default values initialized.
+// NewListNodeDeploymentsParams creates a new ListNodeDeploymentsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListNodeDeploymentsParams() *ListNodeDeploymentsParams {
-	var ()
 	return &ListNodeDeploymentsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListNodeDeploymentsParamsWithTimeout creates a new ListNodeDeploymentsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListNodeDeploymentsParamsWithTimeout(timeout time.Duration) *ListNodeDeploymentsParams {
-	var ()
 	return &ListNodeDeploymentsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListNodeDeploymentsParamsWithContext creates a new ListNodeDeploymentsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListNodeDeploymentsParamsWithContext(ctx context.Context) *ListNodeDeploymentsParams {
-	var ()
 	return &ListNodeDeploymentsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListNodeDeploymentsParamsWithHTTPClient creates a new ListNodeDeploymentsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListNodeDeploymentsParamsWithHTTPClient(client *http.Client) *ListNodeDeploymentsParams {
-	var ()
 	return &ListNodeDeploymentsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListNodeDeploymentsParams contains all the parameters to send to the API endpoint
-for the list node deployments operation typically these are written to a http.Request
+/* ListNodeDeploymentsParams contains all the parameters to send to the API endpoint
+   for the list node deployments operation.
+
+   Typically these are written to a http.Request.
 */
 type ListNodeDeploymentsParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list node deployments params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListNodeDeploymentsParams) WithDefaults() *ListNodeDeploymentsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list node deployments params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListNodeDeploymentsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list node deployments params

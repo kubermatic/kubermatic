@@ -58,7 +58,7 @@ func NewListEtcdRestoreOK() *ListEtcdRestoreOK {
 	return &ListEtcdRestoreOK{}
 }
 
-/*ListEtcdRestoreOK handles this case with default header values.
+/* ListEtcdRestoreOK describes a response with status code 200, with default header values.
 
 EtcdRestore
 */
@@ -69,7 +69,6 @@ type ListEtcdRestoreOK struct {
 func (o *ListEtcdRestoreOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores][%d] listEtcdRestoreOK  %+v", 200, o.Payload)
 }
-
 func (o *ListEtcdRestoreOK) GetPayload() []*models.EtcdRestore {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListEtcdRestoreUnauthorized() *ListEtcdRestoreUnauthorized {
 	return &ListEtcdRestoreUnauthorized{}
 }
 
-/*ListEtcdRestoreUnauthorized handles this case with default header values.
+/* ListEtcdRestoreUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListEtcdRestoreForbidden() *ListEtcdRestoreForbidden {
 	return &ListEtcdRestoreForbidden{}
 }
 
-/*ListEtcdRestoreForbidden handles this case with default header values.
+/* ListEtcdRestoreForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListEtcdRestoreDefault(code int) *ListEtcdRestoreDefault {
 	}
 }
 
-/*ListEtcdRestoreDefault handles this case with default header values.
+/* ListEtcdRestoreDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListEtcdRestoreDefault) Code() int {
 func (o *ListEtcdRestoreDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores][%d] listEtcdRestore default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListEtcdRestoreDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

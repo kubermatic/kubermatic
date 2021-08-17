@@ -58,7 +58,7 @@ func NewCreateClusterCreated() *CreateClusterCreated {
 	return &CreateClusterCreated{}
 }
 
-/*CreateClusterCreated handles this case with default header values.
+/* CreateClusterCreated describes a response with status code 201, with default header values.
 
 Cluster
 */
@@ -69,7 +69,6 @@ type CreateClusterCreated struct {
 func (o *CreateClusterCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters][%d] createClusterCreated  %+v", 201, o.Payload)
 }
-
 func (o *CreateClusterCreated) GetPayload() *models.Cluster {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewCreateClusterUnauthorized() *CreateClusterUnauthorized {
 	return &CreateClusterUnauthorized{}
 }
 
-/*CreateClusterUnauthorized handles this case with default header values.
+/* CreateClusterUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewCreateClusterForbidden() *CreateClusterForbidden {
 	return &CreateClusterForbidden{}
 }
 
-/*CreateClusterForbidden handles this case with default header values.
+/* CreateClusterForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewCreateClusterDefault(code int) *CreateClusterDefault {
 	}
 }
 
-/*CreateClusterDefault handles this case with default header values.
+/* CreateClusterDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *CreateClusterDefault) Code() int {
 func (o *CreateClusterDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters][%d] createCluster default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *CreateClusterDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

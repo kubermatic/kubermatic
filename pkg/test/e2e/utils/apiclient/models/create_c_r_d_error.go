@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -27,6 +29,11 @@ type CreateCRDError struct {
 
 // Validate validates this create c r d error
 func (m *CreateCRDError) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this create c r d error based on context it is used
+func (m *CreateCRDError) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

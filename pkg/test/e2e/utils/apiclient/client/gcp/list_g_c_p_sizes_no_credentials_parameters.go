@@ -16,62 +16,79 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListGCPSizesNoCredentialsParams creates a new ListGCPSizesNoCredentialsParams object
-// with the default values initialized.
+// NewListGCPSizesNoCredentialsParams creates a new ListGCPSizesNoCredentialsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListGCPSizesNoCredentialsParams() *ListGCPSizesNoCredentialsParams {
-	var ()
 	return &ListGCPSizesNoCredentialsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListGCPSizesNoCredentialsParamsWithTimeout creates a new ListGCPSizesNoCredentialsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListGCPSizesNoCredentialsParamsWithTimeout(timeout time.Duration) *ListGCPSizesNoCredentialsParams {
-	var ()
 	return &ListGCPSizesNoCredentialsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListGCPSizesNoCredentialsParamsWithContext creates a new ListGCPSizesNoCredentialsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListGCPSizesNoCredentialsParamsWithContext(ctx context.Context) *ListGCPSizesNoCredentialsParams {
-	var ()
 	return &ListGCPSizesNoCredentialsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListGCPSizesNoCredentialsParamsWithHTTPClient creates a new ListGCPSizesNoCredentialsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListGCPSizesNoCredentialsParamsWithHTTPClient(client *http.Client) *ListGCPSizesNoCredentialsParams {
-	var ()
 	return &ListGCPSizesNoCredentialsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListGCPSizesNoCredentialsParams contains all the parameters to send to the API endpoint
-for the list g c p sizes no credentials operation typically these are written to a http.Request
+/* ListGCPSizesNoCredentialsParams contains all the parameters to send to the API endpoint
+   for the list g c p sizes no credentials operation.
+
+   Typically these are written to a http.Request.
 */
 type ListGCPSizesNoCredentialsParams struct {
 
-	/*Zone*/
+	// Zone.
 	Zone *string
-	/*ClusterID*/
+
+	// ClusterID.
 	ClusterID string
-	/*Dc*/
+
+	// Dc.
 	DC string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list g c p sizes no credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListGCPSizesNoCredentialsParams) WithDefaults() *ListGCPSizesNoCredentialsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list g c p sizes no credentials params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListGCPSizesNoCredentialsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list g c p sizes no credentials params
@@ -165,7 +182,6 @@ func (o *ListGCPSizesNoCredentialsParams) WriteToRequest(r runtime.ClientRequest
 		if err := r.SetHeaderParam("Zone", *o.Zone); err != nil {
 			return err
 		}
-
 	}
 
 	// path param cluster_id

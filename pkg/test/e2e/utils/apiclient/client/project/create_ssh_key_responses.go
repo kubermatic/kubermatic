@@ -58,7 +58,7 @@ func NewCreateSSHKeyCreated() *CreateSSHKeyCreated {
 	return &CreateSSHKeyCreated{}
 }
 
-/*CreateSSHKeyCreated handles this case with default header values.
+/* CreateSSHKeyCreated describes a response with status code 201, with default header values.
 
 SSHKey
 */
@@ -69,7 +69,6 @@ type CreateSSHKeyCreated struct {
 func (o *CreateSSHKeyCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/sshkeys][%d] createSshKeyCreated  %+v", 201, o.Payload)
 }
-
 func (o *CreateSSHKeyCreated) GetPayload() *models.SSHKey {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewCreateSSHKeyUnauthorized() *CreateSSHKeyUnauthorized {
 	return &CreateSSHKeyUnauthorized{}
 }
 
-/*CreateSSHKeyUnauthorized handles this case with default header values.
+/* CreateSSHKeyUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewCreateSSHKeyForbidden() *CreateSSHKeyForbidden {
 	return &CreateSSHKeyForbidden{}
 }
 
-/*CreateSSHKeyForbidden handles this case with default header values.
+/* CreateSSHKeyForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewCreateSSHKeyDefault(code int) *CreateSSHKeyDefault {
 	}
 }
 
-/*CreateSSHKeyDefault handles this case with default header values.
+/* CreateSSHKeyDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *CreateSSHKeyDefault) Code() int {
 func (o *CreateSSHKeyDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/sshkeys][%d] createSSHKey default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *CreateSSHKeyDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -58,7 +58,7 @@ func NewPatchGatekeeperConfigOK() *PatchGatekeeperConfigOK {
 	return &PatchGatekeeperConfigOK{}
 }
 
-/*PatchGatekeeperConfigOK handles this case with default header values.
+/* PatchGatekeeperConfigOK describes a response with status code 200, with default header values.
 
 GatekeeperConfig
 */
@@ -69,7 +69,6 @@ type PatchGatekeeperConfigOK struct {
 func (o *PatchGatekeeperConfigOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] patchGatekeeperConfigOK  %+v", 200, o.Payload)
 }
-
 func (o *PatchGatekeeperConfigOK) GetPayload() *models.GatekeeperConfig {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewPatchGatekeeperConfigUnauthorized() *PatchGatekeeperConfigUnauthorized {
 	return &PatchGatekeeperConfigUnauthorized{}
 }
 
-/*PatchGatekeeperConfigUnauthorized handles this case with default header values.
+/* PatchGatekeeperConfigUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewPatchGatekeeperConfigForbidden() *PatchGatekeeperConfigForbidden {
 	return &PatchGatekeeperConfigForbidden{}
 }
 
-/*PatchGatekeeperConfigForbidden handles this case with default header values.
+/* PatchGatekeeperConfigForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewPatchGatekeeperConfigDefault(code int) *PatchGatekeeperConfigDefault {
 	}
 }
 
-/*PatchGatekeeperConfigDefault handles this case with default header values.
+/* PatchGatekeeperConfigDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *PatchGatekeeperConfigDefault) Code() int {
 func (o *PatchGatekeeperConfigDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] patchGatekeeperConfig default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *PatchGatekeeperConfigDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

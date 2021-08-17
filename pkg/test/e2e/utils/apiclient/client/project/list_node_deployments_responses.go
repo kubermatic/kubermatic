@@ -58,7 +58,7 @@ func NewListNodeDeploymentsOK() *ListNodeDeploymentsOK {
 	return &ListNodeDeploymentsOK{}
 }
 
-/*ListNodeDeploymentsOK handles this case with default header values.
+/* ListNodeDeploymentsOK describes a response with status code 200, with default header values.
 
 NodeDeployment
 */
@@ -69,7 +69,6 @@ type ListNodeDeploymentsOK struct {
 func (o *ListNodeDeploymentsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments][%d] listNodeDeploymentsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListNodeDeploymentsOK) GetPayload() []*models.NodeDeployment {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListNodeDeploymentsUnauthorized() *ListNodeDeploymentsUnauthorized {
 	return &ListNodeDeploymentsUnauthorized{}
 }
 
-/*ListNodeDeploymentsUnauthorized handles this case with default header values.
+/* ListNodeDeploymentsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListNodeDeploymentsForbidden() *ListNodeDeploymentsForbidden {
 	return &ListNodeDeploymentsForbidden{}
 }
 
-/*ListNodeDeploymentsForbidden handles this case with default header values.
+/* ListNodeDeploymentsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListNodeDeploymentsDefault(code int) *ListNodeDeploymentsDefault {
 	}
 }
 
-/*ListNodeDeploymentsDefault handles this case with default header values.
+/* ListNodeDeploymentsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListNodeDeploymentsDefault) Code() int {
 func (o *ListNodeDeploymentsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments][%d] listNodeDeployments default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListNodeDeploymentsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

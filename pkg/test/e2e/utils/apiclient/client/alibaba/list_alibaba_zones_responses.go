@@ -46,7 +46,7 @@ func NewListAlibabaZonesOK() *ListAlibabaZonesOK {
 	return &ListAlibabaZonesOK{}
 }
 
-/*ListAlibabaZonesOK handles this case with default header values.
+/* ListAlibabaZonesOK describes a response with status code 200, with default header values.
 
 AlibabaZoneList
 */
@@ -57,7 +57,6 @@ type ListAlibabaZonesOK struct {
 func (o *ListAlibabaZonesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/alibaba/zones][%d] listAlibabaZonesOK  %+v", 200, o.Payload)
 }
-
 func (o *ListAlibabaZonesOK) GetPayload() models.AlibabaZoneList {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListAlibabaZonesDefault(code int) *ListAlibabaZonesDefault {
 	}
 }
 
-/*ListAlibabaZonesDefault handles this case with default header values.
+/* ListAlibabaZonesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListAlibabaZonesDefault) Code() int {
 func (o *ListAlibabaZonesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/alibaba/zones][%d] listAlibabaZones default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListAlibabaZonesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

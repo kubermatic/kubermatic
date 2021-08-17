@@ -16,63 +16,79 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListAWSSizesNoCredentialsV2Params creates a new ListAWSSizesNoCredentialsV2Params object
-// with the default values initialized.
+// NewListAWSSizesNoCredentialsV2Params creates a new ListAWSSizesNoCredentialsV2Params object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListAWSSizesNoCredentialsV2Params() *ListAWSSizesNoCredentialsV2Params {
-	var ()
 	return &ListAWSSizesNoCredentialsV2Params{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListAWSSizesNoCredentialsV2ParamsWithTimeout creates a new ListAWSSizesNoCredentialsV2Params object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListAWSSizesNoCredentialsV2ParamsWithTimeout(timeout time.Duration) *ListAWSSizesNoCredentialsV2Params {
-	var ()
 	return &ListAWSSizesNoCredentialsV2Params{
-
 		timeout: timeout,
 	}
 }
 
 // NewListAWSSizesNoCredentialsV2ParamsWithContext creates a new ListAWSSizesNoCredentialsV2Params object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListAWSSizesNoCredentialsV2ParamsWithContext(ctx context.Context) *ListAWSSizesNoCredentialsV2Params {
-	var ()
 	return &ListAWSSizesNoCredentialsV2Params{
-
 		Context: ctx,
 	}
 }
 
 // NewListAWSSizesNoCredentialsV2ParamsWithHTTPClient creates a new ListAWSSizesNoCredentialsV2Params object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListAWSSizesNoCredentialsV2ParamsWithHTTPClient(client *http.Client) *ListAWSSizesNoCredentialsV2Params {
-	var ()
 	return &ListAWSSizesNoCredentialsV2Params{
 		HTTPClient: client,
 	}
 }
 
-/*ListAWSSizesNoCredentialsV2Params contains all the parameters to send to the API endpoint
-for the list a w s sizes no credentials v2 operation typically these are written to a http.Request
+/* ListAWSSizesNoCredentialsV2Params contains all the parameters to send to the API endpoint
+   for the list a w s sizes no credentials v2 operation.
+
+   Typically these are written to a http.Request.
 */
 type ListAWSSizesNoCredentialsV2Params struct {
 
-	/*Architecture
-	  architecture query parameter. Supports: arm64 and x64 types.
+	/* Architecture.
 
+	   architecture query parameter. Supports: arm64 and x64 types.
 	*/
 	Architecture *string
-	/*ClusterID*/
+
+	// ClusterID.
 	ClusterID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list a w s sizes no credentials v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAWSSizesNoCredentialsV2Params) WithDefaults() *ListAWSSizesNoCredentialsV2Params {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list a w s sizes no credentials v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListAWSSizesNoCredentialsV2Params) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list a w s sizes no credentials v2 params
@@ -153,16 +169,17 @@ func (o *ListAWSSizesNoCredentialsV2Params) WriteToRequest(r runtime.ClientReque
 
 		// query param architecture
 		var qrArchitecture string
+
 		if o.Architecture != nil {
 			qrArchitecture = *o.Architecture
 		}
 		qArchitecture := qrArchitecture
 		if qArchitecture != "" {
+
 			if err := r.SetQueryParam("architecture", qArchitecture); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	// path param cluster_id

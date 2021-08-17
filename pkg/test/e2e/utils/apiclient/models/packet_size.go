@@ -6,6 +6,7 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -50,7 +51,6 @@ func (m *PacketSize) Validate(formats strfmt.Registry) error {
 }
 
 func (m *PacketSize) validateCPUs(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.CPUs) { // not required
 		return nil
 	}
@@ -75,7 +75,6 @@ func (m *PacketSize) validateCPUs(formats strfmt.Registry) error {
 }
 
 func (m *PacketSize) validateDrives(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Drives) { // not required
 		return nil
 	}
@@ -87,6 +86,60 @@ func (m *PacketSize) validateDrives(formats strfmt.Registry) error {
 
 		if m.Drives[i] != nil {
 			if err := m.Drives[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("drives" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+// ContextValidate validate this packet size based on the context it is used
+func (m *PacketSize) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateCPUs(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateDrives(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *PacketSize) contextValidateCPUs(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.CPUs); i++ {
+
+		if m.CPUs[i] != nil {
+			if err := m.CPUs[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("cpus" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *PacketSize) contextValidateDrives(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Drives); i++ {
+
+		if m.Drives[i] != nil {
+			if err := m.Drives[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("drives" + "." + strconv.Itoa(i))
 				}

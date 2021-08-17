@@ -18,60 +18,76 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
-// NewCreateEtcdRestoreParams creates a new CreateEtcdRestoreParams object
-// with the default values initialized.
+// NewCreateEtcdRestoreParams creates a new CreateEtcdRestoreParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewCreateEtcdRestoreParams() *CreateEtcdRestoreParams {
-	var ()
 	return &CreateEtcdRestoreParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewCreateEtcdRestoreParamsWithTimeout creates a new CreateEtcdRestoreParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewCreateEtcdRestoreParamsWithTimeout(timeout time.Duration) *CreateEtcdRestoreParams {
-	var ()
 	return &CreateEtcdRestoreParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewCreateEtcdRestoreParamsWithContext creates a new CreateEtcdRestoreParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewCreateEtcdRestoreParamsWithContext(ctx context.Context) *CreateEtcdRestoreParams {
-	var ()
 	return &CreateEtcdRestoreParams{
-
 		Context: ctx,
 	}
 }
 
 // NewCreateEtcdRestoreParamsWithHTTPClient creates a new CreateEtcdRestoreParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewCreateEtcdRestoreParamsWithHTTPClient(client *http.Client) *CreateEtcdRestoreParams {
-	var ()
 	return &CreateEtcdRestoreParams{
 		HTTPClient: client,
 	}
 }
 
-/*CreateEtcdRestoreParams contains all the parameters to send to the API endpoint
-for the create etcd restore operation typically these are written to a http.Request
+/* CreateEtcdRestoreParams contains all the parameters to send to the API endpoint
+   for the create etcd restore operation.
+
+   Typically these are written to a http.Request.
 */
 type CreateEtcdRestoreParams struct {
 
-	/*Body*/
+	// Body.
 	Body *models.ErBody
-	/*ClusterID*/
+
+	// ClusterID.
 	ClusterID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the create etcd restore params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *CreateEtcdRestoreParams) WithDefaults() *CreateEtcdRestoreParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the create etcd restore params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *CreateEtcdRestoreParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the create etcd restore params
@@ -147,7 +163,6 @@ func (o *CreateEtcdRestoreParams) WriteToRequest(r runtime.ClientRequest, reg st
 		return err
 	}
 	var res []error
-
 	if o.Body != nil {
 		if err := r.SetBodyParam(o.Body); err != nil {
 			return err

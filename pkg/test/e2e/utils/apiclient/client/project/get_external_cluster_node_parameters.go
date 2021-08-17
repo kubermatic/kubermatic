@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetExternalClusterNodeParams creates a new GetExternalClusterNodeParams object
-// with the default values initialized.
+// NewGetExternalClusterNodeParams creates a new GetExternalClusterNodeParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetExternalClusterNodeParams() *GetExternalClusterNodeParams {
-	var ()
 	return &GetExternalClusterNodeParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetExternalClusterNodeParamsWithTimeout creates a new GetExternalClusterNodeParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetExternalClusterNodeParamsWithTimeout(timeout time.Duration) *GetExternalClusterNodeParams {
-	var ()
 	return &GetExternalClusterNodeParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetExternalClusterNodeParamsWithContext creates a new GetExternalClusterNodeParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetExternalClusterNodeParamsWithContext(ctx context.Context) *GetExternalClusterNodeParams {
-	var ()
 	return &GetExternalClusterNodeParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetExternalClusterNodeParamsWithHTTPClient creates a new GetExternalClusterNodeParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetExternalClusterNodeParamsWithHTTPClient(client *http.Client) *GetExternalClusterNodeParams {
-	var ()
 	return &GetExternalClusterNodeParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetExternalClusterNodeParams contains all the parameters to send to the API endpoint
-for the get external cluster node operation typically these are written to a http.Request
+/* GetExternalClusterNodeParams contains all the parameters to send to the API endpoint
+   for the get external cluster node operation.
+
+   Typically these are written to a http.Request.
 */
 type GetExternalClusterNodeParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*NodeID*/
+
+	// NodeID.
 	NodeID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get external cluster node params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetExternalClusterNodeParams) WithDefaults() *GetExternalClusterNodeParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get external cluster node params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetExternalClusterNodeParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get external cluster node params

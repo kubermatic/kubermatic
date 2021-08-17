@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -30,6 +32,11 @@ type RHELSpec struct {
 
 // Validate validates this r h e l spec
 func (m *RHELSpec) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this r h e l spec based on context it is used
+func (m *RHELSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

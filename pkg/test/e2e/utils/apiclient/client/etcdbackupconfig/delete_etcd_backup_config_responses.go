@@ -58,7 +58,7 @@ func NewDeleteEtcdBackupConfigOK() *DeleteEtcdBackupConfigOK {
 	return &DeleteEtcdBackupConfigOK{}
 }
 
-/*DeleteEtcdBackupConfigOK handles this case with default header values.
+/* DeleteEtcdBackupConfigOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -79,7 +79,7 @@ func NewDeleteEtcdBackupConfigUnauthorized() *DeleteEtcdBackupConfigUnauthorized
 	return &DeleteEtcdBackupConfigUnauthorized{}
 }
 
-/*DeleteEtcdBackupConfigUnauthorized handles this case with default header values.
+/* DeleteEtcdBackupConfigUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -100,7 +100,7 @@ func NewDeleteEtcdBackupConfigForbidden() *DeleteEtcdBackupConfigForbidden {
 	return &DeleteEtcdBackupConfigForbidden{}
 }
 
-/*DeleteEtcdBackupConfigForbidden handles this case with default header values.
+/* DeleteEtcdBackupConfigForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -123,7 +123,7 @@ func NewDeleteEtcdBackupConfigDefault(code int) *DeleteEtcdBackupConfigDefault {
 	}
 }
 
-/*DeleteEtcdBackupConfigDefault handles this case with default header values.
+/* DeleteEtcdBackupConfigDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -141,7 +141,6 @@ func (o *DeleteEtcdBackupConfigDefault) Code() int {
 func (o *DeleteEtcdBackupConfigDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_name}][%d] deleteEtcdBackupConfig default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *DeleteEtcdBackupConfigDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

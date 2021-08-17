@@ -16,58 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListClusterRoleNamesV2Params creates a new ListClusterRoleNamesV2Params object
-// with the default values initialized.
+// NewListClusterRoleNamesV2Params creates a new ListClusterRoleNamesV2Params object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListClusterRoleNamesV2Params() *ListClusterRoleNamesV2Params {
-	var ()
 	return &ListClusterRoleNamesV2Params{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListClusterRoleNamesV2ParamsWithTimeout creates a new ListClusterRoleNamesV2Params object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListClusterRoleNamesV2ParamsWithTimeout(timeout time.Duration) *ListClusterRoleNamesV2Params {
-	var ()
 	return &ListClusterRoleNamesV2Params{
-
 		timeout: timeout,
 	}
 }
 
 // NewListClusterRoleNamesV2ParamsWithContext creates a new ListClusterRoleNamesV2Params object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListClusterRoleNamesV2ParamsWithContext(ctx context.Context) *ListClusterRoleNamesV2Params {
-	var ()
 	return &ListClusterRoleNamesV2Params{
-
 		Context: ctx,
 	}
 }
 
 // NewListClusterRoleNamesV2ParamsWithHTTPClient creates a new ListClusterRoleNamesV2Params object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListClusterRoleNamesV2ParamsWithHTTPClient(client *http.Client) *ListClusterRoleNamesV2Params {
-	var ()
 	return &ListClusterRoleNamesV2Params{
 		HTTPClient: client,
 	}
 }
 
-/*ListClusterRoleNamesV2Params contains all the parameters to send to the API endpoint
-for the list cluster role names v2 operation typically these are written to a http.Request
+/* ListClusterRoleNamesV2Params contains all the parameters to send to the API endpoint
+   for the list cluster role names v2 operation.
+
+   Typically these are written to a http.Request.
 */
 type ListClusterRoleNamesV2Params struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list cluster role names v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListClusterRoleNamesV2Params) WithDefaults() *ListClusterRoleNamesV2Params {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list cluster role names v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListClusterRoleNamesV2Params) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list cluster role names v2 params

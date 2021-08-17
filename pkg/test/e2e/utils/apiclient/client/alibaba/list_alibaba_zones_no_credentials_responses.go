@@ -46,7 +46,7 @@ func NewListAlibabaZonesNoCredentialsOK() *ListAlibabaZonesNoCredentialsOK {
 	return &ListAlibabaZonesNoCredentialsOK{}
 }
 
-/*ListAlibabaZonesNoCredentialsOK handles this case with default header values.
+/* ListAlibabaZonesNoCredentialsOK describes a response with status code 200, with default header values.
 
 AlibabaZoneList
 */
@@ -57,7 +57,6 @@ type ListAlibabaZonesNoCredentialsOK struct {
 func (o *ListAlibabaZonesNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/alibaba/zones][%d] listAlibabaZonesNoCredentialsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListAlibabaZonesNoCredentialsOK) GetPayload() models.AlibabaZoneList {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListAlibabaZonesNoCredentialsDefault(code int) *ListAlibabaZonesNoCreden
 	}
 }
 
-/*ListAlibabaZonesNoCredentialsDefault handles this case with default header values.
+/* ListAlibabaZonesNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListAlibabaZonesNoCredentialsDefault) Code() int {
 func (o *ListAlibabaZonesNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/alibaba/zones][%d] listAlibabaZonesNoCredentials default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListAlibabaZonesNoCredentialsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

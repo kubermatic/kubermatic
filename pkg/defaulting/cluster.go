@@ -31,8 +31,9 @@ func DefaultCreateClusterSpec(
 	if err := cloudProvider.DefaultCloudSpec(&spec.Cloud); err != nil {
 		return fmt.Errorf("failed to default cloud spec: %v", err)
 	}
-	if spec.ComponentsOverride.Etcd.ClusterSize == 0 {
-		spec.ComponentsOverride.Etcd.ClusterSize = kubermaticv1.DefaultEtcdClusterSize
+	if spec.ComponentsOverride.Etcd.ClusterSize == nil {
+		n := int32(kubermaticv1.DefaultEtcdClusterSize)
+		spec.ComponentsOverride.Etcd.ClusterSize = &n
 	}
 	return nil
 }

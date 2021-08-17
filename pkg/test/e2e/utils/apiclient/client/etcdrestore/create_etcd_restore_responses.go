@@ -58,7 +58,7 @@ func NewCreateEtcdRestoreCreated() *CreateEtcdRestoreCreated {
 	return &CreateEtcdRestoreCreated{}
 }
 
-/*CreateEtcdRestoreCreated handles this case with default header values.
+/* CreateEtcdRestoreCreated describes a response with status code 201, with default header values.
 
 EtcdBackupConfig
 */
@@ -69,7 +69,6 @@ type CreateEtcdRestoreCreated struct {
 func (o *CreateEtcdRestoreCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores][%d] createEtcdRestoreCreated  %+v", 201, o.Payload)
 }
-
 func (o *CreateEtcdRestoreCreated) GetPayload() *models.EtcdBackupConfig {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewCreateEtcdRestoreUnauthorized() *CreateEtcdRestoreUnauthorized {
 	return &CreateEtcdRestoreUnauthorized{}
 }
 
-/*CreateEtcdRestoreUnauthorized handles this case with default header values.
+/* CreateEtcdRestoreUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewCreateEtcdRestoreForbidden() *CreateEtcdRestoreForbidden {
 	return &CreateEtcdRestoreForbidden{}
 }
 
-/*CreateEtcdRestoreForbidden handles this case with default header values.
+/* CreateEtcdRestoreForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewCreateEtcdRestoreDefault(code int) *CreateEtcdRestoreDefault {
 	}
 }
 
-/*CreateEtcdRestoreDefault handles this case with default header values.
+/* CreateEtcdRestoreDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *CreateEtcdRestoreDefault) Code() int {
 func (o *CreateEtcdRestoreDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores][%d] createEtcdRestore default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *CreateEtcdRestoreDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

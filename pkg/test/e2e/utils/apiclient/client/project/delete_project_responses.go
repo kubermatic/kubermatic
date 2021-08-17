@@ -58,7 +58,7 @@ func NewDeleteProjectOK() *DeleteProjectOK {
 	return &DeleteProjectOK{}
 }
 
-/*DeleteProjectOK handles this case with default header values.
+/* DeleteProjectOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -79,7 +79,7 @@ func NewDeleteProjectUnauthorized() *DeleteProjectUnauthorized {
 	return &DeleteProjectUnauthorized{}
 }
 
-/*DeleteProjectUnauthorized handles this case with default header values.
+/* DeleteProjectUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -100,7 +100,7 @@ func NewDeleteProjectForbidden() *DeleteProjectForbidden {
 	return &DeleteProjectForbidden{}
 }
 
-/*DeleteProjectForbidden handles this case with default header values.
+/* DeleteProjectForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -123,7 +123,7 @@ func NewDeleteProjectDefault(code int) *DeleteProjectDefault {
 	}
 }
 
-/*DeleteProjectDefault handles this case with default header values.
+/* DeleteProjectDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -141,7 +141,6 @@ func (o *DeleteProjectDefault) Code() int {
 func (o *DeleteProjectDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}][%d] deleteProject default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *DeleteProjectDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -23,251 +23,248 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	AssignSSHKeyToCluster(params *AssignSSHKeyToClusterParams, authInfo runtime.ClientAuthInfoWriter) (*AssignSSHKeyToClusterCreated, error)
+	AssignSSHKeyToCluster(params *AssignSSHKeyToClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AssignSSHKeyToClusterCreated, error)
 
-	AssignSSHKeyToClusterV2(params *AssignSSHKeyToClusterV2Params, authInfo runtime.ClientAuthInfoWriter) (*AssignSSHKeyToClusterV2Created, error)
+	AssignSSHKeyToClusterV2(params *AssignSSHKeyToClusterV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AssignSSHKeyToClusterV2Created, error)
 
-	BindUserToClusterRole(params *BindUserToClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*BindUserToClusterRoleOK, error)
+	BindUserToClusterRole(params *BindUserToClusterRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*BindUserToClusterRoleOK, error)
 
-	BindUserToClusterRoleV2(params *BindUserToClusterRoleV2Params, authInfo runtime.ClientAuthInfoWriter) (*BindUserToClusterRoleV2OK, error)
+	BindUserToClusterRoleV2(params *BindUserToClusterRoleV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*BindUserToClusterRoleV2OK, error)
 
-	BindUserToRole(params *BindUserToRoleParams, authInfo runtime.ClientAuthInfoWriter) (*BindUserToRoleOK, error)
+	BindUserToRole(params *BindUserToRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*BindUserToRoleOK, error)
 
-	BindUserToRoleV2(params *BindUserToRoleV2Params, authInfo runtime.ClientAuthInfoWriter) (*BindUserToRoleV2OK, error)
+	BindUserToRoleV2(params *BindUserToRoleV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*BindUserToRoleV2OK, error)
 
-	CreateCluster(params *CreateClusterParams, authInfo runtime.ClientAuthInfoWriter) (*CreateClusterCreated, error)
+	CreateCluster(params *CreateClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateClusterCreated, error)
 
-	CreateClusterRole(params *CreateClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*CreateClusterRoleCreated, error)
+	CreateClusterRole(params *CreateClusterRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateClusterRoleCreated, error)
 
-	CreateClusterTemplate(params *CreateClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter) (*CreateClusterTemplateCreated, error)
+	CreateClusterTemplate(params *CreateClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateClusterTemplateCreated, error)
 
-	CreateClusterTemplateInstance(params *CreateClusterTemplateInstanceParams, authInfo runtime.ClientAuthInfoWriter) (*CreateClusterTemplateInstanceCreated, error)
+	CreateClusterTemplateInstance(params *CreateClusterTemplateInstanceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateClusterTemplateInstanceCreated, error)
 
-	CreateClusterV2(params *CreateClusterV2Params, authInfo runtime.ClientAuthInfoWriter) (*CreateClusterV2Created, error)
+	CreateClusterV2(params *CreateClusterV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateClusterV2Created, error)
 
-	CreateConstraint(params *CreateConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*CreateConstraintOK, error)
+	CreateConstraint(params *CreateConstraintParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateConstraintOK, error)
 
-	CreateExternalCluster(params *CreateExternalClusterParams, authInfo runtime.ClientAuthInfoWriter) (*CreateExternalClusterCreated, error)
+	CreateExternalCluster(params *CreateExternalClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateExternalClusterCreated, error)
 
-	CreateGatekeeperConfig(params *CreateGatekeeperConfigParams, authInfo runtime.ClientAuthInfoWriter) (*CreateGatekeeperConfigCreated, error)
+	CreateGatekeeperConfig(params *CreateGatekeeperConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateGatekeeperConfigCreated, error)
 
-	CreateMachineDeployment(params *CreateMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*CreateMachineDeploymentCreated, error)
+	CreateMachineDeployment(params *CreateMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateMachineDeploymentCreated, error)
 
-	CreateNodeDeployment(params *CreateNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*CreateNodeDeploymentCreated, error)
+	CreateNodeDeployment(params *CreateNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateNodeDeploymentCreated, error)
 
-	CreateProject(params *CreateProjectParams, authInfo runtime.ClientAuthInfoWriter) (*CreateProjectCreated, error)
+	CreateProject(params *CreateProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateProjectCreated, error)
 
-	CreateRole(params *CreateRoleParams, authInfo runtime.ClientAuthInfoWriter) (*CreateRoleCreated, error)
+	CreateRole(params *CreateRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRoleCreated, error)
 
-	CreateSSHKey(params *CreateSSHKeyParams, authInfo runtime.ClientAuthInfoWriter) (*CreateSSHKeyCreated, error)
+	CreateSSHKey(params *CreateSSHKeyParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateSSHKeyCreated, error)
 
-	DeleteCluster(params *DeleteClusterParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteClusterOK, error)
+	DeleteCluster(params *DeleteClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteClusterOK, error)
 
-	DeleteClusterRole(params *DeleteClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteClusterRoleOK, error)
+	DeleteClusterRole(params *DeleteClusterRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteClusterRoleOK, error)
 
-	DeleteClusterTemplate(params *DeleteClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteClusterTemplateOK, error)
+	DeleteClusterTemplate(params *DeleteClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteClusterTemplateOK, error)
 
-	DeleteClusterV2(params *DeleteClusterV2Params, authInfo runtime.ClientAuthInfoWriter) (*DeleteClusterV2OK, error)
+	DeleteClusterV2(params *DeleteClusterV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteClusterV2OK, error)
 
-	DeleteConstraint(params *DeleteConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteConstraintOK, error)
+	DeleteConstraint(params *DeleteConstraintParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteConstraintOK, error)
 
-	DeleteExternalCluster(params *DeleteExternalClusterParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteExternalClusterOK, error)
+	DeleteExternalCluster(params *DeleteExternalClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteExternalClusterOK, error)
 
-	DeleteGatekeeperConfig(params *DeleteGatekeeperConfigParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteGatekeeperConfigOK, error)
+	DeleteGatekeeperConfig(params *DeleteGatekeeperConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteGatekeeperConfigOK, error)
 
-	DeleteMachineDeployment(params *DeleteMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteMachineDeploymentOK, error)
+	DeleteMachineDeployment(params *DeleteMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteMachineDeploymentOK, error)
 
-	DeleteMachineDeploymentNode(params *DeleteMachineDeploymentNodeParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteMachineDeploymentNodeOK, error)
+	DeleteMachineDeploymentNode(params *DeleteMachineDeploymentNodeParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteMachineDeploymentNodeOK, error)
 
-	DeleteNodeDeployment(params *DeleteNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteNodeDeploymentOK, error)
+	DeleteNodeDeployment(params *DeleteNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteNodeDeploymentOK, error)
 
-	DeleteNodeForClusterLegacy(params *DeleteNodeForClusterLegacyParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteNodeForClusterLegacyOK, error)
+	DeleteNodeForClusterLegacy(params *DeleteNodeForClusterLegacyParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteNodeForClusterLegacyOK, error)
 
-	DeleteProject(params *DeleteProjectParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteProjectOK, error)
+	DeleteProject(params *DeleteProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteProjectOK, error)
 
-	DeleteRole(params *DeleteRoleParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteRoleOK, error)
+	DeleteRole(params *DeleteRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteRoleOK, error)
 
-	DeleteSSHKey(params *DeleteSSHKeyParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteSSHKeyOK, error)
+	DeleteSSHKey(params *DeleteSSHKeyParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteSSHKeyOK, error)
 
-	DetachSSHKeyFromCluster(params *DetachSSHKeyFromClusterParams, authInfo runtime.ClientAuthInfoWriter) (*DetachSSHKeyFromClusterOK, error)
+	DetachSSHKeyFromCluster(params *DetachSSHKeyFromClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DetachSSHKeyFromClusterOK, error)
 
-	DetachSSHKeyFromClusterV2(params *DetachSSHKeyFromClusterV2Params, authInfo runtime.ClientAuthInfoWriter) (*DetachSSHKeyFromClusterV2OK, error)
+	DetachSSHKeyFromClusterV2(params *DetachSSHKeyFromClusterV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DetachSSHKeyFromClusterV2OK, error)
 
-	GetAlertmanager(params *GetAlertmanagerParams, authInfo runtime.ClientAuthInfoWriter) (*GetAlertmanagerOK, error)
+	GetAlertmanager(params *GetAlertmanagerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAlertmanagerOK, error)
 
-	GetCluster(params *GetClusterParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterOK, error)
+	GetCluster(params *GetClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterOK, error)
 
-	GetClusterEvents(params *GetClusterEventsParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterEventsOK, error)
+	GetClusterEvents(params *GetClusterEventsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterEventsOK, error)
 
-	GetClusterEventsV2(params *GetClusterEventsV2Params, authInfo runtime.ClientAuthInfoWriter) (*GetClusterEventsV2OK, error)
+	GetClusterEventsV2(params *GetClusterEventsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterEventsV2OK, error)
 
-	GetClusterHealth(params *GetClusterHealthParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterHealthOK, error)
+	GetClusterHealth(params *GetClusterHealthParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterHealthOK, error)
 
-	GetClusterHealthV2(params *GetClusterHealthV2Params, authInfo runtime.ClientAuthInfoWriter) (*GetClusterHealthV2OK, error)
+	GetClusterHealthV2(params *GetClusterHealthV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterHealthV2OK, error)
 
-	GetClusterKubeconfig(params *GetClusterKubeconfigParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterKubeconfigOK, error)
+	GetClusterKubeconfig(params *GetClusterKubeconfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterKubeconfigOK, error)
 
-	GetClusterKubeconfigV2(params *GetClusterKubeconfigV2Params, authInfo runtime.ClientAuthInfoWriter) (*GetClusterKubeconfigV2OK, error)
+	GetClusterKubeconfigV2(params *GetClusterKubeconfigV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterKubeconfigV2OK, error)
 
-	GetClusterMetrics(params *GetClusterMetricsParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterMetricsOK, error)
+	GetClusterMetrics(params *GetClusterMetricsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterMetricsOK, error)
 
-	GetClusterMetricsV2(params *GetClusterMetricsV2Params, authInfo runtime.ClientAuthInfoWriter) (*GetClusterMetricsV2OK, error)
+	GetClusterMetricsV2(params *GetClusterMetricsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterMetricsV2OK, error)
 
-	GetClusterOidc(params *GetClusterOidcParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterOidcOK, error)
+	GetClusterOidc(params *GetClusterOidcParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterOidcOK, error)
 
-	GetClusterRole(params *GetClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterRoleOK, error)
+	GetClusterRole(params *GetClusterRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterRoleOK, error)
 
-	GetClusterTemplate(params *GetClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterTemplateOK, error)
+	GetClusterTemplate(params *GetClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterTemplateOK, error)
 
-	GetClusterTemplateInstance(params *GetClusterTemplateInstanceParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterTemplateInstanceOK, error)
+	GetClusterUpgrades(params *GetClusterUpgradesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterUpgradesOK, error)
 
-	GetClusterUpgrades(params *GetClusterUpgradesParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterUpgradesOK, error)
+	GetClusterUpgradesV2(params *GetClusterUpgradesV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterUpgradesV2OK, error)
 
-	GetClusterUpgradesV2(params *GetClusterUpgradesV2Params, authInfo runtime.ClientAuthInfoWriter) (*GetClusterUpgradesV2OK, error)
+	GetClusterV2(params *GetClusterV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterV2OK, error)
 
-	GetClusterV2(params *GetClusterV2Params, authInfo runtime.ClientAuthInfoWriter) (*GetClusterV2OK, error)
+	GetConstraint(params *GetConstraintParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetConstraintOK, error)
 
-	GetConstraint(params *GetConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*GetConstraintOK, error)
+	GetExternalCluster(params *GetExternalClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetExternalClusterOK, error)
 
-	GetExternalCluster(params *GetExternalClusterParams, authInfo runtime.ClientAuthInfoWriter) (*GetExternalClusterOK, error)
+	GetExternalClusterMetrics(params *GetExternalClusterMetricsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetExternalClusterMetricsOK, error)
 
-	GetExternalClusterMetrics(params *GetExternalClusterMetricsParams, authInfo runtime.ClientAuthInfoWriter) (*GetExternalClusterMetricsOK, error)
+	GetExternalClusterNode(params *GetExternalClusterNodeParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetExternalClusterNodeOK, error)
 
-	GetExternalClusterNode(params *GetExternalClusterNodeParams, authInfo runtime.ClientAuthInfoWriter) (*GetExternalClusterNodeOK, error)
+	GetGatekeeperConfig(params *GetGatekeeperConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetGatekeeperConfigOK, error)
 
-	GetGatekeeperConfig(params *GetGatekeeperConfigParams, authInfo runtime.ClientAuthInfoWriter) (*GetGatekeeperConfigOK, error)
+	GetMachineDeployment(params *GetMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetMachineDeploymentOK, error)
 
-	GetMachineDeployment(params *GetMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*GetMachineDeploymentOK, error)
+	GetNodeDeployment(params *GetNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNodeDeploymentOK, error)
 
-	GetNodeDeployment(params *GetNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*GetNodeDeploymentOK, error)
+	GetOidcClusterKubeconfig(params *GetOidcClusterKubeconfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOidcClusterKubeconfigOK, error)
 
-	GetOidcClusterKubeconfig(params *GetOidcClusterKubeconfigParams, authInfo runtime.ClientAuthInfoWriter) (*GetOidcClusterKubeconfigOK, error)
+	GetOidcClusterKubeconfigV2(params *GetOidcClusterKubeconfigV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOidcClusterKubeconfigV2OK, error)
 
-	GetOidcClusterKubeconfigV2(params *GetOidcClusterKubeconfigV2Params, authInfo runtime.ClientAuthInfoWriter) (*GetOidcClusterKubeconfigV2OK, error)
+	GetProject(params *GetProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetProjectOK, error)
 
-	GetProject(params *GetProjectParams, authInfo runtime.ClientAuthInfoWriter) (*GetProjectOK, error)
+	GetRole(params *GetRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRoleOK, error)
 
-	GetRole(params *GetRoleParams, authInfo runtime.ClientAuthInfoWriter) (*GetRoleOK, error)
+	ListClusterRole(params *ListClusterRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterRoleOK, error)
 
-	ListClusterRole(params *ListClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*ListClusterRoleOK, error)
+	ListClusterRoleBinding(params *ListClusterRoleBindingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterRoleBindingOK, error)
 
-	ListClusterRoleBinding(params *ListClusterRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*ListClusterRoleBindingOK, error)
+	ListClusterRoleBindingV2(params *ListClusterRoleBindingV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterRoleBindingV2OK, error)
 
-	ListClusterRoleBindingV2(params *ListClusterRoleBindingV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListClusterRoleBindingV2OK, error)
+	ListClusterRoleNames(params *ListClusterRoleNamesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterRoleNamesOK, error)
 
-	ListClusterRoleNames(params *ListClusterRoleNamesParams, authInfo runtime.ClientAuthInfoWriter) (*ListClusterRoleNamesOK, error)
+	ListClusterRoleNamesV2(params *ListClusterRoleNamesV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterRoleNamesV2OK, error)
 
-	ListClusterRoleNamesV2(params *ListClusterRoleNamesV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListClusterRoleNamesV2OK, error)
+	ListClusterRoleV2(params *ListClusterRoleV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterRoleV2OK, error)
 
-	ListClusterRoleV2(params *ListClusterRoleV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListClusterRoleV2OK, error)
+	ListClusterTemplates(params *ListClusterTemplatesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterTemplatesOK, error)
 
-	ListClusterTemplateInstances(params *ListClusterTemplateInstancesParams, authInfo runtime.ClientAuthInfoWriter) (*ListClusterTemplateInstancesOK, error)
+	ListClusters(params *ListClustersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClustersOK, error)
 
-	ListClusterTemplates(params *ListClusterTemplatesParams, authInfo runtime.ClientAuthInfoWriter) (*ListClusterTemplatesOK, error)
+	ListClustersForProject(params *ListClustersForProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClustersForProjectOK, error)
 
-	ListClusters(params *ListClustersParams, authInfo runtime.ClientAuthInfoWriter) (*ListClustersOK, error)
+	ListClustersV2(params *ListClustersV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClustersV2OK, error)
 
-	ListClustersForProject(params *ListClustersForProjectParams, authInfo runtime.ClientAuthInfoWriter) (*ListClustersForProjectOK, error)
+	ListConstraints(params *ListConstraintsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListConstraintsOK, error)
 
-	ListClustersV2(params *ListClustersV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListClustersV2OK, error)
+	ListExternalClusterEvents(params *ListExternalClusterEventsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClusterEventsOK, error)
 
-	ListConstraints(params *ListConstraintsParams, authInfo runtime.ClientAuthInfoWriter) (*ListConstraintsOK, error)
+	ListExternalClusterNodes(params *ListExternalClusterNodesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClusterNodesOK, error)
 
-	ListExternalClusterEvents(params *ListExternalClusterEventsParams, authInfo runtime.ClientAuthInfoWriter) (*ListExternalClusterEventsOK, error)
+	ListExternalClusterNodesMetrics(params *ListExternalClusterNodesMetricsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClusterNodesMetricsOK, error)
 
-	ListExternalClusterNodes(params *ListExternalClusterNodesParams, authInfo runtime.ClientAuthInfoWriter) (*ListExternalClusterNodesOK, error)
+	ListExternalClusters(params *ListExternalClustersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClustersOK, error)
 
-	ListExternalClusterNodesMetrics(params *ListExternalClusterNodesMetricsParams, authInfo runtime.ClientAuthInfoWriter) (*ListExternalClusterNodesMetricsOK, error)
+	ListMachineDeploymentNodes(params *ListMachineDeploymentNodesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListMachineDeploymentNodesOK, error)
 
-	ListExternalClusters(params *ListExternalClustersParams, authInfo runtime.ClientAuthInfoWriter) (*ListExternalClustersOK, error)
+	ListMachineDeploymentNodesEvents(params *ListMachineDeploymentNodesEventsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListMachineDeploymentNodesEventsOK, error)
 
-	ListMachineDeploymentNodes(params *ListMachineDeploymentNodesParams, authInfo runtime.ClientAuthInfoWriter) (*ListMachineDeploymentNodesOK, error)
+	ListMachineDeployments(params *ListMachineDeploymentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListMachineDeploymentsOK, error)
 
-	ListMachineDeploymentNodesEvents(params *ListMachineDeploymentNodesEventsParams, authInfo runtime.ClientAuthInfoWriter) (*ListMachineDeploymentNodesEventsOK, error)
+	ListNamespace(params *ListNamespaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNamespaceOK, error)
 
-	ListMachineDeployments(params *ListMachineDeploymentsParams, authInfo runtime.ClientAuthInfoWriter) (*ListMachineDeploymentsOK, error)
+	ListNamespaceV2(params *ListNamespaceV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNamespaceV2OK, error)
 
-	ListNamespace(params *ListNamespaceParams, authInfo runtime.ClientAuthInfoWriter) (*ListNamespaceOK, error)
+	ListNodeDeploymentNodes(params *ListNodeDeploymentNodesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNodeDeploymentNodesOK, error)
 
-	ListNamespaceV2(params *ListNamespaceV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListNamespaceV2OK, error)
+	ListNodeDeploymentNodesEvents(params *ListNodeDeploymentNodesEventsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNodeDeploymentNodesEventsOK, error)
 
-	ListNodeDeploymentNodes(params *ListNodeDeploymentNodesParams, authInfo runtime.ClientAuthInfoWriter) (*ListNodeDeploymentNodesOK, error)
+	ListNodeDeployments(params *ListNodeDeploymentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNodeDeploymentsOK, error)
 
-	ListNodeDeploymentNodesEvents(params *ListNodeDeploymentNodesEventsParams, authInfo runtime.ClientAuthInfoWriter) (*ListNodeDeploymentNodesEventsOK, error)
+	ListNodesForCluster(params *ListNodesForClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNodesForClusterOK, error)
 
-	ListNodeDeployments(params *ListNodeDeploymentsParams, authInfo runtime.ClientAuthInfoWriter) (*ListNodeDeploymentsOK, error)
+	ListProjects(params *ListProjectsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectsOK, error)
 
-	ListNodesForCluster(params *ListNodesForClusterParams, authInfo runtime.ClientAuthInfoWriter) (*ListNodesForClusterOK, error)
+	ListRole(params *ListRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRoleOK, error)
 
-	ListProjects(params *ListProjectsParams, authInfo runtime.ClientAuthInfoWriter) (*ListProjectsOK, error)
+	ListRoleBinding(params *ListRoleBindingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRoleBindingOK, error)
 
-	ListRole(params *ListRoleParams, authInfo runtime.ClientAuthInfoWriter) (*ListRoleOK, error)
+	ListRoleBindingV2(params *ListRoleBindingV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRoleBindingV2OK, error)
 
-	ListRoleBinding(params *ListRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*ListRoleBindingOK, error)
+	ListRoleNames(params *ListRoleNamesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRoleNamesOK, error)
 
-	ListRoleBindingV2(params *ListRoleBindingV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListRoleBindingV2OK, error)
+	ListRoleNamesV2(params *ListRoleNamesV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRoleNamesV2OK, error)
 
-	ListRoleNames(params *ListRoleNamesParams, authInfo runtime.ClientAuthInfoWriter) (*ListRoleNamesOK, error)
+	ListRoleV2(params *ListRoleV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRoleV2OK, error)
 
-	ListRoleNamesV2(params *ListRoleNamesV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListRoleNamesV2OK, error)
+	ListSSHKeys(params *ListSSHKeysParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListSSHKeysOK, error)
 
-	ListRoleV2(params *ListRoleV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListRoleV2OK, error)
+	ListSSHKeysAssignedToCluster(params *ListSSHKeysAssignedToClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListSSHKeysAssignedToClusterOK, error)
 
-	ListSSHKeys(params *ListSSHKeysParams, authInfo runtime.ClientAuthInfoWriter) (*ListSSHKeysOK, error)
+	ListSSHKeysAssignedToClusterV2(params *ListSSHKeysAssignedToClusterV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListSSHKeysAssignedToClusterV2OK, error)
 
-	ListSSHKeysAssignedToCluster(params *ListSSHKeysAssignedToClusterParams, authInfo runtime.ClientAuthInfoWriter) (*ListSSHKeysAssignedToClusterOK, error)
+	PatchCluster(params *PatchClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchClusterOK, error)
 
-	ListSSHKeysAssignedToClusterV2(params *ListSSHKeysAssignedToClusterV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListSSHKeysAssignedToClusterV2OK, error)
+	PatchClusterRole(params *PatchClusterRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchClusterRoleOK, error)
 
-	PatchCluster(params *PatchClusterParams, authInfo runtime.ClientAuthInfoWriter) (*PatchClusterOK, error)
+	PatchClusterV2(params *PatchClusterV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchClusterV2OK, error)
 
-	PatchClusterRole(params *PatchClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*PatchClusterRoleOK, error)
+	PatchConstraint(params *PatchConstraintParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchConstraintOK, error)
 
-	PatchClusterTemplateInstance(params *PatchClusterTemplateInstanceParams, authInfo runtime.ClientAuthInfoWriter) (*PatchClusterTemplateInstanceOK, error)
+	PatchGatekeeperConfig(params *PatchGatekeeperConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchGatekeeperConfigOK, error)
 
-	PatchClusterV2(params *PatchClusterV2Params, authInfo runtime.ClientAuthInfoWriter) (*PatchClusterV2OK, error)
+	PatchMachineDeployment(params *PatchMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchMachineDeploymentOK, error)
 
-	PatchConstraint(params *PatchConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*PatchConstraintOK, error)
+	PatchNodeDeployment(params *PatchNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchNodeDeploymentOK, error)
 
-	PatchGatekeeperConfig(params *PatchGatekeeperConfigParams, authInfo runtime.ClientAuthInfoWriter) (*PatchGatekeeperConfigOK, error)
+	PatchRole(params *PatchRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchRoleOK, error)
 
-	PatchMachineDeployment(params *PatchMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*PatchMachineDeploymentOK, error)
+	ResetAlertmanager(params *ResetAlertmanagerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResetAlertmanagerOK, error)
 
-	PatchNodeDeployment(params *PatchNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*PatchNodeDeploymentOK, error)
+	RestartMachineDeployment(params *RestartMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RestartMachineDeploymentOK, error)
 
-	PatchRole(params *PatchRoleParams, authInfo runtime.ClientAuthInfoWriter) (*PatchRoleOK, error)
+	RevokeClusterAdminToken(params *RevokeClusterAdminTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RevokeClusterAdminTokenOK, error)
 
-	ResetAlertmanager(params *ResetAlertmanagerParams, authInfo runtime.ClientAuthInfoWriter) (*ResetAlertmanagerOK, error)
+	RevokeClusterAdminTokenV2(params *RevokeClusterAdminTokenV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RevokeClusterAdminTokenV2OK, error)
 
-	RestartMachineDeployment(params *RestartMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*RestartMachineDeploymentOK, error)
+	RevokeClusterViewerToken(params *RevokeClusterViewerTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RevokeClusterViewerTokenOK, error)
 
-	RevokeClusterAdminToken(params *RevokeClusterAdminTokenParams, authInfo runtime.ClientAuthInfoWriter) (*RevokeClusterAdminTokenOK, error)
+	RevokeClusterViewerTokenV2(params *RevokeClusterViewerTokenV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RevokeClusterViewerTokenV2OK, error)
 
-	RevokeClusterAdminTokenV2(params *RevokeClusterAdminTokenV2Params, authInfo runtime.ClientAuthInfoWriter) (*RevokeClusterAdminTokenV2OK, error)
+	UnbindUserFromClusterRoleBinding(params *UnbindUserFromClusterRoleBindingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UnbindUserFromClusterRoleBindingOK, error)
 
-	RevokeClusterViewerToken(params *RevokeClusterViewerTokenParams, authInfo runtime.ClientAuthInfoWriter) (*RevokeClusterViewerTokenOK, error)
+	UnbindUserFromClusterRoleBindingV2(params *UnbindUserFromClusterRoleBindingV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UnbindUserFromClusterRoleBindingV2OK, error)
 
-	RevokeClusterViewerTokenV2(params *RevokeClusterViewerTokenV2Params, authInfo runtime.ClientAuthInfoWriter) (*RevokeClusterViewerTokenV2OK, error)
+	UnbindUserFromRoleBinding(params *UnbindUserFromRoleBindingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UnbindUserFromRoleBindingOK, error)
 
-	UnbindUserFromClusterRoleBinding(params *UnbindUserFromClusterRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*UnbindUserFromClusterRoleBindingOK, error)
+	UnbindUserFromRoleBindingV2(params *UnbindUserFromRoleBindingV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UnbindUserFromRoleBindingV2OK, error)
 
-	UnbindUserFromClusterRoleBindingV2(params *UnbindUserFromClusterRoleBindingV2Params, authInfo runtime.ClientAuthInfoWriter) (*UnbindUserFromClusterRoleBindingV2OK, error)
+	UpdateAlertmanager(params *UpdateAlertmanagerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateAlertmanagerOK, error)
 
-	UnbindUserFromRoleBinding(params *UnbindUserFromRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*UnbindUserFromRoleBindingOK, error)
+	UpdateExternalCluster(params *UpdateExternalClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateExternalClusterOK, error)
 
-	UnbindUserFromRoleBindingV2(params *UnbindUserFromRoleBindingV2Params, authInfo runtime.ClientAuthInfoWriter) (*UnbindUserFromRoleBindingV2OK, error)
+	UpdateProject(params *UpdateProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateProjectOK, error)
 
-	UpdateAlertmanager(params *UpdateAlertmanagerParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateAlertmanagerOK, error)
+	UpgradeClusterNodeDeployments(params *UpgradeClusterNodeDeploymentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpgradeClusterNodeDeploymentsOK, error)
 
-	UpdateExternalCluster(params *UpdateExternalClusterParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateExternalClusterOK, error)
-
-	UpdateProject(params *UpdateProjectParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateProjectOK, error)
-
-	UpgradeClusterNodeDeployments(params *UpgradeClusterNodeDeploymentsParams, authInfo runtime.ClientAuthInfoWriter) (*UpgradeClusterNodeDeploymentsOK, error)
-
-	UpgradeClusterNodeDeploymentsV2(params *UpgradeClusterNodeDeploymentsV2Params, authInfo runtime.ClientAuthInfoWriter) (*UpgradeClusterNodeDeploymentsV2OK, error)
+	UpgradeClusterNodeDeploymentsV2(params *UpgradeClusterNodeDeploymentsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpgradeClusterNodeDeploymentsV2OK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -275,13 +272,12 @@ type ClientService interface {
 /*
   AssignSSHKeyToCluster Assigns an existing ssh key to the given cluster
 */
-func (a *Client) AssignSSHKeyToCluster(params *AssignSSHKeyToClusterParams, authInfo runtime.ClientAuthInfoWriter) (*AssignSSHKeyToClusterCreated, error) {
+func (a *Client) AssignSSHKeyToCluster(params *AssignSSHKeyToClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AssignSSHKeyToClusterCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAssignSSHKeyToClusterParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "assignSSHKeyToCluster",
 		Method:             "PUT",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id}",
@@ -293,7 +289,12 @@ func (a *Client) AssignSSHKeyToCluster(params *AssignSSHKeyToClusterParams, auth
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -309,13 +310,12 @@ func (a *Client) AssignSSHKeyToCluster(params *AssignSSHKeyToClusterParams, auth
 /*
   AssignSSHKeyToClusterV2 Assigns an existing ssh key to the given cluster
 */
-func (a *Client) AssignSSHKeyToClusterV2(params *AssignSSHKeyToClusterV2Params, authInfo runtime.ClientAuthInfoWriter) (*AssignSSHKeyToClusterV2Created, error) {
+func (a *Client) AssignSSHKeyToClusterV2(params *AssignSSHKeyToClusterV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AssignSSHKeyToClusterV2Created, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAssignSSHKeyToClusterV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "assignSSHKeyToClusterV2",
 		Method:             "PUT",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/sshkeys/{key_id}",
@@ -327,7 +327,12 @@ func (a *Client) AssignSSHKeyToClusterV2(params *AssignSSHKeyToClusterV2Params, 
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -343,13 +348,12 @@ func (a *Client) AssignSSHKeyToClusterV2(params *AssignSSHKeyToClusterV2Params, 
 /*
   BindUserToClusterRole Binds user to cluster role
 */
-func (a *Client) BindUserToClusterRole(params *BindUserToClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*BindUserToClusterRoleOK, error) {
+func (a *Client) BindUserToClusterRole(params *BindUserToClusterRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*BindUserToClusterRoleOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewBindUserToClusterRoleParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "bindUserToClusterRole",
 		Method:             "POST",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings",
@@ -361,7 +365,12 @@ func (a *Client) BindUserToClusterRole(params *BindUserToClusterRoleParams, auth
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -377,13 +386,12 @@ func (a *Client) BindUserToClusterRole(params *BindUserToClusterRoleParams, auth
 /*
   BindUserToClusterRoleV2 Binds user to cluster role
 */
-func (a *Client) BindUserToClusterRoleV2(params *BindUserToClusterRoleV2Params, authInfo runtime.ClientAuthInfoWriter) (*BindUserToClusterRoleV2OK, error) {
+func (a *Client) BindUserToClusterRoleV2(params *BindUserToClusterRoleV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*BindUserToClusterRoleV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewBindUserToClusterRoleV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "bindUserToClusterRoleV2",
 		Method:             "POST",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings",
@@ -395,7 +403,12 @@ func (a *Client) BindUserToClusterRoleV2(params *BindUserToClusterRoleV2Params, 
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -411,13 +424,12 @@ func (a *Client) BindUserToClusterRoleV2(params *BindUserToClusterRoleV2Params, 
 /*
   BindUserToRole Binds user to the role
 */
-func (a *Client) BindUserToRole(params *BindUserToRoleParams, authInfo runtime.ClientAuthInfoWriter) (*BindUserToRoleOK, error) {
+func (a *Client) BindUserToRole(params *BindUserToRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*BindUserToRoleOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewBindUserToRoleParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "bindUserToRole",
 		Method:             "POST",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings",
@@ -429,7 +441,12 @@ func (a *Client) BindUserToRole(params *BindUserToRoleParams, authInfo runtime.C
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -445,13 +462,12 @@ func (a *Client) BindUserToRole(params *BindUserToRoleParams, authInfo runtime.C
 /*
   BindUserToRoleV2 Binds user to the role
 */
-func (a *Client) BindUserToRoleV2(params *BindUserToRoleV2Params, authInfo runtime.ClientAuthInfoWriter) (*BindUserToRoleV2OK, error) {
+func (a *Client) BindUserToRoleV2(params *BindUserToRoleV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*BindUserToRoleV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewBindUserToRoleV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "bindUserToRoleV2",
 		Method:             "POST",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings",
@@ -463,7 +479,12 @@ func (a *Client) BindUserToRoleV2(params *BindUserToRoleV2Params, authInfo runti
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -479,13 +500,12 @@ func (a *Client) BindUserToRoleV2(params *BindUserToRoleV2Params, authInfo runti
 /*
   CreateCluster creates a cluster for the given project
 */
-func (a *Client) CreateCluster(params *CreateClusterParams, authInfo runtime.ClientAuthInfoWriter) (*CreateClusterCreated, error) {
+func (a *Client) CreateCluster(params *CreateClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateClusterCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewCreateClusterParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "createCluster",
 		Method:             "POST",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters",
@@ -497,7 +517,12 @@ func (a *Client) CreateCluster(params *CreateClusterParams, authInfo runtime.Cli
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -513,13 +538,12 @@ func (a *Client) CreateCluster(params *CreateClusterParams, authInfo runtime.Cli
 /*
   CreateClusterRole Creates cluster role
 */
-func (a *Client) CreateClusterRole(params *CreateClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*CreateClusterRoleCreated, error) {
+func (a *Client) CreateClusterRole(params *CreateClusterRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateClusterRoleCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewCreateClusterRoleParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "createClusterRole",
 		Method:             "POST",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles",
@@ -531,7 +555,12 @@ func (a *Client) CreateClusterRole(params *CreateClusterRoleParams, authInfo run
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -547,13 +576,12 @@ func (a *Client) CreateClusterRole(params *CreateClusterRoleParams, authInfo run
 /*
   CreateClusterTemplate creates a cluster templates for the given project
 */
-func (a *Client) CreateClusterTemplate(params *CreateClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter) (*CreateClusterTemplateCreated, error) {
+func (a *Client) CreateClusterTemplate(params *CreateClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateClusterTemplateCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewCreateClusterTemplateParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "createClusterTemplate",
 		Method:             "POST",
 		PathPattern:        "/api/v2/projects/{project_id}/clustertemplates",
@@ -565,7 +593,12 @@ func (a *Client) CreateClusterTemplate(params *CreateClusterTemplateParams, auth
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -581,13 +614,12 @@ func (a *Client) CreateClusterTemplate(params *CreateClusterTemplateParams, auth
 /*
   CreateClusterTemplateInstance creates cluster template instance
 */
-func (a *Client) CreateClusterTemplateInstance(params *CreateClusterTemplateInstanceParams, authInfo runtime.ClientAuthInfoWriter) (*CreateClusterTemplateInstanceCreated, error) {
+func (a *Client) CreateClusterTemplateInstance(params *CreateClusterTemplateInstanceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateClusterTemplateInstanceCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewCreateClusterTemplateInstanceParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "createClusterTemplateInstance",
 		Method:             "POST",
 		PathPattern:        "/api/v2/projects/{project_id}/clustertemplates/{template_id}/instances",
@@ -599,7 +631,12 @@ func (a *Client) CreateClusterTemplateInstance(params *CreateClusterTemplateInst
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -615,13 +652,12 @@ func (a *Client) CreateClusterTemplateInstance(params *CreateClusterTemplateInst
 /*
   CreateClusterV2 creates a cluster for the given project
 */
-func (a *Client) CreateClusterV2(params *CreateClusterV2Params, authInfo runtime.ClientAuthInfoWriter) (*CreateClusterV2Created, error) {
+func (a *Client) CreateClusterV2(params *CreateClusterV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateClusterV2Created, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewCreateClusterV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "createClusterV2",
 		Method:             "POST",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters",
@@ -633,7 +669,12 @@ func (a *Client) CreateClusterV2(params *CreateClusterV2Params, authInfo runtime
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -649,13 +690,12 @@ func (a *Client) CreateClusterV2(params *CreateClusterV2Params, authInfo runtime
 /*
   CreateConstraint creates a given constraint for the specified cluster
 */
-func (a *Client) CreateConstraint(params *CreateConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*CreateConstraintOK, error) {
+func (a *Client) CreateConstraint(params *CreateConstraintParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateConstraintOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewCreateConstraintParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "createConstraint",
 		Method:             "POST",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/constraints",
@@ -667,7 +707,12 @@ func (a *Client) CreateConstraint(params *CreateConstraintParams, authInfo runti
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -683,13 +728,12 @@ func (a *Client) CreateConstraint(params *CreateConstraintParams, authInfo runti
 /*
   CreateExternalCluster creates an external cluster for the given project
 */
-func (a *Client) CreateExternalCluster(params *CreateExternalClusterParams, authInfo runtime.ClientAuthInfoWriter) (*CreateExternalClusterCreated, error) {
+func (a *Client) CreateExternalCluster(params *CreateExternalClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateExternalClusterCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewCreateExternalClusterParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "createExternalCluster",
 		Method:             "POST",
 		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters",
@@ -701,7 +745,12 @@ func (a *Client) CreateExternalCluster(params *CreateExternalClusterParams, auth
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -717,13 +766,12 @@ func (a *Client) CreateExternalCluster(params *CreateExternalClusterParams, auth
 /*
   CreateGatekeeperConfig Creates a gatekeeper config for the given cluster
 */
-func (a *Client) CreateGatekeeperConfig(params *CreateGatekeeperConfigParams, authInfo runtime.ClientAuthInfoWriter) (*CreateGatekeeperConfigCreated, error) {
+func (a *Client) CreateGatekeeperConfig(params *CreateGatekeeperConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateGatekeeperConfigCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewCreateGatekeeperConfigParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "createGatekeeperConfig",
 		Method:             "POST",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config",
@@ -735,7 +783,12 @@ func (a *Client) CreateGatekeeperConfig(params *CreateGatekeeperConfigParams, au
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -751,13 +804,12 @@ func (a *Client) CreateGatekeeperConfig(params *CreateGatekeeperConfigParams, au
 /*
   CreateMachineDeployment Creates a machine deployment that will belong to the given cluster
 */
-func (a *Client) CreateMachineDeployment(params *CreateMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*CreateMachineDeploymentCreated, error) {
+func (a *Client) CreateMachineDeployment(params *CreateMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateMachineDeploymentCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewCreateMachineDeploymentParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "createMachineDeployment",
 		Method:             "POST",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments",
@@ -769,7 +821,12 @@ func (a *Client) CreateMachineDeployment(params *CreateMachineDeploymentParams, 
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -785,13 +842,12 @@ func (a *Client) CreateMachineDeployment(params *CreateMachineDeploymentParams, 
 /*
   CreateNodeDeployment Creates a node deployment that will belong to the given cluster
 */
-func (a *Client) CreateNodeDeployment(params *CreateNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*CreateNodeDeploymentCreated, error) {
+func (a *Client) CreateNodeDeployment(params *CreateNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateNodeDeploymentCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewCreateNodeDeploymentParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "createNodeDeployment",
 		Method:             "POST",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments",
@@ -803,7 +859,12 @@ func (a *Client) CreateNodeDeployment(params *CreateNodeDeploymentParams, authIn
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -821,13 +882,12 @@ func (a *Client) CreateNodeDeployment(params *CreateNodeDeploymentParams, authIn
 
   Note that this endpoint can be consumed by every authenticated user.
 */
-func (a *Client) CreateProject(params *CreateProjectParams, authInfo runtime.ClientAuthInfoWriter) (*CreateProjectCreated, error) {
+func (a *Client) CreateProject(params *CreateProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateProjectCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewCreateProjectParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "createProject",
 		Method:             "POST",
 		PathPattern:        "/api/v1/projects",
@@ -839,7 +899,12 @@ func (a *Client) CreateProject(params *CreateProjectParams, authInfo runtime.Cli
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -855,13 +920,12 @@ func (a *Client) CreateProject(params *CreateProjectParams, authInfo runtime.Cli
 /*
   CreateRole Creates cluster role
 */
-func (a *Client) CreateRole(params *CreateRoleParams, authInfo runtime.ClientAuthInfoWriter) (*CreateRoleCreated, error) {
+func (a *Client) CreateRole(params *CreateRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRoleCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewCreateRoleParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "createRole",
 		Method:             "POST",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles",
@@ -873,7 +937,12 @@ func (a *Client) CreateRole(params *CreateRoleParams, authInfo runtime.ClientAut
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -889,13 +958,12 @@ func (a *Client) CreateRole(params *CreateRoleParams, authInfo runtime.ClientAut
 /*
   CreateSSHKey adds the given SSH key to the specified project
 */
-func (a *Client) CreateSSHKey(params *CreateSSHKeyParams, authInfo runtime.ClientAuthInfoWriter) (*CreateSSHKeyCreated, error) {
+func (a *Client) CreateSSHKey(params *CreateSSHKeyParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateSSHKeyCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewCreateSSHKeyParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "createSSHKey",
 		Method:             "POST",
 		PathPattern:        "/api/v1/projects/{project_id}/sshkeys",
@@ -907,7 +975,12 @@ func (a *Client) CreateSSHKey(params *CreateSSHKeyParams, authInfo runtime.Clien
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -923,13 +996,12 @@ func (a *Client) CreateSSHKey(params *CreateSSHKeyParams, authInfo runtime.Clien
 /*
   DeleteCluster Deletes the specified cluster
 */
-func (a *Client) DeleteCluster(params *DeleteClusterParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteClusterOK, error) {
+func (a *Client) DeleteCluster(params *DeleteClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteClusterOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewDeleteClusterParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "deleteCluster",
 		Method:             "DELETE",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}",
@@ -941,7 +1013,12 @@ func (a *Client) DeleteCluster(params *DeleteClusterParams, authInfo runtime.Cli
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -957,13 +1034,12 @@ func (a *Client) DeleteCluster(params *DeleteClusterParams, authInfo runtime.Cli
 /*
   DeleteClusterRole Delete the cluster role with the given name
 */
-func (a *Client) DeleteClusterRole(params *DeleteClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteClusterRoleOK, error) {
+func (a *Client) DeleteClusterRole(params *DeleteClusterRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteClusterRoleOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewDeleteClusterRoleParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "deleteClusterRole",
 		Method:             "DELETE",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}",
@@ -975,7 +1051,12 @@ func (a *Client) DeleteClusterRole(params *DeleteClusterRoleParams, authInfo run
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -991,13 +1072,12 @@ func (a *Client) DeleteClusterRole(params *DeleteClusterRoleParams, authInfo run
 /*
   DeleteClusterTemplate deletes cluster template
 */
-func (a *Client) DeleteClusterTemplate(params *DeleteClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteClusterTemplateOK, error) {
+func (a *Client) DeleteClusterTemplate(params *DeleteClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteClusterTemplateOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewDeleteClusterTemplateParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "deleteClusterTemplate",
 		Method:             "DELETE",
 		PathPattern:        "/api/v2/projects/{project_id}/clustertemplates/{template_id}",
@@ -1009,7 +1089,12 @@ func (a *Client) DeleteClusterTemplate(params *DeleteClusterTemplateParams, auth
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -1025,13 +1110,12 @@ func (a *Client) DeleteClusterTemplate(params *DeleteClusterTemplateParams, auth
 /*
   DeleteClusterV2 Deletes the specified cluster
 */
-func (a *Client) DeleteClusterV2(params *DeleteClusterV2Params, authInfo runtime.ClientAuthInfoWriter) (*DeleteClusterV2OK, error) {
+func (a *Client) DeleteClusterV2(params *DeleteClusterV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteClusterV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewDeleteClusterV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "deleteClusterV2",
 		Method:             "DELETE",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}",
@@ -1043,7 +1127,12 @@ func (a *Client) DeleteClusterV2(params *DeleteClusterV2Params, authInfo runtime
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -1059,13 +1148,12 @@ func (a *Client) DeleteClusterV2(params *DeleteClusterV2Params, authInfo runtime
 /*
   DeleteConstraint deletes a specified constraint for the given cluster
 */
-func (a *Client) DeleteConstraint(params *DeleteConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteConstraintOK, error) {
+func (a *Client) DeleteConstraint(params *DeleteConstraintParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteConstraintOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewDeleteConstraintParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "deleteConstraint",
 		Method:             "DELETE",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/constraints/{constraint_name}",
@@ -1077,7 +1165,12 @@ func (a *Client) DeleteConstraint(params *DeleteConstraintParams, authInfo runti
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -1093,13 +1186,12 @@ func (a *Client) DeleteConstraint(params *DeleteConstraintParams, authInfo runti
 /*
   DeleteExternalCluster Deletes the specified external cluster
 */
-func (a *Client) DeleteExternalCluster(params *DeleteExternalClusterParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteExternalClusterOK, error) {
+func (a *Client) DeleteExternalCluster(params *DeleteExternalClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteExternalClusterOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewDeleteExternalClusterParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "deleteExternalCluster",
 		Method:             "DELETE",
 		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}",
@@ -1111,7 +1203,12 @@ func (a *Client) DeleteExternalCluster(params *DeleteExternalClusterParams, auth
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -1127,13 +1224,12 @@ func (a *Client) DeleteExternalCluster(params *DeleteExternalClusterParams, auth
 /*
   DeleteGatekeeperConfig deletes the gatekeeper sync config for the specified cluster
 */
-func (a *Client) DeleteGatekeeperConfig(params *DeleteGatekeeperConfigParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteGatekeeperConfigOK, error) {
+func (a *Client) DeleteGatekeeperConfig(params *DeleteGatekeeperConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteGatekeeperConfigOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewDeleteGatekeeperConfigParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "deleteGatekeeperConfig",
 		Method:             "DELETE",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config",
@@ -1145,7 +1241,12 @@ func (a *Client) DeleteGatekeeperConfig(params *DeleteGatekeeperConfigParams, au
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -1161,13 +1262,12 @@ func (a *Client) DeleteGatekeeperConfig(params *DeleteGatekeeperConfigParams, au
 /*
   DeleteMachineDeployment deletes the given machine deployment that belongs to the cluster
 */
-func (a *Client) DeleteMachineDeployment(params *DeleteMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteMachineDeploymentOK, error) {
+func (a *Client) DeleteMachineDeployment(params *DeleteMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteMachineDeploymentOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewDeleteMachineDeploymentParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "deleteMachineDeployment",
 		Method:             "DELETE",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}",
@@ -1179,7 +1279,12 @@ func (a *Client) DeleteMachineDeployment(params *DeleteMachineDeploymentParams, 
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -1195,13 +1300,12 @@ func (a *Client) DeleteMachineDeployment(params *DeleteMachineDeploymentParams, 
 /*
   DeleteMachineDeploymentNode deletes the given node that belongs to the machine deployment
 */
-func (a *Client) DeleteMachineDeploymentNode(params *DeleteMachineDeploymentNodeParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteMachineDeploymentNodeOK, error) {
+func (a *Client) DeleteMachineDeploymentNode(params *DeleteMachineDeploymentNodeParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteMachineDeploymentNodeOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewDeleteMachineDeploymentNodeParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "deleteMachineDeploymentNode",
 		Method:             "DELETE",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/nodes/{node_id}",
@@ -1213,7 +1317,12 @@ func (a *Client) DeleteMachineDeploymentNode(params *DeleteMachineDeploymentNode
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -1229,13 +1338,12 @@ func (a *Client) DeleteMachineDeploymentNode(params *DeleteMachineDeploymentNode
 /*
   DeleteNodeDeployment deletes the given node deployment that belongs to the cluster
 */
-func (a *Client) DeleteNodeDeployment(params *DeleteNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteNodeDeploymentOK, error) {
+func (a *Client) DeleteNodeDeployment(params *DeleteNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteNodeDeploymentOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewDeleteNodeDeploymentParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "deleteNodeDeployment",
 		Method:             "DELETE",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}",
@@ -1247,7 +1355,12 @@ func (a *Client) DeleteNodeDeployment(params *DeleteNodeDeploymentParams, authIn
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -1265,13 +1378,12 @@ func (a *Client) DeleteNodeDeployment(params *DeleteNodeDeploymentParams, authIn
 
   This endpoint is deprecated, please create a Node Deployment instead.
 */
-func (a *Client) DeleteNodeForClusterLegacy(params *DeleteNodeForClusterLegacyParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteNodeForClusterLegacyOK, error) {
+func (a *Client) DeleteNodeForClusterLegacy(params *DeleteNodeForClusterLegacyParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteNodeForClusterLegacyOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewDeleteNodeForClusterLegacyParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "deleteNodeForClusterLegacy",
 		Method:             "DELETE",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id}",
@@ -1283,7 +1395,12 @@ func (a *Client) DeleteNodeForClusterLegacy(params *DeleteNodeForClusterLegacyPa
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -1299,13 +1416,12 @@ func (a *Client) DeleteNodeForClusterLegacy(params *DeleteNodeForClusterLegacyPa
 /*
   DeleteProject deletes the project with the given ID
 */
-func (a *Client) DeleteProject(params *DeleteProjectParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteProjectOK, error) {
+func (a *Client) DeleteProject(params *DeleteProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteProjectOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewDeleteProjectParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "deleteProject",
 		Method:             "DELETE",
 		PathPattern:        "/api/v1/projects/{project_id}",
@@ -1317,7 +1433,12 @@ func (a *Client) DeleteProject(params *DeleteProjectParams, authInfo runtime.Cli
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -1333,13 +1454,12 @@ func (a *Client) DeleteProject(params *DeleteProjectParams, authInfo runtime.Cli
 /*
   DeleteRole Delete the cluster role with the given name
 */
-func (a *Client) DeleteRole(params *DeleteRoleParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteRoleOK, error) {
+func (a *Client) DeleteRole(params *DeleteRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteRoleOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewDeleteRoleParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "deleteRole",
 		Method:             "DELETE",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}",
@@ -1351,7 +1471,12 @@ func (a *Client) DeleteRole(params *DeleteRoleParams, authInfo runtime.ClientAut
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -1367,13 +1492,12 @@ func (a *Client) DeleteRole(params *DeleteRoleParams, authInfo runtime.ClientAut
 /*
   DeleteSSHKey removes the given SSH key from the system
 */
-func (a *Client) DeleteSSHKey(params *DeleteSSHKeyParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteSSHKeyOK, error) {
+func (a *Client) DeleteSSHKey(params *DeleteSSHKeyParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteSSHKeyOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewDeleteSSHKeyParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "deleteSSHKey",
 		Method:             "DELETE",
 		PathPattern:        "/api/v1/projects/{project_id}/sshkeys/{key_id}",
@@ -1385,7 +1509,12 @@ func (a *Client) DeleteSSHKey(params *DeleteSSHKeyParams, authInfo runtime.Clien
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -1401,13 +1530,12 @@ func (a *Client) DeleteSSHKey(params *DeleteSSHKeyParams, authInfo runtime.Clien
 /*
   DetachSSHKeyFromCluster Unassignes an ssh key from the given cluster
 */
-func (a *Client) DetachSSHKeyFromCluster(params *DetachSSHKeyFromClusterParams, authInfo runtime.ClientAuthInfoWriter) (*DetachSSHKeyFromClusterOK, error) {
+func (a *Client) DetachSSHKeyFromCluster(params *DetachSSHKeyFromClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DetachSSHKeyFromClusterOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewDetachSSHKeyFromClusterParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "detachSSHKeyFromCluster",
 		Method:             "DELETE",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id}",
@@ -1419,7 +1547,12 @@ func (a *Client) DetachSSHKeyFromCluster(params *DetachSSHKeyFromClusterParams, 
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -1435,13 +1568,12 @@ func (a *Client) DetachSSHKeyFromCluster(params *DetachSSHKeyFromClusterParams, 
 /*
   DetachSSHKeyFromClusterV2 Unassignes an ssh key from the given cluster
 */
-func (a *Client) DetachSSHKeyFromClusterV2(params *DetachSSHKeyFromClusterV2Params, authInfo runtime.ClientAuthInfoWriter) (*DetachSSHKeyFromClusterV2OK, error) {
+func (a *Client) DetachSSHKeyFromClusterV2(params *DetachSSHKeyFromClusterV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DetachSSHKeyFromClusterV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewDetachSSHKeyFromClusterV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "detachSSHKeyFromClusterV2",
 		Method:             "DELETE",
 		PathPattern:        "/api/projects/{project_id}/clusters/{cluster_id}/sshkeys/{key_id}",
@@ -1453,7 +1585,12 @@ func (a *Client) DetachSSHKeyFromClusterV2(params *DetachSSHKeyFromClusterV2Para
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -1469,13 +1606,12 @@ func (a *Client) DetachSSHKeyFromClusterV2(params *DetachSSHKeyFromClusterV2Para
 /*
   GetAlertmanager gets the alertmanager configuration for the specified cluster
 */
-func (a *Client) GetAlertmanager(params *GetAlertmanagerParams, authInfo runtime.ClientAuthInfoWriter) (*GetAlertmanagerOK, error) {
+func (a *Client) GetAlertmanager(params *GetAlertmanagerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAlertmanagerOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetAlertmanagerParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getAlertmanager",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config",
@@ -1487,7 +1623,12 @@ func (a *Client) GetAlertmanager(params *GetAlertmanagerParams, authInfo runtime
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -1503,13 +1644,12 @@ func (a *Client) GetAlertmanager(params *GetAlertmanagerParams, authInfo runtime
 /*
   GetCluster Gets the cluster with the given name
 */
-func (a *Client) GetCluster(params *GetClusterParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterOK, error) {
+func (a *Client) GetCluster(params *GetClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetClusterParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getCluster",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}",
@@ -1521,7 +1661,12 @@ func (a *Client) GetCluster(params *GetClusterParams, authInfo runtime.ClientAut
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -1537,13 +1682,12 @@ func (a *Client) GetCluster(params *GetClusterParams, authInfo runtime.ClientAut
 /*
   GetClusterEvents gets the events related to the specified cluster
 */
-func (a *Client) GetClusterEvents(params *GetClusterEventsParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterEventsOK, error) {
+func (a *Client) GetClusterEvents(params *GetClusterEventsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterEventsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetClusterEventsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getClusterEvents",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/events",
@@ -1555,7 +1699,12 @@ func (a *Client) GetClusterEvents(params *GetClusterEventsParams, authInfo runti
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -1571,13 +1720,12 @@ func (a *Client) GetClusterEvents(params *GetClusterEventsParams, authInfo runti
 /*
   GetClusterEventsV2 gets the events related to the specified cluster
 */
-func (a *Client) GetClusterEventsV2(params *GetClusterEventsV2Params, authInfo runtime.ClientAuthInfoWriter) (*GetClusterEventsV2OK, error) {
+func (a *Client) GetClusterEventsV2(params *GetClusterEventsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterEventsV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetClusterEventsV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getClusterEventsV2",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/events",
@@ -1589,7 +1737,12 @@ func (a *Client) GetClusterEventsV2(params *GetClusterEventsV2Params, authInfo r
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -1605,13 +1758,12 @@ func (a *Client) GetClusterEventsV2(params *GetClusterEventsV2Params, authInfo r
 /*
   GetClusterHealth Returns the cluster's component health status
 */
-func (a *Client) GetClusterHealth(params *GetClusterHealthParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterHealthOK, error) {
+func (a *Client) GetClusterHealth(params *GetClusterHealthParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterHealthOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetClusterHealthParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getClusterHealth",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/health",
@@ -1623,7 +1775,12 @@ func (a *Client) GetClusterHealth(params *GetClusterHealthParams, authInfo runti
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -1639,13 +1796,12 @@ func (a *Client) GetClusterHealth(params *GetClusterHealthParams, authInfo runti
 /*
   GetClusterHealthV2 Returns the cluster's component health status
 */
-func (a *Client) GetClusterHealthV2(params *GetClusterHealthV2Params, authInfo runtime.ClientAuthInfoWriter) (*GetClusterHealthV2OK, error) {
+func (a *Client) GetClusterHealthV2(params *GetClusterHealthV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterHealthV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetClusterHealthV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getClusterHealthV2",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/health",
@@ -1657,7 +1813,12 @@ func (a *Client) GetClusterHealthV2(params *GetClusterHealthV2Params, authInfo r
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -1673,13 +1834,12 @@ func (a *Client) GetClusterHealthV2(params *GetClusterHealthV2Params, authInfo r
 /*
   GetClusterKubeconfig gets the kubeconfig for the specified cluster
 */
-func (a *Client) GetClusterKubeconfig(params *GetClusterKubeconfigParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterKubeconfigOK, error) {
+func (a *Client) GetClusterKubeconfig(params *GetClusterKubeconfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterKubeconfigOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetClusterKubeconfigParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getClusterKubeconfig",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/kubeconfig",
@@ -1691,7 +1851,12 @@ func (a *Client) GetClusterKubeconfig(params *GetClusterKubeconfigParams, authIn
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -1707,13 +1872,12 @@ func (a *Client) GetClusterKubeconfig(params *GetClusterKubeconfigParams, authIn
 /*
   GetClusterKubeconfigV2 gets the kubeconfig for the specified cluster
 */
-func (a *Client) GetClusterKubeconfigV2(params *GetClusterKubeconfigV2Params, authInfo runtime.ClientAuthInfoWriter) (*GetClusterKubeconfigV2OK, error) {
+func (a *Client) GetClusterKubeconfigV2(params *GetClusterKubeconfigV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterKubeconfigV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetClusterKubeconfigV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getClusterKubeconfigV2",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/kubeconfig",
@@ -1725,7 +1889,12 @@ func (a *Client) GetClusterKubeconfigV2(params *GetClusterKubeconfigV2Params, au
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -1741,13 +1910,12 @@ func (a *Client) GetClusterKubeconfigV2(params *GetClusterKubeconfigV2Params, au
 /*
   GetClusterMetrics Gets cluster metrics
 */
-func (a *Client) GetClusterMetrics(params *GetClusterMetricsParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterMetricsOK, error) {
+func (a *Client) GetClusterMetrics(params *GetClusterMetricsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterMetricsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetClusterMetricsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getClusterMetrics",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics",
@@ -1759,7 +1927,12 @@ func (a *Client) GetClusterMetrics(params *GetClusterMetricsParams, authInfo run
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -1775,13 +1948,12 @@ func (a *Client) GetClusterMetrics(params *GetClusterMetricsParams, authInfo run
 /*
   GetClusterMetricsV2 Gets cluster metrics
 */
-func (a *Client) GetClusterMetricsV2(params *GetClusterMetricsV2Params, authInfo runtime.ClientAuthInfoWriter) (*GetClusterMetricsV2OK, error) {
+func (a *Client) GetClusterMetricsV2(params *GetClusterMetricsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterMetricsV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetClusterMetricsV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getClusterMetricsV2",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/metrics",
@@ -1793,7 +1965,12 @@ func (a *Client) GetClusterMetricsV2(params *GetClusterMetricsV2Params, authInfo
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -1809,13 +1986,12 @@ func (a *Client) GetClusterMetricsV2(params *GetClusterMetricsV2Params, authInfo
 /*
   GetClusterOidc gets the o ID c params for the specified cluster with o ID c authentication
 */
-func (a *Client) GetClusterOidc(params *GetClusterOidcParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterOidcOK, error) {
+func (a *Client) GetClusterOidc(params *GetClusterOidcParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterOidcOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetClusterOidcParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getClusterOidc",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/oidc",
@@ -1827,7 +2003,12 @@ func (a *Client) GetClusterOidc(params *GetClusterOidcParams, authInfo runtime.C
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -1843,13 +2024,12 @@ func (a *Client) GetClusterOidc(params *GetClusterOidcParams, authInfo runtime.C
 /*
   GetClusterRole Gets the cluster role with the given name
 */
-func (a *Client) GetClusterRole(params *GetClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterRoleOK, error) {
+func (a *Client) GetClusterRole(params *GetClusterRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterRoleOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetClusterRoleParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getClusterRole",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{role_id}",
@@ -1861,7 +2041,12 @@ func (a *Client) GetClusterRole(params *GetClusterRoleParams, authInfo runtime.C
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -1877,13 +2062,12 @@ func (a *Client) GetClusterRole(params *GetClusterRoleParams, authInfo runtime.C
 /*
   GetClusterTemplate gets cluster template
 */
-func (a *Client) GetClusterTemplate(params *GetClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterTemplateOK, error) {
+func (a *Client) GetClusterTemplate(params *GetClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterTemplateOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetClusterTemplateParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getClusterTemplate",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clustertemplates/{template_id}",
@@ -1895,7 +2079,12 @@ func (a *Client) GetClusterTemplate(params *GetClusterTemplateParams, authInfo r
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -1909,49 +2098,14 @@ func (a *Client) GetClusterTemplate(params *GetClusterTemplateParams, authInfo r
 }
 
 /*
-  GetClusterTemplateInstance gets cluster template instance
-*/
-func (a *Client) GetClusterTemplateInstance(params *GetClusterTemplateInstanceParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterTemplateInstanceOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewGetClusterTemplateInstanceParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "getClusterTemplateInstance",
-		Method:             "POST",
-		PathPattern:        "/api/v2/projects/{project_id}/clustertemplates/{template_id}/instances/{instance_id}",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &GetClusterTemplateInstanceReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*GetClusterTemplateInstanceOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetClusterTemplateInstanceDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
-}
-
-/*
   GetClusterUpgrades Gets possible cluster upgrades
 */
-func (a *Client) GetClusterUpgrades(params *GetClusterUpgradesParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterUpgradesOK, error) {
+func (a *Client) GetClusterUpgrades(params *GetClusterUpgradesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterUpgradesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetClusterUpgradesParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getClusterUpgrades",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/upgrades",
@@ -1963,7 +2117,12 @@ func (a *Client) GetClusterUpgrades(params *GetClusterUpgradesParams, authInfo r
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -1979,13 +2138,12 @@ func (a *Client) GetClusterUpgrades(params *GetClusterUpgradesParams, authInfo r
 /*
   GetClusterUpgradesV2 Gets possible cluster upgrades
 */
-func (a *Client) GetClusterUpgradesV2(params *GetClusterUpgradesV2Params, authInfo runtime.ClientAuthInfoWriter) (*GetClusterUpgradesV2OK, error) {
+func (a *Client) GetClusterUpgradesV2(params *GetClusterUpgradesV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterUpgradesV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetClusterUpgradesV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getClusterUpgradesV2",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/upgrades",
@@ -1997,7 +2155,12 @@ func (a *Client) GetClusterUpgradesV2(params *GetClusterUpgradesV2Params, authIn
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -2013,13 +2176,12 @@ func (a *Client) GetClusterUpgradesV2(params *GetClusterUpgradesV2Params, authIn
 /*
   GetClusterV2 Gets the cluster with the given name
 */
-func (a *Client) GetClusterV2(params *GetClusterV2Params, authInfo runtime.ClientAuthInfoWriter) (*GetClusterV2OK, error) {
+func (a *Client) GetClusterV2(params *GetClusterV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetClusterV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getClusterV2",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}",
@@ -2031,7 +2193,12 @@ func (a *Client) GetClusterV2(params *GetClusterV2Params, authInfo runtime.Clien
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -2047,13 +2214,12 @@ func (a *Client) GetClusterV2(params *GetClusterV2Params, authInfo runtime.Clien
 /*
   GetConstraint gets an specified constraint for the given cluster
 */
-func (a *Client) GetConstraint(params *GetConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*GetConstraintOK, error) {
+func (a *Client) GetConstraint(params *GetConstraintParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetConstraintOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetConstraintParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getConstraint",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/constraints/{constraint_name}",
@@ -2065,7 +2231,12 @@ func (a *Client) GetConstraint(params *GetConstraintParams, authInfo runtime.Cli
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -2081,13 +2252,12 @@ func (a *Client) GetConstraint(params *GetConstraintParams, authInfo runtime.Cli
 /*
   GetExternalCluster gets an external cluster for the given project
 */
-func (a *Client) GetExternalCluster(params *GetExternalClusterParams, authInfo runtime.ClientAuthInfoWriter) (*GetExternalClusterOK, error) {
+func (a *Client) GetExternalCluster(params *GetExternalClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetExternalClusterOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetExternalClusterParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getExternalCluster",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}",
@@ -2099,7 +2269,12 @@ func (a *Client) GetExternalCluster(params *GetExternalClusterParams, authInfo r
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -2115,13 +2290,12 @@ func (a *Client) GetExternalCluster(params *GetExternalClusterParams, authInfo r
 /*
   GetExternalClusterMetrics Gets cluster metrics
 */
-func (a *Client) GetExternalClusterMetrics(params *GetExternalClusterMetricsParams, authInfo runtime.ClientAuthInfoWriter) (*GetExternalClusterMetricsOK, error) {
+func (a *Client) GetExternalClusterMetrics(params *GetExternalClusterMetricsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetExternalClusterMetricsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetExternalClusterMetricsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getExternalClusterMetrics",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/metrics",
@@ -2133,7 +2307,12 @@ func (a *Client) GetExternalClusterMetrics(params *GetExternalClusterMetricsPara
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -2149,13 +2328,12 @@ func (a *Client) GetExternalClusterMetrics(params *GetExternalClusterMetricsPara
 /*
   GetExternalClusterNode gets an external cluster node
 */
-func (a *Client) GetExternalClusterNode(params *GetExternalClusterNodeParams, authInfo runtime.ClientAuthInfoWriter) (*GetExternalClusterNodeOK, error) {
+func (a *Client) GetExternalClusterNode(params *GetExternalClusterNodeParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetExternalClusterNodeOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetExternalClusterNodeParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getExternalClusterNode",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/nodes/{node_id}",
@@ -2167,7 +2345,12 @@ func (a *Client) GetExternalClusterNode(params *GetExternalClusterNodeParams, au
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -2183,13 +2366,12 @@ func (a *Client) GetExternalClusterNode(params *GetExternalClusterNodeParams, au
 /*
   GetGatekeeperConfig gets the gatekeeper sync config for the specified cluster
 */
-func (a *Client) GetGatekeeperConfig(params *GetGatekeeperConfigParams, authInfo runtime.ClientAuthInfoWriter) (*GetGatekeeperConfigOK, error) {
+func (a *Client) GetGatekeeperConfig(params *GetGatekeeperConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetGatekeeperConfigOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetGatekeeperConfigParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getGatekeeperConfig",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config",
@@ -2201,7 +2383,12 @@ func (a *Client) GetGatekeeperConfig(params *GetGatekeeperConfigParams, authInfo
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -2217,13 +2404,12 @@ func (a *Client) GetGatekeeperConfig(params *GetGatekeeperConfigParams, authInfo
 /*
   GetMachineDeployment gets a machine deployment that is assigned to the given cluster
 */
-func (a *Client) GetMachineDeployment(params *GetMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*GetMachineDeploymentOK, error) {
+func (a *Client) GetMachineDeployment(params *GetMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetMachineDeploymentOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetMachineDeploymentParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getMachineDeployment",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}",
@@ -2235,7 +2421,12 @@ func (a *Client) GetMachineDeployment(params *GetMachineDeploymentParams, authIn
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -2251,13 +2442,12 @@ func (a *Client) GetMachineDeployment(params *GetMachineDeploymentParams, authIn
 /*
   GetNodeDeployment gets a node deployment that is assigned to the given cluster
 */
-func (a *Client) GetNodeDeployment(params *GetNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*GetNodeDeploymentOK, error) {
+func (a *Client) GetNodeDeployment(params *GetNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNodeDeploymentOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetNodeDeploymentParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getNodeDeployment",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}",
@@ -2269,7 +2459,12 @@ func (a *Client) GetNodeDeployment(params *GetNodeDeploymentParams, authInfo run
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -2285,13 +2480,12 @@ func (a *Client) GetNodeDeployment(params *GetNodeDeploymentParams, authInfo run
 /*
   GetOidcClusterKubeconfig gets the kubeconfig for the specified cluster with oidc authentication
 */
-func (a *Client) GetOidcClusterKubeconfig(params *GetOidcClusterKubeconfigParams, authInfo runtime.ClientAuthInfoWriter) (*GetOidcClusterKubeconfigOK, error) {
+func (a *Client) GetOidcClusterKubeconfig(params *GetOidcClusterKubeconfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOidcClusterKubeconfigOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetOidcClusterKubeconfigParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getOidcClusterKubeconfig",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/oidckubeconfig",
@@ -2303,7 +2497,12 @@ func (a *Client) GetOidcClusterKubeconfig(params *GetOidcClusterKubeconfigParams
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -2319,13 +2518,12 @@ func (a *Client) GetOidcClusterKubeconfig(params *GetOidcClusterKubeconfigParams
 /*
   GetOidcClusterKubeconfigV2 gets the kubeconfig for the specified cluster with oidc authentication
 */
-func (a *Client) GetOidcClusterKubeconfigV2(params *GetOidcClusterKubeconfigV2Params, authInfo runtime.ClientAuthInfoWriter) (*GetOidcClusterKubeconfigV2OK, error) {
+func (a *Client) GetOidcClusterKubeconfigV2(params *GetOidcClusterKubeconfigV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOidcClusterKubeconfigV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetOidcClusterKubeconfigV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getOidcClusterKubeconfigV2",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/oidckubeconfig",
@@ -2337,7 +2535,12 @@ func (a *Client) GetOidcClusterKubeconfigV2(params *GetOidcClusterKubeconfigV2Pa
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -2353,13 +2556,12 @@ func (a *Client) GetOidcClusterKubeconfigV2(params *GetOidcClusterKubeconfigV2Pa
 /*
   GetProject Gets the project with the given ID
 */
-func (a *Client) GetProject(params *GetProjectParams, authInfo runtime.ClientAuthInfoWriter) (*GetProjectOK, error) {
+func (a *Client) GetProject(params *GetProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetProjectOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetProjectParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getProject",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}",
@@ -2371,7 +2573,12 @@ func (a *Client) GetProject(params *GetProjectParams, authInfo runtime.ClientAut
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -2387,13 +2594,12 @@ func (a *Client) GetProject(params *GetProjectParams, authInfo runtime.ClientAut
 /*
   GetRole Gets the role with the given name
 */
-func (a *Client) GetRole(params *GetRoleParams, authInfo runtime.ClientAuthInfoWriter) (*GetRoleOK, error) {
+func (a *Client) GetRole(params *GetRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRoleOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetRoleParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getRole",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}",
@@ -2405,7 +2611,12 @@ func (a *Client) GetRole(params *GetRoleParams, authInfo runtime.ClientAuthInfoW
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -2421,13 +2632,12 @@ func (a *Client) GetRole(params *GetRoleParams, authInfo runtime.ClientAuthInfoW
 /*
   ListClusterRole Lists all ClusterRoles
 */
-func (a *Client) ListClusterRole(params *ListClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*ListClusterRoleOK, error) {
+func (a *Client) ListClusterRole(params *ListClusterRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterRoleOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListClusterRoleParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listClusterRole",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles",
@@ -2439,7 +2649,12 @@ func (a *Client) ListClusterRole(params *ListClusterRoleParams, authInfo runtime
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -2455,13 +2670,12 @@ func (a *Client) ListClusterRole(params *ListClusterRoleParams, authInfo runtime
 /*
   ListClusterRoleBinding List cluster role binding
 */
-func (a *Client) ListClusterRoleBinding(params *ListClusterRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*ListClusterRoleBindingOK, error) {
+func (a *Client) ListClusterRoleBinding(params *ListClusterRoleBindingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterRoleBindingOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListClusterRoleBindingParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listClusterRoleBinding",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterbindings",
@@ -2473,7 +2687,12 @@ func (a *Client) ListClusterRoleBinding(params *ListClusterRoleBindingParams, au
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -2489,13 +2708,12 @@ func (a *Client) ListClusterRoleBinding(params *ListClusterRoleBindingParams, au
 /*
   ListClusterRoleBindingV2 List cluster role binding
 */
-func (a *Client) ListClusterRoleBindingV2(params *ListClusterRoleBindingV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListClusterRoleBindingV2OK, error) {
+func (a *Client) ListClusterRoleBindingV2(params *ListClusterRoleBindingV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterRoleBindingV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListClusterRoleBindingV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listClusterRoleBindingV2",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/clusterbindings",
@@ -2507,7 +2725,12 @@ func (a *Client) ListClusterRoleBindingV2(params *ListClusterRoleBindingV2Params
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -2523,13 +2746,12 @@ func (a *Client) ListClusterRoleBindingV2(params *ListClusterRoleBindingV2Params
 /*
   ListClusterRoleNames Lists all ClusterRoles
 */
-func (a *Client) ListClusterRoleNames(params *ListClusterRoleNamesParams, authInfo runtime.ClientAuthInfoWriter) (*ListClusterRoleNamesOK, error) {
+func (a *Client) ListClusterRoleNames(params *ListClusterRoleNamesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterRoleNamesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListClusterRoleNamesParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listClusterRoleNames",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterrolenames",
@@ -2541,7 +2763,12 @@ func (a *Client) ListClusterRoleNames(params *ListClusterRoleNamesParams, authIn
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -2557,13 +2784,12 @@ func (a *Client) ListClusterRoleNames(params *ListClusterRoleNamesParams, authIn
 /*
   ListClusterRoleNamesV2 Lists all ClusterRoles
 */
-func (a *Client) ListClusterRoleNamesV2(params *ListClusterRoleNamesV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListClusterRoleNamesV2OK, error) {
+func (a *Client) ListClusterRoleNamesV2(params *ListClusterRoleNamesV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterRoleNamesV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListClusterRoleNamesV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listClusterRoleNamesV2",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/clusterrolenames",
@@ -2575,7 +2801,12 @@ func (a *Client) ListClusterRoleNamesV2(params *ListClusterRoleNamesV2Params, au
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -2591,13 +2822,12 @@ func (a *Client) ListClusterRoleNamesV2(params *ListClusterRoleNamesV2Params, au
 /*
   ListClusterRoleV2 Lists all ClusterRoles
 */
-func (a *Client) ListClusterRoleV2(params *ListClusterRoleV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListClusterRoleV2OK, error) {
+func (a *Client) ListClusterRoleV2(params *ListClusterRoleV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterRoleV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListClusterRoleV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listClusterRoleV2",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/clusterroles",
@@ -2609,7 +2839,12 @@ func (a *Client) ListClusterRoleV2(params *ListClusterRoleV2Params, authInfo run
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -2623,49 +2858,14 @@ func (a *Client) ListClusterRoleV2(params *ListClusterRoleV2Params, authInfo run
 }
 
 /*
-  ListClusterTemplateInstances lists cluster template instances
-*/
-func (a *Client) ListClusterTemplateInstances(params *ListClusterTemplateInstancesParams, authInfo runtime.ClientAuthInfoWriter) (*ListClusterTemplateInstancesOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewListClusterTemplateInstancesParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "listClusterTemplateInstances",
-		Method:             "GET",
-		PathPattern:        "/api/v2/projects/{project_id}/clustertemplates/{template_id}/instances",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &ListClusterTemplateInstancesReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*ListClusterTemplateInstancesOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*ListClusterTemplateInstancesDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
-}
-
-/*
   ListClusterTemplates lists cluster templates for the given project
 */
-func (a *Client) ListClusterTemplates(params *ListClusterTemplatesParams, authInfo runtime.ClientAuthInfoWriter) (*ListClusterTemplatesOK, error) {
+func (a *Client) ListClusterTemplates(params *ListClusterTemplatesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterTemplatesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListClusterTemplatesParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listClusterTemplates",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clustertemplates",
@@ -2677,7 +2877,12 @@ func (a *Client) ListClusterTemplates(params *ListClusterTemplatesParams, authIn
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -2693,13 +2898,12 @@ func (a *Client) ListClusterTemplates(params *ListClusterTemplatesParams, authIn
 /*
   ListClusters lists clusters for the specified project and data center
 */
-func (a *Client) ListClusters(params *ListClustersParams, authInfo runtime.ClientAuthInfoWriter) (*ListClustersOK, error) {
+func (a *Client) ListClusters(params *ListClustersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClustersOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListClustersParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listClusters",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters",
@@ -2711,7 +2915,12 @@ func (a *Client) ListClusters(params *ListClustersParams, authInfo runtime.Clien
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -2727,13 +2936,12 @@ func (a *Client) ListClusters(params *ListClustersParams, authInfo runtime.Clien
 /*
   ListClustersForProject lists clusters for the specified project
 */
-func (a *Client) ListClustersForProject(params *ListClustersForProjectParams, authInfo runtime.ClientAuthInfoWriter) (*ListClustersForProjectOK, error) {
+func (a *Client) ListClustersForProject(params *ListClustersForProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClustersForProjectOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListClustersForProjectParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listClustersForProject",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/clusters",
@@ -2745,7 +2953,12 @@ func (a *Client) ListClustersForProject(params *ListClustersForProjectParams, au
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -2761,13 +2974,12 @@ func (a *Client) ListClustersForProject(params *ListClustersForProjectParams, au
 /*
   ListClustersV2 lists clusters for the specified project
 */
-func (a *Client) ListClustersV2(params *ListClustersV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListClustersV2OK, error) {
+func (a *Client) ListClustersV2(params *ListClustersV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClustersV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListClustersV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listClustersV2",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters",
@@ -2779,7 +2991,12 @@ func (a *Client) ListClustersV2(params *ListClustersV2Params, authInfo runtime.C
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -2795,13 +3012,12 @@ func (a *Client) ListClustersV2(params *ListClustersV2Params, authInfo runtime.C
 /*
   ListConstraints lists constraints for the specified cluster
 */
-func (a *Client) ListConstraints(params *ListConstraintsParams, authInfo runtime.ClientAuthInfoWriter) (*ListConstraintsOK, error) {
+func (a *Client) ListConstraints(params *ListConstraintsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListConstraintsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListConstraintsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listConstraints",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/constraints",
@@ -2813,7 +3029,12 @@ func (a *Client) ListConstraints(params *ListConstraintsParams, authInfo runtime
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -2829,13 +3050,12 @@ func (a *Client) ListConstraints(params *ListConstraintsParams, authInfo runtime
 /*
   ListExternalClusterEvents gets an external cluster events
 */
-func (a *Client) ListExternalClusterEvents(params *ListExternalClusterEventsParams, authInfo runtime.ClientAuthInfoWriter) (*ListExternalClusterEventsOK, error) {
+func (a *Client) ListExternalClusterEvents(params *ListExternalClusterEventsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClusterEventsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListExternalClusterEventsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listExternalClusterEvents",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/events",
@@ -2847,7 +3067,12 @@ func (a *Client) ListExternalClusterEvents(params *ListExternalClusterEventsPara
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -2863,13 +3088,12 @@ func (a *Client) ListExternalClusterEvents(params *ListExternalClusterEventsPara
 /*
   ListExternalClusterNodes gets an external cluster nodes
 */
-func (a *Client) ListExternalClusterNodes(params *ListExternalClusterNodesParams, authInfo runtime.ClientAuthInfoWriter) (*ListExternalClusterNodesOK, error) {
+func (a *Client) ListExternalClusterNodes(params *ListExternalClusterNodesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClusterNodesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListExternalClusterNodesParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listExternalClusterNodes",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/nodes",
@@ -2881,7 +3105,12 @@ func (a *Client) ListExternalClusterNodes(params *ListExternalClusterNodesParams
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -2897,13 +3126,12 @@ func (a *Client) ListExternalClusterNodes(params *ListExternalClusterNodesParams
 /*
   ListExternalClusterNodesMetrics gets an external cluster nodes metrics
 */
-func (a *Client) ListExternalClusterNodesMetrics(params *ListExternalClusterNodesMetricsParams, authInfo runtime.ClientAuthInfoWriter) (*ListExternalClusterNodesMetricsOK, error) {
+func (a *Client) ListExternalClusterNodesMetrics(params *ListExternalClusterNodesMetricsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClusterNodesMetricsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListExternalClusterNodesMetricsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listExternalClusterNodesMetrics",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/nodesmetrics",
@@ -2915,7 +3143,12 @@ func (a *Client) ListExternalClusterNodesMetrics(params *ListExternalClusterNode
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -2931,13 +3164,12 @@ func (a *Client) ListExternalClusterNodesMetrics(params *ListExternalClusterNode
 /*
   ListExternalClusters lists external clusters for the specified project
 */
-func (a *Client) ListExternalClusters(params *ListExternalClustersParams, authInfo runtime.ClientAuthInfoWriter) (*ListExternalClustersOK, error) {
+func (a *Client) ListExternalClusters(params *ListExternalClustersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClustersOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListExternalClustersParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listExternalClusters",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters",
@@ -2949,7 +3181,12 @@ func (a *Client) ListExternalClusters(params *ListExternalClustersParams, authIn
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -2965,13 +3202,12 @@ func (a *Client) ListExternalClusters(params *ListExternalClustersParams, authIn
 /*
   ListMachineDeploymentNodes lists nodes that belong to the given machine deployment
 */
-func (a *Client) ListMachineDeploymentNodes(params *ListMachineDeploymentNodesParams, authInfo runtime.ClientAuthInfoWriter) (*ListMachineDeploymentNodesOK, error) {
+func (a *Client) ListMachineDeploymentNodes(params *ListMachineDeploymentNodesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListMachineDeploymentNodesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListMachineDeploymentNodesParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listMachineDeploymentNodes",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes",
@@ -2983,7 +3219,12 @@ func (a *Client) ListMachineDeploymentNodes(params *ListMachineDeploymentNodesPa
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -3001,13 +3242,12 @@ func (a *Client) ListMachineDeploymentNodes(params *ListMachineDeploymentNodesPa
 
   If the value is 'normal' then normal events are returned. If the query parameter is missing method returns all events.
 */
-func (a *Client) ListMachineDeploymentNodesEvents(params *ListMachineDeploymentNodesEventsParams, authInfo runtime.ClientAuthInfoWriter) (*ListMachineDeploymentNodesEventsOK, error) {
+func (a *Client) ListMachineDeploymentNodesEvents(params *ListMachineDeploymentNodesEventsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListMachineDeploymentNodesEventsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListMachineDeploymentNodesEventsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listMachineDeploymentNodesEvents",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/events",
@@ -3019,7 +3259,12 @@ func (a *Client) ListMachineDeploymentNodesEvents(params *ListMachineDeploymentN
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -3035,13 +3280,12 @@ func (a *Client) ListMachineDeploymentNodesEvents(params *ListMachineDeploymentN
 /*
   ListMachineDeployments Lists machine deployments that belong to the given cluster
 */
-func (a *Client) ListMachineDeployments(params *ListMachineDeploymentsParams, authInfo runtime.ClientAuthInfoWriter) (*ListMachineDeploymentsOK, error) {
+func (a *Client) ListMachineDeployments(params *ListMachineDeploymentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListMachineDeploymentsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListMachineDeploymentsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listMachineDeployments",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments",
@@ -3053,7 +3297,12 @@ func (a *Client) ListMachineDeployments(params *ListMachineDeploymentsParams, au
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -3069,13 +3318,12 @@ func (a *Client) ListMachineDeployments(params *ListMachineDeploymentsParams, au
 /*
   ListNamespace Lists all namespaces in the cluster
 */
-func (a *Client) ListNamespace(params *ListNamespaceParams, authInfo runtime.ClientAuthInfoWriter) (*ListNamespaceOK, error) {
+func (a *Client) ListNamespace(params *ListNamespaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNamespaceOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListNamespaceParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listNamespace",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/namespaces",
@@ -3087,7 +3335,12 @@ func (a *Client) ListNamespace(params *ListNamespaceParams, authInfo runtime.Cli
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -3103,13 +3356,12 @@ func (a *Client) ListNamespace(params *ListNamespaceParams, authInfo runtime.Cli
 /*
   ListNamespaceV2 Lists all namespaces in the cluster
 */
-func (a *Client) ListNamespaceV2(params *ListNamespaceV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListNamespaceV2OK, error) {
+func (a *Client) ListNamespaceV2(params *ListNamespaceV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNamespaceV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListNamespaceV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listNamespaceV2",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/namespaces",
@@ -3121,7 +3373,12 @@ func (a *Client) ListNamespaceV2(params *ListNamespaceV2Params, authInfo runtime
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -3137,13 +3394,12 @@ func (a *Client) ListNamespaceV2(params *ListNamespaceV2Params, authInfo runtime
 /*
   ListNodeDeploymentNodes lists nodes that belong to the given node deployment
 */
-func (a *Client) ListNodeDeploymentNodes(params *ListNodeDeploymentNodesParams, authInfo runtime.ClientAuthInfoWriter) (*ListNodeDeploymentNodesOK, error) {
+func (a *Client) ListNodeDeploymentNodes(params *ListNodeDeploymentNodesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNodeDeploymentNodesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListNodeDeploymentNodesParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listNodeDeploymentNodes",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes",
@@ -3155,7 +3411,12 @@ func (a *Client) ListNodeDeploymentNodes(params *ListNodeDeploymentNodesParams, 
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -3173,13 +3434,12 @@ func (a *Client) ListNodeDeploymentNodes(params *ListNodeDeploymentNodesParams, 
 
   If the value is 'normal' then normal events are returned. If the query parameter is missing method returns all events.
 */
-func (a *Client) ListNodeDeploymentNodesEvents(params *ListNodeDeploymentNodesEventsParams, authInfo runtime.ClientAuthInfoWriter) (*ListNodeDeploymentNodesEventsOK, error) {
+func (a *Client) ListNodeDeploymentNodesEvents(params *ListNodeDeploymentNodesEventsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNodeDeploymentNodesEventsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListNodeDeploymentNodesEventsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listNodeDeploymentNodesEvents",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes/events",
@@ -3191,7 +3451,12 @@ func (a *Client) ListNodeDeploymentNodesEvents(params *ListNodeDeploymentNodesEv
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -3207,13 +3472,12 @@ func (a *Client) ListNodeDeploymentNodesEvents(params *ListNodeDeploymentNodesEv
 /*
   ListNodeDeployments Lists node deployments that belong to the given cluster
 */
-func (a *Client) ListNodeDeployments(params *ListNodeDeploymentsParams, authInfo runtime.ClientAuthInfoWriter) (*ListNodeDeploymentsOK, error) {
+func (a *Client) ListNodeDeployments(params *ListNodeDeploymentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNodeDeploymentsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListNodeDeploymentsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listNodeDeployments",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments",
@@ -3225,7 +3489,12 @@ func (a *Client) ListNodeDeployments(params *ListNodeDeploymentsParams, authInfo
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -3241,13 +3510,12 @@ func (a *Client) ListNodeDeployments(params *ListNodeDeploymentsParams, authInfo
 /*
   ListNodesForCluster this endpoint is used for kubeadm cluster
 */
-func (a *Client) ListNodesForCluster(params *ListNodesForClusterParams, authInfo runtime.ClientAuthInfoWriter) (*ListNodesForClusterOK, error) {
+func (a *Client) ListNodesForCluster(params *ListNodesForClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNodesForClusterOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListNodesForClusterParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listNodesForCluster",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/nodes",
@@ -3259,7 +3527,12 @@ func (a *Client) ListNodesForCluster(params *ListNodesForClusterParams, authInfo
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -3275,13 +3548,12 @@ func (a *Client) ListNodesForCluster(params *ListNodesForClusterParams, authInfo
 /*
   ListProjects lists projects that an authenticated user is a member of
 */
-func (a *Client) ListProjects(params *ListProjectsParams, authInfo runtime.ClientAuthInfoWriter) (*ListProjectsOK, error) {
+func (a *Client) ListProjects(params *ListProjectsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListProjectsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listProjects",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects",
@@ -3293,7 +3565,12 @@ func (a *Client) ListProjects(params *ListProjectsParams, authInfo runtime.Clien
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -3309,13 +3586,12 @@ func (a *Client) ListProjects(params *ListProjectsParams, authInfo runtime.Clien
 /*
   ListRole Lists all Roles
 */
-func (a *Client) ListRole(params *ListRoleParams, authInfo runtime.ClientAuthInfoWriter) (*ListRoleOK, error) {
+func (a *Client) ListRole(params *ListRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRoleOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListRoleParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listRole",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles",
@@ -3327,7 +3603,12 @@ func (a *Client) ListRole(params *ListRoleParams, authInfo runtime.ClientAuthInf
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -3343,13 +3624,12 @@ func (a *Client) ListRole(params *ListRoleParams, authInfo runtime.ClientAuthInf
 /*
   ListRoleBinding List role binding
 */
-func (a *Client) ListRoleBinding(params *ListRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*ListRoleBindingOK, error) {
+func (a *Client) ListRoleBinding(params *ListRoleBindingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRoleBindingOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListRoleBindingParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listRoleBinding",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/bindings",
@@ -3361,7 +3641,12 @@ func (a *Client) ListRoleBinding(params *ListRoleBindingParams, authInfo runtime
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -3377,13 +3662,12 @@ func (a *Client) ListRoleBinding(params *ListRoleBindingParams, authInfo runtime
 /*
   ListRoleBindingV2 List role binding
 */
-func (a *Client) ListRoleBindingV2(params *ListRoleBindingV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListRoleBindingV2OK, error) {
+func (a *Client) ListRoleBindingV2(params *ListRoleBindingV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRoleBindingV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListRoleBindingV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listRoleBindingV2",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/bindings",
@@ -3395,7 +3679,12 @@ func (a *Client) ListRoleBindingV2(params *ListRoleBindingV2Params, authInfo run
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -3411,13 +3700,12 @@ func (a *Client) ListRoleBindingV2(params *ListRoleBindingV2Params, authInfo run
 /*
   ListRoleNames Lists all Role names with namespaces
 */
-func (a *Client) ListRoleNames(params *ListRoleNamesParams, authInfo runtime.ClientAuthInfoWriter) (*ListRoleNamesOK, error) {
+func (a *Client) ListRoleNames(params *ListRoleNamesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRoleNamesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListRoleNamesParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listRoleNames",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/rolenames",
@@ -3429,7 +3717,12 @@ func (a *Client) ListRoleNames(params *ListRoleNamesParams, authInfo runtime.Cli
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -3445,13 +3738,12 @@ func (a *Client) ListRoleNames(params *ListRoleNamesParams, authInfo runtime.Cli
 /*
   ListRoleNamesV2 Lists all Role names with namespaces
 */
-func (a *Client) ListRoleNamesV2(params *ListRoleNamesV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListRoleNamesV2OK, error) {
+func (a *Client) ListRoleNamesV2(params *ListRoleNamesV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRoleNamesV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListRoleNamesV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listRoleNamesV2",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/rolenames",
@@ -3463,7 +3755,12 @@ func (a *Client) ListRoleNamesV2(params *ListRoleNamesV2Params, authInfo runtime
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -3479,13 +3776,12 @@ func (a *Client) ListRoleNamesV2(params *ListRoleNamesV2Params, authInfo runtime
 /*
   ListRoleV2 Lists all Roles
 */
-func (a *Client) ListRoleV2(params *ListRoleV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListRoleV2OK, error) {
+func (a *Client) ListRoleV2(params *ListRoleV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRoleV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListRoleV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listRoleV2",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/roles",
@@ -3497,7 +3793,12 @@ func (a *Client) ListRoleV2(params *ListRoleV2Params, authInfo runtime.ClientAut
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -3515,13 +3816,12 @@ func (a *Client) ListRoleV2(params *ListRoleV2Params, authInfo runtime.ClientAut
 
   The returned collection is sorted by creation timestamp.
 */
-func (a *Client) ListSSHKeys(params *ListSSHKeysParams, authInfo runtime.ClientAuthInfoWriter) (*ListSSHKeysOK, error) {
+func (a *Client) ListSSHKeys(params *ListSSHKeysParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListSSHKeysOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListSSHKeysParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listSSHKeys",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/sshkeys",
@@ -3533,7 +3833,12 @@ func (a *Client) ListSSHKeys(params *ListSSHKeysParams, authInfo runtime.ClientA
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -3550,13 +3855,12 @@ func (a *Client) ListSSHKeys(params *ListSSHKeysParams, authInfo runtime.ClientA
   ListSSHKeysAssignedToCluster Lists ssh keys that are assigned to the cluster
 The returned collection is sorted by creation timestamp.
 */
-func (a *Client) ListSSHKeysAssignedToCluster(params *ListSSHKeysAssignedToClusterParams, authInfo runtime.ClientAuthInfoWriter) (*ListSSHKeysAssignedToClusterOK, error) {
+func (a *Client) ListSSHKeysAssignedToCluster(params *ListSSHKeysAssignedToClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListSSHKeysAssignedToClusterOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListSSHKeysAssignedToClusterParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listSSHKeysAssignedToCluster",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys",
@@ -3568,7 +3872,12 @@ func (a *Client) ListSSHKeysAssignedToCluster(params *ListSSHKeysAssignedToClust
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -3585,13 +3894,12 @@ func (a *Client) ListSSHKeysAssignedToCluster(params *ListSSHKeysAssignedToClust
   ListSSHKeysAssignedToClusterV2 Lists ssh keys that are assigned to the cluster
 The returned collection is sorted by creation timestamp.
 */
-func (a *Client) ListSSHKeysAssignedToClusterV2(params *ListSSHKeysAssignedToClusterV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListSSHKeysAssignedToClusterV2OK, error) {
+func (a *Client) ListSSHKeysAssignedToClusterV2(params *ListSSHKeysAssignedToClusterV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListSSHKeysAssignedToClusterV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListSSHKeysAssignedToClusterV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listSSHKeysAssignedToClusterV2",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/sshkeys",
@@ -3603,7 +3911,12 @@ func (a *Client) ListSSHKeysAssignedToClusterV2(params *ListSSHKeysAssignedToClu
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -3619,13 +3932,12 @@ func (a *Client) ListSSHKeysAssignedToClusterV2(params *ListSSHKeysAssignedToClu
 /*
   PatchCluster patches the given cluster using JSON merge patch method https tools ietf org html rfc7396
 */
-func (a *Client) PatchCluster(params *PatchClusterParams, authInfo runtime.ClientAuthInfoWriter) (*PatchClusterOK, error) {
+func (a *Client) PatchCluster(params *PatchClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchClusterOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewPatchClusterParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "patchCluster",
 		Method:             "PATCH",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}",
@@ -3637,7 +3949,12 @@ func (a *Client) PatchCluster(params *PatchClusterParams, authInfo runtime.Clien
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -3653,13 +3970,12 @@ func (a *Client) PatchCluster(params *PatchClusterParams, authInfo runtime.Clien
 /*
   PatchClusterRole Patch the cluster role with the given name
 */
-func (a *Client) PatchClusterRole(params *PatchClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*PatchClusterRoleOK, error) {
+func (a *Client) PatchClusterRole(params *PatchClusterRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchClusterRoleOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewPatchClusterRoleParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "patchClusterRole",
 		Method:             "PATCH",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}",
@@ -3671,7 +3987,12 @@ func (a *Client) PatchClusterRole(params *PatchClusterRoleParams, authInfo runti
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -3685,49 +4006,14 @@ func (a *Client) PatchClusterRole(params *PatchClusterRoleParams, authInfo runti
 }
 
 /*
-  PatchClusterTemplateInstance patches cluster template instances
-*/
-func (a *Client) PatchClusterTemplateInstance(params *PatchClusterTemplateInstanceParams, authInfo runtime.ClientAuthInfoWriter) (*PatchClusterTemplateInstanceOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewPatchClusterTemplateInstanceParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "patchClusterTemplateInstance",
-		Method:             "PATCH",
-		PathPattern:        "/api/v2/projects/{project_id}/clustertemplates/{template_id}/instances/{instance_id}",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &PatchClusterTemplateInstanceReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*PatchClusterTemplateInstanceOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*PatchClusterTemplateInstanceDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
-}
-
-/*
   PatchClusterV2 patches the given cluster using JSON merge patch method https tools ietf org html rfc7396
 */
-func (a *Client) PatchClusterV2(params *PatchClusterV2Params, authInfo runtime.ClientAuthInfoWriter) (*PatchClusterV2OK, error) {
+func (a *Client) PatchClusterV2(params *PatchClusterV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchClusterV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewPatchClusterV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "patchClusterV2",
 		Method:             "PATCH",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}",
@@ -3739,7 +4025,12 @@ func (a *Client) PatchClusterV2(params *PatchClusterV2Params, authInfo runtime.C
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -3755,13 +4046,12 @@ func (a *Client) PatchClusterV2(params *PatchClusterV2Params, authInfo runtime.C
 /*
   PatchConstraint patches a given constraint for the specified cluster
 */
-func (a *Client) PatchConstraint(params *PatchConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*PatchConstraintOK, error) {
+func (a *Client) PatchConstraint(params *PatchConstraintParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchConstraintOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewPatchConstraintParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "patchConstraint",
 		Method:             "PATCH",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/constraints/{constraint_name}",
@@ -3773,7 +4063,12 @@ func (a *Client) PatchConstraint(params *PatchConstraintParams, authInfo runtime
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -3789,13 +4084,12 @@ func (a *Client) PatchConstraint(params *PatchConstraintParams, authInfo runtime
 /*
   PatchGatekeeperConfig patches the gatekeeper config for the specified cluster
 */
-func (a *Client) PatchGatekeeperConfig(params *PatchGatekeeperConfigParams, authInfo runtime.ClientAuthInfoWriter) (*PatchGatekeeperConfigOK, error) {
+func (a *Client) PatchGatekeeperConfig(params *PatchGatekeeperConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchGatekeeperConfigOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewPatchGatekeeperConfigParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "patchGatekeeperConfig",
 		Method:             "PATCH",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config",
@@ -3807,7 +4101,12 @@ func (a *Client) PatchGatekeeperConfig(params *PatchGatekeeperConfigParams, auth
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -3824,13 +4123,12 @@ func (a *Client) PatchGatekeeperConfig(params *PatchGatekeeperConfigParams, auth
   PatchMachineDeployment Patches a machine deployment that is assigned to the given cluster. Please note that at the moment only
 node deployment's spec can be updated by a patch, no other fields can be changed using this endpoint.
 */
-func (a *Client) PatchMachineDeployment(params *PatchMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*PatchMachineDeploymentOK, error) {
+func (a *Client) PatchMachineDeployment(params *PatchMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchMachineDeploymentOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewPatchMachineDeploymentParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "patchMachineDeployment",
 		Method:             "PATCH",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}",
@@ -3842,7 +4140,12 @@ func (a *Client) PatchMachineDeployment(params *PatchMachineDeploymentParams, au
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -3859,13 +4162,12 @@ func (a *Client) PatchMachineDeployment(params *PatchMachineDeploymentParams, au
   PatchNodeDeployment Patches a node deployment that is assigned to the given cluster. Please note that at the moment only
 node deployment's spec can be updated by a patch, no other fields can be changed using this endpoint.
 */
-func (a *Client) PatchNodeDeployment(params *PatchNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*PatchNodeDeploymentOK, error) {
+func (a *Client) PatchNodeDeployment(params *PatchNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchNodeDeploymentOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewPatchNodeDeploymentParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "patchNodeDeployment",
 		Method:             "PATCH",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}",
@@ -3877,7 +4179,12 @@ func (a *Client) PatchNodeDeployment(params *PatchNodeDeploymentParams, authInfo
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -3893,13 +4200,12 @@ func (a *Client) PatchNodeDeployment(params *PatchNodeDeploymentParams, authInfo
 /*
   PatchRole Patch the role with the given name
 */
-func (a *Client) PatchRole(params *PatchRoleParams, authInfo runtime.ClientAuthInfoWriter) (*PatchRoleOK, error) {
+func (a *Client) PatchRole(params *PatchRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchRoleOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewPatchRoleParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "patchRole",
 		Method:             "PATCH",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}",
@@ -3911,7 +4217,12 @@ func (a *Client) PatchRole(params *PatchRoleParams, authInfo runtime.ClientAuthI
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -3927,13 +4238,12 @@ func (a *Client) PatchRole(params *PatchRoleParams, authInfo runtime.ClientAuthI
 /*
   ResetAlertmanager resets the alertmanager configuration to default for the specified cluster
 */
-func (a *Client) ResetAlertmanager(params *ResetAlertmanagerParams, authInfo runtime.ClientAuthInfoWriter) (*ResetAlertmanagerOK, error) {
+func (a *Client) ResetAlertmanager(params *ResetAlertmanagerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResetAlertmanagerOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewResetAlertmanagerParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "resetAlertmanager",
 		Method:             "DELETE",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config",
@@ -3945,7 +4255,12 @@ func (a *Client) ResetAlertmanager(params *ResetAlertmanagerParams, authInfo run
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -3961,13 +4276,12 @@ func (a *Client) ResetAlertmanager(params *ResetAlertmanagerParams, authInfo run
 /*
   RestartMachineDeployment schedules rolling restart of a machine deployment that is assigned to the given cluster
 */
-func (a *Client) RestartMachineDeployment(params *RestartMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*RestartMachineDeploymentOK, error) {
+func (a *Client) RestartMachineDeployment(params *RestartMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RestartMachineDeploymentOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewRestartMachineDeploymentParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "restartMachineDeployment",
 		Method:             "POST",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}",
@@ -3979,7 +4293,12 @@ func (a *Client) RestartMachineDeployment(params *RestartMachineDeploymentParams
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -3995,13 +4314,12 @@ func (a *Client) RestartMachineDeployment(params *RestartMachineDeploymentParams
 /*
   RevokeClusterAdminToken Revokes the current admin token
 */
-func (a *Client) RevokeClusterAdminToken(params *RevokeClusterAdminTokenParams, authInfo runtime.ClientAuthInfoWriter) (*RevokeClusterAdminTokenOK, error) {
+func (a *Client) RevokeClusterAdminToken(params *RevokeClusterAdminTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RevokeClusterAdminTokenOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewRevokeClusterAdminTokenParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "revokeClusterAdminToken",
 		Method:             "PUT",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/token",
@@ -4013,7 +4331,12 @@ func (a *Client) RevokeClusterAdminToken(params *RevokeClusterAdminTokenParams, 
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -4029,13 +4352,12 @@ func (a *Client) RevokeClusterAdminToken(params *RevokeClusterAdminTokenParams, 
 /*
   RevokeClusterAdminTokenV2 Revokes the current admin token
 */
-func (a *Client) RevokeClusterAdminTokenV2(params *RevokeClusterAdminTokenV2Params, authInfo runtime.ClientAuthInfoWriter) (*RevokeClusterAdminTokenV2OK, error) {
+func (a *Client) RevokeClusterAdminTokenV2(params *RevokeClusterAdminTokenV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RevokeClusterAdminTokenV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewRevokeClusterAdminTokenV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "revokeClusterAdminTokenV2",
 		Method:             "PUT",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/token",
@@ -4047,7 +4369,12 @@ func (a *Client) RevokeClusterAdminTokenV2(params *RevokeClusterAdminTokenV2Para
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -4063,13 +4390,12 @@ func (a *Client) RevokeClusterAdminTokenV2(params *RevokeClusterAdminTokenV2Para
 /*
   RevokeClusterViewerToken Revokes the current viewer token
 */
-func (a *Client) RevokeClusterViewerToken(params *RevokeClusterViewerTokenParams, authInfo runtime.ClientAuthInfoWriter) (*RevokeClusterViewerTokenOK, error) {
+func (a *Client) RevokeClusterViewerToken(params *RevokeClusterViewerTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RevokeClusterViewerTokenOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewRevokeClusterViewerTokenParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "revokeClusterViewerToken",
 		Method:             "PUT",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/viewertoken",
@@ -4081,7 +4407,12 @@ func (a *Client) RevokeClusterViewerToken(params *RevokeClusterViewerTokenParams
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -4097,13 +4428,12 @@ func (a *Client) RevokeClusterViewerToken(params *RevokeClusterViewerTokenParams
 /*
   RevokeClusterViewerTokenV2 Revokes the current viewer token
 */
-func (a *Client) RevokeClusterViewerTokenV2(params *RevokeClusterViewerTokenV2Params, authInfo runtime.ClientAuthInfoWriter) (*RevokeClusterViewerTokenV2OK, error) {
+func (a *Client) RevokeClusterViewerTokenV2(params *RevokeClusterViewerTokenV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RevokeClusterViewerTokenV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewRevokeClusterViewerTokenV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "revokeClusterViewerTokenV2",
 		Method:             "PUT",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/viewertoken",
@@ -4115,7 +4445,12 @@ func (a *Client) RevokeClusterViewerTokenV2(params *RevokeClusterViewerTokenV2Pa
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -4131,13 +4466,12 @@ func (a *Client) RevokeClusterViewerTokenV2(params *RevokeClusterViewerTokenV2Pa
 /*
   UnbindUserFromClusterRoleBinding Unbinds user from cluster role binding
 */
-func (a *Client) UnbindUserFromClusterRoleBinding(params *UnbindUserFromClusterRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*UnbindUserFromClusterRoleBindingOK, error) {
+func (a *Client) UnbindUserFromClusterRoleBinding(params *UnbindUserFromClusterRoleBindingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UnbindUserFromClusterRoleBindingOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewUnbindUserFromClusterRoleBindingParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "unbindUserFromClusterRoleBinding",
 		Method:             "DELETE",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings",
@@ -4149,7 +4483,12 @@ func (a *Client) UnbindUserFromClusterRoleBinding(params *UnbindUserFromClusterR
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -4165,13 +4504,12 @@ func (a *Client) UnbindUserFromClusterRoleBinding(params *UnbindUserFromClusterR
 /*
   UnbindUserFromClusterRoleBindingV2 Unbinds user from cluster role binding
 */
-func (a *Client) UnbindUserFromClusterRoleBindingV2(params *UnbindUserFromClusterRoleBindingV2Params, authInfo runtime.ClientAuthInfoWriter) (*UnbindUserFromClusterRoleBindingV2OK, error) {
+func (a *Client) UnbindUserFromClusterRoleBindingV2(params *UnbindUserFromClusterRoleBindingV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UnbindUserFromClusterRoleBindingV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewUnbindUserFromClusterRoleBindingV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "unbindUserFromClusterRoleBindingV2",
 		Method:             "DELETE",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings",
@@ -4183,7 +4521,12 @@ func (a *Client) UnbindUserFromClusterRoleBindingV2(params *UnbindUserFromCluste
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -4199,13 +4542,12 @@ func (a *Client) UnbindUserFromClusterRoleBindingV2(params *UnbindUserFromCluste
 /*
   UnbindUserFromRoleBinding Unbinds user from the role binding
 */
-func (a *Client) UnbindUserFromRoleBinding(params *UnbindUserFromRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*UnbindUserFromRoleBindingOK, error) {
+func (a *Client) UnbindUserFromRoleBinding(params *UnbindUserFromRoleBindingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UnbindUserFromRoleBindingOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewUnbindUserFromRoleBindingParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "unbindUserFromRoleBinding",
 		Method:             "DELETE",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings",
@@ -4217,7 +4559,12 @@ func (a *Client) UnbindUserFromRoleBinding(params *UnbindUserFromRoleBindingPara
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -4233,13 +4580,12 @@ func (a *Client) UnbindUserFromRoleBinding(params *UnbindUserFromRoleBindingPara
 /*
   UnbindUserFromRoleBindingV2 Unbinds user from the role binding
 */
-func (a *Client) UnbindUserFromRoleBindingV2(params *UnbindUserFromRoleBindingV2Params, authInfo runtime.ClientAuthInfoWriter) (*UnbindUserFromRoleBindingV2OK, error) {
+func (a *Client) UnbindUserFromRoleBindingV2(params *UnbindUserFromRoleBindingV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UnbindUserFromRoleBindingV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewUnbindUserFromRoleBindingV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "unbindUserFromRoleBindingV2",
 		Method:             "DELETE",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings",
@@ -4251,7 +4597,12 @@ func (a *Client) UnbindUserFromRoleBindingV2(params *UnbindUserFromRoleBindingV2
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -4267,13 +4618,12 @@ func (a *Client) UnbindUserFromRoleBindingV2(params *UnbindUserFromRoleBindingV2
 /*
   UpdateAlertmanager Updates an alertmanager configuration for the given cluster
 */
-func (a *Client) UpdateAlertmanager(params *UpdateAlertmanagerParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateAlertmanagerOK, error) {
+func (a *Client) UpdateAlertmanager(params *UpdateAlertmanagerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateAlertmanagerOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewUpdateAlertmanagerParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "updateAlertmanager",
 		Method:             "PUT",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config",
@@ -4285,7 +4635,12 @@ func (a *Client) UpdateAlertmanager(params *UpdateAlertmanagerParams, authInfo r
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -4301,13 +4656,12 @@ func (a *Client) UpdateAlertmanager(params *UpdateAlertmanagerParams, authInfo r
 /*
   UpdateExternalCluster updates an external cluster for the given project
 */
-func (a *Client) UpdateExternalCluster(params *UpdateExternalClusterParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateExternalClusterOK, error) {
+func (a *Client) UpdateExternalCluster(params *UpdateExternalClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateExternalClusterOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewUpdateExternalClusterParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "updateExternalCluster",
 		Method:             "PUT",
 		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}",
@@ -4319,7 +4673,12 @@ func (a *Client) UpdateExternalCluster(params *UpdateExternalClusterParams, auth
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -4335,13 +4694,12 @@ func (a *Client) UpdateExternalCluster(params *UpdateExternalClusterParams, auth
 /*
   UpdateProject Updates the given project
 */
-func (a *Client) UpdateProject(params *UpdateProjectParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateProjectOK, error) {
+func (a *Client) UpdateProject(params *UpdateProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateProjectOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewUpdateProjectParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "updateProject",
 		Method:             "PUT",
 		PathPattern:        "/api/v1/projects/{project_id}",
@@ -4353,7 +4711,12 @@ func (a *Client) UpdateProject(params *UpdateProjectParams, authInfo runtime.Cli
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -4369,13 +4732,12 @@ func (a *Client) UpdateProject(params *UpdateProjectParams, authInfo runtime.Cli
 /*
   UpgradeClusterNodeDeployments Upgrades node deployments in a cluster
 */
-func (a *Client) UpgradeClusterNodeDeployments(params *UpgradeClusterNodeDeploymentsParams, authInfo runtime.ClientAuthInfoWriter) (*UpgradeClusterNodeDeploymentsOK, error) {
+func (a *Client) UpgradeClusterNodeDeployments(params *UpgradeClusterNodeDeploymentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpgradeClusterNodeDeploymentsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewUpgradeClusterNodeDeploymentsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "upgradeClusterNodeDeployments",
 		Method:             "PUT",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/upgrades",
@@ -4387,7 +4749,12 @@ func (a *Client) UpgradeClusterNodeDeployments(params *UpgradeClusterNodeDeploym
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -4403,13 +4770,12 @@ func (a *Client) UpgradeClusterNodeDeployments(params *UpgradeClusterNodeDeploym
 /*
   UpgradeClusterNodeDeploymentsV2 Upgrades node deployments in a cluster
 */
-func (a *Client) UpgradeClusterNodeDeploymentsV2(params *UpgradeClusterNodeDeploymentsV2Params, authInfo runtime.ClientAuthInfoWriter) (*UpgradeClusterNodeDeploymentsV2OK, error) {
+func (a *Client) UpgradeClusterNodeDeploymentsV2(params *UpgradeClusterNodeDeploymentsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpgradeClusterNodeDeploymentsV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewUpgradeClusterNodeDeploymentsV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "upgradeClusterNodeDeploymentsV2",
 		Method:             "PUT",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/nodes/upgrades",
@@ -4421,7 +4787,12 @@ func (a *Client) UpgradeClusterNodeDeploymentsV2(params *UpgradeClusterNodeDeplo
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

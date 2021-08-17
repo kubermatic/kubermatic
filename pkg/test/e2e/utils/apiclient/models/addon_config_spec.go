@@ -6,6 +6,7 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -50,7 +51,6 @@ func (m *AddonConfigSpec) Validate(formats strfmt.Registry) error {
 }
 
 func (m *AddonConfigSpec) validateControls(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Controls) { // not required
 		return nil
 	}
@@ -62,6 +62,38 @@ func (m *AddonConfigSpec) validateControls(formats strfmt.Registry) error {
 
 		if m.Controls[i] != nil {
 			if err := m.Controls[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("formSpec" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+// ContextValidate validate this addon config spec based on the context it is used
+func (m *AddonConfigSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateControls(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *AddonConfigSpec) contextValidateControls(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Controls); i++ {
+
+		if m.Controls[i] != nil {
+			if err := m.Controls[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("formSpec" + "." + strconv.Itoa(i))
 				}

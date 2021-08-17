@@ -58,7 +58,7 @@ func NewDeleteSSHKeyOK() *DeleteSSHKeyOK {
 	return &DeleteSSHKeyOK{}
 }
 
-/*DeleteSSHKeyOK handles this case with default header values.
+/* DeleteSSHKeyOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -79,7 +79,7 @@ func NewDeleteSSHKeyUnauthorized() *DeleteSSHKeyUnauthorized {
 	return &DeleteSSHKeyUnauthorized{}
 }
 
-/*DeleteSSHKeyUnauthorized handles this case with default header values.
+/* DeleteSSHKeyUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -100,7 +100,7 @@ func NewDeleteSSHKeyForbidden() *DeleteSSHKeyForbidden {
 	return &DeleteSSHKeyForbidden{}
 }
 
-/*DeleteSSHKeyForbidden handles this case with default header values.
+/* DeleteSSHKeyForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -123,7 +123,7 @@ func NewDeleteSSHKeyDefault(code int) *DeleteSSHKeyDefault {
 	}
 }
 
-/*DeleteSSHKeyDefault handles this case with default header values.
+/* DeleteSSHKeyDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -141,7 +141,6 @@ func (o *DeleteSSHKeyDefault) Code() int {
 func (o *DeleteSSHKeyDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/sshkeys/{key_id}][%d] deleteSSHKey default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *DeleteSSHKeyDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

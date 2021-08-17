@@ -426,7 +426,7 @@ type StatefulSetSettings struct {
 }
 
 type EtcdStatefulSetSettings struct {
-	ClusterSize  int                          `json:"clusterSize,omitempty"`
+	ClusterSize  *int32                       `json:"clusterSize,omitempty"`
 	StorageClass string                       `json:"storageClass,omitempty"`
 	DiskSize     *resource.Quantity           `json:"diskSize,omitempty"`
 	Resources    *corev1.ResourceRequirements `json:"resources,omitempty"`
@@ -465,6 +465,9 @@ type ClusterNetworkingConfig struct {
 	// Defaults to ipvs.
 	ProxyMode string `json:"proxyMode"`
 
+	// IPVS defines kube-proxy ipvs configuration options
+	IPVS *IPVSConfiguration `json:"ipvs,omitempty"`
+
 	// NodeLocalDNSCacheEnabled controls whether the NodeLocal DNS Cache feature is enabled.
 	// Defaults to true.
 	NodeLocalDNSCacheEnabled *bool `json:"nodeLocalDNSCacheEnabled,omitempty"`
@@ -496,6 +499,13 @@ type ClusterAddress struct {
 	AdminToken string `json:"adminToken"`
 	// IP is the external IP under which the apiserver is available
 	IP string `json:"ip"`
+}
+
+// IPVSConfiguration contains ipvs-related configuration details for kube-proxy.
+type IPVSConfiguration struct {
+	// StrictArp configure arp_ignore and arp_announce to avoid answering ARP queries from kube-ipvs0 interface.
+	// defaults to true.
+	StrictArp *bool `json:"strictArp,omitempty"`
 }
 
 // CloudSpec mutually stores access data to a cloud provider.
@@ -566,13 +576,14 @@ type AzureCloudSpec struct {
 	ClientID       string `json:"clientID,omitempty"`
 	ClientSecret   string `json:"clientSecret,omitempty"`
 
-	ResourceGroup     string `json:"resourceGroup"`
-	VNetResourceGroup string `json:"vnetResourceGroup"`
-	VNetName          string `json:"vnet"`
-	SubnetName        string `json:"subnet"`
-	RouteTableName    string `json:"routeTable"`
-	SecurityGroup     string `json:"securityGroup"`
-	AvailabilitySet   string `json:"availabilitySet"`
+	ResourceGroup         string `json:"resourceGroup"`
+	VNetResourceGroup     string `json:"vnetResourceGroup"`
+	VNetName              string `json:"vnet"`
+	SubnetName            string `json:"subnet"`
+	RouteTableName        string `json:"routeTable"`
+	SecurityGroup         string `json:"securityGroup"`
+	AssignAvailabilitySet *bool  `json:"assignAvailabilitySet"`
+	AvailabilitySet       string `json:"availabilitySet"`
 	// LoadBalancerSKU sets the LB type that will be used for the Azure cluster, possible values are "basic" and "standard", if empty, "basic" will be used
 	LoadBalancerSKU LBSKU `json:"loadBalancerSKU"`
 }

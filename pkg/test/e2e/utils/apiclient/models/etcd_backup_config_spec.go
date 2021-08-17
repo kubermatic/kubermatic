@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -30,6 +32,11 @@ type EtcdBackupConfigSpec struct {
 
 // Validate validates this etcd backup config spec
 func (m *EtcdBackupConfigSpec) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this etcd backup config spec based on context it is used
+func (m *EtcdBackupConfigSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

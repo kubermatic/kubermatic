@@ -23,11 +23,14 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	GetCurrentUserSettings(params *GetCurrentUserSettingsParams, authInfo runtime.ClientAuthInfoWriter) (*GetCurrentUserSettingsOK, error)
+	GetCurrentUserSettings(params *GetCurrentUserSettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCurrentUserSettingsOK, error)
 
-	PatchCurrentUserSettings(params *PatchCurrentUserSettingsParams, authInfo runtime.ClientAuthInfoWriter) (*PatchCurrentUserSettingsOK, error)
+	PatchCurrentUserSettings(params *PatchCurrentUserSettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchCurrentUserSettingsOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -35,13 +38,12 @@ type ClientService interface {
 /*
   GetCurrentUserSettings returns settings of the current user
 */
-func (a *Client) GetCurrentUserSettings(params *GetCurrentUserSettingsParams, authInfo runtime.ClientAuthInfoWriter) (*GetCurrentUserSettingsOK, error) {
+func (a *Client) GetCurrentUserSettings(params *GetCurrentUserSettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCurrentUserSettingsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetCurrentUserSettingsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getCurrentUserSettings",
 		Method:             "GET",
 		PathPattern:        "/api/v1/me/settings",
@@ -53,7 +55,12 @@ func (a *Client) GetCurrentUserSettings(params *GetCurrentUserSettingsParams, au
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -69,13 +76,12 @@ func (a *Client) GetCurrentUserSettings(params *GetCurrentUserSettingsParams, au
 /*
   PatchCurrentUserSettings updates settings of the current user
 */
-func (a *Client) PatchCurrentUserSettings(params *PatchCurrentUserSettingsParams, authInfo runtime.ClientAuthInfoWriter) (*PatchCurrentUserSettingsOK, error) {
+func (a *Client) PatchCurrentUserSettings(params *PatchCurrentUserSettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchCurrentUserSettingsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewPatchCurrentUserSettingsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "patchCurrentUserSettings",
 		Method:             "PATCH",
 		PathPattern:        "/api/v1/me/settings",
@@ -87,7 +93,12 @@ func (a *Client) PatchCurrentUserSettings(params *PatchCurrentUserSettingsParams
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

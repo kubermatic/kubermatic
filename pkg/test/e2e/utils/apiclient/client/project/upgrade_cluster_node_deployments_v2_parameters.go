@@ -18,60 +18,76 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
-// NewUpgradeClusterNodeDeploymentsV2Params creates a new UpgradeClusterNodeDeploymentsV2Params object
-// with the default values initialized.
+// NewUpgradeClusterNodeDeploymentsV2Params creates a new UpgradeClusterNodeDeploymentsV2Params object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewUpgradeClusterNodeDeploymentsV2Params() *UpgradeClusterNodeDeploymentsV2Params {
-	var ()
 	return &UpgradeClusterNodeDeploymentsV2Params{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewUpgradeClusterNodeDeploymentsV2ParamsWithTimeout creates a new UpgradeClusterNodeDeploymentsV2Params object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewUpgradeClusterNodeDeploymentsV2ParamsWithTimeout(timeout time.Duration) *UpgradeClusterNodeDeploymentsV2Params {
-	var ()
 	return &UpgradeClusterNodeDeploymentsV2Params{
-
 		timeout: timeout,
 	}
 }
 
 // NewUpgradeClusterNodeDeploymentsV2ParamsWithContext creates a new UpgradeClusterNodeDeploymentsV2Params object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewUpgradeClusterNodeDeploymentsV2ParamsWithContext(ctx context.Context) *UpgradeClusterNodeDeploymentsV2Params {
-	var ()
 	return &UpgradeClusterNodeDeploymentsV2Params{
-
 		Context: ctx,
 	}
 }
 
 // NewUpgradeClusterNodeDeploymentsV2ParamsWithHTTPClient creates a new UpgradeClusterNodeDeploymentsV2Params object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewUpgradeClusterNodeDeploymentsV2ParamsWithHTTPClient(client *http.Client) *UpgradeClusterNodeDeploymentsV2Params {
-	var ()
 	return &UpgradeClusterNodeDeploymentsV2Params{
 		HTTPClient: client,
 	}
 }
 
-/*UpgradeClusterNodeDeploymentsV2Params contains all the parameters to send to the API endpoint
-for the upgrade cluster node deployments v2 operation typically these are written to a http.Request
+/* UpgradeClusterNodeDeploymentsV2Params contains all the parameters to send to the API endpoint
+   for the upgrade cluster node deployments v2 operation.
+
+   Typically these are written to a http.Request.
 */
 type UpgradeClusterNodeDeploymentsV2Params struct {
 
-	/*Body*/
+	// Body.
 	Body *models.MasterVersion
-	/*ClusterID*/
+
+	// ClusterID.
 	ClusterID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the upgrade cluster node deployments v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *UpgradeClusterNodeDeploymentsV2Params) WithDefaults() *UpgradeClusterNodeDeploymentsV2Params {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the upgrade cluster node deployments v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *UpgradeClusterNodeDeploymentsV2Params) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the upgrade cluster node deployments v2 params
@@ -147,7 +163,6 @@ func (o *UpgradeClusterNodeDeploymentsV2Params) WriteToRequest(r runtime.ClientR
 		return err
 	}
 	var res []error
-
 	if o.Body != nil {
 		if err := r.SetBodyParam(o.Body); err != nil {
 			return err

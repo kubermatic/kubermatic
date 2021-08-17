@@ -16,56 +16,70 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetUsersForProjectParams creates a new GetUsersForProjectParams object
-// with the default values initialized.
+// NewGetUsersForProjectParams creates a new GetUsersForProjectParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetUsersForProjectParams() *GetUsersForProjectParams {
-	var ()
 	return &GetUsersForProjectParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetUsersForProjectParamsWithTimeout creates a new GetUsersForProjectParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetUsersForProjectParamsWithTimeout(timeout time.Duration) *GetUsersForProjectParams {
-	var ()
 	return &GetUsersForProjectParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetUsersForProjectParamsWithContext creates a new GetUsersForProjectParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetUsersForProjectParamsWithContext(ctx context.Context) *GetUsersForProjectParams {
-	var ()
 	return &GetUsersForProjectParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetUsersForProjectParamsWithHTTPClient creates a new GetUsersForProjectParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetUsersForProjectParamsWithHTTPClient(client *http.Client) *GetUsersForProjectParams {
-	var ()
 	return &GetUsersForProjectParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetUsersForProjectParams contains all the parameters to send to the API endpoint
-for the get users for project operation typically these are written to a http.Request
+/* GetUsersForProjectParams contains all the parameters to send to the API endpoint
+   for the get users for project operation.
+
+   Typically these are written to a http.Request.
 */
 type GetUsersForProjectParams struct {
 
-	/*ProjectID*/
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get users for project params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetUsersForProjectParams) WithDefaults() *GetUsersForProjectParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get users for project params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetUsersForProjectParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get users for project params

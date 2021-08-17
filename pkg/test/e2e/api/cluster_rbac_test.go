@@ -119,6 +119,11 @@ func TestCreateClusterRoleBinding(t *testing.T) {
 			}
 
 			for _, roleName := range roleNameList {
+				rb, err := testClient.GetRoleBindings(project.ID, tc.dc, cluster.ID)
+				if err != nil {
+					t.Fatalf("failed to get bindings: %v", getErrorResponse(err))
+				}
+				t.Logf("existing role bindings %v", rb)
 				binding, err := testClient.BindUserToRole(project.ID, tc.dc, cluster.ID, roleName.Name, "default", "test@example.com")
 				if err != nil {
 					t.Fatalf("failed to create binding: %v", getErrorResponse(err))
@@ -129,6 +134,11 @@ func TestCreateClusterRoleBinding(t *testing.T) {
 			}
 
 			for _, clusterRoleName := range clusterRoleNameList {
+				crb, err := testClient.GetClusterBindings(project.ID, tc.dc, cluster.ID)
+				if err != nil {
+					t.Fatalf("failed to get cluster bindings: %v", getErrorResponse(err))
+				}
+				t.Logf("existing cluster role bindings %v", crb)
 				binding, err := testClient.BindUserToClusterRole(project.ID, tc.dc, cluster.ID, clusterRoleName.Name, "test@example.com")
 				if err != nil {
 					t.Fatalf("failed to create cluster binding: %v", getErrorResponse(err))

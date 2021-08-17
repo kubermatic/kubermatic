@@ -56,6 +56,8 @@ spec:
       cidrBlocks:
       - 172.25.0.0/16
     proxyMode: ipvs
+    ipvs:
+      strictArp: true
     services:
       cidrBlocks:
       - 10.240.16.0/20

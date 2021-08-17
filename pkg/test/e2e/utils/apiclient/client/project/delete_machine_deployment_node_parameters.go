@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewDeleteMachineDeploymentNodeParams creates a new DeleteMachineDeploymentNodeParams object
-// with the default values initialized.
+// NewDeleteMachineDeploymentNodeParams creates a new DeleteMachineDeploymentNodeParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewDeleteMachineDeploymentNodeParams() *DeleteMachineDeploymentNodeParams {
-	var ()
 	return &DeleteMachineDeploymentNodeParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewDeleteMachineDeploymentNodeParamsWithTimeout creates a new DeleteMachineDeploymentNodeParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewDeleteMachineDeploymentNodeParamsWithTimeout(timeout time.Duration) *DeleteMachineDeploymentNodeParams {
-	var ()
 	return &DeleteMachineDeploymentNodeParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewDeleteMachineDeploymentNodeParamsWithContext creates a new DeleteMachineDeploymentNodeParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewDeleteMachineDeploymentNodeParamsWithContext(ctx context.Context) *DeleteMachineDeploymentNodeParams {
-	var ()
 	return &DeleteMachineDeploymentNodeParams{
-
 		Context: ctx,
 	}
 }
 
 // NewDeleteMachineDeploymentNodeParamsWithHTTPClient creates a new DeleteMachineDeploymentNodeParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewDeleteMachineDeploymentNodeParamsWithHTTPClient(client *http.Client) *DeleteMachineDeploymentNodeParams {
-	var ()
 	return &DeleteMachineDeploymentNodeParams{
 		HTTPClient: client,
 	}
 }
 
-/*DeleteMachineDeploymentNodeParams contains all the parameters to send to the API endpoint
-for the delete machine deployment node operation typically these are written to a http.Request
+/* DeleteMachineDeploymentNodeParams contains all the parameters to send to the API endpoint
+   for the delete machine deployment node operation.
+
+   Typically these are written to a http.Request.
 */
 type DeleteMachineDeploymentNodeParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*NodeID*/
+
+	// NodeID.
 	NodeID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the delete machine deployment node params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DeleteMachineDeploymentNodeParams) WithDefaults() *DeleteMachineDeploymentNodeParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the delete machine deployment node params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DeleteMachineDeploymentNodeParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the delete machine deployment node params

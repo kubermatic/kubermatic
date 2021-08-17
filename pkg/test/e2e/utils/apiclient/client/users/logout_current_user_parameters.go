@@ -16,52 +16,66 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewLogoutCurrentUserParams creates a new LogoutCurrentUserParams object
-// with the default values initialized.
+// NewLogoutCurrentUserParams creates a new LogoutCurrentUserParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewLogoutCurrentUserParams() *LogoutCurrentUserParams {
-
 	return &LogoutCurrentUserParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewLogoutCurrentUserParamsWithTimeout creates a new LogoutCurrentUserParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewLogoutCurrentUserParamsWithTimeout(timeout time.Duration) *LogoutCurrentUserParams {
-
 	return &LogoutCurrentUserParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewLogoutCurrentUserParamsWithContext creates a new LogoutCurrentUserParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewLogoutCurrentUserParamsWithContext(ctx context.Context) *LogoutCurrentUserParams {
-
 	return &LogoutCurrentUserParams{
-
 		Context: ctx,
 	}
 }
 
 // NewLogoutCurrentUserParamsWithHTTPClient creates a new LogoutCurrentUserParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewLogoutCurrentUserParamsWithHTTPClient(client *http.Client) *LogoutCurrentUserParams {
-
 	return &LogoutCurrentUserParams{
 		HTTPClient: client,
 	}
 }
 
-/*LogoutCurrentUserParams contains all the parameters to send to the API endpoint
-for the logout current user operation typically these are written to a http.Request
+/* LogoutCurrentUserParams contains all the parameters to send to the API endpoint
+   for the logout current user operation.
+
+   Typically these are written to a http.Request.
 */
 type LogoutCurrentUserParams struct {
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the logout current user params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *LogoutCurrentUserParams) WithDefaults() *LogoutCurrentUserParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the logout current user params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *LogoutCurrentUserParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the logout current user params

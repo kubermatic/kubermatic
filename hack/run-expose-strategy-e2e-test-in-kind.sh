@@ -44,13 +44,13 @@ DOCKER_REPO="${DOCKER_REPO:-quay.io/kubermatic}"
 GOOS="${GOOS:-linux}"
 TAG="$(git rev-parse HEAD)"
 KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kubermatic}"
-KIND_NODE_VERSION="${KIND_NODE_VERSION:-v1.20.2}"
+KIND_NODE_VERSION="${KIND_NODE_VERSION:-v1.21.1}"
 USER_CLUSTER_KUBERNETES_VERSION="${USER_CLUSTER_KUBERNETES_VERSION:-v1.20.2}"
 KUBECONFIG="${KUBECONFIG:-"${HOME}/.kube/config"}"
 HELM_BINARY="${HELM_BINARY:-helm}" # This works when helm 3 is in path
 
 REPOSUFFIX=""
-if [ "${KUBERMATIC_EDITION}" == "ee" ]; then
+if [ "${KUBERMATIC_EDITION:-}" == "ee" ]; then
   REPOSUFFIX="-${KUBERMATIC_EDITION}"
 fi
 

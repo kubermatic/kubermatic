@@ -58,7 +58,7 @@ func NewGetConstraintOK() *GetConstraintOK {
 	return &GetConstraintOK{}
 }
 
-/*GetConstraintOK handles this case with default header values.
+/* GetConstraintOK describes a response with status code 200, with default header values.
 
 Constraint
 */
@@ -69,7 +69,6 @@ type GetConstraintOK struct {
 func (o *GetConstraintOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints/{constraint_name}][%d] getConstraintOK  %+v", 200, o.Payload)
 }
-
 func (o *GetConstraintOK) GetPayload() *models.Constraint {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewGetConstraintUnauthorized() *GetConstraintUnauthorized {
 	return &GetConstraintUnauthorized{}
 }
 
-/*GetConstraintUnauthorized handles this case with default header values.
+/* GetConstraintUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewGetConstraintForbidden() *GetConstraintForbidden {
 	return &GetConstraintForbidden{}
 }
 
-/*GetConstraintForbidden handles this case with default header values.
+/* GetConstraintForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewGetConstraintDefault(code int) *GetConstraintDefault {
 	}
 }
 
-/*GetConstraintDefault handles this case with default header values.
+/* GetConstraintDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *GetConstraintDefault) Code() int {
 func (o *GetConstraintDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints/{constraint_name}][%d] getConstraint default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetConstraintDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

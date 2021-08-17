@@ -6,6 +6,7 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -306,7 +307,6 @@ func (m *JSONSchemaProps) Validate(formats strfmt.Registry) error {
 }
 
 func (m *JSONSchemaProps) validateDollarSchema(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.DollarSchema) { // not required
 		return nil
 	}
@@ -322,7 +322,6 @@ func (m *JSONSchemaProps) validateDollarSchema(formats strfmt.Registry) error {
 }
 
 func (m *JSONSchemaProps) validateAllOf(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.AllOf) { // not required
 		return nil
 	}
@@ -347,7 +346,6 @@ func (m *JSONSchemaProps) validateAllOf(formats strfmt.Registry) error {
 }
 
 func (m *JSONSchemaProps) validateAnyOf(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.AnyOf) { // not required
 		return nil
 	}
@@ -372,7 +370,6 @@ func (m *JSONSchemaProps) validateAnyOf(formats strfmt.Registry) error {
 }
 
 func (m *JSONSchemaProps) validateEnum(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Enum) { // not required
 		return nil
 	}
@@ -397,7 +394,6 @@ func (m *JSONSchemaProps) validateEnum(formats strfmt.Registry) error {
 }
 
 func (m *JSONSchemaProps) validateOneOf(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.OneOf) { // not required
 		return nil
 	}
@@ -422,7 +418,6 @@ func (m *JSONSchemaProps) validateOneOf(formats strfmt.Registry) error {
 }
 
 func (m *JSONSchemaProps) validatePatternProperties(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.PatternProperties) { // not required
 		return nil
 	}
@@ -444,7 +439,6 @@ func (m *JSONSchemaProps) validatePatternProperties(formats strfmt.Registry) err
 }
 
 func (m *JSONSchemaProps) validateProperties(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Properties) { // not required
 		return nil
 	}
@@ -466,7 +460,6 @@ func (m *JSONSchemaProps) validateProperties(formats strfmt.Registry) error {
 }
 
 func (m *JSONSchemaProps) validateAdditionalItems(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.AdditionalItems) { // not required
 		return nil
 	}
@@ -484,7 +477,6 @@ func (m *JSONSchemaProps) validateAdditionalItems(formats strfmt.Registry) error
 }
 
 func (m *JSONSchemaProps) validateAdditionalProperties(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.AdditionalProperties) { // not required
 		return nil
 	}
@@ -502,7 +494,6 @@ func (m *JSONSchemaProps) validateAdditionalProperties(formats strfmt.Registry) 
 }
 
 func (m *JSONSchemaProps) validateDefault(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Default) { // not required
 		return nil
 	}
@@ -520,39 +511,40 @@ func (m *JSONSchemaProps) validateDefault(formats strfmt.Registry) error {
 }
 
 func (m *JSONSchemaProps) validateDefinitions(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Definitions) { // not required
 		return nil
 	}
 
-	if err := m.Definitions.Validate(formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("definitions")
+	if m.Definitions != nil {
+		if err := m.Definitions.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("definitions")
+			}
+			return err
 		}
-		return err
 	}
 
 	return nil
 }
 
 func (m *JSONSchemaProps) validateDependencies(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Dependencies) { // not required
 		return nil
 	}
 
-	if err := m.Dependencies.Validate(formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("dependencies")
+	if m.Dependencies != nil {
+		if err := m.Dependencies.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("dependencies")
+			}
+			return err
 		}
-		return err
 	}
 
 	return nil
 }
 
 func (m *JSONSchemaProps) validateExample(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Example) { // not required
 		return nil
 	}
@@ -570,7 +562,6 @@ func (m *JSONSchemaProps) validateExample(formats strfmt.Registry) error {
 }
 
 func (m *JSONSchemaProps) validateExternalDocs(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ExternalDocs) { // not required
 		return nil
 	}
@@ -588,7 +579,6 @@ func (m *JSONSchemaProps) validateExternalDocs(formats strfmt.Registry) error {
 }
 
 func (m *JSONSchemaProps) validateItems(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Items) { // not required
 		return nil
 	}
@@ -606,13 +596,322 @@ func (m *JSONSchemaProps) validateItems(formats strfmt.Registry) error {
 }
 
 func (m *JSONSchemaProps) validateNot(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Not) { // not required
 		return nil
 	}
 
 	if m.Not != nil {
 		if err := m.Not.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("not")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this JSON schema props based on the context it is used
+func (m *JSONSchemaProps) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateDollarSchema(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateAllOf(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateAnyOf(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateEnum(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateOneOf(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidatePatternProperties(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateProperties(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateAdditionalItems(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateAdditionalProperties(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateDefault(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateDefinitions(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateDependencies(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateExample(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateExternalDocs(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateItems(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateNot(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *JSONSchemaProps) contextValidateDollarSchema(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.DollarSchema.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("$schema")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *JSONSchemaProps) contextValidateAllOf(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.AllOf); i++ {
+
+		if m.AllOf[i] != nil {
+			if err := m.AllOf[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("allOf" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *JSONSchemaProps) contextValidateAnyOf(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.AnyOf); i++ {
+
+		if m.AnyOf[i] != nil {
+			if err := m.AnyOf[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("anyOf" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *JSONSchemaProps) contextValidateEnum(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Enum); i++ {
+
+		if m.Enum[i] != nil {
+			if err := m.Enum[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("enum" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *JSONSchemaProps) contextValidateOneOf(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.OneOf); i++ {
+
+		if m.OneOf[i] != nil {
+			if err := m.OneOf[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("oneOf" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *JSONSchemaProps) contextValidatePatternProperties(ctx context.Context, formats strfmt.Registry) error {
+
+	for k := range m.PatternProperties {
+
+		if val, ok := m.PatternProperties[k]; ok {
+			if err := val.ContextValidate(ctx, formats); err != nil {
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *JSONSchemaProps) contextValidateProperties(ctx context.Context, formats strfmt.Registry) error {
+
+	for k := range m.Properties {
+
+		if val, ok := m.Properties[k]; ok {
+			if err := val.ContextValidate(ctx, formats); err != nil {
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *JSONSchemaProps) contextValidateAdditionalItems(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.AdditionalItems != nil {
+		if err := m.AdditionalItems.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("additionalItems")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *JSONSchemaProps) contextValidateAdditionalProperties(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.AdditionalProperties != nil {
+		if err := m.AdditionalProperties.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("additionalProperties")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *JSONSchemaProps) contextValidateDefault(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Default != nil {
+		if err := m.Default.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("default")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *JSONSchemaProps) contextValidateDefinitions(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.Definitions.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("definitions")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *JSONSchemaProps) contextValidateDependencies(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.Dependencies.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("dependencies")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *JSONSchemaProps) contextValidateExample(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Example != nil {
+		if err := m.Example.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("example")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *JSONSchemaProps) contextValidateExternalDocs(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.ExternalDocs != nil {
+		if err := m.ExternalDocs.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("externalDocs")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *JSONSchemaProps) contextValidateItems(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Items != nil {
+		if err := m.Items.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("items")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *JSONSchemaProps) contextValidateNot(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Not != nil {
+		if err := m.Not.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("not")
 			}

@@ -23,13 +23,16 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	ListHetznerSizes(params *ListHetznerSizesParams, authInfo runtime.ClientAuthInfoWriter) (*ListHetznerSizesOK, error)
+	ListHetznerSizes(params *ListHetznerSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListHetznerSizesOK, error)
 
-	ListHetznerSizesNoCredentials(params *ListHetznerSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListHetznerSizesNoCredentialsOK, error)
+	ListHetznerSizesNoCredentials(params *ListHetznerSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListHetznerSizesNoCredentialsOK, error)
 
-	ListHetznerSizesNoCredentialsV2(params *ListHetznerSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListHetznerSizesNoCredentialsV2OK, error)
+	ListHetznerSizesNoCredentialsV2(params *ListHetznerSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListHetznerSizesNoCredentialsV2OK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -37,13 +40,12 @@ type ClientService interface {
 /*
   ListHetznerSizes Lists sizes from hetzner
 */
-func (a *Client) ListHetznerSizes(params *ListHetznerSizesParams, authInfo runtime.ClientAuthInfoWriter) (*ListHetznerSizesOK, error) {
+func (a *Client) ListHetznerSizes(params *ListHetznerSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListHetznerSizesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListHetznerSizesParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listHetznerSizes",
 		Method:             "GET",
 		PathPattern:        "/api/v1/providers/hetzner/sizes",
@@ -55,7 +57,12 @@ func (a *Client) ListHetznerSizes(params *ListHetznerSizesParams, authInfo runti
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -71,13 +78,12 @@ func (a *Client) ListHetznerSizes(params *ListHetznerSizesParams, authInfo runti
 /*
   ListHetznerSizesNoCredentials Lists sizes from hetzner
 */
-func (a *Client) ListHetznerSizesNoCredentials(params *ListHetznerSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListHetznerSizesNoCredentialsOK, error) {
+func (a *Client) ListHetznerSizesNoCredentials(params *ListHetznerSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListHetznerSizesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListHetznerSizesNoCredentialsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listHetznerSizesNoCredentials",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/hetzner/sizes",
@@ -89,7 +95,12 @@ func (a *Client) ListHetznerSizesNoCredentials(params *ListHetznerSizesNoCredent
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -105,13 +116,12 @@ func (a *Client) ListHetznerSizesNoCredentials(params *ListHetznerSizesNoCredent
 /*
   ListHetznerSizesNoCredentialsV2 Lists sizes from hetzner
 */
-func (a *Client) ListHetznerSizesNoCredentialsV2(params *ListHetznerSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListHetznerSizesNoCredentialsV2OK, error) {
+func (a *Client) ListHetznerSizesNoCredentialsV2(params *ListHetznerSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListHetznerSizesNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListHetznerSizesNoCredentialsV2Params()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listHetznerSizesNoCredentialsV2",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/hetzner/sizes",
@@ -123,7 +133,12 @@ func (a *Client) ListHetznerSizesNoCredentialsV2(params *ListHetznerSizesNoCrede
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

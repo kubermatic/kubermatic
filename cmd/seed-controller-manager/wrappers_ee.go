@@ -33,7 +33,7 @@ func addFlags(fs *flag.FlagSet) {
 	eeseedctrlmgr.AddFlags(fs)
 }
 
-func seedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, options controllerRunOptions) (provider.SeedGetter, error) {
+func seedGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader, options controllerRunOptions) (provider.SeedGetter, error) {
 	return eeseedctrlmgr.SeedGetterFactory(ctx, client, options.dc, options.namespace)
 }
 

@@ -20,11 +20,8 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"testing"
-	"time"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
@@ -119,34 +116,6 @@ func TestCreateClusterTemplateAndInstance(t *testing.T) {
 
 			if clusterTemplate.Scope != tc.scope {
 				t.Fatalf("expected scope %v, but got %v", tc.scope, clusterTemplate.Scope)
-			}
-
-			instance, err := testClient.CreateClusterTemplateInstance(project.ID, clusterTemplate.ID, tc.replicas)
-			if err != nil {
-				t.Fatalf("failed to create cluster template instance: %v", getErrorResponse(err))
-			}
-
-			expectedInstanceName := fmt.Sprintf("%s-%s", project.ID, clusterTemplate.ID)
-			if instance.Name != expectedInstanceName {
-				t.Fatalf("expected name %s, but got %s", expectedInstanceName, instance.Name)
-			}
-
-			if instance.Spec.Replicas != tc.replicas {
-				t.Fatalf("expected replicas %d, but got %d", tc.replicas, instance.Spec.Replicas)
-			}
-
-			// check clusters created from template
-			clusters := []*apiv1.Cluster{}
-			timeout := 30 * time.Second
-
-			if !utils.WaitFor(5*time.Second, timeout, func() bool {
-				clusters, err = testClient.ListClusters(project.ID)
-				if err != nil {
-					t.Fatalf("failed to list clusters: %v", getErrorResponse(err))
-				}
-				return int(tc.replicas) == len(clusters)
-			}) {
-				t.Fatalf("expected number of clusters %d, but got %d", tc.replicas, len(clusters))
 			}
 
 		})

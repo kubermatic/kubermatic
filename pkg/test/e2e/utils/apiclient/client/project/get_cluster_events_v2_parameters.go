@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetClusterEventsV2Params creates a new GetClusterEventsV2Params object
-// with the default values initialized.
+// NewGetClusterEventsV2Params creates a new GetClusterEventsV2Params object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetClusterEventsV2Params() *GetClusterEventsV2Params {
-	var ()
 	return &GetClusterEventsV2Params{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetClusterEventsV2ParamsWithTimeout creates a new GetClusterEventsV2Params object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetClusterEventsV2ParamsWithTimeout(timeout time.Duration) *GetClusterEventsV2Params {
-	var ()
 	return &GetClusterEventsV2Params{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetClusterEventsV2ParamsWithContext creates a new GetClusterEventsV2Params object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetClusterEventsV2ParamsWithContext(ctx context.Context) *GetClusterEventsV2Params {
-	var ()
 	return &GetClusterEventsV2Params{
-
 		Context: ctx,
 	}
 }
 
 // NewGetClusterEventsV2ParamsWithHTTPClient creates a new GetClusterEventsV2Params object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetClusterEventsV2ParamsWithHTTPClient(client *http.Client) *GetClusterEventsV2Params {
-	var ()
 	return &GetClusterEventsV2Params{
 		HTTPClient: client,
 	}
 }
 
-/*GetClusterEventsV2Params contains all the parameters to send to the API endpoint
-for the get cluster events v2 operation typically these are written to a http.Request
+/* GetClusterEventsV2Params contains all the parameters to send to the API endpoint
+   for the get cluster events v2 operation.
+
+   Typically these are written to a http.Request.
 */
 type GetClusterEventsV2Params struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
-	/*Type*/
+
+	// Type.
 	Type *string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get cluster events v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetClusterEventsV2Params) WithDefaults() *GetClusterEventsV2Params {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get cluster events v2 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetClusterEventsV2Params) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get cluster events v2 params
@@ -160,16 +176,17 @@ func (o *GetClusterEventsV2Params) WriteToRequest(r runtime.ClientRequest, reg s
 
 		// query param type
 		var qrType string
+
 		if o.Type != nil {
 			qrType = *o.Type
 		}
 		qType := qrType
 		if qType != "" {
+
 			if err := r.SetQueryParam("type", qType); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if len(res) > 0 {

@@ -16,52 +16,66 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListSeedsParams creates a new ListSeedsParams object
-// with the default values initialized.
+// NewListSeedsParams creates a new ListSeedsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListSeedsParams() *ListSeedsParams {
-
 	return &ListSeedsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListSeedsParamsWithTimeout creates a new ListSeedsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListSeedsParamsWithTimeout(timeout time.Duration) *ListSeedsParams {
-
 	return &ListSeedsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListSeedsParamsWithContext creates a new ListSeedsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListSeedsParamsWithContext(ctx context.Context) *ListSeedsParams {
-
 	return &ListSeedsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListSeedsParamsWithHTTPClient creates a new ListSeedsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListSeedsParamsWithHTTPClient(client *http.Client) *ListSeedsParams {
-
 	return &ListSeedsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListSeedsParams contains all the parameters to send to the API endpoint
-for the list seeds operation typically these are written to a http.Request
+/* ListSeedsParams contains all the parameters to send to the API endpoint
+   for the list seeds operation.
+
+   Typically these are written to a http.Request.
 */
 type ListSeedsParams struct {
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list seeds params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListSeedsParams) WithDefaults() *ListSeedsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list seeds params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListSeedsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list seeds params

@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewDeleteRuleGroupParams creates a new DeleteRuleGroupParams object
-// with the default values initialized.
+// NewDeleteRuleGroupParams creates a new DeleteRuleGroupParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewDeleteRuleGroupParams() *DeleteRuleGroupParams {
-	var ()
 	return &DeleteRuleGroupParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewDeleteRuleGroupParamsWithTimeout creates a new DeleteRuleGroupParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewDeleteRuleGroupParamsWithTimeout(timeout time.Duration) *DeleteRuleGroupParams {
-	var ()
 	return &DeleteRuleGroupParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewDeleteRuleGroupParamsWithContext creates a new DeleteRuleGroupParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewDeleteRuleGroupParamsWithContext(ctx context.Context) *DeleteRuleGroupParams {
-	var ()
 	return &DeleteRuleGroupParams{
-
 		Context: ctx,
 	}
 }
 
 // NewDeleteRuleGroupParamsWithHTTPClient creates a new DeleteRuleGroupParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewDeleteRuleGroupParamsWithHTTPClient(client *http.Client) *DeleteRuleGroupParams {
-	var ()
 	return &DeleteRuleGroupParams{
 		HTTPClient: client,
 	}
 }
 
-/*DeleteRuleGroupParams contains all the parameters to send to the API endpoint
-for the delete rule group operation typically these are written to a http.Request
+/* DeleteRuleGroupParams contains all the parameters to send to the API endpoint
+   for the delete rule group operation.
+
+   Typically these are written to a http.Request.
 */
 type DeleteRuleGroupParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
-	/*RulegroupID*/
+
+	// RulegroupID.
 	RuleGroupID string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the delete rule group params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DeleteRuleGroupParams) WithDefaults() *DeleteRuleGroupParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the delete rule group params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DeleteRuleGroupParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the delete rule group params

@@ -42,6 +42,9 @@ type ObjectMeta struct {
 	// Name represents human readable name for the resource
 	Name string `json:"name"`
 
+	// Annotations that can be added to the resource
+	Annotations map[string]string `json:"annotations,omitempty"`
+
 	// DeletionTimestamp is a timestamp representing the server time when this object was deleted.
 	// swagger:strfmt date-time
 	DeletionTimestamp *Time `json:"deletionTimestamp,omitempty"`
@@ -914,14 +917,18 @@ func newPublicHetznerCloudSpec(internal *kubermaticv1.HetznerCloudSpec) (public 
 }
 
 // PublicAzureCloudSpec is a public counterpart of apiv1.AzureCloudSpec.
-type PublicAzureCloudSpec struct{}
+type PublicAzureCloudSpec struct {
+	AssignAvailabilitySet *bool `json:"assignAvailabilitySet"`
+}
 
 func newPublicAzureCloudSpec(internal *kubermaticv1.AzureCloudSpec) (public *PublicAzureCloudSpec) {
 	if internal == nil {
 		return nil
 	}
 
-	return &PublicAzureCloudSpec{}
+	return &PublicAzureCloudSpec{
+		AssignAvailabilitySet: internal.AssignAvailabilitySet,
+	}
 }
 
 // PublicVSphereCloudSpec is a public counterpart of apiv1.VSphereCloudSpec.
@@ -1322,6 +1329,8 @@ type AzureNodeSpec struct {
 	// ImageID represents the ID of the image that should be used to run the node
 	// required: false
 	ImageID string `json:"imageID"`
+	// AssignAvailabilitySet is used to check if an availability set should be created and assigned to the cluster.
+	AssignAvailabilitySet bool `json:"assignAvailabilitySet"`
 }
 
 func (spec *AzureNodeSpec) MarshalJSON() ([]byte, error) {
@@ -1336,21 +1345,23 @@ func (spec *AzureNodeSpec) MarshalJSON() ([]byte, error) {
 	}
 
 	res := struct {
-		Size           string            `json:"size"`
-		AssignPublicIP bool              `json:"assignPublicIP"`
-		Tags           map[string]string `json:"tags,omitempty"`
-		OSDiskSize     int32             `json:"osDiskSize"`
-		DataDiskSize   int32             `json:"dataDiskSize"`
-		Zones          []string          `json:"zones"`
-		ImageID        string            `json:"imageID"`
+		Size                  string            `json:"size"`
+		AssignPublicIP        bool              `json:"assignPublicIP"`
+		Tags                  map[string]string `json:"tags,omitempty"`
+		OSDiskSize            int32             `json:"osDiskSize"`
+		DataDiskSize          int32             `json:"dataDiskSize"`
+		Zones                 []string          `json:"zones"`
+		ImageID               string            `json:"imageID"`
+		AssignAvailabilitySet bool              `json:"assignAvailabilitySet"`
 	}{
-		Size:           spec.Size,
-		AssignPublicIP: spec.AssignPublicIP,
-		Tags:           spec.Tags,
-		OSDiskSize:     spec.OSDiskSize,
-		DataDiskSize:   spec.DataDiskSize,
-		Zones:          spec.Zones,
-		ImageID:        spec.ImageID,
+		Size:                  spec.Size,
+		AssignPublicIP:        spec.AssignPublicIP,
+		Tags:                  spec.Tags,
+		OSDiskSize:            spec.OSDiskSize,
+		DataDiskSize:          spec.DataDiskSize,
+		Zones:                 spec.Zones,
+		ImageID:               spec.ImageID,
+		AssignAvailabilitySet: spec.AssignAvailabilitySet,
 	}
 
 	return json.Marshal(&res)

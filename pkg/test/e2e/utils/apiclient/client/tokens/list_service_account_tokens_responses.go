@@ -58,7 +58,7 @@ func NewListServiceAccountTokensOK() *ListServiceAccountTokensOK {
 	return &ListServiceAccountTokensOK{}
 }
 
-/*ListServiceAccountTokensOK handles this case with default header values.
+/* ListServiceAccountTokensOK describes a response with status code 200, with default header values.
 
 PublicServiceAccountToken
 */
@@ -69,7 +69,6 @@ type ListServiceAccountTokensOK struct {
 func (o *ListServiceAccountTokensOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens][%d] listServiceAccountTokensOK  %+v", 200, o.Payload)
 }
-
 func (o *ListServiceAccountTokensOK) GetPayload() []*models.PublicServiceAccountToken {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListServiceAccountTokensUnauthorized() *ListServiceAccountTokensUnauthor
 	return &ListServiceAccountTokensUnauthorized{}
 }
 
-/*ListServiceAccountTokensUnauthorized handles this case with default header values.
+/* ListServiceAccountTokensUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListServiceAccountTokensForbidden() *ListServiceAccountTokensForbidden {
 	return &ListServiceAccountTokensForbidden{}
 }
 
-/*ListServiceAccountTokensForbidden handles this case with default header values.
+/* ListServiceAccountTokensForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListServiceAccountTokensDefault(code int) *ListServiceAccountTokensDefau
 	}
 }
 
-/*ListServiceAccountTokensDefault handles this case with default header values.
+/* ListServiceAccountTokensDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListServiceAccountTokensDefault) Code() int {
 func (o *ListServiceAccountTokensDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens][%d] listServiceAccountTokens default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListServiceAccountTokensDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -16,60 +16,76 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListRuleGroupsParams creates a new ListRuleGroupsParams object
-// with the default values initialized.
+// NewListRuleGroupsParams creates a new ListRuleGroupsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListRuleGroupsParams() *ListRuleGroupsParams {
-	var ()
 	return &ListRuleGroupsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListRuleGroupsParamsWithTimeout creates a new ListRuleGroupsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListRuleGroupsParamsWithTimeout(timeout time.Duration) *ListRuleGroupsParams {
-	var ()
 	return &ListRuleGroupsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListRuleGroupsParamsWithContext creates a new ListRuleGroupsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListRuleGroupsParamsWithContext(ctx context.Context) *ListRuleGroupsParams {
-	var ()
 	return &ListRuleGroupsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListRuleGroupsParamsWithHTTPClient creates a new ListRuleGroupsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListRuleGroupsParamsWithHTTPClient(client *http.Client) *ListRuleGroupsParams {
-	var ()
 	return &ListRuleGroupsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListRuleGroupsParams contains all the parameters to send to the API endpoint
-for the list rule groups operation typically these are written to a http.Request
+/* ListRuleGroupsParams contains all the parameters to send to the API endpoint
+   for the list rule groups operation.
+
+   Typically these are written to a http.Request.
 */
 type ListRuleGroupsParams struct {
 
-	/*ClusterID*/
+	// ClusterID.
 	ClusterID string
-	/*ProjectID*/
+
+	// ProjectID.
 	ProjectID string
-	/*Type*/
+
+	// Type.
 	Type *string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list rule groups params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListRuleGroupsParams) WithDefaults() *ListRuleGroupsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list rule groups params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListRuleGroupsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list rule groups params
@@ -160,16 +176,17 @@ func (o *ListRuleGroupsParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 
 		// query param type
 		var qrType string
+
 		if o.Type != nil {
 			qrType = *o.Type
 		}
 		qType := qrType
 		if qType != "" {
+
 			if err := r.SetQueryParam("type", qType); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if len(res) > 0 {

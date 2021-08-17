@@ -46,7 +46,7 @@ func NewListAWSSubnetsNoCredentialsV2OK() *ListAWSSubnetsNoCredentialsV2OK {
 	return &ListAWSSubnetsNoCredentialsV2OK{}
 }
 
-/*ListAWSSubnetsNoCredentialsV2OK handles this case with default header values.
+/* ListAWSSubnetsNoCredentialsV2OK describes a response with status code 200, with default header values.
 
 AWSSubnetList
 */
@@ -57,7 +57,6 @@ type ListAWSSubnetsNoCredentialsV2OK struct {
 func (o *ListAWSSubnetsNoCredentialsV2OK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/aws/subnets][%d] listAWSSubnetsNoCredentialsV2OK  %+v", 200, o.Payload)
 }
-
 func (o *ListAWSSubnetsNoCredentialsV2OK) GetPayload() models.AWSSubnetList {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListAWSSubnetsNoCredentialsV2Default(code int) *ListAWSSubnetsNoCredenti
 	}
 }
 
-/*ListAWSSubnetsNoCredentialsV2Default handles this case with default header values.
+/* ListAWSSubnetsNoCredentialsV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListAWSSubnetsNoCredentialsV2Default) Code() int {
 func (o *ListAWSSubnetsNoCredentialsV2Default) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/aws/subnets][%d] listAWSSubnetsNoCredentialsV2 default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListAWSSubnetsNoCredentialsV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -58,7 +58,7 @@ func NewListAccessibleAddonsOK() *ListAccessibleAddonsOK {
 	return &ListAccessibleAddonsOK{}
 }
 
-/*ListAccessibleAddonsOK handles this case with default header values.
+/* ListAccessibleAddonsOK describes a response with status code 200, with default header values.
 
 AccessibleAddons
 */
@@ -69,7 +69,6 @@ type ListAccessibleAddonsOK struct {
 func (o *ListAccessibleAddonsOK) Error() string {
 	return fmt.Sprintf("[POST /api/v1/addons][%d] listAccessibleAddonsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListAccessibleAddonsOK) GetPayload() models.AccessibleAddons {
 	return o.Payload
 }
@@ -89,7 +88,7 @@ func NewListAccessibleAddonsUnauthorized() *ListAccessibleAddonsUnauthorized {
 	return &ListAccessibleAddonsUnauthorized{}
 }
 
-/*ListAccessibleAddonsUnauthorized handles this case with default header values.
+/* ListAccessibleAddonsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +109,7 @@ func NewListAccessibleAddonsForbidden() *ListAccessibleAddonsForbidden {
 	return &ListAccessibleAddonsForbidden{}
 }
 
-/*ListAccessibleAddonsForbidden handles this case with default header values.
+/* ListAccessibleAddonsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -133,7 +132,7 @@ func NewListAccessibleAddonsDefault(code int) *ListAccessibleAddonsDefault {
 	}
 }
 
-/*ListAccessibleAddonsDefault handles this case with default header values.
+/* ListAccessibleAddonsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,7 +150,6 @@ func (o *ListAccessibleAddonsDefault) Code() int {
 func (o *ListAccessibleAddonsDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v1/addons][%d] listAccessibleAddons default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListAccessibleAddonsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

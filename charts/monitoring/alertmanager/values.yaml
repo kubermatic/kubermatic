@@ -15,7 +15,7 @@
 alertmanager:
   image:
     repository: quay.io/prometheus/alertmanager
-    tag: v0.21.0
+    tag: v0.22.2
     pullPolicy: IfNotPresent
   configReloaderImage:
     repository: docker.io/jimmidyson/configmap-reload
@@ -72,14 +72,6 @@ alertmanager:
       limits:
         cpu: 150m
         memory: 32Mi
-    migration:
-      resources:
-        requests:
-          cpu: 100m
-          memory: 64Mi
-        limits:
-          cpu: 200m
-          memory: 128Mi
   nodeSelector: {}
   affinity:
     podAntiAffinity:
@@ -91,17 +83,3 @@ alertmanager:
           topologyKey: kubernetes.io/hostname
         weight: 100
   tolerations: []
-
-  # When upgrading the chart from 1.x => 2.0, the naming for volumes
-  # has changed and without a migration your existing Alertmanager database
-  # would not be used anymore. Set the enabled flag to true to let an
-  # init container copy the data over. A lockfile is created so that when
-  # the pod for whatever reason restarts the migration is not executed
-  # again.
-  # Once the migration has finished and you set the flag to false again,
-  # you can safely remove the old `alertmanager-kubermatic-db-...` PVCs.
-  migration:
-    enabled: false
-    image:
-      repository: quay.io/kubermatic/util
-      tag: 1.4.1

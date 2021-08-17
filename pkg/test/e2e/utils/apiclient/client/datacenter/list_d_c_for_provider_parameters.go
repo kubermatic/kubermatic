@@ -16,56 +16,70 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListDCForProviderParams creates a new ListDCForProviderParams object
-// with the default values initialized.
+// NewListDCForProviderParams creates a new ListDCForProviderParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListDCForProviderParams() *ListDCForProviderParams {
-	var ()
 	return &ListDCForProviderParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListDCForProviderParamsWithTimeout creates a new ListDCForProviderParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListDCForProviderParamsWithTimeout(timeout time.Duration) *ListDCForProviderParams {
-	var ()
 	return &ListDCForProviderParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListDCForProviderParamsWithContext creates a new ListDCForProviderParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListDCForProviderParamsWithContext(ctx context.Context) *ListDCForProviderParams {
-	var ()
 	return &ListDCForProviderParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListDCForProviderParamsWithHTTPClient creates a new ListDCForProviderParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListDCForProviderParamsWithHTTPClient(client *http.Client) *ListDCForProviderParams {
-	var ()
 	return &ListDCForProviderParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListDCForProviderParams contains all the parameters to send to the API endpoint
-for the list d c for provider operation typically these are written to a http.Request
+/* ListDCForProviderParams contains all the parameters to send to the API endpoint
+   for the list d c for provider operation.
+
+   Typically these are written to a http.Request.
 */
 type ListDCForProviderParams struct {
 
-	/*ProviderName*/
+	// ProviderName.
 	Provider string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list d c for provider params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListDCForProviderParams) WithDefaults() *ListDCForProviderParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list d c for provider params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListDCForProviderParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list d c for provider params

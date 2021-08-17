@@ -113,8 +113,10 @@ beforeDockerBuild=$(nowms)
   echodate "Building user-ssh-keys-agent image"
   TEST_NAME="Build user-ssh-keys-agent Docker image"
   retry 5 docker login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
-  IMAGE_NAME=quay.io/kubermatic/user-ssh-keys-agent:$KUBERMATIC_VERSION
-  time retry 5 docker build -f cmd/user-ssh-keys-agent/Dockerfile -t "${IMAGE_NAME}" .
+  cd cmd/user-ssh-keys-agent
+  make build
+  IMAGE_NAME="quay.io/kubermatic/user-ssh-keys-agent:$KUBERMATIC_VERSION"
+  time retry 5 docker build -t "${IMAGE_NAME}" .
   time retry 5 docker push "${IMAGE_NAME}"
 )
 (

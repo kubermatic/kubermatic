@@ -58,7 +58,7 @@ func NewCreateAddonCreated() *CreateAddonCreated {
 	return &CreateAddonCreated{}
 }
 
-/*CreateAddonCreated handles this case with default header values.
+/* CreateAddonCreated describes a response with status code 201, with default header values.
 
 Addon
 */
@@ -69,7 +69,6 @@ type CreateAddonCreated struct {
 func (o *CreateAddonCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons][%d] createAddonCreated  %+v", 201, o.Payload)
 }
-
 func (o *CreateAddonCreated) GetPayload() *models.Addon {
 	return o.Payload
 }
@@ -91,7 +90,7 @@ func NewCreateAddonUnauthorized() *CreateAddonUnauthorized {
 	return &CreateAddonUnauthorized{}
 }
 
-/*CreateAddonUnauthorized handles this case with default header values.
+/* CreateAddonUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -112,7 +111,7 @@ func NewCreateAddonForbidden() *CreateAddonForbidden {
 	return &CreateAddonForbidden{}
 }
 
-/*CreateAddonForbidden handles this case with default header values.
+/* CreateAddonForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -135,7 +134,7 @@ func NewCreateAddonDefault(code int) *CreateAddonDefault {
 	}
 }
 
-/*CreateAddonDefault handles this case with default header values.
+/* CreateAddonDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,7 +152,6 @@ func (o *CreateAddonDefault) Code() int {
 func (o *CreateAddonDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons][%d] createAddon default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *CreateAddonDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

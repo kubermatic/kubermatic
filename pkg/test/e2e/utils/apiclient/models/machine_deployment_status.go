@@ -6,6 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -50,6 +52,11 @@ type MachineDeploymentStatus struct {
 
 // Validate validates this machine deployment status
 func (m *MachineDeploymentStatus) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this machine deployment status based on context it is used
+func (m *MachineDeploymentStatus) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

@@ -136,22 +136,32 @@ func (h *AdmissionHandler) applyDefaults(c *kubermaticv1.Cluster) {
 		}
 	}
 
+	if c.Spec.ClusterNetwork.IPVS != nil {
+		if c.Spec.ClusterNetwork.IPVS.StrictArp == nil {
+			c.Spec.ClusterNetwork.IPVS.StrictArp = pointer.BoolPtr(resources.IPVSStrictArp)
+		}
+	}
+
 	if c.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled == nil {
 		c.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled = pointer.BoolPtr(true)
 	}
 
 	// Default component settings
+	h.defaultClusterComponentSettings(c)
+}
+
+func (h *AdmissionHandler) defaultClusterComponentSettings(c *kubermaticv1.Cluster) {
 	if c.Spec.ComponentsOverride.Apiserver.Replicas == nil {
 		c.Spec.ComponentsOverride.Apiserver.Replicas = h.defaultComponentSettings.Apiserver.Replicas
 	}
 	if c.Spec.ComponentsOverride.Apiserver.Resources == nil {
 		c.Spec.ComponentsOverride.Apiserver.Resources = h.defaultComponentSettings.Apiserver.Resources
 	}
-	if c.Spec.ComponentsOverride.Apiserver.NodePortRange == "" {
-		c.Spec.ComponentsOverride.Apiserver.NodePortRange = h.defaultComponentSettings.Apiserver.NodePortRange
-	}
 	if c.Spec.ComponentsOverride.Apiserver.EndpointReconcilingDisabled == nil {
 		c.Spec.ComponentsOverride.Apiserver.EndpointReconcilingDisabled = h.defaultComponentSettings.Apiserver.EndpointReconcilingDisabled
+	}
+	if c.Spec.ComponentsOverride.Apiserver.NodePortRange == "" {
+		c.Spec.ComponentsOverride.Apiserver.NodePortRange = h.defaultComponentSettings.Apiserver.NodePortRange
 	}
 	if c.Spec.ComponentsOverride.ControllerManager.Replicas == nil {
 		c.Spec.ComponentsOverride.ControllerManager.Replicas = h.defaultComponentSettings.ControllerManager.Replicas
@@ -159,14 +169,50 @@ func (h *AdmissionHandler) applyDefaults(c *kubermaticv1.Cluster) {
 	if c.Spec.ComponentsOverride.ControllerManager.Resources == nil {
 		c.Spec.ComponentsOverride.ControllerManager.Resources = h.defaultComponentSettings.ControllerManager.Resources
 	}
+	if c.Spec.ComponentsOverride.ControllerManager.Tolerations == nil {
+		c.Spec.ComponentsOverride.ControllerManager.Tolerations = h.defaultComponentSettings.ControllerManager.Tolerations
+	}
+	if c.Spec.ComponentsOverride.ControllerManager.LeaseDurationSeconds == nil {
+		c.Spec.ComponentsOverride.ControllerManager.LeaseDurationSeconds = h.defaultComponentSettings.ControllerManager.LeaseDurationSeconds
+	}
+	if c.Spec.ComponentsOverride.ControllerManager.RenewDeadlineSeconds == nil {
+		c.Spec.ComponentsOverride.ControllerManager.RenewDeadlineSeconds = h.defaultComponentSettings.ControllerManager.RenewDeadlineSeconds
+	}
+	if c.Spec.ComponentsOverride.ControllerManager.RetryPeriodSeconds == nil {
+		c.Spec.ComponentsOverride.ControllerManager.RetryPeriodSeconds = h.defaultComponentSettings.ControllerManager.RetryPeriodSeconds
+	}
 	if c.Spec.ComponentsOverride.Scheduler.Replicas == nil {
 		c.Spec.ComponentsOverride.Scheduler.Replicas = h.defaultComponentSettings.Scheduler.Replicas
 	}
 	if c.Spec.ComponentsOverride.Scheduler.Resources == nil {
 		c.Spec.ComponentsOverride.Scheduler.Resources = h.defaultComponentSettings.Scheduler.Resources
 	}
+	if c.Spec.ComponentsOverride.Scheduler.Tolerations == nil {
+		c.Spec.ComponentsOverride.Scheduler.Tolerations = h.defaultComponentSettings.Scheduler.Tolerations
+	}
+	if c.Spec.ComponentsOverride.Scheduler.LeaseDurationSeconds == nil {
+		c.Spec.ComponentsOverride.Scheduler.LeaseDurationSeconds = h.defaultComponentSettings.Scheduler.LeaseDurationSeconds
+	}
+	if c.Spec.ComponentsOverride.Scheduler.RenewDeadlineSeconds == nil {
+		c.Spec.ComponentsOverride.Scheduler.RenewDeadlineSeconds = h.defaultComponentSettings.Scheduler.RenewDeadlineSeconds
+	}
+	if c.Spec.ComponentsOverride.Scheduler.RetryPeriodSeconds == nil {
+		c.Spec.ComponentsOverride.Scheduler.RetryPeriodSeconds = h.defaultComponentSettings.Scheduler.RetryPeriodSeconds
+	}
+	if c.Spec.ComponentsOverride.Etcd.ClusterSize == nil {
+		c.Spec.ComponentsOverride.Etcd.ClusterSize = h.defaultComponentSettings.Etcd.ClusterSize
+	}
 	if c.Spec.ComponentsOverride.Etcd.Resources == nil {
 		c.Spec.ComponentsOverride.Etcd.Resources = h.defaultComponentSettings.Etcd.Resources
+	}
+	if c.Spec.ComponentsOverride.Etcd.Tolerations == nil {
+		c.Spec.ComponentsOverride.Etcd.Tolerations = h.defaultComponentSettings.Etcd.Tolerations
+	}
+	if c.Spec.ComponentsOverride.Etcd.DiskSize == nil {
+		c.Spec.ComponentsOverride.Etcd.DiskSize = h.defaultComponentSettings.Etcd.DiskSize
+	}
+	if c.Spec.ComponentsOverride.Etcd.StorageClass == "" {
+		c.Spec.ComponentsOverride.Etcd.StorageClass = h.defaultComponentSettings.Etcd.StorageClass
 	}
 	if c.Spec.ComponentsOverride.Prometheus.Resources == nil {
 		c.Spec.ComponentsOverride.Prometheus.Resources = h.defaultComponentSettings.Prometheus.Resources

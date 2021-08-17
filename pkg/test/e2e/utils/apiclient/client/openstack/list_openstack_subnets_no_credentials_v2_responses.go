@@ -46,7 +46,7 @@ func NewListOpenstackSubnetsNoCredentialsV2OK() *ListOpenstackSubnetsNoCredentia
 	return &ListOpenstackSubnetsNoCredentialsV2OK{}
 }
 
-/*ListOpenstackSubnetsNoCredentialsV2OK handles this case with default header values.
+/* ListOpenstackSubnetsNoCredentialsV2OK describes a response with status code 200, with default header values.
 
 OpenstackSubnet
 */
@@ -57,7 +57,6 @@ type ListOpenstackSubnetsNoCredentialsV2OK struct {
 func (o *ListOpenstackSubnetsNoCredentialsV2OK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/openstack/subnets][%d] listOpenstackSubnetsNoCredentialsV2OK  %+v", 200, o.Payload)
 }
-
 func (o *ListOpenstackSubnetsNoCredentialsV2OK) GetPayload() []*models.OpenstackSubnet {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewListOpenstackSubnetsNoCredentialsV2Default(code int) *ListOpenstackSubne
 	}
 }
 
-/*ListOpenstackSubnetsNoCredentialsV2Default handles this case with default header values.
+/* ListOpenstackSubnetsNoCredentialsV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -97,7 +96,6 @@ func (o *ListOpenstackSubnetsNoCredentialsV2Default) Code() int {
 func (o *ListOpenstackSubnetsNoCredentialsV2Default) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/openstack/subnets][%d] listOpenstackSubnetsNoCredentialsV2 default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ListOpenstackSubnetsNoCredentialsV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

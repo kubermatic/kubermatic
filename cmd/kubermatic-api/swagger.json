@@ -10725,6 +10725,59 @@
             }
           }
         }
+      },
+      "delete": {
+        "description": "Deletes a etcd restore config for a given cluster based on its name",
+        "tags": [
+          "etcdrestore"
+        ],
+        "operationId": "deleteEtcdRestore",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "EtcdRestoreName",
+            "name": "er_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "409": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
       }
     },
     "/api/v2/projects/{project_id}/clusters/{cluster_id}/events": {
@@ -12277,6 +12330,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
+          },
+          {
+            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -12288,13 +12348,6 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
           }
         ],
         "responses": {
@@ -14151,58 +14204,6 @@
       }
     },
     "/api/v2/projects/{project_id}/clustertemplates/{template_id}/instances": {
-      "get": {
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "project"
-        ],
-        "summary": "List cluster template instances.",
-        "operationId": "listClusterTemplateInstances",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "ProjectID",
-            "name": "project_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterTemplateID",
-            "name": "template_id",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ClusterTemplateInstance",
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/ClusterTemplateInstance"
-              }
-            }
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      },
       "post": {
         "consumes": [
           "application/json"
@@ -14247,134 +14248,6 @@
         ],
         "responses": {
           "201": {
-            "description": "ClusterTemplateInstance",
-            "schema": {
-              "$ref": "#/definitions/ClusterTemplateInstance"
-            }
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/projects/{project_id}/clustertemplates/{template_id}/instances/{instance_id}": {
-      "post": {
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "project"
-        ],
-        "summary": "Get cluster template instance.",
-        "operationId": "getClusterTemplateInstance",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "ProjectID",
-            "name": "project_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterTemplateID",
-            "name": "template_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterTemplateInstanceID",
-            "name": "instance_id",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ClusterTemplateInstance",
-            "schema": {
-              "$ref": "#/definitions/ClusterTemplateInstance"
-            }
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      },
-      "patch": {
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "project"
-        ],
-        "summary": "Patch cluster template instances.",
-        "operationId": "patchClusterTemplateInstance",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "ProjectID",
-            "name": "project_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterTemplateID",
-            "name": "template_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterTemplateInstanceID",
-            "name": "instance_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "name": "Body",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "replicas": {
-                  "type": "integer",
-                  "format": "int64",
-                  "x-go-name": "Replicas"
-                }
-              }
-            }
-          }
-        ],
-        "responses": {
-          "200": {
             "description": "ClusterTemplateInstance",
             "schema": {
               "$ref": "#/definitions/ClusterTemplateInstance"
@@ -15851,6 +15724,14 @@
       "description": "Addon represents a predefined addon that users may install into their cluster",
       "type": "object",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
           "type": "string",
@@ -15883,6 +15764,14 @@
       "description": "AddonConfig represents a addon configuration",
       "type": "object",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
           "type": "string",
@@ -16352,6 +16241,10 @@
       "type": "object",
       "title": "AzureCloudSpec specifies access credentials to Azure cloud.",
       "properties": {
+        "assignAvailabilitySet": {
+          "type": "boolean",
+          "x-go-name": "AssignAvailabilitySet"
+        },
         "availabilitySet": {
           "type": "string",
           "x-go-name": "AvailabilitySet"
@@ -16412,6 +16305,11 @@
         "size"
       ],
       "properties": {
+        "assignAvailabilitySet": {
+          "description": "AssignAvailabilitySet is used to check if an availability set should be created and assigned to the cluster.",
+          "type": "boolean",
+          "x-go-name": "AssignAvailabilitySet"
+        },
         "assignPublicIP": {
           "description": "should the machine have a publicly accessible IP address",
           "type": "boolean",
@@ -16622,7 +16520,7 @@
           "$ref": "#/definitions/Time"
         }
       },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "BackupStatusPhase": {
       "type": "string",
@@ -16758,6 +16656,14 @@
       "type": "object",
       "title": "Cluster defines the cluster resource",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
           "type": "string",
@@ -16879,6 +16785,9 @@
           "type": "string",
           "x-go-name": "DNSDomain"
         },
+        "ipvs": {
+          "$ref": "#/definitions/IPVSConfiguration"
+        },
         "nodeLocalDNSCacheEnabled": {
           "description": "NodeLocalDNSCacheEnabled controls whether the NodeLocal DNS Cache feature is enabled.\nDefaults to true.",
           "type": "boolean",
@@ -16902,6 +16811,14 @@
       "description": "ClusterRole defines cluster RBAC role for the user cluster",
       "type": "object",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
           "type": "string",
@@ -18012,7 +17929,7 @@
           "$ref": "#/definitions/EtcdBackupConfigConditionType"
         }
       },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "EtcdBackupConfigConditionType": {
       "description": "EtcdBackupConfigConditionType is used to indicate the type of a EtcdBackupConfig condition. For all condition\ntypes, the `true` value must indicate success. All condition types must be registered within\nthe `AllClusterConditionTypes` variable.",
@@ -18067,7 +17984,7 @@
           "x-go-name": "CurrentBackups"
         }
       },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "EtcdRestore": {
       "description": "EtcdRestore represents an object holding the configuration for etcd backup restore",
@@ -18123,12 +18040,20 @@
           "$ref": "#/definitions/Time"
         }
       },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "Event": {
       "type": "object",
       "title": "Event is a report of an event somewhere in the cluster.",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
         "count": {
           "description": "The number of times this event has occurred.",
           "type": "integer",
@@ -18679,6 +18604,18 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "IPVSConfiguration": {
+      "type": "object",
+      "title": "IPVSConfiguration contains ipvs-related configuration details for kube-proxy.",
+      "properties": {
+        "strictArp": {
+          "description": "StrictArp configure arp_ignore and arp_announce to avoid answering ARP queries from kube-ipvs0 interface.\ndefaults to true.",
+          "type": "boolean",
+          "x-go-name": "StrictArp"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "ImageList": {
       "description": "ImageList defines a map of operating system and the image to use",
@@ -19412,6 +19349,14 @@
       "description": "Node represents a worker node that is part of a cluster",
       "type": "object",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
           "type": "string",
@@ -19504,6 +19449,14 @@
       "description": "NodeDeployment represents a set of worker nodes that is part of a cluster",
       "type": "object",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
           "type": "string",
@@ -19900,6 +19853,14 @@
       "description": "ObjectMeta defines the set of fields that objects returned from the API have",
       "type": "object",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
           "type": "string",
@@ -20576,6 +20537,14 @@
       "description": "Project is a top-level container for a set of resources",
       "type": "object",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
         "clustersNumber": {
           "type": "integer",
           "format": "int64",
@@ -20679,6 +20648,12 @@
     "PublicAzureCloudSpec": {
       "type": "object",
       "title": "PublicAzureCloudSpec is a public counterpart of apiv1.AzureCloudSpec.",
+      "properties": {
+        "assignAvailabilitySet": {
+          "type": "boolean",
+          "x-go-name": "AssignAvailabilitySet"
+        }
+      },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "PublicBringYourOwnCloudSpec": {
@@ -20809,6 +20784,14 @@
       "description": "PublicServiceAccountToken represent an API service account token without secret fields",
       "type": "object",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
           "type": "string",
@@ -20896,6 +20879,14 @@
       "description": "Role defines RBAC role for the user cluster",
       "type": "object",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
           "type": "string",
@@ -21032,6 +21023,14 @@
       "description": "SSHKey represents a ssh key",
       "type": "object",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
           "type": "string",
@@ -21202,6 +21201,14 @@
       "description": "ServiceAccount represent an API service account",
       "type": "object",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
           "type": "string",
@@ -21264,6 +21271,14 @@
       "description": "ServiceAccountToken represent an API service account token",
       "type": "object",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
           "type": "string",
@@ -21449,10 +21464,11 @@
       "x-go-package": "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
     },
     "Time": {
-      "description": "+protobuf.options.marshal=false\n+protobuf.as=Timestamp\n+protobuf.options.(gogoproto.goproto_stringer)=false",
-      "type": "object",
-      "title": "Time is a wrapper around time.Time which supports correct\nmarshaling to YAML and JSON.  Wrappers are provided for many\nof the factory methods that the time package offers.",
-      "x-go-package": "k8s.io/apimachinery/pkg/apis/meta/v1"
+      "description": "Programs using times should typically store and pass them as values,\nnot pointers. That is, time variables and struct fields should be of\ntype time.Time, not *time.Time.\n\nA Time value can be used by multiple goroutines simultaneously except\nthat the methods GobDecode, UnmarshalBinary, UnmarshalJSON and\nUnmarshalText are not concurrency-safe.\n\nTime instants can be compared using the Before, After, and Equal methods.\nThe Sub method subtracts two instants, producing a Duration.\nThe Add method adds a Time and a Duration, producing a Time.\n\nThe zero value of type Time is January 1, year 1, 00:00:00.000000000 UTC.\nAs this time is unlikely to come up in practice, the IsZero method gives\na simple way of detecting a time that has not been initialized explicitly.\n\nEach Time has associated with it a Location, consulted when computing the\npresentation form of the time, such as in the Format, Hour, and Year methods.\nThe methods Local, UTC, and In return a Time with a specific location.\nChanging the location in this way changes only the presentation; it does not\nchange the instant in time being denoted and therefore does not affect the\ncomputations described in earlier paragraphs.\n\nRepresentations of a Time value saved by the GobEncode, MarshalBinary,\nMarshalJSON, and MarshalText methods store the Time.Location's offset, but not\nthe location name. They therefore lose information about Daylight Saving Time.\n\nIn addition to the required “wall clock” reading, a Time may contain an optional\nreading of the current process's monotonic clock, to provide additional precision\nfor comparison or subtraction.\nSee the “Monotonic Clocks” section in the package documentation for details.\n\nNote that the Go == operator compares not just the time instant but also the\nLocation and the monotonic clock reading. Therefore, Time values should not\nbe used as map or database keys without first guaranteeing that the\nidentical Location has been set for all values, which can be achieved\nthrough use of the UTC or Local method, and that the monotonic clock reading\nhas been stripped by setting t = t.Round(0). In general, prefer t.Equal(u)\nto t == u, since t.Equal uses the most accurate comparison available and\ncorrectly handles the case when only one of its arguments has a monotonic\nclock reading.",
+      "type": "string",
+      "format": "date-time",
+      "title": "A Time represents an instant in time with nanosecond precision.",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "Trace": {
       "type": "object",
@@ -21508,6 +21524,14 @@
       "description": "User represent an API user",
       "type": "object",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
           "type": "string",
