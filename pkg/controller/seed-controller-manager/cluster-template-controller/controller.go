@@ -19,7 +19,6 @@ package clustertemplatecontroller
 import (
 	"context"
 	"fmt"
-	"sort"
 
 	"go.uber.org/zap"
 
@@ -34,7 +33,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -90,14 +88,6 @@ func Add(
 		return fmt.Errorf("failed to create watch for seed cluster template instance: %v", err)
 	}
 
-	if err := c.Watch(
-		&source.Kind{Type: &kubermaticv1.Cluster{}},
-		enqueueClusterTemplateInstances(),
-		workerlabel.Predicates(workerName),
-	); err != nil {
-		return fmt.Errorf("failed to create watch for clusters: %w", err)
-	}
-
 	return nil
 }
 
@@ -125,12 +115,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 func (r *reconciler) reconcile(ctx context.Context, instance *kubermaticv1.ClusterTemplateInstance, log *zap.SugaredLogger) error {
 	var remove = true
 	var add = false
-	clusterTemplateLabelSelector := ctrlruntimeclient.MatchingLabels{kubernetes.ClusterTemplateInstanceLabelKey: instance.Name}
-
-	clusterList := &kubermaticv1.ClusterList{}
-	if err := r.seedClient.List(ctx, clusterList, &ctrlruntimeclient.ListOptions{LabelSelector: r.workerNameLabelSelector}, clusterTemplateLabelSelector); err != nil {
-		return fmt.Errorf("failed listing clusters: %w", err)
-	}
 
 	// deletion
 	if !instance.DeletionTimestamp.IsZero() {
@@ -152,28 +136,10 @@ func (r *reconciler) reconcile(ctx context.Context, instance *kubermaticv1.Clust
 		}
 	}
 
-	nc := len(clusterList.Items)
-	currentNumberOfClusters := int64(nc)
-	desiredNumberOfClusters := instance.Spec.Replicas
-
-	switch {
-	case currentNumberOfClusters == desiredNumberOfClusters:
-		return nil
-	case currentNumberOfClusters > desiredNumberOfClusters:
-		toDelete := currentNumberOfClusters - desiredNumberOfClusters
-		if err := r.deleteClusters(ctx, clusterList, toDelete, log); err != nil {
-			log.Errorf("failed to delete clusters %v", err)
-			return err
-		}
-	case currentNumberOfClusters < desiredNumberOfClusters:
-		toCreate := desiredNumberOfClusters - currentNumberOfClusters
-		if err := r.createClusters(ctx, instance, toCreate, currentNumberOfClusters, log); err != nil {
-			log.Errorf("failed to create clusters %v", err)
-			return err
-		}
+	if err := r.createClusters(ctx, instance, log); err != nil {
+		return err
 	}
-
-	return nil
+	return r.seedClient.Delete(ctx, instance)
 }
 
 func (r *reconciler) patchFinalizer(ctx context.Context, instance *kubermaticv1.ClusterTemplateInstance, remove bool) error {
@@ -192,38 +158,9 @@ func (r *reconciler) patchFinalizer(ctx context.Context, instance *kubermaticv1.
 	return nil
 }
 
-func (r *reconciler) deleteClusters(ctx context.Context, clusterList *kubermaticv1.ClusterList, numberOfClusters int64, log *zap.SugaredLogger) error {
-	log.Debugf("delete %d clusters", numberOfClusters)
-	if numberOfClusters > 0 {
-		clusters := []*kubermaticv1.Cluster{}
+func (r *reconciler) createClusters(ctx context.Context, instance *kubermaticv1.ClusterTemplateInstance, log *zap.SugaredLogger) error {
 
-		for _, cluster := range clusterList.Items {
-			clusters = append(clusters, cluster.DeepCopy())
-		}
-		// delete always with the highest index
-		sortClustersByIndexedName(clusters)
-
-		for index, cluster := range clusters {
-			if err := r.seedClient.Delete(ctx, cluster); err != nil {
-				return err
-			}
-			if int64(index+1) == numberOfClusters {
-				break
-			}
-		}
-	}
-	return nil
-}
-
-func sortClustersByIndexedName(clusters []*kubermaticv1.Cluster) {
-	sort.SliceStable(clusters, func(i, j int) bool {
-		mi, mj := clusters[i], clusters[j]
-		return mi.Spec.HumanReadableName > mj.Spec.HumanReadableName
-	})
-}
-
-func (r *reconciler) createClusters(ctx context.Context, instance *kubermaticv1.ClusterTemplateInstance, numberOfClusters, index int64, log *zap.SugaredLogger) error {
-	log.Debugf("create clusters from template %s, number of clusters: %d", instance.Spec.ClusterTemplateID, numberOfClusters)
+	log.Debugf("create clusters from template %s, number of clusters: %d", instance.Spec.ClusterTemplateID, instance.Spec.Replicas)
 
 	template := &kubermaticv1.ClusterTemplate{}
 	if err := r.seedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: instance.Spec.ClusterTemplateID}, template); err != nil {
@@ -239,31 +176,44 @@ func (r *reconciler) createClusters(ctx context.Context, instance *kubermaticv1.
 	}
 	partialCluster.Spec = template.Spec
 
-	for i := 0; i < int(numberOfClusters); i++ {
-		newCluster := genNewCluster(template, instance, r.workerName, int(index)+i)
+	if instance.Spec.Replicas > 0 {
+		oldInstance := instance.DeepCopy()
+		for i := 0; i < int(instance.Spec.Replicas); i++ {
 
-		// Here partialCluster is used to copy credentials to the new cluster
-		err := resources.CopyCredentials(resources.NewCredentialsData(context.Background(), partialCluster, r.seedClient), newCluster)
-		if err != nil {
-			return fmt.Errorf("failed to get credentials: %v", err)
-		}
-		if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(ctx, r.seedClient, newCluster); err != nil {
-			return err
-		}
-		kuberneteshelper.AddFinalizer(newCluster, kubermaticapiv1.CredentialsSecretsCleanupFinalizer)
+			newCluster := genNewCluster(template, instance, r.workerName)
 
-		if err := r.seedClient.Create(ctx, newCluster); err != nil {
-			return err
+			// Here partialCluster is used to copy credentials to the new cluster
+			err := resources.CopyCredentials(resources.NewCredentialsData(context.Background(), partialCluster, r.seedClient), newCluster)
+			if err != nil {
+				return fmt.Errorf("failed to get credentials: %v", err)
+			}
+			if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(ctx, r.seedClient, newCluster); err != nil {
+				return err
+			}
+			kuberneteshelper.AddFinalizer(newCluster, kubermaticapiv1.CredentialsSecretsCleanupFinalizer)
+
+			if err := r.seedClient.Create(ctx, newCluster); err != nil {
+				// if error then change number of replicas
+				created := int64(i + 1)
+				totalReplicas := instance.Spec.Replicas
+				instance.Spec.Replicas = totalReplicas - created
+				if err := r.seedClient.Patch(ctx, instance, ctrlruntimeclient.MergeFrom(oldInstance)); err != nil {
+					return err
+				}
+				return fmt.Errorf("failed to create desired number of clusters. Created %d from %d", created, totalReplicas)
+			}
 		}
 	}
 
 	return nil
 }
 
-func genNewCluster(template *kubermaticv1.ClusterTemplate, instance *kubermaticv1.ClusterTemplateInstance, workerName string, index int) *kubermaticv1.Cluster {
+func genNewCluster(template *kubermaticv1.ClusterTemplate, instance *kubermaticv1.ClusterTemplateInstance, workerName string) *kubermaticv1.Cluster {
+
+	name := rand.String(10)
 	newCluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        rand.String(10),
+			Name:        name,
 			Labels:      template.ClusterLabels,
 			Annotations: template.Annotations,
 		},
@@ -281,26 +231,8 @@ func genNewCluster(template *kubermaticv1.ClusterTemplate, instance *kubermaticv
 	newCluster.Labels[kubernetes.ClusterTemplateInstanceLabelKey] = instance.Name
 	newCluster.Spec = template.Spec
 
-	newCluster.Spec.HumanReadableName = fmt.Sprintf("%s-%d", newCluster.Spec.HumanReadableName, index)
+	newCluster.Spec.HumanReadableName = fmt.Sprintf("%s-%s", newCluster.Spec.HumanReadableName, name)
 	newCluster.Status.UserEmail = template.Annotations[kubermaticv1.ClusterTemplateUserAnnotationKey]
 
 	return newCluster
-}
-
-func enqueueClusterTemplateInstances() handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
-		var requests []reconcile.Request
-
-		clusterLabels := a.GetLabels()
-		if clusterLabels != nil {
-			instanceName, ok := clusterLabels[kubernetes.ClusterTemplateInstanceLabelKey]
-			if ok && instanceName != "" {
-				requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{
-					Name: instanceName,
-				}})
-			}
-		}
-
-		return requests
-	})
 }
