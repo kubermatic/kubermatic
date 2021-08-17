@@ -994,9 +994,10 @@ func (r *TestClient) BindUserToRole(projectID, dc, clusterID, roleName, namespac
 		RoleID:    roleName,
 	}
 	SetupRetryParams(r.test, params, Backoff{
-		Duration: 1 * time.Second,
 		Steps:    4,
-		Factor:   1.5,
+		Duration: 10 * time.Millisecond,
+		Factor:   5.0,
+		Jitter:   0.1,
 	})
 
 	response, err := r.client.Project.BindUserToRole(params, r.bearerToken)
@@ -1013,9 +1014,10 @@ func (r *TestClient) BindUserToRole(projectID, dc, clusterID, roleName, namespac
 func (r *TestClient) GetClusterRoles(projectID, dc, clusterID string) ([]apiv1.ClusterRoleName, error) {
 	params := &project.ListClusterRoleNamesParams{DC: dc, ProjectID: projectID, ClusterID: clusterID}
 	SetupRetryParams(r.test, params, Backoff{
-		Duration: 1 * time.Second,
 		Steps:    4,
-		Factor:   1.5,
+		Duration: 10 * time.Millisecond,
+		Factor:   5.0,
+		Jitter:   0.1,
 	})
 
 	response, err := r.client.Project.ListClusterRoleNames(params, r.bearerToken)
@@ -1043,9 +1045,10 @@ func (r *TestClient) BindUserToClusterRole(projectID, dc, clusterID, roleName, u
 		RoleID:    roleName,
 	}
 	SetupRetryParams(r.test, params, Backoff{
-		Duration: 1 * time.Second,
 		Steps:    4,
-		Factor:   1.5,
+		Duration: 10 * time.Millisecond,
+		Factor:   5.0,
+		Jitter:   0.1,
 	})
 
 	response, err := r.client.Project.BindUserToClusterRole(params, r.bearerToken)
@@ -1061,9 +1064,10 @@ func (r *TestClient) BindUserToClusterRole(projectID, dc, clusterID, roleName, u
 func (r *TestClient) GetRoleBindings(projectID, dc, clusterID string) ([]apiv1.RoleBinding, error) {
 	params := &project.ListRoleBindingParams{DC: dc, ProjectID: projectID, ClusterID: clusterID}
 	SetupRetryParams(r.test, params, Backoff{
-		Duration: 1 * time.Second,
 		Steps:    4,
-		Factor:   1.5,
+		Duration: 10 * time.Millisecond,
+		Factor:   5.0,
+		Jitter:   0.1,
 	})
 
 	response, err := r.client.Project.ListRoleBinding(params, r.bearerToken)
@@ -1094,9 +1098,10 @@ func (r *TestClient) GetRoleBindings(projectID, dc, clusterID string) ([]apiv1.R
 func (r *TestClient) GetClusterBindings(projectID, dc, clusterID string) ([]apiv1.ClusterRoleBinding, error) {
 	params := &project.ListClusterRoleBindingParams{DC: dc, ProjectID: projectID, ClusterID: clusterID}
 	SetupRetryParams(r.test, params, Backoff{
-		Duration: 1 * time.Second,
 		Steps:    4,
-		Factor:   1.5,
+		Duration: 10 * time.Millisecond,
+		Factor:   5.0,
+		Jitter:   0.1,
 	})
 
 	response, err := r.client.Project.ListClusterRoleBinding(params, r.bearerToken)
