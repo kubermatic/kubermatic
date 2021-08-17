@@ -17,7 +17,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: prometheus-custom-scrape-configs-node-exporter
+  name: prometheus-scraping-node-exporter
   namespace: mla-system
 data:
   custom-scrape-configs.yaml: |+
