@@ -136,6 +136,16 @@ func DeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 							},
 						},
 					},
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceMemory: resource.MustParse("256Mi"),
+							corev1.ResourceCPU:    resource.MustParse("100m"),
+						},
+						Limits: corev1.ResourceList{
+							corev1.ResourceMemory: resource.MustParse("4Gi"),
+							corev1.ResourceCPU:    resource.MustParse("1"),
+						},
+					},
 				},
 				{
 					Name:            "prometheus-config-reloader",
@@ -171,12 +181,12 @@ func DeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 					},
 					Resources: corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{
-							corev1.ResourceMemory: resource.MustParse("50Mi"),
-							corev1.ResourceCPU:    resource.MustParse("100m"),
+							corev1.ResourceMemory: resource.MustParse("10Mi"),
+							corev1.ResourceCPU:    resource.MustParse("10m"),
 						},
 						Limits: corev1.ResourceList{
 							corev1.ResourceMemory: resource.MustParse("100Mi"),
-							corev1.ResourceCPU:    resource.MustParse("200m"),
+							corev1.ResourceCPU:    resource.MustParse("100m"),
 						},
 					},
 				},
