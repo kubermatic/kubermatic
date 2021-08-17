@@ -50,6 +50,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -579,16 +580,21 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 	}
 
 	if r.userClusterMLA.Monitoring {
+		customScrapeConfigs, err := r.getUserClusterPrometheusCustomScrapeConfigs(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to get user cluster prometheus custom scrape configs: %w", err)
+		}
 		creators = []reconciling.NamedConfigMapCreatorGetter{
 			userclusterprometheus.ConfigMapCreator(userclusterprometheus.Config{
-				MLAGatewayURL: r.userClusterMLA.MLAGatewayURL + "/api/v1/push",
-				TLSCertFile:   fmt.Sprintf("%s/%s", resources.UserClusterPrometheusClientCertMountPath, resources.UserClusterPrometheusClientCertSecretKey),
-				TLSKeyFile:    fmt.Sprintf("%s/%s", resources.UserClusterPrometheusClientCertMountPath, resources.UserClusterPrometheusClientKeySecretKey),
-				TLSCACertFile: fmt.Sprintf("%s/%s", resources.UserClusterPrometheusClientCertMountPath, resources.MLAGatewayCACertKey),
+				MLAGatewayURL:       r.userClusterMLA.MLAGatewayURL + "/api/v1/push",
+				TLSCertFile:         fmt.Sprintf("%s/%s", resources.UserClusterPrometheusClientCertMountPath, resources.UserClusterPrometheusClientCertSecretKey),
+				TLSKeyFile:          fmt.Sprintf("%s/%s", resources.UserClusterPrometheusClientCertMountPath, resources.UserClusterPrometheusClientKeySecretKey),
+				TLSCACertFile:       fmt.Sprintf("%s/%s", resources.UserClusterPrometheusClientCertMountPath, resources.MLAGatewayCACertKey),
+				CustomScrapeConfigs: customScrapeConfigs,
 			}),
 		}
 		if err := reconciling.ReconcileConfigMaps(ctx, creators, resources.UserClusterMLANamespace, r.Client); err != nil {
-			return fmt.Errorf("failed to reconcile Secrets in namespace %s: %v", resources.UserClusterMLANamespace, err)
+			return fmt.Errorf("failed to reconcile ConfigMap in namespace %s: %v", resources.UserClusterMLANamespace, err)
 		}
 	}
 	return nil
@@ -843,4 +849,24 @@ func (r *reconciler) ensureMLAIsRemoved(ctx context.Context) error {
 		}
 	}
 	return nil
+}
+
+func (r *reconciler) getUserClusterPrometheusCustomScrapeConfigs(ctx context.Context) (string, error) {
+	if r.userClusterMLA.PrometheusScrapeConfigPrefix == "" {
+		return "", nil
+	}
+	configMapList := &corev1.ConfigMapList{}
+	if err := r.List(ctx, configMapList, ctrlruntimeclient.InNamespace(resources.UserClusterMLANamespace)); err != nil {
+		return "", fmt.Errorf("failed to list the configmap: %w", err)
+	}
+	customScrapeConfigs := ""
+	for _, configMap := range configMapList.Items {
+		if !strings.HasPrefix(configMap.GetName(), r.userClusterMLA.PrometheusScrapeConfigPrefix) {
+			continue
+		}
+		for _, v := range configMap.Data {
+			customScrapeConfigs += strings.TrimSpace(v) + "\n"
+		}
+	}
+	return customScrapeConfigs, nil
 }
