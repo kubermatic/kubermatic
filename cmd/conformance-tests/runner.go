@@ -1240,8 +1240,8 @@ func (r *testRunner) getGinkgoRuns(
 func (r *testRunner) executeGinkgoRun(ctx context.Context, parentLog *zap.SugaredLogger, run *ginkgoRun, client ctrlruntimeclient.Client) (*ginkgoResult, error) {
 	log := parentLog.With("reports-dir", run.reportsDir)
 
-	if err := r.deleteAllNonDefaultNamespaces(ctx, log, client); err != nil {
-		return nil, fmt.Errorf("failed to cleanup namespaces before the Ginkgo run: %v", err)
+	if err := r.cleanupBeforeGinkgo(ctx, log, client); err != nil {
+		return nil, fmt.Errorf("failed to cleanup before the Ginkgo run: %v", err)
 	}
 
 	timedCtx, cancel := context.WithTimeout(ctx, run.timeout)
