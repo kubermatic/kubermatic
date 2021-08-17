@@ -292,7 +292,7 @@ func (c *ClusterJig) CleanUp() error {
 				return false, errors.Wrap(err, "failed to delete user cluster")
 			}
 		}
-		
+
 		return false, nil
 	})
 }
