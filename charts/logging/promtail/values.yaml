@@ -296,15 +296,17 @@ promtail:
           job: systemd-journal
       pipeline_stages:
       - match:
-          selector: '{unit="kubelet.service"}'
+          selector: '{unit!="kubelet.service"}'
+          action: drop
       relabel_configs:
         - source_labels: ['__journal__systemd_unit']
           target_label: 'unit'
         - source_labels: ['__journal__hostname']
           target_label: 'hostname'
     - job_name: kubernetes-events
+      kubernetes_sd_configs:
+      - role: pod
       pipeline_stages:
-      - docker:
       - match:
           selector: '{app="eventrouter"}'
           stages:
