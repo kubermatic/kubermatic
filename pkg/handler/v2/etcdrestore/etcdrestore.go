@@ -191,6 +191,35 @@ func DecodeGetEtcdRestoreReq(c context.Context, r *http.Request) (interface{}, e
 	return req, nil
 }
 
+func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(getEtcdRestoreReq)
+
+		c, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		// check if restore is in progress, if yes, delete is not possible
+		// there is a potential race condition here, if the restore starts progressing between this get and the delete
+		er, err := getEtcdRestore(ctx, userInfoGetter, c, req.ProjectID, req.EtcdRestoreName)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		if er.Status.Phase != kubermaticv1.EtcdRestorePhaseCompleted && er.Status.Phase != "" {
+			return nil, errors.New(http.StatusConflict, fmt.Sprintf("Restore is in progress (phase: %q), cannot delete at this moment", er.Status.Phase))
+		}
+
+		err = deleteEtcdRestore(ctx, userInfoGetter, c, req.ProjectID, req.EtcdRestoreName)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		return nil, nil
+	}
+}
+
 func convertInternalToAPIEtcdRestore(er *kubermaticv1.EtcdRestore) *apiv2.EtcdRestore {
 	etcdRestore := &apiv2.EtcdRestore{
 		Name: er.Name,
@@ -277,6 +306,21 @@ func listEtcdRestore(ctx context.Context, userInfoGetter provider.UserInfoGetter
 		return nil, err
 	}
 	return etcdRestoreProvider.List(userInfo, cluster)
+}
+
+func deleteEtcdRestore(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID, etcdRestoreName string) error {
+	adminUserInfo, privilegedEtcdRestoreProvider, err := getAdminUserInfoPrivilegedEtcdRestoreProvider(ctx, userInfoGetter)
+	if err != nil {
+		return err
+	}
+	if adminUserInfo.IsAdmin {
+		return privilegedEtcdRestoreProvider.DeleteUnsecured(cluster, etcdRestoreName)
+	}
+	userInfo, etcdRestoreProvider, err := getUserInfoEtcdRestoreProvider(ctx, userInfoGetter, projectID)
+	if err != nil {
+		return err
+	}
+	return etcdRestoreProvider.Delete(userInfo, cluster, etcdRestoreName)
 }
 
 func getAdminUserInfoPrivilegedEtcdRestoreProvider(ctx context.Context, userInfoGetter provider.UserInfoGetter) (*provider.UserInfo, provider.PrivilegedEtcdRestoreProvider, error) {

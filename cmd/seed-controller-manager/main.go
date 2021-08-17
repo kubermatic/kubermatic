@@ -191,7 +191,19 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		// Setup the validation admission handler for kubermatic Cluster CRDs
 		clustervalidation.NewAdmissionHandler(options.featureGates).SetupWebhookWithManager(mgr)
 		// Setup the mutation admission handler for kubermatic Cluster CRDs
-		clustermutation.NewAdmissionHandler(defaultComponentSettings(ctrlCtx)).SetupWebhookWithManager(mgr)
+		getter, err := seedGetterFactory(rootCtx, mgr.GetAPIReader(), options)
+		if err != nil {
+			log.Fatalf("make seed getter with api reader: %v", err)
+		}
+		seed, err := getter()
+		if err != nil {
+			log.Fatalf("could not get seed resource: %v", err)
+		}
+		settings, err := defaultComponentSettings(ctrlCtx.runOptions, seed)
+		if err != nil {
+			log.Fatal(err)
+		}
+		clustermutation.NewAdmissionHandler(settings).SetupWebhookWithManager(mgr)
 	}
 
 	if err := createAllControllers(ctrlCtx); err != nil {

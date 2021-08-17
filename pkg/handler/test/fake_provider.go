@@ -330,3 +330,7 @@ func (p *FakeEtcdRestoreProvider) Get(userInfo *provider.UserInfo, cluster *kube
 func (p *FakeEtcdRestoreProvider) List(userInfo *provider.UserInfo, cluster *kubermaticapiv1.Cluster) (*kubermaticapiv1.EtcdRestoreList, error) {
 	return p.Provider.List(userInfo, cluster)
 }
+
+func (p *FakeEtcdRestoreProvider) Delete(userInfo *provider.UserInfo, cluster *kubermaticapiv1.Cluster, name string) error {
+	return p.Provider.Delete(userInfo, cluster, name)
+}

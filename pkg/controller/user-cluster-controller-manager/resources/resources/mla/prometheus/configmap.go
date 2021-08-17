@@ -27,10 +27,11 @@ import (
 )
 
 type Config struct {
-	MLAGatewayURL string
-	TLSCertFile   string
-	TLSKeyFile    string
-	TLSCACertFile string
+	MLAGatewayURL       string
+	TLSCertFile         string
+	TLSKeyFile          string
+	TLSCACertFile       string
+	CustomScrapeConfigs string
 }
 
 func ConfigMapCreator(config Config) reconciling.NamedConfigMapCreatorGetter {
@@ -321,5 +322,12 @@ scrape_configs:
     - __meta_kubernetes_pod_phase
   scrape_interval: 5m
   scrape_timeout: 30s
+
+{{- with .CustomScrapeConfigs }}
+#######################################################################
+# custom scraping configurations
+
+{{ . }}
+{{- end }}
 `
 )

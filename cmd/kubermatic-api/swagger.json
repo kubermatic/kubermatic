@@ -10725,6 +10725,59 @@
             }
           }
         }
+      },
+      "delete": {
+        "description": "Deletes a etcd restore config for a given cluster based on its name",
+        "tags": [
+          "etcdrestore"
+        ],
+        "operationId": "deleteEtcdRestore",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "EtcdRestoreName",
+            "name": "er_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "409": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
       }
     },
     "/api/v2/projects/{project_id}/clusters/{cluster_id}/events": {
@@ -12277,6 +12330,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
+          },
+          {
+            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -12288,13 +12348,6 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
           }
         ],
         "responses": {
@@ -14151,58 +14204,6 @@
       }
     },
     "/api/v2/projects/{project_id}/clustertemplates/{template_id}/instances": {
-      "get": {
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "project"
-        ],
-        "summary": "List cluster template instances.",
-        "operationId": "listClusterTemplateInstances",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "ProjectID",
-            "name": "project_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterTemplateID",
-            "name": "template_id",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ClusterTemplateInstance",
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/ClusterTemplateInstance"
-              }
-            }
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      },
       "post": {
         "consumes": [
           "application/json"
@@ -14247,134 +14248,6 @@
         ],
         "responses": {
           "201": {
-            "description": "ClusterTemplateInstance",
-            "schema": {
-              "$ref": "#/definitions/ClusterTemplateInstance"
-            }
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/projects/{project_id}/clustertemplates/{template_id}/instances/{instance_id}": {
-      "post": {
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "project"
-        ],
-        "summary": "Get cluster template instance.",
-        "operationId": "getClusterTemplateInstance",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "ProjectID",
-            "name": "project_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterTemplateID",
-            "name": "template_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterTemplateInstanceID",
-            "name": "instance_id",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ClusterTemplateInstance",
-            "schema": {
-              "$ref": "#/definitions/ClusterTemplateInstance"
-            }
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      },
-      "patch": {
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "project"
-        ],
-        "summary": "Patch cluster template instances.",
-        "operationId": "patchClusterTemplateInstance",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "ProjectID",
-            "name": "project_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterTemplateID",
-            "name": "template_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterTemplateInstanceID",
-            "name": "instance_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "name": "Body",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "replicas": {
-                  "type": "integer",
-                  "format": "int64",
-                  "x-go-name": "Replicas"
-                }
-              }
-            }
-          }
-        ],
-        "responses": {
-          "200": {
             "description": "ClusterTemplateInstance",
             "schema": {
               "$ref": "#/definitions/ClusterTemplateInstance"
@@ -15851,6 +15724,14 @@
       "description": "Addon represents a predefined addon that users may install into their cluster",
       "type": "object",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
           "type": "string",
@@ -15883,6 +15764,14 @@
       "description": "AddonConfig represents a addon configuration",
       "type": "object",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
           "type": "string",
@@ -16767,6 +16656,14 @@
       "type": "object",
       "title": "Cluster defines the cluster resource",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
           "type": "string",
@@ -16914,6 +16811,14 @@
       "description": "ClusterRole defines cluster RBAC role for the user cluster",
       "type": "object",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
           "type": "string",
@@ -18141,6 +18046,14 @@
       "type": "object",
       "title": "Event is a report of an event somewhere in the cluster.",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
         "count": {
           "description": "The number of times this event has occurred.",
           "type": "integer",
@@ -19436,6 +19349,14 @@
       "description": "Node represents a worker node that is part of a cluster",
       "type": "object",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
           "type": "string",
@@ -19528,6 +19449,14 @@
       "description": "NodeDeployment represents a set of worker nodes that is part of a cluster",
       "type": "object",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
           "type": "string",
@@ -19924,6 +19853,14 @@
       "description": "ObjectMeta defines the set of fields that objects returned from the API have",
       "type": "object",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
           "type": "string",
@@ -20600,6 +20537,14 @@
       "description": "Project is a top-level container for a set of resources",
       "type": "object",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
         "clustersNumber": {
           "type": "integer",
           "format": "int64",
@@ -20703,6 +20648,12 @@
     "PublicAzureCloudSpec": {
       "type": "object",
       "title": "PublicAzureCloudSpec is a public counterpart of apiv1.AzureCloudSpec.",
+      "properties": {
+        "assignAvailabilitySet": {
+          "type": "boolean",
+          "x-go-name": "AssignAvailabilitySet"
+        }
+      },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "PublicBringYourOwnCloudSpec": {
@@ -20833,6 +20784,14 @@
       "description": "PublicServiceAccountToken represent an API service account token without secret fields",
       "type": "object",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
           "type": "string",
@@ -20920,6 +20879,14 @@
       "description": "Role defines RBAC role for the user cluster",
       "type": "object",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
           "type": "string",
@@ -21056,6 +21023,14 @@
       "description": "SSHKey represents a ssh key",
       "type": "object",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
           "type": "string",
@@ -21226,6 +21201,14 @@
       "description": "ServiceAccount represent an API service account",
       "type": "object",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
           "type": "string",
@@ -21288,6 +21271,14 @@
       "description": "ServiceAccountToken represent an API service account token",
       "type": "object",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
           "type": "string",
@@ -21533,6 +21524,14 @@
       "description": "User represent an API user",
       "type": "object",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
           "type": "string",

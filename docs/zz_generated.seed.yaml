@@ -208,6 +208,38 @@ spec:
             rhel: ""
             sles: ""
             ubuntu: ""
+  # DefaultComponentSettings are default values to set for newly created clusters.
+  defaultComponentSettings:
+    apiserver:
+      endpointReconcilingDisabled: null
+      nodePortRange: ""
+      replicas: null
+      resources: null
+      tolerations: null
+    controllerManager:
+      leaderElection:
+        leaseDurationSeconds: null
+        renewDeadlineSeconds: null
+        retryPeriodSeconds: null
+      replicas: null
+      resources: null
+      tolerations: null
+    etcd:
+      clusterSize: null
+      diskSize: null
+      resources: null
+      storageClass: ""
+      tolerations: null
+    prometheus:
+      resources: null
+    scheduler:
+      leaderElection:
+        leaseDurationSeconds: null
+        renewDeadlineSeconds: null
+        retryPeriodSeconds: null
+      replicas: null
+      resources: null
+      tolerations: null
   # Optional: ExposeStrategy explicitly sets the expose strategy for this seed cluster, if not set, the default provided by the master is used.
   expose_strategy: ""
   # A reference to the Kubeconfig of this cluster. The Kubeconfig must

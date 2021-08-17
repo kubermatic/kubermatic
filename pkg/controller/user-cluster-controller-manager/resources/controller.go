@@ -60,9 +60,10 @@ const (
 )
 
 type UserClusterMLA struct {
-	Logging       bool
-	Monitoring    bool
-	MLAGatewayURL string
+	Logging                      bool
+	Monitoring                   bool
+	MLAGatewayURL                string
+	PrometheusScrapeConfigPrefix string
 }
 
 // Add creates a new user cluster controller.

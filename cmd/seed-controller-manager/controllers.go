@@ -93,24 +93,63 @@ func createSeedConditionUpToDateController(ctrlCtx *controllerContext) error {
 	)
 }
 
-func defaultComponentSettings(ctrlCtx *controllerContext) kubermaticv1.ComponentSettings {
-	return kubermaticv1.ComponentSettings{
-		Apiserver: kubermaticv1.APIServerSettings{
-			DeploymentSettings:          kubermaticv1.DeploymentSettings{Replicas: utilpointer.Int32Ptr(int32(ctrlCtx.runOptions.apiServerDefaultReplicas))},
-			EndpointReconcilingDisabled: utilpointer.BoolPtr(ctrlCtx.runOptions.apiServerEndpointReconcilingDisabled),
-			NodePortRange:               ctrlCtx.runOptions.nodePortRange,
-		},
-		ControllerManager: kubermaticv1.ControllerSettings{
-			DeploymentSettings: kubermaticv1.DeploymentSettings{
-				Replicas: utilpointer.Int32Ptr(int32(ctrlCtx.runOptions.controllerManagerDefaultReplicas)),
-			},
-		},
-		Scheduler: kubermaticv1.ControllerSettings{
-			DeploymentSettings: kubermaticv1.DeploymentSettings{
-				Replicas: utilpointer.Int32Ptr(int32(ctrlCtx.runOptions.schedulerDefaultReplicas)),
-			},
-		},
+func defaultComponentSettings(runOptions controllerRunOptions, seed *kubermaticv1.Seed) (kubermaticv1.ComponentSettings, error) {
+	// Copy default settings.
+	settings := seed.Spec.DefaultComponentSettings
+
+	if replicas := runOptions.apiServerDefaultReplicas; replicas != 0 {
+		if settings.Apiserver.Replicas != nil && replicas != int(*settings.Apiserver.Replicas) {
+			return settings, fmt.Errorf(
+				"conflicting settings, cli option api-server-default-replicas (%v) and field Seed.spec.defaultComponentSettings.apiserver.replicas (%v) do not match",
+				replicas,
+				*settings.Apiserver.Replicas,
+			)
+		}
+
+		settings.Apiserver.Replicas = utilpointer.Int32Ptr(int32(replicas))
 	}
+
+	if reconcilingDisabled := runOptions.apiServerEndpointReconcilingDisabled; reconcilingDisabled {
+		settings.Apiserver.EndpointReconcilingDisabled = &reconcilingDisabled
+	}
+
+	if nodePortRange := runOptions.nodePortRange; nodePortRange != "" {
+		if settings.Apiserver.NodePortRange != "" && settings.Apiserver.NodePortRange != nodePortRange {
+			return settings, fmt.Errorf(
+				"conflicting settings, cli option nodeport-range (%v) and field Seed.spec.defaultComponentSettings.apiserver.nodePortRange (%v) do not match",
+				nodePortRange,
+				settings.Apiserver.NodePortRange,
+			)
+		}
+
+		settings.Apiserver.NodePortRange = nodePortRange
+	}
+
+	if replicas := runOptions.controllerManagerDefaultReplicas; replicas != 0 {
+		if settings.ControllerManager.Replicas != nil && replicas != int(*settings.ControllerManager.Replicas) {
+			return settings, fmt.Errorf(
+				"conflicting settings, cli option controller-manager-default-replicas (%v) and field Seed.spec.defaultComponentSettings.controllerManager.replicas (%v) do not match",
+				replicas,
+				*settings.ControllerManager.Replicas,
+			)
+		}
+
+		settings.ControllerManager.Replicas = utilpointer.Int32Ptr(int32(replicas))
+	}
+
+	if replicas := runOptions.schedulerDefaultReplicas; replicas != 0 {
+		if settings.Scheduler.Replicas != nil && replicas != int(*settings.Scheduler.Replicas) {
+			return settings, fmt.Errorf(
+				"conflicting settings, cli option schedular-default-replicas (%v) and field Seed.spec.defaultComponentSettings.schedular.replicas (%v) do not match",
+				replicas,
+				*settings.Scheduler.Replicas,
+			)
+		}
+
+		settings.Scheduler.Replicas = utilpointer.Int32Ptr(int32(replicas))
+	}
+
+	return settings, nil
 }
 
 func createCloudController(ctrlCtx *controllerContext) error {
