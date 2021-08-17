@@ -17,7 +17,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: prometheus-custom-scrape-configs-kube-state-metrics
+  name: prometheus-scraping-kube-state-metrics
   namespace: mla-system
 data:
   custom-scrape-configs.yaml: |+
