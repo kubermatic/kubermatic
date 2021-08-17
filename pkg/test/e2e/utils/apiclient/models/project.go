@@ -20,6 +20,9 @@ import (
 // swagger:model Project
 type Project struct {
 
+	// Annotations that can be added to the resource
+	Annotations map[string]string `json:"annotations,omitempty"`
+
 	// clusters number
 	ClustersNumber int64 `json:"clustersNumber,omitempty"`
 

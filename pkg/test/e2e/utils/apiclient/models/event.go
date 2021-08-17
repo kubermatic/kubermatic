@@ -19,6 +19,9 @@ import (
 // swagger:model Event
 type Event struct {
 
+	// Annotations that can be added to the resource
+	Annotations map[string]string `json:"annotations,omitempty"`
+
 	// The number of times this event has occurred.
 	Count int32 `json:"count,omitempty"`
 

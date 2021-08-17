@@ -163,6 +163,7 @@ func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.Node
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:                md.Name,
 			Name:              md.Name,
+			Annotations:       md.Annotations,
 			DeletionTimestamp: deletionTimestamp,
 			CreationTimestamp: apiv1.NewTime(md.CreationTimestamp.Time),
 		},
