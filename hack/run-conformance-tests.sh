@@ -44,7 +44,7 @@ cd $(dirname $0)/..
 source hack/lib.sh
 
 if [ -z "${VAULT_ADDR:-}" ]; then
-  export VAULT_ADDR=https://vault.loodse.com/
+  export VAULT_ADDR=https://vault.kubermatic.com/
 fi
 
 if [ -z "${KUBECONFIG:-}" ]; then
