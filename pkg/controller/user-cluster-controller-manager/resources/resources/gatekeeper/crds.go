@@ -41,7 +41,17 @@ func ConfigCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
 			crd.Labels = map[string]string{"gatekeeper.sh/system": "yes"}
 			crd.Spec.Group = configAPIGroup
 			crd.Spec.Versions = []apiextensionsv1.CustomResourceDefinitionVersion{
-				{Name: configAPIVersion, Served: true, Storage: true},
+				{
+					Name:    configAPIVersion,
+					Served:  true,
+					Storage: true,
+					Schema: &apiextensionsv1.CustomResourceValidation{
+						OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
+							XPreserveUnknownFields: resources.Bool(true),
+							Type:                   "object",
+						},
+					},
+				},
 			}
 			crd.Spec.Scope = apiextensionsv1.NamespaceScoped
 			crd.Spec.Names.Kind = "Config"
@@ -62,8 +72,34 @@ func ConstraintTemplateCRDCreator() reconciling.NamedCustomResourceDefinitionCre
 			crd.Labels = map[string]string{"gatekeeper.sh/system": "yes", "controller-tools.k8s.io": "1.0"}
 			crd.Spec.Group = constraintTemplateAPIGroup
 			crd.Spec.Versions = []apiextensionsv1.CustomResourceDefinitionVersion{
-				{Name: constraintTemplateAPIVersion, Served: true, Storage: true, Subresources: &apiextensionsv1.CustomResourceSubresources{Status: &apiextensionsv1.CustomResourceSubresourceStatus{}}},
-				{Name: "v1alpha1", Served: true, Storage: false, Subresources: &apiextensionsv1.CustomResourceSubresources{Status: &apiextensionsv1.CustomResourceSubresourceStatus{}}},
+				{
+					Name:    constraintTemplateAPIVersion,
+					Served:  true,
+					Storage: true,
+					Schema: &apiextensionsv1.CustomResourceValidation{
+						OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
+							XPreserveUnknownFields: resources.Bool(true),
+							Type:                   "object",
+						},
+					},
+					Subresources: &apiextensionsv1.CustomResourceSubresources{
+						Status: &apiextensionsv1.CustomResourceSubresourceStatus{},
+					},
+				},
+				{
+					Name:    "v1alpha1",
+					Served:  true,
+					Storage: false,
+					Schema: &apiextensionsv1.CustomResourceValidation{
+						OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
+							XPreserveUnknownFields: resources.Bool(true),
+							Type:                   "object",
+						},
+					},
+					Subresources: &apiextensionsv1.CustomResourceSubresources{
+						Status: &apiextensionsv1.CustomResourceSubresourceStatus{},
+					},
+				},
 			}
 			crd.Spec.Scope = apiextensionsv1.ClusterScoped
 			crd.Spec.Names.Kind = "ConstraintTemplate"
@@ -74,14 +110,27 @@ func ConstraintTemplateCRDCreator() reconciling.NamedCustomResourceDefinitionCre
 	}
 }
 
-// ConstraintPodStatusRDCreator returns the gatekeeper ConstraintPodStatus CRD definition
-func ConstraintPodStatusRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
+// ConstraintPodStatusCRDCreator returns the gatekeeper ConstraintPodStatus CRD definition
+func ConstraintPodStatusCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return resources.GatekeeperConstraintPodStatusCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			crd.Labels = map[string]string{"gatekeeper.sh/system": "yes"}
 			crd.Spec.Group = statusAPIGroup
 			crd.Spec.Versions = []apiextensionsv1.CustomResourceDefinitionVersion{
-				{Name: constraintPodStatusAPIVersion, Served: true, Storage: true, Subresources: &apiextensionsv1.CustomResourceSubresources{Status: &apiextensionsv1.CustomResourceSubresourceStatus{}}},
+				{
+					Name:    constraintPodStatusAPIVersion,
+					Served:  true,
+					Storage: true,
+					Schema: &apiextensionsv1.CustomResourceValidation{
+						OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
+							XPreserveUnknownFields: resources.Bool(true),
+							Type:                   "object",
+						},
+					},
+					Subresources: &apiextensionsv1.CustomResourceSubresources{
+						Status: &apiextensionsv1.CustomResourceSubresourceStatus{},
+					},
+				},
 			}
 			crd.Spec.Scope = apiextensionsv1.NamespaceScoped
 			crd.Spec.Names.Kind = "ConstraintPodStatus"
@@ -92,14 +141,27 @@ func ConstraintPodStatusRDCreator() reconciling.NamedCustomResourceDefinitionCre
 	}
 }
 
-// ConstraintTemplatePodStatusRDCreator returns the gatekeeper ConstraintTemplatePodStatus CRD definition
-func ConstraintTemplatePodStatusRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
+// ConstraintTemplatePodStatusCRDCreator returns the gatekeeper ConstraintTemplatePodStatus CRD definition
+func ConstraintTemplatePodStatusCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return resources.GatekeeperConstraintTemplatePodStatusCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			crd.Labels = map[string]string{"gatekeeper.sh/system": "yes"}
 			crd.Spec.Group = statusAPIGroup
 			crd.Spec.Versions = []apiextensionsv1.CustomResourceDefinitionVersion{
-				{Name: constraintTemplatePodStatusAPIVersion, Served: true, Storage: true, Subresources: &apiextensionsv1.CustomResourceSubresources{Status: &apiextensionsv1.CustomResourceSubresourceStatus{}}},
+				{
+					Name:    constraintTemplatePodStatusAPIVersion,
+					Served:  true,
+					Storage: true,
+					Schema: &apiextensionsv1.CustomResourceValidation{
+						OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
+							XPreserveUnknownFields: resources.Bool(true),
+							Type:                   "object",
+						},
+					},
+					Subresources: &apiextensionsv1.CustomResourceSubresources{
+						Status: &apiextensionsv1.CustomResourceSubresourceStatus{},
+					},
+				},
 			}
 			crd.Spec.Scope = apiextensionsv1.NamespaceScoped
 			crd.Spec.Names.Kind = "ConstraintTemplatePodStatus"
