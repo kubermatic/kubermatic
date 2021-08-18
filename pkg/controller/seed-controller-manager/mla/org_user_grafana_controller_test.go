@@ -207,7 +207,7 @@ func TestOrgUserGrafanaReconcile(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:              "delete",
 						DeletionTimestamp: &metav1.Time{Time: time.Now()},
-						Finalizers:        []string{mlaFinalizer, "just-a-test-do-not-delete-thanks"},
+						Finalizers:        []string{mlaFinalizer},
 					},
 					Spec: kubermaticv1.UserProjectBindingSpec{
 						UserEmail: "user@email.com",

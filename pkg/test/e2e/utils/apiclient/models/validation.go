@@ -18,9 +18,6 @@ import (
 // swagger:model Validation
 type Validation struct {
 
-	// +kubebuilder:default=true
-	LegacySchema bool `json:"legacySchema,omitempty"`
-
 	// open API v3 schema
 	OpenAPIV3Schema *JSONSchemaProps `json:"openAPIV3Schema,omitempty"`
 }

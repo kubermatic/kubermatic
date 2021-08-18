@@ -37,7 +37,7 @@ import (
 	allowedregistrycontroller "k8c.io/kubermatic/v2/pkg/ee/allowed-registry-controller"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -150,12 +150,12 @@ func genConstraintTemplate() *kubermaticv1.ConstraintTemplate {
 					Kind: allowedregistrycontroller.AllowedRegistryCTName,
 				},
 				Validation: &constrainttemplatev1beta1.Validation{
-					OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
-						Properties: map[string]apiextensionsv1.JSONSchemaProps{
+					OpenAPIV3Schema: &apiextensionsv1beta1.JSONSchemaProps{
+						Properties: map[string]apiextensionsv1beta1.JSONSchemaProps{
 							allowedregistrycontroller.AllowedRegistryField: {
 								Type: "array",
-								Items: &apiextensionsv1.JSONSchemaPropsOrArray{
-									Schema: &apiextensionsv1.JSONSchemaProps{
+								Items: &apiextensionsv1beta1.JSONSchemaPropsOrArray{
+									Schema: &apiextensionsv1beta1.JSONSchemaProps{
 										Type: "string",
 									},
 								},

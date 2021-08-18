@@ -223,6 +223,7 @@ func sortClustersByIndexedName(clusters []*kubermaticv1.Cluster) {
 }
 
 func (r *reconciler) createClusters(ctx context.Context, instance *kubermaticv1.ClusterTemplateInstance, numberOfClusters, index int64, log *zap.SugaredLogger) error {
+
 	log.Debugf("create clusters from template %s, number of clusters: %d", instance.Spec.ClusterTemplateID, numberOfClusters)
 
 	template := &kubermaticv1.ClusterTemplate{}
@@ -240,6 +241,7 @@ func (r *reconciler) createClusters(ctx context.Context, instance *kubermaticv1.
 	partialCluster.Spec = template.Spec
 
 	for i := 0; i < int(numberOfClusters); i++ {
+
 		newCluster := genNewCluster(template, instance, r.workerName, int(index)+i)
 
 		// Here partialCluster is used to copy credentials to the new cluster
@@ -261,6 +263,7 @@ func (r *reconciler) createClusters(ctx context.Context, instance *kubermaticv1.
 }
 
 func genNewCluster(template *kubermaticv1.ClusterTemplate, instance *kubermaticv1.ClusterTemplateInstance, workerName string, index int) *kubermaticv1.Cluster {
+
 	newCluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        rand.String(10),

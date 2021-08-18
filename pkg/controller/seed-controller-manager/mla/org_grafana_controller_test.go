@@ -271,7 +271,6 @@ func TestOrgGrafanaReconcile(t *testing.T) {
 					Name:              "delete",
 					DeletionTimestamp: &metav1.Time{Time: time.Now()},
 					Annotations:       map[string]string{grafanaOrgAnnotationKey: "1"},
-					Finalizers:        []string{"just-a-test-do-not-delete-thanks"},
 				},
 				Spec: kubermaticv1.ProjectSpec{
 					Name: "projectName",
@@ -293,7 +292,7 @@ func TestOrgGrafanaReconcile(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:              "delete",
 					DeletionTimestamp: &metav1.Time{Time: time.Now()},
-					Finalizers:        []string{mlaFinalizer, "just-a-test-do-not-delete-thanks"},
+					Finalizers:        []string{mlaFinalizer},
 				},
 				Spec: kubermaticv1.ProjectSpec{
 					Name: "projectName",

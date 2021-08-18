@@ -41,15 +41,12 @@ var (
 func DaemonSetCreator(versions kubermatic.Versions) reconciling.NamedDaemonSetCreatorGetter {
 	return func() (string, reconciling.DaemonSetCreator) {
 		return daemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
-			ds.Spec.UpdateStrategy.Type = appsv1.RollingUpdateDaemonSetStrategyType
-
-			// be careful to not override any defaulting a k8s 1.21 with feature gate
-			// DaemonSetUpdateSurge might perform on the .MaxSurge field
-			if ds.Spec.UpdateStrategy.RollingUpdate == nil {
-				ds.Spec.UpdateStrategy.RollingUpdate = &appsv1.RollingUpdateDaemonSet{}
+			ds.Spec.UpdateStrategy = appsv1.DaemonSetUpdateStrategy{
+				Type: appsv1.RollingUpdateDaemonSetStrategyType,
+				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
+					MaxUnavailable: &daemonSetMaxUnavailable,
+				},
 			}
-			ds.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable = &daemonSetMaxUnavailable
-
 			labels := map[string]string{"app": "user-ssh-keys-agent"}
 			ds.Spec.Selector = &metav1.LabelSelector{MatchLabels: labels}
 			ds.Spec.Template.ObjectMeta.Labels = labels

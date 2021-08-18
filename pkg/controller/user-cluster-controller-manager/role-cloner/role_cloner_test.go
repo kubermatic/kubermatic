@@ -54,8 +54,16 @@ func TestReconcile(t *testing.T) {
 			name: "role not found, no error",
 		},
 		{
-			name:          "delete role view for all namespaces",
-			expectedRoles: []rbacv1.Role{},
+			name: "delete role view for all namespaces",
+			expectedRoles: []rbacv1.Role{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "view",
+						Namespace: "kube-system",
+						Labels:    map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
+					},
+				},
+			},
 			objects: []ctrlruntimeclient.Object{
 				&rbacv1.Role{
 					ObjectMeta: metav1.ObjectMeta{
@@ -342,14 +350,8 @@ func TestReconcile(t *testing.T) {
 			sortRoles(newExistingRoles)
 			sortRoles(tc.expectedRoles)
 
-			if len(tc.expectedRoles) > 0 {
-				if !reflect.DeepEqual(newExistingRoles, tc.expectedRoles) {
-					t.Fatalf("roles are not equal, expected %v got %v", tc.expectedRoles, newExistingRoles)
-				}
-			} else {
-				if len(newExistingRoles) != 0 {
-					t.Fatalf("expected 0 roles, but found %d", len(newExistingRoles))
-				}
+			if !reflect.DeepEqual(newExistingRoles, tc.expectedRoles) {
+				t.Fatalf("roles are not equal, expected %v got %v", tc.expectedRoles, newExistingRoles)
 			}
 		})
 	}

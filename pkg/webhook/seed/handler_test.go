@@ -21,7 +21,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/go-logr/logr"
+	logrtesting "github.com/go-logr/logr/testing"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 
 	admissionv1 "k8s.io/api/admission/v1"
@@ -176,7 +177,7 @@ func TestHandle(t *testing.T) {
 			t.Fatalf("error occurred while creating decoder: %v", err)
 		}
 		handler := seedAdmissionHandler{
-			log:     logr.Discard(),
+			log:     &logrtesting.NullLogger{},
 			decoder: d,
 			validateFunc: func(_ context.Context, s *kubermaticv1.Seed, op admissionv1.Operation) error {
 				if !equality.Semantic.DeepEqual(*s, tt.wantSeed) {

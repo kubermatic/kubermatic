@@ -57,7 +57,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	apiextensionv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -85,7 +85,7 @@ func init() {
 	if err := v1beta1.AddToScheme(scheme.Scheme); err != nil {
 		kubermaticlog.Logger.Fatalw("failed to register scheme metrics/v1beta1", "error", err)
 	}
-	if err := apiextensionv1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
+	if err := apiextensionv1beta1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
 		kubermaticlog.Logger.Fatalw("failed to register scheme apiextension/v1beta1", "error", err)
 	}
 	if err := gatekeeperconfigv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
@@ -1348,12 +1348,12 @@ func GenDefaultConstraintTemplate(name string) apiv2.ConstraintTemplate {
 						ShortNames: []string{"lc"},
 					},
 					Validation: &constrainttemplatev1beta1.Validation{
-						OpenAPIV3Schema: &apiextensionv1.JSONSchemaProps{
-							Properties: map[string]apiextensionv1.JSONSchemaProps{
+						OpenAPIV3Schema: &apiextensionv1beta1.JSONSchemaProps{
+							Properties: map[string]apiextensionv1beta1.JSONSchemaProps{
 								"labels": {
 									Type: "array",
-									Items: &apiextensionv1.JSONSchemaPropsOrArray{
-										Schema: &apiextensionv1.JSONSchemaProps{
+									Items: &apiextensionv1beta1.JSONSchemaPropsOrArray{
+										Schema: &apiextensionv1beta1.JSONSchemaProps{
 											Type: "string",
 										},
 									},
@@ -1415,12 +1415,12 @@ func GenConstraintTemplate(name string) *kubermaticv1.ConstraintTemplate {
 					ShortNames: []string{"lc"},
 				},
 				Validation: &constrainttemplatev1beta1.Validation{
-					OpenAPIV3Schema: &apiextensionv1.JSONSchemaProps{
-						Properties: map[string]apiextensionv1.JSONSchemaProps{
+					OpenAPIV3Schema: &apiextensionv1beta1.JSONSchemaProps{
+						Properties: map[string]apiextensionv1beta1.JSONSchemaProps{
 							"labels": {
 								Type: "array",
-								Items: &apiextensionv1.JSONSchemaPropsOrArray{
-									Schema: &apiextensionv1.JSONSchemaProps{
+								Items: &apiextensionv1beta1.JSONSchemaPropsOrArray{
+									Schema: &apiextensionv1beta1.JSONSchemaProps{
 										Type: "string",
 									},
 								},

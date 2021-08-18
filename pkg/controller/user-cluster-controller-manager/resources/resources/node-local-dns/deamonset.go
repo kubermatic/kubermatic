@@ -32,17 +32,13 @@ import (
 func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 	return func() (string, reconciling.DaemonSetCreator) {
 		return resources.NodeLocalDNSDaemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
-			maxUnvailable := intstr.FromString("10%")
-
-			ds.Spec.UpdateStrategy.Type = appsv1.RollingUpdateDaemonSetStrategyType
-
-			// be careful to not override any defaulting a k8s 1.21 with feature gate
-			// DaemonSetUpdateSurge might perform on the .MaxSurge field
-			if ds.Spec.UpdateStrategy.RollingUpdate == nil {
-				ds.Spec.UpdateStrategy.RollingUpdate = &appsv1.RollingUpdateDaemonSet{}
+			sptr := intstr.FromString("10%")
+			ds.Spec.UpdateStrategy = appsv1.DaemonSetUpdateStrategy{
+				Type: appsv1.RollingUpdateDaemonSetStrategyType,
+				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
+					MaxUnavailable: &sptr,
+				},
 			}
-			ds.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable = &maxUnvailable
-
 			labels := resources.BaseAppLabels(resources.NodeLocalDNSDaemonSetName,
 				map[string]string{"app.kubernetes.io/name": resources.NodeLocalDNSDaemonSetName})
 			if ds.Labels == nil {

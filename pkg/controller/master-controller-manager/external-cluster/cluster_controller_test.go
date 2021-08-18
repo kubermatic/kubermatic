@@ -38,7 +38,6 @@ import (
 )
 
 func TestReconcile(t *testing.T) {
-	testCluster := genExternalCluster("test", metav1.Now())
 
 	tests := []struct {
 		name                      string
@@ -49,12 +48,9 @@ func TestReconcile(t *testing.T) {
 			name:        "scenario 1: cleanup finalizer and kubeconfig secret",
 			clusterName: "test",
 			existingKubermaticObjects: []ctrlruntimeclient.Object{
-				testCluster,
+				genExternalCluster("test", metav1.Now()),
 				&corev1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      testCluster.GetKubeconfigSecretName(),
-						Namespace: resources.KubermaticNamespace,
-					},
+					ObjectMeta: metav1.ObjectMeta{Name: genExternalCluster("test", metav1.Now()).GetKubeconfigSecretName(), Namespace: resources.KubermaticNamespace},
 				},
 			},
 		},
@@ -82,23 +78,19 @@ func TestReconcile(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-
-			// ensure the ExternalCluster is gone (the controller removed the finalizer, and since a
-			// DeletionTimestamp was set, it should now be gone)
 			cluster := &kubermaticv1.ExternalCluster{}
 			err = kubermaticFakeClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: test.clusterName}, cluster)
-			if err == nil {
-				t.Fatal("expected ExternalCluster to be gone, but found it anyway")
+			if err != nil {
+				t.Fatal(err)
 			}
-			if !kerrors.IsNotFound(err) {
-				t.Fatalf("expected not-found error, but got %v", err)
+			if kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.ExternalClusterKubeconfigCleanupFinalizer) {
+				t.Fatal("the finalizer should be deleted")
 			}
 
-			// the secret should also be gone
 			secretKubeconfig := &corev1.Secret{}
 			err = kubermaticFakeClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: cluster.GetKubeconfigSecretName()}, secretKubeconfig)
 			if err == nil {
-				t.Fatal("expected secret to be gone, but found it anyway")
+				t.Fatal("expected error")
 			}
 			if !kerrors.IsNotFound(err) {
 				t.Fatalf("expected not-found error, but got %v", err)
@@ -108,11 +100,9 @@ func TestReconcile(t *testing.T) {
 }
 
 func genExternalCluster(name string, deletionTimestamp metav1.Time) *kubermaticv1.ExternalCluster {
+
 	cluster := &kubermaticv1.ExternalCluster{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:              name,
-			DeletionTimestamp: &deletionTimestamp,
-		},
+		ObjectMeta: metav1.ObjectMeta{Name: name, DeletionTimestamp: &deletionTimestamp},
 		Spec: kubermaticv1.ExternalClusterSpec{
 			HumanReadableName: name,
 		},

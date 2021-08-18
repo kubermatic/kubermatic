@@ -37,7 +37,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/record"
@@ -154,12 +154,12 @@ func allowedRegistryCTCreatorGetter() reconciling.NamedKubermaticV1ConstraintTem
 							Kind: AllowedRegistryCTName,
 						},
 						Validation: &constrainttemplatev1beta1.Validation{
-							OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
-								Properties: map[string]apiextensionsv1.JSONSchemaProps{
+							OpenAPIV3Schema: &apiextensionsv1beta1.JSONSchemaProps{
+								Properties: map[string]apiextensionsv1beta1.JSONSchemaProps{
 									AllowedRegistryField: {
 										Type: "array",
-										Items: &apiextensionsv1.JSONSchemaPropsOrArray{
-											Schema: &apiextensionsv1.JSONSchemaProps{
+										Items: &apiextensionsv1beta1.JSONSchemaPropsOrArray{
+											Schema: &apiextensionsv1beta1.JSONSchemaProps{
 												Type: "string",
 											},
 										},

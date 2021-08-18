@@ -30,7 +30,7 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
-	apiextensionv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -230,12 +230,12 @@ func genCTSpec() kubermaticv1.ConstraintTemplateSpec {
 					ShortNames: []string{"lc"},
 				},
 				Validation: &v1beta1.Validation{
-					OpenAPIV3Schema: &apiextensionv1.JSONSchemaProps{
-						Properties: map[string]apiextensionv1.JSONSchemaProps{
+					OpenAPIV3Schema: &apiextensionv1beta1.JSONSchemaProps{
+						Properties: map[string]apiextensionv1beta1.JSONSchemaProps{
 							"labels": {
 								Type: "array",
-								Items: &apiextensionv1.JSONSchemaPropsOrArray{
-									Schema: &apiextensionv1.JSONSchemaProps{
+								Items: &apiextensionv1beta1.JSONSchemaPropsOrArray{
+									Schema: &apiextensionv1beta1.JSONSchemaProps{
 										Type: "string",
 									},
 								},

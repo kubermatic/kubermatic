@@ -175,7 +175,6 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 						Labels:            map[string]string{kubermaticv1.ProjectIDLabelKey: "projectUID"},
 						Name:              "clusterUID",
 						DeletionTimestamp: &metav1.Time{Time: time.Now()},
-						Finalizers:        []string{"just-a-test-do-not-delete-thanks"},
 					},
 					Spec: kubermaticv1.ClusterSpec{
 						HumanReadableName: "Super Cluster",

@@ -1781,11 +1781,6 @@ func TestFinalization(t *testing.T) {
 			backupConfig.Status.CleanupRunning = tc.existingCleanupRunningFlag
 			kuberneteshelper.AddFinalizer(backupConfig, DeleteAllBackupsFinalizer)
 
-			// to validate objects after reconciling, we want to prevent the fakeclient
-			// from deleting them once all finalizers are gone; we achieve this by
-			// attached a dummy finalizer
-			kuberneteshelper.AddFinalizer(backupConfig, "just-a-test-do-not-delete-thanks")
-
 			initObjs := []client.Object{
 				cluster,
 				backupConfig,
@@ -1816,7 +1811,7 @@ func TestFinalization(t *testing.T) {
 			}
 
 			readbackBackupConfig := &kubermaticv1.EtcdBackupConfig{}
-			if err := reconciler.Get(ctx, client.ObjectKey{Namespace: backupConfig.GetNamespace(), Name: backupConfig.GetName()}, readbackBackupConfig); err != nil {
+			if err := reconciler.Get(context.Background(), client.ObjectKey{Namespace: backupConfig.GetNamespace(), Name: backupConfig.GetName()}, readbackBackupConfig); err != nil {
 				t.Fatalf("Error reading back completed backupConfig: %v", err)
 			}
 
