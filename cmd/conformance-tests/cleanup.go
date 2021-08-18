@@ -21,8 +21,10 @@ import (
 
 	"go.uber.org/zap"
 
+	"k8c.io/kubermatic/v2/pkg/resources"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/resources/kubernetes-dashboard"
 
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -36,10 +38,42 @@ var (
 		metav1.NamespaceSystem,
 		metav1.NamespacePublic,
 		corev1.NamespaceNodeLease,
-		kubernetesdashboard.Namespace)
+		kubernetesdashboard.Namespace,
+		resources.CloudInitSettingsNamespace,
+	)
 )
 
-func (r *testRunner) deleteAllNonDefaultNamespaces(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client) error {
+func (r *testRunner) cleanupBeforeGinkgo(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client) error {
+	log.Info("Removing webhooks...")
+
+	if err := wait.Poll(r.userClusterPollInterval, r.customTestTimeout, func() (done bool, err error) {
+		webhookList := &admissionregistrationv1.ValidatingWebhookConfigurationList{}
+		if err := client.List(ctx, webhookList); err != nil {
+			log.Errorw("Failed to list webhooks", zap.Error(err))
+			return false, nil
+		}
+
+		if len(webhookList.Items) == 0 {
+			return true, nil
+		}
+
+		for _, webhook := range webhookList.Items {
+			if webhook.DeletionTimestamp == nil {
+				wlog := log.With("webhook", webhook.Name)
+
+				if err := client.Delete(ctx, &webhook); err != nil {
+					wlog.Errorw("Failed to delete webhook", zap.Error(err))
+				} else {
+					wlog.Debug("Deleted webhook.")
+				}
+			}
+		}
+
+		return false, nil
+	}); err != nil {
+		return err
+	}
+
 	log.Info("Removing non-default namespaces...")
 
 	return wait.Poll(r.userClusterPollInterval, r.customTestTimeout, func() (done bool, err error) {
@@ -61,14 +95,12 @@ func (r *testRunner) deleteAllNonDefaultNamespaces(ctx context.Context, log *zap
 
 			// If it's not gone & the DeletionTimestamp is nil, delete it
 			if namespace.DeletionTimestamp == nil {
-				// make sure to create a new variable, or else subsequent With() calls will
-				// *add* new attributes instead of overriding the existing namespace value
-				log := log.With("namespace", namespace.Name)
+				nslog := log.With("namespace", namespace.Name)
 
 				if err := client.Delete(ctx, &namespace); err != nil {
-					log.Errorw("Failed to delete namespace", zap.Error(err))
+					nslog.Errorw("Failed to delete namespace", zap.Error(err))
 				} else {
-					log.Debug("Deleted namespace.")
+					nslog.Debug("Deleted namespace.")
 				}
 			}
 		}
