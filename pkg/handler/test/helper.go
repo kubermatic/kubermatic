@@ -1704,7 +1704,7 @@ func GenClusterTemplate(name, id, projectID, scope, userEmail string) *kubermati
 	return &kubermaticv1.ClusterTemplate{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        id,
-			Labels:      map[string]string{kubermaticv1.ClusterTemplateScopeLabelKey: scope, kubermaticv1.ProjectIDLabelKey: projectID},
+			Labels:      map[string]string{kubermaticv1.ClusterTemplateScopeLabelKey: scope, kubermaticv1.ProjectIDLabelKey: projectID, kubermaticv1.ClusterTemplateHumanReadableNameLabelKey: name},
 			Annotations: map[string]string{kubermaticv1.ClusterTemplateUserAnnotationKey: userEmail},
 		},
 		ClusterLabels:          nil,

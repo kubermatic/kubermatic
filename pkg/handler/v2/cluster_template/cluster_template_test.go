@@ -151,31 +151,52 @@ func TestListClusterTemplates(t *testing.T) {
 			Name: "scenario 1: list cluster templates",
 			ExpectedClusterTemplates: []apiv2.ClusterTemplate{
 				{
-					Name:           "ct1",
-					ID:             "ctID1",
-					ProjectID:      test.GenDefaultProject().Name,
-					User:           test.GenDefaultAPIUser().Email,
-					Scope:          kubermaticv1.UserClusterTemplateScope,
-					Cluster:        nil,
-					NodeDeployment: nil,
+					Name:      "ct1",
+					ID:        "ctID1",
+					ProjectID: test.GenDefaultProject().Name,
+					User:      test.GenDefaultAPIUser().Email,
+					Scope:     kubermaticv1.UserClusterTemplateScope,
+					Cluster: &apiv1.Cluster{
+						Spec: apiv1.ClusterSpec{
+							Cloud: kubermaticv1.CloudSpec{
+								DatacenterName: "fake-dc",
+								Fake:           &kubermaticv1.FakeCloudSpec{},
+							},
+						},
+					},
+					NodeDeployment: &apiv1.NodeDeployment{},
 				},
 				{
-					Name:           "ct2",
-					ID:             "ctID2",
-					ProjectID:      "",
-					User:           "john@acme.com",
-					Scope:          kubermaticv1.GlobalClusterTemplateScope,
-					Cluster:        nil,
-					NodeDeployment: nil,
+					Name:      "ct2",
+					ID:        "ctID2",
+					ProjectID: "",
+					User:      "john@acme.com",
+					Scope:     kubermaticv1.GlobalClusterTemplateScope,
+					Cluster: &apiv1.Cluster{
+						Spec: apiv1.ClusterSpec{
+							Cloud: kubermaticv1.CloudSpec{
+								DatacenterName: "fake-dc",
+								Fake:           &kubermaticv1.FakeCloudSpec{},
+							},
+						},
+					},
+					NodeDeployment: &apiv1.NodeDeployment{},
 				},
 				{
-					Name:           "ct4",
-					ID:             "ctID4",
-					ProjectID:      test.GenDefaultProject().Name,
-					User:           "john@acme.com",
-					Scope:          kubermaticv1.ProjectClusterTemplateScope,
-					Cluster:        nil,
-					NodeDeployment: nil,
+					Name:      "ct4",
+					ID:        "ctID4",
+					ProjectID: test.GenDefaultProject().Name,
+					User:      "john@acme.com",
+					Scope:     kubermaticv1.ProjectClusterTemplateScope,
+					Cluster: &apiv1.Cluster{
+						Spec: apiv1.ClusterSpec{
+							Cloud: kubermaticv1.CloudSpec{
+								DatacenterName: "fake-dc",
+								Fake:           &kubermaticv1.FakeCloudSpec{},
+							},
+						},
+					},
+					NodeDeployment: &apiv1.NodeDeployment{},
 				},
 			},
 			HTTPStatus: http.StatusOK,
@@ -233,7 +254,7 @@ func TestGetClusterTemplates(t *testing.T) {
 		{
 			Name:             "scenario 1: get global template",
 			TemplateID:       "ctID2",
-			ExpectedResponse: `{"name":"","id":"ctID2","user":"john@acme.com","scope":"global","cluster":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","type":"","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"","oidc":{}},"status":{"version":"","url":"","externalCCMMigration":""}},"nodeDeployment":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}},"status":{}}}`,
+			ExpectedResponse: `{"name":"ct2","id":"ctID2","user":"john@acme.com","scope":"global","cluster":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","type":"","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"","oidc":{}},"status":{"version":"","url":"","externalCCMMigration":""}},"nodeDeployment":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}},"status":{}}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
@@ -265,7 +286,7 @@ func TestGetClusterTemplates(t *testing.T) {
 		{
 			Name:             "scenario 3: get user scope template",
 			TemplateID:       "ctID1",
-			ExpectedResponse: `{"name":"","id":"ctID1","projectID":"my-first-project-ID","user":"bob@acme.com","scope":"user","cluster":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","type":"","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"","oidc":{}},"status":{"version":"","url":"","externalCCMMigration":""}},"nodeDeployment":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}},"status":{}}}`,
+			ExpectedResponse: `{"name":"ct1","id":"ctID1","projectID":"my-first-project-ID","user":"bob@acme.com","scope":"user","cluster":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","type":"","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"","oidc":{}},"status":{"version":"","url":"","externalCCMMigration":""}},"nodeDeployment":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}},"status":{}}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
@@ -281,7 +302,7 @@ func TestGetClusterTemplates(t *testing.T) {
 		{
 			Name:             "scenario 4: get project scope template",
 			TemplateID:       "ctID4",
-			ExpectedResponse: `{"name":"","id":"ctID4","projectID":"my-first-project-ID","user":"john@acme.com","scope":"project","cluster":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","type":"","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"","oidc":{}},"status":{"version":"","url":"","externalCCMMigration":""}},"nodeDeployment":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}},"status":{}}}`,
+			ExpectedResponse: `{"name":"ct4","id":"ctID4","projectID":"my-first-project-ID","user":"john@acme.com","scope":"project","cluster":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","type":"","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"","oidc":{}},"status":{"version":"","url":"","externalCCMMigration":""}},"nodeDeployment":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}},"status":{}}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
