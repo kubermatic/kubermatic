@@ -220,7 +220,7 @@ func deployKubermaticOperator(ctx context.Context, logger *logrus.Entry, kubeCli
 	}
 
 	sublogger.Info("Deploying Custom Resource Definitions…")
-	if err := util.DeployCRDs(ctx, kubeClient, sublogger, filepath.Join(opt.ChartsDirectory, "kubermatic", "crd")); err != nil {
+	if err := util.DeployCRDs(ctx, kubeClient, sublogger, filepath.Join(opt.ChartsDirectory, "kubermatic-operator", "crd")); err != nil {
 		return fmt.Errorf("failed to deploy CRDs: %v", err)
 	}
 
