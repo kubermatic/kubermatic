@@ -111,8 +111,8 @@ func main() {
 			},
 			{
 				ResourceName:       "CustomResourceDefinition",
-				ImportAlias:        "apiextensionsv1beta1",
-				ResourceImportPath: "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1",
+				ImportAlias:        "apiextensionsv1",
+				ResourceImportPath: "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1",
 			},
 			{
 				ResourceName:       "CronJob",
