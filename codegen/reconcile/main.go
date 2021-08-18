@@ -176,6 +176,12 @@ func main() {
 				ImportAlias:      "kubermaticv1",
 				APIVersionPrefix: "KubermaticV1",
 			},
+			{
+				ResourceName:       "NetworkPolicy",
+				ResourceNamePlural: "NetworkPolicies",
+				ImportAlias:        "networkingv1",
+				ResourceImportPath: "k8s.io/api/networking/v1",
+			},
 		},
 	}
 
