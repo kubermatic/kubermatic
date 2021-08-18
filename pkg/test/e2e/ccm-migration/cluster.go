@@ -28,13 +28,16 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
+	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/retry"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -42,6 +45,9 @@ import (
 const (
 	clusterReadinessCheckPeriod = 10 * time.Second
 	clusterReadinessTimeout     = 10 * time.Minute
+
+	machineDeploymentName      = "ccm-migration-e2e"
+	machineDeploymentNamespace = "kube-system"
 )
 
 // ClusterJig helps setting up a user cluster for testing.
@@ -94,19 +100,19 @@ func (c *ClusterJig) CreateMachineDeployment(userClient ctrlruntimeclient.Client
 
 	machineDeployment := &clusterv1alpha1.MachineDeployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-machine",
-			Namespace: "kube-system",
+			Name:      machineDeploymentName,
+			Namespace: machineDeploymentNamespace,
 		},
 		Spec: clusterv1alpha1.MachineDeploymentSpec{
 			Selector: metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"name": "test-machine",
+					"name": machineDeploymentName,
 				},
 			},
 			Template: clusterv1alpha1.MachineTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"name": "test-machine",
+						"name": machineDeploymentName,
 					},
 				},
 				Spec: clusterv1alpha1.MachineSpec{
@@ -211,7 +217,86 @@ func (c *ClusterJig) createCluster(cloudSpec kubermaticv1.CloudSpec) error {
 
 // CleanUp deletes the cluster.
 func (c *ClusterJig) CleanUp() error {
-	return c.SeedClient.Delete(context.TODO(), c.Cluster)
+	ctx := context.TODO()
+
+	clusterClientProvider, err := clusterclient.NewExternal(c.SeedClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to get user cluster client provider")
+	}
+
+	userClient, err := clusterClientProvider.GetClient(ctx, c.Cluster)
+	if err != nil {
+		return errors.Wrap(err, "failed to get user cluster client")
+	}
+
+	// Skip eviction to speed up the clean up process
+	nodes := &corev1.NodeList{}
+	if err := userClient.List(ctx, nodes); err != nil {
+		return errors.Wrap(err, "failed to list user cluster nodes")
+	}
+
+	for _, node := range nodes.Items {
+		nodeKey := ctrlruntimeclient.ObjectKey{Name: node.Name}
+
+		retErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			n := corev1.Node{}
+			if err := userClient.Get(ctx, nodeKey, &n); err != nil {
+				return err
+			}
+
+			if n.Annotations == nil {
+				n.Annotations = map[string]string{}
+			}
+			n.Annotations["kubermatic.io/skip-eviction"] = "true"
+			return userClient.Update(ctx, &n)
+		})
+		if retErr != nil {
+			return errors.Wrapf(retErr, "failed to annotate node %s", node.Name)
+		}
+	}
+
+	// Delete MachineDeployment and Cluster
+	deleteTimeout := 15 * time.Minute
+	return wait.PollImmediate(5*time.Second, deleteTimeout, func() (bool, error) {
+		mdKey := ctrlruntimeclient.ObjectKey{Name: machineDeploymentName, Namespace: machineDeploymentNamespace}
+
+		md := &clusterv1alpha1.MachineDeployment{}
+		err := userClient.Get(ctx, mdKey, md)
+		if err == nil {
+			if md.DeletionTimestamp != nil {
+				return false, nil
+			}
+			err := userClient.Delete(ctx, md)
+			if err != nil {
+				return false, errors.Wrap(err, "failed to delete user cluster machinedeployment")
+			}
+			return false, nil
+		} else if err != nil && !k8serrors.IsNotFound(err) {
+			return false, errors.Wrap(err, "failed to get user cluster machinedeployment")
+		}
+
+		clusters := &kubermaticv1.ClusterList{}
+		err = c.SeedClient.List(ctx, clusters)
+		if err != nil {
+			return false, errors.Wrap(err, "failed to list user clusters")
+		}
+
+		if len(clusters.Items) == 0 {
+			return true, nil
+		}
+		if len(clusters.Items) > 1 {
+			return false, errors.Wrap(err, "there is more than one user cluster, expected one or zero cluster")
+		}
+
+		if clusters.Items[0].DeletionTimestamp == nil {
+			err := c.SeedClient.Delete(ctx, c.Cluster)
+			if err != nil {
+				return false, errors.Wrap(err, "failed to delete user cluster")
+			}
+		}
+
+		return false, nil
+	})
 }
 
 func (c *ClusterJig) waitForClusterControlPlaneReady(cl *kubermaticv1.Cluster) error {
