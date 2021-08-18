@@ -37,6 +37,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
+	kerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -202,16 +203,18 @@ func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
+		var errorList []string
 		for _, template := range templates {
-			result = append(result, apiv2.ClusterTemplate{
-				Name:      template.Spec.HumanReadableName,
-				ID:        template.Name,
-				ProjectID: template.Labels[kubermaticv1.ProjectIDLabelKey],
-				User:      template.Annotations[kubermaticv1.ClusterTemplateUserAnnotationKey],
-				Scope:     template.Labels[kubermaticv1.ClusterTemplateScopeLabelKey],
-			})
+			externalClusterTemplate, err := convertInternalClusterTemplatetoExternal(&template)
+			if err != nil {
+				errorList = append(errorList, err.Error())
+				continue
+			}
+			result = append(result, *externalClusterTemplate)
 		}
-
+		if len(errorList) > 0 {
+			return nil, kerrors.NewWithDetails(http.StatusInternalServerError, "failed to get some cluster templates, please examine details field for more info", errorList)
+		}
 		return result, nil
 	}
 }
