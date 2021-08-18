@@ -164,18 +164,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, _ reconcile.Request) (reconc
 	return reconcile.Result{}, err
 }
 
-type dummyClientBuilder struct {
-	client ctrlruntimeclient.Client
-}
-
-func (d *dummyClientBuilder) WithUncached(objs ...ctrlruntimeclient.Object) manager.ClientBuilder {
-	return d
-}
-
-func (d *dummyClientBuilder) Build(cache cache.Cache, config *rest.Config, options ctrlruntimeclient.Options) (ctrlruntimeclient.Client, error) {
-	return d.client, nil
-}
-
 func (r *Reconciler) reconcile(ctx context.Context) error {
 	seeds, err := r.seedsGetter()
 	if err != nil {
@@ -217,7 +205,9 @@ func (r *Reconciler) reconcile(ctx context.Context) error {
 		NewCache: func(_ *rest.Config, _ cache.Options) (cache.Cache, error) {
 			return r.masterCache, nil
 		},
-		ClientBuilder: &dummyClientBuilder{r.masterClient},
+		NewClient: func(_ cache.Cache, _ *rest.Config, _ ctrlruntimeclient.Options, _ ...ctrlruntimeclient.Object) (ctrlruntimeclient.Client, error) {
+			return r.masterClient, nil
+		},
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create master controller manager: %v", err)

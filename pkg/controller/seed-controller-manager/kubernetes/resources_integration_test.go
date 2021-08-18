@@ -43,17 +43,8 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 	env := &envtest.Environment{
 		// Uncomment this to get the logs from etcd+apiserver
 		// AttachControlPlaneOutput: true,
-		KubeAPIServerFlags: []string{
-			"--etcd-servers={{ if .EtcdURL }}{{ .EtcdURL.String }}{{ end }}",
-			"--cert-dir={{ .CertDir }}",
-			"--insecure-port={{ if .URL }}{{ .URL.Port }}{{ end }}",
-			"--insecure-bind-address={{ if .URL }}{{ .URL.Hostname }}{{ end }}",
-			"--secure-port={{ if .SecurePort }}{{ .SecurePort }}{{ end }}",
-			"--admission-control=AlwaysAdmit",
-			// Upstream does not have `--allow-privileged`,
-			"--allow-privileged",
-		},
 	}
+
 	cfg, err := env.Start()
 	if err != nil {
 		t.Fatalf("failed to start testenv: %v", err)
@@ -117,6 +108,12 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 
 	// This is used as basis to sync the clusters address which we in turn do
 	// before creating any deployments.
+	namespace := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: testCluster.Status.NamespaceName,
+		},
+	}
+
 	lbService := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testCluster.Status.NamespaceName,
@@ -138,6 +135,9 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		},
 	}
 
+	if err := mgr.GetClient().Create(ctx, namespace); err != nil {
+		t.Fatalf("failed to create namespace: %v", err)
+	}
 	if err := mgr.GetClient().Create(ctx, testCluster); err != nil {
 		t.Fatalf("failed to create testcluster: %v", err)
 	}
