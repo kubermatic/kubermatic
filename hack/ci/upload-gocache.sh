@@ -51,6 +51,12 @@ echodate "Building binaries"
 
 (
   TEST_NAME="Build Kubermatic"
+
+  # prevent the Makefile from downloading the old Gocache. This ensures that
+  # our cache does not grow over time, as packages are added and removed,
+  # but makes creating the cache a tiny bit slower
+  touch download-gocache
+
   retry 2 make build
 )
 (
