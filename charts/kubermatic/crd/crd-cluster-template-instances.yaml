@@ -20,10 +20,7 @@ metadata:
     "api-approved.kubernetes.io": "unapproved, legacy API"
 spec:
   group: kubermatic.k8s.io
-  subresources:
-    scale:
-      specReplicasPath: .spec.replicas
-      statusReplicasPath: .status.replicas
+  scope: Cluster
   names:
     kind: ClusterTemplateInstance
     listKind: ClusterTemplateInstanceList
@@ -31,19 +28,29 @@ spec:
     singular: clustertemplateinstance
     shortNames:
       - clti
-  scope: Cluster
-  version: v1
-  additionalPrinterColumns:
-    - JSONPath: .metadata.creationTimestamp
-      description: |-
-        CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC.
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          x-kubernetes-preserve-unknown-fields: true
+          type: object
+      subresources:
+        scale:
+          specReplicasPath: .spec.replicas
+          statusReplicasPath: .status.replicas
+      additionalPrinterColumns:
+        - jsonPath: .metadata.creationTimestamp
+          description: |-
+            CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC.
 
-        Populated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
-      name: Age
-      type: date
-    - JSONPath: .spec.projectID
-      name: ProjectID
-      type: string
-    - JSONPath: .spec.clusterTemplateID
-      name: ClusterTemplateID
-      type: string
+            Populated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+          name: Age
+          type: date
+        - jsonPath: .spec.projectID
+          name: ProjectID
+          type: string
+        - jsonPath: .spec.clusterTemplateID
+          name: ClusterTemplateID
+          type: string

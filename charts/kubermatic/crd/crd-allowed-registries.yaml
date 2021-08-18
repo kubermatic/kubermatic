@@ -20,6 +20,7 @@ metadata:
     "api-approved.kubernetes.io": "unapproved, legacy API"
 spec:
   group: kubermatic.k8s.io
+  scope: Cluster
   names:
     kind: AllowedRegistry
     listKind: AllowedRegistryList
@@ -27,18 +28,24 @@ spec:
     singular: allowedregistry
     shortNames:
       - alr
-  scope: Cluster
-  version: v1
-  additionalPrinterColumns:
-    - JSONPath: .metadata.creationTimestamp
-      description: |-
-        CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC.
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          x-kubernetes-preserve-unknown-fields: true
+          type: object
+      additionalPrinterColumns:
+        - jsonPath: .metadata.creationTimestamp
+          description: |-
+            CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC.
 
-        Populated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
-      name: Age
-      type: date
-    - JSONPath: .spec.registryPrefix
-      description: |-
-        RegistryPrefix contains the prefix of the registry which will be allowed. User clusters will be able to deploy only images which are prefixed with one of the allowed registry prefixes.
-      name: RegistryPrefix
-      type: string
+            Populated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+          name: Age
+          type: date
+        - jsonPath: .spec.registryPrefix
+          description: |-
+            RegistryPrefix contains the prefix of the registry which will be allowed. User clusters will be able to deploy only images which are prefixed with one of the allowed registry prefixes.
+          name: RegistryPrefix
+          type: string

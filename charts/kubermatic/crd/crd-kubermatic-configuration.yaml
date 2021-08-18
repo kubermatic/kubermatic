@@ -18,10 +18,17 @@ metadata:
   name: kubermaticconfigurations.operator.kubermatic.io
 spec:
   group: operator.kubermatic.io
+  scope: Namespaced
   names:
     kind: KubermaticConfiguration
     listKind: KubermaticConfigurationList
     plural: kubermaticconfigurations
     singular: kubermaticconfiguration
-  scope: Namespaced
-  version: v1alpha1
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          x-kubernetes-preserve-unknown-fields: true
+          type: object

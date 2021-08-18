@@ -20,31 +20,38 @@ metadata:
     "api-approved.kubernetes.io": "unapproved, legacy API"
 spec:
   group: kubermatic.k8s.io
+  scope: Namespaced
   names:
     kind: EtcdBackupConfig
     listKind: EtcdBackupConfigList
     plural: etcdbackupconfigs
     singular: etcdbackupconfig
-  scope: Namespaced
-  version: v1
-  additionalPrinterColumns:
-  - JSONPath: .status.lastBackups[-1].backupPhase
-    name: lastPhase
-    type: string
-  - JSONPath: .status.lastBackups[-1].backupName
-    name: lastBackupName
-    type: string
-    priority: 1
-  - JSONPath: .status.lastBackups[-1].scheduledTime
-    name: lastScheduled
-    type: string
-    format: date-time
-    priority: 1
-  - JSONPath: .status.lastBackups[-1].jobName
-    name: job
-    type: string
-    priority: 1
-  - JSONPath: .status.lastBackups[-1].deleteJobName
-    name: deleteJob
-    type: string
-    priority: 1
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          x-kubernetes-preserve-unknown-fields: true
+          type: object
+      additionalPrinterColumns:
+      - jsonPath: .status.lastBackups[-1].backupPhase
+        name: lastPhase
+        type: string
+      - jsonPath: .status.lastBackups[-1].backupName
+        name: lastBackupName
+        type: string
+        priority: 1
+      - jsonPath: .status.lastBackups[-1].scheduledTime
+        name: lastScheduled
+        type: string
+        format: date-time
+        priority: 1
+      - jsonPath: .status.lastBackups[-1].jobName
+        name: job
+        type: string
+        priority: 1
+      - jsonPath: .status.lastBackups[-1].deleteJobName
+        name: deleteJob
+        type: string
+        priority: 1

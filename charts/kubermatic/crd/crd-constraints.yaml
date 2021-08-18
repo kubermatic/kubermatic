@@ -20,10 +20,17 @@ metadata:
     "api-approved.kubernetes.io": "unapproved, legacy API"
 spec:
   group: kubermatic.k8s.io
+  scope: Namespaced
   names:
     kind: Constraint
     listKind: ConstraintList
     plural: constraints
     singular: constraint
-  scope: Namespaced
-  version: v1
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          x-kubernetes-preserve-unknown-fields: true
+          type: object
