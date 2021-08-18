@@ -213,6 +213,10 @@ const (
 	// ClusterFeatureEtcdLauncher enables features related to the experimental etcd-launcher. This includes user-cluster
 	// etcd scaling, automatic volume recovery and new backup/restore contorllers.
 	ClusterFeatureEtcdLauncher = "etcdLauncher"
+
+	// ApiserverNetworkPolicy enables the deployment of network policies that
+	// restrict the egress traffic from Apiserver pods.
+	ApiserverNetworkPolicy = "apiserverNetworkPolicy"
 )
 
 // ClusterConditionType is used to indicate the type of a cluster condition. For all condition
