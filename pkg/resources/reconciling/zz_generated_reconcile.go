@@ -15,6 +15,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	networkingv1beta1 "k8s.io/api/networking/v1beta1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -1131,6 +1132,43 @@ func ReconcileKubermaticV1ClusterTemplates(ctx context.Context, namedGetters []N
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kubermaticv1.ClusterTemplate{}, false); err != nil {
 			return fmt.Errorf("failed to ensure ClusterTemplate %s/%s: %v", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
+// NetworkPolicyCreator defines an interface to create/update NetworkPolicys
+type NetworkPolicyCreator = func(existing *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error)
+
+// NamedNetworkPolicyCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedNetworkPolicyCreatorGetter = func() (name string, create NetworkPolicyCreator)
+
+// NetworkPolicyObjectWrapper adds a wrapper so the NetworkPolicyCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func NetworkPolicyObjectWrapper(create NetworkPolicyCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*networkingv1.NetworkPolicy))
+		}
+		return create(&networkingv1.NetworkPolicy{})
+	}
+}
+
+// ReconcileNetworkPolicies will create and update the NetworkPolicies coming from the passed NetworkPolicyCreator slice
+func ReconcileNetworkPolicies(ctx context.Context, namedGetters []NamedNetworkPolicyCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := NetworkPolicyObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &networkingv1.NetworkPolicy{}, false); err != nil {
+			return fmt.Errorf("failed to ensure NetworkPolicy %s/%s: %v", namespace, name, err)
 		}
 	}
 
