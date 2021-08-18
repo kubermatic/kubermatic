@@ -36,7 +36,7 @@ if [ "$KUBERMATIC_EDITION" == "ee" ]; then
 fi
 
 if [ -z "${VAULT_ADDR:-}" ]; then
-  export VAULT_ADDR=https://vault.loodse.com/
+  export VAULT_ADDR=https://vault.kubermatic.com/
 fi
 
 if [ -z "${KUBECONFIG:-}" ]; then
