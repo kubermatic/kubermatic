@@ -38,7 +38,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
@@ -150,7 +150,7 @@ func Add(
 		&rbacv1.ClusterRoleBinding{},
 		&admissionregistrationv1.MutatingWebhookConfiguration{},
 		&admissionregistrationv1.ValidatingWebhookConfiguration{},
-		&apiextensionsv1beta1.CustomResourceDefinition{},
+		&apiextensionsv1.CustomResourceDefinition{},
 		&appsv1.Deployment{},
 		&v1beta1.PodDisruptionBudget{},
 	}
