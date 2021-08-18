@@ -140,7 +140,7 @@ kubermatic)
   initTiller
 
   echodate "Deploying the Kubermatic CRDs..."
-  retry 5 kubectl apply -f charts/kubermatic/crd/
+  retry 5 kubectl apply -f charts/kubermatic-operator/crd/
 
   # PULL_BASE_REF is the name of the current branch in case of a post-submit
   # or the name of the base branch in case of a PR.
