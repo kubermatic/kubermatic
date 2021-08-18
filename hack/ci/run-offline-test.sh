@@ -30,7 +30,6 @@ cd "$(dirname "$0")/"
 source ../lib.sh
 
 echodate "Getting secrets from Vault"
-export VAULT_ADDR=https://vault.kubermatic.com/
 export VAULT_TOKEN=$(vault write \
   --format=json auth/approle/login \
   role_id=${VAULT_ROLE_ID} secret_id=${VAULT_SECRET_ID} |

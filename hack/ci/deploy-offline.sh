@@ -30,7 +30,6 @@ source hack/lib.sh
 ./hack/ci/push-images.sh
 
 echodate "Getting secrets from Vault"
-export VAULT_ADDR=https://vault.kubermatic.com/
 export VAULT_TOKEN=$(vault write \
   --format=json auth/approle/login \
   role_id=${VAULT_ROLE_ID} secret_id=${VAULT_SECRET_ID} |
