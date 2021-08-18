@@ -21,7 +21,6 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/util/restmapper"
 
 	corev1 "k8s.io/api/core/v1"
@@ -145,7 +144,6 @@ func SeedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.C
 		if err != nil {
 			return nil, fmt.Errorf("failed to load kubeconfig: %v", err)
 		}
-		kubermaticlog.Logger.With("seed", seed.Name).Debug("Successfully got kubeconfig")
 		return cfg, nil
 	}, nil
 }
