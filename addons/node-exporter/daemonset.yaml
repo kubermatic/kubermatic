@@ -20,7 +20,7 @@ metadata:
   labels:
     addonmanager.kubernetes.io/mode: Reconcile
     app.kubernetes.io/name: node-exporter
-    app.kubernetes.io/version: v1.0.1
+    app.kubernetes.io/version: v1.2.2
 spec:
   updateStrategy:
     type: RollingUpdate
@@ -38,7 +38,7 @@ spec:
       serviceAccountName: node-exporter
       containers:
       - name: node-exporter
-        image: '{{ Registry "quay.io" }}/prometheus/node-exporter:v0.18.0'
+        image: '{{ Registry "quay.io" }}/prometheus/node-exporter:v1.2.2'
         args:
         - '--path.procfs=/host/proc'
         - '--path.sysfs=/host/sys'
@@ -64,7 +64,7 @@ spec:
           mountPropagation: HostToContainer
 
       - name: kube-rbac-proxy
-        image: '{{ Registry "quay.io" }}/brancz/kube-rbac-proxy:v0.6.0'
+        image: '{{ Registry "quay.io" }}/brancz/kube-rbac-proxy:v0.11.0'
         args:
         - '--logtostderr'
         - '--secure-listen-address=$(IP):9100'
@@ -104,4 +104,5 @@ spec:
           path: /
       securityContext:
         runAsNonRoot: true
-        runAsUser: 65534
+        runAsUser: 65532
+        runAsGroup: 65534
