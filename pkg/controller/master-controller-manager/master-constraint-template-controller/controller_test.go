@@ -29,7 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
-	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	apiextensionv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -152,12 +152,12 @@ func genCTSpec() kubermaticv1.ConstraintTemplateSpec {
 					ShortNames: []string{"lc"},
 				},
 				Validation: &v1beta1.Validation{
-					OpenAPIV3Schema: &apiextensionv1beta1.JSONSchemaProps{
-						Properties: map[string]apiextensionv1beta1.JSONSchemaProps{
+					OpenAPIV3Schema: &apiextensionv1.JSONSchemaProps{
+						Properties: map[string]apiextensionv1.JSONSchemaProps{
 							"labels": {
 								Type: "array",
-								Items: &apiextensionv1beta1.JSONSchemaPropsOrArray{
-									Schema: &apiextensionv1beta1.JSONSchemaProps{
+								Items: &apiextensionv1.JSONSchemaPropsOrArray{
+									Schema: &apiextensionv1.JSONSchemaProps{
 										Type: "string",
 									},
 								},
@@ -172,7 +172,7 @@ func genCTSpec() kubermaticv1.ConstraintTemplateSpec {
 				Target: "admission.k8s.gatekeeper.sh",
 				Rego: `
 		package k8srequiredlabels
-		
+
         deny[{"msg": msg, "details": {"missing_labels": missing}}] {
           provided := {label | input.review.object.metadata.labels[label]}
           required := {label | label := input.parameters.labels[_]}

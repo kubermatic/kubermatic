@@ -16532,7 +16532,7 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "ByPodStatus": {
-      "description": "ByPodStatus defines the observed state of ConstraintTemplate as seen by\nan individual controller",
+      "description": "ByPodStatus defines the observed state of ConstraintTemplate as seen by\nan individual controller\n+kubebuilder:pruning:PreserveUnknownFields",
       "type": "object",
       "properties": {
         "errors": {
@@ -18126,7 +18126,7 @@
           "x-go-name": "URL"
         }
       },
-      "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+      "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
     },
     "FakeCloudSpec": {
       "type": "object",
@@ -18638,7 +18638,7 @@
           }
         }
       },
-      "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+      "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
     },
     "JSONSchemaDefinitions": {
       "type": "object",
@@ -18646,7 +18646,7 @@
       "additionalProperties": {
         "$ref": "#/definitions/JSONSchemaProps"
       },
-      "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+      "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
     },
     "JSONSchemaDependencies": {
       "type": "object",
@@ -18654,7 +18654,7 @@
       "additionalProperties": {
         "$ref": "#/definitions/JSONSchemaPropsOrStringArray"
       },
-      "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+      "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
     },
     "JSONSchemaProps": {
       "type": "object",
@@ -18863,7 +18863,7 @@
           "x-go-name": "XPreserveUnknownFields"
         }
       },
-      "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+      "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
     },
     "JSONSchemaPropsOrArray": {
       "description": "JSONSchemaPropsOrArray represents a value that can either be a JSONSchemaProps\nor an array of JSONSchemaProps. Mainly here for serialization purposes.",
@@ -18879,7 +18879,7 @@
           "$ref": "#/definitions/JSONSchemaProps"
         }
       },
-      "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+      "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
     },
     "JSONSchemaPropsOrBool": {
       "description": "Defaults to true for the boolean property.",
@@ -18893,7 +18893,7 @@
           "$ref": "#/definitions/JSONSchemaProps"
         }
       },
-      "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+      "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
     },
     "JSONSchemaPropsOrStringArray": {
       "type": "object",
@@ -18909,12 +18909,12 @@
           "$ref": "#/definitions/JSONSchemaProps"
         }
       },
-      "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+      "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
     },
     "JSONSchemaURL": {
       "type": "string",
       "title": "JSONSchemaURL represents a schema url.",
-      "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+      "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
     },
     "Kind": {
       "description": "Kind specifies the resource Kind and APIGroup",
@@ -19022,7 +19022,7 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "LabelSelector": {
-      "description": "A label selector is a label query over a set of resources. The result of matchLabels and\nmatchExpressions are ANDed. An empty label selector matches all objects. A null\nlabel selector matches no objects.",
+      "description": "A label selector is a label query over a set of resources. The result of matchLabels and\nmatchExpressions are ANDed. An empty label selector matches all objects. A null\nlabel selector matches no objects.\n+structType=atomic",
       "type": "object",
       "properties": {
         "matchExpressions": {
@@ -21759,6 +21759,11 @@
     "Validation": {
       "type": "object",
       "properties": {
+        "legacySchema": {
+          "description": "+kubebuilder:default=true",
+          "type": "boolean",
+          "x-go-name": "LegacySchema"
+        },
         "openAPIV3Schema": {
           "$ref": "#/definitions/JSONSchemaProps"
         }

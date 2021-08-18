@@ -21,8 +21,7 @@ import (
 	"context"
 	"testing"
 
-	logrtesting "github.com/go-logr/logr/testing"
-
+	"github.com/go-logr/logr"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -1021,7 +1020,7 @@ func TestHandle(t *testing.T) {
 			t.Fatalf("error occurred while creating decoder: %v", err)
 		}
 		handler := AdmissionHandler{
-			log:      &logrtesting.NullLogger{},
+			log:      logr.Discard(),
 			decoder:  d,
 			features: tt.features,
 		}

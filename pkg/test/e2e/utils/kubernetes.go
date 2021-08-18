@@ -158,7 +158,7 @@ func GetClients() (ctrlruntimeclient.Client, rest.Interface, *rest.Config, error
 	if err := kubermaticv1.AddToScheme(scheme); err != nil {
 		return nil, nil, nil, err
 	}
-	if err := constrainttemplatev1beta1.AddToSchemes.AddToScheme(scheme); err != nil {
+	if err := constrainttemplatev1beta1.AddToScheme(scheme); err != nil {
 		return nil, nil, nil, err
 	}
 
