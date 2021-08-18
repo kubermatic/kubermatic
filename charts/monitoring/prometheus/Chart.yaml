@@ -14,7 +14,7 @@
 
 apiVersion: v1
 name: prometheus
-version: 2.4.1
+version: 2.4.2
 appVersion: v2.29.1
 description: Prometheus Monitoring for Kubernetes
 keywords:
@@ -27,5 +27,5 @@ sources:
 - https://github.com/helm/charts/tree/master/stable/prometheus
 - https://github.com/improbable-eng/thanos/tree/master/tutorials/kubernetes-demo/manifests
 maintainers:
-- name: Loodse GmbH
+- name: The Kubermatic Kubernetes Platform contributors
   email: support@kubermatic.com
