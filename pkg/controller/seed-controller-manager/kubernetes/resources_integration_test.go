@@ -63,7 +63,7 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		t.Fatalf("failed to register vertical pod autoscaler resources to scheme: %v", err)
 	}
 	crdInstallOpts := envtest.CRDInstallOptions{
-		Paths:              []string{"../../../../charts/kubermatic/crd"},
+		Paths:              []string{"../../../../charts/kubermatic-operator/crd"},
 		ErrorIfPathMissing: true,
 	}
 	if _, err := envtest.InstallCRDs(cfg, crdInstallOpts); err != nil {
