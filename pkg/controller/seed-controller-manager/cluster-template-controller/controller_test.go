@@ -25,6 +25,7 @@ import (
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
@@ -45,6 +46,7 @@ func TestReconcile(t *testing.T) {
 		t.Fatalf("failed to build worker-name selector: %v", err)
 	}
 	seedNamespace := "namespace"
+	projectName := test.GenDefaultProject().Name
 
 	testCases := []struct {
 		name                 string
@@ -59,21 +61,21 @@ func TestReconcile(t *testing.T) {
 				Name: "my-first-project-ID-ctID2",
 			},
 			expectedClusters: []*kubermaticv1.Cluster{
-				genCluster("ct2-0", "john@acme.com", *test.GenClusterTemplateInstance(test.GenDefaultProject().Name, "ctID2", 3)),
-				genCluster("ct2-1", "john@acme.com", *test.GenClusterTemplateInstance(test.GenDefaultProject().Name, "ctID2", 3)),
-				genCluster("ct2-2", "john@acme.com", *test.GenClusterTemplateInstance(test.GenDefaultProject().Name, "ctID2", 3)),
+				genCluster("ct2-0", "john@acme.com", *test.GenClusterTemplateInstance(projectName, "ctID2", 3)),
+				genCluster("ct2-1", "john@acme.com", *test.GenClusterTemplateInstance(projectName, "ctID2", 3)),
+				genCluster("ct2-2", "john@acme.com", *test.GenClusterTemplateInstance(projectName, "ctID2", 3)),
 			},
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(
-					test.GenClusterTemplate("ct1", "ctID1", test.GenDefaultProject().Name, kubermaticv1.UserClusterTemplateScope, test.GenDefaultAPIUser().Email),
+					test.GenClusterTemplate("ct1", "ctID1", projectName, kubermaticv1.UserClusterTemplateScope, test.GenDefaultAPIUser().Email),
 					test.GenClusterTemplate("ct2", "ctID2", "", kubermaticv1.GlobalClusterTemplateScope, "john@acme.com"),
-					test.GenClusterTemplate("ct3", "ctID3", test.GenDefaultProject().Name, kubermaticv1.UserClusterTemplateScope, "john@acme.com"),
-					test.GenClusterTemplate("ct4", "ctID4", test.GenDefaultProject().Name, kubermaticv1.ProjectClusterTemplateScope, "john@acme.com"),
-					test.GenClusterTemplateInstance(test.GenDefaultProject().Name, "ctID1", 2),
-					test.GenClusterTemplateInstance(test.GenDefaultProject().Name, "ctID2", 3),
-					test.GenClusterTemplateInstance(test.GenDefaultProject().Name, "ctID3", 10),
+					test.GenClusterTemplate("ct3", "ctID3", projectName, kubermaticv1.UserClusterTemplateScope, "john@acme.com"),
+					test.GenClusterTemplate("ct4", "ctID4", projectName, kubermaticv1.ProjectClusterTemplateScope, "john@acme.com"),
+					test.GenClusterTemplateInstance(projectName, "ctID1", 2),
+					test.GenClusterTemplateInstance(projectName, "ctID2", 3),
+					test.GenClusterTemplateInstance(projectName, "ctID3", 10),
 				).
 				Build(),
 		},
@@ -84,22 +86,22 @@ func TestReconcile(t *testing.T) {
 				Name: "my-first-project-ID-ctID2",
 			},
 			expectedClusters: []*kubermaticv1.Cluster{
-				genCluster("ct2-0", "john@acme.com", *test.GenClusterTemplateInstance(test.GenDefaultProject().Name, "ctID2", 3)),
+				genCluster("ct2-0", "john@acme.com", *test.GenClusterTemplateInstance(projectName, "ctID2", 3)),
 			},
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(
-					test.GenClusterTemplate("ct1", "ctID1", test.GenDefaultProject().Name, kubermaticv1.UserClusterTemplateScope, test.GenDefaultAPIUser().Email),
+					test.GenClusterTemplate("ct1", "ctID1", projectName, kubermaticv1.UserClusterTemplateScope, test.GenDefaultAPIUser().Email),
 					test.GenClusterTemplate("ct2", "ctID2", "", kubermaticv1.GlobalClusterTemplateScope, "john@acme.com"),
-					test.GenClusterTemplate("ct3", "ctID3", test.GenDefaultProject().Name, kubermaticv1.UserClusterTemplateScope, "john@acme.com"),
-					test.GenClusterTemplate("ct4", "ctID4", test.GenDefaultProject().Name, kubermaticv1.ProjectClusterTemplateScope, "john@acme.com"),
-					test.GenClusterTemplateInstance(test.GenDefaultProject().Name, "ctID1", 2),
-					test.GenClusterTemplateInstance(test.GenDefaultProject().Name, "ctID2", 1),
-					test.GenClusterTemplateInstance(test.GenDefaultProject().Name, "ctID3", 10),
-					genCluster("ct2-0", "john@acme.com", *test.GenClusterTemplateInstance(test.GenDefaultProject().Name, "ctID2", 3)),
-					genCluster("ct2-1", "john@acme.com", *test.GenClusterTemplateInstance(test.GenDefaultProject().Name, "ctID2", 3)),
-					genCluster("ct2-2", "john@acme.com", *test.GenClusterTemplateInstance(test.GenDefaultProject().Name, "ctID2", 3)),
+					test.GenClusterTemplate("ct3", "ctID3", projectName, kubermaticv1.UserClusterTemplateScope, "john@acme.com"),
+					test.GenClusterTemplate("ct4", "ctID4", projectName, kubermaticv1.ProjectClusterTemplateScope, "john@acme.com"),
+					test.GenClusterTemplateInstance(projectName, "ctID1", 2),
+					test.GenClusterTemplateInstance(projectName, "ctID2", 1),
+					test.GenClusterTemplateInstance(projectName, "ctID3", 10),
+					genCluster("ct2-0", "john@acme.com", *test.GenClusterTemplateInstance(projectName, "ctID2", 3)),
+					genCluster("ct2-1", "john@acme.com", *test.GenClusterTemplateInstance(projectName, "ctID2", 3)),
+					genCluster("ct2-2", "john@acme.com", *test.GenClusterTemplateInstance(projectName, "ctID2", 3)),
 				).
 				Build(),
 		},
@@ -137,11 +139,19 @@ func TestReconcile(t *testing.T) {
 				t.Fatalf("failed get constraint: %v", err)
 			}
 
-			// remove autogenerated name
+			// remove autogenerated name;
 			clusterList := []*kubermaticv1.Cluster{}
 			for _, cluster := range clusters.Items {
+				// ignore clusters that only have a deletion timestampa and
+				// the CredentialsSecretsCleanupFinalizer finalizer, as those
+				// would be cleaned up by another controller
+				if kuberneteshelper.HasOnlyFinalizer(&cluster, kubermaticapiv1.CredentialsSecretsCleanupFinalizer) && !cluster.DeletionTimestamp.IsZero() {
+					continue
+				}
+
 				modifiedCluster := cluster.DeepCopy()
 				modifiedCluster.Name = ""
+
 				clusterList = append(clusterList, modifiedCluster)
 			}
 			expectedClusterList := []*kubermaticv1.Cluster{}
@@ -156,7 +166,6 @@ func TestReconcile(t *testing.T) {
 			if !reflect.DeepEqual(clusterList, expectedClusterList) {
 				t.Fatalf("diff: %s", diff.ObjectGoPrintSideBySide(clusterList, expectedClusterList))
 			}
-
 		})
 	}
 }
