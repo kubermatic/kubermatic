@@ -583,15 +583,15 @@ const (
 const (
 	MLANamespace                   = "mla-system"
 	PromtailServiceAccountName     = "promtail"
-	PromtailClusterRoleName        = "system:kubermatic:mla:promtail"
-	PromtailClusterRoleBindingName = "system:kubermatic:mla:promtail"
+	PromtailClusterRoleName        = "system:mla:promtail"
+	PromtailClusterRoleBindingName = "system:mla:promtail"
 	PromtailSecretName             = "promtail"
 	PromtailDaemonSetName          = "promtail"
 
 	UserClusterPrometheusConfigMapName          = "prometheus"
 	UserClusterPrometheusServiceAccountName     = "prometheus"
-	UserClusterPrometheusClusterRoleName        = "system:kubermatic:mla:prometheus"
-	UserClusterPrometheusClusterRoleBindingName = "system:kubermatic:mla:prometheus"
+	UserClusterPrometheusClusterRoleName        = "system:mla:prometheus"
+	UserClusterPrometheusClusterRoleBindingName = "system:mla:prometheus"
 	UserClusterPrometheusDeploymentName         = "prometheus"
 )
 
