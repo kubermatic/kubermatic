@@ -69,7 +69,6 @@ var (
 		"cluster-autoscaler",
 		"node-exporter",
 		"multus",
-		"gatekeeper",
 	}
 
 	DefaultUIResources = corev1.ResourceRequirements{
