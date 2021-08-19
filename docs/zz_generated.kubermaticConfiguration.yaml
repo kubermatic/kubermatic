@@ -10,7 +10,6 @@ spec:
     accessibleAddons:
       - cluster-autoscaler
       - node-exporter
-      - gatekeeper
     # DebugLog enables more verbose logging.
     debugLog: false
     # DockerRepository is the repository containing the Kubermatic REST API image.
