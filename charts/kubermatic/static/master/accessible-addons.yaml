@@ -3,4 +3,3 @@
 addons:
 - cluster-autoscaler
 - node-exporter
-- gatekeeper

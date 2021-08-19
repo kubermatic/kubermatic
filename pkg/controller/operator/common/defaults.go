@@ -66,7 +66,6 @@ var (
 	DefaultAccessibleAddons = []string{
 		"cluster-autoscaler",
 		"node-exporter",
-		"gatekeeper",
 	}
 
 	DefaultUIResources = corev1.ResourceRequirements{
