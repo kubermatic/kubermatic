@@ -19,7 +19,7 @@ package kubermatic
 import (
 	"fmt"
 
-	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
+	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -103,14 +103,14 @@ func IngressCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.N
 			issuer := cfg.Spec.Ingress.CertificateIssuer
 
 			if issuer.Name != "" {
-				delete(i.Annotations, certmanagerv1alpha2.IngressIssuerNameAnnotationKey)
-				delete(i.Annotations, certmanagerv1alpha2.IngressClusterIssuerNameAnnotationKey)
+				delete(i.Annotations, certmanagerv1.IngressIssuerNameAnnotationKey)
+				delete(i.Annotations, certmanagerv1.IngressClusterIssuerNameAnnotationKey)
 
 				switch issuer.Kind {
-				case certmanagerv1alpha2.IssuerKind:
-					i.Annotations[certmanagerv1alpha2.IngressIssuerNameAnnotationKey] = issuer.Name
-				case certmanagerv1alpha2.ClusterIssuerKind:
-					i.Annotations[certmanagerv1alpha2.IngressClusterIssuerNameAnnotationKey] = issuer.Name
+				case certmanagerv1.IssuerKind:
+					i.Annotations[certmanagerv1.IngressIssuerNameAnnotationKey] = issuer.Name
+				case certmanagerv1.ClusterIssuerKind:
+					i.Annotations[certmanagerv1.IngressClusterIssuerNameAnnotationKey] = issuer.Name
 				default:
 					return nil, fmt.Errorf("unknown Certificate Issuer Kind %q configured", issuer.Kind)
 				}

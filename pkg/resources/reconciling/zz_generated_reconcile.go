@@ -8,7 +8,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 	gatekeeperv1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -798,43 +797,6 @@ func ReconcileSeeds(ctx context.Context, namedGetters []NamedSeedCreatorGetter, 
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kubermaticv1.Seed{}, false); err != nil {
 			return fmt.Errorf("failed to ensure Seed %s/%s: %v", namespace, name, err)
-		}
-	}
-
-	return nil
-}
-
-// CertificateCreator defines an interface to create/update Certificates
-type CertificateCreator = func(existing *certmanagerv1alpha2.Certificate) (*certmanagerv1alpha2.Certificate, error)
-
-// NamedCertificateCreatorGetter returns the name of the resource and the corresponding creator function
-type NamedCertificateCreatorGetter = func() (name string, create CertificateCreator)
-
-// CertificateObjectWrapper adds a wrapper so the CertificateCreator matches ObjectCreator.
-// This is needed as Go does not support function interface matching.
-func CertificateObjectWrapper(create CertificateCreator) ObjectCreator {
-	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
-		if existing != nil {
-			return create(existing.(*certmanagerv1alpha2.Certificate))
-		}
-		return create(&certmanagerv1alpha2.Certificate{})
-	}
-}
-
-// ReconcileCertificates will create and update the Certificates coming from the passed CertificateCreator slice
-func ReconcileCertificates(ctx context.Context, namedGetters []NamedCertificateCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
-	for _, get := range namedGetters {
-		name, create := get()
-		createObject := CertificateObjectWrapper(create)
-		createObject = createWithNamespace(createObject, namespace)
-		createObject = createWithName(createObject, name)
-
-		for _, objectModifier := range objectModifiers {
-			createObject = objectModifier(createObject)
-		}
-
-		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &certmanagerv1alpha2.Certificate{}, false); err != nil {
-			return fmt.Errorf("failed to ensure Certificate %s/%s: %v", namespace, name, err)
 		}
 	}
 

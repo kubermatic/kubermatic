@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver/v3"
-	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
+	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
@@ -249,7 +249,7 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 			return fmt.Errorf("failed to add scheme: %v", err)
 		}
 
-		if err := certmanagerv1alpha2.AddToScheme(mgr.GetScheme()); err != nil {
+		if err := certmanagerv1.AddToScheme(mgr.GetScheme()); err != nil {
 			return fmt.Errorf("failed to add scheme: %v", err)
 		}
 

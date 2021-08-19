@@ -24,7 +24,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/docker/distribution/reference"
 	"github.com/ghodss/yaml"
-	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
+	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	"go.uber.org/zap"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -375,7 +375,7 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 	// it does not make sense to force to change the configuration for the
 	// default case
 	if copy.Spec.Ingress.CertificateIssuer.Kind == "" {
-		copy.Spec.Ingress.CertificateIssuer.Kind = certmanagerv1alpha2.ClusterIssuerKind
+		copy.Spec.Ingress.CertificateIssuer.Kind = certmanagerv1.ClusterIssuerKind
 		logger.Debugw("Defaulting field", "field", "ingress.certificateIssuer.kind", "value", copy.Spec.Ingress.CertificateIssuer.Kind)
 	}
 
