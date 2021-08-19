@@ -132,8 +132,8 @@ func main() {
 			},
 			{
 				ResourceName:       "APIService",
-				ImportAlias:        "apiregistrationv1beta1",
-				ResourceImportPath: "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1",
+				ImportAlias:        "apiregistrationv1",
+				ResourceImportPath: "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1",
 			},
 			{
 				ResourceName:       "Ingress",

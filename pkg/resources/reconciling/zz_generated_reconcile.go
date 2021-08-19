@@ -21,7 +21,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
-	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
+	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 )
 
 // NamespaceCreator defines an interface to create/update Namespaces
@@ -695,7 +695,7 @@ func ReconcileValidatingWebhookConfigurations(ctx context.Context, namedGetters 
 }
 
 // APIServiceCreator defines an interface to create/update APIServices
-type APIServiceCreator = func(existing *apiregistrationv1beta1.APIService) (*apiregistrationv1beta1.APIService, error)
+type APIServiceCreator = func(existing *apiregistrationv1.APIService) (*apiregistrationv1.APIService, error)
 
 // NamedAPIServiceCreatorGetter returns the name of the resource and the corresponding creator function
 type NamedAPIServiceCreatorGetter = func() (name string, create APIServiceCreator)
@@ -705,9 +705,9 @@ type NamedAPIServiceCreatorGetter = func() (name string, create APIServiceCreato
 func APIServiceObjectWrapper(create APIServiceCreator) ObjectCreator {
 	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 		if existing != nil {
-			return create(existing.(*apiregistrationv1beta1.APIService))
+			return create(existing.(*apiregistrationv1.APIService))
 		}
-		return create(&apiregistrationv1beta1.APIService{})
+		return create(&apiregistrationv1.APIService{})
 	}
 }
 
@@ -723,7 +723,7 @@ func ReconcileAPIServices(ctx context.Context, namedGetters []NamedAPIServiceCre
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &apiregistrationv1beta1.APIService{}, false); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &apiregistrationv1.APIService{}, false); err != nil {
 			return fmt.Errorf("failed to ensure APIService %s/%s: %v", namespace, name, err)
 		}
 	}
