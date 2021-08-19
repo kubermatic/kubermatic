@@ -25,9 +25,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
-	networkingv1beta1 "k8s.io/api/networking/v1beta1"
+	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 const (
@@ -93,7 +92,7 @@ func ClusterRoleBindingCreator(cfg *operatorv1alpha1.KubermaticConfiguration) re
 
 func IngressCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedIngressCreatorGetter {
 	return func() (string, reconciling.IngressCreator) {
-		return ingressName, func(i *networkingv1beta1.Ingress) (*networkingv1beta1.Ingress, error) {
+		return ingressName, func(i *networkingv1.Ingress) (*networkingv1.Ingress, error) {
 			if i.Annotations == nil {
 				i.Annotations = make(map[string]string)
 			}
@@ -116,7 +115,7 @@ func IngressCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.N
 					return nil, fmt.Errorf("unknown Certificate Issuer Kind %q configured", issuer.Kind)
 				}
 
-				i.Spec.TLS = []networkingv1beta1.IngressTLS{
+				i.Spec.TLS = []networkingv1.IngressTLS{
 					{
 						Hosts:      []string{cfg.Spec.Ingress.Domain},
 						SecretName: certificateSecretName,
@@ -124,46 +123,39 @@ func IngressCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.N
 				}
 			}
 
-			i.Spec.Backend = &networkingv1beta1.IngressBackend{
-				ServiceName: uiServiceName,
-				ServicePort: intstr.FromInt(80),
+			i.Spec.DefaultBackend = &networkingv1.IngressBackend{
+				Service: &networkingv1.IngressServiceBackend{
+					Name: uiServiceName,
+					Port: networkingv1.ServiceBackendPort{
+						Number: 80,
+					},
+				},
 			}
 
-			// PathType has been added in Kubernetes 1.18 and defaults to
-			// "ImplementationSpecific". To prevent reconcile loops in previous
-			// Kubernetes versions, this code is carefully written to not
-			// overwrite a PathType that has been defaulted by the apiserver.
-			var pathType *networkingv1beta1.PathType
+			pathType := networkingv1.PathTypePrefix
 
-			// As we control the entire rule set anyway, it's enough to find
-			// the first pathType -- they will all be identical eventually.
-			if rules := i.Spec.Rules; len(rules) > 0 {
-				if http := rules[0].IngressRuleValue.HTTP; http != nil {
-					for _, path := range http.Paths {
-						pathType = path.PathType
-						break
-					}
-				}
-			}
-
-			i.Spec.Rules = []networkingv1beta1.IngressRule{
+			i.Spec.Rules = []networkingv1.IngressRule{
 				{
 					Host: cfg.Spec.Ingress.Domain,
-					IngressRuleValue: networkingv1beta1.IngressRuleValue{
-						HTTP: &networkingv1beta1.HTTPIngressRuleValue{
-							Paths: []networkingv1beta1.HTTPIngressPath{
+					IngressRuleValue: networkingv1.IngressRuleValue{
+						HTTP: &networkingv1.HTTPIngressRuleValue{
+							Paths: []networkingv1.HTTPIngressPath{
 								{
 									Path:     "/api",
-									PathType: pathType,
-									Backend: networkingv1beta1.IngressBackend{
-										ServiceName: apiServiceName,
-										ServicePort: intstr.FromInt(80),
+									PathType: &pathType,
+									Backend: networkingv1.IngressBackend{
+										Service: &networkingv1.IngressServiceBackend{
+											Name: apiServiceName,
+											Port: networkingv1.ServiceBackendPort{
+												Number: 80,
+											},
+										},
 									},
 								},
 								{
 									Path:     "/",
-									PathType: pathType,
-									Backend:  *i.Spec.Backend,
+									PathType: &pathType,
+									Backend:  *i.Spec.DefaultBackend,
 								},
 							},
 						},
