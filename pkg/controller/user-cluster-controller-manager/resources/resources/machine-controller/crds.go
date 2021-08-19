@@ -20,7 +20,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -31,122 +32,150 @@ const (
 // MachineCRD returns the machine CRD definition
 func MachineCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
-		return resources.MachineCRDName, func(crd *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error) {
+		return resources.MachineCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
+			metav1.SetMetaDataAnnotation(&crd.ObjectMeta, "api-approved.kubernetes.io", "unapproved, legacy API")
+
 			crd.Spec.Group = clusterAPIGroup
-			crd.Spec.Version = clusterAPIVersion
-			crd.Spec.Scope = apiextensionsv1beta1.NamespaceScoped
+			crd.Spec.Scope = apiextensionsv1.NamespaceScoped
 			crd.Spec.Names.Kind = "Machine"
 			crd.Spec.Names.ListKind = "MachineList"
 			crd.Spec.Names.Plural = "machines"
 			crd.Spec.Names.Singular = "machine"
 			crd.Spec.Names.ShortNames = []string{"ma"}
-			crd.Spec.AdditionalPrinterColumns = []apiextensionsv1beta1.CustomResourceColumnDefinition{
+			crd.Spec.Versions = []apiextensionsv1.CustomResourceDefinitionVersion{
 				{
-					Name:     "Age",
-					Type:     "date",
-					JSONPath: ".metadata.creationTimestamp",
-				},
-				{
-					Name:     "Deleted",
-					Type:     "date",
-					JSONPath: ".metadata.deletionTimestamp",
-				},
-				{
-					Name:     "MachineSet",
-					Type:     "string",
-					JSONPath: ".metadata.ownerReferences[0].name",
-				},
-				{
-					Name:     "Address",
-					Type:     "string",
-					JSONPath: ".status.addresses[0].address",
-				},
-				{
-					Name:     "Node",
-					Type:     "string",
-					JSONPath: ".status.nodeRef.name",
-				},
-				{
-					Name:     "Provider",
-					Type:     "string",
-					JSONPath: ".spec.providerSpec.value.cloudProvider",
-				},
-				{
-					Name:     "OS",
-					Type:     "string",
-					JSONPath: ".spec.providerSpec.value.operatingSystem",
-				},
-				{
-					Name:     "Version",
-					Type:     "string",
-					JSONPath: ".spec.versions.kubelet",
+					Name:    clusterAPIVersion,
+					Served:  true,
+					Storage: true,
+					Schema: &apiextensionsv1.CustomResourceValidation{
+						OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
+							XPreserveUnknownFields: resources.Bool(true),
+							Type:                   "object",
+						},
+					},
+					AdditionalPrinterColumns: []apiextensionsv1.CustomResourceColumnDefinition{
+						{
+							Name:     "Age",
+							Type:     "date",
+							JSONPath: ".metadata.creationTimestamp",
+						},
+						{
+							Name:     "Deleted",
+							Type:     "date",
+							JSONPath: ".metadata.deletionTimestamp",
+						},
+						{
+							Name:     "MachineSet",
+							Type:     "string",
+							JSONPath: ".metadata.ownerReferences[0].name",
+						},
+						{
+							Name:     "Address",
+							Type:     "string",
+							JSONPath: ".status.addresses[0].address",
+						},
+						{
+							Name:     "Node",
+							Type:     "string",
+							JSONPath: ".status.nodeRef.name",
+						},
+						{
+							Name:     "Provider",
+							Type:     "string",
+							JSONPath: ".spec.providerSpec.value.cloudProvider",
+						},
+						{
+							Name:     "OS",
+							Type:     "string",
+							JSONPath: ".spec.providerSpec.value.operatingSystem",
+						},
+						{
+							Name:     "Version",
+							Type:     "string",
+							JSONPath: ".spec.versions.kubelet",
+						},
+					},
 				},
 			}
 
 			return crd, nil
 		}
 	}
-
 }
 
 // MachineSetCRD returns the machineset CRD definition
 func MachineSetCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
-		return resources.MachineSetCRDName, func(crd *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error) {
+		return resources.MachineSetCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
+			metav1.SetMetaDataAnnotation(&crd.ObjectMeta, "api-approved.kubernetes.io", "unapproved, legacy API")
+
 			crd.Spec.Group = clusterAPIGroup
-			crd.Spec.Version = clusterAPIVersion
-			crd.Spec.Scope = apiextensionsv1beta1.NamespaceScoped
+			crd.Spec.Scope = apiextensionsv1.NamespaceScoped
 			crd.Spec.Names.Kind = "MachineSet"
 			crd.Spec.Names.ListKind = "MachineSetList"
 			crd.Spec.Names.Plural = "machinesets"
 			crd.Spec.Names.Singular = "machineset"
 			crd.Spec.Names.ShortNames = []string{"ms"}
-			crd.Spec.Subresources = &apiextensionsv1beta1.CustomResourceSubresources{
-				Status: &apiextensionsv1beta1.CustomResourceSubresourceStatus{},
-				Scale: &apiextensionsv1beta1.CustomResourceSubresourceScale{
-					SpecReplicasPath:   ".spec.replicas",
-					StatusReplicasPath: ".status.replicas",
-				}}
-			crd.Spec.AdditionalPrinterColumns = []apiextensionsv1beta1.CustomResourceColumnDefinition{
+			crd.Spec.Versions = []apiextensionsv1.CustomResourceDefinitionVersion{
 				{
-					Name:     "Age",
-					Type:     "date",
-					JSONPath: ".metadata.creationTimestamp",
-				},
-				{
-					Name:     "Deleted",
-					Type:     "date",
-					JSONPath: ".metadata.deletionTimestamp",
-				},
-				{
-					Name:     "Replicas",
-					Type:     "string",
-					JSONPath: ".spec.replicas",
-				},
-				{
-					Name:     "AvailableReplicas",
-					Type:     "string",
-					JSONPath: ".status.availableReplicas",
-				},
-				{
-					Name:     "MachineDeployment",
-					Type:     "string",
-					JSONPath: ".metadata.ownerReferences[0].name",
-				},
-				{
-					Name:     "Provider",
-					Type:     "string",
-					JSONPath: ".spec.template.spec.providerSpec.value.cloudProvider",
-				},
-				{
-					Name:     "OS",
-					Type:     "string",
-					JSONPath: ".spec.template.spec.providerSpec.value.operatingSystem",
-				},
-				{
-					Name:     "Version",
-					Type:     "string",
-					JSONPath: ".spec.template.spec.versions.kubelet",
+					Name:    clusterAPIVersion,
+					Served:  true,
+					Storage: true,
+					Schema: &apiextensionsv1.CustomResourceValidation{
+						OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
+							XPreserveUnknownFields: resources.Bool(true),
+							Type:                   "object",
+						},
+					},
+					Subresources: &apiextensionsv1.CustomResourceSubresources{
+						Status: &apiextensionsv1.CustomResourceSubresourceStatus{},
+						Scale: &apiextensionsv1.CustomResourceSubresourceScale{
+							SpecReplicasPath:   ".spec.replicas",
+							StatusReplicasPath: ".status.replicas",
+						},
+					},
+					AdditionalPrinterColumns: []apiextensionsv1.CustomResourceColumnDefinition{
+						{
+							Name:     "Age",
+							Type:     "date",
+							JSONPath: ".metadata.creationTimestamp",
+						},
+						{
+							Name:     "Deleted",
+							Type:     "date",
+							JSONPath: ".metadata.deletionTimestamp",
+						},
+						{
+							Name:     "Replicas",
+							Type:     "string",
+							JSONPath: ".spec.replicas",
+						},
+						{
+							Name:     "AvailableReplicas",
+							Type:     "string",
+							JSONPath: ".status.availableReplicas",
+						},
+						{
+							Name:     "MachineDeployment",
+							Type:     "string",
+							JSONPath: ".metadata.ownerReferences[0].name",
+						},
+						{
+							Name:     "Provider",
+							Type:     "string",
+							JSONPath: ".spec.template.spec.providerSpec.value.cloudProvider",
+						},
+						{
+							Name:     "OS",
+							Type:     "string",
+							JSONPath: ".spec.template.spec.providerSpec.value.operatingSystem",
+						},
+						{
+							Name:     "Version",
+							Type:     "string",
+							JSONPath: ".spec.template.spec.versions.kubelet",
+						},
+					},
 				},
 			}
 
@@ -158,56 +187,71 @@ func MachineSetCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGett
 // MachineDeploymentCRD returns the machinedeployments CRD definition
 func MachineDeploymentCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
-		return resources.MachineDeploymentCRDName, func(crd *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error) {
+		return resources.MachineDeploymentCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
+			metav1.SetMetaDataAnnotation(&crd.ObjectMeta, "api-approved.kubernetes.io", "unapproved, legacy API")
+
 			crd.Spec.Group = clusterAPIGroup
-			crd.Spec.Version = clusterAPIVersion
-			crd.Spec.Scope = apiextensionsv1beta1.NamespaceScoped
+			crd.Spec.Scope = apiextensionsv1.NamespaceScoped
 			crd.Spec.Names.Kind = "MachineDeployment"
 			crd.Spec.Names.ListKind = "MachineDeploymentList"
 			crd.Spec.Names.Plural = "machinedeployments"
 			crd.Spec.Names.Singular = "machinedeployment"
 			crd.Spec.Names.ShortNames = []string{"md"}
-			crd.Spec.Subresources = &apiextensionsv1beta1.CustomResourceSubresources{
-				Status: &apiextensionsv1beta1.CustomResourceSubresourceStatus{},
-				Scale: &apiextensionsv1beta1.CustomResourceSubresourceScale{
-					SpecReplicasPath:   ".spec.replicas",
-					StatusReplicasPath: ".status.replicas",
-				}}
-			crd.Spec.AdditionalPrinterColumns = []apiextensionsv1beta1.CustomResourceColumnDefinition{
+			crd.Spec.Versions = []apiextensionsv1.CustomResourceDefinitionVersion{
 				{
-					Name:     "Age",
-					Type:     "date",
-					JSONPath: ".metadata.creationTimestamp",
-				},
-				{
-					Name:     "Deleted",
-					Type:     "date",
-					JSONPath: ".metadata.deletionTimestamp",
-				},
-				{
-					Name:     "Replicas",
-					Type:     "string",
-					JSONPath: ".spec.replicas",
-				},
-				{
-					Name:     "AvailableReplicas",
-					Type:     "string",
-					JSONPath: ".status.availableReplicas",
-				},
-				{
-					Name:     "Provider",
-					Type:     "string",
-					JSONPath: ".spec.template.spec.providerSpec.value.cloudProvider",
-				},
-				{
-					Name:     "OS",
-					Type:     "string",
-					JSONPath: ".spec.template.spec.providerSpec.value.operatingSystem",
-				},
-				{
-					Name:     "Version",
-					Type:     "string",
-					JSONPath: ".spec.template.spec.versions.kubelet",
+					Name:    clusterAPIVersion,
+					Served:  true,
+					Storage: true,
+					Schema: &apiextensionsv1.CustomResourceValidation{
+						OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
+							XPreserveUnknownFields: resources.Bool(true),
+							Type:                   "object",
+						},
+					},
+					Subresources: &apiextensionsv1.CustomResourceSubresources{
+						Status: &apiextensionsv1.CustomResourceSubresourceStatus{},
+						Scale: &apiextensionsv1.CustomResourceSubresourceScale{
+							SpecReplicasPath:   ".spec.replicas",
+							StatusReplicasPath: ".status.replicas",
+						},
+					},
+					AdditionalPrinterColumns: []apiextensionsv1.CustomResourceColumnDefinition{
+						{
+							Name:     "Age",
+							Type:     "date",
+							JSONPath: ".metadata.creationTimestamp",
+						},
+						{
+							Name:     "Deleted",
+							Type:     "date",
+							JSONPath: ".metadata.deletionTimestamp",
+						},
+						{
+							Name:     "Replicas",
+							Type:     "string",
+							JSONPath: ".spec.replicas",
+						},
+						{
+							Name:     "AvailableReplicas",
+							Type:     "string",
+							JSONPath: ".status.availableReplicas",
+						},
+						{
+							Name:     "Provider",
+							Type:     "string",
+							JSONPath: ".spec.template.spec.providerSpec.value.cloudProvider",
+						},
+						{
+							Name:     "OS",
+							Type:     "string",
+							JSONPath: ".spec.template.spec.providerSpec.value.operatingSystem",
+						},
+						{
+							Name:     "Version",
+							Type:     "string",
+							JSONPath: ".spec.template.spec.versions.kubelet",
+						},
+					},
 				},
 			}
 
@@ -219,16 +263,32 @@ func MachineDeploymentCRDCreator() reconciling.NamedCustomResourceDefinitionCrea
 // ClusterCRD returns the cluster crd definition
 func ClusterCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
-		return resources.ClusterCRDName, func(crd *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error) {
+		return resources.ClusterCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
+			metav1.SetMetaDataAnnotation(&crd.ObjectMeta, "api-approved.kubernetes.io", "unapproved, legacy API")
+
 			crd.Spec.Group = clusterAPIGroup
-			crd.Spec.Version = clusterAPIVersion
-			crd.Spec.Scope = apiextensionsv1beta1.NamespaceScoped
+			crd.Spec.Scope = apiextensionsv1.NamespaceScoped
 			crd.Spec.Names.Kind = "Cluster"
 			crd.Spec.Names.ListKind = "ClusterList"
 			crd.Spec.Names.Plural = "clusters"
 			crd.Spec.Names.Singular = "cluster"
 			crd.Spec.Names.ShortNames = []string{"cl"}
-			crd.Spec.Subresources = &apiextensionsv1beta1.CustomResourceSubresources{Status: &apiextensionsv1beta1.CustomResourceSubresourceStatus{}}
+			crd.Spec.Versions = []apiextensionsv1.CustomResourceDefinitionVersion{
+				{
+					Name:    clusterAPIVersion,
+					Served:  true,
+					Storage: true,
+					Schema: &apiextensionsv1.CustomResourceValidation{
+						OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
+							XPreserveUnknownFields: resources.Bool(true),
+							Type:                   "object",
+						},
+					},
+					Subresources: &apiextensionsv1.CustomResourceSubresources{
+						Status: &apiextensionsv1.CustomResourceSubresourceStatus{},
+					},
+				},
+			}
 
 			return crd, nil
 		}

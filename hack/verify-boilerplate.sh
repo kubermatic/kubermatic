@@ -27,7 +27,8 @@ boilerplate \
   -exclude hack/images/startup-script/manage-startup-script.sh \
   -exclude pkg/resources/certificates/triple/triple.go \
   -exclude pkg/resources/etcd/testdata \
-  -exclude pkg/ee
+  -exclude pkg/ee \
+  -exclude charts/kubermatic-operator/crd/crd-vpa.yaml
 
 echodate "Checking Kubermatic EE licenses..."
 boilerplate \

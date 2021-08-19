@@ -12,24 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: etcdrestores.kubermatic.k8s.io
+  name: kubermaticconfigurations.operator.kubermatic.io
 spec:
-  group: kubermatic.k8s.io
-  names:
-    kind: EtcdRestore
-    listKind: EtcdRestoreList
-    plural: etcdrestores
-    singular: etcdrestore
+  group: operator.kubermatic.io
   scope: Namespaced
-  version: v1
-  additionalPrinterColumns:
-  - JSONPath: .status.phase
-    name: phase
-    type: string
-  - JSONPath: .status.conditions[?(@.type==SchedulingActive)].status
-    name: scheduling
-    type: string
-    priority: 1
+  names:
+    kind: KubermaticConfiguration
+    listKind: KubermaticConfigurationList
+    plural: kubermaticconfigurations
+    singular: kubermaticconfiguration
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          x-kubernetes-preserve-unknown-fields: true
+          type: object
