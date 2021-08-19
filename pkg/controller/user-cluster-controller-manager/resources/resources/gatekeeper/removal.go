@@ -23,7 +23,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -88,11 +88,11 @@ func GetResourcesToRemoveOnDelete() []ctrlruntimeclient.Object {
 	})
 
 	// CRDs
-	toRemove = append(toRemove, &apiextensionsv1beta1.CustomResourceDefinition{
+	toRemove = append(toRemove, &apiextensionsv1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: resources.GatekeeperConstraintTemplateCRDName,
 		}})
-	toRemove = append(toRemove, &apiextensionsv1beta1.CustomResourceDefinition{
+	toRemove = append(toRemove, &apiextensionsv1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: resources.GatekeeperConfigCRDName,
 		}})

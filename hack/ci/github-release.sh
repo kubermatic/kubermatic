@@ -244,7 +244,6 @@ for buildTarget in $RELEASE_PLATFORMS; do
     charts/cert-manager \
     charts/iap \
     charts/kubermatic-operator \
-    charts/kubermatic/crd \
     charts/logging \
     charts/minio \
     charts/monitoring \

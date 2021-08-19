@@ -19,7 +19,7 @@ import (
 	networkingv1beta1 "k8s.io/api/networking/v1beta1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
 )
@@ -546,7 +546,7 @@ func ReconcileRoleBindings(ctx context.Context, namedGetters []NamedRoleBindingC
 }
 
 // CustomResourceDefinitionCreator defines an interface to create/update CustomResourceDefinitions
-type CustomResourceDefinitionCreator = func(existing *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error)
+type CustomResourceDefinitionCreator = func(existing *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error)
 
 // NamedCustomResourceDefinitionCreatorGetter returns the name of the resource and the corresponding creator function
 type NamedCustomResourceDefinitionCreatorGetter = func() (name string, create CustomResourceDefinitionCreator)
@@ -556,9 +556,9 @@ type NamedCustomResourceDefinitionCreatorGetter = func() (name string, create Cu
 func CustomResourceDefinitionObjectWrapper(create CustomResourceDefinitionCreator) ObjectCreator {
 	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 		if existing != nil {
-			return create(existing.(*apiextensionsv1beta1.CustomResourceDefinition))
+			return create(existing.(*apiextensionsv1.CustomResourceDefinition))
 		}
-		return create(&apiextensionsv1beta1.CustomResourceDefinition{})
+		return create(&apiextensionsv1.CustomResourceDefinition{})
 	}
 }
 
@@ -574,7 +574,7 @@ func ReconcileCustomResourceDefinitions(ctx context.Context, namedGetters []Name
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &apiextensionsv1beta1.CustomResourceDefinition{}, false); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &apiextensionsv1.CustomResourceDefinition{}, false); err != nil {
 			return fmt.Errorf("failed to ensure CustomResourceDefinition %s/%s: %v", namespace, name, err)
 		}
 	}
