@@ -27,7 +27,7 @@ source hack/lib.sh
 
 # find all changed charts (the pre-kubermatic-verify-charts job ensures
 # that all updated charts also change their Chart.yaml)
-changedCharts=$(git diff --name-status "${PULL_BASE_SHA}..${PULL_PULL_SHA}" 'charts/**/Chart.yaml' | awk '{ print $2 }' | xargs dirname | sort -u)
+changedCharts=$(git diff --name-status "${PULL_BASE_SHA}..${PULL_PULL_SHA:-}" 'charts/**/Chart.yaml' | awk '{ print $2 }' | xargs dirname | sort -u)
 
 for chartDirectory in $changedCharts; do
   chartName="$(basename "$chartDirectory")"
