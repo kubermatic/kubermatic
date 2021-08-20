@@ -540,7 +540,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.22.0"
+          value: "v1.22.1"
         - name: DISTRIBUTIONS
           value: ubuntu
         - name: SERVICE_ACCOUNT_KEY
@@ -583,7 +583,7 @@ presubmits:
         - name: ONLY_TEST_CREATION
           value: "true"
         - name: VERSIONS_TO_TEST
-          value: "v1.22.0"
+          value: "v1.22.1"
         - name: DISTRIBUTIONS
           value: ubuntu
         - name: SERVICE_ACCOUNT_KEY
@@ -1170,7 +1170,7 @@ presubmits:
         - "./hack/ci/run-api-e2e.sh"
         env:
         - name: VERSION_TO_TEST
-          value: v1.22.0
+          value: v1.22.1
         securityContext:
           privileged: true
         resources:

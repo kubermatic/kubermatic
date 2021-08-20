@@ -207,7 +207,7 @@ var (
 			semver.MustParse("v1.21.0"),
 			semver.MustParse("v1.21.3"),
 			// Kubernetes 1.22
-			semver.MustParse("v1.22.0"),
+			semver.MustParse("v1.22.1"),
 		},
 		Updates: []operatorv1alpha1.Update{
 			// ======= 1.18 =======

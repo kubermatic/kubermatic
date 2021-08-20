@@ -131,7 +131,7 @@ const (
 	// RequiredEmailDomain required domain for predefined credentials
 	RequiredEmailDomain = "acme.com"
 	// DefaultKubernetesVersion kubernetes version
-	DefaultKubernetesVersion = "1.22.0"
+	DefaultKubernetesVersion = "1.22.1"
 	// Kubermatic namespace
 	KubermaticNamespace = "kubermatic"
 )
@@ -1159,7 +1159,7 @@ func GenDefaultVersions() []*version.Version {
 			Type:    apiv1.KubernetesClusterType,
 		},
 		{
-			Version: ver.MustParse("1.22.0"),
+			Version: ver.MustParse("1.22.1"),
 			Default: false,
 			Type:    apiv1.KubernetesClusterType,
 		},

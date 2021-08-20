@@ -49,8 +49,8 @@ func TestCreateClusterTemplateEndpoint(t *testing.T) {
 		// scenario 1
 		{
 			Name:             "scenario 1: create cluster template in user scope",
-			Body:             `{"name":"test","scope":"user","cluster":{"name":"keen-snyder","spec":{"version":"1.22.0","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
-			ExpectedResponse: `{"name":"test","id":"%s","projectID":"my-first-project-ID","user":"bob@acme.com","scope":"user","cluster":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"type":"","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.22.0","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd"},"status":{"version":"","url":"","externalCCMMigration":""}},"nodeDeployment":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}},"status":{}}}`,
+			Body:             `{"name":"test","scope":"user","cluster":{"name":"keen-snyder","spec":{"version":"1.22.1","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
+			ExpectedResponse: `{"name":"test","id":"%s","projectID":"my-first-project-ID","user":"bob@acme.com","scope":"user","cluster":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"type":"","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.22.1","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd"},"status":{"version":"","url":"","externalCCMMigration":""}},"nodeDeployment":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}},"status":{}}}`,
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -62,8 +62,8 @@ func TestCreateClusterTemplateEndpoint(t *testing.T) {
 		// scenario 2
 		{
 			Name:             "scenario 2: create cluster template in project scope",
-			Body:             `{"name":"test","scope":"project","cluster":{"name":"keen-snyder","spec":{"version":"1.22.0","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
-			ExpectedResponse: `{"name":"test","id":"%s","projectID":"my-first-project-ID","user":"bob@acme.com","scope":"project","cluster":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"type":"","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.22.0","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd"},"status":{"version":"","url":"","externalCCMMigration":""}},"nodeDeployment":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}},"status":{}}}`,
+			Body:             `{"name":"test","scope":"project","cluster":{"name":"keen-snyder","spec":{"version":"1.22.1","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
+			ExpectedResponse: `{"name":"test","id":"%s","projectID":"my-first-project-ID","user":"bob@acme.com","scope":"project","cluster":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"type":"","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.22.1","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd"},"status":{"version":"","url":"","externalCCMMigration":""}},"nodeDeployment":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}},"status":{}}}`,
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -75,8 +75,8 @@ func TestCreateClusterTemplateEndpoint(t *testing.T) {
 		// scenario 3
 		{
 			Name:             "scenario 3: create cluster template in global scope by admin",
-			Body:             `{"name":"test","scope":"global","cluster":{"name":"keen-snyder","spec":{"version":"1.22.0","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
-			ExpectedResponse: `{"name":"test","id":"%s","projectID":"my-first-project-ID","user":"john@acme.com","scope":"global","cluster":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"type":"","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.22.0","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd"},"status":{"version":"","url":"","externalCCMMigration":""}},"nodeDeployment":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}},"status":{}}}`,
+			Body:             `{"name":"test","scope":"global","cluster":{"name":"keen-snyder","spec":{"version":"1.22.1","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
+			ExpectedResponse: `{"name":"test","id":"%s","projectID":"my-first-project-ID","user":"john@acme.com","scope":"global","cluster":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"type":"","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.22.1","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd"},"status":{"version":"","url":"","externalCCMMigration":""}},"nodeDeployment":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}},"status":{}}}`,
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -89,7 +89,7 @@ func TestCreateClusterTemplateEndpoint(t *testing.T) {
 		// scenario 4
 		{
 			Name:             "scenario 4: regular user can't create global cluster template",
-			Body:             `{"name":"test","scope":"global","cluster":{"name":"keen-snyder","spec":{"version":"1.22.0","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
+			Body:             `{"name":"test","scope":"global","cluster":{"name":"keen-snyder","spec":{"version":"1.22.1","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
 			ExpectedResponse: `{"error":{"code":500,"message":"the global scope is reserved only for admins"}}`,
 			HTTPStatus:       http.StatusInternalServerError,
 			ProjectToSync:    test.GenDefaultProject().Name,

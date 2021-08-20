@@ -157,7 +157,7 @@ func TestLoadFiles(t *testing.T) {
 			Version: semver.MustParse("1.21.0"),
 		},
 		{
-			Version: semver.MustParse("1.22.0"),
+			Version: semver.MustParse("1.22.1"),
 		},
 	}
 

@@ -25,4 +25,4 @@ versions:
   type: kubernetes
   version: 1.21.3
 - type: kubernetes
-  version: 1.22.0
+  version: 1.22.1
