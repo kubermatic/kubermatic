@@ -118,34 +118,22 @@ func TestCreateClusterRoleBinding(t *testing.T) {
 				}
 			}
 
-			for _, roleName := range roleNameList {
-				rb, err := testClient.GetRoleBindings(project.ID, tc.dc, cluster.ID)
-				if err != nil {
-					t.Fatalf("failed to get bindings: %v", getErrorResponse(err))
-				}
-				t.Logf("existing role bindings %v", rb)
-				binding, err := testClient.BindUserToRole(project.ID, tc.dc, cluster.ID, roleName.Name, "default", "test@example.com")
-				if err != nil {
-					t.Fatalf("failed to create binding: %v", getErrorResponse(err))
-				}
-				if binding.RoleRefName != roleName.Name {
-					t.Fatalf("expected binding RoleRefName %q, but got %q", roleName.Name, binding.RoleRefName)
-				}
+			roleName := tc.expectedRoleNames[0]
+			binding, err := testClient.BindUserToRole(project.ID, tc.dc, cluster.ID, roleName, "default", "test@example.com")
+			if err != nil {
+				t.Fatalf("failed to create binding: %v", getErrorResponse(err))
+			}
+			if binding.RoleRefName != roleName {
+				t.Fatalf("expected binding RoleRefName %q, but got %q", roleName, binding.RoleRefName)
 			}
 
-			for _, clusterRoleName := range clusterRoleNameList {
-				crb, err := testClient.GetClusterBindings(project.ID, tc.dc, cluster.ID)
-				if err != nil {
-					t.Fatalf("failed to get cluster bindings: %v", getErrorResponse(err))
-				}
-				t.Logf("existing cluster role bindings %v", crb)
-				binding, err := testClient.BindUserToClusterRole(project.ID, tc.dc, cluster.ID, clusterRoleName.Name, "test@example.com")
-				if err != nil {
-					t.Fatalf("failed to create cluster binding: %v", getErrorResponse(err))
-				}
-				if binding.RoleRefName != clusterRoleName.Name {
-					t.Fatalf("expected cluster binding RoleRefName %q, but got %q", clusterRoleName.Name, binding.RoleRefName)
-				}
+			clusterRoleName := tc.expectedClusterRoleNames[0]
+			crBinding, err := testClient.BindUserToClusterRole(project.ID, tc.dc, cluster.ID, clusterRoleName, "test@example.com")
+			if err != nil {
+				t.Fatalf("failed to create cluster binding: %v", getErrorResponse(err))
+			}
+			if crBinding.RoleRefName != clusterRoleName {
+				t.Fatalf("expected cluster binding RoleRefName %q, but got %q", clusterRoleName, binding.RoleRefName)
 			}
 
 			testClient.CleanupCluster(t, project.ID, tc.dc, cluster.ID)
