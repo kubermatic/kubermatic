@@ -150,7 +150,7 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 					Name:    Name,
 					Image:   repository + ":" + tag,
 					Command: []string{"/usr/local/bin/machine-controller"},
-					Args:   getFlags(clusterDNSIP, data.DC().Node, data.Cluster().Spec.ContainerRuntime, isExternal),
+					Args:    getFlags(clusterDNSIP, data.DC().Node, data.Cluster().Spec.ContainerRuntime, isExternal),
 					Env: append(envVars, corev1.EnvVar{
 						Name:  "KUBECONFIG",
 						Value: "/etc/kubernetes/kubeconfig/kubeconfig",
@@ -286,7 +286,7 @@ func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, cri 
 		}
 
 		if isExternal {
-			flags = append(flags, "-node-external-cloud-provider", "true")
+			flags = append(flags, "-node-external-cloud-provider")
 		}
 
 		// TODO(kron4eg): deprecate and remove this
