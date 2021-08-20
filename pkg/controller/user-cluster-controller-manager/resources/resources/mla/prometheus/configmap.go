@@ -58,8 +58,8 @@ func ConfigMapCreator(config Config) reconciling.NamedConfigMapCreatorGetter {
 const (
 	configTemplate = `
 global:
-  evaluation_interval: 1m
-  scrape_interval: 1m
+  evaluation_interval: 30s
+  scrape_interval: 30s
   scrape_timeout: 10s
 remote_write:
 - url: {{ .MLAGatewayURL }}
@@ -77,20 +77,6 @@ scrape_configs:
   static_configs:
   - targets:
     - localhost:9090
-- bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
-  job_name: kubernetes-apiservers
-  kubernetes_sd_configs:
-  - role: endpoints
-  relabel_configs:
-  - action: keep
-    regex: default;kubernetes;https
-    source_labels:
-    - __meta_kubernetes_namespace
-    - __meta_kubernetes_service_name
-    - __meta_kubernetes_endpoint_port_name
-  scheme: https
-  tls_config:
-    ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
 - bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
   job_name: kubernetes-nodes
   kubernetes_sd_configs:
