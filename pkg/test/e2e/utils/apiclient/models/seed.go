@@ -23,6 +23,9 @@ type Seed struct {
 	// For informational purposes in the Kubermatic dashboard only.
 	Country string `json:"country,omitempty"`
 
+	// EnableClustersMetering enables the metering on user clusters across the seed.
+	EnableClustersMetering bool `json:"enableClustersMetering,omitempty"`
+
 	// Optional: Detailed location of the cluster, like "Hamburg" or "Datacenter 7".
 	// For informational purposes in the Kubermatic dashboard only.
 	Location string `json:"location,omitempty"`

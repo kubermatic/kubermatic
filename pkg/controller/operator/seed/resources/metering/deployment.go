@@ -35,8 +35,8 @@ const (
 	meteringCronJobMonthly = "kubermatic-metering-report-monthly"
 )
 
-// MeteringToolDeploymentCreator creates a new metering tool deployment per seed cluster.
-func MeteringToolDeploymentCreator(_ *kubermaticv1.Seed) reconciling.NamedDeploymentCreatorGetter {
+// DeploymentCreator creates a new metering tool deployment per seed cluster.
+func DeploymentCreator(_ *kubermaticv1.Seed) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		//TODO: Add custom values for the metering deployment fields such as seed, interval and output-rotation.
 		return meteringToolName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {

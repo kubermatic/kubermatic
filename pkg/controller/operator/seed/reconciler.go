@@ -234,6 +234,10 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *operatorv1alph
 		return err
 	}
 
+	if err := r.reconcileNamespaces(ctx, cfg, seed, client, log); err != nil {
+		return err
+	}
+
 	if err := r.reconcileServiceAccounts(ctx, cfg, seed, client, log); err != nil {
 		return err
 	}
@@ -307,7 +311,7 @@ func (r *Reconciler) reconcileServiceAccounts(ctx context.Context, cfg *operator
 	}
 
 	if seed.Spec.EnableClustersMetering {
-		creators = append(creators, metering.MeteringServiceAccountCreator())
+		creators = append(creators, metering.ServiceAccountCreator())
 	}
 
 	if !seed.Spec.NodeportProxy.Disable {
@@ -500,7 +504,7 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, cfg *operatorv1al
 	if seed.Spec.EnableClustersMetering {
 		creators = append(
 			creators,
-			metering.MeteringToolDeploymentCreator(nil),
+			metering.DeploymentCreator(nil),
 		)
 	}
 

@@ -21096,6 +21096,11 @@
           },
           "x-go-name": "SeedDatacenters"
         },
+        "enableClustersMetering": {
+          "description": "EnableClustersMetering enables the metering on user clusters across the seed.",
+          "type": "boolean",
+          "x-go-name": "EnableClustersMetering"
+        },
         "expose_strategy": {
           "$ref": "#/definitions/ExposeStrategy"
         },
@@ -21171,6 +21176,11 @@
             "$ref": "#/definitions/Datacenter"
           },
           "x-go-name": "SeedDatacenters"
+        },
+        "enableClustersMetering": {
+          "description": "EnableClustersMetering enables the metering on user clusters across the seed.",
+          "type": "boolean",
+          "x-go-name": "EnableClustersMetering"
         },
         "expose_strategy": {
           "$ref": "#/definitions/ExposeStrategy"

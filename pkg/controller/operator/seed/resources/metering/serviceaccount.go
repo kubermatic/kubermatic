@@ -22,8 +22,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// MeteringServiceAccountCreator creates the service account for the metering tool.
-func MeteringServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
+// ServiceAccountCreator creates the service account for the metering tool.
+func ServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
 	return func() (string, reconciling.ServiceAccountCreator) {
 		return meteringToolName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			return sa, nil

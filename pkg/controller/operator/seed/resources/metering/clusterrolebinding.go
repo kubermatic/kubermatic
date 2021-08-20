@@ -22,7 +22,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-// ClusterRoleBindingCreator create a cluser role binding for the metering tool.
+// ClusterRoleBindingCreator create a cluster role binding for the metering tool.
 func ClusterRoleBindingCreator(namespace string) reconciling.NamedClusterRoleBindingCreatorGetter {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return meteringToolName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
