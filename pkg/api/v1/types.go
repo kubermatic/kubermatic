@@ -2177,6 +2177,8 @@ type SeedSpec struct {
 	ExposeStrategy kubermaticv1.ExposeStrategy `json:"expose_strategy,omitempty"`
 	// Optional: MLA allows configuring seed level MLA (Monitoring, Logging & Alerting) stack settings.
 	MLA *kubermaticv1.SeedMLASettings `json:"mla,omitempty"`
+	// EnableClustersMetering enables the metering on user clusters across the seed.
+	EnableClustersMetering bool `json:"enableClustersMetering,omitempty"`
 }
 
 // swagger:model SeedNamesList

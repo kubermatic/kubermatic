@@ -93,6 +93,8 @@ type SeedSpec struct {
 	MLA *SeedMLASettings `json:"mla,omitempty"`
 	// DefaultComponentSettings are default values to set for newly created clusters.
 	DefaultComponentSettings ComponentSettings `json:"defaultComponentSettings,omitempty"`
+	// EnableClustersMetering enables the metering on user clusters across the seed.
+	EnableClustersMetering bool `json:"enableClustersMetering,omitempty"`
 	// BackupRestore when set, enables backup and restore controllers with given configuration.
 	BackupRestore *SeedBackupRestoreConfiguration `json:"backupRestore,omitempty"`
 }
