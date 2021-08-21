@@ -112,7 +112,7 @@ func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, fldPa
 				fmt.Sprintf("couldn't parse service CIDR: %v", err)))
 		}
 	}
-	// TODO(irozzo) Remove all hardcodes before allowing arbitrary domain names.
+	// TODO Remove all hardcodes before allowing arbitrary domain names.
 	if (!allowEmpty || n.DNSDomain != "") && n.DNSDomain != "cluster.local" {
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("dnsDomain"), n.DNSDomain,
 			"dnsDomain must be 'cluster.local'"))

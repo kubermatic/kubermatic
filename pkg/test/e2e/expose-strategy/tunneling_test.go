@@ -77,7 +77,7 @@ var _ = ginkgo.Describe("The Tunneling strategy", func() {
 			ginkgo.By("relying on SNI when Kubeconfig is used e.g. Kubelet")
 			gomega.Expect(client.QueryApiserverVersion("", false, options.kubernetesVersion, 5, 4)).To(gomega.BeTrue(), "Apiserver should be reachable passing from the SNI entrypoint in nodeport proxy")
 			ginkgo.By("tunneling requests using HTTP/2 CONNECT when no SNI is present e.g. pods relying on kubernetes service in default namespace")
-			// TODO(irozzo): For sake of simplicity we are deploying an agent in the
+			// TODO: For sake of simplicity we are deploying an agent in the
 			// seed cluster. It would be better to create workers in the future for
 			// better coverage.
 			gomega.Expect(client.QueryApiserverVersion(agentConfig.GetKASHostPort(), true, options.kubernetesVersion, 5, 4)).To(gomega.BeTrue(), "Apiserver should be reachable passing from the SNI entrypoint in nodeport proxy")

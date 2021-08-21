@@ -164,7 +164,7 @@ func (d *Deployer) SetUp() error {
 // CleanUp deletes the resources.
 func (d *Deployer) CleanUp() error {
 	for _, o := range d.resources {
-		// TODO(irozzo) handle better errors
+		// TODO handle better errors
 		_ = d.Client.Delete(context.TODO(), o)
 	}
 	return nil

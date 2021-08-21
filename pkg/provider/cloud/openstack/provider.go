@@ -311,7 +311,7 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 	// health status is not up, meaning that there was no successful
 	// reconciliations so far. This is to avoid hitting OpenStack API at each
 	// iteration.
-	// TODO(irozzo): this is terrible, find a better way.
+	// TODO: this is terrible, find a better way.
 	if cluster.Status.ExtendedHealth.CloudProviderInfrastructure != kubermaticv1.HealthStatusUp {
 		if _, err = attachSubnetToRouter(netClient, cluster.Spec.Cloud.Openstack.SubnetID, cluster.Spec.Cloud.Openstack.RouterID); err != nil {
 			return nil, fmt.Errorf("failed to attach subnet to router: %v", err)

@@ -162,7 +162,7 @@ func validateUpdateImmutability(c, oldC *kubermaticv1.Cluster) field.ErrorList {
 	}
 	if c.Spec.CNIPlugin != nil && oldC.Spec.CNIPlugin != nil {
 		// Immutable fields
-		// TODO(irozzo): this constraint should be relaxed to provide the
+		// TODO: this constraint should be relaxed to provide the
 		// possibility to upgrade CNI plugin version.
 		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
 			*c.Spec.CNIPlugin,

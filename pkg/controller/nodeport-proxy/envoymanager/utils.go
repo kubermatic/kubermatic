@@ -136,7 +136,7 @@ func portHostMappingFromAnnotation(svc *corev1.Service) (portHostMapping, error)
 }
 
 func (p portHostMapping) validate(svc *corev1.Service) error {
-	// TODO(irozzo): validate that hosts are well formed FQDN
+	// TODO: validate that hosts are well formed FQDN
 	portNames, hosts := p.portHostSets()
 	if len(p) > hosts.Len() {
 		return fmt.Errorf("duplicated hostname in port host mapping of service: %v", p)

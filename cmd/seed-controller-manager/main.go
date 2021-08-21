@@ -136,7 +136,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	metrics.RegisterRuntimErrorMetricCounter("kubermatic_controller_manager", prometheus.DefaultRegisterer)
 
 	// Default to empty JSON object
-	// TODO(irozzo) Do not create secret and image pull secret if empty
+	// TODO: Do not create secret and image pull secret if empty
 	dockerPullConfigJSON := []byte("{}")
 	if options.dockerPullConfigJSONFile != "" {
 		dockerPullConfigJSON, err = ioutil.ReadFile(options.dockerPullConfigJSONFile)

@@ -72,8 +72,7 @@ type validator struct {
 // Validate returns an error if the given seed does not pass all validation steps.
 func (v *validator) Validate(ctx context.Context, seed *kubermaticv1.Seed, op admissionv1.Operation) error {
 	// We need locking to make the validation concurrency-safe
-	// (irozzo): this is acceptable as request rate is low, but is it
-	// required?
+	// TODO: this is acceptable as request rate is low, but is it required?
 	v.lock.Lock()
 	defer v.lock.Unlock()
 
