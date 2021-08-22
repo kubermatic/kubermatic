@@ -14,7 +14,7 @@
 
 apiVersion: v1
 name: oauth
-version: 1.5.7
+version: 1.5.8
 appVersion: v2.27.0
 description: Dex
 keywords:
@@ -25,5 +25,5 @@ home: https://github.com/dexidp/dex
 sources:
 - https://github.com/kubermatic/kubermatic
 maintainers:
-- name: Loodse GmbH
+- name: The Kubermatic Kubernetes Platform contributors
   email: support@kubermatic.com
