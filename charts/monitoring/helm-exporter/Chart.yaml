@@ -14,7 +14,7 @@
 
 apiVersion: v1
 name: helm-exporter
-version: 1.0.6
+version: 1.0.7
 appVersion: 0.4.3
 description: Exports Helm release information to Prometheus
 keywords:
@@ -26,5 +26,5 @@ home: https://github.com/sstarcher/helm-exporter
 sources:
 - https://github.com/sstarcher/helm-exporter
 maintainers:
-- name: Loodse GmbH
+- name: The Kubermatic Kubernetes Platform contributors
   email: support@kubermatic.com

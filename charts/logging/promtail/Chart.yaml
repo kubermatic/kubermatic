@@ -14,7 +14,7 @@
 
 apiVersion: v1
 name: promtail
-version: 0.2.3
+version: 0.2.4
 appVersion: v2.1.0
 description: "Responsible for gathering logs and sending them to Loki"
 keywords:
@@ -27,5 +27,5 @@ home: https://grafana.com/loki
 sources:
 - https://github.com/grafana/loki
 maintainers:
-- name: Loodse GmbH
+- name: The Kubermatic Kubernetes Platform contributors
   email: support@kubermatic.com

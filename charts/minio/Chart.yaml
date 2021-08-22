@@ -14,7 +14,7 @@
 
 apiVersion: v1
 name: minio
-version: 1.0.21
+version: 1.0.22
 appVersion: RELEASE.2021-03-04T00-53-13Z
 description: minio
 keywords:
@@ -26,5 +26,5 @@ sources:
 - https://www.minio.io/kubernetes.html
 - https://github.com/helm/charts/tree/master/stable/minio
 maintainers:
-- name: Loodse GmbH
+- name: The Kubermatic Kubernetes Platform contributors
   email: support@kubermatic.com
