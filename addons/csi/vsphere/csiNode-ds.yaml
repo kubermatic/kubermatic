@@ -25,9 +25,6 @@
 {{ if eq .Cluster.MajorMinorVersion "1.21" }}
 {{ $version = "v2.2.1 "}}
 {{ end }}
-{{ if eq .Cluster.MajorMinorVersion "1.22" }}
-{{ $version = "v2.2.1 "}}
-{{ end }}
 
 ---
 kind: DaemonSet
