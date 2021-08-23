@@ -64,11 +64,12 @@ ExtensionInstance CRD fields:
 
 ### Extension Controller
 
-Reconciles Extension and ExtensionInstance CRs. Runs on each user cluster,
-basically it’s a Helm manager. Initially deploys extensions CRs defined in the
-cluster template or KKP configuration. Based on the cluster configuration it
-allows you to install some extensions by default. It’s responsible for
-automatic extensions upgrades during the k8s cluster upgrade.
+Reconciles Extension and ExtensionInstance CRs. It runs in the KPP controller
+manager in the seed cluster, basically as Helm manager for the user clusters.
+Initially deploys extensions CRs defined in the cluster template or KKP
+configuration. Based on the cluster configuration it allows you to install some
+extensions by default. It’s responsible for automatic extensions upgrades
+during the k8s cluster upgrade.
 
 ### Architecture
 ![Platform-extension architecture](./images/platform-extension-implementation-helm-manager.png)
