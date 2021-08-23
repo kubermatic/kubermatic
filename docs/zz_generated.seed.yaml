@@ -4,6 +4,8 @@ metadata:
   name: <<exampleseed>>
   namespace: kubermatic
 spec:
+  # BackupRestore when set, enables backup and restore controllers with given configuration.
+  backupRestore: null
   # Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.
   # For informational purposes in the Kubermatic dashboard only.
   country: ""

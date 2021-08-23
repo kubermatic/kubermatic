@@ -181,6 +181,7 @@ spec:
     # BackupDeleteContainer is the container used for deleting etcd snapshots from a backup location.
     backupDeleteContainer: ""
     # BackupRestore contains the setup of the new backup and restore controllers.
+    # Deprecated: Use Seed.Spec.BackupRestore. This is legacy field to support old configurations.
     backupRestore:
       # Enabled enables the new etcd backup and restore controllers.
       enabled: false
