@@ -607,7 +607,7 @@ presubmits:
   # Extended Kubernetes Tests (various cloud providers, OS)
   #########################################################
 
-  - name: pre-kubermatic-e2e-azure-ubuntu-1.21
+  - name: pre-kubermatic-e2e-azure-ubuntu-1.22
     decorate: true
     optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -628,7 +628,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.21.0"
+          value: "v1.22.1"
         - name: DISTRIBUTIONS
           value: ubuntu
         - name: PROVIDER
@@ -652,7 +652,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-gcp-ubuntu-1.21
+  - name: pre-kubermatic-e2e-gcp-ubuntu-1.22
     decorate: true
     always_run: false
     optional: true
@@ -674,7 +674,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.21.0"
+          value: "v1.22.1"
         - name: PROVIDER
           value: "gcp"
         - name: DISTRIBUTIONS
@@ -696,7 +696,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-gcp-ubuntu-1.21-psp
+  - name: pre-kubermatic-e2e-gcp-ubuntu-1.22-psp
     decorate: true
     optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -717,7 +717,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.21.0"
+          value: "v1.22.1"
         - name: PROVIDER
           value: "gcp"
         - name: DISTRIBUTIONS
@@ -743,7 +743,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-do-centos-1.21
+  - name: pre-kubermatic-e2e-do-centos-1.22
     decorate: true
     always_run: false
     optional: true
@@ -765,7 +765,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.21.0"
+          value: "v1.22.1"
         - name: DISTRIBUTIONS
           value: centos
         - name: PROVIDER
@@ -787,7 +787,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-packet-ubuntu-1.21
+  - name: pre-kubermatic-e2e-packet-ubuntu-1.22
     decorate: true
     optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -808,7 +808,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.21.0"
+          value: "v1.22.1"
         - name: PROVIDER
           value: "packet"
         - name: DISTRIBUTIONS
@@ -830,7 +830,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-kubevirt-centos-1.21
+  - name: pre-kubermatic-e2e-kubevirt-centos-1.22
     decorate: true
     optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -851,7 +851,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.21.0"
+          value: "v1.22.1"
         - name: PROVIDER
           value: "kubevirt"
         - name: DISTRIBUTIONS
@@ -873,7 +873,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-hetzner-ubuntu-1.21
+  - name: pre-kubermatic-e2e-hetzner-ubuntu-1.22
     decorate: true
     optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -894,7 +894,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.21.0"
+          value: "v1.22.1"
         - name: PROVIDER
           value: "hetzner"
         - name: DISTRIBUTIONS
@@ -918,7 +918,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-openstack-ubuntu-1.21
+  - name: pre-kubermatic-e2e-openstack-ubuntu-1.22
     decorate: true
     optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -939,7 +939,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.21.0"
+          value: "v1.22.1"
         - name: PROVIDER
           value: "openstack"
         - name: DISTRIBUTIONS
@@ -963,7 +963,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-openstack-centos-1.21
+  - name: pre-kubermatic-e2e-openstack-centos-1.22
     decorate: true
     optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -984,7 +984,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.21.0"
+          value: "v1.22.1"
         - name: PROVIDER
           value: "openstack"
         - name: DEFAULT_TIMEOUT_MINUTES
@@ -1008,7 +1008,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.21
+  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.22
     decorate: true
     run_if_changed: "pkg/provider/cloud/vsphere"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -1029,7 +1029,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.21.0"
+          value: "v1.22.1"
         - name: PROVIDER
           value: "vsphere"
         - name: DISTRIBUTIONS
@@ -1051,7 +1051,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.21-customfolder
+  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.22-customfolder
     decorate: true
     optional: true
     run_if_changed: "pkg/provider/cloud/vsphere"
@@ -1073,7 +1073,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.21.0"
+          value: "v1.22.1"
         - name: PROVIDER
           value: "vsphere"
         - name: DISTRIBUTIONS
@@ -1097,7 +1097,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.21-datastore-cluster
+  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.22-datastore-cluster
     decorate: true
     optional: true
     run_if_changed: "pkg/provider/cloud/vsphere"
@@ -1119,7 +1119,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.21.0"
+          value: "v1.22.1"
         - name: PROVIDER
           value: "vsphere"
         - name: DISTRIBUTIONS
