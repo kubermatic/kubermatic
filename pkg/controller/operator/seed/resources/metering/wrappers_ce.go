@@ -1,3 +1,5 @@
+// +build !ee
+
 /*
 Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 
@@ -17,16 +19,19 @@ limitations under the License.
 package metering
 
 import (
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"context"
 
-	corev1 "k8s.io/api/core/v1"
+	"go.uber.org/zap"
+
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// ServiceAccountCreator creates the service account for the metering tool.
-func ServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
-	return func() (string, reconciling.ServiceAccountCreator) {
-		return meteringToolName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
-			return sa, nil
-		}
-	}
+// ReconcileMeteringResources reconciles the metering related resources.
+func ReconcileMeteringResources(_ context.Context, _ ctrlruntimeclient.Client, _ string,
+	_ *operatorv1alpha1.KubermaticConfiguration, _ *kubermaticv1.Seed, _ *zap.SugaredLogger) error {
+
+	return nil
 }

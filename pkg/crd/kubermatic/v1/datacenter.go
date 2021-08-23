@@ -93,8 +93,8 @@ type SeedSpec struct {
 	MLA *SeedMLASettings `json:"mla,omitempty"`
 	// DefaultComponentSettings are default values to set for newly created clusters.
 	DefaultComponentSettings ComponentSettings `json:"defaultComponentSettings,omitempty"`
-	// EnableClustersMetering enables the metering on user clusters across the seed.
-	EnableClustersMetering bool `json:"enableClustersMetering,omitempty"`
+	// Metering configures the metering tool on user clusters across the seed.
+	Metering *MeteringConfigurations `json:"metering,omitempty"`
 	// BackupRestore when set, enables backup and restore controllers with given configuration.
 	BackupRestore *SeedBackupRestoreConfiguration `json:"backupRestore,omitempty"`
 }
@@ -428,4 +428,14 @@ type NodeSettings struct {
 type SeedMLASettings struct {
 	// Optional: UserClusterMLAEnabled controls whether the user cluster MLA (Monitoring, Logging & Alerting) stack is enabled in the seed.
 	UserClusterMLAEnabled bool `json:"user_cluster_mla_enabled,omitempty"`
+}
+
+// Metering contains all the configurations for the metering tool.
+type MeteringConfigurations struct {
+	Enabled bool `json:"enabled"`
+	// StorageClassName is the name of the storage class that the metering tool uses to save processed files before
+	// exporting it to s3 bucket. Default value is kubermatic-fast.
+	StorageClassName string `json:"storageClassName"`
+	// StorageSize is the size of the storage class. Default value is 100Gi.
+	StorageSize string `json:"storageSize"`
 }

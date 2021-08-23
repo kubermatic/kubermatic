@@ -20,13 +20,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/metering"
 
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common/vpa"
 	kubermaticseed "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/kubermatic"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/metering"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
@@ -230,10 +230,6 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *operatorv1alph
 		return fmt.Errorf("failed to get CA bundle ConfigMap: %v", err)
 	}
 
-	if err := r.reconcilePersistentVolumeClaim(ctx, client, seed, log); err != nil {
-		return err
-	}
-
 	if err := r.reconcileNamespaces(ctx, cfg, seed, client, log); err != nil {
 		return err
 	}
@@ -266,7 +262,7 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *operatorv1alph
 		return err
 	}
 
-	if err := r.reconcileDeployments(ctx, cfg, seed, client, log, nil); err != nil {
+	if err := r.reconcileDeployments(ctx, cfg, seed, client, log, caBundle); err != nil {
 		return err
 	}
 
@@ -282,8 +278,10 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *operatorv1alph
 		return err
 	}
 
-	if err := r.reconcileCronJobs(ctx, seed, client, log); err != nil {
-		return err
+	if seed.Spec.Metering != nil && seed.Spec.Metering.Enabled {
+		if err := metering.ReconcileMeteringResources(ctx, client, r.namespace, cfg, seed, log); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -308,10 +306,6 @@ func (r *Reconciler) reconcileServiceAccounts(ctx context.Context, cfg *operator
 
 	creators := []reconciling.NamedServiceAccountCreatorGetter{
 		kubermaticseed.ServiceAccountCreator(cfg, seed),
-	}
-
-	if seed.Spec.EnableClustersMetering {
-		creators = append(creators, metering.ServiceAccountCreator())
 	}
 
 	if !seed.Spec.NodeportProxy.Disable {
@@ -399,10 +393,6 @@ func (r *Reconciler) reconcileClusterRoleBindings(ctx context.Context, cfg *oper
 
 	creators := []reconciling.NamedClusterRoleBindingCreatorGetter{
 		kubermaticseed.ClusterRoleBindingCreator(cfg, seed),
-	}
-
-	if seed.Spec.EnableClustersMetering {
-		creators = append(creators, metering.ClusterRoleBindingCreator(seed.Namespace))
 	}
 
 	if !seed.Spec.NodeportProxy.Disable {
@@ -499,13 +489,6 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, cfg *operatorv1al
 
 	creators := []reconciling.NamedDeploymentCreatorGetter{
 		kubermaticseed.SeedControllerManagerDeploymentCreator(r.workerName, r.versions, cfg, seed),
-	}
-
-	if seed.Spec.EnableClustersMetering {
-		creators = append(
-			creators,
-			metering.DeploymentCreator(nil),
-		)
 	}
 
 	if !seed.Spec.NodeportProxy.Disable {
@@ -622,32 +605,6 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *operat
 
 	if err := reconciling.ReconcileMutatingWebhookConfigurations(ctx, mutatingWebhookCreators, "", client); err != nil {
 		return fmt.Errorf("failed to reconcile mutating AdmissionWebhooks: %v", err)
-	}
-
-	return nil
-}
-
-func (r *Reconciler) reconcilePersistentVolumeClaim(ctx context.Context, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed, log *zap.SugaredLogger) error {
-	if seed.Spec.EnableClustersMetering {
-		log.Debug("reconciling metering PersistentVolumeClaim")
-		if err := metering.PersistentVolumeClaimCreator(ctx, client, seed.Namespace); err != nil {
-			return fmt.Errorf("failed to reconcile metering pvc: %v", err)
-		}
-	}
-
-	return nil
-}
-
-func (r *Reconciler) reconcileCronJobs(ctx context.Context, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
-	if seed.Spec.EnableClustersMetering {
-		log.Debug("reconciling metering CronJobs")
-		creators := []reconciling.NamedCronJobCreatorGetter{
-			metering.CronJobCreator(seed.Name),
-		}
-
-		if err := reconciling.ReconcileCronJobs(ctx, creators, r.namespace, client); err != nil {
-			return fmt.Errorf("failed to reconcile cronjpbs: %v", err)
-		}
 	}
 
 	return nil

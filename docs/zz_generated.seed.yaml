@@ -244,8 +244,6 @@ spec:
       replicas: null
       resources: null
       tolerations: null
-  # EnableClustersMetering enables the metering on user clusters across the seed.
-  enableClustersMetering: false
   # Optional: ExposeStrategy explicitly sets the expose strategy for this seed cluster, if not set, the default provided by the master is used.
   expose_strategy: ""
   # A reference to the Kubeconfig of this cluster. The Kubeconfig must
@@ -280,6 +278,14 @@ spec:
   # Optional: Detailed location of the cluster, like "Hamburg" or "Datacenter 7".
   # For informational purposes in the Kubermatic dashboard only.
   location: ""
+  # Metering configures the metering tool on user clusters across the seed.
+  metering:
+    enabled: false
+    # StorageClassName is the name of the storage class that the metering tool uses to save processed files before
+    # exporting it to s3 bucket. Default value is kubermatic-fast.
+    storageClassName: kubermatic-fast
+    # StorageSize is the size of the storage class. Default value is 100Gi.
+    storageSize: 100Gi
   # Optional: MLA allows configuring seed level MLA (Monitoring, Logging & Alerting) stack settings.
   mla: null
   # NodeportProxy can be used to configure the NodePort proxy service that is
