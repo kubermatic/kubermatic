@@ -34,7 +34,6 @@ echodate "Getting secrets from Vault"
 retry 5 vault_ci_login
 export KUBECONFIG=/tmp/kubeconfig
 export VALUES_FILE=/tmp/values.yaml
-export USE_KUBERMATIC_OPERATOR=true
 
 # deploy to dev-asia
 vault kv get -field=kubeconfig dev/seed-clusters/dev.kubermatic.io > ${KUBECONFIG}

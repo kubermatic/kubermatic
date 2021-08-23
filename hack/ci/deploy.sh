@@ -43,7 +43,6 @@ DEPLOY_NODEPORT_PROXY=${DEPLOY_NODEPORT_PROXY:-true}
 DEPLOY_ALERTMANAGER=${DEPLOY_ALERTMANAGER:-true}
 DEPLOY_MINIO=${DEPLOY_MINIO:-true}
 DEPLOY_LOKI=${DEPLOY_LOKI:-false}
-USE_KUBERMATIC_OPERATOR=${USE_KUBERMATIC_OPERATOR:-false}
 DEPLOY_STACK=${DEPLOY_STACK:-kubermatic}
 TILLER_NAMESPACE=${TILLER_NAMESPACE:-kubermatic}
 HELM_INIT_ARGS=${HELM_INIT_ARGS:-""}
@@ -181,29 +180,25 @@ kubermatic)
   fi
 
   # Kubermatic
-  if [[ "${USE_KUBERMATIC_OPERATOR}" = true ]]; then
-    if [[ "${1}" = "master" ]]; then
-      echodate "Deploying Kubermatic Operator..."
+  if [[ "${1}" = "master" ]]; then
+    echodate "Deploying Kubermatic Operator..."
 
-      retry 3 helm upgrade --install --force --wait --timeout 300 \
-        --set-file "kubermaticOperator.imagePullSecret=$DOCKER_CONFIG" \
-        --set "kubermaticOperator.image.repository=quay.io/kubermatic/kubermatic-ee" \
-        --namespace kubermatic \
-        --values ${VALUES_FILE} \
-        kubermatic-operator \
-        charts/kubermatic-operator/
+    retry 3 helm upgrade --install --force --wait --timeout 300 \
+      --set-file "kubermaticOperator.imagePullSecret=$DOCKER_CONFIG" \
+      --set "kubermaticOperator.image.repository=quay.io/kubermatic/kubermatic-ee" \
+      --namespace kubermatic \
+      --values ${VALUES_FILE} \
+      kubermatic-operator \
+      charts/kubermatic-operator/
 
-      # only deploy KubermaticConfigurations on masters, on seed clusters
-      # the relevant Seed CR is copied by Kubermatic itself
-      if [ -n "${KUBERMATIC_CONFIG:-}" ]; then
-        echodate "Deploying KubermaticConfiguration..."
-        retry 3 kubectl apply -f $KUBERMATIC_CONFIG
-      fi
-    else
-      echodate "Not deploying Kubermatic, as this is not a master cluster."
+    # only deploy KubermaticConfigurations on masters, on seed clusters
+    # the relevant Seed CR is copied by Kubermatic itself
+    if [ -n "${KUBERMATIC_CONFIG:-}" ]; then
+      echodate "Deploying KubermaticConfiguration..."
+      retry 3 kubectl apply -f $KUBERMATIC_CONFIG
     fi
   else
-    deploy "kubermatic" "kubermatic" charts/kubermatic/
+    echodate "Not deploying Kubermatic, as this is not a master cluster."
   fi
   ;;
 esac

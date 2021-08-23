@@ -35,7 +35,6 @@ export KUBECONFIG=/tmp/kubeconfig
 export VALUES_FILE=/tmp/values.yaml
 export DOCKER_CONFIG=/tmp/dockercfg
 export KUBERMATIC_CONFIG=/tmp/kubermatic.yaml
-export USE_KUBERMATIC_OPERATOR=true
 
 # deploy to dev
 vault kv get -field=kubeconfig dev/seed-clusters/dev.kubermatic.io > ${KUBECONFIG}
