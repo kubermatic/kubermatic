@@ -7,7 +7,7 @@
 ## Goals
 
 This proposal is to introduce the implementation for platform-extensions based
-on Helm-charts.
+on Helm charts.
 
 ## Motivation and Background
 
