@@ -18,6 +18,7 @@ package seedsync
 
 import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 )
 
@@ -34,6 +35,23 @@ func seedCreator(seed *kubermaticv1.Seed) reconciling.NamedSeedCreatorGetter {
 			s.Spec = seed.Spec
 
 			return s, nil
+		}
+	}
+}
+
+func configCreator(config *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedKubermaticConfigurationCreatorGetter {
+	return func() (string, reconciling.KubermaticConfigurationCreator) {
+		return config.Name, func(c *operatorv1alpha1.KubermaticConfiguration) (*operatorv1alpha1.KubermaticConfiguration, error) {
+			c.Labels = config.Labels
+			if c.Labels == nil {
+				c.Labels = make(map[string]string)
+			}
+			c.Labels[ManagedByLabel] = ControllerName
+
+			c.Annotations = config.Annotations
+			c.Spec = config.Spec
+
+			return c, nil
 		}
 	}
 }

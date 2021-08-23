@@ -24,6 +24,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -48,7 +49,7 @@ type Reconciler struct {
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	logger := r.log.With("seed", request.Name)
-	logger.Info("Reconciling seed")
+	logger.Info("Reconciling seed cluster")
 
 	seed := &kubermaticv1.Seed{}
 	if err := r.Get(ctx, request.NamespacedName, seed); err != nil {
@@ -56,19 +57,24 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			return reconcile.Result{}, nil
 		}
 
-		return reconcile.Result{}, fmt.Errorf("failed to get seed: %v", err)
+		return reconcile.Result{}, fmt.Errorf("failed to get seed: %w", err)
 	}
 
 	client, err := r.seedClientGetter(seed)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to create client for seed: %v", err)
+		return reconcile.Result{}, fmt.Errorf("failed to create client for seed: %w", err)
+	}
+
+	config, err := r.getKubermaticConfiguration(ctx, request.Namespace)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to get config: %w", err)
 	}
 
 	// cleanup once a Seed was deleted in the master cluster
 	if seed.DeletionTimestamp != nil {
-		result, err := r.cleanupDeletedSeed(ctx, seed, client, logger)
+		result, err := r.cleanupDeletedSeed(ctx, config, seed, client, logger)
 		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("failed to cleanup deleted Seed: %v", err)
+			return reconcile.Result{}, fmt.Errorf("failed to cleanup deleted Seed: %w", err)
 		}
 		if result != nil {
 			return *result, nil
@@ -77,34 +83,67 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, nil
 	}
 
-	if err := r.reconcile(ctx, seed, client, logger); err != nil {
+	if err := r.reconcile(ctx, config, seed, client, logger); err != nil {
 		r.recorder.Eventf(seed, corev1.EventTypeWarning, "ReconcilingFailed", "%v", err)
-		return reconcile.Result{}, fmt.Errorf("failed to reconcile: %v", err)
+		return reconcile.Result{}, fmt.Errorf("failed to reconcile: %w", err)
 	}
 
 	logger.Info("Successfully reconciled")
 	return reconcile.Result{}, nil
 }
 
-func (r *Reconciler) reconcile(ctx context.Context, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, logger *zap.SugaredLogger) error {
+func (r *Reconciler) getKubermaticConfiguration(ctx context.Context, namespace string) (*operatorv1alpha1.KubermaticConfiguration, error) {
+	configList := &operatorv1alpha1.KubermaticConfigurationList{}
+	listOpts := &ctrlruntimeclient.ListOptions{
+		Namespace: namespace,
+	}
+
+	if err := r.List(ctx, configList, listOpts); err != nil {
+		return nil, fmt.Errorf("failed to find KubermaticConfigurations: %w", err)
+	}
+
+	if len(configList.Items) == 0 {
+		r.log.Debug("ignoring request for namespace without KubermaticConfiguration")
+		return nil, nil
+	}
+
+	if len(configList.Items) > 1 {
+		r.log.Warnw("there are multiple KubermaticConfiguration objects, cannot reconcile", "namespace", namespace)
+		return nil, nil
+	}
+
+	return &configList.Items[0], nil
+}
+
+func (r *Reconciler) reconcile(ctx context.Context, config *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, logger *zap.SugaredLogger) error {
 	// ensure we always have a cleanup finalizer on the original
 	// Seed CR inside the master cluster
 	oldSeed := seed.DeepCopy()
 	kubernetes.AddFinalizer(seed, CleanupFinalizer)
 	if err := r.Patch(ctx, seed, ctrlruntimeclient.MergeFrom(oldSeed)); err != nil {
-		return fmt.Errorf("failed to add finalizer to Seed: %v", err)
+		return fmt.Errorf("failed to add finalizer to Seed: %w", err)
+	}
+
+	if seed.Spec.ExposeStrategy != "" {
+		if !kubermaticv1.AllExposeStrategies.Has(seed.Spec.ExposeStrategy) {
+			return fmt.Errorf("failed to validate seed: invalid expose strategy %q, must be one of %v", seed.Spec.ExposeStrategy, kubermaticv1.AllExposeStrategies)
+		}
 	}
 
 	seedCreators := []reconciling.NamedSeedCreatorGetter{
 		seedCreator(seed),
 	}
-	if seed.Spec.ExposeStrategy != "" {
-		if !kubermaticv1.AllExposeStrategies.Has(seed.Spec.ExposeStrategy) {
-			return fmt.Errorf("failed to validate seed: invalid Seed Expose Strategy %s", seed.Spec.ExposeStrategy)
-		}
-	}
+
 	if err := reconciling.ReconcileSeeds(ctx, seedCreators, seed.Namespace, client); err != nil {
-		return fmt.Errorf("failed to reconcile seed: %v", err)
+		return fmt.Errorf("failed to reconcile seed: %w", err)
+	}
+
+	configCreators := []reconciling.NamedKubermaticConfigurationCreatorGetter{
+		configCreator(config),
+	}
+
+	if err := reconciling.ReconcileKubermaticConfigurations(ctx, configCreators, seed.Namespace, client); err != nil {
+		return fmt.Errorf("failed to reconcile seed: %w", err)
 	}
 
 	return nil
@@ -114,21 +153,29 @@ func (r *Reconciler) reconcile(ctx context.Context, seed *kubermaticv1.Seed, cli
 // and is responsible for removing the Seed CR copy inside the seed cluster. This can end up
 // in a Retry if other components like the Kubermatic Operator still have finalizers on the
 // Seed CR copy.
-func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, seedInMaster *kubermaticv1.Seed, seedClient ctrlruntimeclient.Client, logger *zap.SugaredLogger) (*reconcile.Result, error) {
+func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, configInMaster *operatorv1alpha1.KubermaticConfiguration, seedInMaster *kubermaticv1.Seed, seedClient ctrlruntimeclient.Client, logger *zap.SugaredLogger) (*reconcile.Result, error) {
 	if !kubernetes.HasAnyFinalizer(seedInMaster, CleanupFinalizer) {
 		return nil, nil
 	}
 
 	logger.Debug("Seed was deleted, removing copy in seed cluster")
 
-	key := ctrlruntimeclient.ObjectKeyFromObject(seedInMaster)
+	seedKey := ctrlruntimeclient.ObjectKeyFromObject(seedInMaster)
+	configKey := ctrlruntimeclient.ObjectKeyFromObject(configInMaster)
 
 	// when master==seed cluster, this is the same as seedInMaster
 	seedInSeed := &kubermaticv1.Seed{}
 
-	err := seedClient.Get(ctx, key, seedInSeed)
+	err := seedClient.Get(ctx, seedKey, seedInSeed)
 	if err != nil && !kerrors.IsNotFound(err) {
-		return nil, fmt.Errorf("failed to probe for %s: %v", key, err)
+		return nil, fmt.Errorf("failed to probe for %s: %w", seedKey, err)
+	}
+
+	configInSeed := &operatorv1alpha1.KubermaticConfiguration{}
+
+	err = seedClient.Get(ctx, configKey, configInSeed)
+	if err != nil && !kerrors.IsNotFound(err) {
+		return nil, fmt.Errorf("failed to probe for %s: %w", configKey, err)
 	}
 
 	// if the copy still exists, attempt to delete it unless it has only our own finalizer
@@ -136,7 +183,16 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, seedInMaster *kuber
 	if err == nil && !kubernetes.HasOnlyFinalizer(seedInSeed, CleanupFinalizer) {
 		logger.Debug("Issuing DELETE call for Seed copy now")
 		if err := seedClient.Delete(ctx, seedInSeed); err != nil {
-			return nil, fmt.Errorf("failed to delete %s: %v", key, err)
+			return nil, fmt.Errorf("failed to delete %s: %w", seedKey, err)
+		}
+
+		// older KKP setups do not yet sync the config into each seed, so it's fine
+		// and expected if the config doesn't yet exist
+		if configInSeed.Name != "" {
+			logger.Debug("Issuing DELETE call for KubermaticConfiguration copy now")
+			if err := seedClient.Delete(ctx, configInSeed); err != nil {
+				return nil, fmt.Errorf("failed to delete %s: %w", configKey, err)
+			}
 		}
 
 		return &reconcile.Result{
@@ -150,7 +206,7 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, seedInMaster *kuber
 	kubernetes.RemoveFinalizer(seedInMaster, CleanupFinalizer)
 
 	if err := r.Patch(ctx, seedInMaster, ctrlruntimeclient.MergeFrom(oldSeed)); err != nil {
-		return nil, fmt.Errorf("failed to remove finalizer from Seed in master cluster: %v", err)
+		return nil, fmt.Errorf("failed to remove finalizer from Seed in master cluster: %w", err)
 	}
 
 	return nil, nil
