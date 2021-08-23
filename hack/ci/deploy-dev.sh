@@ -43,8 +43,6 @@ vault kv get -field=.dockerconfigjson dev/seed-clusters/dev.kubermatic.io > ${DO
 vault kv get -field=kubermatic.yaml dev/seed-clusters/dev.kubermatic.io > ${KUBERMATIC_CONFIG}
 echodate "Successfully got secrets for dev from Vault"
 
-# deploy Loki as beta
-export DEPLOY_LOKI=true
 export DEPLOY_NODEPORT_PROXY=false
 
 echodate "Deploying ${DEPLOY_STACK} stack to dev"

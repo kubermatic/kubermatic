@@ -20,29 +20,22 @@
 
 set -euo pipefail
 
-if [ "$#" -lt 1 ] || [ "${1}" == "--help" ]; then
+if [ "$#" -lt 1 ] || [ "$1" == "--help" ]; then
   cat << EOF
-Usage: $(basename $0) (master|seed) path/to/${VALUES_FILE} "[EXTRA HELM ARGUMENTS]"
+Usage: $(basename $0) (master|seed) path/to/${VALUES_FILE}
 EOF
   exit 0
 fi
 
-if [[ ! -f ${2} ]]; then
+if [[ ! -f "$2" ]]; then
   echo "File not found!"
   exit 1
 fi
 
-HELM_EXTRA_ARGS=${@:3}
-VALUES_FILE=$(realpath ${2})
-if [[ "${1}" = "master" ]]; then
-  MASTER_FLAG="--set=kubermatic.isMaster=true"
-else
-  MASTER_FLAG="--set=kubermatic.isMaster=false"
-fi
+VALUES_FILE="$(realpath "$2")"
 DEPLOY_NODEPORT_PROXY=${DEPLOY_NODEPORT_PROXY:-true}
 DEPLOY_ALERTMANAGER=${DEPLOY_ALERTMANAGER:-true}
 DEPLOY_MINIO=${DEPLOY_MINIO:-true}
-DEPLOY_LOKI=${DEPLOY_LOKI:-false}
 DEPLOY_STACK=${DEPLOY_STACK:-kubermatic}
 TILLER_NAMESPACE=${TILLER_NAMESPACE:-kubermatic}
 HELM_INIT_ARGS=${HELM_INIT_ARGS:-""}
@@ -51,11 +44,12 @@ cd $(dirname "$0")/../..
 source hack/lib.sh
 
 deployment_disabled() {
-  local release="$1"
+  local namespace="$1"
+  local release="$2"
   local name="prow-disable-$release-chart"
 
   # retrieve a dummy configmap
-  cm=$(kubectl -n kube-system get configmap "$name" -o json --ignore-not-found)
+  cm=$(kubectl --namespace "$namespace" get configmap "$name" --output json --ignore-not-found)
   if [ -z "$cm" ]; then
     return 1
   fi
@@ -81,7 +75,7 @@ function deploy {
 
   TEST_NAME="[Helm] Deploy chart ${name}"
 
-  if deployment_disabled "${name}"; then
+  if deployment_disabled "kube-system" "${name}"; then
     echodate "Deployment has been manually disabled on this cluster. Skipping this chart."
     unset TEST_NAME
     return 0
@@ -90,7 +84,25 @@ function deploy {
   inital_revision="$(retry 5 helm list --tiller-namespace=${TILLER_NAMESPACE} ${name} --output=json | jq '.Releases[0].Revision')"
 
   echodate "Upgrading ${name}..."
-  retry 5 helm --tiller-namespace ${TILLER_NAMESPACE} upgrade --install --force --atomic --timeout $timeout ${MASTER_FLAG} ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace ${namespace} ${name} ${path}
+  retry 5 helm --tiller-namespace ${TILLER_NAMESPACE} upgrade --install --force --atomic --timeout $timeout --values ${VALUES_FILE} --namespace ${namespace} ${name} ${path}
+
+  unset TEST_NAME
+}
+
+function deploy3 {
+  local name="$1"
+  local namespace="$2"
+  local path="$3"
+  local timeout="${4:-10m}"
+
+  TEST_NAME="[Helm] Deploy chart $name"
+
+  if deployment_disabled "$namespace" "$name"; then
+    echodate "Deployment has been manually disabled on this cluster. Skipping this chart."
+  else
+    echodate "Upgrading $name..."
+    retry 5 helm3 --namespace "$namespace" upgrade --install --force --atomic --timeout "$timeout" --values "$VALUES_FILE" "$name" "$path"
+  fi
 
   unset TEST_NAME
 }
@@ -109,30 +121,24 @@ function initTiller() {
 echodate "Deploying ${DEPLOY_STACK} stack..."
 case "${DEPLOY_STACK}" in
 monitoring)
-  initTiller
-  deploy "node-exporter" "monitoring" charts/monitoring/node-exporter/
-  deploy "kube-state-metrics" "monitoring" charts/monitoring/kube-state-metrics/
-  deploy "grafana" "monitoring" charts/monitoring/grafana/
-  deploy "helm-exporter" "monitoring" charts/monitoring/helm-exporter/
-  if [[ "${DEPLOY_ALERTMANAGER}" = true ]]; then
-    deploy "alertmanager" "monitoring" charts/monitoring/alertmanager/
+  deploy3 "node-exporter" "monitoring" charts/monitoring/node-exporter/
+  deploy3 "kube-state-metrics" "monitoring" charts/monitoring/kube-state-metrics/
+  deploy3 "grafana" "monitoring" charts/monitoring/grafana/
+  deploy3 "helm-exporter" "monitoring" charts/monitoring/helm-exporter/
+  deploy3 "alertmanager" "monitoring" charts/monitoring/alertmanager/
 
-    if [[ "${1}" = "master" ]]; then
-      deploy "karma" "monitoring" charts/monitoring/karma/
-    fi
+  if [[ "${1}" = "master" ]]; then
+    deploy3 "karma" "monitoring" charts/monitoring/karma/
   fi
 
   # Prometheus can take a long time to become ready, depending on the WAL size.
   # We try to accommodate by waiting for 15 instead of 5 minutes.
-  deploy "prometheus" "monitoring" charts/monitoring/prometheus/ 900
+  deploy3 "prometheus" "monitoring" charts/monitoring/prometheus/ 15m
   ;;
 
 logging)
-  initTiller
-  if [[ "${DEPLOY_LOKI}" = true ]]; then
-    deploy "loki" "logging" charts/logging/loki/
-    deploy "promtail" "logging" charts/logging/promtail/
-  fi
+  deploy3 "loki" "logging" charts/logging/loki/
+  deploy3 "promtail" "logging" charts/logging/promtail/
   ;;
 
 kubermatic)
