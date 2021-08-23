@@ -433,6 +433,20 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		return nil, fmt.Errorf("can not find etcdRestoreProvider for cluster %q", seed.Name)
 	}
 
+	etcdBackupConfigProjectProvider := kubernetes.NewEtcdBackupConfigProjectProvider(
+		map[string]kubernetes.ImpersonationClient{"us-central1": fakeImpersonationClient},
+		map[string]ctrlruntimeclient.Client{"us-central1": fakeClient})
+	etcdBackupConfigProjectProviderGetter := func(seed map[string]*kubermaticv1.Seed) (provider.EtcdBackupConfigProjectProvider, error) {
+		return etcdBackupConfigProjectProvider, nil
+	}
+
+	etcdRestoreProjectProvider := kubernetes.NewEtcdRestoreProjectProvider(
+		map[string]kubernetes.ImpersonationClient{"us-central1": fakeImpersonationClient},
+		map[string]ctrlruntimeclient.Client{"us-central1": fakeClient})
+	etcdRestoreProjectProviderGetter := func(seed map[string]*kubermaticv1.Seed) (provider.EtcdRestoreProjectProvider, error) {
+		return etcdRestoreProjectProvider, nil
+	}
+
 	eventRecorderProvider := kubernetes.NewEventRecorder()
 
 	settingsWatcher, err := kuberneteswatcher.NewSettingsWatcher(settingsProvider)
@@ -494,8 +508,8 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		fakePrivilegedAllowedRegistryProvider,
 		etcdBackupConfigProviderGetter,
 		etcdRestoreProviderGetter,
-		nil,
-		nil,
+		etcdBackupConfigProjectProviderGetter,
+		etcdRestoreProjectProviderGetter,
 	)
 
 	return mainRouter, &ClientsSets{kubermaticClient, fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil
