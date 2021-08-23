@@ -85,8 +85,12 @@ interpreted as described in RFC 2119.*
 	  of KKP.
 	* (4.2) The life-cycle of external extensions SHOULD be tied to the
 	  life-cycle of Kubernetes.
-5. Access to cluster data
-	* (5.1) Extension MAY need access to data from the Master Cluster. For
+5. Maintainability at runtime
+	* (5.1) External extensions MUST be up- and downgradable at runtime
+	  dependent on Kubernetes version.
+	* (5.2) External extensions MUST be uninstallable at runtime.
+6. Access to cluster data
+	* (6.1) Extension MAY need access to data from the Master Cluster. For
 	  example a mapping of cluster users to SSH keys - to be used for
 	  authentication within an extension.
 
