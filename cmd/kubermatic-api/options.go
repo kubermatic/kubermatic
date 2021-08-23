@@ -180,4 +180,6 @@ type providers struct {
 	privilegedAllowedRegistryProvider     provider.PrivilegedAllowedRegistryProvider
 	etcdBackupConfigProviderGetter        provider.EtcdBackupConfigProviderGetter
 	etcdRestoreProviderGetter             provider.EtcdRestoreProviderGetter
+	etcdBackupConfigProjectProviderGetter provider.EtcdBackupConfigProjectProviderGetter
+	etcdRestoreProjectProviderGetter      provider.EtcdRestoreProjectProviderGetter
 }

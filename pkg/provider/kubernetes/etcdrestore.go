@@ -36,7 +36,7 @@ type EtcdRestoreProvider struct {
 	clientPrivileged             ctrlruntimeclient.Client
 }
 
-// NewEtcdRestoreProvider returns a constraint provider
+// NewEtcdRestoreProvider returns a etcd restore provider
 func NewEtcdRestoreProvider(createSeedImpersonatedClient impersonationClient, client ctrlruntimeclient.Client) *EtcdRestoreProvider {
 	return &EtcdRestoreProvider{
 		clientPrivileged:             client,
@@ -63,7 +63,6 @@ func EtcdRestoreProviderFactory(mapper meta.RESTMapper, seedKubeconfigGetter pro
 }
 
 func (p *EtcdRestoreProvider) Create(userInfo *provider.UserInfo, etcdRestore *kubermaticv1.EtcdRestore) (*kubermaticv1.EtcdRestore, error) {
-
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
@@ -138,4 +137,53 @@ func (p *EtcdRestoreProvider) DeleteUnsecured(cluster *kubermaticv1.Cluster, nam
 		},
 	}
 	return p.clientPrivileged.Delete(context.Background(), er)
+}
+
+// EtcdRestoreProjectProvider struct that holds required components in order manage etcd backup restores across projects
+type EtcdRestoreProjectProvider struct {
+	// createSeedImpersonatedClient is used as a ground for impersonation
+	// whenever a connection to Seed API server is required
+	createSeedImpersonatedClients map[string]impersonationClient
+	clientsPrivileged             map[string]ctrlruntimeclient.Client
+}
+
+// NewEtcdRestoreProjectProvider returns an etcd restore global provider
+func NewEtcdRestoreProjectProvider(createSeedImpersonatedClients map[string]impersonationClient, clients map[string]ctrlruntimeclient.Client) *EtcdRestoreProjectProvider {
+	return &EtcdRestoreProjectProvider{
+		clientsPrivileged:             clients,
+		createSeedImpersonatedClients: createSeedImpersonatedClients,
+	}
+}
+
+func EtcdRestoreProjectProviderFactory(mapper meta.RESTMapper, seedKubeconfigGetter provider.SeedKubeconfigGetter) provider.EtcdRestoreProjectProviderGetter {
+	return func(seeds map[string]*kubermaticv1.Seed) (provider.EtcdRestoreProjectProvider, error) {
+		clientsPrivileged := make(map[string]ctrlruntimeclient.Client)
+		createSeedImpersonationClients := make(map[string]impersonationClient)
+
+		for seedName, seed := range seeds {
+			cfg, err := seedKubeconfigGetter(seed)
+			if err != nil {
+				return nil, err
+			}
+			createSeedImpersonationClients[seedName] = NewImpersonationClient(cfg, mapper).CreateImpersonatedClient
+			clientPrivileged, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{Mapper: mapper})
+			if err != nil {
+				return nil, err
+			}
+			clientsPrivileged[seedName] = clientPrivileged
+		}
+
+		return NewEtcdRestoreProjectProvider(
+			createSeedImpersonationClients,
+			clientsPrivileged,
+		), nil
+	}
+}
+
+func (p *EtcdRestoreProjectProvider) List(userInfo *provider.UserInfo, projectID string) (*kubermaticv1.EtcdRestoreList, error) {
+	return nil, nil
+}
+
+func (p *EtcdRestoreProjectProvider) ListUnsecured(projectID string) (*kubermaticv1.EtcdRestoreList, error) {
+	return nil, nil
 }

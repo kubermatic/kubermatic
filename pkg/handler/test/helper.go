@@ -197,6 +197,8 @@ type newRoutingFunc func(
 	privilegedAllowedRegistryProvider provider.PrivilegedAllowedRegistryProvider,
 	etcdBackupConfigProviderGetter provider.EtcdBackupConfigProviderGetter,
 	etcdRestoreProviderGetter provider.EtcdRestoreProviderGetter,
+	etcdBackupConfigProjectProviderGetter provider.EtcdBackupConfigProjectProviderGetter,
+	etcdRestoreProjectProviderGetter provider.EtcdRestoreProjectProviderGetter,
 ) http.Handler
 
 func getRuntimeObjects(objs ...ctrlruntimeclient.Object) []runtime.Object {
@@ -492,6 +494,8 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		fakePrivilegedAllowedRegistryProvider,
 		etcdBackupConfigProviderGetter,
 		etcdRestoreProviderGetter,
+		nil,
+		nil,
 	)
 
 	return mainRouter, &ClientsSets{kubermaticClient, fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil

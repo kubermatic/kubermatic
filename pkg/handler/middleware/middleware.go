@@ -98,6 +98,18 @@ const (
 	// PrivilegedEtcdRestoreProviderContextKey key under which the current PrivilegedEtcdRestoreProvider is kept in the ctx
 	PrivilegedEtcdRestoreProviderContextKey kubermaticcontext.Key = "privileged-etcdrestore-provider"
 
+	// EtcdBackupConfigProjectProviderContextKey key under which the current EtcdBackupConfigProjectProvider is kept in the ctx
+	EtcdBackupConfigProjectProviderContextKey kubermaticcontext.Key = "etcdbackupconfig-project-provider"
+
+	// PrivilegedEtcdBackupConfigProjectProviderContextKey key under which the current PrivilegedEtcdBackupConfigProjectProvider is kept in the ctx
+	PrivilegedEtcdBackupConfigProjectProviderContextKey kubermaticcontext.Key = "privileged-etcdbackupconfig-project-provider"
+
+	// EtcdRestoreProjectProviderContextKey key under which the current EtcdRestoreProjectProvider is kept in the ctx
+	EtcdRestoreProjectProviderContextKey kubermaticcontext.Key = "etcdbrestore-project-provider"
+
+	// PrivilegedEtcdRestoreProjectProviderContextKey key under which the current PrivilegedEtcdRestoreProjectProvider is kept in the ctx
+	PrivilegedEtcdRestoreProjectProviderContextKey kubermaticcontext.Key = "privileged-etcdrestore-project-provider"
+
 	UserCRContextKey                            = kubermaticcontext.UserCRContextKey
 	SeedsGetterContextKey kubermaticcontext.Key = "seeds-getter"
 )
@@ -703,4 +715,81 @@ func getEtcdRestoreProvider(clusterProviderGetter provider.ClusterProviderGetter
 	}
 
 	return etcdRestoreProviderGetter(seed)
+}
+
+// EtcdBackupConfigProject is a middleware that injects the current EtcdBackupConfigProjectProvider into the ctx
+func EtcdBackupConfigProject(etcdBackupConfigProjectProviderGetter provider.EtcdBackupConfigProjectProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			etcdBackupConfigProvider, err := getEtcdBackupConfigProjectProvider(etcdBackupConfigProjectProviderGetter, seedsGetter)
+			if err != nil {
+				return nil, err
+			}
+			ctx = context.WithValue(ctx, EtcdBackupConfigProjectProviderContextKey, etcdBackupConfigProvider)
+			return next(ctx, request)
+		}
+	}
+}
+
+// PrivilegedEtcdBackupConfigProject is a middleware that injects the current PrivilegedEtcdBackupConfigProjectProvider into the ctx
+func PrivilegedEtcdBackupConfigProject(etcdBackupConfigProjectProviderGetter provider.EtcdBackupConfigProjectProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			ebcProvider, err := getEtcdBackupConfigProjectProvider(etcdBackupConfigProjectProviderGetter, seedsGetter)
+			if err != nil {
+				return nil, err
+			}
+			privilegedEtcdBackupConfigProvider := ebcProvider.(provider.PrivilegedEtcdBackupConfigProjectProvider)
+			ctx = context.WithValue(ctx, PrivilegedEtcdBackupConfigProjectProviderContextKey, privilegedEtcdBackupConfigProvider)
+			return next(ctx, request)
+		}
+	}
+}
+
+func getEtcdBackupConfigProjectProvider(etcdBackupConfigProjectProviderGetter provider.EtcdBackupConfigProjectProviderGetter, seedsGetter provider.SeedsGetter) (provider.EtcdBackupConfigProjectProvider, error) {
+	seeds, err := seedsGetter()
+	if err != nil {
+		return nil, err
+	}
+
+	return etcdBackupConfigProjectProviderGetter(seeds)
+}
+
+
+// EtcdRestoreProject is a middleware that injects the current EtcdRestoreProjectProvider into the ctx
+func EtcdRestoreProject(etcdRestoreProjectProviderGetter provider.EtcdRestoreProjectProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			etcdRestoreProvider, err := getEtcdRestoreProjectProvider(etcdRestoreProjectProviderGetter, seedsGetter)
+			if err != nil {
+				return nil, err
+			}
+			ctx = context.WithValue(ctx, EtcdRestoreProjectProviderContextKey, etcdRestoreProvider)
+			return next(ctx, request)
+		}
+	}
+}
+
+// PrivilegedEtcdRestoreProject is a middleware that injects the current PrivilegedEtcdRestoreProjectProvider into the ctx
+func PrivilegedEtcdRestoreProject(etcdRestoreProjectProviderGetter provider.EtcdRestoreProjectProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			ebcProvider, err := getEtcdRestoreProjectProvider(etcdRestoreProjectProviderGetter, seedsGetter)
+			if err != nil {
+				return nil, err
+			}
+			privilegedEtcdRestoreProvider := ebcProvider.(provider.PrivilegedEtcdRestoreProjectProvider)
+			ctx = context.WithValue(ctx, PrivilegedEtcdRestoreProjectProviderContextKey, privilegedEtcdRestoreProvider)
+			return next(ctx, request)
+		}
+	}
+}
+
+func getEtcdRestoreProjectProvider(etcdRestoreProjectProviderGetter provider.EtcdRestoreProjectProviderGetter, seedsGetter provider.SeedsGetter) (provider.EtcdRestoreProjectProvider, error) {
+	seeds, err := seedsGetter()
+	if err != nil {
+		return nil, err
+	}
+
+	return etcdRestoreProjectProviderGetter(seeds)
 }

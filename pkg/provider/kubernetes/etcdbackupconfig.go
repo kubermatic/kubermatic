@@ -155,3 +155,52 @@ func (p *EtcdBackupConfigProvider) PatchUnsecured(old, new *kubermaticv1.EtcdBac
 	err := p.clientPrivileged.Patch(context.Background(), new, ctrlruntimeclient.MergeFrom(old))
 	return new, err
 }
+
+// EtcdBackupConfigProjectProvider struct that holds required components in order manage etcd backup backupConfigs across projects
+type EtcdBackupConfigProjectProvider struct {
+	// createSeedImpersonatedClient is used as a ground for impersonation
+	// whenever a connection to Seed API server is required
+	createSeedImpersonatedClients map[string]impersonationClient
+	clientsPrivileged             map[string]ctrlruntimeclient.Client
+}
+
+// NewEtcdBackupConfigProjectProvider returns an etcd backupConfig global provider
+func NewEtcdBackupConfigProjectProvider(createSeedImpersonatedClients map[string]impersonationClient, clients map[string]ctrlruntimeclient.Client) *EtcdBackupConfigProjectProvider {
+	return &EtcdBackupConfigProjectProvider{
+		clientsPrivileged:             clients,
+		createSeedImpersonatedClients: createSeedImpersonatedClients,
+	}
+}
+
+func EtcdBackupConfigProjectProviderFactory(mapper meta.RESTMapper, seedKubeconfigGetter provider.SeedKubeconfigGetter) provider.EtcdBackupConfigProjectProviderGetter {
+	return func(seeds map[string]*kubermaticv1.Seed) (provider.EtcdBackupConfigProjectProvider, error) {
+		clientsPrivileged := make(map[string]ctrlruntimeclient.Client)
+		createSeedImpersonationClients := make(map[string]impersonationClient)
+
+		for seedName, seed := range seeds {
+			cfg, err := seedKubeconfigGetter(seed)
+			if err != nil {
+				return nil, err
+			}
+			createSeedImpersonationClients[seedName] = NewImpersonationClient(cfg, mapper).CreateImpersonatedClient
+			clientPrivileged, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{Mapper: mapper})
+			if err != nil {
+				return nil, err
+			}
+			clientsPrivileged[seedName] = clientPrivileged
+		}
+
+		return NewEtcdBackupConfigProjectProvider(
+			createSeedImpersonationClients,
+			clientsPrivileged,
+		), nil
+	}
+}
+
+func (p *EtcdBackupConfigProjectProvider) List(userInfo *provider.UserInfo, projectID string) (*kubermaticv1.EtcdBackupConfigList, error) {
+	return nil, nil
+}
+
+func (p *EtcdBackupConfigProjectProvider) ListUnsecured(projectID string) (*kubermaticv1.EtcdBackupConfigList, error) {
+	return nil, nil
+}
