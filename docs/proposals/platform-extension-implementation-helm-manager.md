@@ -11,7 +11,7 @@ on Helm-charts.
 
 ## Motivation and Background
 
-An implementation of platform-extension based on helm-charts provides flexible
+An implementation of platform-extension based on Helm charts provides flexible
 way to manage the lifecycle of platform-extensions, and it overcomes
 limitations of current ADDON mechanism. 
 
@@ -21,7 +21,7 @@ limitations of current ADDON mechanism.
 
 In this new mechanism we propose to use Helm-charts to deploy extension and
 manage their life-cycle. We include Helm-charts repo information into CRDs and
-a helm-controller watches this CRs to manage extensions.
+a Helm-controller watches this CRs to manage extensions.
 
 This mechanism overcomes the [limitations](./platform-extensions.md#limitations)
 with existing ADDON mechanism in following ways:
@@ -33,7 +33,7 @@ with existing ADDON mechanism in following ways:
 ### Main Concept Points
 
 * Extensions provided by KKP devs
-  * Extensions created as helm charts
+  * Extensions created as Helm charts
   * All extensions in the same repo `kubermatic/extensions`
     * The repo tags match the k8s version, for instance v1.19, v1.20
 * Extensions provided by users
@@ -65,7 +65,7 @@ ExtensionInstance CRD fields:
 ### Extension Controller
 
 Reconciles Extension and ExtensionInstance CRs. Runs on each user cluster,
-basically it’s a helm manager. Initially deploys extensions CRs defined in the
+basically it’s a Helm manager. Initially deploys extensions CRs defined in the
 cluster template or KKP configuration. Based on the cluster configuration it
 allows you to install some extensions by default. It’s responsible for
 automatic extensions upgrades during the k8s cluster upgrade.
