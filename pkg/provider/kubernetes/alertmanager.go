@@ -37,14 +37,14 @@ import (
 type AlertmanagerProvider struct {
 	// createSeedImpersonatedClient is used as a ground for impersonation
 	// whenever a connection to Seed API server is required
-	createSeedImpersonatedClient impersonationClient
+	createSeedImpersonatedClient ImpersonationClient
 
 	// privilegedClient is used for admins to interact with alertmanager configuration.
 	privilegedClient ctrlruntimeclient.Client
 }
 
 // NewAlertmanagerProvider returns an alertmanager provider
-func NewAlertmanagerProvider(createSeedImpersonatedClient impersonationClient, privilegedClient ctrlruntimeclient.Client) *AlertmanagerProvider {
+func NewAlertmanagerProvider(createSeedImpersonatedClient ImpersonationClient, privilegedClient ctrlruntimeclient.Client) *AlertmanagerProvider {
 	return &AlertmanagerProvider{
 		createSeedImpersonatedClient: createSeedImpersonatedClient,
 		privilegedClient:             privilegedClient,

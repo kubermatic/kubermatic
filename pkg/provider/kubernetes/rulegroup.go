@@ -32,14 +32,14 @@ import (
 type RuleGroupProvider struct {
 	// createSeedImpersonatedClient is used as a ground for impersonation
 	// whenever a connection to Seed API server is required
-	createSeedImpersonatedClient impersonationClient
+	createSeedImpersonatedClient ImpersonationClient
 
 	// privilegedClient is used for admins to interact with RuleGroup objects.
 	privilegedClient ctrlruntimeclient.Client
 }
 
 // NewRuleGroupProvider returns a ruleGroup provider
-func NewRuleGroupProvider(createSeedImpersonatedClient impersonationClient, privilegedClient ctrlruntimeclient.Client) *RuleGroupProvider {
+func NewRuleGroupProvider(createSeedImpersonatedClient ImpersonationClient, privilegedClient ctrlruntimeclient.Client) *RuleGroupProvider {
 	return &RuleGroupProvider{
 		createSeedImpersonatedClient: createSeedImpersonatedClient,
 		privilegedClient:             privilegedClient,

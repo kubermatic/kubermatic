@@ -39,14 +39,14 @@ const (
 type ClusterTemplateInstanceProvider struct {
 	// createSeedImpersonatedClient is used as a ground for impersonation
 	// whenever a connection to Seed API server is required
-	createSeedImpersonatedClient impersonationClient
+	createSeedImpersonatedClient ImpersonationClient
 
 	// privilegedClient is used for admins
 	privilegedClient ctrlruntimeclient.Client
 }
 
 // ClusterTemplateInstanceProvider returns provider
-func NewClusterTemplateInstanceProvider(createSeedImpersonatedClient impersonationClient, privilegedClient ctrlruntimeclient.Client) *ClusterTemplateInstanceProvider {
+func NewClusterTemplateInstanceProvider(createSeedImpersonatedClient ImpersonationClient, privilegedClient ctrlruntimeclient.Client) *ClusterTemplateInstanceProvider {
 	return &ClusterTemplateInstanceProvider{
 		createSeedImpersonatedClient: createSeedImpersonatedClient,
 		privilegedClient:             privilegedClient,

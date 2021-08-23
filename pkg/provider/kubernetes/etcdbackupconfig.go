@@ -32,12 +32,12 @@ import (
 type EtcdBackupConfigProvider struct {
 	// createSeedImpersonatedClient is used as a ground for impersonation
 	// whenever a connection to Seed API server is required
-	createSeedImpersonatedClient impersonationClient
+	createSeedImpersonatedClient ImpersonationClient
 	clientPrivileged             ctrlruntimeclient.Client
 }
 
 // NewEtcdBackupConfigProvider returns a constraint provider
-func NewEtcdBackupConfigProvider(createSeedImpersonatedClient impersonationClient, client ctrlruntimeclient.Client) *EtcdBackupConfigProvider {
+func NewEtcdBackupConfigProvider(createSeedImpersonatedClient ImpersonationClient, client ctrlruntimeclient.Client) *EtcdBackupConfigProvider {
 	return &EtcdBackupConfigProvider{
 		clientPrivileged:             client,
 		createSeedImpersonatedClient: createSeedImpersonatedClient,
@@ -160,12 +160,12 @@ func (p *EtcdBackupConfigProvider) PatchUnsecured(old, new *kubermaticv1.EtcdBac
 type EtcdBackupConfigProjectProvider struct {
 	// createSeedImpersonatedClient is used as a ground for impersonation
 	// whenever a connection to Seed API server is required
-	createSeedImpersonatedClients map[string]impersonationClient
+	createSeedImpersonatedClients map[string]ImpersonationClient
 	clientsPrivileged             map[string]ctrlruntimeclient.Client
 }
 
 // NewEtcdBackupConfigProjectProvider returns an etcd backupConfig global provider
-func NewEtcdBackupConfigProjectProvider(createSeedImpersonatedClients map[string]impersonationClient, clients map[string]ctrlruntimeclient.Client) *EtcdBackupConfigProjectProvider {
+func NewEtcdBackupConfigProjectProvider(createSeedImpersonatedClients map[string]ImpersonationClient, clients map[string]ctrlruntimeclient.Client) *EtcdBackupConfigProjectProvider {
 	return &EtcdBackupConfigProjectProvider{
 		clientsPrivileged:             clients,
 		createSeedImpersonatedClients: createSeedImpersonatedClients,
@@ -175,7 +175,7 @@ func NewEtcdBackupConfigProjectProvider(createSeedImpersonatedClients map[string
 func EtcdBackupConfigProjectProviderFactory(mapper meta.RESTMapper, seedKubeconfigGetter provider.SeedKubeconfigGetter) provider.EtcdBackupConfigProjectProviderGetter {
 	return func(seeds map[string]*kubermaticv1.Seed) (provider.EtcdBackupConfigProjectProvider, error) {
 		clientsPrivileged := make(map[string]ctrlruntimeclient.Client)
-		createSeedImpersonationClients := make(map[string]impersonationClient)
+		createSeedImpersonationClients := make(map[string]ImpersonationClient)
 
 		for seedName, seed := range seeds {
 			cfg, err := seedKubeconfigGetter(seed)
