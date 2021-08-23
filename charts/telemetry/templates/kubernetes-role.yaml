@@ -1,4 +1,3 @@
-
 # Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +15,6 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  creationTimestamp: null
   name: {{ .Chart.Name }}-kubernetes-agent-role
 rules:
 - apiGroups:

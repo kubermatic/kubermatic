@@ -40,12 +40,7 @@ spec:
                 - name: records
                   mountPath: "/records"
               resources:
-                limits:
-                  cpu: "1"
-                  memory: 100Mi
-                requests:
-                  cpu: "0.5"
-                  memory: 100Mi
+                {{- toYaml .Values.telemetry.resources | nindent 16 }}
             - name: kubermatic-agent
               image: "{{ .Values.telemetry.kubermaticAgent.image.repository }}:{{ .Values.telemetry.kubermaticAgent.image.tag | default .Chart.AppVersion }}"
               imagePullPolicy: {{ .Values.telemetry.kubermaticAgent.image.pullPolicy }}
@@ -58,12 +53,7 @@ spec:
                 - name: records
                   mountPath: "/records"
               resources:
-                limits:
-                  cpu: "1"
-                  memory: 100Mi
-                requests:
-                  cpu: "0.5"
-                  memory: 100Mi
+                {{- toYaml .Values.telemetry.resources | nindent 16 }}
           containers:
             - name: reporter
               image: "{{ .Values.telemetry.reporter.image.repository }}:{{ .Values.telemetry.reporter.image.tag | default .Chart.AppVersion }}"

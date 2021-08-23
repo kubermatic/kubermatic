@@ -34,11 +34,10 @@ telemetry:
       pullPolicy: IfNotPresent
       tag: "v0.1.0"
 
-  serviceAccount:
-    name: telemetry-agent-sa
-    namespace: telemetry-system
-
-  uuidgen: ""
+# uuid is the unique identifier of the client where the agent is running.
+# This field is required and will print an error message when that entry is missing.
+# You can generate uuid using command uuidgen on your linux machine
+  uuid: ""
 
   resources:
     limits:
@@ -47,5 +46,3 @@ telemetry:
     requests:
       cpu: "0.5"
       memory: 100Mi
-
-
