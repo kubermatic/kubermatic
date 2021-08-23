@@ -30,10 +30,7 @@ if [[ "${DEPLOY_STACK}" == "kubermatic" ]]; then
 fi
 
 echodate "Getting secrets from Vault"
-retry 5 vault write \
-  --format=json auth/approle/login \
-  role_id=${VAULT_ROLE_ID} secret_id=${VAULT_SECRET_ID} > /tmp/vault-token-response.json
-export VAULT_TOKEN="$(cat /tmp/vault-token-response.json | jq .auth.client_token -r)"
+retry 5 vault_ci_login
 export KUBECONFIG=/tmp/kubeconfig
 export VALUES_FILE=/tmp/values.yaml
 export DOCKER_CONFIG=/tmp/dockercfg
