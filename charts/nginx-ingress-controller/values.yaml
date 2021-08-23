@@ -18,7 +18,7 @@ nginx:
   replicas: 3
   image:
     repository: k8s.gcr.io/ingress-nginx/controller
-    tag: v0.44.0
+    tag: v0.49.0
   config: {}
 #   load-balance: "least_conn"
   extraArgs: []
@@ -27,7 +27,7 @@ nginx:
       cpu: 50m
       memory: 128Mi
     limits:
-      cpu: 250m
+      cpu: 500m
       memory: 512Mi
   nodeSelector: {}
   affinity:
