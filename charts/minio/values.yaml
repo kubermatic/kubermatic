@@ -15,7 +15,7 @@
 minio:
   image:
     repository: docker.io/minio/minio
-    tag: RELEASE.2021-03-04T00-53-13Z
+    tag: RELEASE.2021-08-20T18-32-01Z
   storeSize: 100Gi
 
   # These settings are required. Keys must be alphanumeric.
@@ -45,7 +45,7 @@ minio:
     enabled: true
     image:
       repository: quay.io/kubermatic/util
-      tag: 1.4.1
+      tag: 1.5.0
 
   # If your cluster does not have a default storage class,
   # you can specify the class to use for Minio. Note that
