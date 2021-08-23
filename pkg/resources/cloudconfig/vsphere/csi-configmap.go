@@ -19,11 +19,11 @@ package vsphere
 import (
 	"bytes"
 	"fmt"
-	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
 
+	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	"github.com/kubermatic/machine-controller/pkg/ini"
 )
 

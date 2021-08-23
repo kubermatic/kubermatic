@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	vsphere2 "k8c.io/kubermatic/v2/pkg/resources/cloudconfig/vsphere"
 	"net/url"
 
 	aws "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
@@ -31,8 +30,9 @@ import (
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	gcp "k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	vspherecloudconfig "k8c.io/kubermatic/v2/pkg/resources/cloudconfig/vsphere"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -77,7 +77,7 @@ func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreat
 
 func ConfigmapVsphereCSICreator(data configMapCreatorData) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
-		return resources.VsphereCSICloudConfigConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+		return resources.CSICloudConfigConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {
 				cm.Data = map[string]string{}
 			}
@@ -91,7 +91,7 @@ func ConfigmapVsphereCSICreator(data configMapCreatorData) reconciling.NamedConf
 			if err != nil {
 				return nil, err
 			}
-			cloudConfig, err := vsphere2.CloudConfigCSIToString(vsphereCloudConfig)
+			cloudConfig, err := vspherecloudconfig.CloudConfigCSIToString(vsphereCloudConfig)
 			if err != nil {
 				return nil, err
 			}

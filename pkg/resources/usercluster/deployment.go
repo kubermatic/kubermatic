@@ -19,7 +19,6 @@ package usercluster
 import (
 	"encoding/json"
 	"fmt"
-	"k8c.io/kubermatic/v2/pkg/provider"
 	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -67,7 +66,7 @@ type userclusterControllerData interface {
 	GetMLAGatewayPort() (int32, error)
 	KubermaticAPIImage() string
 	KubermaticDockerTag() string
-	GetKubernetesCloudProviderName() string
+	GetCloudProviderName() (string, error)
 	UserClusterMLAEnabled() bool
 }
 
@@ -151,7 +150,7 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				args = append(args, "-kas-secure-port", fmt.Sprint(data.Cluster().Address.Port))
 			}
 
-			providerName, err := getCloudProviderName(data.Cluster())
+			providerName, err := data.GetCloudProviderName()
 			if err != nil {
 				return nil, fmt.Errorf("failed to get cloud provider name: %v", err)
 			}
@@ -312,47 +311,4 @@ func getLabelsArgValue(cluster *kubermaticv1.Cluster) (string, error) {
 		return "", fmt.Errorf("failed to marshal labels: %v", err)
 	}
 	return string(bytes), nil
-}
-
-func getCloudProviderName(cluster *kubermaticv1.Cluster) (string, error) {
-	if cluster.Spec.Cloud.VSphere != nil {
-		return provider.VSphereCloudProvider, nil
-	}
-	if cluster.Spec.Cloud.AWS != nil {
-		return provider.AWSCloudProvider, nil
-	}
-	if cluster.Spec.Cloud.Openstack != nil {
-		return provider.OpenstackCloudProvider, nil
-	}
-	if cluster.Spec.Cloud.GCP != nil {
-		return provider.GCPCloudProvider, nil
-	}
-	if cluster.Spec.Cloud.Alibaba != nil {
-		return provider.AlibabaCloudProvider, nil
-	}
-	if cluster.Spec.Cloud.Anexia != nil {
-		return provider.AnexiaCloudProvider, nil
-	}
-	if cluster.Spec.Cloud.Azure != nil {
-		return provider.AzureCloudProvider, nil
-	}
-	if cluster.Spec.Cloud.Digitalocean != nil {
-		return provider.DigitaloceanCloudProvider, nil
-	}
-	if cluster.Spec.Cloud.Hetzner != nil {
-		return provider.HetznerCloudProvider, nil
-	}
-	if cluster.Spec.Cloud.Kubevirt != nil {
-		return provider.KubevirtCloudProvider, nil
-	}
-	if cluster.Spec.Cloud.Packet != nil {
-		return provider.PacketCloudProvider, nil
-	}
-	if cluster.Spec.Cloud.BringYourOwn != nil {
-		return provider.BringYourOwnCloudProvider, nil
-	}
-	if cluster.Spec.Cloud.Fake != nil {
-		return provider.FakeCloudProvider, nil
-	}
-	return "", fmt.Errorf("provider unknown")
 }

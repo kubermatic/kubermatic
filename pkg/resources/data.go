@@ -512,9 +512,8 @@ func (d *TemplateData) GetGlobalSecretKeySelectorValue(configVar *providerconfig
 	return provider.SecretKeySelectorValueFuncFactory(d.ctx, d.client)(configVar, key)
 }
 
-func (d *TemplateData) GetKubernetesCloudProviderName() string {
-	return GetKubernetesCloudProviderName(d.Cluster(),
-		d.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider])
+func (d *TemplateData) GetCloudProviderName() (string, error) {
+	return GetCloudProviderName(d.Cluster())
 }
 
 func (d *TemplateData) GetCSIMigrationFeatureGates() []string {
@@ -619,6 +618,49 @@ func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster, externalCloud
 	default:
 		return ""
 	}
+}
+
+func GetCloudProviderName(cluster *kubermaticv1.Cluster) (string, error) {
+	if cluster.Spec.Cloud.VSphere != nil {
+		return provider.VSphereCloudProvider, nil
+	}
+	if cluster.Spec.Cloud.AWS != nil {
+		return provider.AWSCloudProvider, nil
+	}
+	if cluster.Spec.Cloud.Openstack != nil {
+		return provider.OpenstackCloudProvider, nil
+	}
+	if cluster.Spec.Cloud.GCP != nil {
+		return provider.GCPCloudProvider, nil
+	}
+	if cluster.Spec.Cloud.Alibaba != nil {
+		return provider.AlibabaCloudProvider, nil
+	}
+	if cluster.Spec.Cloud.Anexia != nil {
+		return provider.AnexiaCloudProvider, nil
+	}
+	if cluster.Spec.Cloud.Azure != nil {
+		return provider.AzureCloudProvider, nil
+	}
+	if cluster.Spec.Cloud.Digitalocean != nil {
+		return provider.DigitaloceanCloudProvider, nil
+	}
+	if cluster.Spec.Cloud.Hetzner != nil {
+		return provider.HetznerCloudProvider, nil
+	}
+	if cluster.Spec.Cloud.Kubevirt != nil {
+		return provider.KubevirtCloudProvider, nil
+	}
+	if cluster.Spec.Cloud.Packet != nil {
+		return provider.PacketCloudProvider, nil
+	}
+	if cluster.Spec.Cloud.BringYourOwn != nil {
+		return provider.BringYourOwnCloudProvider, nil
+	}
+	if cluster.Spec.Cloud.Fake != nil {
+		return provider.FakeCloudProvider, nil
+	}
+	return "", fmt.Errorf("provider unknown")
 }
 
 func ExternalCloudProviderEnabled(cluster *kubermaticv1.Cluster) bool {

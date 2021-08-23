@@ -194,6 +194,8 @@ const (
 	OpenVPNClientCertificatesSecretName = "openvpn-client-certificates"
 	// CloudConfigSecretName is the name for the secret containing the cloud-config inside the user cluster.
 	CloudConfigSecretName = "cloud-config"
+	// CSICloudConfigSecretName is the name for the secret containing the cloud-config used by the csi driver inside the user cluster
+	CSICloudConfigSecretName = "cloud-config-csi"
 	// EtcdTLSCertificateSecretName is the name for the secret containing the etcd tls certificate used for transport security
 	EtcdTLSCertificateSecretName = "etcd-tls-certificate"
 	// ApiserverEtcdClientCertificateSecretName is the name for the secret containing the client certificate used by the apiserver for authenticating against etcd
@@ -220,6 +222,8 @@ const (
 
 	// CloudConfigConfigMapName is the name for the configmap containing the cloud-config
 	CloudConfigConfigMapName = "cloud-config"
+	// CSICloudConfigConfigMapName is the name for the configmap containing the cloud-config used by the csi driver
+	CSICloudConfigConfigMapName = "cloud-config-csi"
 	// CloudConfigConfigMapKey is the key under which the cloud-config in the cloud-config configmap can be found
 	CloudConfigConfigMapKey = "config"
 	// OpenVPNClientConfigsConfigMapName is the name for the ConfigMap containing the OpenVPN client config used within the user cluster
@@ -524,8 +528,6 @@ const (
 
 	KubevirtKubeConfig = "kubeConfig"
 
-	VsphereCSICloudConfigConfigMapName = "cloud-config-csi"
-	VsphereCSICloudConfigSecretName    = "cloud-config-csi"
 	VsphereUsername                    = "username"
 	VspherePassword                    = "password"
 	VsphereInfraManagementUserUsername = "infraManagementUserUsername"

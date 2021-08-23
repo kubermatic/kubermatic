@@ -268,7 +268,7 @@ func (v *Provider) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 
 	if ds := spec.VSphere.Datastore; ds != "" {
 		if _, err = session.Finder.Datastore(ctx, ds); err != nil {
-			return fmt.Errorf("failed to get datastore provided by cluster spec %q: %v", ds, err)
+			return fmt.Errorf("failed to get datastore cluster provided by cluste spec %q: %v", ds, err)
 		}
 	}
 

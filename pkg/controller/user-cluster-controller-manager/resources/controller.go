@@ -20,7 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	types2 "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"net"
 	"net/http"
 	"net/url"
@@ -107,7 +107,7 @@ func Add(
 		versions:          versions,
 		caBundle:          caBundle,
 		userClusterMLA:    userClusterMLA,
-		cloudProvider:     types2.CloudProvider(cloudProviderName),
+		cloudProvider:     v1.ProviderType(cloudProviderName),
 	}
 
 	var err error
@@ -223,7 +223,7 @@ type reconciler struct {
 	versions          kubermatic.Versions
 	caBundle          resources.CABundle
 	userClusterMLA    UserClusterMLA
-	cloudProvider     types2.CloudProvider
+	cloudProvider     v1.ProviderType
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool

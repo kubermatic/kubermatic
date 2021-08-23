@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/resources"

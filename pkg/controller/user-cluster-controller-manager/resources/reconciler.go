@@ -19,7 +19,6 @@ package resources
 import (
 	"context"
 	"fmt"
-	types2 "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"net"
 	"strings"
 
@@ -76,20 +75,20 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to get cloudConfig: %v", err)
 	}
-	var vsphereCSICloudConfig []byte
-	if r.cloudProvider == types2.CloudProviderVsphere {
-		vsphereCSICloudConfig, err = r.cloudConfig(ctx, resources.VsphereCSICloudConfigConfigMapName)
+	var CSICloudConfig []byte
+	if r.cloudProvider == kubermaticv1.ProviderVSphere {
+		CSICloudConfig, err = r.cloudConfig(ctx, resources.CSICloudConfigConfigMapName)
 		if err != nil {
 			return fmt.Errorf("failed to get cloudConfig: %v", err)
 		}
 	}
 
 	data := reconcileData{
-		caCert:                caCert,
-		openVPNCACert:         openVPNCACert,
-		userSSHKeys:           userSSHKeys,
-		cloudConfig:           cloudConfig,
-		vsphereCSICloudConfig: vsphereCSICloudConfig,
+		caCert:         caCert,
+		openVPNCACert:  openVPNCACert,
+		userSSHKeys:    userSSHKeys,
+		cloudConfig:    cloudConfig,
+		csiCloudConfig: CSICloudConfig,
 	}
 
 	if r.userClusterMLA.Monitoring || r.userClusterMLA.Logging {
@@ -615,8 +614,8 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		cloudcontroller.CloudConfig(data.cloudConfig, resources.CloudConfigSecretName),
 	}
 
-	if r.cloudProvider == types2.CloudProviderVsphere {
-		creators = append(creators, cloudcontroller.CloudConfig(data.vsphereCSICloudConfig, resources.VsphereCSICloudConfigSecretName))
+	if data.csiCloudConfig != nil {
+		creators = append(creators, cloudcontroller.CloudConfig(data.csiCloudConfig, resources.CSICloudConfigSecretName))
 	}
 
 	if r.userSSHKeyAgent {
@@ -773,12 +772,13 @@ func (r *reconciler) reconcilePodDisruptionBudgets(ctx context.Context) error {
 }
 
 type reconcileData struct {
-	caCert                *triple.KeyPair
-	openVPNCACert         *resources.ECDSAKeyPair
-	mlaGatewayCACert      *resources.ECDSAKeyPair
-	userSSHKeys           map[string][]byte
-	cloudConfig           []byte
-	vsphereCSICloudConfig []byte
+	caCert           *triple.KeyPair
+	openVPNCACert    *resources.ECDSAKeyPair
+	mlaGatewayCACert *resources.ECDSAKeyPair
+	userSSHKeys      map[string][]byte
+	cloudConfig      []byte
+	// csiCloudConfig is currently used only by vSphere, whose needs it to properly configure the external CSI driver
+	csiCloudConfig []byte
 }
 
 func (r *reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context) error {
