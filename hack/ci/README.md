@@ -10,11 +10,6 @@ a dummy release in a dedicated GitHub repo. The purpose is to
 * test that releasing code actually works, and
 * to provide test builds for internal purposes.
 
-## deploy-ci-kubermatic-io.sh
-
-This script is used as a postsubmit job and updates the CI cluster
-after every commit to master.
-
 ## deploy-dev-asia.sh
 
 This script is used as a postsubmit job and updates the dev-asia seed
