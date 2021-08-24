@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"net"
 	"net/http"
 	"net/url"
@@ -30,6 +29,7 @@ import (
 	"go.uber.org/zap"
 
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -107,7 +107,7 @@ func Add(
 		versions:          versions,
 		caBundle:          caBundle,
 		userClusterMLA:    userClusterMLA,
-		cloudProvider:     v1.ProviderType(cloudProviderName),
+		cloudProvider:     kubermaticv1.ProviderType(cloudProviderName),
 	}
 
 	var err error
@@ -223,7 +223,7 @@ type reconciler struct {
 	versions          kubermatic.Versions
 	caBundle          resources.CABundle
 	userClusterMLA    UserClusterMLA
-	cloudProvider     v1.ProviderType
+	cloudProvider     kubermaticv1.ProviderType
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool

@@ -154,7 +154,7 @@ type DatacenterSpec struct {
 
 	//nolint:staticcheck
 	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
-	Fake *DatacenterSpecFake `json:"fake,omitempty,omitempty"`
+	Fake *DatacenterSpecFake `json:"fake,omitempty,omitgenyaml"`
 
 	// Optional: When defined, only users with an e-mail address on the
 	// given domains can make use of this datacenter. You can define multiple
