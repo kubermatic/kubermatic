@@ -138,7 +138,6 @@ HELM_INIT_ARGS="--tiller-image ${PROXY_INTERNAL_ADDR}:5000/kubernetes-helm/tille
 
 HELM_INIT_ARGS="--tiller-image ${PROXY_INTERNAL_ADDR}:5000/kubernetes-helm/tiller:${HELM_VERSION}" \
   DEPLOY_STACK=logging \
-  DEPLOY_LOKI=true \
   TILLER_NAMESPACE="kube-system" \
   ./hack/ci/deploy.sh \
   master \

@@ -130,6 +130,24 @@ ensure_github_host_pubkey() {
   fi
 }
 
+vault_ci_login() {
+  # already logged in
+  if [ -n "${VAULT_TOKEN:-}" ]; then
+    return 0
+  fi
+
+  # check environment variables
+  if [ -z "${VAULT_ROLE_ID:-}" ] || [ -z "${VAULT_SECRET_ID:-}" ]; then
+    echo "VAULT_ROLE_ID and VAULT_SECRET_ID must be set to programmatically authenticate against Vault."
+    return 1
+  fi
+
+  local token
+  token=$(vault write --format=json auth/approle/login "role_id=$VAULT_ROLE_ID" "secret_id=$VAULT_SECRET_ID" | jq -r '.auth.client_token')
+
+  export VAULT_TOKEN="$token"
+}
+
 get_latest_dashboard_hash() {
   local FOR_BRANCH="$1"
 
