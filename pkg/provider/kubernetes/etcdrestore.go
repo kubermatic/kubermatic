@@ -180,10 +180,35 @@ func EtcdRestoreProjectProviderFactory(mapper meta.RESTMapper, seedKubeconfigGet
 	}
 }
 
-func (p *EtcdRestoreProjectProvider) List(userInfo *provider.UserInfo, projectID string) (*kubermaticv1.EtcdRestoreList, error) {
-	return nil, nil
+func (p *EtcdRestoreProjectProvider) List(userInfo *provider.UserInfo, projectID string) ([]*kubermaticv1.EtcdRestoreList, error) {
+	var etcdRestoreLists []*kubermaticv1.EtcdRestoreList
+	for _, createSeedImpersonationClient := range p.createSeedImpersonatedClients {
+		impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, createSeedImpersonationClient)
+		if err != nil {
+			return nil, err
+		}
+
+		erList := &kubermaticv1.EtcdRestoreList{}
+		err = impersonationClient.List(context.Background(), erList, ctrlruntimeclient.MatchingLabels{"project": projectID})
+		if err != nil {
+			return nil, err
+		}
+		etcdRestoreLists = append(etcdRestoreLists, erList)
+	}
+
+	return etcdRestoreLists, nil
 }
 
-func (p *EtcdRestoreProjectProvider) ListUnsecured(projectID string) (*kubermaticv1.EtcdRestoreList, error) {
-	return nil, nil
+func (p *EtcdRestoreProjectProvider) ListUnsecured(projectID string) ([]*kubermaticv1.EtcdRestoreList, error) {
+	var etcdRestoreLists []*kubermaticv1.EtcdRestoreList
+	for _, clientPrivileged := range p.clientsPrivileged {
+		erList := &kubermaticv1.EtcdRestoreList{}
+		err := clientPrivileged.List(context.Background(), erList, ctrlruntimeclient.MatchingLabels{"project": projectID})
+		if err != nil {
+			return nil, err
+		}
+		etcdRestoreLists = append(etcdRestoreLists, erList)
+	}
+
+	return etcdRestoreLists, nil
 }
