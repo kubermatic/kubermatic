@@ -70,6 +70,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, fmt.Errorf("failed to get config: %w", err)
 	}
 
+	// not having a config at all should never really happen
+	if config == nil {
+		return reconcile.Result{}, nil
+	}
+
 	// cleanup once a Seed was deleted in the master cluster
 	if seed.DeletionTimestamp != nil {
 		result, err := r.cleanupDeletedSeed(ctx, config, seed, client, logger)
