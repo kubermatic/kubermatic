@@ -55,7 +55,7 @@ RUN curl --fail -L https://get.helm.sh/helm-${HELM2_VERSION}-linux-amd64.tar.gz 
     mv helm2 helm3 /usr/local/bin/ && \
     chmod +x /usr/local/bin/helm* && \
     helm2 version --client --short && \
-    helm3 version --client --short && \
+    helm3 version --short && \
     ln -s /usr/local/bin/helm2 /usr/local/bin/helm
 
 RUN curl -Lo vault.zip https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip && \
