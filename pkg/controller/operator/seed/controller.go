@@ -140,8 +140,6 @@ func Add(
 			return nil
 		}
 
-		fmt.Println("Configmap!")
-
 		seeds, err := seedsGetter()
 		if err != nil {
 			log.Errorw("Failed to handle request", zap.Error(err))
