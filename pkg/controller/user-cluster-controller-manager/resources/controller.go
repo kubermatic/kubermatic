@@ -42,7 +42,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
-	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
+	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -139,7 +139,7 @@ func Add(
 	})
 
 	typesToWatch := []ctrlruntimeclient.Object{
-		&apiregistrationv1beta1.APIService{},
+		&apiregistrationv1.APIService{},
 		&corev1.ServiceAccount{},
 		&corev1.Service{},
 		&corev1.ConfigMap{},

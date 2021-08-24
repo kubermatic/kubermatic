@@ -13,9 +13,6 @@
 # limitations under the License.
 
 {{ $version := "UNSUPPORTED" }}
-{{ if eq .Cluster.MajorMinorVersion "1.18" }}
-{{ $version = "v1.18.2 "}}
-{{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.19" }}
 {{ $version = "v1.19.0 "}}
 {{ end }}
@@ -24,6 +21,9 @@
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.21" }}
 {{ $version = "v1.21.0 "}}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.22" }}
+{{ $version = "v1.22.0 "}}
 {{ end }}
 
 {{ if not (eq $version "UNSUPPORTED") }}
@@ -63,9 +63,9 @@ rules:
       - "persistentvolumeclaims"
       - "persistentvolumes"
     verbs: ["watch", "list", "get"]
-  - apiGroups: ["extensions"]
-    resources: ["replicasets", "daemonsets"]
-    verbs: ["watch", "list", "get"]
+  - apiGroups: ["batch", "extensions"]
+    resources: ["jobs"]
+    verbs: ["get", "list", "watch", "patch"]
   - apiGroups: ["policy"]
     resources: ["poddisruptionbudgets"]
     verbs: ["watch", "list"]
@@ -73,11 +73,11 @@ rules:
     resources: ["statefulsets", "replicasets", "daemonsets"]
     verbs: ["watch", "list", "get"]
   - apiGroups: ["storage.k8s.io"]
-    resources: ["storageclasses", "csinodes"]
+    resources: ["storageclasses", "csinodes", "csidrivers", "csistoragecapacities"]
     verbs: ["watch", "list", "get"]
-  - apiGroups: ["batch", "extensions"]
-    resources: ["jobs"]
-    verbs: ["get", "list", "watch", "patch"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["list", "watch"]
   - apiGroups: ["coordination.k8s.io"]
     resources: ["leases"]
     verbs: ["create"]
@@ -183,7 +183,6 @@ spec:
         args:
         - --cloud-provider=clusterapi
         - --namespace=kube-system
-        - --logtostderr=true
         - --stderrthreshold=info
         - --v=4
         env:
@@ -191,7 +190,7 @@ spec:
           value: "cluster.k8s.io"
         resources:
           limits:
-            cpu: 100m
+            cpu: 500m
             memory: 300Mi
           requests:
             cpu: 100m

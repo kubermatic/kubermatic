@@ -29,8 +29,7 @@ Support for minor releases is a bit more involved to add. There are a coulple of
 need to be updated.
 
 Before a new minor can be added to KKP, the test binaries need to be included in the e2e Docker
-image. Bump the `e2e-kind` and `e2e-kind-with-conformance-tests` Docker images and push new
-images to quay before continuing.
+image. Bump the `build` Docker image and push new images to quay before continuing.
 
 Once new Docker images are ready, KKP can be updated as well.
 

@@ -37,12 +37,12 @@ import (
 var (
 	defaultResourceRequirements = corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("32Mi"),
-			corev1.ResourceCPU:    resource.MustParse("25m"),
+			corev1.ResourceMemory: resource.MustParse("200Mi"),
+			corev1.ResourceCPU:    resource.MustParse("100m"),
 		},
 		Limits: corev1.ResourceList{
 			corev1.ResourceMemory: resource.MustParse("512Mi"),
-			corev1.ResourceCPU:    resource.MustParse("150m"),
+			corev1.ResourceCPU:    resource.MustParse("1"),
 		},
 	}
 )
@@ -54,7 +54,7 @@ const (
 	ServingCertSecretName  = "metrics-server-serving-cert"
 	servingCertMountFolder = "/etc/serving-cert"
 
-	tag = "v0.3.6"
+	tag = "v0.5.0"
 )
 
 // metricsServerData is the data needed to construct the metrics-server components
@@ -120,18 +120,18 @@ func DeploymentCreator(data metricsServerData) reconciling.NamedDeploymentCreato
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    name,
-					Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/metrics-server-amd64:" + tag,
+					Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/metrics-server/metrics-server:" + tag,
 					Command: []string{"/metrics-server"},
 					Args: []string{
 						"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 						"--authentication-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 						"--authorization-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
-						"--kubelet-port", "10250",
 						"--kubelet-insecure-tls",
+						"--kubelet-use-node-status-port",
+						"--metric-resolution", "15s",
 						// We use the same as the API server as we use the same dnat-controller
 						"--kubelet-preferred-address-types", "ExternalIP,InternalIP",
 						"--v", "1",
-						"--logtostderr",
 						"--tls-cert-file", servingCertMountFolder + "/" + resources.ServingCertSecretKey,
 						"--tls-private-key-file", servingCertMountFolder + "/" + resources.ServingCertKeySecretKey,
 					},
@@ -162,6 +162,7 @@ func DeploymentCreator(data metricsServerData) reconciling.NamedDeploymentCreato
 			}
 
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name, data.Cluster().Name)
+			dep.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
 
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(name))
 			if err != nil {

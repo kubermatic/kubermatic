@@ -46,7 +46,7 @@ var (
 func (r *testRunner) cleanupBeforeGinkgo(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client) error {
 	log.Info("Removing webhooks...")
 
-	if err := wait.Poll(r.userClusterPollInterval, r.customTestTimeout, func() (done bool, err error) {
+	if err := wait.PollImmediate(r.userClusterPollInterval, r.customTestTimeout, func() (done bool, err error) {
 		webhookList := &admissionregistrationv1.ValidatingWebhookConfigurationList{}
 		if err := client.List(ctx, webhookList); err != nil {
 			log.Errorw("Failed to list webhooks", zap.Error(err))
@@ -76,35 +76,36 @@ func (r *testRunner) cleanupBeforeGinkgo(ctx context.Context, log *zap.SugaredLo
 
 	log.Info("Removing non-default namespaces...")
 
-	return wait.Poll(r.userClusterPollInterval, r.customTestTimeout, func() (done bool, err error) {
-		namespaceList := &corev1.NamespaceList{}
-		if err := client.List(ctx, namespaceList); err != nil {
-			log.Errorw("Failed to list namespaces", zap.Error(err))
-			return false, nil
+	// For these we do not wait for thhe deletion to be done, as it's enough to trigger
+	// the deletion and have the resources disappear over time.
+
+	namespaceList := &corev1.NamespaceList{}
+	if err := client.List(ctx, namespaceList); err != nil {
+		log.Errorw("Failed to delete namespaces", zap.Error(err))
+		return nil
+	}
+
+	// This check assumes no one deleted one of the protected namespaces
+	if len(namespaceList.Items) <= protectedNamespaces.Len() {
+		return nil
+	}
+
+	for _, namespace := range namespaceList.Items {
+		if protectedNamespaces.Has(namespace.Name) {
+			continue
 		}
 
-		// This check assumes no one deleted one of the protected namespaces
-		if len(namespaceList.Items) <= protectedNamespaces.Len() {
-			return true, nil
-		}
+		// If it's not gone & the DeletionTimestamp is nil, delete it
+		if namespace.DeletionTimestamp == nil {
+			nslog := log.With("namespace", namespace.Name)
 
-		for _, namespace := range namespaceList.Items {
-			if protectedNamespaces.Has(namespace.Name) {
-				continue
+			if err := client.Delete(ctx, &namespace); err != nil {
+				nslog.Errorw("Failed to delete namespace", zap.Error(err))
+			} else {
+				nslog.Debug("Deleted namespace.")
 			}
-
-			// If it's not gone & the DeletionTimestamp is nil, delete it
-			if namespace.DeletionTimestamp == nil {
-				nslog := log.With("namespace", namespace.Name)
-
-				if err := client.Delete(ctx, &namespace); err != nil {
-					nslog.Errorw("Failed to delete namespace", zap.Error(err))
-				} else {
-					nslog.Debug("Deleted namespace.")
-				}
-			}
 		}
+	}
 
-		return false, nil
-	})
+	return nil
 }

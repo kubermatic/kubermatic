@@ -16,12 +16,6 @@
 
 {{ if eq .Cluster.CloudProviderName "openstack" }}
 {{ $version := "UNSUPPORTED" }}
-{{ if eq .Cluster.MajorMinorVersion "1.17" }}
-{{ $version = "v1.17.1 "}}
-{{ end }}
-{{ if eq .Cluster.MajorMinorVersion "1.18" }}
-{{ $version = "v1.18.0 "}}
-{{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.19" }}
 {{ $version = "v1.19.0 "}}
 {{ end }}
@@ -29,7 +23,10 @@
 {{ $version = "v1.20.3 "}}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.21" }}
-{{ $version = "v1.20.3 "}}
+{{ $version = "v1.21.0 "}}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.22" }}
+{{ $version = "v1.22.0 "}}
 {{ end }}
 
 ---
@@ -117,7 +114,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: liveness-probe
-          image: k8s.gcr.io/sig-storage/livenessprobe:v2.1.0
+          image: k8s.gcr.io/sig-storage/livenessprobe:v2.4.0
           args:
             - "--csi-address=$(ADDRESS)"
           env:

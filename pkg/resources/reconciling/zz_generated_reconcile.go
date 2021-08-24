@@ -8,7 +8,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 	gatekeeperv1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -16,12 +15,11 @@ import (
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
-	networkingv1beta1 "k8s.io/api/networking/v1beta1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
-	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
+	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 )
 
 // NamespaceCreator defines an interface to create/update Namespaces
@@ -695,7 +693,7 @@ func ReconcileValidatingWebhookConfigurations(ctx context.Context, namedGetters 
 }
 
 // APIServiceCreator defines an interface to create/update APIServices
-type APIServiceCreator = func(existing *apiregistrationv1beta1.APIService) (*apiregistrationv1beta1.APIService, error)
+type APIServiceCreator = func(existing *apiregistrationv1.APIService) (*apiregistrationv1.APIService, error)
 
 // NamedAPIServiceCreatorGetter returns the name of the resource and the corresponding creator function
 type NamedAPIServiceCreatorGetter = func() (name string, create APIServiceCreator)
@@ -705,9 +703,9 @@ type NamedAPIServiceCreatorGetter = func() (name string, create APIServiceCreato
 func APIServiceObjectWrapper(create APIServiceCreator) ObjectCreator {
 	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 		if existing != nil {
-			return create(existing.(*apiregistrationv1beta1.APIService))
+			return create(existing.(*apiregistrationv1.APIService))
 		}
-		return create(&apiregistrationv1beta1.APIService{})
+		return create(&apiregistrationv1.APIService{})
 	}
 }
 
@@ -723,7 +721,7 @@ func ReconcileAPIServices(ctx context.Context, namedGetters []NamedAPIServiceCre
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &apiregistrationv1beta1.APIService{}, false); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &apiregistrationv1.APIService{}, false); err != nil {
 			return fmt.Errorf("failed to ensure APIService %s/%s: %v", namespace, name, err)
 		}
 	}
@@ -732,7 +730,7 @@ func ReconcileAPIServices(ctx context.Context, namedGetters []NamedAPIServiceCre
 }
 
 // IngressCreator defines an interface to create/update Ingresss
-type IngressCreator = func(existing *networkingv1beta1.Ingress) (*networkingv1beta1.Ingress, error)
+type IngressCreator = func(existing *networkingv1.Ingress) (*networkingv1.Ingress, error)
 
 // NamedIngressCreatorGetter returns the name of the resource and the corresponding creator function
 type NamedIngressCreatorGetter = func() (name string, create IngressCreator)
@@ -742,9 +740,9 @@ type NamedIngressCreatorGetter = func() (name string, create IngressCreator)
 func IngressObjectWrapper(create IngressCreator) ObjectCreator {
 	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 		if existing != nil {
-			return create(existing.(*networkingv1beta1.Ingress))
+			return create(existing.(*networkingv1.Ingress))
 		}
-		return create(&networkingv1beta1.Ingress{})
+		return create(&networkingv1.Ingress{})
 	}
 }
 
@@ -760,7 +758,7 @@ func ReconcileIngresses(ctx context.Context, namedGetters []NamedIngressCreatorG
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &networkingv1beta1.Ingress{}, false); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &networkingv1.Ingress{}, false); err != nil {
 			return fmt.Errorf("failed to ensure Ingress %s/%s: %v", namespace, name, err)
 		}
 	}
@@ -799,43 +797,6 @@ func ReconcileSeeds(ctx context.Context, namedGetters []NamedSeedCreatorGetter, 
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kubermaticv1.Seed{}, false); err != nil {
 			return fmt.Errorf("failed to ensure Seed %s/%s: %v", namespace, name, err)
-		}
-	}
-
-	return nil
-}
-
-// CertificateCreator defines an interface to create/update Certificates
-type CertificateCreator = func(existing *certmanagerv1alpha2.Certificate) (*certmanagerv1alpha2.Certificate, error)
-
-// NamedCertificateCreatorGetter returns the name of the resource and the corresponding creator function
-type NamedCertificateCreatorGetter = func() (name string, create CertificateCreator)
-
-// CertificateObjectWrapper adds a wrapper so the CertificateCreator matches ObjectCreator.
-// This is needed as Go does not support function interface matching.
-func CertificateObjectWrapper(create CertificateCreator) ObjectCreator {
-	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
-		if existing != nil {
-			return create(existing.(*certmanagerv1alpha2.Certificate))
-		}
-		return create(&certmanagerv1alpha2.Certificate{})
-	}
-}
-
-// ReconcileCertificates will create and update the Certificates coming from the passed CertificateCreator slice
-func ReconcileCertificates(ctx context.Context, namedGetters []NamedCertificateCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
-	for _, get := range namedGetters {
-		name, create := get()
-		createObject := CertificateObjectWrapper(create)
-		createObject = createWithNamespace(createObject, namespace)
-		createObject = createWithName(createObject, name)
-
-		for _, objectModifier := range objectModifiers {
-			createObject = objectModifier(createObject)
-		}
-
-		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &certmanagerv1alpha2.Certificate{}, false); err != nil {
-			return fmt.Errorf("failed to ensure Certificate %s/%s: %v", namespace, name, err)
 		}
 	}
 

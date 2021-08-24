@@ -24,7 +24,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/docker/distribution/reference"
 	"github.com/ghodss/yaml"
-	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
+	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	"go.uber.org/zap"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -190,53 +190,32 @@ var (
 	}
 
 	DefaultKubernetesVersioning = operatorv1alpha1.KubermaticVersioningConfiguration{
-		Default: semver.MustParse("v1.19.9"),
+		Default: semver.MustParse("v1.21.3"),
 		Versions: []*semver.Version{
-			// Kubernetes 1.18
-			semver.MustParse("v1.18.6"),
-			semver.MustParse("v1.18.8"),
-			semver.MustParse("v1.18.10"),
-			semver.MustParse("v1.18.14"),
-			semver.MustParse("v1.18.17"),
 			// Kubernetes 1.19
 			semver.MustParse("v1.19.0"),
 			semver.MustParse("v1.19.2"),
 			semver.MustParse("v1.19.3"),
 			semver.MustParse("v1.19.8"),
 			semver.MustParse("v1.19.9"),
+			semver.MustParse("v1.19.13"),
 			// Kubernetes 1.20
 			semver.MustParse("v1.20.2"),
 			semver.MustParse("v1.20.5"),
+			semver.MustParse("v1.20.9"),
 			// Kubernetes 1.21
 			semver.MustParse("v1.21.0"),
+			semver.MustParse("v1.21.3"),
+			// Kubernetes 1.22
+			semver.MustParse("v1.22.1"),
 		},
 		Updates: []operatorv1alpha1.Update{
-			// ======= 1.17 =======
-			{
-				// Auto-upgrade unsupported clusters
-				From:      "1.17.*",
-				To:        "1.18.17",
-				Automatic: pointer.BoolPtr(true),
-			},
-
 			// ======= 1.18 =======
 			{
-				// Allow to change to any patch version
-				From: "1.18.*",
-				To:   "1.18.*",
-			},
-			{
-				// CVE-2020-8559
-				// Releases from 1.18.0 to 1.18.2 also do not work with CentOS7
-				// https://github.com/kubernetes/kubernetes/pull/90678
-				From:      "<= 1.18.5, >= 1.18.0",
-				To:        "1.18.6",
+				// Auto-upgrade unsupported clusters
+				From:      "1.18.*",
+				To:        "1.19.*",
 				Automatic: pointer.BoolPtr(true),
-			},
-			{
-				// Allow to next minor release
-				From: "1.18.*",
-				To:   "1.19.*",
 			},
 
 			// ======= 1.19 =======
@@ -268,6 +247,18 @@ var (
 				// Allow to change to any patch version
 				From: "1.21.*",
 				To:   "1.21.*",
+			},
+			{
+				// Allow to next minor release
+				From: "1.22.*",
+				To:   "1.22.*",
+			},
+
+			// ======= 1.22 =======
+			{
+				// Allow to change to any patch version
+				From: "1.22.*",
+				To:   "1.22.*",
 			},
 		},
 	}
@@ -384,7 +375,7 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 	// it does not make sense to force to change the configuration for the
 	// default case
 	if copy.Spec.Ingress.CertificateIssuer.Kind == "" {
-		copy.Spec.Ingress.CertificateIssuer.Kind = certmanagerv1alpha2.ClusterIssuerKind
+		copy.Spec.Ingress.CertificateIssuer.Kind = certmanagerv1.ClusterIssuerKind
 		logger.Debugw("Defaulting field", "field", "ingress.certificateIssuer.kind", "value", copy.Spec.Ingress.CertificateIssuer.Kind)
 	}
 

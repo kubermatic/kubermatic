@@ -45,7 +45,7 @@ func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cluste
 		return !isOTC(dc.Spec.Openstack) && OpenStackCloudControllerSupported(cluster.Spec.Version)
 
 	case cluster.Spec.Cloud.Hetzner != nil:
-		return dc.Spec.Hetzner.Network != "" && cluster.Spec.Version.Minor() >= 18
+		return dc.Spec.Hetzner.Network != ""
 
 	case cluster.Spec.Cloud.VSphere != nil:
 		return VsphereCloudControllerSupported(cluster.Spec.Version)

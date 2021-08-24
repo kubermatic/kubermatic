@@ -647,9 +647,11 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 		// The CSIMigrationNeededAnnotation is removed when all kubelets have
 		// been migrated.
 		if kubermaticv1helper.ClusterConditionHasStatus(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue) {
+			// TODO: This feature flag was removed in k8s 1.22
 			if cluster.Spec.Cloud.Openstack != nil {
 				featureFlags = append(featureFlags, "CSIMigrationOpenStackComplete=true")
 			}
+			// TODO: This feature flag was removed in k8s 1.22
 			if cluster.Spec.Cloud.VSphere != nil {
 				featureFlags = append(featureFlags, "CSIMigrationvSphereComplete=true")
 			}

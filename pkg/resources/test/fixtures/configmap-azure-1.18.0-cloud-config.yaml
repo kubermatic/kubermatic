@@ -1,9 +1,0 @@
-# This file has been generated, DO NOT EDIT.
-
-data:
-  config: '{"cloud":"AZUREPUBLICCLOUD","tenantId":"az-tenant-id","subscriptionId":"az-subscription-id","aadClientId":"az-client-id","aadClientSecret":"az-client-secret","resourceGroup":"az-res-group","location":"az-location","vnetName":"az-vnet-name","subnetName":"az-subnet-name","routeTableName":"az-route-table-name","securityGroupName":"az-sec-group","primaryAvailabilitySetName":"az-availability-set","vnetResourceGroup":"","useInstanceMetadata":false,"loadBalancerSku":"basic"}'
-  fakeVmwareUUID: VMware-42 00 00 00 00 00 00 00-00 00 00 00 00 00 00 00
-metadata:
-  creationTimestamp: null
-  labels:
-    app: cloud-config
