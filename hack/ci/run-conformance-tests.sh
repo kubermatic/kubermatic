@@ -24,10 +24,7 @@ source hack/lib.sh
 
 if [ -z "${E2E_SSH_PUBKEY:-}" ]; then
   echodate "Getting default SSH pubkey for machines from Vault"
-  retry 5 vault write \
-    --format=json auth/approle/login \
-    role_id=${VAULT_ROLE_ID} secret_id=${VAULT_SECRET_ID} > /tmp/vault-token-response.json
-
+  retry 5 vault_ci_login
   E2E_SSH_PUBKEY="$(mktemp)"
   vault kv get -field=pubkey dev/e2e-machine-controller-ssh-key > "${E2E_SSH_PUBKEY}"
 else
