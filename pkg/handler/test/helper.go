@@ -1827,7 +1827,7 @@ func GenAPIEtcdBackupConfig(name, clusterID string) *apiv2.EtcdBackupConfig {
 	}
 }
 
-func GenEtcdBackupConfig(name string, cluster *kubermaticv1.Cluster) *kubermaticv1.EtcdBackupConfig {
+func GenEtcdBackupConfig(name string, cluster *kubermaticv1.Cluster, projectID string) *kubermaticv1.EtcdBackupConfig {
 	keep := 5
 	clusterObjectRef, _ := reference.GetReference(scheme.Scheme, cluster)
 
@@ -1835,6 +1835,9 @@ func GenEtcdBackupConfig(name string, cluster *kubermaticv1.Cluster) *kubermatic
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: cluster.Status.NamespaceName,
+			Labels: map[string]string{
+				provider.ProjectLabelKey: projectID,
+			},
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(cluster, kubermaticv1.SchemeGroupVersion.WithKind("Cluster")),
 			},
@@ -1859,13 +1862,16 @@ func GenAPIEtcdRestore(name, clusterID string) *apiv2.EtcdRestore {
 	}
 }
 
-func GenEtcdRestore(name string, cluster *kubermaticv1.Cluster) *kubermaticv1.EtcdRestore {
+func GenEtcdRestore(name string, cluster *kubermaticv1.Cluster, projectID string) *kubermaticv1.EtcdRestore {
 	clusterObjectRef, _ := reference.GetReference(scheme.Scheme, cluster)
 
 	return &kubermaticv1.EtcdRestore{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: cluster.Status.NamespaceName,
+			Labels: map[string]string{
+				provider.ProjectLabelKey: projectID,
+			},
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(cluster, kubermaticv1.SchemeGroupVersion.WithKind("Cluster")),
 			},
