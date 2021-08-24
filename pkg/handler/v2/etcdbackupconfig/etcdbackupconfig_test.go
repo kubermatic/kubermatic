@@ -589,7 +589,7 @@ func TestProjectListEndpoint(t *testing.T) {
 			},
 		},
 		{
-			Name:      "user john cannot list etcdbackupconfigs from a project he doesnt belong to",
+			Name:      "user john cannot list etcdbackupconfigs from a project he does not belong to",
 			ProjectID: test.GenDefaultProject().Name,
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),

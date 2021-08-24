@@ -1164,13 +1164,13 @@ type PrivilegedEtcdRestoreProvider interface {
 	DeleteUnsecured(cluster *kubermaticv1.Cluster, name string) error
 }
 
-// EtcdBackupConfigProjectProvider declares the set of method for interacting with etcd backup configs accros projects and its seeds
+// EtcdBackupConfigProjectProvider declares the set of method for interacting with etcd backup configs across projects and its seeds
 type EtcdBackupConfigProjectProvider interface {
 	// List gets a list of etcdBackupConfig for a given project
 	List(userInfo *UserInfo, projectID string) ([]*kubermaticv1.EtcdBackupConfigList, error)
 }
 
-// PrivilegedEtcdBackupConfigProjectProvider declares the set of method for interacting with etcd backup configs using a privileged client accross projects and its seeds
+// PrivilegedEtcdBackupConfigProjectProvider declares the set of method for interacting with etcd backup configs using a privileged client across projects and its seeds
 type PrivilegedEtcdBackupConfigProjectProvider interface {
 	// ListUnsecured gets a list of all etcdBackupConfigs for a given project
 	//
@@ -1179,13 +1179,13 @@ type PrivilegedEtcdBackupConfigProjectProvider interface {
 	ListUnsecured(projectID string) ([]*kubermaticv1.EtcdBackupConfigList, error)
 }
 
-// EtcdRestoreProjectProvider declares the set of method for interacting with etcd backup restores accros projects and its seeds
+// EtcdRestoreProjectProvider declares the set of method for interacting with etcd backup restores across projects and its seeds
 type EtcdRestoreProjectProvider interface {
 	// List gets a list of etcdRestore for a given project
 	List(userInfo *UserInfo, projectID string) ([]*kubermaticv1.EtcdRestoreList, error)
 }
 
-// PrivilegedEtcdRestoreProjectProvider declares the set of method for interacting with etcd backup configs using a privileged client accross projects and its seeds
+// PrivilegedEtcdRestoreProjectProvider declares the set of method for interacting with etcd backup configs using a privileged client across projects and its seeds
 type PrivilegedEtcdRestoreProjectProvider interface {
 	// ListUnsecured gets a list of all etcdRestores for a given project
 	//
