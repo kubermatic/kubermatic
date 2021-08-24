@@ -206,7 +206,7 @@ func (p *EtcdBackupConfigProjectProvider) List(userInfo *provider.UserInfo, proj
 		}
 
 		ebcList := &kubermaticv1.EtcdBackupConfigList{}
-		err = impersonationClient.List(context.Background(), ebcList, ctrlruntimeclient.MatchingLabels{"project": projectID})
+		err = impersonationClient.List(context.Background(), ebcList, ctrlruntimeclient.MatchingLabels{provider.ProjectLabelKey: projectID})
 		if err != nil {
 			return nil, err
 		}
@@ -220,7 +220,7 @@ func (p *EtcdBackupConfigProjectProvider) ListUnsecured(projectID string) ([]*ku
 	var etcdBackupConfigLists []*kubermaticv1.EtcdBackupConfigList
 	for _, clientPrivileged := range p.clientsPrivileged {
 		ebcList := &kubermaticv1.EtcdBackupConfigList{}
-		err := clientPrivileged.List(context.Background(), ebcList, ctrlruntimeclient.MatchingLabels{"project": projectID})
+		err := clientPrivileged.List(context.Background(), ebcList, ctrlruntimeclient.MatchingLabels{provider.ProjectLabelKey: projectID})
 		if err != nil {
 			return nil, err
 		}

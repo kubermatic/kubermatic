@@ -44,8 +44,8 @@ var (
 	ErrAlreadyExists = errors.New("the given resource already exists")
 )
 
-// Constants defining known cloud providers.
 const (
+	// Constants defining known cloud providers.
 	FakeCloudProvider         = "fake"
 	DigitaloceanCloudProvider = "digitalocean"
 	BringYourOwnCloudProvider = "bringyourown"
@@ -64,6 +64,9 @@ const (
 	DefaultKubeletPort = 10250
 
 	DefaultKubeconfigFieldPath = "kubeconfig"
+
+	// ProjectLabelKey is the key under which resources can be project labelled
+	ProjectLabelKey = "project"
 )
 
 // CloudProvider declares a set of methods for interacting with a cloud provider

@@ -59,6 +59,11 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 			return nil, err
 		}
 
+		// set projectID label
+		er.Labels = map[string]string{
+			provider.ProjectLabelKey: req.ProjectID,
+		}
+
 		er, err = createEtcdRestore(ctx, userInfoGetter, req.ProjectID, er)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)

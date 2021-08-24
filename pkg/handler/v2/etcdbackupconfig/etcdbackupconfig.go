@@ -59,6 +59,11 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 			return nil, err
 		}
 
+		// set projectID label
+		ebc.Labels = map[string]string{
+			provider.ProjectLabelKey: req.ProjectID,
+		}
+
 		ebc, err = createEtcdBackupConfig(ctx, userInfoGetter, req.ProjectID, ebc)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
