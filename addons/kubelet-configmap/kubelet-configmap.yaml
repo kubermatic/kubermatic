@@ -13,27 +13,6 @@
 # limitations under the License.
 
 apiVersion: v1
-data:
-  ClusterConfiguration: |
-    apiServer:
-      extraArgs:
-        authorization-mode: Webhook
-      timeoutForControlPlane: 4m0s
-    apiVersion: kubeadm.k8s.io/v1beta1
-    certificatesDir: /etc/kubernetes/pki
-    imageRepository: k8s.gcr.io
-    kind: ClusterConfiguration
-    kubernetesVersion: {{ .Cluster.Version }}
-  ClusterStatus: |
-    apiVersion: kubeadm.k8s.io/v1beta1
-    kind: ClusterStatus
-    apiEndpoints:
-kind: ConfigMap
-metadata:
-  name: kubeadm-config
-  namespace: kube-system
----
-apiVersion: v1
 kind: ConfigMap
 metadata:
   name: kubelet-config-1.19
