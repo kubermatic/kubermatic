@@ -1,0 +1,84 @@
+# Copyright 2021 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-job
+  namespace:  {{ .Release.Namespace }}
+spec:
+  schedule:  {{ .Values.telemetry.schedule }}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            control-plane: {{ .Release.Name }}
+        spec:
+          serviceAccountName: {{ .Release.Name }}-agent-sa
+          initContainers:
+            - name: kubernetes-agent
+              image: "{{ .Values.telemetry.kubernetesAgent.image.repository }}:{{ .Values.telemetry.kubernetesAgent.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.telemetry.kubernetesAgent.image.pullPolicy }}
+              args:
+                - "--record-dir=$(RECORD_DIR)"
+              env:
+                - name: RECORD_DIR
+                  value: "/records"
+              volumeMounts:
+                - name: records
+                  mountPath: "/records"
+              resources:
+                {{- toYaml .Values.telemetry.resources | nindent 16 }}
+            - name: kubermatic-agent
+              image: "{{ .Values.telemetry.kubermaticAgent.image.repository }}:{{ .Values.telemetry.kubermaticAgent.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.telemetry.kubermaticAgent.image.pullPolicy }}
+              args:
+                - "--record-dir=$(RECORD_DIR)"
+              env:
+                - name: RECORD_DIR
+                  value: "/records"
+              volumeMounts:
+                - name: records
+                  mountPath: "/records"
+              resources:
+                {{- toYaml .Values.telemetry.resources | nindent 16 }}
+          containers:
+            - name: reporter
+              image: "{{ .Values.telemetry.reporter.image.repository }}:{{ .Values.telemetry.reporter.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.telemetry.reporter.image.pullPolicy }}
+              args:
+                - "http"
+                - "--client-uuid=$(CLIENT_UUID)"
+                - "--url=$(URL)"
+                - "--record-dir=$(RECORD_DIR)"
+              env:
+                - name: RECORD_DIR
+                  value: "/records"
+                - name: URL
+                  value: "https://telemetry.k8c.io/api/v1"
+                - name: CLIENT_UUID
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Release.Name }}-client-uuid
+                      key: uuid
+              volumeMounts:
+                - mountPath: "/records"
+                  name: records
+              resources:
+                {{- toYaml .Values.telemetry.resources | nindent 16 }}
+          volumes:
+            - name: records
+              emptyDir: {}
+          restartPolicy: OnFailure
