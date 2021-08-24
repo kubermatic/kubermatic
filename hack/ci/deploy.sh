@@ -117,6 +117,7 @@ kubermatic)
     echodate "Running Kubermatic Installer..."
 
     ./_build/kubermatic-installer deploy \
+      --storageclass copy-default \
       --config "$KUBERMATIC_CONFIG" \
       --helm-values "$VALUES_FILE" \
       --helm-binary "helm3"
