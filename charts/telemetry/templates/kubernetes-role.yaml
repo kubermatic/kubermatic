@@ -15,7 +15,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ .Chart.Name }}-kubernetes-agent-role
+  name: {{ .Release.Name }}-kubernetes-agent-role
 rules:
 - apiGroups:
   - ""

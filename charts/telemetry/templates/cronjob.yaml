@@ -15,7 +15,7 @@
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: {{ .Chart.Name }}-job
+  name: {{ .Release.Name }}-job
   namespace:  {{ .Release.Namespace }}
 spec:
   schedule:  {{ .Values.telemetry.schedule }}
@@ -24,9 +24,9 @@ spec:
       template:
         metadata:
           labels:
-            control-plane: {{ .Chart.Name }}
+            control-plane: {{ .Release.Name }}
         spec:
-          serviceAccountName: {{ .Chart.Name }}-agent-sa
+          serviceAccountName: {{ .Release.Name }}-agent-sa
           initContainers:
             - name: kubernetes-agent
               image: "{{ .Values.telemetry.kubernetesAgent.image.repository }}:{{ .Values.telemetry.kubernetesAgent.image.tag | default .Chart.AppVersion }}"
@@ -71,7 +71,7 @@ spec:
                 - name: CLIENT_UUID
                   valueFrom:
                     secretKeyRef:
-                      name: {{ .Chart.Name }}-client-uuid
+                      name: {{ .Release.Name }}-client-uuid
                       key: uuid
               volumeMounts:
                 - mountPath: "/records"
