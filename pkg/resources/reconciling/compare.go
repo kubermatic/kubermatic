@@ -57,7 +57,7 @@ func DeepEqual(a, b metav1.Object) bool {
 		diff = deep.Equal(b, a)
 	}
 
-	kubermaticlog.Logger.Infow("Object differs from generated one", "type", fmt.Sprintf("%T", a), "namespace", a.GetNamespace(), "name", a.GetName(), "diff", diff)
+	kubermaticlog.Logger.Debugw("Object differs from generated one", "type", fmt.Sprintf("%T", a), "namespace", a.GetNamespace(), "name", a.GetName(), "diff", diff)
 	return false
 }
 
