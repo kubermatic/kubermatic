@@ -40,9 +40,6 @@ const (
 	name = "etcd"
 
 	dataDir = "/var/run/etcd/pod_${POD_NAME}/"
-	// ImageTag defines the image tag to use for the etcd image
-	etcdImageTagV33 = "v3.3.18"
-	etcdImageTagV34 = "v3.4.3"
 )
 
 var (
@@ -354,10 +351,11 @@ func getBasePodLabels(cluster *kubermaticv1.Cluster) map[string]string {
 // ImageTag returns the correct etcd image tag for a given Cluster
 // TODO: Other functions use this function, switch them to getLauncherImage
 func ImageTag(c *kubermaticv1.Cluster) string {
-	if c.Spec.Version.Minor() < 17 {
-		return etcdImageTagV33
+	if c.Spec.Version.Minor() < 22 {
+		return "v3.4.3"
 	}
-	return etcdImageTagV34
+
+	return "v3.5.0"
 }
 
 func computeReplicas(data etcdStatefulSetCreatorData, set *appsv1.StatefulSet) int32 {

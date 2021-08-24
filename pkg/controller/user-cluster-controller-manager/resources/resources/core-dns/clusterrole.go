@@ -29,9 +29,9 @@ func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 		return resources.CoreDNSClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			cr.Rules = []rbacv1.PolicyRule{
 				{
-					APIGroups: []string{""},
-					Resources: []string{"nodes"},
-					Verbs:     []string{"get"},
+					APIGroups: []string{"discovery.k8s.io"},
+					Resources: []string{"endpointslices"},
+					Verbs:     []string{"list", "watch"},
 				},
 				{
 					APIGroups: []string{""},

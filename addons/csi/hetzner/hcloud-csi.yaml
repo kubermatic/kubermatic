@@ -27,7 +27,7 @@ metadata:
 data:
   token: {{ .Credentials.Hetzner.Token | b64enc }}
 ---
-apiVersion: storage.k8s.io/v1beta1
+apiVersion: storage.k8s.io/v1
 kind: CSIDriver
 metadata:
   name: csi.hetzner.cloud

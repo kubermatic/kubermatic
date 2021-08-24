@@ -13,7 +13,7 @@
 # limitations under the License.
 
 {{ if .Values.kubermatic.isMaster }}
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: api
@@ -31,19 +31,27 @@ spec:
   - secretName: kubermatic-tls
     hosts:
     - {{ .Values.kubermatic.domain }}
-  backend:
-    serviceName: kubermatic-dashboard
-    servicePort: 80
+  defaultBackend:
+    service:
+      name: kubermatic-dashboard
+      port:
+        number: 80
   rules:
   - host: {{ .Values.kubermatic.domain }}
     http:
       paths:
       - path: /api
+        pathType: Prefix
         backend:
-          serviceName: kubermatic-api
-          servicePort: 80
+          service:
+            name: kubermatic-api
+            port:
+              number: 80
       - path: /
+        pathType: Prefix
         backend:
-          serviceName: kubermatic-dashboard
-          servicePort: 80
+          service:
+            name: kubermatic-dashboard
+            port:
+              number: 80
 {{ end }}

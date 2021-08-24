@@ -21,7 +21,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
+	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 )
 
 const (
@@ -31,12 +31,12 @@ const (
 // APIServiceCreator returns the func to create/update the APIService used by the metrics-server
 func APIServiceCreator(caBundle []byte) reconciling.NamedAPIServiceCreatorGetter {
 	return func() (string, reconciling.APIServiceCreator) {
-		return resources.MetricsServerAPIServiceName, func(se *apiregistrationv1beta1.APIService) (*apiregistrationv1beta1.APIService, error) {
+		return resources.MetricsServerAPIServiceName, func(se *apiregistrationv1.APIService) (*apiregistrationv1.APIService, error) {
 			labels := resources.BaseAppLabels(Name, nil)
 			se.Labels = labels
 
 			if se.Spec.Service == nil {
-				se.Spec.Service = &apiregistrationv1beta1.ServiceReference{}
+				se.Spec.Service = &apiregistrationv1.ServiceReference{}
 			}
 			se.Spec.Service.Namespace = metav1.NamespaceSystem
 			se.Spec.Service.Name = resources.MetricsServerExternalNameServiceName

@@ -87,7 +87,7 @@ spec:
       - key: node-role.kubernetes.io/master
         effect: NoSchedule`
 
-	daemonSetManifest = `apiVersion: extensions/v1beta1
+	daemonSetManifest = `apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: node-exporter

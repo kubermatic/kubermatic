@@ -1,0 +1,65 @@
+# This file has been generated, DO NOT EDIT.
+
+metadata:
+  creationTimestamp: null
+  name: etcd-defragger
+  ownerReferences:
+  - apiVersion: kubermatic.k8s.io/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Cluster
+    name: de-test-01
+    uid: "1234567890"
+spec:
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    metadata:
+      creationTimestamp: null
+    spec:
+      template:
+        metadata:
+          creationTimestamp: null
+        spec:
+          containers:
+          - command:
+            - /bin/sh
+            - -ec
+            - |-
+              etcdctl() {
+              ETCDCTL_API=3 /usr/local/bin/etcdctl \
+                --command-timeout=60s \
+                --endpoints https://$1.etcd.cluster-de-test-01.svc.cluster.local.:2379 \
+                --cacert /etc/etcd/pki/client/ca.crt \
+                --cert /etc/etcd/pki/client/apiserver-etcd-client.crt \
+                --key /etc/etcd/pki/client/apiserver-etcd-client.key \
+                $2
+              }
+
+              for node in etcd-0 etcd-1 etcd-2; do
+                etcdctl $node "endpoint health"
+
+                if [ $? -eq 0 ]; then
+                  echo "Defragmenting $node..."
+                  etcdctl $node defrag
+                  sleep 30
+                else
+                  echo "$node is not healthy, skipping defrag."
+                fi
+              done
+            image: gcr.io/etcd-development/etcd:v3.5.0
+            name: defragger
+            resources: {}
+            volumeMounts:
+            - mountPath: /etc/etcd/pki/client
+              name: apiserver-etcd-client-certificate
+              readOnly: true
+          imagePullSecrets:
+          - name: dockercfg
+          restartPolicy: OnFailure
+          volumes:
+          - name: apiserver-etcd-client-certificate
+            secret:
+              secretName: apiserver-etcd-client-certificate
+  schedule: '@every 3h'
+  successfulJobsHistoryLimit: 0
+status: {}

@@ -132,24 +132,19 @@ func main() {
 			},
 			{
 				ResourceName:       "APIService",
-				ImportAlias:        "apiregistrationv1beta1",
-				ResourceImportPath: "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1",
+				ImportAlias:        "apiregistrationv1",
+				ResourceImportPath: "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1",
 			},
 			{
 				ResourceName:       "Ingress",
 				ResourceNamePlural: "Ingresses",
-				ImportAlias:        "networkingv1beta1",
-				ResourceImportPath: "k8s.io/api/networking/v1beta1",
+				ImportAlias:        "networkingv1",
+				ResourceImportPath: "k8s.io/api/networking/v1",
 			},
 			{
 				ResourceName:       "Seed",
 				ImportAlias:        "kubermaticv1",
 				ResourceImportPath: "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1",
-			},
-			{
-				ResourceName:       "Certificate",
-				ImportAlias:        "certmanagerv1alpha2",
-				ResourceImportPath: "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2",
 			},
 			{
 				ResourceName:       "EtcdBackupConfig",

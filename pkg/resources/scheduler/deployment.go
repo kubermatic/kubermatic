@@ -134,8 +134,6 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 					Command: []string{"/usr/local/bin/kube-scheduler"},
 					Args:    flags,
 					Env: []corev1.EnvVar{
-						// Kubernetes <1.19 did not ship any certificates in their Docker images,
-						// so this not only injects _our_ CA bundle, it injects _the only_ CA bundle for 1.17/1.18 clusters.
 						{
 							Name:  "SSL_CERT_FILE",
 							Value: "/etc/kubernetes/pki/ca-bundle/ca-bundle.pem",

@@ -28,11 +28,10 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
 
-	apps "k8s.io/api/apps/v1"
-	autoscaling "k8s.io/api/autoscaling/v1"
-	batch "k8s.io/api/batch/v1"
-	extensions "k8s.io/api/extensions/v1beta1"
-	networking "k8s.io/api/networking/v1beta1"
+	appsv1 "k8s.io/api/apps/v1"
+	autoscalingv1 "k8s.io/api/autoscaling/v1"
+	batchv1 "k8s.io/api/batch/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -115,7 +114,7 @@ func GenerateRBACClusterRole(resourceName string) (*rbacv1.ClusterRole, error) {
 				Verbs: verbs,
 			},
 			{
-				APIGroups: []string{apps.GroupName},
+				APIGroups: []string{appsv1.GroupName},
 				Resources: []string{
 					"controllerrevisions",
 					"daemonsets",
@@ -129,31 +128,17 @@ func GenerateRBACClusterRole(resourceName string) (*rbacv1.ClusterRole, error) {
 				Verbs: verbs,
 			},
 			{
-				APIGroups: []string{autoscaling.GroupName},
+				APIGroups: []string{autoscalingv1.GroupName},
 				Resources: []string{"horizontalpodautoscalers"},
 				Verbs:     verbs,
 			},
 			{
-				APIGroups: []string{batch.GroupName},
+				APIGroups: []string{batchv1.GroupName},
 				Resources: []string{"cronjobs", "jobs"},
 				Verbs:     verbs,
 			},
 			{
-				APIGroups: []string{extensions.GroupName},
-				Resources: []string{
-					"daemonsets",
-					"deployments",
-					"deployments/scale",
-					"ingresses",
-					"networkpolicies",
-					"replicasets",
-					"replicasets/scale",
-					"replicationcontrollers/scale",
-				},
-				Verbs: verbs,
-			},
-			{
-				APIGroups: []string{networking.GroupName},
+				APIGroups: []string{networkingv1.GroupName},
 				Resources: []string{"ingresses", "networkpolicies"},
 				Verbs:     verbs,
 			},

@@ -50,12 +50,9 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
-	appsv1beta1 "k8s.io/api/apps/v1beta1"
-	appsv1beta2 "k8s.io/api/apps/v1beta2"
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
-	extensionv1beta1 "k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -573,41 +570,14 @@ func getImagesFromManifest(log *zap.SugaredLogger, decoder runtime.Decoder, b []
 func getImagesFromObject(obj runtime.Object) []string {
 	// We don't have the conversion funcs available thus we must check all available Kubernetes types which can contain images
 	switch obj := obj.(type) {
-	// Deployment
 	case *appsv1.Deployment:
 		return getImagesFromPodSpec(obj.Spec.Template.Spec)
-	case *appsv1beta1.Deployment:
-		return getImagesFromPodSpec(obj.Spec.Template.Spec)
-	case *appsv1beta2.Deployment:
-		return getImagesFromPodSpec(obj.Spec.Template.Spec)
-	case *extensionv1beta1.Deployment:
-		return getImagesFromPodSpec(obj.Spec.Template.Spec)
-
-	// ReplicaSet
 	case *appsv1.ReplicaSet:
 		return getImagesFromPodSpec(obj.Spec.Template.Spec)
-	case *appsv1beta2.ReplicaSet:
-		return getImagesFromPodSpec(obj.Spec.Template.Spec)
-	case *extensionv1beta1.ReplicaSet:
-		return getImagesFromPodSpec(obj.Spec.Template.Spec)
-
-	// Statefulset
 	case *appsv1.StatefulSet:
 		return getImagesFromPodSpec(obj.Spec.Template.Spec)
-	case *appsv1beta1.StatefulSet:
-		return getImagesFromPodSpec(obj.Spec.Template.Spec)
-	case *appsv1beta2.StatefulSet:
-		return getImagesFromPodSpec(obj.Spec.Template.Spec)
-
-	// DaemonSet
 	case *appsv1.DaemonSet:
 		return getImagesFromPodSpec(obj.Spec.Template.Spec)
-	case *appsv1beta2.DaemonSet:
-		return getImagesFromPodSpec(obj.Spec.Template.Spec)
-	case *extensionv1beta1.DaemonSet:
-		return getImagesFromPodSpec(obj.Spec.Template.Spec)
-
-	// Pod
 	case *corev1.Pod:
 		return getImagesFromPodSpec(obj.Spec)
 

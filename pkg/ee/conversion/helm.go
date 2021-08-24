@@ -30,7 +30,7 @@ import (
 	"strconv"
 	"strings"
 
-	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
+	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -205,7 +205,7 @@ func convertKubermaticConfiguration(values *helmValues, targetNamespace string) 
 	// most recent cert-manager chart installed, which provides this ClusterIssuer by
 	// default.
 	config.Spec.Ingress.CertificateIssuer.Name = "letsencrypt-prod"
-	config.Spec.Ingress.CertificateIssuer.Kind = certmanagerv1alpha2.ClusterIssuerKind
+	config.Spec.Ingress.CertificateIssuer.Kind = certmanagerv1.ClusterIssuerKind
 
 	if values.Kubermatic.ExposeStrategy != "" {
 		if es, ok := kubermaticv1.ExposeStrategyFromString(values.Kubermatic.ExposeStrategy); ok {
