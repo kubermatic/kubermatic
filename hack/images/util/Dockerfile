@@ -15,11 +15,12 @@
 FROM alpine:3.13
 LABEL maintainer="support@kubermatic.com"
 
-ENV MC_VERSION=RELEASE.2021-03-12T03-36-59Z \
-    KUBECTL_VERSION=v1.20.5 \
-    HELM_VERSION=v2.17.0 \
-    VAULT_VERSION=1.6.3 \
-    YQ_VERSION=3.3.4
+ENV MC_VERSION=RELEASE.2021-07-27T06-46-19Z \
+    KUBECTL_VERSION=v1.21.4 \
+    HELM2_VERSION=v2.17.0 \
+    HELM3_VERSION=v3.6.3 \
+    VAULT_VERSION=1.8.0 \
+    YQ_VERSION=3.4.1
 
 RUN apk add --no-cache -U \
     bash \
@@ -49,10 +50,13 @@ RUN curl -Lo /usr/bin/kubectl https://storage.googleapis.com/kubernetes-release/
     chmod +x /usr/bin/kubectl && \
     kubectl version --short --client
 
-RUN curl -L https://storage.googleapis.com/kubernetes-helm/helm-${HELM_VERSION}-linux-amd64.tar.gz | tar -xvz && \
-    mv linux-amd64/helm /usr/bin/helm && \
-    rm -rf linux-amd64 && \
-    helm version --client --short
+RUN curl --fail -L https://get.helm.sh/helm-${HELM2_VERSION}-linux-amd64.tar.gz | tar -xzO linux-amd64/helm > helm2 && \
+    curl --fail -L https://get.helm.sh/helm-${HELM3_VERSION}-linux-amd64.tar.gz | tar -xzO linux-amd64/helm > helm3 && \
+    mv helm2 helm3 /usr/local/bin/ && \
+    chmod +x /usr/local/bin/helm* && \
+    helm2 version --client --short && \
+    helm3 version --short && \
+    ln -s /usr/local/bin/helm2 /usr/local/bin/helm
 
 RUN curl -Lo vault.zip https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip && \
     unzip vault.zip && \
