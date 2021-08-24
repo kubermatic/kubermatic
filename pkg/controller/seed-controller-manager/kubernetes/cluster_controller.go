@@ -37,6 +37,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -207,6 +208,7 @@ func Add(
 		&autoscalingv1beta2.VerticalPodAutoscaler{},
 		&rbacv1.Role{},
 		&rbacv1.RoleBinding{},
+		&networkingv1.NetworkPolicy{},
 	}
 
 	for _, t := range typesToWatch {
