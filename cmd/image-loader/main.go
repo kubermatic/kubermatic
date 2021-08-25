@@ -455,7 +455,7 @@ func getTemplateData(clusterVersion *kubermaticversion.Version, kubermaticVersio
 		return nil, err
 	}
 	fakeCluster := &kubermaticv1.Cluster{}
-	fakeCluster.Spec.Cloud = kubermaticv1.CloudSpec{}
+	fakeCluster.Spec.Cloud = kubermaticv1.CloudSpec{Fake: &kubermaticv1.FakeCloudSpec{}}
 	fakeCluster.Spec.Version = *clusterSemver
 	fakeCluster.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.25.0.0/16"}
 	fakeCluster.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.10.10.0/24"}

@@ -243,7 +243,7 @@ func filterOutPresets(userInfo *provider.UserInfo, list *kubermaticv1.PresetList
 func (m *PresetsProvider) SetCloudCredentials(userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) (*kubermaticv1.CloudSpec, error) {
 
 	if cloud.VSphere != nil {
-		return m.setVsphereCredentials(userInfo, presetName, cloud)
+		return m.setVsphereCredentials(userInfo, presetName, cloud, dc)
 	}
 	if cloud.Openstack != nil {
 		return m.setOpenStackCredentials(userInfo, presetName, cloud, dc)
@@ -465,7 +465,7 @@ func (m *PresetsProvider) setOpenStackCredentials(userInfo *provider.UserInfo, p
 
 }
 
-func (m *PresetsProvider) setVsphereCredentials(userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
+func (m *PresetsProvider) setVsphereCredentials(userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) (*kubermaticv1.CloudSpec, error) {
 	preset, err := m.GetPreset(userInfo, presetName)
 	if err != nil {
 		return nil, err
@@ -480,6 +480,9 @@ func (m *PresetsProvider) setVsphereCredentials(userInfo *provider.UserInfo, pre
 	cloud.VSphere.VMNetName = credentials.VMNetName
 	cloud.VSphere.Datastore = credentials.Datastore
 	cloud.VSphere.DatastoreCluster = credentials.DatastoreCluster
+	if cloud.VSphere.StoragePolicy == "" {
+		cloud.VSphere.StoragePolicy = dc.Spec.VSphere.DefaultStoragePolicy
+	}
 	return &cloud, nil
 
 }

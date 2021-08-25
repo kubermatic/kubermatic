@@ -802,8 +802,9 @@ func TestCredentialEndpoint(t *testing.T) {
 					},
 				},
 			},
+			dc:                &kubermaticv1.Datacenter{Spec: kubermaticv1.DatacenterSpec{VSphere: &kubermaticv1.DatacenterSpecVSphere{DefaultStoragePolicy: "fake_storage_policy"}}},
 			cloudSpec:         kubermaticv1.CloudSpec{VSphere: &kubermaticv1.VSphereCloudSpec{}},
-			expectedCloudSpec: &kubermaticv1.CloudSpec{VSphere: &kubermaticv1.VSphereCloudSpec{Password: "secret", Username: "bob"}},
+			expectedCloudSpec: &kubermaticv1.CloudSpec{VSphere: &kubermaticv1.VSphereCloudSpec{Password: "secret", Username: "bob", StoragePolicy: "fake_storage_policy"}},
 		},
 		{
 			name:       "test 9: set credentials for Azure provider",

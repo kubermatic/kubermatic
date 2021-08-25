@@ -94,7 +94,6 @@ spec:
         - svc.cluster.local
         - cluster.local
       dnsPolicy: None
-      hostNetwork: true
       initContainers:
       - command:
         - /bin/cp

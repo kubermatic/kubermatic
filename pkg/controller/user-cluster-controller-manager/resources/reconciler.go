@@ -71,16 +71,24 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to get userSSHKeys: %v", err)
 	}
-	cloudConfig, err := r.cloudConfig(ctx)
+	cloudConfig, err := r.cloudConfig(ctx, resources.CloudConfigConfigMapName)
 	if err != nil {
 		return fmt.Errorf("failed to get cloudConfig: %v", err)
 	}
+	var CSICloudConfig []byte
+	if r.cloudProvider == kubermaticv1.ProviderVSphere {
+		CSICloudConfig, err = r.cloudConfig(ctx, resources.CSICloudConfigConfigMapName)
+		if err != nil {
+			return fmt.Errorf("failed to get cloudConfig: %v", err)
+		}
+	}
 
 	data := reconcileData{
-		caCert:        caCert,
-		openVPNCACert: openVPNCACert,
-		userSSHKeys:   userSSHKeys,
-		cloudConfig:   cloudConfig,
+		caCert:         caCert,
+		openVPNCACert:  openVPNCACert,
+		userSSHKeys:    userSSHKeys,
+		cloudConfig:    cloudConfig,
+		csiCloudConfig: CSICloudConfig,
 	}
 
 	if r.userClusterMLA.Monitoring || r.userClusterMLA.Logging {
@@ -603,7 +611,11 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedSecretCreatorGetter{
 		openvpn.ClientCertificate(data.openVPNCACert),
-		cloudcontroller.CloudConfig(data.cloudConfig),
+		cloudcontroller.CloudConfig(data.cloudConfig, resources.CloudConfigSecretName),
+	}
+
+	if data.csiCloudConfig != nil {
+		creators = append(creators, cloudcontroller.CloudConfig(data.csiCloudConfig, resources.CSICloudConfigSecretName))
 	}
 
 	if r.userSSHKeyAgent {
@@ -765,6 +777,8 @@ type reconcileData struct {
 	mlaGatewayCACert *resources.ECDSAKeyPair
 	userSSHKeys      map[string][]byte
 	cloudConfig      []byte
+	// csiCloudConfig is currently used only by vSphere, whose needs it to properly configure the external CSI driver
+	csiCloudConfig []byte
 }
 
 func (r *reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context) error {
