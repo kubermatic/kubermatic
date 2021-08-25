@@ -50,6 +50,9 @@ func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cluste
 	case cluster.Spec.Cloud.VSphere != nil:
 		return VsphereCloudControllerSupported(cluster.Spec.Version)
 
+	case dc.Spec.Anexia != nil:
+		return true
+
 	default:
 		return false
 	}

@@ -45,6 +45,9 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 	case data.Cluster().Spec.Cloud.Hetzner != nil:
 		creatorGetter = hetznerDeploymentCreator(data)
 
+	case data.Cluster().Spec.Cloud.Anexia != nil:
+		creatorGetter = anexiaDeploymentCreator(data)
+
 	case data.Cluster().Spec.Cloud.VSphere != nil:
 		creatorGetter = vsphereDeploymentCreator(data)
 	}

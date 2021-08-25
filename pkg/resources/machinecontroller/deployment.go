@@ -90,7 +90,7 @@ func DeploymentCreator(data machinecontrollerData) reconciling.NamedDeploymentCr
 	}
 }
 
-// DeploymentCreator returns the function to create and update the machine controller deployment without the
+// DeploymentCreatorWithoutInitWrapper returns the function to create and update the machine controller deployment without the
 // wrapper that checks for apiserver availabiltiy. This allows to adjust the command.
 func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
@@ -144,7 +144,6 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 			if t := data.MachineControllerImageTag(); t != "" {
 				tag = t
 			}
-
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    Name,
@@ -280,7 +279,6 @@ func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, cri 
 		if nodeSettings.PauseImage != "" {
 			flags = append(flags, "-node-pause-image", nodeSettings.PauseImage)
 		}
-
 		// TODO(kron4eg): deprecate and remove this
 		if nodeSettings.HyperkubeImage != "" {
 			flags = append(flags, "-node-hyperkube-image", nodeSettings.HyperkubeImage)
