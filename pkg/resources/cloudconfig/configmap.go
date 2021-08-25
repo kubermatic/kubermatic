@@ -30,8 +30,9 @@ import (
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	gcp "k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	vspherecloudconfig "k8c.io/kubermatic/v2/pkg/resources/cloudconfig/vsphere"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -63,6 +64,36 @@ func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreat
 			cloudConfig, err := CloudConfig(data.Cluster(), data.DC(), credentials)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create cloud-config: %v", err)
+			}
+
+			cm.Labels = resources.BaseAppLabels(name, nil)
+			cm.Data[resources.CloudConfigConfigMapKey] = cloudConfig
+			cm.Data[FakeVMWareUUIDKeyName] = fakeVMWareUUID
+
+			return cm, nil
+		}
+	}
+}
+
+func ConfigmapVsphereCSICreator(data configMapCreatorData) reconciling.NamedConfigMapCreatorGetter {
+	return func() (string, reconciling.ConfigMapCreator) {
+		return resources.CSICloudConfigConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+			if cm.Data == nil {
+				cm.Data = map[string]string{}
+			}
+
+			credentials, err := resources.GetCredentials(data)
+			if err != nil {
+				return nil, err
+			}
+
+			vsphereCloudConfig, err := getVsphereCloudConfig(data.Cluster(), data.DC(), credentials)
+			if err != nil {
+				return nil, err
+			}
+			cloudConfig, err := vspherecloudconfig.CloudConfigCSIToString(vsphereCloudConfig)
+			if err != nil {
+				return nil, err
 			}
 
 			cm.Labels = resources.BaseAppLabels(name, nil)
@@ -266,6 +297,7 @@ func getVsphereCloudConfig(
 			Datacenter:       dc.Spec.VSphere.Datacenter,
 			DefaultDatastore: datastore,
 			WorkingDir:       cluster.Name,
+			ClusterID:        dc.Spec.VSphere.Cluster,
 		},
 		Workspace: vsphere.WorkspaceOpts{
 			// This is redudant with what the Vsphere cloud provider itself does:

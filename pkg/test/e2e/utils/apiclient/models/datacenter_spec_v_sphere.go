@@ -36,6 +36,9 @@ type DatacenterSpecVSphere struct {
 	// case no `Datastore` or `DatastoreCluster` is provided at Cluster level.
 	DefaultDatastore string `json:"datastore,omitempty"`
 
+	// The name of the storage policy to use for the storage class created in the user cluster.
+	DefaultStoragePolicy string `json:"storage_policy,omitempty"`
+
 	// Endpoint URL to use, including protocol, for example "https://vcenter.example.com".
 	Endpoint string `json:"endpoint,omitempty"`
 

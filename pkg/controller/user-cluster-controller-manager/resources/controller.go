@@ -29,6 +29,7 @@ import (
 	"go.uber.org/zap"
 
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -98,7 +99,6 @@ func Add(
 		kasSecurePort:     kasSecurePort,
 		tunnelingAgentIP:  tunnelingAgentIP,
 		log:               log,
-		platform:          cloudProviderName,
 		dnsClusterIP:      dnsClusterIP,
 		nodeLocalDNSCache: nodeLocalDNSCache,
 		opaIntegration:    opaIntegration,
@@ -107,6 +107,7 @@ func Add(
 		versions:          versions,
 		caBundle:          caBundle,
 		userClusterMLA:    userClusterMLA,
+		cloudProvider:     kubermaticv1.ProviderType(cloudProviderName),
 	}
 
 	var err error
@@ -214,7 +215,6 @@ type reconciler struct {
 	openvpnServerPort uint32
 	kasSecurePort     uint32
 	tunnelingAgentIP  net.IP
-	platform          string
 	dnsClusterIP      string
 	nodeLocalDNSCache bool
 	opaIntegration    bool
@@ -223,6 +223,7 @@ type reconciler struct {
 	versions          kubermatic.Versions
 	caBundle          resources.CABundle
 	userClusterMLA    UserClusterMLA
+	cloudProvider     kubermaticv1.ProviderType
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool
@@ -279,9 +280,9 @@ func (r *reconciler) userSSHKeys(ctx context.Context) (map[string][]byte, error)
 	return secret.Data, nil
 }
 
-func (r *reconciler) cloudConfig(ctx context.Context) ([]byte, error) {
+func (r *reconciler) cloudConfig(ctx context.Context, cloudConfigConfigmapName string) ([]byte, error) {
 	configmap := &corev1.ConfigMap{}
-	name := types.NamespacedName{Namespace: r.namespace, Name: resources.CloudConfigConfigMapName}
+	name := types.NamespacedName{Namespace: r.namespace, Name: cloudConfigConfigmapName}
 	if err := r.seedClient.Get(ctx, name, configmap); err != nil {
 		return nil, fmt.Errorf("failed to get cloud-config: %v", err)
 	}

@@ -44,6 +44,21 @@ volumeBindingMode: WaitForFirstConsumer
 {{ end }}
 
 {{ if eq .Cluster.CloudProviderName "vsphere" }}
+{{ if .Cluster.Features.Has "externalCloudProvider" }}
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  annotations:
+    storageclass.beta.kubernetes.io/is-default-class: "true"
+  labels:
+    kubernetes.io/cluster-service: "true"
+  name: vsphere-csi
+provisioner: csi.vsphere.vmware.com
+{{ if .Cluster.StoragePolicy }}
+parameters:
+  storagepolicyname: {{ .Cluster.StoragePolicy }}
+{{ end }}
+{{ else }}
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -55,6 +70,7 @@ metadata:
 provisioner: kubernetes.io/vsphere-volume
 parameters:
   diskformat: thin
+{{ end }}
 {{ end }}
 
 {{ if eq .Cluster.CloudProviderName "openstack" }}

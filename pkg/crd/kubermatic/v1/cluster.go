@@ -22,7 +22,6 @@ import (
 	"fmt"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -627,6 +626,9 @@ type VSphereCloudSpec struct {
 	// exclusive with Datastore.
 	// +optional
 	DatastoreCluster string `json:"datastoreCluster,omitempty"`
+
+	// StoragePolicy to be used for storage provisioning
+	StoragePolicy string `json:"storagePolicy"`
 
 	// ResourcePool is used to manage resources such as cpu and memory for vSphere virtual machines. The resource pool
 	// should be defined on vSphere cluster level.

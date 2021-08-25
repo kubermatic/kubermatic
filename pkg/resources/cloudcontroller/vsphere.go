@@ -20,7 +20,6 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
@@ -77,7 +76,6 @@ func vsphereDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 				return nil, err
 			}
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.BoolPtr(false)
-			dep.Spec.Template.Spec.HostNetwork = true
 
 			version, err := getVsphereCPIVersion(data.Cluster().Spec.Version)
 			if err != nil {

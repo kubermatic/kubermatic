@@ -66,7 +66,7 @@ type userclusterControllerData interface {
 	GetMLAGatewayPort() (int32, error)
 	KubermaticAPIImage() string
 	KubermaticDockerTag() string
-	GetKubernetesCloudProviderName() string
+	GetCloudProviderName() (string, error)
 	UserClusterMLAEnabled() bool
 }
 
@@ -138,7 +138,6 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				"-openvpn-server-port", fmt.Sprint(openvpnServerPort),
 				"-overwrite-registry", data.ImageRegistry(""),
 				"-version", data.Cluster().Spec.Version.String(),
-				"-cloud-provider-name", data.GetKubernetesCloudProviderName(),
 				"-owner-email", data.Cluster().Status.UserEmail,
 				fmt.Sprintf("-enable-ssh-key-agent=%t", *enableUserSSHKeyAgent),
 				fmt.Sprintf("-opa-integration=%t", data.Cluster().Spec.OPAIntegration != nil && data.Cluster().Spec.OPAIntegration.Enabled),
@@ -150,6 +149,12 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				args = append(args, "-tunneling-agent-ip", data.Cluster().Address.IP)
 				args = append(args, "-kas-secure-port", fmt.Sprint(data.Cluster().Address.Port))
 			}
+
+			providerName, err := data.GetCloudProviderName()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get cloud provider name: %v", err)
+			}
+			args = append(args, "-cloud-provider-name", providerName)
 
 			if data.Cluster().Spec.UpdateWindow != nil && data.Cluster().Spec.UpdateWindow.Length != "" && data.Cluster().Spec.UpdateWindow.Start != "" {
 				args = append(args, "-update-window-start", data.Cluster().Spec.UpdateWindow.Start, "-update-window-length", data.Cluster().Spec.UpdateWindow.Length)

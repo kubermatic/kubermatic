@@ -17725,6 +17725,11 @@
           "type": "string",
           "x-go-name": "RootPath"
         },
+        "storage_policy": {
+          "description": "The name of the storage policy to use for the storage class created in the user cluster.",
+          "type": "string",
+          "x-go-name": "DefaultStoragePolicy"
+        },
         "templates": {
           "$ref": "#/definitions/ImageList"
         }
@@ -21648,6 +21653,11 @@
           "description": "ResourcePool is used to manage resources such as cpu and memory for vSphere virtual machines. The resource pool\nshould be defined on vSphere cluster level.\n+optional",
           "type": "string",
           "x-go-name": "ResourcePool"
+        },
+        "storagePolicy": {
+          "description": "StoragePolicy to be used for storage provisioning",
+          "type": "string",
+          "x-go-name": "StoragePolicy"
         },
         "username": {
           "description": "Username is the vSphere user name.\n+optional",

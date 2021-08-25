@@ -107,6 +107,11 @@ func NewTemplateData(
 		}
 	}
 
+	var storagePolicy string
+	if cluster.Spec.Cloud.VSphere != nil {
+		storagePolicy = cluster.Spec.Cloud.VSphere.StoragePolicy
+	}
+
 	return &TemplateData{
 		DatacenterName: cluster.Spec.Cloud.DatacenterName,
 		Variables:      variables,
@@ -142,6 +147,7 @@ func NewTemplateData(
 				MonitoringEnabled: cluster.Spec.MLA != nil && cluster.Spec.MLA.MonitoringEnabled,
 				LoggingEnabled:    cluster.Spec.MLA != nil && cluster.Spec.MLA.LoggingEnabled,
 			},
+			StoragePolicy: storagePolicy,
 		},
 	}, nil
 }
@@ -197,6 +203,8 @@ type ClusterData struct {
 	CNIPlugin CNIPlugin
 	// MLA contains monitoring, logging and alerting related settings for the user cluster.
 	MLA MLASettings
+	// StoragePolicy is the storage policy to use for vsphere csi addon
+	StoragePolicy string
 }
 
 type ClusterNetwork struct {

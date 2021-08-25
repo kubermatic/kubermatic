@@ -65,6 +65,8 @@ OPENVPN_SERVER_NODEPORT="$(echo ${OPENVPN_SERVER_SERVICE_RAW} | jq -r .spec.port
 ARGS=""
 if echo $CLUSTER_RAW | grep -i aws -q; then
   ARGS="$ARGS -cloud-provider-name=aws"
+elif echo $CLUSTER_RAW | grep -i vsphere -q; then
+  ARGS="$ARGS -cloud-provider-name=vsphere"
 fi
 
 echodate "Starting user-cluster-controller-manager..."

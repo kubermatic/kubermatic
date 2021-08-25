@@ -58,6 +58,8 @@ type ClusterData struct {
 	CNIPlugin CNIPlugin
 	// MLA contains monitoring, logging and alerting related settings for the user cluster.
 	MLA MLASettings
+	// StoragePolicy is the storage policy to use for vsphere csi addon
+	StoragePolicy string
 }
 
 type ClusterNetwork struct {
