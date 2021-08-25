@@ -39,8 +39,8 @@ type SettingSpec struct {
 	// enable o ID c kubeconfig
 	EnableOIDCKubeconfig bool `json:"enableOIDCKubeconfig,omitempty"`
 
-	// mla alertmanager domain
-	MlaAlertmanagerDomain string `json:"mlaAlertmanagerDomain,omitempty"`
+	// mla alertmanager prefix
+	MlaAlertmanagerPrefix string `json:"mlaAlertmanagerPrefix,omitempty"`
 
 	// restrict project creation
 	RestrictProjectCreation bool `json:"restrictProjectCreation,omitempty"`
