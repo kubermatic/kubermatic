@@ -10,6 +10,7 @@ spec:
     accessibleAddons:
       - cluster-autoscaler
       - node-exporter
+      - kube-state-metrics
       - multus
     # DebugLog enables more verbose logging.
     debugLog: false
