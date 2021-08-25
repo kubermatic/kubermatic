@@ -141,20 +141,18 @@ func getOSFlags(data *resources.TemplateData) []string {
 	return flags
 }
 
-const latestOpenstackCCMVersion = "1.21.1"
-
 func getOSVersion(version semver.Semver) (string, error) {
 	switch version.Minor() {
 	case 19:
 		return "1.19.2", nil
 	case 20:
-		return latestOpenstackCCMVersion, nil
+		return "1.20.2", nil
 	case 21:
-		return latestOpenstackCCMVersion, nil
+		return "1.21.0", nil
 	case 22:
-		return latestOpenstackCCMVersion, nil
+		fallthrough
 	default:
-		return latestOpenstackCCMVersion, nil
+		return "1.22.0", nil
 	}
 }
 

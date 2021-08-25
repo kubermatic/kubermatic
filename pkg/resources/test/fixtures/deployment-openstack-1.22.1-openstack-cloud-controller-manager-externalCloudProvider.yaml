@@ -65,7 +65,7 @@ spec:
         - '{"command":"/bin/openstack-cloud-controller-manager","args":["--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig","--v=1","--cloud-config=/etc/kubernetes/cloud/config","--cloud-provider=openstack"]}'
         command:
         - /http-prober-bin/http-prober
-        image: docker.io/k8scloudprovider/openstack-cloud-controller-manager:v1.21.1
+        image: docker.io/k8scloudprovider/openstack-cloud-controller-manager:v1.22.0
         name: cloud-controller-manager
         resources:
           limits:
