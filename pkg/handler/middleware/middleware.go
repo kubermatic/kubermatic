@@ -755,7 +755,6 @@ func getEtcdBackupConfigProjectProvider(etcdBackupConfigProjectProviderGetter pr
 	return etcdBackupConfigProjectProviderGetter(seeds)
 }
 
-
 // EtcdRestoreProject is a middleware that injects the current EtcdRestoreProjectProvider into the ctx
 func EtcdRestoreProject(etcdRestoreProjectProviderGetter provider.EtcdRestoreProjectProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
