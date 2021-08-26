@@ -59,6 +59,11 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 			return nil, err
 		}
 
+		// set projectID label
+		ebc.Labels = map[string]string{
+			provider.ProjectLabelKey: req.ProjectID,
+		}
+
 		ebc, err = createEtcdBackupConfig(ctx, userInfoGetter, req.ProjectID, ebc)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -281,6 +286,44 @@ func (r *patchEtcdBackupConfigReq) validate() error {
 	return nil
 }
 
+func ProjectListEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(listProjectEtcdBackupConfigReq)
+
+		ebcLists, err := listProjectEtcdBackupConfig(ctx, userInfoGetter, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		var ebcAPIList []*apiv2.EtcdBackupConfig
+		for _, ebcList := range ebcLists {
+			for _, er := range ebcList.Items {
+				ebcAPIList = append(ebcAPIList, convertInternalToAPIEtcdBackupConfig(&er))
+			}
+		}
+
+		return ebcAPIList, nil
+	}
+}
+
+// listProjectEtcdBackupConfigReq represents a request for listing project etcd backupConfigs
+// swagger:parameters listProjectEtcdBackupConfig
+type listProjectEtcdBackupConfigReq struct {
+	common.ProjectReq
+}
+
+func DecodeListProjectEtcdBackupConfigReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req listProjectEtcdBackupConfigReq
+
+	pr, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.ProjectReq = pr.(common.ProjectReq)
+	return req, nil
+}
+
 func convertInternalToAPIEtcdBackupConfig(ebc *kubermaticv1.EtcdBackupConfig) *apiv2.EtcdBackupConfig {
 	etcdBackupConfig := &apiv2.EtcdBackupConfig{
 		Name: ebc.Name,
@@ -422,6 +465,21 @@ func listEtcdBackupConfig(ctx context.Context, userInfoGetter provider.UserInfoG
 	return etcdBackupConfigProvider.List(userInfo, cluster)
 }
 
+func listProjectEtcdBackupConfig(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID string) ([]*kubermaticv1.EtcdBackupConfigList, error) {
+	adminUserInfo, privilegedEtcdBackupConfigProjectProvider, err := getAdminUserInfoPrivilegedEtcdBackupConfigProjectProvider(ctx, userInfoGetter)
+	if err != nil {
+		return nil, err
+	}
+	if adminUserInfo.IsAdmin {
+		return privilegedEtcdBackupConfigProjectProvider.ListUnsecured(projectID)
+	}
+	userInfo, etcdBackupConfigProjectProvider, err := getUserInfoEtcdBackupConfigProjectProvider(ctx, userInfoGetter, projectID)
+	if err != nil {
+		return nil, err
+	}
+	return etcdBackupConfigProjectProvider.List(userInfo, projectID)
+}
+
 func deleteEtcdBackupConfig(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID, etcdBackupConfigName string) error {
 	adminUserInfo, privilegedEtcdBackupConfigProvider, err := getAdminUserInfoPrivilegedEtcdBackupConfigProvider(ctx, userInfoGetter)
 	if err != nil {
@@ -473,4 +531,27 @@ func getUserInfoEtcdBackupConfigProvider(ctx context.Context, userInfoGetter pro
 
 	etcdBackupConfigProvider := ctx.Value(middleware.EtcdBackupConfigProviderContextKey).(provider.EtcdBackupConfigProvider)
 	return userInfo, etcdBackupConfigProvider, nil
+}
+
+func getAdminUserInfoPrivilegedEtcdBackupConfigProjectProvider(ctx context.Context, userInfoGetter provider.UserInfoGetter) (*provider.UserInfo, provider.PrivilegedEtcdBackupConfigProjectProvider, error) {
+	userInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, nil, err
+	}
+	if !userInfo.IsAdmin {
+		return userInfo, nil, nil
+	}
+	privilegedEtcdBackupConfigProjectProvider := ctx.Value(middleware.PrivilegedEtcdBackupConfigProjectProviderContextKey).(provider.PrivilegedEtcdBackupConfigProjectProvider)
+	return userInfo, privilegedEtcdBackupConfigProjectProvider, nil
+}
+
+func getUserInfoEtcdBackupConfigProjectProvider(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID string) (*provider.UserInfo, provider.EtcdBackupConfigProjectProvider, error) {
+
+	userInfo, err := userInfoGetter(ctx, projectID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	etcdBackupConfigProjectProvider := ctx.Value(middleware.EtcdBackupConfigProjectProviderContextKey).(provider.EtcdBackupConfigProjectProvider)
+	return userInfo, etcdBackupConfigProjectProvider, nil
 }

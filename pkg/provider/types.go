@@ -44,8 +44,8 @@ var (
 	ErrAlreadyExists = errors.New("the given resource already exists")
 )
 
-// Constants defining known cloud providers.
 const (
+	// Constants defining known cloud providers.
 	FakeCloudProvider         = "fake"
 	DigitaloceanCloudProvider = "digitalocean"
 	BringYourOwnCloudProvider = "bringyourown"
@@ -64,6 +64,9 @@ const (
 	DefaultKubeletPort = 10250
 
 	DefaultKubeconfigFieldPath = "kubeconfig"
+
+	// ProjectLabelKey is the key under which resources can be project labelled
+	ProjectLabelKey = "project"
 )
 
 // CloudProvider declares a set of methods for interacting with a cloud provider
@@ -1159,4 +1162,34 @@ type PrivilegedEtcdRestoreProvider interface {
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to delete the resource
 	DeleteUnsecured(cluster *kubermaticv1.Cluster, name string) error
+}
+
+// EtcdBackupConfigProjectProvider declares the set of method for interacting with etcd backup configs across projects and its seeds
+type EtcdBackupConfigProjectProvider interface {
+	// List gets a list of etcdBackupConfig for a given project
+	List(userInfo *UserInfo, projectID string) ([]*kubermaticv1.EtcdBackupConfigList, error)
+}
+
+// PrivilegedEtcdBackupConfigProjectProvider declares the set of method for interacting with etcd backup configs using a privileged client across projects and its seeds
+type PrivilegedEtcdBackupConfigProjectProvider interface {
+	// ListUnsecured gets a list of all etcdBackupConfigs for a given project
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to list the resources
+	ListUnsecured(projectID string) ([]*kubermaticv1.EtcdBackupConfigList, error)
+}
+
+// EtcdRestoreProjectProvider declares the set of method for interacting with etcd backup restores across projects and its seeds
+type EtcdRestoreProjectProvider interface {
+	// List gets a list of etcdRestore for a given project
+	List(userInfo *UserInfo, projectID string) ([]*kubermaticv1.EtcdRestoreList, error)
+}
+
+// PrivilegedEtcdRestoreProjectProvider declares the set of method for interacting with etcd backup configs using a privileged client across projects and its seeds
+type PrivilegedEtcdRestoreProjectProvider interface {
+	// ListUnsecured gets a list of all etcdRestores for a given project
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to list the resources
+	ListUnsecured(projectID string) ([]*kubermaticv1.EtcdRestoreList, error)
 }

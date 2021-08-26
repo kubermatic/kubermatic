@@ -32,12 +32,12 @@ import (
 type EtcdBackupConfigProvider struct {
 	// createSeedImpersonatedClient is used as a ground for impersonation
 	// whenever a connection to Seed API server is required
-	createSeedImpersonatedClient impersonationClient
+	createSeedImpersonatedClient ImpersonationClient
 	clientPrivileged             ctrlruntimeclient.Client
 }
 
 // NewEtcdBackupConfigProvider returns a constraint provider
-func NewEtcdBackupConfigProvider(createSeedImpersonatedClient impersonationClient, client ctrlruntimeclient.Client) *EtcdBackupConfigProvider {
+func NewEtcdBackupConfigProvider(createSeedImpersonatedClient ImpersonationClient, client ctrlruntimeclient.Client) *EtcdBackupConfigProvider {
 	return &EtcdBackupConfigProvider{
 		clientPrivileged:             client,
 		createSeedImpersonatedClient: createSeedImpersonatedClient,
@@ -154,4 +154,78 @@ func (p *EtcdBackupConfigProvider) Patch(userInfo *provider.UserInfo, old, new *
 func (p *EtcdBackupConfigProvider) PatchUnsecured(old, new *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
 	err := p.clientPrivileged.Patch(context.Background(), new, ctrlruntimeclient.MergeFrom(old))
 	return new, err
+}
+
+// EtcdBackupConfigProjectProvider struct that holds required components in order manage etcd backup backupConfigs across projects
+type EtcdBackupConfigProjectProvider struct {
+	// createSeedImpersonatedClient is used as a ground for impersonation
+	// whenever a connection to Seed API server is required
+	createSeedImpersonatedClients map[string]ImpersonationClient
+	clientsPrivileged             map[string]ctrlruntimeclient.Client
+}
+
+// NewEtcdBackupConfigProjectProvider returns an etcd backupConfig global provider
+func NewEtcdBackupConfigProjectProvider(createSeedImpersonatedClients map[string]ImpersonationClient, clients map[string]ctrlruntimeclient.Client) *EtcdBackupConfigProjectProvider {
+	return &EtcdBackupConfigProjectProvider{
+		clientsPrivileged:             clients,
+		createSeedImpersonatedClients: createSeedImpersonatedClients,
+	}
+}
+
+func EtcdBackupConfigProjectProviderFactory(mapper meta.RESTMapper, seedKubeconfigGetter provider.SeedKubeconfigGetter) provider.EtcdBackupConfigProjectProviderGetter {
+	return func(seeds map[string]*kubermaticv1.Seed) (provider.EtcdBackupConfigProjectProvider, error) {
+		clientsPrivileged := make(map[string]ctrlruntimeclient.Client)
+		createSeedImpersonationClients := make(map[string]ImpersonationClient)
+
+		for seedName, seed := range seeds {
+			cfg, err := seedKubeconfigGetter(seed)
+			if err != nil {
+				return nil, err
+			}
+			createSeedImpersonationClients[seedName] = NewImpersonationClient(cfg, mapper).CreateImpersonatedClient
+			clientPrivileged, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{Mapper: mapper})
+			if err != nil {
+				return nil, err
+			}
+			clientsPrivileged[seedName] = clientPrivileged
+		}
+
+		return NewEtcdBackupConfigProjectProvider(
+			createSeedImpersonationClients,
+			clientsPrivileged,
+		), nil
+	}
+}
+
+func (p *EtcdBackupConfigProjectProvider) List(userInfo *provider.UserInfo, projectID string) ([]*kubermaticv1.EtcdBackupConfigList, error) {
+	var etcdBackupConfigLists []*kubermaticv1.EtcdBackupConfigList
+	for _, createSeedImpersonationClient := range p.createSeedImpersonatedClients {
+		impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, createSeedImpersonationClient)
+		if err != nil {
+			return nil, err
+		}
+
+		ebcList := &kubermaticv1.EtcdBackupConfigList{}
+		err = impersonationClient.List(context.Background(), ebcList, ctrlruntimeclient.MatchingLabels{provider.ProjectLabelKey: projectID})
+		if err != nil {
+			return nil, err
+		}
+		etcdBackupConfigLists = append(etcdBackupConfigLists, ebcList)
+	}
+
+	return etcdBackupConfigLists, nil
+}
+
+func (p *EtcdBackupConfigProjectProvider) ListUnsecured(projectID string) ([]*kubermaticv1.EtcdBackupConfigList, error) {
+	var etcdBackupConfigLists []*kubermaticv1.EtcdBackupConfigList
+	for _, clientPrivileged := range p.clientsPrivileged {
+		ebcList := &kubermaticv1.EtcdBackupConfigList{}
+		err := clientPrivileged.List(context.Background(), ebcList, ctrlruntimeclient.MatchingLabels{provider.ProjectLabelKey: projectID})
+		if err != nil {
+			return nil, err
+		}
+		etcdBackupConfigLists = append(etcdBackupConfigLists, ebcList)
+	}
+
+	return etcdBackupConfigLists, nil
 }

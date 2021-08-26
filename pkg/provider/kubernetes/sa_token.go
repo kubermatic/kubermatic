@@ -38,7 +38,7 @@ const (
 )
 
 // NewServiceAccountProvider returns a service account provider
-func NewServiceAccountTokenProvider(impersonationClient impersonationClient, clientPrivileged ctrlruntimeclient.Client) (*ServiceAccountTokenProvider, error) {
+func NewServiceAccountTokenProvider(impersonationClient ImpersonationClient, clientPrivileged ctrlruntimeclient.Client) (*ServiceAccountTokenProvider, error) {
 
 	return &ServiceAccountTokenProvider{
 		kubernetesImpersonationClient: impersonationClient,
@@ -49,7 +49,7 @@ func NewServiceAccountTokenProvider(impersonationClient impersonationClient, cli
 // ServiceAccountProvider manages service account resources
 type ServiceAccountTokenProvider struct {
 	// kubernetesImpersonationClient is used as a ground for impersonation
-	kubernetesImpersonationClient impersonationClient
+	kubernetesImpersonationClient ImpersonationClient
 
 	kubernetesClientPrivileged ctrlruntimeclient.Client
 }

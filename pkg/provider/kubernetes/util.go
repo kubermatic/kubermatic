@@ -30,8 +30,8 @@ const (
 	NamespacePrefix = "cluster-"
 )
 
-// impersonationClient gives runtime controller client that uses user impersonation
-type impersonationClient func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error)
+// ImpersonationClient gives runtime controller client that uses user impersonation
+type ImpersonationClient func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error)
 
 // NamespaceName returns the namespace name for a cluster
 func NamespaceName(clusterName string) string {
@@ -39,7 +39,7 @@ func NamespaceName(clusterName string) string {
 }
 
 // createImpersonationClientWrapperFromUserInfo is a helper method that spits back controller runtime client that uses user impersonation
-func createImpersonationClientWrapperFromUserInfo(userInfo *provider.UserInfo, createImpersonationClient impersonationClient) (ctrlruntimeclient.Client, error) {
+func createImpersonationClientWrapperFromUserInfo(userInfo *provider.UserInfo, createImpersonationClient ImpersonationClient) (ctrlruntimeclient.Client, error) {
 	impersonationCfg := restclient.ImpersonationConfig{
 		UserName: userInfo.Email,
 		Groups:   []string{userInfo.Group},

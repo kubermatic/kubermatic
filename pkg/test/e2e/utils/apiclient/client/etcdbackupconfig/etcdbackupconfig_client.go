@@ -36,6 +36,8 @@ type ClientService interface {
 
 	ListEtcdBackupConfig(params *ListEtcdBackupConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEtcdBackupConfigOK, error)
 
+	ListProjectEtcdBackupConfig(params *ListProjectEtcdBackupConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectEtcdBackupConfigOK, error)
+
 	PatchEtcdBackupConfig(params *PatchEtcdBackupConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchEtcdBackupConfigOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
@@ -190,6 +192,44 @@ func (a *Client) ListEtcdBackupConfig(params *ListEtcdBackupConfigParams, authIn
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListEtcdBackupConfigDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListProjectEtcdBackupConfig List etcd backup configs for a given project
+*/
+func (a *Client) ListProjectEtcdBackupConfig(params *ListProjectEtcdBackupConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectEtcdBackupConfigOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListProjectEtcdBackupConfigParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listProjectEtcdBackupConfig",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/etcdbackupconfigs",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListProjectEtcdBackupConfigReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListProjectEtcdBackupConfigOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListProjectEtcdBackupConfigDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

@@ -14268,6 +14268,94 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/etcdbackupconfigs": {
+      "get": {
+        "description": "List etcd backup configs for a given project",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "etcdbackupconfig"
+        ],
+        "operationId": "listProjectEtcdBackupConfig",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "EtcdBackupConfig",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/EtcdBackupConfig"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/etcdrestores": {
+      "get": {
+        "description": "List etcd backup restores for a given project",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "etcdrestore"
+        ],
+        "operationId": "listProjectEtcdRestore",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "EtcdRestore",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/EtcdRestore"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/kubernetes/clusters": {
       "get": {
         "produces": [
