@@ -98,6 +98,10 @@ var (
 		Name:  "migrate-logrotate",
 		Usage: "enable the data migration to delete the logrotate addon",
 	}
+	telemetryFlag = cli.BoolFlag{
+		Name:  "telemetry",
+		Usage: "disable telemetry agents",
+	}
 )
 
 func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) cli.Command {
@@ -118,6 +122,7 @@ func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) c
 			enableCertManagerV2MigrationFlag,
 			migrateOpenstackCSIdriversFlag,
 			migrateLogrotateFlag,
+			telemetryFlag,
 		},
 	}
 }
@@ -266,6 +271,7 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 			EnableCertManagerV2Migration:      ctx.Bool(enableCertManagerV2MigrationFlag.Name),
 			EnableOpenstackCSIDriverMigration: ctx.Bool(migrateOpenstackCSIdriversFlag.Name),
 			EnableLogrotateMigration:          ctx.Bool(migrateLogrotateFlag.Name),
+			DisableTelemetry:                  ctx.Bool(telemetryFlag.Name),
 		}
 
 		logger.Infof("🧩 Deploying %s…", kubermaticStack.Name())
