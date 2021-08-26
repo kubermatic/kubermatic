@@ -91,23 +91,6 @@ func TestCreateEndpoint(t *testing.T) {
 			ExpectedHTTPStatusCode: http.StatusCreated,
 			ExpectedResponse:       test.GenAPIEtcdBackupConfig("test-ebc", test.GenDefaultCluster().Name),
 		},
-		{
-			Name:      "validation fails when schedule is set and keep is not",
-			ProjectID: test.GenDefaultProject().Name,
-			ClusterID: test.GenDefaultCluster().Name,
-			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
-				test.GenTestSeed(),
-				test.GenDefaultCluster(),
-			),
-			ExistingAPIUser: test.GenDefaultAPIUser(),
-			EtcdBackupConfig: func() *apiv2.EtcdBackupConfig {
-				ebc := test.GenAPIEtcdBackupConfig("test-ebc", test.GenDefaultCluster().Name)
-				ebc.Spec.Keep = nil
-				return ebc
-			}(),
-			ExpectedHTTPStatusCode: http.StatusBadRequest,
-			ExpectedResponse:       nil,
-		},
 	}
 
 	for _, tc := range testCases {
@@ -508,25 +491,6 @@ func TestPatchEndpoint(t *testing.T) {
 				ebc.Spec.Schedule = modifiedSchedule
 				return ebc
 			}(),
-		},
-		{
-			Name:                 "patch etcdbackupconfig validation fail",
-			EtcdBackupConfigName: "test-1",
-			PatchSpec: func() *apiv2.EtcdBackupConfigSpec {
-				spec := test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name).Spec
-				spec.Schedule = modifiedSchedule
-				spec.Keep = nil
-				return &spec
-			}(),
-			ProjectID: test.GenDefaultProject().Name,
-			ClusterID: test.GenDefaultCluster().Name,
-			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
-				test.GenTestSeed(),
-				test.GenDefaultCluster(),
-				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
-			),
-			ExistingAPIUser:        test.GenDefaultAPIUser(),
-			ExpectedHTTPStatusCode: http.StatusBadRequest,
 		},
 	}
 

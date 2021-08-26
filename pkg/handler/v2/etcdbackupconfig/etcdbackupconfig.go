@@ -56,10 +56,6 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 			return nil, err
 		}
 
-		if err := req.validate(); err != nil {
-			return nil, err
-		}
-
 		ebc, err := convertAPIToInternalEtcdBackupConfig(req.Body.Name, &req.Body.Spec, c)
 		if err != nil {
 			return nil, err
@@ -92,14 +88,6 @@ type ebcBody struct {
 	Name string `json:"name"`
 	// EtcdBackupConfigSpec Spec of the etcd backup config
 	Spec apiv2.EtcdBackupConfigSpec `json:"spec"`
-}
-
-func (r *createEtcdBackupConfigReq) validate() error {
-	// schedule and keep have to either be both set, or both absent
-	if (r.Body.Spec.Keep == nil && r.Body.Spec.Schedule != "") || (r.Body.Spec.Keep != nil && r.Body.Spec.Schedule == "") {
-		return errors.NewBadRequest("EtcdBackupConfig has to have both Schedule and Keep options set or both empty")
-	}
-	return nil
 }
 
 func DecodeCreateEtcdBackupConfigReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -224,9 +212,6 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(patchEtcdBackupConfigReq)
-		if err := req.validate(); err != nil {
-			return nil, err
-		}
 
 		c, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 		if err != nil {
@@ -282,14 +267,6 @@ func DecodePatchEtcdBackupConfigReq(c context.Context, r *http.Request) (interfa
 	}
 
 	return req, nil
-}
-
-func (r *patchEtcdBackupConfigReq) validate() error {
-	// schedule and keep have to either be both set, or both absent
-	if (r.Body.Keep == nil && r.Body.Schedule != "") || (r.Body.Keep != nil && r.Body.Schedule == "") {
-		return errors.NewBadRequest("EtcdBackupConfig has to have both Schedule and Keep options set or both empty")
-	}
-	return nil
 }
 
 func ProjectListEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
