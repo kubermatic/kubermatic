@@ -58,7 +58,7 @@ type extractGroupPrefixFunc func(groupName string) string
 // it uses createSeedImpersonatedClient to create a connection that uses user impersonation
 func NewClusterProvider(
 	cfg *restclient.Config,
-	createSeedImpersonatedClient impersonationClient,
+	createSeedImpersonatedClient ImpersonationClient,
 	userClusterConnProvider UserClusterConnectionProvider,
 	workerName string,
 	extractGroupPrefix extractGroupPrefixFunc,
@@ -84,7 +84,7 @@ func NewClusterProvider(
 type ClusterProvider struct {
 	// createSeedImpersonatedClient is used as a ground for impersonation
 	// whenever a connection to Seed API server is required
-	createSeedImpersonatedClient impersonationClient
+	createSeedImpersonatedClient ImpersonationClient
 
 	// userClusterConnProvider used for obtaining a connection to the client's cluster
 	userClusterConnProvider UserClusterConnectionProvider

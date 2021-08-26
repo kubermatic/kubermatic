@@ -33,20 +33,20 @@ import (
 type ConstraintProvider struct {
 	// createSeedImpersonatedClient is used as a ground for impersonation
 	// whenever a connection to Seed API server is required
-	createSeedImpersonatedClient impersonationClient
+	createSeedImpersonatedClient ImpersonationClient
 	clientPrivileged             ctrlruntimeclient.Client
 }
 
 // DefaultConstraintProvider struct that holds required components in order manage constraints
 type DefaultConstraintProvider struct {
 	// createMasterImpersonatedClient is used as a ground for impersonation
-	createMasterImpersonatedClient impersonationClient
+	createMasterImpersonatedClient ImpersonationClient
 	clientPrivileged               ctrlruntimeclient.Client
 	kubermaticNamespace            string
 }
 
 // NewConstraintProvider returns a constraint provider
-func NewConstraintProvider(createSeedImpersonatedClient impersonationClient, client ctrlruntimeclient.Client) (*ConstraintProvider, error) {
+func NewConstraintProvider(createSeedImpersonatedClient ImpersonationClient, client ctrlruntimeclient.Client) (*ConstraintProvider, error) {
 	return &ConstraintProvider{
 		clientPrivileged:             client,
 		createSeedImpersonatedClient: createSeedImpersonatedClient,
@@ -54,7 +54,7 @@ func NewConstraintProvider(createSeedImpersonatedClient impersonationClient, cli
 }
 
 // NewDefaultConstraintProvider returns a default constraint provider
-func NewDefaultConstraintProvider(createMasterImpersonatedClient impersonationClient, client ctrlruntimeclient.Client, namespace string) (*DefaultConstraintProvider, error) {
+func NewDefaultConstraintProvider(createMasterImpersonatedClient ImpersonationClient, client ctrlruntimeclient.Client, namespace string) (*DefaultConstraintProvider, error) {
 	return &DefaultConstraintProvider{
 		createMasterImpersonatedClient: createMasterImpersonatedClient,
 		clientPrivileged:               client,

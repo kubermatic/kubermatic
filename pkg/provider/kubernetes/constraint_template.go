@@ -30,13 +30,13 @@ import (
 // ConstraintTemplateProvider struct that holds required components in order manage constraint templates
 type ConstraintTemplateProvider struct {
 	// createSeedImpersonatedClient is used as a ground for impersonation
-	createMasterImpersonatedClient impersonationClient
+	createMasterImpersonatedClient ImpersonationClient
 	clientPrivileged               ctrlruntimeclient.Client
 	restMapperCache                *restmapper.Cache
 }
 
 // NewConstraintTemplateProvider returns a constraint template provider
-func NewConstraintTemplateProvider(createMasterImpersonatedClient impersonationClient, client ctrlruntimeclient.Client) (*ConstraintTemplateProvider, error) {
+func NewConstraintTemplateProvider(createMasterImpersonatedClient ImpersonationClient, client ctrlruntimeclient.Client) (*ConstraintTemplateProvider, error) {
 	return &ConstraintTemplateProvider{
 		createMasterImpersonatedClient: createMasterImpersonatedClient,
 		clientPrivileged:               client,

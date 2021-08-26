@@ -31,7 +31,7 @@ import (
 )
 
 // NewProjectProvider returns a project provider
-func NewProjectProvider(createMasterImpersonatedClient impersonationClient, client ctrlruntimeclient.Client) (*ProjectProvider, error) {
+func NewProjectProvider(createMasterImpersonatedClient ImpersonationClient, client ctrlruntimeclient.Client) (*ProjectProvider, error) {
 
 	return &ProjectProvider{
 		createMasterImpersonatedClient: createMasterImpersonatedClient,
@@ -49,7 +49,7 @@ func NewPrivilegedProjectProvider(client ctrlruntimeclient.Client) (*PrivilegedP
 // ProjectProvider represents a data structure that knows how to manage projects
 type ProjectProvider struct {
 	// createMasterImpersonatedClient is used as a ground for impersonation
-	createMasterImpersonatedClient impersonationClient
+	createMasterImpersonatedClient ImpersonationClient
 
 	// clientPrivileged privileged client
 	clientPrivileged ctrlruntimeclient.Client

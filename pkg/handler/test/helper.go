@@ -197,6 +197,8 @@ type newRoutingFunc func(
 	privilegedAllowedRegistryProvider provider.PrivilegedAllowedRegistryProvider,
 	etcdBackupConfigProviderGetter provider.EtcdBackupConfigProviderGetter,
 	etcdRestoreProviderGetter provider.EtcdRestoreProviderGetter,
+	etcdBackupConfigProjectProviderGetter provider.EtcdBackupConfigProjectProviderGetter,
+	etcdRestoreProjectProviderGetter provider.EtcdRestoreProjectProviderGetter,
 ) http.Handler
 
 func getRuntimeObjects(objs ...ctrlruntimeclient.Object) []runtime.Object {
@@ -431,6 +433,20 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		return nil, fmt.Errorf("can not find etcdRestoreProvider for cluster %q", seed.Name)
 	}
 
+	etcdBackupConfigProjectProvider := kubernetes.NewEtcdBackupConfigProjectProvider(
+		map[string]kubernetes.ImpersonationClient{"us-central1": fakeImpersonationClient},
+		map[string]ctrlruntimeclient.Client{"us-central1": fakeClient})
+	etcdBackupConfigProjectProviderGetter := func(seed map[string]*kubermaticv1.Seed) (provider.EtcdBackupConfigProjectProvider, error) {
+		return etcdBackupConfigProjectProvider, nil
+	}
+
+	etcdRestoreProjectProvider := kubernetes.NewEtcdRestoreProjectProvider(
+		map[string]kubernetes.ImpersonationClient{"us-central1": fakeImpersonationClient},
+		map[string]ctrlruntimeclient.Client{"us-central1": fakeClient})
+	etcdRestoreProjectProviderGetter := func(seed map[string]*kubermaticv1.Seed) (provider.EtcdRestoreProjectProvider, error) {
+		return etcdRestoreProjectProvider, nil
+	}
+
 	eventRecorderProvider := kubernetes.NewEventRecorder()
 
 	settingsWatcher, err := kuberneteswatcher.NewSettingsWatcher(settingsProvider)
@@ -492,6 +508,8 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		fakePrivilegedAllowedRegistryProvider,
 		etcdBackupConfigProviderGetter,
 		etcdRestoreProviderGetter,
+		etcdBackupConfigProjectProviderGetter,
+		etcdRestoreProjectProviderGetter,
 	)
 
 	return mainRouter, &ClientsSets{kubermaticClient, fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil
@@ -1809,7 +1827,7 @@ func GenAPIEtcdBackupConfig(name, clusterID string) *apiv2.EtcdBackupConfig {
 	}
 }
 
-func GenEtcdBackupConfig(name string, cluster *kubermaticv1.Cluster) *kubermaticv1.EtcdBackupConfig {
+func GenEtcdBackupConfig(name string, cluster *kubermaticv1.Cluster, projectID string) *kubermaticv1.EtcdBackupConfig {
 	keep := 5
 	clusterObjectRef, _ := reference.GetReference(scheme.Scheme, cluster)
 
@@ -1817,6 +1835,9 @@ func GenEtcdBackupConfig(name string, cluster *kubermaticv1.Cluster) *kubermatic
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: cluster.Status.NamespaceName,
+			Labels: map[string]string{
+				provider.ProjectLabelKey: projectID,
+			},
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(cluster, kubermaticv1.SchemeGroupVersion.WithKind("Cluster")),
 			},
@@ -1841,13 +1862,16 @@ func GenAPIEtcdRestore(name, clusterID string) *apiv2.EtcdRestore {
 	}
 }
 
-func GenEtcdRestore(name string, cluster *kubermaticv1.Cluster) *kubermaticv1.EtcdRestore {
+func GenEtcdRestore(name string, cluster *kubermaticv1.Cluster, projectID string) *kubermaticv1.EtcdRestore {
 	clusterObjectRef, _ := reference.GetReference(scheme.Scheme, cluster)
 
 	return &kubermaticv1.EtcdRestore{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: cluster.Status.NamespaceName,
+			Labels: map[string]string{
+				provider.ProjectLabelKey: projectID,
+			},
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(cluster, kubermaticv1.SchemeGroupVersion.WithKind("Cluster")),
 			},

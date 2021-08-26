@@ -611,6 +611,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_name}").
 		Handler(r.patchEtcdBackupConfig())
 
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/etcdbackupconfigs").
+		Handler(r.listProjectEtcdBackupConfig())
+
 	// Defines a set of HTTP endpoints for managing etcd backup restores
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/clusters/{cluster_id}/etcdrestores").
@@ -627,6 +631,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{er_name}").
 		Handler(r.deleteEtcdRestore())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/etcdrestores").
+		Handler(r.listProjectEtcdRestore())
 
 }
 
@@ -4229,6 +4237,32 @@ func (r Routing) patchEtcdBackupConfig() http.Handler {
 	)
 }
 
+// swagger:route GET /api/v2/projects/{project_id}/etcdbackupconfigs etcdbackupconfig listProjectEtcdBackupConfig
+//
+//     List etcd backup configs for a given project
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []EtcdBackupConfig
+//       401: empty
+//       403: empty
+func (r Routing) listProjectEtcdBackupConfig() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.EtcdBackupConfigProject(r.etcdBackupConfigProjectProviderGetter, r.seedsGetter),
+			middleware.PrivilegedEtcdBackupConfigProject(r.etcdBackupConfigProjectProviderGetter, r.seedsGetter),
+		)(etcdbackupconfig.ProjectListEndpoint(r.userInfoGetter)),
+		etcdbackupconfig.DecodeListProjectEtcdBackupConfigReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route POST /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores etcdrestore createEtcdRestore
 //
 //     Creates a etcd backup restore for a given cluster
@@ -4337,6 +4371,32 @@ func (r Routing) deleteEtcdRestore() http.Handler {
 			middleware.PrivilegedEtcdRestore(r.clusterProviderGetter, r.etcdRestoreProviderGetter, r.seedsGetter),
 		)(etcdrestore.DeleteEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
 		etcdrestore.DecodeGetEtcdRestoreReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/etcdrestores etcdrestore listProjectEtcdRestore
+//
+//     List etcd backup restores for a given project
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []EtcdRestore
+//       401: empty
+//       403: empty
+func (r Routing) listProjectEtcdRestore() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.EtcdRestoreProject(r.etcdRestoreProjectProviderGetter, r.seedsGetter),
+			middleware.PrivilegedEtcdRestoreProject(r.etcdRestoreProjectProviderGetter, r.seedsGetter),
+		)(etcdrestore.ProjectListEndpoint(r.userInfoGetter)),
+		etcdrestore.DecodeListProjectEtcdRestoreReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

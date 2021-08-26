@@ -47,7 +47,7 @@ func NewPrivilegedSSHKeyProvider(client ctrlruntimeclient.Client) (*PrivilegedSS
 
 // NewSSHKeyProvider returns a new ssh key provider that respects RBAC policies
 // it uses createMasterImpersonatedClient to create a connection that uses User Impersonation
-func NewSSHKeyProvider(createMasterImpersonatedClient impersonationClient, client ctrlruntimeclient.Client) *SSHKeyProvider {
+func NewSSHKeyProvider(createMasterImpersonatedClient ImpersonationClient, client ctrlruntimeclient.Client) *SSHKeyProvider {
 	return &SSHKeyProvider{createMasterImpersonatedClient: createMasterImpersonatedClient, client: client}
 }
 
@@ -56,7 +56,7 @@ func NewSSHKeyProvider(createMasterImpersonatedClient impersonationClient, clien
 type SSHKeyProvider struct {
 	// createMasterImpersonatedClient is used as a ground for impersonation
 	// whenever a connection to Seed API server is required
-	createMasterImpersonatedClient impersonationClient
+	createMasterImpersonatedClient ImpersonationClient
 
 	client ctrlruntimeclient.Client
 }
