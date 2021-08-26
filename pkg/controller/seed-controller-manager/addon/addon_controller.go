@@ -28,6 +28,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/ghodss/yaml"
 	"go.uber.org/zap"
 
@@ -38,6 +39,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/machinecontroller"
+	"k8c.io/kubermatic/v2/pkg/util/kubectl"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -462,10 +464,22 @@ func (r *Reconciler) setupManifestInteraction(ctx context.Context, log *zap.Suga
 	return kubeconfigFilename, manifestFilename, done, nil
 }
 
-func (r *Reconciler) getApplyCommand(ctx context.Context, kubeconfigFilename, manifestFilename string, selector fmt.Stringer) *exec.Cmd {
-	// kubectl apply --prune -f manifest.yaml -l app=nginx
-	cmd := exec.CommandContext(ctx, "kubectl", "--kubeconfig", kubeconfigFilename, "apply", "--prune", "-f", manifestFilename, "-l", selector.String())
-	return cmd
+func (r *Reconciler) getApplyCommand(ctx context.Context, kubeconfigFilename, manifestFilename string, selector fmt.Stringer, clusterVersion *semver.Version) (*exec.Cmd, error) {
+	binary, err := kubectl.BinaryForClusterVersion(clusterVersion)
+	if err != nil {
+		return nil, fmt.Errorf("failed to determine kubectl binary to use: %w", err)
+	}
+
+	cmd := exec.CommandContext(
+		ctx,
+		binary,
+		"--kubeconfig", kubeconfigFilename,
+		"apply",
+		"--prune",
+		"--filename", manifestFilename,
+		"--selector", selector.String(),
+	)
+	return cmd, nil
 }
 
 func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
@@ -487,7 +501,11 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 
 	// We delete all resources with this label which are not in the combined manifest
 	selector := labels.SelectorFromSet(r.getAddonLabel(addon))
-	cmd := r.getApplyCommand(ctx, kubeconfigFilename, manifestFilename, selector)
+	cmd, err := r.getApplyCommand(ctx, kubeconfigFilename, manifestFilename, selector, cluster.Spec.Version.Version)
+	if err != nil {
+		return fmt.Errorf("failed to create command: %w", err)
+	}
+
 	cmdLog := log.With("cmd", strings.Join(cmd.Args, " "))
 
 	cmdLog.Debug("Applying manifest...")

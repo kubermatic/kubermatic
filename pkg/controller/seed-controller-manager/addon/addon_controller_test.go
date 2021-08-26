@@ -28,10 +28,12 @@ import (
 	"testing"
 
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/util/kubectl"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -402,8 +404,19 @@ func TestController_ensureAddonLabelOnManifests(t *testing.T) {
 
 func TestController_getApplyCommand(t *testing.T) {
 	controller := &Reconciler{}
-	cmd := controller.getApplyCommand(context.Background(), "/opt/kubeconfig", "/opt/manifest.yaml", labels.SelectorFromSet(map[string]string{"foo": "bar"}))
-	expected := "kubectl --kubeconfig /opt/kubeconfig apply --prune -f /opt/manifest.yaml -l foo=bar"
+	clusterVersion := common.DefaultKubernetesVersioning.Default
+
+	binary, err := kubectl.BinaryForClusterVersion(clusterVersion)
+	if err != nil {
+		t.Fatalf("Should be able to determine a kubectl binary for %q, but got %v", clusterVersion, err)
+	}
+
+	cmd, err := controller.getApplyCommand(context.Background(), "/opt/kubeconfig", "/opt/manifest.yaml", labels.SelectorFromSet(map[string]string{"foo": "bar"}), clusterVersion)
+	if err != nil {
+		t.Fatalf("Should be able to determine the command, but got %v", err)
+	}
+
+	expected := fmt.Sprintf("%s --kubeconfig /opt/kubeconfig apply --prune --filename /opt/manifest.yaml --selector foo=bar", binary)
 	got := strings.Join(cmd.Args, " ")
 	if got != expected {
 		t.Fatalf("invalid apply command returned. Expected \n%s, Got \n%s", expected, got)
