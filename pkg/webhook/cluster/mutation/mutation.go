@@ -60,7 +60,10 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 
 	switch req.Operation {
 	case admissionv1.Create:
-		// NOP
+		if err := h.decoder.Decode(req, cluster); err != nil {
+			return admission.Errored(http.StatusBadRequest, err)
+		}
+		h.applyDefaults(cluster)
 	case admissionv1.Update:
 		if err := h.decoder.Decode(req, cluster); err != nil {
 			return admission.Errored(http.StatusBadRequest, err)
@@ -86,6 +89,16 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 		return admission.Errored(http.StatusBadRequest, fmt.Errorf("%s not supported on cluster resources", req.Operation))
 	}
 	return webhook.Allowed(fmt.Sprintf("no mutation done for request %s", req.UID))
+}
+
+func (h *AdmissionHandler) applyDefaults(c *kubermaticv1.Cluster) {
+	// Network policies for Apiserver are deployed by default
+	if _, ok := c.Spec.Features[kubermaticv1.ApiserverNetworkPolicy]; !ok {
+		if c.Spec.Features == nil {
+			c.Spec.Features = map[string]bool{}
+		}
+		c.Spec.Features[kubermaticv1.ApiserverNetworkPolicy] = true
+	}
 }
 
 func (h *AdmissionHandler) mutateUpdate(ctx context.Context, oldCluster, newCluster *kubermaticv1.Cluster) error {
