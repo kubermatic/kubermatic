@@ -118,6 +118,24 @@ func (r ClusterTemplateInstanceProvider) GetUnsecured(name string) (*kubermaticv
 	return instance, nil
 }
 
+func (r ClusterTemplateInstanceProvider) ListUnsecured(options provider.ClusterTemplateInstanceListOptions) (*kubermaticv1.ClusterTemplateInstanceList, error) {
+	instanceList := &kubermaticv1.ClusterTemplateInstanceList{}
+
+	labelSelector := ctrlruntimeclient.MatchingLabels{}
+
+	if options.ProjectID != "" {
+		labelSelector[kubermaticv1.ClusterTemplateProjectLabelKey] = options.ProjectID
+	}
+	if options.TemplateID != "" {
+		labelSelector[ClusterTemplateLabelKey] = options.TemplateID
+	}
+
+	if err := r.privilegedClient.List(context.Background(), instanceList, labelSelector); err != nil {
+		return nil, err
+	}
+	return instanceList, nil
+}
+
 func (r ClusterTemplateInstanceProvider) Get(userInfo *provider.UserInfo, name string) (*kubermaticv1.ClusterTemplateInstance, error) {
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, r.createSeedImpersonatedClient)
 	if err != nil {
