@@ -13,8 +13,7 @@ require (
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.751
 	github.com/anexia-it/go-anxcloud v0.3.8
 	github.com/apoydence/onpar v0.0.0-20200406201722-06f95a1c68e8 // indirect
-	github.com/aws/aws-sdk-go v1.36.30
-	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
+	github.com/aws/aws-sdk-go v1.37.22
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/coreos/locksmith v0.6.2
 	github.com/cristim/ec2-instances-info v0.0.0-20201110114654-2dfcc09f67d4
@@ -92,7 +91,7 @@ require (
 	k8s.io/kube-aggregator v0.21.3
 	k8s.io/kubectl v0.21.3
 	k8s.io/metrics v0.21.3
-	k8s.io/test-infra v0.0.0-20200220102703-18fae0a00a2c
+	k8s.io/test-infra v0.0.0-20210826180422-39483c498f0f
 	k8s.io/utils v0.0.0-20210722164352-7f3ee0f31471
 	sigs.k8s.io/controller-runtime v0.9.6
 	sigs.k8s.io/yaml v1.2.0
