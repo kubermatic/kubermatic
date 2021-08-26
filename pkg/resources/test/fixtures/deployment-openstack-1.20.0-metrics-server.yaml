@@ -164,7 +164,6 @@ spec:
         volumeMounts:
         - mountPath: /http-prober-bin
           name: http-prober-bin
-      priorityClassName: system-cluster-critical
       volumes:
       - name: metrics-server
         secret:

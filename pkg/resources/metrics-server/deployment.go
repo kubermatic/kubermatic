@@ -162,7 +162,6 @@ func DeploymentCreator(data metricsServerData) reconciling.NamedDeploymentCreato
 			}
 
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name, data.Cluster().Name)
-			dep.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
 
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(name))
 			if err != nil {
