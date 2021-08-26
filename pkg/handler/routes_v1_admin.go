@@ -405,3 +405,27 @@ func (r Routing) deleteSeed() http.Handler {
 		r.defaultServerOptions()...,
 	)
 }
+
+// swagger:route POST /api/v1/admin/metering/credentials admin updateOrCreateMeteringCredentials
+//
+//     Creates or updates the metering tool credentials.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) createOrUpdateMeteringCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(admin.CreateOrUpdateMeteringCredentials(r.seedsGetter, r.seedsClientGetter)),
+		admin.DecodeMeteringReq,
+		EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
