@@ -222,8 +222,15 @@ spec:
       tolerations: null
     controllerManager:
       leaderElection:
+        # LeaseDurationSeconds is the duration in seconds that non-leader candidates
+        # will wait to force acquire leadership. This is measured against time of
+        # last observed ack.
         leaseDurationSeconds: null
+        # RenewDeadlineSeconds is the duration in seconds that the acting controlplane
+        # will retry refreshing leadership before giving up.
         renewDeadlineSeconds: null
+        # RetryPeriodSeconds is the duration in seconds the LeaderElector clients
+        # should wait between tries of actions.
         retryPeriodSeconds: null
       replicas: null
       resources: null
@@ -238,8 +245,15 @@ spec:
       resources: null
     scheduler:
       leaderElection:
+        # LeaseDurationSeconds is the duration in seconds that non-leader candidates
+        # will wait to force acquire leadership. This is measured against time of
+        # last observed ack.
         leaseDurationSeconds: null
+        # RenewDeadlineSeconds is the duration in seconds that the acting controlplane
+        # will retry refreshing leadership before giving up.
         renewDeadlineSeconds: null
+        # RetryPeriodSeconds is the duration in seconds the LeaderElector clients
+        # should wait between tries of actions.
         retryPeriodSeconds: null
       replicas: null
       resources: null
