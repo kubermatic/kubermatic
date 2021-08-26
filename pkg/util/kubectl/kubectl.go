@@ -18,7 +18,6 @@ package kubectl
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 
 	"github.com/Masterminds/semver/v3"
@@ -26,7 +25,7 @@ import (
 
 // BinaryForClusterVersion returns the full path to a kubectl binary
 // that shall be used to communicate with a usercluster. An error is
-// returned if no suitable kubectl can be found.
+// returned if no suitable kubectl can be determined.
 func BinaryForClusterVersion(version *semver.Version) (string, error) {
 	var binary string
 
@@ -43,11 +42,5 @@ func BinaryForClusterVersion(version *semver.Version) (string, error) {
 		return "", fmt.Errorf("unsupported Kubernetes version %v", version)
 	}
 
-	fullPath := filepath.Join("/usr/local/bin/", binary)
-
-	if _, err := os.Stat(fullPath); err != nil {
-		return "", fmt.Errorf("Kubernetes version %v should use %s, but no such binary was found", version, fullPath)
-	}
-
-	return fullPath, nil
+	return filepath.Join("/usr/local/bin/", binary), nil
 }
