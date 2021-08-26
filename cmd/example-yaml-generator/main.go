@@ -164,6 +164,11 @@ func createExampleSeed() *kubermaticv1.Seed {
 				},
 			},
 			ProxySettings: &proxySettings,
+			Metering: &kubermaticv1.MeteringConfigurations{
+				Enabled:          false,
+				StorageClassName: "kubermatic-fast",
+				StorageSize:      "100Gi",
+			},
 		},
 	}
 

@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/metering"
 
 	"go.uber.org/zap"
 
@@ -275,6 +276,12 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *operatorv1alph
 
 	if err := r.reconcileAdmissionWebhooks(ctx, cfg, seed, client, log); err != nil {
 		return err
+	}
+
+	if seed.Spec.Metering != nil && seed.Spec.Metering.Enabled {
+		if err := metering.ReconcileMeteringResources(ctx, client, r.namespace, cfg, seed, log); err != nil {
+			return err
+		}
 	}
 
 	return nil
