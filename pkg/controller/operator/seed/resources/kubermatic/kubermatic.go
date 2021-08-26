@@ -93,8 +93,8 @@ func BackupContainersConfigMapCreator(cfg *operatorv1alpha1.KubermaticConfigurat
 	}
 }
 
-func RestoreS3SettingsConfigMapCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedConfigMapCreatorGetter {
-	if !cfg.Spec.SeedController.BackupRestore.Enabled {
+func RestoreS3SettingsConfigMapCreator(backupRestore *kubermaticv1.SeedBackupRestoreConfiguration) reconciling.NamedConfigMapCreatorGetter {
+	if backupRestore == nil {
 		return nil
 	}
 
@@ -104,8 +104,8 @@ func RestoreS3SettingsConfigMapCreator(cfg *operatorv1alpha1.KubermaticConfigura
 				c.Data = make(map[string]string)
 			}
 
-			c.Data[s3EndpointKey] = cfg.Spec.SeedController.BackupRestore.S3Endpoint
-			c.Data[s3BucketNameKey] = cfg.Spec.SeedController.BackupRestore.S3BucketName
+			c.Data[s3EndpointKey] = backupRestore.S3Endpoint
+			c.Data[s3BucketNameKey] = backupRestore.S3BucketName
 
 			return c, nil
 		}
