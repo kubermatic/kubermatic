@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
@@ -38,6 +39,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/reference"
+)
+
+const (
+	automaticBackup = "automatic"
+	snapshot        = "snapshot"
 )
 
 func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
@@ -289,6 +295,9 @@ func (r *patchEtcdBackupConfigReq) validate() error {
 func ProjectListEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listProjectEtcdBackupConfigReq)
+		if err := req.validate(); err != nil {
+			return nil, err
+		}
 
 		ebcLists, err := listProjectEtcdBackupConfig(ctx, userInfoGetter, req.ProjectID)
 		if err != nil {
@@ -297,8 +306,11 @@ func ProjectListEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoi
 
 		var ebcAPIList []*apiv2.EtcdBackupConfig
 		for _, ebcList := range ebcLists {
-			for _, er := range ebcList.Items {
-				ebcAPIList = append(ebcAPIList, convertInternalToAPIEtcdBackupConfig(&er))
+			for _, ebc := range ebcList.Items {
+				ebcAPI := convertInternalToAPIEtcdBackupConfig(&ebc)
+				if req.Type == "" || strings.EqualFold(req.Type, getEtcdBackupConfigType(ebcAPI)) {
+					ebcAPIList = append(ebcAPIList, ebcAPI)
+				}
 			}
 		}
 
@@ -306,10 +318,30 @@ func ProjectListEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoi
 	}
 }
 
+func getEtcdBackupConfigType(ebc *apiv2.EtcdBackupConfig) string {
+	if ebc.Spec.Schedule == "" {
+		return snapshot
+	}
+	return automaticBackup
+}
+
 // listProjectEtcdBackupConfigReq represents a request for listing project etcd backupConfigs
 // swagger:parameters listProjectEtcdBackupConfig
 type listProjectEtcdBackupConfigReq struct {
 	common.ProjectReq
+
+	// in: query
+	Type string `json:"type,omitempty"`
+}
+
+func (r *listProjectEtcdBackupConfigReq) validate() error {
+	if len(r.Type) > 0 {
+		if r.Type == automaticBackup || r.Type == snapshot {
+			return nil
+		}
+		return errors.NewBadRequest("wrong query parameter, unsupported type: %s", r.Type)
+	}
+	return nil
 }
 
 func DecodeListProjectEtcdBackupConfigReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -321,6 +353,8 @@ func DecodeListProjectEtcdBackupConfigReq(c context.Context, r *http.Request) (i
 	}
 
 	req.ProjectReq = pr.(common.ProjectReq)
+
+	req.Type = r.URL.Query().Get("type")
 	return req, nil
 }
 

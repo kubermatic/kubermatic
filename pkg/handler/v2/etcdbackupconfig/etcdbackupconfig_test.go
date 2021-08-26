@@ -27,6 +27,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 
@@ -566,6 +567,7 @@ func TestProjectListEndpoint(t *testing.T) {
 	testCases := []struct {
 		Name                      string
 		ProjectID                 string
+		Type                      string
 		ExistingKubermaticObjects []ctrlruntimeclient.Object
 		ExistingAPIUser           *apiv1.User
 		ExpectedResponse          []*apiv2.EtcdBackupConfig
@@ -580,12 +582,22 @@ func TestProjectListEndpoint(t *testing.T) {
 				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
 				test.GenEtcdBackupConfig("test-2", test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)), test.GenDefaultProject().Name),
 				test.GenEtcdBackupConfig("test-3", test.GenDefaultCluster(), "some-different-project"),
+				func() *kubermaticv1.EtcdBackupConfig {
+					ebc := test.GenEtcdBackupConfig("test-4", test.GenDefaultCluster(), test.GenDefaultProject().Name)
+					ebc.Spec.Schedule = ""
+					return ebc
+				}(),
 			),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 			ExpectedHTTPStatusCode: http.StatusOK,
 			ExpectedResponse: []*apiv2.EtcdBackupConfig{
 				test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name),
 				test.GenAPIEtcdBackupConfig("test-2", "clusterAbcID"),
+				func() *apiv2.EtcdBackupConfig {
+					ebc := test.GenAPIEtcdBackupConfig("test-4", test.GenDefaultCluster().Name)
+					ebc.Spec.Schedule = ""
+					return ebc
+				}(),
 			},
 		},
 		{
@@ -611,19 +623,92 @@ func TestProjectListEndpoint(t *testing.T) {
 				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
 				test.GenEtcdBackupConfig("test-2", test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)), test.GenDefaultProject().Name),
 				test.GenEtcdBackupConfig("test-3", test.GenDefaultCluster(), "some-different-project"),
+				func() *kubermaticv1.EtcdBackupConfig {
+					ebc := test.GenEtcdBackupConfig("test-4", test.GenDefaultCluster(), test.GenDefaultProject().Name)
+					ebc.Spec.Schedule = ""
+					return ebc
+				}(),
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 			ExpectedHTTPStatusCode: http.StatusOK,
 			ExpectedResponse: []*apiv2.EtcdBackupConfig{
 				test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name),
 				test.GenAPIEtcdBackupConfig("test-2", "clusterAbcID"),
+				func() *apiv2.EtcdBackupConfig {
+					ebc := test.GenAPIEtcdBackupConfig("test-4", test.GenDefaultCluster().Name)
+					ebc.Spec.Schedule = ""
+					return ebc
+				}(),
 			},
+		},
+		{
+			Name:      "filter by type snapshot",
+			ProjectID: test.GenDefaultProject().Name,
+			Type:      "snapshot",
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-2", test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-3", test.GenDefaultCluster(), "some-different-project"),
+				func() *kubermaticv1.EtcdBackupConfig {
+					ebc := test.GenEtcdBackupConfig("test-4", test.GenDefaultCluster(), test.GenDefaultProject().Name)
+					ebc.Spec.Schedule = ""
+					return ebc
+				}(),
+			),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			ExpectedHTTPStatusCode: http.StatusOK,
+			ExpectedResponse: []*apiv2.EtcdBackupConfig{
+				func() *apiv2.EtcdBackupConfig {
+					ebc := test.GenAPIEtcdBackupConfig("test-4", test.GenDefaultCluster().Name)
+					ebc.Spec.Schedule = ""
+					return ebc
+				}(),
+			},
+		},
+		{
+			Name:      "filter by type automatic",
+			ProjectID: test.GenDefaultProject().Name,
+			Type:      "automatic",
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-2", test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-3", test.GenDefaultCluster(), "some-different-project"),
+				func() *kubermaticv1.EtcdBackupConfig {
+					ebc := test.GenEtcdBackupConfig("test-4", test.GenDefaultCluster(), test.GenDefaultProject().Name)
+					ebc.Spec.Schedule = ""
+					return ebc
+				}(),
+			),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			ExpectedHTTPStatusCode: http.StatusOK,
+			ExpectedResponse: []*apiv2.EtcdBackupConfig{
+				test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name),
+				test.GenAPIEtcdBackupConfig("test-2", "clusterAbcID"),
+			},
+		},
+		{
+			Name:      "fail filtering by unknown type",
+			Type:      "unknown",
+			ProjectID: test.GenDefaultProject().Name,
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+				test.GenAdminUser("John", "john@acme.com", false),
+				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-2", test.GenDefaultCluster(), test.GenDefaultProject().Name),
+			),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			ExpectedHTTPStatusCode: http.StatusBadRequest,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
-			requestURL := fmt.Sprintf("/api/v2/projects/%s/etcdbackupconfigs", tc.ProjectID)
+			requestURL := fmt.Sprintf("/api/v2/projects/%s/etcdbackupconfigs?type=%s", tc.ProjectID, tc.Type)
 			req := httptest.NewRequest(http.MethodGet, requestURL, nil)
 			resp := httptest.NewRecorder()
 
