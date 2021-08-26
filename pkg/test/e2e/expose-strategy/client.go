@@ -25,7 +25,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
-	"k8c.io/kubermatic/v2/pkg/util/kubectl"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -71,14 +70,8 @@ type clientJig struct {
 }
 
 func (cj *clientJig) QueryApiserverVersion(kasHostPort string, insecure bool, expectServerVersion semver.Semver, retries, minSuccess int) bool {
-	binary, err := kubectl.BinaryForClusterVersion(expectServerVersion.Version)
-	if err != nil {
-		cj.Log.Errorf("Failed to determine kubectl binary to use: %v", err)
-		return false
-	}
-
 	c := []string{
-		binary,
+		"kubectl",
 		"version",
 		"-o",
 		"json",
