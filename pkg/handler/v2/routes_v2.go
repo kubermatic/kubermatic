@@ -531,6 +531,11 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/seeds/{seed_name}/settings").
 		Handler(r.getSeedSettings())
 
+	// Define an endpoint to retrieve the Kubernetes versions supported by the given provider
+	mux.Methods(http.MethodGet).
+		Path("/providers/{provider_name}/versions").
+		Handler(r.updatePreset())
+
 	// Define a set of endpoints for cluster templates management
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/clustertemplates").
@@ -3540,6 +3545,31 @@ func (r Routing) updatePreset() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(preset.UpdatePreset(r.presetsProvider, r.userInfoGetter)),
 		preset.DecodeUpdatePreset,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/{provider_name}/versions versions listVersions
+//
+// Lists all versions which don't result in automatic updates for a given provider
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []MasterVersion
+//       401: empty
+//       403: empty
+func (r Routing) listVersions() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(preset.ListProviderPresets(r.presetsProvider, r.userInfoGetter)),
+		common.DecodeEmptyReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

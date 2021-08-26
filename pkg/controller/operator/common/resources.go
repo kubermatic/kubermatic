@@ -54,6 +54,10 @@ const (
 	// cluster upgrade rules.
 	UpdatesFileName = "updates.yaml"
 
+	// ProviderIncompatibilitiesFileName is the name of the YAML file containing the configured
+	// cluster provider incompatibility rules.
+	ProviderIncompatibilitiesFileName = "provider-incompatibilities.yaml"
+
 	// KubernetesAddonsFileName is the name of the kubernetes addons manifest file
 	// in the master files.
 	KubernetesAddonsFileName = "kubernetes-addons.yaml"
@@ -122,10 +126,16 @@ func ExtraFilesSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reco
 				return s, fmt.Errorf("failed to encode updates as YAML: %v", err)
 			}
 
+			providerIncompatibilities, err := CreateProviderIncompatibilitiesYAML(&cfg.Spec.Versions)
+			if err != nil {
+				return s, fmt.Errorf("failed to encode provider incompatibilities as YAML: %v", err)
+			}
+
 			data := map[string]string{
-				KubernetesAddonsFileName: cfg.Spec.UserCluster.Addons.Kubernetes.DefaultManifests,
-				VersionsFileName:         versions,
-				UpdatesFileName:          updates,
+				KubernetesAddonsFileName:          cfg.Spec.UserCluster.Addons.Kubernetes.DefaultManifests,
+				VersionsFileName:                  versions,
+				UpdatesFileName:                   updates,
+				ProviderIncompatibilitiesFileName: providerIncompatibilities,
 			}
 
 			return createSecretData(s, data), nil

@@ -23,8 +23,16 @@ import (
 	"github.com/Masterminds/semver/v3"
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
+)
+
+type IncompatibilityCondition string
+
+const (
+	AlwaysCondition                IncompatibilityCondition = "always"
+	ExternalCloudProviderCondition IncompatibilityCondition = "externalCloudProvider"
 )
 
 var (
@@ -34,8 +42,16 @@ var (
 
 // Manager is a object to handle versions & updates from a predefined config
 type Manager struct {
-	versions []*Version
-	updates  []*Update
+	versions                  []*Version
+	updates                   []*Update
+	providerIncompatibilities []*ProviderIncompatibility
+}
+
+type ProviderIncompatibility struct {
+	Provider  kubermaticv1.ProviderType
+	Version   string                   `json:"version"`
+	Condition IncompatibilityCondition `json:"condition"`
+	Type      string                   `json:"type,omitempty"`
 }
 
 // Version is the object representing a Kubernetes version.
@@ -55,15 +71,16 @@ type Update struct {
 }
 
 // New returns a instance of Manager
-func New(versions []*Version, updates []*Update) *Manager {
+func New(versions []*Version, updates []*Update, providerIncompatibilities []*ProviderIncompatibility) *Manager {
 	return &Manager{
-		updates:  updates,
-		versions: versions,
+		updates:                   updates,
+		versions:                  versions,
+		providerIncompatibilities: providerIncompatibilities,
 	}
 }
 
 // NewFromFiles returns a instance of manager with the versions & updates loaded from the given paths
-func NewFromFiles(versionsFilename, updatesFilename string) (*Manager, error) {
+func NewFromFiles(versionsFilename, updatesFilename, providerIncompatibilitiesFilename string) (*Manager, error) {
 	updates, err := LoadUpdates(updatesFilename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load updates from %s: %v", updatesFilename, err)
@@ -85,7 +102,17 @@ func NewFromFiles(versionsFilename, updatesFilename string) (*Manager, error) {
 		}
 	}
 
-	return New(versions, updates), nil
+	providerIncompatibilities, err := LoadProviderIncompatibilities(providerIncompatibilitiesFilename)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load provider providerIncompatibilities from %s: %v", providerIncompatibilitiesFilename, err)
+	}
+	for _, i := range providerIncompatibilities {
+		if len(i.Type) == 0 {
+			i.Type = v1.KubernetesClusterType
+		}
+	}
+
+	return New(versions, updates, providerIncompatibilities), nil
 }
 
 // GetDefault returns the default version
@@ -127,6 +154,31 @@ func (m *Manager) GetVersions(clusterType string) ([]*Version, error) {
 				continue
 			}
 			masterVersions = append(masterVersions, v)
+		}
+	}
+	return masterVersions, nil
+}
+
+// GetVersionsV2 returns all Versions which don't result in automatic updates
+func (m *Manager) GetVersionsV2(clusterType string, provider kubermaticv1.ProviderType) ([]*Version, error) {
+	var masterVersions []*Version
+	for _, v := range m.versions {
+		if v.Type == clusterType {
+			autoUpdate, err := m.AutomaticControlplaneUpdate(v.Version.String(), clusterType)
+			if err != nil {
+				kubermaticlog.Logger.Errorf("Failed to get AutomaticUpdate for version %s: %v", v.Version.String(), err)
+				continue
+			}
+			if autoUpdate != nil {
+				continue
+			}
+			compatible, err := m.CheckProviderCompatibility(v.Version, provider, clusterType, AlwaysCondition)
+			if err != nil {
+				return nil, err
+			}
+			if compatible {
+				masterVersions = append(masterVersions, v)
+			}
 		}
 	}
 	return masterVersions, nil
@@ -210,7 +262,7 @@ func (m *Manager) automaticUpdate(fromVersionRaw, clusterType string, isForNode 
 }
 
 // GetPossibleUpdates returns possible updates for the version passed in
-func (m *Manager) GetPossibleUpdates(fromVersionRaw, clusterType string) ([]*Version, error) {
+func (m *Manager) GetPossibleUpdates(fromVersionRaw, clusterType string, provider kubermaticv1.ProviderType, conditions ...IncompatibilityCondition) ([]*Version, error) {
 	from, err := semver.NewVersion(fromVersionRaw)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse version %s: %v", fromVersionRaw, err)
@@ -239,10 +291,35 @@ func (m *Manager) GetPossibleUpdates(fromVersionRaw, clusterType string) ([]*Ver
 	for _, c := range toConstraints {
 		for _, v := range m.versions {
 			if c.Check(v.Version) && !from.Equal(v.Version) && v.Type == clusterType {
-				possibleVersions = append(possibleVersions, v)
+				compatible, err := m.CheckProviderCompatibility(v.Version, provider, clusterType, conditions...)
+				if err != nil {
+					return nil, err
+				}
+				if compatible {
+					possibleVersions = append(possibleVersions, v)
+				}
 			}
 		}
 	}
 
 	return possibleVersions, nil
+}
+
+func (m *Manager) CheckProviderCompatibility(version *semver.Version, provider kubermaticv1.ProviderType, clusterType string, conditions ...IncompatibilityCondition) (bool, error) {
+	var compatible = true
+	for _, pi := range m.providerIncompatibilities {
+		for _, ic := range conditions {
+			if pi.Provider == provider && (pi.Condition == ic || ic == AlwaysCondition || pi.Condition == AlwaysCondition) && pi.Type == clusterType {
+				c, err := semver.NewConstraint(pi.Version)
+				if err != nil {
+					return false, fmt.Errorf("failed to parse to constraint %s: %v", c, err)
+				}
+				if c.Check(version) {
+					compatible = false
+					break
+				}
+			}
+		}
+	}
+	return compatible, nil
 }

@@ -20,6 +20,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -312,6 +313,9 @@ type KubermaticVersioningConfiguration struct {
 	// updates as well. 'automaticNodeUpdate: true' implies 'automatic: true' as well,
 	// because Nodes may not have a newer version than the controlplane.
 	Updates []Update `json:"updates,omitempty"`
+
+	// ProviderIncompatibilities lists all the kubernetes version prohibited for a given provider. Wildcards are allowed, e.g. "1.22.*".
+	ProviderIncompatibilities []Incompatibility `json:"providerIncompatibilities,omitempty"`
 }
 
 // Update represents an update option for a user cluster.
@@ -332,6 +336,12 @@ type Update struct {
 	//nolint:staticcheck
 	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
 	AutomaticNodeUpdate *bool `json:"automaticNodeUpdate,omitempty,omitgenyaml"`
+}
+
+type Incompatibility struct {
+	Provider  kubermaticv1.ProviderType        `json:"provider,omitempty"`
+	Version   string                           `json:"version,omitempty"`
+	Condition version.IncompatibilityCondition `json:"condition,omitempty"`
 }
 
 // KubermaticVPAConfiguration configures the Kubernetes VPA.

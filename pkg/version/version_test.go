@@ -22,6 +22,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 )
 
 func TestAutomaticUpdate(t *testing.T) {
@@ -58,7 +59,7 @@ func TestAutomaticUpdate(t *testing.T) {
 					Automatic: true,
 					Type:      apiv1.KubernetesClusterType,
 				},
-			}),
+			}, nil),
 		},
 		{
 			name:            "test Kubernetes best automatic update with wild card for kubernetes cluster",
@@ -83,7 +84,7 @@ func TestAutomaticUpdate(t *testing.T) {
 					Automatic: true,
 					Type:      apiv1.KubernetesClusterType,
 				},
-			}),
+			}, nil),
 		},
 	}
 	for _, tc := range tests {
@@ -106,6 +107,270 @@ func TestAutomaticUpdate(t *testing.T) {
 				}
 				if updateVersion.Version.String() != tc.expectedVersion {
 					t.Fatalf("Unexpected update version to be %s. Got=%v", tc.expectedVersion, updateVersion)
+				}
+			}
+		})
+	}
+}
+
+func TestProviderIncompatibilitiesVersions(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name             string
+		manager          *Manager
+		clusterType      string
+		provider         kubermaticv1.ProviderType
+		expectedVersions []*Version
+	}{
+		{
+			name:        "No incompatibility for given provider",
+			provider:    kubermaticv1.ProviderAWS,
+			clusterType: apiv1.KubernetesClusterType,
+			manager: New([]*Version{
+				{
+					Version: semver.MustParse("1.21.0"),
+					Default: true,
+					Type:    apiv1.KubernetesClusterType,
+				},
+				{
+					Version: semver.MustParse("1.22.0"),
+					Default: false,
+					Type:    apiv1.KubernetesClusterType,
+				},
+			}, nil,
+				[]*ProviderIncompatibility{
+					{
+						Provider: kubermaticv1.ProviderVSphere,
+						Version:  "1.22.*",
+						Type:     apiv1.KubernetesClusterType,
+					},
+				}),
+			expectedVersions: []*Version{
+				{
+					Version: semver.MustParse("1.21.0"),
+				},
+				{
+					Version: semver.MustParse("1.22.0"),
+				},
+			},
+		},
+		{
+			name:        "Incompatibility for given provider",
+			provider:    kubermaticv1.ProviderVSphere,
+			clusterType: apiv1.KubernetesClusterType,
+			manager: New([]*Version{
+				{
+					Version: semver.MustParse("1.21.0"),
+					Default: true,
+					Type:    apiv1.KubernetesClusterType,
+				},
+				{
+					Version: semver.MustParse("1.22.0"),
+					Default: false,
+					Type:    apiv1.KubernetesClusterType,
+				},
+			}, nil,
+				[]*ProviderIncompatibility{
+					{
+						Provider: kubermaticv1.ProviderVSphere,
+						Version:  "1.22.*",
+						Type:     apiv1.KubernetesClusterType,
+					},
+				}),
+			expectedVersions: []*Version{
+				{
+					Version: semver.MustParse("1.21.0"),
+				},
+			},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+
+			availableVersions, err := tc.manager.GetVersionsV2(tc.clusterType, tc.provider)
+			if err != nil {
+				t.Fatalf("unexpected error %s", err)
+			}
+			for _, ev := range tc.expectedVersions {
+				var found bool
+				for _, av := range availableVersions {
+					if av.Version.String() == ev.Version.String() {
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Fatalf("expected version %s not found in availableVersions", ev.Version)
+				}
+			}
+
+			for _, av := range availableVersions {
+				var found bool
+				for _, ev := range tc.expectedVersions {
+					if av.Version.String() == ev.Version.String() {
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Fatalf("unexpected version %s is available", av.Version)
+				}
+			}
+		})
+	}
+}
+
+func TestProviderIncompatibilitiesUpdate(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name             string
+		manager          *Manager
+		clusterType      string
+		provider         kubermaticv1.ProviderType
+		fromVersion      string
+		conditions       []IncompatibilityCondition
+		expectedVersions []*Version
+	}{
+		{
+			name:        "Check with no incompatibility for given provider",
+			provider:    kubermaticv1.ProviderAWS,
+			clusterType: apiv1.KubernetesClusterType,
+			fromVersion: "1.21.0",
+			manager: New([]*Version{
+				{
+					Version: semver.MustParse("1.21.0"),
+					Default: true,
+					Type:    apiv1.KubernetesClusterType,
+				},
+				{
+					Version: semver.MustParse("1.22.0"),
+					Default: false,
+					Type:    apiv1.KubernetesClusterType,
+				},
+			}, []*Update{
+				{
+					From:      "1.21.*",
+					To:        "1.22.*",
+					Automatic: true,
+					Type:      apiv1.KubernetesClusterType,
+				},
+			}, []*ProviderIncompatibility{
+				{
+					Provider: kubermaticv1.ProviderVSphere,
+					Version:  "1.22.*",
+					Type:     apiv1.KubernetesClusterType,
+				},
+			}),
+			expectedVersions: []*Version{
+				{
+					Version: semver.MustParse("1.22.0"),
+				},
+			},
+		},
+		{
+			name:        "Check with conditioned Incompatibility for given provider",
+			provider:    kubermaticv1.ProviderVSphere,
+			clusterType: apiv1.KubernetesClusterType,
+			fromVersion: "1.21.0",
+			conditions:  []IncompatibilityCondition{ExternalCloudProviderCondition},
+			manager: New([]*Version{
+				{
+					Version: semver.MustParse("1.21.0"),
+					Default: true,
+					Type:    apiv1.KubernetesClusterType,
+				},
+				{
+					Version: semver.MustParse("1.22.0"),
+					Default: false,
+					Type:    apiv1.KubernetesClusterType,
+				},
+			}, []*Update{
+				{
+					From:      "1.21.*",
+					To:        "1.22.*",
+					Automatic: true,
+					Type:      apiv1.KubernetesClusterType,
+				},
+			}, []*ProviderIncompatibility{
+				{
+					Provider:  kubermaticv1.ProviderVSphere,
+					Version:   "1.22.*",
+					Type:      apiv1.KubernetesClusterType,
+					Condition: ExternalCloudProviderCondition,
+				},
+			}),
+			expectedVersions: []*Version{},
+		},
+		{
+			name:        "Check with unconditioned Incompatibility for given provider",
+			provider:    kubermaticv1.ProviderVSphere,
+			clusterType: apiv1.KubernetesClusterType,
+			fromVersion: "1.21.0",
+			manager: New([]*Version{
+				{
+					Version: semver.MustParse("1.21.0"),
+					Default: true,
+					Type:    apiv1.KubernetesClusterType,
+				},
+				{
+					Version: semver.MustParse("1.22.0"),
+					Default: false,
+					Type:    apiv1.KubernetesClusterType,
+				},
+			}, []*Update{
+				{
+					From:      "1.21.*",
+					To:        "1.22.*",
+					Automatic: true,
+					Type:      apiv1.KubernetesClusterType,
+				},
+			}, []*ProviderIncompatibility{
+				{
+					Provider:  kubermaticv1.ProviderVSphere,
+					Version:   "1.22.*",
+					Type:      apiv1.KubernetesClusterType,
+					Condition: ExternalCloudProviderCondition,
+				},
+			}),
+			expectedVersions: []*Version{
+				{
+					Version: semver.MustParse("1.22.0"),
+				},
+			},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+
+			availableVersions, err := tc.manager.GetPossibleUpdates(tc.fromVersion, tc.clusterType, tc.provider, tc.conditions...)
+			if err != nil {
+				t.Fatalf("unexpected error %s", err)
+			}
+			for _, ev := range tc.expectedVersions {
+				var found bool
+				for _, av := range availableVersions {
+					if av.Version.String() == ev.Version.String() {
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Fatalf("expected version %s not found in availableVersions", ev.Version)
+				}
+			}
+
+			for _, av := range availableVersions {
+				var found bool
+				for _, ev := range tc.expectedVersions {
+					if av.Version.String() == ev.Version.String() {
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Fatalf("unexpected version %s is available", av.Version)
 				}
 			}
 		})
