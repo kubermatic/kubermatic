@@ -93,6 +93,16 @@ type SeedSpec struct {
 	MLA *SeedMLASettings `json:"mla,omitempty"`
 	// DefaultComponentSettings are default values to set for newly created clusters.
 	DefaultComponentSettings ComponentSettings `json:"defaultComponentSettings,omitempty"`
+	// BackupRestore when set, enables backup and restore controllers with given configuration.
+	BackupRestore *SeedBackupRestoreConfiguration `json:"backupRestore,omitempty"`
+}
+
+// SeedBackupRestoreConfiguration are s3 settings used for backups and restores of user cluster etcds.
+type SeedBackupRestoreConfiguration struct {
+	// S3Endpoint is the S3 API endpoint to use for backup and restore. Defaults to s3.amazonaws.com.
+	S3Endpoint string `json:"s3Endpoint,omitempty"`
+	// S3BucketName is the S3 bucket name to use for backup and restore.
+	S3BucketName string `json:"s3BucketName,omitempty"`
 }
 
 type NodeportProxyConfig struct {

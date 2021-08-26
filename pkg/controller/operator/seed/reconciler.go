@@ -425,7 +425,17 @@ func (r *Reconciler) reconcileConfigMaps(ctx context.Context, cfg *operatorv1alp
 
 	var kubeSystemCreators []reconciling.NamedConfigMapCreatorGetter
 
-	if creator := kubermaticseed.RestoreS3SettingsConfigMapCreator(cfg); creator != nil {
+	// For backward compatibility check both sources for backup and restore configuration.
+	var backupRestore *kubermaticv1.SeedBackupRestoreConfiguration
+	if cfg.Spec.SeedController.BackupRestore.Enabled {
+		backupRestore.S3Endpoint = cfg.Spec.SeedController.BackupRestore.S3Endpoint
+		backupRestore.S3BucketName = cfg.Spec.SeedController.BackupRestore.S3BucketName
+	}
+	// Seed backup and restore configuration takes precedence.
+	if seed.Spec.BackupRestore != nil {
+		backupRestore = seed.Spec.BackupRestore
+	}
+	if creator := kubermaticseed.RestoreS3SettingsConfigMapCreator(backupRestore); creator != nil {
 		kubeSystemCreators = append(kubeSystemCreators, creator)
 	}
 
