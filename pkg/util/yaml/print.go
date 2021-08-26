@@ -32,6 +32,11 @@ func Encode(resource interface{}, output io.Writer) error {
 	encoder := yaml3.NewEncoder(output)
 	encoder.SetIndent(2)
 
+	cm, err := genyaml.NewCommentMap()
+	if err != nil {
+		return err
+	}
+
 	// genyaml is smart enough to not output a creationTimestamp when marshalling as YAML
-	return genyaml.NewCommentMap().EncodeYaml(resource, encoder)
+	return cm.EncodeYaml(resource, encoder)
 }
