@@ -31,9 +31,11 @@ import (
 )
 
 const (
-	imageName = "grafana/promtail"
-	tag       = "2.1.0"
-	appName   = "mla-promtail"
+	imageName     = "grafana/promtail"
+	imageTag      = "2.1.0"
+	initImageName = "busybox"
+	initImageTag  = "1.33"
+	appName       = "mla-promtail"
 
 	configVolumeName         = "config"
 	configVolumeMountPath    = "/etc/promtail"
@@ -48,6 +50,8 @@ const (
 
 	promtailNameKey     = "app.kubernetes.io/name"
 	promtailInstanceKey = "app.kubernetes.io/instance"
+
+	inotifyMaxUserInstances = 256
 )
 
 var (
@@ -72,10 +76,25 @@ func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 				RunAsUser:  pointer.Int64Ptr(0),
 				RunAsGroup: pointer.Int64Ptr(0),
 			}
+			ds.Spec.Template.Spec.InitContainers = []corev1.Container{
+				{
+					Name:            "init-inotify",
+					Image:           fmt.Sprintf("%s/%s:%s", resources.RegistryDocker, initImageName, initImageTag),
+					ImagePullPolicy: corev1.PullAlways,
+					Command: []string{
+						"sh",
+						"-c",
+						fmt.Sprintf("sysctl -w fs.inotify.max_user_instances=%d", inotifyMaxUserInstances),
+					},
+					SecurityContext: &corev1.SecurityContext{
+						Privileged: pointer.BoolPtr(true),
+					},
+				},
+			}
 			ds.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            "promtail",
-					Image:           fmt.Sprintf("%s/%s:%s", resources.RegistryDocker, imageName, tag),
+					Image:           fmt.Sprintf("%s/%s:%s", resources.RegistryDocker, imageName, imageTag),
 					ImagePullPolicy: corev1.PullAlways,
 					Args: []string{
 						"-config.file=/etc/promtail/promtail.yaml",
