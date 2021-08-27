@@ -19,9 +19,9 @@ groups:
     rules:
       - alert: VeleroBackupTakesTooLong
         annotations:
-          message: Backup schedule {{ $labels.schedule }} has been taking more than 60min already.
+          message: Last backup with schedule {{ $labels.schedule }} has not finished successfully within 60min.
           runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-velerobackuptakestoolong
-        expr: (velero_backup_attempt_total - velero_backup_success_total) > 0
+        expr: (increase(velero_backup_attempt_total[60m]) - increase(velero_backup_failure_total[60m])) > 0
         for: 60m
         labels:
           severity: warning
