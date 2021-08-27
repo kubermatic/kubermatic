@@ -18,11 +18,25 @@ limitations under the License.
 
 package admin
 
-// CreateOrUpdateMeteringCredentials creates or update the metering credentials.
-func CreateOrUpdateMeteringCredentials() error {
+import (
+	"context"
+	"net/http"
+
+	"k8c.io/kubermatic/v2/pkg/provider"
+)
+
+func createOrUpdateMeteringCredentials(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
 	return nil
 }
 
-func DecodeMeteringReq(c context.Context, r *http.Request) (interface{}, error) {
+func DecodeMeteringReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return nil, nil
+}
+
+func createOrUpdateMeteringConfigurations(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
+	return nil
+}
+
+func DecodeMeteringConfigurationsReq(_ context.Context, r *http.Request) (interface{}, error) {
 	return nil, nil
 }

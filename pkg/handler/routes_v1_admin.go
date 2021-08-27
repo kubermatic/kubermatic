@@ -85,6 +85,14 @@ func (r Routing) RegisterV1Admin(mux *mux.Router) {
 	mux.Methods(http.MethodDelete).
 		Path("/admin/seeds/{seed_name}").
 		Handler(r.deleteSeed())
+
+	mux.Methods(http.MethodPost).
+		Path("/admin/metering/credentials").
+		Handler(r.createOrUpdateMeteringCredentials())
+
+	mux.Methods(http.MethodPost).
+		Path("/admin/metering/configurations").
+		Handler(r.createOrUpdateMeteringConfigurations())
 }
 
 // swagger:route GET /api/v1/admin/settings admin getKubermaticSettings

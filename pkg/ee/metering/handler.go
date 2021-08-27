@@ -216,7 +216,7 @@ func getSeeds(seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedCl
 	for _, seed := range seeds {
 		seedClient, err := seedClientGetter(seed)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get seed client for seed %q: %v", seed, err)
+			return nil, fmt.Errorf("failed to get seed client for seed %q: %v", seed.Name, err)
 		}
 
 		seedClients[seed] = seedClient
