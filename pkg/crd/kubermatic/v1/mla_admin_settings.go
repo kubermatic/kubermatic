@@ -80,7 +80,7 @@ type LoggingRateLimitSettings struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// MLAAdminSettingList specifies a list of administrtor settigs for KKP
+// MLAAdminSettingList specifies a list of administrtor settings for KKP
 // user cluster MLA (monitoring, logging & alerting) stack
 type MLAAdminSettingList struct {
 	metav1.TypeMeta `json:",inline"`
