@@ -138,10 +138,21 @@ func DeleteSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter prov
 	}
 }
 
-// CreateOrUpdateMeteringCredentials deletes seed CRD element with the given name from the Kubermatic
+// CreateOrUpdateMeteringCredentials creates or updates metreing tool credentials.
 func CreateOrUpdateMeteringCredentials(seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		if err := createOrUpdateMeteringCredentials(ctx, request, seedsGetter, seedClientGetter); err != nil {
+			return nil, fmt.Errorf("failed to create/update metering credentials: %v", err)
+		}
+
+		return nil, nil
+	}
+}
+
+// CreateOrUpdateMeteringConfigurations configures kkp metering tool.
+func CreateOrUpdateMeteringConfigurations(seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		if err := createOrUpdateMeteringConfigurations(ctx, request, seedsGetter, seedClientGetter); err != nil {
 			return nil, fmt.Errorf("failed to create/update metering credentials: %v", err)
 		}
 

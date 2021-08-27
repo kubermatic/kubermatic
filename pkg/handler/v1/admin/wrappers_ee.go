@@ -25,11 +25,18 @@ import (
 	"net/http"
 )
 
-// createOrUpdateMeteringCredentials creates or update the metering credentials.
 func createOrUpdateMeteringCredentials(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
 	return metering.CreateOrUpdateCredentials(ctx, request, seedsGetter, seedClientGetter)
 }
 
 func DecodeMeteringReq(_ context.Context, r *http.Request) (interface{}, error) {
 	return metering.DecodeMeteringToolCredentials(r)
+}
+
+func createOrUpdateMeteringConfigurations(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
+	return metering.CreateOrUpdateConfigurations(ctx, request, seedsGetter, seedClientGetter)
+}
+
+func DecodeMeteringConfigurationsReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return metering.DecodeMeteringToolConfigurations(r)
 }

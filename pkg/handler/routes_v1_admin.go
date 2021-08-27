@@ -429,3 +429,27 @@ func (r Routing) createOrUpdateMeteringCredentials() http.Handler {
 		r.defaultServerOptions()...,
 	)
 }
+
+// swagger:route POST /api/v1/admin/metering/configurations admin createOrUpdateMeteringConfigurations
+//
+//     Configures KKP metering tool.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) createOrUpdateMeteringConfigurations() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(admin.CreateOrUpdateMeteringConfigurations(r.seedsGetter, r.seedsClientGetter)),
+		admin.DecodeMeteringConfigurationsReq,
+		EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}

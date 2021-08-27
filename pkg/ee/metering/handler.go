@@ -32,16 +32,95 @@ import (
 	"fmt"
 	"net/http"
 
+	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
+	storagev1 "k8s.io/api/storage/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+// CreateOrUpdateCredentials creates or updates the metering tool configurations.
+func CreateOrUpdateConfigurations(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
+	if seedsGetter == nil || seedClientGetter == nil {
+		return errors.New("parameter seedsGetter nor seedClientGetter cannot be nil")
+	}
+
+	req, ok := request.(meteringConfigurations)
+	if !ok {
+		return k8cerrors.NewBadRequest("invalid request")
+	}
+
+	seeds, err := getSeeds(seedsGetter, seedClientGetter)
+	if err != nil {
+		return fmt.Errorf("failed to gety seed clients: %v", err)
+	}
+
+	for seed, client := range seeds {
+		if err := updateSeedMeteringConfiguration(ctx, req, seed, client); err != nil {
+			return fmt.Errorf("failed to create or update metering tool credentials: %v", err)
+		}
+	}
+
+	return nil
+}
+
+func updateSeedMeteringConfiguration(ctx context.Context, meteringCfg meteringConfigurations, seed *v1.Seed, client ctrlruntimeclient.Client) error {
+	sc := &storagev1.StorageClass{}
+	if err := client.Get(ctx, types.NamespacedName{
+		Namespace: seed.Namespace,
+		Name:      meteringCfg.StorageClassName,
+	}, sc); err != nil {
+		return fmt.Errorf("failed to get storageClass %q:%v", meteringCfg.StorageClassName, err)
+	}
+
+	seed.Spec.Metering = &v1.MeteringConfigurations{
+		Enabled:          meteringCfg.Enabled,
+		StorageClassName: meteringCfg.StorageClassName,
+		StorageSize:      meteringCfg.StorageSize,
+	}
+
+	if err := client.Update(ctx, seed); err != nil {
+		return fmt.Errorf("failed to update seed %q: %v", seed.Name, err)
+	}
+
+	return nil
+}
+
+type meteringConfigurations struct {
+	Enabled          bool   `json:"enabled"`
+	StorageClassName string `json:"storageClassName"`
+	StorageSize      string `json:"storageSize"`
+}
+
+func (m meteringConfigurations) Validate() error {
+	if m.Enabled {
+		if m.StorageClassName == "" || m.StorageSize == "" {
+			return errors.New("storageClassName or storageSize cannot be empty when the metering tool is enabled")
+		}
+
+		if _, err := resource.ParseQuantity(m.StorageSize); err != nil {
+			return fmt.Errorf("inapproperiate storageClass size: %v", err)
+		}
+	}
+
+	return nil
+}
+
+func DecodeMeteringToolConfigurations(r *http.Request) (interface{}, error) {
+	var req meteringConfigurations
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
 
 // CreateOrUpdateCredentials creates or updates the metering tool credentials.
 func CreateOrUpdateCredentials(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
@@ -58,7 +137,7 @@ func CreateOrUpdateCredentials(ctx context.Context, request interface{}, seedsGe
 		return err
 	}
 
-	clients, err := getSeedsClient(seedsGetter, seedClientGetter)
+	seeds, err := getSeeds(seedsGetter, seedClientGetter)
 	if err != nil {
 		return fmt.Errorf("failed to gety seed clients: %v", err)
 	}
@@ -70,7 +149,7 @@ func CreateOrUpdateCredentials(ctx context.Context, request interface{}, seedsGe
 		"endpoint":  []byte(req.Endpoint),
 	}
 
-	for _, client := range clients {
+	for _, client := range seeds {
 		if err := createOrUpdateMeteringToolSecret(ctx, client, data); err != nil {
 			return fmt.Errorf("failed to create or update metering tool credentials: %v", err)
 		}
@@ -79,57 +158,6 @@ func CreateOrUpdateCredentials(ctx context.Context, request interface{}, seedsGe
 	return nil
 }
 
-func getSeedsClient(seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) ([]ctrlruntimeclient.Client, error) {
-	seeds, err := seedsGetter()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get seeds: %v", err)
-	}
-
-	var seedClients = make([]ctrlruntimeclient.Client, len(seeds))
-
-	for _, seed := range seeds {
-		seedClient, err := seedClientGetter(seed)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get seed client for seed %q: %v", seed, err)
-		}
-
-		seedClients = append(seedClients, seedClient)
-	}
-
-	if len(seedClients) < 1 {
-		return nil, errors.New("no seeds found")
-	}
-
-	return seedClients, nil
-}
-
-// credentials contains the aws credentials to access s3 bucket.
-type credentials struct {
-	BucketName string `json:"bucketName"`
-	AccessKey  string `json:"accessKey"`
-	SecretKey  string `json:"secretKey"`
-	Endpoint   string `json:"endpoint"`
-}
-
-func (c credentials) Validate() error {
-	if c.Endpoint == "" || c.AccessKey == "" || c.SecretKey == "" || c.BucketName == "" {
-		return fmt.Errorf("accessKey, secretKey, bucketName or endpoint cannot be empty")
-	}
-
-	return nil
-}
-
-func DecodeMeteringToolCredentials(r *http.Request) (interface{}, error) {
-	var req credentials
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// createOrUpdateMeteringToolSecret creates an s3 secret with all the needed aws credentials that are used to interact
-// with the buckets where the metering tool exports the metering reports.
 func createOrUpdateMeteringToolSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, secretData map[string][]byte) error {
 	const secretName = "metering-s3"
 
@@ -175,4 +203,53 @@ func createOrUpdateMeteringToolSecret(ctx context.Context, seedClient ctrlruntim
 	}
 
 	return nil
+}
+
+func getSeeds(seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) (map[*v1.Seed]ctrlruntimeclient.Client, error) {
+	seeds, err := seedsGetter()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get seeds: %v", err)
+	}
+
+	var seedClients = make(map[*v1.Seed]ctrlruntimeclient.Client, len(seeds))
+
+	for _, seed := range seeds {
+		seedClient, err := seedClientGetter(seed)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get seed client for seed %q: %v", seed, err)
+		}
+
+		seedClients[seed] = seedClient
+	}
+
+	if len(seedClients) < 1 {
+		return nil, errors.New("no seeds found")
+	}
+
+	return seedClients, nil
+}
+
+// credentials contains the aws credentials to access s3 bucket.
+type credentials struct {
+	BucketName string `json:"bucketName"`
+	AccessKey  string `json:"accessKey"`
+	SecretKey  string `json:"secretKey"`
+	Endpoint   string `json:"endpoint"`
+}
+
+func (c credentials) Validate() error {
+	if c.Endpoint == "" || c.AccessKey == "" || c.SecretKey == "" || c.BucketName == "" {
+		return fmt.Errorf("accessKey, secretKey, bucketName or endpoint cannot be empty")
+	}
+
+	return nil
+}
+
+func DecodeMeteringToolCredentials(r *http.Request) (interface{}, error) {
+	var req credentials
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return nil, err
+	}
+
+	return req, nil
 }
