@@ -53,16 +53,6 @@ func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 					Verbs: []string{"list", "watch"},
 				},
 				{
-					APIGroups: []string{"extensions"},
-					Resources: []string{
-						"daemonsets",
-						"deployments",
-						"replicasets",
-						"ingresses",
-					},
-					Verbs: []string{"list", "watch"},
-				},
-				{
 					APIGroups: []string{"apps"},
 					Resources: []string{
 						"daemonsets",
@@ -127,6 +117,7 @@ func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 					APIGroups: []string{"networking.k8s.io"},
 					Resources: []string{
 						"networkpolicies",
+						"ingresses",
 					},
 					Verbs: []string{"list", "watch"},
 				},
