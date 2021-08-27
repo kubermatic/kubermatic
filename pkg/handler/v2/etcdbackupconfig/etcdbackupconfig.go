@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
@@ -40,6 +41,11 @@ import (
 	"k8s.io/client-go/tools/reference"
 )
 
+const (
+	automaticBackup = "automatic"
+	snapshot        = "snapshot"
+)
+
 func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
@@ -47,10 +53,6 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 
 		c, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 		if err != nil {
-			return nil, err
-		}
-
-		if err := req.validate(); err != nil {
 			return nil, err
 		}
 
@@ -86,14 +88,6 @@ type ebcBody struct {
 	Name string `json:"name"`
 	// EtcdBackupConfigSpec Spec of the etcd backup config
 	Spec apiv2.EtcdBackupConfigSpec `json:"spec"`
-}
-
-func (r *createEtcdBackupConfigReq) validate() error {
-	// schedule and keep have to either be both set, or both absent
-	if (r.Body.Spec.Keep == nil && r.Body.Spec.Schedule != "") || (r.Body.Spec.Keep != nil && r.Body.Spec.Schedule == "") {
-		return errors.NewBadRequest("EtcdBackupConfig has to have both Schedule and Keep options set or both empty")
-	}
-	return nil
 }
 
 func DecodeCreateEtcdBackupConfigReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -218,9 +212,6 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(patchEtcdBackupConfigReq)
-		if err := req.validate(); err != nil {
-			return nil, err
-		}
 
 		c, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 		if err != nil {
@@ -278,17 +269,12 @@ func DecodePatchEtcdBackupConfigReq(c context.Context, r *http.Request) (interfa
 	return req, nil
 }
 
-func (r *patchEtcdBackupConfigReq) validate() error {
-	// schedule and keep have to either be both set, or both absent
-	if (r.Body.Keep == nil && r.Body.Schedule != "") || (r.Body.Keep != nil && r.Body.Schedule == "") {
-		return errors.NewBadRequest("EtcdBackupConfig has to have both Schedule and Keep options set or both empty")
-	}
-	return nil
-}
-
 func ProjectListEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listProjectEtcdBackupConfigReq)
+		if err := req.validate(); err != nil {
+			return nil, err
+		}
 
 		ebcLists, err := listProjectEtcdBackupConfig(ctx, userInfoGetter, req.ProjectID)
 		if err != nil {
@@ -297,8 +283,11 @@ func ProjectListEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoi
 
 		var ebcAPIList []*apiv2.EtcdBackupConfig
 		for _, ebcList := range ebcLists {
-			for _, er := range ebcList.Items {
-				ebcAPIList = append(ebcAPIList, convertInternalToAPIEtcdBackupConfig(&er))
+			for _, ebc := range ebcList.Items {
+				ebcAPI := convertInternalToAPIEtcdBackupConfig(&ebc)
+				if req.Type == "" || strings.EqualFold(req.Type, getEtcdBackupConfigType(ebcAPI)) {
+					ebcAPIList = append(ebcAPIList, ebcAPI)
+				}
 			}
 		}
 
@@ -306,10 +295,30 @@ func ProjectListEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoi
 	}
 }
 
+func getEtcdBackupConfigType(ebc *apiv2.EtcdBackupConfig) string {
+	if ebc.Spec.Schedule == "" {
+		return snapshot
+	}
+	return automaticBackup
+}
+
 // listProjectEtcdBackupConfigReq represents a request for listing project etcd backupConfigs
 // swagger:parameters listProjectEtcdBackupConfig
 type listProjectEtcdBackupConfigReq struct {
 	common.ProjectReq
+
+	// in: query
+	Type string `json:"type,omitempty"`
+}
+
+func (r *listProjectEtcdBackupConfigReq) validate() error {
+	if len(r.Type) > 0 {
+		if r.Type == automaticBackup || r.Type == snapshot {
+			return nil
+		}
+		return errors.NewBadRequest("wrong query parameter, unsupported type: %s", r.Type)
+	}
+	return nil
 }
 
 func DecodeListProjectEtcdBackupConfigReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -321,6 +330,8 @@ func DecodeListProjectEtcdBackupConfigReq(c context.Context, r *http.Request) (i
 	}
 
 	req.ProjectReq = pr.(common.ProjectReq)
+
+	req.Type = r.URL.Query().Get("type")
 	return req, nil
 }
 

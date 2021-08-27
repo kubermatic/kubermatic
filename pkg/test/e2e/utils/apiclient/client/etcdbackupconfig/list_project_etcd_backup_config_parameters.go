@@ -62,6 +62,9 @@ type ListProjectEtcdBackupConfigParams struct {
 	// ProjectID.
 	ProjectID string
 
+	// Type.
+	Type *string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -126,6 +129,17 @@ func (o *ListProjectEtcdBackupConfigParams) SetProjectID(projectID string) {
 	o.ProjectID = projectID
 }
 
+// WithType adds the typeVar to the list project etcd backup config params
+func (o *ListProjectEtcdBackupConfigParams) WithType(typeVar *string) *ListProjectEtcdBackupConfigParams {
+	o.SetType(typeVar)
+	return o
+}
+
+// SetType adds the type to the list project etcd backup config params
+func (o *ListProjectEtcdBackupConfigParams) SetType(typeVar *string) {
+	o.Type = typeVar
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListProjectEtcdBackupConfigParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -137,6 +151,23 @@ func (o *ListProjectEtcdBackupConfigParams) WriteToRequest(r runtime.ClientReque
 	// path param project_id
 	if err := r.SetPathParam("project_id", o.ProjectID); err != nil {
 		return err
+	}
+
+	if o.Type != nil {
+
+		// query param type
+		var qrType string
+
+		if o.Type != nil {
+			qrType = *o.Type
+		}
+		qType := qrType
+		if qType != "" {
+
+			if err := r.SetQueryParam("type", qType); err != nil {
+				return err
+			}
+		}
 	}
 
 	if len(res) > 0 {
