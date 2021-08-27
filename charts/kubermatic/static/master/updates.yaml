@@ -20,7 +20,7 @@ updates:
 - from: 1.21.*
   to: 1.21.*
   type: kubernetes
-- from: 1.22.*
+- from: 1.21.*
   to: 1.22.*
   type: kubernetes
 - from: 1.22.*
