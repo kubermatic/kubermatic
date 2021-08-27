@@ -14285,6 +14285,12 @@
             "name": "project_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Type",
+            "name": "type",
+            "in": "query"
           }
         ],
         "responses": {
