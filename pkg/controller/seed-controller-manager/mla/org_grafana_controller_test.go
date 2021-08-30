@@ -84,6 +84,7 @@ func TestOrgGrafanaReconcile(t *testing.T) {
 
 	board.Overwrite = true
 	board.Dashboard.Title = "dashboard"
+	board.Dashboard.UID = "unique"
 	boardData, err := json.Marshal(board)
 	assert.Nil(t, err)
 	testCases := []struct {
@@ -135,7 +136,7 @@ func TestOrgGrafanaReconcile(t *testing.T) {
 						Name:      grafanaDashboardsConfigmapNamePrefix + "-defaults",
 						Namespace: "mla",
 					},
-					Data: map[string]string{"first": `{"title": "dashboard"}`},
+					Data: map[string]string{"first": `{"title": "dashboard", "uid":"unique"}`},
 				},
 				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
