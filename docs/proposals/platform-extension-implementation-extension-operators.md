@@ -59,13 +59,13 @@ managed by [OLM](https://olm.operatorframework.io/).
 
 Reconciles `Extension` CRs and takes care of registering Operators for
 Extensions in the Extension catalog, making them available for installation.
-It basically translates `Extensions` to CRs needed by the OML operator either
+It basically translates `Extensions` to CRs needed by the OLM operator either
 wrapping OLM's catalog operator or implementing the necessary parts to fit our
 requirements.
 
 ### Extension Controller
 
-The extension controller reconciles ExtensionOperator CRs. It runs in the KPP
+The extension controller reconciles ExtensionOperator CRs. It runs in the KKP
 controller manager in the seed cluster and manages OLM CRs on all user
 clusters. It acts as a wrapping layer around the OLM operator which taking care
 of the whole lifecycle of application operators.
