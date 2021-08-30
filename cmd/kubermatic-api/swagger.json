@@ -406,7 +406,7 @@
       }
     },
     "/api/v1/admin/metering/configurations": {
-      "post": {
+      "put": {
         "produces": [
           "application/json"
         ],
@@ -435,7 +435,7 @@
       }
     },
     "/api/v1/admin/metering/credentials": {
-      "post": {
+      "put": {
         "produces": [
           "application/json"
         ],
