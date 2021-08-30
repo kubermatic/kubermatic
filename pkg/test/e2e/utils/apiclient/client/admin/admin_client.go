@@ -71,7 +71,7 @@ func (a *Client) CreateOrUpdateMeteringConfigurations(params *CreateOrUpdateMete
 	}
 	op := &runtime.ClientOperation{
 		ID:                 "createOrUpdateMeteringConfigurations",
-		Method:             "POST",
+		Method:             "PUT",
 		PathPattern:        "/api/v1/admin/metering/configurations",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
@@ -565,7 +565,7 @@ func (a *Client) UpdateOrCreateMeteringCredentials(params *UpdateOrCreateMeterin
 	}
 	op := &runtime.ClientOperation{
 		ID:                 "updateOrCreateMeteringCredentials",
-		Method:             "POST",
+		Method:             "PUT",
 		PathPattern:        "/api/v1/admin/metering/credentials",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
