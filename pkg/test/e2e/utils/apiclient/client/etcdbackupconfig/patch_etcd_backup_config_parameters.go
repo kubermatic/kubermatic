@@ -67,8 +67,8 @@ type PatchEtcdBackupConfigParams struct {
 	// ClusterID.
 	ClusterID string
 
-	// EbcName.
-	EtcdBackupConfigName string
+	// EbcID.
+	EtcdBackupConfigID string
 
 	// ProjectID.
 	ProjectID string
@@ -148,15 +148,15 @@ func (o *PatchEtcdBackupConfigParams) SetClusterID(clusterID string) {
 	o.ClusterID = clusterID
 }
 
-// WithEtcdBackupConfigName adds the ebcName to the patch etcd backup config params
-func (o *PatchEtcdBackupConfigParams) WithEtcdBackupConfigName(ebcName string) *PatchEtcdBackupConfigParams {
-	o.SetEtcdBackupConfigName(ebcName)
+// WithEtcdBackupConfigID adds the ebcID to the patch etcd backup config params
+func (o *PatchEtcdBackupConfigParams) WithEtcdBackupConfigID(ebcID string) *PatchEtcdBackupConfigParams {
+	o.SetEtcdBackupConfigID(ebcID)
 	return o
 }
 
-// SetEtcdBackupConfigName adds the ebcName to the patch etcd backup config params
-func (o *PatchEtcdBackupConfigParams) SetEtcdBackupConfigName(ebcName string) {
-	o.EtcdBackupConfigName = ebcName
+// SetEtcdBackupConfigID adds the ebcId to the patch etcd backup config params
+func (o *PatchEtcdBackupConfigParams) SetEtcdBackupConfigID(ebcID string) {
+	o.EtcdBackupConfigID = ebcID
 }
 
 // WithProjectID adds the projectID to the patch etcd backup config params
@@ -188,8 +188,8 @@ func (o *PatchEtcdBackupConfigParams) WriteToRequest(r runtime.ClientRequest, re
 		return err
 	}
 
-	// path param ebc_name
-	if err := r.SetPathParam("ebc_name", o.EtcdBackupConfigName); err != nil {
+	// path param ebc_id
+	if err := r.SetPathParam("ebc_id", o.EtcdBackupConfigID); err != nil {
 		return err
 	}
 
