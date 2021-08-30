@@ -1140,6 +1140,11 @@ func (in *ClusterTemplate) DeepCopyInto(out *ClusterTemplate) {
 			(*out)[key] = val
 		}
 	}
+	if in.UserSSHKeys != nil {
+		in, out := &in.UserSSHKeys, &out.UserSSHKeys
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	in.Spec.DeepCopyInto(&out.Spec)
 	return
 }
