@@ -15530,6 +15530,41 @@
         }
       }
     },
+    "/api/v2/providers/{provider_name}/versions": {
+      "get": {
+        "description": "Lists all versions which don't result in automatic updates for a given provider",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "versions"
+        ],
+        "operationId": "listVersions",
+        "responses": {
+          "200": {
+            "description": "MasterVersion",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/MasterVersion"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/seeds/{seed_name}/settings": {
       "get": {
         "produces": [
