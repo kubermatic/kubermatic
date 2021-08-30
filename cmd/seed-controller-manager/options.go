@@ -58,6 +58,7 @@ type controllerRunOptions struct {
 	workerName                                       string
 	versionsFile                                     string
 	updatesFile                                      string
+	providerIncompatibilitiesFile                    string
 	workerCount                                      int
 	overwriteRegistry                                string
 	nodePortRange                                    string
@@ -138,6 +139,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.workerName, "worker-name", "", "The name of the worker that will only processes resources with label=worker-name.")
 	flag.StringVar(&c.versionsFile, "versions", "versions.yaml", "The versions.yaml file path")
 	flag.StringVar(&c.updatesFile, "updates", "updates.yaml", "The updates.yaml file path")
+	flag.StringVar(&c.providerIncompatibilitiesFile, "provider-incompatibilities.yaml", "provider-incompatibilities.yaml", "The provider-incompatibilities.yaml file path")
 	flag.IntVar(&c.workerCount, "worker-count", 4, "Number of workers which process the clusters in parallel.")
 	flag.StringVar(&c.overwriteRegistry, "overwrite-registry", "", "registry to use for all images")
 	flag.StringVar(&c.nodePortRange, "nodeport-range", resources.DefaultNodePortRange, "Deprecated: configure defaultComponentSettings on Seed resource. NodePort range to use for new clusters. It must be within the NodePort range of the seed-cluster")
