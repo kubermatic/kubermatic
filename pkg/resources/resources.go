@@ -168,7 +168,7 @@ const (
 	KubernetesDashboardKubeconfigSecretName = "kubernetes-dashboard-kubeconfig"
 	// GatekeeperWebhookServerCertSecretName is the name of the gatekeeper webhook cert secret name
 	GatekeeperWebhookServerCertSecretName = "gatekeeper-webhook-server-cert"
-
+	PodDisruptionName                     = "gatekeeper-controller-manager"
 	// ImagePullSecretName specifies the name of the dockercfg secret used to access the private repo.
 	ImagePullSecretName = "dockercfg"
 
@@ -335,7 +335,8 @@ const (
 	// KubermaticNamespace is the main kubermatic namespace
 	KubermaticNamespace = "kubermatic"
 	// GatekeeperNamespace is the main gatkeeper namespace where the gatekeeper config is stored
-	GatekeeperNamespace = "gatekeeper-system"
+	GatekeeperNamespace        = "gatekeeper-system"
+	ExperimentalEnableMutation = "false"
 	// CloudInitSettingsNamespace are used in order to reach, authenticate and be authorized by the api server, to fetch
 	// the machine  provisioning cloud-init
 	CloudInitSettingsNamespace = "cloud-init-settings"
@@ -381,6 +382,9 @@ const (
 	GatekeeperConfigCRDName = "configs.config.gatekeeper.sh"
 	// GatekeeperConstraintTemplateCRDName defines the CRD name for gatekeeper constraint template objects
 	GatekeeperConstraintTemplateCRDName = "constrainttemplates.templates.gatekeeper.sh"
+	MutatorPodStatusCRDName             = "mutatorpodstatuses.status.gatekeeper.sh"
+	AssignCRDName                       = "assign.mutations.gatekeeper.sh"
+	AssignMetadataCRDName               = "assignmetadata.mutations.gatekeeper.sh"
 	// GatekeeperConstraintPodStatusCRDName defines the CRD name for gatekeeper ConstraintPodStatus objects
 	GatekeeperConstraintPodStatusCRDName = "constraintpodstatuses.status.gatekeeper.sh"
 	// GatekeeperConstraintTemplatePodStatusCRDName defines the CRD name for gatekeeper ConstraintTemplatePodStatus objects
@@ -393,7 +397,7 @@ const (
 	// GatekeeperValidatingWebhookConfigurationName is the name of the gatekeeper validating webhook
 	// configuration
 	GatekeeperValidatingWebhookConfigurationName = "gatekeeper-validating-webhook-configuration"
-
+	GatekeeperMutatingWebhookConfigurationName   = "gatekeeper-mutating-webhook-configuration"
 	// InternalUserClusterAdminKubeconfigSecretName is the name of the secret containing an admin kubeconfig that can only be used from
 	// within the seed cluster
 	InternalUserClusterAdminKubeconfigSecretName = "internal-admin-kubeconfig"

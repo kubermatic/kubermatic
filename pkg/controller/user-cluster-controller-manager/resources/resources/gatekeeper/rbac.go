@@ -219,6 +219,20 @@ func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 						"watch",
 					},
 				},
+				{
+					APIGroups:     []string{"admissionregistration.k8s.io"},
+					Resources:     []string{"mutatingwebhookconfigurations"},
+					ResourceNames: []string{resources.GatekeeperMutatingWebhookConfigurationName},
+					Verbs: []string{
+						"create",
+						"delete",
+						"get",
+						"list",
+						"patch",
+						"update",
+						"watch",
+					},
+				},
 			}
 			return r, nil
 		}

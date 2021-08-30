@@ -476,7 +476,10 @@ func (r *reconciler) reconcileCRDs(ctx context.Context) error {
 			gatekeeper.ConfigCRDCreator(),
 			gatekeeper.ConstraintTemplateCRDCreator(),
 			gatekeeper.ConstraintPodStatusCRDCreator(),
-			gatekeeper.ConstraintTemplatePodStatusCRDCreator())
+			gatekeeper.ConstraintTemplatePodStatusCRDCreator(),
+			gatekeeper.MutatorPodStatusCRDCreator(),
+			gatekeeper.AssignCRDCreator(),
+			gatekeeper.AssignMetadataCRDCreator())
 	}
 
 	if err := reconciling.ReconcileCustomResourceDefinitions(ctx, creators, "", r.Client); err != nil {
@@ -488,6 +491,9 @@ func (r *reconciler) reconcileCRDs(ctx context.Context) error {
 func (r *reconciler) reconcileMutatingWebhookConfigurations(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedMutatingWebhookConfigurationCreatorGetter{
 		machinecontroller.MutatingwebhookConfigurationCreator(data.caCert.Cert, r.namespace),
+	}
+	if r.opaIntegration {
+		creators = append(creators, gatekeeper.MutatingWebhookConfigurationCreator(r.opaWebhookTimeout))
 	}
 
 	if err := reconciling.ReconcileMutatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
@@ -764,6 +770,15 @@ func (r *reconciler) reconcileDeployments(ctx context.Context) error {
 func (r *reconciler) reconcilePodDisruptionBudgets(ctx context.Context) error {
 	creators := []reconciling.NamedPodDisruptionBudgetCreatorGetter{
 		coredns.PodDisruptionBudgetCreator(),
+	}
+	// OPA relate resources
+	if r.opaIntegration {
+		creators = []reconciling.NamedPodDisruptionBudgetCreatorGetter{
+			gatekeeper.PodDisruptionBudgetCreator(),
+		}
+		if err := reconciling.ReconcilePodDisruptionBudgets(ctx, creators, resources.GatekeeperNamespace, r.Client); err != nil {
+			return fmt.Errorf("failed to reconcile PodDisruptionBudgets in namespace %s: %v", resources.GatekeeperNamespace, err)
+		}
 	}
 	if err := reconciling.ReconcilePodDisruptionBudgets(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile PodDisruptionBudgets: %v", err)
