@@ -21,6 +21,8 @@ import (
 	"fmt"
 
 	"github.com/go-kit/kit/endpoint"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"k8c.io/kubermatic/v2/pkg/handler/v1/metering"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -28,8 +30,16 @@ import (
 )
 
 // CreateOrUpdateMeteringCredentials creates or updates metrering tool MeteringSecretReq.
-func CreateOrUpdateMeteringCredentials(seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
+func CreateOrUpdateMeteringCredentials(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
+
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, err
+		}
+		if !userInfo.IsAdmin {
+			return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
+		}
 
 		request, ok := req.(metering.MeteringSecretReq)
 		if !ok {
@@ -49,8 +59,16 @@ func CreateOrUpdateMeteringCredentials(seedsGetter provider.SeedsGetter, seedCli
 }
 
 // CreateOrUpdateMeteringConfigurations configures kkp metering tool.
-func CreateOrUpdateMeteringConfigurations(seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
+func CreateOrUpdateMeteringConfigurations(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
+
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, err
+		}
+		if !userInfo.IsAdmin {
+			return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
+		}
 
 		request, ok := req.(metering.MeteringConfigurationReq)
 		if !ok {
@@ -69,8 +87,16 @@ func CreateOrUpdateMeteringConfigurations(seedsGetter provider.SeedsGetter, seed
 	}
 }
 
-func ListMeteringReportsEndpoint(seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
+func ListMeteringReportsEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
+
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, err
+		}
+		if !userInfo.IsAdmin {
+			return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
+		}
 
 		request, ok := req.(metering.ListMeteringReportReq)
 		if !ok {
@@ -86,8 +112,16 @@ func ListMeteringReportsEndpoint(seedsGetter provider.SeedsGetter, seedClientGet
 	}
 }
 
-func GetMeteringReportEndpoint(seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
+func GetMeteringReportEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
+
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, err
+		}
+		if !userInfo.IsAdmin {
+			return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
+		}
 
 		request, ok := req.(metering.GetMeteringReportReq)
 		if !ok {

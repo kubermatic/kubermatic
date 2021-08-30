@@ -442,7 +442,7 @@ func (r Routing) createOrUpdateMeteringCredentials() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(admin.CreateOrUpdateMeteringCredentials(r.seedsGetter, r.seedsClientGetter)),
+		)(admin.CreateOrUpdateMeteringCredentials(r.userInfoGetter, r.seedsGetter, r.seedsClientGetter)),
 		metering.DecodeMeteringReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
@@ -466,7 +466,7 @@ func (r Routing) createOrUpdateMeteringConfigurations() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(admin.CreateOrUpdateMeteringConfigurations(r.seedsGetter, r.seedsClientGetter)),
+		)(admin.CreateOrUpdateMeteringConfigurations(r.userInfoGetter, r.seedsGetter, r.seedsClientGetter)),
 		metering.DecodeMeteringConfigurationsReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
@@ -490,7 +490,7 @@ func (r Routing) listMeteringReports() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(admin.ListMeteringReportsEndpoint(r.seedsGetter, r.seedsClientGetter)),
+		)(admin.ListMeteringReportsEndpoint(r.userInfoGetter, r.seedsGetter, r.seedsClientGetter)),
 		metering.DecodeListMeteringReportReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
@@ -514,7 +514,7 @@ func (r Routing) getMeteringReport() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(admin.GetMeteringReportEndpoint(r.seedsGetter, r.seedsClientGetter)),
+		)(admin.GetMeteringReportEndpoint(r.userInfoGetter, r.seedsGetter, r.seedsClientGetter)),
 		metering.DecodeGetMeteringReportReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
