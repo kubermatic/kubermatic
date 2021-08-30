@@ -20,11 +20,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/Masterminds/semver/v3"
 
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/userdata/flatcar"
+
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
@@ -2187,6 +2189,22 @@ type SeedCluster struct {
 	SeedName  string
 	ClusterID string
 }
+
+// ReportList holds objects names for available reports
+// swagger:model MeteringReportList
+//type ReportList []MeteringReport
+
+// MeteringReport holds objects names and metadata for available reports
+// swagger:model MeteringReport
+type MeteringReport struct {
+	Name         string    `json:"name"`
+	LastModified time.Time `json:"lastModified"`
+	Size         int64     `json:"size"`
+}
+
+// ReportURL represent an S3 pre signed URL to download a report
+// swagger:model MeteringReportURL
+type ReportURL string
 
 const (
 	// NodeDeletionFinalizer indicates that the nodes still need cleanup

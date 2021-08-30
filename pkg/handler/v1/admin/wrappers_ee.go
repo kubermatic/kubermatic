@@ -20,9 +20,11 @@ package admin
 
 import (
 	"context"
+	"net/http"
+
+	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/ee/metering"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"net/http"
 )
 
 func createOrUpdateMeteringCredentials(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
@@ -39,4 +41,12 @@ func createOrUpdateMeteringConfigurations(ctx context.Context, request interface
 
 func DecodeMeteringConfigurationsReq(_ context.Context, r *http.Request) (interface{}, error) {
 	return metering.DecodeMeteringToolConfigurations(r)
+}
+
+func listMeteringReports(ctx context.Context, request ListMeteringReportReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) ([]v1.MeteringReport, error) {
+	return metering.ListReports(ctx, request, seedsGetter, seedClientGetter)
+}
+
+func getMeteringReport(ctx context.Context, request GetMeteringReportReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) (string, error) {
+	return metering.GetReport(ctx, request, seedsGetter, seedClientGetter)
 }

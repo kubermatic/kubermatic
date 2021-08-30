@@ -86,6 +86,7 @@ func (r Routing) RegisterV1Admin(mux *mux.Router) {
 		Path("/admin/seeds/{seed_name}").
 		Handler(r.deleteSeed())
 
+	// Defines a set of HTTP endpoints to access metering reports
 	mux.Methods(http.MethodPut).
 		Path("/admin/metering/credentials").
 		Handler(r.createOrUpdateMeteringCredentials())
@@ -93,6 +94,15 @@ func (r Routing) RegisterV1Admin(mux *mux.Router) {
 	mux.Methods(http.MethodPut).
 		Path("/admin/metering/configurations").
 		Handler(r.createOrUpdateMeteringConfigurations())
+
+	mux.Methods(http.MethodGet).
+		Path("/admin/metering/reports").
+		Handler(r.listMeteringReports())
+
+	mux.Methods(http.MethodGet).
+		Path("/admin/metering/reports/{report_name}").
+		Handler(r.getMeteringReport())
+
 }
 
 // swagger:route GET /api/v1/admin/settings admin getKubermaticSettings
@@ -457,6 +467,55 @@ func (r Routing) createOrUpdateMeteringConfigurations() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(admin.CreateOrUpdateMeteringConfigurations(r.seedsGetter, r.seedsClientGetter)),
 		admin.DecodeMeteringConfigurationsReq,
+		EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+
+// swagger:route GET /api/v1/admin/metering/reports metering reports listMeteringReports
+//
+//     List metering reports
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []MeteringReport
+//       401: empty
+//       403: empty
+func (r Routing) listMeteringReports() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(admin.ListMeteringReportsEndpoint(r.seedsGetter, r.seedsClientGetter)),
+		admin.DecodeListMeteringReportReq,
+		EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+//swagger:route GET /api/v1/admin/metering/reports/{report_name} metering report getMeteringReport
+//
+//    Download a specific metering report. Provides an S3 pre signed URL valid for 1 hour.
+//
+//    Produces:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      200: MeteringReportURL
+//      401: empty
+//      403: empty
+func (r Routing) getMeteringReport() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(admin.GetMeteringReportEndpoint(r.seedsGetter, r.seedsClientGetter)),
+		admin.DecodeGetMeteringReportReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)

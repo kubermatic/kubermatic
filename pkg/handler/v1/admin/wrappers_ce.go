@@ -22,6 +22,7 @@ import (
 	"context"
 	"net/http"
 
+	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
@@ -39,4 +40,12 @@ func createOrUpdateMeteringConfigurations(ctx context.Context, request interface
 
 func DecodeMeteringConfigurationsReq(_ context.Context, r *http.Request) (interface{}, error) {
 	return nil, nil
+}
+
+func listMeteringReports(ctx context.Context, request ListMeteringReportReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) ([]v1.MeteringReport, error) {
+	return nil, nil
+}
+
+func getMeteringReport(ctx context.Context, request GetMeteringReportReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) (v1.ReportURL, error) {
+	return "", nil
 }
