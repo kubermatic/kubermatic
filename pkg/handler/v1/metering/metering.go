@@ -74,14 +74,10 @@ func DecodeGetMeteringReportReq(ctx context.Context, r *http.Request) (interface
 	return req, nil
 }
 
-// swagger:parameters createOrUpdateMeteringConfigurations
 type ConfigurationReq struct {
-	// in: body
-	Enabled bool `json:"enabled"`
-	// in: body
+	Enabled          bool   `json:"enabled"`
 	StorageClassName string `json:"storageClassName"`
-	// in: body
-	StorageSize string `json:"storageSize"`
+	StorageSize      string `json:"storageSize"`
 }
 
 func (m ConfigurationReq) Validate() error {
@@ -108,20 +104,11 @@ func DecodeMeteringConfigurationsReq(_ context.Context, r *http.Request) (interf
 }
 
 // SecretReq contains the s3 secrets to access s3 bucket.
-// swagger:parameters createOrUpdateMeteringCredentials
 type SecretReq struct {
-	// in: body
-	// required: true
 	BucketName string `json:"bucketName"`
-	// in: body
-	// required: true
-	AccessKey string `json:"accessKey"`
-	// in: body
-	// required: true
-	SecretKey string `json:"secretKey"`
-	// in: body
-	// required: true
-	Endpoint string `json:"endpoint"`
+	AccessKey  string `json:"accessKey"`
+	SecretKey  string `json:"secretKey"`
+	Endpoint   string `json:"endpoint"`
 }
 
 func (c SecretReq) Validate() error {

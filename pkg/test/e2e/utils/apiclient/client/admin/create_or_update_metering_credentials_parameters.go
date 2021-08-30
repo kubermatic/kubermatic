@@ -58,19 +58,6 @@ func NewCreateOrUpdateMeteringCredentialsParamsWithHTTPClient(client *http.Clien
    Typically these are written to a http.Request.
 */
 type CreateOrUpdateMeteringCredentialsParams struct {
-
-	// AccessKey.
-	AccessKey string
-
-	// BucketName.
-	BucketName string
-
-	// Endpoint.
-	Endpoint string
-
-	// SecretKey.
-	SecretKey string
-
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -124,50 +111,6 @@ func (o *CreateOrUpdateMeteringCredentialsParams) SetHTTPClient(client *http.Cli
 	o.HTTPClient = client
 }
 
-// WithAccessKey adds the accessKey to the create or update metering credentials params
-func (o *CreateOrUpdateMeteringCredentialsParams) WithAccessKey(accessKey string) *CreateOrUpdateMeteringCredentialsParams {
-	o.SetAccessKey(accessKey)
-	return o
-}
-
-// SetAccessKey adds the accessKey to the create or update metering credentials params
-func (o *CreateOrUpdateMeteringCredentialsParams) SetAccessKey(accessKey string) {
-	o.AccessKey = accessKey
-}
-
-// WithBucketName adds the bucketName to the create or update metering credentials params
-func (o *CreateOrUpdateMeteringCredentialsParams) WithBucketName(bucketName string) *CreateOrUpdateMeteringCredentialsParams {
-	o.SetBucketName(bucketName)
-	return o
-}
-
-// SetBucketName adds the bucketName to the create or update metering credentials params
-func (o *CreateOrUpdateMeteringCredentialsParams) SetBucketName(bucketName string) {
-	o.BucketName = bucketName
-}
-
-// WithEndpoint adds the endpoint to the create or update metering credentials params
-func (o *CreateOrUpdateMeteringCredentialsParams) WithEndpoint(endpoint string) *CreateOrUpdateMeteringCredentialsParams {
-	o.SetEndpoint(endpoint)
-	return o
-}
-
-// SetEndpoint adds the endpoint to the create or update metering credentials params
-func (o *CreateOrUpdateMeteringCredentialsParams) SetEndpoint(endpoint string) {
-	o.Endpoint = endpoint
-}
-
-// WithSecretKey adds the secretKey to the create or update metering credentials params
-func (o *CreateOrUpdateMeteringCredentialsParams) WithSecretKey(secretKey string) *CreateOrUpdateMeteringCredentialsParams {
-	o.SetSecretKey(secretKey)
-	return o
-}
-
-// SetSecretKey adds the secretKey to the create or update metering credentials params
-func (o *CreateOrUpdateMeteringCredentialsParams) SetSecretKey(secretKey string) {
-	o.SecretKey = secretKey
-}
-
 // WriteToRequest writes these params to a swagger request
 func (o *CreateOrUpdateMeteringCredentialsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -175,18 +118,6 @@ func (o *CreateOrUpdateMeteringCredentialsParams) WriteToRequest(r runtime.Clien
 		return err
 	}
 	var res []error
-	if err := r.SetBodyParam(o.AccessKey); err != nil {
-		return err
-	}
-	if err := r.SetBodyParam(o.BucketName); err != nil {
-		return err
-	}
-	if err := r.SetBodyParam(o.Endpoint); err != nil {
-		return err
-	}
-	if err := r.SetBodyParam(o.SecretKey); err != nil {
-		return err
-	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
