@@ -99,6 +99,7 @@ interpreted as described in RFC 2119.*
 (unordered list)
 
 * [Helm magager](./platform-extension-implementation-helm-manager.md)
+* [Extension operators](./platform-extension-implementation-extension-operators.md)
 * tbd.
 
 ## Open questions
