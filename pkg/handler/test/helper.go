@@ -1815,10 +1815,15 @@ func GenAllowedRegistry(name, registryPrefix string) *kubermaticv1.AllowedRegist
 	return wr
 }
 
-func GenAPIEtcdBackupConfig(name, clusterID string) *apiv2.EtcdBackupConfig {
+func GenAPIEtcdBackupConfig(id, name, clusterID string) *apiv2.EtcdBackupConfig {
 	keep := 5
 	return &apiv2.EtcdBackupConfig{
-		Name: name,
+		ObjectMeta: apiv1.ObjectMeta{
+			Name:              name,
+			ID:                id,
+			Annotations:       nil,
+			CreationTimestamp: apiv1.Date(0001, 01, 01, 00, 00, 0, 0, time.UTC),
+		},
 		Spec: apiv2.EtcdBackupConfigSpec{
 			ClusterID: clusterID,
 			Schedule:  "5 * * * * *",
@@ -1827,13 +1832,13 @@ func GenAPIEtcdBackupConfig(name, clusterID string) *apiv2.EtcdBackupConfig {
 	}
 }
 
-func GenEtcdBackupConfig(name string, cluster *kubermaticv1.Cluster, projectID string) *kubermaticv1.EtcdBackupConfig {
+func GenEtcdBackupConfig(id, name string, cluster *kubermaticv1.Cluster, projectID string) *kubermaticv1.EtcdBackupConfig {
 	keep := 5
 	clusterObjectRef, _ := reference.GetReference(scheme.Scheme, cluster)
 
 	return &kubermaticv1.EtcdBackupConfig{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
+			Name:      id,
 			Namespace: cluster.Status.NamespaceName,
 			Labels: map[string]string{
 				provider.ProjectLabelKey: projectID,
