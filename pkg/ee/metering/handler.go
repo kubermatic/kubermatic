@@ -27,34 +27,35 @@ package metering
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
 
 	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/metering"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// CreateOrUpdateCredentials creates or updates the metering tool configurations.
-func CreateOrUpdateConfigurations(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
+const AccessKey = "accessKey"
+const SecretKey = "secretKey"
+const Bucket = "bucket"
+const Endpoint = "endpoint"
+const SecretName = "metering-s3"
+const SecretNamespace = "kubermatic"
+
+var secretNamespacedName = types.NamespacedName{Name: SecretName, Namespace: SecretNamespace}
+
+// CreateOrUpdateConfigurations creates or updates the metering tool configurations.
+func CreateOrUpdateConfigurations(ctx context.Context, req metering.MeteringConfigurationReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
 	if seedsGetter == nil || seedClientGetter == nil {
 		return errors.New("parameter seedsGetter nor seedClientGetter cannot be nil")
-	}
-
-	req, ok := request.(meteringConfigurations)
-	if !ok {
-		return k8cerrors.NewBadRequest("invalid request")
 	}
 
 	seeds, err := getSeeds(seedsGetter, seedClientGetter)
@@ -71,7 +72,7 @@ func CreateOrUpdateConfigurations(ctx context.Context, request interface{}, seed
 	return nil
 }
 
-func updateSeedMeteringConfiguration(ctx context.Context, meteringCfg meteringConfigurations, seed *v1.Seed, client ctrlruntimeclient.Client) error {
+func updateSeedMeteringConfiguration(ctx context.Context, meteringCfg metering.MeteringConfigurationReq, seed *v1.Seed, client ctrlruntimeclient.Client) error {
 	sc := &storagev1.StorageClass{}
 	if err := client.Get(ctx, types.NamespacedName{
 		Namespace: seed.Namespace,
@@ -93,48 +94,10 @@ func updateSeedMeteringConfiguration(ctx context.Context, meteringCfg meteringCo
 	return nil
 }
 
-type meteringConfigurations struct {
-	Enabled          bool   `json:"enabled"`
-	StorageClassName string `json:"storageClassName"`
-	StorageSize      string `json:"storageSize"`
-}
-
-func (m meteringConfigurations) Validate() error {
-	if m.Enabled {
-		if m.StorageClassName == "" || m.StorageSize == "" {
-			return errors.New("storageClassName or storageSize cannot be empty when the metering tool is enabled")
-		}
-
-		if _, err := resource.ParseQuantity(m.StorageSize); err != nil {
-			return fmt.Errorf("inapproperiate storageClass size: %v", err)
-		}
-	}
-
-	return nil
-}
-
-func DecodeMeteringToolConfigurations(r *http.Request) (interface{}, error) {
-	var req meteringConfigurations
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
 // CreateOrUpdateCredentials creates or updates the metering tool credentials.
-func CreateOrUpdateCredentials(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
+func CreateOrUpdateCredentials(ctx context.Context, req metering.MeteringSecretReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
 	if seedsGetter == nil || seedClientGetter == nil {
 		return errors.New("parameter seedsGetter nor seedClientGetter cannot be nil")
-	}
-
-	req, ok := request.(credentials)
-	if !ok {
-		return k8cerrors.NewBadRequest("invalid request")
-	}
-
-	if err := req.Validate(); err != nil {
-		return err
 	}
 
 	seeds, err := getSeeds(seedsGetter, seedClientGetter)
@@ -143,10 +106,10 @@ func CreateOrUpdateCredentials(ctx context.Context, request interface{}, seedsGe
 	}
 
 	data := map[string][]byte{
-		"accessKey": []byte(req.AccessKey),
-		"secretKey": []byte(req.SecretKey),
-		"bucket":    []byte(req.BucketName),
-		"endpoint":  []byte(req.Endpoint),
+		AccessKey: []byte(req.AccessKey),
+		SecretKey: []byte(req.SecretKey),
+		Bucket:    []byte(req.BucketName),
+		Endpoint:  []byte(req.Endpoint),
 	}
 
 	for _, client := range seeds {
@@ -159,18 +122,16 @@ func CreateOrUpdateCredentials(ctx context.Context, request interface{}, seedsGe
 }
 
 func createOrUpdateMeteringToolSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, secretData map[string][]byte) error {
-	const secretName = "metering-s3"
 
-	namespacedName := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: secretName}
 	existingSecret := &corev1.Secret{}
-	if err := seedClient.Get(ctx, namespacedName, existingSecret); err != nil && !kerrors.IsNotFound(err) {
-		return fmt.Errorf("failed to probe for secret %q: %v", secretName, err)
+	if err := seedClient.Get(ctx, secretNamespacedName, existingSecret); err != nil && !kerrors.IsNotFound(err) {
+		return fmt.Errorf("failed to probe for secret %q: %v", SecretName, err)
 	}
 
 	if existingSecret.Name == "" {
 		secret := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      secretName,
+				Name:      SecretName,
 				Namespace: resources.KubermaticNamespace,
 			},
 			Type: corev1.SecretTypeOpaque,
@@ -227,29 +188,4 @@ func getSeeds(seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedCl
 	}
 
 	return seedClients, nil
-}
-
-// credentials contains the aws credentials to access s3 bucket.
-type credentials struct {
-	BucketName string `json:"bucketName"`
-	AccessKey  string `json:"accessKey"`
-	SecretKey  string `json:"secretKey"`
-	Endpoint   string `json:"endpoint"`
-}
-
-func (c credentials) Validate() error {
-	if c.Endpoint == "" || c.AccessKey == "" || c.SecretKey == "" || c.BucketName == "" {
-		return fmt.Errorf("accessKey, secretKey, bucketName or endpoint cannot be empty")
-	}
-
-	return nil
-}
-
-func DecodeMeteringToolCredentials(r *http.Request) (interface{}, error) {
-	var req credentials
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return nil, err
-	}
-
-	return req, nil
 }

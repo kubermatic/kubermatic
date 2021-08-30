@@ -18,37 +18,61 @@ package admin
 
 import (
 	"context"
-	"net/http"
-	"strconv"
+	"fmt"
 
 	"github.com/go-kit/kit/endpoint"
-	"github.com/gorilla/mux"
 
+	"k8c.io/kubermatic/v2/pkg/handler/v1/metering"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
-// swagger:parameters listMeteringReports
-type ListMeteringReportReq struct {
-	// required: false
-	// in: query
-	StartAfter string `json:"start_after"`
-	// required: false
-	// in: query
-	MaxKeys int `json:"max_keys"`
+// CreateOrUpdateMeteringCredentials creates or updates metrering tool MeteringSecretReq.
+func CreateOrUpdateMeteringCredentials(seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+
+		request, ok := req.(metering.MeteringSecretReq)
+		if !ok {
+			return "", k8cerrors.NewBadRequest("invalid request")
+		}
+
+		if err := request.Validate(); err != nil {
+			return "", err
+		}
+
+		if err := createOrUpdateMeteringCredentials(ctx, request, seedsGetter, seedClientGetter); err != nil {
+			return nil, fmt.Errorf("failed to create/update metering MeteringSecretReq: %v", err)
+		}
+
+		return nil, nil
+	}
 }
 
-// swagger:parameters getMeteringReport
-type GetMeteringReportReq struct {
-	// in: path
-	// required: true
-	ReportName string `json:"report_name"`
+// CreateOrUpdateMeteringConfigurations configures kkp metering tool.
+func CreateOrUpdateMeteringConfigurations(seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+
+		request, ok := req.(metering.MeteringConfigurationReq)
+		if !ok {
+			return "", k8cerrors.NewBadRequest("invalid request")
+		}
+
+		if err := request.Validate(); err != nil {
+			return "", err
+		}
+
+		if err := createOrUpdateMeteringConfigurations(ctx, request, seedsGetter, seedClientGetter); err != nil {
+			return nil, fmt.Errorf("failed to create/update metering MeteringSecretReq: %v", err)
+		}
+
+		return nil, nil
+	}
 }
 
 func ListMeteringReportsEndpoint(seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 
-		request, ok := req.(ListMeteringReportReq)
+		request, ok := req.(metering.ListMeteringReportReq)
 		if !ok {
 			return "", k8cerrors.NewBadRequest("invalid request")
 		}
@@ -65,7 +89,7 @@ func ListMeteringReportsEndpoint(seedsGetter provider.SeedsGetter, seedClientGet
 func GetMeteringReportEndpoint(seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 
-		request, ok := req.(GetMeteringReportReq)
+		request, ok := req.(metering.GetMeteringReportReq)
 		if !ok {
 			return "", k8cerrors.NewBadRequest("invalid request")
 		}
@@ -77,31 +101,4 @@ func GetMeteringReportEndpoint(seedsGetter provider.SeedsGetter, seedClientGette
 
 		return report, nil
 	}
-}
-
-func DecodeListMeteringReportReq(ctx context.Context, r *http.Request) (interface{}, error) {
-	var req ListMeteringReportReq
-
-	maxKeys := r.URL.Query().Get("max_keys")
-
-	if maxKeys == "" {
-		req.MaxKeys = 1000
-	} else {
-		mK, err := strconv.Atoi(maxKeys)
-		if err != nil {
-			return nil, k8cerrors.NewBadRequest("invalid value for `may_keys`")
-		}
-		req.MaxKeys = mK
-	}
-
-	req.StartAfter = r.URL.Query().Get("start_after")
-
-	return req, nil
-}
-
-func DecodeGetMeteringReportReq(ctx context.Context, r *http.Request) (interface{}, error) {
-	var req GetMeteringReportReq
-	req.ReportName = mux.Vars(r)["report_name"]
-
-	return req, nil
 }

@@ -58,6 +58,16 @@ func NewCreateOrUpdateMeteringConfigurationsParamsWithHTTPClient(client *http.Cl
    Typically these are written to a http.Request.
 */
 type CreateOrUpdateMeteringConfigurationsParams struct {
+
+	// Enabled.
+	Enabled bool
+
+	// StorageClassName.
+	StorageClassName string
+
+	// StorageSize.
+	StorageSize string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -111,6 +121,39 @@ func (o *CreateOrUpdateMeteringConfigurationsParams) SetHTTPClient(client *http.
 	o.HTTPClient = client
 }
 
+// WithEnabled adds the enabled to the create or update metering configurations params
+func (o *CreateOrUpdateMeteringConfigurationsParams) WithEnabled(enabled bool) *CreateOrUpdateMeteringConfigurationsParams {
+	o.SetEnabled(enabled)
+	return o
+}
+
+// SetEnabled adds the enabled to the create or update metering configurations params
+func (o *CreateOrUpdateMeteringConfigurationsParams) SetEnabled(enabled bool) {
+	o.Enabled = enabled
+}
+
+// WithStorageClassName adds the storageClassName to the create or update metering configurations params
+func (o *CreateOrUpdateMeteringConfigurationsParams) WithStorageClassName(storageClassName string) *CreateOrUpdateMeteringConfigurationsParams {
+	o.SetStorageClassName(storageClassName)
+	return o
+}
+
+// SetStorageClassName adds the storageClassName to the create or update metering configurations params
+func (o *CreateOrUpdateMeteringConfigurationsParams) SetStorageClassName(storageClassName string) {
+	o.StorageClassName = storageClassName
+}
+
+// WithStorageSize adds the storageSize to the create or update metering configurations params
+func (o *CreateOrUpdateMeteringConfigurationsParams) WithStorageSize(storageSize string) *CreateOrUpdateMeteringConfigurationsParams {
+	o.SetStorageSize(storageSize)
+	return o
+}
+
+// SetStorageSize adds the storageSize to the create or update metering configurations params
+func (o *CreateOrUpdateMeteringConfigurationsParams) SetStorageSize(storageSize string) {
+	o.StorageSize = storageSize
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *CreateOrUpdateMeteringConfigurationsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -118,6 +161,15 @@ func (o *CreateOrUpdateMeteringConfigurationsParams) WriteToRequest(r runtime.Cl
 		return err
 	}
 	var res []error
+	if err := r.SetBodyParam(o.Enabled); err != nil {
+		return err
+	}
+	if err := r.SetBodyParam(o.StorageClassName); err != nil {
+		return err
+	}
+	if err := r.SetBodyParam(o.StorageSize); err != nil {
+		return err
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

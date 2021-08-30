@@ -415,6 +415,32 @@
         ],
         "summary": "Configures KKP metering tool.",
         "operationId": "createOrUpdateMeteringConfigurations",
+        "parameters": [
+          {
+            "x-go-name": "Enabled",
+            "name": "enabled",
+            "in": "body",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "x-go-name": "StorageClassName",
+            "name": "storageClassName",
+            "in": "body",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "x-go-name": "StorageSize",
+            "name": "storageSize",
+            "in": "body",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "$ref": "#/responses/empty"
@@ -443,7 +469,45 @@
           "admin"
         ],
         "summary": "Creates or updates the metering tool credentials.",
-        "operationId": "updateOrCreateMeteringCredentials",
+        "operationId": "createOrUpdateMeteringCredentials",
+        "parameters": [
+          {
+            "x-go-name": "BucketName",
+            "name": "bucketName",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "x-go-name": "AccessKey",
+            "name": "accessKey",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "x-go-name": "SecretKey",
+            "name": "secretKey",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "x-go-name": "Endpoint",
+            "name": "endpoint",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "$ref": "#/responses/empty"

@@ -26,6 +26,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/admin"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/metering"
 )
 
 // RegisterV1Admin declares all router paths for the admin users
@@ -424,7 +425,7 @@ func (r Routing) deleteSeed() http.Handler {
 	)
 }
 
-// swagger:route PUT /api/v1/admin/metering/credentials admin updateOrCreateMeteringCredentials
+// swagger:route PUT /api/v1/admin/metering/credentials admin createOrUpdateMeteringCredentials
 //
 //     Creates or updates the metering tool credentials.
 //
@@ -442,7 +443,7 @@ func (r Routing) createOrUpdateMeteringCredentials() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(admin.CreateOrUpdateMeteringCredentials(r.seedsGetter, r.seedsClientGetter)),
-		admin.DecodeMeteringReq,
+		metering.DecodeMeteringReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -466,12 +467,11 @@ func (r Routing) createOrUpdateMeteringConfigurations() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(admin.CreateOrUpdateMeteringConfigurations(r.seedsGetter, r.seedsClientGetter)),
-		admin.DecodeMeteringConfigurationsReq,
+		metering.DecodeMeteringConfigurationsReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
-
 
 // swagger:route GET /api/v1/admin/metering/reports metering reports listMeteringReports
 //
@@ -491,7 +491,7 @@ func (r Routing) listMeteringReports() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(admin.ListMeteringReportsEndpoint(r.seedsGetter, r.seedsClientGetter)),
-		admin.DecodeListMeteringReportReq,
+		metering.DecodeListMeteringReportReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -515,7 +515,7 @@ func (r Routing) getMeteringReport() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(admin.GetMeteringReportEndpoint(r.seedsGetter, r.seedsClientGetter)),
-		admin.DecodeGetMeteringReportReq,
+		metering.DecodeGetMeteringReportReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
