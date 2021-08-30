@@ -27,6 +27,7 @@ import (
 	"go.uber.org/zap"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
+	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -94,6 +95,9 @@ func newDatasourceGrafanaReconciler(
 
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to watch Clusters: %w", err)
+	}
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.MLAAdminSetting{}}, controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient())); err != nil {
+		return fmt.Errorf("failed to watch MLAAdminSetting: %w", err)
 	}
 	return err
 }
@@ -308,8 +312,19 @@ func (r *datasourceGrafanaController) ensureDeployments(ctx context.Context, c *
 }
 
 func (r *datasourceGrafanaController) ensureConfigMaps(ctx context.Context, c *kubermaticv1.Cluster) error {
+	var settings *kubermaticv1.MLAAdminSetting
+	settingsList := &kubermaticv1.MLAAdminSettingList{}
+	if err := r.List(ctx, settingsList, &ctrlruntimeclient.ListOptions{Namespace: c.Status.NamespaceName}); err != nil {
+		return err
+	}
+	if len(settingsList.Items) > 1 {
+		return fmt.Errorf("failed to ensure MLA ConfigMaps: too many MLAAdminSetting CRs in the cluster namesapce")
+	}
+	for _, s := range settingsList.Items {
+		settings = &s
+	}
 	creators := []reconciling.NamedConfigMapCreatorGetter{
-		GatewayConfigMapCreator(c, r.mlaNamespace),
+		GatewayConfigMapCreator(c, r.mlaNamespace, settings),
 	}
 	if err := reconciling.ReconcileConfigMaps(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
 		return fmt.Errorf("failed to ensure that the ConfigMap exists: %v", err)

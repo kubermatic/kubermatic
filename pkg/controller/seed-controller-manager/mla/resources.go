@@ -65,6 +65,16 @@ http {
   tcp_nopush   on;
   resolver kube-dns.kube-system.svc.cluster.local;
 
+{{ if .LokiWriteLimit }}
+  limit_req_zone $binary_remote_addr zone=loki_write_limit:1m rate={{ .LokiWriteLimit }}r/s;
+{{ end }}
+{{ if .LokiReadLimit }}
+  limit_req_zone $binary_remote_addr zone=loki_read_limit:1m rate={{ .LokiReadLimit }}r/s;
+{{ end }}
+{{ if .CortexReadLimit }}
+  limit_req_zone $binary_remote_addr zone=cortex_read_limit:1m rate={{ .CortexReadLimit }}r/s;
+{{ end }}
+
   # write path - exposed to user clusters
   server {
 	listen                  8080 ssl;
@@ -76,21 +86,24 @@ http {
 	ssl_client_certificate  {{ .SSLCACertFile }};
 	ssl_protocols           TLSv1.3;
 
-	# Loki Config
+	# Loki
 	location = /loki/api/v1/push {
-	  proxy_pass       http://loki-distributed-distributor.{{ .Namespace}}.svc.cluster.local:3100$request_uri;
+{{ if .LokiWriteLimit }}
+      limit_req zone=loki_write_limit burst={{ .LokiWriteLimitBurst }} nodelay;
+{{ end }}
+	  proxy_pass       http://loki-distributed-distributor.{{ .Namespace }}.svc.cluster.local:3100$request_uri;
 	}
 
-	# Cortex Config
+	# Cortex
 	location = /api/v1/push {
-	  proxy_pass      http://cortex-distributor.{{ .Namespace}}.svc.cluster.local:8080$request_uri;
+	  proxy_pass      http://cortex-distributor.{{ .Namespace }}.svc.cluster.local:8080$request_uri;
 	}
   }
 
   # read path - cluster-local access only
   server {
 	listen             8081;
-	proxy_set_header   X-Scope-OrgID {{ .TenantID}};
+	proxy_set_header   X-Scope-OrgID {{ .TenantID }};
 
 	# k8s probes
 	location = / {
@@ -98,25 +111,20 @@ http {
 	  auth_basic off;
 	}
 
-	# location = /api/prom/tail {
-	#   proxy_pass       http://loki-distributed-querier.{{ .Namespace}}.svc.cluster.local:3100$request_uri;
-	#   proxy_set_header Upgrade $http_upgrade;
-	#   proxy_set_header Connection "upgrade";
-	# }
-
-	# location = /loki/api/v1/tail {
-	#   proxy_pass       http://loki-distributed-querier.{{ .Namespace}}.svc.cluster.local:3100$request_uri;
-	#   proxy_set_header Upgrade $http_upgrade;
-	#   proxy_set_header Connection "upgrade";
-	# }
-
+	# Loki
 	location ~ /loki/api/.* {
-	  proxy_pass       http://loki-distributed-query-frontend.{{ .Namespace}}.svc.cluster.local:3100$request_uri;
+{{ if .LokiReadLimit }}
+      limit_req zone=loki_read_limit burst={{ .LokiReadLimitBurst }} nodelay;
+{{ end }}
+	  proxy_pass       http://loki-distributed-query-frontend.{{ .Namespace }}.svc.cluster.local:3100$request_uri;
 	}
 
-	# Cortex Config
+	# Cortex
 	location ~ /api/prom/.* {
-	  proxy_pass       http://cortex-query-frontend.{{ .Namespace}}.svc.cluster.local:8080$request_uri;
+{{ if .CortexReadLimit }}
+      limit_req zone=cortex_read_limit burst={{ .CortexReadLimitBurst }} nodelay;
+{{ end }}
+	  proxy_pass       http://cortex-query-frontend.{{ .Namespace }}.svc.cluster.local:8080$request_uri;
 	}
   }
 }
@@ -138,11 +146,17 @@ const (
 )
 
 type configTemplateData struct {
-	Namespace     string
-	TenantID      string
-	SSLCertFile   string
-	SSLKeyFile    string
-	SSLCACertFile string
+	Namespace            string
+	TenantID             string
+	SSLCertFile          string
+	SSLKeyFile           string
+	SSLCACertFile        string
+	CortexReadLimit      int32
+	CortexReadLimitBurst int32
+	LokiWriteLimit       int32
+	LokiWriteLimitBurst  int32
+	LokiReadLimit        int32
+	LokiReadLimitBurst   int32
 }
 
 func renderTemplate(tpl string, data interface{}) (string, error) {
@@ -159,7 +173,7 @@ func renderTemplate(tpl string, data interface{}) (string, error) {
 	return strings.TrimSpace(output.String()), nil
 }
 
-func GatewayConfigMapCreator(c *kubermaticv1.Cluster, mlaNamespace string) reconciling.NamedConfigMapCreatorGetter {
+func GatewayConfigMapCreator(c *kubermaticv1.Cluster, mlaNamespace string, s *kubermaticv1.MLAAdminSetting) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return gatewayName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {
@@ -169,6 +183,17 @@ func GatewayConfigMapCreator(c *kubermaticv1.Cluster, mlaNamespace string) recon
 					SSLCertFile:   fmt.Sprintf("%s/%s", certificatesVolumePath, resources.MLAGatewayCertSecretKey),
 					SSLKeyFile:    fmt.Sprintf("%s/%s", certificatesVolumePath, resources.MLAGatewayKeySecretKey),
 					SSLCACertFile: fmt.Sprintf("%s/%s", caCertificatesVolumePath, resources.MLAGatewayCACertKey),
+				}
+				if s != nil && s.Spec.MonitoringRateLimits != nil {
+					// NOTE: Cortex write path rate-limiting is implemented directly by Cortex configuration
+					configData.CortexReadLimit = s.Spec.MonitoringRateLimits.QueryRate
+					configData.CortexReadLimitBurst = s.Spec.MonitoringRateLimits.QueryBurstSize
+				}
+				if s != nil && s.Spec.LoggingRateLimits != nil {
+					configData.LokiWriteLimit = s.Spec.LoggingRateLimits.IngestionRate
+					configData.LokiWriteLimitBurst = s.Spec.LoggingRateLimits.IngestionBurstSize
+					configData.LokiReadLimit = s.Spec.LoggingRateLimits.QueryRate
+					configData.LokiReadLimitBurst = s.Spec.LoggingRateLimits.QueryBurstSize
 				}
 				config, err := renderTemplate(nginxConfig, configData)
 				if err != nil {
