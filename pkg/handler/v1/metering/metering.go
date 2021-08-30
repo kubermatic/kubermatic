@@ -1,3 +1,19 @@
+/*
+Copyright 2021 The Kubermatic Kubernetes Platform contributors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package metering
 
 import (
@@ -59,7 +75,7 @@ func DecodeGetMeteringReportReq(ctx context.Context, r *http.Request) (interface
 }
 
 // swagger:parameters createOrUpdateMeteringConfigurations
-type MeteringConfigurationReq struct {
+type ConfigurationReq struct {
 	// in: body
 	Enabled bool `json:"enabled"`
 	// in: body
@@ -68,7 +84,7 @@ type MeteringConfigurationReq struct {
 	StorageSize string `json:"storageSize"`
 }
 
-func (m MeteringConfigurationReq) Validate() error {
+func (m ConfigurationReq) Validate() error {
 	if m.Enabled {
 		if m.StorageClassName == "" || m.StorageSize == "" {
 			return errors.New("storageClassName or storageSize cannot be empty when the metering tool is enabled")
@@ -83,7 +99,7 @@ func (m MeteringConfigurationReq) Validate() error {
 }
 
 func DecodeMeteringConfigurationsReq(_ context.Context, r *http.Request) (interface{}, error) {
-	var req MeteringConfigurationReq
+	var req ConfigurationReq
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, err
 	}
@@ -91,9 +107,9 @@ func DecodeMeteringConfigurationsReq(_ context.Context, r *http.Request) (interf
 	return req, nil
 }
 
-// MeteringSecretReq contains the s3 secrets to access s3 bucket.
+// SecretReq contains the s3 secrets to access s3 bucket.
 // swagger:parameters createOrUpdateMeteringCredentials
-type MeteringSecretReq struct {
+type SecretReq struct {
 	// in: body
 	// required: true
 	BucketName string `json:"bucketName"`
@@ -108,7 +124,7 @@ type MeteringSecretReq struct {
 	Endpoint string `json:"endpoint"`
 }
 
-func (c MeteringSecretReq) Validate() error {
+func (c SecretReq) Validate() error {
 	if c.Endpoint == "" || c.AccessKey == "" || c.SecretKey == "" || c.BucketName == "" {
 		return fmt.Errorf("accessKey, secretKey, bucketName or endpoint cannot be empty")
 	}
@@ -116,8 +132,8 @@ func (c MeteringSecretReq) Validate() error {
 	return nil
 }
 
-func DecodeMeteringReq(_ context.Context, r *http.Request) (interface{}, error) {
-	var req MeteringSecretReq
+func DecodeMeteringSecretReq(_ context.Context, r *http.Request) (interface{}, error) {
+	var req SecretReq
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, err
 	}

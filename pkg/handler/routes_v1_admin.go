@@ -443,7 +443,7 @@ func (r Routing) createOrUpdateMeteringCredentials() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(admin.CreateOrUpdateMeteringCredentials(r.userInfoGetter, r.seedsGetter, r.seedsClientGetter)),
-		metering.DecodeMeteringReq,
+		metering.DecodeMeteringSecretReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)

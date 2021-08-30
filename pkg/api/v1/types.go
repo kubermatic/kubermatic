@@ -2190,10 +2190,6 @@ type SeedCluster struct {
 	ClusterID string
 }
 
-// ReportList holds objects names for available reports
-// swagger:model MeteringReportList
-//type ReportList []MeteringReport
-
 // MeteringReport holds objects names and metadata for available reports
 // swagger:model MeteringReport
 type MeteringReport struct {

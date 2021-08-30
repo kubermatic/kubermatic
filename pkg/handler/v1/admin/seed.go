@@ -138,7 +138,6 @@ func DeleteSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter prov
 	}
 }
 
-
 func getSeed(ctx context.Context, req seedReq, userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter) (*kubermaticv1.Seed, error) {
 	userInfo, err := userInfoGetter(ctx, "")
 	if err != nil {

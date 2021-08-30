@@ -53,7 +53,7 @@ const SecretNamespace = "kubermatic"
 var secretNamespacedName = types.NamespacedName{Name: SecretName, Namespace: SecretNamespace}
 
 // CreateOrUpdateConfigurations creates or updates the metering tool configurations.
-func CreateOrUpdateConfigurations(ctx context.Context, req metering.MeteringConfigurationReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
+func CreateOrUpdateConfigurations(ctx context.Context, req metering.ConfigurationReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
 	if seedsGetter == nil || seedClientGetter == nil {
 		return errors.New("parameter seedsGetter nor seedClientGetter cannot be nil")
 	}
@@ -72,7 +72,7 @@ func CreateOrUpdateConfigurations(ctx context.Context, req metering.MeteringConf
 	return nil
 }
 
-func updateSeedMeteringConfiguration(ctx context.Context, meteringCfg metering.MeteringConfigurationReq, seed *v1.Seed, client ctrlruntimeclient.Client) error {
+func updateSeedMeteringConfiguration(ctx context.Context, meteringCfg metering.ConfigurationReq, seed *v1.Seed, client ctrlruntimeclient.Client) error {
 	sc := &storagev1.StorageClass{}
 	if err := client.Get(ctx, types.NamespacedName{
 		Namespace: seed.Namespace,
@@ -95,7 +95,7 @@ func updateSeedMeteringConfiguration(ctx context.Context, meteringCfg metering.M
 }
 
 // CreateOrUpdateCredentials creates or updates the metering tool credentials.
-func CreateOrUpdateCredentials(ctx context.Context, req metering.MeteringSecretReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
+func CreateOrUpdateCredentials(ctx context.Context, req metering.SecretReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
 	if seedsGetter == nil || seedClientGetter == nil {
 		return errors.New("parameter seedsGetter nor seedClientGetter cannot be nil")
 	}

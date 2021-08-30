@@ -27,11 +27,11 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
-func createOrUpdateMeteringCredentials(ctx context.Context, request meteringApi.MeteringSecretReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
+func createOrUpdateMeteringCredentials(ctx context.Context, request meteringApi.SecretReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
 	return metering.CreateOrUpdateCredentials(ctx, request, seedsGetter, seedClientGetter)
 }
 
-func createOrUpdateMeteringConfigurations(ctx context.Context, request meteringApi.MeteringConfigurationReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
+func createOrUpdateMeteringConfigurations(ctx context.Context, request meteringApi.ConfigurationReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
 	return metering.CreateOrUpdateConfigurations(ctx, request, seedsGetter, seedClientGetter)
 }
 

@@ -29,7 +29,7 @@ import (
 	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
-// CreateOrUpdateMeteringCredentials creates or updates metrering tool MeteringSecretReq.
+// CreateOrUpdateMeteringCredentials creates or updates metrering tool SecretReq.
 func CreateOrUpdateMeteringCredentials(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 
@@ -41,7 +41,7 @@ func CreateOrUpdateMeteringCredentials(userInfoGetter provider.UserInfoGetter, s
 			return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
 		}
 
-		request, ok := req.(metering.MeteringSecretReq)
+		request, ok := req.(metering.SecretReq)
 		if !ok {
 			return "", k8cerrors.NewBadRequest("invalid request")
 		}
@@ -51,7 +51,7 @@ func CreateOrUpdateMeteringCredentials(userInfoGetter provider.UserInfoGetter, s
 		}
 
 		if err := createOrUpdateMeteringCredentials(ctx, request, seedsGetter, seedClientGetter); err != nil {
-			return nil, fmt.Errorf("failed to create/update metering MeteringSecretReq: %v", err)
+			return nil, fmt.Errorf("failed to create/update metering SecretReq: %v", err)
 		}
 
 		return nil, nil
@@ -70,7 +70,7 @@ func CreateOrUpdateMeteringConfigurations(userInfoGetter provider.UserInfoGetter
 			return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
 		}
 
-		request, ok := req.(metering.MeteringConfigurationReq)
+		request, ok := req.(metering.ConfigurationReq)
 		if !ok {
 			return "", k8cerrors.NewBadRequest("invalid request")
 		}
@@ -80,7 +80,7 @@ func CreateOrUpdateMeteringConfigurations(userInfoGetter provider.UserInfoGetter
 		}
 
 		if err := createOrUpdateMeteringConfigurations(ctx, request, seedsGetter, seedClientGetter); err != nil {
-			return nil, fmt.Errorf("failed to create/update metering MeteringSecretReq: %v", err)
+			return nil, fmt.Errorf("failed to create/update metering SecretReq: %v", err)
 		}
 
 		return nil, nil
