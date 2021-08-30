@@ -156,7 +156,7 @@ func TestGetEndpoint(t *testing.T) {
 				kubernetesObjs = append(kubernetesObjs, tc.ExistingConfigSecret)
 			}
 
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, kubernetesObjs, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, kubernetesObjs, tc.ExistingKubermaticObjects, nil, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -308,7 +308,7 @@ func TestUpdateEndpoint(t *testing.T) {
 				kubernetesObjs = append(kubernetesObjs, tc.ExistingConfigSecret)
 			}
 
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, kubernetesObjs, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, kubernetesObjs, tc.ExistingKubermaticObjects, nil, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -425,7 +425,7 @@ func TestDeleteEndpoint(t *testing.T) {
 				kubernetesObjs = append(kubernetesObjs, tc.ExistingConfigSecret)
 			}
 
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, kubernetesObjs, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, kubernetesObjs, tc.ExistingKubermaticObjects, nil, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}

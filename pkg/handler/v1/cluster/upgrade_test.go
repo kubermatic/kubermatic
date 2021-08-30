@@ -244,7 +244,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 				machineObj = append(machineObj, existingMachineDeployment)
 			}
 
-			ep, _, err := test.CreateTestEndpointAndGetClients(testStruct.apiUser, nil, []ctrlruntimeclient.Object{}, machineObj, kubermaticObj, testStruct.versions, testStruct.updates, hack.NewTestRouting)
+			ep, _, err := test.CreateTestEndpointAndGetClients(testStruct.apiUser, nil, []ctrlruntimeclient.Object{}, machineObj, kubermaticObj, testStruct.versions, testStruct.updates, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create testStruct endpoint due to %v", err)
 			}
@@ -358,7 +358,7 @@ func TestUpgradeClusterNodeDeployments(t *testing.T) {
 			var kubernetesObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			machineObj = append(machineObj, tc.ExistingMachineDeployments...)
-			ep, cs, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubernetesObj, machineObj, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, cs, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubernetesObj, machineObj, kubermaticObj, nil, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -491,7 +491,7 @@ func TestGetNodeUpgrades(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/upgrades/node?control_plane_version=%s", testStruct.controlPlaneVersion), nil)
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(testStruct.apiUser, nil, testStruct.existingKubermaticObjs,
-				testStruct.existingVersions, testStruct.existingUpdates, hack.NewTestRouting)
+				testStruct.existingVersions, testStruct.existingUpdates, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create testStruct endpoint due to %v", err)
 			}
@@ -560,7 +560,7 @@ func TestGetMasterVersionsEndpoint(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/upgrades/cluster%s", testStruct.clusterType), nil)
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(testStruct.apiUser, nil, testStruct.existingKubermaticObjs,
-				testStruct.existingVersions, testStruct.existingUpdates, hack.NewTestRouting)
+				testStruct.existingVersions, testStruct.existingUpdates, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create testStruct endpoint due to %v", err)
 			}

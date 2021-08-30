@@ -81,7 +81,7 @@ func TestUserWatchEndpoint(t *testing.T) {
 			}
 
 			ep, cli, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, []ctrlruntimeclient.Object{}, nil,
-				runtimeObjectUsers, nil, nil, hack.NewTestRouting)
+				runtimeObjectUsers, nil, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
