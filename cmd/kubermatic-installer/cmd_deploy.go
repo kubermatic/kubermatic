@@ -99,7 +99,7 @@ var (
 		Usage: "enable the data migration to delete the logrotate addon",
 	}
 	telemetryFlag = cli.BoolFlag{
-		Name:  "telemetry",
+		Name:  "disable-telemetry",
 		Usage: "disable telemetry agents",
 	}
 )

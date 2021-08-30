@@ -19,19 +19,19 @@ telemetry:
   kubermaticAgent:
     image:
       repository: quay.io/kubermatic/telemetry-kubermatic-agent
-      pullPolicy: IfNotPresent
+      pullPolicy: Always
       tag: "v0.1.0"
 
   kubernetesAgent:
     image:
       repository: quay.io/kubermatic/telemetry-kubernetes-agent
-      pullPolicy: IfNotPresent
+      pullPolicy: Always
       tag: "v0.1.0"
 
   reporter:
     image:
       repository: quay.io/kubermatic/telemetry-reporter
-      pullPolicy: IfNotPresent
+      pullPolicy: Always
       tag: "v0.1.0"
 
 # uuid is the unique identifier of the client where the agent is running.
