@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,9 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-/*
-Package seedproxy contains a controller that is responsible for creating various
-resources in the master cluster to be able to access the other seeds clusters prometheus,
-leveraging `kubectl proxy` under the hood.
-*/
-package seedproxy
+package kubectl
+
+import (
+	"testing"
+
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+)
+
+func TestKubectlForAllSupportedVersions(t *testing.T) {
+	for _, v := range common.DefaultKubernetesVersioning.Versions {
+		_, err := BinaryForClusterVersion(v)
+		if err != nil {
+			t.Errorf("No kubectl binary found for cluster version %q: %v", v, err)
+		}
+	}
+}

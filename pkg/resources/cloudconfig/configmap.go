@@ -300,7 +300,7 @@ func getVsphereCloudConfig(
 			ClusterID:        dc.Spec.VSphere.Cluster,
 		},
 		Workspace: vsphere.WorkspaceOpts{
-			// This is redudant with what the Vsphere cloud provider itself does:
+			// This is redundant with what the Vsphere cloud provider itself does:
 			// https://github.com/kubernetes/kubernetes/blob/9d80e7522ab7fc977e40dd6f3b5b16d8ebfdc435/pkg/cloudprovider/providers/vsphere/vsphere.go#L346
 			// We do it here because the fields in the "Global" object
 			// are marked as deprecated even thought the code checks

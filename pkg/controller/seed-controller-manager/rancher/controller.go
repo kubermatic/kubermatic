@@ -30,6 +30,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
 	rancherclient "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/rancher/client"
@@ -37,6 +38,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/util/kubectl"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -337,7 +339,11 @@ func (r *Reconciler) applyRancherRegstrationCommand(ctx context.Context, log *za
 		return fmt.Errorf("failed to write the admin kubeconfig to the local filesystem: %v", err)
 	}
 	defer kubeconfigDone()
-	cmd := getApplyCommand(ctx, kubeconfigFilename)
+	cmd, err := getApplyCommand(ctx, kubeconfigFilename, cluster.Spec.Version.Version)
+	if err != nil {
+		return fmt.Errorf("failed to create command: %v", err)
+	}
+
 	buffer := bytes.Buffer{}
 
 	buffer.Write(manifest)
@@ -373,8 +379,13 @@ func getFileDeleteFinalizer(log *zap.SugaredLogger, filename string) fileHandlin
 	}
 }
 
-func getApplyCommand(ctx context.Context, kubeconfigFilename string) *exec.Cmd {
-	return exec.CommandContext(ctx, "kubectl", "--kubeconfig", kubeconfigFilename, "apply", "-f", "-")
+func getApplyCommand(ctx context.Context, kubeconfigFilename string, clusterVersion *semver.Version) (*exec.Cmd, error) {
+	binary, err := kubectl.BinaryForClusterVersion(clusterVersion)
+	if err != nil {
+		return nil, fmt.Errorf("failed to determine kubectl binary to use: %w", err)
+	}
+
+	return exec.CommandContext(ctx, binary, "--kubeconfig", kubeconfigFilename, "apply", "--filename", "-"), nil
 }
 
 func getHTTPClient(insecure bool) http.Client {
