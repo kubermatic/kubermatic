@@ -48,10 +48,10 @@ type Manager struct {
 }
 
 type ProviderIncompatibility struct {
-	Provider  kubermaticv1.ProviderType
-	Version   string                   `json:"version"`
-	Condition IncompatibilityCondition `json:"condition"`
-	Type      string                   `json:"type,omitempty"`
+	Provider  kubermaticv1.ProviderType `json:"provider"`
+	Version   string                    `json:"version"`
+	Condition IncompatibilityCondition  `json:"condition"`
+	Type      string                    `json:"type,omitempty"`
 }
 
 // Version is the object representing a Kubernetes version.

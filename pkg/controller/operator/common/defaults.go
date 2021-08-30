@@ -613,6 +613,10 @@ func defaultVersioning(settings *operatorv1alpha1.KubermaticVersioningConfigurat
 		settings.Updates = defaults.Updates
 	}
 
+	if len(settings.ProviderIncompatibilities) == 0 {
+		settings.ProviderIncompatibilities = defaults.ProviderIncompatibilities
+	}
+
 	return nil
 }
 
