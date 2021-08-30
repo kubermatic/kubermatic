@@ -535,7 +535,7 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	// Define an endpoint to retrieve the Kubernetes versions supported by the given provider
 	mux.Methods(http.MethodGet).
 		Path("/providers/{provider_name}/versions").
-		Handler(r.updatePreset())
+		Handler(r.listVersions())
 
 	// Define a set of endpoints for cluster templates management
 	mux.Methods(http.MethodPost).

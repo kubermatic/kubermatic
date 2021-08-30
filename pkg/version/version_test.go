@@ -270,6 +270,44 @@ func TestProviderIncompatibilitiesUpdate(t *testing.T) {
 			},
 		},
 		{
+			name:        "Check with incompatibility for another provider",
+			provider:    kubermaticv1.ProviderAWS,
+			clusterType: apiv1.KubernetesClusterType,
+			conditions:  []IncompatibilityCondition{ExternalCloudProviderCondition},
+			fromVersion: "1.21.0",
+			manager: New([]*Version{
+				{
+					Version: semver.MustParse("1.21.0"),
+					Default: true,
+					Type:    apiv1.KubernetesClusterType,
+				},
+				{
+					Version: semver.MustParse("1.22.0"),
+					Default: false,
+					Type:    apiv1.KubernetesClusterType,
+				},
+			}, []*Update{
+				{
+					From:      "1.21.*",
+					To:        "1.22.*",
+					Automatic: true,
+					Type:      apiv1.KubernetesClusterType,
+				},
+			}, []*ProviderIncompatibility{
+				{
+					Provider:  kubermaticv1.ProviderVSphere,
+					Version:   "1.22.*",
+					Type:      apiv1.KubernetesClusterType,
+					Condition: ExternalCloudProviderCondition,
+				},
+			}),
+			expectedVersions: []*Version{
+				{
+					Version: semver.MustParse("1.22.0"),
+				},
+			},
+		},
+		{
 			name:        "Check with conditioned Incompatibility for given provider",
 			provider:    kubermaticv1.ProviderVSphere,
 			clusterType: apiv1.KubernetesClusterType,

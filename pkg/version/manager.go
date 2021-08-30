@@ -309,7 +309,7 @@ func (m *Manager) CheckProviderCompatibility(version *semver.Version, provider k
 	var compatible = true
 	for _, pi := range m.providerIncompatibilities {
 		for _, ic := range conditions {
-			if pi.Provider == provider && (pi.Condition == ic || ic == AlwaysCondition || pi.Condition == AlwaysCondition) && pi.Type == clusterType {
+			if pi.Provider == provider && pi.Type == clusterType && (pi.Condition == ic || ic == AlwaysCondition || pi.Condition == AlwaysCondition) {
 				c, err := semver.NewConstraint(pi.Version)
 				if err != nil {
 					return false, fmt.Errorf("failed to parse to constraint %s: %v", c, err)
