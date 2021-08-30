@@ -43,6 +43,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/rulegroup"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/seedsettings"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/version"
 )
 
 // RegisterV2 declares all router paths for v2
@@ -3568,8 +3569,8 @@ func (r Routing) listVersions() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(preset.ListProviderPresets(r.presetsProvider, r.userInfoGetter)),
-		common.DecodeEmptyReq,
+		)(version.ListVersions(r.updateManager)),
+		version.DecodeListProviderVersions,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

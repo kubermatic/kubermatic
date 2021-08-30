@@ -1,0 +1,7 @@
+# This file has been generated using hack/update-kubermatic-chart.sh, do not edit.
+
+ProviderIncompatibilities:
+- condition: externalCloudProvider
+  provider: vsphere
+  type: kubernetes
+  version: 1.22.*
