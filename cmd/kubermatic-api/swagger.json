@@ -21520,6 +21520,10 @@
           "type": "string",
           "x-go-name": "MlaAlertmanagerPrefix"
         },
+        "mlaGrafanaPrefix": {
+          "type": "string",
+          "x-go-name": "MlaGrafanaPrefix"
+        },
         "mlaOptions": {
           "$ref": "#/definitions/MlaOptions"
         },
