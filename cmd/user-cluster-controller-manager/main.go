@@ -265,6 +265,7 @@ func main() {
 			MLAGatewayURL:                runOp.mlaGatewayURL,
 			PrometheusScrapeConfigPrefix: runOp.prometheusScrapeConfigPrefix,
 		},
+		runOp.clusterName,
 		log,
 	); err != nil {
 		log.Fatalw("Failed to register user cluster controller", zap.Error(err))
