@@ -85,6 +85,14 @@ func (r Routing) RegisterV1Admin(mux *mux.Router) {
 	mux.Methods(http.MethodDelete).
 		Path("/admin/seeds/{seed_name}").
 		Handler(r.deleteSeed())
+
+	mux.Methods(http.MethodPost).
+		Path("/admin/metering/credentials").
+		Handler(r.createOrUpdateMeteringCredentials())
+
+	mux.Methods(http.MethodPost).
+		Path("/admin/metering/configurations").
+		Handler(r.createOrUpdateMeteringConfigurations())
 }
 
 // swagger:route GET /api/v1/admin/settings admin getKubermaticSettings
@@ -401,6 +409,54 @@ func (r Routing) deleteSeed() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(admin.DeleteSeedEndpoint(r.userInfoGetter, r.seedsGetter, r.seedsClientGetter)),
 		admin.DecodeSeedReq,
+		EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v1/admin/metering/credentials admin updateOrCreateMeteringCredentials
+//
+//     Creates or updates the metering tool credentials.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) createOrUpdateMeteringCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(admin.CreateOrUpdateMeteringCredentials(r.seedsGetter, r.seedsClientGetter)),
+		admin.DecodeMeteringReq,
+		EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v1/admin/metering/configurations admin createOrUpdateMeteringConfigurations
+//
+//     Configures KKP metering tool.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) createOrUpdateMeteringConfigurations() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(admin.CreateOrUpdateMeteringConfigurations(r.seedsGetter, r.seedsClientGetter)),
+		admin.DecodeMeteringConfigurationsReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
