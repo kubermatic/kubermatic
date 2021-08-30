@@ -91,7 +91,7 @@ func newDashboardGrafanaReconciler(
 		if !strings.HasPrefix(a.GetName(), grafanaDashboardsConfigmapNamePrefix) {
 			return []reconcile.Request{}
 		}
-		return []reconcile.Request{reconcile.Request{NamespacedName: types.NamespacedName{Name: a.GetName(), Namespace: a.GetNamespace()}}}
+		return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: a.GetName(), Namespace: a.GetNamespace()}}}
 	})
 
 	if err := c.Watch(&source.Kind{Type: &corev1.ConfigMap{}}, enqueueGrafanaConfigMap, predicateutil.ByNamespace(dashboardGrafanaController.mlaNamespace)); err != nil {
