@@ -10,6 +10,7 @@ import (
 
 	gatekeeperv1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -760,6 +761,43 @@ func ReconcileIngresses(ctx context.Context, namedGetters []NamedIngressCreatorG
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &networkingv1.Ingress{}, false); err != nil {
 			return fmt.Errorf("failed to ensure Ingress %s/%s: %v", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
+// KubermaticConfigurationCreator defines an interface to create/update KubermaticConfigurations
+type KubermaticConfigurationCreator = func(existing *operatorv1alpha1.KubermaticConfiguration) (*operatorv1alpha1.KubermaticConfiguration, error)
+
+// NamedKubermaticConfigurationCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedKubermaticConfigurationCreatorGetter = func() (name string, create KubermaticConfigurationCreator)
+
+// KubermaticConfigurationObjectWrapper adds a wrapper so the KubermaticConfigurationCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func KubermaticConfigurationObjectWrapper(create KubermaticConfigurationCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*operatorv1alpha1.KubermaticConfiguration))
+		}
+		return create(&operatorv1alpha1.KubermaticConfiguration{})
+	}
+}
+
+// ReconcileKubermaticConfigurations will create and update the KubermaticConfigurations coming from the passed KubermaticConfigurationCreator slice
+func ReconcileKubermaticConfigurations(ctx context.Context, namedGetters []NamedKubermaticConfigurationCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := KubermaticConfigurationObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &operatorv1alpha1.KubermaticConfiguration{}, false); err != nil {
+			return fmt.Errorf("failed to ensure KubermaticConfiguration %s/%s: %v", namespace, name, err)
 		}
 	}
 

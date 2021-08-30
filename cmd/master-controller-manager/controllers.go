@@ -83,7 +83,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	if err := serviceaccount.Add(ctrlCtx.mgr); err != nil {
 		return fmt.Errorf("failed to create serviceaccount controller: %v", err)
 	}
-	if err := seedsync.Add(ctrlCtx.ctx, ctrlCtx.mgr, 1, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.seedKubeconfigGetter); err != nil {
+	if err := seedsync.Add(ctrlCtx.ctx, ctrlCtx.mgr, 1, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.seedKubeconfigGetter, ctrlCtx.seedsGetter); err != nil {
 		return fmt.Errorf("failed to create seedsync controller: %v", err)
 	}
 	if err := seedproxy.Add(ctrlCtx.ctx, ctrlCtx.mgr, 1, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.seedsGetter, ctrlCtx.seedKubeconfigGetter); err != nil {

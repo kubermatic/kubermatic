@@ -23,7 +23,6 @@ import (
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	"k8c.io/kubermatic/v2/pkg/controller/util"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
@@ -64,6 +63,7 @@ func Add(
 	workerName string,
 ) error {
 	namespacePredicate := predicateutil.ByNamespace(namespace)
+	versionChangedPredicate := predicate.ResourceVersionChangedPredicate{}
 
 	reconciler := &Reconciler{
 		log:            log.Named(ControllerName),
@@ -88,7 +88,7 @@ func Add(
 	}
 
 	// watch for changes to KubermaticConfigurations in the master cluster and reconcile all seeds
-	configEventHandler := handler.EnqueueRequestsFromMapFunc(func(_ ctrlruntimeclient.Object) []reconcile.Request {
+	configEventHandler := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		seeds, err := seedsGetter()
 		if err != nil {
 			log.Errorw("Failed to handle request", zap.Error(err))
@@ -100,7 +100,8 @@ func Add(
 		for _, seed := range seeds {
 			requests = append(requests, reconcile.Request{
 				NamespacedName: types.NamespacedName{
-					Name: seed.Name,
+					Name:      seed.Name,
+					Namespace: seed.Namespace,
 				},
 			})
 		}
@@ -109,19 +110,64 @@ func Add(
 	})
 
 	config := &operatorv1alpha1.KubermaticConfiguration{}
-	if err := c.Watch(&source.Kind{Type: config}, configEventHandler, namespacePredicate); err != nil {
+	if err := c.Watch(&source.Kind{Type: config}, configEventHandler, namespacePredicate, predicate.ResourceVersionChangedPredicate{}); err != nil {
 		return fmt.Errorf("failed to create watcher for %T: %v", config, err)
 	}
 
 	// watch for changes to the global CA bundle ConfigMap and replicate it into each Seed
+	configMapEventHandler := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+		// find the owning KubermaticConfiguration
+		config, err := getKubermaticConfigurationForNamespace(ctx, reconciler.masterClient, namespace, reconciler.log)
+		if err != nil {
+			log.Errorw("Failed to retrieve config", zap.Error(err))
+			utilruntime.HandleError(err)
+			return nil
+		}
+		if config == nil {
+			return nil
+		}
+
+		defaulted, err := common.DefaultConfiguration(config, zap.NewNop().Sugar())
+		if err != nil {
+			log.Errorw("Failed to default config", zap.Error(err))
+			utilruntime.HandleError(err)
+			return nil
+		}
+
+		// we only care for one specific ConfigMap, but its name is dynamic so we cannot have
+		// a static watch setup for it
+		if a.GetName() != defaulted.Spec.CABundle.Name {
+			return nil
+		}
+
+		seeds, err := seedsGetter()
+		if err != nil {
+			log.Errorw("Failed to handle request", zap.Error(err))
+			utilruntime.HandleError(err)
+			return nil
+		}
+
+		requests := []reconcile.Request{}
+		for _, seed := range seeds {
+			requests = append(requests, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      seed.Name,
+					Namespace: seed.Namespace,
+				},
+			})
+		}
+
+		return requests
+	})
+
 	configMap := &corev1.ConfigMap{}
-	if err := c.Watch(&source.Kind{Type: configMap}, configEventHandler, namespacePredicate); err != nil {
+	if err := c.Watch(&source.Kind{Type: configMap}, configMapEventHandler, namespacePredicate, versionChangedPredicate); err != nil {
 		return fmt.Errorf("failed to create watcher for %T: %v", configMap, err)
 	}
 
 	// watch for changes to Seed CRs inside the master cluster and reconcile the seed itself only
 	seed := &kubermaticv1.Seed{}
-	if err := c.Watch(&source.Kind{Type: seed}, &handler.EnqueueRequestForObject{}, namespacePredicate); err != nil {
+	if err := c.Watch(&source.Kind{Type: seed}, &handler.EnqueueRequestForObject{}, namespacePredicate, versionChangedPredicate); err != nil {
 		return fmt.Errorf("failed to create watcher for %T: %v", seed, err)
 	}
 
@@ -140,7 +186,14 @@ func Add(
 
 func createSeedWatches(controller controller.Controller, seedName string, seedManager manager.Manager, namespace string) error {
 	cache := seedManager.GetCache()
-	eventHandler := util.EnqueueConst(seedName)
+	eventHandler := handler.EnqueueRequestsFromMapFunc(func(o ctrlruntimeclient.Object) []reconcile.Request {
+		return []reconcile.Request{{
+			NamespacedName: types.NamespacedName{
+				Name:      seedName,
+				Namespace: namespace,
+			},
+		}}
+	})
 
 	watch := func(t ctrlruntimeclient.Object, preds ...predicate.Predicate) error {
 		seedTypeWatch := &source.Kind{Type: t}
@@ -220,4 +273,28 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 	}
 
 	return nil
+}
+
+func getKubermaticConfigurationForNamespace(ctx context.Context, client ctrlruntimeclient.Client, namespace string, log *zap.SugaredLogger) (*operatorv1alpha1.KubermaticConfiguration, error) {
+	// find the owning KubermaticConfiguration
+	configList := &operatorv1alpha1.KubermaticConfigurationList{}
+	listOpts := &ctrlruntimeclient.ListOptions{
+		Namespace: namespace,
+	}
+
+	if err := client.List(ctx, configList, listOpts); err != nil {
+		return nil, fmt.Errorf("failed to find KubermaticConfigurations: %v", err)
+	}
+
+	if len(configList.Items) == 0 {
+		log.Debug("ignoring request for namespace without KubermaticConfiguration")
+		return nil, nil
+	}
+
+	if len(configList.Items) > 1 {
+		log.Infow("there are multiple KubermaticConfiguration objects, cannot reconcile", "namespace", namespace)
+		return nil, nil
+	}
+
+	return &configList.Items[0], nil
 }
