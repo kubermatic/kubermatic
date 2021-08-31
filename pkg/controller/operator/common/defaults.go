@@ -266,7 +266,14 @@ var (
 			{
 				Provider:  kubermaticv1.ProviderVSphere,
 				Version:   "1.22.*",
+				Condition: version.AlwaysCondition,
+				Operation: version.CreateOperation,
+			},
+			{
+				Provider:  kubermaticv1.ProviderVSphere,
+				Version:   "1.22.*",
 				Condition: version.ExternalCloudProviderCondition,
+				Operation: version.UpdateOperation,
 			},
 		},
 	}
@@ -927,6 +934,7 @@ func CreateProviderIncompatibilitiesYAML(config *operatorv1alpha1.KubermaticVers
 				Provider:  i.Provider,
 				Version:   i.Version,
 				Condition: i.Condition,
+				Operation: i.Operation,
 				Type:      kind,
 			})
 		}

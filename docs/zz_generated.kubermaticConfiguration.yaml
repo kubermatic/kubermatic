@@ -415,7 +415,12 @@ spec:
       default: 1.21.3
       # ProviderIncompatibilities lists all the kubernetes version prohibited for a given provider. Wildcards are allowed, e.g. "1.22.*".
       providerIncompatibilities:
+        - condition: always
+          operation: CREATE
+          provider: vsphere
+          version: 1.22.*
         - condition: externalCloudProvider
+          operation: UPDATE
           provider: vsphere
           version: 1.22.*
       # Updates is a list of available and automatic upgrades.

@@ -202,7 +202,7 @@ type CreateReq struct {
 	Body apiv1.CreateClusterSpec
 }
 
-// Validate validates DeleteEndpoint request
+// Validate validates CreateEndpoint request
 func (r CreateReq) Validate(clusterType kubermaticv1.ClusterType, updateManager common.UpdateManager) error {
 	if len(r.ProjectID) == 0 || len(r.DC) == 0 {
 		return fmt.Errorf("the service account ID and datacenter cannot be empty")

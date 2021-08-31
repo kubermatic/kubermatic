@@ -32,7 +32,7 @@ import (
 )
 
 // listProviderVersionsReq represents a request for a list of presets
-// swagger:parameters listProviderVersionsReq
+// swagger:parameters listVersionsByProvider
 type listProviderVersionsReq struct {
 	// in: path
 	// required: true

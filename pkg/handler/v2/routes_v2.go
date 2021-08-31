@@ -535,7 +535,7 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	// Define an endpoint to retrieve the Kubernetes versions supported by the given provider
 	mux.Methods(http.MethodGet).
 		Path("/providers/{provider_name}/versions").
-		Handler(r.listVersions())
+		Handler(r.listVersionsByProvider())
 
 	// Define a set of endpoints for cluster templates management
 	mux.Methods(http.MethodPost).
@@ -3551,20 +3551,22 @@ func (r Routing) updatePreset() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v2/providers/{provider_name}/versions versions listVersions
+// swagger:route GET /api/v2/providers/{provider_name}/versions version listVersionsByProvider
 //
 // Lists all versions which don't result in automatic updates for a given provider
 //
+//     Consumes:
+//	   - application/json
 //
 //     Produces:
 //     - application/json
 //
 //     Responses:
 //       default: errorResponse
-//       200: []MasterVersion
+//       200: VersionList
 //       401: empty
 //       403: empty
-func (r Routing) listVersions() http.Handler {
+func (r Routing) listVersionsByProvider() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),

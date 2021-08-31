@@ -35,6 +35,13 @@ const (
 	ExternalCloudProviderCondition IncompatibilityCondition = "externalCloudProvider"
 )
 
+type OperationType string
+
+const (
+	CreateOperation OperationType = "CREATE"
+	UpdateOperation OperationType = "UPDATE"
+)
+
 var (
 	errVersionNotFound  = errors.New("version not found")
 	errNoDefaultVersion = errors.New("no default version configured")
@@ -51,6 +58,7 @@ type ProviderIncompatibility struct {
 	Provider  kubermaticv1.ProviderType `json:"provider"`
 	Version   string                    `json:"version"`
 	Condition IncompatibilityCondition  `json:"condition"`
+	Operation OperationType             `json:"operation"`
 	Type      string                    `json:"type,omitempty"`
 }
 
@@ -160,7 +168,7 @@ func (m *Manager) GetVersions(clusterType string) ([]*Version, error) {
 }
 
 // GetVersionsV2 returns all Versions which don't result in automatic updates
-func (m *Manager) GetVersionsV2(clusterType string, provider kubermaticv1.ProviderType) ([]*Version, error) {
+func (m *Manager) GetVersionsV2(clusterType string, provider kubermaticv1.ProviderType, conditions ...IncompatibilityCondition) ([]*Version, error) {
 	var masterVersions []*Version
 	for _, v := range m.versions {
 		if v.Type == clusterType {
@@ -172,7 +180,7 @@ func (m *Manager) GetVersionsV2(clusterType string, provider kubermaticv1.Provid
 			if autoUpdate != nil {
 				continue
 			}
-			compatible, err := m.CheckProviderCompatibility(v.Version, provider, clusterType, AlwaysCondition)
+			compatible, err := m.checkProviderCompatibility(v.Version, provider, clusterType, CreateOperation, conditions...)
 			if err != nil {
 				return nil, err
 			}
@@ -291,7 +299,7 @@ func (m *Manager) GetPossibleUpdates(fromVersionRaw, clusterType string, provide
 	for _, c := range toConstraints {
 		for _, v := range m.versions {
 			if c.Check(v.Version) && !from.Equal(v.Version) && v.Type == clusterType {
-				compatible, err := m.CheckProviderCompatibility(v.Version, provider, clusterType, conditions...)
+				compatible, err := m.checkProviderCompatibility(v.Version, provider, clusterType, UpdateOperation, conditions...)
 				if err != nil {
 					return nil, err
 				}
@@ -305,21 +313,42 @@ func (m *Manager) GetPossibleUpdates(fromVersionRaw, clusterType string, provide
 	return possibleVersions, nil
 }
 
-func (m *Manager) CheckProviderCompatibility(version *semver.Version, provider kubermaticv1.ProviderType, clusterType string, conditions ...IncompatibilityCondition) (bool, error) {
+func (m *Manager) checkProviderCompatibility(version *semver.Version, provider kubermaticv1.ProviderType, clusterType string, operation OperationType, conditions ...IncompatibilityCondition) (bool, error) {
 	var compatible = true
+	var err error
 	for _, pi := range m.providerIncompatibilities {
-		for _, ic := range conditions {
-			if pi.Provider == provider && pi.Type == clusterType && (pi.Condition == ic || ic == AlwaysCondition || pi.Condition == AlwaysCondition) {
-				c, err := semver.NewConstraint(pi.Version)
+		if pi.Provider == provider && pi.Type == clusterType && operation == pi.Operation {
+			if pi.Condition == AlwaysCondition {
+				compatible, err = createAndCheckConstraint(version, pi.Version)
 				if err != nil {
-					return false, fmt.Errorf("failed to parse to constraint %s: %v", c, err)
+					return false, fmt.Errorf("check incompatibility failed")
 				}
-				if c.Check(version) {
-					compatible = false
-					break
+			} else {
+				for _, ic := range conditions {
+					if pi.Condition == ic || ic == AlwaysCondition || pi.Condition == AlwaysCondition {
+						compatible, err = createAndCheckConstraint(version, pi.Version)
+						if err != nil {
+							return false, fmt.Errorf("check incompatibility failed")
+						}
+						if !compatible {
+							return false, nil
+						}
+					}
 				}
+			}
+			if !compatible {
+				return false, nil
 			}
 		}
 	}
 	return compatible, nil
+}
+
+func createAndCheckConstraint(baseVersion *semver.Version, version string) (bool, error) {
+	c, err := semver.NewConstraint(version)
+	if err != nil {
+		return false, fmt.Errorf("failed to parse to constraint %s: %v", c, err)
+	}
+
+	return !c.Check(baseVersion), nil
 }

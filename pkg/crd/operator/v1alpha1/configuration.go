@@ -342,6 +342,7 @@ type Incompatibility struct {
 	Provider  kubermaticv1.ProviderType        `json:"provider,omitempty"`
 	Version   string                           `json:"version,omitempty"`
 	Condition version.IncompatibilityCondition `json:"condition,omitempty"`
+	Operation version.OperationType            `json:"operation,omitempty"`
 }
 
 // KubermaticVPAConfiguration configures the Kubernetes VPA.

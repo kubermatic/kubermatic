@@ -15533,21 +15533,36 @@
     "/api/v2/providers/{provider_name}/versions": {
       "get": {
         "description": "Lists all versions which don't result in automatic updates for a given provider",
+        "consumes": [
+          "application/json"
+        ],
         "produces": [
           "application/json"
         ],
         "tags": [
-          "versions"
+          "version"
         ],
-        "operationId": "listVersions",
+        "operationId": "listVersionsByProvider",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProviderName",
+            "name": "provider_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Type",
+            "name": "type",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
-            "description": "MasterVersion",
+            "description": "VersionList",
             "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/MasterVersion"
-              }
+              "$ref": "#/definitions/VersionList"
             }
           },
           "401": {
@@ -22191,6 +22206,14 @@
       "type": "object",
       "title": "Version represents a single semantic version.",
       "x-go-package": "github.com/Masterminds/semver/v3"
+    },
+    "VersionList": {
+      "description": "VersionList represents a list of versions",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/MasterVersion"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "Violation": {
       "description": "Violation represents a gatekeeper constraint violation",
