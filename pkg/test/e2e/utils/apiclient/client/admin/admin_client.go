@@ -30,6 +30,8 @@ type ClientOption func(*runtime.ClientOperation)
 type ClientService interface {
 	CreateOrUpdateMeteringConfigurations(params *CreateOrUpdateMeteringConfigurationsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOrUpdateMeteringConfigurationsOK, error)
 
+	CreateOrUpdateMeteringCredentials(params *CreateOrUpdateMeteringCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOrUpdateMeteringCredentialsOK, error)
+
 	DeleteAdmissionPlugin(params *DeleteAdmissionPluginParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAdmissionPluginOK, error)
 
 	DeleteSeed(params *DeleteSeedParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteSeedOK, error)
@@ -53,8 +55,6 @@ type ClientService interface {
 	SetAdmin(params *SetAdminParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SetAdminOK, error)
 
 	UpdateAdmissionPlugin(params *UpdateAdmissionPluginParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateAdmissionPluginOK, error)
-
-	UpdateOrCreateMeteringCredentials(params *UpdateOrCreateMeteringCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateOrCreateMeteringCredentialsOK, error)
 
 	UpdateSeed(params *UpdateSeedParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateSeedOK, error)
 
@@ -96,6 +96,44 @@ func (a *Client) CreateOrUpdateMeteringConfigurations(params *CreateOrUpdateMete
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*CreateOrUpdateMeteringConfigurationsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  CreateOrUpdateMeteringCredentials creates or updates the metering tool credentials
+*/
+func (a *Client) CreateOrUpdateMeteringCredentials(params *CreateOrUpdateMeteringCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOrUpdateMeteringCredentialsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewCreateOrUpdateMeteringCredentialsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "createOrUpdateMeteringCredentials",
+		Method:             "PUT",
+		PathPattern:        "/api/v1/admin/metering/credentials",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateOrUpdateMeteringCredentialsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*CreateOrUpdateMeteringCredentialsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*CreateOrUpdateMeteringCredentialsDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
@@ -552,44 +590,6 @@ func (a *Client) UpdateAdmissionPlugin(params *UpdateAdmissionPluginParams, auth
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*UpdateAdmissionPluginDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
-}
-
-/*
-  UpdateOrCreateMeteringCredentials creates or updates the metering tool credentials
-*/
-func (a *Client) UpdateOrCreateMeteringCredentials(params *UpdateOrCreateMeteringCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateOrCreateMeteringCredentialsOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewUpdateOrCreateMeteringCredentialsParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "updateOrCreateMeteringCredentials",
-		Method:             "PUT",
-		PathPattern:        "/api/v1/admin/metering/credentials",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &UpdateOrCreateMeteringCredentialsReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*UpdateOrCreateMeteringCredentialsOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*UpdateOrCreateMeteringCredentialsDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

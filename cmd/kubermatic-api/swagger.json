@@ -443,10 +443,103 @@
           "admin"
         ],
         "summary": "Creates or updates the metering tool credentials.",
-        "operationId": "updateOrCreateMeteringCredentials",
+        "operationId": "createOrUpdateMeteringCredentials",
         "responses": {
           "200": {
             "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/metering/reports": {
+      "get": {
+        "description": "List metering reports",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "metering",
+          "reports"
+        ],
+        "operationId": "listMeteringReports",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "StartAfter",
+            "name": "start_after",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int64",
+            "x-go-name": "MaxKeys",
+            "name": "max_keys",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "MeteringReport",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/MeteringReport"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/metering/reports/{report_name}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "metering",
+          "report"
+        ],
+        "summary": "Download a specific metering report. Provides an S3 pre signed URL valid for 1 hour.",
+        "operationId": "getMeteringReport",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ReportName",
+            "name": "report_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "MeteringReportURL",
+            "schema": {
+              "$ref": "#/definitions/MeteringReportURL"
+            }
           },
           "401": {
             "$ref": "#/responses/empty"
@@ -19463,6 +19556,33 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "MeteringReport": {
+      "description": "MeteringReport holds objects names and metadata for available reports",
+      "type": "object",
+      "properties": {
+        "lastModified": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "LastModified"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "size": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Size"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "MeteringReportURL": {
+      "description": "ReportURL represent an S3 pre signed URL to download a report",
+      "type": "string",
+      "x-go-name": "ReportURL",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "MlaOptions": {
       "type": "object",

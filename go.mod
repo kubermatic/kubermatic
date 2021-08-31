@@ -49,6 +49,7 @@ require (
 	github.com/kubermatic/grafanasdk v0.9.9
 	github.com/kubermatic/machine-controller v1.35.1
 	github.com/minio/minio-go v6.0.14+incompatible
+	github.com/minio/minio-go/v7 v7.0.13
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.14.0
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20210802220920-c000ec35322e

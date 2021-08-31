@@ -20,23 +20,25 @@ package admin
 
 import (
 	"context"
+
+	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/ee/metering"
+	meteringApi "k8c.io/kubermatic/v2/pkg/handler/v1/metering"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"net/http"
 )
 
-func createOrUpdateMeteringCredentials(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
+func createOrUpdateMeteringCredentials(ctx context.Context, request meteringApi.SecretReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
 	return metering.CreateOrUpdateCredentials(ctx, request, seedsGetter, seedClientGetter)
 }
 
-func DecodeMeteringReq(_ context.Context, r *http.Request) (interface{}, error) {
-	return metering.DecodeMeteringToolCredentials(r)
-}
-
-func createOrUpdateMeteringConfigurations(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
+func createOrUpdateMeteringConfigurations(ctx context.Context, request meteringApi.ConfigurationReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
 	return metering.CreateOrUpdateConfigurations(ctx, request, seedsGetter, seedClientGetter)
 }
 
-func DecodeMeteringConfigurationsReq(_ context.Context, r *http.Request) (interface{}, error) {
-	return metering.DecodeMeteringToolConfigurations(r)
+func listMeteringReports(ctx context.Context, request meteringApi.ListMeteringReportReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) ([]v1.MeteringReport, error) {
+	return metering.ListReports(ctx, request, seedsGetter, seedClientGetter)
+}
+
+func getMeteringReport(ctx context.Context, request meteringApi.GetMeteringReportReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) (string, error) {
+	return metering.GetReport(ctx, request, seedsGetter, seedClientGetter)
 }

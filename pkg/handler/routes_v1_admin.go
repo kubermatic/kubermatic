@@ -26,6 +26,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/admin"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/metering"
 )
 
 // RegisterV1Admin declares all router paths for the admin users
@@ -86,6 +87,7 @@ func (r Routing) RegisterV1Admin(mux *mux.Router) {
 		Path("/admin/seeds/{seed_name}").
 		Handler(r.deleteSeed())
 
+	// Defines a set of HTTP endpoints for metering tool
 	mux.Methods(http.MethodPut).
 		Path("/admin/metering/credentials").
 		Handler(r.createOrUpdateMeteringCredentials())
@@ -93,6 +95,15 @@ func (r Routing) RegisterV1Admin(mux *mux.Router) {
 	mux.Methods(http.MethodPut).
 		Path("/admin/metering/configurations").
 		Handler(r.createOrUpdateMeteringConfigurations())
+
+	mux.Methods(http.MethodGet).
+		Path("/admin/metering/reports").
+		Handler(r.listMeteringReports())
+
+	mux.Methods(http.MethodGet).
+		Path("/admin/metering/reports/{report_name}").
+		Handler(r.getMeteringReport())
+
 }
 
 // swagger:route GET /api/v1/admin/settings admin getKubermaticSettings
@@ -414,7 +425,7 @@ func (r Routing) deleteSeed() http.Handler {
 	)
 }
 
-// swagger:route PUT /api/v1/admin/metering/credentials admin updateOrCreateMeteringCredentials
+// swagger:route PUT /api/v1/admin/metering/credentials admin createOrUpdateMeteringCredentials
 //
 //     Creates or updates the metering tool credentials.
 //
@@ -431,8 +442,8 @@ func (r Routing) createOrUpdateMeteringCredentials() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(admin.CreateOrUpdateMeteringCredentials(r.seedsGetter, r.seedsClientGetter)),
-		admin.DecodeMeteringReq,
+		)(admin.CreateOrUpdateMeteringCredentials(r.userInfoGetter, r.seedsGetter, r.seedsClientGetter)),
+		metering.DecodeMeteringSecretReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -455,8 +466,56 @@ func (r Routing) createOrUpdateMeteringConfigurations() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(admin.CreateOrUpdateMeteringConfigurations(r.seedsGetter, r.seedsClientGetter)),
-		admin.DecodeMeteringConfigurationsReq,
+		)(admin.CreateOrUpdateMeteringConfigurations(r.userInfoGetter, r.seedsGetter, r.seedsClientGetter)),
+		metering.DecodeMeteringConfigurationsReq,
+		EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/admin/metering/reports metering reports listMeteringReports
+//
+//     List metering reports
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []MeteringReport
+//       401: empty
+//       403: empty
+func (r Routing) listMeteringReports() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(admin.ListMeteringReportsEndpoint(r.userInfoGetter, r.seedsGetter, r.seedsClientGetter)),
+		metering.DecodeListMeteringReportReq,
+		EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+//swagger:route GET /api/v1/admin/metering/reports/{report_name} metering report getMeteringReport
+//
+//    Download a specific metering report. Provides an S3 pre signed URL valid for 1 hour.
+//
+//    Produces:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      200: MeteringReportURL
+//      401: empty
+//      403: empty
+func (r Routing) getMeteringReport() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(admin.GetMeteringReportEndpoint(r.userInfoGetter, r.seedsGetter, r.seedsClientGetter)),
+		metering.DecodeGetMeteringReportReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
