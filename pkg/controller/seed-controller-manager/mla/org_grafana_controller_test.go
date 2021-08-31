@@ -61,7 +61,8 @@ func newTestOrgGrafanaReconciler(t *testing.T, objects []ctrlruntimeclient.Objec
 		Build()
 	ts := httptest.NewServer(handler)
 
-	grafanaClient := grafanasdk.NewClient(ts.URL, "admin:admin", ts.Client())
+	grafanaClient, err := grafanasdk.NewClient(ts.URL, "admin:admin", ts.Client())
+	assert.Nil(t, err)
 
 	orgGrafanaController := newOrgGrafanaController(dynamicClient, kubermaticlog.Logger, "mla", grafanaClient)
 	reconciler := orgGrafanaReconciler{
@@ -83,6 +84,7 @@ func TestOrgGrafanaReconcile(t *testing.T) {
 
 	board.Overwrite = true
 	board.Dashboard.Title = "dashboard"
+	board.Dashboard.UID = "unique"
 	boardData, err := json.Marshal(board)
 	assert.Nil(t, err)
 	testCases := []struct {
@@ -134,7 +136,7 @@ func TestOrgGrafanaReconcile(t *testing.T) {
 						Name:      grafanaDashboardsConfigmapNamePrefix + "-defaults",
 						Namespace: "mla",
 					},
-					Data: map[string]string{"first": `{"title": "dashboard"}`},
+					Data: map[string]string{"first": `{"title": "dashboard", "uid":"unique"}`},
 				},
 				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{

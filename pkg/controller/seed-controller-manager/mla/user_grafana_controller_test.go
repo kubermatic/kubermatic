@@ -47,7 +47,8 @@ func newTestUserGrafanaReconciler(t *testing.T, objects []ctrlruntimeclient.Obje
 		Build()
 	ts := httptest.NewServer(handler)
 
-	grafanaClient := grafanasdk.NewClient(ts.URL, "admin:admin", ts.Client())
+	grafanaClient, err := grafanasdk.NewClient(ts.URL, "admin:admin", ts.Client())
+	assert.Nil(t, err)
 
 	userGrafanaController := newUserGrafanaController(dynamicClient, kubermaticlog.Logger, grafanaClient, ts.Client(), ts.URL, "X-WEBAUTH-USER")
 	reconciler := userGrafanaReconciler{
