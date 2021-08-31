@@ -42,7 +42,7 @@ require (
 	github.com/gorilla/websocket v1.4.2
 	github.com/grafana/grafana v6.1.6+incompatible
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/hetznercloud/hcloud-go v1.25.0
+	github.com/hetznercloud/hcloud-go v1.32.0
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/inconshreveable/log15 v0.0.0-20201112154412-8562bdadbbac // indirect
 	github.com/jetstack/cert-manager v1.1.0
