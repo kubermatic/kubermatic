@@ -120,18 +120,11 @@ make test
 #### Update code generation
 
 Kuberneres code-generator tool does not work outside of GOPATH
-[see](https://github.com/kubernetes/kubernetes/issues/86753), if you followed
-the recommendation and cloned your repository at `$(go env GOPATH)/src/k8c.io`
-you can run the following command:
+[see](https://github.com/kubernetes/kubernetes/issues/86753), so the script below will
+automatically run the code generation in a Docker container.
 
 ```bash
 hack/update-codegen.sh
-```
-
-Otherwise run the following (requires Docker):
-
-```bash
-make update-codegen-in-docker
 ```
 
 ### Pull requests
