@@ -26,7 +26,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/admin"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
-	"k8c.io/kubermatic/v2/pkg/handler/v1/metering"
 )
 
 // RegisterV1Admin declares all router paths for the admin users
@@ -443,7 +442,7 @@ func (r Routing) createOrUpdateMeteringCredentials() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(admin.CreateOrUpdateMeteringCredentials(r.userInfoGetter, r.seedsGetter, r.seedsClientGetter)),
-		metering.DecodeMeteringSecretReq,
+		admin.DecodeMeteringSecretReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -467,7 +466,7 @@ func (r Routing) createOrUpdateMeteringConfigurations() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(admin.CreateOrUpdateMeteringConfigurations(r.userInfoGetter, r.masterClient)),
-		metering.DecodeMeteringConfigurationsReq,
+		admin.DecodeMeteringConfigurationsReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -491,7 +490,7 @@ func (r Routing) listMeteringReports() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(admin.ListMeteringReportsEndpoint(r.userInfoGetter, r.seedsGetter, r.seedsClientGetter)),
-		metering.DecodeListMeteringReportReq,
+		admin.DecodeListMeteringReportReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -515,7 +514,7 @@ func (r Routing) getMeteringReport() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(admin.GetMeteringReportEndpoint(r.userInfoGetter, r.seedsGetter, r.seedsClientGetter)),
-		metering.DecodeGetMeteringReportReq,
+		admin.DecodeGetMeteringReportReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)

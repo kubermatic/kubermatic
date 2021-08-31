@@ -20,26 +20,42 @@ package admin
 
 import (
 	"context"
+	"net/http"
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	meteringApi "k8c.io/kubermatic/v2/pkg/handler/v1/metering"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func createOrUpdateMeteringCredentials(ctx context.Context, request meteringApi.SecretReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
+func createOrUpdateMeteringCredentials(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
 	return nil
 }
 
-func createOrUpdateMeteringConfigurations(ctx context.Context, request meteringApi.ConfigurationReq, masterClient client.Client) error {
-	return nil
-}
-
-func listMeteringReports(ctx context.Context, request meteringApi.ListMeteringReportReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) ([]v1.MeteringReport, error) {
+func DecodeMeteringSecretReq(_ context.Context, r *http.Request) (interface{}, error) {
 	return nil, nil
 }
 
-func getMeteringReport(ctx context.Context, request meteringApi.GetMeteringReportReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) (string, error) {
+func createOrUpdateMeteringConfigurations(ctx context.Context, request interface{}, masterClient client.Client) error {
+	return nil
+}
+
+func DecodeMeteringConfigurationsReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return nil, nil
+}
+
+func listMeteringReports(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) ([]v1.MeteringReport, error) {
+	return nil, nil
+}
+
+func DecodeListMeteringReportReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return nil, nil
+}
+
+func getMeteringReport(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) (string, error) {
 	return "", nil
+}
+
+func DecodeGetMeteringReportReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return nil, nil
 }
