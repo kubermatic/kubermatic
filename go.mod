@@ -35,7 +35,7 @@ require (
 	github.com/go-swagger/go-swagger v0.27.0
 	github.com/go-test/deep v1.0.7
 	github.com/google/go-cmp v0.5.6
-	github.com/gophercloud/gophercloud v0.14.0
+	github.com/gophercloud/gophercloud v0.20.0
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/securecookie v1.1.1
