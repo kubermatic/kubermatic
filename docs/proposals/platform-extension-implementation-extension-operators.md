@@ -65,7 +65,7 @@ Kubernetes version is upgraded, OLM could automatically upgrade the operator.
   * installApprovalPlan
 * Parameters to create CRs managed by the operator
 * Status
-  * condeses [OperatorCondition](https://olm.operatorframework.io/docs/concepts/crds/operatorcondition/)
+  * Condensed information from [OperatorCondition](https://olm.operatorframework.io/docs/concepts/crds/operatorcondition/)
 
 ### Extension Catalog Controller
 
