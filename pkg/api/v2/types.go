@@ -172,6 +172,7 @@ type ClusterTemplate struct {
 	ProjectID      string                `json:"projectID,omitempty"`
 	User           string                `json:"user,omitempty"`
 	Scope          string                `json:"scope"`
+	UserSSHKeys    []string              `json:"userSshKeys,omitempty"`
 	Cluster        *apiv1.Cluster        `json:"cluster,omitempty"`
 	NodeDeployment *apiv1.NodeDeployment `json:"nodeDeployment,omitempty"`
 }

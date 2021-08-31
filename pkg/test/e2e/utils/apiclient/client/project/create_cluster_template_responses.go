@@ -182,6 +182,9 @@ type CreateClusterTemplateBody struct {
 	// scope
 	Scope string `json:"scope,omitempty"`
 
+	// user SSH keys
+	UserSSHKeys []string `json:"userSshKeys"`
+
 	// cluster
 	Cluster *models.Cluster `json:"cluster,omitempty"`
 

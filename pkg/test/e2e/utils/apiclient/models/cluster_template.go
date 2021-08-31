@@ -33,6 +33,9 @@ type ClusterTemplate struct {
 	// user
 	User string `json:"user,omitempty"`
 
+	// user SSH keys
+	UserSSHKeys []string `json:"userSshKeys"`
+
 	// cluster
 	Cluster *Cluster `json:"cluster,omitempty"`
 
