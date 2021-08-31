@@ -145,7 +145,7 @@ func getVsphereCPIVersion(version semver.Semver) (string, error) {
 	case 21:
 		return latestVsphereCPIVersion, nil
 	case 22:
-		return latestVsphereCPIVersion, nil
+		return "", fmt.Errorf("kubernetes v1.22 not supported by external CCM")
 	default:
 		return latestVsphereCPIVersion, nil
 	}

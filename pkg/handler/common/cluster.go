@@ -42,6 +42,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/cluster"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/validation"
+	"k8c.io/kubermatic/v2/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -1052,6 +1053,10 @@ func getSSHKey(ctx context.Context, userInfoGetter provider.UserInfoGetter, sshK
 }
 
 func convertInternalCCMStatusToExternal(cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.Datacenter) apiv1.ExternalCCMMigrationStatus {
+	if check, _ := version.CreateAndCheckNotConstrained(cluster.Spec.Version.Version, "1.22.*"); !check {
+		return apiv1.ExternalCCMMigrationUnsupported
+	}
+
 	switch externalCCMEnabled, externalCCMSupported := cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider], cloudcontroller.ExternalCloudControllerFeatureSupported(datacenter, cluster); {
 
 	case externalCCMEnabled:

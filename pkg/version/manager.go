@@ -319,14 +319,14 @@ func (m *Manager) checkProviderCompatibility(version *semver.Version, provider k
 	for _, pi := range m.providerIncompatibilities {
 		if pi.Provider == provider && pi.Type == clusterType && operation == pi.Operation {
 			if pi.Condition == AlwaysCondition {
-				compatible, err = createAndCheckConstraint(version, pi.Version)
+				compatible, err = CreateAndCheckNotConstrained(version, pi.Version)
 				if err != nil {
 					return false, fmt.Errorf("check incompatibility failed")
 				}
 			} else {
 				for _, ic := range conditions {
 					if pi.Condition == ic || ic == AlwaysCondition || pi.Condition == AlwaysCondition {
-						compatible, err = createAndCheckConstraint(version, pi.Version)
+						compatible, err = CreateAndCheckNotConstrained(version, pi.Version)
 						if err != nil {
 							return false, fmt.Errorf("check incompatibility failed")
 						}
@@ -342,13 +342,4 @@ func (m *Manager) checkProviderCompatibility(version *semver.Version, provider k
 		}
 	}
 	return compatible, nil
-}
-
-func createAndCheckConstraint(baseVersion *semver.Version, version string) (bool, error) {
-	c, err := semver.NewConstraint(version)
-	if err != nil {
-		return false, fmt.Errorf("failed to parse to constraint %s: %v", c, err)
-	}
-
-	return !c.Check(baseVersion), nil
 }
