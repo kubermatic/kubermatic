@@ -51,7 +51,7 @@ var scopeList = []string{
 
 func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
 	userInfoGetter provider.UserInfoGetter, clusterTemplateProvider provider.ClusterTemplateProvider, settingsProvider provider.SettingsProvider, updateManager common.UpdateManager,
-	seedsGetter provider.SeedsGetter, credentialManager provider.PresetProvider, caBundle *x509.CertPool, exposeStrategy kubermaticv1.ExposeStrategy) endpoint.Endpoint {
+	seedsGetter provider.SeedsGetter, credentialManager provider.PresetProvider, caBundle *x509.CertPool, exposeStrategy kubermaticv1.ExposeStrategy, sshKeyProvider provider.SSHKeyProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createClusterTemplateReq)
 
@@ -105,6 +105,28 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 		newClusterTemplate.Labels[kubermaticv1.ClusterTemplateScopeLabelKey] = req.Body.Scope
 		newClusterTemplate.Labels[kubermaticv1.ClusterTemplateHumanReadableNameLabelKey] = req.Body.Name
 
+		// SSH check
+		if len(req.Body.UserSSHKeys) > 0 && req.Body.Scope == kubermaticv1.ProjectClusterTemplateScope {
+
+			projectSSHKeys, err := sshKeyProvider.List(project, nil)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			for _, templateKeyID := range req.Body.UserSSHKeys {
+				found := false
+				for _, projectSSHKey := range projectSSHKeys {
+					if projectSSHKey.Name == templateKeyID {
+						found = true
+						break
+					}
+				}
+				if !found {
+					return nil, fmt.Errorf("the given ssh key %s does not belong to the given project %s (%s)", templateKeyID, project.Spec.Name, project.Name)
+				}
+			}
+			newClusterTemplate.UserSSHKeys = req.Body.UserSSHKeys
+		}
+
 		clusterTemplate, err := clusterTemplateProvider.New(adminUserInfo, newClusterTemplate, req.Body.Scope, project.Name)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -138,8 +160,9 @@ type createClusterTemplateReq struct {
 	common.ProjectReq
 	// in: body
 	Body struct {
-		Name  string `json:"name"`
-		Scope string `json:"scope"`
+		Name        string   `json:"name"`
+		Scope       string   `json:"scope"`
+		UserSSHKeys []string `json:"userSshKeys"`
 		apiv1.CreateClusterSpec
 	}
 
@@ -422,11 +445,12 @@ func convertInternalClusterTemplatetoExternal(template *kubermaticv1.ClusterTemp
 	}
 
 	return &apiv2.ClusterTemplate{
-		Name:      template.Labels[kubermaticv1.ClusterTemplateHumanReadableNameLabelKey],
-		ID:        template.Name,
-		ProjectID: template.Labels[kubermaticv1.ClusterTemplateProjectLabelKey],
-		User:      template.Annotations[kubermaticv1.ClusterTemplateUserAnnotationKey],
-		Scope:     template.Labels[kubermaticv1.ClusterTemplateScopeLabelKey],
+		Name:        template.Labels[kubermaticv1.ClusterTemplateHumanReadableNameLabelKey],
+		ID:          template.Name,
+		ProjectID:   template.Labels[kubermaticv1.ClusterTemplateProjectLabelKey],
+		User:        template.Annotations[kubermaticv1.ClusterTemplateUserAnnotationKey],
+		Scope:       template.Labels[kubermaticv1.ClusterTemplateScopeLabelKey],
+		UserSSHKeys: template.UserSSHKeys,
 		Cluster: &apiv1.Cluster{
 			Labels:          template.ClusterLabels,
 			InheritedLabels: template.InheritedClusterLabels,

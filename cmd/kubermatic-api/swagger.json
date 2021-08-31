@@ -14230,6 +14230,13 @@
                 "scope": {
                   "type": "string",
                   "x-go-name": "Scope"
+                },
+                "userSshKeys": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "x-go-name": "UserSSHKeys"
                 }
               }
             }
@@ -17268,6 +17275,13 @@
         "user": {
           "type": "string",
           "x-go-name": "User"
+        },
+        "userSshKeys": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "UserSSHKeys"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
