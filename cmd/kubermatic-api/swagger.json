@@ -22172,7 +22172,7 @@
       "type": "object",
       "properties": {
         "name": {
-          "description": "Name of the etcd backup restore",
+          "description": "Name of the etcd backup restore. If not set, it will be generated",
           "type": "string",
           "x-go-name": "Name"
         },
