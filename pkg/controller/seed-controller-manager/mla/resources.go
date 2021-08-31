@@ -89,7 +89,7 @@ http {
 	# Loki
 	location = /loki/api/v1/push {
 {{ if .LokiWriteLimit }}
-      limit_req zone=loki_write_limit burst={{ .LokiWriteLimitBurst }} nodelay;
+      limit_req zone=loki_write_limit{{ if .LokiWriteLimitBurst }} burst={{ .LokiWriteLimitBurst }} nodelay{{ end }};
 {{ end }}
 	  proxy_pass       http://loki-distributed-distributor.{{ .Namespace }}.svc.cluster.local:3100$request_uri;
 	}
@@ -114,7 +114,7 @@ http {
 	# Loki
 	location ~ /loki/api/.* {
 {{ if .LokiReadLimit }}
-      limit_req zone=loki_read_limit burst={{ .LokiReadLimitBurst }} nodelay;
+      limit_req zone=loki_read_limit{{ if .LokiReadLimitBurst }} burst={{ .LokiReadLimitBurst }} nodelay{{ end }};
 {{ end }}
 	  proxy_pass       http://loki-distributed-query-frontend.{{ .Namespace }}.svc.cluster.local:3100$request_uri;
 	}
@@ -122,7 +122,7 @@ http {
 	# Cortex
 	location ~ /api/prom/.* {
 {{ if .CortexReadLimit }}
-      limit_req zone=cortex_read_limit burst={{ .CortexReadLimitBurst }} nodelay;
+      limit_req zone=cortex_read_limit{{ if .CortexReadLimitBurst }} burst={{ .CortexReadLimitBurst }} nodelay{{ end }};
 {{ end }}
 	  proxy_pass       http://cortex-query-frontend.{{ .Namespace }}.svc.cluster.local:8080$request_uri;
 	}
