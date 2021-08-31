@@ -10,23 +10,23 @@ This proposal explores an operator based approach for KKP extensions.
 
 ## Motivation and Background
 
-An implementation of platform-extension based on Helm charts provides flexible
-yet simplistic way to manage the lifecycle of platform-extensions.
+An implementation of platform-extension based on Helm charts provides flexible yet simplistic way to
+manage the lifecycle of platform-extensions.
 
-In case of more complex extensions that can not simply be installed with Helm
-([like KubeVirt](https://kubevirt.io/user-guide/operations/installation/), the
-extensions could be managed by their own operators.
+In case of more complex extensions that can not simply be installed with Helm ([like
+KubeVirt](https://kubevirt.io/user-guide/operations/installation/), the extensions could be managed
+by their own operators.
 
-To cover simple Helm based extensions either a Helm operator could be installed
-or simple operators could be [generated directly from Helm
+To cover simple Helm based extensions either a Helm operator could be installed or simple operators
+could be [generated directly from Helm
 charts](https://sdk.operatorframework.io/docs/building-operators/helm/tutorial/).
 
 [Check this for requirements](./platform-extensions.md#requirements-for-implementations)
 
 ## Implementation
 
-Every extension is managed by its own operator. These operators are being
-managed by [OLM](https://olm.operatorframework.io/).
+Every extension is managed by its own operator. These operators are being managed by
+[OLM](https://olm.operatorframework.io/).
 
 ### Main Concept Points
 
@@ -39,11 +39,10 @@ managed by [OLM](https://olm.operatorframework.io/).
 
 ### Extension Registration
 
-`Extension` 
+`Extension`
 * Reference to a
   [ClusterServiceVersion](https://olm.operatorframework.io/docs/concepts/crds/clusterserviceversion/)
-* Reference to a
-  [CatalogSource](https://olm.operatorframework.io/docs/concepts/crds/catalogsource/)
+* Reference to a [CatalogSource](https://olm.operatorframework.io/docs/concepts/crds/catalogsource/)
   (only required for user extensions, will default to KKP extension catalog)
 
 `ExtensionOperator`
@@ -52,27 +51,25 @@ managed by [OLM](https://olm.operatorframework.io/).
   * Name
   * Source
   * installApprovalPlan
+* Parameters to create CRs managed by the operator
 * Status
   * condeses [OperatorCondition](https://olm.operatorframework.io/docs/concepts/crds/operatorcondition/)
 
 ### Extension Catalog Controller
 
-Reconciles `Extension` CRs and takes care of registering Operators for
-Extensions in the Extension catalog, making them available for installation.
-It basically translates `Extensions` to CRs needed by the OLM operator either
-wrapping OLM's catalog operator or implementing the necessary parts to fit our
-requirements.
+Reconciles `Extension` CRs and takes care of registering Operators for Extensions in the Extension
+catalog, making them available for installation.  It basically translates `Extensions` to CRs needed
+by the OLM operator either wrapping OLM's catalog operator or implementing the necessary parts to
+fit our requirements.
 
 ### Extension Controller
 
-The extension controller reconciles ExtensionOperator CRs. It runs in the KKP
-controller manager in the seed cluster and manages OLM CRs on all user
-clusters. It acts as a wrapping layer around the OLM operator which taking care
-of the whole lifecycle of application operators.
+The extension controller reconciles ExtensionOperator CRs. It runs in the KKP controller manager in
+the seed cluster and manages OLM CRs on all user clusters. It acts as a wrapping layer around the
+OLM operator which taking care of the whole lifecycle of application operators.
 
-It initially handles ExtensionOperator CRs defined in the cluster template or
-KKP configuration. Based on the cluster configuration it allows you to install
-some extensions by default.
+It initially handles ExtensionOperator CRs defined in the cluster template or KKP configuration.
+Based on the cluster configuration it allows you to install some extensions by default.
 
 ### Architecture
 
@@ -83,4 +80,5 @@ tbd.
 See https://olm.operatorframework.io/docs/glossary/
 
 ## References
+
 * https://olm.operatorframework.io/docs
