@@ -22,21 +22,22 @@ import (
 	"context"
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	meteringApi "k8c.io/kubermatic/v2/pkg/handler/v1/metering"
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
-func createOrUpdateMeteringCredentials(ctx context.Context, request MeteringSecretReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
+func createOrUpdateMeteringCredentials(ctx context.Context, request meteringApi.SecretReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
 	return nil
 }
 
-func createOrUpdateMeteringConfigurations(ctx context.Context, request MeteringConfigurationReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
+func createOrUpdateMeteringConfigurations(ctx context.Context, request meteringApi.ConfigurationReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
 	return nil
 }
 
-func listMeteringReports(ctx context.Context, request ListMeteringReportReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) ([]v1.MeteringReport, error) {
+func listMeteringReports(ctx context.Context, request meteringApi.ListMeteringReportReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) ([]v1.MeteringReport, error) {
 	return nil, nil
 }
 
-func getMeteringReport(ctx context.Context, request GetMeteringReportReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) (v1.ReportURL, error) {
+func getMeteringReport(ctx context.Context, request meteringApi.GetMeteringReportReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) (string, error) {
 	return "", nil
 }
