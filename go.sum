@@ -461,8 +461,9 @@ github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f h1:lO4WD4F/r
 github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f/go.mod h1:cuUVRXasLTGF7a8hSLbxyZXjz+1KgoB3wDUb6vlszIc=
 github.com/dgryski/go-sip13 v0.0.0-20181026042036-e10d5fee7954/go.mod h1:vAd38F8PWV+bWy6jNmig1y/TA+kYO4g3RSRF0IAv0no=
 github.com/digitalocean/godo v1.44.0/go.mod h1:p7dOjjtSBqCTUksqtA5Fd3uaKs9kyTq2xcz76ulEJRU=
-github.com/digitalocean/godo v1.54.0 h1:KP0Nv87pgViR8k/7De3VrmflCL5pJqXbNnkcw0bwG10=
 github.com/digitalocean/godo v1.54.0/go.mod h1:p7dOjjtSBqCTUksqtA5Fd3uaKs9kyTq2xcz76ulEJRU=
+github.com/digitalocean/godo v1.65.0 h1:3SywGJBC18HaYtPQF+T36jYzXBi+a6eIMonSjDll7TA=
+github.com/digitalocean/godo v1.65.0/go.mod h1:p7dOjjtSBqCTUksqtA5Fd3uaKs9kyTq2xcz76ulEJRU=
 github.com/dimchansky/utfbom v1.1.0 h1:FcM3g+nofKgUteL8dm/UpdRXNC9KmADgTpLKsu0TRo4=
 github.com/dimchansky/utfbom v1.1.0/go.mod h1:rO41eb7gLfo8SF1jd9F8HplJm1Fewwi4mQvIirEdv+8=
 github.com/djherbis/atime v1.0.0/go.mod h1:5W+KBIuTwVGcqjIfaTwt+KSYX1o6uep8dtevevQP/f8=
