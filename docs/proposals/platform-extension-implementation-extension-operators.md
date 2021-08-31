@@ -30,12 +30,24 @@ Every extension is managed by its own operator. These operators are being manage
 
 ### Main Concept Points
 
-* Extensions provided by KKP devs
-  * Extension operators are bundled and provided via OLM catalog
-* Extensions provided by users
-  * Users can create and bundle their own extension operators and extend the
-	catalog
-* Life cycle management for extensions comes with OLM
+The idea is to profit from the life-cycle management of OLM, but abstract away some of the
+complexity away from KKP users and use it as "package manager for extension operators".
+
+To make operators available to install with OLM, they first need to be
+[packaged](https://olm.operatorframework.io/docs/tasks/creating-operator-manifests/). After creating
+[bundles](https://olm.operatorframework.io/docs/tasks/creating-operator-bundle/) from these package
+manifests, these bundles are added to an
+[Index](https://olm.operatorframework.io/docs/tasks/creating-an-index/) which is a docker image.
+This Index image can be referenced in OLM's CatalogSource CRs and will be constantly pulled by OLM's
+catalog operator to watch for new Versions of Operators.
+
+* Extensions by KKP are provided by an operator Index image from KKP
+* Extensions by users can be added by bundling and indexing them. See CatalogSource Reference in the
+  Extension CRD
+
+Life cycle management for Extensions comes with OLM. ClusterServiceVersions of operators can have
+minimum Kubernetes versions, so if InstallPlans for Operators are defined accordingly and the
+Kubernetes version is upgraded, OLM could automatically upgrade the operator.
 
 ### Extension Registration
 
