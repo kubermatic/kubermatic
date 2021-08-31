@@ -31,7 +31,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
-// listProviderVersionsReq represents a request for a list of presets
+// listProviderVersionsReq represents a request for a list of versions
 // swagger:parameters listVersionsByProvider
 type listProviderVersionsReq struct {
 	// in: path
