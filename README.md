@@ -7,12 +7,14 @@ Kubermatic Kubernetes Platform is in an open source project to centrally manage 
 All user documentation is available at the [Kubermatic Kubernetes Platform docs website][21].
 
 ## Editions
+
 There are two editions of Kubermatic Kubernetes Platform:
 
 Kubermatic Kubernetes Platform Community Edition (CE) is available freely under the Apache License, Version 2.0.
 Kubermatic Kubernetes Platform Enterprise Edition (EE) includes premium features that are most useful for organizations with large-scale Kubernetes installations with more than 50 clusters. To access the Enterprise Edition and get official support please become a subscriber.
 
 ## Licensing
+
 See the [LICENSE](LICENSE) file for licensing information as it pertains to files in this repository.
 
 ## Installation
