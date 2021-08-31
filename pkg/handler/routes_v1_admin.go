@@ -86,11 +86,11 @@ func (r Routing) RegisterV1Admin(mux *mux.Router) {
 		Path("/admin/seeds/{seed_name}").
 		Handler(r.deleteSeed())
 
-	mux.Methods(http.MethodPost).
+	mux.Methods(http.MethodPut).
 		Path("/admin/metering/credentials").
 		Handler(r.createOrUpdateMeteringCredentials())
 
-	mux.Methods(http.MethodPost).
+	mux.Methods(http.MethodPut).
 		Path("/admin/metering/configurations").
 		Handler(r.createOrUpdateMeteringConfigurations())
 }
@@ -414,7 +414,7 @@ func (r Routing) deleteSeed() http.Handler {
 	)
 }
 
-// swagger:route POST /api/v1/admin/metering/credentials admin updateOrCreateMeteringCredentials
+// swagger:route PUT /api/v1/admin/metering/credentials admin updateOrCreateMeteringCredentials
 //
 //     Creates or updates the metering tool credentials.
 //
@@ -438,7 +438,7 @@ func (r Routing) createOrUpdateMeteringCredentials() http.Handler {
 	)
 }
 
-// swagger:route POST /api/v1/admin/metering/configurations admin createOrUpdateMeteringConfigurations
+// swagger:route PUT /api/v1/admin/metering/configurations admin createOrUpdateMeteringConfigurations
 //
 //     Configures KKP metering tool.
 //

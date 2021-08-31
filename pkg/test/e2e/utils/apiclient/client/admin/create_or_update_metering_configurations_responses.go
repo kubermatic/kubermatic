@@ -66,7 +66,7 @@ type CreateOrUpdateMeteringConfigurationsOK struct {
 }
 
 func (o *CreateOrUpdateMeteringConfigurationsOK) Error() string {
-	return fmt.Sprintf("[POST /api/v1/admin/metering/configurations][%d] createOrUpdateMeteringConfigurationsOK ", 200)
+	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations][%d] createOrUpdateMeteringConfigurationsOK ", 200)
 }
 
 func (o *CreateOrUpdateMeteringConfigurationsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -87,7 +87,7 @@ type CreateOrUpdateMeteringConfigurationsUnauthorized struct {
 }
 
 func (o *CreateOrUpdateMeteringConfigurationsUnauthorized) Error() string {
-	return fmt.Sprintf("[POST /api/v1/admin/metering/configurations][%d] createOrUpdateMeteringConfigurationsUnauthorized ", 401)
+	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations][%d] createOrUpdateMeteringConfigurationsUnauthorized ", 401)
 }
 
 func (o *CreateOrUpdateMeteringConfigurationsUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -108,7 +108,7 @@ type CreateOrUpdateMeteringConfigurationsForbidden struct {
 }
 
 func (o *CreateOrUpdateMeteringConfigurationsForbidden) Error() string {
-	return fmt.Sprintf("[POST /api/v1/admin/metering/configurations][%d] createOrUpdateMeteringConfigurationsForbidden ", 403)
+	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations][%d] createOrUpdateMeteringConfigurationsForbidden ", 403)
 }
 
 func (o *CreateOrUpdateMeteringConfigurationsForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -139,7 +139,7 @@ func (o *CreateOrUpdateMeteringConfigurationsDefault) Code() int {
 }
 
 func (o *CreateOrUpdateMeteringConfigurationsDefault) Error() string {
-	return fmt.Sprintf("[POST /api/v1/admin/metering/configurations][%d] createOrUpdateMeteringConfigurations default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations][%d] createOrUpdateMeteringConfigurations default  %+v", o._statusCode, o.Payload)
 }
 func (o *CreateOrUpdateMeteringConfigurationsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload

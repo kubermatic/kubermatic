@@ -58,12 +58,11 @@ func deploymentCreator(seed *kubermaticv1.Seed) reconciling.NamedDeploymentCreat
 			d.Spec.Strategy.Type = appsv1.RecreateDeploymentStrategyType
 
 			d.Spec.Template.Labels = map[string]string{
-				"role":    meteringToolName,
-				"version": "1",
+				"role": meteringToolName,
 			}
 			d.Spec.Template.Annotations = map[string]string{
 				"prometheus.io/scrape": "true",
-				"prometheus.io/port":   "2112",
+				"prometheus.io/port":   "8080",
 				"fluentbit.io/parser":  "glog",
 			}
 
@@ -91,7 +90,7 @@ mc mirror --newer-than "32d0h0m" s3/$S3_BUCKET /metering-data || true`,
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "s3",
+										Name: "metering-s3",
 									},
 									Key: "endpoint",
 								},
@@ -102,7 +101,7 @@ mc mirror --newer-than "32d0h0m" s3/$S3_BUCKET /metering-data || true`,
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "s3",
+										Name: "metering-s3",
 									},
 									Key: "bucket",
 								},
@@ -113,7 +112,7 @@ mc mirror --newer-than "32d0h0m" s3/$S3_BUCKET /metering-data || true`,
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "s3",
+										Name: "metering-s3",
 									},
 									Key: "accessKey",
 								},
@@ -124,7 +123,7 @@ mc mirror --newer-than "32d0h0m" s3/$S3_BUCKET /metering-data || true`,
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "s3",
+										Name: "metering-s3",
 									},
 									Key: "secretKey",
 								},
@@ -142,11 +141,11 @@ mc mirror --newer-than "32d0h0m" s3/$S3_BUCKET /metering-data || true`,
 						"-workdir",
 						"/" + meteringDataName,
 						"-output-rotation",
-						"MONTHLY",
+						"WEEKLY",
 						"--seed",
 						seed.Name,
 					},
-					Image:           "quay.io/kubermatic/metering:d2f3002",
+					Image:           "quay.io/kubermatic/metering:7a12117",
 					ImagePullPolicy: corev1.PullAlways,
 					Ports: []corev1.ContainerPort{
 						{
@@ -156,23 +155,25 @@ mc mirror --newer-than "32d0h0m" s3/$S3_BUCKET /metering-data || true`,
 						},
 					},
 					LivenessProbe: &corev1.Probe{
+						InitialDelaySeconds: 15,
 						Handler: corev1.Handler{
 							HTTPGet: &corev1.HTTPGetAction{
-								Path:   "/metrics",
-								Port:   intstr.FromInt(2112),
+								Path:   "/healthz",
+								Port:   intstr.FromInt(8081),
 								Scheme: corev1.URISchemeHTTP,
 							},
 						},
-						PeriodSeconds:    10,
+						PeriodSeconds:    20,
 						SuccessThreshold: 1,
 						TimeoutSeconds:   5,
 						FailureThreshold: 3,
 					},
 					ReadinessProbe: &corev1.Probe{
+						InitialDelaySeconds: 5,
 						Handler: corev1.Handler{
 							HTTPGet: &corev1.HTTPGetAction{
-								Path:   "/metrics",
-								Port:   intstr.FromInt(2112),
+								Path:   "/readyz",
+								Port:   intstr.FromInt(8081),
 								Scheme: corev1.URISchemeHTTP,
 							},
 						},
@@ -207,7 +208,7 @@ mc mirror --newer-than "32d0h0m" s3/$S3_BUCKET /metering-data || true`,
 					Args: []string{
 						"-c",
 						`mc config host add s3 $S3_ENDPOINT $ACCESS_KEY_ID $SECRET_ACCESS_KEY
-mc mb --ignore-existing --region=$S3_REGION s3/$S3_BUCKET
+mc mb --ignore-existing s3/$S3_BUCKET
 while true; do mc mirror --overwrite /metering-data s3/$S3_BUCKET; sleep 300; done`,
 					},
 					Image:           "docker.io/minio/mc:RELEASE.2021-07-27T06-46-19Z",
@@ -218,20 +219,9 @@ while true; do mc mirror --overwrite /metering-data s3/$S3_BUCKET; sleep 300; do
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "s3",
+										Name: "metering-s3",
 									},
 									Key: "endpoint",
-								},
-							},
-						},
-						{
-							Name: "S3_REGION",
-							ValueFrom: &corev1.EnvVarSource{
-								SecretKeyRef: &corev1.SecretKeySelector{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "s3",
-									},
-									Key: "region",
 								},
 							},
 						},
@@ -240,7 +230,7 @@ while true; do mc mirror --overwrite /metering-data s3/$S3_BUCKET; sleep 300; do
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "s3",
+										Name: "metering-s3",
 									},
 									Key: "bucket",
 								},
@@ -251,7 +241,7 @@ while true; do mc mirror --overwrite /metering-data s3/$S3_BUCKET; sleep 300; do
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "s3",
+										Name: "metering-s3",
 									},
 									Key: "accessKey",
 								},
@@ -262,7 +252,7 @@ while true; do mc mirror --overwrite /metering-data s3/$S3_BUCKET; sleep 300; do
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "s3",
+										Name: "metering-s3",
 									},
 									Key: "secretKey",
 								},
@@ -295,37 +285,6 @@ while true; do mc mirror --overwrite /metering-data s3/$S3_BUCKET; sleep 300; do
 					},
 				},
 			}
-
-			d.Spec.Template.Spec.Affinity = &corev1.Affinity{
-				NodeAffinity: &corev1.NodeAffinity{
-					PreferredDuringSchedulingIgnoredDuringExecution: []corev1.PreferredSchedulingTerm{
-						{
-							Preference: corev1.NodeSelectorTerm{
-								MatchExpressions: []corev1.NodeSelectorRequirement{
-									{
-										Key:      "kubermatic.io/type",
-										Operator: corev1.NodeSelectorOpIn,
-										Values: []string{
-											"stable",
-										},
-									},
-								},
-							},
-							Weight: 100,
-						},
-					},
-				},
-			}
-
-			d.Spec.Template.Spec.Tolerations = []corev1.Toleration{
-				{
-					Effect:   corev1.TaintEffectNoSchedule,
-					Key:      "only_critical",
-					Operator: corev1.TolerationOpEqual,
-					Value:    "true",
-				},
-			}
-
 			return d, nil
 		}
 	}
