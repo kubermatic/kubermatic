@@ -66,7 +66,7 @@ type CreateOrUpdateMeteringCredentialsOK struct {
 }
 
 func (o *CreateOrUpdateMeteringCredentialsOK) Error() string {
-	return fmt.Sprintf("[POST /api/v1/admin/metering/credentials][%d] createOrUpdateMeteringCredentialsOK ", 200)
+	return fmt.Sprintf("[PUT /api/v1/admin/metering/credentials][%d] createOrUpdateMeteringCredentialsOK ", 200)
 }
 
 func (o *CreateOrUpdateMeteringCredentialsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -87,7 +87,7 @@ type CreateOrUpdateMeteringCredentialsUnauthorized struct {
 }
 
 func (o *CreateOrUpdateMeteringCredentialsUnauthorized) Error() string {
-	return fmt.Sprintf("[POST /api/v1/admin/metering/credentials][%d] createOrUpdateMeteringCredentialsUnauthorized ", 401)
+	return fmt.Sprintf("[PUT /api/v1/admin/metering/credentials][%d] createOrUpdateMeteringCredentialsUnauthorized ", 401)
 }
 
 func (o *CreateOrUpdateMeteringCredentialsUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -108,7 +108,7 @@ type CreateOrUpdateMeteringCredentialsForbidden struct {
 }
 
 func (o *CreateOrUpdateMeteringCredentialsForbidden) Error() string {
-	return fmt.Sprintf("[POST /api/v1/admin/metering/credentials][%d] createOrUpdateMeteringCredentialsForbidden ", 403)
+	return fmt.Sprintf("[PUT /api/v1/admin/metering/credentials][%d] createOrUpdateMeteringCredentialsForbidden ", 403)
 }
 
 func (o *CreateOrUpdateMeteringCredentialsForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -139,7 +139,7 @@ func (o *CreateOrUpdateMeteringCredentialsDefault) Code() int {
 }
 
 func (o *CreateOrUpdateMeteringCredentialsDefault) Error() string {
-	return fmt.Sprintf("[POST /api/v1/admin/metering/credentials][%d] createOrUpdateMeteringCredentials default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[PUT /api/v1/admin/metering/credentials][%d] createOrUpdateMeteringCredentials default  %+v", o._statusCode, o.Payload)
 }
 func (o *CreateOrUpdateMeteringCredentialsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload

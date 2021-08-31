@@ -87,7 +87,7 @@ func (r Routing) RegisterV1Admin(mux *mux.Router) {
 		Path("/admin/seeds/{seed_name}").
 		Handler(r.deleteSeed())
 
-	// Defines a set of HTTP endpoints to access metering reports
+	// Defines a set of HTTP endpoints for metering tool
 	mux.Methods(http.MethodPut).
 		Path("/admin/metering/credentials").
 		Handler(r.createOrUpdateMeteringCredentials())
