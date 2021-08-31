@@ -93,7 +93,7 @@ func newDatasourceGrafanaReconciler(
 	}
 
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}); err != nil {
-		return fmt.Errorf("failed to watch Clusters: %v", err)
+		return fmt.Errorf("failed to watch Clusters: %w", err)
 	}
 	return err
 }
@@ -172,14 +172,17 @@ func (r *datasourceGrafanaController) reconcile(ctx context.Context, cluster *ku
 	if cluster.Spec.MLA == nil {
 		cluster.Spec.MLA = &kubermaticv1.MLASettings{}
 	}
-	grafanaClient := grafanasdk.NewClient(r.grafanaURL, r.grafanaAuth, r.httpClient)
+	grafanaClient, err := grafanasdk.NewClient(r.grafanaURL, r.grafanaAuth, r.httpClient)
+	if err != nil {
+		return nil, fmt.Errorf("unable to initialize grafana client")
+	}
 	projectID, ok := cluster.GetLabels()[kubermaticv1.ProjectIDLabelKey]
 	if !ok {
 		return nil, fmt.Errorf("unable to get project name from label")
 	}
 
 	project := &kubermaticv1.Project{}
-	err := r.Get(ctx, types.NamespacedName{Name: projectID}, project)
+	err = r.Get(ctx, types.NamespacedName{Name: projectID}, project)
 	if err != nil {
 		if apiErrors.IsNotFound(err) {
 			// if project removed before cluster we need only to remove resources and finalizer

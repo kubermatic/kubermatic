@@ -27,14 +27,11 @@ import (
 	"go.uber.org/zap"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
-	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -46,8 +43,7 @@ import (
 )
 
 const (
-	grafanaOrgAnnotationKey              = "mla.k8c.io/organization"
-	grafanaDashboardsConfigmapNamePrefix = "grafana-dashboards"
+	grafanaOrgAnnotationKey = "mla.k8c.io/organization"
 )
 
 // orgGrafanaReconciler stores necessary components that are required to manage MLA(Monitoring, Logging, and Alerting) setup.
@@ -92,27 +88,8 @@ func newOrgGrafanaReconciler(
 		return err
 	}
 
-	enqueueProjectForConfigMap := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
-		if !strings.HasPrefix(a.GetName(), grafanaDashboardsConfigmapNamePrefix) {
-			return []reconcile.Request{}
-		}
-		projectList := &kubermaticv1.ProjectList{}
-		if err := client.List(context.Background(), projectList); err != nil {
-			log.Errorw("Failed to list projects", zap.Error(err))
-			utilruntime.HandleError(fmt.Errorf("failed to list Projects: %w", err))
-		}
-		requests := make([]reconcile.Request, 0, len(projectList.Items))
-		for _, project := range projectList.Items {
-			requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: project.Name, Namespace: project.Namespace}})
-		}
-		return requests
-	})
-	if err := c.Watch(&source.Kind{Type: &corev1.ConfigMap{}}, enqueueProjectForConfigMap, predicateutil.ByNamespace(orgGrafanaController.mlaNamespace)); err != nil {
-		return fmt.Errorf("failed to watch ConfigMap: %v", err)
-	}
-
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Project{}}, &handler.EnqueueRequestForObject{}); err != nil {
-		return fmt.Errorf("failed to watch Projects: %v", err)
+		return fmt.Errorf("failed to watch Projects: %w", err)
 	}
 	return err
 }
@@ -264,7 +241,7 @@ func (r *orgGrafanaController) ensureDashboards(ctx context.Context, log *zap.Su
 		if !strings.HasPrefix(configMap.GetName(), grafanaDashboardsConfigmapNamePrefix) {
 			continue
 		}
-		if err := addDashboards(ctx, log, r.grafanaClient.WithOrgIDHeader(orgID), configMap); err != nil {
+		if err := addDashboards(ctx, log, r.grafanaClient.WithOrgIDHeader(orgID), &configMap); err != nil {
 			return err
 		}
 	}
