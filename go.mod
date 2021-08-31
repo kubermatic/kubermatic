@@ -4,9 +4,9 @@ go 1.16
 
 require (
 	code.cloudfoundry.org/go-pubsub v0.0.0-20180503211407-becd51dc37cb
-	github.com/Azure/azure-sdk-for-go v51.3.0+incompatible
-	github.com/Azure/go-autorest/autorest v0.11.18
-	github.com/Azure/go-autorest/autorest/azure/auth v0.5.5
+	github.com/Azure/azure-sdk-for-go v57.0.0+incompatible
+	github.com/Azure/go-autorest/autorest v0.11.20
+	github.com/Azure/go-autorest/autorest/azure/auth v0.5.8
 	github.com/Azure/go-autorest/autorest/to v0.4.0
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/Masterminds/sprig/v3 v3.1.0
@@ -69,7 +69,7 @@ require (
 	github.com/vmware/govmomi v0.23.1
 	go.etcd.io/etcd/v3 v3.3.0-rc.0.0.20200728214110-6c81b20ec8de
 	go.uber.org/zap v1.18.1
-	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
+	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
 	golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c
 	golang.org/x/tools v0.1.2
 	gomodules.xyz/jsonpatch/v2 v2.2.0
