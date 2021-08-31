@@ -28,6 +28,7 @@ import (
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
+	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -51,6 +52,9 @@ import (
 const (
 	prometheusType = "prometheus"
 	lokiType       = "loki"
+
+	// mlaAdminSettingsCRName contains a fixed name of the MLA amin settings custom resource in the cluster namespace
+	mlaAdminSettingsCRName = "mla-admin-settings"
 )
 
 // datasourceGrafanaReconciler stores necessary components that are required to manage MLA(Monitoring, Logging, and Alerting) setup.
@@ -96,7 +100,8 @@ func newDatasourceGrafanaReconciler(
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to watch Clusters: %w", err)
 	}
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.MLAAdminSetting{}}, controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient())); err != nil {
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.MLAAdminSetting{}},
+		controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient()), predicateutil.ByName(mlaAdminSettingsCRName)); err != nil {
 		return fmt.Errorf("failed to watch MLAAdminSetting: %w", err)
 	}
 	return err
@@ -312,16 +317,9 @@ func (r *datasourceGrafanaController) ensureDeployments(ctx context.Context, c *
 }
 
 func (r *datasourceGrafanaController) ensureConfigMaps(ctx context.Context, c *kubermaticv1.Cluster) error {
-	var settings *kubermaticv1.MLAAdminSetting
-	settingsList := &kubermaticv1.MLAAdminSettingList{}
-	if err := r.List(ctx, settingsList, &ctrlruntimeclient.ListOptions{Namespace: c.Status.NamespaceName}); err != nil {
-		return err
-	}
-	if len(settingsList.Items) > 1 {
-		return fmt.Errorf("failed to ensure MLA ConfigMaps: too many MLAAdminSetting CRs in the cluster namesapce")
-	}
-	for _, s := range settingsList.Items {
-		settings = &s
+	settings := &kubermaticv1.MLAAdminSetting{}
+	if err := r.Get(ctx, types.NamespacedName{Name: mlaAdminSettingsCRName, Namespace: c.Status.NamespaceName}, settings); err != nil && !apiErrors.IsNotFound(err) {
+		return fmt.Errorf("failed to get MLAAdminSetting: %w", err)
 	}
 	creators := []reconciling.NamedConfigMapCreatorGetter{
 		GatewayConfigMapCreator(c, r.mlaNamespace, settings),
