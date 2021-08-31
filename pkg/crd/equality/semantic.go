@@ -32,7 +32,15 @@ var Semantic = conversion.EqualitiesOrDie(
 		return a.Cmp(b) == 0
 	},
 	func(a, b *semverlib.Version) bool {
-		return a.Compare(b) == 0
+		if a == nil && b == nil {
+			return true
+		}
+
+		if a != nil && b != nil {
+			return a.Equal(b)
+		}
+
+		return false
 	},
 	func(a, b time.Time) bool {
 		return a.UTC() == b.UTC()

@@ -36,6 +36,8 @@ type ClientService interface {
 
 	ListEtcdRestore(params *ListEtcdRestoreParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEtcdRestoreOK, error)
 
+	ListProjectEtcdRestore(params *ListProjectEtcdRestoreParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectEtcdRestoreOK, error)
+
 	SetTransport(transport runtime.ClientTransport)
 }
 
@@ -188,6 +190,44 @@ func (a *Client) ListEtcdRestore(params *ListEtcdRestoreParams, authInfo runtime
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListEtcdRestoreDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListProjectEtcdRestore List etcd backup restores for a given project
+*/
+func (a *Client) ListProjectEtcdRestore(params *ListProjectEtcdRestoreParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectEtcdRestoreOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListProjectEtcdRestoreParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listProjectEtcdRestore",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/etcdrestores",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListProjectEtcdRestoreReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListProjectEtcdRestoreOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListProjectEtcdRestoreDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

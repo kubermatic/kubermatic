@@ -39,14 +39,14 @@ const (
 type ClusterTemplateInstanceProvider struct {
 	// createSeedImpersonatedClient is used as a ground for impersonation
 	// whenever a connection to Seed API server is required
-	createSeedImpersonatedClient impersonationClient
+	createSeedImpersonatedClient ImpersonationClient
 
 	// privilegedClient is used for admins
 	privilegedClient ctrlruntimeclient.Client
 }
 
 // ClusterTemplateInstanceProvider returns provider
-func NewClusterTemplateInstanceProvider(createSeedImpersonatedClient impersonationClient, privilegedClient ctrlruntimeclient.Client) *ClusterTemplateInstanceProvider {
+func NewClusterTemplateInstanceProvider(createSeedImpersonatedClient ImpersonationClient, privilegedClient ctrlruntimeclient.Client) *ClusterTemplateInstanceProvider {
 	return &ClusterTemplateInstanceProvider{
 		createSeedImpersonatedClient: createSeedImpersonatedClient,
 		privilegedClient:             privilegedClient,
@@ -116,6 +116,24 @@ func (r ClusterTemplateInstanceProvider) GetUnsecured(name string) (*kubermaticv
 		return nil, err
 	}
 	return instance, nil
+}
+
+func (r ClusterTemplateInstanceProvider) ListUnsecured(options provider.ClusterTemplateInstanceListOptions) (*kubermaticv1.ClusterTemplateInstanceList, error) {
+	instanceList := &kubermaticv1.ClusterTemplateInstanceList{}
+
+	labelSelector := ctrlruntimeclient.MatchingLabels{}
+
+	if options.ProjectID != "" {
+		labelSelector[kubermaticv1.ClusterTemplateProjectLabelKey] = options.ProjectID
+	}
+	if options.TemplateID != "" {
+		labelSelector[ClusterTemplateLabelKey] = options.TemplateID
+	}
+
+	if err := r.privilegedClient.List(context.Background(), instanceList, labelSelector); err != nil {
+		return nil, err
+	}
+	return instanceList, nil
 }
 
 func (r ClusterTemplateInstanceProvider) Get(userInfo *provider.UserInfo, name string) (*kubermaticv1.ClusterTemplateInstance, error) {

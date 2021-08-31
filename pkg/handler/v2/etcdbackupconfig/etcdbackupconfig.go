@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
@@ -36,8 +37,14 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/reference"
+)
+
+const (
+	automaticBackup = "automatic"
+	snapshot        = "snapshot"
 )
 
 func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
@@ -50,13 +57,14 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 			return nil, err
 		}
 
-		if err := req.validate(); err != nil {
-			return nil, err
-		}
-
 		ebc, err := convertAPIToInternalEtcdBackupConfig(req.Body.Name, &req.Body.Spec, c)
 		if err != nil {
 			return nil, err
+		}
+
+		// set projectID label
+		ebc.Labels = map[string]string{
+			provider.ProjectLabelKey: req.ProjectID,
 		}
 
 		ebc, err = createEtcdBackupConfig(ctx, userInfoGetter, req.ProjectID, ebc)
@@ -83,14 +91,6 @@ type ebcBody struct {
 	Spec apiv2.EtcdBackupConfigSpec `json:"spec"`
 }
 
-func (r *createEtcdBackupConfigReq) validate() error {
-	// schedule and keep have to either be both set, or both absent
-	if (r.Body.Spec.Keep == nil && r.Body.Spec.Schedule != "") || (r.Body.Spec.Keep != nil && r.Body.Spec.Schedule == "") {
-		return errors.NewBadRequest("EtcdBackupConfig has to have both Schedule and Keep options set or both empty")
-	}
-	return nil
-}
-
 func DecodeCreateEtcdBackupConfigReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req createEtcdBackupConfigReq
 	cr, err := cluster.DecodeGetClusterReq(c, r)
@@ -115,7 +115,7 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 			return nil, err
 		}
 
-		ebc, err := getEtcdBackupConfig(ctx, userInfoGetter, c, req.ProjectID, req.EtcdBackupConfigName)
+		ebc, err := getEtcdBackupConfig(ctx, userInfoGetter, c, req.ProjectID, req.EtcdBackupConfigID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -130,7 +130,7 @@ type getEtcdBackupConfigReq struct {
 	cluster.GetClusterReq
 	// in: path
 	// required: true
-	EtcdBackupConfigName string `json:"ebc_name"`
+	EtcdBackupConfigID string `json:"ebc_id"`
 }
 
 func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
@@ -183,9 +183,9 @@ func DecodeGetEtcdBackupConfigReq(c context.Context, r *http.Request) (interface
 	}
 	req.GetClusterReq = cr.(cluster.GetClusterReq)
 
-	req.EtcdBackupConfigName = mux.Vars(r)["ebc_name"]
-	if req.EtcdBackupConfigName == "" {
-		return "", fmt.Errorf("'ebc_name' parameter is required but was not provided")
+	req.EtcdBackupConfigID = mux.Vars(r)["ebc_id"]
+	if req.EtcdBackupConfigID == "" {
+		return "", fmt.Errorf("'ebc_id' parameter is required but was not provided")
 	}
 
 	return req, nil
@@ -201,7 +201,7 @@ func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 			return nil, err
 		}
 
-		err = deleteEtcdBackupConfig(ctx, userInfoGetter, c, req.ProjectID, req.EtcdBackupConfigName)
+		err = deleteEtcdBackupConfig(ctx, userInfoGetter, c, req.ProjectID, req.EtcdBackupConfigID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -213,9 +213,6 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(patchEtcdBackupConfigReq)
-		if err := req.validate(); err != nil {
-			return nil, err
-		}
 
 		c, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 		if err != nil {
@@ -223,7 +220,7 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 		}
 
 		// get EBC
-		originalEBC, err := getEtcdBackupConfig(ctx, userInfoGetter, c, req.ProjectID, req.EtcdBackupConfigName)
+		originalEBC, err := getEtcdBackupConfig(ctx, userInfoGetter, c, req.ProjectID, req.EtcdBackupConfigID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -247,7 +244,7 @@ type patchEtcdBackupConfigReq struct {
 	cluster.GetClusterReq
 	// in: path
 	// required: true
-	EtcdBackupConfigName string `json:"ebc_name"`
+	EtcdBackupConfigID string `json:"ebc_id"`
 	// in: body
 	// required: true
 	Body apiv2.EtcdBackupConfigSpec
@@ -261,9 +258,9 @@ func DecodePatchEtcdBackupConfigReq(c context.Context, r *http.Request) (interfa
 	}
 	req.GetClusterReq = cr.(cluster.GetClusterReq)
 
-	req.EtcdBackupConfigName = mux.Vars(r)["ebc_name"]
-	if req.EtcdBackupConfigName == "" {
-		return "", fmt.Errorf("'ebc_name' parameter is required but was not provided")
+	req.EtcdBackupConfigID = mux.Vars(r)["ebc_id"]
+	if req.EtcdBackupConfigID == "" {
+		return "", fmt.Errorf("'ebc_id' parameter is required but was not provided")
 	}
 
 	if err = json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
@@ -273,17 +270,87 @@ func DecodePatchEtcdBackupConfigReq(c context.Context, r *http.Request) (interfa
 	return req, nil
 }
 
-func (r *patchEtcdBackupConfigReq) validate() error {
-	// schedule and keep have to either be both set, or both absent
-	if (r.Body.Keep == nil && r.Body.Schedule != "") || (r.Body.Keep != nil && r.Body.Schedule == "") {
-		return errors.NewBadRequest("EtcdBackupConfig has to have both Schedule and Keep options set or both empty")
+func ProjectListEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(listProjectEtcdBackupConfigReq)
+		if err := req.validate(); err != nil {
+			return nil, err
+		}
+
+		ebcLists, err := listProjectEtcdBackupConfig(ctx, userInfoGetter, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		var ebcAPIList []*apiv2.EtcdBackupConfig
+		for _, ebcList := range ebcLists {
+			for _, ebc := range ebcList.Items {
+				ebcAPI := convertInternalToAPIEtcdBackupConfig(&ebc)
+				if req.Type == "" || strings.EqualFold(req.Type, getEtcdBackupConfigType(ebcAPI)) {
+					ebcAPIList = append(ebcAPIList, ebcAPI)
+				}
+			}
+		}
+
+		return ebcAPIList, nil
+	}
+}
+
+func getEtcdBackupConfigType(ebc *apiv2.EtcdBackupConfig) string {
+	if ebc.Spec.Schedule == "" {
+		return snapshot
+	}
+	return automaticBackup
+}
+
+// listProjectEtcdBackupConfigReq represents a request for listing project etcd backupConfigs
+// swagger:parameters listProjectEtcdBackupConfig
+type listProjectEtcdBackupConfigReq struct {
+	common.ProjectReq
+
+	// in: query
+	Type string `json:"type,omitempty"`
+}
+
+func (r *listProjectEtcdBackupConfigReq) validate() error {
+	if len(r.Type) > 0 {
+		if r.Type == automaticBackup || r.Type == snapshot {
+			return nil
+		}
+		return errors.NewBadRequest("wrong query parameter, unsupported type: %s", r.Type)
 	}
 	return nil
 }
 
+func DecodeListProjectEtcdBackupConfigReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req listProjectEtcdBackupConfigReq
+
+	pr, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.ProjectReq = pr.(common.ProjectReq)
+
+	req.Type = r.URL.Query().Get("type")
+	return req, nil
+}
+
 func convertInternalToAPIEtcdBackupConfig(ebc *kubermaticv1.EtcdBackupConfig) *apiv2.EtcdBackupConfig {
 	etcdBackupConfig := &apiv2.EtcdBackupConfig{
-		Name: ebc.Name,
+		ObjectMeta: apiv1.ObjectMeta{
+			Name:              ebc.Spec.Name,
+			ID:                ebc.Name,
+			Annotations:       ebc.Annotations,
+			CreationTimestamp: apiv1.NewTime(ebc.CreationTimestamp.Time),
+			DeletionTimestamp: func() *apiv1.Time {
+				if ebc.DeletionTimestamp != nil {
+					deletionTimestamp := apiv1.NewTime(ebc.DeletionTimestamp.Time)
+					return &deletionTimestamp
+				}
+				return nil
+			}(),
+		},
 		Spec: apiv2.EtcdBackupConfigSpec{
 			ClusterID: ebc.Spec.Cluster.Name,
 			Schedule:  ebc.Spec.Schedule,
@@ -362,7 +429,7 @@ func convertAPIToInternalEtcdBackupConfig(name string, ebcSpec *apiv2.EtcdBackup
 
 	return &kubermaticv1.EtcdBackupConfig{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
+			Name:      rand.String(10),
 			Namespace: cluster.Status.NamespaceName,
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(cluster, kubermaticv1.SchemeGroupVersion.WithKind("Cluster")),
@@ -422,6 +489,21 @@ func listEtcdBackupConfig(ctx context.Context, userInfoGetter provider.UserInfoG
 	return etcdBackupConfigProvider.List(userInfo, cluster)
 }
 
+func listProjectEtcdBackupConfig(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID string) ([]*kubermaticv1.EtcdBackupConfigList, error) {
+	adminUserInfo, privilegedEtcdBackupConfigProjectProvider, err := getAdminUserInfoPrivilegedEtcdBackupConfigProjectProvider(ctx, userInfoGetter)
+	if err != nil {
+		return nil, err
+	}
+	if adminUserInfo.IsAdmin {
+		return privilegedEtcdBackupConfigProjectProvider.ListUnsecured(projectID)
+	}
+	userInfo, etcdBackupConfigProjectProvider, err := getUserInfoEtcdBackupConfigProjectProvider(ctx, userInfoGetter, projectID)
+	if err != nil {
+		return nil, err
+	}
+	return etcdBackupConfigProjectProvider.List(userInfo, projectID)
+}
+
 func deleteEtcdBackupConfig(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID, etcdBackupConfigName string) error {
 	adminUserInfo, privilegedEtcdBackupConfigProvider, err := getAdminUserInfoPrivilegedEtcdBackupConfigProvider(ctx, userInfoGetter)
 	if err != nil {
@@ -473,4 +555,27 @@ func getUserInfoEtcdBackupConfigProvider(ctx context.Context, userInfoGetter pro
 
 	etcdBackupConfigProvider := ctx.Value(middleware.EtcdBackupConfigProviderContextKey).(provider.EtcdBackupConfigProvider)
 	return userInfo, etcdBackupConfigProvider, nil
+}
+
+func getAdminUserInfoPrivilegedEtcdBackupConfigProjectProvider(ctx context.Context, userInfoGetter provider.UserInfoGetter) (*provider.UserInfo, provider.PrivilegedEtcdBackupConfigProjectProvider, error) {
+	userInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, nil, err
+	}
+	if !userInfo.IsAdmin {
+		return userInfo, nil, nil
+	}
+	privilegedEtcdBackupConfigProjectProvider := ctx.Value(middleware.PrivilegedEtcdBackupConfigProjectProviderContextKey).(provider.PrivilegedEtcdBackupConfigProjectProvider)
+	return userInfo, privilegedEtcdBackupConfigProjectProvider, nil
+}
+
+func getUserInfoEtcdBackupConfigProjectProvider(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID string) (*provider.UserInfo, provider.EtcdBackupConfigProjectProvider, error) {
+
+	userInfo, err := userInfoGetter(ctx, projectID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	etcdBackupConfigProjectProvider := ctx.Value(middleware.EtcdBackupConfigProjectProviderContextKey).(provider.EtcdBackupConfigProjectProvider)
+	return userInfo, etcdBackupConfigProjectProvider, nil
 }

@@ -33,12 +33,12 @@ import (
 // ClusterTemplateProvider struct that holds required components in order manage cluster templates
 type ClusterTemplateProvider struct {
 	// createMasterImpersonatedClient is used as a ground for impersonation
-	createMasterImpersonatedClient impersonationClient
+	createMasterImpersonatedClient ImpersonationClient
 	clientPrivileged               ctrlruntimeclient.Client
 }
 
 // NewClusterTemplateProvider returns a cluster template provider
-func NewClusterTemplateProvider(createMasterImpersonatedClient impersonationClient, client ctrlruntimeclient.Client) (*ClusterTemplateProvider, error) {
+func NewClusterTemplateProvider(createMasterImpersonatedClient ImpersonationClient, client ctrlruntimeclient.Client) (*ClusterTemplateProvider, error) {
 	return &ClusterTemplateProvider{
 		createMasterImpersonatedClient: createMasterImpersonatedClient,
 		clientPrivileged:               client,
@@ -53,6 +53,10 @@ func (p *ClusterTemplateProvider) New(userInfo *provider.UserInfo, newClusterTem
 		return nil, errors.New("cluster template scope is missing but required")
 	}
 
+	if userInfo.IsAdmin {
+		return p.createTemplate(newClusterTemplate)
+	}
+
 	if !userInfo.IsAdmin && scope == kubermaticv1.GlobalClusterTemplateScope {
 		return nil, errors.New("the global scope is reserved only for admins")
 	}
@@ -65,12 +69,16 @@ func (p *ClusterTemplateProvider) New(userInfo *provider.UserInfo, newClusterTem
 		return nil, errors.New("project ID is missing but required")
 	}
 
+	return p.createTemplate(newClusterTemplate)
+
+}
+
+func (p *ClusterTemplateProvider) createTemplate(newClusterTemplate *kubermaticv1.ClusterTemplate) (*kubermaticv1.ClusterTemplate, error) {
 	if err := p.clientPrivileged.Create(context.Background(), newClusterTemplate); err != nil {
 		return nil, err
 	}
 
 	return newClusterTemplate, nil
-
 }
 
 func (p *ClusterTemplateProvider) List(userInfo *provider.UserInfo, projectID string) ([]kubermaticv1.ClusterTemplate, error) {

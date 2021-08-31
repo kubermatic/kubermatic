@@ -251,7 +251,7 @@ var (
 			},
 			{
 				// Allow to next minor release
-				From: "1.22.*",
+				From: "1.21.*",
 				To:   "1.22.*",
 			},
 

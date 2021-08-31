@@ -36,7 +36,7 @@ import (
 type AddonProvider struct {
 	// createSeedImpersonatedClient is used as a ground for impersonation
 	// whenever a connection to Seed API server is required
-	createSeedImpersonatedClient impersonationClient
+	createSeedImpersonatedClient ImpersonationClient
 	// accessibleAddons is the set of addons that the provider should provide CRUD access to
 	accessibleAddons sets.String
 	// clientPrivileged is used for privileged operations
@@ -47,7 +47,7 @@ type AddonProvider struct {
 // it uses createSeedImpersonatedClient to create a connection that uses user impersonation
 func NewAddonProvider(
 	clientPrivileged ctrlruntimeclient.Client,
-	createSeedImpersonatedClient impersonationClient,
+	createSeedImpersonatedClient ImpersonationClient,
 	accessibleAddons sets.String) *AddonProvider {
 	return &AddonProvider{
 		createSeedImpersonatedClient: createSeedImpersonatedClient,

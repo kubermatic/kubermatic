@@ -208,7 +208,7 @@ type AllowedRegistry struct {
 // EtcdBackupConfig represents an object holding the configuration for etcd backups
 // swagger:model EtcdBackupConfig
 type EtcdBackupConfig struct {
-	Name string `json:"name"`
+	apiv1.ObjectMeta
 
 	Spec   EtcdBackupConfigSpec   `json:"spec"`
 	Status EtcdBackupConfigStatus `json:"status"`

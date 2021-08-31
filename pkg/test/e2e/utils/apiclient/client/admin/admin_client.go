@@ -28,6 +28,10 @@ type ClientOption func(*runtime.ClientOperation)
 
 // ClientService is the interface for Client methods
 type ClientService interface {
+	CreateOrUpdateMeteringConfigurations(params *CreateOrUpdateMeteringConfigurationsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOrUpdateMeteringConfigurationsOK, error)
+
+	CreateOrUpdateMeteringCredentials(params *CreateOrUpdateMeteringCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOrUpdateMeteringCredentialsOK, error)
+
 	DeleteAdmissionPlugin(params *DeleteAdmissionPluginParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAdmissionPluginOK, error)
 
 	DeleteSeed(params *DeleteSeedParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteSeedOK, error)
@@ -55,6 +59,82 @@ type ClientService interface {
 	UpdateSeed(params *UpdateSeedParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateSeedOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+  CreateOrUpdateMeteringConfigurations configures k k p metering tool
+*/
+func (a *Client) CreateOrUpdateMeteringConfigurations(params *CreateOrUpdateMeteringConfigurationsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOrUpdateMeteringConfigurationsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewCreateOrUpdateMeteringConfigurationsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "createOrUpdateMeteringConfigurations",
+		Method:             "PUT",
+		PathPattern:        "/api/v1/admin/metering/configurations",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateOrUpdateMeteringConfigurationsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*CreateOrUpdateMeteringConfigurationsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*CreateOrUpdateMeteringConfigurationsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  CreateOrUpdateMeteringCredentials creates or updates the metering tool credentials
+*/
+func (a *Client) CreateOrUpdateMeteringCredentials(params *CreateOrUpdateMeteringCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOrUpdateMeteringCredentialsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewCreateOrUpdateMeteringCredentialsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "createOrUpdateMeteringCredentials",
+		Method:             "PUT",
+		PathPattern:        "/api/v1/admin/metering/credentials",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateOrUpdateMeteringCredentialsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*CreateOrUpdateMeteringCredentialsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*CreateOrUpdateMeteringCredentialsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*

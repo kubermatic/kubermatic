@@ -37,7 +37,7 @@ const (
 )
 
 // NewServiceAccountProvider returns a service account provider
-func NewServiceAccountProvider(createMasterImpersonatedClient impersonationClient, clientPrivileged ctrlruntimeclient.Client, domain string) *ServiceAccountProvider {
+func NewServiceAccountProvider(createMasterImpersonatedClient ImpersonationClient, clientPrivileged ctrlruntimeclient.Client, domain string) *ServiceAccountProvider {
 	return &ServiceAccountProvider{
 		createMasterImpersonatedClient: createMasterImpersonatedClient,
 		clientPrivileged:               clientPrivileged,
@@ -48,7 +48,7 @@ func NewServiceAccountProvider(createMasterImpersonatedClient impersonationClien
 // ServiceAccountProvider manages service account resources
 type ServiceAccountProvider struct {
 	// createMasterImpersonatedClient is used as a ground for impersonation
-	createMasterImpersonatedClient impersonationClient
+	createMasterImpersonatedClient ImpersonationClient
 
 	// treat clientPrivileged as a privileged user and use wisely
 	clientPrivileged ctrlruntimeclient.Client

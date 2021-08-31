@@ -47,13 +47,13 @@ import (
 // ExternalClusterProvider struct that holds required components in order to provide connection to the cluster
 type ExternalClusterProvider struct {
 	// createSeedImpersonatedClient is used as a ground for impersonation
-	createMasterImpersonatedClient impersonationClient
+	createMasterImpersonatedClient ImpersonationClient
 	clientPrivileged               ctrlruntimeclient.Client
 	restMapperCache                *restmapper.Cache
 }
 
 // NewExternalClusterProvider returns an external cluster provider
-func NewExternalClusterProvider(createMasterImpersonatedClient impersonationClient, client ctrlruntimeclient.Client) (*ExternalClusterProvider, error) {
+func NewExternalClusterProvider(createMasterImpersonatedClient ImpersonationClient, client ctrlruntimeclient.Client) (*ExternalClusterProvider, error) {
 	return &ExternalClusterProvider{
 		createMasterImpersonatedClient: createMasterImpersonatedClient,
 		clientPrivileged:               client,

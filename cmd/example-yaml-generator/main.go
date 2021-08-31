@@ -74,7 +74,11 @@ func main() {
 	files = append(files, operatorFiles...)
 	files = append(files, filepath.Join(root, "vendor/k8s.io/api/core/v1/types.go"))
 
-	cm := genyaml.NewCommentMap(files...)
+	cm, err := genyaml.NewCommentMap(files...)
+	if err != nil {
+		log.Fatalf("Failed to create comment map: %v", err)
+	}
+
 	examples := map[string]runtime.Object{
 		"seed":                    createExampleSeed(),
 		"kubermaticConfiguration": createExampleKubermaticConfiguration(),
@@ -164,6 +168,11 @@ func createExampleSeed() *kubermaticv1.Seed {
 				},
 			},
 			ProxySettings: &proxySettings,
+			Metering: &kubermaticv1.MeteringConfigurations{
+				Enabled:          false,
+				StorageClassName: "kubermatic-fast",
+				StorageSize:      "100Gi",
+			},
 		},
 	}
 

@@ -73,13 +73,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	logger := r.log.With("config", identifier)
 
-	// create a copy of the configuration with default values applied
-	defaulted, err := common.DefaultConfiguration(config, logger)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to apply defaults: %v", err)
-	}
-
-	err = r.reconcile(ctx, defaulted, logger)
+	err = r.reconcile(ctx, config, logger)
 	if err != nil {
 		r.recorder.Event(config, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
@@ -102,43 +96,50 @@ func (r *Reconciler) reconcile(ctx context.Context, config *operatorv1alpha1.Kub
 		return fmt.Errorf("failed to add finalizer: %v", err)
 	}
 
-	if err := r.reconcileNamespaces(ctx, config, logger); err != nil {
+	// patching the config will refresh the object, so any attempts to set the default values
+	// before calling Patch() are pointless, as the defaults would be gone after the call
+	defaulted, err := common.DefaultConfiguration(config, logger)
+	if err != nil {
+		return fmt.Errorf("failed to apply defaults: %v", err)
+	}
+
+	if err := r.reconcileNamespaces(ctx, defaulted, logger); err != nil {
 		return err
 	}
 
-	if err := r.reconcileServiceAccounts(ctx, config, logger); err != nil {
+	if err := r.reconcileServiceAccounts(ctx, defaulted, logger); err != nil {
 		return err
 	}
 
-	if err := r.reconcileClusterRoleBindings(ctx, config, logger); err != nil {
+	if err := r.reconcileClusterRoleBindings(ctx, defaulted, logger); err != nil {
 		return err
 	}
 
-	if err := r.reconcileSecrets(ctx, config, logger); err != nil {
+	if err := r.reconcileSecrets(ctx, defaulted, logger); err != nil {
 		return err
 	}
 
-	if err := r.reconcileConfigMaps(ctx, config, logger); err != nil {
+	if err := r.reconcileConfigMaps(ctx, defaulted, logger); err != nil {
 		return err
 	}
 
-	if err := r.reconcileDeployments(ctx, config, logger); err != nil {
+	if err := r.reconcileDeployments(ctx, defaulted, logger); err != nil {
 		return err
 	}
 
-	if err := r.reconcilePodDisruptionBudgets(ctx, config, logger); err != nil {
+	if err := r.reconcilePodDisruptionBudgets(ctx, defaulted, logger); err != nil {
 		return err
 	}
 
-	if err := r.reconcileServices(ctx, config, logger); err != nil {
+	if err := r.reconcileServices(ctx, defaulted, logger); err != nil {
 		return err
 	}
 
-	if err := r.reconcileIngresses(ctx, config, logger); err != nil {
+	if err := r.reconcileIngresses(ctx, defaulted, logger); err != nil {
 		return err
 	}
 
-	if err := r.reconcileAdmissionWebhooks(ctx, config, logger); err != nil {
+	if err := r.reconcileAdmissionWebhooks(ctx, defaulted, logger); err != nil {
 		return err
 	}
 

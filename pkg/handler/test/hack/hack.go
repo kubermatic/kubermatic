@@ -88,7 +88,9 @@ func NewTestRouting(
 	defaultConstraintProvider provider.DefaultConstraintProvider,
 	privilegedAllowedRegistryProvider provider.PrivilegedAllowedRegistryProvider,
 	etcdBackupConfigProviderGetter provider.EtcdBackupConfigProviderGetter,
-	etcdRestoreProviderGetter provider.EtcdRestoreProviderGetter) http.Handler {
+	etcdRestoreProviderGetter provider.EtcdRestoreProviderGetter,
+	etcdBackupConfigProjectProviderGetter provider.EtcdBackupConfigProjectProviderGetter,
+	etcdRestoreProjectProviderGetter provider.EtcdRestoreProjectProviderGetter) http.Handler {
 
 	updateManager := version.New(versions, updates)
 
@@ -140,6 +142,8 @@ func NewTestRouting(
 		PrivilegedAllowedRegistryProvider:     privilegedAllowedRegistryProvider,
 		EtcdBackupConfigProviderGetter:        etcdBackupConfigProviderGetter,
 		EtcdRestoreProviderGetter:             etcdRestoreProviderGetter,
+		EtcdBackupConfigProjectProviderGetter: etcdBackupConfigProjectProviderGetter,
+		EtcdRestoreProjectProviderGetter:      etcdRestoreProjectProviderGetter,
 		Versions:                              kubermaticVersions,
 		CABundle:                              certificates.NewFakeCABundle().CertPool(),
 	}

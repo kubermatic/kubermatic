@@ -34,7 +34,7 @@ import (
 )
 
 // NewProjectMemberProvider returns a project members provider
-func NewProjectMemberProvider(createMasterImpersonatedClient impersonationClient, clientPrivileged ctrlruntimeclient.Client, isServiceAccountFunc func(string) bool) *ProjectMemberProvider {
+func NewProjectMemberProvider(createMasterImpersonatedClient ImpersonationClient, clientPrivileged ctrlruntimeclient.Client, isServiceAccountFunc func(string) bool) *ProjectMemberProvider {
 	return &ProjectMemberProvider{
 		createMasterImpersonatedClient: createMasterImpersonatedClient,
 		clientPrivileged:               clientPrivileged,
@@ -47,7 +47,7 @@ var _ provider.ProjectMemberProvider = &ProjectMemberProvider{}
 // ProjectMemberProvider binds users with projects
 type ProjectMemberProvider struct {
 	// createMasterImpersonatedClient is used as a ground for impersonation
-	createMasterImpersonatedClient impersonationClient
+	createMasterImpersonatedClient ImpersonationClient
 
 	// treat clientPrivileged as a privileged user and use wisely
 	clientPrivileged ctrlruntimeclient.Client

@@ -36,6 +36,8 @@ type ClientService interface {
 
 	ListEtcdBackupConfig(params *ListEtcdBackupConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEtcdBackupConfigOK, error)
 
+	ListProjectEtcdBackupConfig(params *ListProjectEtcdBackupConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectEtcdBackupConfigOK, error)
+
 	PatchEtcdBackupConfig(params *PatchEtcdBackupConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchEtcdBackupConfigOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
@@ -80,7 +82,7 @@ func (a *Client) CreateEtcdBackupConfig(params *CreateEtcdBackupConfigParams, au
 }
 
 /*
-  DeleteEtcdBackupConfig Deletes a etcd backup config for a given cluster based on its name
+  DeleteEtcdBackupConfig Deletes a etcd backup config for a given cluster based on its id
 */
 func (a *Client) DeleteEtcdBackupConfig(params *DeleteEtcdBackupConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteEtcdBackupConfigOK, error) {
 	// TODO: Validate the params before sending
@@ -90,7 +92,7 @@ func (a *Client) DeleteEtcdBackupConfig(params *DeleteEtcdBackupConfigParams, au
 	op := &runtime.ClientOperation{
 		ID:                 "deleteEtcdBackupConfig",
 		Method:             "DELETE",
-		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_name}",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -118,7 +120,7 @@ func (a *Client) DeleteEtcdBackupConfig(params *DeleteEtcdBackupConfigParams, au
 }
 
 /*
-  GetEtcdBackupConfig Gets a etcd backup config for a given cluster based on its name
+  GetEtcdBackupConfig Gets a etcd backup config for a given cluster based on its id
 */
 func (a *Client) GetEtcdBackupConfig(params *GetEtcdBackupConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetEtcdBackupConfigOK, error) {
 	// TODO: Validate the params before sending
@@ -128,7 +130,7 @@ func (a *Client) GetEtcdBackupConfig(params *GetEtcdBackupConfigParams, authInfo
 	op := &runtime.ClientOperation{
 		ID:                 "getEtcdBackupConfig",
 		Method:             "GET",
-		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_name}",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -194,7 +196,45 @@ func (a *Client) ListEtcdBackupConfig(params *ListEtcdBackupConfigParams, authIn
 }
 
 /*
-  PatchEtcdBackupConfig Patches a etcd backup config for a given cluster based on its name
+  ListProjectEtcdBackupConfig List etcd backup configs for a given project
+*/
+func (a *Client) ListProjectEtcdBackupConfig(params *ListProjectEtcdBackupConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectEtcdBackupConfigOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListProjectEtcdBackupConfigParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listProjectEtcdBackupConfig",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/etcdbackupconfigs",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListProjectEtcdBackupConfigReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListProjectEtcdBackupConfigOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListProjectEtcdBackupConfigDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  PatchEtcdBackupConfig Patches a etcd backup config for a given cluster based on its id
 */
 func (a *Client) PatchEtcdBackupConfig(params *PatchEtcdBackupConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchEtcdBackupConfigOK, error) {
 	// TODO: Validate the params before sending
@@ -204,7 +244,7 @@ func (a *Client) PatchEtcdBackupConfig(params *PatchEtcdBackupConfigParams, auth
 	op := &runtime.ClientOperation{
 		ID:                 "patchEtcdBackupConfig",
 		Method:             "PATCH",
-		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_name}",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},

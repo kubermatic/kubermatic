@@ -64,7 +64,7 @@ const (
 	SNIType
 	// TunnelingType configures Envoy to terminate the tunnel and stream the
 	// data to the destination.
-	// The only supported tunneling tecnique at the moment in HTTP/2 Connect.
+	// The only supported tunneling technique at the moment in HTTP/2 Connect.
 	TunnelingType
 )
 
