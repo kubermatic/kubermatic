@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # This is based on
-# 1.19: https://raw.githubusercontent.com/hetznercloud/csi-driver/v1.5.1/deploy/kubernetes/hcloud-csi.yml
+# https://raw.githubusercontent.com/hetznercloud/csi-driver/v1.5.1/deploy/kubernetes/hcloud-csi.yml
 # and is applicable for k8s 1.19 clusters.
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
