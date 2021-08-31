@@ -17,7 +17,6 @@ limitations under the License.
 package v1
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -36,8 +35,8 @@ type MLAAdminSetting struct {
 // MLAAdminSettingSpec specifies the cluster-specific administrator settings
 // for KKP user cluster MLA (monitoring, logging & alerting) stack.
 type MLAAdminSettingSpec struct {
-	// Cluster is the reference to the user cluster whose MLA settings are defined in this object.
-	Cluster corev1.ObjectReference `json:"cluster"`
+	// ClusterName is the name of the user cluster whose MLA settings are defined in this object.
+	ClusterName string `json:"clusterName"`
 	// MonitoringRateLimits contains rate-limiting configuration for monitoring in the user cluster.
 	MonitoringRateLimits *MonitoringRateLimitSettings `json:"monitoringRateLimits,omitempty"`
 	// LoggingRateLimits contains rate-limiting configuration logging in the user cluster.
