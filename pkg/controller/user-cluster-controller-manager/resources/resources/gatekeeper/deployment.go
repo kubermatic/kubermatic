@@ -34,7 +34,7 @@ const (
 	controllerName = resources.GatekeeperControllerDeploymentName
 	auditName      = resources.GatekeeperAuditDeploymentName
 	imageName      = "openpolicyagent/gatekeeper"
-	tag            = "v3.5.0"
+	tag            = "v3.5.2"
 	// Namespace used by Dashboard to find required resources.
 	webhookServerPort  = 8443
 	metricsPort        = 8888
@@ -176,7 +176,7 @@ func getControllerContainers() []corev1.Container {
 			"--logtostderr",
 			fmt.Sprintf("--exempt-namespace=%s", resources.GatekeeperNamespace),
 			"--operation=webhook",
-			fmt.Sprintf("--enable-mutation=%s", resources.ExperimentalEnableMutation),
+			fmt.Sprintf("--enable-mutation=%t", resources.ExperimentalEnableMutation),
 		},
 		Ports: []corev1.ContainerPort{
 			{
@@ -261,7 +261,8 @@ func getAuditContainers() []corev1.Container {
 		Args: []string{
 			"--logtostderr",
 			"--operation=audit",
-			// - --audit-match-kind-only={{ .Values.auditMatchKindOnly }}
+			fmt.Sprintf("--constraint-violations-limit=%d", resources.ConstraintViolationsLimit),
+			fmt.Sprintf("--audit-match-kind-only=%t", resources.AuditMatchKindOnly),
 		},
 		Ports: []corev1.ContainerPort{
 			{

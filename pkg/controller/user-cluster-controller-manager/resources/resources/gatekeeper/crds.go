@@ -43,7 +43,7 @@ const (
 func ConfigCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return resources.GatekeeperConfigCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
-			crd.Annotations = map[string]string{"controller-gen.kubebuilder.io/version": "v0.2.4"} // v0.5.0
+			crd.Annotations = map[string]string{"controller-gen.kubebuilder.io/version": "v0.5.0"}
 			crd.Labels = map[string]string{"gatekeeper.sh/system": "yes"}
 			crd.Spec.Group = configAPIGroup
 			crd.Spec.Versions = []apiextensionsv1.CustomResourceDefinitionVersion{
@@ -74,7 +74,7 @@ func ConfigCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
 func ConstraintTemplateCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return resources.GatekeeperConstraintTemplateCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
-			crd.Annotations = map[string]string{"controller-gen.kubebuilder.io/version": "v0.2.4"} // v0.5.0
+			crd.Annotations = map[string]string{"controller-gen.kubebuilder.io/version": "v0.5.0"}
 			crd.Labels = map[string]string{"gatekeeper.sh/system": "yes", "controller-tools.k8s.io": "1.0"}
 			crd.Spec.Group = constraintTemplateAPIGroup
 			crd.Spec.Versions = []apiextensionsv1.CustomResourceDefinitionVersion{

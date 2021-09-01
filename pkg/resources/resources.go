@@ -99,11 +99,6 @@ const (
 	MetricsScraperDeploymentName = "dashboard-metrics-scraper"
 	// MetricsScraperServiceName is the name of dashboard-metrics-scraper service
 	MetricsScraperServiceName = "dashboard-metrics-scraper"
-	// GatekeeperControllerDeploymentName is the name of the gatekeeper controller deployment
-	GatekeeperControllerDeploymentName = "gatekeeper-controller-manager"
-	// GatekeeperAuditDeploymentName is the name of the gatekeeper audit deployment
-	GatekeeperAuditDeploymentName = "gatekeeper-audit"
-
 	// PrometheusStatefulSetName is the name for the prometheus StatefulSet
 	PrometheusStatefulSetName = "prometheus"
 	// EtcdStatefulSetName is the name for the etcd StatefulSet
@@ -128,9 +123,6 @@ const (
 	OpenVPNServerServiceName = "openvpn-server"
 	// MachineControllerWebhookServiceName is the name of the machine-controller webhook service
 	MachineControllerWebhookServiceName = "machine-controller-webhook"
-	// GatekeeperWebhookServiceName is the name of the gatekeeper webhook service
-	GatekeeperWebhookServiceName = "gatekeeper-webhook-service"
-
 	// MetricsServerAPIServiceName is the name for the metrics-server APIService
 	MetricsServerAPIServiceName = "v1beta1.metrics.k8s.io"
 
@@ -166,9 +158,7 @@ const (
 	ClusterAutoscalerKubeconfigSecretName = "cluster-autoscaler-kubeconfig"
 	// KubernetesDashboardKubeconfigSecretName is the name of the kubeconfig secret user for Kubernetes Dashboard
 	KubernetesDashboardKubeconfigSecretName = "kubernetes-dashboard-kubeconfig"
-	// GatekeeperWebhookServerCertSecretName is the name of the gatekeeper webhook cert secret name
-	GatekeeperWebhookServerCertSecretName = "gatekeeper-webhook-server-cert"
-	PodDisruptionName                     = "gatekeeper-controller-manager"
+
 	// ImagePullSecretName specifies the name of the dockercfg secret used to access the private repo.
 	ImagePullSecretName = "dockercfg"
 
@@ -247,13 +237,6 @@ const (
 
 	// PrometheusRoleBindingName is the name for the Prometheus rolebinding
 	PrometheusRoleBindingName = "prometheus"
-
-	// GatekeeperRoleName is the name for the Gatekeeper role
-	GatekeeperRoleName = "gatekeeper-manager-role"
-	// GatekeeperRoleBindingName is the name for the Gatekeeper rolebinding
-	GatekeeperRoleBindingName = "gatekeeper-manager-rolebinding"
-	// GatekeeperServiceAccountName is the name for the Gatekeeper service account
-	GatekeeperServiceAccountName = "gatekeeper-admin"
 
 	// CloudControllerManagerRoleBindingName is the name for the cloud controller manager rolebinding.
 	CloudControllerManagerRoleBindingName = "cloud-controller-manager"
@@ -334,9 +317,30 @@ const (
 
 	// KubermaticNamespace is the main kubermatic namespace
 	KubermaticNamespace = "kubermatic"
+	// GatekeeperControllerDeploymentName is the name of the gatekeeper controller deployment
+	GatekeeperControllerDeploymentName = "gatekeeper-controller-manager"
+	// GatekeeperAuditDeploymentName is the name of the gatekeeper audit deployment
+	GatekeeperAuditDeploymentName = "gatekeeper-audit"
+	// GatekeeperWebhookServiceName is the name of the gatekeeper webhook service
+	GatekeeperWebhookServiceName = "gatekeeper-webhook-service"
+	// GatekeeperWebhookServerCertSecretName is the name of the gatekeeper webhook cert secret name
+	GatekeeperWebhookServerCertSecretName = "gatekeeper-webhook-server-cert"
+	PodDisruptionName                     = "gatekeeper-controller-manager"
+	// GatekeeperRoleName is the name for the Gatekeeper role
+	GatekeeperRoleName = "gatekeeper-manager-role"
+	// GatekeeperRoleBindingName is the name for the Gatekeeper rolebinding
+	GatekeeperRoleBindingName = "gatekeeper-manager-rolebinding"
+	// GatekeeperServiceAccountName is the name for the Gatekeeper service account
+	GatekeeperServiceAccountName = "gatekeeper-admin"
 	// GatekeeperNamespace is the main gatkeeper namespace where the gatekeeper config is stored
-	GatekeeperNamespace        = "gatekeeper-system"
-	ExperimentalEnableMutation = "false"
+	GatekeeperNamespace = "gatekeeper-system"
+	// Enable mutation
+	ExperimentalEnableMutation = false
+	// Gatekeeper audits all resources in the cluster, to only validate resource in OPA cache set this flag to true
+	AuditMatchKindOnly = false
+	// The maximum number of audit violations reported on a constraint
+	ConstraintViolationsLimit = 20
+
 	// CloudInitSettingsNamespace are used in order to reach, authenticate and be authorized by the api server, to fetch
 	// the machine  provisioning cloud-init
 	CloudInitSettingsNamespace = "cloud-init-settings"

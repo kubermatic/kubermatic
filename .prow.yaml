@@ -1279,7 +1279,7 @@ presubmits:
             - "./hack/ci/run-opa-e2e-tests.sh"
           env:
             - name: VERSION_TO_TEST
-              value: v1.21.0
+              value: v1.22.0
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
