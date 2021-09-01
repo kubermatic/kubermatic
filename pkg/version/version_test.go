@@ -120,7 +120,7 @@ func TestProviderIncompatibilitiesVersions(t *testing.T) {
 		name             string
 		manager          *Manager
 		clusterType      string
-		conditions       []IncompatibilityCondition
+		conditions       []ConditionType
 		provider         kubermaticv1.ProviderType
 		expectedVersions []*Version
 	}{
@@ -192,7 +192,7 @@ func TestProviderIncompatibilitiesVersions(t *testing.T) {
 			name:        "Matching Incompatibility for given provider",
 			provider:    kubermaticv1.ProviderVSphere,
 			clusterType: apiv1.KubernetesClusterType,
-			conditions:  []IncompatibilityCondition{ExternalCloudProviderCondition},
+			conditions:  []ConditionType{ExternalCloudProviderCondition},
 			manager: New([]*Version{
 				{
 					Version: semver.MustParse("1.21.0"),
@@ -304,7 +304,7 @@ func TestProviderIncompatibilitiesUpdate(t *testing.T) {
 		clusterType      string
 		provider         kubermaticv1.ProviderType
 		fromVersion      string
-		conditions       []IncompatibilityCondition
+		conditions       []ConditionType
 		expectedVersions []*Version
 	}{
 		{
@@ -350,7 +350,7 @@ func TestProviderIncompatibilitiesUpdate(t *testing.T) {
 			provider:    kubermaticv1.ProviderVSphere,
 			clusterType: apiv1.KubernetesClusterType,
 			fromVersion: "1.21.0",
-			conditions:  []IncompatibilityCondition{ExternalCloudProviderCondition},
+			conditions:  []ConditionType{ExternalCloudProviderCondition},
 			manager: New([]*Version{
 				{
 					Version: semver.MustParse("1.21.0"),

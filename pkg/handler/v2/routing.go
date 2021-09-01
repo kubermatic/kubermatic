@@ -61,6 +61,7 @@ type Routing struct {
 	addonProviderGetter                   provider.AddonProviderGetter
 	addonConfigProvider                   provider.AddonConfigProvider
 	updateManager                         common.UpdateManager
+	supportManager                        common.SupportManager
 	prometheusClient                      prometheusapi.Client
 	projectMemberProvider                 provider.ProjectMemberProvider
 	privilegedProjectMemberProvider       provider.PrivilegedProjectMemberProvider
@@ -118,6 +119,7 @@ func NewV2Routing(routingParams handler.RoutingParams) Routing {
 		tokenVerifiers:                        routingParams.TokenVerifiers,
 		tokenExtractors:                       routingParams.TokenExtractors,
 		updateManager:                         routingParams.UpdateManager,
+		supportManager:                        routingParams.UpdateManager.(common.SupportManager),
 		prometheusClient:                      routingParams.PrometheusClient,
 		projectMemberProvider:                 routingParams.ProjectMemberProvider,
 		privilegedProjectMemberProvider:       routingParams.PrivilegedProjectMemberProvider,

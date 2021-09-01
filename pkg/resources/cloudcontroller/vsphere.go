@@ -143,19 +143,10 @@ func getVsphereCPIVersion(version semver.Semver) (string, error) {
 	case 20:
 		return "1.20.0", nil
 	case 21:
-		return latestVsphereCPIVersion, nil
+		fallthrough
 	case 22:
-		return "", fmt.Errorf("kubernetes v1.22 not supported by external CCM")
+		fallthrough
 	default:
 		return latestVsphereCPIVersion, nil
 	}
-}
-
-// VsphereCloudControllerSupported checks if this version of Kubernetes is supported
-// by our implementation of the external cloud controller.
-func VsphereCloudControllerSupported(version semver.Semver) bool {
-	if _, err := getVsphereCPIVersion(version); err != nil {
-		return false
-	}
-	return true
 }

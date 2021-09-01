@@ -275,6 +275,12 @@ var (
 				Condition: version.ExternalCloudProviderCondition,
 				Operation: version.UpdateOperation,
 			},
+			{
+				Provider:  kubermaticv1.ProviderVSphere,
+				Version:   "1.22.*",
+				Condition: version.ExternalCloudProviderCondition,
+				Operation: version.SupportOperation,
+			},
 		},
 	}
 )

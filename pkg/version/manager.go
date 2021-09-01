@@ -28,14 +28,14 @@ import (
 	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
 )
 
-// IncompatibilityCondition is the type defining the cluster or datacenter condition that must be met to block a specific version
-type IncompatibilityCondition string
+// ConditionType is the type defining the cluster or datacenter condition that must be met to block a specific version
+type ConditionType string
 
 const (
 	// AlwaysCondition represent an always true matching condition used while checking provider incompatibilities
-	AlwaysCondition IncompatibilityCondition = "always"
+	AlwaysCondition ConditionType = "always"
 	// ExternalCloudProviderCondition is an incompatibility condition that represents the usage of the external Cloud Provider
-	ExternalCloudProviderCondition IncompatibilityCondition = "externalCloudProvider"
+	ExternalCloudProviderCondition ConditionType = kubermaticv1.ClusterFeatureExternalCloudProvider
 )
 
 // OperationType is the type defining the operations triggering the compatibility check (CREATE or UPDATE)
@@ -44,8 +44,10 @@ type OperationType string
 const (
 	// CreateOperation represents the creation of a new cluster
 	CreateOperation OperationType = "CREATE"
-	// UpdateOperation represents the update of an already existing cluster
-	UpdateOperation OperationType = "UPDATE"
+	// UpdateOperation represents the update of an existing cluster
+	UpdateOperation OperationType = "UPGRADE"
+	// SupportOperation represents the possibility to enable a new feature on an existing cluster
+	SupportOperation OperationType = "SUPPORT"
 )
 
 var (
@@ -63,7 +65,7 @@ type Manager struct {
 type ProviderIncompatibility struct {
 	Provider  kubermaticv1.ProviderType `json:"provider"`
 	Version   string                    `json:"version"`
-	Condition IncompatibilityCondition  `json:"condition"`
+	Condition ConditionType             `json:"condition"`
 	Operation OperationType             `json:"operation"`
 	Type      string                    `json:"type,omitempty"`
 }
@@ -174,7 +176,7 @@ func (m *Manager) GetVersions(clusterType string) ([]*Version, error) {
 }
 
 // GetVersionsV2 returns all Versions which don't result in automatic updates
-func (m *Manager) GetVersionsV2(clusterType string, provider kubermaticv1.ProviderType, conditions ...IncompatibilityCondition) ([]*Version, error) {
+func (m *Manager) GetVersionsV2(clusterType string, provider kubermaticv1.ProviderType, conditions ...ConditionType) ([]*Version, error) {
 	var masterVersions []*Version
 	for _, v := range m.versions {
 		if v.Type == clusterType {
@@ -186,7 +188,7 @@ func (m *Manager) GetVersionsV2(clusterType string, provider kubermaticv1.Provid
 			if autoUpdate != nil {
 				continue
 			}
-			compatible, err := m.checkProviderCompatibility(v.Version, provider, clusterType, CreateOperation, conditions...)
+			compatible, err := checkProviderCompatibility(v.Version, provider, clusterType, CreateOperation, m.providerIncompatibilities, conditions...)
 			if err != nil {
 				return nil, err
 			}
@@ -276,7 +278,7 @@ func (m *Manager) automaticUpdate(fromVersionRaw, clusterType string, isForNode 
 }
 
 // GetPossibleUpdates returns possible updates for the version passed in
-func (m *Manager) GetPossibleUpdates(fromVersionRaw, clusterType string, provider kubermaticv1.ProviderType, conditions ...IncompatibilityCondition) ([]*Version, error) {
+func (m *Manager) GetPossibleUpdates(fromVersionRaw, clusterType string, provider kubermaticv1.ProviderType, conditions ...ConditionType) ([]*Version, error) {
 	from, err := semver.NewVersion(fromVersionRaw)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse version %s: %v", fromVersionRaw, err)
@@ -305,7 +307,7 @@ func (m *Manager) GetPossibleUpdates(fromVersionRaw, clusterType string, provide
 	for _, c := range toConstraints {
 		for _, v := range m.versions {
 			if c.Check(v.Version) && !from.Equal(v.Version) && v.Type == clusterType {
-				compatible, err := m.checkProviderCompatibility(v.Version, provider, clusterType, UpdateOperation, conditions...)
+				compatible, err := checkProviderCompatibility(v.Version, provider, clusterType, UpdateOperation, m.providerIncompatibilities, conditions...)
 				if err != nil {
 					return nil, err
 				}
@@ -319,33 +321,6 @@ func (m *Manager) GetPossibleUpdates(fromVersionRaw, clusterType string, provide
 	return possibleVersions, nil
 }
 
-func (m *Manager) checkProviderCompatibility(version *semver.Version, provider kubermaticv1.ProviderType, clusterType string, operation OperationType, conditions ...IncompatibilityCondition) (bool, error) {
-	var compatible = true
-	var err error
-	for _, pi := range m.providerIncompatibilities {
-		if pi.Provider == provider && pi.Type == clusterType && operation == pi.Operation {
-			if pi.Condition == AlwaysCondition {
-				compatible, err = CheckUnconstrained(version, pi.Version)
-				if err != nil {
-					return false, fmt.Errorf("check incompatibility failed")
-				}
-			} else {
-				for _, ic := range conditions {
-					if pi.Condition == ic || ic == AlwaysCondition || pi.Condition == AlwaysCondition {
-						compatible, err = CheckUnconstrained(version, pi.Version)
-						if err != nil {
-							return false, fmt.Errorf("check incompatibility failed")
-						}
-						if !compatible {
-							return false, nil
-						}
-					}
-				}
-			}
-			if !compatible {
-				return false, nil
-			}
-		}
-	}
-	return compatible, nil
+func (m *Manager) GetIncompatibilities() []*ProviderIncompatibility {
+	return m.providerIncompatibilities
 }

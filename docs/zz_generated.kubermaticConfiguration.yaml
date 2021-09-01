@@ -424,7 +424,11 @@ spec:
           # Version is the Kubernetes version that must be checked. Wildcards are allowed, e.g. "1.22.*".
           version: 1.22.*
         - condition: externalCloudProvider
-          operation: UPDATE
+          operation: UPGRADE
+          provider: vsphere
+          version: 1.22.*
+        - condition: externalCloudProvider
+          operation: SUPPORT
           provider: vsphere
           version: 1.22.*
       # Updates is a list of available and automatic upgrades.

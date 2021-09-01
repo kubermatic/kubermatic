@@ -20,7 +20,45 @@ import (
 	"fmt"
 
 	"github.com/Masterminds/semver/v3"
+
+	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 )
+
+func IsSupported(version *semver.Version, provider kubermaticv1.ProviderType, incompatibilities []*ProviderIncompatibility, conditions ...ConditionType) (bool, error) {
+	return checkProviderCompatibility(version, provider, v1.KubernetesClusterType, SupportOperation, incompatibilities, conditions...)
+}
+
+func checkProviderCompatibility(version *semver.Version, provider kubermaticv1.ProviderType, clusterType string, operation OperationType, incompatibilities []*ProviderIncompatibility, conditions ...ConditionType) (bool, error) {
+	var compatible = true
+	var err error
+	for _, pi := range incompatibilities {
+		if pi.Provider == provider && pi.Type == clusterType && operation == pi.Operation {
+			if pi.Condition == AlwaysCondition {
+				compatible, err = CheckUnconstrained(version, pi.Version)
+				if err != nil {
+					return false, fmt.Errorf("check incompatibility failed")
+				}
+			} else {
+				for _, ic := range conditions {
+					if pi.Condition == ic || ic == AlwaysCondition || pi.Condition == AlwaysCondition {
+						compatible, err = CheckUnconstrained(version, pi.Version)
+						if err != nil {
+							return false, fmt.Errorf("check incompatibility failed")
+						}
+						if !compatible {
+							return false, nil
+						}
+					}
+				}
+			}
+			if !compatible {
+				return false, nil
+			}
+		}
+	}
+	return compatible, nil
+}
 
 func CheckUnconstrained(baseVersion *semver.Version, version string) (bool, error) {
 	c, err := semver.NewConstraint(version)

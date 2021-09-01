@@ -66,7 +66,7 @@ func GetUpgradesEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGe
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the cloud provider name: %v", err)
 	}
-	var updateConditions []version.IncompatibilityCondition
+	var updateConditions []version.ConditionType
 	externalCloudProvider := cluster.Spec.Features[v1.ClusterFeatureExternalCloudProvider]
 	if externalCloudProvider {
 		updateConditions = append(updateConditions, version.ExternalCloudProviderCondition)

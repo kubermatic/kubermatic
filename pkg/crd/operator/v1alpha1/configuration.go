@@ -345,7 +345,7 @@ type Incompatibility struct {
 	// Version is the Kubernetes version that must be checked. Wildcards are allowed, e.g. "1.22.*".
 	Version string `json:"version,omitempty"`
 	// Condition is the cluster or datacenter condition that must be met to block a specific version
-	Condition version.IncompatibilityCondition `json:"condition,omitempty"`
+	Condition version.ConditionType `json:"condition,omitempty"`
 	// Operation is the operation triggering the compatibility check (CREATE or UPDATE)
 	Operation version.OperationType `json:"operation,omitempty"`
 }
