@@ -72,6 +72,40 @@ func TestGetSeedSettingsEndpoint(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:     "scenario 3: user can get seed settings with metering enabled",
+			seedName: "us-central1",
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenDefaultUser(),
+				genMeteringSeed(true),
+			},
+			existingAPIUser:    test.GenDefaultAPIUser(),
+			expectedHTTPStatus: http.StatusOK,
+			expectedResponse: apiv2.SeedSettings{
+				Metering: apiv2.Metering{
+					Enabled:          true,
+					StorageClassName: "fast",
+					StorageSize:      "100Gi",
+				},
+			},
+		},
+		{
+			name:     "scenario 4: user can get seed settings without metering",
+			seedName: "us-central1",
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenDefaultUser(),
+				test.GenTestSeed(),
+			},
+			existingAPIUser:    test.GenDefaultAPIUser(),
+			expectedHTTPStatus: http.StatusOK,
+			expectedResponse: apiv2.SeedSettings{
+				Metering: apiv2.Metering{
+					Enabled:          false,
+					StorageClassName: "",
+					StorageSize:      "",
+				},
+			},
+		},
 	}
 
 	for _, tc := range testcases {
@@ -104,6 +138,16 @@ func genMLASeed(mlaEnabled bool) *kubermaticv1.Seed {
 	seed := test.GenTestSeed()
 	seed.Spec.MLA = &kubermaticv1.SeedMLASettings{
 		UserClusterMLAEnabled: mlaEnabled,
+	}
+	return seed
+}
+
+func genMeteringSeed(enabled bool) *kubermaticv1.Seed {
+	seed := test.GenTestSeed()
+	seed.Spec.Metering = &kubermaticv1.MeteringConfigurations{
+		Enabled:          enabled,
+		StorageClassName: "fast",
+		StorageSize:      "100Gi",
 	}
 	return seed
 }
