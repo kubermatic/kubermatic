@@ -42,6 +42,9 @@ type SettingSpec struct {
 	// mla alertmanager prefix
 	MlaAlertmanagerPrefix string `json:"mlaAlertmanagerPrefix,omitempty"`
 
+	// mla grafana prefix
+	MlaGrafanaPrefix string `json:"mlaGrafanaPrefix,omitempty"`
+
 	// restrict project creation
 	RestrictProjectCreation bool `json:"restrictProjectCreation,omitempty"`
 
