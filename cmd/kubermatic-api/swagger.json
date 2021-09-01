@@ -474,6 +474,21 @@
           "reports"
         ],
         "operationId": "listMeteringReports",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "StartAfter",
+            "name": "start_after",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int64",
+            "x-go-name": "MaxKeys",
+            "name": "max_keys",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "MeteringReport",
@@ -510,6 +525,15 @@
           "report"
         ],
         "operationId": "getMeteringReport",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ReportName",
+            "name": "report_name",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "description": "MeteringReportURL",

@@ -197,10 +197,8 @@ func getS3DataFromSeed(ctx context.Context, seedClient ctrlruntimeclient.Client)
 
 // swagger:parameters listMeteringReports
 type listReportReq struct {
-	// required: false
 	// in: query
 	StartAfter string `json:"start_after"`
-	// required: false
 	// in: query
 	MaxKeys int `json:"max_keys"`
 }

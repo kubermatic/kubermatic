@@ -23,5 +23,5 @@ CONTAINERIZE_IMAGE=golang:1.16.1 containerize ./hack/update-swagger.sh
 
 echodate "Generating swagger spec"
 cd cmd/kubermatic-api/
-go run github.com/go-swagger/go-swagger/cmd/swagger generate spec --scan-models -o swagger.json
+go run github.com/go-swagger/go-swagger/cmd/swagger generate spec --tags=ee --scan-models -o swagger.json
 echodate "Completed."
