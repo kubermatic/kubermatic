@@ -21,9 +21,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-12-01/compute"
-	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-06-01/network"
-	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2018-02-01/resources"
+	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2021-07-01/compute"
+	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2021-03-01/network"
+	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2020-10-01/resources"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -116,7 +116,7 @@ type AzureClientSet interface {
 }
 
 func (s *azureClientSetImpl) ListSKU(ctx context.Context, location string) ([]compute.ResourceSku, error) {
-	skuList, err := s.skusClient.List(ctx, location)
+	skuList, err := s.skusClient.List(ctx, location, "")
 	if err != nil {
 		return nil, fmt.Errorf("failed to list SKU resource: %v", err)
 	}
