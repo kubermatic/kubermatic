@@ -36,6 +36,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/reference"
 )
@@ -52,6 +53,11 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 
 		if err := req.validate(); err != nil {
 			return nil, err
+		}
+
+		// generate name if not set
+		if req.Body.Name == "" {
+			req.Body.Name = rand.String(10)
 		}
 
 		er, err := convertAPIToInternalEtcdRestore(req.Body.Name, &req.Body.Spec, c)
@@ -82,8 +88,8 @@ type createEtcdRestoreReq struct {
 }
 
 type erBody struct {
-	// Name of the etcd backup restore
-	Name string `json:"name"`
+	// Name of the etcd backup restore. If not set, it will be generated
+	Name string `json:"name,omitempty"`
 	// EtcdRestoreSpec Spec of the etcd backup restore
 	Spec apiv2.EtcdRestoreSpec `json:"spec"`
 }
