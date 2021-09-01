@@ -466,7 +466,7 @@ func (r Routing) createOrUpdateMeteringConfigurations() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(admin.CreateOrUpdateMeteringConfigurations(r.userInfoGetter, r.seedsGetter, r.seedsClientGetter)),
+		)(admin.CreateOrUpdateMeteringConfigurations(r.userInfoGetter, r.masterClient)),
 		metering.DecodeMeteringConfigurationsReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,

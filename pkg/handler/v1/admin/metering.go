@@ -21,12 +21,14 @@ import (
 	"fmt"
 
 	"github.com/go-kit/kit/endpoint"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"k8c.io/kubermatic/v2/pkg/handler/v1/metering"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // CreateOrUpdateMeteringCredentials creates or updates metrering tool SecretReq.
@@ -59,7 +61,7 @@ func CreateOrUpdateMeteringCredentials(userInfoGetter provider.UserInfoGetter, s
 }
 
 // CreateOrUpdateMeteringConfigurations configures kkp metering tool.
-func CreateOrUpdateMeteringConfigurations(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
+func CreateOrUpdateMeteringConfigurations(userInfoGetter provider.UserInfoGetter, masterClient client.Client) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 
 		userInfo, err := userInfoGetter(ctx, "")
@@ -79,7 +81,7 @@ func CreateOrUpdateMeteringConfigurations(userInfoGetter provider.UserInfoGetter
 			return "", err
 		}
 
-		if err := createOrUpdateMeteringConfigurations(ctx, request, seedsGetter, seedClientGetter); err != nil {
+		if err := createOrUpdateMeteringConfigurations(ctx, request, masterClient); err != nil {
 			return nil, fmt.Errorf("failed to create/update metering SecretReq: %v", err)
 		}
 
