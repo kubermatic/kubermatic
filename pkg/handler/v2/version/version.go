@@ -82,7 +82,7 @@ func ListVersions(updateManager common.UpdateManager) endpoint.Endpoint {
 
 		versions, err := updateManager.GetVersionsV2(req.Type, kubermaticv1.ProviderType(req.ProviderName))
 		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, errors.New(http.StatusInternalServerError, err.Error())
 		}
 
 		masterVersions := make([]*apiv1.MasterVersion, len(versions))

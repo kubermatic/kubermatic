@@ -64,13 +64,6 @@ func main() {
 	}
 
 	writeYAML(updatesYAML, "charts/kubermatic/static/master/updates.yaml")
-
-	providerIncompatibilitiesYAML, err := common.CreateProviderIncompatibilitiesYAML(versionCfg)
-	if err != nil {
-		log.Fatalf("Failed to encode updates as YAML: %v", err)
-	}
-
-	writeYAML(providerIncompatibilitiesYAML, "charts/kubermatic/static/master/provider-incompatibilities.yaml")
 }
 
 func writeYAML(container string, filename string) {

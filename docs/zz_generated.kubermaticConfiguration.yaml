@@ -413,11 +413,15 @@ spec:
     kubernetes:
       # Default is the default version to offer users.
       default: 1.21.3
-      # ProviderIncompatibilities lists all the kubernetes version prohibited for a given provider. Wildcards are allowed, e.g. "1.22.*".
+      # ProviderIncompatibilities lists all the Kubernetes version incompatibilities
       providerIncompatibilities:
-        - condition: always
+        - # Condition is the cluster or datacenter condition that must be met to block a specific version
+          condition: always
+          # Operation is the operation triggering the compatibility check (CREATE or UPDATE)
           operation: CREATE
+          # Provider to which to apply the compatibility check
           provider: vsphere
+          # Version is the Kubernetes version that must be checked. Wildcards are allowed, e.g. "1.22.*".
           version: 1.22.*
         - condition: externalCloudProvider
           operation: UPDATE

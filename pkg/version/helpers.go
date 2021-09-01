@@ -22,7 +22,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 )
 
-func CreateAndCheckNotConstrained(baseVersion *semver.Version, version string) (bool, error) {
+func CheckUnconstrained(baseVersion *semver.Version, version string) (bool, error) {
 	c, err := semver.NewConstraint(version)
 	if err != nil {
 		return false, fmt.Errorf("failed to parse to constraint %s: %v", c, err)

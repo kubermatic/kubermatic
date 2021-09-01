@@ -1053,7 +1053,7 @@ func getSSHKey(ctx context.Context, userInfoGetter provider.UserInfoGetter, sshK
 }
 
 func convertInternalCCMStatusToExternal(cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.Datacenter) apiv1.ExternalCCMMigrationStatus {
-	if check, _ := version.CreateAndCheckNotConstrained(cluster.Spec.Version.Version, "1.22.*"); !check {
+	if check, _ := version.CheckUnconstrained(cluster.Spec.Version.Version, "1.22.*"); !check {
 		return apiv1.ExternalCCMMigrationUnsupported
 	}
 

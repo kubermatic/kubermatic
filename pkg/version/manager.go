@@ -28,17 +28,23 @@ import (
 	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
 )
 
+// IncompatibilityCondition is the type defining the cluster or datacenter condition that must be met to block a specific version
 type IncompatibilityCondition string
 
 const (
-	AlwaysCondition                IncompatibilityCondition = "always"
+	// AlwaysCondition represent an always true matching condition used while checking provider incompatibilities
+	AlwaysCondition IncompatibilityCondition = "always"
+	// ExternalCloudProviderCondition is an incompatibility condition that represents the usage of the external Cloud Provider
 	ExternalCloudProviderCondition IncompatibilityCondition = "externalCloudProvider"
 )
 
+// OperationType is the type defining the operations triggering the compatibility check (CREATE or UPDATE)
 type OperationType string
 
 const (
+	// CreateOperation represents the creation of a new cluster
 	CreateOperation OperationType = "CREATE"
+	// UpdateOperation represents the update of an already existing cluster
 	UpdateOperation OperationType = "UPDATE"
 )
 
@@ -319,14 +325,14 @@ func (m *Manager) checkProviderCompatibility(version *semver.Version, provider k
 	for _, pi := range m.providerIncompatibilities {
 		if pi.Provider == provider && pi.Type == clusterType && operation == pi.Operation {
 			if pi.Condition == AlwaysCondition {
-				compatible, err = CreateAndCheckNotConstrained(version, pi.Version)
+				compatible, err = CheckUnconstrained(version, pi.Version)
 				if err != nil {
 					return false, fmt.Errorf("check incompatibility failed")
 				}
 			} else {
 				for _, ic := range conditions {
 					if pi.Condition == ic || ic == AlwaysCondition || pi.Condition == AlwaysCondition {
-						compatible, err = CreateAndCheckNotConstrained(version, pi.Version)
+						compatible, err = CheckUnconstrained(version, pi.Version)
 						if err != nil {
 							return false, fmt.Errorf("check incompatibility failed")
 						}

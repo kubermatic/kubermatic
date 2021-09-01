@@ -48,7 +48,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 		wantVersions           []*apiv1.MasterVersion
 	}{
 		{
-			name: "upgrade available and incompatibility with another provider",
+			name: "upgrade available and compatible with the given provider",
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 			),
