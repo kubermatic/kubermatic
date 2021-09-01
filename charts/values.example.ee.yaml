@@ -72,3 +72,9 @@ kubermaticOperator:
 minio:
   storeSize: '500Gi'
   storageClass: minio-hdd
+
+telemetry:
+  # uuid is the unique identifier of the client where the agent is running.
+  # This field is required and will print an error message when that entry is missing.
+  # You can generate uuid using command uuidgen on your linux machine
+  uuid: ""

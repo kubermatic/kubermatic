@@ -58,6 +58,10 @@ const (
 	KubermaticOperatorReleaseName = KubermaticOperatorChartName
 	KubermaticOperatorNamespace   = "kubermatic"
 
+	TelemetryChartName   = "telemetry"
+	TelemetryReleaseName = TelemetryChartName
+	TelemetryNamespace   = "telemetry-system"
+
 	NodePortProxyService = "nodeport-proxy"
 
 	StorageClassName = "kubermatic-fast"
@@ -98,7 +102,43 @@ func (*MasterStack) Deploy(ctx context.Context, opt stack.DeployOptions) error {
 		return fmt.Errorf("failed to apply Kubermatic Configuration: %v", err)
 	}
 
+	if err := deployTelemetry(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
+		return fmt.Errorf("failed to deploy Telemetry: %w", err)
+	}
+
 	showDNSSettings(ctx, opt.Logger, opt.KubeClient, opt)
+
+	return nil
+}
+
+func deployTelemetry(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
+	logger.Infof("📦 Deploying Telemetry")
+	sublogger := log.Prefix(logger, "   ")
+
+	if opt.DisableTelemetry {
+		sublogger.Info("Telemetry creation has been disabled in the KubermaticConfiguration, skipping.")
+		return nil
+	}
+
+	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, "telemetry"))
+	if err != nil {
+		return fmt.Errorf("failed to load Helm chart: %v", err)
+	}
+
+	if err := util.EnsureNamespace(ctx, sublogger, kubeClient, TelemetryNamespace); err != nil {
+		return fmt.Errorf("failed to create namespace: %v", err)
+	}
+
+	release, err := util.CheckHelmRelease(ctx, sublogger, helmClient, TelemetryNamespace, TelemetryReleaseName)
+	if err != nil {
+		return fmt.Errorf("failed to check to Helm release: %v", err)
+	}
+
+	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, TelemetryNamespace, TelemetryReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, release); err != nil {
+		return fmt.Errorf("failed to deploy Helm release: %v", err)
+	}
+
+	logger.Info("✅ Success.")
 
 	return nil
 }
