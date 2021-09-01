@@ -99,7 +99,7 @@ kubermatic:
     #   If enabled will apply the cluster level etcd-launcher feature flag on all clusters, unless it's explicitly disabled at the cluster level
     # For example:
     # featureGates: "OpenIDAuthPlugin=true,VerticalPodAutoscaler=true"
-    featureGates: ""
+    featureGates: "EtcdLauncher=true"
     datacenterName: ""
     # Specifies the NodePort range for customer clusters - this must match the NodePort range of the seed cluster.
     nodeportRange: "30000-32767"
@@ -270,7 +270,7 @@ kubermatic:
   # which allow dynamically creating multiple arbitrary backup schedules for each
   # cluster, as well as restoring a cluster's etcd from any of the created backups
   etcdBackupsRestores:
-    enabled: false
+    enabled: true
     s3:
       endpoint: minio.minio.svc.cluster.local:9000
       bucket: kubermatic-etcd-backups
