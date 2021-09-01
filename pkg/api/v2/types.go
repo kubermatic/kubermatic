@@ -156,11 +156,23 @@ type AlertmanagerSpec struct {
 type SeedSettings struct {
 	// the Seed level MLA (Monitoring, Logging, and Alerting) stack settings
 	MLA MLA `json:"mla"`
+	// the Seed level metering settings
+	Metering Metering `json:"metering"`
 }
 
 type MLA struct {
 	// whether the user cluster MLA (Monitoring, Logging & Alerting) stack is enabled in the seed
 	UserClusterMLAEnabled bool `json:"user_cluster_mla_enabled"`
+}
+
+type Metering struct {
+	// whether metering is enabled on all seeds
+	Enabled bool `json:"enabled"`
+	// StorageClassName is the name of the storage class that the metering tool uses to save processed files before
+	// exporting it to s3 bucket. Default value is kubermatic-fast.
+	StorageClassName string `json:"storageClassName"`
+	// StorageSize is the size of the storage class. Default value is 100Gi.
+	StorageSize string `json:"storageSize"`
 }
 
 // ClusterTemplate represents a ClusterTemplate object
