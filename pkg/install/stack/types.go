@@ -42,6 +42,7 @@ type DeployOptions struct {
 	EnableCertManagerV2Migration      bool
 	EnableOpenstackCSIDriverMigration bool
 	EnableLogrotateMigration          bool
+	DisableTelemetry                  bool
 }
 
 type Stack interface {
