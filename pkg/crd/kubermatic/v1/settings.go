@@ -57,6 +57,7 @@ type SettingSpec struct {
 	OpaOptions                  OpaOptions     `json:"opaOptions"`
 	MlaOptions                  MlaOptions     `json:"mlaOptions"`
 	MlaAlertmanagerPrefix       string         `json:"mlaAlertmanagerPrefix"`
+	MlaGrafanaPrefix            string         `json:"mlaGrafanaPrefix"`
 
 	MachineDeploymentVMResourceQuota MachineDeploymentVMResourceQuota `json:"machineDeploymentVMResourceQuota"`
 

@@ -948,6 +948,7 @@ func convertGlobalSettings(gSettings *models.GlobalSettings) *apiv1.GlobalSettin
 			MonitoringEnforced: gSettings.MlaOptions.MonitoringEnforced,
 		},
 		MlaAlertmanagerPrefix: gSettings.MlaAlertmanagerPrefix,
+		MlaGrafanaPrefix:      gSettings.MlaGrafanaPrefix,
 	}
 }
 
