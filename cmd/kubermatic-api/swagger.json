@@ -19559,7 +19559,7 @@
     },
     "MeteringConfigurations": {
       "type": "object",
-      "title": "Metering contains all the configurations for the metering tool.",
+      "title": "MeteringConfigurations contains all the configurations for the metering tool.",
       "properties": {
         "enabled": {
           "type": "boolean",
