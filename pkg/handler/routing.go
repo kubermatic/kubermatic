@@ -35,6 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/watcher"
 
 	"k8s.io/apimachinery/pkg/util/sets"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // Routing represents an object which binds endpoints to http handlers.
@@ -43,6 +44,7 @@ type Routing struct {
 	logger                                log.Logger
 	versions                              kubermatic.Versions
 	presetsProvider                       provider.PresetProvider
+	masterClient                          client.Client
 	seedsGetter                           provider.SeedsGetter
 	seedsClientGetter                     provider.SeedClientGetter
 	sshKeyProvider                        provider.SSHKeyProvider
@@ -80,11 +82,12 @@ type Routing struct {
 }
 
 // NewRouting creates a new Routing.
-func NewRouting(routingParams RoutingParams) Routing {
+func NewRouting(routingParams RoutingParams, masterClient client.Client) Routing {
 	return Routing{
 		log:                                   routingParams.Log,
 		logger:                                log.NewLogfmtLogger(os.Stderr),
 		presetsProvider:                       routingParams.PresetsProvider,
+		masterClient:                          masterClient,
 		seedsGetter:                           routingParams.SeedsGetter,
 		seedsClientGetter:                     routingParams.SeedsClientGetter,
 		clusterProviderGetter:                 routingParams.ClusterProviderGetter,
