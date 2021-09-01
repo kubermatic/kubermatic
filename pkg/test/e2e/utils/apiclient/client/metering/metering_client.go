@@ -36,7 +36,7 @@ type ClientService interface {
 }
 
 /*
-  GetMeteringReport downloads a specific metering report provides an s3 pre signed URL valid for 1 hour
+  GetMeteringReport Download a specific metering report. Provides an S3 pre signed URL valid for 1 hour. Only available in Kubermatic Enterprise Edition
 */
 func (a *Client) GetMeteringReport(params *GetMeteringReportParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetMeteringReportOK, error) {
 	// TODO: Validate the params before sending
@@ -74,7 +74,7 @@ func (a *Client) GetMeteringReport(params *GetMeteringReportParams, authInfo run
 }
 
 /*
-  ListMeteringReports List metering reports
+  ListMeteringReports List metering reports. Only available in Kubermatic Enterprise Edition
 */
 func (a *Client) ListMeteringReports(params *ListMeteringReportsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListMeteringReportsOK, error) {
 	// TODO: Validate the params before sending

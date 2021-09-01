@@ -407,13 +407,13 @@
     },
     "/api/v1/admin/metering/configurations": {
       "put": {
+        "description": "Configures KKP metering tool. Only available in Kubermatic Enterprise Edition",
         "produces": [
           "application/json"
         ],
         "tags": [
           "admin"
         ],
-        "summary": "Configures KKP metering tool.",
         "operationId": "createOrUpdateMeteringConfigurations",
         "responses": {
           "200": {
@@ -436,13 +436,13 @@
     },
     "/api/v1/admin/metering/credentials": {
       "put": {
+        "description": "Creates or updates the metering tool credentials. Only available in Kubermatic Enterprise Edition",
         "produces": [
           "application/json"
         ],
         "tags": [
           "admin"
         ],
-        "summary": "Creates or updates the metering tool credentials.",
         "operationId": "createOrUpdateMeteringCredentials",
         "responses": {
           "200": {
@@ -465,7 +465,7 @@
     },
     "/api/v1/admin/metering/reports": {
       "get": {
-        "description": "List metering reports",
+        "description": "List metering reports. Only available in Kubermatic Enterprise Edition",
         "produces": [
           "application/json"
         ],
@@ -474,21 +474,6 @@
           "reports"
         ],
         "operationId": "listMeteringReports",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "StartAfter",
-            "name": "start_after",
-            "in": "query"
-          },
-          {
-            "type": "integer",
-            "format": "int64",
-            "x-go-name": "MaxKeys",
-            "name": "max_keys",
-            "in": "query"
-          }
-        ],
         "responses": {
           "200": {
             "description": "MeteringReport",
@@ -516,6 +501,7 @@
     },
     "/api/v1/admin/metering/reports/{report_name}": {
       "get": {
+        "description": "Download a specific metering report. Provides an S3 pre signed URL valid for 1 hour. Only available in Kubermatic Enterprise Edition",
         "produces": [
           "application/json"
         ],
@@ -523,17 +509,7 @@
           "metering",
           "report"
         ],
-        "summary": "Download a specific metering report. Provides an S3 pre signed URL valid for 1 hour.",
         "operationId": "getMeteringReport",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "ReportName",
-            "name": "report_name",
-            "in": "path",
-            "required": true
-          }
-        ],
         "responses": {
           "200": {
             "description": "MeteringReportURL",

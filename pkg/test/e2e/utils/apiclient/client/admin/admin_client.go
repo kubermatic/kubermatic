@@ -62,7 +62,7 @@ type ClientService interface {
 }
 
 /*
-  CreateOrUpdateMeteringConfigurations configures k k p metering tool
+  CreateOrUpdateMeteringConfigurations Configures KKP metering tool. Only available in Kubermatic Enterprise Edition
 */
 func (a *Client) CreateOrUpdateMeteringConfigurations(params *CreateOrUpdateMeteringConfigurationsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOrUpdateMeteringConfigurationsOK, error) {
 	// TODO: Validate the params before sending
@@ -100,7 +100,7 @@ func (a *Client) CreateOrUpdateMeteringConfigurations(params *CreateOrUpdateMete
 }
 
 /*
-  CreateOrUpdateMeteringCredentials creates or updates the metering tool credentials
+  CreateOrUpdateMeteringCredentials Creates or updates the metering tool credentials. Only available in Kubermatic Enterprise Edition
 */
 func (a *Client) CreateOrUpdateMeteringCredentials(params *CreateOrUpdateMeteringCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOrUpdateMeteringCredentialsOK, error) {
 	// TODO: Validate the params before sending

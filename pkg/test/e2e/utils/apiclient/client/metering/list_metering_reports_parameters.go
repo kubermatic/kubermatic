@@ -14,7 +14,6 @@ import (
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
-	"github.com/go-openapi/swag"
 )
 
 // NewListMeteringReportsParams creates a new ListMeteringReportsParams object,
@@ -59,15 +58,6 @@ func NewListMeteringReportsParamsWithHTTPClient(client *http.Client) *ListMeteri
    Typically these are written to a http.Request.
 */
 type ListMeteringReportsParams struct {
-
-	// MaxKeys.
-	//
-	// Format: int64
-	MaxKeys *int64
-
-	// StartAfter.
-	StartAfter *string
-
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -121,28 +111,6 @@ func (o *ListMeteringReportsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
-// WithMaxKeys adds the maxKeys to the list metering reports params
-func (o *ListMeteringReportsParams) WithMaxKeys(maxKeys *int64) *ListMeteringReportsParams {
-	o.SetMaxKeys(maxKeys)
-	return o
-}
-
-// SetMaxKeys adds the maxKeys to the list metering reports params
-func (o *ListMeteringReportsParams) SetMaxKeys(maxKeys *int64) {
-	o.MaxKeys = maxKeys
-}
-
-// WithStartAfter adds the startAfter to the list metering reports params
-func (o *ListMeteringReportsParams) WithStartAfter(startAfter *string) *ListMeteringReportsParams {
-	o.SetStartAfter(startAfter)
-	return o
-}
-
-// SetStartAfter adds the startAfter to the list metering reports params
-func (o *ListMeteringReportsParams) SetStartAfter(startAfter *string) {
-	o.StartAfter = startAfter
-}
-
 // WriteToRequest writes these params to a swagger request
 func (o *ListMeteringReportsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -150,40 +118,6 @@ func (o *ListMeteringReportsParams) WriteToRequest(r runtime.ClientRequest, reg 
 		return err
 	}
 	var res []error
-
-	if o.MaxKeys != nil {
-
-		// query param max_keys
-		var qrMaxKeys int64
-
-		if o.MaxKeys != nil {
-			qrMaxKeys = *o.MaxKeys
-		}
-		qMaxKeys := swag.FormatInt64(qrMaxKeys)
-		if qMaxKeys != "" {
-
-			if err := r.SetQueryParam("max_keys", qMaxKeys); err != nil {
-				return err
-			}
-		}
-	}
-
-	if o.StartAfter != nil {
-
-		// query param start_after
-		var qrStartAfter string
-
-		if o.StartAfter != nil {
-			qrStartAfter = *o.StartAfter
-		}
-		qStartAfter := qrStartAfter
-		if qStartAfter != "" {
-
-			if err := r.SetQueryParam("start_after", qStartAfter); err != nil {
-				return err
-			}
-		}
-	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
