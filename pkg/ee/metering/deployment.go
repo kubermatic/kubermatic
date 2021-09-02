@@ -145,7 +145,7 @@ mc mirror --newer-than "32d0h0m" s3/$S3_BUCKET /metering-data || true`,
 						"--seed",
 						seed.Name,
 					},
-					Image:           "quay.io/kubermatic/metering:v0.5.0",
+					Image:           "quay.io/kubermatic/metering:v0.5",
 					ImagePullPolicy: corev1.PullAlways,
 					Ports: []corev1.ContainerPort{
 						{
