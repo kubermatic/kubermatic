@@ -56,7 +56,7 @@ func CreateOrUpdateEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.End
 
 		backupCredentialsProvider, ok := ctx.Value(middleware.BackupCredentialsProviderContextKey).(provider.BackupCredentialsProvider)
 		if !ok {
-			return nil, errors.New(http.StatusInternalServerError, "cant find backup credentials provider")
+			return nil, errors.New(http.StatusInternalServerError, "can't find backup credentials provider")
 		}
 
 		bc := convertAPIToInternalBackupCredentials(&req.Body.BackupCredentials)

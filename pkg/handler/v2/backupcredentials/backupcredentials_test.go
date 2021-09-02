@@ -68,7 +68,7 @@ func TestCreateOrUpdateEndpoint(t *testing.T) {
 			ExpectedHTTPStatusCode: http.StatusForbidden,
 		},
 		{
-			Name:     "cant manage backup credentials for non-existing seed",
+			Name:     "can't manage backup credentials for non-existing seed",
 			SeedName: "nothere",
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
