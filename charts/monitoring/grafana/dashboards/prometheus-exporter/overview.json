@@ -24,7 +24,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus xrstf",
+      "datasource": "prometheus",
       "editable": true,
       "fill": 1,
       "gridPos": {
@@ -111,7 +111,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus xrstf",
+      "datasource": "prometheus",
       "editable": true,
       "fill": 1,
       "gridPos": {
@@ -211,7 +211,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus xrstf",
+      "datasource": "prometheus",
       "editable": true,
       "fill": 1,
       "gridPos": {
@@ -299,7 +299,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus xrstf",
+      "datasource": "prometheus",
       "editable": true,
       "fill": 1,
       "gridPos": {
@@ -387,7 +387,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus xrstf",
+      "datasource": "prometheus",
       "editable": true,
       "fill": 1,
       "gridPos": {
@@ -475,7 +475,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus xrstf",
+      "datasource": "prometheus",
       "editable": true,
       "fill": 1,
       "gridPos": {
@@ -575,7 +575,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus xrstf",
+      "datasource": "prometheus",
       "editable": true,
       "fill": 1,
       "gridPos": {
@@ -663,7 +663,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus xrstf",
+      "datasource": "prometheus",
       "editable": true,
       "fill": 1,
       "gridPos": {
@@ -750,7 +750,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus xrstf",
+      "datasource": "prometheus",
       "editable": true,
       "fill": 1,
       "gridPos": {
@@ -838,7 +838,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Prometheus xrstf",
+      "datasource": "prometheus",
       "editable": true,
       "fill": 1,
       "gridPos": {
@@ -930,7 +930,7 @@
       {
         "allValue": null,
         "current": {},
-        "datasource": "Prometheus xrstf",
+        "datasource": "prometheus",
         "definition": "label_values(prom_exporter_pod_cpu_usage, pod)",
         "hide": 0,
         "includeAll": true,
