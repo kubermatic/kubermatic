@@ -348,7 +348,7 @@ func getContainerFromFile(path string) (*corev1.Container, error) {
 }
 
 func createUpdateController(ctrlCtx *controllerContext) error {
-	updateManager, err := version.NewFromFiles(ctrlCtx.runOptions.versionsFile, ctrlCtx.runOptions.updatesFile)
+	updateManager, err := version.NewFromFiles(ctrlCtx.runOptions.versionsFile, ctrlCtx.runOptions.updatesFile, ctrlCtx.runOptions.providerIncompatibilitiesFile)
 	if err != nil {
 		return fmt.Errorf("failed to create update manager: %v", err)
 	}

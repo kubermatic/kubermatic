@@ -35,22 +35,23 @@ import (
 )
 
 type serverRunOptions struct {
-	listenAddress    string
-	internalAddr     string
-	prometheusURL    string
-	masterResources  string
-	workerName       string
-	versionsFile     string
-	updatesFile      string
-	presetsFile      string
-	swaggerFile      string
-	domain           string
-	exposeStrategy   kubermaticv1.ExposeStrategy
-	dynamicPresets   bool
-	namespace        string
-	log              kubermaticlog.Options
-	accessibleAddons sets.String
-	caBundle         *certificates.CABundle
+	listenAddress                 string
+	internalAddr                  string
+	prometheusURL                 string
+	masterResources               string
+	workerName                    string
+	versionsFile                  string
+	updatesFile                   string
+	providerIncompatibilitiesFile string
+	presetsFile                   string
+	swaggerFile                   string
+	domain                        string
+	exposeStrategy                kubermaticv1.ExposeStrategy
+	dynamicPresets                bool
+	namespace                     string
+	log                           kubermaticlog.Options
+	accessibleAddons              sets.String
+	caBundle                      *certificates.CABundle
 
 	// OIDC configuration
 	oidcURL                        string
@@ -88,6 +89,7 @@ func newServerRunOptions() (serverRunOptions, error) {
 	flag.StringVar(&s.workerName, "worker-name", "", "Create clusters only processed by worker-name cluster controller")
 	flag.StringVar(&s.versionsFile, "versions", "versions.yaml", "The versions.yaml file path")
 	flag.StringVar(&s.updatesFile, "updates", "updates.yaml", "The updates.yaml file path")
+	flag.StringVar(&s.providerIncompatibilitiesFile, "provider-incompatibilities", "provider-incompatibilities.yaml", "The provider-incompatibilities.yaml file path")
 	flag.StringVar(&s.presetsFile, "presets", "", "The optional file path for a file containing presets")
 	flag.StringVar(&s.swaggerFile, "swagger", "./cmd/kubermatic-api/swagger.json", "The swagger.json file path")
 	flag.StringVar(&rawAccessibleAddons, "accessible-addons", "", "Comma-separated list of user cluster addons to expose via the API")

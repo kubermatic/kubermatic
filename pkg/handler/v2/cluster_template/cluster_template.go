@@ -51,7 +51,7 @@ var scopeList = []string{
 
 func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
 	userInfoGetter provider.UserInfoGetter, clusterTemplateProvider provider.ClusterTemplateProvider, settingsProvider provider.SettingsProvider, updateManager common.UpdateManager,
-	seedsGetter provider.SeedsGetter, credentialManager provider.PresetProvider, caBundle *x509.CertPool, exposeStrategy kubermaticv1.ExposeStrategy, sshKeyProvider provider.SSHKeyProvider) endpoint.Endpoint {
+	seedsGetter provider.SeedsGetter, credentialManager provider.PresetProvider, caBundle *x509.CertPool, exposeStrategy kubermaticv1.ExposeStrategy, sshKeyProvider provider.SSHKeyProvider, supportManager common.SupportManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createClusterTemplateReq)
 
@@ -75,7 +75,7 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		partialCluster, err := handlercommon.GenerateCluster(ctx, req.ProjectID, req.Body.CreateClusterSpec, seedsGetter, credentialManager, exposeStrategy, userInfoGetter, caBundle)
+		partialCluster, err := handlercommon.GenerateCluster(ctx, req.ProjectID, req.Body.CreateClusterSpec, seedsGetter, credentialManager, exposeStrategy, userInfoGetter, caBundle, supportManager)
 		if err != nil {
 			return nil, err
 		}

@@ -514,7 +514,7 @@ func (d *TemplateData) GetGlobalSecretKeySelectorValue(configVar *providerconfig
 }
 
 func (d *TemplateData) GetCloudProviderName() (string, error) {
-	return GetCloudProviderName(d.Cluster())
+	return GetCloudProviderName(d.Cluster().Spec.Cloud)
 }
 
 func (d *TemplateData) GetCSIMigrationFeatureGates() []string {
@@ -621,44 +621,44 @@ func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster, externalCloud
 	}
 }
 
-func GetCloudProviderName(cluster *kubermaticv1.Cluster) (string, error) {
-	if cluster.Spec.Cloud.VSphere != nil {
+func GetCloudProviderName(cloud kubermaticv1.CloudSpec) (string, error) {
+	if cloud.VSphere != nil {
 		return provider.VSphereCloudProvider, nil
 	}
-	if cluster.Spec.Cloud.AWS != nil {
+	if cloud.AWS != nil {
 		return provider.AWSCloudProvider, nil
 	}
-	if cluster.Spec.Cloud.Openstack != nil {
+	if cloud.Openstack != nil {
 		return provider.OpenstackCloudProvider, nil
 	}
-	if cluster.Spec.Cloud.GCP != nil {
+	if cloud.GCP != nil {
 		return provider.GCPCloudProvider, nil
 	}
-	if cluster.Spec.Cloud.Alibaba != nil {
+	if cloud.Alibaba != nil {
 		return provider.AlibabaCloudProvider, nil
 	}
-	if cluster.Spec.Cloud.Anexia != nil {
+	if cloud.Anexia != nil {
 		return provider.AnexiaCloudProvider, nil
 	}
-	if cluster.Spec.Cloud.Azure != nil {
+	if cloud.Azure != nil {
 		return provider.AzureCloudProvider, nil
 	}
-	if cluster.Spec.Cloud.Digitalocean != nil {
+	if cloud.Digitalocean != nil {
 		return provider.DigitaloceanCloudProvider, nil
 	}
-	if cluster.Spec.Cloud.Hetzner != nil {
+	if cloud.Hetzner != nil {
 		return provider.HetznerCloudProvider, nil
 	}
-	if cluster.Spec.Cloud.Kubevirt != nil {
+	if cloud.Kubevirt != nil {
 		return provider.KubevirtCloudProvider, nil
 	}
-	if cluster.Spec.Cloud.Packet != nil {
+	if cloud.Packet != nil {
 		return provider.PacketCloudProvider, nil
 	}
-	if cluster.Spec.Cloud.BringYourOwn != nil {
+	if cloud.BringYourOwn != nil {
 		return provider.BringYourOwnCloudProvider, nil
 	}
-	if cluster.Spec.Cloud.Fake != nil {
+	if cloud.Fake != nil {
 		return provider.FakeCloudProvider, nil
 	}
 	return "", fmt.Errorf("provider unknown")

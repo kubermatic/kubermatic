@@ -50,6 +50,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 		apiUser                    apiv1.User
 		versions                   []*version.Version
 		updates                    []*version.Update
+		incompatibilities          []*version.ProviderIncompatibility
 		wantUpdates                []*apiv1.MasterVersion
 	}{
 		{
@@ -160,6 +161,73 @@ func TestGetClusterUpgrades(t *testing.T) {
 			},
 		},
 		{
+			name: "upgrade available but incompatible with the given provider",
+			cluster: func() *kubermaticv1.Cluster {
+				c := test.GenCluster("foo", "foo", "project", time.Now(), func(cluster *kubermaticv1.Cluster) {
+					cluster.Spec.Cloud.VSphere = &kubermaticv1.VSphereCloudSpec{}
+				})
+				c.Labels = map[string]string{"user": test.UserName}
+				c.Spec.Version = *k8csemver.NewSemverOrDie("1.21.0")
+				return c
+			}(),
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+			),
+			apiUser: *test.GenDefaultAPIUser(),
+			wantUpdates: []*apiv1.MasterVersion{
+				{
+					Version: semver.MustParse("1.21.1"),
+				},
+			},
+			versions: []*version.Version{
+				{
+					Version: semver.MustParse("1.21.0"),
+					Type:    apiv1.KubernetesClusterType,
+				},
+				{
+					Version: semver.MustParse("1.21.1"),
+					Type:    apiv1.KubernetesClusterType,
+				},
+				{
+					Version: semver.MustParse("1.22.0"),
+					Type:    apiv1.KubernetesClusterType,
+				},
+				{
+					Version: semver.MustParse("1.22.1"),
+					Type:    apiv1.KubernetesClusterType,
+				},
+			},
+			updates: []*version.Update{
+				{
+					From:      "1.21.*",
+					To:        "1.21.*",
+					Automatic: false,
+					Type:      apiv1.KubernetesClusterType,
+				},
+				{
+					From:      "1.21.*",
+					To:        "1.22.*",
+					Automatic: false,
+					Type:      apiv1.KubernetesClusterType,
+				},
+				{
+					From:      "1.22.*",
+					To:        "1.22.*",
+					Automatic: false,
+					Type:      apiv1.KubernetesClusterType,
+				},
+			},
+			incompatibilities: []*version.ProviderIncompatibility{
+				{
+					Provider:  kubermaticv1.ProviderVSphere,
+					Version:   "1.22.*",
+					Condition: version.AlwaysCondition,
+					Operation: version.UpdateOperation,
+					Type:      apiv1.KubernetesClusterType,
+				},
+			},
+		},
+		{
 			name: "no available",
 			cluster: func() *kubermaticv1.Cluster {
 				c := test.GenCluster("foo", "foo", "project", time.Now())
@@ -244,7 +312,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 				machineObj = append(machineObj, existingMachineDeployment)
 			}
 
-			ep, _, err := test.CreateTestEndpointAndGetClients(testStruct.apiUser, nil, []ctrlruntimeclient.Object{}, machineObj, kubermaticObj, testStruct.versions, testStruct.updates, hack.NewTestRouting)
+			ep, _, err := test.CreateTestEndpointAndGetClients(testStruct.apiUser, nil, []ctrlruntimeclient.Object{}, machineObj, kubermaticObj, testStruct.versions, testStruct.updates, testStruct.incompatibilities, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create testStruct endpoint due to %v", err)
 			}
@@ -358,7 +426,7 @@ func TestUpgradeClusterNodeDeployments(t *testing.T) {
 			var kubernetesObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			machineObj = append(machineObj, tc.ExistingMachineDeployments...)
-			ep, cs, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubernetesObj, machineObj, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, cs, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubernetesObj, machineObj, kubermaticObj, nil, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -491,7 +559,7 @@ func TestGetNodeUpgrades(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/upgrades/node?control_plane_version=%s", testStruct.controlPlaneVersion), nil)
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(testStruct.apiUser, nil, testStruct.existingKubermaticObjs,
-				testStruct.existingVersions, testStruct.existingUpdates, hack.NewTestRouting)
+				testStruct.existingVersions, testStruct.existingUpdates, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create testStruct endpoint due to %v", err)
 			}
@@ -560,7 +628,7 @@ func TestGetMasterVersionsEndpoint(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/upgrades/cluster%s", testStruct.clusterType), nil)
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(testStruct.apiUser, nil, testStruct.existingKubermaticObjs,
-				testStruct.existingVersions, testStruct.existingUpdates, hack.NewTestRouting)
+				testStruct.existingVersions, testStruct.existingUpdates, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create testStruct endpoint due to %v", err)
 			}

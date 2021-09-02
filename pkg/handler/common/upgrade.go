@@ -18,15 +18,19 @@ package common
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/Masterminds/semver/v3"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
 	"k8c.io/kubermatic/v2/pkg/version"
@@ -58,7 +62,16 @@ func GetUpgradesEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGe
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	versions, err := updateManager.GetPossibleUpdates(cluster.Spec.Version.String(), apiv1.KubernetesClusterType)
+	providerName, err := resources.GetCloudProviderName(cluster.Spec.Cloud)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the cloud provider name: %v", err)
+	}
+	var updateConditions []version.ConditionType
+	externalCloudProvider := cluster.Spec.Features[v1.ClusterFeatureExternalCloudProvider]
+	if externalCloudProvider {
+		updateConditions = append(updateConditions, version.ExternalCloudProviderCondition)
+	}
+	versions, err := updateManager.GetPossibleUpdates(cluster.Spec.Version.String(), apiv1.KubernetesClusterType, kubermaticv1.ProviderType(providerName), updateConditions...)
 	if err != nil {
 		return nil, err
 	}
