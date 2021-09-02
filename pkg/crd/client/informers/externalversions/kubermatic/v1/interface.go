@@ -34,6 +34,8 @@ type Interface interface {
 	ExternalClusters() ExternalClusterInformer
 	// KubermaticSettings returns a KubermaticSettingInformer.
 	KubermaticSettings() KubermaticSettingInformer
+	// MLAAdminSettings returns a MLAAdminSettingInformer.
+	MLAAdminSettings() MLAAdminSettingInformer
 	// Projects returns a ProjectInformer.
 	Projects() ProjectInformer
 	// RuleGroups returns a RuleGroupInformer.
@@ -120,6 +122,11 @@ func (v *version) ExternalClusters() ExternalClusterInformer {
 // KubermaticSettings returns a KubermaticSettingInformer.
 func (v *version) KubermaticSettings() KubermaticSettingInformer {
 	return &kubermaticSettingInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// MLAAdminSettings returns a MLAAdminSettingInformer.
+func (v *version) MLAAdminSettings() MLAAdminSettingInformer {
+	return &mLAAdminSettingInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // Projects returns a ProjectInformer.

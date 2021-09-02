@@ -23,6 +23,7 @@ type KubermaticV1Interface interface {
 	EtcdRestoresGetter
 	ExternalClustersGetter
 	KubermaticSettingsGetter
+	MLAAdminSettingsGetter
 	ProjectsGetter
 	RuleGroupsGetter
 	UsersGetter
@@ -85,6 +86,10 @@ func (c *KubermaticV1Client) ExternalClusters() ExternalClusterInterface {
 
 func (c *KubermaticV1Client) KubermaticSettings() KubermaticSettingInterface {
 	return newKubermaticSettings(c)
+}
+
+func (c *KubermaticV1Client) MLAAdminSettings(namespace string) MLAAdminSettingInterface {
+	return newMLAAdminSettings(c, namespace)
 }
 
 func (c *KubermaticV1Client) Projects() ProjectInterface {

@@ -74,6 +74,14 @@ type ExternalClusterListerExpansion interface{}
 // KubermaticSettingLister.
 type KubermaticSettingListerExpansion interface{}
 
+// MLAAdminSettingListerExpansion allows custom methods to be added to
+// MLAAdminSettingLister.
+type MLAAdminSettingListerExpansion interface{}
+
+// MLAAdminSettingNamespaceListerExpansion allows custom methods to be added to
+// MLAAdminSettingNamespaceLister.
+type MLAAdminSettingNamespaceListerExpansion interface{}
+
 // ProjectListerExpansion allows custom methods to be added to
 // ProjectLister.
 type ProjectListerExpansion interface{}
