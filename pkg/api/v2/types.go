@@ -318,6 +318,6 @@ type BackupCredentials struct {
 // S3BackupCredentials contains credentials for S3 etcd backups
 // swagger:model S3BackupCredentials
 type S3BackupCredentials struct {
-	AccessKeyId     string `json:"accessKeyId,omitempty"`
+	AccessKeyID     string `json:"accessKeyId,omitempty"`
 	SecretAccessKey string `json:"secretAccessKey,omitempty"`
 }

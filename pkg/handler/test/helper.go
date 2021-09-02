@@ -1906,7 +1906,7 @@ func GenEtcdRestore(name string, cluster *kubermaticv1.Cluster, projectID string
 func GenDefaultAPIBackupCredentials() *apiv2.BackupCredentials {
 	return &apiv2.BackupCredentials{
 		S3BackupCredentials: apiv2.S3BackupCredentials{
-			AccessKeyId:     "accessKeyId",
+			AccessKeyID:     "accessKeyId",
 			SecretAccessKey: "secretAccessKey",
 		},
 	}

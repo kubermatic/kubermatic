@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	accessKeyId                = "ACCESS_KEY_ID"
+	accessKeyID                = "ACCESS_KEY_ID"
 	secretAccessKey            = "SECRET_ACCESS_KEY"
 	s3credentialsName          = "s3-credentials"
 	backupCredentialsNamespace = "kube-system"
@@ -121,7 +121,7 @@ func convertAPIToInternalBackupCredentials(bc *apiv2.BackupCredentials) *v1.Secr
 			Namespace: backupCredentialsNamespace,
 		},
 		StringData: map[string]string{
-			accessKeyId:     bc.S3BackupCredentials.AccessKeyId,
+			accessKeyID:     bc.S3BackupCredentials.AccessKeyID,
 			secretAccessKey: bc.S3BackupCredentials.SecretAccessKey,
 		},
 	}
@@ -130,7 +130,7 @@ func convertAPIToInternalBackupCredentials(bc *apiv2.BackupCredentials) *v1.Secr
 func convertInternalToAPIBackupCredentials(bc *v1.Secret) *apiv2.BackupCredentials {
 	return &apiv2.BackupCredentials{
 		S3BackupCredentials: apiv2.S3BackupCredentials{
-			AccessKeyId:     string(bc.Data[accessKeyId]),
+			AccessKeyID:     string(bc.Data[accessKeyID]),
 			SecretAccessKey: string(bc.Data[secretAccessKey]),
 		},
 	}
