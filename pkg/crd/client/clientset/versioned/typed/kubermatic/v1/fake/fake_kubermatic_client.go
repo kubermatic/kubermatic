@@ -64,6 +64,10 @@ func (c *FakeKubermaticV1) KubermaticSettings() v1.KubermaticSettingInterface {
 	return &FakeKubermaticSettings{c}
 }
 
+func (c *FakeKubermaticV1) MLAAdminSettings(namespace string) v1.MLAAdminSettingInterface {
+	return &FakeMLAAdminSettings{c, namespace}
+}
+
 func (c *FakeKubermaticV1) Projects() v1.ProjectInterface {
 	return &FakeProjects{c}
 }

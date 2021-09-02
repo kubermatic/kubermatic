@@ -129,21 +129,21 @@ func (r *reconciler) reconcile(ctx context.Context, instance *kubermaticv1.Clust
 		return nil
 	}
 
-	// initialization
+	if err := r.createClusters(ctx, instance, log); err != nil {
+		return err
+	}
+
+	// set finalizer when all instances are created
 	if !kuberneteshelper.HasFinalizer(instance, finalizer) {
+		instance.Spec.Replicas = 0
 		if err := r.patchFinalizer(ctx, instance, add); err != nil {
 			return err
 		}
-	}
-
-	if err := r.createClusters(ctx, instance, log); err != nil {
-		return err
 	}
 	return r.seedClient.Delete(ctx, instance)
 }
 
 func (r *reconciler) patchFinalizer(ctx context.Context, instance *kubermaticv1.ClusterTemplateInstance, remove bool) error {
-	oldInstance := instance.DeepCopy()
 
 	kuberneteshelper.AddFinalizer(instance, finalizer)
 
@@ -151,7 +151,7 @@ func (r *reconciler) patchFinalizer(ctx context.Context, instance *kubermaticv1.
 		kuberneteshelper.RemoveFinalizer(instance, finalizer)
 	}
 
-	if err := r.seedClient.Patch(ctx, instance, ctrlruntimeclient.MergeFrom(oldInstance)); err != nil {
+	if err := r.seedClient.Update(ctx, instance); err != nil {
 		return fmt.Errorf("failed to update cluster template instance %s finalizer: %v", instance.Name, err)
 	}
 
@@ -159,24 +159,23 @@ func (r *reconciler) patchFinalizer(ctx context.Context, instance *kubermaticv1.
 }
 
 func (r *reconciler) createClusters(ctx context.Context, instance *kubermaticv1.ClusterTemplateInstance, log *zap.SugaredLogger) error {
-
-	log.Debugf("create clusters from template %s, number of clusters: %d", instance.Spec.ClusterTemplateID, instance.Spec.Replicas)
-
-	template := &kubermaticv1.ClusterTemplate{}
-	if err := r.seedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: instance.Spec.ClusterTemplateID}, template); err != nil {
-		return fmt.Errorf("failed to get template %s: %w", instance.Spec.ClusterTemplateID, err)
-	}
-
-	// This is temporary cluster with cloud spec from the template.
-	// It holds credential for the new cluster
-	partialCluster := &kubermaticv1.Cluster{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: template.Name,
-		},
-	}
-	partialCluster.Spec = template.Spec
-
 	if instance.Spec.Replicas > 0 {
+		log.Debugf("create clusters from template %s, number of clusters: %d", instance.Spec.ClusterTemplateID, instance.Spec.Replicas)
+
+		template := &kubermaticv1.ClusterTemplate{}
+		if err := r.seedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: instance.Spec.ClusterTemplateID}, template); err != nil {
+			return fmt.Errorf("failed to get template %s: %w", instance.Spec.ClusterTemplateID, err)
+		}
+
+		// This is temporary cluster with cloud spec from the template.
+		// It holds credential for the new cluster
+		partialCluster := &kubermaticv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: template.Name,
+			},
+		}
+		partialCluster.Spec = template.Spec
+
 		oldInstance := instance.DeepCopy()
 		for i := 0; i < int(instance.Spec.Replicas); i++ {
 
@@ -202,9 +201,29 @@ func (r *reconciler) createClusters(ctx context.Context, instance *kubermaticv1.
 				}
 				return fmt.Errorf("failed to create desired number of clusters. Created %d from %d", created, totalReplicas)
 			}
+			if err := r.assignSSHKeyToCluster(ctx, newCluster.Name, template.UserSSHKeys); err != nil {
+				log.Errorf("failed to assign SSH key to the cluster %v", err)
+			}
 		}
 	}
 
+	return nil
+}
+
+func (r *reconciler) assignSSHKeyToCluster(ctx context.Context, clusterID string, userSSHKeys []string) error {
+	if len(userSSHKeys) == 0 {
+		return nil
+	}
+	for _, sshKeyID := range userSSHKeys {
+		userKey := &kubermaticv1.UserSSHKey{}
+		if err := r.seedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: sshKeyID}, userKey); err != nil {
+			return err
+		}
+		userKey.AddToCluster(clusterID)
+		if err := r.seedClient.Update(ctx, userKey); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

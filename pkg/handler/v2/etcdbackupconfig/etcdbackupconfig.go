@@ -37,6 +37,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/reference"
 )
@@ -114,7 +115,7 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 			return nil, err
 		}
 
-		ebc, err := getEtcdBackupConfig(ctx, userInfoGetter, c, req.ProjectID, req.EtcdBackupConfigName)
+		ebc, err := getEtcdBackupConfig(ctx, userInfoGetter, c, req.ProjectID, req.EtcdBackupConfigID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -129,7 +130,7 @@ type getEtcdBackupConfigReq struct {
 	cluster.GetClusterReq
 	// in: path
 	// required: true
-	EtcdBackupConfigName string `json:"ebc_name"`
+	EtcdBackupConfigID string `json:"ebc_id"`
 }
 
 func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
@@ -182,9 +183,9 @@ func DecodeGetEtcdBackupConfigReq(c context.Context, r *http.Request) (interface
 	}
 	req.GetClusterReq = cr.(cluster.GetClusterReq)
 
-	req.EtcdBackupConfigName = mux.Vars(r)["ebc_name"]
-	if req.EtcdBackupConfigName == "" {
-		return "", fmt.Errorf("'ebc_name' parameter is required but was not provided")
+	req.EtcdBackupConfigID = mux.Vars(r)["ebc_id"]
+	if req.EtcdBackupConfigID == "" {
+		return "", fmt.Errorf("'ebc_id' parameter is required but was not provided")
 	}
 
 	return req, nil
@@ -200,7 +201,7 @@ func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 			return nil, err
 		}
 
-		err = deleteEtcdBackupConfig(ctx, userInfoGetter, c, req.ProjectID, req.EtcdBackupConfigName)
+		err = deleteEtcdBackupConfig(ctx, userInfoGetter, c, req.ProjectID, req.EtcdBackupConfigID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -219,7 +220,7 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 		}
 
 		// get EBC
-		originalEBC, err := getEtcdBackupConfig(ctx, userInfoGetter, c, req.ProjectID, req.EtcdBackupConfigName)
+		originalEBC, err := getEtcdBackupConfig(ctx, userInfoGetter, c, req.ProjectID, req.EtcdBackupConfigID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -243,7 +244,7 @@ type patchEtcdBackupConfigReq struct {
 	cluster.GetClusterReq
 	// in: path
 	// required: true
-	EtcdBackupConfigName string `json:"ebc_name"`
+	EtcdBackupConfigID string `json:"ebc_id"`
 	// in: body
 	// required: true
 	Body apiv2.EtcdBackupConfigSpec
@@ -257,9 +258,9 @@ func DecodePatchEtcdBackupConfigReq(c context.Context, r *http.Request) (interfa
 	}
 	req.GetClusterReq = cr.(cluster.GetClusterReq)
 
-	req.EtcdBackupConfigName = mux.Vars(r)["ebc_name"]
-	if req.EtcdBackupConfigName == "" {
-		return "", fmt.Errorf("'ebc_name' parameter is required but was not provided")
+	req.EtcdBackupConfigID = mux.Vars(r)["ebc_id"]
+	if req.EtcdBackupConfigID == "" {
+		return "", fmt.Errorf("'ebc_id' parameter is required but was not provided")
 	}
 
 	if err = json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
@@ -337,7 +338,19 @@ func DecodeListProjectEtcdBackupConfigReq(c context.Context, r *http.Request) (i
 
 func convertInternalToAPIEtcdBackupConfig(ebc *kubermaticv1.EtcdBackupConfig) *apiv2.EtcdBackupConfig {
 	etcdBackupConfig := &apiv2.EtcdBackupConfig{
-		Name: ebc.Name,
+		ObjectMeta: apiv1.ObjectMeta{
+			Name:              ebc.Spec.Name,
+			ID:                ebc.Name,
+			Annotations:       ebc.Annotations,
+			CreationTimestamp: apiv1.NewTime(ebc.CreationTimestamp.Time),
+			DeletionTimestamp: func() *apiv1.Time {
+				if ebc.DeletionTimestamp != nil {
+					deletionTimestamp := apiv1.NewTime(ebc.DeletionTimestamp.Time)
+					return &deletionTimestamp
+				}
+				return nil
+			}(),
+		},
 		Spec: apiv2.EtcdBackupConfigSpec{
 			ClusterID: ebc.Spec.Cluster.Name,
 			Schedule:  ebc.Spec.Schedule,
@@ -416,7 +429,7 @@ func convertAPIToInternalEtcdBackupConfig(name string, ebcSpec *apiv2.EtcdBackup
 
 	return &kubermaticv1.EtcdBackupConfig{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
+			Name:      rand.String(10),
 			Namespace: cluster.Status.NamespaceName,
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(cluster, kubermaticv1.SchemeGroupVersion.WithKind("Cluster")),

@@ -405,6 +405,157 @@
         }
       }
     },
+    "/api/v1/admin/metering/configurations": {
+      "put": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "admin"
+        ],
+        "summary": "Configures KKP metering tool.",
+        "operationId": "createOrUpdateMeteringConfigurations",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/metering/credentials": {
+      "put": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "admin"
+        ],
+        "summary": "Creates or updates the metering tool credentials.",
+        "operationId": "createOrUpdateMeteringCredentials",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/metering/reports": {
+      "get": {
+        "description": "List metering reports",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "metering",
+          "reports"
+        ],
+        "operationId": "listMeteringReports",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "StartAfter",
+            "name": "start_after",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int64",
+            "x-go-name": "MaxKeys",
+            "name": "max_keys",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "MeteringReport",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/MeteringReport"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/metering/reports/{report_name}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "metering",
+          "report"
+        ],
+        "summary": "Download a specific metering report. Provides an S3 pre signed URL valid for 1 hour.",
+        "operationId": "getMeteringReport",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ReportName",
+            "name": "report_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "MeteringReportURL",
+            "schema": {
+              "$ref": "#/definitions/MeteringReportURL"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/seeds": {
       "get": {
         "produces": [
@@ -10399,9 +10550,9 @@
         }
       }
     },
-    "/api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_name}": {
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}": {
       "get": {
-        "description": "Gets a etcd backup config for a given cluster based on its name",
+        "description": "Gets a etcd backup config for a given cluster based on its id",
         "produces": [
           "application/json"
         ],
@@ -10426,8 +10577,8 @@
           },
           {
             "type": "string",
-            "x-go-name": "EtcdBackupConfigName",
-            "name": "ebc_name",
+            "x-go-name": "EtcdBackupConfigID",
+            "name": "ebc_id",
             "in": "path",
             "required": true
           }
@@ -10454,7 +10605,7 @@
         }
       },
       "delete": {
-        "description": "Deletes a etcd backup config for a given cluster based on its name",
+        "description": "Deletes a etcd backup config for a given cluster based on its id",
         "tags": [
           "etcdbackupconfig"
         ],
@@ -10476,8 +10627,8 @@
           },
           {
             "type": "string",
-            "x-go-name": "EtcdBackupConfigName",
-            "name": "ebc_name",
+            "x-go-name": "EtcdBackupConfigID",
+            "name": "ebc_id",
             "in": "path",
             "required": true
           }
@@ -10501,7 +10652,7 @@
         }
       },
       "patch": {
-        "description": "Patches a etcd backup config for a given cluster based on its name",
+        "description": "Patches a etcd backup config for a given cluster based on its id",
         "consumes": [
           "application/json"
         ],
@@ -10529,8 +10680,8 @@
           },
           {
             "type": "string",
-            "x-go-name": "EtcdBackupConfigName",
-            "name": "ebc_name",
+            "x-go-name": "EtcdBackupConfigID",
+            "name": "ebc_id",
             "in": "path",
             "required": true
           },
@@ -14079,6 +14230,13 @@
                 "scope": {
                   "type": "string",
                   "x-go-name": "Scope"
+                },
+                "userSshKeys": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "x-go-name": "UserSSHKeys"
                 }
               }
             }
@@ -17117,6 +17275,13 @@
         "user": {
           "type": "string",
           "x-go-name": "User"
+        },
+        "userSshKeys": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "UserSSHKeys"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -17989,7 +18154,33 @@
       "description": "EtcdBackupConfig represents an object holding the configuration for etcd backups",
       "type": "object",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
+        "creationTimestamp": {
+          "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreationTimestamp"
+        },
+        "deletionTimestamp": {
+          "description": "DeletionTimestamp is a timestamp representing the server time when this object was deleted.",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "DeletionTimestamp"
+        },
+        "id": {
+          "description": "ID unique value that identifies the resource generated by the server. Read-Only.",
+          "type": "string",
+          "x-go-name": "ID"
+        },
         "name": {
+          "description": "Name represents human readable name for the resource",
           "type": "string",
           "x-go-name": "Name"
         },
@@ -19385,6 +19576,33 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "MeteringReport": {
+      "description": "MeteringReport holds objects names and metadata for available reports",
+      "type": "object",
+      "properties": {
+        "lastModified": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "LastModified"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "size": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Size"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "MeteringReportURL": {
+      "description": "ReportURL represent an S3 pre signed URL to download a report",
+      "type": "string",
+      "x-go-name": "ReportURL",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "MlaOptions": {
       "type": "object",
@@ -21495,6 +21713,10 @@
           "type": "string",
           "x-go-name": "MlaAlertmanagerPrefix"
         },
+        "mlaGrafanaPrefix": {
+          "type": "string",
+          "x-go-name": "MlaGrafanaPrefix"
+        },
         "mlaOptions": {
           "$ref": "#/definitions/MlaOptions"
         },
@@ -22001,7 +22223,7 @@
       "type": "object",
       "properties": {
         "name": {
-          "description": "Name of the etcd backup restore",
+          "description": "Name of the etcd backup restore. If not set, it will be generated",
           "type": "string",
           "x-go-name": "Name"
         },

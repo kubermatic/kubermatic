@@ -4,9 +4,9 @@ go 1.16
 
 require (
 	code.cloudfoundry.org/go-pubsub v0.0.0-20180503211407-becd51dc37cb
-	github.com/Azure/azure-sdk-for-go v51.3.0+incompatible
-	github.com/Azure/go-autorest/autorest v0.11.18
-	github.com/Azure/go-autorest/autorest/azure/auth v0.5.5
+	github.com/Azure/azure-sdk-for-go v57.0.0+incompatible
+	github.com/Azure/go-autorest/autorest v0.11.20
+	github.com/Azure/go-autorest/autorest/azure/auth v0.5.8
 	github.com/Azure/go-autorest/autorest/to v0.4.0
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/Masterminds/sprig/v3 v3.1.0
@@ -17,7 +17,7 @@ require (
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/coreos/locksmith v0.6.2
 	github.com/cristim/ec2-instances-info v0.0.0-20201110114654-2dfcc09f67d4
-	github.com/digitalocean/godo v1.54.0
+	github.com/digitalocean/godo v1.65.0
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/envoyproxy/go-control-plane v0.9.7
 	github.com/evanphx/json-patch v4.11.0+incompatible
@@ -35,25 +35,26 @@ require (
 	github.com/go-swagger/go-swagger v0.27.0
 	github.com/go-test/deep v1.0.7
 	github.com/google/go-cmp v0.5.6
-	github.com/gophercloud/gophercloud v0.14.0
+	github.com/gophercloud/gophercloud v0.20.0
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/websocket v1.4.2
 	github.com/grafana/grafana v6.1.6+incompatible
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/hetznercloud/hcloud-go v1.25.0
+	github.com/hetznercloud/hcloud-go v1.32.0
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/inconshreveable/log15 v0.0.0-20201112154412-8562bdadbbac // indirect
 	github.com/jetstack/cert-manager v1.1.0
-	github.com/kubermatic/grafanasdk v0.9.9
-	github.com/kubermatic/machine-controller v1.35.1
+	github.com/kubermatic/grafanasdk v0.9.10
+	github.com/kubermatic/machine-controller v1.35.2
 	github.com/minio/minio-go v6.0.14+incompatible
+	github.com/minio/minio-go/v7 v7.0.13
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.14.0
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20210802220920-c000ec35322e
 	github.com/open-policy-agent/gatekeeper v0.0.0-20201111000257-4450f08fa95e
-	github.com/packethost/packngo v0.5.1
+	github.com/packethost/packngo v0.19.0
 	github.com/pkg/errors v0.9.1
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/poy/onpar v1.0.1 // indirect
@@ -68,7 +69,7 @@ require (
 	github.com/vmware/govmomi v0.23.1
 	go.etcd.io/etcd/v3 v3.3.0-rc.0.0.20200728214110-6c81b20ec8de
 	go.uber.org/zap v1.18.1
-	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
+	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
 	golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c
 	golang.org/x/tools v0.1.2
 	gomodules.xyz/jsonpatch/v2 v2.2.0

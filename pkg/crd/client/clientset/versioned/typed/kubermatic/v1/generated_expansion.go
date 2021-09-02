@@ -28,6 +28,8 @@ type ExternalClusterExpansion interface{}
 
 type KubermaticSettingExpansion interface{}
 
+type MLAAdminSettingExpansion interface{}
+
 type ProjectExpansion interface{}
 
 type RuleGroupExpansion interface{}

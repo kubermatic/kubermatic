@@ -29,7 +29,7 @@ level. The following addition to the `ClusterSpec` type is proposed:
 Features map[string]bool
 ```
 
-All features and their status will be shown in the `Features` property, allowing operators to easely discover Features
+All features and their status will be shown in the `Features` property, allowing operators to easily discover Features
 and enable or disable them.
 
 The external cloud provider feature will be recognized by a `const FeatureNameExternalCloudProvider = "externalCloudProvider"`

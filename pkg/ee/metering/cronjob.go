@@ -38,7 +38,7 @@ func cronJobCreator(seedName string) reconciling.NamedCronJobCreatorGetter {
 	return func() (string, reconciling.CronJobCreator) {
 		return meteringCronJobMonthly, func(job *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
 
-			job.Spec.Schedule = "0 6 1 * *"
+			job.Spec.Schedule = "0 6 * * 1"
 			job.Spec.JobTemplate.Spec.Parallelism = pointer.Int32Ptr(1)
 			job.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = meteringToolName
 			job.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyOnFailure
@@ -123,7 +123,7 @@ mc mirror --newer-than "65d0h0m" s3/$S3_BUCKET /metering-data || true`,
 						"-c",
 						`/usr/local/bin/kubermatic-metering-report -workdir=/metering-data \
                                                           -reportdir=/report \
-                                                          -last-month \
+                                                          -last-week \
                                                           -seed=` + seedName + ` \
                                                           -scrape-interval=300
                         touch /report/finished`,

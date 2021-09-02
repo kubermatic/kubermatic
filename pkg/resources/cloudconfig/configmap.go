@@ -26,6 +26,7 @@ import (
 	aws "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
 	azure "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
 	gce "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types"
+	kubevirt "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
 	openstack "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
@@ -261,6 +262,12 @@ func CloudConfig(
 		if err != nil {
 			return cloudConfig, err
 		}
+
+	case cloud.Kubevirt != nil:
+		cc := kubevirt.CloudConfig{
+			Kubeconfig: credentials.Kubevirt.KubeConfig,
+		}
+		return cc.String()
 	}
 
 	return cloudConfig, err
@@ -300,7 +307,7 @@ func getVsphereCloudConfig(
 			ClusterID:        dc.Spec.VSphere.Cluster,
 		},
 		Workspace: vsphere.WorkspaceOpts{
-			// This is redudant with what the Vsphere cloud provider itself does:
+			// This is redundant with what the Vsphere cloud provider itself does:
 			// https://github.com/kubernetes/kubernetes/blob/9d80e7522ab7fc977e40dd6f3b5b16d8ebfdc435/pkg/cloudprovider/providers/vsphere/vsphere.go#L346
 			// We do it here because the fields in the "Global" object
 			// are marked as deprecated even thought the code checks

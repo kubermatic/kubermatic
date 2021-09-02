@@ -500,7 +500,7 @@ func (k *NewEtcdBackupConfigSliceWrapper) DecodeOrDie(r io.Reader, t *testing.T)
 // Sort sorts the collection by Name
 func (k NewEtcdBackupConfigSliceWrapper) Sort() {
 	sort.Slice(k, func(i, j int) bool {
-		return k[i].Name < k[j].Name
+		return k[i].ObjectMeta.Name < k[j].ObjectMeta.Name
 	})
 }
 

@@ -30,6 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -95,6 +96,59 @@ func TestCreateClusterTemplateEndpoint(t *testing.T) {
 			ProjectToSync:    test.GenDefaultProject().Name,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+		// scenario 5
+		{
+			Name:             "scenario 5: create cluster template in project scope with SSH key",
+			Body:             `{"name":"test","scope":"project","userSshKeys":["key-c08aa5c7abf34504f18552846485267d-yafn"],"cluster":{"name":"keen-snyder","spec":{"version":"1.22.1","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
+			ExpectedResponse: `{"name":"test","id":"%s","projectID":"my-first-project-ID","user":"bob@acme.com","scope":"project","userSshKeys":["key-c08aa5c7abf34504f18552846485267d-yafn"],"cluster":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"type":"","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.22.1","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd"},"status":{"version":"","url":"","externalCCMMigration":""}},"nodeDeployment":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}},"status":{}}}`,
+			RewriteClusterID: true,
+			HTTPStatus:       http.StatusCreated,
+			ProjectToSync:    test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				// add an ssh key
+				&kubermaticv1.UserSSHKey{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: "kubermatic.k8s.io/v1",
+								Kind:       "Project",
+								UID:        "",
+								Name:       test.GenDefaultProject().Name,
+							},
+						},
+					},
+				},
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+		// scenario 6
+		{
+			Name:             "scenario 6: create cluster template in project scope with wrong SSH key",
+			Body:             `{"name":"test","scope":"project","userSshKeys":["key-c08aa5c7abf34504f18552846485267d-yafn","wrong-key"],"cluster":{"name":"keen-snyder","spec":{"version":"1.22.1","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
+			ExpectedResponse: `{"error":{"code":500,"message":"the given ssh key wrong-key does not belong to the given project my-first-project (my-first-project-ID)"}}`,
+			HTTPStatus:       http.StatusInternalServerError,
+			ProjectToSync:    test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				// add an ssh key
+				&kubermaticv1.UserSSHKey{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: "kubermatic.k8s.io/v1",
+								Kind:       "Project",
+								UID:        "",
+								Name:       test.GenDefaultProject().Name,
+							},
+						},
+					},
+				},
 			),
 			ExistingAPIUser: test.GenDefaultAPIUser(),
 		},

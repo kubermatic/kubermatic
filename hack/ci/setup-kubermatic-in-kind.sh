@@ -153,7 +153,7 @@ EOF
 cat hack/ci/testdata/oauth_values.yaml >> $HELM_VALUES_FILE
 
 # install dependencies and Kubermatic Operator into cluster
-./_build/kubermatic-installer deploy \
+./_build/kubermatic-installer deploy --disable-telemetry \
   --storageclass copy-default \
   --config "$KUBERMATIC_CONFIG" \
   --helm-values "$HELM_VALUES_FILE" \

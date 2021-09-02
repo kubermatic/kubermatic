@@ -14,11 +14,11 @@
 
 # This is based on
 # https://raw.githubusercontent.com/hetznercloud/csi-driver/v1.5.1/deploy/kubernetes/hcloud-csi.yml
-# and compatible with Kubernetes 1.16+; the only difference between
-# 1.4.0 and 1.5.1 is the NODE_NAME env variable.
+# and is applicable for k8s 1.19 clusters.
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "hetzner" }}
+{{ if eq .Cluster.MajorMinorVersion "1.19" }}
 apiVersion: v1
 kind: Secret
 metadata:
@@ -358,5 +358,6 @@ spec:
     - port: 9189
       name: metrics
       targetPort: metrics
+{{ end }}
 {{ end }}
 {{ end }}

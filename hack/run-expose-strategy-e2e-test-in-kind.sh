@@ -163,7 +163,7 @@ kubermaticOperator:
 EOF
 
 # install dependencies and Kubermatic Operator into cluster
-./_build/kubermatic-installer deploy \
+./_build/kubermatic-installer deploy --disable-telemetry \
   --storageclass copy-default \
   --config "${KUBERMATIC_CONFIG}" \
   --kubeconfig "${KUBECONFIG}" \

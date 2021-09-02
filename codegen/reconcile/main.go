@@ -142,6 +142,11 @@ func main() {
 				ResourceImportPath: "k8s.io/api/networking/v1",
 			},
 			{
+				ResourceName:       "KubermaticConfiguration",
+				ImportAlias:        "operatorv1alpha1",
+				ResourceImportPath: "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1",
+			},
+			{
 				ResourceName:       "Seed",
 				ImportAlias:        "kubermaticv1",
 				ResourceImportPath: "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1",

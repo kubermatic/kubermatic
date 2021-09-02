@@ -172,6 +172,7 @@ type ClusterTemplate struct {
 	ProjectID      string                `json:"projectID,omitempty"`
 	User           string                `json:"user,omitempty"`
 	Scope          string                `json:"scope"`
+	UserSSHKeys    []string              `json:"userSshKeys,omitempty"`
 	Cluster        *apiv1.Cluster        `json:"cluster,omitempty"`
 	NodeDeployment *apiv1.NodeDeployment `json:"nodeDeployment,omitempty"`
 }
@@ -208,7 +209,7 @@ type AllowedRegistry struct {
 // EtcdBackupConfig represents an object holding the configuration for etcd backups
 // swagger:model EtcdBackupConfig
 type EtcdBackupConfig struct {
-	Name string `json:"name"`
+	apiv1.ObjectMeta
 
 	Spec   EtcdBackupConfigSpec   `json:"spec"`
 	Status EtcdBackupConfigStatus `json:"status"`
