@@ -76,6 +76,7 @@ import (
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
 	"k8s.io/klog"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
@@ -117,7 +118,20 @@ func main() {
 		kubermaticlog.Logger.Fatalw("failed to register scheme", zap.Stringer("api", gatekeeperconfigv1alpha1.GroupVersion), zap.Error(err))
 	}
 
-	providers, err := createInitProviders(ctx, options)
+	masterCfg, err := ctrlruntime.GetConfig()
+	if err != nil {
+		kubermaticlog.Logger.Fatalw("unable to build client configuration from kubeconfig due to %v", err)
+	}
+
+	// We use the manager only to get a lister-backed ctrlruntimeclient.Client. We can not use it for most
+	// other actions, because it doesn't support impersonation (and can't be changed to do that as that would mean it has to replicate the apiservers RBAC for the lister)
+	mgr, err := manager.New(masterCfg, manager.Options{MetricsBindAddress: "0"})
+	if err != nil {
+		kubermaticlog.Logger.Fatalw("failed to construct manager: %v", err)
+	}
+
+	providers, err := createInitProviders(ctx, options, masterCfg, mgr)
+
 	if err != nil {
 		log.Fatalw("failed to create and initialize providers", "error", err)
 	}
@@ -133,7 +147,7 @@ func main() {
 	if err != nil {
 		log.Fatalw("failed to create update manager", "error", err)
 	}
-	apiHandler, err := createAPIHandler(options, providers, oidcIssuerVerifier, tokenVerifiers, tokenExtractors, updateManager)
+	apiHandler, err := createAPIHandler(options, providers, oidcIssuerVerifier, tokenVerifiers, tokenExtractors, updateManager, mgr)
 	if err != nil {
 		log.Fatalw("failed to create API Handler", "error", err)
 	}
@@ -149,24 +163,12 @@ func main() {
 	log.Fatalw("failed to start API server", "error", http.ListenAndServe(options.listenAddress, handlers.CombinedLoggingHandler(os.Stdout, apiHandler)))
 }
 
-func createInitProviders(ctx context.Context, options serverRunOptions) (providers, error) {
-	masterCfg, err := ctrlruntime.GetConfig()
-	if err != nil {
-		return providers{}, fmt.Errorf("unable to build client configuration from kubeconfig due to %v", err)
-	}
-
+func createInitProviders(ctx context.Context, options serverRunOptions, masterCfg *rest.Config, mgr manager.Manager) (providers, error) {
 	// create other providers
 	kubeMasterClient := kubernetes.NewForConfigOrDie(masterCfg)
 	kubeMasterInformerFactory := informers.NewSharedInformerFactory(kubeMasterClient, 30*time.Minute)
 	kubermaticMasterClient := kubermaticclientset.NewForConfigOrDie(masterCfg)
 	kubermaticMasterInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticMasterClient, 30*time.Minute)
-
-	// We use the manager only to get a lister-backed ctrlruntimeclient.Client. We can not use it for most
-	// other actions, because it doesn't support impersonation (and can't be changed to do that as that would mean it has to replicate the apiservers RBAC for the lister)
-	mgr, err := manager.New(masterCfg, manager.Options{MetricsBindAddress: "0"})
-	if err != nil {
-		return providers{}, fmt.Errorf("failed to construct manager: %v", err)
-	}
 
 	client := mgr.GetClient()
 
@@ -360,7 +362,8 @@ func createAuthClients(options serverRunOptions, prov providers) (auth.TokenVeri
 	return tokenVerifiers, tokenExtractors, nil
 }
 
-func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifier auth.OIDCIssuerVerifier, tokenVerifiers auth.TokenVerifier, tokenExtractors auth.TokenExtractor, updateManager common.UpdateManager) (http.HandlerFunc, error) {
+func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifier auth.OIDCIssuerVerifier, tokenVerifiers auth.TokenVerifier,
+	tokenExtractors auth.TokenExtractor, updateManager common.UpdateManager, mgr manager.Manager) (http.HandlerFunc, error) {
 	var prometheusClient prometheusapi.Client
 	if options.featureGates.Enabled(features.PrometheusEndpoint) {
 		var err error
@@ -421,7 +424,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		CABundle:                              options.caBundle.CertPool(),
 	}
 
-	r := handler.NewRouting(routingParams)
+	r := handler.NewRouting(routingParams, mgr.GetClient())
 	rv2 := v2.NewV2Routing(routingParams)
 
 	registerMetrics()
