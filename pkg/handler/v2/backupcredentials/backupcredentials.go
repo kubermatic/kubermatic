@@ -126,12 +126,3 @@ func convertAPIToInternalBackupCredentials(bc *apiv2.BackupCredentials) *v1.Secr
 		},
 	}
 }
-
-func convertInternalToAPIBackupCredentials(bc *v1.Secret) *apiv2.BackupCredentials {
-	return &apiv2.BackupCredentials{
-		S3BackupCredentials: apiv2.S3BackupCredentials{
-			AccessKeyID:     string(bc.Data[accessKeyID]),
-			SecretAccessKey: string(bc.Data[secretAccessKey]),
-		},
-	}
-}
