@@ -96,6 +96,10 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("failed to get MLA Gateway CA cert: %v", err)
 		}
+		data.monitoringRequirements, data.loggingRequirements, err = r.mlaResourceRequirements(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to get MLA resource requirements: %w", err)
+		}
 	}
 
 	// Must be first because of openshift
@@ -117,7 +121,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return err
 	}
 
-	if err := r.reconcileDeployments(ctx); err != nil {
+	if err := r.reconcileDeployments(ctx, data); err != nil {
 		return err
 	}
 
@@ -157,7 +161,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return err
 	}
 
-	if err := r.reconcileDaemonSet(ctx); err != nil {
+	if err := r.reconcileDaemonSet(ctx, data); err != nil {
 		return err
 	}
 
@@ -672,7 +676,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 	return nil
 }
 
-func (r *reconciler) reconcileDaemonSet(ctx context.Context) error {
+func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData) error {
 	var dsCreators []reconciling.NamedDaemonSetCreatorGetter
 
 	if r.nodeLocalDNSCache {
@@ -693,7 +697,7 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context) error {
 
 	if r.userClusterMLA.Logging {
 		dsCreators = []reconciling.NamedDaemonSetCreatorGetter{
-			promtail.DaemonSetCreator(),
+			promtail.DaemonSetCreator(data.loggingRequirements),
 		}
 		if err := reconciling.ReconcileDaemonSets(ctx, dsCreators, resources.UserClusterMLANamespace, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile the DaemonSet: %v", err)
@@ -720,7 +724,7 @@ func (r *reconciler) reconcileNamespaces(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) reconcileDeployments(ctx context.Context) error {
+func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileData) error {
 	// Kubernetes Dashboard and related resources
 	creators := []reconciling.NamedDeploymentCreatorGetter{
 		kubernetesdashboard.DeploymentCreator(),
@@ -751,7 +755,7 @@ func (r *reconciler) reconcileDeployments(ctx context.Context) error {
 
 	if r.userClusterMLA.Monitoring {
 		creators := []reconciling.NamedDeploymentCreatorGetter{
-			userclusterprometheus.DeploymentCreator(),
+			userclusterprometheus.DeploymentCreator(data.monitoringRequirements),
 		}
 		if err := reconciling.ReconcileDeployments(ctx, creators, resources.UserClusterMLANamespace, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile Deployments in namespace %s: %v", resources.UserClusterMLANamespace, err)
@@ -778,7 +782,9 @@ type reconcileData struct {
 	userSSHKeys      map[string][]byte
 	cloudConfig      []byte
 	// csiCloudConfig is currently used only by vSphere, whose needs it to properly configure the external CSI driver
-	csiCloudConfig []byte
+	csiCloudConfig         []byte
+	monitoringRequirements *corev1.ResourceRequirements
+	loggingRequirements    *corev1.ResourceRequirements
 }
 
 func (r *reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context) error {

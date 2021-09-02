@@ -19376,6 +19376,9 @@
     "MLASettings": {
       "type": "object",
       "properties": {
+        "LoggingResources": {
+          "$ref": "#/definitions/ResourceRequirements"
+        },
         "loggingEnabled": {
           "description": "LoggingEnabled is the flag for enabling logging in user cluster.",
           "type": "boolean",
@@ -19385,6 +19388,9 @@
           "description": "MonitoringEnabled is the flag for enabling monitoring in user cluster.",
           "type": "boolean",
           "x-go-name": "MonitoringEnabled"
+        },
+        "monitoringResources": {
+          "$ref": "#/definitions/ResourceRequirements"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -21145,6 +21151,12 @@
       "title": "PublicVSphereCloudSpec is a public counterpart of apiv1.VSphereCloudSpec.",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
+    "Quantity": {
+      "description": "The serialization format is:\n\n\u003cquantity\u003e        ::= \u003csignedNumber\u003e\u003csuffix\u003e\n(Note that \u003csuffix\u003e may be empty, from the \"\" case in \u003cdecimalSI\u003e.)\n\u003cdigit\u003e           ::= 0 | 1 | ... | 9\n\u003cdigits\u003e          ::= \u003cdigit\u003e | \u003cdigit\u003e\u003cdigits\u003e\n\u003cnumber\u003e          ::= \u003cdigits\u003e | \u003cdigits\u003e.\u003cdigits\u003e | \u003cdigits\u003e. | .\u003cdigits\u003e\n\u003csign\u003e            ::= \"+\" | \"-\"\n\u003csignedNumber\u003e    ::= \u003cnumber\u003e | \u003csign\u003e\u003cnumber\u003e\n\u003csuffix\u003e          ::= \u003cbinarySI\u003e | \u003cdecimalExponent\u003e | \u003cdecimalSI\u003e\n\u003cbinarySI\u003e        ::= Ki | Mi | Gi | Ti | Pi | Ei\n(International System of units; See: http://physics.nist.gov/cuu/Units/binary.html)\n\u003cdecimalSI\u003e       ::= m | \"\" | k | M | G | T | P | E\n(Note that 1024 = 1Ki but 1000 = 1k; I didn't choose the capitalization.)\n\u003cdecimalExponent\u003e ::= \"e\" \u003csignedNumber\u003e | \"E\" \u003csignedNumber\u003e\n\nNo matter which of the three exponent forms is used, no quantity may represent\na number greater than 2^63-1 in magnitude, nor may it have more than 3 decimal\nplaces. Numbers larger or more precise will be capped or rounded up.\n(E.g.: 0.1m will rounded up to 1m.)\nThis may be extended in the future if we require larger or smaller quantities.\n\nWhen a Quantity is parsed from a string, it will remember the type of suffix\nit had, and will use the same type again when it is serialized.\n\nBefore serializing, Quantity will be put in \"canonical form\".\nThis means that Exponent/suffix will be adjusted up or down (with a\ncorresponding increase or decrease in Mantissa) such that:\na. No precision is lost\nb. No fractional digits will be emitted\nc. The exponent (or suffix) is as large as possible.\nThe sign will be omitted unless the number is negative.\n\nExamples:\n1.5 will be serialized as \"1500m\"\n1.5Gi will be serialized as \"1536Mi\"\n\nNote that the quantity will NEVER be internally represented by a\nfloating point number. That is the whole point of this exercise.\n\nNon-canonical values will still parse as long as they are well formed,\nbut will be re-emitted in their canonical form. (So always use canonical\nform, or don't diff.)\n\nThis format is intended to make it difficult to use these numbers without\nwriting some sort of special handling code in the hopes that that will\ncause implementors to also use a fixed point implementation.\n\n+protobuf=true\n+protobuf.embed=string\n+protobuf.options.marshal=false\n+protobuf.options.(gogoproto.goproto_stringer)=false\n+k8s:deepcopy-gen=true\n+k8s:openapi-gen=true",
+      "type": "object",
+      "title": "Quantity is a fixed-point representation of a number.\nIt provides convenient marshaling/unmarshaling in JSON and YAML,\nin addition to String() and AsInt64() accessors.",
+      "x-go-package": "k8s.io/apimachinery/pkg/api/resource"
+    },
     "RHELSpec": {
       "description": "RHELSpec contains rhel specific settings",
       "type": "object",
@@ -21187,6 +21199,27 @@
         "$ref": "#/definitions/LabelKeyList"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "ResourceList": {
+      "type": "object",
+      "title": "ResourceList is a set of (resource name, quantity) pairs.",
+      "additionalProperties": {
+        "$ref": "#/definitions/Quantity"
+      },
+      "x-go-package": "k8s.io/api/core/v1"
+    },
+    "ResourceRequirements": {
+      "type": "object",
+      "title": "ResourceRequirements describes the compute resource requirements.",
+      "properties": {
+        "limits": {
+          "$ref": "#/definitions/ResourceList"
+        },
+        "requests": {
+          "$ref": "#/definitions/ResourceList"
+        }
+      },
+      "x-go-package": "k8s.io/api/core/v1"
     },
     "ResourceType": {
       "type": "string",
