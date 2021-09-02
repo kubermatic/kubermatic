@@ -184,4 +184,5 @@ type providers struct {
 	etcdRestoreProviderGetter             provider.EtcdRestoreProviderGetter
 	etcdBackupConfigProjectProviderGetter provider.EtcdBackupConfigProjectProviderGetter
 	etcdRestoreProjectProviderGetter      provider.EtcdRestoreProjectProviderGetter
+	backupCredentialsProviderGetter       provider.BackupCredentialsProviderGetter
 }
