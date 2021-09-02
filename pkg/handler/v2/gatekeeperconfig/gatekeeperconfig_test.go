@@ -111,7 +111,7 @@ func TestGetConfigEndpoint(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/gatekeeper/config", tc.ProjectID, tc.ClusterID), strings.NewReader(""))
 			res := httptest.NewRecorder()
 
-			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, tc.ExistingKubermaticObjs, nil, nil, hack.NewTestRouting)
+			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, tc.ExistingKubermaticObjs, nil, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -207,7 +207,7 @@ func TestDeleteConfigEndpoint(t *testing.T) {
 			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/gatekeeper/config", tc.ProjectID, tc.ClusterID), strings.NewReader(""))
 			res := httptest.NewRecorder()
 
-			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, tc.ExistingKubermaticObjs, nil, nil, hack.NewTestRouting)
+			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, tc.ExistingKubermaticObjs, nil, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -310,7 +310,7 @@ func TestCreateConfigEndpoint(t *testing.T) {
 			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/gatekeeper/config", tc.ProjectID, tc.ClusterID), bytes.NewBuffer(body))
 			res := httptest.NewRecorder()
 
-			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, tc.ExistingKubermaticObjs, nil, nil, hack.NewTestRouting)
+			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, tc.ExistingKubermaticObjs, nil, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -411,7 +411,7 @@ func TestPatchConfigEndpoint(t *testing.T) {
 			req := httptest.NewRequest("PATCH", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/gatekeeper/config", tc.ProjectID, tc.ClusterID), strings.NewReader(tc.Patch))
 			res := httptest.NewRecorder()
 
-			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, tc.ExistingKubermaticObjs, nil, nil, hack.NewTestRouting)
+			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, tc.ExistingKubermaticObjs, nil, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}

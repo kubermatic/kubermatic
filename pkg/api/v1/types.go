@@ -704,6 +704,10 @@ type AnexiaTemplate struct {
 	ID string `json:"id"`
 }
 
+// VersionList represents a list of versions
+// swagger:model VersionList
+type VersionList []MasterVersion
+
 // MasterVersion describes a version of the master components
 // swagger:model MasterVersion
 type MasterVersion struct {

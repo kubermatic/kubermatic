@@ -141,7 +141,7 @@ func main() {
 	if err != nil {
 		log.Fatalw("failed to create auth clients", "error", err)
 	}
-	updateManager, err := version.NewFromFiles(options.versionsFile, options.updatesFile)
+	updateManager, err := version.NewFromFiles(options.versionsFile, options.updatesFile, options.providerIncompatibilitiesFile)
 	if err != nil {
 		log.Fatalw("failed to create update manager", "error", err)
 	}

@@ -21,13 +21,14 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
 // ExternalCloudControllerFeatureSupported checks if the cloud provider supports
 // external CCM.
-func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cluster *kubermaticv1.Cluster) bool {
+func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cluster *kubermaticv1.Cluster, incompatibilities ...*version.ProviderIncompatibility) bool {
 	switch {
 	case cluster.Spec.Cloud.Openstack != nil:
 		// When using OpenStack external CCM with Open Telekom Cloud the creation
@@ -48,7 +49,11 @@ func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cluste
 		return dc.Spec.Hetzner.Network != ""
 
 	case cluster.Spec.Cloud.VSphere != nil:
-		return VsphereCloudControllerSupported(cluster.Spec.Version)
+		supported, err := version.IsSupported(cluster.Spec.Version.Version, kubermaticv1.ProviderVSphere, incompatibilities, version.ExternalCloudProviderCondition)
+		if err != nil {
+			return false
+		}
+		return supported
 
 	case cluster.Spec.Cloud.Anexia != nil:
 		return true

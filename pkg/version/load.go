@@ -78,3 +78,26 @@ func LoadVersions(path string) ([]*Version, error) {
 
 	return s.Versions, nil
 }
+
+func LoadProviderIncompatibilities(path string) ([]*ProviderIncompatibility, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+
+	bytes, err := ioutil.ReadAll(bufio.NewReader(f))
+	if err != nil {
+		return nil, err
+	}
+
+	s := struct {
+		ProviderIncompatibilities []*ProviderIncompatibility `json:"providerIncompatibilities"`
+	}{}
+
+	err = yaml.UnmarshalStrict(bytes, &s)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.ProviderIncompatibilities, nil
+}

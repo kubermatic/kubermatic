@@ -53,7 +53,7 @@ func TestSeedNamesListEndpoint(t *testing.T) {
 			req := httptest.NewRequest("GET", "/api/v1/seed", nil)
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []ctrlruntimeclient.Object{},
-				[]ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, nil, hack.NewTestRouting)
+				[]ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}

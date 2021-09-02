@@ -262,6 +262,26 @@ var (
 				To:   "1.22.*",
 			},
 		},
+		ProviderIncompatibilities: []operatorv1alpha1.Incompatibility{
+			{
+				Provider:  kubermaticv1.ProviderVSphere,
+				Version:   "1.22.*",
+				Condition: version.AlwaysCondition,
+				Operation: version.CreateOperation,
+			},
+			{
+				Provider:  kubermaticv1.ProviderVSphere,
+				Version:   "1.22.*",
+				Condition: version.ExternalCloudProviderCondition,
+				Operation: version.UpdateOperation,
+			},
+			{
+				Provider:  kubermaticv1.ProviderVSphere,
+				Version:   "1.22.*",
+				Condition: version.ExternalCloudProviderCondition,
+				Operation: version.SupportOperation,
+			},
+		},
 	}
 )
 
@@ -606,6 +626,10 @@ func defaultVersioning(settings *operatorv1alpha1.KubermaticVersioningConfigurat
 		settings.Updates = defaults.Updates
 	}
 
+	if len(settings.ProviderIncompatibilities) == 0 {
+		settings.ProviderIncompatibilities = defaults.ProviderIncompatibilities
+	}
+
 	return nil
 }
 
@@ -893,6 +917,31 @@ func CreateUpdatesYAML(config *operatorv1alpha1.KubermaticVersionsConfiguration)
 				Automatic:           automatic,
 				AutomaticNodeUpdate: automaticNodeUpdate,
 				Type:                kind,
+			})
+		}
+	}
+
+	appendOrchestrator(&config.Kubernetes, kubermaticapiv1.KubernetesClusterType)
+	return toYAML(output)
+}
+
+type providerIncompatibilitiesYAML struct {
+	ProviderIncompatibilities []*version.ProviderIncompatibility `json:"ProviderIncompatibilities"`
+}
+
+func CreateProviderIncompatibilitiesYAML(config *operatorv1alpha1.KubermaticVersionsConfiguration) (string, error) {
+	output := providerIncompatibilitiesYAML{
+		ProviderIncompatibilities: make([]*version.ProviderIncompatibility, 0),
+	}
+
+	appendOrchestrator := func(cfg *operatorv1alpha1.KubermaticVersioningConfiguration, kind string) {
+		for _, i := range cfg.ProviderIncompatibilities {
+			output.ProviderIncompatibilities = append(output.ProviderIncompatibilities, &version.ProviderIncompatibility{
+				Provider:  i.Provider,
+				Version:   i.Version,
+				Condition: i.Condition,
+				Operation: i.Operation,
+				Type:      kind,
 			})
 		}
 	}

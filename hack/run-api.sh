@@ -67,6 +67,7 @@ set -x
   -ca-bundle=charts/kubermatic-operator/static/ca-bundle.pem \
   -versions=charts/kubermatic/static/master/versions.yaml \
   -updates=charts/kubermatic/static/master/updates.yaml \
+  -provider-incompatibilities=charts/kubermatic/static/master/provider-incompatibilities.yaml \
   -master-resources=charts/kubermatic/static/master \
   -worker-name="$(worker_name)" \
   -internal-address=127.0.0.1:18085 \

@@ -69,6 +69,7 @@ func NewTestRouting(
 	privilegedProjectMemberProvider provider.PrivilegedProjectMemberProvider,
 	versions []*version.Version,
 	updates []*version.Update,
+	providerIncompatibilities []*version.ProviderIncompatibility,
 	saTokenAuthenticator serviceaccount.TokenAuthenticator,
 	saTokenGenerator serviceaccount.TokenGenerator,
 	eventRecorderProvider provider.EventRecorderProvider,
@@ -92,7 +93,7 @@ func NewTestRouting(
 	etcdBackupConfigProjectProviderGetter provider.EtcdBackupConfigProjectProviderGetter,
 	etcdRestoreProjectProviderGetter provider.EtcdRestoreProjectProviderGetter) http.Handler {
 
-	updateManager := version.New(versions, updates)
+	updateManager := version.New(versions, updates, providerIncompatibilities)
 
 	routingParams := handler.RoutingParams{
 		Log:                                   kubermaticlog.Logger,

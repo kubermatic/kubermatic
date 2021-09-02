@@ -177,6 +177,7 @@ type newRoutingFunc func(
 	privilegedProjectMemberProvider provider.PrivilegedProjectMemberProvider,
 	versions []*version.Version,
 	updates []*version.Update,
+	providerIncompatibilities []*version.ProviderIncompatibility,
 	saTokenAuthenticator serviceaccount.TokenAuthenticator,
 	saTokenGenerator serviceaccount.TokenGenerator,
 	eventRecorderProvider provider.EventRecorderProvider,
@@ -210,7 +211,7 @@ func getRuntimeObjects(objs ...ctrlruntimeclient.Object) []runtime.Object {
 	return runtimeObjects
 }
 
-func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObjects, machineObjects, kubermaticObjects []ctrlruntimeclient.Object, versions []*version.Version, updates []*version.Update, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
+func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObjects, machineObjects, kubermaticObjects []ctrlruntimeclient.Object, versions []*version.Version, updates []*version.Update, providerIncompatibilities []*version.ProviderIncompatibility, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
 	ctx := context.Background()
 
 	allObjects := kubeObjects
@@ -488,6 +489,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		projectMemberProvider,
 		versions,
 		updates,
+		providerIncompatibilities,
 		tokenAuth,
 		tokenGenerator,
 		eventRecorderProvider,
@@ -516,13 +518,13 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 }
 
 // CreateTestEndpointAndGetClients is a convenience function that instantiates fake providers and sets up routes for the tests
-func CreateTestEndpointAndGetClients(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObjects, machineObjects, kubermaticObjects []ctrlruntimeclient.Object, versions []*version.Version, updates []*version.Update, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
-	return initTestEndpoint(user, seedsGetter, kubeObjects, machineObjects, kubermaticObjects, versions, updates, routingFunc)
+func CreateTestEndpointAndGetClients(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObjects, machineObjects, kubermaticObjects []ctrlruntimeclient.Object, versions []*version.Version, updates []*version.Update, providerIncompatibilities []*version.ProviderIncompatibility, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
+	return initTestEndpoint(user, seedsGetter, kubeObjects, machineObjects, kubermaticObjects, versions, updates, providerIncompatibilities, routingFunc)
 }
 
 // CreateTestEndpoint does exactly the same as CreateTestEndpointAndGetClients except it omits ClientsSets when returning
-func CreateTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []ctrlruntimeclient.Object, versions []*version.Version, updates []*version.Update, routingFunc newRoutingFunc) (http.Handler, error) {
-	router, _, err := CreateTestEndpointAndGetClients(user, nil, kubeObjects, nil, kubermaticObjects, versions, updates, routingFunc)
+func CreateTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []ctrlruntimeclient.Object, versions []*version.Version, updates []*version.Update, providerIncompatibilities []*version.ProviderIncompatibility, routingFunc newRoutingFunc) (http.Handler, error) {
+	router, _, err := CreateTestEndpointAndGetClients(user, nil, kubeObjects, nil, kubermaticObjects, versions, updates, providerIncompatibilities, routingFunc)
 	return router, err
 }
 

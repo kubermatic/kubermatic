@@ -20,6 +20,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -312,6 +313,9 @@ type KubermaticVersioningConfiguration struct {
 	// updates as well. 'automaticNodeUpdate: true' implies 'automatic: true' as well,
 	// because Nodes may not have a newer version than the controlplane.
 	Updates []Update `json:"updates,omitempty"`
+
+	// ProviderIncompatibilities lists all the Kubernetes version incompatibilities
+	ProviderIncompatibilities []Incompatibility `json:"providerIncompatibilities,omitempty"`
 }
 
 // Update represents an update option for a user cluster.
@@ -332,6 +336,18 @@ type Update struct {
 	//nolint:staticcheck
 	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
 	AutomaticNodeUpdate *bool `json:"automaticNodeUpdate,omitempty,omitgenyaml"`
+}
+
+// Incompatibility represents a version incompatibility for a user cluster
+type Incompatibility struct {
+	// Provider to which to apply the compatibility check
+	Provider kubermaticv1.ProviderType `json:"provider,omitempty"`
+	// Version is the Kubernetes version that must be checked. Wildcards are allowed, e.g. "1.22.*".
+	Version string `json:"version,omitempty"`
+	// Condition is the cluster or datacenter condition that must be met to block a specific version
+	Condition version.ConditionType `json:"condition,omitempty"`
+	// Operation is the operation triggering the compatibility check (CREATE or UPDATE)
+	Operation version.OperationType `json:"operation,omitempty"`
 }
 
 // KubermaticVPAConfiguration configures the Kubernetes VPA.

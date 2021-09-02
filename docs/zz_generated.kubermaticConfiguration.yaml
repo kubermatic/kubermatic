@@ -413,6 +413,24 @@ spec:
     kubernetes:
       # Default is the default version to offer users.
       default: 1.21.3
+      # ProviderIncompatibilities lists all the Kubernetes version incompatibilities
+      providerIncompatibilities:
+        - # Condition is the cluster or datacenter condition that must be met to block a specific version
+          condition: always
+          # Operation is the operation triggering the compatibility check (CREATE or UPDATE)
+          operation: CREATE
+          # Provider to which to apply the compatibility check
+          provider: vsphere
+          # Version is the Kubernetes version that must be checked. Wildcards are allowed, e.g. "1.22.*".
+          version: 1.22.*
+        - condition: externalCloudProvider
+          operation: UPGRADE
+          provider: vsphere
+          version: 1.22.*
+        - condition: externalCloudProvider
+          operation: SUPPORT
+          provider: vsphere
+          version: 1.22.*
       # Updates is a list of available and automatic upgrades.
       # All 'to' versions must be configured in the version list for this orchestrator.
       # Each update may optionally be configured to be 'automatic: true', in which case the

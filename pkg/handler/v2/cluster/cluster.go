@@ -41,7 +41,7 @@ import (
 )
 
 func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, credentialManager provider.PresetProvider,
-	exposeStrategy kubermaticv1.ExposeStrategy, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider, updateManager common.UpdateManager, caBundle *x509.CertPool) endpoint.Endpoint {
+	exposeStrategy kubermaticv1.ExposeStrategy, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider, updateManager common.UpdateManager, caBundle *x509.CertPool, supportManager common.SupportManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateClusterReq)
 		globalSettings, err := settingsProvider.GetGlobalSettings()
@@ -54,12 +54,12 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 		}
 
 		return handlercommon.CreateEndpoint(ctx, req.ProjectID, req.Body, projectProvider, privilegedProjectProvider,
-			seedsGetter, credentialManager, exposeStrategy, userInfoGetter, caBundle)
+			seedsGetter, credentialManager, exposeStrategy, userInfoGetter, caBundle, supportManager)
 	}
 }
 
 // ListEndpoint list clusters for the given project
-func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, clusterProviderGetter provider.ClusterProviderGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, clusterProviderGetter provider.ClusterProviderGetter, userInfoGetter provider.UserInfoGetter, supportManager common.SupportManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetProjectRq)
 		allClusters := make([]*apiv1.Cluster, 0)
@@ -76,7 +76,7 @@ func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 				klog.Errorf("failed to create cluster provider for seed %s: %v", seed.Name, err)
 				continue
 			}
-			apiClusters, err := handlercommon.GetClusters(ctx, userInfoGetter, clusterProvider, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID)
+			apiClusters, err := handlercommon.GetClusters(ctx, userInfoGetter, clusterProvider, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID, supportManager)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
@@ -87,10 +87,10 @@ func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 	}
 }
 
-func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, supportManager common.SupportManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GetClusterReq)
-		return handlercommon.GetEndpoint(ctx, projectProvider, privilegedProjectProvider, seedsGetter, userInfoGetter, req.ProjectID, req.ClusterID)
+		return handlercommon.GetEndpoint(ctx, projectProvider, privilegedProjectProvider, seedsGetter, userInfoGetter, req.ProjectID, req.ClusterID, supportManager)
 	}
 }
 
@@ -102,11 +102,11 @@ func DeleteEndpoint(sshKeyProvider provider.SSHKeyProvider, privilegedSSHKeyProv
 }
 
 func PatchEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
-	seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, caBundle *x509.CertPool) endpoint.Endpoint {
+	seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, caBundle *x509.CertPool, supportManager common.SupportManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(PatchReq)
 		return handlercommon.PatchEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, req.Patch, seedsGetter,
-			projectProvider, privilegedProjectProvider, caBundle)
+			projectProvider, privilegedProjectProvider, caBundle, supportManager)
 	}
 }
 
@@ -124,10 +124,10 @@ func HealthEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 	}
 }
 
-func MigrateEndpointToExternalCCM(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func MigrateEndpointToExternalCCM(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, supportManager common.SupportManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GetClusterReq)
-		return handlercommon.MigrateEndpointToExternalCCM(ctx, userInfoGetter, req.ProjectID, req.ClusterID, projectProvider, seedsGetter, privilegedProjectProvider)
+		return handlercommon.MigrateEndpointToExternalCCM(ctx, userInfoGetter, req.ProjectID, req.ClusterID, projectProvider, seedsGetter, privilegedProjectProvider, supportManager)
 	}
 }
 
