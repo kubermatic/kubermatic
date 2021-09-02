@@ -20,6 +20,7 @@ package admin
 
 import (
 	"context"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/ee/metering"
@@ -31,8 +32,8 @@ func createOrUpdateMeteringCredentials(ctx context.Context, request meteringApi.
 	return metering.CreateOrUpdateCredentials(ctx, request, seedsGetter, seedClientGetter)
 }
 
-func createOrUpdateMeteringConfigurations(ctx context.Context, request meteringApi.ConfigurationReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
-	return metering.CreateOrUpdateConfigurations(ctx, request, seedsGetter, seedClientGetter)
+func createOrUpdateMeteringConfigurations(ctx context.Context, request meteringApi.ConfigurationReq, masterClient client.Client) error {
+	return metering.CreateOrUpdateConfigurations(ctx, request, masterClient)
 }
 
 func listMeteringReports(ctx context.Context, request meteringApi.ListMeteringReportReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) ([]v1.MeteringReport, error) {

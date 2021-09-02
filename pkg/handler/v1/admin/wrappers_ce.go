@@ -24,13 +24,15 @@ import (
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	meteringApi "k8c.io/kubermatic/v2/pkg/handler/v1/metering"
 	"k8c.io/kubermatic/v2/pkg/provider"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func createOrUpdateMeteringCredentials(ctx context.Context, request meteringApi.SecretReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
 	return nil
 }
 
-func createOrUpdateMeteringConfigurations(ctx context.Context, request meteringApi.ConfigurationReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
+func createOrUpdateMeteringConfigurations(ctx context.Context, request meteringApi.ConfigurationReq, masterClient client.Client) error {
 	return nil
 }
 

@@ -30,41 +30,39 @@ import (
 	"errors"
 	"fmt"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/metering"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
-	storagev1 "k8s.io/api/storage/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const AccessKey = "accessKey"
-const SecretKey = "secretKey"
-const Bucket = "bucket"
-const Endpoint = "endpoint"
-const SecretName = "metering-s3"
-const SecretNamespace = "kubermatic"
+const (
+	AccessKey       = "accessKey"
+	SecretKey       = "secretKey"
+	Bucket          = "bucket"
+	Endpoint        = "endpoint"
+	SecretName      = "metering-s3"
+	SecretNamespace = "kubermatic"
+)
 
 var secretNamespacedName = types.NamespacedName{Name: SecretName, Namespace: SecretNamespace}
 
 // CreateOrUpdateConfigurations creates or updates the metering tool configurations.
-func CreateOrUpdateConfigurations(ctx context.Context, req metering.ConfigurationReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
-	if seedsGetter == nil || seedClientGetter == nil {
-		return errors.New("parameter seedsGetter nor seedClientGetter cannot be nil")
+func CreateOrUpdateConfigurations(ctx context.Context, req metering.ConfigurationReq, masterClient ctrlruntimeclient.Client) error {
+	seedList := &kubermaticv1.SeedList{}
+	if err := masterClient.List(ctx, seedList, &ctrlruntimeclient.ListOptions{Namespace: resources.KubermaticNamespace}); err != nil {
+		return fmt.Errorf("failed listing seeds: %w", err)
 	}
 
-	seeds, err := getSeeds(seedsGetter, seedClientGetter)
-	if err != nil {
-		return fmt.Errorf("failed to gety seed clients: %v", err)
-	}
-
-	for seed, client := range seeds {
-		if err := updateSeedMeteringConfiguration(ctx, req, seed, client); err != nil {
+	for _, seed := range seedList.Items {
+		if err := updateSeedMeteringConfiguration(ctx, req, &seed, masterClient); err != nil {
 			return fmt.Errorf("failed to create or update metering tool credentials: %v", err)
 		}
 	}
@@ -72,22 +70,14 @@ func CreateOrUpdateConfigurations(ctx context.Context, req metering.Configuratio
 	return nil
 }
 
-func updateSeedMeteringConfiguration(ctx context.Context, meteringCfg metering.ConfigurationReq, seed *v1.Seed, client ctrlruntimeclient.Client) error {
-	sc := &storagev1.StorageClass{}
-	if err := client.Get(ctx, types.NamespacedName{
-		Namespace: seed.Namespace,
-		Name:      meteringCfg.StorageClassName,
-	}, sc); err != nil {
-		return fmt.Errorf("failed to get storageClass %q:%v", meteringCfg.StorageClassName, err)
-	}
-
+func updateSeedMeteringConfiguration(ctx context.Context, meteringCfg metering.ConfigurationReq, seed *v1.Seed, masterClient ctrlruntimeclient.Client) error {
 	seed.Spec.Metering = &v1.MeteringConfigurations{
 		Enabled:          meteringCfg.Enabled,
 		StorageClassName: meteringCfg.StorageClassName,
 		StorageSize:      meteringCfg.StorageSize,
 	}
 
-	if err := client.Update(ctx, seed); err != nil {
+	if err := masterClient.Update(ctx, seed); err != nil {
 		return fmt.Errorf("failed to update seed %q: %v", seed.Name, err)
 	}
 
