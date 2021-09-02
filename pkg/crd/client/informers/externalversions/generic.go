@@ -63,6 +63,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Kubermatic().V1().ExternalClusters().Informer()}, nil
 	case v1.SchemeGroupVersion.WithResource("kubermaticsettings"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Kubermatic().V1().KubermaticSettings().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("mlaadminsettings"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Kubermatic().V1().MLAAdminSettings().Informer()}, nil
 	case v1.SchemeGroupVersion.WithResource("projects"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Kubermatic().V1().Projects().Informer()}, nil
 	case v1.SchemeGroupVersion.WithResource("rulegroups"):
