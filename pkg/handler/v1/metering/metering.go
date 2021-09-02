@@ -25,9 +25,10 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
-	"k8s.io/apimachinery/pkg/api/resource"
 
 	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 // swagger:parameters listMeteringReports
