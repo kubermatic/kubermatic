@@ -38,9 +38,9 @@ import (
 )
 
 const (
-	meteringToolName       = "kubermatic-metering"
-	meteringDataName       = "metering-data"
-	meteringCronJobMonthly = "kubermatic-metering-report-monthly"
+	meteringToolName          = "kubermatic-metering"
+	meteringDataName          = "metering-data"
+	meteringCronJobWeeklyName = "kubermatic-metering-report-weekly"
 )
 
 // deploymentCreator creates a new metering tool deployment per seed cluster.

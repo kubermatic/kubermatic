@@ -36,7 +36,7 @@ import (
 // cronJobCreator returns the func to create/update the etcd defragger cronjob
 func cronJobCreator(seedName string) reconciling.NamedCronJobCreatorGetter {
 	return func() (string, reconciling.CronJobCreator) {
-		return meteringCronJobMonthly, func(job *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
+		return meteringCronJobWeeklyName, func(job *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
 
 			job.Spec.Schedule = "0 6 * * 1"
 			job.Spec.JobTemplate.Spec.Parallelism = pointer.Int32Ptr(1)
