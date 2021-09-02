@@ -146,7 +146,7 @@ func main() {
 	if runOp.clusterURL == "" {
 		log.Fatal("-cluster-url must be set")
 	}
-	if runOp.ccmMigration && runOp.clusterName == "" {
+	if runOp.clusterName == "" {
 		log.Fatal("-cluster-name must be set")
 	}
 	if runOp.dnsClusterIP == "" {

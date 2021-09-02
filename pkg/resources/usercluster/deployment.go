@@ -134,6 +134,7 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				"-health-listen-address", "0.0.0.0:8086",
 				"-namespace", "$(NAMESPACE)",
 				"-cluster-url", data.Cluster().Address.URL,
+				"-cluster-name", data.Cluster().Name,
 				"-dns-cluster-ip", dnsClusterIP,
 				"-openvpn-server-port", fmt.Sprint(openvpnServerPort),
 				"-overwrite-registry", data.ImageRegistry(""),
@@ -183,7 +184,6 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 
 			if helper.NeedCCMMigration(data.Cluster()) {
 				args = append(args, "-ccm-migration")
-				args = append(args, fmt.Sprintf("-cluster-name=%v", data.Cluster().Name))
 			}
 
 			labelArgsValue, err := getLabelsArgValue(data.Cluster())

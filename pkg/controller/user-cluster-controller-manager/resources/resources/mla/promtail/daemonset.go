@@ -234,16 +234,13 @@ func DaemonSetCreator(overrides *corev1.ResourceRequirements) reconciling.NamedD
 			defResourceRequirements := map[string]*corev1.ResourceRequirements{
 				containerName: defaultResourceRequirements.DeepCopy(),
 			}
-			var err error
-			if overrides == nil {
-				err = resources.SetResourceRequirements(ds.Spec.Template.Spec.Containers, defResourceRequirements, nil, ds.Annotations)
-			} else {
-				overridesRequirements := map[string]*corev1.ResourceRequirements{
+			var overridesRequirements map[string]*corev1.ResourceRequirements
+			if overrides != nil {
+				overridesRequirements = map[string]*corev1.ResourceRequirements{
 					containerName: overrides.DeepCopy(),
 				}
-				err = resources.SetResourceRequirements(ds.Spec.Template.Spec.Containers, defResourceRequirements, overridesRequirements, ds.Annotations)
 			}
-			if err != nil {
+			if err := resources.SetResourceRequirements(ds.Spec.Template.Spec.Containers, defResourceRequirements, overridesRequirements, ds.Annotations); err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 			return ds, nil
