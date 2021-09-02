@@ -129,7 +129,7 @@ func NewTestRouting(
 		Versions:                              kubermaticVersions,
 	}
 
-	r := handler.NewRouting(routingParams)
+	r := handler.NewRouting(routingParams, nil)
 	rv2 := v2.NewV2Routing(routingParams)
 
 	mainRouter := mux.NewRouter()
