@@ -2178,6 +2178,8 @@ type SeedSpec struct {
 	ExposeStrategy kubermaticv1.ExposeStrategy `json:"expose_strategy,omitempty"`
 	// Optional: MLA allows configuring seed level MLA (Monitoring, Logging & Alerting) stack settings.
 	MLA *kubermaticv1.SeedMLASettings `json:"mla,omitempty"`
+	// Optional: BackupRestore when set, enables backup and restore controllers with given configuration.
+	BackupRestore *kubermaticv1.SeedBackupRestoreConfiguration `json:"backupRestore,omitempty"`
 }
 
 // swagger:model SeedNamesList
