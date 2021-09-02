@@ -14,6 +14,8 @@ import (
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
+
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
 // NewCreateOrUpdateBackupCredentialsParams creates a new CreateOrUpdateBackupCredentialsParams object,
@@ -58,6 +60,13 @@ func NewCreateOrUpdateBackupCredentialsParamsWithHTTPClient(client *http.Client)
    Typically these are written to a http.Request.
 */
 type CreateOrUpdateBackupCredentialsParams struct {
+
+	// Body.
+	Body *models.BcBody
+
+	// SeedName.
+	SeedName string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -111,6 +120,28 @@ func (o *CreateOrUpdateBackupCredentialsParams) SetHTTPClient(client *http.Clien
 	o.HTTPClient = client
 }
 
+// WithBody adds the body to the create or update backup credentials params
+func (o *CreateOrUpdateBackupCredentialsParams) WithBody(body *models.BcBody) *CreateOrUpdateBackupCredentialsParams {
+	o.SetBody(body)
+	return o
+}
+
+// SetBody adds the body to the create or update backup credentials params
+func (o *CreateOrUpdateBackupCredentialsParams) SetBody(body *models.BcBody) {
+	o.Body = body
+}
+
+// WithSeedName adds the seedName to the create or update backup credentials params
+func (o *CreateOrUpdateBackupCredentialsParams) WithSeedName(seedName string) *CreateOrUpdateBackupCredentialsParams {
+	o.SetSeedName(seedName)
+	return o
+}
+
+// SetSeedName adds the seedName to the create or update backup credentials params
+func (o *CreateOrUpdateBackupCredentialsParams) SetSeedName(seedName string) {
+	o.SeedName = seedName
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *CreateOrUpdateBackupCredentialsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -118,6 +149,16 @@ func (o *CreateOrUpdateBackupCredentialsParams) WriteToRequest(r runtime.ClientR
 		return err
 	}
 	var res []error
+	if o.Body != nil {
+		if err := r.SetBodyParam(o.Body); err != nil {
+			return err
+		}
+	}
+
+	// path param seed_name
+	if err := r.SetPathParam("seed_name", o.SeedName); err != nil {
+		return err
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

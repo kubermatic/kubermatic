@@ -15593,6 +15593,22 @@
           "backupcredentials"
         ],
         "operationId": "createOrUpdateBackupCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "SeedName",
+            "name": "seed_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/bcBody"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "$ref": "#/responses/empty"
