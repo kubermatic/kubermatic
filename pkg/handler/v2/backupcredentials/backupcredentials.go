@@ -80,7 +80,7 @@ func CreateOrUpdateEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.End
 }
 
 // createOrUpdateBackupCredentialsReq represents a request for creating or updating backup credentials
-// swagger:parameters createBackupCredentials
+// swagger:parameters createOrUpdateBackupCredentials
 type createOrUpdateBackupCredentialsReq struct {
 	// in: path
 	// required: true
