@@ -17,7 +17,7 @@ import (
 // swagger:model S3BackupCredentials
 type S3BackupCredentials struct {
 
-	// access key Id
+	// access key ID
 	AccessKeyID string `json:"accessKeyId,omitempty"`
 
 	// secret access key

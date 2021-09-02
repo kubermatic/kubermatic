@@ -21492,7 +21492,7 @@
       "properties": {
         "accessKeyId": {
           "type": "string",
-          "x-go-name": "AccessKeyId"
+          "x-go-name": "AccessKeyID"
         },
         "secretAccessKey": {
           "type": "string",
