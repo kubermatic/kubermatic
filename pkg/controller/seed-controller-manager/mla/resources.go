@@ -18,8 +18,9 @@ package mla
 
 import (
 	"bytes"
-	"crypto/sha256"
+	"crypto/sha1"
 	"crypto/x509"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"text/template"
@@ -302,8 +303,12 @@ func GatewayDeploymentCreator(data *resources.TemplateData, settings *kubermatic
 				RunAsNonRoot: pointer.BoolPtr(true),
 			}
 			// hash for the annotation used to force pod restart upon configuration change
-			configHash := sha256.New()
-			configHash.Write([]byte(fmt.Sprintf("%v", settings)))
+			configHash := sha1.New()
+			configData, err := json.Marshal(settings)
+			if err != nil {
+				return nil, fmt.Errorf("failed to encode MLAAdminSetting: %v", err)
+			}
+			configHash.Write(configData)
 			d.Spec.Template.Labels = map[string]string{
 				configHashAnnotation: fmt.Sprintf("%x", configHash.Sum(nil)),
 				common.NameLabel:     gatewayName,
