@@ -36,6 +36,7 @@ const (
 	initImageName = "busybox"
 	initImageTag  = "1.33"
 	appName       = "mla-promtail"
+	containerName = "promtail"
 
 	configVolumeName         = "config"
 	configVolumeMountPath    = "/etc/promtail"
@@ -59,9 +60,19 @@ var (
 		promtailNameKey:     resources.PromtailDaemonSetName,
 		promtailInstanceKey: resources.PromtailDaemonSetName,
 	}
+	defaultResourceRequirements = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("64Mi"),
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+			corev1.ResourceCPU:    resource.MustParse("200m"),
+		},
+	}
 )
 
-func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
+func DaemonSetCreator(overrides *corev1.ResourceRequirements) reconciling.NamedDaemonSetCreatorGetter {
 	return func() (string, reconciling.DaemonSetCreator) {
 		return resources.PromtailDaemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
 			ds.Labels = resources.BaseAppLabels(appName, nil)
@@ -93,7 +104,7 @@ func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 			}
 			ds.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:            "promtail",
+					Name:            containerName,
 					Image:           fmt.Sprintf("%s/%s:%s", resources.RegistryDocker, imageName, imageTag),
 					ImagePullPolicy: corev1.PullAlways,
 					Args: []string{
@@ -163,16 +174,6 @@ func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 						SuccessThreshold:    1,
 						TimeoutSeconds:      1,
 					},
-					Resources: corev1.ResourceRequirements{
-						Requests: corev1.ResourceList{
-							corev1.ResourceMemory: resource.MustParse("64Mi"),
-							corev1.ResourceCPU:    resource.MustParse("50m"),
-						},
-						Limits: corev1.ResourceList{
-							corev1.ResourceMemory: resource.MustParse("128Mi"),
-							corev1.ResourceCPU:    resource.MustParse("200m"),
-						},
-					},
 				},
 			}
 			ds.Spec.Template.Spec.Tolerations = []corev1.Toleration{
@@ -228,6 +229,19 @@ func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 						},
 					},
 				},
+			}
+
+			defResourceRequirements := map[string]*corev1.ResourceRequirements{
+				containerName: defaultResourceRequirements.DeepCopy(),
+			}
+			var overridesRequirements map[string]*corev1.ResourceRequirements
+			if overrides != nil {
+				overridesRequirements = map[string]*corev1.ResourceRequirements{
+					containerName: overrides.DeepCopy(),
+				}
+			}
+			if err := resources.SetResourceRequirements(ds.Spec.Template.Spec.Containers, defResourceRequirements, overridesRequirements, ds.Annotations); err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 			return ds, nil
 		}

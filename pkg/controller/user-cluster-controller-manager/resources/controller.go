@@ -23,6 +23,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"reflect"
 	"sync"
 
 	"github.com/Masterminds/semver/v3"
@@ -88,6 +89,7 @@ func Add(
 	opaWebhookTimeout int,
 	caBundle resources.CABundle,
 	userClusterMLA UserClusterMLA,
+	clusterName string,
 	log *zap.SugaredLogger) error {
 	r := &reconciler{
 		version:           version,
@@ -108,6 +110,7 @@ func Add(
 		caBundle:          caBundle,
 		userClusterMLA:    userClusterMLA,
 		cloudProvider:     kubermaticv1.ProviderType(cloudProviderName),
+		clusterName:       clusterName,
 	}
 
 	var err error
@@ -190,6 +193,27 @@ func Add(
 		}
 	}
 
+	// Watch cluster if user cluster MLA is enabled so that controller can get resource requirements for user cluster MLA components.
+	if r.userClusterMLA.Monitoring || r.userClusterMLA.Logging {
+		seedWatch := &source.Kind{Type: &kubermaticv1.Cluster{}}
+		if err := seedWatch.InjectCache(seedMgr.GetCache()); err != nil {
+			return fmt.Errorf("failed to inject cache in seed cluster watch for cluster: %w", err)
+		}
+		clusterPredicate := predicate.Funcs{
+			// For Update event, only trigger reconciliation when Resource Requirements change.
+			UpdateFunc: func(event event.UpdateEvent) bool {
+				oldCluster := event.ObjectOld.(*kubermaticv1.Cluster)
+				newCluster := event.ObjectNew.(*kubermaticv1.Cluster)
+				oldResourceRequirements := oldCluster.GetUserClusterMLAResourceRequirements()
+				newResourceRequirements := newCluster.GetUserClusterMLAResourceRequirements()
+				return !reflect.DeepEqual(oldResourceRequirements, newResourceRequirements)
+			},
+		}
+		if err := c.Watch(seedWatch, mapFn, clusterPredicate); err != nil {
+			return fmt.Errorf("failed to watch cluster in seed: %w", err)
+		}
+	}
+
 	// A very simple but limited way to express the first successful reconciling to the seed cluster
 	return registerReconciledCheck(fmt.Sprintf("%s-%s", controllerName, "reconciled_successfully_once"), func(_ *http.Request) error {
 		r.rLock.Lock()
@@ -224,6 +248,7 @@ type reconciler struct {
 	caBundle          resources.CABundle
 	userClusterMLA    UserClusterMLA
 	cloudProvider     kubermaticv1.ProviderType
+	clusterName       string
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool
@@ -291,4 +316,14 @@ func (r *reconciler) cloudConfig(ctx context.Context, cloudConfigConfigmapName s
 		return nil, fmt.Errorf("cloud-config configmap contains no data for key %s", resources.CloudConfigConfigMapKey)
 	}
 	return []byte(value), nil
+}
+
+func (r *reconciler) mlaResourceRequirements(ctx context.Context) (monitoring, logging *corev1.ResourceRequirements, err error) {
+	cluster := &kubermaticv1.Cluster{}
+	if err = r.seedClient.Get(ctx, types.NamespacedName{
+		Name: r.clusterName,
+	}, cluster); err != nil {
+		return nil, nil, fmt.Errorf("failed to get cluster: %w", err)
+	}
+	return cluster.Spec.MLA.MonitoringResources, cluster.Spec.MLA.LoggingResources, nil
 }

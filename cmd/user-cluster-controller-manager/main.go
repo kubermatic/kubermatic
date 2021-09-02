@@ -146,7 +146,7 @@ func main() {
 	if runOp.clusterURL == "" {
 		log.Fatal("-cluster-url must be set")
 	}
-	if runOp.ccmMigration && runOp.clusterName == "" {
+	if runOp.clusterName == "" {
 		log.Fatal("-cluster-name must be set")
 	}
 	if runOp.dnsClusterIP == "" {
@@ -265,6 +265,7 @@ func main() {
 			MLAGatewayURL:                runOp.mlaGatewayURL,
 			PrometheusScrapeConfigPrefix: runOp.prometheusScrapeConfigPrefix,
 		},
+		runOp.clusterName,
 		log,
 	); err != nil {
 		log.Fatalw("Failed to register user cluster controller", zap.Error(err))

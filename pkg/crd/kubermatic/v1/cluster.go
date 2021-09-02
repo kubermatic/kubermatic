@@ -396,6 +396,10 @@ type MLASettings struct {
 	MonitoringEnabled bool `json:"monitoringEnabled,omitempty"`
 	// LoggingEnabled is the flag for enabling logging in user cluster.
 	LoggingEnabled bool `json:"loggingEnabled,omitempty"`
+	// MonitoringResources is the resource requirements for user cluster prometheus.
+	MonitoringResources *corev1.ResourceRequirements `json:"monitoringResources,omitempty"`
+	// LoggingResources is the resource requirements for user cluster promtail.
+	LoggingResources *corev1.ResourceRequirements `json:"LoggingResources,omitempty"`
 }
 
 type ComponentSettings struct {
@@ -854,4 +858,14 @@ func (cluster *Cluster) GetSecretName() string {
 		return fmt.Sprintf("%s-anexia-%s", CredentialPrefix, cluster.Name)
 	}
 	return ""
+}
+
+func (cluster *Cluster) GetUserClusterMLAResourceRequirements() map[string]*corev1.ResourceRequirements {
+	if cluster.Spec.MLA == nil {
+		return nil
+	}
+	return map[string]*corev1.ResourceRequirements{
+		"monitoring": cluster.Spec.MLA.MonitoringResources,
+		"logging":    cluster.Spec.MLA.LoggingResources,
+	}
 }
