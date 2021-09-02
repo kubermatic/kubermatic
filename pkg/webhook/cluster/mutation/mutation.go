@@ -225,8 +225,9 @@ func (h *AdmissionHandler) defaultClusterComponentSettings(c *kubermaticv1.Clust
 	if c.Spec.ComponentsOverride.Prometheus.Resources == nil {
 		c.Spec.ComponentsOverride.Prometheus.Resources = h.defaultComponentSettings.Prometheus.Resources
 	}
-	if c.Spec.Cloud.Anexia != nil {
-		// Always enable external CCM for Anexia clusters
+
+	// Always enable external CCM
+	if c.Spec.Cloud.Anexia != nil || c.Spec.Cloud.Kubevirt != nil {
 		c.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] = true
 	}
 }

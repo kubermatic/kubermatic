@@ -345,7 +345,7 @@ func TestHandle(t *testing.T) {
 			},
 		},
 		{
-			name: "Default network configuration for KubeVirt cloud provider",
+			name: "Default configuration for KubeVirt cloud provider",
 			req: webhook.AdmissionRequest{
 				AdmissionRequest: admissionv1.AdmissionRequest{
 					Operation: admissionv1.Create,
@@ -377,6 +377,7 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", "ipvs"),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/dnsDomain", "cluster.local"),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", true),
+				jsonpatch.NewOperation("replace", "/spec/features/externalCloudProvider", true),
 			},
 		},
 		{

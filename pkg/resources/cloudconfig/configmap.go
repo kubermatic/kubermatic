@@ -26,6 +26,7 @@ import (
 	aws "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
 	azure "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
 	gce "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types"
+	kubevirt "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
 	openstack "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
@@ -261,6 +262,12 @@ func CloudConfig(
 		if err != nil {
 			return cloudConfig, err
 		}
+
+	case cloud.Kubevirt != nil:
+		cc := kubevirt.CloudConfig{
+			Kubeconfig: credentials.Kubevirt.KubeConfig,
+		}
+		return cc.String()
 	}
 
 	return cloudConfig, err

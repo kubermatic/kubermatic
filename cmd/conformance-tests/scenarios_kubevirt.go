@@ -82,12 +82,13 @@ func (s *kubevirtScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec
 
 func (s *kubevirtScenario) NodeDeployments(_ context.Context, num int, _ secrets) ([]apimodels.NodeDeployment, error) {
 	var sourceURL string
+	registryAddr := "http://http-server.kube-system.svc.cluster.local"
 
 	switch {
 	case s.nodeOsSpec.Ubuntu != nil:
-		sourceURL = "http://10.102.236.197/ubuntu.img"
+		sourceURL = registryAddr + "/ubuntu.img"
 	case s.nodeOsSpec.Centos != nil:
-		sourceURL = "http://10.102.236.197/centos.img"
+		sourceURL = registryAddr + "/centos.img"
 	default:
 		s.logger.Error("coreos operating system is not supported")
 	}
@@ -99,10 +100,10 @@ func (s *kubevirtScenario) NodeDeployments(_ context.Context, num int, _ secrets
 				Template: &apimodels.NodeSpec{
 					Cloud: &apimodels.NodeCloudSpec{
 						Kubevirt: &apimodels.KubevirtNodeSpec{
-							Memory:           utilpointer.StringPtr("2048M"),
+							Memory:           utilpointer.StringPtr("2Gi"),
 							Namespace:        utilpointer.StringPtr("kube-system"),
 							SourceURL:        utilpointer.StringPtr(sourceURL),
-							StorageClassName: utilpointer.StringPtr("kubermatic-fast"),
+							StorageClassName: utilpointer.StringPtr("local-path"),
 							PVCSize:          utilpointer.StringPtr("25Gi"),
 							CPUs:             utilpointer.StringPtr("2"),
 						},
