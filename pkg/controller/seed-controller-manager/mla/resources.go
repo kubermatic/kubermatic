@@ -18,6 +18,7 @@ package mla
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"crypto/x509"
 	"fmt"
 	"strings"
@@ -137,6 +138,7 @@ const (
 	extPortName = "http-ext"
 	intPortName = "http-int"
 
+	configHashAnnotation     = "mla.k8c.io/config-hash"
 	configVolumeName         = "config"
 	configVolumePath         = "/etc/nginx"
 	certificatesVolumeName   = "gw-certificates"
@@ -177,32 +179,31 @@ func GatewayConfigMapCreator(c *kubermaticv1.Cluster, mlaNamespace string, s *ku
 	return func() (string, reconciling.ConfigMapCreator) {
 		return gatewayName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {
-				configData := configTemplateData{
-					Namespace:     mlaNamespace,
-					TenantID:      c.Name,
-					SSLCertFile:   fmt.Sprintf("%s/%s", certificatesVolumePath, resources.MLAGatewayCertSecretKey),
-					SSLKeyFile:    fmt.Sprintf("%s/%s", certificatesVolumePath, resources.MLAGatewayKeySecretKey),
-					SSLCACertFile: fmt.Sprintf("%s/%s", caCertificatesVolumePath, resources.MLAGatewayCACertKey),
-				}
-				if s != nil && s.Spec.MonitoringRateLimits != nil {
-					// NOTE: Cortex write path rate-limiting is implemented directly by Cortex configuration
-					configData.CortexReadLimit = s.Spec.MonitoringRateLimits.QueryRate
-					configData.CortexReadLimitBurst = s.Spec.MonitoringRateLimits.QueryBurstSize
-				}
-				if s != nil && s.Spec.LoggingRateLimits != nil {
-					configData.LokiWriteLimit = s.Spec.LoggingRateLimits.IngestionRate
-					configData.LokiWriteLimitBurst = s.Spec.LoggingRateLimits.IngestionBurstSize
-					configData.LokiReadLimit = s.Spec.LoggingRateLimits.QueryRate
-					configData.LokiReadLimitBurst = s.Spec.LoggingRateLimits.QueryBurstSize
-				}
-				config, err := renderTemplate(nginxConfig, configData)
-				if err != nil {
-					return nil, fmt.Errorf("failed to render Prometheus config: %v", err)
-				}
-
-				cm.Data = map[string]string{
-					"nginx.conf": config}
+				cm.Data = map[string]string{}
 			}
+			configData := configTemplateData{
+				Namespace:     mlaNamespace,
+				TenantID:      c.Name,
+				SSLCertFile:   fmt.Sprintf("%s/%s", certificatesVolumePath, resources.MLAGatewayCertSecretKey),
+				SSLKeyFile:    fmt.Sprintf("%s/%s", certificatesVolumePath, resources.MLAGatewayKeySecretKey),
+				SSLCACertFile: fmt.Sprintf("%s/%s", caCertificatesVolumePath, resources.MLAGatewayCACertKey),
+			}
+			if s != nil && s.Spec.MonitoringRateLimits != nil {
+				// NOTE: Cortex write path rate-limiting is implemented directly by Cortex configuration
+				configData.CortexReadLimit = s.Spec.MonitoringRateLimits.QueryRate
+				configData.CortexReadLimitBurst = s.Spec.MonitoringRateLimits.QueryBurstSize
+			}
+			if s != nil && s.Spec.LoggingRateLimits != nil {
+				configData.LokiWriteLimit = s.Spec.LoggingRateLimits.IngestionRate
+				configData.LokiWriteLimitBurst = s.Spec.LoggingRateLimits.IngestionBurstSize
+				configData.LokiReadLimit = s.Spec.LoggingRateLimits.QueryRate
+				configData.LokiReadLimitBurst = s.Spec.LoggingRateLimits.QueryBurstSize
+			}
+			config, err := renderTemplate(nginxConfig, configData)
+			if err != nil {
+				return nil, fmt.Errorf("failed to render Prometheus config: %v", err)
+			}
+			cm.Data["nginx.conf"] = config
 			return cm, nil
 		}
 	}
@@ -281,10 +282,10 @@ func GatewayExternalServiceCreator(c *kubermaticv1.Cluster) reconciling.NamedSer
 
 const (
 	image   = "nginxinc/nginx-unprivileged"
-	version = "1.19-alpine"
+	version = "1.20.1-alpine"
 )
 
-func GatewayDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
+func GatewayDeploymentCreator(data *resources.TemplateData, settings *kubermaticv1.MLAAdminSetting) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return gatewayName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = pointer.Int32Ptr(1)
@@ -300,7 +301,13 @@ func GatewayDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 				RunAsUser:    pointer.Int64Ptr(1001),
 				RunAsNonRoot: pointer.BoolPtr(true),
 			}
-			d.Spec.Template.Labels = d.Spec.Selector.MatchLabels
+			// hash for the annotation used to force pod restart upon configuration change
+			configHash := sha256.New()
+			configHash.Write([]byte(fmt.Sprintf("%v", settings)))
+			d.Spec.Template.Labels = map[string]string{
+				configHashAnnotation: fmt.Sprintf("%x", configHash.Sum(nil)),
+				common.NameLabel:     gatewayName,
+			}
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            "nginx",

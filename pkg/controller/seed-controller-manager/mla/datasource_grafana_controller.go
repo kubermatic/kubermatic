@@ -53,7 +53,7 @@ const (
 	prometheusType = "prometheus"
 	lokiType       = "loki"
 
-	// mlaAdminSettingsCRName contains a fixed name of the MLA amin settings custom resource in the cluster namespace
+	// mlaAdminSettingsCRName contains a fixed name of the MLA admin settings custom resource in the cluster namespace
 	mlaAdminSettingsCRName = "mla-admin-settings"
 )
 
@@ -231,13 +231,18 @@ func (r *datasourceGrafanaController) reconcile(ctx context.Context, cluster *ku
 		WithOverwriteRegistry(r.overwriteRegistry).
 		Build()
 
-	if err := r.ensureConfigMaps(ctx, cluster); err != nil {
+	settings := &kubermaticv1.MLAAdminSetting{}
+	if err := r.Get(ctx, types.NamespacedName{Name: mlaAdminSettingsCRName, Namespace: cluster.Status.NamespaceName}, settings); err != nil && !apiErrors.IsNotFound(err) {
+		return nil, fmt.Errorf("failed to get MLAAdminSetting: %w", err)
+	}
+
+	if err := r.ensureConfigMaps(ctx, cluster, settings); err != nil {
 		return nil, fmt.Errorf("failed to reconcile ConfigMaps in namespace %s: %w", cluster.Status.NamespaceName, err)
 	}
 	if err := r.ensureSecrets(ctx, cluster, data); err != nil {
 		return nil, fmt.Errorf("failed to reconcile Secrets in namespace %s: %w", cluster.Status.NamespaceName, err)
 	}
-	if err := r.ensureDeployments(ctx, cluster, data); err != nil {
+	if err := r.ensureDeployments(ctx, cluster, data, settings); err != nil {
 		return nil, fmt.Errorf("failed to reconcile Deployments in namespace %s: %w", cluster.Status.NamespaceName, err)
 	}
 	if err := r.ensureServices(ctx, cluster); err != nil {
@@ -306,9 +311,9 @@ func (r *datasourceGrafanaController) reconcileDatasource(ctx context.Context, g
 
 }
 
-func (r *datasourceGrafanaController) ensureDeployments(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
+func (r *datasourceGrafanaController) ensureDeployments(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData, settings *kubermaticv1.MLAAdminSetting) error {
 	creators := []reconciling.NamedDeploymentCreatorGetter{
-		GatewayDeploymentCreator(data),
+		GatewayDeploymentCreator(data, settings),
 	}
 	if err := reconciling.ReconcileDeployments(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
 		return err
@@ -316,11 +321,7 @@ func (r *datasourceGrafanaController) ensureDeployments(ctx context.Context, c *
 	return nil
 }
 
-func (r *datasourceGrafanaController) ensureConfigMaps(ctx context.Context, c *kubermaticv1.Cluster) error {
-	settings := &kubermaticv1.MLAAdminSetting{}
-	if err := r.Get(ctx, types.NamespacedName{Name: mlaAdminSettingsCRName, Namespace: c.Status.NamespaceName}, settings); err != nil && !apiErrors.IsNotFound(err) {
-		return fmt.Errorf("failed to get MLAAdminSetting: %w", err)
-	}
+func (r *datasourceGrafanaController) ensureConfigMaps(ctx context.Context, c *kubermaticv1.Cluster, settings *kubermaticv1.MLAAdminSetting) error {
 	creators := []reconciling.NamedConfigMapCreatorGetter{
 		GatewayConfigMapCreator(c, r.mlaNamespace, settings),
 	}
