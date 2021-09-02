@@ -21395,6 +21395,9 @@
       "description": "Seed represents a seed object",
       "type": "object",
       "properties": {
+        "backupRestore": {
+          "$ref": "#/definitions/SeedBackupRestoreConfiguration"
+        },
         "country": {
           "description": "Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.\nFor informational purposes in the Kubermatic dashboard only.",
           "type": "string",
@@ -21438,6 +21441,23 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
+    "SeedBackupRestoreConfiguration": {
+      "type": "object",
+      "title": "SeedBackupRestoreConfiguration are s3 settings used for backups and restores of user cluster etcds.",
+      "properties": {
+        "s3BucketName": {
+          "description": "S3BucketName is the S3 bucket name to use for backup and restore.",
+          "type": "string",
+          "x-go-name": "S3BucketName"
+        },
+        "s3Endpoint": {
+          "description": "S3Endpoint is the S3 API endpoint to use for backup and restore. Defaults to s3.amazonaws.com.",
+          "type": "string",
+          "x-go-name": "S3Endpoint"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
     "SeedMLASettings": {
       "type": "object",
       "title": "SeedMLASettings allow configuring seed level MLA (Monitoring, Logging \u0026 Alerting) stack settings.",
@@ -21471,6 +21491,9 @@
       "description": "The spec for a seed data",
       "type": "object",
       "properties": {
+        "backupRestore": {
+          "$ref": "#/definitions/SeedBackupRestoreConfiguration"
+        },
         "country": {
           "description": "Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.\nFor informational purposes in the Kubermatic dashboard only.",
           "type": "string",

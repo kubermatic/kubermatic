@@ -39,6 +39,9 @@ type Seed struct {
 	// across all seeds).
 	SeedDatacenters map[string]Datacenter `json:"datacenters,omitempty"`
 
+	// backup restore
+	BackupRestore *SeedBackupRestoreConfiguration `json:"backupRestore,omitempty"`
+
 	// expose strategy
 	ExposeStrategy ExposeStrategy `json:"expose_strategy,omitempty"`
 
@@ -57,6 +60,10 @@ func (m *Seed) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateSeedDatacenters(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateBackupRestore(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -98,6 +105,23 @@ func (m *Seed) validateSeedDatacenters(formats strfmt.Registry) error {
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *Seed) validateBackupRestore(formats strfmt.Registry) error {
+	if swag.IsZero(m.BackupRestore) { // not required
+		return nil
+	}
+
+	if m.BackupRestore != nil {
+		if err := m.BackupRestore.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("backupRestore")
+			}
+			return err
+		}
 	}
 
 	return nil
@@ -177,6 +201,10 @@ func (m *Seed) ContextValidate(ctx context.Context, formats strfmt.Registry) err
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateBackupRestore(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateExposeStrategy(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -209,6 +237,20 @@ func (m *Seed) contextValidateSeedDatacenters(ctx context.Context, formats strfm
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *Seed) contextValidateBackupRestore(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.BackupRestore != nil {
+		if err := m.BackupRestore.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("backupRestore")
+			}
+			return err
+		}
 	}
 
 	return nil
