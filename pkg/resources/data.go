@@ -25,6 +25,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/docker/distribution/reference"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
@@ -689,13 +690,20 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 		// The CSIMigrationNeededAnnotation is removed when all kubelets have
 		// been migrated.
 		if kubermaticv1helper.ClusterConditionHasStatus(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue) {
-			// TODO: This feature flag was removed in k8s 1.22
+			lessThan21, _ := semver.NewConstraint("< 1.21.0")
 			if cluster.Spec.Cloud.Openstack != nil {
-				featureFlags = append(featureFlags, "CSIMigrationOpenStackComplete=true")
+				if lessThan21.Check(cluster.Spec.Version.Version) {
+					featureFlags = append(featureFlags, "CSIMigrationOpenStackComplete=true")
+				} else {
+					featureFlags = append(featureFlags, "InTreePluginOpenStackUnregister=true")
+				}
 			}
-			// TODO: This feature flag was removed in k8s 1.22
 			if cluster.Spec.Cloud.VSphere != nil {
-				featureFlags = append(featureFlags, "CSIMigrationvSphereComplete=true")
+				if lessThan21.Check(cluster.Spec.Version.Version) {
+					featureFlags = append(featureFlags, "CSIMigrationvSphereComplete=true")
+				} else {
+					featureFlags = append(featureFlags, "InTreePluginvSphereUnregister=true")
+				}
 			}
 		}
 	}
