@@ -24,8 +24,10 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 
+	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -99,7 +101,7 @@ func newRatelimitCortexReconciler(
 		return err
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.MLAAdminSetting{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.MLAAdminSetting{}}, &handler.EnqueueRequestForObject{}, predicateutil.ByName(resources.MLAAdminSettingsName)); err != nil {
 		return fmt.Errorf("failed to watch MLAAdminSetting: %w", err)
 	}
 
@@ -122,15 +124,15 @@ func (r *ratelimitCortexReconciler) Reconcile(ctx context.Context, request recon
 		return reconcile.Result{}, nil
 	}
 
-	if err := r.ratelimitCortexController.ensureLimits(ctx, mlaAdminSetting); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to ensure limits: %w", err)
-	}
-
 	if !kubernetes.HasFinalizer(mlaAdminSetting, mlaFinalizer) {
 		kubernetes.AddFinalizer(mlaAdminSetting, mlaFinalizer)
 		if err := r.Update(ctx, mlaAdminSetting); err != nil {
 			return reconcile.Result{}, fmt.Errorf("updating finalizers: %w", err)
 		}
+	}
+
+	if err := r.ratelimitCortexController.ensureLimits(ctx, mlaAdminSetting); err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to ensure limits: %w", err)
 	}
 
 	return reconcile.Result{}, nil
@@ -203,7 +205,7 @@ func (r *ratelimitCortexController) ensureLimits(ctx context.Context, mlaAdminSe
 
 func (r *ratelimitCortexController) cleanUp(ctx context.Context) error {
 	mlaAdminSettingList := &kubermaticv1.MLAAdminSettingList{}
-	if err := r.List(ctx, mlaAdminSettingList, ctrlruntimeclient.InNamespace(r.mlaNamespace)); err != nil {
+	if err := r.List(ctx, mlaAdminSettingList); err != nil {
 		return fmt.Errorf("Failed to list mlaAdminSetting: %w", err)
 	}
 	for _, mlaAdminSetting := range mlaAdminSettingList.Items {
