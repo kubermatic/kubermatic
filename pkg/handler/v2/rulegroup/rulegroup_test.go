@@ -589,7 +589,7 @@ func TestUpdateEndpoint(t *testing.T) {
 			if resp.Code != tc.ExpectedHTTPStatusCode {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.ExpectedHTTPStatusCode, resp.Code, resp.Body.String())
 			}
-			if resp.Code == http.StatusCreated {
+			if resp.Code == http.StatusOK {
 				b, err := json.Marshal(tc.ExpectedResponse)
 				if err != nil {
 					t.Fatalf("failed to marshal expected response %v", err)

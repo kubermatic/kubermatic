@@ -69,6 +69,9 @@ type AlertmanagerProviderGetter = func(seed *kubermaticv1.Seed) (AlertmanagerPro
 // RuleGroupProviderGetter is used to get an RuleGroupProvider
 type RuleGroupProviderGetter = func(seed *kubermaticv1.Seed) (RuleGroupProvider, error)
 
+// PrivilegedMLAAdminSettingProviderGetter is used to get a PrivilegedMLAAdminSettingProvider
+type PrivilegedMLAAdminSettingProviderGetter = func(seed *kubermaticv1.Seed) (PrivilegedMLAAdminSettingProvider, error)
+
 // ClusterTemplateInstanceProviderGetter is used to get a ClusterTemplateInstanceProvider
 type ClusterTemplateInstanceProviderGetter = func(seed *kubermaticv1.Seed) (ClusterTemplateInstanceProvider, error)
 

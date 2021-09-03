@@ -308,3 +308,12 @@ type OIDCSpec struct {
 	ClientID     string `json:"clientId,omitempty"`
 	ClientSecret string `json:"clientSecret,omitempty"`
 }
+
+// MLAAdminSetting represents an object holding admin setting options for user cluster MLA (Monitoring, Logging and Alerting).
+// swagger:model MLAAdminSetting
+type MLAAdminSetting struct {
+	// MonitoringRateLimits contains rate-limiting configuration for monitoring in the user cluster.
+	MonitoringRateLimits *crdapiv1.MonitoringRateLimitSettings `json:"monitoringRateLimits,omitempty"`
+	// LoggingRateLimits contains rate-limiting configuration logging in the user cluster.
+	LoggingRateLimits *crdapiv1.LoggingRateLimitSettings `json:"loggingRateLimits,omitempty"`
+}

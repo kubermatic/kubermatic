@@ -110,6 +110,9 @@ const (
 	// PrivilegedEtcdRestoreProjectProviderContextKey key under which the current PrivilegedEtcdRestoreProjectProvider is kept in the ctx
 	PrivilegedEtcdRestoreProjectProviderContextKey kubermaticcontext.Key = "privileged-etcdrestore-project-provider"
 
+	// PrivilegedMLAAdminSettingProviderContextKey key under which the current PrivilegedMLAAdminSettingProvider is kept in the ctx
+	PrivilegedMLAAdminSettingProviderContextKey kubermaticcontext.Key = "privileged-mla-admin-setting-provider"
+
 	UserCRContextKey                            = kubermaticcontext.UserCRContextKey
 	SeedsGetterContextKey kubermaticcontext.Key = "seeds-getter"
 )
@@ -791,4 +794,46 @@ func getEtcdRestoreProjectProvider(etcdRestoreProjectProviderGetter provider.Etc
 	}
 
 	return etcdRestoreProjectProviderGetter(seeds)
+}
+
+// PrivilegedMLAAdminSetting is a middleware that injects the current PrivilegedMLAAdminSettingProvider into the ctx
+func PrivilegedMLAAdminSetting(clusterProviderGetter provider.ClusterProviderGetter, mlaAdminSettingProviderGetter provider.PrivilegedMLAAdminSettingProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			seedCluster := request.(seedClusterGetter).GetSeedCluster()
+			privilegedMLAAdminSettingProvider, err := getPrivilegedMLAAdminSettingProvider(clusterProviderGetter, mlaAdminSettingProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			if err != nil {
+				return nil, err
+			}
+			ctx = context.WithValue(ctx, PrivilegedMLAAdminSettingProviderContextKey, privilegedMLAAdminSettingProvider)
+			return next(ctx, request)
+		}
+	}
+}
+
+func getPrivilegedMLAAdminSettingProvider(clusterProviderGetter provider.ClusterProviderGetter, mlaAdminSettingProviderGetter provider.PrivilegedMLAAdminSettingProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.PrivilegedMLAAdminSettingProvider, error) {
+	seeds, err := seedsGetter()
+	if err != nil {
+		return nil, err
+	}
+
+	if clusterID != "" {
+		for _, seed := range seeds {
+			clusterProvider, err := clusterProviderGetter(seed)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			if clusterProvider.IsCluster(clusterID) {
+				seedName = seed.Name
+				break
+			}
+		}
+	}
+
+	seed, found := seeds[seedName]
+	if !found {
+		return nil, fmt.Errorf("couldn't find seed %q", seedName)
+	}
+
+	return mlaAdminSettingProviderGetter(seed)
 }

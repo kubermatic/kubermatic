@@ -30,7 +30,7 @@ import (
 	"net/http"
 	"time"
 
-	minio "github.com/minio/minio-go"
+	"github.com/minio/minio-go"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
@@ -641,6 +641,7 @@ alertmanager_config: |
   receivers:
     - name: 'null'
 `
+	DefaultMLAAdminSettingName = "mla-admin-setting"
 )
 
 // ECDSAKeyPair is a ECDSA x509 certificate and private key
