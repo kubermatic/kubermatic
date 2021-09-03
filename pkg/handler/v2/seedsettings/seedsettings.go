@@ -74,5 +74,12 @@ func convertSeedToSeedSettings(seed *kubermaticv1.Seed) *apiv2.SeedSettings {
 	if seed.Spec.MLA != nil && seed.Spec.MLA.UserClusterMLAEnabled {
 		seedSettings.MLA.UserClusterMLAEnabled = true
 	}
+
+	if seed.Spec.Metering != nil {
+		seedSettings.Metering.Enabled = seed.Spec.Metering.Enabled
+		seedSettings.Metering.StorageClassName = seed.Spec.Metering.StorageClassName
+		seedSettings.Metering.StorageSize = seed.Spec.Metering.StorageSize
+	}
+
 	return seedSettings
 }
