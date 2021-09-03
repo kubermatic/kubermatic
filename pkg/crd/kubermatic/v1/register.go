@@ -93,6 +93,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&RuleGroupList{},
 		&AllowedRegistry{},
 		&AllowedRegistryList{},
+		&MLAAdminSetting{},
+		&MLAAdminSettingList{},
 	)
 
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
