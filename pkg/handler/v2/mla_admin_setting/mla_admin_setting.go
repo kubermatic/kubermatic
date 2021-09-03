@@ -144,7 +144,7 @@ func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 func convertAPIToInternalMLAAdminSetting(cluster *kubermaticv1.Cluster, mlaAdminSetting *apiv2.MLAAdminSetting) (*kubermaticv1.MLAAdminSetting, error) {
 	internalMLAAdminSetting := &kubermaticv1.MLAAdminSetting{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.DefaultMLAAdminSettingName,
+			Name:      resources.MLAAdminSettingsName,
 			Namespace: cluster.Status.NamespaceName,
 		},
 		Spec: kubermaticv1.MLAAdminSettingSpec{

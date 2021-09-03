@@ -33,7 +33,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const mlaAdminSettingName = resources.DefaultMLAAdminSettingName
+const mlaAdminSettingName = resources.MLAAdminSettingsName
 
 func TestGetEndpoint(t *testing.T) {
 	t.Parallel()

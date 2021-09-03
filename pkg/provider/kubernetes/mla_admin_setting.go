@@ -38,7 +38,7 @@ type PrivilegedMLAAdminSettingProvider struct {
 func (p *PrivilegedMLAAdminSettingProvider) GetUnsecured(cluster *kubermaticv1.Cluster) (*kubermaticv1.MLAAdminSetting, error) {
 	mlaAdminSetting := &kubermaticv1.MLAAdminSetting{}
 	if err := p.privilegedClient.Get(context.Background(), types.NamespacedName{
-		Name:      resources.DefaultMLAAdminSettingName,
+		Name:      resources.MLAAdminSettingsName,
 		Namespace: cluster.Status.NamespaceName,
 	}, mlaAdminSetting); err != nil {
 		return nil, err
@@ -59,7 +59,7 @@ func (p *PrivilegedMLAAdminSettingProvider) UpdateUnsecured(newMLAAdminSetting *
 func (p *PrivilegedMLAAdminSettingProvider) DeleteUnsecured(cluster *kubermaticv1.Cluster) error {
 	return p.privilegedClient.Delete(context.Background(), &kubermaticv1.MLAAdminSetting{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.DefaultMLAAdminSettingName,
+			Name:      resources.MLAAdminSettingsName,
 			Namespace: cluster.Status.NamespaceName,
 		},
 	})
