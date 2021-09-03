@@ -20,12 +20,13 @@ package admin
 
 import (
 	"context"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/ee/metering"
 	meteringApi "k8c.io/kubermatic/v2/pkg/handler/v1/metering"
 	"k8c.io/kubermatic/v2/pkg/provider"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func createOrUpdateMeteringCredentials(ctx context.Context, request meteringApi.SecretReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
