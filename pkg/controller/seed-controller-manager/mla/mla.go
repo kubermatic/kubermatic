@@ -67,6 +67,7 @@ var (
 // * alertmanager configuration controller - manage alertmanager configuration based on Kubermatic Clusters
 // * rule group controller - manager rule groups that will be used to generate alerts.
 // * dashboard grafana controller - create/delete Grafana dashboards based on configmaps with prefix `grafana-dashboards`
+// * ratelimit cortex controller - updates Cortex runtime configuration with rate limits based on kubermatic MLAAdminSetting
 // * cleanup controller - this controller runs when mla disabled and clean objects that left from other MLA controller
 func Add(
 	ctx context.Context,
@@ -125,7 +126,12 @@ func Add(
 	userGrafanaController := newUserGrafanaController(mgr.GetClient(), log, grafanaClient, httpClient, grafanaURL, grafanaHeader)
 	ruleGroupController := newRuleGroupController(mgr.GetClient(), log, httpClient, cortexRulerURL, lokiRulerURL)
 	dashboardGrafanaController := newDashboardGrafanaController(mgr.GetClient(), log, mlaNamespace, grafanaClient)
+	ratelimitCortexController := newRatelimitCortexController(mgr.GetClient(), log, mlaNamespace)
 	if mlaEnabled {
+		// ratelimit cortex controller update 1 configmap, so we better to have only one worker
+		if err := newRatelimitCortexReconciler(mgr, log, 1, workerName, versions, ratelimitCortexController); err != nil {
+			return fmt.Errorf("failed to create mla ratelimit cortex controller: %w", err)
+		}
 		if err := newDashboardGrafanaReconciler(mgr, log, numWorkers, workerName, versions, dashboardGrafanaController); err != nil {
 			return fmt.Errorf("failed to create mla dashboard grafana controller: %w", err)
 		}
@@ -152,12 +158,13 @@ func Add(
 			mgr.GetClient(),
 			log,
 			datasourceGrafanaController,
+			dashboardGrafanaController,
 			alertmanagerController,
 			orgUserGrafanaController,
 			orgGrafanaController,
 			userGrafanaController,
 			ruleGroupController,
-			dashboardGrafanaController,
+			ratelimitCortexController,
 		)
 		if err := newCleanupReconciler(mgr, log, numWorkers, workerName, versions, cleanupController); err != nil {
 			return fmt.Errorf("failed to create mla cleanup controller: %w", err)
