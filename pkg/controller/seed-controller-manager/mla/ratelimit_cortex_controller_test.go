@@ -101,7 +101,7 @@ func TestRatelimitCortexReconcile(t *testing.T) {
 			},
 			expectedOverrides: overrides{
 				Overrides: map[string]tenantOverride{
-					"123": tenantOverride{},
+					"123": {},
 				},
 			},
 			hasFinalizer: true,
@@ -141,7 +141,7 @@ func TestRatelimitCortexReconcile(t *testing.T) {
 			},
 			expectedOverrides: overrides{
 				Overrides: map[string]tenantOverride{
-					"123": tenantOverride{
+					"123": {
 						IngestionRate:      utilpointer.Int32(1),
 						IngestionBurstSize: utilpointer.Int32(2),
 						MaxSeriesPerMetric: utilpointer.Int32(3),
@@ -188,7 +188,7 @@ func TestRatelimitCortexReconcile(t *testing.T) {
 			},
 			expectedOverrides: overrides{
 				Overrides: map[string]tenantOverride{
-					"123": tenantOverride{
+					"123": {
 						IngestionRate:      utilpointer.Int32(1),
 						IngestionBurstSize: utilpointer.Int32(2),
 						MaxSeriesPerMetric: utilpointer.Int32(3),
@@ -228,7 +228,7 @@ func TestRatelimitCortexReconcile(t *testing.T) {
 			},
 			expectedOverrides: overrides{
 				Overrides: map[string]tenantOverride{
-					"old": tenantOverride{
+					"old": {
 						IngestionRate:      nil,
 						IngestionBurstSize: nil,
 						MaxSeriesPerMetric: nil,
