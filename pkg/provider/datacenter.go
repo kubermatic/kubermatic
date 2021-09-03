@@ -84,6 +84,9 @@ type EtcdRestoreProviderGetter = func(seed *kubermaticv1.Seed) (EtcdRestoreProvi
 // EtcdRestoreProjectProviderGetter is used to get a EtcdRestoreProjectProvider
 type EtcdRestoreProjectProviderGetter = func(seeds map[string]*kubermaticv1.Seed) (EtcdRestoreProjectProvider, error)
 
+// BackupCredentialsProviderGetter is used to get a BackupCredentialsProvider
+type BackupCredentialsProviderGetter = func(seed *kubermaticv1.Seed) (BackupCredentialsProvider, error)
+
 // SeedGetterFactory returns a SeedGetter. It has validation of all its arguments
 func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader, seedName string, namespace string) (SeedGetter, error) {
 	return func() (*kubermaticv1.Seed, error) {
