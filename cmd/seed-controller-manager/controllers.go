@@ -209,6 +209,7 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 			EtcdDataCorruptionChecks:     ctrlCtx.runOptions.featureGates.Enabled(features.EtcdDataCorruptionChecks),
 			KubernetesOIDCAuthentication: ctrlCtx.runOptions.featureGates.Enabled(features.OpenIDAuthPlugin),
 			EtcdLauncher:                 ctrlCtx.runOptions.featureGates.Enabled(features.EtcdLauncher),
+			Konnectivity:                 ctrlCtx.runOptions.featureGates.Enabled(features.KonnectivityService),
 		},
 		ctrlCtx.versions,
 	)

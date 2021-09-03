@@ -355,6 +355,8 @@ const (
 
 	// RegistryK8SGCR defines the kubernetes specific docker registry at google
 	RegistryK8SGCR = "k8s.gcr.io"
+	// RegistryUSGCR defines the docker registry at google US
+	RegistryUSGCR = "us.gcr.io"
 	// RegistryGCR defines the kubernetes docker registry at google
 	RegistryGCR = "gcr.io"
 	// RegistryDocker defines the default docker.io registry
@@ -644,6 +646,23 @@ alertmanager_config: |
 
 	// MLAAdminSettingsName specifies a fixed name of the MLA admin settings custom resource in the cluster namespace
 	MLAAdminSettingsName = "mla-admin-settings"
+
+	// Konnectivity
+	KonnectivityDeploymentName             = "konnectivity-agent"
+	KonnectivityClusterRoleBindingName     = "system:konnectivity-server"
+	KonnectivityClusterRoleBindingUsername = "system:konnectivity-server"
+	KonnectivityServiceAccountName         = "system-konnectivity-agent"
+	KonnectivityAgentContainer             = "konnectivity-agent"
+	KonnectivityAgentToken                 = "system-konnectivity-agent-token"
+	KonnectivityProxyServiceName           = "konnectivity-server"
+	KonnectivityProxyTLSSecretName         = "konnectivityproxy-tls"
+	KonnectivityKubeconfigSecretName       = "konnectivity-kubeconfig"
+	KonnectivityServerConf                 = "konnectivity-server.conf"
+	KonnectivityStolenAgentTokenSecretName = "stolen-agent-ca"
+	KonnectivityStolenAgentTokenNameCert   = "agentca.crt"
+	KonnectivityStolenAgentTokenNameToken  = "agenttoken.txt"
+	KonnectivityKubeApiserverEgress        = "kube-apiserver-egress"
+	KonnectivityUDS                        = "konnectivity-uds"
 )
 
 // ECDSAKeyPair is a ECDSA x509 certificate and private key

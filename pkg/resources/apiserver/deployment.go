@@ -25,6 +25,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/etcd"
 	"k8c.io/kubermatic/v2/pkg/resources/etcd/etcdrunning"
+	"k8c.io/kubermatic/v2/pkg/resources/konnectivity"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
 
@@ -86,8 +87,8 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
-			volumes := getVolumes()
-			volumeMounts := getVolumeMounts()
+			volumes := getVolumes(data.IsKonnectivityEnabled())
+			volumeMounts := getVolumeMounts(data.IsKonnectivityEnabled())
 
 			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
 			if err != nil {
@@ -115,19 +116,31 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 				etcdrunning.Container(etcdEndpoints, data),
 			}
 
-			openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
-			if err != nil {
-				return nil, fmt.Errorf("failed to get openvpn-client sidecar: %v", err)
+			var konnectivityProxySidecar *corev1.Container
+			var openvpnSidecar *corev1.Container
+			var dnatControllerSidecar *corev1.Container
+
+			if data.IsKonnectivityEnabled() {
+				konnectivityProxySidecar, err = konnectivity.ProxySidecar(data, *dep.Spec.Replicas)
+				if err != nil {
+					return nil, fmt.Errorf("failed to get konnectivity-proxy sidecar: %v", err)
+				}
+			} else {
+				openvpnSidecar, err = vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
+				if err != nil {
+					return nil, fmt.Errorf("failed to get openvpn-client sidecar: %v", err)
+				}
+
+				dnatControllerSidecar, err = vpnsidecar.DnatControllerContainer(
+					data,
+					"dnat-controller",
+					fmt.Sprintf("https://127.0.0.1:%d", data.Cluster().Address.Port),
+				)
+				if err != nil {
+					return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
+				}
 			}
 
-			dnatControllerSidecar, err := vpnsidecar.DnatControllerContainer(
-				data,
-				"dnat-controller",
-				fmt.Sprintf("https://127.0.0.1:%d", data.Cluster().Address.Port),
-			)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
-			}
 			auditLogEnabled := data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.Enabled
 			flags, err := getApiserverFlags(data, etcdEndpoints, enableOIDCAuthentication, auditLogEnabled)
 			if err != nil {
@@ -139,57 +152,72 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 				return nil, err
 			}
 
-			dep.Spec.Template.Spec.Containers = []corev1.Container{
-				*openvpnSidecar,
-				*dnatControllerSidecar,
-				{
-					Name:    resources.ApiserverDeploymentName,
-					Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/kube-apiserver:v" + data.Cluster().Spec.Version.String(),
-					Command: []string{"/usr/local/bin/kube-apiserver"},
-					Env:     envVars,
-					Args:    flags,
-					Ports: []corev1.ContainerPort{
-						{
-							ContainerPort: data.Cluster().Address.Port,
-							Protocol:      corev1.ProtocolTCP,
-						},
+			apiserverContainer := &corev1.Container{
+				Name:    resources.ApiserverDeploymentName,
+				Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/kube-apiserver:v" + data.Cluster().Spec.Version.String(),
+				Command: []string{"/usr/local/bin/kube-apiserver"},
+				Env:     envVars,
+				Args:    flags,
+				Ports: []corev1.ContainerPort{
+					{
+						ContainerPort: data.Cluster().Address.Port,
+						Protocol:      corev1.ProtocolTCP,
 					},
-					ReadinessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
-							HTTPGet: &corev1.HTTPGetAction{
-								Path:   "/healthz",
-								Port:   intstr.FromInt(int(data.Cluster().Address.Port)),
-								Scheme: "HTTPS",
-							},
-						},
-						FailureThreshold: 3,
-						PeriodSeconds:    5,
-						SuccessThreshold: 1,
-						TimeoutSeconds:   15,
-					},
-					LivenessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
-							HTTPGet: &corev1.HTTPGetAction{
-								Path:   "/healthz",
-								Port:   intstr.FromInt(int(data.Cluster().Address.Port)),
-								Scheme: "HTTPS",
-							},
-						},
-						InitialDelaySeconds: 15,
-						FailureThreshold:    8,
-						PeriodSeconds:       10,
-						SuccessThreshold:    1,
-						TimeoutSeconds:      15,
-					},
-					VolumeMounts: volumeMounts,
 				},
+				ReadinessProbe: &corev1.Probe{
+					Handler: corev1.Handler{
+						HTTPGet: &corev1.HTTPGetAction{
+							Path:   "/healthz",
+							Port:   intstr.FromInt(int(data.Cluster().Address.Port)),
+							Scheme: "HTTPS",
+						},
+					},
+					FailureThreshold: 3,
+					PeriodSeconds:    5,
+					SuccessThreshold: 1,
+					TimeoutSeconds:   15,
+				},
+				LivenessProbe: &corev1.Probe{
+					Handler: corev1.Handler{
+						HTTPGet: &corev1.HTTPGetAction{
+							Path:   "/healthz",
+							Port:   intstr.FromInt(int(data.Cluster().Address.Port)),
+							Scheme: "HTTPS",
+						},
+					},
+					InitialDelaySeconds: 15,
+					FailureThreshold:    8,
+					PeriodSeconds:       10,
+					SuccessThreshold:    1,
+					TimeoutSeconds:      15,
+				},
+				VolumeMounts: volumeMounts,
 			}
 
-			defResourceRequirements := map[string]*corev1.ResourceRequirements{
-				name:                       defaultResourceRequirements.DeepCopy(),
-				openvpnSidecar.Name:        openvpnSidecar.Resources.DeepCopy(),
-				dnatControllerSidecar.Name: dnatControllerSidecar.Resources.DeepCopy(),
+			var defResourceRequirements map[string]*corev1.ResourceRequirements
+			if data.IsKonnectivityEnabled() {
+				dep.Spec.Template.Spec.Containers = []corev1.Container{
+					*konnectivityProxySidecar,
+					*apiserverContainer,
+				}
+				defResourceRequirements = map[string]*corev1.ResourceRequirements{
+					name:                          defaultResourceRequirements.DeepCopy(),
+					konnectivityProxySidecar.Name: konnectivityProxySidecar.Resources.DeepCopy(),
+				}
+			} else {
+				dep.Spec.Template.Spec.Containers = []corev1.Container{
+					*openvpnSidecar,
+					*dnatControllerSidecar,
+					*apiserverContainer,
+				}
+
+				defResourceRequirements = map[string]*corev1.ResourceRequirements{
+					name:                       defaultResourceRequirements.DeepCopy(),
+					openvpnSidecar.Name:        openvpnSidecar.Resources.DeepCopy(),
+					dnatControllerSidecar.Name: dnatControllerSidecar.Resources.DeepCopy(),
+				}
 			}
+
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
@@ -347,6 +375,10 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 			audiences = []string{issuer}
 		}
 
+		if data.IsKonnectivityEnabled() {
+			audiences = append(audiences, "system:konnectivity-server")
+		}
+
 		flags = append(flags,
 			"--service-account-issuer", issuer,
 			"--service-account-signing-key-file", serviceAccountKeyFile,
@@ -357,7 +389,16 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 	if cluster.Spec.Cloud.GCP != nil {
 		flags = append(flags, "--kubelet-preferred-address-types", "InternalIP")
 	} else {
-		flags = append(flags, "--kubelet-preferred-address-types", "ExternalIP,InternalIP")
+		// KAS tries to connect to kubelet via konnectivity-agent in the user-cluster.
+		// This request fails because of security policies disallow external traffic to the node.
+		// So we prefer InternalIP for contacting kubelet when konnectivity is enabled.
+		// Refer: https://github.com/kubermatic/kubermatic/pull/7504#discussion_r700992387
+		// and https://kubermatic.slack.com/archives/C01EWQZEW69/p1628769575001400
+		if data.IsKonnectivityEnabled() {
+			flags = append(flags, "--kubelet-preferred-address-types", "InternalIP,ExternalIP")
+		} else {
+			flags = append(flags, "--kubelet-preferred-address-types", "ExternalIP,InternalIP")
+		}
 	}
 
 	cloudProviderName := resources.GetKubernetesCloudProviderName(data.Cluster(), resources.ExternalCloudProviderEnabled(data.Cluster()))
@@ -418,8 +459,8 @@ func getApiserverOverrideFlags(data *resources.TemplateData) (kubermaticv1.APISe
 	return settings, nil
 }
 
-func getVolumeMounts() []corev1.VolumeMount {
-	return []corev1.VolumeMount{
+func getVolumeMounts(isKonnectivityEnabled bool) []corev1.VolumeMount {
+	vms := []corev1.VolumeMount{
 		{
 			MountPath: "/etc/kubernetes/tls",
 			Name:      resources.ApiserverTLSSecretName,
@@ -486,10 +527,26 @@ func getVolumeMounts() []corev1.VolumeMount {
 			ReadOnly:  true,
 		},
 	}
+
+	if isKonnectivityEnabled {
+		vms = append(vms, []corev1.VolumeMount{
+			{
+				Name:      resources.KonnectivityUDS,
+				MountPath: "/etc/kubernetes/konnectivity-server",
+			},
+			{
+				Name:      resources.KonnectivityKubeApiserverEgress,
+				MountPath: "/etc/kubernetes/konnectivity",
+				ReadOnly:  true,
+			},
+		}...)
+	}
+
+	return vms
 }
 
-func getVolumes() []corev1.Volume {
-	return []corev1.Volume{
+func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
+	vs := []corev1.Volume{
 		{
 			Name: resources.ApiserverTLSSecretName,
 			VolumeSource: corev1.VolumeSource{
@@ -624,6 +681,49 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 	}
+
+	if isKonnectivityEnabled {
+		vs = append(vs, []corev1.Volume{
+			{
+				Name: resources.KonnectivityKubeconfigSecretName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName:  resources.KonnectivityKubeconfigSecretName,
+						DefaultMode: intPtr(420),
+					},
+				},
+			},
+			{
+				Name: resources.KonnectivityProxyTLSSecretName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName:  resources.KonnectivityProxyTLSSecretName,
+						DefaultMode: intPtr(420),
+					},
+				},
+			},
+			{
+				Name: resources.KonnectivityUDS,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+			{
+				Name: resources.KonnectivityKubeApiserverEgress,
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: resources.KonnectivityKubeApiserverEgress,
+						},
+						DefaultMode: intPtr(420),
+					},
+				},
+			},
+		}...)
+	}
+
+	return vs
+
 }
 
 type kubeAPIServerEnvData interface {
@@ -652,4 +752,8 @@ func GetEnvVars(data kubeAPIServerEnvData) ([]corev1.EnvVar, error) {
 	}
 
 	return append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().Address.InternalName)...), nil
+}
+
+func intPtr(n int32) *int32 {
+	return &n
 }
