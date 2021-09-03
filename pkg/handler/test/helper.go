@@ -200,6 +200,7 @@ type newRoutingFunc func(
 	etcdRestoreProviderGetter provider.EtcdRestoreProviderGetter,
 	etcdBackupConfigProjectProviderGetter provider.EtcdBackupConfigProjectProviderGetter,
 	etcdRestoreProjectProviderGetter provider.EtcdRestoreProjectProviderGetter,
+	backupCredentialsProviderGetter provider.BackupCredentialsProviderGetter,
 ) http.Handler
 
 func getRuntimeObjects(objs ...ctrlruntimeclient.Object) []runtime.Object {
@@ -448,6 +449,15 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		return etcdRestoreProjectProvider, nil
 	}
 
+	backupCredentialsProvider := kubernetes.NewBackupCredentialsProvider(fakeClient)
+	backupCredentialsProviders := map[string]provider.BackupCredentialsProvider{"us-central1": backupCredentialsProvider}
+	backupCredentialsProviderGetter := func(seed *kubermaticv1.Seed) (provider.BackupCredentialsProvider, error) {
+		if backupCredentials, exists := backupCredentialsProviders[seed.Name]; exists {
+			return backupCredentials, nil
+		}
+		return nil, fmt.Errorf("can not find backupCredentialsProvider for cluster %q", seed.Name)
+	}
+
 	eventRecorderProvider := kubernetes.NewEventRecorder()
 
 	settingsWatcher, err := kuberneteswatcher.NewSettingsWatcher(settingsProvider)
@@ -512,6 +522,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		etcdRestoreProviderGetter,
 		etcdBackupConfigProjectProviderGetter,
 		etcdRestoreProjectProviderGetter,
+		backupCredentialsProviderGetter,
 	)
 
 	return mainRouter, &ClientsSets{kubermaticClient, fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil
@@ -1888,6 +1899,28 @@ func GenEtcdRestore(name string, cluster *kubermaticv1.Cluster, projectID string
 			Cluster:                         *clusterObjectRef,
 			BackupName:                      "backup-1",
 			BackupDownloadCredentialsSecret: "secret",
+		},
+	}
+}
+
+func GenDefaultAPIBackupCredentials() *apiv2.BackupCredentials {
+	return &apiv2.BackupCredentials{
+		S3BackupCredentials: apiv2.S3BackupCredentials{
+			AccessKeyID:     "accessKeyId",
+			SecretAccessKey: "secretAccessKey",
+		},
+	}
+}
+
+func GenDefaultBackupCredentials() *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "s3-credentials",
+			Namespace: "kube-system",
+		},
+		StringData: map[string]string{
+			"ACCESS_KEY_ID":     "accessKeyId",
+			"SECRET_ACCESS_KEY": "secretAccessKey",
 		},
 	}
 }

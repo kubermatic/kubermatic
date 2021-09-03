@@ -91,6 +91,7 @@ type Routing struct {
 	etcdRestoreProviderGetter             provider.EtcdRestoreProviderGetter
 	etcdBackupConfigProjectProviderGetter provider.EtcdBackupConfigProjectProviderGetter
 	etcdRestoreProjectProviderGetter      provider.EtcdRestoreProjectProviderGetter
+	backupCredentialsProviderGetter       provider.BackupCredentialsProviderGetter
 	versions                              kubermatic.Versions
 	caBundle                              *x509.CertPool
 }
@@ -149,6 +150,7 @@ func NewV2Routing(routingParams handler.RoutingParams) Routing {
 		etcdRestoreProviderGetter:             routingParams.EtcdRestoreProviderGetter,
 		etcdBackupConfigProjectProviderGetter: routingParams.EtcdBackupConfigProjectProviderGetter,
 		etcdRestoreProjectProviderGetter:      routingParams.EtcdRestoreProjectProviderGetter,
+		backupCredentialsProviderGetter:       routingParams.BackupCredentialsProviderGetter,
 		versions:                              routingParams.Versions,
 		caBundle:                              routingParams.CABundle,
 	}

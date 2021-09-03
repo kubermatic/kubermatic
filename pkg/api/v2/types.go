@@ -308,3 +308,16 @@ type OIDCSpec struct {
 	ClientID     string `json:"clientId,omitempty"`
 	ClientSecret string `json:"clientSecret,omitempty"`
 }
+
+// BackupCredentials contains credentials for etcd backups
+// swagger:model BackupCredentials
+type BackupCredentials struct {
+	S3BackupCredentials S3BackupCredentials `json:"s3,omitempty"`
+}
+
+// S3BackupCredentials contains credentials for S3 etcd backups
+// swagger:model S3BackupCredentials
+type S3BackupCredentials struct {
+	AccessKeyID     string `json:"accessKeyId,omitempty"`
+	SecretAccessKey string `json:"secretAccessKey,omitempty"`
+}
