@@ -325,7 +325,8 @@ const (
 	GatekeeperWebhookServiceName = "gatekeeper-webhook-service"
 	// GatekeeperWebhookServerCertSecretName is the name of the gatekeeper webhook cert secret name
 	GatekeeperWebhookServerCertSecretName = "gatekeeper-webhook-server-cert"
-	PodDisruptionName                     = "gatekeeper-controller-manager"
+	// GatekeeperPodDisruptionBudgetName is the name of the PDB for the gatekeeper controller manager
+	GatekeeperPodDisruptionBudgetName = "gatekeeper-controller-manager"
 	// GatekeeperRoleName is the name for the Gatekeeper role
 	GatekeeperRoleName = "gatekeeper-manager-role"
 	// GatekeeperRoleBindingName is the name for the Gatekeeper rolebinding
@@ -334,11 +335,11 @@ const (
 	GatekeeperServiceAccountName = "gatekeeper-admin"
 	// GatekeeperNamespace is the main gatkeeper namespace where the gatekeeper config is stored
 	GatekeeperNamespace = "gatekeeper-system"
-	// Enable mutation
+	// ExperimentalEnableMutation enables gatekeeper to validate created kubernetes resources and also modify them based on defined mutation policies
 	ExperimentalEnableMutation = false
-	// Gatekeeper audits all resources in the cluster, to only validate resource in OPA cache set this flag to true
+	// AuditMatchKindOnly enables gatekeeper to only audit resources in OPA cache
 	AuditMatchKindOnly = false
-	// The maximum number of audit violations reported on a constraint
+	// ConstraintViolationsLimit defines the maximum number of audit violations reported on a constraint
 	ConstraintViolationsLimit = 20
 
 	// CloudInitSettingsNamespace are used in order to reach, authenticate and be authorized by the api server, to fetch
@@ -386,9 +387,12 @@ const (
 	GatekeeperConfigCRDName = "configs.config.gatekeeper.sh"
 	// GatekeeperConstraintTemplateCRDName defines the CRD name for gatekeeper constraint template objects
 	GatekeeperConstraintTemplateCRDName = "constrainttemplates.templates.gatekeeper.sh"
-	MutatorPodStatusCRDName             = "mutatorpodstatuses.status.gatekeeper.sh"
-	AssignCRDName                       = "assign.mutations.gatekeeper.sh"
-	AssignMetadataCRDName               = "assignmetadata.mutations.gatekeeper.sh"
+	// GatekeeperMutatorPodStatusCRDName defines the CRD name for gatekeeper MutatorPodStatus objects
+	GatekeeperMutatorPodStatusCRDName = "mutatorpodstatuses.status.gatekeeper.sh"
+	// GatekeeperAssignCRDName defines the CRD name for gatekeeper assign objects
+	GatekeeperAssignCRDName = "assign.mutations.gatekeeper.sh"
+	// GatekeeperAssignMetadataCRDName defines the CRD name for gatekeeper assign metadata objects
+	GatekeeperAssignMetadataCRDName = "assignmetadata.mutations.gatekeeper.sh"
 	// GatekeeperConstraintPodStatusCRDName defines the CRD name for gatekeeper ConstraintPodStatus objects
 	GatekeeperConstraintPodStatusCRDName = "constraintpodstatuses.status.gatekeeper.sh"
 	// GatekeeperConstraintTemplatePodStatusCRDName defines the CRD name for gatekeeper ConstraintTemplatePodStatus objects

@@ -19,9 +19,9 @@ package gatekeeper
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 )
@@ -145,6 +145,7 @@ func MutatingWebhookConfigurationCreator(timeout int) reconciling.NamedMutatingW
 			sideEffectsNone := admissionregistrationv1.SideEffectClassNone
 			matchPolicyExact := admissionregistrationv1.Exact
 			allScopes := admissionregistrationv1.AllScopes
+			reinvocationPolicy := admissionregistrationv1.NeverReinvocationPolicy
 
 			mutatingWebhookConfigurationWebhookConfiguration.Labels = map[string]string{"gatekeeper.sh/system": "yes"}
 			// Get cabundle if set
@@ -158,6 +159,7 @@ func MutatingWebhookConfigurationCreator(timeout int) reconciling.NamedMutatingW
 					Name:                    "mutation.gatekeeper.sh",
 					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version, admissionregistrationv1beta1.SchemeGroupVersion.Version},
 					FailurePolicy:           &failurePolicyIgnore,
+					ReinvocationPolicy:      &reinvocationPolicy,
 					SideEffects:             &sideEffectsNone,
 					TimeoutSeconds:          pointer.Int32Ptr(int32(timeout)),
 					MatchPolicy:             &matchPolicyExact,
