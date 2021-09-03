@@ -212,7 +212,7 @@ func TestRestrictProjectCreation(t *testing.T) {
 
 			_, err = adminTestClient.UpdateGlobalSettings(json.RawMessage(`{"restrictProjectCreation":true}`))
 			if err != nil {
-				t.Fatalf("failed to update global settings: %v", err)
+				t.Fatalf("failed to update global settings: %v", getErrorResponse(err))
 			}
 
 			defer func() {

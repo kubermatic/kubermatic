@@ -32,6 +32,7 @@ import (
 )
 
 func TestLogout(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		isAdmin bool
@@ -47,7 +48,6 @@ func TestLogout(t *testing.T) {
 	}
 
 	ctx := context.Background()
-
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			var masterToken string
@@ -63,12 +63,14 @@ func TestLogout(t *testing.T) {
 			}
 
 			testClient := utils.NewTestClient(masterToken, t)
+
+			// logout
 			if err := testClient.Logout(); err != nil {
 				t.Fatal(err)
 			}
 
 			// test projection creation
-			_, err = testClient.CreateProject(rand.String(10))
+			_, err = testClient.CreateProjectWithoutChecks(rand.String(10))
 			if err == nil {
 				t.Fatal("create project: expected error")
 			}

@@ -116,6 +116,23 @@ func (r *TestClient) CreateProject(name string) (*apiv1.Project, error) {
 	return apiProject, nil
 }
 
+// CreateProjectWithoutChecks creates a new project without waiting for Active state.
+func (r *TestClient) CreateProjectWithoutChecks(name string) (*apiv1.Project, error) {
+	params := &project.CreateProjectParams{Body: project.CreateProjectBody{Name: name}}
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
+
+	response, err := r.client.Project.CreateProject(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return convertProject(response.Payload)
+}
+
 // CreateProjectBySA creates a new project and waits for it to become active (ready).
 func (r *TestClient) CreateProjectBySA(name string, users []string) (*apiv1.Project, error) {
 	before := time.Now()
@@ -1400,7 +1417,11 @@ func (r *TestClient) ListDC() ([]*models.Datacenter, error) {
 
 func (r *TestClient) Logout() error {
 	params := &users.LogoutCurrentUserParams{}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
 
 	_, err := r.client.Users.LogoutCurrentUser(params, r.bearerToken)
 	return err
