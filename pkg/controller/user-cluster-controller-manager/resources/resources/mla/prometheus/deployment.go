@@ -32,7 +32,7 @@ import (
 
 const (
 	imageName     = "prometheus/prometheus"
-	tag           = "v2.26.0"
+	tag           = "v2.29.2"
 	appName       = "mla-prometheus"
 	containerName = "prometheus"
 
