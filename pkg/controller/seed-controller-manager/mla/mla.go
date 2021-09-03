@@ -128,7 +128,8 @@ func Add(
 	dashboardGrafanaController := newDashboardGrafanaController(mgr.GetClient(), log, mlaNamespace, grafanaClient)
 	ratelimitCortexController := newRatelimitCortexController(mgr.GetClient(), log, mlaNamespace)
 	if mlaEnabled {
-		if err := newRatelimitCortexReconciler(mgr, log, numWorkers, workerName, versions, ratelimitCortexController); err != nil {
+		// ratelimit cortex controller update 1 configmap, so we better to have only one worker
+		if err := newRatelimitCortexReconciler(mgr, log, 1, workerName, versions, ratelimitCortexController); err != nil {
 			return fmt.Errorf("failed to create mla ratelimit cortex controller: %w", err)
 		}
 		if err := newDashboardGrafanaReconciler(mgr, log, numWorkers, workerName, versions, dashboardGrafanaController); err != nil {
