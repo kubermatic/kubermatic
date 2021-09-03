@@ -373,7 +373,6 @@ func computeReplicas(data etcdStatefulSetCreatorData, set *appsv1.StatefulSet) i
 	}
 	isEtcdHealthy := data.Cluster().Status.ExtendedHealth.Etcd == kubermaticv1.HealthStatusUp
 	if isEtcdHealthy { // no scaling until we are healthy
-
 		if etcdClusterSize > replicas {
 			return replicas + 1
 		}
@@ -408,7 +407,6 @@ func getEtcdCommand(name, namespace string, enableCorruptionCheck, launcherEnabl
 	if launcherEnabled {
 		command := []string{"/opt/bin/etcd-launcher",
 			"-namespace", "$(NAMESPACE)",
-			"-etcd-cluster-size", "$(ETCD_CLUSTER_SIZE)",
 			"-pod-name", "$(POD_NAME)",
 			"-pod-ip", "$(POD_IP)",
 			"-api-version", "$(ETCDCTL_API)",
