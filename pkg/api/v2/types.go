@@ -309,6 +309,19 @@ type OIDCSpec struct {
 	ClientSecret string `json:"clientSecret,omitempty"`
 }
 
+// BackupCredentials contains credentials for etcd backups
+// swagger:model BackupCredentials
+type BackupCredentials struct {
+	S3BackupCredentials S3BackupCredentials `json:"s3,omitempty"`
+}
+
+// S3BackupCredentials contains credentials for S3 etcd backups
+// swagger:model S3BackupCredentials
+type S3BackupCredentials struct {
+	AccessKeyID     string `json:"accessKeyId,omitempty"`
+	SecretAccessKey string `json:"secretAccessKey,omitempty"`
+}
+
 // MLAAdminSetting represents an object holding admin setting options for user cluster MLA (Monitoring, Logging and Alerting).
 // swagger:model MLAAdminSetting
 type MLAAdminSetting struct {

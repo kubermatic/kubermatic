@@ -110,8 +110,12 @@ const (
 	// PrivilegedEtcdRestoreProjectProviderContextKey key under which the current PrivilegedEtcdRestoreProjectProvider is kept in the ctx
 	PrivilegedEtcdRestoreProjectProviderContextKey kubermaticcontext.Key = "privileged-etcdrestore-project-provider"
 
+	// BackupCredentialsProviderContextKey key under which the current BackupCredentialsProvider is kept in the ctx
+	BackupCredentialsProviderContextKey kubermaticcontext.Key = "backupcredentials-provider"
+
 	// PrivilegedMLAAdminSettingProviderContextKey key under which the current PrivilegedMLAAdminSettingProvider is kept in the ctx
 	PrivilegedMLAAdminSettingProviderContextKey kubermaticcontext.Key = "privileged-mla-admin-setting-provider"
+
 
 	UserCRContextKey                            = kubermaticcontext.UserCRContextKey
 	SeedsGetterContextKey kubermaticcontext.Key = "seeds-getter"
@@ -794,6 +798,33 @@ func getEtcdRestoreProjectProvider(etcdRestoreProjectProviderGetter provider.Etc
 	}
 
 	return etcdRestoreProjectProviderGetter(seeds)
+}
+
+// BackupCredentials is a middleware that injects the current BackupCredentialsProvider into the ctx
+func BackupCredentials(backupCredentialsProviderGetter provider.BackupCredentialsProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			seedCluster := request.(seedClusterGetter).GetSeedCluster()
+
+			seeds, err := seedsGetter()
+			if err != nil {
+				return nil, err
+			}
+
+			seed, found := seeds[seedCluster.SeedName]
+			if !found {
+				return nil, k8cerrors.NewBadRequest("couldn't find seed %q", seedCluster.SeedName)
+			}
+
+			backupCredentialsProvider, err := backupCredentialsProviderGetter(seed)
+			if err != nil {
+				return nil, err
+			}
+
+			ctx = context.WithValue(ctx, BackupCredentialsProviderContextKey, backupCredentialsProvider)
+			return next(ctx, request)
+		}
+	}
 }
 
 // PrivilegedMLAAdminSetting is a middleware that injects the current PrivilegedMLAAdminSettingProvider into the ctx

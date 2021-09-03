@@ -1194,6 +1194,27 @@ type PrivilegedEtcdRestoreProjectProvider interface {
 	ListUnsecured(projectID string) ([]*kubermaticv1.EtcdRestoreList, error)
 }
 
+// BackupCredentialsProvider declares the set of method for interacting with etcd backup credentials using a privileged client
+type BackupCredentialsProvider interface {
+	// CreateUnsecured creates the backup credentials
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to create the resource
+	CreateUnsecured(credentials *corev1.Secret) (*corev1.Secret, error)
+
+	// GetUnsecured gets the backup credentials
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to get the resource
+	GetUnsecured() (*corev1.Secret, error)
+
+	// UpdateUnsecured updates the backup credentials
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to update the resource
+	UpdateUnsecured(new *corev1.Secret) (*corev1.Secret, error)
+}
+
 type PrivilegedMLAAdminSettingProvider interface {
 	// GetUnsecured gets the given MLAAdminSetting
 	//

@@ -92,6 +92,7 @@ func NewTestRouting(
 	etcdRestoreProviderGetter provider.EtcdRestoreProviderGetter,
 	etcdBackupConfigProjectProviderGetter provider.EtcdBackupConfigProjectProviderGetter,
 	etcdRestoreProjectProviderGetter provider.EtcdRestoreProjectProviderGetter,
+	backupCredentialsProviderGetter provider.BackupCredentialsProviderGetter,
 	privilegedMLAAdminSettingProviderGetter provider.PrivilegedMLAAdminSettingProviderGetter) http.Handler {
 
 	updateManager := version.New(versions, updates, providerIncompatibilities)
@@ -146,6 +147,7 @@ func NewTestRouting(
 		EtcdRestoreProviderGetter:               etcdRestoreProviderGetter,
 		EtcdBackupConfigProjectProviderGetter:   etcdBackupConfigProjectProviderGetter,
 		EtcdRestoreProjectProviderGetter:        etcdRestoreProjectProviderGetter,
+		BackupCredentialsProviderGetter:         backupCredentialsProviderGetter,
 		PrivilegedMLAAdminSettingProviderGetter: privilegedMLAAdminSettingProviderGetter,
 		Versions:                                kubermaticVersions,
 		CABundle:                                certificates.NewFakeCABundle().CertPool(),

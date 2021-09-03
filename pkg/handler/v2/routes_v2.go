@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/addon"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/alertmanager"
 	allowedregistry "k8c.io/kubermatic/v2/pkg/handler/v2/allowed_registry"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/backupcredentials"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	clustertemplate "k8c.io/kubermatic/v2/pkg/handler/v2/cluster_template"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
@@ -643,6 +644,11 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/etcdrestores").
 		Handler(r.listProjectEtcdRestore())
 
+	// Defines a set of HTTP endpoints for managing etcd backup restores
+	mux.Methods(http.MethodPut).
+		Path("/seeds/{seed_name}/backupcredentials").
+		Handler(r.createOrUpdateBackupCredentials())
+
 	// Defines a set of HTTP endpoints for managing MLA admin setting
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/clusters/{cluster_id}/mlaadminsetting").
@@ -659,7 +665,6 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/clusters/{cluster_id}/mlaadminsetting").
 		Handler(r.deleteMLAAdminSetting())
-
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -4448,6 +4453,34 @@ func (r Routing) listProjectEtcdRestore() http.Handler {
 			middleware.PrivilegedEtcdRestoreProject(r.etcdRestoreProjectProviderGetter, r.seedsGetter),
 		)(etcdrestore.ProjectListEndpoint(r.userInfoGetter)),
 		etcdrestore.DecodeListProjectEtcdRestoreReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PUT /api/v2/seeds/{seed_name}/backupcredentials backupcredentials createOrUpdateBackupCredentials
+//
+//     Creates or updates backup credentials for a given seed
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) createOrUpdateBackupCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.BackupCredentials(r.backupCredentialsProviderGetter, r.seedsGetter),
+		)(backupcredentials.CreateOrUpdateEndpoint(r.userInfoGetter)),
+		backupcredentials.DecodeBackupCredentialsReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

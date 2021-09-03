@@ -15785,6 +15785,54 @@
         }
       }
     },
+    "/api/v2/seeds/{seed_name}/backupcredentials": {
+      "put": {
+        "description": "Creates or updates backup credentials for a given seed",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "backupcredentials"
+        ],
+        "operationId": "createOrUpdateBackupCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "SeedName",
+            "name": "seed_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/bcBody"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/seeds/{seed_name}/settings": {
       "get": {
         "produces": [
@@ -16981,6 +17029,16 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "BackupCredentials": {
+      "description": "BackupCredentials contains credentials for etcd backups",
+      "type": "object",
+      "properties": {
+        "s3": {
+          "$ref": "#/definitions/S3BackupCredentials"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "BackupStatus": {
       "type": "object",
@@ -21732,6 +21790,21 @@
       "type": "string",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
+    "S3BackupCredentials": {
+      "description": "S3BackupCredentials contains credentials for S3 etcd backups",
+      "type": "object",
+      "properties": {
+        "accessKeyId": {
+          "type": "string",
+          "x-go-name": "AccessKeyID"
+        },
+        "secretAccessKey": {
+          "type": "string",
+          "x-go-name": "SecretAccessKey"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "SLESSpec": {
       "description": "SLESSpec contains SLES specific settings",
       "type": "object",
@@ -22569,6 +22642,15 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "bcBody": {
+      "type": "object",
+      "properties": {
+        "backup_credentials": {
+          "$ref": "#/definitions/BackupCredentials"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/handler/v2/backupcredentials"
     },
     "body": {
       "type": "object",
