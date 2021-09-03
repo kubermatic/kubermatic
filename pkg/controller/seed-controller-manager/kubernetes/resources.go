@@ -31,6 +31,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/dns"
 	"k8c.io/kubermatic/v2/pkg/resources/etcd"
 	"k8c.io/kubermatic/v2/pkg/resources/gatekeeper"
+	"k8c.io/kubermatic/v2/pkg/resources/konnectivity"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/resources/kubernetes-dashboard"
 	"k8c.io/kubermatic/v2/pkg/resources/machinecontroller"
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
@@ -45,6 +46,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *kubermaticv1.Cluster) error {
@@ -188,6 +190,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		WithInClusterPrometheusDefaultScrapingConfigsDisabled(r.inClusterPrometheusDisableDefaultScrapingConfigs).
 		WithInClusterPrometheusScrapingConfigsFile(r.inClusterPrometheusScrapingConfigsFile).
 		WithUserClusterMLAEnabled(r.userClusterMLAEnabled).
+		WithKonnectivityEnabled(r.features.Konnectivity).
 		WithCABundle(r.caBundle).
 		WithOIDCIssuerURL(r.oidcIssuerURL).
 		WithOIDCIssuerClientID(r.oidcIssuerClientID).
@@ -242,9 +245,14 @@ func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedService
 		metricsserver.ServiceCreator(),
 	}
 
+	if data.IsKonnectivityEnabled() {
+		creators = append(creators, konnectivity.ServiceCreator(data.Cluster().Spec.ExposeStrategy, data.Cluster().Address.ExternalName))
+	}
+
 	if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
 		creators = append(creators, nodeportproxy.FrontLoadBalancerServiceCreator())
 	}
+
 	if flag := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureRancherIntegration]; flag {
 		creators = append(creators, rancherserver.ServiceCreator(data.Cluster().Spec.ExposeStrategy))
 	}
@@ -271,6 +279,11 @@ func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuth
 		usercluster.DeploymentCreator(data),
 		kubernetesdashboard.DeploymentCreator(data),
 	}
+
+	if data.IsKonnectivityEnabled() {
+		deployments = append(deployments, konnectivity.DeploymentCreator(data))
+	}
+
 	if data.Cluster().Annotations[kubermaticv1.AnnotationNameClusterAutoscalerEnabled] != "" {
 		deployments = append(deployments, clusterautoscaler.DeploymentCreator(data))
 	}
@@ -292,7 +305,7 @@ func (r *Reconciler) ensureDeployments(ctx context.Context, cluster *kubermaticv
 }
 
 // GetSecretCreators returns all SecretCreators that are currently in use
-func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconciling.NamedSecretCreatorGetter {
+func (r *Reconciler) GetSecretCreators(data *resources.TemplateData, userClusterClient ctrlruntimeclient.Client) []reconciling.NamedSecretCreatorGetter {
 	creators := []reconciling.NamedSecretCreatorGetter{
 		certificates.RootCACreator(data),
 		openvpn.CACreator(),
@@ -325,6 +338,14 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 		resources.ViewerKubeconfigCreator(data),
 	}
 
+	if data.IsKonnectivityEnabled() {
+		creators = append(creators, []reconciling.NamedSecretCreatorGetter{
+			konnectivity.AgentTokenCreator(userClusterClient),
+			konnectivity.ProxyKubeconfig(data),
+			konnectivity.TLSServingCertificateCreator(data),
+		}...)
+	}
+
 	if flag := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; flag {
 		creators = append(creators, resources.GetInternalKubeconfigCreator(
 			resources.CloudControllerManagerKubeconfigSecretName, resources.CloudControllerManagerCertUsername, nil, data,
@@ -339,7 +360,17 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 }
 
 func (r *Reconciler) ensureSecrets(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	namedSecretCreatorGetters := r.GetSecretCreators(data)
+	var userClusterClient ctrlruntimeclient.Client
+	var err error
+
+	if data.IsKonnectivityEnabled() {
+		userClusterClient, err = r.userClusterConnProvider.GetClient(ctx, c)
+		if err != nil {
+			return fmt.Errorf("failed to get user-cluster client: %v", err)
+		}
+	}
+
+	namedSecretCreatorGetters := r.GetSecretCreators(data, userClusterClient)
 
 	if err := reconciling.ReconcileSecrets(ctx, namedSecretCreatorGetters, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
 		return fmt.Errorf("failed to ensure that the Secret exists: %v", err)
@@ -430,6 +461,10 @@ func GetConfigMapCreators(data *resources.TemplateData) []reconciling.NamedConfi
 		apiserver.AuditConfigMapCreator(),
 		apiserver.AdmissionControlCreator(data),
 		apiserver.CABundleCreator(data),
+	}
+
+	if data.IsKonnectivityEnabled() {
+		creators = append(creators, apiserver.EgressSelectorConfigCreator())
 	}
 
 	if data.Cluster().Spec.Cloud.VSphere != nil {

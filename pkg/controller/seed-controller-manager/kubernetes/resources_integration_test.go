@@ -22,6 +22,7 @@ import (
 	"context"
 	"testing"
 
+	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -37,6 +38,28 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
+
+type testUserClusterConnectionProvider struct {
+	userClusterConnectionProvider
+	ctrlruntimeclient.Client
+}
+
+func (c *testUserClusterConnectionProvider) GetClient(context.Context, *kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (ctrlruntimeclient.Client, error) {
+	return c, nil
+}
+
+func (c *testUserClusterConnectionProvider) Get(ctx context.Context, key ctrlruntimeclient.ObjectKey, obj ctrlruntimeclient.Object) error {
+	switch x := obj.(type) {
+	case *corev1.ServiceAccount:
+		x.Secrets = append(x.Secrets, corev1.ObjectReference{
+			Name: "token-name",
+		})
+	case *corev1.Secret:
+		x.Data["ca.crt"] = []byte("ca.crtGARBAGE")
+		x.Data["token"] = []byte("tokenGARBAGE")
+	}
+	return nil
+}
 
 func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 	kubermaticlog.Logger = kubermaticlog.New(true, kubermaticlog.FormatJSON).Sugar()
@@ -182,7 +205,8 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 				},
 			}, nil
 		},
-		caBundle: caBundle,
+		caBundle:                caBundle,
+		userClusterConnProvider: new(testUserClusterConnectionProvider),
 	}
 
 	if err := r.ensureResourcesAreDeployed(ctx, testCluster); err != nil {

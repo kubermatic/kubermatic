@@ -89,4 +89,5 @@ set -x
   -seed-kubeconfig=${SEED_KUBECONFIG} \
   -owner-email=${OWNER_EMAIL} \
   -dns-cluster-ip=10.240.16.10 \
+  -konnectivity-enabled=true \
   ${ARGS}

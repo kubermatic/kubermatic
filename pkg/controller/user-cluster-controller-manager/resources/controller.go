@@ -90,27 +90,29 @@ func Add(
 	caBundle resources.CABundle,
 	userClusterMLA UserClusterMLA,
 	clusterName string,
+	konnectivity bool,
 	log *zap.SugaredLogger) error {
 	r := &reconciler{
-		version:           version,
-		rLock:             &sync.Mutex{},
-		namespace:         namespace,
-		clusterURL:        clusterURL,
-		clusterIsPaused:   clusterIsPaused,
-		openvpnServerPort: openvpnServerPort,
-		kasSecurePort:     kasSecurePort,
-		tunnelingAgentIP:  tunnelingAgentIP,
-		log:               log,
-		dnsClusterIP:      dnsClusterIP,
-		nodeLocalDNSCache: nodeLocalDNSCache,
-		opaIntegration:    opaIntegration,
-		opaWebhookTimeout: opaWebhookTimeout,
-		userSSHKeyAgent:   userSSHKeyAgent,
-		versions:          versions,
-		caBundle:          caBundle,
-		userClusterMLA:    userClusterMLA,
-		cloudProvider:     kubermaticv1.ProviderType(cloudProviderName),
-		clusterName:       clusterName,
+		version:               version,
+		rLock:                 &sync.Mutex{},
+		namespace:             namespace,
+		clusterURL:            clusterURL,
+		clusterIsPaused:       clusterIsPaused,
+		openvpnServerPort:     openvpnServerPort,
+		kasSecurePort:         kasSecurePort,
+		tunnelingAgentIP:      tunnelingAgentIP,
+		log:                   log,
+		dnsClusterIP:          dnsClusterIP,
+		nodeLocalDNSCache:     nodeLocalDNSCache,
+		opaIntegration:        opaIntegration,
+		opaWebhookTimeout:     opaWebhookTimeout,
+		userSSHKeyAgent:       userSSHKeyAgent,
+		versions:              versions,
+		caBundle:              caBundle,
+		userClusterMLA:        userClusterMLA,
+		cloudProvider:         kubermaticv1.ProviderType(cloudProviderName),
+		clusterName:           clusterName,
+		isKonnectivityEnabled: konnectivity,
 	}
 
 	var err error
@@ -229,26 +231,27 @@ func Add(
 // reconcileUserCluster reconciles objects in the user cluster
 type reconciler struct {
 	ctrlruntimeclient.Client
-	seedClient        ctrlruntimeclient.Client
-	version           string
-	clusterSemVer     *semver.Version
-	cache             cache.Cache
-	namespace         string
-	clusterURL        *url.URL
-	clusterIsPaused   userclustercontrollermanager.IsPausedChecker
-	openvpnServerPort uint32
-	kasSecurePort     uint32
-	tunnelingAgentIP  net.IP
-	dnsClusterIP      string
-	nodeLocalDNSCache bool
-	opaIntegration    bool
-	opaWebhookTimeout int
-	userSSHKeyAgent   bool
-	versions          kubermatic.Versions
-	caBundle          resources.CABundle
-	userClusterMLA    UserClusterMLA
-	cloudProvider     kubermaticv1.ProviderType
-	clusterName       string
+	seedClient            ctrlruntimeclient.Client
+	version               string
+	clusterSemVer         *semver.Version
+	cache                 cache.Cache
+	namespace             string
+	clusterURL            *url.URL
+	clusterIsPaused       userclustercontrollermanager.IsPausedChecker
+	openvpnServerPort     uint32
+	kasSecurePort         uint32
+	tunnelingAgentIP      net.IP
+	dnsClusterIP          string
+	nodeLocalDNSCache     bool
+	opaIntegration        bool
+	opaWebhookTimeout     int
+	userSSHKeyAgent       bool
+	versions              kubermatic.Versions
+	caBundle              resources.CABundle
+	userClusterMLA        UserClusterMLA
+	cloudProvider         kubermaticv1.ProviderType
+	clusterName           string
+	isKonnectivityEnabled bool
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool

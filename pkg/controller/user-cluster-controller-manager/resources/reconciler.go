@@ -31,6 +31,7 @@ import (
 	dnatcontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/dnat-controller"
 	envoyagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/envoy-agent"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper"
+	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/konnectivity"
 	kubestatemetrics "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kube-state-metrics"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard"
 	machinecontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
@@ -113,7 +114,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return err
 	}
 
-	if err := r.reconcileServiceAcconts(ctx); err != nil {
+	if err := r.reconcileServiceAccounts(ctx); err != nil {
 		return err
 	}
 
@@ -212,7 +213,7 @@ func (r *reconciler) ensureAPIServices(ctx context.Context, data reconcileData) 
 	return nil
 }
 
-func (r *reconciler) reconcileServiceAcconts(ctx context.Context) error {
+func (r *reconciler) reconcileServiceAccounts(ctx context.Context) error {
 	creators := []reconciling.NamedServiceAccountCreatorGetter{
 		userauth.ServiceAccountCreator(),
 		usersshkeys.ServiceAccountCreator(),
@@ -256,6 +257,15 @@ func (r *reconciler) reconcileServiceAcconts(ctx context.Context) error {
 		}
 	}
 
+	if r.isKonnectivityEnabled {
+		creators = []reconciling.NamedServiceAccountCreatorGetter{
+			konnectivity.ServiceAccountCreator(),
+		}
+		if err := reconciling.ReconcileServiceAccounts(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
+			return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %v", metav1.NamespaceSystem, err)
+		}
+	}
+
 	creators = []reconciling.NamedServiceAccountCreatorGetter{}
 	if r.userClusterMLA.Logging {
 		creators = append(creators,
@@ -267,6 +277,7 @@ func (r *reconciler) reconcileServiceAcconts(ctx context.Context) error {
 			userclusterprometheus.ServiceAccountCreator(),
 		)
 	}
+
 	if len(creators) != 0 {
 		if err := reconciling.ReconcileServiceAccounts(ctx, creators, resources.UserClusterMLANamespace, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %v", resources.UserClusterMLANamespace, err)
@@ -457,8 +468,13 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context) error {
 	if r.userClusterMLA.Logging {
 		creators = append(creators, promtail.ClusterRoleBindingCreator())
 	}
+
 	if r.userClusterMLA.Monitoring {
 		creators = append(creators, userclusterprometheus.ClusterRoleBindingCreator())
+	}
+
+	if r.isKonnectivityEnabled {
+		creators = append(creators, konnectivity.ClusterRoleBindingCreator())
 	}
 
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, creators, "", r.Client); err != nil {
@@ -735,6 +751,10 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 
 	kubeSystemCreators := []reconciling.NamedDeploymentCreatorGetter{
 		coredns.DeploymentCreator(r.clusterSemVer),
+	}
+
+	if r.isKonnectivityEnabled {
+		kubeSystemCreators = append(kubeSystemCreators, konnectivity.DeploymentCreator(r.clusterURL.Hostname()))
 	}
 
 	if err := reconciling.ReconcileDeployments(ctx, kubeSystemCreators, metav1.NamespaceSystem, r.Client); err != nil {

@@ -88,6 +88,7 @@ type TemplateData struct {
 	inClusterPrometheusScrapingConfigsFile           string
 
 	userClusterMLAEnabled bool
+	isKonnectivityEnabled bool
 }
 
 type TemplateDataBuilder struct {
@@ -170,6 +171,11 @@ func (td *TemplateDataBuilder) WithInClusterPrometheusScrapingConfigsFile(file s
 
 func (td *TemplateDataBuilder) WithUserClusterMLAEnabled(enabled bool) *TemplateDataBuilder {
 	td.data.userClusterMLAEnabled = enabled
+	return td
+}
+
+func (td *TemplateDataBuilder) WithKonnectivityEnabled(enabled bool) *TemplateDataBuilder {
+	td.data.isKonnectivityEnabled = enabled
 	return td
 }
 
@@ -318,6 +324,11 @@ func (d *TemplateData) InClusterPrometheusScrapingConfigsFile() string {
 // UserClusterMLAEnabled returns userClusterMLAEnabled
 func (d *TemplateData) UserClusterMLAEnabled() bool {
 	return d.userClusterMLAEnabled
+}
+
+// IsKonnectivityEnabled returns isKonnectivityEnabled
+func (d *TemplateData) IsKonnectivityEnabled() bool {
+	return d.isKonnectivityEnabled
 }
 
 // NodeAccessNetwork returns the node access network
