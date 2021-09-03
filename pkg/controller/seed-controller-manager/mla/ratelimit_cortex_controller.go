@@ -50,7 +50,7 @@ type tenantOverride struct {
 	MaxSeriesPerQuery  int32 `yaml:"max_series_per_query"`
 	MaxSamplesPerQuery int32 `yaml:"max_samples_per_query"`
 	IngestionBurstSize int32 `yaml:"ingestion_burst_size"`
-	// MaxSeriesTotal     int32 `yaml:"max_series_total"`
+	MaxSeriesTotal     int32 `yaml:"max_series_per_user"`
 }
 
 type overrides struct {
@@ -176,6 +176,7 @@ func (r *ratelimitCortexController) ensureLimits(ctx context.Context, mlaAdminSe
 		MaxSeriesPerQuery:  mlaAdminSetting.Spec.MonitoringRateLimits.MaxSeriesPerQuery,
 		MaxSamplesPerQuery: mlaAdminSetting.Spec.MonitoringRateLimits.MaxSamplesPerQuery,
 		IngestionBurstSize: mlaAdminSetting.Spec.MonitoringRateLimits.IngestionBurstSize,
+		MaxSeriesTotal:     mlaAdminSetting.Spec.MonitoringRateLimits.MaxSeriesTotal,
 	}
 	or.Overrides[mlaAdminSetting.Spec.ClusterName] = tenantOr
 	data, err := yaml.Marshal(or)
