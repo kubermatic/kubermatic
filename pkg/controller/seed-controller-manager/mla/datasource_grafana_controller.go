@@ -27,6 +27,8 @@ import (
 	"go.uber.org/zap"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
+	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
+	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -94,6 +96,10 @@ func newDatasourceGrafanaReconciler(
 
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to watch Clusters: %w", err)
+	}
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.MLAAdminSetting{}},
+		controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient()), predicateutil.ByName(resources.MLAAdminSettingsName)); err != nil {
+		return fmt.Errorf("failed to watch MLAAdminSetting: %w", err)
 	}
 	return err
 }
@@ -222,13 +228,18 @@ func (r *datasourceGrafanaController) reconcile(ctx context.Context, cluster *ku
 		WithOverwriteRegistry(r.overwriteRegistry).
 		Build()
 
-	if err := r.ensureConfigMaps(ctx, cluster); err != nil {
+	settings := &kubermaticv1.MLAAdminSetting{}
+	if err := r.Get(ctx, types.NamespacedName{Name: resources.MLAAdminSettingsName, Namespace: cluster.Status.NamespaceName}, settings); err != nil && !apiErrors.IsNotFound(err) {
+		return nil, fmt.Errorf("failed to get MLAAdminSetting: %w", err)
+	}
+
+	if err := r.ensureConfigMaps(ctx, cluster, settings); err != nil {
 		return nil, fmt.Errorf("failed to reconcile ConfigMaps in namespace %s: %w", cluster.Status.NamespaceName, err)
 	}
 	if err := r.ensureSecrets(ctx, cluster, data); err != nil {
 		return nil, fmt.Errorf("failed to reconcile Secrets in namespace %s: %w", cluster.Status.NamespaceName, err)
 	}
-	if err := r.ensureDeployments(ctx, cluster, data); err != nil {
+	if err := r.ensureDeployments(ctx, cluster, data, settings); err != nil {
 		return nil, fmt.Errorf("failed to reconcile Deployments in namespace %s: %w", cluster.Status.NamespaceName, err)
 	}
 	if err := r.ensureServices(ctx, cluster); err != nil {
@@ -297,9 +308,9 @@ func (r *datasourceGrafanaController) reconcileDatasource(ctx context.Context, g
 
 }
 
-func (r *datasourceGrafanaController) ensureDeployments(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
+func (r *datasourceGrafanaController) ensureDeployments(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData, settings *kubermaticv1.MLAAdminSetting) error {
 	creators := []reconciling.NamedDeploymentCreatorGetter{
-		GatewayDeploymentCreator(data),
+		GatewayDeploymentCreator(data, settings),
 	}
 	if err := reconciling.ReconcileDeployments(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
 		return err
@@ -307,9 +318,9 @@ func (r *datasourceGrafanaController) ensureDeployments(ctx context.Context, c *
 	return nil
 }
 
-func (r *datasourceGrafanaController) ensureConfigMaps(ctx context.Context, c *kubermaticv1.Cluster) error {
+func (r *datasourceGrafanaController) ensureConfigMaps(ctx context.Context, c *kubermaticv1.Cluster, settings *kubermaticv1.MLAAdminSetting) error {
 	creators := []reconciling.NamedConfigMapCreatorGetter{
-		GatewayConfigMapCreator(c, r.mlaNamespace),
+		GatewayConfigMapCreator(c, r.mlaNamespace, settings),
 	}
 	if err := reconciling.ReconcileConfigMaps(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
 		return fmt.Errorf("failed to ensure that the ConfigMap exists: %v", err)

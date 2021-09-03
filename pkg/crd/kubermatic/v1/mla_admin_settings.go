@@ -20,6 +20,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	// MLAAdminSettingResourceName represents "Resource" defined in Kubernetes
+	MLAAdminSettingResourceName = "mlaadminsettings"
+
+	// MLAAdminSettingKindName represents "Kind" defined in Kubernetes
+	MLAAdminSettingKindName = "MLAAdminSetting"
+)
+
 //+genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
