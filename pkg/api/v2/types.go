@@ -156,6 +156,8 @@ type AlertmanagerSpec struct {
 type SeedSettings struct {
 	// the Seed level MLA (Monitoring, Logging, and Alerting) stack settings
 	MLA MLA `json:"mla"`
+	// the Seed level metering settings
+	Metering crdapiv1.MeteringConfigurations `json:"metering"`
 }
 
 type MLA struct {

@@ -430,7 +430,7 @@ type SeedMLASettings struct {
 	UserClusterMLAEnabled bool `json:"user_cluster_mla_enabled,omitempty"`
 }
 
-// Metering contains all the configurations for the metering tool.
+// MeteringConfigurations contains all the configurations for the metering tool.
 type MeteringConfigurations struct {
 	Enabled bool `json:"enabled"`
 	// StorageClassName is the name of the storage class that the metering tool uses to save processed files before

@@ -19627,6 +19627,27 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
+    "MeteringConfigurations": {
+      "type": "object",
+      "title": "MeteringConfigurations contains all the configurations for the metering tool.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        },
+        "storageClassName": {
+          "description": "StorageClassName is the name of the storage class that the metering tool uses to save processed files before\nexporting it to s3 bucket. Default value is kubermatic-fast.",
+          "type": "string",
+          "x-go-name": "StorageClassName"
+        },
+        "storageSize": {
+          "description": "StorageSize is the size of the storage class. Default value is 100Gi.",
+          "type": "string",
+          "x-go-name": "StorageSize"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
     "MeteringReport": {
       "description": "MeteringReport holds objects names and metadata for available reports",
       "type": "object",
@@ -21564,6 +21585,9 @@
       "description": "SeedSettings represents settings for a Seed cluster",
       "type": "object",
       "properties": {
+        "metering": {
+          "$ref": "#/definitions/MeteringConfigurations"
+        },
         "mla": {
           "$ref": "#/definitions/MLA"
         }
