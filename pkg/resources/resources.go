@@ -641,7 +641,9 @@ alertmanager_config: |
   receivers:
     - name: 'null'
 `
-	DefaultMLAAdminSettingName = "mla-admin-setting"
+
+	// MLAAdminSettingsName specifies a fixed name of the MLA admin settings custom resource in the cluster namespace
+	MLAAdminSettingsName = "mla-admin-settings"
 )
 
 // ECDSAKeyPair is a ECDSA x509 certificate and private key

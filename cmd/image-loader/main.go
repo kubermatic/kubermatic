@@ -281,7 +281,7 @@ func getImagesFromCreators(log *zap.SugaredLogger, templateData *resources.Templ
 	deploymentCreators = append(deploymentCreators, vpa.AdmissionControllerDeploymentCreator(config, kubermaticVersions))
 	deploymentCreators = append(deploymentCreators, vpa.RecommenderDeploymentCreator(config, kubermaticVersions))
 	deploymentCreators = append(deploymentCreators, vpa.UpdaterDeploymentCreator(config, kubermaticVersions))
-	deploymentCreators = append(deploymentCreators, mla.GatewayDeploymentCreator(templateData))
+	deploymentCreators = append(deploymentCreators, mla.GatewayDeploymentCreator(templateData, nil))
 
 	cronjobCreators := kubernetescontroller.GetCronJobCreators(templateData)
 
