@@ -32,7 +32,7 @@ import (
 
 const (
 	imageName     = "grafana/promtail"
-	imageTag      = "2.1.0"
+	imageTag      = "2.2.1"
 	initImageName = "busybox"
 	initImageTag  = "1.33"
 	appName       = "mla-promtail"
