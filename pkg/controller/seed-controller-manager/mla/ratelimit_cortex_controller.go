@@ -45,12 +45,12 @@ const (
 )
 
 type tenantOverride struct {
-	IngestionRate      int32 `yaml:"ingestion_rate"`
-	MaxSeriesPerMetric int32 `yaml:"max_series_per_metric"`
-	MaxSeriesPerQuery  int32 `yaml:"max_series_per_query"`
-	MaxSamplesPerQuery int32 `yaml:"max_samples_per_query"`
-	IngestionBurstSize int32 `yaml:"ingestion_burst_size"`
-	MaxSeriesTotal     int32 `yaml:"max_series_per_user"`
+	IngestionRate      *int32 `yaml:"ingestion_rate,omitempty"`
+	MaxSeriesPerMetric *int32 `yaml:"max_series_per_metric,omitempty"`
+	MaxSeriesPerQuery  *int32 `yaml:"max_series_per_query,omitempty"`
+	MaxSamplesPerQuery *int32 `yaml:"max_samples_per_query,omitempty"`
+	IngestionBurstSize *int32 `yaml:"ingestion_burst_size,omitempty"`
+	MaxSeriesTotal     *int32 `yaml:"max_series_per_user,omitempty"`
 }
 
 type overrides struct {
@@ -170,13 +170,27 @@ func (r *ratelimitCortexController) ensureLimits(ctx context.Context, mlaAdminSe
 		return fmt.Errorf("unable to unmarshal runtime config[%s]: %w", config, err)
 	}
 
-	tenantOr := tenantOverride{
-		IngestionRate:      mlaAdminSetting.Spec.MonitoringRateLimits.IngestionRate,
-		MaxSeriesPerMetric: mlaAdminSetting.Spec.MonitoringRateLimits.MaxSeriesPerMetric,
-		MaxSeriesPerQuery:  mlaAdminSetting.Spec.MonitoringRateLimits.MaxSeriesPerQuery,
-		MaxSamplesPerQuery: mlaAdminSetting.Spec.MonitoringRateLimits.MaxSamplesPerQuery,
-		IngestionBurstSize: mlaAdminSetting.Spec.MonitoringRateLimits.IngestionBurstSize,
-		MaxSeriesTotal:     mlaAdminSetting.Spec.MonitoringRateLimits.MaxSeriesTotal,
+	tenantOr := tenantOverride{}
+
+	if mlaAdminSetting.Spec.MonitoringRateLimits != nil {
+		if mlaAdminSetting.Spec.MonitoringRateLimits.IngestionRate > 0 {
+			tenantOr.IngestionRate = &mlaAdminSetting.Spec.MonitoringRateLimits.IngestionRate
+		}
+		if mlaAdminSetting.Spec.MonitoringRateLimits.MaxSeriesPerMetric > 0 {
+			tenantOr.MaxSeriesPerMetric = &mlaAdminSetting.Spec.MonitoringRateLimits.MaxSeriesPerMetric
+		}
+		if mlaAdminSetting.Spec.MonitoringRateLimits.MaxSeriesPerQuery > 0 {
+			tenantOr.MaxSeriesPerQuery = &mlaAdminSetting.Spec.MonitoringRateLimits.MaxSeriesPerQuery
+		}
+		if mlaAdminSetting.Spec.MonitoringRateLimits.MaxSamplesPerQuery > 0 {
+			tenantOr.MaxSamplesPerQuery = &mlaAdminSetting.Spec.MonitoringRateLimits.MaxSamplesPerQuery
+		}
+		if mlaAdminSetting.Spec.MonitoringRateLimits.IngestionBurstSize > 0 {
+			tenantOr.IngestionBurstSize = &mlaAdminSetting.Spec.MonitoringRateLimits.IngestionBurstSize
+		}
+		if mlaAdminSetting.Spec.MonitoringRateLimits.MaxSeriesTotal > 0 {
+			tenantOr.MaxSeriesTotal = &mlaAdminSetting.Spec.MonitoringRateLimits.MaxSeriesTotal
+		}
 	}
 	or.Overrides[mlaAdminSetting.Spec.ClusterName] = tenantOr
 	data, err := yaml.Marshal(or)
