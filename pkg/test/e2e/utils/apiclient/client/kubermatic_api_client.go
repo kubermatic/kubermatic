@@ -31,6 +31,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/hetzner"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/metering"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/metric"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/mlaadminsetting"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/openstack"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/operations"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/packet"
@@ -110,6 +111,7 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Kubermatic
 	cli.Hetzner = hetzner.New(transport, formats)
 	cli.Metering = metering.New(transport, formats)
 	cli.Metric = metric.New(transport, formats)
+	cli.Mlaadminsetting = mlaadminsetting.New(transport, formats)
 	cli.Openstack = openstack.New(transport, formats)
 	cli.Operations = operations.New(transport, formats)
 	cli.Packet = packet.New(transport, formats)
@@ -210,6 +212,8 @@ type KubermaticAPI struct {
 
 	Metric metric.ClientService
 
+	Mlaadminsetting mlaadminsetting.ClientService
+
 	Openstack openstack.ClientService
 
 	Operations operations.ClientService
@@ -265,6 +269,7 @@ func (c *KubermaticAPI) SetTransport(transport runtime.ClientTransport) {
 	c.Hetzner.SetTransport(transport)
 	c.Metering.SetTransport(transport)
 	c.Metric.SetTransport(transport)
+	c.Mlaadminsetting.SetTransport(transport)
 	c.Openstack.SetTransport(transport)
 	c.Operations.SetTransport(transport)
 	c.Packet.SetTransport(transport)

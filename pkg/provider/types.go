@@ -1214,3 +1214,29 @@ type BackupCredentialsProvider interface {
 	// is unsafe in a sense that it uses privileged account to update the resource
 	UpdateUnsecured(new *corev1.Secret) (*corev1.Secret, error)
 }
+
+type PrivilegedMLAAdminSettingProvider interface {
+	// GetUnsecured gets the given MLAAdminSetting
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to get the resource
+	GetUnsecured(cluster *kubermaticv1.Cluster) (*kubermaticv1.MLAAdminSetting, error)
+
+	// CreateUnsecured creates the given MLAAdminSetting
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to create the resource
+	CreateUnsecured(mlaAdminSetting *kubermaticv1.MLAAdminSetting) (*kubermaticv1.MLAAdminSetting, error)
+
+	// UpdateUnsecured updates an MLAAdminSetting
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to update the resource
+	UpdateUnsecured(newMLAAdminSetting *kubermaticv1.MLAAdminSetting) (*kubermaticv1.MLAAdminSetting, error)
+
+	// DeleteUnsecured deletes the MLAAdminSetting with the given name
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to delete the resource
+	DeleteUnsecured(cluster *kubermaticv1.Cluster) error
+}

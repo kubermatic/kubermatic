@@ -201,6 +201,7 @@ type newRoutingFunc func(
 	etcdBackupConfigProjectProviderGetter provider.EtcdBackupConfigProjectProviderGetter,
 	etcdRestoreProjectProviderGetter provider.EtcdRestoreProjectProviderGetter,
 	backupCredentialsProviderGetter provider.BackupCredentialsProviderGetter,
+	privilegedMLAAdminSettingProviderGetter provider.PrivilegedMLAAdminSettingProviderGetter,
 ) http.Handler
 
 func getRuntimeObjects(objs ...ctrlruntimeclient.Object) []runtime.Object {
@@ -458,6 +459,15 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		return nil, fmt.Errorf("can not find backupCredentialsProvider for cluster %q", seed.Name)
 	}
 
+	privilegedMLAAdminSettingProvider := kubernetes.NewPrivilegedMLAAdminSettingProvider(fakeClient)
+	privilegedMLAAdminSettingProviders := map[string]provider.PrivilegedMLAAdminSettingProvider{"us-central1": privilegedMLAAdminSettingProvider}
+	privilegedMLAAdminSettingProviderGetter := func(seed *kubermaticv1.Seed) (provider.PrivilegedMLAAdminSettingProvider, error) {
+		if privilegedMLAAdminSetting, exists := privilegedMLAAdminSettingProviders[seed.Name]; exists {
+			return privilegedMLAAdminSetting, nil
+		}
+		return nil, fmt.Errorf("can not find privilegedMLAAdminSettingProvider for cluster %q", seed.Name)
+	}
+
 	eventRecorderProvider := kubernetes.NewEventRecorder()
 
 	settingsWatcher, err := kuberneteswatcher.NewSettingsWatcher(settingsProvider)
@@ -523,6 +533,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		etcdBackupConfigProjectProviderGetter,
 		etcdRestoreProjectProviderGetter,
 		backupCredentialsProviderGetter,
+		privilegedMLAAdminSettingProviderGetter,
 	)
 
 	return mainRouter, &ClientsSets{kubermaticClient, fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil
@@ -1921,6 +1932,59 @@ func GenDefaultBackupCredentials() *corev1.Secret {
 		StringData: map[string]string{
 			"ACCESS_KEY_ID":     "accessKeyId",
 			"SECRET_ACCESS_KEY": "secretAccessKey",
+		},
+	}
+}
+
+func GenMLAAdminSetting(name, clusterName string, value int32) *kubermaticv1.MLAAdminSetting {
+	return &kubermaticv1.MLAAdminSetting{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: "cluster-" + clusterName,
+		},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       kubermaticv1.MLAAdminSettingKindName,
+			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+		},
+		Spec: kubermaticv1.MLAAdminSettingSpec{
+			ClusterName: clusterName,
+			MonitoringRateLimits: &kubermaticv1.MonitoringRateLimitSettings{
+				IngestionRate:      value,
+				IngestionBurstSize: value,
+				MaxSeriesPerMetric: value,
+				MaxSeriesTotal:     value,
+				QueryRate:          value,
+				QueryBurstSize:     value,
+				MaxSamplesPerQuery: value,
+				MaxSeriesPerQuery:  value,
+			},
+			LoggingRateLimits: &kubermaticv1.LoggingRateLimitSettings{
+				IngestionRate:      value,
+				IngestionBurstSize: value,
+				QueryRate:          value,
+				QueryBurstSize:     value,
+			},
+		},
+	}
+}
+
+func GenAPIMLAAdminSetting(value int32) *apiv2.MLAAdminSetting {
+	return &apiv2.MLAAdminSetting{
+		MonitoringRateLimits: &kubermaticv1.MonitoringRateLimitSettings{
+			IngestionRate:      value,
+			IngestionBurstSize: value,
+			MaxSeriesPerMetric: value,
+			MaxSeriesTotal:     value,
+			QueryRate:          value,
+			QueryBurstSize:     value,
+			MaxSamplesPerQuery: value,
+			MaxSeriesPerQuery:  value,
+		},
+		LoggingRateLimits: &kubermaticv1.LoggingRateLimitSettings{
+			IngestionRate:      value,
+			IngestionBurstSize: value,
+			QueryRate:          value,
+			QueryBurstSize:     value,
 		},
 	}
 }

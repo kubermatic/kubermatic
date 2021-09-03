@@ -11990,6 +11990,211 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/mlaadminsetting": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "mlaadminsetting"
+        ],
+        "summary": "Gets MLA Admin settings for the given cluster.",
+        "operationId": "getMLAAdminSetting",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "MLAAdminSetting",
+            "schema": {
+              "$ref": "#/definitions/MLAAdminSetting"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "put": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "mlaadminsetting"
+        ],
+        "summary": "Updates the MLA admin setting for the given cluster.",
+        "operationId": "updateMLAAdminSetting",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/MLAAdminSetting"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "MLAAdminSetting",
+            "schema": {
+              "$ref": "#/definitions/MLAAdminSetting"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Creates MLA admin setting that will belong to the given cluster",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "mlaadminsetting"
+        ],
+        "operationId": "createMLAAdminSetting",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/MLAAdminSetting"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "MLAAdminSetting",
+            "schema": {
+              "$ref": "#/definitions/MLAAdminSetting"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "delete": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "mlaadminsetting"
+        ],
+        "summary": "Deletes the MLA admin setting that belongs to the cluster.",
+        "operationId": "deleteMLAAdminSetting",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/clusters/{cluster_id}/namespaces": {
       "get": {
         "description": "Lists all namespaces in the cluster",
@@ -19470,6 +19675,37 @@
       },
       "x-go-package": "k8s.io/apimachinery/pkg/apis/meta/v1"
     },
+    "LoggingRateLimitSettings": {
+      "type": "object",
+      "title": "LoggingRateLimitSettings contains rate-limiting configuration for logging in the user cluster.",
+      "properties": {
+        "ingestionBurstSize": {
+          "description": "IngestionBurstSize represents ingestion burst size in number of requests (nginx `burst`).",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "IngestionBurstSize"
+        },
+        "ingestionRate": {
+          "description": "IngestionRate represents ingestion rate limit in requests per second (nginx `rate` in `r/s`).",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "IngestionRate"
+        },
+        "queryBurstSize": {
+          "description": "QueryBurstSize represents query burst size in number of requests (nginx `burst`).",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "QueryBurstSize"
+        },
+        "queryRate": {
+          "description": "QueryRate represents query request rate limit per second (nginx `rate` in `r/s`).",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "QueryRate"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
     "MLA": {
       "type": "object",
       "properties": {
@@ -19477,6 +19713,19 @@
           "description": "whether the user cluster MLA (Monitoring, Logging \u0026 Alerting) stack is enabled in the seed",
           "type": "boolean",
           "x-go-name": "UserClusterMLAEnabled"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "MLAAdminSetting": {
+      "type": "object",
+      "title": "MLAAdminSetting represents an object holding admin setting options for user cluster MLA (Monitoring, Logging and Alerting).",
+      "properties": {
+        "loggingRateLimits": {
+          "$ref": "#/definitions/LoggingRateLimitSettings"
+        },
+        "monitoringRateLimits": {
+          "$ref": "#/definitions/MonitoringRateLimitSettings"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -19751,6 +20000,61 @@
         "monitoringEnforced": {
           "type": "boolean",
           "x-go-name": "MonitoringEnforced"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
+    "MonitoringRateLimitSettings": {
+      "type": "object",
+      "title": "MonitoringRateLimitSettings contains rate-limiting configuration for monitoring in the user cluster.",
+      "properties": {
+        "ingestionBurstSize": {
+          "description": "IngestionBurstSize represents ingestion burst size in samples per second (Cortex `ingestion_burst_size`).",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "IngestionBurstSize"
+        },
+        "ingestionRate": {
+          "description": "IngestionRate represents the ingestion rate limit in samples per second (Cortex `ingestion_rate`).",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "IngestionRate"
+        },
+        "maxSamplesPerQuery": {
+          "description": "MaxSamplesPerQuery represents maximum number of samples during a query (Cortex `max_samples_per_query`).",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "MaxSamplesPerQuery"
+        },
+        "maxSeriesPerMetric": {
+          "description": "MaxSeriesPerMetric represents maximum number of series per metric (Cortex `max_series_per_metric`).",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "MaxSeriesPerMetric"
+        },
+        "maxSeriesPerQuery": {
+          "description": "MaxSeriesPerQuery represents maximum number of timeseries during a query (Cortex `max_series_per_query`).",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "MaxSeriesPerQuery"
+        },
+        "maxSeriesTotal": {
+          "description": "MaxSeriesTotal represents maximum number of series per this user cluster (Cortex `max_series_per_user`).",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "MaxSeriesTotal"
+        },
+        "queryBurstSize": {
+          "description": "QueryBurstSize represents query burst size in number of requests (nginx `burst`).",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "QueryBurstSize"
+        },
+        "queryRate": {
+          "description": "QueryRate represents  query request rate limit per second (nginx `rate` in `r/s`).",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "QueryRate"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"

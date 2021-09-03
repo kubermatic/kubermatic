@@ -24,15 +24,16 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/middleware"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
+	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
+
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
