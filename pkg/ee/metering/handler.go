@@ -87,7 +87,7 @@ func DecodeMeteringConfigurationsReq(r *http.Request) (interface{}, error) {
 }
 
 // CreateOrUpdateConfigurations creates or updates the metering tool configurations.
-func CreateOrUpdateConfigurations(ctx context.Context,  request interface{}, masterClient ctrlruntimeclient.Client) error {
+func CreateOrUpdateConfigurations(ctx context.Context, request interface{}, masterClient ctrlruntimeclient.Client) error {
 
 	req, ok := request.(configurationReq)
 	if !ok {
@@ -108,7 +108,7 @@ func CreateOrUpdateConfigurations(ctx context.Context,  request interface{}, mas
 	return nil
 }
 
-func updateSeedMeteringConfiguration(ctx context.Context, meteringCfg ConfigurationReq, seed *v1.Seed, masterClient ctrlruntimeclient.Client) error {
+func updateSeedMeteringConfiguration(ctx context.Context, meteringCfg configurationReq, seed *v1.Seed, masterClient ctrlruntimeclient.Client) error {
 
 	seed.Spec.Metering = &v1.MeteringConfigurations{
 		Enabled:          meteringCfg.Enabled,

@@ -23,7 +23,6 @@ import (
 	"github.com/go-kit/kit/endpoint"
 
 	"k8c.io/kubermatic/v2/pkg/provider"
-	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -61,7 +60,6 @@ func CreateOrUpdateMeteringConfigurations(userInfoGetter provider.UserInfoGetter
 		if !userInfo.IsAdmin {
 			return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
 		}
-
 
 		if err := createOrUpdateMeteringConfigurations(ctx, req, masterClient); err != nil {
 			return nil, fmt.Errorf("failed to create/update metering SecretReq: %v", err)

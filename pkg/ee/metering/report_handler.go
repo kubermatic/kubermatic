@@ -234,5 +234,9 @@ func DecodeGetMeteringReportReq(r *http.Request) (interface{}, error) {
 	var req getReportReq
 	req.ReportName = mux.Vars(r)["report_name"]
 
+	if req.ReportName == "" {
+		return nil, k8cerrors.NewBadRequest("`report_name` cannot be empty")
+	}
+
 	return req, nil
 }

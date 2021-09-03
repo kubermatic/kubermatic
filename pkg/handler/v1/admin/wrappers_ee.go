@@ -20,6 +20,7 @@ package admin
 
 import (
 	"context"
+	"net/http"
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/ee/metering"
