@@ -440,6 +440,11 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		flags = append(flags, strings.Join(fg, ","))
 	}
 
+	if data.IsKonnectivityEnabled() {
+		flags = append(flags, "--egress-selector-config-file",
+			"/etc/kubernetes/konnectivity/egress-selector-configuration.yaml")
+	}
+
 	return flags, nil
 }
 
