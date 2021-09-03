@@ -1943,7 +1943,7 @@ func GenMLAAdminSetting(name, clusterName string, value int32) *kubermaticv1.MLA
 			Namespace: "cluster-" + clusterName,
 		},
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "MLAAdminSetting",
+			Kind:       kubermaticv1.MLAAdminSettingKindName,
 			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 		},
 		Spec: kubermaticv1.MLAAdminSettingSpec{

@@ -30,7 +30,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/minio/minio-go"
+	minio "github.com/minio/minio-go"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
