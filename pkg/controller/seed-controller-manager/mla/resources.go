@@ -302,16 +302,16 @@ func GatewayDeploymentCreator(data *resources.TemplateData, settings *kubermatic
 				RunAsUser:    pointer.Int64Ptr(1001),
 				RunAsNonRoot: pointer.BoolPtr(true),
 			}
-			// hash for the annotation used to force pod restart upon configuration change
+			d.Spec.Template.Labels = d.Spec.Selector.MatchLabels
+			// hash for the annotation used to force deployment rollout upon configuration change
 			configHash := sha1.New()
 			configData, err := json.Marshal(settings)
 			if err != nil {
 				return nil, fmt.Errorf("failed to encode MLAAdminSetting: %v", err)
 			}
 			configHash.Write(configData)
-			d.Spec.Template.Labels = map[string]string{
+			d.Spec.Template.Annotations = map[string]string{
 				configHashAnnotation: fmt.Sprintf("%x", configHash.Sum(nil)),
-				common.NameLabel:     gatewayName,
 			}
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{

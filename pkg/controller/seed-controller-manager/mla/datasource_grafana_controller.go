@@ -52,9 +52,6 @@ import (
 const (
 	prometheusType = "prometheus"
 	lokiType       = "loki"
-
-	// mlaAdminSettingsCRName contains a fixed name of the MLA admin settings custom resource in the cluster namespace
-	mlaAdminSettingsCRName = "mla-admin-settings"
 )
 
 // datasourceGrafanaReconciler stores necessary components that are required to manage MLA(Monitoring, Logging, and Alerting) setup.
@@ -101,7 +98,7 @@ func newDatasourceGrafanaReconciler(
 		return fmt.Errorf("failed to watch Clusters: %w", err)
 	}
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.MLAAdminSetting{}},
-		controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient()), predicateutil.ByName(mlaAdminSettingsCRName)); err != nil {
+		controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient()), predicateutil.ByName(resources.MLAAdminSettingsName)); err != nil {
 		return fmt.Errorf("failed to watch MLAAdminSetting: %w", err)
 	}
 	return err
@@ -232,7 +229,7 @@ func (r *datasourceGrafanaController) reconcile(ctx context.Context, cluster *ku
 		Build()
 
 	settings := &kubermaticv1.MLAAdminSetting{}
-	if err := r.Get(ctx, types.NamespacedName{Name: mlaAdminSettingsCRName, Namespace: cluster.Status.NamespaceName}, settings); err != nil && !apiErrors.IsNotFound(err) {
+	if err := r.Get(ctx, types.NamespacedName{Name: resources.MLAAdminSettingsName, Namespace: cluster.Status.NamespaceName}, settings); err != nil && !apiErrors.IsNotFound(err) {
 		return nil, fmt.Errorf("failed to get MLAAdminSetting: %w", err)
 	}
 
