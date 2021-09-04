@@ -43,8 +43,6 @@ vault kv get -field=.dockerconfigjson dev/seed-clusters/dev.kubermatic.io > ${DO
 vault kv get -field=kubermatic.yaml dev/seed-clusters/dev.kubermatic.io > ${KUBERMATIC_CONFIG}
 echodate "Successfully got secrets for dev from Vault"
 
-export DEPLOY_NODEPORT_PROXY=false
-
 echodate "Deploying ${DEPLOY_STACK} stack to dev"
-TILLER_NAMESPACE=kubermatic-installer ./hack/ci/deploy.sh master ${VALUES_FILE}
+./hack/ci/deploy.sh master ${VALUES_FILE}
 echodate "Successfully deployed ${DEPLOY_STACK} stack to dev"
