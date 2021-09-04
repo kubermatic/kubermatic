@@ -249,7 +249,6 @@ for buildTarget in $RELEASE_PLATFORMS; do
     charts/minio \
     charts/monitoring \
     charts/nginx-ingress-controller \
-    charts/nodeport-proxy \
     charts/oauth \
     charts/s3-exporter \
     charts/values.example.ce.yaml \
@@ -281,12 +280,10 @@ for buildTarget in $RELEASE_PLATFORMS; do
     charts/cert-manager \
     charts/iap \
     charts/kubermatic-operator \
-    charts/kubermatic \
     charts/logging \
     charts/minio \
     charts/monitoring \
     charts/nginx-ingress-controller \
-    charts/nodeport-proxy \
     charts/oauth \
     charts/s3-exporter \
     charts/values.example.ee.yaml \

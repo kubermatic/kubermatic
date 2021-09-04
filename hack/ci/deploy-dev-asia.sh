@@ -24,11 +24,9 @@ source ./hack/lib.sh
 
 export DEPLOY_STACK=${DEPLOY_STACK:-kubermatic}
 export GIT_HEAD_HASH="$(git rev-parse HEAD | tr -d '\n')"
-export DEPLOY_NODEPORT_PROXY=false
 
-if [[ "${DEPLOY_STACK}" == "kubermatic" ]]; then
-  ./hack/ci/push-images.sh
-fi
+# This job does not need to build any binaries, as we only install a few
+# CRDs and charts to this seed cluster.
 
 echodate "Getting secrets from Vault"
 retry 5 vault_ci_login
@@ -42,5 +40,5 @@ kubectl config use-context asia-south1-c
 echodate "Successfully got secrets for dev-asia from Vault"
 
 echodate "Deploying ${DEPLOY_STACK} stack to dev-asia"
-TILLER_NAMESPACE=kubermatic-installer ./hack/ci/deploy.sh seed ${VALUES_FILE}
+./hack/ci/deploy.sh seed ${VALUES_FILE}
 echodate "Successfully deployed ${DEPLOY_STACK} stack to dev-asia"
