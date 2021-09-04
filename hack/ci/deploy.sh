@@ -85,7 +85,7 @@ function deploy {
 }
 
 # silence complaints by Helm
-chmod 600 "$KUBECONFG"
+chmod 600 "$KUBECONFIG"
 
 echodate "Deploying ${DEPLOY_STACK} stack..."
 case "${DEPLOY_STACK}" in
