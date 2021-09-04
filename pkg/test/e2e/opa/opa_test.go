@@ -79,14 +79,14 @@ func TestOPAIntegration(t *testing.T) {
 	t.Log("creating project...")
 	project, err := masterClient.CreateProject(rand.String(10))
 	if err != nil {
-		t.Fatalf("failed to create project: %v", err)
+		t.Fatalf("failed to create project: %v", getErrorResponse(err))
 	}
 	defer cleanupProject(t, project.ID)
 
 	t.Log("creating cluster...")
 	apiCluster, err := masterClient.CreateDOCluster(project.ID, datacenter, rand.String(10), credential, version, location, 1)
 	if err != nil {
-		t.Fatalf("failed to create cluster: %v", err)
+		t.Fatalf("failed to create cluster: %v", getErrorResponse(err))
 	}
 
 	// wait for the cluster to become healthy
@@ -119,7 +119,7 @@ func TestOPAIntegration(t *testing.T) {
 	t.Log("creating Constraint Template...")
 	ct, err := masterAdminClient.CreateCT(constraintTemplateName, ctKind)
 	if err != nil {
-		t.Fatalf("error creating Constraint Template: %v", err)
+		t.Fatalf("error creating Constraint Template: %v", getErrorResponse(err))
 	}
 
 	t.Log("creating client for user cluster...")
@@ -162,7 +162,7 @@ func TestOPAIntegration(t *testing.T) {
 	cm := genTestConfigMap()
 	cm.Labels = map[string]string{"gatekeeper": "true"}
 	if err := userClient.Create(ctx, cm); err != nil {
-		t.Fatalf("error creating policy-aligned configmap on user cluster: %v", err)
+		t.Fatalf("error creating policy-aligned configmap on user cluster: %v", getErrorResponse(err))
 	}
 
 	// Delete constraint

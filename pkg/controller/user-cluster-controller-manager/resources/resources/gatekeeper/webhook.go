@@ -44,7 +44,7 @@ func ValidatingWebhookConfigurationCreator(timeout int) reconciling.NamedValidat
 			validatingWebhookConfigurationWebhookConfiguration.Webhooks = []admissionregistrationv1.ValidatingWebhook{
 				{
 					Name:                    "validation.gatekeeper.sh",
-					AdmissionReviewVersions: []string{admissionregistrationv1beta1.SchemeGroupVersion.Version},
+					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version, admissionregistrationv1beta1.SchemeGroupVersion.Version},
 					FailurePolicy:           &failurePolicyIgnore,
 					SideEffects:             &sideEffectsNone,
 					TimeoutSeconds:          pointer.Int32Ptr(int32(timeout)),
@@ -76,6 +76,7 @@ func ValidatingWebhookConfigurationCreator(timeout int) reconciling.NamedValidat
 							Operations: []admissionregistrationv1.OperationType{
 								admissionregistrationv1.Create,
 								admissionregistrationv1.Update,
+								admissionregistrationv1.Delete,
 							},
 							Rule: admissionregistrationv1.Rule{
 								APIGroups:   []string{"*"},
@@ -88,7 +89,7 @@ func ValidatingWebhookConfigurationCreator(timeout int) reconciling.NamedValidat
 				},
 				{
 					Name:                    "check-ignore-label.gatekeeper.sh",
-					AdmissionReviewVersions: []string{admissionregistrationv1beta1.SchemeGroupVersion.Version},
+					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version, admissionregistrationv1beta1.SchemeGroupVersion.Version},
 					FailurePolicy:           &failurePolicyIgnore,
 					SideEffects:             &sideEffectsNone,
 					TimeoutSeconds:          pointer.Int32Ptr(int32(timeout)),
@@ -133,6 +134,74 @@ func ValidatingWebhookConfigurationCreator(timeout int) reconciling.NamedValidat
 			}
 
 			return validatingWebhookConfigurationWebhookConfiguration, nil
+		}
+	}
+}
+
+func MutatingWebhookConfigurationCreator(timeout int) reconciling.NamedMutatingWebhookConfigurationCreatorGetter {
+	return func() (string, reconciling.MutatingWebhookConfigurationCreator) {
+		return resources.GatekeeperMutatingWebhookConfigurationName, func(mutatingWebhookConfigurationWebhookConfiguration *admissionregistrationv1.MutatingWebhookConfiguration) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
+			failurePolicyIgnore := admissionregistrationv1.Ignore
+			sideEffectsNone := admissionregistrationv1.SideEffectClassNone
+			matchPolicyExact := admissionregistrationv1.Exact
+			allScopes := admissionregistrationv1.AllScopes
+			reinvocationPolicy := admissionregistrationv1.NeverReinvocationPolicy
+
+			mutatingWebhookConfigurationWebhookConfiguration.Labels = map[string]string{"gatekeeper.sh/system": "yes"}
+			// Get cabundle if set
+			var caBundle []byte
+			if len(mutatingWebhookConfigurationWebhookConfiguration.Webhooks) > 0 {
+				caBundle = mutatingWebhookConfigurationWebhookConfiguration.Webhooks[0].ClientConfig.CABundle
+			}
+			mutatingWebhookConfigurationWebhookConfiguration.Webhooks = []admissionregistrationv1.MutatingWebhook{
+
+				{
+					Name:                    "mutation.gatekeeper.sh",
+					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version, admissionregistrationv1beta1.SchemeGroupVersion.Version},
+					FailurePolicy:           &failurePolicyIgnore,
+					ReinvocationPolicy:      &reinvocationPolicy,
+					SideEffects:             &sideEffectsNone,
+					TimeoutSeconds:          pointer.Int32Ptr(int32(timeout)),
+					MatchPolicy:             &matchPolicyExact,
+					NamespaceSelector: &metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{
+							{
+								Key:      "control-plane",
+								Operator: metav1.LabelSelectorOpDoesNotExist,
+							},
+							{
+								Key:      "admission.gatekeeper.sh/ignore",
+								Operator: metav1.LabelSelectorOpDoesNotExist,
+							},
+						},
+					},
+					ObjectSelector: &metav1.LabelSelector{},
+					ClientConfig: admissionregistrationv1.WebhookClientConfig{
+						CABundle: caBundle,
+						Service: &admissionregistrationv1.ServiceReference{
+							Name:      resources.GatekeeperWebhookServiceName,
+							Namespace: resources.GatekeeperNamespace,
+							Path:      pointer.StringPtr("/v1/mutate"),
+							Port:      pointer.Int32Ptr(443),
+						},
+					},
+					Rules: []admissionregistrationv1.RuleWithOperations{
+						{
+							Operations: []admissionregistrationv1.OperationType{
+								admissionregistrationv1.Create,
+								admissionregistrationv1.Update,
+							},
+							Rule: admissionregistrationv1.Rule{
+								APIGroups:   []string{"*"},
+								APIVersions: []string{"*"},
+								Resources:   []string{"*"},
+								Scope:       &allScopes,
+							},
+						},
+					},
+				},
+			}
+			return mutatingWebhookConfigurationWebhookConfiguration, nil
 		}
 	}
 }

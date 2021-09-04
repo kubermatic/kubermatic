@@ -20596,6 +20596,11 @@
           "type": "boolean",
           "x-go-name": "Enabled"
         },
+        "experimentalEnableMutation": {
+          "description": "Enable mutation",
+          "type": "boolean",
+          "x-go-name": "ExperimentalEnableMutation"
+        },
         "webhookTimeoutSeconds": {
           "description": "WebhookTimeout is the timeout that is set for the gatekeeper validating webhook admission review calls.\nBy default 10 seconds.",
           "type": "integer",
