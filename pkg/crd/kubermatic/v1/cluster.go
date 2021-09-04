@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -379,6 +380,8 @@ type OPAIntegrationSettings struct {
 	// WebhookTimeout is the timeout that is set for the gatekeeper validating webhook admission review calls.
 	// By default 10 seconds.
 	WebhookTimeoutSeconds *int32 `json:"webhookTimeoutSeconds,omitempty"`
+	// Enable mutation
+	ExperimentalEnableMutation bool `json:"experimentalEnableMutation,omitempty"`
 }
 
 type ServiceAccountSettings struct {

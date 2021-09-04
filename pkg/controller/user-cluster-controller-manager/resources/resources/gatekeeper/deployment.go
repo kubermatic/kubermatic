@@ -34,7 +34,7 @@ const (
 	controllerName = resources.GatekeeperControllerDeploymentName
 	auditName      = resources.GatekeeperAuditDeploymentName
 	imageName      = "openpolicyagent/gatekeeper"
-	tag            = "v3.2.3"
+	tag            = "v3.5.2"
 	// Namespace used by Dashboard to find required resources.
 	webhookServerPort  = 8443
 	metricsPort        = 8888
@@ -103,7 +103,7 @@ func ControllerDeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 			dep.Spec.Template.Spec.TerminationGracePeriodSeconds = pointer.Int64Ptr(60)
 			dep.Spec.Template.Spec.NodeSelector = map[string]string{"kubernetes.io/os": "linux"}
 			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
-
+			dep.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
 			dep.Spec.Template.Spec.Containers = getControllerContainers()
 			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
 			if err != nil {
@@ -150,6 +150,8 @@ func AuditDeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 			dep.Spec.Template.Spec.TerminationGracePeriodSeconds = pointer.Int64Ptr(60)
 			dep.Spec.Template.Spec.NodeSelector = map[string]string{"kubernetes.io/os": "linux"}
 			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.BoolPtr(true)
+			dep.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
 
 			dep.Spec.Template.Spec.Containers = getAuditContainers()
 			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
@@ -174,6 +176,7 @@ func getControllerContainers() []corev1.Container {
 			"--logtostderr",
 			fmt.Sprintf("--exempt-namespace=%s", resources.GatekeeperNamespace),
 			"--operation=webhook",
+			fmt.Sprintf("--enable-mutation=%t", resources.ExperimentalEnableMutation),
 		},
 		Ports: []corev1.ContainerPort{
 			{
@@ -240,9 +243,10 @@ func getControllerContainers() []corev1.Container {
 					"all",
 				},
 			},
-			RunAsGroup:   pointer.Int64Ptr(999),
-			RunAsNonRoot: pointer.BoolPtr(true),
-			RunAsUser:    pointer.Int64Ptr(1000),
+			ReadOnlyRootFilesystem: pointer.BoolPtr(true),
+			RunAsGroup:             pointer.Int64Ptr(999),
+			RunAsNonRoot:           pointer.BoolPtr(true),
+			RunAsUser:              pointer.Int64Ptr(1000),
 		},
 	}}
 }
@@ -257,6 +261,8 @@ func getAuditContainers() []corev1.Container {
 		Args: []string{
 			"--logtostderr",
 			"--operation=audit",
+			fmt.Sprintf("--constraint-violations-limit=%d", resources.ConstraintViolationsLimit),
+			fmt.Sprintf("--audit-match-kind-only=%t", resources.AuditMatchKindOnly),
 		},
 		Ports: []corev1.ContainerPort{
 			{
@@ -313,9 +319,10 @@ func getAuditContainers() []corev1.Container {
 					"all",
 				},
 			},
-			RunAsGroup:   pointer.Int64Ptr(999),
-			RunAsNonRoot: pointer.BoolPtr(true),
-			RunAsUser:    pointer.Int64Ptr(1000),
+			ReadOnlyRootFilesystem: pointer.BoolPtr(true),
+			RunAsGroup:             pointer.Int64Ptr(999),
+			RunAsNonRoot:           pointer.BoolPtr(true),
+			RunAsUser:              pointer.Int64Ptr(1000),
 		},
 	}}
 }
