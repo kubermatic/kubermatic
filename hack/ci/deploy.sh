@@ -113,7 +113,9 @@ logging)
 kubermatic)
   sed -i "s/__KUBERMATIC_TAG__/${GIT_HEAD_HASH}/g" charts/kubermatic-operator/*.yaml
 
-  yq write --inplace charts/kubermatic-operator/values.yaml 'kubermaticOperator.imagePullSecret' "$(cat $DOCKER_CONFIG)"
+  if [ -n "${DOCKER_CONFIG:-}" ]; then
+    yq write --inplace charts/kubermatic-operator/values.yaml 'kubermaticOperator.imagePullSecret' "$(cat $DOCKER_CONFIG)"
+  fi
 
   # Kubermatic
   if [[ "${1}" = "master" ]]; then

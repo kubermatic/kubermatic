@@ -29,17 +29,18 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/features"
+	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 )
 
-func (*MasterStack) ValidateConfiguration(config *operatorv1alpha1.KubermaticConfiguration, helmValues *yamled.Document, logger logrus.FieldLogger) (*operatorv1alpha1.KubermaticConfiguration, *yamled.Document, []error) {
+func (*MasterStack) ValidateConfiguration(config *operatorv1alpha1.KubermaticConfiguration, helmValues *yamled.Document, opt stack.DeployOptions, logger logrus.FieldLogger) (*operatorv1alpha1.KubermaticConfiguration, *yamled.Document, []error) {
 	kubermaticFailures := validateKubermaticConfiguration(config)
 	for idx, e := range kubermaticFailures {
 		kubermaticFailures[idx] = prefixError("KubermaticConfiguration: ", e)
 	}
 
-	helmFailures := validateHelmValues(config, helmValues, logger)
+	helmFailures := validateHelmValues(config, helmValues, opt, logger)
 	for idx, e := range helmFailures {
 		helmFailures[idx] = prefixError("Helm values: ", e)
 	}
@@ -87,7 +88,7 @@ func validateRandomSecret(config *operatorv1alpha1.KubermaticConfiguration, valu
 	return failures
 }
 
-func validateHelmValues(config *operatorv1alpha1.KubermaticConfiguration, helmValues *yamled.Document, logger logrus.FieldLogger) []error {
+func validateHelmValues(config *operatorv1alpha1.KubermaticConfiguration, helmValues *yamled.Document, opt stack.DeployOptions, logger logrus.FieldLogger) []error {
 	failures := []error{}
 
 	path := yamled.Path{"dex", "ingress", "host"}
@@ -100,6 +101,13 @@ func validateHelmValues(config *operatorv1alpha1.KubermaticConfiguration, helmVa
 	if value, _ := helmValues.GetString(path); value == "" {
 		logger.Warnf("Helm values: %s is empty, setting to spec.imagePullSecret from KubermaticConfiguration", path.String())
 		helmValues.Set(path, config.Spec.ImagePullSecret)
+	}
+
+	if !opt.DisableTelemetry {
+		path = yamled.Path{"telemetry", "uuid"}
+		if value, _ := helmValues.GetString(path); value == "" {
+			failures = append(failures, errors.New("Telemetry is enabled, but no UUID was configured; generate a UUID and set it as telemetry.uuid in your Helm values"))
+		}
 	}
 
 	defaultedConfig, err := common.DefaultConfiguration(config, zap.NewNop().Sugar())
