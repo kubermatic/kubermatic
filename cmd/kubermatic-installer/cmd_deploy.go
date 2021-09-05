@@ -98,7 +98,7 @@ var (
 		Name:  "migrate-logrotate",
 		Usage: "enable the data migration to delete the logrotate addon",
 	}
-	telemetryFlag = cli.BoolFlag{
+	disableTelemetryFlag = cli.BoolFlag{
 		Name:  "disable-telemetry",
 		Usage: "disable telemetry agents",
 	}
@@ -122,7 +122,7 @@ func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) c
 			enableCertManagerV2MigrationFlag,
 			migrateOpenstackCSIdriversFlag,
 			migrateLogrotateFlag,
-			telemetryFlag,
+			disableTelemetryFlag,
 		},
 	}
 }
@@ -192,12 +192,26 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 			return fmt.Errorf("failed to load Helm values: %v", err)
 		}
 
+		opt := stack.DeployOptions{
+			HelmClient:                        helmClient,
+			HelmValues:                        helmValues,
+			KubermaticConfiguration:           kubermaticConfig,
+			RawKubermaticConfiguration:        rawKubermaticConfig,
+			StorageClassProvider:              ctx.String(deployStorageClassFlag.Name),
+			ForceHelmReleaseUpgrade:           ctx.Bool(deployForceFlag.Name),
+			ChartsDirectory:                   ctx.GlobalString(chartsDirectoryFlag.Name),
+			EnableCertManagerV2Migration:      ctx.Bool(enableCertManagerV2MigrationFlag.Name),
+			EnableOpenstackCSIDriverMigration: ctx.Bool(migrateOpenstackCSIdriversFlag.Name),
+			EnableLogrotateMigration:          ctx.Bool(migrateLogrotateFlag.Name),
+			DisableTelemetry:                  ctx.Bool(disableTelemetryFlag.Name),
+		}
+
 		// validate the configuration
 		logger.Info("🚦 Validating the provided configuration…")
 
 		subLogger := log.Prefix(logrus.NewEntry(logger), "   ")
 
-		kubermaticConfig, helmValues, validationErrors := kubermaticStack.ValidateConfiguration(kubermaticConfig, helmValues, subLogger)
+		kubermaticConfig, helmValues, validationErrors := kubermaticStack.ValidateConfiguration(kubermaticConfig, helmValues, opt, subLogger)
 		if len(validationErrors) > 0 {
 			logger.Error("⛔ The provided configuration files are invalid:")
 
@@ -258,21 +272,10 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 			return fmt.Errorf("failed to add scheme: %v", err)
 		}
 
-		opt := stack.DeployOptions{
-			HelmClient:                        helmClient,
-			KubeClient:                        kubeClient,
-			HelmValues:                        helmValues,
-			KubermaticConfiguration:           kubermaticConfig,
-			RawKubermaticConfiguration:        rawKubermaticConfig,
-			Logger:                            subLogger,
-			StorageClassProvider:              ctx.String(deployStorageClassFlag.Name),
-			ForceHelmReleaseUpgrade:           ctx.Bool(deployForceFlag.Name),
-			ChartsDirectory:                   ctx.GlobalString(chartsDirectoryFlag.Name),
-			EnableCertManagerV2Migration:      ctx.Bool(enableCertManagerV2MigrationFlag.Name),
-			EnableOpenstackCSIDriverMigration: ctx.Bool(migrateOpenstackCSIdriversFlag.Name),
-			EnableLogrotateMigration:          ctx.Bool(migrateLogrotateFlag.Name),
-			DisableTelemetry:                  ctx.Bool(telemetryFlag.Name),
-		}
+		opt.KubermaticConfiguration = kubermaticConfig
+		opt.HelmValues = helmValues
+		opt.KubeClient = kubeClient
+		opt.Logger = subLogger
 
 		logger.Infof("🧩 Deploying %s…", kubermaticStack.Name())
 
