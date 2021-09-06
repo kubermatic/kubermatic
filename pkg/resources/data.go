@@ -235,7 +235,7 @@ func (td *TemplateDataBuilder) WithMachineControllerImageRepository(repository s
 }
 
 func (td TemplateDataBuilder) Build() *TemplateData {
-	// TODO(irozzo): Add validation
+	// TODO: Add validation
 	return &td.data
 }
 

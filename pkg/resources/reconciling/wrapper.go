@@ -47,7 +47,7 @@ func OwnerRefWrapper(ref metav1.OwnerReference) ObjectModifier {
 // ImagePullSecretsWrapper is generating a new ObjectModifier that wraps an ObjectCreator
 // and takes care of adding the secret names provided to the ImagePullSecrets.
 //
-// TODO(irozzo) At the moment only Deployments are supported, but
+// TODO At the moment only Deployments are supported, but
 // this can be extended to whatever Object carrying a PodSpec.
 func ImagePullSecretsWrapper(secretNames ...string) ObjectModifier {
 	return func(create ObjectCreator) ObjectCreator {

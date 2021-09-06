@@ -16,7 +16,7 @@ limitations under the License.
 
 package nodeportproxy
 
-// TODO(irozzo) make registries configurable
+// TODO make registries configurable
 const (
 	AgnhostImage = "k8s.gcr.io/e2e-test-images/agnhost:2.21"
 )

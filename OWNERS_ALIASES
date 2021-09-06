@@ -16,27 +16,18 @@ aliases:
 
   sig-cluster-management:
     - kron4eg
-    - irozzo-1A
+    - mfranczy
     - moadqassem
     - moelsayed
     - xmudrii
     - xrstf
     - youssefazrak
-    - mfranczy
 
   sig-networking:
-    - irozzo-1A
     - moadqassem
     - moelsayed
     - rastislavs
     - youssefazrak
-
-  sig-security:
-    - aborilov
-    - irozzo-1A
-    - jiachengxu
-    - lsviben
-    - moadqassem
 
   sig-ui:
     - floreks

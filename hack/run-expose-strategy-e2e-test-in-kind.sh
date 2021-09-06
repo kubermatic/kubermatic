@@ -31,7 +31,7 @@ function generate_secret {
 # We replace the domain with a dns name relying on nip.io poining to the
 # nodeport-proxy service. This makes the testing of expose strategies relying
 # on nodeport-proxy very easy from within the kind cluster.
-# TODO(irozzo) Find another solution in case nip.io does not result to be
+# TODO Find another solution in case nip.io does not result to be
 # available enough for our own CI usage.
 function patch_kubermatic_domain {
   local ip="$(kubectl get service nodeport-proxy -n kubermatic -otemplate --template='{{ .spec.clusterIP }}')"

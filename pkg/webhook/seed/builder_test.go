@@ -24,7 +24,7 @@ import (
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-// TODO(irozzo) Add some tests
+// TODO Add some tests
 func TestBuilder(t *testing.T) {
 	tests := []struct {
 		name    string

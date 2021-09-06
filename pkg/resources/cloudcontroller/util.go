@@ -40,7 +40,7 @@ func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cluste
 		// https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
 		// for more details).
 		//
-		// TODO(irozzo) This is a dirty hack to temporarily support OTC using
+		// TODO This is a dirty hack to temporarily support OTC using
 		// Openstack provider, remove this when dedicated OTC support is
 		// introduced in Kubermatic.
 		return !isOTC(dc.Spec.Openstack) && OpenStackCloudControllerSupported(cluster.Spec.Version)
