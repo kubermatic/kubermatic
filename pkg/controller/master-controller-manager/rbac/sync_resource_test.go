@@ -136,6 +136,29 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						},
 					},
 				},
+
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:configmap-cluster-abcd-ca-bundle:viewers-thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.ClusterKindName,
+								Name:       "abcd",
+								UID:        "abcdID", // set manually
+							},
+						},
+						ResourceVersion: "1",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups:     []string{""},
+							Resources:     []string{"configmaps"},
+							ResourceNames: []string{"cluster-abcd-ca-bundle"},
+							Verbs:         []string{"get"},
+						},
+					},
+				},
 			},
 
 			expectedClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
@@ -243,6 +266,33 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
 						Name:     "kubermatic:cluster-abcd:viewers-thunderball",
+					},
+				},
+
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:configmap-cluster-abcd-ca-bundle:etcd-launcher",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.ClusterKindName,
+								Name:       "abcd",
+								UID:        "abcdID", // set manually
+							},
+						},
+						ResourceVersion: "1",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							Namespace: "cluster-abcd",
+							Kind:      "ServiceAccount",
+							Name:      "etcd-launcher",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:configmap-cluster-abcd-ca-bundle:viewers-thunderball",
 					},
 				},
 			},
