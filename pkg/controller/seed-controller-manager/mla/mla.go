@@ -23,7 +23,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/grafana/grafana/pkg/models"
 	"go.uber.org/zap"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
@@ -51,10 +50,10 @@ const (
 
 var (
 	// groupToRole map kubermatic groups to grafana roles
-	groupToRole = map[string]models.RoleType{
-		rbac.OwnerGroupNamePrefix:  models.ROLE_EDITOR, // we assign the editor (not admin) role to project owners, to make sure they cannot edit datasources in Grafana
-		rbac.EditorGroupNamePrefix: models.ROLE_EDITOR,
-		rbac.ViewerGroupNamePrefix: models.ROLE_VIEWER,
+	groupToRole = map[string]grafanasdk.RoleType{
+		rbac.OwnerGroupNamePrefix:  grafanasdk.ROLE_EDITOR, // we assign the editor (not admin) role to project owners, to make sure they cannot edit datasources in Grafana
+		rbac.EditorGroupNamePrefix: grafanasdk.ROLE_EDITOR,
+		rbac.ViewerGroupNamePrefix: grafanasdk.ROLE_VIEWER,
 	}
 )
 
