@@ -28,7 +28,8 @@
 ### Breaking Changes
 
 - Kubernetes 1.19 is now the minimum supported version for master, seed and user clusters. Please upgrade all userclusters to 1.19
-  prior to upgrading to KKP 2.18.
+  prior to upgrading to KKP 2.18. See the [documenation](https://docs.kubermatic.com/kubermatic/v2.17/tutorials_howtos/upgrading/upgrade_from_2.16_to_2.17/chart_migration/)
+  for more details.
 - Helm 2 is not supported anymore, please use Helm 3 instead. It might still be possible to install KKP using Helm 2, but it's neither
   supported nor recommended.
 - The (in 2.14) deprecated `kubermatic` and `nodeport-proxy` Helm charts have now been removed. If you haven't done so, migrate your KKP installation
@@ -77,7 +78,7 @@
 - Add API endpoints for Etcd Backup Restore ([#7430](https://github.com/kubermatic/kubermatic/issues/7430))
 - Add API endpoints for Whitelisted Registry [EE] ([#7346](https://github.com/kubermatic/kubermatic/issues/7346))
 - Add API endpoints for cluster backups ([#7395](https://github.com/kubermatic/kubermatic/issues/7395))
-- Add API enpoint returning OIDC params of user cluster ([#7427](https://github.com/kubermatic/kubermatic/issues/7427))
+- Add API endpoint returning OIDC params of user cluster ([#7427](https://github.com/kubermatic/kubermatic/issues/7427))
 - Add CSIDriver data migration to the kubermatic-installer ([#7030](https://github.com/kubermatic/kubermatic/issues/7030))
 - Add Konnectivity option for controlplane to cluster communication ([#7504](https://github.com/kubermatic/kubermatic/issues/7504))
 - Add MLA options to admin settings ([#7009](https://github.com/kubermatic/kubermatic/issues/7009))
@@ -88,7 +89,7 @@
 - Add `MLAAdminSetting` CRD ([#7603](https://github.com/kubermatic/kubermatic/issues/7603))
 - Add `kubermatic-installer print` command to improve defaulting visibility ([#7394](https://github.com/kubermatic/kubermatic/issues/7394))
 - Add `projectmanagers` group for RBAC controller. The new group will be assigned to service accounts ([#7016](https://github.com/kubermatic/kubermatic/issues/7016), [#7043](https://github.com/kubermatic/kubermatic/issues/7043), [#3375](https://github.com/kubermatic/dashboard/issues/3375))
-- Add `strictARP` setting for kube-proxy IPVS mode and make it configurable vie Cluster CRD or API ([#7410](https://github.com/kubermatic/kubermatic/issues/7410))
+- Add `strictARP` setting for kube-proxy IPVS mode and make it configurable via Cluster CRD or API ([#7410](https://github.com/kubermatic/kubermatic/issues/7410))
 - Add a v2 endpoint to get seed settings (`GET /api/v2/seeds/{seed_name}/settings`) ([#7008](https://github.com/kubermatic/kubermatic/issues/7008))
 - Add allowlist for Docker registries [EE only], which allows users to set which image registries are allowed so only workloads from those registries can be deployed on user clusters ([#7305](https://github.com/kubermatic/kubermatic/issues/7305), [#3562](https://github.com/kubermatic/dashboard/issues/3562))
 - Add apiserver network policy ([#7396](https://github.com/kubermatic/kubermatic/issues/7396))
@@ -132,7 +133,7 @@
 - Extend admin settings by new field MLA alertmanager domain ([#7326](https://github.com/kubermatic/kubermatic/issues/7326))
 - Extract kubeadm-configmap addon from kubelet-configmap addon ([#7586](https://github.com/kubermatic/kubermatic/issues/7586))
 - Kubermatic API, etcd-launcher, and dnat-controller images are defaulted to the docker.io registry only if the provided custom image has less than 3 parts ([#7287](https://github.com/kubermatic/kubermatic/issues/7287))
-- Kubermatic OPA Constraints now additionaly support using regular yaml `parameters` instead of `rawJSON`. `rawJSON` is still supported so no migration needed ([#7066](https://github.com/kubermatic/kubermatic/issues/7066))
+- Kubermatic OPA Constraints now additionally support using regular yaml `parameters` instead of `rawJSON`. `rawJSON` is still supported so no migration needed ([#7066](https://github.com/kubermatic/kubermatic/issues/7066))
 - Limit number of simultaneously running etcd backup delete jobs ([#6952](https://github.com/kubermatic/kubermatic/issues/6952))
 - Move backup and restore configuration to Seed resource to allow to have different s3-settings ([#7428](https://github.com/kubermatic/kubermatic/issues/7428))
 - Move component settings defaulting to webhook ([#7082](https://github.com/kubermatic/kubermatic/issues/7082))
