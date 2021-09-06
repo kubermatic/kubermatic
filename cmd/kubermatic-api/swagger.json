@@ -19733,13 +19733,13 @@
     "MLASettings": {
       "type": "object",
       "properties": {
-        "LoggingResources": {
-          "$ref": "#/definitions/ResourceRequirements"
-        },
         "loggingEnabled": {
           "description": "LoggingEnabled is the flag for enabling logging in user cluster.",
           "type": "boolean",
           "x-go-name": "LoggingEnabled"
+        },
+        "loggingResources": {
+          "$ref": "#/definitions/ResourceRequirements"
         },
         "monitoringEnabled": {
           "description": "MonitoringEnabled is the flag for enabling monitoring in user cluster.",

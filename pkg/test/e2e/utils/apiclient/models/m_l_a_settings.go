@@ -21,11 +21,11 @@ type MLASettings struct {
 	// LoggingEnabled is the flag for enabling logging in user cluster.
 	LoggingEnabled bool `json:"loggingEnabled,omitempty"`
 
-	// logging resources
-	LoggingResources *ResourceRequirements `json:"LoggingResources,omitempty"`
-
 	// MonitoringEnabled is the flag for enabling monitoring in user cluster.
 	MonitoringEnabled bool `json:"monitoringEnabled,omitempty"`
+
+	// logging resources
+	LoggingResources *ResourceRequirements `json:"loggingResources,omitempty"`
 
 	// monitoring resources
 	MonitoringResources *ResourceRequirements `json:"monitoringResources,omitempty"`
@@ -57,7 +57,7 @@ func (m *MLASettings) validateLoggingResources(formats strfmt.Registry) error {
 	if m.LoggingResources != nil {
 		if err := m.LoggingResources.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("LoggingResources")
+				return ve.ValidateName("loggingResources")
 			}
 			return err
 		}
@@ -106,7 +106,7 @@ func (m *MLASettings) contextValidateLoggingResources(ctx context.Context, forma
 	if m.LoggingResources != nil {
 		if err := m.LoggingResources.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("LoggingResources")
+				return ve.ValidateName("loggingResources")
 			}
 			return err
 		}
