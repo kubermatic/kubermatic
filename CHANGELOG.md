@@ -1,3 +1,195 @@
+# Kubermatic 2.18
+
+## [v2.18.0-rc.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.0-rc.0)
+
+### Supported Kubernetes Versions
+
+* 1.19.0
+* 1.19.2
+* 1.19.3
+* 1.19.8
+* 1.19.9
+* 1.19.13
+* 1.20.2
+* 1.20.5
+* 1.20.9
+* 1.21.0
+* 1.21.3
+* 1.22.1
+
+### Highlights
+
+- Add Kubernetes 1.22, remove Kubernetes 1.17 and 1.18 ([#7461](https://github.com/kubermatic/kubermatic/issues/7461))
+- Add telemetry chart, use `--disable-telemetry` in installer to disable it ([#7579](https://github.com/kubermatic/kubermatic/issues/7579))
+- Metering tool integration ([#7549](https://github.com/kubermatic/kubermatic/issues/7549))
+- AWS Spot instances support ([#7073](https://github.com/kubermatic/kubermatic/issues/7073), [#3607](https://github.com/kubermatic/dashboard/issues/3607))
+
+### Breaking Changes
+
+- Kubernetes 1.19 is now the minimum supported version for master, seed and user clusters. Please upgrade all userclusters to 1.19
+  prior to upgrading to KKP 2.18.
+- Helm 2 is not supported anymore, please use Helm 3 instead. It might still be possible to install KKP using Helm 2, but it's neither
+  supported nor recommended.
+- The (in 2.14) deprecated `kubermatic` and `nodeport-proxy` Helm charts have now been removed. If you haven't done so, migrate your KKP installation
+  to use the `kubermatic-operator` Helm chart or, even better, use the KKP installer. The KKP operator will automatically manage the
+  nodeport-proxy, so the chart is not required anymore.
+- The `cert-manager` Helm chart requires admins to set the Let's Encrypt account email explicitly ([#7184](https://github.com/kubermatic/kubermatic/issues/7184))
+
+### Dashboard
+
+- Add Flatcar support for KubeVirt ([#3561](https://github.com/kubermatic/dashboard/issues/3561))
+- Add MLA support ([#3293](https://github.com/kubermatic/dashboard/issues/3293))
+- Add OPA Default Constraints to UI ([#3543](https://github.com/kubermatic/dashboard/issues/3543))
+- Add admin settings for Alertmanager domain and the link to Alertmanager UI ([#3488](https://github.com/kubermatic/dashboard/issues/3488))
+- Add checkbox for assigning Azure availability sets ([#3612](https://github.com/kubermatic/dashboard/issues/3612))
+- Add container runtime selector for clusters ([#3448](https://github.com/kubermatic/dashboard/issues/3448))
+- Add link to Grafana to UI, visible if user cluster monitoring or user cluster logging is enabled ([#3642](https://github.com/kubermatic/dashboard/issues/3642))
+- Add network configuration for user clusters ([#3460](https://github.com/kubermatic/dashboard/issues/3460))
+- Add option to filter AWS instance types by architecture ([#3600](https://github.com/kubermatic/dashboard/issues/3600))
+- Add option to restart machine deployments ([#3491](https://github.com/kubermatic/dashboard/issues/3491))
+- Add option to select Azure LoadBalancer SKU in cluster creation ([#3455](https://github.com/kubermatic/dashboard/issues/3455))
+- Add option to specify vSphere resource pool ([#3471](https://github.com/kubermatic/dashboard/issues/3471))
+- Add support for Application Credentials to the Openstack provider ([#3480](https://github.com/kubermatic/dashboard/issues/3480))
+- Add support for external CCM migration ([#3554](https://github.com/kubermatic/dashboard/issues/3554))
+- Add vNet resource group field for Azure ([#3275](https://github.com/kubermatic/dashboard/issues/3275))
+- Add validation for service account token names ([#3265](https://github.com/kubermatic/dashboard/issues/3265))
+- Add warning in the wizard when there is no configured seed ([#3378](https://github.com/kubermatic/dashboard/issues/3378))
+- Disable CentOS for GCP ([#3331](https://github.com/kubermatic/dashboard/issues/3331))
+- Extend cluster details view by tab User Cluster Alert Rules for MLA ([#3476](https://github.com/kubermatic/dashboard/issues/3476))
+- Extract provider settings management from the cluster edit dialog to dedicated dialog ([#3557](https://github.com/kubermatic/dashboard/issues/3557))
+- Fix custom link icon display in the sidenav ([#3439](https://github.com/kubermatic/dashboard/issues/3439))
+- Fix replica count, as it was automatically reset to default after a few seconds ([#3402](https://github.com/kubermatic/dashboard/issues/3402))
+- Fix sidenav background behaviour ([#3336](https://github.com/kubermatic/dashboard/issues/3336))
+- Multiple styling improvements ([#3409](https://github.com/kubermatic/dashboard/issues/3409))
+- Redesign Admin Panel ([#3461](https://github.com/kubermatic/dashboard/issues/3461))
+- Redesign OpenStack provider settings step to better support different type of credentials ([#3528](https://github.com/kubermatic/dashboard/issues/3528))
+- Remove option to reset admin settings to defaults ([#3412](https://github.com/kubermatic/dashboard/issues/3412))
+- Set default VM template based on the available operating systems ([#3268](https://github.com/kubermatic/dashboard/issues/3268))
+- Update changelog design ([#3490](https://github.com/kubermatic/dashboard/issues/3490))
+- Updated theme colors ([#3359](https://github.com/kubermatic/dashboard/issues/3359))
+- vNet resource group instead of resource group will be used if it is specified ([#3399](https://github.com/kubermatic/dashboard/issues/3399))
+
+### Misc
+
+- ARM instances for AWS are now being filtered out from the instance size list as KKP does not support ARM ([#6940](https://github.com/kubermatic/kubermatic/issues/6940))
+- Add API endpoint for creating/updating S3 backup credentials per Seed ([#7641](https://github.com/kubermatic/kubermatic/issues/7641))
+- Add API endpoints for Etcd Backup Restore ([#7430](https://github.com/kubermatic/kubermatic/issues/7430))
+- Add API endpoints for Whitelisted Registry [EE] ([#7346](https://github.com/kubermatic/kubermatic/issues/7346))
+- Add API endpoints for cluster backups ([#7395](https://github.com/kubermatic/kubermatic/issues/7395))
+- Add API enpoint returning OIDC params of user cluster ([#7427](https://github.com/kubermatic/kubermatic/issues/7427))
+- Add CSIDriver data migration to the kubermatic-installer ([#7030](https://github.com/kubermatic/kubermatic/issues/7030))
+- Add Konnectivity option for controlplane to cluster communication ([#7504](https://github.com/kubermatic/kubermatic/issues/7504))
+- Add MLA options to admin settings ([#7009](https://github.com/kubermatic/kubermatic/issues/7009))
+- Add NodeLocal DNS Cache configuration to Cluster API ([#7091](https://github.com/kubermatic/kubermatic/issues/7091))
+- Add vNet resource group for Azure ([#6908](https://github.com/kubermatic/kubermatic/issues/6908))
+- Add `ClusterFeatureCCMClusterName` feature for OpenStack clusters. This feature adds the `--cluster-name` flag to the OpenStack external CCM deployment. The feature gate is enabled by default for newly created clusters. Enabling this feature gate for existing clusters can cause the external CCM to lose the track of the existing cloud resources, so it's up to the users to clean up any leftover resources ([#7330](https://github.com/kubermatic/kubermatic/issues/7330))
+- Add `Logs` as a RuleGroup list option: `GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups?type=Logs` ([#7202](https://github.com/kubermatic/kubermatic/issues/7202))
+- Add `MLAAdminSetting` CRD ([#7603](https://github.com/kubermatic/kubermatic/issues/7603))
+- Add `kubermatic-installer print` command to improve defaulting visibility ([#7394](https://github.com/kubermatic/kubermatic/issues/7394))
+- Add `projectmanagers` group for RBAC controller. The new group will be assigned to service accounts ([#7016](https://github.com/kubermatic/kubermatic/issues/7016), [#7043](https://github.com/kubermatic/kubermatic/issues/7043), [#3375](https://github.com/kubermatic/dashboard/issues/3375))
+- Add `strictARP` setting for kube-proxy IPVS mode and make it configurable vie Cluster CRD or API ([#7410](https://github.com/kubermatic/kubermatic/issues/7410))
+- Add a v2 endpoint to get seed settings (`GET /api/v2/seeds/{seed_name}/settings`) ([#7008](https://github.com/kubermatic/kubermatic/issues/7008))
+- Add allowlist for Docker registries [EE only], which allows users to set which image registries are allowed so only workloads from those registries can be deployed on user clusters ([#7305](https://github.com/kubermatic/kubermatic/issues/7305), [#3562](https://github.com/kubermatic/dashboard/issues/3562))
+- Add apiserver network policy ([#7396](https://github.com/kubermatic/kubermatic/issues/7396))
+- Add application credentials and OIDC token for OpenStack ([#7221](https://github.com/kubermatic/kubermatic/issues/7221))
+- Add Blackbox Exporter configuration, scrape config, dashboard ([#7376](https://github.com/kubermatic/kubermatic/issues/7376))
+  - A Blackbox Exporter module that can be used to perform health status checks for HTTPS endpoint with TLS verify skipped.
+  - A Blackbox Exporter dashboard in Grafana.
+  - A scrape job in Prometheus will be used to check the health status of ClusterIP services of user cluster Kubernetes API servers
+- Add container runtime to the cluster spec ([#7225](https://github.com/kubermatic/kubermatic/issues/7225))
+- Add default constraint get and list endpoints for v2 ([#7307](https://github.com/kubermatic/kubermatic/issues/7307))
+- Add endpoint to patch constraint: `PATCH /api/v2/constraints/{constraint_name}` ([#7339](https://github.com/kubermatic/kubermatic/issues/7339))
+- Add endpoint to restart machine deployments ([#7340](https://github.com/kubermatic/kubermatic/issues/7340))
+- Add kube-state-metrics addon ([#7513](https://github.com/kubermatic/kubermatic/issues/7513))
+- Add label info on Constraint GET/LIST ([#7399](https://github.com/kubermatic/kubermatic/issues/7399))
+- Add network configuration to user cluster API ([#6970](https://github.com/kubermatic/kubermatic/issues/6970))
+- Add new endpoints for default constraint creation/deletion: `POST /api/v2/constraints` ([#7256](https://github.com/kubermatic/kubermatic/issues/7256), [#7321](https://github.com/kubermatic/kubermatic/issues/7321))
+- Add option to set the Load Balancer SKU when creating Azure clusters ([#7208](https://github.com/kubermatic/kubermatic/issues/7208))
+- Add option to specify initContainer to override inotify max user instances for promtail chart ([#7388](https://github.com/kubermatic/kubermatic/issues/7388))
+- Add support for Kubernetes 1.20 and 1.21 in cluster-autoscaler addon ([#7511](https://github.com/kubermatic/kubermatic/issues/7511))
+- Add support for RequiredEmails for improved presets filtering. RequiredEmailDomain is deprecated and might go away in a future release ([#7239](https://github.com/kubermatic/kubermatic/issues/7239))
+- Add support for creating MachineDeployment with annotations ([#7447](https://github.com/kubermatic/kubermatic/issues/7447))
+- Add v2 endpoints for KKP admin to manage MLA admin setting ([#7652](https://github.com/kubermatic/kubermatic/issues/7652))
+- Add v2 endpoints for KKP users and admins to manage rule groups ([#7162](https://github.com/kubermatic/kubermatic/issues/7162))
+- Add v2 endpoints to manage alertmanager configuration ([#6943](https://github.com/kubermatic/kubermatic/issues/6943), [#6997](https://github.com/kubermatic/kubermatic/issues/6997))
+- Allow configuring extra args in Prometheus Helm chart ([#7443](https://github.com/kubermatic/kubermatic/issues/7443))
+- Allow configuring remote_write in Prometheus Helm chart ([#7288](https://github.com/kubermatic/kubermatic/issues/7288))
+- Allow to specify sidecars in Alertmanager Helm Chart ([#7329](https://github.com/kubermatic/kubermatic/issues/7329))
+- Anexia CCM is now added to the control plane ([#7548](https://github.com/kubermatic/kubermatic/issues/7548))
+- Change the default cluster CIDR for KubeVirt cloud provider ([#7238](https://github.com/kubermatic/kubermatic/issues/7238))
+- Changes to the tolerations on the node-local-dns DaemonSet will now be kept instead of being overwritten ([#7466](https://github.com/kubermatic/kubermatic/issues/7466))
+- Create and assign Azure availability sets on demand ([#7445](https://github.com/kubermatic/kubermatic/issues/7445))
+- Default component settings can be configured in Seed resource ([#7252](https://github.com/kubermatic/kubermatic/issues/7252)):
+  - `nodeport-range` is deprecated, use `.spec.defaultComponentSettings.apiserver.nodePortRange` instead
+  - `apiserver-default-replicas` is deprecated, use `spec.defaultComponentSettings.apiserver.replicas` instead
+  - `apiserver-reconciling-disabled-by-default` is deprecated, use `spec.defaultComponentSettings.apiserver.endpointReconcilingDisabled` instead
+  - `controller-manager-default-replicas` is deprecated, use `spec.defaultComponentSettings.controllerManager.replicas` instead
+  - `scheduler-default-replicas` is deprecated, use `spec.defaultComponentSettings.scheduler.replicas` instead
+- Dynamically choose a kubectl based on the cluster version ([#7585](https://github.com/kubermatic/kubermatic/issues/7585))
+- Expose MLA options in the Seed CRD and API object ([#6967](https://github.com/kubermatic/kubermatic/issues/6967))
+- Extend Seed API endpoints with Seed backup settings management ([#7647](https://github.com/kubermatic/kubermatic/issues/7647))
+- Extend admin settings by new field MLA alertmanager domain ([#7326](https://github.com/kubermatic/kubermatic/issues/7326))
+- Extract kubeadm-configmap addon from kubelet-configmap addon ([#7586](https://github.com/kubermatic/kubermatic/issues/7586))
+- Kubermatic API, etcd-launcher, and dnat-controller images are defaulted to the docker.io registry only if the provided custom image has less than 3 parts ([#7287](https://github.com/kubermatic/kubermatic/issues/7287))
+- Kubermatic OPA Constraints now additionaly support using regular yaml `parameters` instead of `rawJSON`. `rawJSON` is still supported so no migration needed ([#7066](https://github.com/kubermatic/kubermatic/issues/7066))
+- Limit number of simultaneously running etcd backup delete jobs ([#6952](https://github.com/kubermatic/kubermatic/issues/6952))
+- Move backup and restore configuration to Seed resource to allow to have different s3-settings ([#7428](https://github.com/kubermatic/kubermatic/issues/7428))
+- Move component settings defaulting to webhook ([#7082](https://github.com/kubermatic/kubermatic/issues/7082))
+- Open NodePort range in OpenStack ([#7081](https://github.com/kubermatic/kubermatic/issues/7081), [#7121](https://github.com/kubermatic/kubermatic/issues/7121))
+- Paused userclusters do not reconcile in-cluster resources via the usercluster-controller-manager anymore ([#7470](https://github.com/kubermatic/kubermatic/issues/7470))
+- Re-enable NodeLocal DNS Cache in user clusters ([#7075](https://github.com/kubermatic/kubermatic/issues/7075))
+- Remove Gatekeeper from default accessible addon list ([#7510](https://github.com/kubermatic/kubermatic/issues/7510))
+- Remove NodeCSR from User Cluster Controller Manager and Enables NodeCSR from Machine Controller ([#6982](https://github.com/kubermatic/kubermatic/issues/6982))
+- Support spot instance market options ([#7295](https://github.com/kubermatic/kubermatic/issues/7295))
+- Support standard load balancers for Azure ([#7271](https://github.com/kubermatic/kubermatic/issues/7271))
+- Support the metering tool configuration in the API ([#7601](https://github.com/kubermatic/kubermatic/issues/7601))
+- Support vSphere resource pool ([#7281](https://github.com/kubermatic/kubermatic/issues/7281))
+- Templates for cluster creation ([#7286](https://github.com/kubermatic/kubermatic/issues/7286), [#7298](https://github.com/kubermatic/kubermatic/issues/7298), [#7318](https://github.com/kubermatic/kubermatic/issues/7318), [#7364](https://github.com/kubermatic/kubermatic/issues/7364), [#3618](https://github.com/kubermatic/dashboard/issues/3618), [#7150](https://github.com/kubermatic/kubermatic/issues/7150), [#7168](https://github.com/kubermatic/kubermatic/issues/7168), [#7197](https://github.com/kubermatic/kubermatic/issues/7197))
+- Update CRDs to use `apiextensions/v1` (Kubernetes 1.19+) ([#7528](https://github.com/kubermatic/kubermatic/issues/7528))
+- Update Gatekeeper version to v3.5.2 with new CRDs Assign, AssignMetadata, MutatorPodStatus and resources MutatingWebhookConfiguration, PodDisruptionBudget ([#7613](https://github.com/kubermatic/kubermatic/issues/7613))
+- Use OpenStack CCM v1.21.0 for Kubernetes v1.21 clusters, and CCM v1.22.0 for Kubernetes v1.22 clusters ([#7576](https://github.com/kubermatic/kubermatic/issues/7576))
+- Use optimistic lock when adding finalizers to prevent lost updates ([#7040](https://github.com/kubermatic/kubermatic/issues/7040))
+- Use the systemd cgroup driver for newly-created Kubernetes 1.19+ clusters using the kubeadm provider. Since the kubelet-configmap addon is not reconciled, this change will not affect existing clusters, only newly-created clusters ([#7065](https://github.com/kubermatic/kubermatic/issues/7065))
+- Users are able to expose load balancer from the overkube clusters ([#7543](https://github.com/kubermatic/kubermatic/issues/7543))
+- When creating Hetzner Clusters, specifying the network is now mandatory ([#6878](https://github.com/kubermatic/kubermatic/issues/6878), [#6878](https://github.com/kubermatic/kubermatic/issues/6878))
+- `DefaultStoragePolicy` field has been added to the vSphere datacenter spec and storagePolicy to the vSphere CloudSpec at cluster level ([#7423](https://github.com/kubermatic/kubermatic/issues/7423))
+
+### Bugfixes
+
+- Alert `VeleroBackupTakesTooLong` will now reset if the next backup of the same schedule finished successfully ([#7600](https://github.com/kubermatic/kubermatic/issues/7600))
+- Do not delete custom links after pressing enter key ([#3266](https://github.com/kubermatic/dashboard/issues/3266))
+- Fix Helm post-rendering problems within monitoring/prometheus chart due to duplicate resource definitions ([#7425](https://github.com/kubermatic/kubermatic/issues/7425))
+- Fix OpenStack crashing with Kubernetes 1.20 and 1.21 ([#6923](https://github.com/kubermatic/kubermatic/issues/6923))
+- Fix a bug that always applies default values to container resources ([#7302](https://github.com/kubermatic/kubermatic/issues/7302))
+- Fix cluster list endpoint that was returning errors when user didn't have access to at least one cluster datacenter ([#7440](https://github.com/kubermatic/kubermatic/issues/7440))
+- Fix dashboard source in the Prometheus Exporter dashboard ([#7640](https://github.com/kubermatic/kubermatic/issues/7640))
+- Fix finalizers duplication ([#7135](https://github.com/kubermatic/kubermatic/issues/7135))
+- Fix issue where Kubermatic non-admin users were not allowed to manage Kubermatic Constraints ([#6942](https://github.com/kubermatic/kubermatic/issues/6942))
+- Fix issue where cluster validation was failing on certificate error because the validation provider was not using the provided custom CA Bundle ([#6907](https://github.com/kubermatic/kubermatic/issues/6907))
+- Fix missed cluster-autoscaler resource from the ClusterRole ([#6950](https://github.com/kubermatic/kubermatic/issues/6950))
+- Fix user-ssh-keys-agent migration ([#7193](https://github.com/kubermatic/kubermatic/issues/7193))
+- Fix using a custom CA Bundle for OpenStack by authenticating after setting the proper CA bundle ([#7192](https://github.com/kubermatic/kubermatic/issues/7192))
+- Fix vSphere client not using the provided custom CA bundle ([#6973](https://github.com/kubermatic/kubermatic/issues/6973))
+
+### Updates
+
+- Update Alertmanager to 0.22.2 ([#7438](https://github.com/kubermatic/kubermatic/issues/7438))
+- Update Go dependencies to controller-runtime 0.9.5 and Kubernetes 1.21.3 ([#7462](https://github.com/kubermatic/kubermatic/issues/7462))
+- Update Grafana to 8.1.2 ([#7561](https://github.com/kubermatic/kubermatic/issues/7561))
+- Update Minio to RELEASE.2021-08-20T18-32-01Z ([#7562](https://github.com/kubermatic/kubermatic/issues/7562))
+- Update Prometheus to 2.29.1 ([#7437](https://github.com/kubermatic/kubermatic/issues/7437))
+- Update Velero to 1.6.3 ([#7496](https://github.com/kubermatic/kubermatic/issues/7496))
+- Update cert-manager to 1.5.2 ([#7563](https://github.com/kubermatic/kubermatic/issues/7563))
+- Update go-swagger to v0.27.0 ([#7465](https://github.com/kubermatic/kubermatic/issues/7465))
+- Update karma to 0.89 ([#7439](https://github.com/kubermatic/kubermatic/issues/7439))
+- Update kube-state-metrics to 2.2.0 ([#7571](https://github.com/kubermatic/kubermatic/issues/7571))
+- Update machine-controller to 1.35.1 ([#7492](https://github.com/kubermatic/kubermatic/issues/7492))
+- Update nginx-ingress-controller to 0.49.0 ([#7560](https://github.com/kubermatic/kubermatic/issues/7560))
+- Update node-exporter to v1.2.2 ([#7523](https://github.com/kubermatic/kubermatic/issues/7523))
+
+
+
+
 # Kubermatic 2.17
 
 ## [v2.17.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.17.3)
