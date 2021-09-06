@@ -14439,7 +14439,7 @@
                 "userSshKeys": {
                   "type": "array",
                   "items": {
-                    "type": "string"
+                    "$ref": "#/definitions/ClusterTemplateSSHKey"
                   },
                   "x-go-name": "UserSSHKeys"
                 }
@@ -17592,7 +17592,7 @@
         "userSshKeys": {
           "type": "array",
           "items": {
-            "type": "string"
+            "$ref": "#/definitions/ClusterTemplateSSHKey"
           },
           "x-go-name": "UserSSHKeys"
         }
@@ -17642,6 +17642,21 @@
       "type": "array",
       "items": {
         "$ref": "#/definitions/ClusterTemplate"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "ClusterTemplateSSHKey": {
+      "description": "ClusterTemplateSSHKey represents SSH Key object for Cluster Template",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },

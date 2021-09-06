@@ -50,11 +50,11 @@ type ClusterTemplate struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	ClusterLabels          map[string]string `json:"clusterLabels,omitempty"`
-	InheritedClusterLabels map[string]string `json:"inheritedClusterLabels,omitempty"`
-	Credential             string            `json:"credential"`
-	UserSSHKeys            []string          `json:"userSshKeys"`
-	Spec                   ClusterSpec       `json:"spec"`
+	ClusterLabels          map[string]string       `json:"clusterLabels,omitempty"`
+	InheritedClusterLabels map[string]string       `json:"inheritedClusterLabels,omitempty"`
+	Credential             string                  `json:"credential"`
+	UserSSHKeys            []ClusterTemplateSSHKey `json:"userSshKeys"`
+	Spec                   ClusterSpec             `json:"spec"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -65,4 +65,10 @@ type ClusterTemplateList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 
 	Items []ClusterTemplate `json:"items"`
+}
+
+// ClusterTemplateSSHKey is the object for holding SSH key
+type ClusterTemplateSSHKey struct {
+	Name string `json:"name"`
+	ID   string `json:"id"`
 }

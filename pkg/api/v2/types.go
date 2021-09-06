@@ -171,12 +171,19 @@ type ClusterTemplate struct {
 	Name string `json:"name"`
 	ID   string `json:"id"`
 
-	ProjectID      string                `json:"projectID,omitempty"`
-	User           string                `json:"user,omitempty"`
-	Scope          string                `json:"scope"`
-	UserSSHKeys    []string              `json:"userSshKeys,omitempty"`
-	Cluster        *apiv1.Cluster        `json:"cluster,omitempty"`
-	NodeDeployment *apiv1.NodeDeployment `json:"nodeDeployment,omitempty"`
+	ProjectID      string                  `json:"projectID,omitempty"`
+	User           string                  `json:"user,omitempty"`
+	Scope          string                  `json:"scope"`
+	UserSSHKeys    []ClusterTemplateSSHKey `json:"userSshKeys,omitempty"`
+	Cluster        *apiv1.Cluster          `json:"cluster,omitempty"`
+	NodeDeployment *apiv1.NodeDeployment   `json:"nodeDeployment,omitempty"`
+}
+
+// ClusterTemplateSSHKey represents SSH Key object for Cluster Template
+// swagger:model ClusterTemplateSSHKey
+type ClusterTemplateSSHKey struct {
+	Name string `json:"name"`
+	ID   string `json:"id"`
 }
 
 // ClusterTemplateList represents a ClusterTemplate list
