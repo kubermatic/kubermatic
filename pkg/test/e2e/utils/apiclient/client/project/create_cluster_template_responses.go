@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strconv"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
@@ -183,7 +184,7 @@ type CreateClusterTemplateBody struct {
 	Scope string `json:"scope,omitempty"`
 
 	// user SSH keys
-	UserSSHKeys []string `json:"userSshKeys"`
+	UserSSHKeys []*models.ClusterTemplateSSHKey `json:"userSshKeys"`
 
 	// cluster
 	Cluster *models.Cluster `json:"cluster,omitempty"`
@@ -196,6 +197,10 @@ type CreateClusterTemplateBody struct {
 func (o *CreateClusterTemplateBody) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := o.validateUserSSHKeys(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := o.validateCluster(formats); err != nil {
 		res = append(res, err)
 	}
@@ -207,6 +212,30 @@ func (o *CreateClusterTemplateBody) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (o *CreateClusterTemplateBody) validateUserSSHKeys(formats strfmt.Registry) error {
+	if swag.IsZero(o.UserSSHKeys) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(o.UserSSHKeys); i++ {
+		if swag.IsZero(o.UserSSHKeys[i]) { // not required
+			continue
+		}
+
+		if o.UserSSHKeys[i] != nil {
+			if err := o.UserSSHKeys[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("Body" + "." + "userSshKeys" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 
@@ -248,6 +277,10 @@ func (o *CreateClusterTemplateBody) validateNodeDeployment(formats strfmt.Regist
 func (o *CreateClusterTemplateBody) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := o.contextValidateUserSSHKeys(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := o.contextValidateCluster(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -259,6 +292,24 @@ func (o *CreateClusterTemplateBody) ContextValidate(ctx context.Context, formats
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (o *CreateClusterTemplateBody) contextValidateUserSSHKeys(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(o.UserSSHKeys); i++ {
+
+		if o.UserSSHKeys[i] != nil {
+			if err := o.UserSSHKeys[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("Body" + "." + "userSshKeys" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 

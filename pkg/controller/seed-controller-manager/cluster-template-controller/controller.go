@@ -210,13 +210,13 @@ func (r *reconciler) createClusters(ctx context.Context, instance *kubermaticv1.
 	return nil
 }
 
-func (r *reconciler) assignSSHKeyToCluster(ctx context.Context, clusterID string, userSSHKeys []string) error {
+func (r *reconciler) assignSSHKeyToCluster(ctx context.Context, clusterID string, userSSHKeys []kubermaticv1.ClusterTemplateSSHKey) error {
 	if len(userSSHKeys) == 0 {
 		return nil
 	}
-	for _, sshKeyID := range userSSHKeys {
+	for _, sshKey := range userSSHKeys {
 		userKey := &kubermaticv1.UserSSHKey{}
-		if err := r.seedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: sshKeyID}, userKey); err != nil {
+		if err := r.seedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: sshKey.ID}, userKey); err != nil {
 			return err
 		}
 		userKey.AddToCluster(clusterID)

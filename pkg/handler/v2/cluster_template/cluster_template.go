@@ -112,19 +112,22 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			for _, templateKeyID := range req.Body.UserSSHKeys {
+			for _, templateKey := range req.Body.UserSSHKeys {
 				found := false
 				for _, projectSSHKey := range projectSSHKeys {
-					if projectSSHKey.Name == templateKeyID {
+					if projectSSHKey.Name == templateKey.ID {
 						found = true
 						break
 					}
 				}
 				if !found {
-					return nil, fmt.Errorf("the given ssh key %s does not belong to the given project %s (%s)", templateKeyID, project.Spec.Name, project.Name)
+					return nil, fmt.Errorf("the given ssh key %s does not belong to the given project %s (%s)", templateKey.ID, project.Spec.Name, project.Name)
 				}
+				newClusterTemplate.UserSSHKeys = append(newClusterTemplate.UserSSHKeys, kubermaticv1.ClusterTemplateSSHKey{
+					Name: templateKey.Name,
+					ID:   templateKey.ID,
+				})
 			}
-			newClusterTemplate.UserSSHKeys = req.Body.UserSSHKeys
 		}
 
 		clusterTemplate, err := clusterTemplateProvider.New(adminUserInfo, newClusterTemplate, req.Body.Scope, project.Name)
@@ -160,9 +163,9 @@ type createClusterTemplateReq struct {
 	common.ProjectReq
 	// in: body
 	Body struct {
-		Name        string   `json:"name"`
-		Scope       string   `json:"scope"`
-		UserSSHKeys []string `json:"userSshKeys"`
+		Name        string                        `json:"name"`
+		Scope       string                        `json:"scope"`
+		UserSSHKeys []apiv2.ClusterTemplateSSHKey `json:"userSshKeys"`
 		apiv1.CreateClusterSpec
 	}
 
@@ -444,13 +447,12 @@ func convertInternalClusterTemplatetoExternal(template *kubermaticv1.ClusterTemp
 		}
 	}
 
-	return &apiv2.ClusterTemplate{
-		Name:        template.Labels[kubermaticv1.ClusterTemplateHumanReadableNameLabelKey],
-		ID:          template.Name,
-		ProjectID:   template.Labels[kubermaticv1.ClusterTemplateProjectLabelKey],
-		User:        template.Annotations[kubermaticv1.ClusterTemplateUserAnnotationKey],
-		Scope:       template.Labels[kubermaticv1.ClusterTemplateScopeLabelKey],
-		UserSSHKeys: template.UserSSHKeys,
+	ct := &apiv2.ClusterTemplate{
+		Name:      template.Labels[kubermaticv1.ClusterTemplateHumanReadableNameLabelKey],
+		ID:        template.Name,
+		ProjectID: template.Labels[kubermaticv1.ClusterTemplateProjectLabelKey],
+		User:      template.Annotations[kubermaticv1.ClusterTemplateUserAnnotationKey],
+		Scope:     template.Labels[kubermaticv1.ClusterTemplateScopeLabelKey],
 		Cluster: &apiv1.Cluster{
 			Labels:          template.ClusterLabels,
 			InheritedLabels: template.InheritedClusterLabels,
@@ -474,5 +476,16 @@ func convertInternalClusterTemplatetoExternal(template *kubermaticv1.ClusterTemp
 			},
 		},
 		NodeDeployment: md,
-	}, nil
+	}
+
+	if len(template.UserSSHKeys) > 0 {
+		for _, sshKey := range template.UserSSHKeys {
+			ct.UserSSHKeys = append(ct.UserSSHKeys, apiv2.ClusterTemplateSSHKey{
+				Name: sshKey.Name,
+				ID:   sshKey.ID,
+			})
+		}
+	}
+
+	return ct, nil
 }
