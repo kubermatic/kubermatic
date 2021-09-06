@@ -836,7 +836,7 @@ func TestImagePullSecretsWrapper(t *testing.T) {
 
 // identityCreator is an ObjectModifier that returns the input object
 // untouched.
-// TODO(irozzo) May be useful to move this in a test package?
+// TODO May be useful to move this in a test package?
 func identityCreator(obj controllerruntimeclient.Object) (controllerruntimeclient.Object, error) {
 	return obj, nil
 }

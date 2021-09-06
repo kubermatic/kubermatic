@@ -50,7 +50,7 @@ func (v *ValidationHandlerBuilder) FeatureGates(features features.FeatureGate) *
 }
 
 // WorkerName sets the workerName value to be used to list clusters.
-// TODO(irozzo) check how this is useful.
+// TODO check how this is useful.
 func (v *ValidationHandlerBuilder) WorkerName(workerName string) *ValidationHandlerBuilder {
 	v.workerName = workerName
 	return v

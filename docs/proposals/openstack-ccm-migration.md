@@ -54,9 +54,9 @@ status.
 
 The details of the logic used to detect the migration are left to the
 implementation, but it could consist in checking if the ExternalCloudProvider
-or one of the newly introduced feature gates are enabled in the cluster and 
+or one of the newly introduced feature gates are enabled in the cluster and
 if KAS or CCM still have the `cloud-provider: openstack` flag in their manifest
-arguments. 
+arguments.
 
 The steps of the migration are summarized in the flowchart below.
 
@@ -64,9 +64,9 @@ The steps of the migration are summarized in the flowchart below.
   <img src="./images/openstack-ccm-migration.jpg" width="100%" />
 </div>
 
-TODO(irozzo): This flow implies that for some time the `cloud-node` controller
+TODO: This flow implies that for some time the `cloud-node` controller
 is running besides some kubelets still having `cloud-provider=openstack`,
-double check that this is safe. 
+double check that this is safe.
 
 ### CSI Migration
 

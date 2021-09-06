@@ -96,7 +96,7 @@ func getAgentPodSpec(agentIP net.IP, versions kubermatic.Versions) corev1.PodSpe
 }
 
 func getInitContainers(ip net.IP, v kubermatic.Versions) []corev1.Container {
-	// TODO(irozzo): we are creating and configuring the a dummy interface
+	// TODO: we are creating and configuring the a dummy interface
 	// using init containers. This approach is good enough for the tech preview
 	// but it is definitely not production ready. This should be replaced with
 	// a binary that properly handles error conditions and reconciles the
@@ -104,7 +104,7 @@ func getInitContainers(ip net.IP, v kubermatic.Versions) []corev1.Container {
 	return []corev1.Container{
 		{
 			Name: resources.EnvoyAgentCreateInterfaceInitContainerName,
-			// TODO(irozzo): the registry should be overridable.
+			// TODO: the registry should be overridable.
 			Image:   fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, resources.EnvoyAgentDeviceSetupImage, v.Kubermatic),
 			Command: []string{"sh", "-c", "ip link add envoyagent type dummy || true"},
 			SecurityContext: &corev1.SecurityContext{

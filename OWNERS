@@ -5,7 +5,6 @@ approvers:
   - sig-app-management
   - sig-cluster-management
   - sig-networking
-  - sig-security
   - sig-virtualization
 
 reviewers:
@@ -13,5 +12,4 @@ reviewers:
   - sig-app-management
   - sig-cluster-management
   - sig-networking
-  - sig-security
   - sig-virtualization

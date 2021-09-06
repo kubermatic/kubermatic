@@ -115,7 +115,7 @@ func (a *AgentConfig) newAgentConfigMap(ns string) *corev1.ConfigMap {
 			},
 		},
 	})()
-	// TODO(irozzo): errors should never be thrown here
+	// TODO: errors should never be thrown here
 	cm, _ := createConfigMap(&corev1.ConfigMap{})
 	cm.Name = cmName
 	cm.Namespace = ns
@@ -125,7 +125,7 @@ func (a *AgentConfig) newAgentConfigMap(ns string) *corev1.ConfigMap {
 // newAgnhostPod returns a pod returns the manifest of the agent pod.
 func (a *AgentConfig) newAgentPod(ns string) *corev1.Pod {
 	agentName, createDs := envoyagent.DaemonSetCreator(net.IPv4(0, 0, 0, 0), a.Versions)()
-	// TODO(irozzo): errors should never be thrown here
+	// TODO: errors should never be thrown here
 	ds, _ := createDs(&appsv1.DaemonSet{})
 	// We don't need the init containers in this context.
 	ds.Spec.Template.Spec.InitContainers = []corev1.Container{}
