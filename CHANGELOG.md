@@ -23,6 +23,7 @@
 - Add telemetry chart, use `--disable-telemetry` in installer to disable it ([#7579](https://github.com/kubermatic/kubermatic/issues/7579))
 - Metering tool integration ([#7549](https://github.com/kubermatic/kubermatic/issues/7549))
 - AWS Spot instances support ([#7073](https://github.com/kubermatic/kubermatic/issues/7073), [#3607](https://github.com/kubermatic/dashboard/issues/3607))
+- Add support for cluster templates ([#7286](https://github.com/kubermatic/kubermatic/issues/7286), [#7298](https://github.com/kubermatic/kubermatic/issues/7298), [#7318](https://github.com/kubermatic/kubermatic/issues/7318), [#7364](https://github.com/kubermatic/kubermatic/issues/7364), [#3618](https://github.com/kubermatic/dashboard/issues/3618), [#7150](https://github.com/kubermatic/kubermatic/issues/7150), [#7168](https://github.com/kubermatic/kubermatic/issues/7168), [#7197](https://github.com/kubermatic/kubermatic/issues/7197))
 
 ### Breaking Changes
 
@@ -144,7 +145,6 @@
 - Support standard load balancers for Azure ([#7271](https://github.com/kubermatic/kubermatic/issues/7271))
 - Support the metering tool configuration in the API ([#7601](https://github.com/kubermatic/kubermatic/issues/7601))
 - Support vSphere resource pool ([#7281](https://github.com/kubermatic/kubermatic/issues/7281))
-- Templates for cluster creation ([#7286](https://github.com/kubermatic/kubermatic/issues/7286), [#7298](https://github.com/kubermatic/kubermatic/issues/7298), [#7318](https://github.com/kubermatic/kubermatic/issues/7318), [#7364](https://github.com/kubermatic/kubermatic/issues/7364), [#3618](https://github.com/kubermatic/dashboard/issues/3618), [#7150](https://github.com/kubermatic/kubermatic/issues/7150), [#7168](https://github.com/kubermatic/kubermatic/issues/7168), [#7197](https://github.com/kubermatic/kubermatic/issues/7197))
 - Update CRDs to use `apiextensions/v1` (Kubernetes 1.19+) ([#7528](https://github.com/kubermatic/kubermatic/issues/7528))
 - Update Gatekeeper version to v3.5.2 with new CRDs Assign, AssignMetadata, MutatorPodStatus and resources MutatingWebhookConfiguration, PodDisruptionBudget ([#7613](https://github.com/kubermatic/kubermatic/issues/7613))
 - Use OpenStack CCM v1.21.0 for Kubernetes v1.21 clusters, and CCM v1.22.0 for Kubernetes v1.22 clusters ([#7576](https://github.com/kubermatic/kubermatic/issues/7576))
