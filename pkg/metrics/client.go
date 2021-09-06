@@ -32,8 +32,8 @@ var (
 	// "verb" and "url" labels. It is used for the rest client latency metrics.
 	requestLatency = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name:    "rest_client_request_latency_seconds",
-			Help:    "Request latency in seconds. Broken down by verb and URL.",
+			Name:    "rest_client_request_duration_seconds",
+			Help:    "Request duration in seconds. Broken down by verb and URL.",
 			Buckets: prometheus.ExponentialBuckets(0.001, 2, 10),
 		},
 		[]string{"verb", "url"},
