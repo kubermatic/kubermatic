@@ -68,6 +68,7 @@ type userclusterControllerData interface {
 	KubermaticDockerTag() string
 	GetCloudProviderName() (string, error)
 	UserClusterMLAEnabled() bool
+	IsKonnectivityEnabled() bool
 }
 
 // DeploymentCreator returns the function to create and update the user cluster controller deployment
@@ -145,6 +146,10 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				fmt.Sprintf("-ca-bundle=/opt/ca-bundle/%s", resources.CABundleConfigMapKey),
 				fmt.Sprintf("-node-local-dns-cache=%t", data.NodeLocalDNSCacheEnabled()),
 			}, getNetworkArgs(data)...)
+
+			if data.IsKonnectivityEnabled() {
+				args = append(args, "--konnectivity-enabled", "true")
+			}
 
 			if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
 				args = append(args, "-tunneling-agent-ip", data.Cluster().Address.IP)
