@@ -150,10 +150,6 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return err
 	}
 
-	if err := r.reconcileMutatingWebhookConfigurations(ctx, data); err != nil {
-		return err
-	}
-
 	if err := r.reconcileConfigMaps(ctx, data); err != nil {
 		return err
 	}
@@ -167,6 +163,10 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	}
 
 	if err := r.reconcileValidatingWebhookConfigurations(ctx); err != nil {
+		return err
+	}
+
+	if err := r.reconcileMutatingWebhookConfigurations(ctx, data); err != nil {
 		return err
 	}
 
@@ -512,7 +512,7 @@ func (r *reconciler) reconcileMutatingWebhookConfigurations(ctx context.Context,
 	creators := []reconciling.NamedMutatingWebhookConfigurationCreatorGetter{
 		machinecontroller.MutatingwebhookConfigurationCreator(data.caCert.Cert, r.namespace),
 	}
-	if r.opaIntegration {
+	if r.opaIntegration && r.opaEnableMutation {
 		creators = append(creators, gatekeeper.MutatingWebhookConfigurationCreator(r.opaWebhookTimeout))
 	}
 
@@ -736,6 +736,7 @@ func (r *reconciler) reconcileNamespaces(ctx context.Context) error {
 	}
 	if r.opaIntegration {
 		creators = append(creators, gatekeeper.NamespaceCreator)
+		creators = append(creators, gatekeeper.KubeSystemLabeler)
 	}
 	if r.userClusterMLA.Logging || r.userClusterMLA.Monitoring {
 		creators = append(creators, mla.NamespaceCreator)
@@ -770,7 +771,7 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 	// OPA related resources
 	if r.opaIntegration {
 		creators := []reconciling.NamedDeploymentCreatorGetter{
-			gatekeeper.ControllerDeploymentCreator(),
+			gatekeeper.ControllerDeploymentCreator(r.opaEnableMutation),
 			gatekeeper.AuditDeploymentCreator(),
 		}
 
