@@ -27,17 +27,20 @@ package metering
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/v1/metering"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -54,8 +57,43 @@ const (
 
 var secretNamespacedName = types.NamespacedName{Name: SecretName, Namespace: SecretNamespace}
 
+type configurationReq struct {
+	Enabled          bool   `json:"enabled"`
+	StorageClassName string `json:"storageClassName"`
+	StorageSize      string `json:"storageSize"`
+}
+
+func (m configurationReq) Validate() error {
+	if m.Enabled {
+		if m.StorageClassName == "" || m.StorageSize == "" {
+			return errors.New("storageClassName or storageSize cannot be empty when the metering tool is enabled")
+		}
+
+		if _, err := resource.ParseQuantity(m.StorageSize); err != nil {
+			return fmt.Errorf("inapproperiate storageClass size: %v", err)
+		}
+	}
+
+	return nil
+}
+
+func DecodeMeteringConfigurationsReq(r *http.Request) (interface{}, error) {
+	var req configurationReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // CreateOrUpdateConfigurations creates or updates the metering tool configurations.
-func CreateOrUpdateConfigurations(ctx context.Context, req metering.ConfigurationReq, masterClient ctrlruntimeclient.Client) error {
+func CreateOrUpdateConfigurations(ctx context.Context, request interface{}, masterClient ctrlruntimeclient.Client) error {
+
+	req, ok := request.(configurationReq)
+	if !ok {
+		return k8cerrors.NewBadRequest("invalid request")
+	}
+
 	seedList := &kubermaticv1.SeedList{}
 	if err := masterClient.List(ctx, seedList, &ctrlruntimeclient.ListOptions{Namespace: resources.KubermaticNamespace}); err != nil {
 		return fmt.Errorf("failed listing seeds: %w", err)
@@ -70,7 +108,8 @@ func CreateOrUpdateConfigurations(ctx context.Context, req metering.Configuratio
 	return nil
 }
 
-func updateSeedMeteringConfiguration(ctx context.Context, meteringCfg metering.ConfigurationReq, seed *v1.Seed, masterClient ctrlruntimeclient.Client) error {
+func updateSeedMeteringConfiguration(ctx context.Context, meteringCfg configurationReq, seed *v1.Seed, masterClient ctrlruntimeclient.Client) error {
+
 	seed.Spec.Metering = &v1.MeteringConfigurations{
 		Enabled:          meteringCfg.Enabled,
 		StorageClassName: meteringCfg.StorageClassName,
@@ -84,10 +123,44 @@ func updateSeedMeteringConfiguration(ctx context.Context, meteringCfg metering.C
 	return nil
 }
 
+// credentialReq contains the s3 secrets to access s3 bucket.
+type credentialReq struct {
+	BucketName string `json:"bucketName"`
+	AccessKey  string `json:"accessKey"`
+	SecretKey  string `json:"secretKey"`
+	Endpoint   string `json:"endpoint"`
+}
+
+func (c credentialReq) Validate() error {
+	if c.Endpoint == "" || c.AccessKey == "" || c.SecretKey == "" || c.BucketName == "" {
+		return fmt.Errorf("accessKey, secretKey, bucketName or endpoint cannot be empty")
+	}
+
+	return nil
+}
+
+func DecodeMeteringSecretReq(r *http.Request) (interface{}, error) {
+	var req credentialReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // CreateOrUpdateCredentials creates or updates the metering tool credentials.
-func CreateOrUpdateCredentials(ctx context.Context, req metering.SecretReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
+func CreateOrUpdateCredentials(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
 	if seedsGetter == nil || seedClientGetter == nil {
 		return errors.New("parameter seedsGetter nor seedClientGetter cannot be nil")
+	}
+
+	req, ok := request.(credentialReq)
+	if !ok {
+		return k8cerrors.NewBadRequest("invalid request")
+	}
+
+	if err := req.Validate(); err != nil {
+		return err
 	}
 
 	seeds, err := getSeeds(seedsGetter, seedClientGetter)
