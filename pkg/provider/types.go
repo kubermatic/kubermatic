@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -68,6 +69,34 @@ const (
 	// ProjectLabelKey is the key under which resources can be project labelled
 	ProjectLabelKey = "project"
 )
+
+func supportedProviders() []string {
+	return []string{
+		FakeCloudProvider,
+		DigitaloceanCloudProvider,
+		BringYourOwnCloudProvider,
+		AWSCloudProvider,
+		AzureCloudProvider,
+		OpenstackCloudProvider,
+		PacketCloudProvider,
+		HetznerCloudProvider,
+		VSphereCloudProvider,
+		GCPCloudProvider,
+		KubevirtCloudProvider,
+		AlibabaCloudProvider,
+		AnexiaCloudProvider,
+	}
+}
+
+func IsProviderSupported(name string) bool {
+	for _, provider := range supportedProviders() {
+		if strings.EqualFold(name, provider) {
+			return true
+		}
+	}
+
+	return false
+}
 
 // CloudProvider declares a set of methods for interacting with a cloud provider
 type CloudProvider interface {

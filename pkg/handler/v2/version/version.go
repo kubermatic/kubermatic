@@ -25,9 +25,9 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	crdapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
@@ -49,7 +49,7 @@ func (l listProviderVersionsReq) Validate() error {
 	if len(l.Type) == 0 {
 		return fmt.Errorf("the type field cannot be empty")
 	}
-	if !crdapiv1.IsProviderSupported(l.ProviderName) {
+	if !provider.IsProviderSupported(l.ProviderName) {
 		return fmt.Errorf("invalid provider name %s", l.ProviderName)
 	}
 
