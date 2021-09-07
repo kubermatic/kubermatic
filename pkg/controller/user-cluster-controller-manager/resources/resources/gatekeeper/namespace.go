@@ -21,11 +21,27 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // NamespaceCreator creates the namespace for Gatekeeper
 func NamespaceCreator() (string, reconciling.NamespaceCreator) {
 	return resources.GatekeeperNamespace, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
+		if ns.Labels == nil {
+			ns.Labels = make(map[string]string)
+		}
+		ns.Labels[resources.GatekeeperExemptNamespaceLabel] = "true"
+		return ns, nil
+	}
+}
+
+// KubeSystemLabeler labels the kube-system namespace to be exempt from Gatekeeper
+func KubeSystemLabeler() (string, reconciling.NamespaceCreator) {
+	return metav1.NamespaceSystem, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
+		if ns.Labels == nil {
+			ns.Labels = make(map[string]string)
+		}
+		ns.Labels[resources.GatekeeperExemptNamespaceLabel] = "true"
 		return ns, nil
 	}
 }

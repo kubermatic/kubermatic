@@ -82,6 +82,7 @@ type controllerRunOptions struct {
 	dnsClusterIP                 string
 	nodeLocalDNSCache            bool
 	opaIntegration               bool
+	opaEnableMutation            bool
 	opaWebhookTimeout            int
 	useSSHKeyAgent               bool
 	caBundleFile                 string
@@ -121,7 +122,8 @@ func main() {
 	flag.StringVar(&runOp.updateWindowStart, "update-window-start", "", "The start time of the update window, e.g. 02:00")
 	flag.StringVar(&runOp.updateWindowLength, "update-window-length", "", "The length of the update window, e.g. 1h")
 	flag.BoolVar(&runOp.opaIntegration, "opa-integration", false, "Enable OPA integration in user cluster")
-	flag.IntVar(&runOp.opaWebhookTimeout, "opa-webhook-timeout", 3, "Timeout for OPA Integration validating webhook, in seconds")
+	flag.BoolVar(&runOp.opaEnableMutation, "enable-mutation", false, "Enable OPA experimental mutation in user cluster")
+	flag.IntVar(&runOp.opaWebhookTimeout, "opa-webhook-timeout", 1, "Timeout for OPA Integration validating webhook, in seconds")
 	flag.BoolVar(&runOp.useSSHKeyAgent, "enable-ssh-key-agent", false, "Enable UserSSHKeyAgent integration in user cluster")
 	flag.StringVar(&runOp.caBundleFile, "ca-bundle", "", "The path to the cluster's CA bundle (PEM-encoded).")
 	flag.StringVar(&runOp.mlaGatewayURL, "mla-gateway-url", "", "The URL of MLA (Monitoring, Logging, and Alerting) gateway endpoint.")
@@ -257,6 +259,7 @@ func main() {
 		runOp.dnsClusterIP,
 		runOp.nodeLocalDNSCache,
 		runOp.opaIntegration,
+		runOp.opaEnableMutation,
 		versions,
 		runOp.useSSHKeyAgent,
 		runOp.opaWebhookTimeout,

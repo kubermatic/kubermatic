@@ -341,6 +341,8 @@ const (
 	AuditMatchKindOnly = false
 	// ConstraintViolationsLimit defines the maximum number of audit violations reported on a constraint
 	ConstraintViolationsLimit = 20
+	// GatekeeperExemptNamespaceLabel label key for exempting namespaces from Gatekeeper checks
+	GatekeeperExemptNamespaceLabel = "admission.gatekeeper.sh/ignore"
 
 	// CloudInitSettingsNamespace are used in order to reach, authenticate and be authorized by the api server, to fetch
 	// the machine  provisioning cloud-init
