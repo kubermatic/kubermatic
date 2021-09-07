@@ -114,8 +114,9 @@ mc mirror --newer-than "65d0h0m" s3/$S3_BUCKET /metering-data || true`,
 
 			job.Spec.JobTemplate.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:  "kubermatic-metering-report",
-					Image: "quay.io/kubermatic/metering:v0.5",
+					Name:            "kubermatic-metering-report",
+					Image:           "quay.io/kubermatic/metering:v0.5",
+					ImagePullPolicy: corev1.PullAlways,
 					Command: []string{
 						"/bin/sh",
 					},
