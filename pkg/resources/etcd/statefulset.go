@@ -159,10 +159,6 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 							Value: data.Cluster().Name,
 						},
 						{
-							Name:  "ETCD_CLUSTER_SIZE",
-							Value: strconv.Itoa(int(replicas)),
-						},
-						{
 							Name:  "ENABLE_CORRUPTION_CHECK",
 							Value: strconv.FormatBool(enableDataCorruptionChecks),
 						},
