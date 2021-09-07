@@ -38,9 +38,9 @@ import (
 )
 
 const (
-	meteringToolName       = "kubermatic-metering"
-	meteringDataName       = "metering-data"
-	meteringCronJobMonthly = "kubermatic-metering-report-monthly"
+	meteringToolName          = "kubermatic-metering"
+	meteringDataName          = "metering-data"
+	meteringCronJobWeeklyName = "kubermatic-metering-report-weekly"
 )
 
 // deploymentCreator creates a new metering tool deployment per seed cluster.
@@ -145,7 +145,7 @@ mc mirror --newer-than "32d0h0m" s3/$S3_BUCKET /metering-data || true`,
 						"--seed",
 						seed.Name,
 					},
-					Image:           "quay.io/kubermatic/metering:7a12117",
+					Image:           "quay.io/kubermatic/metering:v0.5",
 					ImagePullPolicy: corev1.PullAlways,
 					Ports: []corev1.ContainerPort{
 						{
