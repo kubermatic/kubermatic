@@ -32,7 +32,7 @@ SWAGGER_FILE="swagger.json"
 TMP_SWAGGER="${SWAGGER_FILE}.tmp"
 
 cd cmd/kubermatic-api/
-go run github.com/go-swagger/go-swagger/cmd/swagger generate spec --scan-models -o ${TMP_SWAGGER}
+go run github.com/go-swagger/go-swagger/cmd/swagger generate spec --tags=ee --scan-models -o ${TMP_SWAGGER}
 # The parameters order in the generated swagger spec json file is not
 # deterministic, sort in order to avoid flake results.
 # The sorting here is applied only to first level arrays, nested arrays are not

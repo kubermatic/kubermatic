@@ -20,27 +20,43 @@ package admin
 
 import (
 	"context"
+	"net/http"
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/ee/metering"
-	meteringApi "k8c.io/kubermatic/v2/pkg/handler/v1/metering"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func createOrUpdateMeteringCredentials(ctx context.Context, request meteringApi.SecretReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
+func createOrUpdateMeteringCredentials(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
 	return metering.CreateOrUpdateCredentials(ctx, request, seedsGetter, seedClientGetter)
 }
 
-func createOrUpdateMeteringConfigurations(ctx context.Context, request meteringApi.ConfigurationReq, masterClient client.Client) error {
+func DecodeMeteringSecretReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return metering.DecodeMeteringSecretReq(r)
+}
+
+func createOrUpdateMeteringConfigurations(ctx context.Context, request interface{}, masterClient client.Client) error {
 	return metering.CreateOrUpdateConfigurations(ctx, request, masterClient)
 }
 
-func listMeteringReports(ctx context.Context, request meteringApi.ListMeteringReportReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) ([]v1.MeteringReport, error) {
+func DecodeMeteringConfigurationsReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return metering.DecodeMeteringConfigurationsReq(r)
+}
+
+func listMeteringReports(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) ([]v1.MeteringReport, error) {
 	return metering.ListReports(ctx, request, seedsGetter, seedClientGetter)
 }
 
-func getMeteringReport(ctx context.Context, request meteringApi.GetMeteringReportReq, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) (string, error) {
+func DecodeListMeteringReportReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return metering.DecodeListMeteringReportReq(r)
+}
+
+func getMeteringReport(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) (string, error) {
 	return metering.GetReport(ctx, request, seedsGetter, seedClientGetter)
+}
+
+func DecodeGetMeteringReportReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return metering.DecodeGetMeteringReportReq(r)
 }

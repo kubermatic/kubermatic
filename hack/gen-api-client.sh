@@ -38,6 +38,7 @@ trap cleanup EXIT SIGINT SIGTERM
 perl -0777 -i -p -e 's/\n(package handler)/\1/' ../../pkg/handler/routes_v1.go
 
 go run github.com/go-swagger/go-swagger/cmd/swagger generate spec \
+  --tags=ee \
   --scan-models \
   -o ${TMP_SWAGGER}
 

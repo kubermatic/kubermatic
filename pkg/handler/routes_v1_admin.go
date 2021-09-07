@@ -26,7 +26,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/admin"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
-	"k8c.io/kubermatic/v2/pkg/handler/v1/metering"
 )
 
 // RegisterV1Admin declares all router paths for the admin users
@@ -427,7 +426,7 @@ func (r Routing) deleteSeed() http.Handler {
 
 // swagger:route PUT /api/v1/admin/metering/credentials admin createOrUpdateMeteringCredentials
 //
-//     Creates or updates the metering tool credentials.
+//     Creates or updates the metering tool credentials. Only available in Kubermatic Enterprise Edition
 //
 //     Produces:
 //     - application/json
@@ -443,7 +442,7 @@ func (r Routing) createOrUpdateMeteringCredentials() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(admin.CreateOrUpdateMeteringCredentials(r.userInfoGetter, r.seedsGetter, r.seedsClientGetter)),
-		metering.DecodeMeteringSecretReq,
+		admin.DecodeMeteringSecretReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -451,7 +450,7 @@ func (r Routing) createOrUpdateMeteringCredentials() http.Handler {
 
 // swagger:route PUT /api/v1/admin/metering/configurations admin createOrUpdateMeteringConfigurations
 //
-//     Configures KKP metering tool.
+//     Configures KKP metering tool. Only available in Kubermatic Enterprise Edition
 //
 //     Produces:
 //     - application/json
@@ -467,7 +466,7 @@ func (r Routing) createOrUpdateMeteringConfigurations() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(admin.CreateOrUpdateMeteringConfigurations(r.userInfoGetter, r.masterClient)),
-		metering.DecodeMeteringConfigurationsReq,
+		admin.DecodeMeteringConfigurationsReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -475,7 +474,7 @@ func (r Routing) createOrUpdateMeteringConfigurations() http.Handler {
 
 // swagger:route GET /api/v1/admin/metering/reports metering reports listMeteringReports
 //
-//     List metering reports
+//     List metering reports. Only available in Kubermatic Enterprise Edition
 //
 //     Produces:
 //     - application/json
@@ -491,7 +490,7 @@ func (r Routing) listMeteringReports() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(admin.ListMeteringReportsEndpoint(r.userInfoGetter, r.seedsGetter, r.seedsClientGetter)),
-		metering.DecodeListMeteringReportReq,
+		admin.DecodeListMeteringReportReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -499,7 +498,7 @@ func (r Routing) listMeteringReports() http.Handler {
 
 //swagger:route GET /api/v1/admin/metering/reports/{report_name} metering report getMeteringReport
 //
-//    Download a specific metering report. Provides an S3 pre signed URL valid for 1 hour.
+//    Download a specific metering report. Provides an S3 pre signed URL valid for 1 hour. Only available in Kubermatic Enterprise Edition
 //
 //    Produces:
 //    - application/json
@@ -515,7 +514,7 @@ func (r Routing) getMeteringReport() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(admin.GetMeteringReportEndpoint(r.userInfoGetter, r.seedsGetter, r.seedsClientGetter)),
-		metering.DecodeGetMeteringReportReq,
+		admin.DecodeGetMeteringReportReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
