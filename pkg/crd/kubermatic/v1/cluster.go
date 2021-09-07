@@ -402,7 +402,7 @@ type MLASettings struct {
 	// MonitoringResources is the resource requirements for user cluster prometheus.
 	MonitoringResources *corev1.ResourceRequirements `json:"monitoringResources,omitempty"`
 	// LoggingResources is the resource requirements for user cluster promtail.
-	LoggingResources *corev1.ResourceRequirements `json:"LoggingResources,omitempty"`
+	LoggingResources *corev1.ResourceRequirements `json:"loggingResources,omitempty"`
 }
 
 type ComponentSettings struct {
