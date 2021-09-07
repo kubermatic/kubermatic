@@ -22,10 +22,7 @@ import (
 	"fmt"
 	"net/http"
 
-	corev1 "k8s.io/api/core/v1"
-
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-
+	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 
@@ -36,6 +33,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 // ListSeedsEndpoint returns seed list
@@ -103,15 +102,35 @@ func UpdateSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter prov
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		oldSeed := seed.DeepCopy()
-		seed.Spec = req.Body.Spec
 
-		if err := seedClient.Patch(ctx, seed, ctrlruntimeclient.MergeFrom(oldSeed)); err != nil {
+		originalJSON, err := json.Marshal(oldSeed.Spec)
+		if err != nil {
+			return nil, k8cerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to convert current seed to JSON: %v", err))
+		}
+		newJSON, err := json.Marshal(req.Body.Spec)
+		if err != nil {
+			return nil, k8cerrors.New(http.StatusBadRequest, fmt.Sprintf("failed to convert patch seed to JSON: %v", err))
+		}
+
+		patchedJSON, err := jsonpatch.MergePatch(originalJSON, newJSON)
+		if err != nil {
+			return nil, k8cerrors.New(http.StatusBadRequest, fmt.Sprintf("failed to merge patch: %v", err))
+		}
+
+		var seedSpec *kubermaticv1.SeedSpec
+		err = json.Unmarshal(patchedJSON, &seedSpec)
+		if err != nil {
+			return nil, k8cerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed unmarshall patched seed: %v", err))
+		}
+
+		seed.Spec = *seedSpec
+		if err := seedClient.Update(ctx, seed); err != nil {
 			return nil, fmt.Errorf("failed to update Seed: %v", err)
 		}
 
 		return apiv1.Seed{
 			Name:     req.Name,
-			SeedSpec: convertSeedSpec(req.Body.Spec, req.Name),
+			SeedSpec: convertSeedSpec(seed.Spec, req.Name),
 		}, nil
 	}
 }
