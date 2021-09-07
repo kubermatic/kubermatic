@@ -18,7 +18,7 @@
 ### Breaking Changes
 
 - Kubernetes 1.19 is now the minimum supported version for master, seed and user clusters. Please upgrade all userclusters to 1.19
-  prior to upgrading to KKP 2.18. See the [documenation](https://docs.kubermatic.com/kubermatic/v2.17/tutorials_howtos/upgrading/upgrade_from_2.16_to_2.17/chart_migration/)
+  prior to upgrading to KKP 2.18. See the [documentation](https://docs.kubermatic.com/kubermatic/v2.17/tutorials_howtos/upgrading/upgrade_from_2.16_to_2.17/chart_migration/)
   for more details.
 - Helm 2 is not supported anymore, please use Helm 3 instead. It might still be possible to install KKP using Helm 2, but it's neither
   supported nor recommended.
@@ -88,7 +88,7 @@
 
 #### Enhancements on Open Policy Agent Integration
 
-- Kubermatic OPA Constraints now additionaly support using regular yaml `parameters` instead of `rawJSON`. `rawJSON` is still supported so no migration needed ([#7066](https://github.com/kubermatic/kubermatic/issues/7066))
+- Kubermatic OPA Constraints now additionally support using regular yaml `parameters` instead of `rawJSON`. `rawJSON` is still supported so no migration needed ([#7066](https://github.com/kubermatic/kubermatic/issues/7066))
 - Remove Gatekeeper from default accessible addon list ([#7510](https://github.com/kubermatic/kubermatic/issues/7510))
 - Update Gatekeeper version to v3.5.2 with new CRDs Assign, AssignMetadata, MutatorPodStatus and resources MutatingWebhookConfiguration, PodDisruptionBudget ([#7613](https://github.com/kubermatic/kubermatic/issues/7613))
 - Add OPA Default Constraints to UI ([#3543](https://github.com/kubermatic/dashboard/issues/3543))
