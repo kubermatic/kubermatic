@@ -84,6 +84,7 @@ func Add(
 	dnsClusterIP string,
 	nodeLocalDNSCache bool,
 	opaIntegration bool,
+	opaEnableMutation bool,
 	versions kubermatic.Versions,
 	userSSHKeyAgent bool,
 	opaWebhookTimeout int,
@@ -105,6 +106,7 @@ func Add(
 		dnsClusterIP:          dnsClusterIP,
 		nodeLocalDNSCache:     nodeLocalDNSCache,
 		opaIntegration:        opaIntegration,
+		opaEnableMutation:     opaEnableMutation,
 		opaWebhookTimeout:     opaWebhookTimeout,
 		userSSHKeyAgent:       userSSHKeyAgent,
 		versions:              versions,
@@ -244,6 +246,7 @@ type reconciler struct {
 	dnsClusterIP          string
 	nodeLocalDNSCache     bool
 	opaIntegration        bool
+	opaEnableMutation     bool
 	opaWebhookTimeout     int
 	userSSHKeyAgent       bool
 	versions              kubermatic.Versions

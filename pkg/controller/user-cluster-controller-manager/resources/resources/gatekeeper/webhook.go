@@ -56,7 +56,7 @@ func ValidatingWebhookConfigurationCreator(timeout int) reconciling.NamedValidat
 								Operator: metav1.LabelSelectorOpDoesNotExist,
 							},
 							{
-								Key:      "admission.gatekeeper.sh/ignore",
+								Key:      resources.GatekeeperExemptNamespaceLabel,
 								Operator: metav1.LabelSelectorOpDoesNotExist,
 							},
 						},
@@ -101,7 +101,7 @@ func ValidatingWebhookConfigurationCreator(timeout int) reconciling.NamedValidat
 								Operator: metav1.LabelSelectorOpDoesNotExist,
 							},
 							{
-								Key:      "admission.gatekeeper.sh/ignore",
+								Key:      resources.GatekeeperExemptNamespaceLabel,
 								Operator: metav1.LabelSelectorOpDoesNotExist,
 							},
 						},
@@ -170,7 +170,7 @@ func MutatingWebhookConfigurationCreator(timeout int) reconciling.NamedMutatingW
 								Operator: metav1.LabelSelectorOpDoesNotExist,
 							},
 							{
-								Key:      "admission.gatekeeper.sh/ignore",
+								Key:      resources.GatekeeperExemptNamespaceLabel,
 								Operator: metav1.LabelSelectorOpDoesNotExist,
 							},
 						},
