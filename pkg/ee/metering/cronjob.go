@@ -36,7 +36,7 @@ import (
 // cronJobCreator returns the func to create/update the etcd defragger cronjob
 func cronJobCreator(seedName string) reconciling.NamedCronJobCreatorGetter {
 	return func() (string, reconciling.CronJobCreator) {
-		return meteringCronJobMonthly, func(job *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
+		return meteringCronJobWeeklyName, func(job *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
 
 			job.Spec.Schedule = "0 6 * * 1"
 			job.Spec.JobTemplate.Spec.Parallelism = pointer.Int32Ptr(1)
@@ -114,8 +114,9 @@ mc mirror --newer-than "65d0h0m" s3/$S3_BUCKET /metering-data || true`,
 
 			job.Spec.JobTemplate.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:  "kubermatic-metering-report",
-					Image: "quay.io/kubermatic/metering:7a12117",
+					Name:            "kubermatic-metering-report",
+					Image:           "quay.io/kubermatic/metering:v0.5",
+					ImagePullPolicy: corev1.PullAlways,
 					Command: []string{
 						"/bin/sh",
 					},
