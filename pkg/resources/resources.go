@@ -604,6 +604,21 @@ const (
 )
 
 const (
+	// CSIMigrationWebhookName is the name of the csi-migration webhook service
+	CSIMigrationWebhookName = "csi-migration-webhook"
+	// CSIMigrationWebhookSecretName defines the name of the secret containing the certificates for the csi-migration admission webhook
+	CSIMigrationWebhookSecretName = "csi-migration-webhook-certs"
+	// CSIMigrationWebhookServingCertCertKeyName is the name for the key that contains the cert
+	CSIMigrationWebhookServingCertCertKeyName = "cert.pem"
+	// CSIMigrationWebhookServingCertKeyKeyName is the name for the key that contains the key
+	CSIMigrationWebhookServingCertKeyKeyName = "key.pem"
+	// CSIMigrationWebhookConfig is the name for the key that contains the webhook config
+	CSIMigrationWebhookConfig = "webhook.config"
+	// CSIMigrationWebhookPort is the port used by the CSI-migration webhook
+	CSIMigrationWebhookPort = 8443
+)
+
+const (
 	UserClusterMLANamespace        = "mla-system"
 	PromtailServiceAccountName     = "promtail"
 	PromtailClusterRoleName        = "system:mla:promtail"
@@ -952,6 +967,20 @@ func getClusterCAFromLister(ctx context.Context, namespace, name string, client 
 	return certs[0], key, nil
 }
 
+func getCACertStringFromSecret(ctx context.Context, namespace, name string, client ctrlruntimeclient.Client) (string, error) {
+	caSecret := &corev1.Secret{}
+	caSecretKey := types.NamespacedName{Namespace: namespace, Name: name}
+	if err := client.Get(ctx, caSecretKey, caSecret); err != nil {
+		return "", fmt.Errorf("unable to check if a CA cert already exists: %v", err)
+	}
+	caCert, found := caSecret.Data[CACertSecretKey]
+	if !found {
+		return "", fmt.Errorf("ca.crt secret not found")
+	}
+
+	return string(caCert), nil
+}
+
 // GetCABundleFromFile returns the CA bundle from a file
 func GetCABundleFromFile(file string) ([]*x509.Certificate, error) {
 	rawData, err := ioutil.ReadFile(file)
@@ -980,6 +1009,10 @@ func GetClusterFrontProxyCA(ctx context.Context, namespace string, client ctrlru
 // GetOpenVPNCA returns the OpenVPN CA of the cluster from the lister
 func GetOpenVPNCA(ctx context.Context, namespace string, client ctrlruntimeclient.Client) (*ECDSAKeyPair, error) {
 	return getECDSAClusterCAFromLister(ctx, namespace, OpenVPNCASecretName, client)
+}
+
+func GetCSIMigrationWebhookCA(ctx context.Context, namespace string, client ctrlruntimeclient.Client) (string, error) {
+	return getCACertStringFromSecret(ctx, namespace, CSIMigrationWebhookSecretName, client)
 }
 
 // GetMLAGatewayCA returns the MLA Gateway CA of the cluster from the lister

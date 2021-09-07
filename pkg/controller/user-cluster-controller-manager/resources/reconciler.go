@@ -28,6 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/clusterautoscaler"
 	controllermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/controller-manager"
 	coredns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/core-dns"
+	csi_migration "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/csi-migration"
 	dnatcontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/dnat-controller"
 	envoyagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/envoy-agent"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper"
@@ -642,6 +643,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 
 	if data.csiCloudConfig != nil {
 		creators = append(creators, cloudcontroller.CloudConfig(data.csiCloudConfig, resources.CSICloudConfigSecretName))
+		creators = append(creators, csi_migration.TLSServingCertificateCreator(data.caCert))
 	}
 
 	if r.userSSHKeyAgent {
@@ -812,11 +814,11 @@ func (r *reconciler) reconcilePodDisruptionBudgets(ctx context.Context) error {
 }
 
 type reconcileData struct {
-	caCert           *triple.KeyPair
-	openVPNCACert    *resources.ECDSAKeyPair
-	mlaGatewayCACert *resources.ECDSAKeyPair
-	userSSHKeys      map[string][]byte
-	cloudConfig      []byte
+	caCert             *triple.KeyPair
+	openVPNCACert      *resources.ECDSAKeyPair
+	mlaGatewayCACert   *resources.ECDSAKeyPair
+	userSSHKeys        map[string][]byte
+	cloudConfig        []byte
 	// csiCloudConfig is currently used only by vSphere, whose needs it to properly configure the external CSI driver
 	csiCloudConfig         []byte
 	monitoringRequirements *corev1.ResourceRequirements

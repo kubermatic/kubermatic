@@ -318,6 +318,17 @@ func (r *Reconciler) getAddonManifests(ctx context.Context, log *zap.SugaredLogg
 		}
 	}
 
+	userClusterClient, err := r.KubeconfigProvider.GetClient(ctx, cluster)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get client for usercluster: %v", err)
+	}
+
+	csiMigrationWebhookCA, err := resources.GetCSIMigrationWebhookCA(ctx, metav1.NamespaceSystem, userClusterClient)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get CA in user cluster: %v", err)
+	}
+
+	variables["CSIMigrationWebhookCerts"] = csiMigrationWebhookCA
 	data, err := addonutils.NewTemplateData(
 		cluster,
 		credentials,
