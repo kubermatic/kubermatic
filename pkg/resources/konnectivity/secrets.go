@@ -21,14 +21,13 @@ import (
 	"encoding/json"
 	"fmt"
 
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/clientcmd/api/v1"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // AgentTokenCreator steals the service account token from konnectivity agent in user-cluster to be used in seed-cluster
