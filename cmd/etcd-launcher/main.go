@@ -41,6 +41,7 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -81,22 +82,15 @@ func main() {
 	// here we find the cluster state
 	clusterClient, err := inClusterClient(log)
 	if err != nil {
-		log.Panicw("get in-cluster client", zap.Error(err))
+		log.Panicw("failed to get in-cluster client", zap.Error(err))
 	}
 
-	k8cCluster, err := getK8cCluster(clusterClient, strings.ReplaceAll(e.namespace, "cluster-", ""), log)
-	if err != nil {
-		log.Panicw("get user cluster", zap.Error(err))
+	if err := e.setClusterSize(clusterClient); err != nil {
+		log.Panicw("failed to set cluster size", zap.Error(err))
 	}
 
-	// check if the etcd cluster is initialized successfully.
-	if k8cCluster.Status.HasConditionValue(kubermaticv1.ClusterConditionEtcdClusterInitialized, corev1.ConditionTrue) {
-		e.initialState = initialStateExisting
-	} else {
-		e.initialState = initialStateNew
-		if err := e.restoreDatadirFromBackupIfNeeded(context.Background(), k8cCluster, clusterClient, log); err != nil {
-			log.Fatalw("failed to restore datadir from backup", zap.Error(err))
-		}
+	if err := e.setInitialState(clusterClient, log); err != nil {
+		log.Panicw("failed to set initialState", zap.Error(err))
 	}
 
 	log.Info("initializing etcd..")
@@ -120,7 +114,7 @@ func main() {
 		log.Panicw("failed to check cluster membership", zap.Error(err))
 	}
 	if thisMember != nil {
-		log.Infof("%s is a member", thisMember.Name)
+		log.Infof("%v is a member", thisMember.GetPeerURLs())
 
 		if _, err := os.Stat(filepath.Join(e.dataDir, "member")); os.IsNotExist(err) {
 			client, err := e.getClusterClient()
@@ -147,12 +141,14 @@ func main() {
 		log.Panicw("failed to update peerURL", zap.Error(err))
 	}
 
-	// reconcile dead members
-	if err = wait.PollInfinite(10*time.Second, func() (done bool, err error) {
-		return deleteUnwantedDeadMembers(e, log)
-	}); err != nil {
-		log.Panicw("manager thread failed to connect to cluster", zap.Error(err))
-	}
+	// reconcile dead members continuously. Initially we did this once as a step at the end of start up. We did that because scale up/down operations required a full restart of the ring with each node add/remove. However, this is no longer the case, so we need to separate the reconcile from the start up process and do it continuously.
+	go func() {
+		wait.Forever(func() {
+			if _, err := deleteUnwantedDeadMembers(e, log); err != nil {
+				log.Warnw("failed to remove dead members", zap.Error(err))
+			}
+		}, 30*time.Second)
+	}()
 
 	if err = etcdCmd.Wait(); err != nil {
 		log.Panic(err)
@@ -245,7 +241,7 @@ func joinCluster(e *etcdCluster, log *zap.SugaredLogger) error {
 
 	defer close(client, log)
 
-	log.Info("joined etcd cluster succcesfully.")
+	log.Info("joined etcd cluster successfully.")
 	return nil
 }
 
@@ -303,7 +299,6 @@ func (e *etcdCluster) endpoint() string {
 
 func (e *etcdCluster) parseConfigFlags() error {
 	flag.StringVar(&e.namespace, "namespace", "", "namespace of the user cluster")
-	flag.IntVar(&e.clusterSize, "etcd-cluster-size", defaultClusterSize, "number of replicas in the etcd cluster")
 	flag.StringVar(&e.podName, "pod-name", "", "name of this etcd pod")
 	flag.StringVar(&e.podIP, "pod-ip", "", "IP address of this etcd pod")
 	flag.StringVar(&e.etcdctlAPIVersion, "api-version", defaultEtcdctlAPIVersion, "etcdctl API version")
@@ -314,11 +309,6 @@ func (e *etcdCluster) parseConfigFlags() error {
 	if e.namespace == "" {
 		return errors.New("-namespace is not set")
 	}
-
-	if e.clusterSize < defaultClusterSize {
-		return fmt.Errorf("-etcd-cluster-size is smaller than %d", defaultClusterSize)
-	}
-
 	if e.podName == "" {
 		return errors.New("-pod-name is not set")
 	}
@@ -523,7 +513,7 @@ func (e *etcdCluster) removeDeadMembers(log *zap.SugaredLogger) error {
 		if member.Name == e.podName {
 			continue
 		}
-		if err = wait.Poll(1*time.Second, 30*time.Second, func() (bool, error) {
+		if err = wait.Poll(1*time.Second, 15*time.Second, func() (bool, error) {
 			// we use the cluster FQDN endpoint url here. Using the IP endpoint will
 			// fail because the certificates don't include Pod IP addresses.
 			return e.isHealthyWithEndpoints(member.ClientURLs[len(member.ClientURLs)-1:], log)
@@ -593,4 +583,35 @@ func close(c io.Closer, log *zap.SugaredLogger) {
 	if err != nil {
 		log.Warn(zap.Error(err))
 	}
+}
+
+func (e *etcdCluster) setInitialState(clusterClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+	k8cCluster, err := getK8cCluster(clusterClient, strings.ReplaceAll(e.namespace, "cluster-", ""), log)
+	if err != nil {
+		return fmt.Errorf("failed to get user cluster: %v", err)
+	}
+
+	// check if the etcd cluster is initialized successfully.
+	if k8cCluster.Status.HasConditionValue(kubermaticv1.ClusterConditionEtcdClusterInitialized, corev1.ConditionTrue) {
+		e.initialState = initialStateExisting
+	} else {
+		e.initialState = initialStateNew
+		if err := e.restoreDatadirFromBackupIfNeeded(context.Background(), k8cCluster, clusterClient, log); err != nil {
+			return fmt.Errorf("failed to restore datadir from backup: %v", err)
+		}
+	}
+	return nil
+}
+
+func (e *etcdCluster) setClusterSize(clusterClient ctrlruntimeclient.Client) error {
+	sts := &appsv1.StatefulSet{}
+
+	if err := clusterClient.Get(context.Background(), types.NamespacedName{Name: "etcd", Namespace: e.namespace}, sts); err != nil {
+		return fmt.Errorf("failed to get etcd sts: %v", err)
+	}
+	e.clusterSize = defaultClusterSize
+	if sts.Spec.Replicas != nil {
+		e.clusterSize = int(*sts.Spec.Replicas)
+	}
+	return nil
 }
