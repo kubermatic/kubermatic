@@ -417,7 +417,7 @@ func (r *Reconciler) reconcileConfigMaps(ctx context.Context, cfg *operatorv1alp
 	var kubeSystemCreators []reconciling.NamedConfigMapCreatorGetter
 
 	// For backward compatibility check both sources for backup and restore configuration.
-	var backupRestore *kubermaticv1.SeedBackupRestoreConfiguration
+	backupRestore := &kubermaticv1.SeedBackupRestoreConfiguration{}
 	if cfg.Spec.SeedController.BackupRestore.Enabled {
 		backupRestore.S3Endpoint = cfg.Spec.SeedController.BackupRestore.S3Endpoint
 		backupRestore.S3BucketName = cfg.Spec.SeedController.BackupRestore.S3BucketName

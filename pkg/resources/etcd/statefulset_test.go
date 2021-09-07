@@ -42,7 +42,7 @@ func TestGetEtcdCommand(t *testing.T) {
 			clusterName:      "62m9k9tqlm",
 			clusterNamespace: "cluster-62m9k9tqlm",
 			launcherEnabled:  true,
-			expectedArgs:     13,
+			expectedArgs:     11,
 		},
 		{
 			name:                  "with-corruption-flags",
