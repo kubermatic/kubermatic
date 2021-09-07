@@ -17,14 +17,13 @@ limitations under the License.
 package apiserver
 
 import (
-	"sigs.k8s.io/yaml"
-
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apiserver/pkg/apis/apiserver"
+	"sigs.k8s.io/yaml"
 )
 
 // EgressSelectorConfigCreator returns function to create cm that contains egress selection configuration for apiserver
