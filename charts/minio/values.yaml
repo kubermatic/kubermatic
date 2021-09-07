@@ -19,7 +19,8 @@ minio:
   storeSize: 100Gi
   
   # The is required to enable the BackupRestore controller so it can backup
-  # and restore from the local minio deployment
+  # and restore from the local minio deployment. The TLS certificates should be 
+  # signed by the global KKP CA.
   certificateSecret: minio-certificates # tls secret used by minio.
   
   # These settings are required. Keys must be alphanumeric.
