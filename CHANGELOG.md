@@ -177,7 +177,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Changes to the tolerations on the node-local-dns DaemonSet will now be kept instead of being overwritten ([#7466](https://github.com/kubermatic/kubermatic/issues/7466))
 - Re-enable NodeLocal DNS Cache in user clusters ([#7075](https://github.com/kubermatic/kubermatic/issues/7075))
 - The Spec for the user-cluster etcd Statefulset was updated; this will cause the etcd pods for user-clusters to be restarted on KKP upgrade ([#6975](https://github.com/kubermatic/kubermatic/issues/6975))
-- Users can now enble/disable konnectivity on their clusters ([#7679](https://github.com/kubermatic/kubermatic/issues/7679))
+- Users can now enable/disable konnectivity on their clusters ([#7679](https://github.com/kubermatic/kubermatic/issues/7679))
 
 ### Bugfixes
 
