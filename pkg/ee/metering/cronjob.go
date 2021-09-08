@@ -69,9 +69,9 @@ mc mirror --newer-than "65d0h0m" s3/$S3_BUCKET /metering-data || true`,
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "s3",
+										Name: SecretName,
 									},
-									Key: "endpoint",
+									Key: Endpoint,
 								},
 							},
 						},
@@ -80,9 +80,9 @@ mc mirror --newer-than "65d0h0m" s3/$S3_BUCKET /metering-data || true`,
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "s3",
+										Name: SecretName,
 									},
-									Key: "bucket",
+									Key: Bucket,
 								},
 							},
 						},
@@ -91,9 +91,9 @@ mc mirror --newer-than "65d0h0m" s3/$S3_BUCKET /metering-data || true`,
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "s3",
+										Name: SecretName,
 									},
-									Key: "accessKey",
+									Key: AccessKey,
 								},
 							},
 						},
@@ -102,9 +102,9 @@ mc mirror --newer-than "65d0h0m" s3/$S3_BUCKET /metering-data || true`,
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "s3",
+										Name: SecretName,
 									},
-									Key: "secretKey",
+									Key: SecretKey,
 								},
 							},
 						},
@@ -164,9 +164,9 @@ mc mirror /report s3/$S3_BUCKET`,
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "s3",
+										Name: SecretName,
 									},
-									Key: "endpoint",
+									Key: Endpoint,
 								},
 							},
 						},
@@ -175,9 +175,9 @@ mc mirror /report s3/$S3_BUCKET`,
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "s3",
+										Name: SecretName,
 									},
-									Key: "bucket",
+									Key: Bucket,
 								},
 							},
 						},
@@ -186,9 +186,9 @@ mc mirror /report s3/$S3_BUCKET`,
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "s3",
+										Name: SecretName,
 									},
-									Key: "accessKey",
+									Key: AccessKey,
 								},
 							},
 						},
@@ -197,9 +197,9 @@ mc mirror /report s3/$S3_BUCKET`,
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "s3",
+										Name: SecretName,
 									},
-									Key: "secretKey",
+									Key: SecretKey,
 								},
 							},
 						},
