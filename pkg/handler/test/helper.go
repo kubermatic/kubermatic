@@ -71,6 +71,7 @@ import (
 	"k8s.io/client-go/tools/reference"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	"k8s.io/utils/pointer"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -202,6 +203,7 @@ type newRoutingFunc func(
 	etcdRestoreProjectProviderGetter provider.EtcdRestoreProjectProviderGetter,
 	backupCredentialsProviderGetter provider.BackupCredentialsProviderGetter,
 	privilegedMLAAdminSettingProviderGetter provider.PrivilegedMLAAdminSettingProviderGetter,
+	masterClient client.Client,
 ) http.Handler
 
 func getRuntimeObjects(objs ...ctrlruntimeclient.Object) []runtime.Object {
@@ -534,6 +536,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		etcdRestoreProjectProviderGetter,
 		backupCredentialsProviderGetter,
 		privilegedMLAAdminSettingProviderGetter,
+		fakeClient,
 	)
 
 	return mainRouter, &ClientsSets{kubermaticClient, fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil
