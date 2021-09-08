@@ -23,6 +23,8 @@ groups:
     for: 10m
     labels:
       severity: warning
+      resource: '{{ $labels.namespace }}'
+      service: kubermatic-seed
     runbook:
       steps:
       - Check the controller-manager pod's logs.
@@ -35,6 +37,8 @@ groups:
     for: 0m
     labels:
       severity: warning
+      resource: '{{ $labels.cluster }}'
+      service: kubermatic-seed
     runbook:
       steps:
       - Check the machine-controller's logs via `kubectl -n cluster-XYZ logs -l 'app=machine-controller'` for errors related to cloud provider integrations.
@@ -51,6 +55,8 @@ groups:
     for: 0m
     labels:
       severity: warning
+      resource: '{{ $labels.cluster }}/{{ $labels.addon }}'
+      service: kubermatic-seed
     runbook:
       steps:
         - Check the kubermatic controller-manager's logs via `kubectl -n kubermatic logs -l 'app.kubernetes.io/name=kubermatic-seed-controller-manager'` for errors related to deletion of the addon.
@@ -68,6 +74,8 @@ groups:
     for: 30m
     labels:
       severity: warning
+      resource: '{{ $labels.cluster }}/{{ $labels.addon }}'
+      service: kubermatic-seed
     runbook:
       steps:
         - Check the kubermatic seed controller-manager's logs via `kubectl -n kubermatic logs -l 'app.kubernetes.io/name=kubermatic-seed-controller-manager'` for errors related to reconciliation of the addon.
@@ -80,6 +88,7 @@ groups:
     for: 15m
     labels:
       severity: critical
+      service: kubermatic-seed
     runbook:
       steps:
       - Check the Prometheus Service Discovery page to find out why the target is unreachable.
@@ -93,6 +102,8 @@ groups:
     for: 15m
     labels:
       severity: critical
+      resource: '{{ $labels.cluster }}'
+      service: kubermatic-seed
 
   - alert: UserClusterPrometheusAbsent
     annotations:
@@ -108,6 +119,8 @@ groups:
     for: 15m
     labels:
       severity: critical
+      resource: '{{ $labels.name }}'
+      service: kubermatic-seed
 
   # This is a dummy alert that is triggered for paused clusters to inhibit all other alerts from such clusters.
   # The label_replace() is used to create a new "cluster" label that will be used for the inhibitions as well.
@@ -116,4 +129,6 @@ groups:
       message: Cluster {{ $labels.name }} has been paused and will not be reconciled until the pause flag is reset.
     expr: label_replace(kubermatic_cluster_info{pause="true"}, "cluster", "$0", "name", ".+")
     labels:
-      severity: none
+      severity: informational
+      resource: '{{ $labels.name }}'
+      service: kubermatic-seed
