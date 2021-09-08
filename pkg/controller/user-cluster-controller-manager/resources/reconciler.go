@@ -163,7 +163,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return err
 	}
 
-	if err := r.reconcileValidatingWebhookConfigurations(ctx); err != nil {
+	if err := r.reconcileValidatingWebhookConfigurations(ctx, data); err != nil {
 		return err
 	}
 
@@ -523,10 +523,14 @@ func (r *reconciler) reconcileMutatingWebhookConfigurations(ctx context.Context,
 	return nil
 }
 
-func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Context) error {
+func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{}
 	if r.opaIntegration {
 		creators = append(creators, gatekeeper.ValidatingWebhookConfigurationCreator(r.opaWebhookTimeout))
+	}
+
+	if data.csiCloudConfig != nil {
+		creators = append(creators, csi_migration.ValidatingwebhookConfigurationCreator(data.caCert.Cert, metav1.NamespaceSystem, resources.VsphereCSIMigrationWebhookConfigurationWebhookName))
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
@@ -814,11 +818,11 @@ func (r *reconciler) reconcilePodDisruptionBudgets(ctx context.Context) error {
 }
 
 type reconcileData struct {
-	caCert             *triple.KeyPair
-	openVPNCACert      *resources.ECDSAKeyPair
-	mlaGatewayCACert   *resources.ECDSAKeyPair
-	userSSHKeys        map[string][]byte
-	cloudConfig        []byte
+	caCert           *triple.KeyPair
+	openVPNCACert    *resources.ECDSAKeyPair
+	mlaGatewayCACert *resources.ECDSAKeyPair
+	userSSHKeys      map[string][]byte
+	cloudConfig      []byte
 	// csiCloudConfig is currently used only by vSphere, whose needs it to properly configure the external CSI driver
 	csiCloudConfig         []byte
 	monitoringRequirements *corev1.ResourceRequirements

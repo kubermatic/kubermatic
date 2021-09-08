@@ -60,6 +60,8 @@ type ClusterData struct {
 	MLA MLASettings
 	// StoragePolicy is the storage policy to use for vsphere csi addon
 	StoragePolicy string
+	// CSIMigration indicates if the cluster needed the CSIMigration
+	CSIMigration bool
 }
 
 type ClusterNetwork struct {

@@ -67,6 +67,7 @@ set -x
   -ca-bundle=$CA_BUNDLE \
   -versions=charts/kubermatic/static/master/versions.yaml \
   -updates=charts/kubermatic/static/master/updates.yaml \
+  -provider-incompatibilities=charts/kubermatic/static/master/provider-incompatibilities.yaml \
   -kubernetes-addons-path=addons \
   -kubernetes-addons-file=charts/kubermatic/static/master/kubernetes-addons.yaml \
   -feature-gates=OpenIDAuthPlugin=true,KonnectivityService=true \
