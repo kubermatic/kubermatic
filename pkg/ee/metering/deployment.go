@@ -90,9 +90,9 @@ mc mirror --newer-than "32d0h0m" s3/$S3_BUCKET /metering-data || true`,
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "metering-s3",
+										Name: SecretName,
 									},
-									Key: "endpoint",
+									Key: Endpoint,
 								},
 							},
 						},
@@ -101,9 +101,9 @@ mc mirror --newer-than "32d0h0m" s3/$S3_BUCKET /metering-data || true`,
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "metering-s3",
+										Name: SecretName,
 									},
-									Key: "bucket",
+									Key: Bucket,
 								},
 							},
 						},
@@ -112,9 +112,9 @@ mc mirror --newer-than "32d0h0m" s3/$S3_BUCKET /metering-data || true`,
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "metering-s3",
+										Name: SecretName,
 									},
-									Key: "accessKey",
+									Key: AccessKey,
 								},
 							},
 						},
@@ -123,9 +123,9 @@ mc mirror --newer-than "32d0h0m" s3/$S3_BUCKET /metering-data || true`,
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "metering-s3",
+										Name: SecretName,
 									},
-									Key: "secretKey",
+									Key: SecretKey,
 								},
 							},
 						},
@@ -219,9 +219,9 @@ while true; do mc mirror --overwrite /metering-data s3/$S3_BUCKET; sleep 300; do
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "metering-s3",
+										Name: SecretName,
 									},
-									Key: "endpoint",
+									Key: Endpoint,
 								},
 							},
 						},
@@ -230,9 +230,9 @@ while true; do mc mirror --overwrite /metering-data s3/$S3_BUCKET; sleep 300; do
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "metering-s3",
+										Name: SecretName,
 									},
-									Key: "bucket",
+									Key: Bucket,
 								},
 							},
 						},
@@ -241,9 +241,9 @@ while true; do mc mirror --overwrite /metering-data s3/$S3_BUCKET; sleep 300; do
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "metering-s3",
+										Name: SecretName,
 									},
-									Key: "accessKey",
+									Key: AccessKey,
 								},
 							},
 						},
@@ -252,9 +252,9 @@ while true; do mc mirror --overwrite /metering-data s3/$S3_BUCKET; sleep 300; do
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "metering-s3",
+										Name: SecretName,
 									},
-									Key: "secretKey",
+									Key: SecretKey,
 								},
 							},
 						},
