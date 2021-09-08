@@ -121,11 +121,13 @@ kubermatic)
   if [[ "${1}" = "master" ]]; then
     echodate "Running Kubermatic Installer..."
 
+    # --force must be given because the Chart versions have not necessarily changed.
     ./_build/kubermatic-installer deploy \
       --storageclass copy-default \
       --config "$KUBERMATIC_CONFIG" \
       --helm-values "$VALUES_FILE" \
-      --helm-binary "helm3"
+      --helm-binary "helm3" \
+      --force
 
     # We might have not configured IAP which results in nothing being deployed. This triggers https://github.com/helm/helm/issues/4295 and marks this as failed
     # We hack around this by grepping for a string that is mandatory in the values file of IAP
