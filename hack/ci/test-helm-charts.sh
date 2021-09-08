@@ -25,9 +25,8 @@ set -euo pipefail
 cd $(dirname $0)/../..
 source hack/lib.sh
 
-# find all changed charts (the pre-kubermatic-verify-charts job ensures
-# that all updated charts also change their Chart.yaml)
-changedCharts=$(git diff --name-status "${PULL_BASE_SHA}..${PULL_PULL_SHA:-}" 'charts/**/Chart.yaml' | awk '{ print $2 }' | xargs dirname | sort -u)
+# find all changed charts
+changedCharts=$(git diff --name-only "${PULL_BASE_SHA}..${PULL_PULL_SHA:-}" 'charts/**' | xargs -r dirname | sort -u)
 
 for chartDirectory in $changedCharts; do
   chartName="$(basename "$chartDirectory")"
