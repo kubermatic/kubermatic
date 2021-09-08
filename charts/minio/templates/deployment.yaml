@@ -67,6 +67,10 @@ spec:
         ports:
         - containerPort: 9000
         volumeMounts:
+        {{- if .Values.minio.certificatesSecret }}
+        - name: certificates-volume
+          mountPath: /root/.minio/certs
+        {{- end }}
         - name: storage
           mountPath: "/storage"
         resources:
@@ -78,7 +82,11 @@ spec:
         args:
         - /bin/sh
         - -c
+        {{- if .Values.minio.certificatesSecret }}
+        - mc --insecure config host add src https://127.0.0.1:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" && while true; do sleep 1h; done
+        {{- else }}
         - mc config host add src http://127.0.0.1:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" && while true; do sleep 1h; done
+        {{- end }}
         env:
         - name: MINIO_ACCESS_KEY
           valueFrom:
@@ -107,6 +115,18 @@ spec:
       {{- if .Values.minio.backup.enabled }}
       - name: minio-backup
         emptyDir: {}
+      {{- end }}
+      {{- if .Values.minio.certificatesSecret }}
+      - name: certificates-volume
+        secret:
+          secretName: {{ .Values.minio.certificatesSecret }}
+          items:
+          - key: tls.crt
+            path: public.crt
+          - key: tls.key
+            path: private.key
+          - key: tls.crt
+            path: CAs/public.crt
       {{- end }}
       nodeSelector:
 {{ toYaml .Values.minio.nodeSelector | indent 8 }}
