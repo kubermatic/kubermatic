@@ -170,8 +170,8 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				args = append(args, "-opa-webhook-timeout", fmt.Sprint(*data.Cluster().Spec.OPAIntegration.WebhookTimeoutSeconds))
 			}
 
-			if data.Cluster().Spec.OPAIntegration != nil && data.Cluster().Spec.OPAIntegration.ExperimentalEnableMutation {
-				args = append(args, "--enable-mutation", fmt.Sprint(&data.Cluster().Spec.OPAIntegration.ExperimentalEnableMutation))
+			if data.Cluster().Spec.OPAIntegration != nil && data.Cluster().Spec.OPAIntegration.Enabled {
+				args = append(args, fmt.Sprintf("-enable-mutation=%t", data.Cluster().Spec.OPAIntegration.ExperimentalEnableMutation))
 			}
 
 			if data.UserClusterMLAEnabled() && data.Cluster().Spec.MLA != nil {
