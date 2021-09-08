@@ -193,20 +193,16 @@ func allowedRegistryConstraintCreatorGetter(wr *kubermaticv1.AllowedRegistry) re
 			}
 
 			ct.Name = AllowedRegistryCTName
-			ct.Spec = kubermaticv1.ConstraintSpec{
-				ConstraintType: AllowedRegistryCTName,
-				Match: kubermaticv1.Match{
-					Kinds: []kubermaticv1.Kind{
-						{
-							APIGroups: []string{""},
-							Kinds:     []string{"Pod"},
-						},
-					},
+			ct.Spec.Match.Kinds = []kubermaticv1.Kind{
+				{
+					APIGroups: []string{""},
+					Kinds:     []string{"Pod"},
 				},
-				Parameters: kubermaticv1.Parameters{
-					AllowedRegistryField: regSet.List(),
-				},
-				Disabled: regSet.Len() == 0,
+			}
+			ct.Spec.ConstraintType = AllowedRegistryCTName
+			ct.Spec.Disabled = regSet.Len() == 0
+			ct.Spec.Parameters = kubermaticv1.Parameters{
+				AllowedRegistryField: regSet.List(),
 			}
 
 			return ct, nil
@@ -215,14 +211,19 @@ func allowedRegistryConstraintCreatorGetter(wr *kubermaticv1.AllowedRegistry) re
 }
 
 func getRegistrySet(constraint *kubermaticv1.Constraint) sets.String {
-	rawRegList, ok := constraint.Spec.Parameters[AllowedRegistryField]
+	raw, ok := constraint.Spec.Parameters[AllowedRegistryField]
 	if !ok {
 		return sets.NewString()
 	}
 
-	regList, ok := rawRegList.([]string)
+	rawRegList, ok := raw.([]interface{})
 	if !ok {
 		return sets.NewString()
+	}
+
+	var regList []string
+	for _, reg := range rawRegList {
+		regList = append(regList, fmt.Sprintf("%v", reg))
 	}
 
 	return sets.NewString(regList...)

@@ -56,32 +56,48 @@ func TestReconcile(t *testing.T) {
 
 	testCases := []struct {
 		name               string
-		allowedRegistry    *kubermaticv1.AllowedRegistry
+		allowedRegistry    []*kubermaticv1.AllowedRegistry
 		expectedCT         *kubermaticv1.ConstraintTemplate
 		expectedConstraint *kubermaticv1.Constraint
 		masterClient       ctrlruntimeclient.Client
 	}{
 		{
-			name:               "scenario 1: sync ct to seed cluster",
-			allowedRegistry:    genAllowedRegistry(false),
+			name:               "scenario 1: sync allowedlist to seed cluster",
+			allowedRegistry:    []*kubermaticv1.AllowedRegistry{genAllowedRegistry("quay", "quay.io", false)},
 			expectedCT:         genConstraintTemplate(),
 			expectedConstraint: genWRConstraint(sets.NewString("quay.io")),
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
-				WithObjects(genAllowedRegistry(false)).
+				WithObjects(genAllowedRegistry("quay", "quay.io", false)).
 				Build(),
 		},
 		{
-			name:               "scenario 2: cleanup ct on seed cluster when master ct is being terminated",
-			allowedRegistry:    genAllowedRegistry(true),
+			name:               "scenario 2: cleanup allowedlist on seed cluster when master ct is being terminated",
+			allowedRegistry:    []*kubermaticv1.AllowedRegistry{genAllowedRegistry("quay", "quay.io", true)},
 			expectedCT:         genConstraintTemplate(),
 			expectedConstraint: genWRConstraint(sets.NewString()),
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
-				WithObjects(genAllowedRegistry(true),
+				WithObjects(genAllowedRegistry("quay", "quay.io", true),
 					genConstraintTemplate(), genWRConstraint(sets.NewString("quay.io"))).
+				Build(),
+		},
+		{
+			name: "scenario 3: sync multiple allowedlists to seed cluster",
+			allowedRegistry: []*kubermaticv1.AllowedRegistry{
+				genAllowedRegistry("quay", "quay.io", false),
+				genAllowedRegistry("myreg", "https://myregistry.com", false),
+			},
+			expectedCT:         genConstraintTemplate(),
+			expectedConstraint: genWRConstraint(sets.NewString("quay.io", "https://myregistry.com")),
+			masterClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(
+					genAllowedRegistry("quay", "quay.io", false),
+					genAllowedRegistry("myreg", "https://myregistry.com", false)).
 				Build(),
 		},
 	}
@@ -97,9 +113,11 @@ func TestReconcile(t *testing.T) {
 				testNamespace,
 			)
 
-			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: tc.allowedRegistry.Name}}
-			if _, err := r.Reconcile(ctx, request); err != nil {
-				t.Fatalf("reconciling failed: %v", err)
+			for _, ar := range tc.allowedRegistry {
+				request := reconcile.Request{NamespacedName: types.NamespacedName{Name: ar.Name}}
+				if _, err := r.Reconcile(ctx, request); err != nil {
+					t.Fatalf("reconciling failed: %v", err)
+				}
 			}
 
 			// check CT
@@ -176,11 +194,11 @@ func genConstraintTemplate() *kubermaticv1.ConstraintTemplate {
 	return ct
 }
 
-func genAllowedRegistry(deleted bool) *kubermaticv1.AllowedRegistry {
+func genAllowedRegistry(name, registry string, deleted bool) *kubermaticv1.AllowedRegistry {
 	wr := &kubermaticv1.AllowedRegistry{}
-	wr.Name = "AllowedRegistry"
+	wr.Name = name
 	wr.Spec = kubermaticv1.AllowedRegistrySpec{
-		RegistryPrefix: "quay.io",
+		RegistryPrefix: registry,
 	}
 
 	if deleted {
