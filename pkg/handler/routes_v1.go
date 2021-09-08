@@ -1561,7 +1561,7 @@ func (r Routing) createDC() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(dc.CreateEndpoint(r.seedsGetter, r.userInfoGetter, r.seedsClientGetter)),
+		)(dc.CreateEndpoint(r.seedsGetter, r.userInfoGetter, r.masterClient)),
 		dc.DecodeCreateDCReq,
 		SetStatusCreatedHeader(EncodeJSON),
 		r.defaultServerOptions()...,
@@ -1588,7 +1588,7 @@ func (r Routing) updateDC() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(dc.UpdateEndpoint(r.seedsGetter, r.userInfoGetter, r.seedsClientGetter)),
+		)(dc.UpdateEndpoint(r.seedsGetter, r.userInfoGetter, r.masterClient)),
 		dc.DecodeUpdateDCReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
@@ -1615,7 +1615,7 @@ func (r Routing) patchDC() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(dc.PatchEndpoint(r.seedsGetter, r.userInfoGetter, r.seedsClientGetter)),
+		)(dc.PatchEndpoint(r.seedsGetter, r.userInfoGetter, r.masterClient)),
 		dc.DecodePatchDCReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
@@ -1639,7 +1639,7 @@ func (r Routing) deleteDC() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(dc.DeleteEndpoint(r.seedsGetter, r.userInfoGetter, r.seedsClientGetter)),
+		)(dc.DeleteEndpoint(r.seedsGetter, r.userInfoGetter, r.masterClient)),
 		dc.DecodeDeleteDCReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,

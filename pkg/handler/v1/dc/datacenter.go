@@ -35,6 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // ListEndpoint an HTTP endpoint that returns a list of apiv1.Datacenter
@@ -268,7 +269,7 @@ func getAPIDCsFromSeed(seed *kubermaticv1.Seed) []apiv1.Datacenter {
 }
 
 // CreateEndpoint an HTTP endpoint that creates the specified apiv1.Datacenter
-func CreateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, seedsClientGetter provider.SeedClientGetter) endpoint.Endpoint {
+func CreateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, masterClient client.Client) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(createDCReq)
 		if !ok {
@@ -304,12 +305,7 @@ func CreateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 		// Add DC, update seed
 		seed.Spec.Datacenters[req.Body.Name] = convertExternalDCToInternal(&req.Body.Spec)
 
-		seedClient, err := seedsClientGetter(seed)
-		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to get seed client: %v", err))
-		}
-
-		if err = seedClient.Update(ctx, seed); err != nil {
+		if err = masterClient.Update(ctx, seed); err != nil {
 			return nil, errors.New(http.StatusInternalServerError,
 				fmt.Sprintf("failed to update seed %q datacenter %q: %v", seed.Name, req.Body.Name, err))
 		}
@@ -325,7 +321,7 @@ func CreateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 
 // UpdateEndpoint an HTTP endpoint that updates the specified apiv1.Datacenter
 func UpdateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter,
-	seedsClientGetter provider.SeedClientGetter) endpoint.Endpoint {
+	masterClient client.Client) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(updateDCReq)
 		if !ok {
@@ -369,12 +365,7 @@ func UpdateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 		}
 		seed.Spec.Datacenters[req.Body.Name] = convertExternalDCToInternal(&req.Body.Spec)
 
-		seedClient, err := seedsClientGetter(seed)
-		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to get seed client: %v", err))
-		}
-
-		if err = seedClient.Update(ctx, seed); err != nil {
+		if err = masterClient.Update(ctx, seed); err != nil {
 			return nil, errors.New(http.StatusInternalServerError,
 				fmt.Sprintf("failed to update seed %q datacenter %q: %v", seed.Name, req.DCToUpdate, err))
 		}
@@ -390,7 +381,7 @@ func UpdateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 
 // PatchEndpoint an HTTP endpoint that patches the specified apiv1.Datacenter
 func PatchEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter,
-	seedsClientGetter provider.SeedClientGetter) endpoint.Endpoint {
+	masterClient client.Client) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(patchDCReq)
 		if !ok {
@@ -472,12 +463,7 @@ func PatchEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Use
 
 		seed.Spec.Datacenters[dcName] = kubermaticPatched
 
-		seedClient, err := seedsClientGetter(seed)
-		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to get seed client: %v", err))
-		}
-
-		if err = seedClient.Update(ctx, seed); err != nil {
+		if err = masterClient.Update(ctx, seed); err != nil {
 			return nil, errors.New(http.StatusInternalServerError,
 				fmt.Sprintf("failed to update seed %q datacenter %q: %v", seed.Name, req.DCToPatch, err))
 		}
@@ -488,7 +474,7 @@ func PatchEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Use
 
 // DeleteEndpoint an HTTP endpoint that deletes the specified apiv1.Datacenter
 func DeleteEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter,
-	seedsClientGetter provider.SeedClientGetter) endpoint.Endpoint {
+	masterClient client.Client) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(deleteDCReq)
 		if !ok {
@@ -517,12 +503,7 @@ func DeleteEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 		}
 		delete(seed.Spec.Datacenters, req.DC)
 
-		seedClient, err := seedsClientGetter(seed)
-		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to get seed client: %v", err))
-		}
-
-		if err = seedClient.Update(ctx, seed); err != nil {
+		if err = masterClient.Update(ctx, seed); err != nil {
 			return nil, errors.New(http.StatusInternalServerError,
 				fmt.Sprintf("failed to delete seed %q datacenter %q: %v", seed.Name, req.DC, err))
 		}

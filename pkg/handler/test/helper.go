@@ -186,6 +186,7 @@ type newRoutingFunc func(
 	constraintTemplateProvider provider.ConstraintTemplateProvider,
 	constraintProviderGetter provider.ConstraintProviderGetter,
 	kubermaticVersions kubermatic.Versions,
+	masterClient ctrlruntimeclient.Client,
 ) http.Handler
 
 func getRuntimeObjects(objs ...ctrlruntimeclient.Object) []runtime.Object {
@@ -406,6 +407,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		fakeConstraintTemplateProvider,
 		constraintProviderGetter,
 		kubermaticVersions,
+		fakeClient,
 	)
 
 	return mainRouter, &ClientsSets{kubermaticClient, fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil

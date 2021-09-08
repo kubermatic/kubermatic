@@ -375,7 +375,7 @@ func (r Routing) updateSeed() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(admin.UpdateSeedEndpoint(r.userInfoGetter, r.seedsGetter, r.seedsClientGetter)),
+		)(admin.UpdateSeedEndpoint(r.userInfoGetter, r.seedsGetter, r.masterClient)),
 		admin.DecodeUpdateSeedReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
@@ -399,7 +399,7 @@ func (r Routing) deleteSeed() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(admin.DeleteSeedEndpoint(r.userInfoGetter, r.seedsGetter, r.seedsClientGetter)),
+		)(admin.DeleteSeedEndpoint(r.userInfoGetter, r.seedsGetter, r.masterClient)),
 		admin.DecodeSeedReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
