@@ -194,6 +194,7 @@ func TestUpdateSeedEndpoint(t *testing.T) {
 			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", true), test.GenTestSeed()},
 			existingAPIUser:        test.GenDefaultAPIUser(),
 		},
+		// scenario 5
 		{
 			name:                   "scenario 5: authorized user updates seed - just backup",
 			body:                   `{"name":"us-central1","spec":{"country":"NL","kubeconfig":{},"backupRestore":{"s3BucketName":"bucket"}}}`,

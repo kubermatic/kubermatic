@@ -39,6 +39,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/watcher"
 
 	"k8s.io/apimachinery/pkg/util/sets"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // NewTestRouting is a hack that helps us avoid circular imports
@@ -93,7 +94,8 @@ func NewTestRouting(
 	etcdBackupConfigProjectProviderGetter provider.EtcdBackupConfigProjectProviderGetter,
 	etcdRestoreProjectProviderGetter provider.EtcdRestoreProjectProviderGetter,
 	backupCredentialsProviderGetter provider.BackupCredentialsProviderGetter,
-	privilegedMLAAdminSettingProviderGetter provider.PrivilegedMLAAdminSettingProviderGetter) http.Handler {
+	privilegedMLAAdminSettingProviderGetter provider.PrivilegedMLAAdminSettingProviderGetter,
+	masterClient client.Client) http.Handler {
 
 	updateManager := version.New(versions, updates, providerIncompatibilities)
 
@@ -153,7 +155,7 @@ func NewTestRouting(
 		CABundle:                                certificates.NewFakeCABundle().CertPool(),
 	}
 
-	r := handler.NewRouting(routingParams, nil)
+	r := handler.NewRouting(routingParams, masterClient)
 	rv2 := v2.NewV2Routing(routingParams)
 
 	mainRouter := mux.NewRouter()
