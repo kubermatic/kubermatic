@@ -251,6 +251,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
     charts/nginx-ingress-controller \
     charts/oauth \
     charts/s3-exporter \
+    charts/telemetry \
     charts/values.example.ce.yaml \
     charts/kubermatic.example.ce.yaml \
     charts/seed.example.yaml \
@@ -286,6 +287,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
     charts/nginx-ingress-controller \
     charts/oauth \
     charts/s3-exporter \
+    charts/telemetry \
     charts/values.example.ee.yaml \
     charts/kubermatic.example.ee.yaml \
     charts/seed.example.yaml \
