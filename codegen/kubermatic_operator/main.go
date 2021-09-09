@@ -27,7 +27,6 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 )
 
 func main() {
@@ -46,31 +45,6 @@ func main() {
 	}
 
 	writeYAML(string(markup), "charts/kubermatic/static/master/accessible-addons.yaml")
-
-	versionCfg := &operatorv1alpha1.KubermaticVersionsConfiguration{
-		Kubernetes: common.DefaultKubernetesVersioning,
-	}
-
-	versionsYAML, err := common.CreateVersionsYAML(versionCfg)
-	if err != nil {
-		log.Fatalf("Failed to encode versions as YAML: %v", err)
-	}
-
-	writeYAML(versionsYAML, "charts/kubermatic/static/master/versions.yaml")
-
-	updatesYAML, err := common.CreateUpdatesYAML(versionCfg)
-	if err != nil {
-		log.Fatalf("Failed to encode updates as YAML: %v", err)
-	}
-
-	writeYAML(updatesYAML, "charts/kubermatic/static/master/updates.yaml")
-
-	providerIncompatibilitiesYAML, err := common.CreateProviderIncompatibilitiesYAML(versionCfg)
-	if err != nil {
-		log.Fatalf("Failed to encode updates as YAML: %v", err)
-	}
-
-	writeYAML(providerIncompatibilitiesYAML, "charts/kubermatic/static/master/provider-incompatibilities.yaml")
 }
 
 func writeYAML(container string, filename string) {
