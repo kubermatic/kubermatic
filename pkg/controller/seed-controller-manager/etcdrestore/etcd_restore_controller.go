@@ -164,6 +164,17 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, rest
 		}
 	}
 
+	// check that the backup to restore from exists and is accessible
+	s3Client, bucketName, err := resources.GetEtcdRestoreS3Client(ctx, restore, true, r.Client, cluster)
+	if err != nil {
+		return nil, fmt.Errorf("failed to obtain S3 client: %w", err)
+	}
+
+	objectName := fmt.Sprintf("%s-%s", cluster.GetName(), restore.Spec.BackupName)
+	if _, err := s3Client.StatObject(bucketName, objectName, minio.StatObjectOptions{}); err != nil {
+		return nil, fmt.Errorf("could not access backup object %s: %w", objectName, err)
+	}
+
 	// before proceeding, ensure restore's namespace/name is stored in the ActiveRestoreAnnotationName cluster annotation
 	// unless some other restore is already stored there
 	thisRestore := fmt.Sprintf("%s/%s", restore.Namespace, restore.Name)
@@ -187,17 +198,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, rest
 
 	if restore.Status.Phase == kubermaticv1.EtcdRestorePhaseStsRebuilding {
 		return r.rebuildEtcdStatefulset(ctx, log, restore, cluster)
-	}
-
-	// check that the backup to restore from exists and is accessible
-	s3Client, bucketName, err := resources.GetEtcdRestoreS3Client(ctx, restore, true, r.Client, cluster)
-	if err != nil {
-		return nil, fmt.Errorf("failed to obtain S3 client: %w", err)
-	}
-
-	objectName := fmt.Sprintf("%s-%s", cluster.GetName(), restore.Spec.BackupName)
-	if _, err := s3Client.StatObject(bucketName, objectName, minio.StatObjectOptions{}); err != nil {
-		return nil, fmt.Errorf("could not access backup object %s: %w", objectName, err)
 	}
 
 	// pause cluster
