@@ -57,7 +57,7 @@ import (
 // TestClient wraps the Swagger-generated API client with some more
 // convenient functions, tailor-made for writing tests.
 type TestClient struct {
-	client      *apiclient.KubermaticAPI
+	client      *apiclient.KubermaticKubernetesPlatformAPI
 	bearerToken runtime.ClientAuthInfoWriter
 	test        *testing.T
 }

@@ -14,23 +14,28 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package classification Kubermatic API.
+// Kubermatic Kubernetes Platform API
 //
-// Kubermatic API
+// This spec describes possible operations which can be made against the Kubermatic Kubernetes Platform API.
 //
-// This describes possible operations which can be made against the Kubermatic API.
-//
-// Terms Of Service:
-//
-// There are no TOS at this moment, use at your own risk we take no responsibility
-//
-//     Version: 2.11
+//     Schemes: https
+//     Host: dev.kubermatic.io
+//     Version: 2.18
 //
 //     Consumes:
 //     - application/json
 //
 //     Produces:
 //     - application/json
+//
+//     Security:
+//     - api_key:
+//
+//     SecurityDefinitions:
+//     api_key:
+//          type: apiKey
+//          name: Authorization
+//          in: header
 //
 // swagger:meta
 package main

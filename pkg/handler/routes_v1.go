@@ -14,28 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// NB: The following block has an empty line separating it from the
-// package declaration. This is intentional, to not treat the Swagger
-// spec as a godoc. During client generation, the empty line is
-// temporarily removed.
-
-// Kubermatic API.
-// Kubermatic API. This describes possible operations which can be made against the Kubermatic API.
-//
-//     Schemes: https
-//     Host: dev.kubermatic.io
-//
-//     Security:
-//     - api_key:
-//
-//     SecurityDefinitions:
-//     api_key:
-//          type: apiKey
-//          name: Authorization
-//          in: header
-//
-// swagger:meta
-
 package handler
 
 import (
