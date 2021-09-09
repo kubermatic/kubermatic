@@ -63,20 +63,13 @@ func (p *PrivilegedAllowedRegistryProvider) ListUnsecured() (*kubermaticv1.Allow
 	return wrList, err
 }
 
-// PatchUnsecured patches a allowed registry
-func (p *PrivilegedAllowedRegistryProvider) PatchUnsecured(wr *kubermaticv1.AllowedRegistry) (*kubermaticv1.AllowedRegistry, error) {
-
-	oldWR, err := p.GetUnsecured(wr.Name)
-	if err != nil {
-		return nil, err
-	}
-	oldWR = oldWR.DeepCopy()
-
-	if err := p.clientPrivileged.Patch(context.Background(), wr, ctrlruntimeclient.MergeFrom(oldWR)); err != nil {
+// UpdateUnsecured updates the allowed registry
+func (p *PrivilegedAllowedRegistryProvider) UpdateUnsecured(ar *kubermaticv1.AllowedRegistry) (*kubermaticv1.AllowedRegistry, error) {
+	if err := p.clientPrivileged.Update(context.Background(), ar); err != nil {
 		return nil, err
 	}
 
-	return wr, nil
+	return ar, nil
 }
 
 // DeleteUnsecured deletes a allowed registry
