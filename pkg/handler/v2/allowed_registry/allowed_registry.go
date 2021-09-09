@@ -224,15 +224,15 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, allowedRegistryProvid
 		}
 
 		// get WR
-		originalWR, err := allowedRegistryProvider.GetUnsecured(req.AllowedRegistryName)
+		allowedRegistry, err := allowedRegistryProvider.GetUnsecured(req.AllowedRegistryName)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		originalAPIWR := convertInternalAllowedRegistryToExternal(originalWR)
+		originalAPIAR := convertInternalAllowedRegistryToExternal(allowedRegistry)
 
 		// patch
-		originalJSON, err := json.Marshal(originalAPIWR)
+		originalJSON, err := json.Marshal(originalAPIAR)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to convert current allowedRegistry: %v", err))
 		}
@@ -249,24 +249,18 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, allowedRegistryProvid
 		}
 
 		// validate
-		if patched.Name != originalWR.Name {
-			return nil, errors.New(http.StatusBadRequest, fmt.Sprintf("Changing allowedRegistry name is not allowed: %q to %q", originalWR.Name, patched.Name))
+		if patched.Name != allowedRegistry.Name {
+			return nil, errors.New(http.StatusBadRequest, fmt.Sprintf("Changing allowedRegistry name is not allowed: %q to %q", allowedRegistry.Name, patched.Name))
 		}
 
-		patchedCT := &kubermaticv1.AllowedRegistry{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:            patched.Name,
-				ResourceVersion: originalWR.ResourceVersion,
-			},
-			Spec: patched.Spec,
-		}
+		allowedRegistry.Spec = patched.Spec
 
 		// apply patch
-		patchedCT, err = allowedRegistryProvider.PatchUnsecured(patchedCT)
+		allowedRegistry, err = allowedRegistryProvider.UpdateUnsecured(allowedRegistry)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		return convertInternalAllowedRegistryToExternal(patchedCT), nil
+		return convertInternalAllowedRegistryToExternal(allowedRegistry), nil
 	}
 }

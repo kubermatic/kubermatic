@@ -1073,7 +1073,7 @@ type PrivilegedAllowedRegistryProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to create the resource
-	CreateUnsecured(wr *kubermaticv1.AllowedRegistry) (*kubermaticv1.AllowedRegistry, error)
+	CreateUnsecured(ar *kubermaticv1.AllowedRegistry) (*kubermaticv1.AllowedRegistry, error)
 
 	// GetUnsecured gets the given allowed registry
 	//
@@ -1087,11 +1087,11 @@ type PrivilegedAllowedRegistryProvider interface {
 	// is unsafe in a sense that it uses privileged account to get the resources
 	ListUnsecured() (*kubermaticv1.AllowedRegistryList, error)
 
-	// PatchUnsecured patches a allowed registry
+	// UpdateUnsecured updates the allowed registry
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to update the resource
-	PatchUnsecured(wr *kubermaticv1.AllowedRegistry) (*kubermaticv1.AllowedRegistry, error)
+	UpdateUnsecured(ar *kubermaticv1.AllowedRegistry) (*kubermaticv1.AllowedRegistry, error)
 
 	// DeleteUnsecured deletes the allowed registry with the given name
 	//
