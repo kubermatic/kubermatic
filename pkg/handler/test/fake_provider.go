@@ -281,8 +281,8 @@ func (p *FakePrivilegedAllowedRegistryProvider) ListUnsecured() (*kubermaticapiv
 	return p.Provider.ListUnsecured()
 }
 
-func (p *FakePrivilegedAllowedRegistryProvider) PatchUnsecured(wr *kubermaticapiv1.AllowedRegistry) (*kubermaticapiv1.AllowedRegistry, error) {
-	return p.Provider.PatchUnsecured(wr)
+func (p *FakePrivilegedAllowedRegistryProvider) UpdateUnsecured(wr *kubermaticapiv1.AllowedRegistry) (*kubermaticapiv1.AllowedRegistry, error) {
+	return p.Provider.UpdateUnsecured(wr)
 }
 
 func (p *FakePrivilegedAllowedRegistryProvider) DeleteUnsecured(name string) error {
