@@ -276,20 +276,20 @@ var (
 			{
 				Provider:  kubermaticv1.ProviderVSphere,
 				Version:   "1.22.*",
-				Condition: version.AlwaysCondition,
-				Operation: version.CreateOperation,
+				Condition: operatorv1alpha1.AlwaysCondition,
+				Operation: operatorv1alpha1.CreateOperation,
 			},
 			{
 				Provider:  kubermaticv1.ProviderVSphere,
 				Version:   "1.22.*",
-				Condition: version.ExternalCloudProviderCondition,
-				Operation: version.UpdateOperation,
+				Condition: operatorv1alpha1.ExternalCloudProviderCondition,
+				Operation: operatorv1alpha1.UpdateOperation,
 			},
 			{
 				Provider:  kubermaticv1.ProviderVSphere,
 				Version:   "1.22.*",
-				Condition: version.ExternalCloudProviderCondition,
-				Operation: version.SupportOperation,
+				Condition: operatorv1alpha1.ExternalCloudProviderCondition,
+				Operation: operatorv1alpha1.SupportOperation,
 			},
 		},
 	}

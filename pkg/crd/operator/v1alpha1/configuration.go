@@ -20,11 +20,32 @@ import (
 	"github.com/Masterminds/semver/v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
+)
+
+// ConditionType is the type defining the cluster or datacenter condition that must be met to block a specific version
+type ConditionType string
+
+const (
+	// AlwaysCondition represent an always true matching condition used while checking provider incompatibilities
+	AlwaysCondition ConditionType = "always"
+	// ExternalCloudProviderCondition is an incompatibility condition that represents the usage of the external Cloud Provider
+	ExternalCloudProviderCondition ConditionType = kubermaticv1.ClusterFeatureExternalCloudProvider
+)
+
+// OperationType is the type defining the operations triggering the compatibility check (CREATE or UPDATE)
+type OperationType string
+
+const (
+	// CreateOperation represents the creation of a new cluster
+	CreateOperation OperationType = "CREATE"
+	// UpdateOperation represents the update of an existing cluster
+	UpdateOperation OperationType = "UPGRADE"
+	// SupportOperation represents the possibility to enable a new feature on an existing cluster
+	SupportOperation OperationType = "SUPPORT"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -345,9 +366,9 @@ type Incompatibility struct {
 	// Version is the Kubernetes version that must be checked. Wildcards are allowed, e.g. "1.22.*".
 	Version string `json:"version,omitempty"`
 	// Condition is the cluster or datacenter condition that must be met to block a specific version
-	Condition version.ConditionType `json:"condition,omitempty"`
+	Condition ConditionType `json:"condition,omitempty"`
 	// Operation is the operation triggering the compatibility check (CREATE or UPDATE)
-	Operation version.OperationType `json:"operation,omitempty"`
+	Operation OperationType `json:"operation,omitempty"`
 }
 
 // KubermaticVPAConfiguration configures the Kubernetes VPA.

@@ -72,7 +72,6 @@ import (
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
-	"k8c.io/kubermatic/v2/pkg/version"
 	kuberneteswatcher "k8c.io/kubermatic/v2/pkg/watcher/kubernetes"
 
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -146,11 +145,7 @@ func main() {
 	if err != nil {
 		log.Fatalw("failed to create auth clients", "error", err)
 	}
-	updateManager, err := version.NewFromFiles(options.versionsFile, options.updatesFile, options.providerIncompatibilitiesFile)
-	if err != nil {
-		log.Fatalw("failed to create update manager", "error", err)
-	}
-	apiHandler, err := createAPIHandler(options, providers, oidcIssuerVerifier, tokenVerifiers, tokenExtractors, updateManager, mgr)
+	apiHandler, err := createAPIHandler(options, providers, oidcIssuerVerifier, tokenVerifiers, tokenExtractors, mgr)
 	if err != nil {
 		log.Fatalw("failed to create API Handler", "error", err)
 	}
@@ -182,6 +177,10 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 		return providers{}, err
 	}
 	seedKubeconfigGetter, err := seedKubeconfigGetterFactory(ctx, client, options)
+	if err != nil {
+		return providers{}, err
+	}
+	configGetter, err := provider.KubermaticConfigurationGetterFactory(client, options.namespace)
 	if err != nil {
 		return providers{}, err
 	}
@@ -337,6 +336,7 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 		clusterProviderGetter:                   clusterProviderGetter,
 		seedsGetter:                             seedsGetter,
 		seedClientGetter:                        seedClientGetter,
+		configGetter:                            configGetter,
 		addons:                                  addonProviderGetter,
 		addonConfigProvider:                     addonConfigProvider,
 		userInfoGetter:                          userInfoGetter,
@@ -411,7 +411,7 @@ func createAuthClients(options serverRunOptions, prov providers) (auth.TokenVeri
 }
 
 func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifier auth.OIDCIssuerVerifier, tokenVerifiers auth.TokenVerifier,
-	tokenExtractors auth.TokenExtractor, updateManager common.UpdateManager, mgr manager.Manager) (http.HandlerFunc, error) {
+	tokenExtractors auth.TokenExtractor, mgr manager.Manager) (http.HandlerFunc, error) {
 	var prometheusClient prometheusapi.Client
 	if options.featureGates.Enabled(features.PrometheusEndpoint) {
 		var err error
@@ -424,7 +424,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 
 	serviceAccountTokenGenerator, err := serviceaccount.JWTTokenGenerator([]byte(options.serviceAccountSigningKey))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create service account token generator due to %v", err)
+		return nil, fmt.Errorf("failed to create service account token generator: %w", err)
 	}
 	serviceAccountTokenAuth := serviceaccount.JWTTokenAuthenticator([]byte(options.serviceAccountSigningKey))
 
@@ -433,6 +433,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		PresetsProvider:                         prov.presetProvider,
 		SeedsGetter:                             prov.seedsGetter,
 		SeedsClientGetter:                       prov.seedClientGetter,
+		KubermaticConfigurationGetter:           prov.configGetter,
 		SSHKeyProvider:                          prov.sshKey,
 		PrivilegedSSHKeyProvider:                prov.privilegedSSHKeyProvider,
 		UserProvider:                            prov.user,
@@ -448,7 +449,6 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		ClusterProviderGetter:                   prov.clusterProviderGetter,
 		AddonProviderGetter:                     prov.addons,
 		AddonConfigProvider:                     prov.addonConfigProvider,
-		UpdateManager:                           updateManager,
 		PrometheusClient:                        prometheusClient,
 		ProjectMemberProvider:                   prov.projectMember,
 		PrivilegedProjectMemberProvider:         prov.privilegedProjectMemberProvider,

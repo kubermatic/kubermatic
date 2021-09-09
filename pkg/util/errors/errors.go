@@ -65,8 +65,8 @@ func NewNotFound(kind, name string) error {
 	return HTTPError{http.StatusNotFound, fmt.Sprintf("%s %q not found", kind, name), nil}
 }
 
-// NewWrongRequest creates a HTTP 400 error, if we got a wrong request type.
-func NewWrongRequest(got, want interface{}) error {
+// NewWrongMethod creates a HTTP 400 error, if we got a wrong request type.
+func NewWrongMethod(got, want interface{}) error {
 	return HTTPError{http.StatusBadRequest, fmt.Sprintf("Got a '%T' request - expected a '%T' request", got, want), nil}
 }
 

@@ -26,6 +26,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 
@@ -107,6 +108,20 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		},
 	}
 
+	dummyKubermaticConfiguration := operatorv1alpha1.KubermaticConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kubermatic",
+			Namespace: test.KubermaticNamespace,
+		},
+		Spec: operatorv1alpha1.KubermaticConfigurationSpec{
+			Versions: operatorv1alpha1.KubermaticVersionsConfiguration{
+				Kubernetes: operatorv1alpha1.KubermaticVersioningConfiguration{
+					Versions: test.GenDefaultVersions(),
+				},
+			},
+		},
+	}
+
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v2/projects/%s/kubernetes/clusters", tc.ProjectToSync), strings.NewReader(tc.Body))
@@ -117,7 +132,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 			}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, test.GenDefaultVersions(), nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, &dummyKubermaticConfiguration, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -200,7 +215,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -291,7 +306,7 @@ func TestListClusters(t *testing.T) {
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -369,7 +384,7 @@ func TestGetClusterEndpoint(t *testing.T) {
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -444,7 +459,7 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -623,7 +638,7 @@ func TestGetClusterMetrics(t *testing.T) {
 			res := httptest.NewRecorder()
 
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, nil, hack.NewTestRouting)
+			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -746,7 +761,7 @@ func TestGetClusterEvents(t *testing.T) {
 			res := httptest.NewRecorder()
 
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, nil, hack.NewTestRouting)
+			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}

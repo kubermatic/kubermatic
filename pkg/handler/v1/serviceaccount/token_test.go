@@ -129,7 +129,7 @@ func TestCreateTokenProject(t *testing.T) {
 			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/projects/%s/serviceaccounts/%s/tokens", tc.projectToSync, tc.saToSync), strings.NewReader(tc.body))
 			res := httptest.NewRecorder()
 
-			ep, fakeClients, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, tc.existingKubernetesObjs, []ctrlruntimeclient.Object{}, tc.existingKubermaticObjs, nil, nil, nil, hack.NewTestRouting)
+			ep, fakeClients, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, tc.existingKubernetesObjs, []ctrlruntimeclient.Object{}, tc.existingKubermaticObjs, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -251,7 +251,7 @@ func TestListTokens(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/serviceaccounts/%s/tokens", tc.projectToSync, tc.saToSync), strings.NewReader(""))
 			res := httptest.NewRecorder()
 
-			ep, _, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, tc.existingKubernetesObjs, []ctrlruntimeclient.Object{}, tc.existingKubermaticObjs, nil, nil, nil, hack.NewTestRouting)
+			ep, _, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, tc.existingKubernetesObjs, []ctrlruntimeclient.Object{}, tc.existingKubermaticObjs, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -314,7 +314,7 @@ func TestServiceAccountCanGetProject(t *testing.T) {
 				res := httptest.NewRecorder()
 
 				tc.existingKubermaticObjs = append(tc.existingKubermaticObjs, tc.existingSa)
-				lep, _, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, []ctrlruntimeclient.Object{}, []ctrlruntimeclient.Object{}, tc.existingKubermaticObjs, nil, nil, nil, hack.NewTestRouting)
+				lep, _, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, []ctrlruntimeclient.Object{}, []ctrlruntimeclient.Object{}, tc.existingKubermaticObjs, nil, hack.NewTestRouting)
 				if err != nil {
 					t.Fatalf("failed to create test endpoint due to %v", err)
 				}
@@ -472,7 +472,7 @@ func TestPatchToken(t *testing.T) {
 			req := httptest.NewRequest("PATCH", fmt.Sprintf("/api/v1/projects/%s/serviceaccounts/%s/tokens/%s", tc.projectToSync, tc.saToSync, tc.tokenToSync), strings.NewReader(tc.body))
 			res := httptest.NewRecorder()
 
-			ep, _, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, tc.existingKubernetesObjs, []ctrlruntimeclient.Object{}, tc.existingKubermaticObjs, nil, nil, nil, hack.NewTestRouting)
+			ep, _, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, tc.existingKubernetesObjs, []ctrlruntimeclient.Object{}, tc.existingKubermaticObjs, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -650,7 +650,7 @@ func TestUpdateToken(t *testing.T) {
 			req := httptest.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%s/serviceaccounts/%s/tokens/%s", tc.projectToSync, tc.saToSync, tc.tokenToSync), strings.NewReader(tc.body))
 			res := httptest.NewRecorder()
 
-			ep, _, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, tc.existingKubernetesObjs, []ctrlruntimeclient.Object{}, tc.existingKubermaticObjs, nil, nil, nil, hack.NewTestRouting)
+			ep, _, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, tc.existingKubernetesObjs, []ctrlruntimeclient.Object{}, tc.existingKubermaticObjs, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -763,7 +763,7 @@ func TestDeleteToken(t *testing.T) {
 			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%s/serviceaccounts/%s/tokens/%s", tc.projectToSync, tc.saToSync, tc.tokenToDelete), strings.NewReader(""))
 			res := httptest.NewRecorder()
 
-			ep, clientset, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, tc.existingKubernetesObjs, []ctrlruntimeclient.Object{}, tc.existingKubermaticObjs, nil, nil, nil, hack.NewTestRouting)
+			ep, clientset, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, tc.existingKubernetesObjs, []ctrlruntimeclient.Object{}, tc.existingKubermaticObjs, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}

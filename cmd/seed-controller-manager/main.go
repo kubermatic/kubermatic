@@ -36,6 +36,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/metrics"
 	metricserver "k8c.io/kubermatic/v2/pkg/metrics/server"
 	"k8c.io/kubermatic/v2/pkg/pprof"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	clustermutation "k8c.io/kubermatic/v2/pkg/webhook/cluster/mutation"
@@ -151,7 +152,17 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	rootCtx := context.Background()
 	seedGetter, err := seedGetterFactory(rootCtx, mgr.GetClient(), options)
 	if err != nil {
-		log.Fatalw("Unable to create the seed factory", zap.Error(err))
+		log.Fatalw("Unable to create the seed getter", zap.Error(err))
+	}
+
+	configGetter, err := provider.KubermaticConfigurationGetterFactory(mgr.GetClient(), options.namespace)
+	if err != nil {
+		log.Fatalw("Unable to create the configuration getter", zap.Error(err))
+	}
+
+	// check if a config exists
+	if _, err := configGetter(rootCtx); err != nil {
+		log.Fatalw("Failed to load KubermaticConfiguration", zap.Error(err))
 	}
 
 	var clientProvider *client.Provider

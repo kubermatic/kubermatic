@@ -56,9 +56,6 @@ type controllerRunOptions struct {
 	externalURL                                      string
 	dc                                               string
 	workerName                                       string
-	versionsFile                                     string
-	updatesFile                                      string
-	providerIncompatibilitiesFile                    string
 	workerCount                                      int
 	overwriteRegistry                                string
 	nodePortRange                                    string
@@ -130,16 +127,12 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 		defaultKubernetesAddonsFile string
 	)
 
-	flag.BoolVar(&c.enableLeaderElection, "enable-leader-election", true, "Enable leader election for controller manager. "+
-		"Enabling this will ensure there is only one active controller manager.")
+	flag.BoolVar(&c.enableLeaderElection, "enable-leader-election", true, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
 	flag.StringVar(&c.leaderElectionNamespace, "leader-election-namespace", "", "Leader election namespace. In-cluster discovery will be attempted in such case.")
 	flag.StringVar(&c.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the internal server is running on")
 	flag.StringVar(&c.externalURL, "external-url", "", "The external url for the apiserver host and the the dc.(Required)")
 	flag.StringVar(&c.dc, "datacenter-name", "", "The name of the seed datacenter, the controller is running in. It will be used to build the absolute url for a customer cluster.")
 	flag.StringVar(&c.workerName, "worker-name", "", "The name of the worker that will only processes resources with label=worker-name.")
-	flag.StringVar(&c.versionsFile, "versions", "versions.yaml", "The versions.yaml file path")
-	flag.StringVar(&c.updatesFile, "updates", "updates.yaml", "The updates.yaml file path")
-	flag.StringVar(&c.providerIncompatibilitiesFile, "provider-incompatibilities", "provider-incompatibilities.yaml", "The provider-incompatibilities.yaml file path")
 	flag.IntVar(&c.workerCount, "worker-count", 4, "Number of workers which process the clusters in parallel.")
 	flag.StringVar(&c.overwriteRegistry, "overwrite-registry", "", "registry to use for all images")
 	flag.StringVar(&c.nodePortRange, "nodeport-range", resources.DefaultNodePortRange, "Deprecated: configure defaultComponentSettings on Seed resource. NodePort range to use for new clusters. It must be within the NodePort range of the seed-cluster")
@@ -290,6 +283,7 @@ type controllerContext struct {
 	mgr                  manager.Manager
 	clientProvider       *client.Provider
 	seedGetter           provider.SeedGetter
+	configGetter         provider.KubermaticConfigurationGetter
 	dockerPullConfigJSON []byte
 	log                  *zap.SugaredLogger
 	versions             kubermatic.Versions

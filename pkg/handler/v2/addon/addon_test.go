@@ -157,7 +157,7 @@ func TestGetAddon(t *testing.T) {
 			for _, existingAddon := range tc.ExistingAddons {
 				kubermaticObj = append(kubermaticObj, existingAddon)
 			}
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -317,7 +317,7 @@ func TestListAddons(t *testing.T) {
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -474,7 +474,7 @@ func TestCreateAddon(t *testing.T) {
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -652,7 +652,7 @@ func TestCreatePatchGetAddon(t *testing.T) {
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}

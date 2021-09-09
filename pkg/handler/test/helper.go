@@ -42,6 +42,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	kubermaticfakeclientset "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/fake"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/handler/auth"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -50,7 +51,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
-	"k8c.io/kubermatic/v2/pkg/version"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/watcher"
 	kuberneteswatcher "k8c.io/kubermatic/v2/pkg/watcher/kubernetes"
@@ -82,6 +82,9 @@ func init() {
 	// are very good at making that panic
 	if err := clusterv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
 		kubermaticlog.Logger.Fatalw("failed to add cluster/v1alpha1 scheme to scheme.Scheme", "error", err)
+	}
+	if err := operatorv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
+		kubermaticlog.Logger.Fatalw("failed to add operator/v1alpha1 scheme to scheme.Scheme", "error", err)
 	}
 	if err := v1beta1.AddToScheme(scheme.Scheme); err != nil {
 		kubermaticlog.Logger.Fatalw("failed to register scheme metrics/v1beta1", "error", err)
@@ -158,6 +161,7 @@ type newRoutingFunc func(
 	userInfoGetter provider.UserInfoGetter,
 	seedsGetter provider.SeedsGetter,
 	seedClientGetter provider.SeedClientGetter,
+	configGetter provider.KubermaticConfigurationGetter,
 	clusterProviderGetter provider.ClusterProviderGetter,
 	addonProviderGetter provider.AddonProviderGetter,
 	addonConfigProvider provider.AddonConfigProvider,
@@ -176,9 +180,6 @@ type newRoutingFunc func(
 	prometheusClient prometheusapi.Client,
 	projectMemberProvider *kubernetes.ProjectMemberProvider,
 	privilegedProjectMemberProvider provider.PrivilegedProjectMemberProvider,
-	versions []*version.Version,
-	updates []*version.Update,
-	providerIncompatibilities []*version.ProviderIncompatibility,
 	saTokenAuthenticator serviceaccount.TokenAuthenticator,
 	saTokenGenerator serviceaccount.TokenGenerator,
 	eventRecorderProvider provider.EventRecorderProvider,
@@ -215,12 +216,26 @@ func getRuntimeObjects(objs ...ctrlruntimeclient.Object) []runtime.Object {
 	return runtimeObjects
 }
 
-func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObjects, machineObjects, kubermaticObjects []ctrlruntimeclient.Object, versions []*version.Version, updates []*version.Update, providerIncompatibilities []*version.ProviderIncompatibility, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
+func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObjects, machineObjects, kubermaticObjects []ctrlruntimeclient.Object, kubermaticConfiguration *operatorv1alpha1.KubermaticConfiguration, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
 	ctx := context.Background()
 
 	allObjects := kubeObjects
 	allObjects = append(allObjects, machineObjects...)
 	allObjects = append(allObjects, kubermaticObjects...)
+
+	// most tests don't actually use the KubermaticConfiguration, but since they handle the
+	// configGetter, they can still fail if no config exists; to prevent this, we simply
+	// create a dummy, empty config here by default, unless a test defines its own config
+	if kubermaticConfiguration == nil {
+		kubermaticConfiguration = &operatorv1alpha1.KubermaticConfiguration{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "kubermatic",
+				Namespace: KubermaticNamespace,
+			},
+		}
+	}
+
+	allObjects = append(allObjects, kubermaticConfiguration)
 	fakeClient := fakectrlruntimeclient.
 		NewClientBuilder().
 		WithScheme(scheme.Scheme).
@@ -339,6 +354,18 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	seedClientGetter := func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
 		return fakeClient, nil
 	}
+
+	// create a dummy configGetter, but if no explicit config was given, we just return
+	// a regular ConfigGetter that uses the fakeClient to find the KubermaticConfiguration
+	// configGetter := func(_ context.Context) (*operatorv1alpha1.KubermaticConfiguration, error) {
+	// 	return kubermaticConfiguration, nil
+	// }
+	// if kubermaticConfiguration == nil {
+	configGetter, err := provider.KubermaticConfigurationGetterFactory(fakeClient, KubermaticNamespace)
+	if err != nil {
+		return nil, nil, err
+	}
+	// }
 
 	externalClusterProvider, err := kubernetes.NewExternalClusterProvider(fakeImpersonationClient, fakeClient)
 	if err != nil {
@@ -491,6 +518,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		userInfoGetter,
 		seedsGetter,
 		seedClientGetter,
+		configGetter,
 		clusterProviderGetter,
 		addonProviderGetter,
 		addonConfigProvider,
@@ -509,9 +537,6 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		prometheusClient,
 		projectMemberProvider,
 		projectMemberProvider,
-		versions,
-		updates,
-		providerIncompatibilities,
 		tokenAuth,
 		tokenGenerator,
 		eventRecorderProvider,
@@ -543,13 +568,13 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 }
 
 // CreateTestEndpointAndGetClients is a convenience function that instantiates fake providers and sets up routes for the tests
-func CreateTestEndpointAndGetClients(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObjects, machineObjects, kubermaticObjects []ctrlruntimeclient.Object, versions []*version.Version, updates []*version.Update, providerIncompatibilities []*version.ProviderIncompatibility, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
-	return initTestEndpoint(user, seedsGetter, kubeObjects, machineObjects, kubermaticObjects, versions, updates, providerIncompatibilities, routingFunc)
+func CreateTestEndpointAndGetClients(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObjects, machineObjects, kubermaticObjects []ctrlruntimeclient.Object, config *operatorv1alpha1.KubermaticConfiguration, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
+	return initTestEndpoint(user, seedsGetter, kubeObjects, machineObjects, kubermaticObjects, config, routingFunc)
 }
 
 // CreateTestEndpoint does exactly the same as CreateTestEndpointAndGetClients except it omits ClientsSets when returning
-func CreateTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []ctrlruntimeclient.Object, versions []*version.Version, updates []*version.Update, providerIncompatibilities []*version.ProviderIncompatibility, routingFunc newRoutingFunc) (http.Handler, error) {
-	router, _, err := CreateTestEndpointAndGetClients(user, nil, kubeObjects, nil, kubermaticObjects, versions, updates, providerIncompatibilities, routingFunc)
+func CreateTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []ctrlruntimeclient.Object, config *operatorv1alpha1.KubermaticConfiguration, routingFunc newRoutingFunc) (http.Handler, error) {
+	router, _, err := CreateTestEndpointAndGetClients(user, nil, kubeObjects, nil, kubermaticObjects, config, routingFunc)
 	return router, err
 }
 
@@ -1191,23 +1216,11 @@ func GenDefaultSettings() *kubermaticv1.KubermaticSetting {
 	}
 }
 
-func GenDefaultVersions() []*version.Version {
-	return []*version.Version{
-		{
-			Version: ver.MustParse("1.20.11"),
-			Default: false,
-			Type:    apiv1.KubernetesClusterType,
-		},
-		{
-			Version: ver.MustParse("1.21.5"),
-			Default: false,
-			Type:    apiv1.KubernetesClusterType,
-		},
-		{
-			Version: ver.MustParse("1.22.2"),
-			Default: false,
-			Type:    apiv1.KubernetesClusterType,
-		},
+func GenDefaultVersions() []*ver.Version {
+	return []*ver.Version{
+		ver.MustParse("1.20.11"),
+		ver.MustParse("1.21.5"),
+		ver.MustParse("1.22.2"),
 	}
 }
 
