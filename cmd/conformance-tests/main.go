@@ -100,7 +100,7 @@ type Opts struct {
 	kubermaticSeedName           string
 	kubermaticProjectID          string
 	kubermaticOIDCToken          string
-	kubermaticClient             *apiclient.KubermaticAPI
+	kubermaticClient             *apiclient.KubermaticKubernetesPlatformAPI
 	kubermaticAuthenticator      runtime.ClientAuthInfoWriter
 	scenarioOptions              string
 	pushgatewayEndpoint          string
@@ -152,7 +152,7 @@ type secrets struct {
 		AccessKeyID     string
 		AccessKeySecret string
 	}
-	kubermaticClient        *apiclient.KubermaticAPI
+	kubermaticClient        *apiclient.KubermaticKubernetesPlatformAPI
 	kubermaticAuthenticator runtime.ClientAuthInfoWriter
 }
 
@@ -583,7 +583,7 @@ func shuffle(vals []testScenario) []testScenario {
 	return ret
 }
 
-func createProject(ctx context.Context, client *apiclient.KubermaticAPI, bearerToken runtime.ClientAuthInfoWriter, log *zap.SugaredLogger) (string, error) {
+func createProject(ctx context.Context, client *apiclient.KubermaticKubernetesPlatformAPI, bearerToken runtime.ClientAuthInfoWriter, log *zap.SugaredLogger) (string, error) {
 	log.Info("Creating Kubermatic project...")
 
 	params := &project.CreateProjectParams{
@@ -623,7 +623,7 @@ func createProject(ctx context.Context, client *apiclient.KubermaticAPI, bearerT
 	return projectID, nil
 }
 
-func createSSHKeys(ctx context.Context, client *apiclient.KubermaticAPI, bearerToken runtime.ClientAuthInfoWriter, opts *Opts, log *zap.SugaredLogger) error {
+func createSSHKeys(ctx context.Context, client *apiclient.KubermaticKubernetesPlatformAPI, bearerToken runtime.ClientAuthInfoWriter, opts *Opts, log *zap.SugaredLogger) error {
 	for i, key := range opts.publicKeys {
 		log.Infow("Creating UserSSHKey", "pubkey", string(key))
 

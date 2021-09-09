@@ -32,7 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-func NewKubermaticClient(endpointURL string) (*client.KubermaticAPI, error) {
+func NewKubermaticClient(endpointURL string) (*client.KubermaticKubernetesPlatformAPI, error) {
 	parsed, err := url.Parse(endpointURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse URL: %v", err)

@@ -5,13 +5,16 @@
   "produces": [
     "application/json"
   ],
+  "schemes": [
+    "https"
+  ],
   "swagger": "2.0",
   "info": {
-    "description": "Kubermatic API\n\nThis describes possible operations which can be made against the Kubermatic API.",
-    "title": "Kubermatic API.",
-    "termsOfService": "There are no TOS at this moment, use at your own risk we take no responsibility",
-    "version": "2.11"
+    "description": "This spec describes possible operations which can be made against the Kubermatic Kubernetes Platform API.",
+    "title": "Kubermatic Kubernetes Platform API",
+    "version": "2.18"
   },
+  "host": "dev.kubermatic.io",
   "paths": {
     "/api/projects/{project_id}/clusters/{cluster_id}/sshkeys/{key_id}": {
       "delete": {
@@ -22789,5 +22792,17 @@
     "empty": {
       "description": "EmptyResponse is a empty response"
     }
-  }
+  },
+  "securityDefinitions": {
+    "api_key": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header"
+    }
+  },
+  "security": [
+    {
+      "api_key": []
+    }
+  ]
 }

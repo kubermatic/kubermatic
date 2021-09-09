@@ -48,7 +48,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/vsphere"
 )
 
-// Default kubermatic API HTTP client.
+// Default kubermatic kubernetes platform API HTTP client.
 var Default = NewHTTPClient(nil)
 
 const (
@@ -63,14 +63,14 @@ const (
 // DefaultSchemes are the default schemes found in Meta (info) section of spec file
 var DefaultSchemes = []string{"https"}
 
-// NewHTTPClient creates a new kubermatic API HTTP client.
-func NewHTTPClient(formats strfmt.Registry) *KubermaticAPI {
+// NewHTTPClient creates a new kubermatic kubernetes platform API HTTP client.
+func NewHTTPClient(formats strfmt.Registry) *KubermaticKubernetesPlatformAPI {
 	return NewHTTPClientWithConfig(formats, nil)
 }
 
-// NewHTTPClientWithConfig creates a new kubermatic API HTTP client,
+// NewHTTPClientWithConfig creates a new kubermatic kubernetes platform API HTTP client,
 // using a customizable transport config.
-func NewHTTPClientWithConfig(formats strfmt.Registry, cfg *TransportConfig) *KubermaticAPI {
+func NewHTTPClientWithConfig(formats strfmt.Registry, cfg *TransportConfig) *KubermaticKubernetesPlatformAPI {
 	// ensure nullable parameters have default
 	if cfg == nil {
 		cfg = DefaultTransportConfig()
@@ -81,14 +81,14 @@ func NewHTTPClientWithConfig(formats strfmt.Registry, cfg *TransportConfig) *Kub
 	return New(transport, formats)
 }
 
-// New creates a new kubermatic API client
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *KubermaticAPI {
+// New creates a new kubermatic kubernetes platform API client
+func New(transport runtime.ClientTransport, formats strfmt.Registry) *KubermaticKubernetesPlatformAPI {
 	// ensure nullable parameters have default
 	if formats == nil {
 		formats = strfmt.Default
 	}
 
-	cli := new(KubermaticAPI)
+	cli := new(KubermaticKubernetesPlatformAPI)
 	cli.Transport = transport
 	cli.Addon = addon.New(transport, formats)
 	cli.Admin = admin.New(transport, formats)
@@ -168,8 +168,8 @@ func (cfg *TransportConfig) WithSchemes(schemes []string) *TransportConfig {
 	return cfg
 }
 
-// KubermaticAPI is a client for kubermatic API
-type KubermaticAPI struct {
+// KubermaticKubernetesPlatformAPI is a client for kubermatic kubernetes platform API
+type KubermaticKubernetesPlatformAPI struct {
 	Addon addon.ClientService
 
 	Admin admin.ClientService
@@ -246,7 +246,7 @@ type KubermaticAPI struct {
 }
 
 // SetTransport changes the transport on the client and all its subresources
-func (c *KubermaticAPI) SetTransport(transport runtime.ClientTransport) {
+func (c *KubermaticKubernetesPlatformAPI) SetTransport(transport runtime.ClientTransport) {
 	c.Transport = transport
 	c.Addon.SetTransport(transport)
 	c.Admin.SetTransport(transport)
