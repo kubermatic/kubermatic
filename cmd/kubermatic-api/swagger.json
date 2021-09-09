@@ -17519,6 +17519,11 @@
         "opaIntegration": {
           "$ref": "#/definitions/OPAIntegrationSettings"
         },
+        "pause": {
+          "description": "Pause tells that this cluster is currently not managed by the controller.\nIt indicates that the user needs to do some action to resolve the pause.",
+          "type": "boolean",
+          "x-go-name": "Pause"
+        },
         "podNodeSelectorAdmissionPluginConfig": {
           "description": "PodNodeSelectorAdmissionPluginConfig provides the configuration for the PodNodeSelector.\nIt's used by the backend to create a configuration file for this plugin.\nThe key:value from the map is converted to the namespace:\u003cnode-selectors-labels\u003e in the file.\nThe format in a file:\npodNodeSelectorPluginConfig:\nclusterDefaultNodeSelector: \u003cnode-selectors-labels\u003e\nnamespace1: \u003cnode-selectors-labels\u003e\nnamespace2: \u003cnode-selectors-labels\u003e",
           "type": "object",

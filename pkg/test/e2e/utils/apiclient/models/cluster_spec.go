@@ -35,6 +35,10 @@ type ClusterSpec struct {
 	// MachineNetworks optionally specifies the parameters for IPAM.
 	MachineNetworks []*MachineNetworkingConfig `json:"machineNetworks"`
 
+	// Pause tells that this cluster is currently not managed by the controller.
+	// It indicates that the user needs to do some action to resolve the pause.
+	Pause bool `json:"pause,omitempty"`
+
 	// PodNodeSelectorAdmissionPluginConfig provides the configuration for the PodNodeSelector.
 	// It's used by the backend to create a configuration file for this plugin.
 	// The key:value from the map is converted to the namespace:<node-selectors-labels> in the file.
