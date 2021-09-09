@@ -25,6 +25,7 @@ groups:
         for: 15m
         labels:
           severity: critical
+          service: kubermatic-master
       - alert: KubermaticAPITooManyErrors
         annotations:
           message: Kubermatic API is returning a high rate of HTTP 5xx responses.
@@ -33,6 +34,7 @@ groups:
         for: 15m
         labels:
           severity: warning
+          service: kubermatic-master
       - alert: KubermaticAPITooManyInitNodeDeloymentFailures
         annotations:
           message: Kubermatic API is failing to create too many initial node deployments.
@@ -48,3 +50,4 @@ groups:
         for: 15m
         labels:
           severity: critical
+          service: kubermatic-master

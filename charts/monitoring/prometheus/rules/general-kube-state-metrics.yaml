@@ -70,6 +70,7 @@ groups:
         for: 1h
         labels:
           severity: critical
+          resource: "{{ $labels.namespace }}/{{ $labels.pod }}"
       - alert: KubePodNotReady
         annotations:
           message: Pod {{ $labels.namespace }}/{{ $labels.pod }} has been in a non-ready state for longer than an hour.
@@ -78,6 +79,7 @@ groups:
         for: 30m
         labels:
           severity: critical
+          resource: "{{ $labels.namespace }}/{{ $labels.pod }}"
       - alert: KubeDeploymentGenerationMismatch
         annotations:
           message: Deployment generation for {{ $labels.namespace }}/{{ $labels.deployment }} does not match, this indicates that the Deployment has failed but has not been rolled back.
@@ -89,6 +91,7 @@ groups:
         for: 15m
         labels:
           severity: critical
+          resource: "{{ $labels.namespace }}/{{ $labels.deployment }}"
       - alert: KubeDeploymentReplicasMismatch
         annotations:
           message: Deployment {{ $labels.namespace }}/{{ $labels.deployment }} has not matched the expected number of replicas for longer than an hour.
@@ -100,6 +103,7 @@ groups:
         for: 1h
         labels:
           severity: critical
+          resource: "{{ $labels.namespace }}/{{ $labels.deployment }}"
       - alert: KubeStatefulSetReplicasMismatch
         annotations:
           message: StatefulSet {{ $labels.namespace }}/{{ $labels.statefulset }} has not matched the expected number of replicas for longer than 15 minutes.
@@ -111,6 +115,7 @@ groups:
         for: 15m
         labels:
           severity: critical
+          resource: "{{ $labels.namespace }}/{{ $labels.statefulset }}"
       - alert: KubeStatefulSetGenerationMismatch
         annotations:
           message: StatefulSet generation for {{ $labels.namespace }}/{{ $labels.statefulset }} does not match, this indicates that the StatefulSet has failed but has not been rolled back.
@@ -122,6 +127,7 @@ groups:
         for: 15m
         labels:
           severity: critical
+          resource: "{{ $labels.namespace }}/{{ $labels.statefulset }}"
       - alert: KubeStatefulSetUpdateNotRolledOut
         annotations:
           message: StatefulSet {{ $labels.namespace }}/{{ $labels.statefulset }} update has not been rolled out.
@@ -141,6 +147,7 @@ groups:
         for: 15m
         labels:
           severity: critical
+          resource: "{{ $labels.namespace }}/{{ $labels.statefulset }}"
       - alert: KubeDaemonSetRolloutStuck
         annotations:
           message: Only {{ $value }}% of the desired Pods of DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset }} are scheduled and ready.
@@ -152,6 +159,7 @@ groups:
         for: 15m
         labels:
           severity: critical
+          resource: "{{ $labels.namespace }}/{{ $labels.daemonset }}"
       - alert: KubeDaemonSetNotScheduled
         annotations:
           message: '{{ $value }} Pods of DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset }} are not scheduled.'
@@ -163,6 +171,7 @@ groups:
         for: 10m
         labels:
           severity: warning
+          resource: "{{ $labels.namespace }}/{{ $labels.daemonset }}"
       - alert: KubeDaemonSetMisScheduled
         annotations:
           message: '{{ $value }} Pods of DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset }} are running where they are not supposed to run.'
@@ -171,6 +180,7 @@ groups:
         for: 10m
         labels:
           severity: warning
+          resource: "{{ $labels.namespace }}/{{ $labels.daemonset }}"
       - alert: KubeCronJobRunning
         annotations:
           message: CronJob {{ $labels.namespace }}/{{ $labels.cronjob }} is taking more than 1h to complete.
@@ -179,6 +189,7 @@ groups:
         for: 1h
         labels:
           severity: warning
+          resource: "{{ $labels.namespace }}/{{ $labels.cronjob }}"
       - alert: KubeJobCompletion
         annotations:
           message: Job {{ $labels.namespace }}/{{ $labels.job_name }} is taking more than one hour to complete.
@@ -187,6 +198,7 @@ groups:
         for: 1h
         labels:
           severity: warning
+          resource: "{{ $labels.namespace }}/{{ $labels.job_name }}"
       - alert: KubeJobFailed
         annotations:
           message: Job {{ $labels.namespace }}/{{ $labels.job_name }} failed to complete.
@@ -195,6 +207,7 @@ groups:
         for: 1h
         labels:
           severity: warning
+          resource: "{{ $labels.namespace }}/{{ $labels.job_name }}"
       - alert: KubeCPUOvercommit
         annotations:
           message: Cluster has overcommitted CPU resource requests for namespaces.
@@ -270,6 +283,7 @@ groups:
         for: 0m
         labels:
           severity: warning
+          resource: '{{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }}'
       - alert: KubeNodeNotReady
         annotations:
           message: '{{ $labels.node }} has been unready for more than an hour.'
@@ -278,3 +292,4 @@ groups:
         for: 1h
         labels:
           severity: warning
+          resource: '{{ $labels.node }}'

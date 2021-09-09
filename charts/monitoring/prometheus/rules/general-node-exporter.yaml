@@ -183,6 +183,8 @@ groups:
         for: 1h
         labels:
           severity: warning
+          resource: '{{ $labels.instance }} {{ $labels.device }}'
+          service: 'node-exporter'
       - alert: NodeFilesystemSpaceFillingUp
         annotations:
           message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted to run out of space within the next 4 hours.
@@ -196,6 +198,8 @@ groups:
         for: 1h
         labels:
           severity: critical
+          resource: '{{ $labels.instance }} {{ $labels.device }}'
+          service: 'node-exporter'
       - alert: NodeFilesystemOutOfSpace
         annotations:
           message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only {{ $value }}% available space left.
@@ -207,6 +211,8 @@ groups:
         for: 1h
         labels:
           severity: warning
+          resource: '{{ $labels.instance }} {{ $labels.device }}'
+          service: 'node-exporter'
       - alert: NodeFilesystemOutOfSpace
         annotations:
           message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only {{ $value }}% available space left.
@@ -218,6 +224,8 @@ groups:
         for: 1h
         labels:
           severity: critical
+          resource: '{{ $labels.instance }} {{ $labels.device }}'
+          service: 'node-exporter'
       - alert: NodeFilesystemFilesFillingUp
         annotations:
           message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted to run out of files within the next 24 hours.
@@ -231,6 +239,8 @@ groups:
         for: 1h
         labels:
           severity: warning
+          resource: '{{ $labels.instance }} {{ $labels.device }}'
+          service: 'node-exporter'
       - alert: NodeFilesystemFilesFillingUp
         annotations:
           message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted to run out of files within the next 4 hours.
@@ -244,6 +254,8 @@ groups:
         for: 1h
         labels:
           severity: warning
+          resource: '{{ $labels.instance }} {{ $labels.device }}'
+          service: 'node-exporter'
       - alert: NodeFilesystemOutOfFiles
         annotations:
           message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only {{ $value }}% available inodes left.
@@ -255,6 +267,8 @@ groups:
         for: 1h
         labels:
           severity: warning
+          resource: '{{ $labels.instance }} {{ $labels.device }}'
+          service: 'node-exporter'
       - alert: NodeFilesystemOutOfSpace
         annotations:
           message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only {{ $value }}% available space left.
@@ -266,6 +280,8 @@ groups:
         for: 1h
         labels:
           severity: critical
+          resource: '{{ $labels.instance }} {{ $labels.device }}'
+          service: 'node-exporter'
       - alert: NodeNetworkReceiveErrs
         annotations:
           message: '{{ $labels.instance }} interface {{ $labels.device }} shows errors while receiving packets ({{ $value }} errors in two minutes).'
@@ -274,6 +290,8 @@ groups:
         for: 1h
         labels:
           severity: critical
+          resource: '{{ $labels.instance }} {{ $labels.device }}'
+          service: 'node-exporter'
       - alert: NodeNetworkTransmitErrs
         annotations:
           message: '{{ $labels.instance }} interface {{ $labels.device }} shows errors while transmitting packets ({{ $value }} errors in two minutes).'
@@ -282,3 +300,5 @@ groups:
         for: 1h
         labels:
           severity: critical
+          resource: '{{ $labels.instance }} {{ $labels.device }}'
+          service: 'node-exporter'

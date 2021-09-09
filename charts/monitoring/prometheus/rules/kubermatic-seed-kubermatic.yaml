@@ -25,6 +25,8 @@ groups:
         for: 10m
         labels:
           severity: warning
+          resource: '{{ $labels.namespace }}'
+          service: kubermatic-seed
       - alert: KubermaticClusterDeletionTakesTooLong
         annotations:
           message: Cluster {{ $labels.cluster }} is stuck in deletion for more than 30min.
@@ -33,6 +35,8 @@ groups:
         for: 0m
         labels:
           severity: warning
+          resource: '{{ $labels.cluster }}'
+          service: kubermatic-seed
       - alert: KubermaticAddonDeletionTakesTooLong
         annotations:
           message: Addon {{ $labels.addon }} in cluster {{ $labels.cluster }} is stuck in deletion for more than 30min.
@@ -41,6 +45,8 @@ groups:
         for: 0m
         labels:
           severity: warning
+          resource: '{{ $labels.cluster }}/{{ $labels.addon }}'
+          service: kubermatic-seed
       - alert: KubermaticAddonTakesTooLongToReconcile
         annotations:
           message: Addon {{ $labels.addon }} in cluster {{ $labels.cluster }} has no related resources created for more than 30min.
@@ -49,6 +55,8 @@ groups:
         for: 30m
         labels:
           severity: warning
+          resource: '{{ $labels.cluster }}/{{ $labels.addon }}'
+          service: kubermatic-seed
       - alert: KubermaticSeedControllerManagerDown
         annotations:
           message: Kubermatic Seed Controller Manager has disappeared from Prometheus target discovery.
@@ -57,6 +65,7 @@ groups:
         for: 15m
         labels:
           severity: critical
+          service: kubermatic-seed
       - alert: OpenVPNServerDown
         annotations:
           message: There is no healthy OpenVPN server in cluster {{ $labels.cluster }}.
@@ -65,6 +74,8 @@ groups:
         for: 15m
         labels:
           severity: critical
+          resource: '{{ $labels.cluster }}'
+          service: kubermatic-seed
       - alert: UserClusterPrometheusAbsent
         annotations:
           message: There is no Prometheus in cluster {{ $labels.name }}.
@@ -79,6 +90,8 @@ groups:
         for: 15m
         labels:
           severity: critical
+          resource: '{{ $labels.name }}'
+          service: kubermatic-seed
       # This is a dummy alert that is triggered for paused clusters to inhibit all other alerts from such clusters.
       # The label_replace() is used to create a new "cluster" label that will be used for the inhibitions as well.
       - alert: KubermaticClusterPaused
@@ -86,4 +99,6 @@ groups:
           message: Cluster {{ $labels.name }} has been paused and will not be reconciled until the pause flag is reset.
         expr: label_replace(kubermatic_cluster_info{pause="true"}, "cluster", "$0", "name", ".+")
         labels:
-          severity: none
+          severity: informational
+          resource: '{{ $labels.name }}'
+          service: kubermatic-seed

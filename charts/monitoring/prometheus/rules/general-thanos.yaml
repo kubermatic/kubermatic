@@ -25,6 +25,8 @@ groups:
         for: 5m
         labels:
           severity: warning
+          resource: '{{ $labels.namespace }}/{{ $labels.pod }}'
+          service: thanos
       - alert: ThanosSidecarNoHeartbeat
         annotations:
           message: The Thanos sidecar in `{{ $labels.namespace }}/{{ $labels.pod }}` didn't send a heartbeat in {{ $value }} seconds.
@@ -33,6 +35,8 @@ groups:
         for: 3m
         labels:
           severity: warning
+          resource: '{{ $labels.namespace }}/{{ $labels.pod }}'
+          service: thanos
       - alert: ThanosCompactorManyRetries
         annotations:
           message: The Thanos compactor in `{{ $labels.namespace }}` is experiencing a high retry rate.
@@ -41,6 +45,8 @@ groups:
         for: 10m
         labels:
           severity: warning
+          resource: '{{ $labels.namespace }}/{{ $labels.pod }}'
+          service: thanos
       - alert: ThanosShipperManyDirSyncFailures
         annotations:
           message: The Thanos shipper in `{{ $labels.namespace }}/{{ $labels.pod }}` is experiencing a high dir-sync failure rate.
@@ -49,6 +55,8 @@ groups:
         for: 10m
         labels:
           severity: warning
+          resource: '{{ $labels.namespace }}/{{ $labels.pod }}'
+          service: thanos
       - alert: ThanosManyPanicRecoveries
         annotations:
           message: The Thanos component in `{{ $labels.namespace }}/{{ $labels.pod }}` is experiencing a panic recovery rate.
@@ -57,6 +65,8 @@ groups:
         for: 10m
         labels:
           severity: warning
+          resource: '{{ $labels.namespace }}/{{ $labels.pod }}'
+          service: thanos
       - alert: ThanosManyBlockLoadFailures
         annotations:
           message: The Thanos store in `{{ $labels.namespace }}/{{ $labels.pod }}` is experiencing a many failed block loads.
@@ -65,6 +75,8 @@ groups:
         for: 10m
         labels:
           severity: warning
+          resource: '{{ $labels.namespace }}/{{ $labels.pod }}'
+          service: thanos
       - alert: ThanosManyBlockDropFailures
         annotations:
           message: The Thanos store in `{{ $labels.namespace }}/{{ $labels.pod }}` is experiencing a many failed block drops.
@@ -73,3 +85,5 @@ groups:
         for: 10m
         labels:
           severity: warning
+          resource: '{{ $labels.namespace }}/{{ $labels.pod }}'
+          service: thanos
