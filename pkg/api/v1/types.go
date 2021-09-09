@@ -810,6 +810,10 @@ type ClusterSpec struct {
 
 	// ContainerRuntime to use, i.e. Docker or containerd. By default containerd will be used.
 	ContainerRuntime string `json:"containerRuntime,omitempty"`
+
+	// Pause tells that this cluster is currently not managed by the controller.
+	// It indicates that the user needs to do some action to resolve the pause.
+	Pause *bool `json:"pause,omitempty"`
 }
 
 // MarshalJSON marshals ClusterSpec object into JSON. It is overwritten to control data
@@ -832,6 +836,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		MLA                                  *kubermaticv1.MLASettings              `json:"mla,omitempty"`
 		ContainerRuntime                     string                                 `json:"containerRuntime,omitempty"`
 		ClusterNetwork                       *kubermaticv1.ClusterNetworkingConfig  `json:"clusterNetwork,omitempty"`
+		Pause                                *bool                                  `json:"pause,omitempty"`
 	}{
 		Cloud: PublicCloudSpec{
 			DatacenterName: cs.Cloud.DatacenterName,
@@ -864,6 +869,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		MLA:                                  cs.MLA,
 		ContainerRuntime:                     cs.ContainerRuntime,
 		ClusterNetwork:                       cs.ClusterNetwork,
+		Pause:                                cs.Pause,
 	})
 
 	return ret, err
