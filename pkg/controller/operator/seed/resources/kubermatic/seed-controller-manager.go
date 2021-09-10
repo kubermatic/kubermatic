@@ -89,11 +89,13 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 				fmt.Sprintf("-backup-container=/opt/backup/%s", storeContainerKey),
 			}
 
-			if !cfg.Spec.SeedController.BackupRestore.Enabled || cfg.Spec.SeedController.BackupCleanupContainer != "" {
+			if seed.Spec.BackupRestore == nil {
+				args = append(args, fmt.Sprintf("-cleanup-container=/opt/backup/%s", cleanupContainerKey))
+			} else if !cfg.Spec.SeedController.BackupRestore.Enabled || cfg.Spec.SeedController.BackupCleanupContainer != "" {
 				args = append(args, fmt.Sprintf("-cleanup-container=/opt/backup/%s", cleanupContainerKey))
 			}
 
-			if cfg.Spec.SeedController.BackupRestore.Enabled {
+			if cfg.Spec.SeedController.BackupRestore.Enabled || seed.Spec.BackupRestore != nil {
 				args = append(args, "-enable-etcd-backups-restores")
 				args = append(args, fmt.Sprintf("-backup-delete-container=/opt/backup/%s", deleteContainerKey))
 			}
