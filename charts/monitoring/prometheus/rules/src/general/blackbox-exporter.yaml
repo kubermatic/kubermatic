@@ -23,6 +23,8 @@ groups:
     for: 5m
     labels:
       severity: warning
+      resource: '{{ $labels.instance }}'
+      service: blackbox-exporter
 
   - alert: HttpProbeSlow
     annotations:
@@ -32,6 +34,8 @@ groups:
     for: 15m
     labels:
       severity: warning
+      resource: '{{ $labels.instance }}'
+      service: blackbox-exporter
     runbook:
       steps:
       - Check the target system's resource usage for anomalias.
@@ -44,6 +48,8 @@ groups:
     expr: probe_ssl_earliest_cert_expiry - time() < 3*24*3600
     labels:
       severity: warning
+      resource: '{{ $labels.instance }}'
+      service: blackbox-exporter
 
   - alert: HttpCertExpiresVerySoon
     annotations:
@@ -52,3 +58,5 @@ groups:
     expr: probe_ssl_earliest_cert_expiry - time() < 24*3600
     labels:
       severity: critical
+      resource: '{{ $labels.instance }}'
+      service: blackbox-exporter

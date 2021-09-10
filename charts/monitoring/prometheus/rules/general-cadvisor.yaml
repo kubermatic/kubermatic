@@ -25,6 +25,8 @@ groups:
         for: 15m
         labels:
           severity: critical
+          resource: cadvisor
+          service: cadvisor
       - record: namespace:container_memory_usage_bytes:sum
         expr: |
           sum by (namespace) (

@@ -25,3 +25,5 @@ groups:
         for: 15m
         labels:
           severity: warning
+          resource: '{{ $labels.release }}'
+          service: helm-exporter

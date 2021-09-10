@@ -31,3 +31,5 @@ groups:
     for: 10m
     labels:
       severity: critical
+      resource: kube-controller-manager
+      service: kubernetes

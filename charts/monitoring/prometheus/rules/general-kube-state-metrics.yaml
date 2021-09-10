@@ -62,6 +62,8 @@ groups:
         for: 15m
         labels:
           severity: critical
+          resource: '{{ $labels.namespace }}/{{ $labels.pod }}'
+          service: kube-state-metrics
       - alert: KubePodCrashLooping
         annotations:
           message: Pod {{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container }}) is restarting {{ printf "%.2f" $value }} times / 5 minutes.
@@ -220,6 +222,8 @@ groups:
         for: 5m
         labels:
           severity: warning
+          resource: cluster
+          service: kube-state-metrics
       - alert: KubeCPUOvercommit
         annotations:
           message: Cluster has overcommitted CPU resource requests for pods and cannot tolerate node failure.
@@ -233,6 +237,8 @@ groups:
         for: 5m
         labels:
           severity: warning
+          resource: cluster
+          service: kube-state-metrics
       - alert: KubeMemOvercommit
         annotations:
           message: Cluster has overcommitted memory resource requests for namespaces.
@@ -245,6 +251,8 @@ groups:
         for: 5m
         labels:
           severity: warning
+          resource: cluster
+          service: kube-state-metrics
       - alert: KubeMemOvercommit
         annotations:
           message: Cluster has overcommitted memory resource requests for pods and cannot tolerate node failure.
@@ -260,6 +268,8 @@ groups:
         for: 5m
         labels:
           severity: warning
+          resource: cluster
+          service: kube-state-metrics
       - alert: KubeQuotaExceeded
         annotations:
           message: Namespace {{ $labels.namespace }} is using {{ printf "%0.0f" $value }}% of its {{ $labels.resource }} quota.
@@ -272,6 +282,8 @@ groups:
         for: 15m
         labels:
           severity: warning
+          resource: cluster
+          service: kube-state-metrics
       - alert: KubePodOOMKilled
         annotations:
           message: Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} has been OOMKilled {{ $value }} times in the last 30 minutes.
