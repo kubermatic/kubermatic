@@ -55,11 +55,12 @@ const testNamespace = "kubermatic"
 func TestReconcile(t *testing.T) {
 
 	testCases := []struct {
-		name               string
-		allowedRegistry    []*kubermaticv1.AllowedRegistry
-		expectedCT         *kubermaticv1.ConstraintTemplate
-		expectedConstraint *kubermaticv1.Constraint
-		masterClient       ctrlruntimeclient.Client
+		name                  string
+		allowedRegistry       []*kubermaticv1.AllowedRegistry
+		allowedRegistryUpdate *kubermaticv1.AllowedRegistry
+		expectedCT            *kubermaticv1.ConstraintTemplate
+		expectedConstraint    *kubermaticv1.Constraint
+		masterClient          ctrlruntimeclient.Client
 	}{
 		{
 			name:               "scenario 1: sync allowedlist to seed cluster",
@@ -100,6 +101,23 @@ func TestReconcile(t *testing.T) {
 					genAllowedRegistry("myreg", "https://myregistry.com", false)).
 				Build(),
 		},
+		{
+			name: "scenario 4: update a allowedlist",
+			allowedRegistry: []*kubermaticv1.AllowedRegistry{
+				genAllowedRegistry("quay", "quay.io", false),
+				genAllowedRegistry("myreg", "https://myregistry.com", false),
+			},
+			allowedRegistryUpdate: genAllowedRegistry("quay", "quay.io-edited", false),
+			expectedCT:            genConstraintTemplate(),
+			expectedConstraint:    genWRConstraint(sets.NewString("quay.io-edited", "https://myregistry.com")),
+			masterClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(
+					genAllowedRegistry("quay", "quay.io", false),
+					genAllowedRegistry("myreg", "https://myregistry.com", false)).
+				Build(),
+		},
 	}
 
 	for _, tc := range testCases {
@@ -115,6 +133,23 @@ func TestReconcile(t *testing.T) {
 
 			for _, ar := range tc.allowedRegistry {
 				request := reconcile.Request{NamespacedName: types.NamespacedName{Name: ar.Name}}
+				if _, err := r.Reconcile(ctx, request); err != nil {
+					t.Fatalf("reconciling failed: %v", err)
+				}
+			}
+
+			if tc.allowedRegistryUpdate != nil {
+				var ar kubermaticv1.AllowedRegistry
+				if err := tc.masterClient.Get(ctx, types.NamespacedName{Name: tc.allowedRegistryUpdate.Name}, &ar); err != nil {
+					t.Fatal(err)
+				}
+
+				ar.Spec = tc.allowedRegistryUpdate.Spec
+				if err := tc.masterClient.Update(ctx, &ar); err != nil {
+					t.Fatal(err)
+				}
+
+				request := reconcile.Request{NamespacedName: types.NamespacedName{Name: tc.allowedRegistryUpdate.Name}}
 				if _, err := r.Reconcile(ctx, request); err != nil {
 					t.Fatalf("reconciling failed: %v", err)
 				}
