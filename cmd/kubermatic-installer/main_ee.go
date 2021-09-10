@@ -22,7 +22,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
-	eeinstaller "k8c.io/kubermatic/v2/pkg/ee/cmd/kubermatic-installer"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 )
 
@@ -32,8 +31,6 @@ func commands(logger *logrus.Logger, versions kubermaticversion.Versions) []cli.
 		DeployCommand(logger, versions),
 		ConvertKubeconfigCommand(logger),
 		PrintCommand(),
-		eeinstaller.ConvertDatacentersCommand(logger),
-		eeinstaller.ConvertHelmValuesCommand(logger),
 	}
 }
 
