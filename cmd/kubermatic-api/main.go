@@ -60,6 +60,7 @@ import (
 	kubermaticclientset "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned"
 	kubermaticinformers "k8c.io/kubermatic/v2/pkg/crd/client/informers/externalversions"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/handler"
 	"k8c.io/kubermatic/v2/pkg/handler/auth"
@@ -119,6 +120,9 @@ func main() {
 	}
 	if err := gatekeeperconfigv1alpha1.AddToScheme(scheme.Scheme); err != nil {
 		kubermaticlog.Logger.Fatalw("failed to register scheme", zap.Stringer("api", gatekeeperconfigv1alpha1.GroupVersion), zap.Error(err))
+	}
+	if err := operatorv1alpha1.AddToScheme(scheme.Scheme); err != nil {
+		kubermaticlog.Logger.Fatalw("failed to register scheme", zap.Stringer("api", operatorv1alpha1.SchemeGroupVersion), zap.Error(err))
 	}
 
 	masterCfg, err := ctrlruntime.GetConfig()
