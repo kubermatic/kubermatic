@@ -2,6 +2,8 @@
 
 metadata:
   creationTimestamp: null
+  labels:
+    project-id: ""
 spec:
   cluster:
     apiVersion: kubermatic.k8s.io/v1

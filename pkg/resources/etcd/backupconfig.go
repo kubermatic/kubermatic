@@ -38,6 +38,13 @@ type etcdBackupConfigCreatorData interface {
 func BackupConfigCreator(data etcdBackupConfigCreatorData) reconciling.NamedEtcdBackupConfigCreatorGetter {
 	return func() (string, reconciling.EtcdBackupConfigCreator) {
 		return resources.EtcdDefaultBackupConfigName, func(config *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
+			if config.Labels == nil {
+				config.Labels = make(map[string]string)
+			}
+			if data.Cluster().Labels != nil {
+				config.Labels[kubermaticv1.ProjectIDLabelKey] = data.Cluster().Labels[kubermaticv1.ProjectIDLabelKey]
+			}
+
 			backupScheduleString, err := parseDuration(data.BackupSchedule())
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse backup duration: %v", err)
