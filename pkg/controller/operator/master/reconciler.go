@@ -23,6 +23,7 @@ import (
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/kubermatic"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -98,7 +99,7 @@ func (r *Reconciler) reconcile(ctx context.Context, config *operatorv1alpha1.Kub
 
 	// patching the config will refresh the object, so any attempts to set the default values
 	// before calling Patch() are pointless, as the defaults would be gone after the call
-	defaulted, err := common.DefaultConfiguration(config, logger)
+	defaulted, err := defaults.DefaultConfiguration(config, logger)
 	if err != nil {
 		return fmt.Errorf("failed to apply defaults: %v", err)
 	}

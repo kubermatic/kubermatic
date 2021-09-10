@@ -24,7 +24,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
@@ -96,7 +96,7 @@ func (d *Deployer) SetUp() error {
 		}
 	}
 
-	seed, err := common.DefaultSeed(&kubermaticv1.Seed{}, d.Log)
+	seed, err := defaults.DefaultSeed(&kubermaticv1.Seed{}, d.Log)
 	if err != nil {
 		return errors.Wrap(err, "failed to default seed")
 	}

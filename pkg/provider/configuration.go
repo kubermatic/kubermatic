@@ -20,6 +20,8 @@ import (
 	"context"
 	"fmt"
 
+	"go.uber.org/zap"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -32,8 +34,10 @@ import (
 // a single namespace.
 type KubermaticConfigurationGetter = func(ctx context.Context) (*operatorv1alpha1.KubermaticConfiguration, error)
 
-// KubermaticConfigurationGetterFactory returns a KubermaticConfigurationGetter.
-func KubermaticConfigurationGetterFactory(client ctrlruntimeclient.Reader, namespace string) (KubermaticConfigurationGetter, error) {
+// DynamicKubermaticConfigurationGetterFactory returns a dynamic KubermaticConfigurationGetter,
+// which will list all Configurations in the given namespace and return the found config or
+// an error if 0 or more Configurations where found.
+func DynamicKubermaticConfigurationGetterFactory(client ctrlruntimeclient.Reader, namespace string) (KubermaticConfigurationGetter, error) {
 	if len(namespace) == 0 {
 		return nil, fmt.Errorf("a namespace must be provided")
 	}
@@ -52,6 +56,24 @@ func KubermaticConfigurationGetterFactory(client ctrlruntimeclient.Reader, names
 			return nil, fmt.Errorf("more than one KubermaticConfiguration resource found in namespace %q", namespace)
 		}
 
+		config := configList.Items[0]
+
+		defaults.DefaultConfiguration(&config, zap.NewNop().Sugar())
+
 		return &configList.Items[0], nil
+	}, nil
+}
+
+// StaticKubermaticConfigurationGetterFactory returns a KubermaticConfigurationGetter that
+// returns the same Configuration on every call. This is mostly used for local development
+// in order to provide an easy to modify configuration file. Actual production use will use
+// the dynamic getter instead.
+func StaticKubermaticConfigurationGetterFactory(config *operatorv1alpha1.KubermaticConfiguration) (KubermaticConfigurationGetter, error) {
+	if config == nil {
+		return nil, fmt.Errorf("config is nil")
+	}
+
+	return func(ctx context.Context) (*operatorv1alpha1.KubermaticConfiguration, error) {
+		return config, nil
 	}, nil
 }

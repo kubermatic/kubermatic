@@ -24,7 +24,7 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 
-	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version"
 )
@@ -42,7 +42,7 @@ func loadKubermaticConfiguration(log *zap.SugaredLogger, filename string) (*oper
 		return nil, fmt.Errorf("failed to parse file as YAML: %v", err)
 	}
 
-	defaulted, err := common.DefaultConfiguration(config, log)
+	defaulted, err := defaults.DefaultConfiguration(config, log)
 	if err != nil {
 		return nil, fmt.Errorf("failed to process: %v", err)
 	}

@@ -355,17 +355,12 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		return fakeClient, nil
 	}
 
-	// create a dummy configGetter, but if no explicit config was given, we just return
-	// a regular ConfigGetter that uses the fakeClient to find the KubermaticConfiguration
-	// configGetter := func(_ context.Context) (*operatorv1alpha1.KubermaticConfiguration, error) {
-	// 	return kubermaticConfiguration, nil
-	// }
-	// if kubermaticConfiguration == nil {
-	configGetter, err := provider.KubermaticConfigurationGetterFactory(fakeClient, KubermaticNamespace)
+	// could also use a StaticKubermaticConfigurationGetterFactory, but this nicely tests
+	// the more complex implementation on the side
+	configGetter, err := provider.DynamicKubermaticConfigurationGetterFactory(fakeClient, KubermaticNamespace)
 	if err != nil {
 		return nil, nil, err
 	}
-	// }
 
 	externalClusterProvider, err := kubernetes.NewExternalClusterProvider(fakeImpersonationClient, fakeClient)
 	if err != nil {

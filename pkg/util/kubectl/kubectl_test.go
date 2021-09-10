@@ -19,11 +19,11 @@ package kubectl
 import (
 	"testing"
 
-	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 )
 
 func TestKubectlForAllSupportedVersions(t *testing.T) {
-	for _, v := range common.DefaultKubernetesVersioning.Versions {
+	for _, v := range defaults.DefaultKubernetesVersioning.Versions {
 		_, err := BinaryForClusterVersion(v)
 		if err != nil {
 			t.Errorf("No kubectl binary found for cluster version %q: %v", v, err)

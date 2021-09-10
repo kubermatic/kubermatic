@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package common
+package defaults
 
 import (
 	"fmt"
@@ -27,7 +27,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
-	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -444,35 +443,35 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 
 	copy.Spec.Auth = auth
 
-	if err := defaultDockerRepo(&copy.Spec.API.DockerRepository, resources.DefaultKubermaticImage, "api.dockerRepository", logger); err != nil {
+	if err := defaultDockerRepo(&copy.Spec.API.DockerRepository, DefaultKubermaticImage, "api.dockerRepository", logger); err != nil {
 		return copy, err
 	}
 
-	if err := defaultDockerRepo(&copy.Spec.UI.DockerRepository, resources.DefaultDashboardImage, "ui.dockerRepository", logger); err != nil {
+	if err := defaultDockerRepo(&copy.Spec.UI.DockerRepository, DefaultDashboardImage, "ui.dockerRepository", logger); err != nil {
 		return copy, err
 	}
 
-	if err := defaultDockerRepo(&copy.Spec.MasterController.DockerRepository, resources.DefaultKubermaticImage, "masterController.dockerRepository", logger); err != nil {
+	if err := defaultDockerRepo(&copy.Spec.MasterController.DockerRepository, DefaultKubermaticImage, "masterController.dockerRepository", logger); err != nil {
 		return copy, err
 	}
 
-	if err := defaultDockerRepo(&copy.Spec.SeedController.DockerRepository, resources.DefaultKubermaticImage, "seedController.dockerRepository", logger); err != nil {
+	if err := defaultDockerRepo(&copy.Spec.SeedController.DockerRepository, DefaultKubermaticImage, "seedController.dockerRepository", logger); err != nil {
 		return copy, err
 	}
 
-	if err := defaultDockerRepo(&copy.Spec.UserCluster.KubermaticDockerRepository, resources.DefaultKubermaticImage, "userCluster.kubermaticDockerRepository", logger); err != nil {
+	if err := defaultDockerRepo(&copy.Spec.UserCluster.KubermaticDockerRepository, DefaultKubermaticImage, "userCluster.kubermaticDockerRepository", logger); err != nil {
 		return copy, err
 	}
 
-	if err := defaultDockerRepo(&copy.Spec.UserCluster.DNATControllerDockerRepository, resources.DefaultDNATControllerImage, "userCluster.dnatControllerDockerRepository", logger); err != nil {
+	if err := defaultDockerRepo(&copy.Spec.UserCluster.DNATControllerDockerRepository, DefaultDNATControllerImage, "userCluster.dnatControllerDockerRepository", logger); err != nil {
 		return copy, err
 	}
 
-	if err := defaultDockerRepo(&copy.Spec.UserCluster.EtcdLauncherDockerRepository, resources.DefaultEtcdLauncherImage, "userCluster.etcdLauncher.DockerRepository", logger); err != nil {
+	if err := defaultDockerRepo(&copy.Spec.UserCluster.EtcdLauncherDockerRepository, DefaultEtcdLauncherImage, "userCluster.etcdLauncher.DockerRepository", logger); err != nil {
 		return copy, err
 	}
 
-	if err := defaultDockerRepo(&copy.Spec.UserCluster.Addons.Kubernetes.DockerRepository, resources.DefaultKubernetesAddonImage, "userCluster.addons.kubernetes.dockerRepository", logger); err != nil {
+	if err := defaultDockerRepo(&copy.Spec.UserCluster.Addons.Kubernetes.DockerRepository, DefaultKubernetesAddonImage, "userCluster.addons.kubernetes.dockerRepository", logger); err != nil {
 		return copy, err
 	}
 

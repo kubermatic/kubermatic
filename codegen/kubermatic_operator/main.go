@@ -26,19 +26,19 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 )
 
 func main() {
-	writeYAML(common.DefaultBackupStoreContainer, "charts/kubermatic/static/store-container.yaml")
-	writeYAML(common.DefaultBackupCleanupContainer, "charts/kubermatic/static/cleanup-container.yaml")
-	writeYAML(common.DefaultNewBackupStoreContainer, "charts/kubermatic/static/store-container-new.yaml")
-	writeYAML(common.DefaultNewBackupDeleteContainer, "charts/kubermatic/static/delete-container.yaml")
-	writeYAML(common.DefaultKubernetesAddons, "charts/kubermatic/static/master/kubernetes-addons.yaml")
-	writeJSON(common.DefaultUIConfig, "charts/kubermatic/static/master/ui-config.json")
+	writeYAML(defaults.DefaultBackupStoreContainer, "charts/kubermatic/static/store-container.yaml")
+	writeYAML(defaults.DefaultBackupCleanupContainer, "charts/kubermatic/static/cleanup-container.yaml")
+	writeYAML(defaults.DefaultNewBackupStoreContainer, "charts/kubermatic/static/store-container-new.yaml")
+	writeYAML(defaults.DefaultNewBackupDeleteContainer, "charts/kubermatic/static/delete-container.yaml")
+	writeYAML(defaults.DefaultKubernetesAddons, "charts/kubermatic/static/master/kubernetes-addons.yaml")
+	writeJSON(defaults.DefaultUIConfig, "charts/kubermatic/static/master/ui-config.json")
 
 	markup, err := yaml.Marshal(map[string]interface{}{
-		"addons": common.DefaultAccessibleAddons,
+		"addons": defaults.DefaultAccessibleAddons,
 	})
 	if err != nil {
 		log.Fatalf("Failed to encode accessible addons as YAML: %v", err)

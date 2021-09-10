@@ -30,9 +30,10 @@ import (
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	backupcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/backup"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -88,6 +89,10 @@ type controllerRunOptions struct {
 	addonEnforceInterval                             int
 	caBundle                                         *certificates.CABundle
 
+	// for development purposes, a local configuration file
+	// can be used to provide the KubermaticConfiguration
+	kubermaticConfiguration *operatorv1alpha1.KubermaticConfiguration
+
 	// OIDC configuration
 	oidcIssuerURL          string
 	oidcIssuerClientID     string
@@ -125,6 +130,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 		caBundleFile                string
 		defaultKubernetesAddonsList string
 		defaultKubernetesAddonsFile string
+		configFile                  string
 	)
 
 	flag.BoolVar(&c.enableLeaderElection, "enable-leader-election", true, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
@@ -156,10 +162,10 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.oidcIssuerURL, "oidc-issuer-url", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
 	flag.StringVar(&c.oidcIssuerClientID, "oidc-issuer-client-id", "", "Issuer client ID")
 	flag.StringVar(&c.oidcIssuerClientSecret, "oidc-issuer-client-secret", "", "OpenID client secret")
-	flag.StringVar(&c.kubermaticImage, "kubermatic-image", resources.DefaultKubermaticImage, "The location from which to pull the Kubermatic image")
-	flag.StringVar(&c.etcdLauncherImage, "etcd-launcher-image", resources.DefaultEtcdLauncherImage, "The location from which to pull the etcd launcher image")
+	flag.StringVar(&c.kubermaticImage, "kubermatic-image", defaults.DefaultKubermaticImage, "The location from which to pull the Kubermatic image")
+	flag.StringVar(&c.etcdLauncherImage, "etcd-launcher-image", defaults.DefaultEtcdLauncherImage, "The location from which to pull the etcd launcher image")
 	flag.BoolVar(&c.enableEtcdBackupRestoreController, "enable-etcd-backups-restores", false, "Whether to enable the new etcd backup and restore controllers")
-	flag.StringVar(&c.dnatControllerImage, "dnatcontroller-image", resources.DefaultDNATControllerImage, "The location of the dnatcontroller-image")
+	flag.StringVar(&c.dnatControllerImage, "dnatcontroller-image", defaults.DefaultDNATControllerImage, "The location of the dnatcontroller-image")
 	flag.StringVar(&c.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for datacenter custom resources")
 	flag.IntVar(&c.apiServerDefaultReplicas, "apiserver-default-replicas", 2, "Deprecated: configure defaultComponentSettings on Seed resource. The default number of replicas for usercluster api servers")
 	flag.BoolVar(&c.apiServerEndpointReconcilingDisabled, "apiserver-reconciling-disabled-by-default", false, "Deprecated: configure defaultComponentSettings on Seed resource. Whether to disable reconciling for the apiserver endpoints by default")
@@ -179,6 +185,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.lokiRulerURL, "loki-ruler-url", "http://loki-distributed-ruler.mla.svc.cluster.local:3100", "The URL of loki ruler which is running for MLA stack.")
 	flag.StringVar(&c.machineControllerImageTag, "machine-controller-image-tag", "", "The Machine Controller image tag.")
 	flag.StringVar(&c.machineControllerImageRepository, "machine-controller-image-repository", "", "The Machine Controller image repository.")
+	flag.StringVar(&configFile, "kubermatic-configuration-file", "", "(for development only) path to a KubermaticConfiguration YAML file")
 	c.admissionWebhook.AddFlags(flag.CommandLine, true)
 	addFlags(flag.CommandLine)
 	flag.Parse()
@@ -195,6 +202,12 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 
 	if c.overwriteRegistry != "" {
 		c.overwriteRegistry = path.Clean(strings.TrimSpace(c.overwriteRegistry))
+	}
+
+	if configFile != "" {
+		if c.kubermaticConfiguration, err = loadKubermaticConfiguration(configFile); err != nil {
+			return c, fmt.Errorf("invalid KubermaticConfiguration: %w", err)
+		}
 	}
 
 	c.kubernetesAddons, err = loadAddons(defaultKubernetesAddonsList, defaultKubernetesAddonsFile)
@@ -318,7 +331,7 @@ func loadAddons(listOpt, fileOpt string) (kubermaticv1.AddonList, error) {
 
 func getAddonDefaultLabels(addonName string) (map[string]string, error) {
 	defaultAddonList := kubermaticv1.AddonList{}
-	if err := yaml.Unmarshal([]byte(common.DefaultKubernetesAddons), &defaultAddonList); err != nil {
+	if err := yaml.Unmarshal([]byte(defaults.DefaultKubernetesAddons), &defaultAddonList); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal default addon list: %v", err)
 	}
 	for _, addon := range defaultAddonList.Items {
@@ -327,4 +340,23 @@ func getAddonDefaultLabels(addonName string) (map[string]string, error) {
 		}
 	}
 	return nil, nil
+}
+
+func loadKubermaticConfiguration(filename string) (*operatorv1alpha1.KubermaticConfiguration, error) {
+	content, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file: %v", err)
+	}
+
+	config := &operatorv1alpha1.KubermaticConfiguration{}
+	if err := yaml.Unmarshal(content, &config); err != nil {
+		return nil, fmt.Errorf("failed to parse file as YAML: %v", err)
+	}
+
+	defaulted, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
+	if err != nil {
+		return nil, fmt.Errorf("failed to process: %v", err)
+	}
+
+	return defaulted, nil
 }

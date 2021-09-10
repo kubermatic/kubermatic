@@ -180,7 +180,13 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 	if err != nil {
 		return providers{}, err
 	}
-	configGetter, err := provider.KubermaticConfigurationGetterFactory(client, options.namespace)
+
+	var configGetter provider.KubermaticConfigurationGetter
+	if options.kubermaticConfiguration != nil {
+		configGetter, err = provider.StaticKubermaticConfigurationGetterFactory(options.kubermaticConfiguration)
+	} else {
+		configGetter, err = provider.DynamicKubermaticConfigurationGetterFactory(client, options.namespace)
+	}
 	if err != nil {
 		return providers{}, err
 	}

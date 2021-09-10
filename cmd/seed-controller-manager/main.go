@@ -159,14 +159,14 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		log.Fatalw("Unable to create the seed getter", zap.Error(err))
 	}
 
-	configGetter, err := provider.KubermaticConfigurationGetterFactory(mgr.GetClient(), options.namespace)
+	var configGetter provider.KubermaticConfigurationGetter
+	if options.kubermaticConfiguration != nil {
+		configGetter, err = provider.StaticKubermaticConfigurationGetterFactory(options.kubermaticConfiguration)
+	} else {
+		configGetter, err = provider.DynamicKubermaticConfigurationGetterFactory(mgr.GetClient(), options.namespace)
+	}
 	if err != nil {
 		log.Fatalw("Unable to create the configuration getter", zap.Error(err))
-	}
-
-	// check if a config exists
-	if _, err := configGetter(rootCtx); err != nil {
-		log.Fatalw("Failed to load KubermaticConfiguration", zap.Error(err))
 	}
 
 	var clientProvider *client.Provider
@@ -185,6 +185,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		mgr:                  mgr,
 		clientProvider:       clientProvider,
 		seedGetter:           seedGetter,
+		configGetter:         configGetter,
 		dockerPullConfigJSON: dockerPullConfigJSON,
 		log:                  log,
 		versions:             versions,
