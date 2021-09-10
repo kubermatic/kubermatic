@@ -44,7 +44,7 @@ spec:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
         prometheus.io/scrape: "true"
-        prometheus.io/port: "7946"
+        prometheus.io/port: "{{ .Values.loki.config.server.http_listen_port }}"
         kubermatic.io/chart: loki
     spec:
       serviceAccountName: {{ template "loki.serviceAccountName" . }}
