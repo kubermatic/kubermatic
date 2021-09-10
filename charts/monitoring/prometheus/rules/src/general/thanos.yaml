@@ -23,6 +23,8 @@ groups:
     for: 5m
     labels:
       severity: warning
+      resource: '{{ $labels.namespace }}/{{ $labels.pod }}'
+      service: thanos
 
   - alert: ThanosSidecarNoHeartbeat
     annotations:
@@ -32,6 +34,8 @@ groups:
     for: 3m
     labels:
       severity: warning
+      resource: '{{ $labels.namespace }}/{{ $labels.pod }}'
+      service: thanos
 
   - alert: ThanosCompactorManyRetries
     annotations:
@@ -41,6 +45,8 @@ groups:
     for: 10m
     labels:
       severity: warning
+      resource: '{{ $labels.namespace }}/{{ $labels.pod }}'
+      service: thanos
     runbook:
       steps:
       - Check the `thanos-compact` pod's logs.
@@ -53,6 +59,8 @@ groups:
     for: 10m
     labels:
       severity: warning
+      resource: '{{ $labels.namespace }}/{{ $labels.pod }}'
+      service: thanos
     runbook:
       steps:
       - Check the `thanos` containers's logs inside the Prometheus pod.
@@ -65,6 +73,8 @@ groups:
     for: 10m
     labels:
       severity: warning
+      resource: '{{ $labels.namespace }}/{{ $labels.pod }}'
+      service: thanos
 
   - alert: ThanosManyBlockLoadFailures
     annotations:
@@ -74,6 +84,8 @@ groups:
     for: 10m
     labels:
       severity: warning
+      resource: '{{ $labels.namespace }}/{{ $labels.pod }}'
+      service: thanos
 
   - alert: ThanosManyBlockDropFailures
     annotations:
@@ -83,3 +95,5 @@ groups:
     for: 10m
     labels:
       severity: warning
+      resource: '{{ $labels.namespace }}/{{ $labels.pod }}'
+      service: thanos

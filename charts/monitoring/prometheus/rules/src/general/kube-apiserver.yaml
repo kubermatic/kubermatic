@@ -45,6 +45,8 @@ groups:
     for: 15m
     labels:
       severity: critical
+      resource: apiserver
+      service: kubernetes
 
   - alert: KubeAPILatencyHigh
     annotations:
@@ -56,6 +58,8 @@ groups:
     for: 10m
     labels:
       severity: warning
+      resource: apiserver
+      service: kubernetes
 
   - alert: KubeAPILatencyHigh
     annotations:
@@ -67,6 +71,8 @@ groups:
     for: 10m
     labels:
       severity: critical
+      resource: apiserver
+      service: kubernetes
 
   - alert: KubeAPIErrorsHigh
     annotations:
@@ -79,6 +85,8 @@ groups:
     for: 10m
     labels:
       severity: critical
+      resource: apiserver
+      service: kubernetes
 
   - alert: KubeAPIErrorsHigh
     annotations:
@@ -91,6 +99,8 @@ groups:
     for: 10m
     labels:
       severity: warning
+      resource: apiserver
+      service: kubernetes
 
   - alert: KubeClientCertificateExpiration
     annotations:
@@ -102,6 +112,8 @@ groups:
       histogram_quantile(0.01, sum by (job, instance, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m]))) < 604800
     labels:
       severity: warning
+      resource: apiserver
+      service: kubernetes
     runbook:
       steps:
       - Check the [Kubernetes documentation](https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-certs/) on how to renew certificates.
@@ -118,6 +130,8 @@ groups:
       histogram_quantile(0.01, sum by (job, instance, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m]))) < 86400
     labels:
       severity: critical
+      resource: apiserver
+      service: kubernetes
     runbook:
       steps:
       - Urgently renew your certificates. Expired certificates can make fixing the cluster difficult to begin with.

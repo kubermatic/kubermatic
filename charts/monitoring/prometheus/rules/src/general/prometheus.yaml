@@ -23,6 +23,8 @@ groups:
     for: 15m
     labels:
       severity: warning
+      resource: '{{ $labels.job }}/{{ $labels.instance }}'
+      service: prometheus
     runbook:
       steps:
       - Check the Prometheus Service Discovery page to find out why the target is unreachable.
@@ -35,6 +37,8 @@ groups:
     for: 15m
     labels:
       severity: critical
+      resource: '{{ $labels.job }}/{{ $labels.instance }}'
+      service: prometheus
     runbook:
       steps:
       - Check Prometheus pod's logs via `kubectl -n monitoring logs prometheus-0` and `-1`.
@@ -48,6 +52,8 @@ groups:
     for: 10m
     labels:
       severity: critical
+      resource: '{{ $labels.job }}/{{ $labels.instance }}'
+      service: prometheus
     runbook:
       steps:
       - Check Alertmanager pod's logs via `kubectl -n monitoring logs alertmanager-0`, `-1` and `-2`.
@@ -61,6 +67,8 @@ groups:
     for: 5m
     labels:
       severity: critical
+      resource: '{{ $labels.job }}/{{ $labels.instance }}'
+      service: prometheus
     runbook:
       steps:
       - Check Prometheus pod's logs via `kubectl -n monitoring logs prometheus-0` and `-1`.
@@ -78,6 +86,8 @@ groups:
     for: 15m
     labels:
       severity: critical
+      resource: '{{ $labels.job }}/{{ $labels.instance }}'
+      service: prometheus
     runbook:
       steps:
       - Ensure that the Prometheus volume has not reached capacity.
@@ -91,6 +101,8 @@ groups:
     for: 15m
     labels:
       severity: critical
+      resource: '{{ $labels.job }}/{{ $labels.instance }}'
+      service: prometheus
     runbook:
       steps:
       - Check Prometheus pod's logs via `kubectl -n monitoring logs prometheus-0` and `-1`.

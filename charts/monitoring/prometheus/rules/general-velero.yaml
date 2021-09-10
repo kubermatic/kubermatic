@@ -25,10 +25,14 @@ groups:
         for: 60m
         labels:
           severity: warning
+          resource: '{{ $labels.schedule }}'
+          service: 'velero'
       - alert: VeleroNoRecentBackup
         annotations:
           message: There has not been a successful backup for schedule {{ $labels.schedule }} in the last 24 hours.
           runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-veleronorecentbackup
         expr: time() - velero_backup_last_successful_timestamp{schedule!=""} > 3600*25
         labels:
-          severity: warning
+          severity: critical
+          resource: '{{ $labels.schedule }}'
+          service: 'velero'

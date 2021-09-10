@@ -25,6 +25,8 @@ groups:
     for: 15m
     labels:
       severity: warning
+      resource: '{{ $labels.release }}'
+      service: helm-exporter
     runbook:
       steps:
       - Check the installed Helm releases via `helm --tiller-namespace kubermtic-installer ls`.

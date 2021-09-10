@@ -23,6 +23,7 @@ groups:
     for: 15m
     labels:
       severity: critical
+      service: kubermatic-master
     runbook:
       steps:
       - Check the Prometheus Service Discovery page to find out why the target is unreachable.
@@ -36,6 +37,7 @@ groups:
     for: 15m
     labels:
       severity: warning
+      service: kubermatic-master
     runbook:
       steps:
       - Check the API pod's logs.
@@ -56,6 +58,7 @@ groups:
     for: 15m
     labels:
       severity: critical
+      service: kubermatic-master
     runbook:
       steps:
       - Check the Prometheus Service Discovery page to find out why the target is unreachable.

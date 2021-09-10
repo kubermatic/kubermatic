@@ -43,6 +43,8 @@ groups:
         for: 15m
         labels:
           severity: critical
+          resource: apiserver
+          service: kubernetes
       - alert: KubeAPILatencyHigh
         annotations:
           message: The API server has a 99th percentile latency of {{ $value }} seconds for {{ $labels.verb }} {{ $labels.resource }}.
@@ -51,6 +53,8 @@ groups:
         for: 10m
         labels:
           severity: warning
+          resource: apiserver
+          service: kubernetes
       - alert: KubeAPILatencyHigh
         annotations:
           message: The API server has a 99th percentile latency of {{ $value }} seconds for {{ $labels.verb }} {{ $labels.resource }}.
@@ -59,6 +63,8 @@ groups:
         for: 10m
         labels:
           severity: critical
+          resource: apiserver
+          service: kubernetes
       - alert: KubeAPIErrorsHigh
         annotations:
           message: API server is returning errors for {{ $value }}% of requests.
@@ -70,6 +76,8 @@ groups:
         for: 10m
         labels:
           severity: critical
+          resource: apiserver
+          service: kubernetes
       - alert: KubeAPIErrorsHigh
         annotations:
           message: API server is returning errors for {{ $value }}% of requests.
@@ -81,6 +89,8 @@ groups:
         for: 10m
         labels:
           severity: warning
+          resource: apiserver
+          service: kubernetes
       - alert: KubeClientCertificateExpiration
         annotations:
           message: A client certificate used to authenticate to the apiserver is expiring in less than 7 days.
@@ -91,6 +101,8 @@ groups:
           histogram_quantile(0.01, sum by (job, instance, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m]))) < 604800
         labels:
           severity: warning
+          resource: apiserver
+          service: kubernetes
       - alert: KubeClientCertificateExpiration
         annotations:
           message: A client certificate used to authenticate to the apiserver is expiring in less than 24 hours.
@@ -101,3 +113,5 @@ groups:
           histogram_quantile(0.01, sum by (job, instance, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m]))) < 86400
         labels:
           severity: critical
+          resource: apiserver
+          service: kubernetes

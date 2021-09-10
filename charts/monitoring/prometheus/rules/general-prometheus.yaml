@@ -25,6 +25,8 @@ groups:
         for: 15m
         labels:
           severity: warning
+          resource: '{{ $labels.job }}/{{ $labels.instance }}'
+          service: prometheus
       - alert: PromBadConfig
         annotations:
           message: Prometheus failed to reload config.
@@ -33,6 +35,8 @@ groups:
         for: 15m
         labels:
           severity: critical
+          resource: '{{ $labels.job }}/{{ $labels.instance }}'
+          service: prometheus
       - alert: PromAlertmanagerBadConfig
         annotations:
           message: Alertmanager failed to reload config.
@@ -41,6 +45,8 @@ groups:
         for: 10m
         labels:
           severity: critical
+          resource: '{{ $labels.job }}/{{ $labels.instance }}'
+          service: prometheus
       - alert: PromAlertsFailed
         annotations:
           message: Alertmanager failed to send an alert.
@@ -49,6 +55,8 @@ groups:
         for: 5m
         labels:
           severity: critical
+          resource: '{{ $labels.job }}/{{ $labels.instance }}'
+          service: prometheus
       - alert: PromRemoteStorageFailures
         annotations:
           message: Prometheus failed to send {{ printf "%.1f" $value }}% samples.
@@ -61,6 +69,8 @@ groups:
         for: 15m
         labels:
           severity: critical
+          resource: '{{ $labels.job }}/{{ $labels.instance }}'
+          service: prometheus
       - alert: PromRuleFailures
         annotations:
           message: Prometheus failed to evaluate {{ printf "%.1f" $value }} rules/sec.
@@ -69,3 +79,5 @@ groups:
         for: 15m
         labels:
           severity: critical
+          resource: '{{ $labels.job }}/{{ $labels.instance }}'
+          service: prometheus
