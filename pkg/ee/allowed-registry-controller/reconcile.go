@@ -90,6 +90,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, allowedRegistry *kubermaticv1.AllowedRegistry) error {
+	regSet, err := r.getRegistrySet()
+	if err != nil {
+		return fmt.Errorf("error getting registry set from AllowedRegistries: %v", err)
+	}
+
 	if allowedRegistry.DeletionTimestamp != nil {
 		if !kuberneteshelper.HasFinalizer(allowedRegistry, kubermaticapiv1.AllowedRegistryCleanupFinalizer) {
 			return nil
@@ -97,7 +102,7 @@ func (r *Reconciler) reconcile(ctx context.Context, allowedRegistry *kubermaticv
 
 		// Ensure Constraint with registry data
 		constraintCreatorGetters := []reconciling.NamedKubermaticV1ConstraintCreatorGetter{
-			allowedRegistryConstraintCreatorGetter(allowedRegistry),
+			allowedRegistryConstraintCreatorGetter(regSet),
 		}
 
 		err := reconciling.ReconcileKubermaticV1Constraints(ctx, constraintCreatorGetters, r.namespace, r.masterClient)
@@ -125,14 +130,14 @@ func (r *Reconciler) reconcile(ctx context.Context, allowedRegistry *kubermaticv
 	ctCreatorGetters := []reconciling.NamedKubermaticV1ConstraintTemplateCreatorGetter{
 		allowedRegistryCTCreatorGetter(),
 	}
-	err := reconciling.ReconcileKubermaticV1ConstraintTemplates(ctx, ctCreatorGetters, "", r.masterClient)
+	err = reconciling.ReconcileKubermaticV1ConstraintTemplates(ctx, ctCreatorGetters, "", r.masterClient)
 	if err != nil {
 		return fmt.Errorf("error ensuring AllowedRegistry Constraint Template: %v", err)
 	}
 
 	// Ensure Constraint with registry data
 	constraintCreatorGetters := []reconciling.NamedKubermaticV1ConstraintCreatorGetter{
-		allowedRegistryConstraintCreatorGetter(allowedRegistry),
+		allowedRegistryConstraintCreatorGetter(regSet),
 	}
 
 	err = reconciling.ReconcileKubermaticV1Constraints(ctx, constraintCreatorGetters, r.namespace, r.masterClient)
@@ -182,16 +187,9 @@ func allowedRegistryCTCreatorGetter() reconciling.NamedKubermaticV1ConstraintTem
 	}
 }
 
-func allowedRegistryConstraintCreatorGetter(wr *kubermaticv1.AllowedRegistry) reconciling.NamedKubermaticV1ConstraintCreatorGetter {
+func allowedRegistryConstraintCreatorGetter(regSet sets.String) reconciling.NamedKubermaticV1ConstraintCreatorGetter {
 	return func() (string, reconciling.KubermaticV1ConstraintCreator) {
 		return AllowedRegistryCTName, func(ct *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error) {
-			regSet := getRegistrySet(ct)
-			if wr.DeletionTimestamp != nil {
-				regSet.Delete(wr.Spec.RegistryPrefix)
-			} else {
-				regSet.Insert(wr.Spec.RegistryPrefix)
-			}
-
 			ct.Name = AllowedRegistryCTName
 			ct.Spec.Match.Kinds = []kubermaticv1.Kind{
 				{
@@ -210,21 +208,18 @@ func allowedRegistryConstraintCreatorGetter(wr *kubermaticv1.AllowedRegistry) re
 	}
 }
 
-func getRegistrySet(constraint *kubermaticv1.Constraint) sets.String {
-	raw, ok := constraint.Spec.Parameters[AllowedRegistryField]
-	if !ok {
-		return sets.NewString()
+func (r *Reconciler) getRegistrySet() (sets.String, error) {
+	var arList kubermaticv1.AllowedRegistryList
+	if err := r.masterClient.List(context.Background(), &arList); err != nil {
+		return nil, err
 	}
 
-	rawRegList, ok := raw.([]interface{})
-	if !ok {
-		return sets.NewString()
-	}
+	regSet := sets.NewString()
 
-	var regList []string
-	for _, reg := range rawRegList {
-		regList = append(regList, fmt.Sprintf("%v", reg))
+	for _, ar := range arList.Items {
+		if ar.DeletionTimestamp == nil {
+			regSet.Insert(ar.Spec.RegistryPrefix)
+		}
 	}
-
-	return sets.NewString(regList...)
+	return regSet, nil
 }
