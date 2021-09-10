@@ -29,6 +29,7 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -46,7 +47,7 @@ func persistentVolumeClaimCreator(ctx context.Context, client ctrlruntimeclient.
 	if err := client.Get(ctx, types.NamespacedName{Namespace: seed.Namespace, Name: meteringDataName}, pvc); err != nil {
 		if kerrors.IsNotFound(err) {
 			pvc.ObjectMeta.Name = meteringDataName
-			pvc.ObjectMeta.Namespace = seed.Namespace
+			pvc.ObjectMeta.Namespace = resources.KubermaticNamespace
 			pvc.ObjectMeta.Labels = map[string]string{
 				"app": meteringToolName,
 			}

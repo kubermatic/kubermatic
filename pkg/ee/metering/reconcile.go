@@ -29,6 +29,7 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -43,25 +44,25 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 
 	if err := reconciling.ReconcileServiceAccounts(ctx, []reconciling.NamedServiceAccountCreatorGetter{
 		serviceAccountCreator(),
-	}, seed.Namespace, client); err != nil {
+	}, resources.KubermaticNamespace, client); err != nil {
 		return fmt.Errorf("failed to reconcile metering ServiceAccounts: %v", err)
 	}
 
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, []reconciling.NamedClusterRoleBindingCreatorGetter{
-		clusterRoleBindingCreator(seed.Namespace),
+		clusterRoleBindingCreator(resources.KubermaticNamespace),
 	}, "", client); err != nil {
 		return fmt.Errorf("failed to reconcile metering ClusterRoleBindings: %v", err)
 	}
 
 	if err := reconciling.ReconcileCronJobs(ctx, []reconciling.NamedCronJobCreatorGetter{
 		cronJobCreator(seed.Name),
-	}, seed.Namespace, client); err != nil {
+	}, resources.KubermaticNamespace, client); err != nil {
 		return fmt.Errorf("failed to reconcile metering CronJob: %v", err)
 	}
 
 	if err := reconciling.ReconcileDeployments(ctx, []reconciling.NamedDeploymentCreatorGetter{
 		deploymentCreator(seed),
-	}, seed.Namespace, client); err != nil {
+	}, resources.KubermaticNamespace, client); err != nil {
 		return fmt.Errorf("failed to reconcile metering Deployment: %v", err)
 	}
 
