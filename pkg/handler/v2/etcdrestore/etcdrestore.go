@@ -67,7 +67,7 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 
 		// set projectID label
 		er.Labels = map[string]string{
-			provider.ProjectLabelKey: req.ProjectID,
+			kubermaticv1.ProjectIDLabelKey: req.ProjectID,
 		}
 
 		er, err = createEtcdRestore(ctx, userInfoGetter, req.ProjectID, er)
