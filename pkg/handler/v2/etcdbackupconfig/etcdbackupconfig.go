@@ -64,7 +64,7 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 
 		// set projectID label
 		ebc.Labels = map[string]string{
-			provider.ProjectLabelKey: req.ProjectID,
+			kubermaticv1.ProjectIDLabelKey: req.ProjectID,
 		}
 
 		ebc, err = createEtcdBackupConfig(ctx, userInfoGetter, req.ProjectID, ebc)

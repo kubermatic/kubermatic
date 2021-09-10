@@ -65,9 +65,6 @@ const (
 	DefaultKubeletPort = 10250
 
 	DefaultKubeconfigFieldPath = "kubeconfig"
-
-	// ProjectLabelKey is the key under which resources can be project labelled
-	ProjectLabelKey = "project"
 )
 
 func supportedProviders() []string {

@@ -1868,7 +1868,7 @@ func GenEtcdBackupConfig(id, name string, cluster *kubermaticv1.Cluster, project
 			Name:      id,
 			Namespace: cluster.Status.NamespaceName,
 			Labels: map[string]string{
-				provider.ProjectLabelKey: projectID,
+				kubermaticv1.ProjectIDLabelKey: projectID,
 			},
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(cluster, kubermaticv1.SchemeGroupVersion.WithKind("Cluster")),
@@ -1902,7 +1902,7 @@ func GenEtcdRestore(name string, cluster *kubermaticv1.Cluster, projectID string
 			Name:      name,
 			Namespace: cluster.Status.NamespaceName,
 			Labels: map[string]string{
-				provider.ProjectLabelKey: projectID,
+				kubermaticv1.ProjectIDLabelKey: projectID,
 			},
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(cluster, kubermaticv1.SchemeGroupVersion.WithKind("Cluster")),
