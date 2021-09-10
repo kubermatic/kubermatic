@@ -23,6 +23,8 @@ groups:
     for: 15m
     labels:
       severity: critical
+      resource: '{{ $labels.instance }}'
+      service: kubelet
 
   - alert: KubePersistentVolumeUsageCritical
     annotations:
@@ -38,6 +40,8 @@ groups:
     for: 1m
     labels:
       severity: critical
+      service: kubelet
+      resource: '{{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}'
 
   - alert: KubePersistentVolumeFullInFourDays
     annotations:
@@ -57,6 +61,8 @@ groups:
     for: 5m
     labels:
       severity: critical
+      service: kubelet
+      resource: '{{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}'
 
   - alert: KubeletTooManyPods
     annotations:
@@ -66,6 +72,8 @@ groups:
     for: 15m
     labels:
       severity: warning
+      resource: '{{ $labels.instance }}'
+      service: kubelet
 
   - alert: KubeClientErrors
     annotations:
@@ -80,6 +88,8 @@ groups:
     for: 15m
     labels:
       severity: warning
+      resource: '{{ $labels.instance }}'
+      service: kubelet
 
   # a dedicated rule for pods to include more helpful labels in the message like the instance and job name
   - alert: KubeClientErrors
@@ -95,6 +105,8 @@ groups:
     for: 15m
     labels:
       severity: warning
+      resource: '{{ $labels.instance }}'
+      service: kubelet
 
   - alert: KubeletRuntimeErrors
     annotations:
@@ -106,6 +118,8 @@ groups:
     for: 15m
     labels:
       severity: warning
+      resource: '{{ $labels.instance }}'
+      service: kubelet
 
   - alert: KubeletCGroupManagerDurationHigh
     annotations:
@@ -116,6 +130,8 @@ groups:
       sum(rate(kubelet_cgroup_manager_duration_seconds{quantile="0.9"}[5m])) by (instance) * 1000 > 1
     for: 15m
     labels:
+      resource: '{{ $labels.instance }}'
+      service: kubelet
       severity: warning
 
   - alert: KubeletPodWorkerDurationHigh
@@ -128,6 +144,8 @@ groups:
     for: 15m
     labels:
       severity: warning
+      resource: '{{ $labels.instance }}/{{ $labels.operation_type }}'
+      service: kubelet
 
   - alert: KubeVersionMismatch
     annotations:

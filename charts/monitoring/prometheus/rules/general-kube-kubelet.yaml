@@ -25,6 +25,8 @@ groups:
         for: 15m
         labels:
           severity: critical
+          resource: '{{ $labels.instance }}'
+          service: kubelet
       - alert: KubePersistentVolumeUsageCritical
         annotations:
           message: The PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in namespace {{ $labels.namespace }} is only {{ printf "%0.0f" $value }}% free.
@@ -37,6 +39,8 @@ groups:
         for: 1m
         labels:
           severity: critical
+          service: kubelet
+          resource: '{{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}'
       - alert: KubePersistentVolumeFullInFourDays
         annotations:
           message: Based on recent sampling, the PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in namespace {{ $labels.namespace }} is expected to fill up within four days. Currently {{ $value }} bytes are available.
@@ -52,6 +56,8 @@ groups:
         for: 5m
         labels:
           severity: critical
+          service: kubelet
+          resource: '{{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}'
       - alert: KubeletTooManyPods
         annotations:
           message: Kubelet {{ $labels.instance }} is running {{ $value }} pods, close to the limit of 110.
@@ -60,6 +66,8 @@ groups:
         for: 15m
         labels:
           severity: warning
+          resource: '{{ $labels.instance }}'
+          service: kubelet
       - alert: KubeClientErrors
         annotations:
           message: The kubelet on {{ $labels.instance }} is experiencing {{ printf "%0.0f" $value }}% errors.
@@ -72,6 +80,8 @@ groups:
         for: 15m
         labels:
           severity: warning
+          resource: '{{ $labels.instance }}'
+          service: kubelet
       # a dedicated rule for pods to include more helpful labels in the message like the instance and job name
       - alert: KubeClientErrors
         annotations:
@@ -85,6 +95,8 @@ groups:
         for: 15m
         labels:
           severity: warning
+          resource: '{{ $labels.instance }}'
+          service: kubelet
       - alert: KubeletRuntimeErrors
         annotations:
           message: The kubelet on {{ $labels.instance }} is having an elevated error rate for container runtime oprations.
@@ -94,6 +106,8 @@ groups:
         for: 15m
         labels:
           severity: warning
+          resource: '{{ $labels.instance }}'
+          service: kubelet
       - alert: KubeletCGroupManagerDurationHigh
         annotations:
           message: The kubelet's cgroup manager duration on {{ $labels.instance }} has been elevated ({{ printf "%0.2f" $value }}ms) for more than 15 minutes.
@@ -102,6 +116,8 @@ groups:
           sum(rate(kubelet_cgroup_manager_duration_seconds{quantile="0.9"}[5m])) by (instance) * 1000 > 1
         for: 15m
         labels:
+          resource: '{{ $labels.instance }}'
+          service: kubelet
           severity: warning
       - alert: KubeletPodWorkerDurationHigh
         annotations:
@@ -112,6 +128,8 @@ groups:
         for: 15m
         labels:
           severity: warning
+          resource: '{{ $labels.instance }}/{{ $labels.operation_type }}'
+          service: kubelet
       - alert: KubeVersionMismatch
         annotations:
           message: There are {{ $value }} different versions of Kubernetes components running.

@@ -22,6 +22,8 @@ groups:
     expr: certmanager_certificate_expiration_timestamp_seconds - time() < 3*24*3600
     labels:
       severity: warning
+      resource: '{{ $labels.name }}'
+      service: cert-manager
 
   - alert: CertManagerCertExpiresVerySoon
     annotations:
@@ -30,3 +32,5 @@ groups:
     expr: certmanager_certificate_expiration_timestamp_seconds - time() < 24*3600
     labels:
       severity: critical
+      resource: '{{ $labels.name }}'
+      service: cert-manager

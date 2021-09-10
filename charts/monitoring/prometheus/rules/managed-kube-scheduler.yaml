@@ -32,3 +32,5 @@ groups:
         for: 10m
         labels:
           severity: critical
+          resource: kube-scheduler
+          service: kubernetes

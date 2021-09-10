@@ -209,6 +209,8 @@ groups:
     for: 1h
     labels:
       severity: warning
+      resource: '{{ $labels.instance }} {{ $labels.device }}'
+      service: 'node-exporter'
 
   - alert: NodeFilesystemSpaceFillingUp
     annotations:
@@ -225,6 +227,8 @@ groups:
     for: 1h
     labels:
       severity: critical
+      resource: '{{ $labels.instance }} {{ $labels.device }}'
+      service: 'node-exporter'
 
   - alert: NodeFilesystemOutOfSpace
     annotations:
@@ -239,6 +243,8 @@ groups:
     for: 1h
     labels:
       severity: warning
+      resource: '{{ $labels.instance }} {{ $labels.device }}'
+      service: 'node-exporter'
 
   - alert: NodeFilesystemOutOfSpace
     annotations:
@@ -253,6 +259,8 @@ groups:
     for: 1h
     labels:
       severity: critical
+      resource: '{{ $labels.instance }} {{ $labels.device }}'
+      service: 'node-exporter'
 
   - alert: NodeFilesystemFilesFillingUp
     annotations:
@@ -269,6 +277,8 @@ groups:
     for: 1h
     labels:
       severity: warning
+      resource: '{{ $labels.instance }} {{ $labels.device }}'
+      service: 'node-exporter'
 
   - alert: NodeFilesystemFilesFillingUp
     annotations:
@@ -285,6 +295,8 @@ groups:
     for: 1h
     labels:
       severity: warning
+      resource: '{{ $labels.instance }} {{ $labels.device }}'
+      service: 'node-exporter'
 
   - alert: NodeFilesystemOutOfFiles
     annotations:
@@ -299,6 +311,8 @@ groups:
     for: 1h
     labels:
       severity: warning
+      resource: '{{ $labels.instance }} {{ $labels.device }}'
+      service: 'node-exporter'
 
   - alert: NodeFilesystemOutOfSpace
     annotations:
@@ -313,6 +327,8 @@ groups:
     for: 1h
     labels:
       severity: critical
+      resource: '{{ $labels.instance }} {{ $labels.device }}'
+      service: 'node-exporter'
 
   - alert: NodeNetworkReceiveErrs
     annotations:
@@ -324,6 +340,8 @@ groups:
     for: 1h
     labels:
       severity: critical
+      resource: '{{ $labels.instance }} {{ $labels.device }}'
+      service: 'node-exporter'
 
   - alert: NodeNetworkTransmitErrs
     annotations:
@@ -335,3 +353,5 @@ groups:
     for: 1h
     labels:
       severity: critical
+      resource: '{{ $labels.instance }} {{ $labels.device }}'
+      service: 'node-exporter'

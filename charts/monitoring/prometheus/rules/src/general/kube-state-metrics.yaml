@@ -67,6 +67,9 @@ groups:
     for: 15m
     labels:
       severity: critical
+      resource: '{{ $labels.namespace }}/{{ $labels.pod }}'
+      service: kube-state-metrics
+
 
   - alert: KubePodCrashLooping
     annotations:
@@ -78,6 +81,7 @@ groups:
     for: 1h
     labels:
       severity: critical
+      resource: "{{ $labels.namespace }}/{{ $labels.pod }}"
     runbook:
       steps:
       - Check the pod's logs.
@@ -90,6 +94,7 @@ groups:
     for: 30m
     labels:
       severity: critical
+      resource: "{{ $labels.namespace }}/{{ $labels.pod }}"
     runbook:
       steps:
       - Check the pod via `kubectl describe pod [POD]` to find out about scheduling issues.
@@ -107,6 +112,7 @@ groups:
     for: 15m
     labels:
       severity: critical
+      resource: "{{ $labels.namespace }}/{{ $labels.deployment }}"
 
   - alert: KubeDeploymentReplicasMismatch
     annotations:
@@ -121,6 +127,7 @@ groups:
     for: 1h
     labels:
       severity: critical
+      resource: "{{ $labels.namespace }}/{{ $labels.deployment }}"
 
   - alert: KubeStatefulSetReplicasMismatch
     annotations:
@@ -135,6 +142,7 @@ groups:
     for: 15m
     labels:
       severity: critical
+      resource: "{{ $labels.namespace }}/{{ $labels.statefulset }}"
 
   - alert: KubeStatefulSetGenerationMismatch
     annotations:
@@ -149,6 +157,7 @@ groups:
     for: 15m
     labels:
       severity: critical
+      resource: "{{ $labels.namespace }}/{{ $labels.statefulset }}"
 
   - alert: KubeStatefulSetUpdateNotRolledOut
     annotations:
@@ -169,6 +178,7 @@ groups:
     for: 15m
     labels:
       severity: critical
+      resource: "{{ $labels.namespace }}/{{ $labels.statefulset }}"
 
   - alert: KubeDaemonSetRolloutStuck
     annotations:
@@ -183,6 +193,7 @@ groups:
     for: 15m
     labels:
       severity: critical
+      resource: "{{ $labels.namespace }}/{{ $labels.daemonset }}"
 
   - alert: KubeDaemonSetNotScheduled
     annotations:
@@ -195,6 +206,7 @@ groups:
     for: 10m
     labels:
       severity: warning
+      resource: "{{ $labels.namespace }}/{{ $labels.daemonset }}"
 
   - alert: KubeDaemonSetMisScheduled
     annotations:
@@ -204,6 +216,7 @@ groups:
     for: 10m
     labels:
       severity: warning
+      resource: "{{ $labels.namespace }}/{{ $labels.daemonset }}"
 
   - alert: KubeCronJobRunning
     annotations:
@@ -213,6 +226,7 @@ groups:
     for: 1h
     labels:
       severity: warning
+      resource: "{{ $labels.namespace }}/{{ $labels.cronjob }}"
 
   - alert: KubeJobCompletion
     annotations:
@@ -222,6 +236,7 @@ groups:
     for: 1h
     labels:
       severity: warning
+      resource: "{{ $labels.namespace }}/{{ $labels.job_name }}"
 
   - alert: KubeJobFailed
     annotations:
@@ -231,6 +246,7 @@ groups:
     for: 1h
     labels:
       severity: warning
+      resource: "{{ $labels.namespace }}/{{ $labels.job_name }}"
 
   - alert: KubeCPUOvercommit
     annotations:
@@ -244,6 +260,8 @@ groups:
     for: 5m
     labels:
       severity: warning
+      resource: cluster
+      service: kube-state-metrics
 
   - alert: KubeCPUOvercommit
     annotations:
@@ -258,6 +276,8 @@ groups:
     for: 5m
     labels:
       severity: warning
+      resource: cluster
+      service: kube-state-metrics
 
   - alert: KubeMemOvercommit
     annotations:
@@ -271,6 +291,8 @@ groups:
     for: 5m
     labels:
       severity: warning
+      resource: cluster
+      service: kube-state-metrics
 
   - alert: KubeMemOvercommit
     annotations:
@@ -287,6 +309,8 @@ groups:
     for: 5m
     labels:
       severity: warning
+      resource: cluster
+      service: kube-state-metrics
 
   - alert: KubeQuotaExceeded
     annotations:
@@ -300,6 +324,8 @@ groups:
     for: 15m
     labels:
       severity: warning
+      resource: cluster
+      service: kube-state-metrics
 
   - alert: KubePodOOMKilled
     annotations:
@@ -314,6 +340,7 @@ groups:
     for: 0m
     labels:
       severity: warning
+      resource: '{{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }}'
 
   - alert: KubeNodeNotReady
     annotations:
@@ -323,3 +350,4 @@ groups:
     for: 1h
     labels:
       severity: warning
+      resource: '{{ $labels.node }}'

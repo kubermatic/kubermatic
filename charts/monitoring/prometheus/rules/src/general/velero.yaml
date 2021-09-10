@@ -23,6 +23,8 @@ groups:
     for: 60m
     labels:
       severity: warning
+      resource: '{{ $labels.schedule }}'
+      service: 'velero'
     runbook:
       steps:
       - Check if a backup is really in "InProgress" state via `velero -n velero backup get`.
@@ -35,7 +37,9 @@ groups:
       runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-veleronorecentbackup
     expr: time() - velero_backup_last_successful_timestamp{schedule!=""} > 3600*25
     labels:
-      severity: warning
+      severity: critical
+      resource: '{{ $labels.schedule }}'
+      service: 'velero'
     runbook:
       steps:
       - Check if really no backups happened via `velero -n velero backup get`.
