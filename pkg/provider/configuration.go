@@ -56,11 +56,12 @@ func DynamicKubermaticConfigurationGetterFactory(client ctrlruntimeclient.Reader
 			return nil, fmt.Errorf("more than one KubermaticConfiguration resource found in namespace %q", namespace)
 		}
 
-		config := configList.Items[0]
+		config, err := defaults.DefaultConfiguration(&configList.Items[0], zap.NewNop().Sugar())
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply default values: %w", err)
+		}
 
-		defaults.DefaultConfiguration(&config, zap.NewNop().Sugar())
-
-		return &configList.Items[0], nil
+		return config, nil
 	}, nil
 }
 

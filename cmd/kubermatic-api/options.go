@@ -132,6 +132,13 @@ func newServerRunOptions() (serverRunOptions, error) {
 	s.accessibleAddons = sets.NewString(strings.Split(rawAccessibleAddons, ",")...)
 	s.accessibleAddons.Delete("")
 
+	if configFile != "" {
+		var err error
+		if s.kubermaticConfiguration, err = loadKubermaticConfiguration(configFile); err != nil {
+			return s, fmt.Errorf("invalid KubermaticConfiguration: %w", err)
+		}
+	}
+
 	if len(caBundleFile) == 0 {
 		return s, errors.New("no -ca-bundle configured")
 	}

@@ -29,7 +29,7 @@ import (
 	"strings"
 	"testing"
 
-	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
@@ -111,7 +111,7 @@ func TestConvertAuth(t *testing.T) {
 			},
 		},
 		{
-			yaml:     fmt.Sprintf(`kubermatic: { auth: { clientID: "%s" } }`, common.DefaultAuthClientID),
+			yaml:     fmt.Sprintf(`kubermatic: { auth: { clientID: "%s" } }`, defaults.DefaultAuthClientID),
 			expected: &operatorv1alpha1.KubermaticAuthConfiguration{},
 		},
 		{
@@ -194,7 +194,7 @@ func TestConvertAPI(t *testing.T) {
 			},
 		},
 		{
-			yaml:     fmt.Sprintf(`kubermatic: { api: { pprofEndpoint: "%s" } }`, common.DefaultPProfEndpoint),
+			yaml:     fmt.Sprintf(`kubermatic: { api: { pprofEndpoint: "%s" } }`, defaults.DefaultPProfEndpoint),
 			expected: &operatorv1alpha1.KubermaticAPIConfiguration{},
 		},
 	}
