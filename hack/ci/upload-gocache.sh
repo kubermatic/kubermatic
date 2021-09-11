@@ -35,13 +35,21 @@ fi
 
 # The gocache needs a matching go version to work, so append that to the name
 GO_VERSION="$(go version | awk '{ print $3 }' | sed 's/go//g')"
+GOARCH="$(go env GOARCH)"
 
 GOCACHE_DIR="$(mktemp -d)"
 export GOCACHE="${GOCACHE_DIR}"
 export GIT_HEAD_HASH="$(git rev-parse HEAD | tr -d '\n')"
 export CGO_ENABLED=0
 
-echodate "Creating cache for revision ${GIT_HEAD_HASH} / Go ${GO_VERSION} ..."
+# PULL_BASE_REF is the name of the current branch in case of a post-submit
+# or the name of the base branch in case of a PR.
+GIT_BRANCH="${PULL_BASE_REF:-}"
+
+# normalize branch name to prevent accidental directories being created
+GIT_BRANCH="$(echo "$GIT_BRANCH" | sed 's#/#-#g')"
+
+echodate "Creating cache for revision ${GIT_BRANCH}/${GIT_HEAD_HASH} / Go ${GO_VERSION}/${GOARCH} ..."
 
 # Go does not distinguish compiled files based on
 # tags, so we cannot cache CE *and* EE.
@@ -57,17 +65,20 @@ echodate "Building binaries"
   # but makes creating the cache a tiny bit slower
   touch download-gocache
 
-  retry 2 make build
+  make build
 )
 (
   TEST_NAME="Building Nodeport proxy"
-  cd cmd/nodeport-proxy
-  retry 2 make build
+  make -C cmd/nodeport-proxy build
 )
 (
   TEST_NAME="Building kubeletdnat controller"
-  cd cmd/kubeletdnat-controller
-  retry 2 make build
+  make -C cmd/kubeletdnat-controller build
+)
+(
+  TEST_NAME="Building clusterexposer"
+  cd pkg/test/clusterexposer/cmd
+  go build --tags "$KUBERMATIC_EDITION" -v .
 )
 
 TEST_NAME="Build tests"
@@ -88,6 +99,6 @@ echodate "Uploading gocache archive"
 # Passing the Headers as space-separated literals doesn't seem to work
 # in conjunction with the retry func, so we just put them in a file instead
 echo 'Content-Type: application/octet-stream' > /tmp/headers
-retry 2 curl --fail -T "${ARCHIVE_FILE}" -H @/tmp/headers "${GOCACHE_MINIO_ADDRESS}/kkp/${GIT_HEAD_HASH}-${GO_VERSION}.tar"
+retry 2 curl --fail -T "${ARCHIVE_FILE}" -H @/tmp/headers "${GOCACHE_MINIO_ADDRESS}/kkp/${GIT_BRANCH}/${GIT_HEAD_HASH}-${GO_VERSION}-${GOARCH}.tar"
 
 echodate "Upload complete."
