@@ -75,7 +75,7 @@ fi
 GIT_BRANCH="$(echo "$GIT_BRANCH" | sed 's#/#-#g')"
 
 ARCHIVE_NAME="${CACHE_VERSION}-${GO_VERSION}-${GOARCH}.tar"
-URL="${GOCACHE_MINIO_ADDRESS}/kkp/${GIT_BRANCH}/${ARCHIVE_NAME}"
+URL="${GOCACHE_MINIO_ADDRESS}/kubermatic/${GIT_BRANCH}/${ARCHIVE_NAME}"
 
 # Do not go through the retry loop when there is nothing, but do try the
 # first parent if no cache was found. This is helpful for retests happening
@@ -87,7 +87,7 @@ if ! curl --head --silent --fail "${URL}" > /dev/null; then
 
   CACHE_VERSION="$(git rev-parse ${CACHE_VERSION}~1)"
   ARCHIVE_NAME="${CACHE_VERSION}-${GO_VERSION}-${GOARCH}.tar"
-  URL="${GOCACHE_MINIO_ADDRESS}/kkp/${GIT_BRANCH}/${ARCHIVE_NAME}"
+  URL="${GOCACHE_MINIO_ADDRESS}/kubermatic/${GIT_BRANCH}/${ARCHIVE_NAME}"
 
   if ! curl --head --silent --fail "${URL}" > /dev/null; then
     echodate "Remote has no gocache ${ARCHIVE_NAME}, giving up."
