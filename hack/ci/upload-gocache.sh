@@ -88,6 +88,6 @@ echodate "Uploading gocache archive"
 # Passing the Headers as space-separated literals doesn't seem to work
 # in conjunction with the retry func, so we just put them in a file instead
 echo 'Content-Type: application/octet-stream' > /tmp/headers
-retry 2 curl --fail -T "${ARCHIVE_FILE}" -H @/tmp/headers "${GOCACHE_MINIO_ADDRESS}/${GIT_HEAD_HASH}-${GO_VERSION}.tar"
+retry 2 curl --fail -T "${ARCHIVE_FILE}" -H @/tmp/headers "${GOCACHE_MINIO_ADDRESS}/kkp/${GIT_HEAD_HASH}-${GO_VERSION}.tar"
 
 echodate "Upload complete."
