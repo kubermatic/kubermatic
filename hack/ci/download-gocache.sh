@@ -31,7 +31,8 @@ set -euo pipefail
 set -o monitor
 
 # The gocache needs a matching go version to work, so append that to the name
-GO_VERSION="$(go version|awk '{ print $3 }'|sed 's/go//g')"
+GO_VERSION="$(go version | awk '{ print $3 }' | sed 's/go//g')"
+GOARCH="$(go env GOARCH)"
 
 # Make sure we never error, this is always best-effort only
 exit_gracefully() {
@@ -53,26 +54,45 @@ GOCACHE="$(go env GOCACHE)"
 # Make sure it actually exists
 mkdir -p "${GOCACHE}"
 
-export CACHE_VERSION="${PULL_BASE_SHA:-}"
+# PULL_BASE_REF is the name of the current branch in case of a post-submit
+# or the name of the base branch in case of a PR.
+GIT_BRANCH="${PULL_BASE_REF:-}"
+CACHE_VERSION="${PULL_BASE_SHA:-}"
 
 # Periodics just use their head ref
 if [[ -z "${CACHE_VERSION}" ]]; then
   CACHE_VERSION="$(git rev-parse HEAD)"
+  GIT_BRANCH="master"
 fi
 
 if [ -z "${PULL_NUMBER:-}" ]; then
-  # Special case: This is called in a Postubmit. Go one revision back,
+  # Special case: This is called in a Postsubmit. Go one revision back,
   # as there can't be a cache for the current revision
   CACHE_VERSION="$(git rev-parse ${CACHE_VERSION}~1)"
 fi
 
-ARCHIVE_NAME="${CACHE_VERSION}-${GO_VERSION}.tar"
-URL="${GOCACHE_MINIO_ADDRESS}/${ARCHIVE_NAME}"
+# normalize branch name to prevent accidental directories being created
+GIT_BRANCH="$(echo "$GIT_BRANCH" | sed 's#/#-#g')"
 
-# Do not go through the retry loop when there is nothing
+ARCHIVE_NAME="${CACHE_VERSION}-${GO_VERSION}-${GOARCH}.tar"
+URL="${GOCACHE_MINIO_ADDRESS}/kubermatic/${GIT_BRANCH}/${ARCHIVE_NAME}"
+
+# Do not go through the retry loop when there is nothing, but do try the
+# first parent if no cache was found. This is helpful for retests happening
+# quickly after something got merged to master and no gocache for the most
+# recent commit exists yet. In this case, taking the previous commit's
+# cache is better than nothing.
 if ! curl --head --silent --fail "${URL}" > /dev/null; then
-  echodate "Remote has no gocache ${ARCHIVE_NAME}, exiting"
-  exit 0
+  echodate "Remote has no gocache ${ARCHIVE_NAME}, trying previous commit as a fallback..."
+
+  CACHE_VERSION="$(git rev-parse ${CACHE_VERSION}~1)"
+  ARCHIVE_NAME="${CACHE_VERSION}-${GO_VERSION}-${GOARCH}.tar"
+  URL="${GOCACHE_MINIO_ADDRESS}/kubermatic/${GIT_BRANCH}/${ARCHIVE_NAME}"
+
+  if ! curl --head --silent --fail "${URL}" > /dev/null; then
+    echodate "Remote has no gocache ${ARCHIVE_NAME}, giving up."
+    exit 0
+  fi
 fi
 
 echodate "Downloading and extracting gocache"
