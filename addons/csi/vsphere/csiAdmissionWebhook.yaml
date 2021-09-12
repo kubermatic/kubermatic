@@ -1,0 +1,109 @@
+# Copyright 2021 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+{{ if .Cluster.Features.Has "externalCloudProvider" }}
+{{ if eq .Cluster.CloudProviderName "vsphere" }}
+{{ if .Cluster.CSIMigration }}
+  # Requires k8s 1.19+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: csi-migration-webhook
+  namespace: kube-system
+  labels:
+    app: csi-migration-webhook
+spec:
+  ports:
+    - port: 443
+      targetPort: 8443
+  selector:
+    app: csi-migration-webhook
+---
+kind: ServiceAccount
+apiVersion: v1
+metadata:
+  name: csi-migration-webhook
+  namespace: kube-system
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: csi-migration-webhook
+  namespace: kube-system
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: csi-migration-webhook
+  namespace: kube-system
+subjects:
+  - kind: ServiceAccount
+    name: csi-migration-webhook
+    namespace: kube-system
+roleRef:
+  kind: Role
+  name: csi-migration-webhook
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: csi-migration-webhook
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: csi-migration-webhook
+  template:
+    metadata:
+      labels:
+        app: csi-migration-webhook
+        role: csi-migration-webhook
+    spec:
+      serviceAccountName: csi-migration-webhook
+      containers:
+        - name: vsphere-webhook
+          image: gcr.io/cloud-provider-vsphere/csi/release/syncer:v2.3.0
+          args:
+            - "--operation-mode=WEBHOOK_SERVER"
+            - "--fss-name=internal-feature-states.csi.vsphere.vmware.com"
+            - "--fss-namespace=$(CSI_NAMESPACE)"
+          env:
+            - name: WEBHOOK_CONFIG_PATH
+              value: "/etc/webhook/webhook.config"
+            - name: LOGGER_LEVEL
+              value: "PRODUCTION" # Options: DEVELOPMENT, PRODUCTION
+            - name: CSI_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          volumeMounts:
+            - mountPath: /etc/webhook
+              name: webhook-certs
+              readOnly: true
+      volumes:
+        - name: socket-dir
+          emptyDir: {}
+        - name: webhook-certs
+          secret:
+            secretName: csi-migration-webhook-certs
+{{ end }}
+{{ end }}
+{{ end }}

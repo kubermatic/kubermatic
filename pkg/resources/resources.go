@@ -604,6 +604,23 @@ const (
 )
 
 const (
+	// CSIMigrationWebhookName is the name of the csi-migration webhook service
+	CSIMigrationWebhookName = "csi-migration-webhook"
+	// CSIMigrationWebhookSecretName defines the name of the secret containing the certificates for the csi-migration admission webhook
+	CSIMigrationWebhookSecretName = "csi-migration-webhook-certs"
+	// CSIMigrationWebhookServingCertCertKeyName is the name for the key that contains the cert
+	CSIMigrationWebhookServingCertCertKeyName = "cert.pem"
+	// CSIMigrationWebhookServingCertKeyKeyName is the name for the key that contains the key
+	CSIMigrationWebhookServingCertKeyKeyName = "key.pem"
+	// CSIMigrationWebhookConfig is the name for the key that contains the webhook config
+	CSIMigrationWebhookConfig = "webhook.config"
+	// CSIMigrationWebhookPort is the port used by the CSI-migration webhook
+	CSIMigrationWebhookPort = 8443
+	// VsphereCSIMigrationWebhookConfigurationWebhookName is the webhook's name in the vSphere CSI_migration WebhookConfiguration
+	VsphereCSIMigrationWebhookConfigurationWebhookName = "validation.csi.vsphere.vmware.com"
+)
+
+const (
 	UserClusterMLANamespace        = "mla-system"
 	PromtailServiceAccountName     = "promtail"
 	PromtailClusterRoleName        = "system:mla:promtail"

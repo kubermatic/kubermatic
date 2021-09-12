@@ -187,7 +187,11 @@ spec:
 ---
 apiVersion: v1
 data:
+{{ if .Cluster.CSIMigration }}
+  "csi-migration": "true"
+{{ else }}
   "csi-migration": "false"
+{{ end }}
   "csi-auth-check": "true"
   "online-volume-extend": "true"
 kind: ConfigMap
