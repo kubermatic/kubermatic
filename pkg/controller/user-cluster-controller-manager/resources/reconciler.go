@@ -28,6 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/clusterautoscaler"
 	controllermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/controller-manager"
 	coredns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/core-dns"
+	csimigration "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/csi-migration"
 	dnatcontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/dnat-controller"
 	envoyagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/envoy-agent"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper"
@@ -162,7 +163,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return err
 	}
 
-	if err := r.reconcileValidatingWebhookConfigurations(ctx); err != nil {
+	if err := r.reconcileValidatingWebhookConfigurations(ctx, data); err != nil {
 		return err
 	}
 
@@ -522,10 +523,14 @@ func (r *reconciler) reconcileMutatingWebhookConfigurations(ctx context.Context,
 	return nil
 }
 
-func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Context) error {
+func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{}
 	if r.opaIntegration {
 		creators = append(creators, gatekeeper.ValidatingWebhookConfigurationCreator(r.opaWebhookTimeout))
+	}
+
+	if data.csiCloudConfig != nil {
+		creators = append(creators, csimigration.ValidatingwebhookConfigurationCreator(data.caCert.Cert, metav1.NamespaceSystem, resources.VsphereCSIMigrationWebhookConfigurationWebhookName))
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
@@ -642,6 +647,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 
 	if data.csiCloudConfig != nil {
 		creators = append(creators, cloudcontroller.CloudConfig(data.csiCloudConfig, resources.CSICloudConfigSecretName))
+		creators = append(creators, csimigration.TLSServingCertificateCreator(data.caCert))
 	}
 
 	if r.userSSHKeyAgent {

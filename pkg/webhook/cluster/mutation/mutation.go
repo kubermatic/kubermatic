@@ -237,17 +237,14 @@ func (h *AdmissionHandler) mutateUpdate(ctx context.Context, oldCluster, newClus
 	// only for OpenStack clusters, in the following way:
 	//   * Add the CCM/CSI migration annotations
 	//   * Enable the UseOctaiva flag
-	switch {
-	case newCluster.Spec.Cloud.Openstack != nil:
-		if v, oldV := newCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider],
-			oldCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; v && !oldV {
-			if newCluster.ObjectMeta.Annotations == nil {
-				newCluster.ObjectMeta.Annotations = map[string]string{}
-			}
-
-			newCluster.ObjectMeta.Annotations[kubermaticv1.CCMMigrationNeededAnnotation] = ""
-			newCluster.ObjectMeta.Annotations[kubermaticv1.CSIMigrationNeededAnnotation] = ""
+	if v, oldV := newCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider],
+		oldCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; v && !oldV {
+		switch {
+		case newCluster.Spec.Cloud.Openstack != nil:
+			addCCMCSIMigrationAnnotations(newCluster)
 			newCluster.Spec.Cloud.Openstack.UseOctavia = pointer.BoolPtr(true)
+		case newCluster.Spec.Cloud.VSphere != nil:
+			addCCMCSIMigrationAnnotations(newCluster)
 		}
 	}
 
@@ -256,4 +253,13 @@ func (h *AdmissionHandler) mutateUpdate(ctx context.Context, oldCluster, newClus
 
 func (h *AdmissionHandler) SetupWebhookWithManager(mgr ctrlruntime.Manager) {
 	mgr.GetWebhookServer().Register("/mutate-kubermatic-k8s-io-cluster", &webhook.Admission{Handler: h})
+}
+
+func addCCMCSIMigrationAnnotations(cluster *kubermaticv1.Cluster) {
+	if cluster.ObjectMeta.Annotations == nil {
+		cluster.ObjectMeta.Annotations = map[string]string{}
+	}
+
+	cluster.ObjectMeta.Annotations[kubermaticv1.CCMMigrationNeededAnnotation] = ""
+	cluster.ObjectMeta.Annotations[kubermaticv1.CSIMigrationNeededAnnotation] = ""
 }

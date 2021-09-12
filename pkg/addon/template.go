@@ -112,6 +112,8 @@ func NewTemplateData(
 		storagePolicy = cluster.Spec.Cloud.VSphere.StoragePolicy
 	}
 
+	_, csiMigration := cluster.Annotations[kubermaticv1.CSIMigrationNeededAnnotation]
+
 	return &TemplateData{
 		DatacenterName: cluster.Spec.Cloud.DatacenterName,
 		Variables:      variables,
@@ -148,6 +150,7 @@ func NewTemplateData(
 				LoggingEnabled:    cluster.Spec.MLA != nil && cluster.Spec.MLA.LoggingEnabled,
 			},
 			StoragePolicy: storagePolicy,
+			CSIMigration:  csiMigration,
 		},
 	}, nil
 }
@@ -205,6 +208,8 @@ type ClusterData struct {
 	MLA MLASettings
 	// StoragePolicy is the storage policy to use for vsphere csi addon
 	StoragePolicy string
+	// CSIMigration indicates if the cluster needed the CSIMigration
+	CSIMigration bool
 }
 
 type ClusterNetwork struct {
