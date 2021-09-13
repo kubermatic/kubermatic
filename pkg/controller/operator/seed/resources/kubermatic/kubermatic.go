@@ -18,7 +18,11 @@ package kubermatic
 
 import (
 	"fmt"
+	"strings"
 
+	"go.uber.org/zap"
+
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -75,7 +79,7 @@ func ClusterRoleBindingCreator(cfg *operatorv1alpha1.KubermaticConfiguration, se
 	}
 }
 
-func BackupContainersConfigMapCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedConfigMapCreatorGetter {
+func BackupContainersConfigMapCreator(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, log *zap.SugaredLogger) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return backupContainersConfigMapName, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if c.Data == nil {
@@ -84,10 +88,18 @@ func BackupContainersConfigMapCreator(cfg *operatorv1alpha1.KubermaticConfigurat
 
 			c.Data[storeContainerKey] = cfg.Spec.SeedController.BackupStoreContainer
 			c.Data[cleanupContainerKey] = cfg.Spec.SeedController.BackupCleanupContainer
-			if cfg.Spec.SeedController.BackupRestore.Enabled {
-				c.Data[deleteContainerKey] = cfg.Spec.SeedController.BackupDeleteContainer
+
+			if cfg.Spec.SeedController.BackupStoreContainer == strings.TrimSpace(common.DefaultBackupStoreContainer) &&
+				seed.Spec.BackupRestore != nil {
+				c.Data[storeContainerKey] = strings.TrimSpace(common.DefaultNewBackupStoreContainer)
 			}
 
+			if cfg.Spec.SeedController.BackupDeleteContainer == "" {
+				cfg.Spec.SeedController.BackupDeleteContainer = strings.TrimSpace(common.DefaultNewBackupDeleteContainer)
+				log.Debugw("Defaulting field", "field", "seedController.backupDeleteContainer")
+			}
+
+			c.Data[deleteContainerKey] = cfg.Spec.SeedController.BackupDeleteContainer
 			return c, nil
 		}
 	}
