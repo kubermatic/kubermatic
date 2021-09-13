@@ -47,15 +47,14 @@ import (
 )
 
 const (
-	AccessKey       = "accessKey"
-	SecretKey       = "secretKey"
-	Bucket          = "bucket"
-	Endpoint        = "endpoint"
-	SecretName      = "metering-s3"
-	SecretNamespace = "kubermatic"
+	AccessKey  = "accessKey"
+	SecretKey  = "secretKey"
+	Bucket     = "bucket"
+	Endpoint   = "endpoint"
+	SecretName = "metering-s3"
 )
 
-var secretNamespacedName = types.NamespacedName{Name: SecretName, Namespace: SecretNamespace}
+var secretNamespacedName = types.NamespacedName{Name: SecretName, Namespace: resources.KubermaticNamespace}
 
 type configurationReq struct {
 	Enabled          bool   `json:"enabled"`
