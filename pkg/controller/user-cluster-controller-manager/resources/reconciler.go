@@ -52,6 +52,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -178,6 +179,12 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		}
 	} else {
 		if err := r.healthCheck(ctx); err != nil {
+			return err
+		}
+	}
+
+	if r.opaIntegration && !r.opaEnableMutation {
+		if err := r.ensureOPAExperimentalMutationWebhookIsRemoved(ctx); err != nil {
 			return err
 		}
 	}
@@ -516,7 +523,6 @@ func (r *reconciler) reconcileMutatingWebhookConfigurations(ctx context.Context,
 	if r.opaIntegration && r.opaEnableMutation {
 		creators = append(creators, gatekeeper.MutatingWebhookConfigurationCreator(r.opaWebhookTimeout))
 	}
-
 	if err := reconciling.ReconcileMutatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile MutatingWebhookConfigurations: %v", err)
 	}
@@ -836,6 +842,16 @@ func (r *reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context) error {
 		}
 	}
 
+	return nil
+}
+
+func (r *reconciler) ensureOPAExperimentalMutationWebhookIsRemoved(ctx context.Context) error {
+	if err := r.Client.Delete(ctx, &admissionregistrationv1.MutatingWebhookConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: resources.GatekeeperMutatingWebhookConfigurationName,
+		}}); err != nil && !errors.IsNotFound(err) {
+		return fmt.Errorf("failed to remove Mutation Webhook: %v", err)
+	}
 	return nil
 }
 
