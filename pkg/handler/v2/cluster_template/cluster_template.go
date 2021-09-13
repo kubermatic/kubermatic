@@ -96,7 +96,13 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 			return nil, err
 		}
 
-		kuberneteshelper.AddFinalizer(newClusterTemplate, apiv1.CredentialsSecretsCleanupFinalizer)
+		isBYO, err := common.IsBringYourOwnProvider(partialCluster.Spec.Cloud)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		if !isBYO {
+			kuberneteshelper.AddFinalizer(newClusterTemplate, apiv1.CredentialsSecretsCleanupFinalizer)
+		}
 
 		newClusterTemplate.Annotations[apiv1.InitialMachineDeploymentRequestAnnotation] = partialCluster.Annotations[apiv1.InitialMachineDeploymentRequestAnnotation]
 
