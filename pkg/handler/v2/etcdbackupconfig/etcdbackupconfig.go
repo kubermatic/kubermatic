@@ -270,14 +270,21 @@ func DecodePatchEtcdBackupConfigReq(c context.Context, r *http.Request) (interfa
 	return req, nil
 }
 
-func ProjectListEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func ProjectListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listProjectEtcdBackupConfigReq)
 		if err := req.validate(); err != nil {
 			return nil, err
 		}
 
-		ebcLists, err := listProjectEtcdBackupConfig(ctx, userInfoGetter, req.ProjectID)
+		// check if user has access to the project
+		_, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		ebcLists, err := listProjectEtcdBackupConfig(ctx, req.ProjectID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -489,19 +496,12 @@ func listEtcdBackupConfig(ctx context.Context, userInfoGetter provider.UserInfoG
 	return etcdBackupConfigProvider.List(userInfo, cluster)
 }
 
-func listProjectEtcdBackupConfig(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID string) ([]*kubermaticv1.EtcdBackupConfigList, error) {
-	adminUserInfo, privilegedEtcdBackupConfigProjectProvider, err := getAdminUserInfoPrivilegedEtcdBackupConfigProjectProvider(ctx, userInfoGetter)
-	if err != nil {
-		return nil, err
+func listProjectEtcdBackupConfig(ctx context.Context, projectID string) ([]*kubermaticv1.EtcdBackupConfigList, error) {
+	privilegedEtcdBackupConfigProjectProvider := ctx.Value(middleware.PrivilegedEtcdBackupConfigProjectProviderContextKey).(provider.PrivilegedEtcdBackupConfigProjectProvider)
+	if privilegedEtcdBackupConfigProjectProvider == nil {
+		return nil, errors.New(http.StatusInternalServerError, "error getting privileged provider")
 	}
-	if adminUserInfo.IsAdmin {
-		return privilegedEtcdBackupConfigProjectProvider.ListUnsecured(projectID)
-	}
-	userInfo, etcdBackupConfigProjectProvider, err := getUserInfoEtcdBackupConfigProjectProvider(ctx, userInfoGetter, projectID)
-	if err != nil {
-		return nil, err
-	}
-	return etcdBackupConfigProjectProvider.List(userInfo, projectID)
+	return privilegedEtcdBackupConfigProjectProvider.ListUnsecured(projectID)
 }
 
 func deleteEtcdBackupConfig(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID, etcdBackupConfigName string) error {
@@ -555,27 +555,4 @@ func getUserInfoEtcdBackupConfigProvider(ctx context.Context, userInfoGetter pro
 
 	etcdBackupConfigProvider := ctx.Value(middleware.EtcdBackupConfigProviderContextKey).(provider.EtcdBackupConfigProvider)
 	return userInfo, etcdBackupConfigProvider, nil
-}
-
-func getAdminUserInfoPrivilegedEtcdBackupConfigProjectProvider(ctx context.Context, userInfoGetter provider.UserInfoGetter) (*provider.UserInfo, provider.PrivilegedEtcdBackupConfigProjectProvider, error) {
-	userInfo, err := userInfoGetter(ctx, "")
-	if err != nil {
-		return nil, nil, err
-	}
-	if !userInfo.IsAdmin {
-		return userInfo, nil, nil
-	}
-	privilegedEtcdBackupConfigProjectProvider := ctx.Value(middleware.PrivilegedEtcdBackupConfigProjectProviderContextKey).(provider.PrivilegedEtcdBackupConfigProjectProvider)
-	return userInfo, privilegedEtcdBackupConfigProjectProvider, nil
-}
-
-func getUserInfoEtcdBackupConfigProjectProvider(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID string) (*provider.UserInfo, provider.EtcdBackupConfigProjectProvider, error) {
-
-	userInfo, err := userInfoGetter(ctx, projectID)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	etcdBackupConfigProjectProvider := ctx.Value(middleware.EtcdBackupConfigProjectProviderContextKey).(provider.EtcdBackupConfigProjectProvider)
-	return userInfo, etcdBackupConfigProjectProvider, nil
 }
