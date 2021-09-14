@@ -102,74 +102,45 @@ if we can apply some of their concepts to solve our requirements.
 
 ### KubeApps
 
-https://kubeapps.com/docs/
 
-KubeApps offers 2 ways to install applications to a cluster:
+[KubeApps](https://kubeapps.com/docs/) offers two ways to extend a kubernetes
+cluster. Either directly via Helm charts or indirectly by adding operators to
+handle the life-cycle of extensions.
 
-1. Helm charts
-2. Operator Lifecycle manager (Operator hub)
-
-#### Helm
-
-##### Sources
-
-Helm charts can be installed from public and private Helm repositories. The
-Bitnami repository is enabled by default, but other public repositories can be
-added easily. Private repositories like ChartMuseum, Harbor or Artifactory
-(pro) can also be added.
-
-There is a controller that watches an AppRepository CR and creates a cronjob
-for each that repeatedly scans the Helm charts available and stores the chart's
-metadata in KubeApps internal database.
-
-##### Installation
+Helm charts can be installed from public and private Helm repositories. By
+default some public Helm chart repositories are enabled, but other public
+repositories can be added easily. Private repositories like ChartMuseum, Harbor
+or Artifactory (pro) can also be added. There is a controller that watches an
+AppRepository CR and creates a cronjob for each. It repeatedly scans the Helm
+charts available and stores the chart's metadata in KubeApps internal database.
 
 Installation of Helm charts happens imperatively through the KubeApps API.
 Their roadmap states that they want to create plugin-based system and support
 both this imperative approach and also a declarative approach by adding flux as
 a plugin.
 
-#### Operators
-
-##### Sources
-
-If OLM is installed the KubeApps Dashboard also allows to install operators
-from the operator hub (and other sources added to OLM).
-
-##### Installation
-
-Once an operator is installed, applications managed by this operator get listed
-along with existing helm charts and are ready to be installed.
+If [OLM](https://olm.operatorframework.io) is installed the KubeApps Dashboard
+also allows to install operators from the operator hub (and other sources added
+to OLM). Once an operator is installed, applications managed by this operator
+get listed along with existing helm charts and are ready to be installed.
 
 ### Flux
 
-https://fluxcd.io/docs/use-cases/helm/
-https://fluxcd.io/docs/guides/helmreleases/
-https://github.com/fluxcd/helm-controller/blob/main/docs/spec/README.md
-
-Flux is a "GitOps toolkit" that conists of different tools to manage
+[Flux](https://fluxcd.io) is a "GitOps toolkit" that provides tools to manage
 applications based on helm charts in a fully declarative approach.
 
-#### Helm
-
-##### Sources
-
 An operator watches HelmRelease CRs and creates artifacts from charts found in
-Git repositories, Helm repositories and S3 buckets.
+Git repositories, Helm repositories and S3 buckets. Another operator watches
+HelmChart CRs which use HelmRelease CRs as kind of template. It checks for the
+availability of the referenced chart artifact and all required dependencies.
+It then fetches the artifact and takes all required Helm actions like install
+or upgrade to reach the desired state of the application. Helm test actions are
+also executed if they are defined. Retries, rollback or uninstall are executed
+as configured if any Helm action fails.
 
-##### Installation
-
-Another operator watches HelmChart CRs which use HelmRelease CRs as kind of
-template. It checks for the availability of the referenced chart artifact and
-all required dependencies and then fetches the artifact and takes all required
-Helm actions like install or upgrade to reach the desired state of the
-application.  If defiend Helm test actions are also executed. Retries, rollback
-or uninstall are executed as configured if any Helm action fails.
-
-#### Operators
-
-There is no concept for applications that are too complex to be installed
-directly via Helm charts.
+* https://fluxcd.io/docs/use-cases/helm/
+* https://fluxcd.io/docs/guides/helmreleases/
+* https://github.com/fluxcd/helm-controller/blob/main/docs/spec/README.md
 
 ### Operator Lifecycle Manager
 
@@ -178,61 +149,29 @@ https://olm.operatorframework.io/docs/
 OLM provides a declarative way to handle the lifecycle and dependencies of
 Kubernetes operators.
 
-#### Helm
-
-##### Sources
-
-With the operator SDK simple operators can be generated directly from Helm charts.
-
-##### Installation
-
-To install applications based on Helm charts the generated operators need to be
-installed and then a CR of the corresponding kind has to be created so the
-operator takes care of bringing the application up.
-
-#### Operators
-
-##### Sources
+With the operator SDK simple operators can be generated directly from Helm
+charts.  After installing these operators CR of the corresponding kind has to
+be created so the operator takes care of bringing the application up.
 
 Operators from operatorhub can be installed natively. The catalog of operators
 can be extended by 3rd-party catalogs or by bundeling own operators into
 catalogs.
 
-##### Installation
-
-After operators are being installed, creating the corresponding CRs trigger the
-installation of applications.
-
 ### Kyma Service Calatlog: Helm Broker
 
-https://kyma-project.io/docs/components/service-catalog/
-https://kyma-project.io/docs/components/helm-broker/
+[Kyma's Helm Broker](https://kyma-project.io/docs/components/helm-broker/) is
+an abstraction layer on top of Helm to provide Helm chart based services in
+[Kyma's Service
+Catalog](https://kyma-project.io/docs/components/service-catalog/)
 
-Kyma's Helm Broker implements the [Open Service Broker
-API](https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/profile.md#service-metadata)
-as an abstraction layer on top of Helm. It makes services deployed via Helm
-available the same way as cloud services.
+Helm charts get wrapped with all necessary information and metadata into
+so-called Addons. These addons are bundled in repositories and exposed as
+Service Classes in the Service Catalog.
 
-#### Helm
-
-##### Sources
-
-Helm charts are being exposed as Service Classes in a Service Catalog. To
-convert a Helm chart into a Service Class it is enriched with all necessary
-information and metadata into so-called Addons. To make these addons available
-they are bundled in repositories.
-
-##### Installation
-
-To provision such a Service in the cluster, the user creates a set of custom
+To provision such a Service in the cluster the user creates a set of custom
 resources (ServiceInstance, ServiceBinding, ServiceBindingUsage). The service
 broker then creates an instance of that service and injects a set of user
 credetials to make it ready to use.
-
-#### Operators
-
-There is no concept for applications that are too complex to be installed
-directly via Helm charts.
 
 ## Implementation Proposals
 
