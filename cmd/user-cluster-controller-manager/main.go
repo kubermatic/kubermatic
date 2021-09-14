@@ -91,6 +91,7 @@ type controllerRunOptions struct {
 	userClusterMonitoring        bool
 	prometheusScrapeConfigPrefix string
 	ccmMigration                 bool
+	ccmMigrationCompleted        bool
 	isKonnectivityEnabled        bool
 }
 
@@ -131,6 +132,7 @@ func main() {
 	flag.BoolVar(&runOp.userClusterMonitoring, "user-cluster-monitoring", false, "Enable monitoring in user cluster.")
 	flag.StringVar(&runOp.prometheusScrapeConfigPrefix, "prometheus-scrape-config-prefix", "prometheus-scraping", fmt.Sprintf("The name prefix of ConfigMaps in namespace %s, which will be used to add customized scrape configs for user cluster Prometheus.", resources.UserClusterMLANamespace))
 	flag.BoolVar(&runOp.ccmMigration, "ccm-migration", false, "Enable ccm migration in user cluster.")
+	flag.BoolVar(&runOp.ccmMigrationCompleted, "ccm-migration-completed", false, "cluster has been successfully migrated.")
 	flag.BoolVar(&runOp.isKonnectivityEnabled, "konnectivity-enabled", false, "Enable Konnectivity.")
 
 	flag.Parse()
@@ -272,6 +274,8 @@ func main() {
 		},
 		runOp.clusterName,
 		runOp.isKonnectivityEnabled,
+		runOp.ccmMigration,
+		runOp.ccmMigrationCompleted,
 		log,
 	); err != nil {
 		log.Fatalw("Failed to register user cluster controller", zap.Error(err))
