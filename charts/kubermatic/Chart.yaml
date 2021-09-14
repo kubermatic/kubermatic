@@ -14,7 +14,7 @@
 
 apiVersion: v1
 name: kubermatic
-version: 1.1.66
+version: 1.1.67
 appVersion: '__KUBERMATIC_TAG__'
 description: Kubermatic chart for master and/or seed clusters.
 deprecated: true
