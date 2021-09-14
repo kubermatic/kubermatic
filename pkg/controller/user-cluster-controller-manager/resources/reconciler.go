@@ -205,6 +205,12 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		}
 	}
 
+	if r.isKonnectivityEnabled {
+		if err := r.reconcileKonnectivityDeployments(ctx); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -772,10 +778,6 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 		coredns.DeploymentCreator(r.clusterSemVer),
 	}
 
-	if r.isKonnectivityEnabled {
-		kubeSystemCreators = append(kubeSystemCreators, konnectivity.DeploymentCreator(r.clusterURL.Hostname()))
-	}
-
 	if err := reconciling.ReconcileDeployments(ctx, kubeSystemCreators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Deployments in namespace %s: %v", metav1.NamespaceSystem, err)
 	}
@@ -801,6 +803,13 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 		}
 	}
 
+	return nil
+}
+
+func (r *reconciler) reconcileKonnectivityDeployments(ctx context.Context) error {
+	if err := reconciling.ReconcileDeployments(ctx, []reconciling.NamedDeploymentCreatorGetter{konnectivity.DeploymentCreator(r.clusterURL.Hostname())}, metav1.NamespaceSystem, r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile Deployments in namespace %s: %v", metav1.NamespaceSystem, err)
+	}
 	return nil
 }
 

@@ -85,6 +85,7 @@ set -x
   -log-debug=$KUBERMATIC_DEBUG \
   -log-format=Console \
   -logtostderr \
+  -tunneling-agent-ip=192.168.30.10 \
   -v=4 \
   -seed-kubeconfig=${SEED_KUBECONFIG} \
   -owner-email=${OWNER_EMAIL} \
