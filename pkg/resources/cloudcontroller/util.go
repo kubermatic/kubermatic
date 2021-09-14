@@ -66,6 +66,37 @@ func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cluste
 	}
 }
 
+// MigrationToExternalCloudControllerSupported checks if the cloud provider supports the migration to the
+// external CCM.
+func MigrationToExternalCloudControllerSupported(dc *kubermaticv1.Datacenter, cluster *kubermaticv1.Cluster, incompatibilities ...*version.ProviderIncompatibility) bool {
+	switch {
+	case cluster.Spec.Cloud.Openstack != nil:
+		// When using OpenStack external CCM with Open Telekom Cloud the creation
+		// of LBs fail as documented in the issue below:
+		// https://github.com/kubernetes/cloud-provider-openstack/issues/960
+		// Falling back to the in-tree CloudProvider mitigates the problem, even if
+		// not all features are expected to work properly (e.g.
+		// `manage-security-groups` should be set to false in cloud config, see
+		// https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
+		// for more details).
+		//
+		// TODO This is a dirty hack to temporarily support OTC using
+		// Openstack provider, remove this when dedicated OTC support is
+		// introduced in Kubermatic.
+		return !isOTC(dc.Spec.Openstack) && OpenStackCloudControllerSupported(cluster.Spec.Version)
+
+	case cluster.Spec.Cloud.VSphere != nil:
+		supported, err := version.IsSupported(cluster.Spec.Version.Version, kubermaticv1.ProviderVSphere, incompatibilities, version.ExternalCloudProviderCondition)
+		if err != nil {
+			return false
+		}
+		return supported
+
+	default:
+		return false
+	}
+}
+
 // ExternalCloudControllerClusterName checks if the ClusterFeatureCCMClusterName is supported
 // for the cloud provider.
 func ExternalCloudControllerClusterName(cluster *kubermaticv1.Cluster) bool {
