@@ -597,7 +597,7 @@ func MigrateEndpointToExternalCCM(ctx context.Context, userInfoGetter provider.U
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	if !cloudcontroller.ExternalCloudControllerFeatureSupported(dc, oldCluster, supportManager.GetIncompatibilities()...) {
+	if !cloudcontroller.MigrationToExternalCloudControllerSupported(dc, oldCluster, supportManager.GetIncompatibilities()...) {
 		return nil, errors.NewBadRequest("external CCM not supported by the given provider")
 	}
 
@@ -1053,7 +1053,7 @@ func getSSHKey(ctx context.Context, userInfoGetter provider.UserInfoGetter, sshK
 }
 
 func convertInternalCCMStatusToExternal(cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.Datacenter, incompatibilities ...*version.ProviderIncompatibility) apiv1.ExternalCCMMigrationStatus {
-	switch externalCCMEnabled, externalCCMSupported := cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider], cloudcontroller.ExternalCloudControllerFeatureSupported(datacenter, cluster, incompatibilities...); {
+	switch externalCCMEnabled, externalCCMSupported := cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider], cloudcontroller.MigrationToExternalCloudControllerSupported(datacenter, cluster, incompatibilities...); {
 
 	case externalCCMEnabled:
 		_, ccmOk := cluster.Annotations[kubermaticv1.CCMMigrationNeededAnnotation]
