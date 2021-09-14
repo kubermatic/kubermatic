@@ -218,3 +218,7 @@ func NeedCCMMigration(cluster *kubermaticv1.Cluster) bool {
 
 	return ccmOk && csiOk && !migrated
 }
+
+func CCMMigrationCompleted(cluster *kubermaticv1.Cluster) bool {
+	return ClusterConditionHasStatus(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue)
+}
