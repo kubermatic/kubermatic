@@ -134,6 +134,19 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return err
 	}
 
+	// This needs to happen after other secrets are created
+	// because it uses some secrets created in previous steps.
+	if data.IsKonnectivityEnabled() {
+		if err := r.ensureKonnectivitySecrets(ctx, cluster, data); err != nil {
+			return err
+		}
+
+		// check that all Deployments are available
+		if err := r.ensureKonnectivityDeployments(ctx, cluster, data); err != nil {
+			return err
+		}
+	}
+
 	// check that all CronJobs are created
 	if err := r.ensureCronJobs(ctx, cluster, data); err != nil {
 		return err
@@ -280,10 +293,6 @@ func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuth
 		kubernetesdashboard.DeploymentCreator(data),
 	}
 
-	if data.IsKonnectivityEnabled() {
-		deployments = append(deployments, konnectivity.DeploymentCreator(data))
-	}
-
 	if data.Cluster().Annotations[kubermaticv1.AnnotationNameClusterAutoscalerEnabled] != "" {
 		deployments = append(deployments, clusterautoscaler.DeploymentCreator(data))
 	}
@@ -304,8 +313,20 @@ func (r *Reconciler) ensureDeployments(ctx context.Context, cluster *kubermaticv
 	return reconciling.ReconcileDeployments(ctx, creators, cluster.Status.NamespaceName, r, reconciling.OwnerRefWrapper(resources.GetClusterRef(cluster)))
 }
 
+func (r *Reconciler) ensureKonnectivityDeployments(ctx context.Context, cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
+	creators := GetKonnectivityDeploymentCreators(data)
+	return reconciling.ReconcileDeployments(ctx, creators, cluster.Status.NamespaceName, r, reconciling.OwnerRefWrapper(resources.GetClusterRef(cluster)))
+}
+
+// GetKonnectivityDeploymentCreators returns all DeploymentCreators that are currently in use
+func GetKonnectivityDeploymentCreators(data *resources.TemplateData) []reconciling.NamedDeploymentCreatorGetter {
+	return []reconciling.NamedDeploymentCreatorGetter{
+		konnectivity.DeploymentCreator(data),
+	}
+}
+
 // GetSecretCreators returns all SecretCreators that are currently in use
-func (r *Reconciler) GetSecretCreators(data *resources.TemplateData, userClusterClient ctrlruntimeclient.Client) []reconciling.NamedSecretCreatorGetter {
+func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconciling.NamedSecretCreatorGetter {
 	creators := []reconciling.NamedSecretCreatorGetter{
 		certificates.RootCACreator(data),
 		openvpn.CACreator(),
@@ -339,11 +360,9 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData, userCluster
 	}
 
 	if data.IsKonnectivityEnabled() {
-		creators = append(creators, []reconciling.NamedSecretCreatorGetter{
-			konnectivity.AgentTokenCreator(userClusterClient),
-			konnectivity.ProxyKubeconfig(data),
+		creators = append(creators,
 			konnectivity.TLSServingCertificateCreator(data),
-		}...)
+			konnectivity.ProxyKubeconfig(data))
 	}
 
 	if flag := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; flag {
@@ -359,18 +378,33 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData, userCluster
 	return creators
 }
 
-func (r *Reconciler) ensureSecrets(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
+// GetKonnectivitySecretCreators returns all SecretCreators for konnectivity
+func (r *Reconciler) GetKonnectivitySecretCreators(data *resources.TemplateData, userClusterClient ctrlruntimeclient.Client) []reconciling.NamedSecretCreatorGetter {
+	return []reconciling.NamedSecretCreatorGetter{
+		konnectivity.AgentTokenCreator(userClusterClient),
+	}
+}
+
+func (r *Reconciler) ensureKonnectivitySecrets(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	var userClusterClient ctrlruntimeclient.Client
 	var err error
 
-	if data.IsKonnectivityEnabled() {
-		userClusterClient, err = r.userClusterConnProvider.GetClient(ctx, c)
-		if err != nil {
-			return fmt.Errorf("failed to get user-cluster client: %v", err)
-		}
+	userClusterClient, err = r.userClusterConnProvider.GetClient(ctx, c)
+	if err != nil {
+		return fmt.Errorf("failed to get user-cluster client: %v", err)
 	}
 
-	namedSecretCreatorGetters := r.GetSecretCreators(data, userClusterClient)
+	namedSecretCreatorGetters := r.GetKonnectivitySecretCreators(data, userClusterClient)
+
+	if err := reconciling.ReconcileSecrets(ctx, namedSecretCreatorGetters, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
+		return fmt.Errorf("failed to ensure that the Secret exists: %v", err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) ensureSecrets(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
+	namedSecretCreatorGetters := r.GetSecretCreators(data)
 
 	if err := reconciling.ReconcileSecrets(ctx, namedSecretCreatorGetters, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
 		return fmt.Errorf("failed to ensure that the Secret exists: %v", err)

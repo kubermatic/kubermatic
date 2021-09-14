@@ -84,6 +84,7 @@ set -x
   -version=${CLUSTER_VERSION} \
   -log-debug=$KUBERMATIC_DEBUG \
   -log-format=Console \
+  -tunneling-agent-ip=192.168.30.10\
   -logtostderr \
   -v=4 \
   -seed-kubeconfig=${SEED_KUBECONFIG} \
