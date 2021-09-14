@@ -1929,12 +1929,12 @@ func GenDefaultAPIBackupCredentials() *apiv2.BackupCredentials {
 func GenDefaultBackupCredentials() *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "s3-credentials",
-			Namespace: "kube-system",
+			Name:      resources.EtcdRestoreS3CredentialsSecret,
+			Namespace: metav1.NamespaceSystem,
 		},
 		StringData: map[string]string{
-			"ACCESS_KEY_ID":     "accessKeyId",
-			"SECRET_ACCESS_KEY": "secretAccessKey",
+			resources.EtcdBackupAndRestoreS3AccessKeyIDKey:        resources.AWSAccessKeyID,
+			resources.EtcdBackupAndRestoreS3SecretKeyAccessKeyKey: resources.AWSSecretAccessKey,
 		},
 	}
 }

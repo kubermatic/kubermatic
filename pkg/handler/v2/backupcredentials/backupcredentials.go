@@ -30,17 +30,11 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
-
-const (
-	accessKeyID                = "ACCESS_KEY_ID"
-	secretAccessKey            = "SECRET_ACCESS_KEY"
-	s3credentialsName          = "s3-credentials"
-	backupCredentialsNamespace = "kube-system"
 )
 
 func CreateOrUpdateEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
@@ -118,12 +112,12 @@ func DecodeBackupCredentialsReq(c context.Context, r *http.Request) (interface{}
 func convertAPIToInternalBackupCredentials(bc *apiv2.BackupCredentials) *v1.Secret {
 	return &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      s3credentialsName,
-			Namespace: backupCredentialsNamespace,
+			Name:      resources.EtcdRestoreS3CredentialsSecret,
+			Namespace: metav1.NamespaceSystem,
 		},
 		StringData: map[string]string{
-			accessKeyID:     bc.S3BackupCredentials.AccessKeyID,
-			secretAccessKey: bc.S3BackupCredentials.SecretAccessKey,
+			resources.EtcdBackupAndRestoreS3AccessKeyIDKey:        bc.S3BackupCredentials.AccessKeyID,
+			resources.EtcdBackupAndRestoreS3SecretKeyAccessKeyKey: bc.S3BackupCredentials.SecretAccessKey,
 		},
 	}
 }
