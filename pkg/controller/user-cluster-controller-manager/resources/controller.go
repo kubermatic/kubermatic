@@ -92,6 +92,8 @@ func Add(
 	userClusterMLA UserClusterMLA,
 	clusterName string,
 	konnectivity bool,
+	ccmMigration bool,
+	ccmMigrationCompleted bool,
 	log *zap.SugaredLogger) error {
 	r := &reconciler{
 		version:               version,
@@ -115,6 +117,8 @@ func Add(
 		cloudProvider:         kubermaticv1.ProviderType(cloudProviderName),
 		clusterName:           clusterName,
 		isKonnectivityEnabled: konnectivity,
+		ccmMigration:          ccmMigration,
+		ccmMigrationCompleted: ccmMigrationCompleted,
 	}
 
 	var err error
@@ -255,6 +259,8 @@ type reconciler struct {
 	cloudProvider         kubermaticv1.ProviderType
 	clusterName           string
 	isKonnectivityEnabled bool
+	ccmMigration          bool
+	ccmMigrationCompleted bool
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool

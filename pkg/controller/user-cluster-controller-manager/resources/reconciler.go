@@ -92,6 +92,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		userSSHKeys:    userSSHKeys,
 		cloudConfig:    cloudConfig,
 		csiCloudConfig: CSICloudConfig,
+		ccmMigration:   r.ccmMigration || r.ccmMigrationCompleted,
 	}
 
 	if r.userClusterMLA.Monitoring || r.userClusterMLA.Logging {
@@ -541,7 +542,7 @@ func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Contex
 		creators = append(creators, gatekeeper.ValidatingWebhookConfigurationCreator(r.opaWebhookTimeout))
 	}
 
-	if data.csiCloudConfig != nil {
+	if data.ccmMigration && data.csiCloudConfig != nil {
 		creators = append(creators, csimigration.ValidatingwebhookConfigurationCreator(data.caCert.Cert, metav1.NamespaceSystem, resources.VsphereCSIMigrationWebhookConfigurationWebhookName))
 	}
 
@@ -659,7 +660,9 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 
 	if data.csiCloudConfig != nil {
 		creators = append(creators, cloudcontroller.CloudConfig(data.csiCloudConfig, resources.CSICloudConfigSecretName))
-		creators = append(creators, csimigration.TLSServingCertificateCreator(data.caCert))
+		if data.ccmMigration {
+			creators = append(creators, csimigration.TLSServingCertificateCreator(data.caCert))
+		}
 	}
 
 	if r.userSSHKeyAgent {
@@ -840,6 +843,7 @@ type reconcileData struct {
 	cloudConfig      []byte
 	// csiCloudConfig is currently used only by vSphere, whose needs it to properly configure the external CSI driver
 	csiCloudConfig         []byte
+	ccmMigration           bool
 	monitoringRequirements *corev1.ResourceRequirements
 	loggingRequirements    *corev1.ResourceRequirements
 }

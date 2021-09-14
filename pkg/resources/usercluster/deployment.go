@@ -195,6 +195,10 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				args = append(args, "-ccm-migration")
 			}
 
+			if helper.CCMMigrationCompleted(data.Cluster()) {
+				args = append(args, "-ccm-migration-completed")
+			}
+
 			labelArgsValue, err := getLabelsArgValue(data.Cluster())
 			if err != nil {
 				return nil, fmt.Errorf("failed to get label args value: %v", err)
