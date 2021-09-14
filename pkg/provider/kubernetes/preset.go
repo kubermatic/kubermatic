@@ -480,6 +480,7 @@ func (m *PresetsProvider) setVsphereCredentials(userInfo *provider.UserInfo, pre
 	cloud.VSphere.VMNetName = credentials.VMNetName
 	cloud.VSphere.Datastore = credentials.Datastore
 	cloud.VSphere.DatastoreCluster = credentials.DatastoreCluster
+	cloud.VSphere.ResourcePool = credentials.ResourcePool
 	if cloud.VSphere.StoragePolicy == "" {
 		cloud.VSphere.StoragePolicy = dc.Spec.VSphere.DefaultStoragePolicy
 	}

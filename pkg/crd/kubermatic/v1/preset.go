@@ -284,6 +284,7 @@ type VSphere struct {
 	VMNetName        string `json:"vmNetName,omitempty"`
 	Datastore        string `json:"datastore,omitempty"`
 	DatastoreCluster string `json:"datastoreCluster,omitempty"`
+	ResourcePool     string `json:"resourcePool,omitempty"`
 }
 
 func (s VSphere) IsValid() bool {
