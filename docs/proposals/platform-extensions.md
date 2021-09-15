@@ -168,7 +168,7 @@ Service Classes in the Service Catalog.
 To provision such a Service in the cluster the user creates a set of custom
 resources (ServiceInstance, ServiceBinding, ServiceBindingUsage). The service
 broker then creates an instance of that service and injects a set of user
-credetials to make it ready to use.
+credentials to make it ready to use.
 
 ### Comparison Matrix
 
