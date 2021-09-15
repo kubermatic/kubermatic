@@ -23,7 +23,7 @@ import (
 
 const (
 	// EtcdBackupConfigResourceName represents "Resource" defined in Kubernetes
-	EtcdBackupConfigResourceName = "etcdbackupconfig"
+	EtcdBackupConfigResourceName = "etcdbackupconfigs"
 
 	// EtcdBackupConfigKindName represents "Kind" defined in Kubernetes
 	EtcdBackupConfigKindName = "EtcdBackupConfig"
