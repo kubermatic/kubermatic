@@ -21,16 +21,13 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-const (
-	s3CredentialsSecretName = "s3-credentials"
-	credentialsNamespace    = "kube-system"
 )
 
 // BackupCredentialsProvider struct that holds required components in order manage backup credentials
@@ -67,8 +64,8 @@ func (p *BackupCredentialsProvider) CreateUnsecured(credentials *corev1.Secret) 
 func (p *BackupCredentialsProvider) GetUnsecured() (*corev1.Secret, error) {
 	credentials := &corev1.Secret{}
 	err := p.clientPrivileged.Get(context.Background(), types.NamespacedName{
-		Name:      s3CredentialsSecretName,
-		Namespace: credentialsNamespace,
+		Name:      resources.EtcdRestoreS3CredentialsSecret,
+		Namespace: metav1.NamespaceSystem,
 	}, credentials)
 	return credentials, err
 }
