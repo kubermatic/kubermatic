@@ -38,7 +38,7 @@ type testOptions struct {
 }
 
 var options = testOptions{
-	kubernetesVersion: *semver.NewSemverOrDie("v1.20.2"),
+	kubernetesVersion: *semver.NewSemverOrDie("v1.20.11"),
 }
 
 func init() {
