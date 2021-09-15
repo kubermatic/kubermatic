@@ -172,6 +172,16 @@ resources (ServiceInstance, ServiceBinding, ServiceBindingUsage). The service
 broker then creates an instance of that service and injects a set of user
 credetials to make it ready to use.
 
+### Comparison Matrix
+
+|                        | KubeApps | Flux |  OLM  | Kyma |
+|------------------------|:--------:|:----:|:-----:|:----:|
+| Extensible sources     |    ✔️     |  ✔️   |   ✔️   |  ✔️   |
+| Dependency management  |    ✔️     |  ✔️   |   ✔️   |      |
+| Install/Update/Remove  |    ✔️     |  ✔️   |   ✔️   |  ✔️   |
+| Life-cycle tied to K8s |          |      |       |      |
+| Fully Declarative      |          |  ✔️   |   ✔️   |  ✔️   |
+
 ## Implementation Proposals
 
 (unordered list)
