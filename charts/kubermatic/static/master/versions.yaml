@@ -19,7 +19,8 @@ versions:
   version: 1.18.10
 - type: kubernetes
   version: 1.18.14
-- type: kubernetes
+- default: true
+  type: kubernetes
   version: 1.19.15
 - type: kubernetes
   version: 1.20.11
