@@ -119,7 +119,11 @@ func deleteSubnet(ctx context.Context, cloud kubermaticv1.CloudSpec, credentials
 		return err
 	}
 
-	deleteSubnetFuture, err := subnetsClient.Delete(ctx, cloud.Azure.ResourceGroup, cloud.Azure.VNetName, cloud.Azure.SubnetName)
+	var resourceGroup = cloud.Azure.ResourceGroup
+	if cloud.Azure.VNetResourceGroup != "" {
+		resourceGroup = cloud.Azure.VNetResourceGroup
+	}
+	deleteSubnetFuture, err := subnetsClient.Delete(ctx, resourceGroup, cloud.Azure.VNetName, cloud.Azure.SubnetName)
 	if err != nil {
 		return err
 	}
@@ -147,7 +151,11 @@ func deleteVNet(ctx context.Context, cloud kubermaticv1.CloudSpec, credentials C
 		return err
 	}
 
-	deleteVNetFuture, err := networksClient.Delete(ctx, cloud.Azure.ResourceGroup, cloud.Azure.VNetName)
+	var resourceGroup = cloud.Azure.ResourceGroup
+	if cloud.Azure.VNetResourceGroup != "" {
+		resourceGroup = cloud.Azure.VNetResourceGroup
+	}
+	deleteVNetFuture, err := networksClient.Delete(ctx, resourceGroup, cloud.Azure.VNetName)
 	if err != nil {
 		return err
 	}
