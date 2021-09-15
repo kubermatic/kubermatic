@@ -143,10 +143,8 @@ as configured if any Helm action fails.
 
 ### Operator Lifecycle Manager
 
-https://olm.operatorframework.io/docs/
-
-OLM provides a declarative way to handle the lifecycle and dependencies of
-Kubernetes operators.
+[OLM](https://olm.operatorframework.io/docs/) provides a declarative way to
+handle the lifecycle and dependencies of Kubernetes operators.
 
 With the operator SDK simple operators can be generated directly from Helm
 charts.  After installing these operators CR of the corresponding kind has to
@@ -176,11 +174,11 @@ credetials to make it ready to use.
 
 |                        | KubeApps | Flux |  OLM  | Kyma |
 |------------------------|:--------:|:----:|:-----:|:----:|
-| Extensible sources     |    ✔️     |  ✔️   |   ✔️   |  ✔️   |
-| Dependency management  |    ✔️     |  ✔️   |   ✔️   |      |
-| Install/Update/Remove  |    ✔️     |  ✔️   |   ✔️   |  ✔️   |
+| Extensible sources     |    ✅    |  ✅  |   ✅  |  ✅  |
+| Dependency management  |    ✅    |  ✅  |   ✅  |      |
+| Install/Update/Remove  |    ✅    |  ✅  |   ✅  |  ✅  |
 | Life-cycle tied to K8s |          |      |       |      |
-| Fully Declarative      |          |  ✔️   |   ✔️   |  ✔️   |
+| Fully Declarative      |          |  ✅  |   ✅  |  ✅  |
 
 ## Implementation Proposals
 
