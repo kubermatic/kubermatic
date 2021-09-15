@@ -471,7 +471,7 @@ const (
 	EtcdTLSKeySecretKey = "etcd-tls.key"
 
 	// EtcdRestoreS3CredentialsSecret names the secret expected in seed kube-system that must contain S3 credentials for etcd backup restores
-	EtcdRestoreS3CredentialsSecret              = "s3"
+	EtcdRestoreS3CredentialsSecret              = "backup-s3"
 	EtcdBackupAndRestoreS3AccessKeyIDKey        = "ACCESS_KEY_ID"
 	EtcdBackupAndRestoreS3SecretKeyAccessKeyKey = "SECRET_ACCESS_KEY"
 
@@ -1247,10 +1247,10 @@ func GetEtcdRestoreS3Client(ctx context.Context, restore *kubermaticv1.EtcdResto
 			return nil, "", fmt.Errorf("BackupDownloadCredentialsSecret not set")
 		}
 
-		// create BackupDownloadCredentialsSecret containing values from kubermatic/s3 / kube-system/s3-settings
+		// create BackupDownloadCredentialsSecret containing values from kube-system/backup-s3 / kube-system/s3-settings
 
 		credsSecret := &corev1.Secret{}
-		if err := client.Get(ctx, types.NamespacedName{Namespace: KubermaticNamespace, Name: EtcdRestoreS3CredentialsSecret}, credsSecret); err != nil {
+		if err := client.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: EtcdRestoreS3CredentialsSecret}, credsSecret); err != nil {
 			return nil, "", fmt.Errorf("failed to get s3 credentials secret %v/%v: %w", metav1.NamespaceSystem, EtcdRestoreS3CredentialsSecret, err)
 		}
 		settingsConfigMap := &corev1.ConfigMap{}
