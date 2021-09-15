@@ -199,9 +199,7 @@ var (
 			semver.MustParse("v1.18.8"),
 			semver.MustParse("v1.18.10"),
 			// Kubernetes 1.19
-			semver.MustParse("v1.19.0"),
-			semver.MustParse("v1.19.2"),
-			semver.MustParse("v1.19.3"),
+			semver.MustParse("v1.19.15"),
 		},
 		Updates: []operatorv1alpha1.Update{
 			{
@@ -272,6 +270,12 @@ var (
 				// Allow to change to any patch version
 				From: "1.19.*",
 				To:   "1.19.*",
+			},
+			{
+				// Auto-upgrade because of CVE-2021-25741
+				From:      ">= 1.19.0, < 1.19.15",
+				To:        "1.19.15",
+				Automatic: pointer.BoolPtr(true),
 			},
 		},
 	}

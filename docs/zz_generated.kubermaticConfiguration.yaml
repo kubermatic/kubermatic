@@ -448,6 +448,9 @@ spec:
           to: 1.19.*
         - from: 1.19.*
           to: 1.19.*
+        - automatic: true
+          from: '>= 1.19.0, < 1.19.15'
+          to: 1.19.15
       # Versions lists the available versions.
       versions:
         - 1.17.9
@@ -457,9 +460,7 @@ spec:
         - 1.18.6
         - 1.18.8
         - 1.18.10
-        - 1.19.0
-        - 1.19.2
-        - 1.19.3
+        - 1.19.15
     # Openshift configures the Openshift versions and updates.
     openshift:
       # Default is the default version to offer users.
