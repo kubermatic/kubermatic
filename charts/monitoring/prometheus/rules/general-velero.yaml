@@ -21,8 +21,8 @@ groups:
         annotations:
           message: Last backup with schedule {{ $labels.schedule }} has not finished successfully within 60min.
           runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-velerobackuptakestoolong
-        expr: (increase(velero_backup_attempt_total[60m]) - increase(velero_backup_failure_total[60m])) > 0
-        for: 60m
+        expr: time() - velero_backup_last_successful_timestamp{schedule!=""} > 3600
+        for: 5m
         labels:
           severity: warning
           resource: '{{ $labels.schedule }}'
