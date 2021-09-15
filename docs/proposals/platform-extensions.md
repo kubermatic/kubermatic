@@ -102,7 +102,6 @@ if we can apply some of their concepts to solve our requirements.
 
 ### KubeApps
 
-
 [KubeApps](https://kubeapps.com/docs/) offers two ways to extend a kubernetes
 cluster. Either directly via Helm charts or indirectly by adding operators to
 handle the life-cycle of extensions.
@@ -162,7 +161,7 @@ catalogs.
 [Kyma's Helm Broker](https://kyma-project.io/docs/components/helm-broker/) is
 an abstraction layer on top of Helm to provide Helm chart based services in
 [Kyma's Service
-Catalog](https://kyma-project.io/docs/components/service-catalog/)
+Catalog](https://kyma-project.io/docs/components/service-catalog/).
 
 Helm charts get wrapped with all necessary information and metadata into
 so-called Addons. These addons are bundled in repositories and exposed as
