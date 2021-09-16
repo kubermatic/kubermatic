@@ -38,6 +38,10 @@ updates:
 - from: 1.19.*
   to: 1.19.*
   type: kubernetes
+- automatic: true
+  from: '>= 1.19.0, < 1.19.15'
+  to: 1.19.15
+  type: kubernetes
 - from: 4.1.*
   to: 4.1.*
   type: openshift

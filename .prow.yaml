@@ -404,7 +404,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.19.3"
+          value: "v1.19.15"
         - name: EXCLUDE_DISTRIBUTIONS
           value: "centos,flatcar,coreos,rhel"
         - name: SERVICE_ACCOUNT_KEY
@@ -447,7 +447,7 @@ presubmits:
         - name: ONLY_TEST_CREATION
           value: "true"
         - name: VERSIONS_TO_TEST
-          value: "v1.19.3"
+          value: "v1.19.15"
         - name: EXCLUDE_DISTRIBUTIONS
           value: "centos,flatcar,coreos,rhel"
         - name: SERVICE_ACCOUNT_KEY
@@ -493,7 +493,7 @@ presubmits:
         - name: USE_LEGACY_HELM_CHART
           value: "true"
         - name: VERSIONS_TO_TEST
-          value: "v1.19.3"
+          value: "v1.19.15"
         - name: EXCLUDE_DISTRIBUTIONS
           value: "centos,flatcar,coreos,rhel"
         - name: SERVICE_ACCOUNT_KEY
@@ -538,7 +538,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.19.3"
+          value: "v1.19.15"
         - name: EXCLUDE_DISTRIBUTIONS
           value: "centos,coreos,flatcar,rhel"
         - name: PROVIDER
@@ -584,7 +584,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.19.3"
+          value: "v1.19.15"
         - name: PROVIDER
           value: "gcp"
         - name: EXCLUDE_DISTRIBUTIONS
@@ -627,7 +627,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.19.3"
+          value: "v1.19.15"
         - name: PROVIDER
           value: "gcp"
         - name: EXCLUDE_DISTRIBUTIONS
@@ -675,7 +675,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.19.3"
+          value: "v1.19.15"
         - name: EXCLUDE_DISTRIBUTIONS
           value: "ubuntu,coreos,flatcar,rhel"
         - name: PROVIDER
@@ -718,7 +718,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.19.3"
+          value: "v1.19.15"
         - name: PROVIDER
           value: "packet"
         - name: EXCLUDE_DISTRIBUTIONS
@@ -761,7 +761,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.19.3"
+          value: "v1.19.15"
         - name: PROVIDER
           value: "kubevirt"
         - name: EXCLUDE_DISTRIBUTIONS
@@ -804,7 +804,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.19.3"
+          value: "v1.19.15"
         - name: PROVIDER
           value: "hetzner"
         # Hetzner doesn't support coreos
@@ -850,7 +850,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.19.3"
+          value: "v1.19.15"
         - name: PROVIDER
           value: "openstack"
         - name: EXCLUDE_DISTRIBUTIONS
@@ -895,7 +895,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.19.3"
+          value: "v1.19.15"
         - name: PROVIDER
           value: "openstack"
         - name: DEFAULT_TIMEOUT_MINUTES
@@ -940,7 +940,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.19.3"
+          value: "v1.19.15"
         - name: PROVIDER
           value: "vsphere"
         - name: EXCLUDE_DISTRIBUTIONS
@@ -984,7 +984,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.19.3"
+          value: "v1.19.15"
         - name: PROVIDER
           value: "vsphere"
         - name: EXCLUDE_DISTRIBUTIONS
@@ -1030,7 +1030,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.19.3"
+          value: "v1.19.15"
         - name: PROVIDER
           value: "vsphere"
         - name: EXCLUDE_DISTRIBUTIONS
