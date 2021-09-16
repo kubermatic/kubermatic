@@ -8,17 +8,29 @@ updates:
 - from: 1.19.*
   to: 1.19.*
   type: kubernetes
+- automatic: true
+  from: '>= 1.19.0, < 1.19.15'
+  to: 1.19.15
+  type: kubernetes
 - from: 1.19.*
   to: 1.20.*
   type: kubernetes
 - from: 1.20.*
   to: 1.20.*
   type: kubernetes
+- automatic: true
+  from: '>= 1.20.0, < 1.20.11'
+  to: 1.20.11
+  type: kubernetes
 - from: 1.20.*
   to: 1.21.*
   type: kubernetes
 - from: 1.21.*
   to: 1.21.*
+  type: kubernetes
+- automatic: true
+  from: '>= 1.21.0, < 1.21.5'
+  to: 1.21.5
   type: kubernetes
 - from: 1.21.*
   to: 1.22.*

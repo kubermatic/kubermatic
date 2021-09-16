@@ -43,7 +43,7 @@ import (
 )
 
 const (
-	kubernetesVersion = "v1.22.1"
+	kubernetesVersion = "v1.22.2"
 	datacenterName    = "testdc"
 	projectID         = "testproject"
 )

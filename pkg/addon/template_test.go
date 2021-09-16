@@ -105,7 +105,7 @@ func testRenderAddonsForOrchestrator(t *testing.T, orchestrator string) {
 }
 
 func TestNewTemplateData(t *testing.T) {
-	version := semver.NewSemverOrDie("v1.22.1")
+	version := semver.NewSemverOrDie("v1.22.2")
 	feature := "myfeature"
 	cluster := kubermaticv1.Cluster{
 		Spec: kubermaticv1.ClusterSpec{
