@@ -549,7 +549,12 @@ func (r *Reconciler) cleanupManifests(ctx context.Context, log *zap.SugaredLogge
 	}
 	defer done()
 
-	cmd := deleteCommand(ctx, kubeconfigFilename, manifestFilename)
+	binary, err := kubectl.BinaryForClusterVersion(cluster.Spec.Version.Version)
+	if err != nil {
+		return fmt.Errorf("failed to determine kubectl binary to use: %w", err)
+	}
+
+	cmd := exec.CommandContext(ctx, binary, "--kubeconfig", kubeconfigFilename, "delete", "-f", manifestFilename, "--ignore-not-found")
 	cmdLog := log.With("cmd", strings.Join(cmd.Args, " "))
 
 	cmdLog.Debug("Deleting resources...")
@@ -591,10 +596,6 @@ func (r *Reconciler) ensureRequiredResourceTypesExist(ctx context.Context, log *
 	}
 
 	return nil, nil
-}
-
-func deleteCommand(ctx context.Context, kubeconfigFilename, manifestFilename string) *exec.Cmd {
-	return exec.CommandContext(ctx, "kubectl", "--kubeconfig", kubeconfigFilename, "delete", "-f", manifestFilename, "--ignore-not-found")
 }
 
 func setAddonCodition(a *kubermaticv1.Addon, condType kubermaticv1.AddonConditionType, status corev1.ConditionStatus) {
