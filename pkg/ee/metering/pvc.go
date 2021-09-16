@@ -65,11 +65,7 @@ func persistentVolumeClaimCreator(ctx context.Context, client ctrlruntimeclient.
 		return err
 	}
 
-	if err := updatePVCStorageSizeAndName(pvc, seed); err != nil {
-		return fmt.Errorf("failed to update pvc storage class name or size: %v", err)
-	}
-
-	return client.Update(ctx, pvc)
+	return nil
 }
 
 func updatePVCStorageSizeAndName(pvc *corev1.PersistentVolumeClaim, seed *kubermaticv1.Seed) error {
