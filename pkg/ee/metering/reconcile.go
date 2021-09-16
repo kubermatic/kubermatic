@@ -28,6 +28,7 @@ import (
 	"context"
 	"fmt"
 
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -54,15 +55,18 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 		return fmt.Errorf("failed to reconcile metering ClusterRoleBindings: %v", err)
 	}
 
+	modifiers := []reconciling.ObjectModifier{
+		common.VolumeRevisionLabelsModifierFactory(ctx, client),
+	}
 	if err := reconciling.ReconcileCronJobs(ctx, []reconciling.NamedCronJobCreatorGetter{
 		cronJobCreator(seed.Name),
-	}, resources.KubermaticNamespace, client); err != nil {
+	}, resources.KubermaticNamespace, client, modifiers...); err != nil {
 		return fmt.Errorf("failed to reconcile metering CronJob: %v", err)
 	}
 
 	if err := reconciling.ReconcileDeployments(ctx, []reconciling.NamedDeploymentCreatorGetter{
 		deploymentCreator(seed),
-	}, resources.KubermaticNamespace, client); err != nil {
+	}, resources.KubermaticNamespace, client, modifiers...); err != nil {
 		return fmt.Errorf("failed to reconcile metering Deployment: %v", err)
 	}
 
