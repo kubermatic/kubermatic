@@ -148,7 +148,7 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 			}, getNetworkArgs(data)...)
 
 			if data.IsKonnectivityEnabled() {
-				args = append(args, "-konnectivity-enabled", "true")
+				args = append(args, "-konnectivity-enabled=true")
 			}
 
 			if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
