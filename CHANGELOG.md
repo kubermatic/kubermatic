@@ -214,6 +214,27 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 
 # Kubermatic 2.17
 
+## [v2.17.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.17.4)
+
+### Security
+
+Two vulnerabilities were identified in Kubernetes ([CVE-2021-25741](https://github.com/kubernetes/kubernetes/issues/104980) and [CVE-2020-8561](https://github.com/kubernetes/kubernetes/issues/104720)) of which one (CVE-2021-25741) was fixed in Kubernetes 1.19.15 / 1.20.11 / 1.21.5. CVE-2020-8561 is mitigated by Kubermatic not allowing users to reconfigure the kube-apiserver.
+
+Because of these updates, this KKP release includes automatic update rules for all 1.19/1.20/1.21 clusters older than these patch releases. This release also removes all affected Kubernetes versions from the list of supported versions. While CVE-2020-8561 affects the controlplane, CVE-2021-25741 affects the kubelets, which means that updating the controlplane is not enough. Once the automated controlplane updates have completed, an administrator must manually patch all vulnerable `MachineDeployment`s in all affected userclusters.
+
+To lower the resource consumption on the seed clusters during the reconciliation / node rotation, it's recommended to adjust the `spec.seedControllerManager.maximumParallelReconciles` option in the `KubermaticConfiguration` to restrict the number of parallel updates. Users of the legacy `kubermatic` Helm chart need to update `kubermatic.maxParallelReconcile` in their `values.yaml` to achieve the same effect.
+
+The automatic update rules can, if needed, be overwritten using the `spec.versions.kubernetes.updates` field in the `KubermaticConfiguration` or updating the `updates.yaml` if using the legacy `kubermatic` Helm chart. See [#7825](https://github.com/kubermatic/kubermatic/issues/7824) for how the versions and updates are configured. It is however not recommended to deviate from the default and leave userclusters vulnerable.
+
+### Misc
+
+- Add support of Kubernetes 1.20 and 1.21 in cluster-autoscaler addon ([#7511](https://github.com/kubermatic/kubermatic/issues/7511))
+- Remove Gatekeeper from the default accessible addon list ([#7533](https://github.com/kubermatic/kubermatic/issues/7533))
+- Fix dashboard source in the Prometheus Exporter dashboard ([#7640](https://github.com/kubermatic/kubermatic/issues/7640))
+
+
+
+
 ## [v2.17.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.17.3)
 
 ### Bugfixes
@@ -410,6 +431,27 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 
 
 # Kubermatic 2.16
+
+## [v2.16.12](https://github.com/kubermatic/kubermatic/releases/tag/v2.16.12)
+
+### Security
+
+Two vulnerabilities were identified in Kubernetes ([CVE-2021-25741](https://github.com/kubernetes/kubernetes/issues/104980) and [CVE-2020-8561](https://github.com/kubernetes/kubernetes/issues/104720)), of which one (CVE-2021-25741) was fixed in Kubernetes 1.19.15 / 1.20.11. CVE-2020-8561 is mitigated by Kubermatic not allowing users to reconfigure the kube-apiserver.
+
+Because of these updates, this KKP release includes automatic update rules for all 1.19/1.20 clusters older than 1.19.15 / 1.20.11. This release also removes all affected Kubernetes versions from the list of supported versions. While CVE-2020-8561 affects the controlplane, CVE-2021-25741 affects the kubelets, which means that updating the controlplane is not enough. Once the automated controlplane updates have completed, an administrator must manually patch all vulnerable `MachineDeployment`s in all affected userclusters.
+
+To lower the resource consumption on the seed clusters during the reconciliation / node rotation, it's recommended to adjust the `spec.seedControllerManager.maximumParallelReconciles` option in the `KubermaticConfiguration` to restrict the number of parallel updates. Users of the legacy `kubermatic` Helm chart need to update `kubermatic.maxParallelReconcile` in their `values.yaml` to achieve the same effect.
+
+The automatic update rules can, if needed, be overwritten using the `spec.versions.kubernetes.updates` field in the `KubermaticConfiguration` or updating the `updates.yaml` if using the legacy `kubermatic` Helm chart. See [#7824](https://github.com/kubermatic/kubermatic/issues/7824) for how the versions and updates are configured. It is however not recommended to deviate from the default and leave userclusters vulnerable.
+
+### Misc
+
+- Add support of Kubernetes 1.20 in cluster-autoscaler addon ([#7521](https://github.com/kubermatic/kubermatic/issues/7521))
+- Remove Gatekeeper from default accessible addon list ([#7532](https://github.com/kubermatic/kubermatic/issues/7532))
+- Fix dashboard source in the Prometheus Exporter dashboard ([#7640](https://github.com/kubermatic/kubermatic/issues/7640))
+
+
+
 
 ## [v2.16.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.16.11)
 
@@ -727,6 +769,28 @@ as well as the [2.16 upgrade notes](https://docs.kubermatic.com/kubermatic/v2.16
 
 # Kubermatic 2.15
 
+## [v2.15.13](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.13)
+
+This is the last planned release for the `release/v2.15` branch. Uses are encouraged to update at least to 2.16 to receive future updates.
+
+### Security
+
+Two vulnerabilities were identified in Kubernetes ([CVE-2021-25741](https://github.com/kubernetes/kubernetes/issues/104980) and [CVE-2020-8561](https://github.com/kubernetes/kubernetes/issues/104720)) of which one (CVE-2021-25741) was fixed in Kubernetes 1.19.15. CVE-2020-8561 is mitigated by Kubermatic not allowing users to reconfigure the kube-apiserver.
+
+Because of these updates, this KKP release includes an automatic update rule for all 1.19 clusters older than 1.19.15. This release also removes all affected Kubernetes versions from the list of supported versions. While CVE-2020-8561 affects the controlplane, CVE-2021-25741 affects the kubelets, which means that updating the controlplane is not enough. Once the automated controlplane updates have completed, an administrator must manually patch all vulnerable `MachineDeployment`s in all affected userclusters.
+
+To lower the resource consumption on the seed clusters during the reconciliation / node rotation, it's recommended to adjust the `spec.seedControllerManager.maximumParallelReconciles` option in the `KubermaticConfiguration` to restrict the number of parallel updates. Users of the legacy `kubermatic` Helm chart need to update `kubermatic.maxParallelReconcile` in their `values.yaml` to achieve the same effect.
+
+The automatic update rules can, if needed, be overwritten using the `spec.versions.kubernetes.updates` field in the `KubermaticConfiguration` or updating the `updates.yaml` if using the legacy `kubermatic` Helm chart. See [#7823](https://github.com/kubermatic/kubermatic/issues/7823) for how the versions and updates are configured. It is however not recommended to deviate from the default and leave userclusters vulnerable.
+
+### Misc
+
+- Upgrade machine-controller to v1.19.2 ([#7164](https://github.com/kubermatic/kubermatic/issues/7164))
+- Fix dashboard source in the Prometheus Exporter dashboard ([#7640](https://github.com/kubermatic/kubermatic/issues/7640))
+
+
+
+
 ## [v2.15.12](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.12)
 
 ### Misc
@@ -737,6 +801,7 @@ as well as the [2.16 upgrade notes](https://docs.kubermatic.com/kubermatic/v2.16
 ### UI
 
 - Rename every occurrence of "Node Deployment" in the UI to "Machine Deployment" [#3282](https://github.com/kubermatic/dashboard/issues/3282) ([cedi](https://github.com/cedi))
+
 
 
 
