@@ -35,6 +35,9 @@ spec:
         - '{"command":"/bin/vsphere-cloud-controller-manager","args":["--v=2","--cloud-provider=vsphere","--cloud-config=/etc/cloud/config","--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig"]}'
         command:
         - /http-prober-bin/http-prober
+        env:
+        - name: SSL_CERT_FILE
+          value: /etc/kubermatic/certs/ca-bundle.pem
         image: gcr.io/cloud-provider-vsphere/cpi/release/manager:v1.19.1
         name: cloud-controller-manager
         resources:
@@ -50,6 +53,9 @@ spec:
           readOnly: true
         - mountPath: /etc/cloud
           name: cloud-config
+        - mountPath: /etc/kubermatic/certs
+          name: ca-bundle
+          readOnly: true
         - mountPath: /http-prober-bin
           name: http-prober-bin
       - args:
@@ -115,6 +121,9 @@ spec:
       - configMap:
           name: cloud-config
         name: cloud-config
+      - configMap:
+          name: ca-bundle
+        name: ca-bundle
       - emptyDir: {}
         name: http-prober-bin
 status: {}
