@@ -25,6 +25,19 @@ alertmanager:
   replicas: 3
   storageSize: 100Mi
   storageClass: kubermatic-fast
+  sidecarContainers: {}
+    # specify additional sidecars in format {"name": container_spec}
+    # sidecar-name:
+    #  args: ["command", "args", "here"]
+    #  image: some/image:latest
+  sidecarServicePorts: {}
+    # specify ports to expose in a service in format {"name": port_spec}
+    # port-name:
+    #   port: 8080
+    #   protocol: TCP
+    #   targetPort: 8080
+
+
 
   config:
     global:
