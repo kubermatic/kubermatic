@@ -116,14 +116,15 @@ func (c *Client) fetchLoginURL(ctx context.Context) (*url.URL, error) {
 		return nil, fmt.Errorf("invalid provider URL %q: %v", c.ProviderURI, err)
 	}
 
+	// make sure we are seeing the email login form immediately
+	loginURL.Path += "/local"
+
 	params := loginURL.Query()
 	params.Set("client_id", c.ClientID)
 	params.Set("redirect_uri", c.RedirectURI)
 	params.Set("response_type", "id_token")
 	params.Set("scope", "openid profile email")
 	params.Set("nonce", "not-actually-a-nonce")
-	// make sure we are redirected and not greeted with a "choose your login method page"
-	params.Set("connector_id", "local")
 	loginURL.RawQuery = params.Encode()
 
 	c.log.Debugw("Fetching OIDC login page", "url", loginURL.String())
