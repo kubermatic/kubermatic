@@ -1,8 +1,16 @@
 # Kubermatic 2.18
 
+## [v2.18.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.0)
+
 Before upgrading, make sure to read the [general upgrade guidelines](https://docs.kubermatic.com/kubermatic/v2.18/upgrading/guidelines/). Consider tweaking `seedControllerManager.maximumParallelReconciles` to ensure usercluster reconciliations will not cause resource exhausting on seed clusters.
 
-## [v2.18.0-rc.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.0-rc.0)
+Two vulnerabilities were identified in Kubernetes ([CVE-2021-25741](https://github.com/kubernetes/kubernetes/issues/104980) and [CVE-2020-8561](https://github.com/kubernetes/kubernetes/issues/104720)) of which one (CVE-2021-25741) was fixed in Kubernetes 1.19.15 / 1.20.11 / 1.21.5 / 1.22.2. CVE-2020-8561 is mitigated by Kubermatic not allowing users to reconfigure the kube-apiserver.
+
+Because of these updates, this KKP release includes automatic update rules for all 1.19/1.20/1.21/1.22 clusters older than these patch releases. This release also removes all affected Kubernetes versions from the list of supported versions. While CVE-2020-8561 affects the controlplane, CVE-2021-25741 affects the kubelets, which means that updating the controlplane is not enough. Once the automated controlplane updates have completed, an administrator must manually patch all vulnerable `MachineDeployment`s in all affected userclusters.
+
+To lower the resource consumption on the seed clusters during the reconciliation / node rotation, it's recommended to adjust the `spec.seedControllerManager.maximumParallelReconciles` option in the `KubermaticConfiguration` to restrict the number of parallel updates.
+
+The automatic update rules can, if needed, be overwritten using the `spec.versions.kubernetes.updates` field in the `KubermaticConfiguration`. See [#7825](https://github.com/kubermatic/kubermatic/issues/7824) for how the versions and updates are configured. It is however not recommended to deviate from the default and leave userclusters vulnerable.
 
 ### Highlights
 
@@ -28,7 +36,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
   to use the `kubermatic-operator` Helm chart or, even better, use the KKP installer. The KKP operator will automatically manage the
   nodeport-proxy, so the chart is not required anymore.
 - The `cert-manager` Helm chart requires admins to set the Let's Encrypt account email explicitly ([#7184](https://github.com/kubermatic/kubermatic/issues/7184))
-- The new backup mechanism replaces the old mechanism and is not backwards compatible. Furthermore the admin of the platform needs to enable the backup mechanism as described in the [documentation](https://docs.kubermatic.com/kubermatic/master/cheat_sheets/etcd/backup-and-restore/).
+- The experimental new backup mechanism was updated and available as an opt-in option per Seed. If enabled, it will replace the old backups and is not backwards compatible. Users that are already using the experimental backup mechanism, be aware that to prepare it for regular use, we made some changes, admins please check the [documentation](https://docs.kubermatic.com/kubermatic/master/cheat_sheets/etcd/backup-and-restore/).
 
 ### Supported Kubernetes Versions
 
@@ -88,6 +96,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Limit number of simultaneously running etcd backup delete jobs ([#6952](https://github.com/kubermatic/kubermatic/issues/6952))
 - Add API endpoint for creating/updating S3 backup credentials per Seed ([#7641](https://github.com/kubermatic/kubermatic/issues/7641))
 - Move backup and restore configuration to Seed resource to allow to have different s3-settings ([#7428](https://github.com/kubermatic/kubermatic/issues/7428))
+- Enable Etcd-launcher by default ([#7821](https://github.com/kubermatic/kubermatic/issues/7821))
 
 #### Enhancements on Open Policy Agent Integration
 
@@ -178,6 +187,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Re-enable NodeLocal DNS Cache in user clusters ([#7075](https://github.com/kubermatic/kubermatic/issues/7075))
 - The Spec for the user-cluster etcd Statefulset was updated; this will cause the etcd pods for user-clusters to be restarted on KKP upgrade ([#6975](https://github.com/kubermatic/kubermatic/issues/6975))
 - Users can now enable/disable konnectivity on their clusters ([#7679](https://github.com/kubermatic/kubermatic/issues/7679))
+- Add vSphere resource pool to the preset ([#7796](https://github.com/kubermatic/kubermatic/issues/7796))
 
 ### Bugfixes
 
