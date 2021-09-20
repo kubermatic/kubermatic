@@ -41,7 +41,7 @@ karma:
       pullPolicy: IfNotPresent
     initContainer:
       repository: quay.io/kubermatic/util
-      tag: 1.5.0
+      tag: 2.0.0
       pullPolicy: IfNotPresent
   resources:
     karma:
