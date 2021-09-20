@@ -36,7 +36,7 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
   to use the `kubermatic-operator` Helm chart or, even better, use the KKP installer. The KKP operator will automatically manage the
   nodeport-proxy, so the chart is not required anymore.
 - The `cert-manager` Helm chart requires admins to set the Let's Encrypt account email explicitly ([#7184](https://github.com/kubermatic/kubermatic/issues/7184))
-- The new backup mechanism replaces the old mechanism and is not backwards compatible. Furthermore the admin of the platform needs to enable the backup mechanism as described in the [documentation](https://docs.kubermatic.com/kubermatic/master/cheat_sheets/etcd/backup-and-restore/).
+- The experimental new backup mechanism was updated and available as an opt-in option per Seed. If enabled, it will replace the old backups and is not backwards compatible. Users that are already using the experimental backup mechanism, be aware that to prepare it for regular use, we made some changes, admins please check the [documentation](https://docs.kubermatic.com/kubermatic/master/cheat_sheets/etcd/backup-and-restore/).
 
 ### Supported Kubernetes Versions
 
