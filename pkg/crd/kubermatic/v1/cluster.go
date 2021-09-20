@@ -193,6 +193,9 @@ const (
 	// CNIPluginTypeCanal corresponds to Canal CNI plugin (i.e. Flannel +
 	// Calico for policy enforcement).
 	CNIPluginTypeCanal CNIPluginType = "canal"
+
+	// CNIPluginTypeCilium corresponds to Cilium CNI plugin
+	CNIPluginTypeCilium CNIPluginType = "cilium"
 )
 
 const (
