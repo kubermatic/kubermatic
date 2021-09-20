@@ -87,7 +87,7 @@ func MigrationToExternalCloudControllerSupported(dc *kubermaticv1.Datacenter, cl
 		return !isOTC(dc.Spec.Openstack) && OpenStackCloudControllerSupported(cluster.Spec.Version)
 
 	case cluster.Spec.Cloud.VSphere != nil:
-		supported, err := version.IsSupported(cluster.Spec.Version.Version, kubermaticv1.ProviderVSphere, incompatibilities, version.ExternalCloudProviderCondition)
+		supported, err := version.IsSupported(cluster.Spec.Version.Version, kubermaticv1.ProviderVSphere, incompatibilities, operatorv1alpha1.ExternalCloudProviderCondition)
 		if err != nil {
 			return false
 		}
