@@ -13159,13 +13159,6 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
-          },
-          {
-            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -13177,6 +13170,13 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
           }
         ],
         "responses": {
@@ -18383,7 +18383,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/Preset"
+              "$ref": "#/definitions/PresetBody"
             }
           }
         ],
@@ -18433,7 +18433,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/Preset"
+              "$ref": "#/definitions/PresetBody"
             }
           }
         ],
@@ -18933,6 +18933,36 @@
     }
   },
   "definitions": {
+    "AKS": {
+      "type": "object",
+      "properties": {
+        "clientID": {
+          "type": "string",
+          "x-go-name": "ClientID"
+        },
+        "clientSecret": {
+          "type": "string",
+          "x-go-name": "ClientSecret"
+        },
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        },
+        "subscriptionID": {
+          "type": "string",
+          "x-go-name": "SubscriptionID"
+        },
+        "tenantID": {
+          "type": "string",
+          "x-go-name": "TenantID"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
     "AKSCloudSpec": {
       "type": "object",
       "properties": {
@@ -19161,6 +19191,56 @@
         "$ref": "#/definitions/AKSVMSize"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "AWS": {
+      "type": "object",
+      "properties": {
+        "accessKeyID": {
+          "type": "string",
+          "x-go-name": "AccessKeyID"
+        },
+        "assumeRoleARN": {
+          "type": "string",
+          "x-go-name": "AssumeRoleARN"
+        },
+        "assumeRoleExternalID": {
+          "type": "string",
+          "x-go-name": "AssumeRoleExternalID"
+        },
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        },
+        "instanceProfileName": {
+          "type": "string",
+          "x-go-name": "InstanceProfileName"
+        },
+        "roleARN": {
+          "type": "string",
+          "x-go-name": "ControlPlaneRoleARN"
+        },
+        "routeTableID": {
+          "type": "string",
+          "x-go-name": "RouteTableID"
+        },
+        "secretAccessKey": {
+          "type": "string",
+          "x-go-name": "SecretAccessKey"
+        },
+        "securityGroupID": {
+          "type": "string",
+          "x-go-name": "SecurityGroupID"
+        },
+        "vpcID": {
+          "type": "string",
+          "x-go-name": "VPCID"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
     "AWSCloudSpec": {
       "type": "object",
@@ -19936,6 +20016,28 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
+    "Alibaba": {
+      "type": "object",
+      "properties": {
+        "accessKeyID": {
+          "type": "string",
+          "x-go-name": "AccessKeyID"
+        },
+        "accessKeySecret": {
+          "type": "string",
+          "x-go-name": "AccessKeySecret"
+        },
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
     "AlibabaCloudSpec": {
       "type": "object",
       "title": "AlibabaCloudSpec specifies the access data to Alibaba.",
@@ -20090,6 +20192,25 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
+    "Anexia": {
+      "type": "object",
+      "properties": {
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        },
+        "token": {
+          "description": "Token is used to authenticate with the Anexia API.",
+          "type": "string",
+          "x-go-name": "Token"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
     "AnexiaCloudSpec": {
       "type": "object",
       "title": "AnexiaCloudSpec specifies the access data to Anexia.",
@@ -20199,6 +20320,63 @@
     },
     "AuditPolicyPreset": {
       "type": "string",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
+    "Azure": {
+      "type": "object",
+      "properties": {
+        "clientID": {
+          "type": "string",
+          "x-go-name": "ClientID"
+        },
+        "clientSecret": {
+          "type": "string",
+          "x-go-name": "ClientSecret"
+        },
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        },
+        "loadBalancerSKU": {
+          "$ref": "#/definitions/LBSKU"
+        },
+        "resourceGroup": {
+          "type": "string",
+          "x-go-name": "ResourceGroup"
+        },
+        "routeTable": {
+          "type": "string",
+          "x-go-name": "RouteTableName"
+        },
+        "securityGroup": {
+          "type": "string",
+          "x-go-name": "SecurityGroup"
+        },
+        "subnet": {
+          "type": "string",
+          "x-go-name": "SubnetName"
+        },
+        "subscriptionID": {
+          "type": "string",
+          "x-go-name": "SubscriptionID"
+        },
+        "tenantID": {
+          "type": "string",
+          "x-go-name": "TenantID"
+        },
+        "vnet": {
+          "type": "string",
+          "x-go-name": "VNetName"
+        },
+        "vnetResourceGroup": {
+          "type": "string",
+          "x-go-name": "VNetResourceGroup"
+        }
+      },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
     "AzureAvailabilityZonesList": {
@@ -21944,6 +22122,25 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
+    "Digitalocean": {
+      "type": "object",
+      "properties": {
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        },
+        "token": {
+          "description": "Token is used to authenticate with the DigitalOcean API.",
+          "type": "string",
+          "x-go-name": "Token"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
     "DigitaloceanCloudSpec": {
       "type": "object",
       "title": "DigitaloceanCloudSpec specifies access data to DigitalOcean.",
@@ -22068,6 +22265,32 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "EKS": {
+      "type": "object",
+      "properties": {
+        "accessKeyID": {
+          "type": "string",
+          "x-go-name": "AccessKeyID"
+        },
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        },
+        "region": {
+          "type": "string",
+          "x-go-name": "Region"
+        },
+        "secretAccessKey": {
+          "type": "string",
+          "x-go-name": "SecretAccessKey"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
     "EKSAMITypes": {
       "type": "array",
@@ -22899,6 +23122,24 @@
       },
       "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
     },
+    "Fake": {
+      "type": "object",
+      "properties": {
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        },
+        "token": {
+          "type": "string",
+          "x-go-name": "Token"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
     "FakeCloudSpec": {
       "type": "object",
       "title": "FakeCloudSpec specifies access data for a fake cloud.",
@@ -22936,6 +23177,32 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "GCP": {
+      "type": "object",
+      "properties": {
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        },
+        "network": {
+          "type": "string",
+          "x-go-name": "Network"
+        },
+        "serviceAccount": {
+          "type": "string",
+          "x-go-name": "ServiceAccount"
+        },
+        "subnetwork": {
+          "type": "string",
+          "x-go-name": "Subnetwork"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
     "GCPCloudSpec": {
       "type": "object",
@@ -23182,6 +23449,24 @@
         "$ref": "#/definitions/GCPZone"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "GKE": {
+      "type": "object",
+      "properties": {
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        },
+        "serviceAccount": {
+          "type": "string",
+          "x-go-name": "ServiceAccount"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
     "GKEAutoprovisioningNodePoolDefaults": {
       "description": "GKEAutoprovisioningNodePoolDefaults\ncontains defaults for a node pool created by NAP.",
@@ -23728,6 +24013,30 @@
       "type": "string",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
+    "Hetzner": {
+      "type": "object",
+      "properties": {
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        },
+        "network": {
+          "description": "Network is the pre-existing Hetzner network in which the machines are running.\nWhile machines can be in multiple networks, a single one must be chosen for the\nHCloud CCM to work.\nIf this is empty, the network configured on the datacenter will be used.",
+          "type": "string",
+          "x-go-name": "Network"
+        },
+        "token": {
+          "description": "Token is used to authenticate with the Hetzner API.",
+          "type": "string",
+          "x-go-name": "Token"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
     "HetznerCloudSpec": {
       "type": "object",
       "title": "HetznerCloudSpec specifies access data to hetzner cloud.",
@@ -24172,6 +24481,24 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "Kubevirt": {
+      "type": "object",
+      "properties": {
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        },
+        "kubeconfig": {
+          "type": "string",
+          "x-go-name": "Kubeconfig"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
     "KubevirtCloudSpec": {
       "type": "object",
@@ -25164,6 +25491,66 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
+    "Nutanix": {
+      "type": "object",
+      "properties": {
+        "clusterName": {
+          "description": "ClusterName is the Nutanix cluster to deploy resources and nodes to.",
+          "type": "string",
+          "x-go-name": "ClusterName"
+        },
+        "csiEndpoint": {
+          "description": "CSIEndpoint to access Nutanix Prism Element for csi driver",
+          "type": "string",
+          "x-go-name": "CSIEndpoint"
+        },
+        "csiPassword": {
+          "description": "Prism Element Password for csi driver",
+          "type": "string",
+          "x-go-name": "CSIPassword"
+        },
+        "csiPort": {
+          "description": "CSIPort to use when connecting to the Nutanix Prism Element endpoint (defaults to 9440)",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "CSIPort"
+        },
+        "csiUsername": {
+          "description": "Prism Element Username for csi driver",
+          "type": "string",
+          "x-go-name": "CSIUsername"
+        },
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        },
+        "password": {
+          "description": "Password is the password corresponding to the provided user.",
+          "type": "string",
+          "x-go-name": "Password"
+        },
+        "projectName": {
+          "description": "ProjectName is the optional Nutanix project to use. If none is given,\nno project will be used.",
+          "type": "string",
+          "x-go-name": "ProjectName"
+        },
+        "proxyURL": {
+          "description": "ProxyURL is used to optionally configure a HTTP proxy to access Nutanix Prism Central.",
+          "type": "string",
+          "x-go-name": "ProxyURL"
+        },
+        "username": {
+          "description": "Username is the username to access the Nutanix Prism Central API.",
+          "type": "string",
+          "x-go-name": "Username"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
     "NutanixCSIConfig": {
       "type": "object",
       "title": "NutanixCSIConfig contains credentials and the endpoint for the Nutanix Prism Element to which the CSI driver connects.",
@@ -25549,6 +25936,72 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
+    "Openstack": {
+      "type": "object",
+      "properties": {
+        "applicationCredentialID": {
+          "type": "string",
+          "x-go-name": "ApplicationCredentialID"
+        },
+        "applicationCredentialSecret": {
+          "type": "string",
+          "x-go-name": "ApplicationCredentialSecret"
+        },
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "domain": {
+          "type": "string",
+          "x-go-name": "Domain"
+        },
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        },
+        "floatingIPPool": {
+          "type": "string",
+          "x-go-name": "FloatingIPPool"
+        },
+        "network": {
+          "type": "string",
+          "x-go-name": "Network"
+        },
+        "password": {
+          "type": "string",
+          "x-go-name": "Password"
+        },
+        "project": {
+          "type": "string",
+          "x-go-name": "Project"
+        },
+        "projectID": {
+          "type": "string",
+          "x-go-name": "ProjectID"
+        },
+        "routerID": {
+          "type": "string",
+          "x-go-name": "RouterID"
+        },
+        "securityGroups": {
+          "type": "string",
+          "x-go-name": "SecurityGroups"
+        },
+        "subnetID": {
+          "type": "string",
+          "x-go-name": "SubnetID"
+        },
+        "useToken": {
+          "type": "boolean",
+          "x-go-name": "UseToken"
+        },
+        "username": {
+          "type": "string",
+          "x-go-name": "Username"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
     "OpenstackAvailabilityZone": {
       "type": "object",
       "title": "OpenstackAvailabilityZone is the object representing a openstack availability zone.",
@@ -25855,6 +26308,32 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
+    "Packet": {
+      "type": "object",
+      "properties": {
+        "apiKey": {
+          "type": "string",
+          "x-go-name": "APIKey"
+        },
+        "billingCycle": {
+          "type": "string",
+          "x-go-name": "BillingCycle"
+        },
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        },
+        "projectID": {
+          "type": "string",
+          "x-go-name": "ProjectID"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
     "PacketCPU": {
       "type": "object",
       "title": "PacketCPU represents an array of Packet CPUs. It is a part of PacketSize.",
@@ -26097,6 +26576,31 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
+    "PresetBody": {
+      "description": "PresetBody represents the body of a created preset",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "spec": {
+          "$ref": "#/definitions/PresetSpec"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "PresetBodyMetadata": {
+      "description": "PresetBodyMetadata represents metadata within the body of a created preset",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "PresetList": {
       "description": "PresetList represents a list of presets",
       "type": "object",
@@ -26124,6 +26628,72 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "PresetSpec": {
+      "type": "object",
+      "title": "Presets specifies default presets for supported providers.",
+      "properties": {
+        "aks": {
+          "$ref": "#/definitions/AKS"
+        },
+        "alibaba": {
+          "$ref": "#/definitions/Alibaba"
+        },
+        "anexia": {
+          "$ref": "#/definitions/Anexia"
+        },
+        "aws": {
+          "$ref": "#/definitions/AWS"
+        },
+        "azure": {
+          "$ref": "#/definitions/Azure"
+        },
+        "digitalocean": {
+          "$ref": "#/definitions/Digitalocean"
+        },
+        "eks": {
+          "$ref": "#/definitions/EKS"
+        },
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        },
+        "fake": {
+          "$ref": "#/definitions/Fake"
+        },
+        "gcp": {
+          "$ref": "#/definitions/GCP"
+        },
+        "gke": {
+          "$ref": "#/definitions/GKE"
+        },
+        "hetzner": {
+          "$ref": "#/definitions/Hetzner"
+        },
+        "kubevirt": {
+          "$ref": "#/definitions/Kubevirt"
+        },
+        "nutanix": {
+          "$ref": "#/definitions/Nutanix"
+        },
+        "openstack": {
+          "$ref": "#/definitions/Openstack"
+        },
+        "packet": {
+          "$ref": "#/definitions/Packet"
+        },
+        "requiredEmails": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "RequiredEmails"
+        },
+        "vsphere": {
+          "$ref": "#/definitions/VSphere"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
     "Project": {
       "description": "Project is a top-level container for a set of resources",
@@ -26200,6 +26770,20 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "ProviderPreset": {
+      "type": "object",
+      "properties": {
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
     "ProviderType": {
       "type": "string",
@@ -27315,6 +27899,44 @@
         "selectedTheme": {
           "type": "string",
           "x-go-name": "SelectedTheme"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
+    "VSphere": {
+      "type": "object",
+      "properties": {
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "datastore": {
+          "type": "string",
+          "x-go-name": "Datastore"
+        },
+        "datastoreCluster": {
+          "type": "string",
+          "x-go-name": "DatastoreCluster"
+        },
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        },
+        "password": {
+          "type": "string",
+          "x-go-name": "Password"
+        },
+        "resourcePool": {
+          "type": "string",
+          "x-go-name": "ResourcePool"
+        },
+        "username": {
+          "type": "string",
+          "x-go-name": "Username"
+        },
+        "vmNetName": {
+          "type": "string",
+          "x-go-name": "VMNetName"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
