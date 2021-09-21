@@ -25,6 +25,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common/vpa"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	kubermaticseed "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/metering"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
@@ -117,7 +118,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 	}
 
 	// create a copy of the configuration with default values applied
-	defaulted, err := common.DefaultConfiguration(config, log)
+	defaulted, err := defaults.DefaultConfiguration(config, log)
 	if err != nil {
 		return fmt.Errorf("failed to apply defaults to KubermaticConfiguration: %v", err)
 	}
@@ -204,7 +205,7 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *operatorv1alph
 		return fmt.Errorf("failed to add finalizer to Seed: %v", err)
 	}
 
-	seed, err := common.DefaultSeed(seed, log)
+	seed, err := defaults.DefaultSeed(seed, log)
 	if err != nil {
 		return fmt.Errorf("failed to apply default values to Seed:  %v", err)
 	}

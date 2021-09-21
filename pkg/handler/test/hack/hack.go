@@ -34,7 +34,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
-	"k8c.io/kubermatic/v2/pkg/version"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/watcher"
 
@@ -50,6 +49,7 @@ func NewTestRouting(
 	userInfoGetter provider.UserInfoGetter,
 	seedsGetter provider.SeedsGetter,
 	seedClientGetter provider.SeedClientGetter,
+	configGetter provider.KubermaticConfigurationGetter,
 	clusterProvidersGetter provider.ClusterProviderGetter,
 	addonProviderGetter provider.AddonProviderGetter,
 	addonConfigProvider provider.AddonConfigProvider,
@@ -68,9 +68,6 @@ func NewTestRouting(
 	prometheusClient prometheusapi.Client,
 	projectMemberProvider *kubernetes.ProjectMemberProvider,
 	privilegedProjectMemberProvider provider.PrivilegedProjectMemberProvider,
-	versions []*version.Version,
-	updates []*version.Update,
-	providerIncompatibilities []*version.ProviderIncompatibility,
 	saTokenAuthenticator serviceaccount.TokenAuthenticator,
 	saTokenGenerator serviceaccount.TokenGenerator,
 	eventRecorderProvider provider.EventRecorderProvider,
@@ -96,14 +93,12 @@ func NewTestRouting(
 	backupCredentialsProviderGetter provider.BackupCredentialsProviderGetter,
 	privilegedMLAAdminSettingProviderGetter provider.PrivilegedMLAAdminSettingProviderGetter,
 	masterClient client.Client) http.Handler {
-
-	updateManager := version.New(versions, updates, providerIncompatibilities)
-
 	routingParams := handler.RoutingParams{
 		Log:                                     kubermaticlog.Logger,
 		PresetsProvider:                         presetsProvider,
 		SeedsGetter:                             seedsGetter,
 		SeedsClientGetter:                       seedClientGetter,
+		KubermaticConfigurationGetter:           configGetter,
 		SSHKeyProvider:                          sshKeyProvider,
 		PrivilegedSSHKeyProvider:                privilegedSSHKeyProvider,
 		UserProvider:                            userProvider,
@@ -119,7 +114,6 @@ func NewTestRouting(
 		ClusterProviderGetter:                   clusterProvidersGetter,
 		AddonProviderGetter:                     addonProviderGetter,
 		AddonConfigProvider:                     addonConfigProvider,
-		UpdateManager:                           updateManager,
 		PrometheusClient:                        prometheusClient,
 		ProjectMemberProvider:                   projectMemberProvider,
 		PrivilegedProjectMemberProvider:         privilegedProjectMemberProvider,

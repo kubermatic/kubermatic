@@ -16,9 +16,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package resources
+package defaults
 
 const (
+	DefaultNodeportProxyDockerRepository = "quay.io/kubermatic/nodeport-proxy"
+
 	// DefaultKubermaticImage defines the default Docker repository containing the Kubermatic API image.
 	DefaultKubermaticImage = "quay.io/kubermatic/kubermatic-ee"
 

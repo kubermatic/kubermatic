@@ -29,7 +29,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler"
 	"k8c.io/kubermatic/v2/pkg/handler/auth"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
-	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -45,6 +44,7 @@ type Routing struct {
 	presetsProvider                         provider.PresetProvider
 	seedsGetter                             provider.SeedsGetter
 	seedsClientGetter                       provider.SeedClientGetter
+	kubermaticConfigGetter                  provider.KubermaticConfigurationGetter
 	sshKeyProvider                          provider.SSHKeyProvider
 	privilegedSSHKeyProvider                provider.PrivilegedSSHKeyProvider
 	userProvider                            provider.UserProvider
@@ -60,8 +60,6 @@ type Routing struct {
 	clusterProviderGetter                   provider.ClusterProviderGetter
 	addonProviderGetter                     provider.AddonProviderGetter
 	addonConfigProvider                     provider.AddonConfigProvider
-	updateManager                           common.UpdateManager
-	supportManager                          common.SupportManager
 	prometheusClient                        prometheusapi.Client
 	projectMemberProvider                   provider.ProjectMemberProvider
 	privilegedProjectMemberProvider         provider.PrivilegedProjectMemberProvider
@@ -105,6 +103,7 @@ func NewV2Routing(routingParams handler.RoutingParams) Routing {
 		presetsProvider:                         routingParams.PresetsProvider,
 		seedsGetter:                             routingParams.SeedsGetter,
 		seedsClientGetter:                       routingParams.SeedsClientGetter,
+		kubermaticConfigGetter:                  routingParams.KubermaticConfigurationGetter,
 		clusterProviderGetter:                   routingParams.ClusterProviderGetter,
 		addonProviderGetter:                     routingParams.AddonProviderGetter,
 		addonConfigProvider:                     routingParams.AddonConfigProvider,
@@ -120,8 +119,6 @@ func NewV2Routing(routingParams handler.RoutingParams) Routing {
 		oidcIssuerVerifier:                      routingParams.OIDCIssuerVerifier,
 		tokenVerifiers:                          routingParams.TokenVerifiers,
 		tokenExtractors:                         routingParams.TokenExtractors,
-		updateManager:                           routingParams.UpdateManager,
-		supportManager:                          routingParams.UpdateManager.(common.SupportManager),
 		prometheusClient:                        routingParams.PrometheusClient,
 		projectMemberProvider:                   routingParams.ProjectMemberProvider,
 		privilegedProjectMemberProvider:         routingParams.PrivilegedProjectMemberProvider,

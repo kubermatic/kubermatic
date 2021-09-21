@@ -23,6 +23,7 @@ import (
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
@@ -127,7 +128,7 @@ func Add(
 			return nil
 		}
 
-		defaulted, err := common.DefaultConfiguration(config, zap.NewNop().Sugar())
+		defaulted, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
 		if err != nil {
 			log.Errorw("Failed to default config", zap.Error(err))
 			utilruntime.HandleError(err)

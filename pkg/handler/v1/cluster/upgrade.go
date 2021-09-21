@@ -34,13 +34,13 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version"
 )
 
-func GetUpgradesEndpoint(updateManager common.UpdateManager, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func GetUpgradesEndpoint(configGetter provider.KubermaticConfigurationGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(common.GetClusterReq)
 		if !ok {
-			return nil, errors.NewWrongRequest(request, common.GetClusterReq{})
+			return nil, errors.NewWrongMethod(request, common.GetClusterReq{})
 		}
-		return handlercommon.GetUpgradesEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, projectProvider, privilegedProjectProvider, updateManager)
+		return handlercommon.GetUpgradesEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, projectProvider, privilegedProjectProvider, configGetter)
 	}
 }
 
@@ -66,15 +66,19 @@ func DecodeNodeUpgradesReq(c context.Context, r *http.Request) (interface{}, err
 	return req, nil
 }
 
-func GetNodeUpgrades(updateManager common.UpdateManager) endpoint.Endpoint {
+func GetNodeUpgrades(configGetter provider.KubermaticConfigurationGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(NodeUpgradesReq)
 		if !ok {
-			return nil, errors.NewWrongRequest(request, NodeUpgradesReq{})
+			return nil, errors.NewWrongMethod(request, NodeUpgradesReq{})
 		}
 		err := req.TypeReq.Validate()
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
+		}
+		config, err := configGetter(ctx)
+		if err != nil {
+			return nil, err
 		}
 
 		controlPlaneVersion, err := semver.NewVersion(req.ControlPlaneVersion)
@@ -82,7 +86,7 @@ func GetNodeUpgrades(updateManager common.UpdateManager) endpoint.Endpoint {
 			return nil, fmt.Errorf("failed to parse control plane version: %v", err)
 		}
 
-		versions, err := updateManager.GetVersions(req.Type)
+		versions, err := version.NewFromConfiguration(config).GetVersions(req.Type)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get master versions: %v", err)
 		}
@@ -140,20 +144,26 @@ func UpgradeNodeDeploymentsEndpoint(projectProvider provider.ProjectProvider, pr
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(UpgradeNodeDeploymentsReq)
 		if !ok {
-			return nil, errors.NewWrongRequest(request, common.GetClusterReq{})
+			return nil, errors.NewWrongMethod(request, common.GetClusterReq{})
 		}
 		return handlercommon.UpgradeNodeDeploymentsEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, req.Body, projectProvider, privilegedProjectProvider)
 	}
 }
 
-func GetMasterVersionsEndpoint(updateManager common.UpdateManager) endpoint.Endpoint {
+func GetMasterVersionsEndpoint(configGetter provider.KubermaticConfigurationGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(TypeReq)
 		err := req.Validate()
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
-		versions, err := updateManager.GetVersions(req.Type)
+
+		config, err := configGetter(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		versions, err := version.NewFromConfiguration(config).GetVersions(req.Type)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get master versions: %v", err)
 		}

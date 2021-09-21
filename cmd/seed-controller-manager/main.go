@@ -32,10 +32,12 @@ import (
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/collectors"
+	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/metrics"
 	metricserver "k8c.io/kubermatic/v2/pkg/metrics/server"
 	"k8c.io/kubermatic/v2/pkg/pprof"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	clustermutation "k8c.io/kubermatic/v2/pkg/webhook/cluster/mutation"
@@ -121,6 +123,9 @@ func main() {
 	if err := gatekeeperv1beta1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", gatekeeperv1beta1.SchemeGroupVersion), zap.Error(err))
 	}
+	if err := operatorv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", operatorv1alpha1.SchemeGroupVersion), zap.Error(err))
+	}
 
 	// Check if the CRD for the VerticalPodAutoscaler is registered by allocating an informer
 	if err := mgr.GetAPIReader().List(context.Background(), &autoscalingv1beta2.VerticalPodAutoscalerList{}); err != nil {
@@ -151,7 +156,17 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	rootCtx := context.Background()
 	seedGetter, err := seedGetterFactory(rootCtx, mgr.GetClient(), options)
 	if err != nil {
-		log.Fatalw("Unable to create the seed factory", zap.Error(err))
+		log.Fatalw("Unable to create the seed getter", zap.Error(err))
+	}
+
+	var configGetter provider.KubermaticConfigurationGetter
+	if options.kubermaticConfiguration != nil {
+		configGetter, err = provider.StaticKubermaticConfigurationGetterFactory(options.kubermaticConfiguration)
+	} else {
+		configGetter, err = provider.DynamicKubermaticConfigurationGetterFactory(mgr.GetClient(), options.namespace)
+	}
+	if err != nil {
+		log.Fatalw("Unable to create the configuration getter", zap.Error(err))
 	}
 
 	var clientProvider *client.Provider
@@ -170,6 +185,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		mgr:                  mgr,
 		clientProvider:       clientProvider,
 		seedGetter:           seedGetter,
+		configGetter:         configGetter,
 		dockerPullConfigJSON: dockerPullConfigJSON,
 		log:                  log,
 		versions:             versions,

@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -430,7 +431,7 @@ func createTestReconciler(allSeeds map[string]*kubermaticv1.Seed, cfg *operatorv
 	masterObjects := []ctrlruntimeclient.Object{}
 	if cfg != nil {
 		// CABundle is defaulted in reallife scenarios
-		defaulted, err := common.DefaultConfiguration(cfg, kubermaticlog.NewDefault().Sugar())
+		defaulted, err := defaults.DefaultConfiguration(cfg, kubermaticlog.NewDefault().Sugar())
 		if err != nil {
 			panic(err)
 		}

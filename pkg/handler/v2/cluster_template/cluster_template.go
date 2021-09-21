@@ -37,6 +37,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	kerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	"k8c.io/kubermatic/v2/pkg/version"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -49,9 +50,19 @@ var scopeList = []string{
 	kubermaticv1.GlobalClusterTemplateScope,
 }
 
-func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
-	userInfoGetter provider.UserInfoGetter, clusterTemplateProvider provider.ClusterTemplateProvider, settingsProvider provider.SettingsProvider, updateManager common.UpdateManager,
-	seedsGetter provider.SeedsGetter, credentialManager provider.PresetProvider, caBundle *x509.CertPool, exposeStrategy kubermaticv1.ExposeStrategy, sshKeyProvider provider.SSHKeyProvider, supportManager common.SupportManager) endpoint.Endpoint {
+func CreateEndpoint(
+	projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
+	userInfoGetter provider.UserInfoGetter,
+	clusterTemplateProvider provider.ClusterTemplateProvider,
+	settingsProvider provider.SettingsProvider,
+	seedsGetter provider.SeedsGetter,
+	credentialManager provider.PresetProvider,
+	caBundle *x509.CertPool,
+	exposeStrategy kubermaticv1.ExposeStrategy,
+	sshKeyProvider provider.SSHKeyProvider,
+	configGetter provider.KubermaticConfigurationGetter,
+) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createClusterTemplateReq)
 
@@ -61,7 +72,12 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		err = req.Validate(globalSettings.Spec.ClusterTypeOptions, updateManager)
+		config, err := configGetter(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		err = req.Validate(globalSettings.Spec.ClusterTypeOptions, version.NewFromConfiguration(config))
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
@@ -75,7 +91,7 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		partialCluster, err := handlercommon.GenerateCluster(ctx, req.ProjectID, req.Body.CreateClusterSpec, seedsGetter, credentialManager, exposeStrategy, userInfoGetter, caBundle, supportManager)
+		partialCluster, err := handlercommon.GenerateCluster(ctx, req.ProjectID, req.Body.CreateClusterSpec, seedsGetter, credentialManager, exposeStrategy, userInfoGetter, caBundle, configGetter)
 		if err != nil {
 			return nil, err
 		}

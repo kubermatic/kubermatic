@@ -116,26 +116,8 @@ func DockercfgSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) recon
 func ExtraFilesSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return ExtraFilesSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
-			versions, err := CreateVersionsYAML(&cfg.Spec.Versions)
-			if err != nil {
-				return s, fmt.Errorf("failed to encode versions as YAML: %v", err)
-			}
-
-			updates, err := CreateUpdatesYAML(&cfg.Spec.Versions)
-			if err != nil {
-				return s, fmt.Errorf("failed to encode updates as YAML: %v", err)
-			}
-
-			providerIncompatibilities, err := CreateProviderIncompatibilitiesYAML(&cfg.Spec.Versions)
-			if err != nil {
-				return s, fmt.Errorf("failed to encode provider incompatibilities as YAML: %v", err)
-			}
-
 			data := map[string]string{
-				KubernetesAddonsFileName:          cfg.Spec.UserCluster.Addons.Kubernetes.DefaultManifests,
-				VersionsFileName:                  versions,
-				UpdatesFileName:                   updates,
-				ProviderIncompatibilitiesFileName: providerIncompatibilities,
+				KubernetesAddonsFileName: cfg.Spec.UserCluster.Addons.Kubernetes.DefaultManifests,
 			}
 
 			return createSecretData(s, data), nil

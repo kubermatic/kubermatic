@@ -116,7 +116,7 @@ func TestGetEndpoint(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, requestURL, nil)
 			resp := httptest.NewRecorder()
 
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to: %v", err)
 			}
@@ -227,7 +227,7 @@ func TestCreateEndpoint(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, requestURL, bytes.NewBuffer(body))
 			resp := httptest.NewRecorder()
 
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to: %v", err)
 			}
@@ -338,7 +338,7 @@ func TestUpdateEndpoint(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPut, requestURL, bytes.NewBuffer(body))
 			resp := httptest.NewRecorder()
 
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to: %v", err)
 			}
@@ -425,7 +425,7 @@ func TestDeleteEndpoint(t *testing.T) {
 			req := httptest.NewRequest(http.MethodDelete, requestURL, nil)
 			resp := httptest.NewRecorder()
 
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to: %v", err)
 			}
