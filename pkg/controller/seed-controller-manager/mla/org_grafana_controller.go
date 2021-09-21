@@ -23,7 +23,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/grafana/grafana/pkg/models"
 	"go.uber.org/zap"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
@@ -223,7 +222,7 @@ func (r *orgGrafanaController) createGrafanaOrg(ctx context.Context, expected gr
 		if err != nil {
 			return expected, err
 		}
-		if err := addUserToOrg(ctx, r.grafanaClient, expected, &grafanaUser, models.ROLE_EDITOR); err != nil {
+		if err := addUserToOrg(ctx, r.grafanaClient, expected, &grafanaUser, grafanasdk.ROLE_EDITOR); err != nil {
 			return expected, err
 		}
 

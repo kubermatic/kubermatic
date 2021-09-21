@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/grafana/grafana/pkg/models"
 	"go.uber.org/zap"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
@@ -59,7 +58,7 @@ func getGrafanaOrgUser(ctx context.Context, grafanaClient *grafanasdk.Client, or
 	return nil, nil
 }
 
-func addUserToOrg(ctx context.Context, grafanaClient *grafanasdk.Client, org grafanasdk.Org, user *grafanasdk.User, role models.RoleType) error {
+func addUserToOrg(ctx context.Context, grafanaClient *grafanasdk.Client, org grafanasdk.Org, user *grafanasdk.User, role grafanasdk.RoleType) error {
 	// checking if user already exists in the corresponding organization
 	orgUser, err := getGrafanaOrgUser(ctx, grafanaClient, org.ID, user.ID)
 	if err != nil {
