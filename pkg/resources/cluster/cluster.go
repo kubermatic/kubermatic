@@ -56,6 +56,7 @@ func Spec(apiCluster apiv1.Cluster, dc *kubermaticv1.Datacenter, secretKeyGetter
 		ServiceAccount:                       apiCluster.Spec.ServiceAccount,
 		MLA:                                  apiCluster.Spec.MLA,
 		ContainerRuntime:                     apiCluster.Spec.ContainerRuntime,
+		CNIPlugin:                            apiCluster.Spec.CNIPlugin,
 	}
 
 	if apiCluster.Spec.ClusterNetwork != nil {
