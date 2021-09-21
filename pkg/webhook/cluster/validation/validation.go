@@ -37,9 +37,10 @@ import (
 )
 
 var (
-	supportedCNIPlugins        = sets.NewString(kubermaticv1.CNIPluginTypeCanal.String())
+	supportedCNIPlugins        = sets.NewString(kubermaticv1.CNIPluginTypeCanal.String(), kubermaticv1.CNIPluginTypeCilium.String())
 	supportedCNIPluginVersions = map[kubermaticv1.CNIPluginType]sets.String{
-		kubermaticv1.CNIPluginTypeCanal: sets.NewString("v3.8", "v3.19"),
+		kubermaticv1.CNIPluginTypeCanal:  sets.NewString("v3.8", "v3.19"),
+		kubermaticv1.CNIPluginTypeCilium: sets.NewString("v1.10"),
 	}
 )
 
