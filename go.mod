@@ -26,7 +26,6 @@ require (
 	github.com/go-kit/kit v0.10.0
 	github.com/go-logr/logr v0.4.0
 	github.com/go-logr/zapr v0.4.0
-	github.com/go-macaron/session v1.0.2 // indirect
 	github.com/go-openapi/errors v0.20.0
 	github.com/go-openapi/runtime v0.19.27
 	github.com/go-openapi/strfmt v0.20.1
@@ -36,22 +35,21 @@ require (
 	github.com/go-test/deep v1.0.7
 	github.com/google/go-cmp v0.5.6
 	github.com/gophercloud/gophercloud v0.20.0
+	github.com/gopherjs/gopherjs v0.0.0-20190430165422-3e4dfb77656c // indirect
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/websocket v1.4.2
-	github.com/grafana/grafana v6.1.6+incompatible
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hetznercloud/hcloud-go v1.32.0
 	github.com/huandu/xstrings v1.3.2 // indirect
-	github.com/inconshreveable/log15 v0.0.0-20201112154412-8562bdadbbac // indirect
 	github.com/jetstack/cert-manager v1.1.0
-	github.com/kubermatic/grafanasdk v0.9.10
+	github.com/kubermatic/grafanasdk v0.9.11
 	github.com/kubermatic/machine-controller v1.35.2
 	github.com/minio/minio-go v6.0.14+incompatible
 	github.com/minio/minio-go/v7 v7.0.13
 	github.com/onsi/ginkgo v1.16.4
-	github.com/onsi/gomega v1.14.0
+	github.com/onsi/gomega v1.15.0
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20210802220920-c000ec35322e
 	github.com/open-policy-agent/gatekeeper v0.0.0-20201111000257-4450f08fa95e
 	github.com/packethost/packngo v0.19.0
@@ -64,11 +62,10 @@ require (
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
-	github.com/teris-io/shortid v0.0.0-20201117134242-e59966efd125 // indirect
 	github.com/urfave/cli v1.22.5
 	github.com/vmware/govmomi v0.23.1
 	go.etcd.io/etcd/v3 v3.3.0-rc.0.0.20200728214110-6c81b20ec8de
-	go.uber.org/zap v1.18.1
+	go.uber.org/zap v1.19.0
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
 	golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c
 	golang.org/x/tools v0.1.2
@@ -82,32 +79,32 @@ require (
 	gopkg.in/square/go-jose.v2 v2.5.1
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
-	k8s.io/api v0.21.3
-	k8s.io/apiextensions-apiserver v0.21.3
-	k8s.io/apimachinery v0.21.3
-	k8s.io/apiserver v0.21.3
+	k8s.io/api v0.22.1
+	k8s.io/apiextensions-apiserver v0.22.1
+	k8s.io/apimachinery v0.22.1
+	k8s.io/apiserver v0.22.1
 	k8s.io/autoscaler v0.0.0-20190218140445-7f77136aeea4 // git digest for VPA v0.4.0
 	k8s.io/client-go v12.0.0+incompatible
-	k8s.io/code-generator v0.21.3
+	k8s.io/code-generator v0.22.1
 	k8s.io/klog v1.0.0
 	k8s.io/kube-aggregator v0.21.3
 	k8s.io/kubectl v0.21.3
 	k8s.io/metrics v0.21.3
 	k8s.io/test-infra v0.0.0-20210826180422-39483c498f0f
-	k8s.io/utils v0.0.0-20210722164352-7f3ee0f31471
-	sigs.k8s.io/controller-runtime v0.9.6
+	k8s.io/utils v0.0.0-20210802155522-efc7438f0176
+	sigs.k8s.io/controller-runtime v0.10.0
 	sigs.k8s.io/yaml v1.2.0
 )
 
 replace (
 	// etcd.v3 needs an old version for the google.golang.org/grpc/naming package, which got removed in grpc 1.30+
 	google.golang.org/grpc => google.golang.org/grpc v1.29.1
-	k8s.io/api => k8s.io/api v0.21.3
-	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.21.3
-	k8s.io/apimachinery => k8s.io/apimachinery v0.21.3
-	k8s.io/client-go => k8s.io/client-go v0.21.3
-	k8s.io/code-generator => k8s.io/code-generator v0.21.3
-	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.21.3
-	k8s.io/kubelet => k8s.io/kubelet v0.21.3
-	k8s.io/metrics => k8s.io/metrics v0.21.3
+	k8s.io/api => k8s.io/api v0.22.1
+	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.22.1
+	k8s.io/apimachinery => k8s.io/apimachinery v0.22.1
+	k8s.io/client-go => k8s.io/client-go v0.22.1
+	k8s.io/code-generator => k8s.io/code-generator v0.22.1
+	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.22.1
+	k8s.io/kubelet => k8s.io/kubelet v0.22.1
+	k8s.io/metrics => k8s.io/metrics v0.22.1
 )

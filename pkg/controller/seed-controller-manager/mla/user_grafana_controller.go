@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/grafana/grafana/pkg/models"
 	"go.uber.org/zap"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
@@ -223,7 +222,7 @@ func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kub
 				return err
 			}
 			if grafanaUser.IsGrafanaAdmin {
-				if err := addUserToOrg(ctx, r.grafanaClient, org, grafanaUser, models.ROLE_EDITOR); err != nil {
+				if err := addUserToOrg(ctx, r.grafanaClient, org, grafanaUser, grafanasdk.ROLE_EDITOR); err != nil {
 					return err
 				}
 			} else {
