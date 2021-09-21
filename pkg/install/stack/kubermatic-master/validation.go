@@ -26,7 +26,7 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 
-	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
@@ -110,7 +110,7 @@ func validateHelmValues(config *operatorv1alpha1.KubermaticConfiguration, helmVa
 		}
 	}
 
-	defaultedConfig, err := common.DefaultConfiguration(config, zap.NewNop().Sugar())
+	defaultedConfig, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
 	if err != nil {
 		failures = append(failures, fmt.Errorf("failed to process KubermaticConfiguration: %v", err))
 		return failures // must stop here, without defaulting the clientID check can be misleading

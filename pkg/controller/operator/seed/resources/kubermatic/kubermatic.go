@@ -22,7 +22,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -89,15 +89,15 @@ func BackupContainersConfigMapCreator(cfg *operatorv1alpha1.KubermaticConfigurat
 			c.Data[storeContainerKey] = cfg.Spec.SeedController.BackupStoreContainer
 			c.Data[cleanupContainerKey] = cfg.Spec.SeedController.BackupCleanupContainer
 
-			if cfg.Spec.SeedController.BackupStoreContainer == strings.TrimSpace(common.DefaultBackupStoreContainer) &&
+			if cfg.Spec.SeedController.BackupStoreContainer == strings.TrimSpace(defaults.DefaultBackupStoreContainer) &&
 				seed.Spec.BackupRestore != nil {
-				c.Data[storeContainerKey] = strings.TrimSpace(common.DefaultNewBackupStoreContainer)
+				c.Data[storeContainerKey] = strings.TrimSpace(defaults.DefaultNewBackupStoreContainer)
 				log.Debugw("Defaulting field", "field", "seedController.backupRestoreContainer")
 			}
 
 			if seed.Spec.BackupRestore != nil {
 				if cfg.Spec.SeedController.BackupDeleteContainer == "" {
-					cfg.Spec.SeedController.BackupDeleteContainer = strings.TrimSpace(common.DefaultNewBackupDeleteContainer)
+					cfg.Spec.SeedController.BackupDeleteContainer = strings.TrimSpace(defaults.DefaultNewBackupDeleteContainer)
 					log.Debugw("Defaulting field", "field", "seedController.backupDeleteContainer")
 				}
 

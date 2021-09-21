@@ -28,7 +28,7 @@ import (
 	"testing"
 
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -404,7 +404,7 @@ func TestController_ensureAddonLabelOnManifests(t *testing.T) {
 
 func TestController_getApplyCommand(t *testing.T) {
 	controller := &Reconciler{}
-	clusterVersion := common.DefaultKubernetesVersioning.Default
+	clusterVersion := defaults.DefaultKubernetesVersioning.Default
 
 	binary, err := kubectl.BinaryForClusterVersion(clusterVersion)
 	if err != nil {

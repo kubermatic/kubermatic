@@ -20,9 +20,14 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"strings"
 
+	"go.uber.org/zap"
+	"gopkg.in/yaml.v2"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -53,6 +58,10 @@ type serverRunOptions struct {
 	accessibleAddons              sets.String
 	caBundle                      *certificates.CABundle
 
+	// for development purposes, a local configuration file
+	// can be used to provide the KubermaticConfiguration
+	kubermaticConfiguration *operatorv1alpha1.KubermaticConfiguration
+
 	// OIDC configuration
 	oidcURL                        string
 	oidcAuthenticatorClientID      string
@@ -77,6 +86,7 @@ func newServerRunOptions() (serverRunOptions, error) {
 		rawExposeStrategy   string
 		rawAccessibleAddons string
 		caBundleFile        string
+		configFile          string
 	)
 
 	s.log = kubermaticlog.NewDefaultOptions()
@@ -109,6 +119,7 @@ func newServerRunOptions() (serverRunOptions, error) {
 	flag.StringVar(&rawExposeStrategy, "expose-strategy", "NodePort", "The strategy to expose the controlplane with, either \"NodePort\" which creates NodePorts with a \"nodeport-proxy.k8s.io/expose: true\" annotation or \"LoadBalancer\", which creates a LoadBalancer")
 	flag.BoolVar(&s.dynamicPresets, "dynamic-presets", false, "Whether to enable dynamic presets")
 	flag.StringVar(&s.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for datacenter custom resources")
+	flag.StringVar(&configFile, "kubermatic-configuration-file", "", "(for development only) path to a KubermaticConfiguration YAML file")
 	addFlags(flag.CommandLine)
 	flag.Parse()
 
@@ -120,6 +131,13 @@ func newServerRunOptions() (serverRunOptions, error) {
 
 	s.accessibleAddons = sets.NewString(strings.Split(rawAccessibleAddons, ",")...)
 	s.accessibleAddons.Delete("")
+
+	if configFile != "" {
+		var err error
+		if s.kubermaticConfiguration, err = loadKubermaticConfiguration(configFile); err != nil {
+			return s, fmt.Errorf("invalid KubermaticConfiguration: %w", err)
+		}
+	}
 
 	if len(caBundleFile) == 0 {
 		return s, errors.New("no -ca-bundle configured")
@@ -161,6 +179,7 @@ type providers struct {
 	clusterProviderGetter                   provider.ClusterProviderGetter
 	seedsGetter                             provider.SeedsGetter
 	seedClientGetter                        provider.SeedClientGetter
+	configGetter                            provider.KubermaticConfigurationGetter
 	addons                                  provider.AddonProviderGetter
 	addonConfigProvider                     provider.AddonConfigProvider
 	userInfoGetter                          provider.UserInfoGetter
@@ -186,4 +205,23 @@ type providers struct {
 	etcdRestoreProjectProviderGetter        provider.EtcdRestoreProjectProviderGetter
 	backupCredentialsProviderGetter         provider.BackupCredentialsProviderGetter
 	privilegedMLAAdminSettingProviderGetter provider.PrivilegedMLAAdminSettingProviderGetter
+}
+
+func loadKubermaticConfiguration(filename string) (*operatorv1alpha1.KubermaticConfiguration, error) {
+	content, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file: %v", err)
+	}
+
+	config := &operatorv1alpha1.KubermaticConfiguration{}
+	if err := yaml.Unmarshal(content, &config); err != nil {
+		return nil, fmt.Errorf("failed to parse file as YAML: %v", err)
+	}
+
+	defaulted, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
+	if err != nil {
+		return nil, fmt.Errorf("failed to process: %v", err)
+	}
+
+	return defaulted, nil
 }

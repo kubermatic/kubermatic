@@ -27,6 +27,7 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -40,7 +41,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func GetUpgradesEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID string, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, updateManager common.UpdateManager) (interface{}, error) {
+func GetUpgradesEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID string, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, configGetter provider.KubermaticConfigurationGetter) (interface{}, error) {
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
 	cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, nil)
@@ -66,12 +67,20 @@ func GetUpgradesEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGe
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the cloud provider name: %v", err)
 	}
-	var updateConditions []version.ConditionType
+	var updateConditions []operatorv1alpha1.ConditionType
 	externalCloudProvider := cluster.Spec.Features[v1.ClusterFeatureExternalCloudProvider]
 	if externalCloudProvider {
-		updateConditions = append(updateConditions, version.ExternalCloudProviderCondition)
+		updateConditions = append(updateConditions, operatorv1alpha1.ExternalCloudProviderCondition)
 	}
-	versions, err := updateManager.GetPossibleUpdates(cluster.Spec.Version.String(), apiv1.KubernetesClusterType, kubermaticv1.ProviderType(providerName), updateConditions...)
+
+	config, err := configGetter(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	versionManager := version.NewFromConfiguration(config)
+
+	versions, err := versionManager.GetPossibleUpdates(cluster.Spec.Version.String(), apiv1.KubernetesClusterType, kubermaticv1.ProviderType(providerName), updateConditions...)
 	if err != nil {
 		return nil, err
 	}

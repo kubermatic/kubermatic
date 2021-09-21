@@ -14,24 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package common
+package defaults
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/docker/distribution/reference"
-	"github.com/ghodss/yaml"
 	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	"go.uber.org/zap"
 
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
-	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -276,20 +271,20 @@ var (
 			{
 				Provider:  kubermaticv1.ProviderVSphere,
 				Version:   "1.22.*",
-				Condition: version.AlwaysCondition,
-				Operation: version.CreateOperation,
+				Condition: operatorv1alpha1.AlwaysCondition,
+				Operation: operatorv1alpha1.CreateOperation,
 			},
 			{
 				Provider:  kubermaticv1.ProviderVSphere,
 				Version:   "1.22.*",
-				Condition: version.ExternalCloudProviderCondition,
-				Operation: version.UpdateOperation,
+				Condition: operatorv1alpha1.ExternalCloudProviderCondition,
+				Operation: operatorv1alpha1.UpdateOperation,
 			},
 			{
 				Provider:  kubermaticv1.ProviderVSphere,
 				Version:   "1.22.*",
-				Condition: version.ExternalCloudProviderCondition,
-				Operation: version.SupportOperation,
+				Condition: operatorv1alpha1.ExternalCloudProviderCondition,
+				Operation: operatorv1alpha1.SupportOperation,
 			},
 		},
 	}
@@ -448,35 +443,35 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 
 	copy.Spec.Auth = auth
 
-	if err := defaultDockerRepo(&copy.Spec.API.DockerRepository, resources.DefaultKubermaticImage, "api.dockerRepository", logger); err != nil {
+	if err := defaultDockerRepo(&copy.Spec.API.DockerRepository, DefaultKubermaticImage, "api.dockerRepository", logger); err != nil {
 		return copy, err
 	}
 
-	if err := defaultDockerRepo(&copy.Spec.UI.DockerRepository, resources.DefaultDashboardImage, "ui.dockerRepository", logger); err != nil {
+	if err := defaultDockerRepo(&copy.Spec.UI.DockerRepository, DefaultDashboardImage, "ui.dockerRepository", logger); err != nil {
 		return copy, err
 	}
 
-	if err := defaultDockerRepo(&copy.Spec.MasterController.DockerRepository, resources.DefaultKubermaticImage, "masterController.dockerRepository", logger); err != nil {
+	if err := defaultDockerRepo(&copy.Spec.MasterController.DockerRepository, DefaultKubermaticImage, "masterController.dockerRepository", logger); err != nil {
 		return copy, err
 	}
 
-	if err := defaultDockerRepo(&copy.Spec.SeedController.DockerRepository, resources.DefaultKubermaticImage, "seedController.dockerRepository", logger); err != nil {
+	if err := defaultDockerRepo(&copy.Spec.SeedController.DockerRepository, DefaultKubermaticImage, "seedController.dockerRepository", logger); err != nil {
 		return copy, err
 	}
 
-	if err := defaultDockerRepo(&copy.Spec.UserCluster.KubermaticDockerRepository, resources.DefaultKubermaticImage, "userCluster.kubermaticDockerRepository", logger); err != nil {
+	if err := defaultDockerRepo(&copy.Spec.UserCluster.KubermaticDockerRepository, DefaultKubermaticImage, "userCluster.kubermaticDockerRepository", logger); err != nil {
 		return copy, err
 	}
 
-	if err := defaultDockerRepo(&copy.Spec.UserCluster.DNATControllerDockerRepository, resources.DefaultDNATControllerImage, "userCluster.dnatControllerDockerRepository", logger); err != nil {
+	if err := defaultDockerRepo(&copy.Spec.UserCluster.DNATControllerDockerRepository, DefaultDNATControllerImage, "userCluster.dnatControllerDockerRepository", logger); err != nil {
 		return copy, err
 	}
 
-	if err := defaultDockerRepo(&copy.Spec.UserCluster.EtcdLauncherDockerRepository, resources.DefaultEtcdLauncherImage, "userCluster.etcdLauncher.DockerRepository", logger); err != nil {
+	if err := defaultDockerRepo(&copy.Spec.UserCluster.EtcdLauncherDockerRepository, DefaultEtcdLauncherImage, "userCluster.etcdLauncher.DockerRepository", logger); err != nil {
 		return copy, err
 	}
 
-	if err := defaultDockerRepo(&copy.Spec.UserCluster.Addons.Kubernetes.DockerRepository, resources.DefaultKubernetesAddonImage, "userCluster.addons.kubernetes.dockerRepository", logger); err != nil {
+	if err := defaultDockerRepo(&copy.Spec.UserCluster.Addons.Kubernetes.DockerRepository, DefaultKubernetesAddonImage, "userCluster.addons.kubernetes.dockerRepository", logger); err != nil {
 		return copy, err
 	}
 
@@ -881,95 +876,3 @@ items:
     labels:
       addons.kubermatic.io/ensure: true
 `
-
-type versionsYAML struct {
-	Versions []*version.Version `json:"versions"`
-}
-
-func CreateVersionsYAML(config *operatorv1alpha1.KubermaticVersionsConfiguration) (string, error) {
-	output := versionsYAML{
-		Versions: make([]*version.Version, 0),
-	}
-
-	appendOrchestrator := func(cfg *operatorv1alpha1.KubermaticVersioningConfiguration, kind string) {
-		for _, v := range cfg.Versions {
-			output.Versions = append(output.Versions, &version.Version{
-				Version: v,
-				Default: v.Equal(cfg.Default),
-				Type:    kind,
-			})
-		}
-	}
-
-	appendOrchestrator(&config.Kubernetes, kubermaticapiv1.KubernetesClusterType)
-	return toYAML(output)
-}
-
-type updatesYAML struct {
-	Updates []*version.Update `json:"updates"`
-}
-
-func CreateUpdatesYAML(config *operatorv1alpha1.KubermaticVersionsConfiguration) (string, error) {
-	output := updatesYAML{
-		Updates: make([]*version.Update, 0),
-	}
-
-	appendOrchestrator := func(cfg *operatorv1alpha1.KubermaticVersioningConfiguration, kind string) {
-		for _, u := range cfg.Updates {
-			// AutomaticNodeUpdate implies automatic update, because nodes
-			// must not have a newer version than the control plane
-			automaticNodeUpdate := (u.AutomaticNodeUpdate != nil && *u.AutomaticNodeUpdate)
-			automatic := (u.Automatic != nil && *u.Automatic) || automaticNodeUpdate
-
-			output.Updates = append(output.Updates, &version.Update{
-				From:                u.From,
-				To:                  u.To,
-				Automatic:           automatic,
-				AutomaticNodeUpdate: automaticNodeUpdate,
-				Type:                kind,
-			})
-		}
-	}
-
-	appendOrchestrator(&config.Kubernetes, kubermaticapiv1.KubernetesClusterType)
-	return toYAML(output)
-}
-
-type providerIncompatibilitiesYAML struct {
-	ProviderIncompatibilities []*version.ProviderIncompatibility `json:"ProviderIncompatibilities"`
-}
-
-func CreateProviderIncompatibilitiesYAML(config *operatorv1alpha1.KubermaticVersionsConfiguration) (string, error) {
-	output := providerIncompatibilitiesYAML{
-		ProviderIncompatibilities: make([]*version.ProviderIncompatibility, 0),
-	}
-
-	appendOrchestrator := func(cfg *operatorv1alpha1.KubermaticVersioningConfiguration, kind string) {
-		for _, i := range cfg.ProviderIncompatibilities {
-			output.ProviderIncompatibilities = append(output.ProviderIncompatibilities, &version.ProviderIncompatibility{
-				Provider:  i.Provider,
-				Version:   i.Version,
-				Condition: i.Condition,
-				Operation: i.Operation,
-				Type:      kind,
-			})
-		}
-	}
-
-	appendOrchestrator(&config.Kubernetes, kubermaticapiv1.KubernetesClusterType)
-	return toYAML(output)
-}
-
-func toYAML(data interface{}) (string, error) {
-	tmp, err := json.Marshal(data)
-	if err != nil {
-		return "", fmt.Errorf("failed to encode as JSON: %v", err)
-	}
-
-	res, err := yaml.JSONToYAML(tmp)
-	if err != nil {
-		return "", fmt.Errorf("failed to encode as YAML: %v", err)
-	}
-
-	return string(res), nil
-}

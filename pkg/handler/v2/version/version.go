@@ -26,9 +26,9 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
+	"k8c.io/kubermatic/v2/pkg/version"
 )
 
 // listProviderVersionsReq represents a request for a list of versions
@@ -69,7 +69,7 @@ func DecodeListProviderVersions(ctx context.Context, r *http.Request) (interface
 }
 
 // ListVersions returns a list of available Kubernetes version for the given provider
-func ListVersions(updateManager common.UpdateManager) endpoint.Endpoint {
+func ListVersions(configGetter provider.KubermaticConfigurationGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(listProviderVersionsReq)
 		if !ok {
@@ -80,7 +80,12 @@ func ListVersions(updateManager common.UpdateManager) endpoint.Endpoint {
 			return nil, errors.NewBadRequest(err.Error())
 		}
 
-		versions, err := updateManager.GetVersionsV2(req.Type, kubermaticv1.ProviderType(req.ProviderName))
+		config, err := configGetter(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		versions, err := version.NewFromConfiguration(config).GetVersionsV2(req.Type, kubermaticv1.ProviderType(req.ProviderName))
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, err.Error())
 		}

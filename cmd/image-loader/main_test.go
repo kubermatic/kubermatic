@@ -20,7 +20,7 @@ import (
 	"context"
 	"testing"
 
-	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
@@ -32,7 +32,7 @@ import (
 func TestRetagImageForAllVersions(t *testing.T) {
 	log := kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar()
 
-	config, err := common.DefaultConfiguration(&operatorv1alpha1.KubermaticConfiguration{}, log)
+	config, err := defaults.DefaultConfiguration(&operatorv1alpha1.KubermaticConfiguration{}, log)
 	if err != nil {
 		t.Errorf("failed to determine versions: %v", err)
 	}

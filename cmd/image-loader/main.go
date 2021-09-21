@@ -30,8 +30,8 @@ import (
 	"go.uber.org/zap"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common/vpa"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	masteroperator "k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/kubermatic"
 	seedoperatorkubermatic "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/kubermatic"
 	seedoperatornodeportproxy "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
@@ -262,7 +262,7 @@ func getImagesForVersion(log *zap.SugaredLogger, clusterVersion *kubermaticversi
 }
 
 func getImagesFromCreators(log *zap.SugaredLogger, templateData *resources.TemplateData, config *operatorv1alpha1.KubermaticConfiguration, kubermaticVersions kubermatic.Versions) (images []string, err error) {
-	seed, err := common.DefaultSeed(&kubermaticv1.Seed{}, log)
+	seed, err := defaults.DefaultSeed(&kubermaticv1.Seed{}, log)
 	if err != nil {
 		return nil, fmt.Errorf("failed to default Seed: %v", err)
 	}
@@ -475,9 +475,9 @@ func getTemplateData(clusterVersion *kubermaticversion.Version, kubermaticVersio
 		WithEtcdDiskSize(resource.Quantity{}).
 		WithInClusterPrometheusDefaultRulesDisabled(false).
 		WithInClusterPrometheusDefaultScrapingConfigsDisabled(false).
-		WithKubermaticImage(resources.DefaultKubermaticImage).
-		WithEtcdLauncherImage(resources.DefaultEtcdLauncherImage).
-		WithDnatControllerImage(resources.DefaultDNATControllerImage).
+		WithKubermaticImage(defaults.DefaultKubermaticImage).
+		WithEtcdLauncherImage(defaults.DefaultEtcdLauncherImage).
+		WithDnatControllerImage(defaults.DefaultDNATControllerImage).
 		WithBackupPeriod(20 * time.Minute).
 		WithFailureDomainZoneAntiaffinity(false).
 		WithVersions(kubermaticVersions).

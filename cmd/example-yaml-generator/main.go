@@ -29,7 +29,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 
@@ -176,7 +176,7 @@ func createExampleSeed() *kubermaticv1.Seed {
 		},
 	}
 
-	defaulted, err := common.DefaultSeed(seed, zap.NewNop().Sugar())
+	defaulted, err := defaults.DefaultSeed(seed, zap.NewNop().Sugar())
 	if err != nil {
 		log.Fatalf("Failed to default Seed: %v", err)
 	}
@@ -209,7 +209,7 @@ func createExampleKubermaticConfiguration() *operatorv1alpha1.KubermaticConfigur
 		},
 	}
 
-	defaulted, err := common.DefaultConfiguration(cfg, zap.NewNop().Sugar())
+	defaulted, err := defaults.DefaultConfiguration(cfg, zap.NewNop().Sugar())
 	if err != nil {
 		log.Fatalf("Failed to default KubermaticConfiguration: %v", err)
 	}
