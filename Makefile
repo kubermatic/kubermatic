@@ -123,7 +123,6 @@ endif
 lint:
 	golangci-lint run \
 		--verbose \
-		--build-tags "$(KUBERMATIC_EDITION)" \
 		--print-resources-usage \
 		./pkg/... ./cmd/... ./codegen/...
 

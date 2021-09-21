@@ -22,27 +22,27 @@ run:
     - create
     - e2e
     - integration
+  skip-files:
+  - zz_generated.*.go
 
 linters:
   enable:
-    - golint
-    - govet
-    - gofmt
-    - structcheck
-    - varcheck
-    - interfacer
-    - unconvert
-    - ineffassign
-    - goconst
-    - gocyclo
-    - misspell
-    - gosimple
-    - unused
-    - errcheck
-    - deadcode
     - bodyclose
+    - deadcode
+    - errcheck
+    - goconst
     - gocritic
+    - gocyclo
+    - gofmt
+    - gosimple
+    - govet
+    - ineffassign
+    - misspell
     - staticcheck
+    - structcheck
+    - unconvert
+    - unused
+    - varcheck
   disable-all: true
 
 # NOTE: Do not use commas in the exclude patterns, or else the regex will be
@@ -63,3 +63,10 @@ issues:
   - struct field Spec repeats json tag "spec"
   # Generated code
   - func clusterDnsOperatorImage should be clusterDNSOperatorImage
+
+linters-settings:
+  tagliatelle:
+    case:
+      rules:
+        json: goCamel
+        yaml: goCamel
