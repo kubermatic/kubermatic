@@ -17123,6 +17123,25 @@
       },
       "x-go-package": "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
     },
+    "CNIPluginSettings": {
+      "type": "object",
+      "title": "CNIPluginSettings contains the spec of the CNI plugin used by the Cluster.",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/CNIPluginType"
+        },
+        "version": {
+          "type": "string",
+          "x-go-name": "Version"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
+    "CNIPluginType": {
+      "description": "CNIPluginType define the type of CNI plugin installed. e.g. Canal",
+      "type": "string",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
     "CRD": {
       "type": "object",
       "properties": {
@@ -17491,6 +17510,9 @@
         },
         "clusterNetwork": {
           "$ref": "#/definitions/ClusterNetworkingConfig"
+        },
+        "cniPlugin": {
+          "$ref": "#/definitions/CNIPluginSettings"
         },
         "containerRuntime": {
           "description": "ContainerRuntime to use, i.e. Docker or containerd. By default containerd will be used.",
