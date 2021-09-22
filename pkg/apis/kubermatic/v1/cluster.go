@@ -307,13 +307,13 @@ type ClusterStatus struct {
 	// KubermaticVersion is the current kubermatic version in a cluster.
 	KubermaticVersion string `json:"kubermaticVersion"`
 	// Deprecated
-	RootCA *KeyCert `json:"rootCA,omitempty"`
+	RootCA *KeyCert `json:"rootCA,omitempty"` //nolint:tagliatelle
 	// Deprecated
 	ApiserverCert *KeyCert `json:"apiserverCert,omitempty"`
 	// Deprecated
 	KubeletCert *KeyCert `json:"kubeletCert,omitempty"`
 	// Deprecated
-	ApiserverSSHKey *RSAKeys `json:"apiserverSshKey,omitempty"`
+	ApiserverSSHKey *RSAKeys `json:"apiserverSSHKey,omitempty"`
 	// Deprecated
 	ServiceAccountKey Bytes `json:"serviceAccountKey,omitempty"`
 	// NamespaceName defines the namespace the control plane of this cluster is deployed in
@@ -363,8 +363,8 @@ const (
 )
 
 type OIDCSettings struct {
-	IssuerURL     string `json:"issuerUrl,omitempty"`
-	ClientID      string `json:"clientId,omitempty"`
+	IssuerURL     string `json:"issuerURL,omitempty"`
+	ClientID      string `json:"clientID,omitempty"`
 	ClientSecret  string `json:"clientSecret,omitempty"`
 	UsernameClaim string `json:"usernameClaim,omitempty"`
 	GroupsClaim   string `json:"groupsClaim,omitempty"`
@@ -600,7 +600,7 @@ type AzureCloudSpec struct {
 	AssignAvailabilitySet *bool  `json:"assignAvailabilitySet"`
 	AvailabilitySet       string `json:"availabilitySet"`
 	// LoadBalancerSKU sets the LB type that will be used for the Azure cluster, possible values are "basic" and "standard", if empty, "basic" will be used
-	LoadBalancerSKU LBSKU `json:"loadBalancerSKU"`
+	LoadBalancerSKU LBSKU `json:"loadBalancerSKU"` //nolint:tagliatelle
 }
 
 // VSphereCredentials credentials represents a credential for accessing vSphere
@@ -658,12 +658,12 @@ type BringYourOwnCloudSpec struct{}
 type AWSCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
-	AccessKeyID     string `json:"accessKeyId,omitempty"`
+	AccessKeyID     string `json:"accessKeyID,omitempty"`
 	SecretAccessKey string `json:"secretAccessKey,omitempty"`
-	VPCID           string `json:"vpcId"`
+	VPCID           string `json:"vpcID"`
 	// The IAM role, the control plane will use. The control plane will perform an assume-role
-	ControlPlaneRoleARN string `json:"roleARN"`
-	RouteTableID        string `json:"routeTableId"`
+	ControlPlaneRoleARN string `json:"roleARN"` //nolint:tagliatelle
+	RouteTableID        string `json:"routeTableID"`
 	InstanceProfileName string `json:"instanceProfileName"`
 	SecurityGroupID     string `json:"securityGroupID"`
 
@@ -701,7 +701,7 @@ type OpenstackCloudSpec struct {
 	// When specified, all worker nodes will receive a public ip from this floating ip pool
 	//
 	// Note that the network is external if the "External" field is set to true
-	FloatingIPPool string `json:"floatingIpPool"`
+	FloatingIPPool string `json:"floatingIPPool"`
 	RouterID       string `json:"routerID"`
 	SubnetID       string `json:"subnetID"`
 	// Whether or not to use Octavia for LoadBalancer type of Service
@@ -744,7 +744,7 @@ type KubevirtCloudSpec struct {
 type AlibabaCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
-	AccessKeyID     string `json:"accessKeyId,omitempty"`
+	AccessKeyID     string `json:"accessKeyID,omitempty"`
 	AccessKeySecret string `json:"accessKeySecret,omitempty"`
 }
 

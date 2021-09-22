@@ -253,9 +253,9 @@ func (s Hetzner) IsValid() bool {
 type Azure struct {
 	PresetProvider `json:",inline"`
 
-	TenantID       string `json:"tenantId"`
-	SubscriptionID string `json:"subscriptionId"`
-	ClientID       string `json:"clientId"`
+	TenantID       string `json:"tenantID"`
+	SubscriptionID string `json:"subscriptionID"`
+	ClientID       string `json:"clientID"`
 	ClientSecret   string `json:"clientSecret"`
 
 	ResourceGroup     string `json:"resourceGroup,omitempty"`
@@ -265,7 +265,7 @@ type Azure struct {
 	RouteTableName    string `json:"routeTable,omitempty"`
 	SecurityGroup     string `json:"securityGroup,omitempty"`
 	// LoadBalancerSKU sets the LB type that will be used for the Azure cluster, possible values are "basic" and "standard", if empty, "basic" will be used
-	LoadBalancerSKU LBSKU `json:"loadBalancerSKU"`
+	LoadBalancerSKU LBSKU `json:"loadBalancerSKU"` //nolint:tagliatelle
 }
 
 func (s Azure) IsValid() bool {
@@ -295,14 +295,14 @@ func (s VSphere) IsValid() bool {
 type AWS struct {
 	PresetProvider `json:",inline"`
 
-	AccessKeyID     string `json:"accessKeyId"`
+	AccessKeyID     string `json:"accessKeyID"`
 	SecretAccessKey string `json:"secretAccessKey"`
 
-	VPCID               string `json:"vpcId,omitempty"`
-	RouteTableID        string `json:"routeTableId,omitempty"`
+	VPCID               string `json:"vpcID,omitempty"`
+	RouteTableID        string `json:"routeTableID,omitempty"`
 	InstanceProfileName string `json:"instanceProfileName,omitempty"`
 	SecurityGroupID     string `json:"securityGroupID,omitempty"`
-	ControlPlaneRoleARN string `json:"roleARN,omitempty"`
+	ControlPlaneRoleARN string `json:"roleARN,omitempty"` //nolint:tagliatelle
 }
 
 func (s AWS) IsValid() bool {
@@ -326,7 +326,7 @@ type Openstack struct {
 
 	Network        string `json:"network,omitempty"`
 	SecurityGroups string `json:"securityGroups,omitempty"`
-	FloatingIPPool string `json:"floatingIpPool,omitempty"`
+	FloatingIPPool string `json:"floatingIPPool,omitempty"`
 	RouterID       string `json:"routerID,omitempty"`
 	SubnetID       string `json:"subnetID,omitempty"`
 }
@@ -351,7 +351,7 @@ type Packet struct {
 	PresetProvider `json:",inline"`
 
 	APIKey    string `json:"apiKey"`
-	ProjectID string `json:"projectId"`
+	ProjectID string `json:"projectID"`
 
 	BillingCycle string `json:"billingCycle,omitempty"`
 }
@@ -397,7 +397,7 @@ func (s Kubevirt) IsValid() bool {
 type Alibaba struct {
 	PresetProvider `json:",inline"`
 
-	AccessKeyID     string `json:"accessKeyId"`
+	AccessKeyID     string `json:"accessKeyID"`
 	AccessKeySecret string `json:"accessKeySecret"`
 }
 
