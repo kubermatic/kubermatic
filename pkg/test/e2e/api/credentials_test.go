@@ -20,12 +20,8 @@ package api
 
 import (
 	"context"
-	"fmt"
-	"net/http"
-	"net/url"
 	"sort"
 	"testing"
-	"time"
 
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
@@ -90,41 +86,19 @@ func TestListCredentials(t *testing.T) {
 	}
 }
 
-func TestProviderEndpointsWithCredentials(t *testing.T) {
+func TestAzureSizesWithCredentials(t *testing.T) {
 	tests := []struct {
 		name           string
 		credentialName string
-		path           string
 		location       string
-		expectedCode   int
 	}{
-		{
-			name:           "test, get DigitalOcean VM sizes",
-			credentialName: "e2e-digitalocean",
-			path:           "api/v1/providers/digitalocean/sizes",
-			expectedCode:   http.StatusOK,
-		},
 		{
 			name:           "test, get Azure VM sizes",
 			credentialName: "e2e-azure",
-			path:           "api/v1/providers/azure/sizes",
 			location:       "westeurope",
-			expectedCode:   http.StatusOK,
 		},
 	}
-
 	ctx := context.Background()
-
-	endpoint, err := utils.APIEndpoint()
-	if err != nil {
-		t.Fatalf("failed to determine Kubermatic API endpoint: %v", err)
-	}
-
-	u, err := url.Parse(endpoint)
-	if err != nil {
-		t.Fatalf("failed to parse URL: %v", err)
-	}
-
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			masterToken, err := utils.RetrieveMasterToken(ctx)
@@ -132,38 +106,40 @@ func TestProviderEndpointsWithCredentials(t *testing.T) {
 				t.Fatalf("failed to get master token: %v", err)
 			}
 
-			u.Path = tc.path
-
-			req, err := http.NewRequest("GET", u.String(), nil)
+			testClient := utils.NewTestClient(masterToken, t)
+			sizeList, err := testClient.ListAzureSizes(tc.credentialName, tc.location)
 			if err != nil {
-				t.Fatalf("failed to create request: %v", err)
+				t.Fatalf("failed to get Azure size list: %v", err)
 			}
+			t.Log(sizeList)
+		})
+	}
+}
 
-			req.Header.Set("Cache-Control", "no-cache")
-			req.Header.Set("Content-Type", "application/json")
-			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", masterToken))
-			req.Header.Set("Credential", tc.credentialName)
-			if len(tc.location) > 0 {
-				req.Header.Set("Location", tc.location)
-			}
-
-			// with those settings the cumulative sleep duration is ~ 8s
-			// when all attempts are made.
-			client := &http.Client{
-				Transport: utils.NewRoundTripperWithRetries(t, 15*time.Second, utils.Backoff{
-					Steps:    4,
-					Duration: 1 * time.Second,
-					Factor:   1.5}),
-			}
-			resp, err := client.Do(req)
+func TestDOSizesWithCredentials(t *testing.T) {
+	tests := []struct {
+		name           string
+		credentialName string
+	}{
+		{
+			name:           "test, get DigitalOcean VM sizes",
+			credentialName: "e2e-digitalocean",
+		},
+	}
+	ctx := context.Background()
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			masterToken, err := utils.RetrieveMasterToken(ctx)
 			if err != nil {
-				t.Fatalf("error reading response: %v", err)
+				t.Fatalf("failed to get master token: %v", err)
 			}
-			defer resp.Body.Close()
 
-			if resp.StatusCode != tc.expectedCode {
-				t.Errorf("failed to get expected response [%d] from %q endpoint: %v", tc.expectedCode, tc.path, err)
+			testClient := utils.NewTestClient(masterToken, t)
+			sizeList, err := testClient.ListDOSizes(tc.credentialName)
+			if err != nil {
+				t.Fatalf("failed to get DO size list: %v", err)
 			}
+			t.Log(sizeList)
 		})
 	}
 }
