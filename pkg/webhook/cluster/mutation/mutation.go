@@ -34,6 +34,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
+var (
+	defaultCNIPluginVersion = map[kubermaticv1.CNIPluginType]string{
+		kubermaticv1.CNIPluginTypeCanal:  "v3.19",
+		kubermaticv1.CNIPluginTypeCilium: "v1.10",
+	}
+)
+
 // AdmissionHandler for mutating Kubermatic Cluster CRD.
 type AdmissionHandler struct {
 	log     logr.Logger
@@ -100,8 +107,10 @@ func (h *AdmissionHandler) applyDefaults(c *kubermaticv1.Cluster) {
 	if c.Spec.CNIPlugin == nil {
 		c.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
 			Type:    kubermaticv1.CNIPluginTypeCanal,
-			Version: "v3.19",
+			Version: defaultCNIPluginVersion[kubermaticv1.CNIPluginTypeCanal],
 		}
+	} else if c.Spec.CNIPlugin.Version == "" {
+		c.Spec.CNIPlugin.Version = defaultCNIPluginVersion[c.Spec.CNIPlugin.Type]
 	}
 
 	if len(c.Spec.ClusterNetwork.Services.CIDRBlocks) == 0 {
