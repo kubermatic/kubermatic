@@ -60,6 +60,12 @@ type AddonSpec struct {
 	RequiredResourceTypes []schema.GroupVersionKind `json:"requiredResourceTypes,omitempty"`
 	// IsDefault indicates whether the addon is default
 	IsDefault bool `json:"isDefault,omitempty"`
+	// RawAddonTemplate contains custom addon templates as raw data instead of reading it from a file.
+	// The raw data must be base64 encoded otherwise the controller will return an error. RawAddonTemplate
+	// and default template which are read from the addon manifests dir are mutually exclusive.
+	RawAddonTemplate runtime.RawExtension `json:"rawAddonTemplate,omitempty"`
+	// AddonSourceURL is a url for a http endpoint which serves all the needed manifests as one file.
+	RawAddonReference string `json:"rawAddonReference,omitempty"`
 }
 
 // AddonList is a list of addons

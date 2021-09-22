@@ -21,6 +21,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"os/exec"
 	"path"
@@ -464,6 +465,20 @@ func (r *Reconciler) setupManifestInteraction(ctx context.Context, log *zap.Suga
 	return kubeconfigFilename, manifestFilename, done, nil
 }
 
+func (r *Reconciler) setupKubeconfigInteractions(ctx context.Context, log *zap.SugaredLogger,
+	addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (string, fileHandlingDone, error) {
+	kubeconfigFilename, kubeconfigDone, err := r.writeAdminKubeconfig(ctx, log, addon, cluster)
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to write the admin kubeconfig to the local filesystem: %v", err)
+	}
+
+	done := func() {
+		kubeconfigDone()
+	}
+
+	return kubeconfigFilename, done, nil
+}
+
 func (r *Reconciler) getApplyCommand(ctx context.Context, kubeconfigFilename, manifestFilename string, selector fmt.Stringer, clusterVersion *semver.Version) (*exec.Cmd, error) {
 	binary, err := kubectl.BinaryForClusterVersion(clusterVersion)
 	if err != nil {
@@ -483,17 +498,47 @@ func (r *Reconciler) getApplyCommand(ctx context.Context, kubeconfigFilename, ma
 }
 
 func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
-	kubeconfigFilename, manifestFilename, done, err := r.setupManifestInteraction(ctx, log, addon, cluster)
+	var (
+		manifestFilename string
+		done             fileHandlingDone
+		err              error
+		rawFile          []byte
+	)
+
+	if addon.Spec.RawAddonReference != "" {
+		resp, err := http.Get(addon.Spec.RawAddonReference)
+		if err != nil {
+			return err
+		}
+
+		rawFile, err = ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+
+		manifestFilename = addon.Spec.RawAddonReference
+	} else {
+		_, manifestFilename, done, err = r.setupManifestInteraction(ctx, log, addon, cluster)
+		if err != nil {
+			return err
+		}
+
+		rawFile, err = ioutil.ReadFile(manifestFilename)
+		if err != nil {
+			return err
+		}
+
+		defer done()
+	}
+
+	kubeconfigFilename, done, err := r.setupKubeconfigInteractions(ctx, log, addon, cluster)
 	if err != nil {
 		return err
 	}
+
 	defer done()
 
-	d, err := ioutil.ReadFile(manifestFilename)
-	if err != nil {
-		return err
-	}
-	sd := strings.TrimSpace(string(d))
+	sd := strings.TrimSpace(string(rawFile))
 	if len(sd) == 0 {
 		log.Debug("Skipping addon installation as the manifest is empty after parsing")
 		return nil
