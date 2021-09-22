@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -193,9 +194,9 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		Client:               mgr.GetClient(),
 		dockerPullConfigJSON: []byte("{}"),
 		nodeAccessNetwork:    kubermaticv1.DefaultNodeAccessNetwork,
-		kubermaticImage:      resources.DefaultKubermaticImage,
-		dnatControllerImage:  resources.DefaultDNATControllerImage,
-		etcdLauncherImage:    resources.DefaultEtcdLauncherImage,
+		kubermaticImage:      defaults.DefaultKubermaticImage,
+		dnatControllerImage:  defaults.DefaultDNATControllerImage,
+		etcdLauncherImage:    defaults.DefaultEtcdLauncherImage,
 		seedGetter: func() (*kubermaticv1.Seed, error) {
 			return &kubermaticv1.Seed{
 				Spec: kubermaticv1.SeedSpec{

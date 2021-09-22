@@ -33,6 +33,7 @@ import (
 	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/crd/migrations/util"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
@@ -411,11 +412,11 @@ func convertOIDCCABundle(values *helmValues, config *operatorv1alpha1.Kubermatic
 func convertAuth(values *kubermaticValues) (*operatorv1alpha1.KubermaticAuthConfiguration, error) {
 	effectiveClientID := values.Auth.ClientID
 	if effectiveClientID == "" {
-		effectiveClientID = common.DefaultAuthClientID
+		effectiveClientID = defaults.DefaultAuthClientID
 	}
 
 	return &operatorv1alpha1.KubermaticAuthConfiguration{
-		ClientID:                 strIfChanged(values.Auth.ClientID, common.DefaultAuthClientID),
+		ClientID:                 strIfChanged(values.Auth.ClientID, defaults.DefaultAuthClientID),
 		TokenIssuer:              strIfChanged(values.Auth.TokenIssuer, fmt.Sprintf("https://%s/dex", values.Domain)),
 		IssuerClientID:           strIfChanged(values.Auth.IssuerClientID, fmt.Sprintf("%sIssuer", effectiveClientID)),
 		IssuerRedirectURL:        strIfChanged(values.Auth.IssuerRedirectURL, fmt.Sprintf("https://%s/api/v1/kubeconfig", values.Domain)),
@@ -427,33 +428,33 @@ func convertAuth(values *kubermaticValues) (*operatorv1alpha1.KubermaticAuthConf
 }
 
 func convertAPI(values *kubermaticValues) (*operatorv1alpha1.KubermaticAPIConfiguration, error) {
-	replicas, err := getReplicas(values.API.Replicas, common.DefaultAPIReplicas)
+	replicas, err := getReplicas(values.API.Replicas, defaults.DefaultAPIReplicas)
 	if err != nil {
 		return nil, fmt.Errorf("invalid replicas: %v", err)
 	}
 
 	return &operatorv1alpha1.KubermaticAPIConfiguration{
-		DockerRepository: strIfChanged(values.API.Image.Repository, resources.DefaultKubermaticImage),
+		DockerRepository: strIfChanged(values.API.Image.Repository, defaults.DefaultKubermaticImage),
 		AccessibleAddons: values.API.AccessibleAddons,
 		PProfEndpoint:    getPProfEndpoint(values.API.PProfEndpoint),
 		Replicas:         replicas,
-		Resources:        convertResources(values.API.Resources, common.DefaultAPIResources),
+		Resources:        convertResources(values.API.Resources, defaults.DefaultAPIResources),
 	}, nil
 }
 
 func convertSeedController(values *kubermaticValues) (*operatorv1alpha1.KubermaticSeedControllerConfiguration, error) {
-	replicas, err := getReplicas(values.Controller.Replicas, common.DefaultSeedControllerMgrReplicas)
+	replicas, err := getReplicas(values.Controller.Replicas, defaults.DefaultSeedControllerMgrReplicas)
 	if err != nil {
 		return nil, fmt.Errorf("invalid replicas: %v", err)
 	}
 
 	storeContainer := strings.TrimSpace(values.StoreContainer)
-	if storeContainer == strings.TrimSpace(common.DefaultBackupStoreContainer) {
+	if storeContainer == strings.TrimSpace(defaults.DefaultBackupStoreContainer) {
 		storeContainer = ""
 	}
 
 	cleanupContainer := strings.TrimSpace(values.CleanupContainer)
-	if cleanupContainer == strings.TrimSpace(common.DefaultBackupCleanupContainer) {
+	if cleanupContainer == strings.TrimSpace(defaults.DefaultBackupCleanupContainer) {
 		cleanupContainer = ""
 	}
 
@@ -467,17 +468,17 @@ func convertSeedController(values *kubermaticValues) (*operatorv1alpha1.Kubermat
 
 	return &operatorv1alpha1.KubermaticSeedControllerConfiguration{
 		MaximumParallelReconciles: maxParallelReconciles,
-		DockerRepository:          strIfChanged(values.Controller.Image.Repository, resources.DefaultKubermaticImage),
+		DockerRepository:          strIfChanged(values.Controller.Image.Repository, defaults.DefaultKubermaticImage),
 		BackupStoreContainer:      storeContainer,
 		BackupCleanupContainer:    cleanupContainer,
 		PProfEndpoint:             getPProfEndpoint(values.Controller.PProfEndpoint),
 		Replicas:                  replicas,
-		Resources:                 convertResources(values.Controller.Resources, common.DefaultSeedControllerMgrResources),
+		Resources:                 convertResources(values.Controller.Resources, defaults.DefaultSeedControllerMgrResources),
 	}, nil
 }
 
 func convertUserCluster(values *kubermaticValues) (*operatorv1alpha1.KubermaticUserClusterConfiguration, error) {
-	kubernetesAddonCfg, err := convertAddonConfig(&values.Controller.Addons.Kubernetes, common.KubernetesAddonsFileName, resources.DefaultKubernetesAddonImage)
+	kubernetesAddonCfg, err := convertAddonConfig(&values.Controller.Addons.Kubernetes, common.KubernetesAddonsFileName, defaults.DefaultKubernetesAddonImage)
 	if err != nil {
 		return nil, fmt.Errorf("invalid kubernetes addons: %v", err)
 	}
@@ -502,16 +503,16 @@ func convertUserCluster(values *kubermaticValues) (*operatorv1alpha1.KubermaticU
 		customScrapingConfigs = string(encoded)
 	}
 
-	apiserverReplicas, err := getReplicas(values.APIServerDefaultReplicas, common.DefaultAPIServerReplicas)
+	apiserverReplicas, err := getReplicas(values.APIServerDefaultReplicas, defaults.DefaultAPIServerReplicas)
 	if err != nil {
 		return nil, fmt.Errorf("invalid apiserverDefaultReplicas: %v", err)
 	}
 
 	return &operatorv1alpha1.KubermaticUserClusterConfiguration{
-		KubermaticDockerRepository:     strIfChanged(values.KubermaticImage, resources.DefaultKubermaticImage),
-		DNATControllerDockerRepository: strIfChanged(values.DNATControllerImage, resources.DefaultDNATControllerImage),
-		NodePortRange:                  strIfChanged(values.Controller.NodeportRange, common.DefaultNodePortRange),
-		EtcdVolumeSize:                 strIfChanged(values.Etcd.DiskSize, common.DefaultEtcdVolumeSize),
+		KubermaticDockerRepository:     strIfChanged(values.KubermaticImage, defaults.DefaultKubermaticImage),
+		DNATControllerDockerRepository: strIfChanged(values.DNATControllerImage, defaults.DefaultDNATControllerImage),
+		NodePortRange:                  strIfChanged(values.Controller.NodeportRange, defaults.DefaultNodePortRange),
+		EtcdVolumeSize:                 strIfChanged(values.Etcd.DiskSize, defaults.DefaultEtcdVolumeSize),
 		OverwriteRegistry:              values.Controller.OverwriteRegistry,
 		Addons: operatorv1alpha1.KubermaticAddonsConfiguration{
 			Kubernetes: *kubernetesAddonCfg,
@@ -546,30 +547,30 @@ func convertAddonConfig(values *addonValues, defaultManifestFile string, default
 }
 
 func convertMasterController(values *kubermaticValues) (*operatorv1alpha1.KubermaticMasterControllerConfiguration, error) {
-	replicas, err := getReplicas(values.MasterController.Replicas, common.DefaultMasterControllerMgrReplicas)
+	replicas, err := getReplicas(values.MasterController.Replicas, defaults.DefaultMasterControllerMgrReplicas)
 	if err != nil {
 		return nil, fmt.Errorf("invalid replicas: %v", err)
 	}
 
 	return &operatorv1alpha1.KubermaticMasterControllerConfiguration{
-		DockerRepository: strIfChanged(values.MasterController.Image.Repository, resources.DefaultKubermaticImage),
+		DockerRepository: strIfChanged(values.MasterController.Image.Repository, defaults.DefaultKubermaticImage),
 		PProfEndpoint:    getPProfEndpoint(values.MasterController.PProfEndpoint),
 		Replicas:         replicas,
-		Resources:        convertResources(values.MasterController.Resources, common.DefaultMasterControllerMgrResources),
+		Resources:        convertResources(values.MasterController.Resources, defaults.DefaultMasterControllerMgrResources),
 	}, nil
 }
 
 func convertUI(values *kubermaticValues) (*operatorv1alpha1.KubermaticUIConfiguration, error) {
-	replicas, err := getReplicas(values.UI.Replicas, common.DefaultUIReplicas)
+	replicas, err := getReplicas(values.UI.Replicas, defaults.DefaultUIReplicas)
 	if err != nil {
 		return nil, fmt.Errorf("invalid replicas: %v", err)
 	}
 
 	return &operatorv1alpha1.KubermaticUIConfiguration{
-		DockerRepository: strIfChanged(values.UI.Image.Repository, resources.DefaultDashboardImage),
+		DockerRepository: strIfChanged(values.UI.Image.Repository, defaults.DefaultDashboardImage),
 		Config:           values.UI.Config,
 		Replicas:         replicas,
-		Resources:        convertResources(values.UI.Resources, common.DefaultUIResources),
+		Resources:        convertResources(values.UI.Resources, defaults.DefaultUIResources),
 	}, nil
 }
 
@@ -648,7 +649,7 @@ func getReplicas(yamlValue *string, defaultValue int) (*int32, error) {
 }
 
 func getPProfEndpoint(yamlValue string) *string {
-	if yamlValue == "" || yamlValue == common.DefaultPProfEndpoint {
+	if yamlValue == "" || yamlValue == defaults.DefaultPProfEndpoint {
 		return nil
 	}
 

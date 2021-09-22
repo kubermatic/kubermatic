@@ -65,6 +65,9 @@ spec:
         - '{"command":"/bin/openstack-cloud-controller-manager","args":["--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig","--v=1","--cloud-config=/etc/kubernetes/cloud/config","--cloud-provider=openstack"]}'
         command:
         - /http-prober-bin/http-prober
+        env:
+        - name: SSL_CERT_FILE
+          value: /etc/kubermatic/certs/ca-bundle.pem
         image: docker.io/k8scloudprovider/openstack-cloud-controller-manager:v1.22.0
         name: cloud-controller-manager
         resources:
@@ -80,6 +83,9 @@ spec:
           readOnly: true
         - mountPath: /etc/kubernetes/cloud
           name: cloud-config
+          readOnly: true
+        - mountPath: /etc/kubermatic/certs
+          name: ca-bundle
           readOnly: true
         - mountPath: /http-prober-bin
           name: http-prober-bin
@@ -115,6 +121,9 @@ spec:
       - configMap:
           name: cloud-config
         name: cloud-config
+      - configMap:
+          name: ca-bundle
+        name: ca-bundle
       - emptyDir: {}
         name: http-prober-bin
 status: {}

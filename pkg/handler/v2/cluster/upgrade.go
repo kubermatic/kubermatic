@@ -30,13 +30,13 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
-func GetUpgradesEndpoint(updateManager common.UpdateManager, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func GetUpgradesEndpoint(configGetter provider.KubermaticConfigurationGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(GetClusterReq)
 		if !ok {
-			return nil, errors.NewWrongRequest(request, common.GetClusterReq{})
+			return nil, errors.NewWrongMethod(request, common.GetClusterReq{})
 		}
-		return handlercommon.GetUpgradesEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, projectProvider, privilegedProjectProvider, updateManager)
+		return handlercommon.GetUpgradesEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, projectProvider, privilegedProjectProvider, configGetter)
 	}
 }
 
@@ -44,7 +44,7 @@ func UpgradeNodeDeploymentsEndpoint(projectProvider provider.ProjectProvider, pr
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(UpgradeNodeDeploymentsReq)
 		if !ok {
-			return nil, errors.NewWrongRequest(request, common.GetClusterReq{})
+			return nil, errors.NewWrongMethod(request, common.GetClusterReq{})
 		}
 		return handlercommon.UpgradeNodeDeploymentsEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, req.Body, projectProvider, privilegedProjectProvider)
 	}

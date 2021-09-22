@@ -88,16 +88,28 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 				return nil, err
 			}
 
-			dep.Spec.Template.Spec.Volumes = append(getVolumes(), corev1.Volume{
-				Name: resources.CloudConfigConfigMapName,
-				VolumeSource: corev1.VolumeSource{
-					ConfigMap: &corev1.ConfigMapVolumeSource{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: resources.CloudConfigConfigMapName,
+			dep.Spec.Template.Spec.Volumes = append(getVolumes(),
+				corev1.Volume{
+					Name: resources.CloudConfigConfigMapName,
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: resources.CloudConfigConfigMapName,
+							},
 						},
 					},
 				},
-			})
+				corev1.Volume{
+					Name: resources.CABundleConfigMapName,
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: resources.CABundleConfigMapName,
+							},
+						},
+					},
+				},
+			)
 
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
@@ -106,11 +118,24 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 					Image:   data.ImageRegistry(resources.RegistryDocker) + "/k8scloudprovider/openstack-cloud-controller-manager:v" + version,
 					Command: []string{"/bin/openstack-cloud-controller-manager"},
 					Args:    getOSFlags(data),
-					VolumeMounts: append(getVolumeMounts(), corev1.VolumeMount{
-						Name:      resources.CloudConfigConfigMapName,
-						MountPath: "/etc/kubernetes/cloud",
-						ReadOnly:  true,
-					}),
+					Env: []corev1.EnvVar{
+						{
+							Name:  "SSL_CERT_FILE",
+							Value: "/etc/kubermatic/certs/ca-bundle.pem",
+						},
+					},
+					VolumeMounts: append(getVolumeMounts(),
+						corev1.VolumeMount{
+							Name:      resources.CloudConfigConfigMapName,
+							MountPath: "/etc/kubernetes/cloud",
+							ReadOnly:  true,
+						},
+						corev1.VolumeMount{
+							Name:      resources.CABundleConfigMapName,
+							MountPath: "/etc/kubermatic/certs",
+							ReadOnly:  true,
+						},
+					),
 				},
 			}
 

@@ -208,13 +208,6 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 				})
 			}
 
-			args = append(
-				args,
-				"-versions=/opt/extra-files/versions.yaml",
-				"-updates=/opt/extra-files/updates.yaml",
-				"-provider-incompatibilities=/opt/extra-files/provider-incompatibilities.yaml",
-			)
-
 			if cfg.Spec.UserCluster.Addons.Kubernetes.DefaultManifests != "" {
 				args = append(args, "-kubernetes-addons-file=/opt/extra-files/"+common.KubernetesAddonsFileName)
 			} else {

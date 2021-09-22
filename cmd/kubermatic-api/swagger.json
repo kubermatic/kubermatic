@@ -17123,6 +17123,25 @@
       },
       "x-go-package": "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
     },
+    "CNIPluginSettings": {
+      "type": "object",
+      "title": "CNIPluginSettings contains the spec of the CNI plugin used by the Cluster.",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/CNIPluginType"
+        },
+        "version": {
+          "type": "string",
+          "x-go-name": "Version"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
+    "CNIPluginType": {
+      "description": "CNIPluginType define the type of CNI plugin installed. e.g. Canal",
+      "type": "string",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
     "CRD": {
       "type": "object",
       "properties": {
@@ -17491,6 +17510,9 @@
         },
         "clusterNetwork": {
           "$ref": "#/definitions/ClusterNetworkingConfig"
+        },
+        "cniPlugin": {
+          "$ref": "#/definitions/CNIPluginSettings"
         },
         "containerRuntime": {
           "description": "ContainerRuntime to use, i.e. Docker or containerd. By default containerd will be used.",
@@ -20671,7 +20693,7 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "ObjectReference": {
-      "description": "New uses of this type are discouraged because of difficulty describing its usage when embedded in APIs.\n1. Ignored fields.  It includes many fields which are not generally honored.  For instance, ResourceVersion and FieldPath are both very rarely valid in actual usage.\n2. Invalid usage help.  It is impossible to add specific help for individual usage.  In most embedded usages, there are particular\nrestrictions like, \"must refer only to types A and B\" or \"UID not honored\" or \"name must be restricted\".\nThose cannot be well described when embedded.\n3. Inconsistent validation.  Because the usages are different, the validation rules are different by usage, which makes it hard for users to predict what will happen.\n4. The fields are both imprecise and overly precise.  Kind is not a precise mapping to a URL. This can produce ambiguity\nduring interpretation and require a REST mapping.  In most cases, the dependency is on the group,resource tuple\nand the version of the actual struct is irrelevant.\n5. We cannot easily change it.  Because this type is embedded in many locations, updates to this type\nwill affect numerous schemas.  Don't make new APIs embed an underspecified API type they do not control.\nInstead of using this type, create a locally provided and used type that is well-focused on your reference.\nFor example, ServiceReferences for admission registration: https://github.com/kubernetes/api/blob/release-1.17/admissionregistration/v1/types.go#L533 .\n+k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object",
+      "description": "New uses of this type are discouraged because of difficulty describing its usage when embedded in APIs.\n1. Ignored fields.  It includes many fields which are not generally honored.  For instance, ResourceVersion and FieldPath are both very rarely valid in actual usage.\n2. Invalid usage help.  It is impossible to add specific help for individual usage.  In most embedded usages, there are particular\nrestrictions like, \"must refer only to types A and B\" or \"UID not honored\" or \"name must be restricted\".\nThose cannot be well described when embedded.\n3. Inconsistent validation.  Because the usages are different, the validation rules are different by usage, which makes it hard for users to predict what will happen.\n4. The fields are both imprecise and overly precise.  Kind is not a precise mapping to a URL. This can produce ambiguity\nduring interpretation and require a REST mapping.  In most cases, the dependency is on the group,resource tuple\nand the version of the actual struct is irrelevant.\n5. We cannot easily change it.  Because this type is embedded in many locations, updates to this type\nwill affect numerous schemas.  Don't make new APIs embed an underspecified API type they do not control.\nInstead of using this type, create a locally provided and used type that is well-focused on your reference.\nFor example, ServiceReferences for admission registration: https://github.com/kubernetes/api/blob/release-1.17/admissionregistration/v1/types.go#L533 .\n+k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object\n+structType=atomic",
       "type": "object",
       "title": "ObjectReference contains enough information to let you inspect or modify the referred object.",
       "properties": {
@@ -21249,7 +21271,7 @@
           "x-go-name": "ResourceNames"
         },
         "resources": {
-          "description": "Resources is a list of resources this rule applies to.  ResourceAll represents all resources.\n+optional",
+          "description": "Resources is a list of resources this rule applies to. '*' represents all resources.\n+optional",
           "type": "array",
           "items": {
             "type": "string"
@@ -21257,7 +21279,7 @@
           "x-go-name": "Resources"
         },
         "verbs": {
-          "description": "Verbs is a list of Verbs that apply to ALL the ResourceKinds and AttributeRestrictions contained in this rule.  VerbAll represents all kinds.",
+          "description": "Verbs is a list of Verbs that apply to ALL the ResourceKinds and AttributeRestrictions contained in this rule. '*' represents all verbs.",
           "type": "array",
           "items": {
             "type": "string"
@@ -22238,7 +22260,7 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "Subject": {
-      "description": "or a value for non-objects such as user and group names.",
+      "description": "or a value for non-objects such as user and group names.\n+structType=atomic",
       "type": "object",
       "title": "Subject contains a reference to the object or user identities a role binding applies to.  This can either hold a direct API object reference,",
       "properties": {

@@ -41,7 +41,6 @@ import (
 	updatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/update"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
-	"k8c.io/kubermatic/v2/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -349,16 +348,11 @@ func getContainerFromFile(path string) (*corev1.Container, error) {
 }
 
 func createUpdateController(ctrlCtx *controllerContext) error {
-	updateManager, err := version.NewFromFiles(ctrlCtx.runOptions.versionsFile, ctrlCtx.runOptions.updatesFile, ctrlCtx.runOptions.providerIncompatibilitiesFile)
-	if err != nil {
-		return fmt.Errorf("failed to create update manager: %v", err)
-	}
-
 	return updatecontroller.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
-		updateManager,
+		ctrlCtx.configGetter,
 		ctrlCtx.clientProvider,
 		ctrlCtx.log,
 		ctrlCtx.versions,
