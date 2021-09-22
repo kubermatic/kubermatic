@@ -79,20 +79,20 @@ require (
 	gopkg.in/square/go-jose.v2 v2.5.1
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
-	k8s.io/api v0.22.1
-	k8s.io/apiextensions-apiserver v0.22.1
-	k8s.io/apimachinery v0.22.1
-	k8s.io/apiserver v0.22.1
+	k8s.io/api v0.22.2
+	k8s.io/apiextensions-apiserver v0.22.2
+	k8s.io/apimachinery v0.22.2
+	k8s.io/apiserver v0.22.2
 	k8s.io/autoscaler v0.0.0-20190218140445-7f77136aeea4 // git digest for VPA v0.4.0
 	k8s.io/client-go v12.0.0+incompatible
-	k8s.io/code-generator v0.22.1
+	k8s.io/code-generator v0.22.2
 	k8s.io/klog v1.0.0
 	k8s.io/kube-aggregator v0.21.3
 	k8s.io/kubectl v0.21.3
-	k8s.io/metrics v0.21.3
+	k8s.io/metrics v0.22.2
 	k8s.io/test-infra v0.0.0-20210826180422-39483c498f0f
-	k8s.io/utils v0.0.0-20210802155522-efc7438f0176
-	sigs.k8s.io/controller-runtime v0.10.0
+	k8s.io/utils v0.0.0-20210819203725-bdf08cb9a70a
+	sigs.k8s.io/controller-runtime v0.10.1
 	sigs.k8s.io/yaml v1.2.0
 )
 
@@ -226,12 +226,13 @@ require (
 replace (
 	// etcd.v3 needs an old version for the google.golang.org/grpc/naming package, which got removed in grpc 1.30+
 	google.golang.org/grpc => google.golang.org/grpc v1.29.1
-	k8s.io/api => k8s.io/api v0.22.1
-	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.22.1
-	k8s.io/apimachinery => k8s.io/apimachinery v0.22.1
-	k8s.io/client-go => k8s.io/client-go v0.22.1
-	k8s.io/code-generator => k8s.io/code-generator v0.22.1
-	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.22.1
-	k8s.io/kubelet => k8s.io/kubelet v0.22.1
-	k8s.io/metrics => k8s.io/metrics v0.22.1
+	k8s.io/api => k8s.io/api v0.22.2
+	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.22.2
+	k8s.io/apimachinery => k8s.io/apimachinery v0.22.2
+	k8s.io/client-go => k8s.io/client-go v0.22.2
+	k8s.io/code-generator => k8s.io/code-generator v0.22.2
+	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.22.2
+	k8s.io/kubectl => k8s.io/kubectl v0.22.2
+	k8s.io/kubelet => k8s.io/kubelet v0.22.2
+	k8s.io/metrics => k8s.io/metrics v0.22.2
 )
