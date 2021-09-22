@@ -13,9 +13,11 @@
 # limitations under the License.
 
 # Generated from:
-#   helm template cilium cilium/cilium --version 1.10.4 --namespace kube-system --set operator.replicas=1
+#   helm template cilium cilium/cilium --version 1.10.4 --namespace kube-system --set operator.replicas=1 \
+#     --set kubeProxyReplacement=strict --set k8sServiceHost=CHANGEME --set k8sServicePort=CHANGEME
 # Modifications:
 #   - templated cluster-pool-ipv4-cidr
+#   - templated kube-proxy-replacement parts
 
 {{ if eq .Cluster.CNIPlugin.Type "cilium" }}
 {{ if eq .Cluster.CNIPlugin.Version "v1.10" }}
