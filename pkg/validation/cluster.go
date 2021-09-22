@@ -71,7 +71,7 @@ func ValidateCreateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.
 
 	specFieldPath := field.NewPath("spec")
 
-	if errs := ValidateClusterNetworkConfig(&spec.ClusterNetwork, specFieldPath.Child("networkConfig"), true); len(errs) > 0 {
+	if errs := ValidateClusterNetworkConfig(&spec.ClusterNetwork, spec.CNIPlugin, specFieldPath.Child("networkConfig"), true); len(errs) > 0 {
 		return fmt.Errorf("cluster network config validation failed: %v", errs)
 	}
 
@@ -83,7 +83,7 @@ func ValidateCreateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.
 	return nil
 }
 
-func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, fldPath *field.Path, allowEmpty bool) field.ErrorList {
+func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, cni *kubermaticv1.CNIPluginSettings, fldPath *field.Path, allowEmpty bool) field.ErrorList {
 	allErrs := field.ErrorList{}
 	// We only consider first element (not sure why we use lists).
 	if len(n.Pods.CIDRBlocks) > 1 {
@@ -120,6 +120,11 @@ func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, fldPa
 	if (!allowEmpty || n.ProxyMode != "") && (n.ProxyMode != resources.IPVSProxyMode && n.ProxyMode != resources.IPTablesProxyMode && n.ProxyMode != resources.EBPFProxyMode) {
 		allErrs = append(allErrs, field.NotSupported(fldPath.Child("proxyMode"), n.ProxyMode,
 			[]string{resources.IPVSProxyMode, resources.IPTablesProxyMode, resources.EBPFProxyMode}))
+	}
+
+	if n.ProxyMode == resources.EBPFProxyMode && (cni == nil || cni.Type != kubermaticv1.CNIPluginTypeCilium) {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("proxyMode"), n.ProxyMode,
+			fmt.Sprintf("%s proxy mode is valid only for %s CNI", resources.EBPFProxyMode, kubermaticv1.CNIPluginTypeCilium)))
 	}
 
 	return allErrs
