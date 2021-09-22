@@ -18,9 +18,11 @@ run:
   modules-download-mode: readonly
   deadline: 20m
   build-tags:
+    - ce
     - cloud
     - create
     - e2e
+    - ee
     - integration
   skip-files:
   - zz_generated.*.go
