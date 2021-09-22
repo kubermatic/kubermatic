@@ -17389,7 +17389,7 @@
           "$ref": "#/definitions/NetworkRanges"
         },
         "proxyMode": {
-          "description": "ProxyMode defines the kube-proxy mode (ipvs/iptables).\nDefaults to ipvs.",
+          "description": "ProxyMode defines the kube-proxy mode (\"ipvs\" / \"iptables\" / \"ebpf\").\nDefaults to \"ipvs\". \"ebpf\" disables kube-proxy and requires CNI support.",
           "type": "string",
           "x-go-name": "ProxyMode"
         },
