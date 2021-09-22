@@ -102,6 +102,10 @@ type DatacenterSpec struct {
 	// EnforcePodSecurityPolicy enforces pod security policy plugin on every clusters within the DC,
 	// ignoring cluster-specific settings
 	EnforcePodSecurityPolicy bool `json:"enforcePodSecurityPolicy"`
+
+	// EnabledOperatingSystems defines a set of supported operating systems on the given Datacenter.
+	// This allows Admins to define which operating systems are allowed.
+	EnabledOperatingSystems []string `json:"enabledOperatingSystems,omitempty"`
 }
 
 // DatacenterList represents a list of datacenters

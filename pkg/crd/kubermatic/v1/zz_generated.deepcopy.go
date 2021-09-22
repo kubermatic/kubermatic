@@ -1671,6 +1671,11 @@ func (in *DatacenterSpec) DeepCopyInto(out *DatacenterSpec) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
+	if in.EnabledOperatingSystems != nil {
+		in, out := &in.EnabledOperatingSystems, &out.EnabledOperatingSystems
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	return
 }
 

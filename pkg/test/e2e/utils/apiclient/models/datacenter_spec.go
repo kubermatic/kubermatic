@@ -22,6 +22,10 @@ type DatacenterSpec struct {
 	// It is used for informational purposes.
 	Country string `json:"country,omitempty"`
 
+	// EnabledOperatingSystems defines a set of supported operating systems on the given Datacenter.
+	// This allows Admins to define which operating systems are allowed.
+	EnabledOperatingSystems []string `json:"enabledOperatingSystems"`
+
 	// EnforceAuditLogging enforces audit logging on every cluster within the DC,
 	// ignoring cluster-specific settings.
 	EnforceAuditLogging bool `json:"enforceAuditLogging,omitempty"`

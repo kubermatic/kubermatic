@@ -173,6 +173,20 @@ func TestCreateMachineDeployment(t *testing.T) {
 			),
 			ExistingAPIUser: test.GenDefaultAPIUser(),
 		},
+		// scenario 9
+		{
+			Name:             "scenario 9: invalid operating system",
+			Body:             `{"annotations":{"test/annotations":"true"},"spec":{"replicas":1,"dynamicConfig":true,"template":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":[]}},"operatingSystem":{"flatcar":{"disableAutoUpdate":false}}}}}`,
+			ExpectedResponse: `{"error":{"code":400,"message":"node deployment has an unsupported operating system configuration. Supported OS: [ubuntu]"}}`,
+			HTTPStatus:       http.StatusBadRequest,
+			ProjectID:        test.GenDefaultProject().Name,
+			ClusterID:        test.GenDefaultCluster().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				genTestClusterEnabledOperatingSystems(true),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
 	}
 
 	for _, tc := range testcases {
@@ -1907,6 +1921,12 @@ func genTestCluster(isControllerReady bool) *kubermaticv1.Cluster {
 	cluster.Spec.Cloud = kubermaticv1.CloudSpec{
 		DatacenterName: "regular-do1",
 	}
+	return cluster
+}
+
+func genTestClusterEnabledOperatingSystems(isControllerReady bool) *kubermaticv1.Cluster {
+	cluster := genTestCluster(isControllerReady)
+	cluster.Spec.Cloud.DatacenterName = "regular-do-limited-os"
 	return cluster
 }
 

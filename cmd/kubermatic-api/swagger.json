@@ -18019,6 +18019,14 @@
         "digitalocean": {
           "$ref": "#/definitions/DatacenterSpecDigitalocean"
         },
+        "enabledOperatingSystems": {
+          "description": "EnabledOperatingSystems defines a set of supported operating systems on the given Datacenter.\nThis allows Admins to define which operating systems are allowed.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "EnabledOperatingSystems"
+        },
         "enforceAuditLogging": {
           "description": "EnforceAuditLogging enforces audit logging on every cluster within the DC,\nignoring cluster-specific settings.",
           "type": "boolean",

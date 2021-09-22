@@ -606,6 +606,16 @@ func GenTestSeed(modifiers ...func(seed *kubermaticv1.Seed)) *kubermaticv1.Seed 
 						},
 					},
 				},
+				"regular-do-limited-os": {
+					Country:  "NL",
+					Location: "Amsterdam",
+					Spec: kubermaticv1.DatacenterSpec{
+						Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
+							Region: "ams2",
+						},
+						EnabledOperatingSystems: []string{"ubuntu"},
+					},
+				},
 				"restricted-fake-dc": {
 					Country:  "NL",
 					Location: "Amsterdam",

@@ -29,6 +29,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 
+	providertypes "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -652,6 +653,7 @@ func ConvertInternalDCToExternalSpec(dc *kubermaticv1.Datacenter, seedName strin
 		RequiredEmailDomains:     dc.Spec.RequiredEmailDomains,
 		EnforceAuditLogging:      dc.Spec.EnforceAuditLogging,
 		EnforcePodSecurityPolicy: dc.Spec.EnforcePodSecurityPolicy,
+		EnabledOperatingSystems:  dc.Spec.EnabledOperatingSystems,
 	}, nil
 }
 
@@ -678,6 +680,7 @@ func convertExternalDCToInternal(datacenter *apiv1.DatacenterSpec) kubermaticv1.
 			RequiredEmailDomains:     datacenter.RequiredEmailDomains,
 			EnforceAuditLogging:      datacenter.EnforceAuditLogging,
 			EnforcePodSecurityPolicy: datacenter.EnforcePodSecurityPolicy,
+			EnabledOperatingSystems:  datacenter.EnabledOperatingSystems,
 		},
 	}
 }
@@ -959,6 +962,22 @@ func validateProvider(dcSpec *apiv1.DatacenterSpec) error {
 
 	if len(providerNames) != 1 {
 		return fmt.Errorf("one DC provider should be specified, got: %v", providerNames)
+	}
+
+	if dcSpec.EnabledOperatingSystems != nil {
+		for _, sos := range dcSpec.EnabledOperatingSystems {
+			isSuppored := false
+			// check if OS strings are supported
+			for _, aos := range providertypes.AllOperatingSystems {
+				if string(aos) == sos {
+					isSuppored = true
+					break
+				}
+			}
+			if !isSuppored {
+				return fmt.Errorf("EnabledOperatingSystems contains unsupported OS. Problematic OS was: %v", sos)
+			}
+		}
 	}
 	return nil
 }

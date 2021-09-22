@@ -100,6 +100,9 @@ func CreateMachineDeployment(ctx context.Context, userInfoGetter provider.UserIn
 		return nil, fmt.Errorf("error getting dc: %v", err)
 	}
 
+	if len(dc.Spec.EnabledOperatingSystems) > 0 && !isEnabledOperatingSystems(dc.Spec.EnabledOperatingSystems, machineDeployment) {
+		return nil, k8cerrors.NewBadRequest(fmt.Sprintf("node deployment has an unsupported operating system configuration. Supported OS: %s", dc.Spec.EnabledOperatingSystems))
+	}
 	nd, err := machineresource.Validate(&machineDeployment, cluster.Spec.Version.Semver())
 	if err != nil {
 		return nil, k8cerrors.NewBadRequest(fmt.Sprintf("node deployment validation failed: %s", err.Error()))
@@ -126,6 +129,33 @@ func CreateMachineDeployment(ctx context.Context, userInfoGetter provider.UserIn
 	}
 
 	return outputMachineDeployment(md)
+}
+
+func isEnabledOperatingSystems(dc_os []string, md apiv1.NodeDeployment) bool {
+	// anonymous contains function
+	contains := func(arr []string, str string) bool {
+		for _, a := range arr {
+			if a == str {
+				return true
+			}
+		}
+		return false
+	}
+
+	switch {
+	case md.Spec.Template.OperatingSystem.Ubuntu != nil:
+		return contains(dc_os, "ubuntu")
+	case md.Spec.Template.OperatingSystem.Flatcar != nil:
+		return contains(dc_os, "flatcar")
+	case md.Spec.Template.OperatingSystem.CentOS != nil:
+		return contains(dc_os, "centos")
+	case md.Spec.Template.OperatingSystem.SLES != nil:
+		return contains(dc_os, "sles")
+	case md.Spec.Template.OperatingSystem.RHEL != nil:
+		return contains(dc_os, "rhel")
+	default:
+		return false
+	}
 }
 
 func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.NodeDeployment, error) {
