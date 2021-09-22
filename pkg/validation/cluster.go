@@ -117,9 +117,9 @@ func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, fldPa
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("dnsDomain"), n.DNSDomain,
 			"dnsDomain must be 'cluster.local'"))
 	}
-	if (!allowEmpty || n.ProxyMode != "") && (n.ProxyMode != resources.IPVSProxyMode && n.ProxyMode != resources.IPTablesProxyMode) {
+	if (!allowEmpty || n.ProxyMode != "") && (n.ProxyMode != resources.IPVSProxyMode && n.ProxyMode != resources.IPTablesProxyMode && n.ProxyMode != resources.EBPFProxyMode) {
 		allErrs = append(allErrs, field.NotSupported(fldPath.Child("proxyMode"), n.ProxyMode,
-			[]string{resources.IPVSProxyMode, resources.IPTablesProxyMode}))
+			[]string{resources.IPVSProxyMode, resources.IPTablesProxyMode, resources.EBPFProxyMode}))
 	}
 
 	return allErrs
