@@ -420,6 +420,8 @@ const (
 	IPVSProxyMode = "ipvs"
 	// IPTablesProxyMode defines the iptables kube-proxy mode.
 	IPTablesProxyMode = "iptables"
+	// CNIProxyMode defines the non-kube-proxy mode (kube-proxy will not be deployed, CNI is responsible for its functionality).
+	CNIProxyMode = "cni"
 
 	// IPVSStrictArp defines IPVS configuration strictArp setting.
 	IPVSStrictArp = true

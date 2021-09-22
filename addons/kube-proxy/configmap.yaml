@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+{{ if ne .Cluster.Network.ProxyMode "cni" }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -78,3 +79,4 @@ data:
     - name: default
       user:
         tokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+{{ end }}

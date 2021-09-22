@@ -473,8 +473,8 @@ type ClusterNetworkingConfig struct {
 	// Domain name for services.
 	DNSDomain string `json:"dnsDomain"`
 
-	// ProxyMode defines the kube-proxy mode (ipvs/iptables).
-	// Defaults to ipvs.
+	// ProxyMode defines the kube-proxy mode ("ipvs" / "iptables" / "cni").
+	// Defaults to "ipvs". "cni" disables kube-proxy.
 	ProxyMode string `json:"proxyMode"`
 
 	// IPVS defines kube-proxy ipvs configuration options
