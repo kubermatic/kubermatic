@@ -339,7 +339,7 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			t.Logf("[%s] Validating: %+v", test.name, test.networkConfig)
-			errs := ValidateClusterNetworkConfig(&test.networkConfig, field.NewPath("spec", "networkConfig"), test.allowEmpty)
+			errs := ValidateClusterNetworkConfig(&test.networkConfig, nil, field.NewPath("spec", "networkConfig"), test.allowEmpty)
 
 			if test.wantErr == (len(errs) == 0) {
 				t.Errorf("Want error: %t, but got: \"%v\"", test.wantErr, errs)

@@ -13,12 +13,20 @@
 # limitations under the License.
 
 # Generated from:
-#   helm template cilium cilium/cilium --version 1.10.4 --namespace kube-system --set operator.replicas=1
+#   helm template cilium cilium/cilium --version 1.10.4 --namespace kube-system --set operator.replicas=1 \
+#     --set kubeProxyReplacement=strict --set k8sServiceHost=CHANGEME --set k8sServicePort=CHANGEME
 # Modifications:
 #   - templated cluster-pool-ipv4-cidr
+#   - templated kube-proxy-replacement parts
 
 {{ if eq .Cluster.CNIPlugin.Type "cilium" }}
 {{ if eq .Cluster.CNIPlugin.Version "v1.10" }}
+
+{{ $apiServerURL := urlParse .Cluster.ApiserverExternalURL }}
+{{ $hostParts := split ":" $apiServerURL.host }}
+{{ $apiServerHost := $hostParts._0 }}
+{{ $apiServerPort := $hostParts._1 }}
+
 ---
 # Source: cilium/templates/cilium-agent-serviceaccount.yaml
 apiVersion: v1
@@ -150,7 +158,12 @@ data:
   enable-bandwidth-manager: "false"
   enable-local-redirect-policy: "false"
 
+{{ if eq .Cluster.Network.ProxyMode "ebpf" }}
+  kube-proxy-replacement:  "strict"
+  kube-proxy-replacement-healthz-bind-address: ""
+{{ else }}
   kube-proxy-replacement:  "disabled"
+{{ end }}
   enable-health-check-nodeport: "true"
   node-port-bind-protection: "true"
   enable-auto-protect-node-port-range: "true"
@@ -521,6 +534,12 @@ spec:
               key: custom-cni-conf
               name: cilium-config
               optional: true
+{{ if eq .Cluster.Network.ProxyMode "ebpf" }}
+        - name: KUBERNETES_SERVICE_HOST
+          value: "{{ $apiServerHost }}"
+        - name: KUBERNETES_SERVICE_PORT
+          value: "{{ $apiServerPort }}"
+{{ end }}
         image: "quay.io/cilium/cilium:v1.10.4@sha256:7d354052ccf2a7445101d78cebd14444c7c40129ce7889f2f04b89374dbf8a1d"
         imagePullPolicy: IfNotPresent
         lifecycle:
@@ -608,6 +627,12 @@ spec:
               key: clean-cilium-bpf-state
               name: cilium-config
               optional: true
+{{ if eq .Cluster.Network.ProxyMode "ebpf" }}
+        - name: KUBERNETES_SERVICE_HOST
+          value: "{{ $apiServerHost }}"
+        - name: KUBERNETES_SERVICE_PORT
+          value: "{{ $apiServerPort }}"
+{{ end }}
         image: "quay.io/cilium/cilium:v1.10.4@sha256:7d354052ccf2a7445101d78cebd14444c7c40129ce7889f2f04b89374dbf8a1d"
         imagePullPolicy: IfNotPresent
         name: clean-cilium-state
@@ -764,6 +789,12 @@ spec:
               key: debug
               name: cilium-config
               optional: true
+{{ if eq .Cluster.Network.ProxyMode "ebpf" }}
+        - name: KUBERNETES_SERVICE_HOST
+          value: "{{ $apiServerHost }}"
+        - name: KUBERNETES_SERVICE_PORT
+          value: "{{ $apiServerPort }}"
+{{ end }}
         image: "quay.io/cilium/operator-generic:v1.10.4@sha256:c49a14e34634ff1a494c84b718641f27267fb3a0291ce3d74352b44f8a8d2f93"
         imagePullPolicy: IfNotPresent
         name: cilium-operator
