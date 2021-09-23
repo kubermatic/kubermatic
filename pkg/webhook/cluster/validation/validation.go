@@ -117,7 +117,7 @@ func (h *AdmissionHandler) validateCreate(c *kubermaticv1.Cluster) field.ErrorLi
 	}
 	allErrs = append(allErrs, validation.ValidateLeaderElectionSettings(&c.Spec.ComponentsOverride.ControllerManager.LeaderElectionSettings, specFldPath.Child("componentsOverride", "controllerManager", "leaderElection"))...)
 	allErrs = append(allErrs, validation.ValidateLeaderElectionSettings(&c.Spec.ComponentsOverride.Scheduler.LeaderElectionSettings, specFldPath.Child("componentsOverride", "scheduler", "leaderElection"))...)
-	allErrs = append(allErrs, validation.ValidateClusterNetworkConfig(&c.Spec.ClusterNetwork, specFldPath.Child("clusterNetwork"), false)...)
+	allErrs = append(allErrs, validation.ValidateClusterNetworkConfig(&c.Spec.ClusterNetwork, c.Spec.CNIPlugin, specFldPath.Child("clusterNetwork"), false)...)
 
 	allErrs = append(allErrs, validation.ValidateNodePortRange(
 		c.Spec.ComponentsOverride.Apiserver.NodePortRange,
@@ -139,7 +139,7 @@ func (h *AdmissionHandler) validateUpdate(c, oldC *kubermaticv1.Cluster) field.E
 	}
 	allErrs = append(allErrs, validation.ValidateLeaderElectionSettings(&c.Spec.ComponentsOverride.ControllerManager.LeaderElectionSettings, specFldPath.Child("componentsOverride", "controllerManager", "leaderElection"))...)
 	allErrs = append(allErrs, validation.ValidateLeaderElectionSettings(&c.Spec.ComponentsOverride.Scheduler.LeaderElectionSettings, specFldPath.Child("componentsOverride", "scheduler", "leaderElection"))...)
-	allErrs = append(allErrs, validation.ValidateClusterNetworkConfig(&c.Spec.ClusterNetwork, specFldPath.Child("clusterNetwork"), false)...)
+	allErrs = append(allErrs, validation.ValidateClusterNetworkConfig(&c.Spec.ClusterNetwork, c.Spec.CNIPlugin, specFldPath.Child("clusterNetwork"), false)...)
 
 	allErrs = append(allErrs, validation.ValidateNodePortRange(
 		c.Spec.ComponentsOverride.Apiserver.NodePortRange,
