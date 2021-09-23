@@ -91,16 +91,28 @@ func vsphereDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 				*openvpnSidecar,
 			}
 
-			dep.Spec.Template.Spec.Volumes = append(getVolumes(), corev1.Volume{
-				Name: resources.CloudConfigConfigMapName,
-				VolumeSource: corev1.VolumeSource{
-					ConfigMap: &corev1.ConfigMapVolumeSource{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: resources.CloudConfigConfigMapName,
+			dep.Spec.Template.Spec.Volumes = append(getVolumes(),
+				corev1.Volume{
+					Name: resources.CloudConfigConfigMapName,
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: resources.CloudConfigConfigMapName,
+							},
 						},
 					},
 				},
-			})
+				corev1.Volume{
+					Name: resources.CABundleConfigMapName,
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: resources.CABundleConfigMapName,
+							},
+						},
+					},
+				},
+			)
 
 			return dep, nil
 		}
@@ -121,10 +133,23 @@ func getCPIContainer(version string, data *resources.TemplateData) corev1.Contai
 			"--cloud-config=/etc/cloud/config",
 			"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
 		},
-		VolumeMounts: append(getVolumeMounts(), corev1.VolumeMount{
-			MountPath: "/etc/cloud",
-			Name:      resources.CloudConfigConfigMapName,
-		}),
+		Env: []corev1.EnvVar{
+			{
+				Name:  "SSL_CERT_FILE",
+				Value: "/etc/kubermatic/certs/ca-bundle.pem",
+			},
+		},
+		VolumeMounts: append(getVolumeMounts(),
+			corev1.VolumeMount{
+				MountPath: "/etc/cloud",
+				Name:      resources.CloudConfigConfigMapName,
+			},
+			corev1.VolumeMount{
+				Name:      resources.CABundleConfigMapName,
+				MountPath: "/etc/kubermatic/certs",
+				ReadOnly:  true,
+			},
+		),
 		Resources: vsphereCPIResourceRequirements,
 	}
 	if data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureCCMClusterName] {
