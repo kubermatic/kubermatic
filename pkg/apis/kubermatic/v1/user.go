@@ -58,7 +58,7 @@ type UserSpec struct {
 type UserSettings struct {
 	SelectedTheme              string `json:"selectedTheme,omitempty"`
 	ItemsPerPage               int8   `json:"itemsPerPage,omitempty"`
-	SelectedProjectID          string `json:"selectedProjectId,omitempty"`
+	SelectedProjectID          string `json:"selectedProjectID,omitempty"`
 	SelectProjectTableView     bool   `json:"selectProjectTableView,omitempty"`
 	CollapseSidenav            bool   `json:"collapseSidenav,omitempty"`
 	DisplayAllProjectsForAdmin bool   `json:"displayAllProjectsForAdmin,omitempty"`

@@ -50,7 +50,7 @@ type SettingSpec struct {
 	DisplayAPIDocs              bool           `json:"displayAPIDocs"`
 	DisplayTermsOfService       bool           `json:"displayTermsOfService"`
 	EnableDashboard             bool           `json:"enableDashboard"`
-	EnableOIDCKubeconfig        bool           `json:"enableOIDCKubeconfig"`
+	EnableOIDCKubeconfig        bool           `json:"enableOIDCKubeconfig"` //nolint:tagliatelle
 	UserProjectsLimit           int64          `json:"userProjectsLimit"`
 	RestrictProjectCreation     bool           `json:"restrictProjectCreation"`
 	EnableExternalClusterImport bool           `json:"enableExternalClusterImport"`
@@ -88,7 +88,7 @@ type MachineDeploymentVMResourceQuota struct {
 	// Maximum RAM size in GB
 	MaxRAM int `json:"maxRAM"`
 
-	EnableGPU bool `json:"enableGPU"`
+	EnableGPU bool `json:"enableGPU"` //nolint:tagliatelle
 }
 
 type OpaOptions struct {
