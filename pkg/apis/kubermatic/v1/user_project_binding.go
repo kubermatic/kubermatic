@@ -45,7 +45,7 @@ type UserProjectBinding struct {
 // UserProjectBindingSpec specifies a user
 type UserProjectBindingSpec struct {
 	UserEmail string `json:"userEmail"`
-	ProjectID string `json:"projectId"`
+	ProjectID string `json:"projectID"`
 	Group     string `json:"group"`
 }
 

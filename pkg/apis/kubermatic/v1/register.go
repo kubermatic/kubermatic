@@ -37,7 +37,7 @@ var (
 )
 
 // GroupName is the group name use in this package
-const GroupName = "kubermatic.k8s.io"
+const GroupName = "kubermatic.k8c.io"
 const GroupVersion = "v1"
 
 // SchemeGroupVersion is group version used to register these objects

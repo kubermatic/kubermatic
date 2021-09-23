@@ -80,15 +80,15 @@ type SeedSpec struct {
 	Datacenters map[string]Datacenter `json:"datacenters,omitempty"`
 	// Optional: This can be used to override the DNS name used for this seed.
 	// By default the seed name is used.
-	SeedDNSOverwrite string `json:"seed_dns_overwrite,omitempty"`
+	SeedDNSOverwrite string `json:"seedDNSOverwrite,omitempty"`
 	// NodeportProxy can be used to configure the NodePort proxy service that is
 	// responsible for making user-cluster control planes accessible from the outside.
-	NodeportProxy NodeportProxyConfig `json:"nodeport_proxy,omitempty"`
+	NodeportProxy NodeportProxyConfig `json:"nodeportProxy,omitempty"`
 	// Optional: ProxySettings can be used to configure HTTP proxy settings on the
 	// worker nodes in user clusters. However, proxy settings on nodes take precedence.
-	ProxySettings *ProxySettings `json:"proxy_settings,omitempty"`
+	ProxySettings *ProxySettings `json:"proxySettings,omitempty"`
 	// Optional: ExposeStrategy explicitly sets the expose strategy for this seed cluster, if not set, the default provided by the master is used.
-	ExposeStrategy ExposeStrategy `json:"expose_strategy,omitempty"`
+	ExposeStrategy ExposeStrategy `json:"exposeStrategy,omitempty"`
 	// Optional: MLA allows configuring seed level MLA (Monitoring, Logging & Alerting) stack settings.
 	MLA *SeedMLASettings `json:"mla,omitempty"`
 	// DefaultComponentSettings are default values to set for newly created clusters.
@@ -118,7 +118,7 @@ type NodeportProxyConfig struct {
 	// Envoy configures the Envoy application itself.
 	Envoy NodeportProxyComponent `json:"envoy,omitempty"`
 	// EnvoyManager configures the Kubermatic-internal Envoy manager.
-	EnvoyManager NodeportProxyComponent `json:"envoy_manager,omitempty"`
+	EnvoyManager NodeportProxyComponent `json:"envoyManager,omitempty"`
 	// Updater configures the component responsible for updating the LoadBalancer
 	// service.
 	Updater NodeportProxyComponent `json:"updater,omitempty"`
@@ -126,7 +126,7 @@ type NodeportProxyConfig struct {
 
 type NodeportProxyComponent struct {
 	// DockerRepository is the repository containing the component's image.
-	DockerRepository string `json:"docker_repository,omitempty"`
+	DockerRepository string `json:"dockerRepository,omitempty"`
 	// Resources describes the requested and maximum allowed CPU/memory usage.
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
@@ -211,39 +211,39 @@ type DatacenterSpecDigitalocean struct {
 
 // DatacenterSpecOpenstack describes an OpenStack datacenter
 type DatacenterSpecOpenstack struct {
-	AuthURL          string `json:"auth_url"`
-	AvailabilityZone string `json:"availability_zone"`
+	AuthURL          string `json:"authURL"`
+	AvailabilityZone string `json:"availabilityZone"`
 	Region           string `json:"region"`
 	// Optional
-	IgnoreVolumeAZ bool `json:"ignore_volume_az"`
+	IgnoreVolumeAZ bool `json:"ignoreVolumeAZ"` //nolint:tagliatelle
 	// Optional
-	EnforceFloatingIP bool `json:"enforce_floating_ip"`
+	EnforceFloatingIP bool `json:"enforceFloatingIP"`
 	// Used for automatic network creation
-	DNSServers []string `json:"dns_servers"`
+	DNSServers []string `json:"dnsServers"`
 	// Images to use for each supported operating system.
 	Images ImageList `json:"images"`
 	// Optional: Gets mapped to the "manage-security-groups" setting in the cloud config.
 	// See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
 	// This setting defaults to true.
-	ManageSecurityGroups *bool `json:"manage_security_groups"`
+	ManageSecurityGroups *bool `json:"manageSecurityGroups"`
 	// Optional: Gets mapped to the "use-octavia" setting in the cloud config.
 	// use-octavia is enabled by default in CCM since v1.17.0, and disabled by
 	// default with the in-tree cloud provider.
-	UseOctavia *bool `json:"use_octavia"`
+	UseOctavia *bool `json:"useOctavia"`
 	// Optional: Gets mapped to the "trust-device-path" setting in the cloud config.
 	// See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#block-storage
 	// This setting defaults to false.
-	TrustDevicePath      *bool                         `json:"trust_device_path"`
-	NodeSizeRequirements OpenstackNodeSizeRequirements `json:"node_size_requirements"`
+	TrustDevicePath      *bool                         `json:"trustDevicePath"`
+	NodeSizeRequirements OpenstackNodeSizeRequirements `json:"nodeSizeRequirements"`
 	// Optional: List of enabled flavors for the given datacenter
-	EnabledFlavors []string `json:"enabled_flavors"`
+	EnabledFlavors []string `json:"enabledFlavors"`
 }
 
 type OpenstackNodeSizeRequirements struct {
 	// VCPUs is the minimum required amount of (virtual) CPUs
-	MinimumVCPUs int `json:"minimum_vcpus"`
+	MinimumVCPUs int `json:"minimumVCPUs"` //nolint:tagliatelle
 	// MinimumMemory is the minimum required amount of memory, measured in MB
-	MinimumMemory int `json:"minimum_memory"`
+	MinimumMemory int `json:"minimumMemory"`
 }
 
 // DatacenterSpecAzure describes an Azure cloud datacenter
@@ -258,7 +258,7 @@ type DatacenterSpecVSphere struct {
 	// Endpoint URL to use, including protocol, for example "https://vcenter.example.com".
 	Endpoint string `json:"endpoint"`
 	// If set to true, disables the TLS certificate check against the endpoint.
-	AllowInsecure bool `json:"allow_insecure"`
+	AllowInsecure bool `json:"allowInsecure"`
 	// The default Datastore to be used for provisioning volumes using storage
 	// classes/dynamic provisioning and for storing virtual machine files in
 	// case no `Datastore` or `DatastoreCluster` is provided at Cluster level.
@@ -272,12 +272,12 @@ type DatacenterSpecVSphere struct {
 	// located.
 	Cluster string `json:"cluster"`
 	// The name of the storage policy to use for the storage class created in the user cluster.
-	DefaultStoragePolicy string `json:"storage_policy"`
+	DefaultStoragePolicy string `json:"storagePolicy"`
 	// Optional: The root path for cluster specific VM folders. Each cluster gets its own
 	// folder below the root folder. Must be the FQDN (for example
 	// "/datacenter-1/vm/all-kubermatic-vms-in-here") and defaults to the root VM
 	// folder: "/datacenter-1/vm"
-	RootPath string `json:"root_path"`
+	RootPath string `json:"rootPath"`
 	// A list of VM templates to use for a given operating system. You must
 	// define at least one template.
 	// See: https://github.com/kubermatic/machine-controller/blob/master/docs/vsphere.md#template-vms-preparation
@@ -285,7 +285,7 @@ type DatacenterSpecVSphere struct {
 	// Optional: Infra management user is the user that will be used for everything
 	// except the cloud provider functionality, which will still use the credentials
 	// passed in via the Kubermatic dashboard/API.
-	InfraManagementUser *VSphereCredentials `json:"infra_management_user,omitempty"`
+	InfraManagementUser *VSphereCredentials `json:"infraManagementUser,omitempty"`
 }
 
 // DatacenterSpecAWS describes an AWS datacenter
@@ -319,7 +319,7 @@ type DatacenterSpecGCP struct {
 	Region string `json:"region"`
 	// List of enabled zones, for example [a, c]. See the link above for the available
 	// zones in your chosen region.
-	ZoneSuffixes []string `json:"zone_suffixes"`
+	ZoneSuffixes []string `json:"zoneSuffixes"`
 
 	// Optional: Regional clusters spread their resources across multiple availability zones.
 	// Refer to the official documentation for more details on this:
@@ -329,7 +329,7 @@ type DatacenterSpecGCP struct {
 
 // DatacenterSpecFake describes a fake datacenter
 type DatacenterSpecFake struct {
-	FakeProperty string `json:"fake_property,omitempty"`
+	FakeProperty string `json:"fakeProperty,omitempty"`
 }
 
 // DatacenterSpecKubevirt describes a kubevirt datacenter.
@@ -337,11 +337,11 @@ type DatacenterSpecKubevirt struct {
 	// DNSPolicy represents the dns policy for the pod. Valid values are 'ClusterFirstWithHostNet', 'ClusterFirst',
 	// 'Default' or 'None'. Defaults to "ClusterFirst". DNS parameters given in DNSConfig will be merged with the
 	// policy selected with DNSPolicy.
-	DNSPolicy string `json:"dns_policy,omitempty"`
+	DNSPolicy string `json:"dnsPolicy,omitempty"`
 
 	// DNSConfig represents the DNS parameters of a pod. Parameters specified here will be merged to the generated DNS
 	// configuration based on DNSPolicy.
-	DNSConfig *corev1.PodDNSConfig `json:"dns_config,omitempty"`
+	DNSConfig *corev1.PodDNSConfig `json:"dnsConfig,omitempty"`
 }
 
 // DatacenterSpecAlibaba describes a alibaba datacenter.
@@ -354,7 +354,7 @@ type DatacenterSpecAlibaba struct {
 // DatacenterSpecAnexia describes a anexia datacenter.
 type DatacenterSpecAnexia struct {
 	// LocationID the location of the region
-	LocationID string `json:"location_id"`
+	LocationID string `json:"locationID"`
 }
 
 type ProxyValue string
@@ -380,13 +380,13 @@ func (p *ProxyValue) String() string {
 // and nodes
 type ProxySettings struct {
 	// Optional: If set, this proxy will be configured for both HTTP and HTTPS.
-	HTTPProxy *ProxyValue `json:"http_proxy,omitempty"`
+	HTTPProxy *ProxyValue `json:"httpProxy,omitempty"`
 	// Optional: If set this will be set as NO_PROXY environment variable on the node;
 	// The value must be a comma-separated list of domains for which no proxy
 	// should be used, e.g. "*.example.com,internal.dev".
 	// Note that the in-cluster apiserver URL will be automatically prepended
 	// to this value.
-	NoProxy *ProxyValue `json:"no_proxy,omitempty"`
+	NoProxy *ProxyValue `json:"noProxy,omitempty"`
 }
 
 // Empty returns true if p or all of its children are nil or empty strings.
@@ -412,22 +412,22 @@ type NodeSettings struct {
 	ProxySettings `json:",inline"`
 	// Optional: These image registries will be configured as insecure
 	// on the container runtime.
-	InsecureRegistries []string `json:"insecure_registries,omitempty"`
+	InsecureRegistries []string `json:"insecureRegistries,omitempty"`
 	// Optional: These image registries will be configured as registry mirrors
 	// on the container runtime.
-	RegistryMirrors []string `json:"registry_mirrors,omitempty"`
+	RegistryMirrors []string `json:"registryMirrors,omitempty"`
 	// Optional: Translates to --pod-infra-container-image on the kubelet.
 	// If not set, the kubelet will default it.
-	PauseImage string `json:"pause_image,omitempty"`
+	PauseImage string `json:"pauseImage,omitempty"`
 	// Optional: The hyperkube image to use. Currently only Flatcar
 	// makes use of this option.
-	HyperkubeImage string `json:"hyperkube_image,omitempty"`
+	HyperkubeImage string `json:"hyperkubeImage,omitempty"`
 }
 
 // SeedMLASettings allow configuring seed level MLA (Monitoring, Logging & Alerting) stack settings.
 type SeedMLASettings struct {
 	// Optional: UserClusterMLAEnabled controls whether the user cluster MLA (Monitoring, Logging & Alerting) stack is enabled in the seed.
-	UserClusterMLAEnabled bool `json:"user_cluster_mla_enabled,omitempty"`
+	UserClusterMLAEnabled bool `json:"userClusterMLAEnabled,omitempty"` //nolint:tagliatelle
 }
 
 // MeteringConfigurations contains all the configurations for the metering tool.
