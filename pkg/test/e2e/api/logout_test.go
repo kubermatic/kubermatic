@@ -1,4 +1,4 @@
-// +build logout
+//go:build logout
 
 /*
 Copyright 2020 The Kubermatic Kubernetes Platform contributors.
