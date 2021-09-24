@@ -1021,7 +1021,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.21.3"
+          value: "v1.21.5"
         - name: PROVIDER
           value: "vsphere"
         - name: DISTRIBUTIONS
@@ -1065,7 +1065,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.21.3"
+          value: "v1.21.5"
         - name: PROVIDER
           value: "vsphere"
         - name: DISTRIBUTIONS
@@ -1111,7 +1111,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.21.3"
+          value: "v1.21.5"
         - name: PROVIDER
           value: "vsphere"
         - name: DISTRIBUTIONS
