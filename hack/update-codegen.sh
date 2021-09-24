@@ -31,8 +31,8 @@ rm -rf "pkg/crd/client"
 echo "" > /tmp/headerfile
 
 # -trimpath would cause the code generation to fail, so undo the
-# Makefile's value and also force mod=readonly here
-export "GOFLAGS=-mod=readonly"
+# Makefile's value and also force mod=vendor here
+export "GOFLAGS=-mod=vendor"
 
 echodate "Generating kubermatic:v1"
 ./vendor/k8s.io/code-generator/generate-groups.sh all \
