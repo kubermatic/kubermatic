@@ -156,8 +156,7 @@ cat hack/ci/testdata/oauth_values.yaml >> $HELM_VALUES_FILE
 ./_build/kubermatic-installer deploy --disable-telemetry \
   --storageclass copy-default \
   --config "$KUBERMATIC_CONFIG" \
-  --helm-values "$HELM_VALUES_FILE" \
-  --helm-binary "helm3"
+  --helm-values "$HELM_VALUES_FILE"
 
 # TODO: The installer should wait for everything to finish reconciling.
 echodate "Waiting for Kubermatic Operator to deploy Master components..."

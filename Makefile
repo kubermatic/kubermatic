@@ -34,7 +34,7 @@ LDFLAGS += -extldflags '-static' \
 LDFLAGS_EXTRA=-w
 BUILD_DEST ?= _build
 GOTOOLFLAGS ?= $(GOBUILDFLAGS) -ldflags '$(LDFLAGS_EXTRA) $(LDFLAGS)' $(GOTOOLFLAGS_EXTRA)
-GOBUILDIMAGE ?= golang:1.16.1
+GOBUILDIMAGE ?= golang:1.17.1
 DOCKER_BIN := $(shell which docker)
 
 .PHONY: all

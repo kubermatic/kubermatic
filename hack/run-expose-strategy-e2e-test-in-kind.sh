@@ -47,7 +47,6 @@ KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kubermatic}"
 KIND_NODE_VERSION="${KIND_NODE_VERSION:-v1.21.1}"
 USER_CLUSTER_KUBERNETES_VERSION="${USER_CLUSTER_KUBERNETES_VERSION:-v1.20.2}"
 KUBECONFIG="${KUBECONFIG:-"${HOME}/.kube/config"}"
-HELM_BINARY="${HELM_BINARY:-helm}" # This works when helm 3 is in path
 
 REPOSUFFIX=""
 if [ "${KUBERMATIC_EDITION:-}" == "ee" ]; then
@@ -167,8 +166,7 @@ EOF
   --storageclass copy-default \
   --config "${KUBERMATIC_CONFIG}" \
   --kubeconfig "${KUBECONFIG}" \
-  --helm-values "${HELM_VALUES_FILE}" \
-  --helm-binary "${HELM_BINARY}"
+  --helm-values "${HELM_VALUES_FILE}"
 
 # TODO: The installer should wait for everything to finish reconciling.
 #echodate "Waiting for Kubermatic Operator to deploy Master components..."

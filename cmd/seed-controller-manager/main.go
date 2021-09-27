@@ -56,7 +56,7 @@ const (
 	controllerName = "seed-controller-manager"
 )
 
-//nolint:gocritic,exitAfterDefer
+//nolint:gocritic
 func main() {
 	klog.InitFlags(nil)
 	pprofOpts := &pprof.Opts{}
