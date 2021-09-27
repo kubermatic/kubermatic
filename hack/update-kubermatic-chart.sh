@@ -19,7 +19,7 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-CONTAINERIZE_IMAGE=golang:1.16.1 containerize ./hack/update-kubermatic-chart.sh
+CONTAINERIZE_IMAGE=golang:1.17.1 containerize ./hack/update-kubermatic-chart.sh
 
 echodate "Updating static files in Kubermatic Helm chart..."
 go run codegen/kubermatic_operator/main.go

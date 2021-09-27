@@ -26,7 +26,7 @@ source hack/ci/setup-kind-cluster.sh
 echodate "Installing cert-manager..."
 kubectl apply -f charts/cert-manager/crd/
 
-helm3 upgrade \
+helm upgrade \
   --install \
   --namespace cert-manager \
   --create-namespace \

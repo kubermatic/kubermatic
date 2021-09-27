@@ -19,7 +19,7 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-CONTAINERIZE_IMAGE=golang:1.16.1 containerize ./hack/update-codegen.sh
+CONTAINERIZE_IMAGE=golang:1.17.1 containerize ./hack/update-codegen.sh
 
 echodate "Creating vendor directory"
 go mod vendor
@@ -31,8 +31,8 @@ rm -rf "pkg/crd/client"
 echo "" > /tmp/headerfile
 
 # -trimpath would cause the code generation to fail, so undo the
-# Makefile's value and also force mod=readonly here
-export "GOFLAGS=-mod=readonly"
+# Makefile's value and also force mod=vendor here
+export "GOFLAGS=-mod=vendor"
 
 echodate "Generating kubermatic:v1"
 ./vendor/k8s.io/code-generator/generate-groups.sh all \

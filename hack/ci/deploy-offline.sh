@@ -109,7 +109,6 @@ _build/image-loader \
   -configuration-file /dev/null \
   -addons-path addons \
   -charts-path charts \
-  -helm-binary helm3 \
   -helm-values-file "${LOADER_VALUES_FILE}" \
   -registry "${REGISTRY}" \
   -log-format=JSON

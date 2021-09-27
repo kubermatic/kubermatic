@@ -78,7 +78,7 @@ function deploy {
 
     # Do not set --force, as this will cause problems when upgrading a Helm release.
     # See Helm issue #7956 and the upstream k8s bug #91459, which was fixed in 1.22+.
-    retry 5 helm3 --namespace "$namespace" upgrade --install --atomic --timeout "$timeout" --values "$VALUES_FILE" "$name" "$path"
+    retry 5 helm --namespace "$namespace" upgrade --install --atomic --timeout "$timeout" --values "$VALUES_FILE" "$name" "$path"
   fi
 
   unset TEST_NAME
@@ -126,7 +126,6 @@ kubermatic)
       --storageclass copy-default \
       --config "$KUBERMATIC_CONFIG" \
       --helm-values "$VALUES_FILE" \
-      --helm-binary "helm3" \
       --force
 
     # We might have not configured IAP which results in nothing being deployed. This triggers https://github.com/helm/helm/issues/4295 and marks this as failed

@@ -48,7 +48,7 @@ type controllerRunOptions struct {
 	enableLeaderElection bool
 }
 
-//nolint:gocritic,exitAfterDefer
+//nolint:gocritic
 func main() {
 	ctx := context.Background()
 

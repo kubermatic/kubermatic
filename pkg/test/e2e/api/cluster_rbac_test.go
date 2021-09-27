@@ -1,4 +1,4 @@
-// +build create
+//go:build create
 
 /*
 Copyright 2020 The Kubermatic Kubernetes Platform contributors.

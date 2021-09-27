@@ -1,4 +1,4 @@
-// +build tools
+//go:build tools
 /*
 Copyright 2020 The Kubermatic Kubernetes Platform contributors.
 
