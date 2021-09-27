@@ -22,6 +22,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"net"
 	"strings"
 	"text/template"
 
@@ -471,6 +472,10 @@ func GatewayCertificateCreator(c *kubermaticv1.Cluster, mlaGatewayCAGetter func(
 					commonName,
 					c.Address.ExternalName, // required for NodePort expose strategy
 				},
+			}
+			cIP := net.ParseIP(c.Address.IP)
+			if cIP != nil {
+				altNames.IPs = []net.IP{cIP} // required for LoadBalancer expose strategy
 			}
 			if b, exists := se.Data[resources.MLAGatewayCertSecretKey]; exists {
 				certs, err := certutil.ParseCertsPEM(b)
