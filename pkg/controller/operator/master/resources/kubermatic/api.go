@@ -126,11 +126,6 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 				fmt.Sprintf("-accessible-addons=%s", strings.Join(cfg.Spec.API.AccessibleAddons, ",")),
 			}
 
-			// Only EE does support dynamic-datacenters
-			if versions.KubermaticEdition.IsEE() {
-				args = append(args, "-dynamic-datacenters=true")
-			}
-
 			if cfg.Spec.API.DebugLog {
 				args = append(args, "-v=4", "-log-debug=true")
 			} else {

@@ -100,11 +100,6 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 				args = append(args, fmt.Sprintf("-backup-delete-container=/opt/backup/%s", deleteContainerKey))
 			}
 
-			// Only EE does support dynamic-datacenters
-			if versions.KubermaticEdition.IsEE() {
-				args = append(args, "-dynamic-datacenters=true")
-			}
-
 			if cfg.Spec.ImagePullSecret != "" {
 				args = append(args, fmt.Sprintf("-docker-pull-config-json-file=/opt/docker/%s", corev1.DockerConfigJsonKey))
 			}

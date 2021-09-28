@@ -30,7 +30,7 @@ import (
 )
 
 func addFlags(fs *flag.FlagSet) {
-	eeseedctrlmgr.AddFlags(fs)
+	// NOP
 }
 
 func seedGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader, options controllerRunOptions) (provider.SeedGetter, error) {
