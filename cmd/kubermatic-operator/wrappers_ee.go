@@ -28,5 +28,5 @@ import (
 )
 
 func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, opt *controllerRunOptions) (provider.SeedsGetter, error) {
-	return eeprovider.SeedsGetterFactory(ctx, client, "", opt.namespace, true)
+	return eeprovider.SeedsGetterFactory(ctx, client, opt.namespace)
 }

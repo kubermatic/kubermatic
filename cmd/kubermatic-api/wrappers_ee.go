@@ -29,7 +29,7 @@ import (
 )
 
 func addFlags(fs *flag.FlagSet) {
-	eeapi.AddFlags(fs)
+	// NOP
 }
 
 func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, opt serverRunOptions) (provider.SeedsGetter, error) {

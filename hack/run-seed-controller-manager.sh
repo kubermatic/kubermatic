@@ -31,9 +31,6 @@ export KUBERMATICCOMMIT="${KUBERMATICCOMMIT:-$(git rev-parse origin/master)}"
 make seed-controller-manager
 
 CTRL_EXTRA_ARGS=""
-if [ "$KUBERMATIC_EDITION" == "ee" ]; then
-  CTRL_EXTRA_ARGS="-dynamic-datacenters"
-fi
 
 if [ -n "${CONFIG_FILE:-}" ]; then
   CTRL_EXTRA_ARGS="-kubermatic-configuration-file=$CONFIG_FILE"

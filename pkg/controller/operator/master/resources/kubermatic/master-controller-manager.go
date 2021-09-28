@@ -78,11 +78,6 @@ func MasterControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticCo
 				fmt.Sprintf("-feature-gates=%s", common.StringifyFeatureGates(cfg)),
 			}
 
-			// Only EE does support dynamic-datacenters
-			if versions.KubermaticEdition.IsEE() {
-				args = append(args, "-dynamic-datacenters=true")
-			}
-
 			if cfg.Spec.MasterController.DebugLog {
 				args = append(args, "-v=4", "-log-debug=true")
 			} else {

@@ -30,7 +30,7 @@ import (
 )
 
 func addFlags(fs *flag.FlagSet) {
-	eemasterctrlmgr.AddFlags(fs)
+	// NOP
 }
 
 func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, namespace string) (provider.SeedsGetter, error) {
