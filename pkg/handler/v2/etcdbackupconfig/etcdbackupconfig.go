@@ -115,7 +115,7 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 			return nil, err
 		}
 
-		ebc, err := getEtcdBackupConfig(ctx, userInfoGetter, c, req.ProjectID, req.EtcdBackupConfigID)
+		ebc, err := getEtcdBackupConfig(ctx, userInfoGetter, c, req.ProjectID, decodeEtcdBackupConfigID(req.EtcdBackupConfigID, req.ClusterID))
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -201,7 +201,7 @@ func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 			return nil, err
 		}
 
-		err = deleteEtcdBackupConfig(ctx, userInfoGetter, c, req.ProjectID, req.EtcdBackupConfigID)
+		err = deleteEtcdBackupConfig(ctx, userInfoGetter, c, req.ProjectID, decodeEtcdBackupConfigID(req.EtcdBackupConfigID, req.ClusterID))
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -220,7 +220,7 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 		}
 
 		// get EBC
-		originalEBC, err := getEtcdBackupConfig(ctx, userInfoGetter, c, req.ProjectID, req.EtcdBackupConfigID)
+		originalEBC, err := getEtcdBackupConfig(ctx, userInfoGetter, c, req.ProjectID, decodeEtcdBackupConfigID(req.EtcdBackupConfigID, req.ClusterID))
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -347,7 +347,7 @@ func convertInternalToAPIEtcdBackupConfig(ebc *kubermaticv1.EtcdBackupConfig) *a
 	etcdBackupConfig := &apiv2.EtcdBackupConfig{
 		ObjectMeta: apiv1.ObjectMeta{
 			Name:              ebc.Spec.Name,
-			ID:                ebc.Name,
+			ID:                GenEtcdBackupConfigID(ebc.Name, ebc.Spec.Cluster.Name),
 			Annotations:       ebc.Annotations,
 			CreationTimestamp: apiv1.NewTime(ebc.CreationTimestamp.Time),
 			DeletionTimestamp: func() *apiv1.Time {
@@ -449,6 +449,17 @@ func convertAPIToInternalEtcdBackupConfig(name string, ebcSpec *apiv2.EtcdBackup
 			Keep:     ebcSpec.Keep,
 		},
 	}, nil
+}
+
+func GenEtcdBackupConfigID(ebcName, clusterName string) string {
+	return fmt.Sprintf("%s-%s", clusterName, ebcName)
+}
+
+// This is a little hack to avoid changing the EtcdBackupConfig API, as ebc ID is a parameter there, instead of the name.
+// We can't have ID=name because ebc`s are also used in project wide LIST requests, so ID's need to be unique.
+// Requests with just the Name will still work as the TripPrefix just won't remove anything.
+func decodeEtcdBackupConfigID(id, clusterName string) string {
+	return strings.TrimPrefix(id, fmt.Sprintf("%s-", clusterName))
 }
 
 func createEtcdBackupConfig(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID string, etcdBackupConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {

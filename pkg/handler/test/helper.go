@@ -45,6 +45,7 @@ import (
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/handler/auth"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/etcdbackupconfig"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -1850,12 +1851,12 @@ func GenAllowedRegistry(name, registryPrefix string) *kubermaticv1.AllowedRegist
 	return wr
 }
 
-func GenAPIEtcdBackupConfig(id, name, clusterID string) *apiv2.EtcdBackupConfig {
+func GenAPIEtcdBackupConfig(name, clusterID string) *apiv2.EtcdBackupConfig {
 	keep := 5
 	return &apiv2.EtcdBackupConfig{
 		ObjectMeta: apiv1.ObjectMeta{
 			Name:              name,
-			ID:                id,
+			ID:                etcdbackupconfig.GenEtcdBackupConfigID(name, clusterID),
 			Annotations:       nil,
 			CreationTimestamp: apiv1.Date(0001, 01, 01, 00, 00, 0, 0, time.UTC),
 		},
@@ -1867,13 +1868,13 @@ func GenAPIEtcdBackupConfig(id, name, clusterID string) *apiv2.EtcdBackupConfig 
 	}
 }
 
-func GenEtcdBackupConfig(id, name string, cluster *kubermaticv1.Cluster, projectID string) *kubermaticv1.EtcdBackupConfig {
+func GenEtcdBackupConfig(name string, cluster *kubermaticv1.Cluster, projectID string) *kubermaticv1.EtcdBackupConfig {
 	keep := 5
 	clusterObjectRef, _ := reference.GetReference(scheme.Scheme, cluster)
 
 	return &kubermaticv1.EtcdBackupConfig{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      id,
+			Name:      name,
 			Namespace: cluster.Status.NamespaceName,
 			Labels: map[string]string{
 				kubermaticv1.ProjectIDLabelKey: projectID,
