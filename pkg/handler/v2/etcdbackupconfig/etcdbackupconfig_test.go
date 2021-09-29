@@ -32,6 +32,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/etcdbackupconfig"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -61,9 +62,9 @@ func TestCreateEndpoint(t *testing.T) {
 				test.GenDefaultCluster(),
 			),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
-			EtcdBackupConfig:       test.GenAPIEtcdBackupConfig("id-1", "test-ebc", test.GenDefaultCluster().Name),
+			EtcdBackupConfig:       test.GenAPIEtcdBackupConfig("test-ebc", test.GenDefaultCluster().Name),
 			ExpectedHTTPStatusCode: http.StatusCreated,
-			ExpectedResponse:       test.GenAPIEtcdBackupConfig("id-1", "test-ebc", test.GenDefaultCluster().Name),
+			ExpectedResponse:       test.GenAPIEtcdBackupConfig("test-ebc", test.GenDefaultCluster().Name),
 		},
 		{
 			Name:      "user john cannot create etcd backup config that belongs to bob's cluster",
@@ -75,7 +76,7 @@ func TestCreateEndpoint(t *testing.T) {
 				test.GenAdminUser("John", "john@acme.com", false),
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
-			EtcdBackupConfig:       test.GenAPIEtcdBackupConfig("id-1", "test-ebc", test.GenDefaultCluster().Name),
+			EtcdBackupConfig:       test.GenAPIEtcdBackupConfig("test-ebc", test.GenDefaultCluster().Name),
 			ExpectedHTTPStatusCode: http.StatusForbidden,
 			ExpectedResponse:       nil,
 		},
@@ -89,9 +90,9 @@ func TestCreateEndpoint(t *testing.T) {
 				test.GenAdminUser("John", "john@acme.com", true),
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
-			EtcdBackupConfig:       test.GenAPIEtcdBackupConfig("id-1", "test-ebc", test.GenDefaultCluster().Name),
+			EtcdBackupConfig:       test.GenAPIEtcdBackupConfig("test-ebc", test.GenDefaultCluster().Name),
 			ExpectedHTTPStatusCode: http.StatusCreated,
-			ExpectedResponse:       test.GenAPIEtcdBackupConfig("id-1", "test-ebc", test.GenDefaultCluster().Name),
+			ExpectedResponse:       test.GenAPIEtcdBackupConfig("test-ebc", test.GenDefaultCluster().Name),
 		},
 	}
 
@@ -147,21 +148,21 @@ func TestGetEndpoint(t *testing.T) {
 	}{
 		{
 			Name:               "get etcdbackupconfig that belongs to the given cluster",
-			EtcdBackupConfigID: "id-1",
+			EtcdBackupConfigID: etcdbackupconfig.GenEtcdBackupConfigID("test-1", test.GenDefaultCluster().Name),
 			ProjectID:          test.GenDefaultProject().Name,
 			ClusterID:          test.GenDefaultCluster().Name,
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
-				test.GenEtcdBackupConfig("id-1", "test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
 			),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 			ExpectedHTTPStatusCode: http.StatusOK,
-			ExpectedResponse:       test.GenAPIEtcdBackupConfig("id-1", "test-1", test.GenDefaultCluster().Name),
+			ExpectedResponse:       test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name),
 		},
 		{
 			Name:               "get etcdbackupconfig which doesn't exist",
-			EtcdBackupConfigID: "id-1",
+			EtcdBackupConfigID: etcdbackupconfig.GenEtcdBackupConfigID("test-1", test.GenDefaultCluster().Name),
 			ProjectID:          test.GenDefaultProject().Name,
 			ClusterID:          test.GenDefaultCluster().Name,
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
@@ -173,32 +174,32 @@ func TestGetEndpoint(t *testing.T) {
 		},
 		{
 			Name:               "user john cannot get etcdbackupconfig that belongs to bob's cluster",
-			EtcdBackupConfigID: "id-1",
+			EtcdBackupConfigID: etcdbackupconfig.GenEtcdBackupConfigID("test-1", test.GenDefaultCluster().Name),
 			ProjectID:          test.GenDefaultProject().Name,
 			ClusterID:          test.GenDefaultCluster().Name,
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", false),
-				test.GenEtcdBackupConfig("id-1", "test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 			ExpectedHTTPStatusCode: http.StatusForbidden,
 		},
 		{
 			Name:               "admin user john can get etcdbackupconfig that belongs to bob's cluster",
-			EtcdBackupConfigID: "id-1",
+			EtcdBackupConfigID: etcdbackupconfig.GenEtcdBackupConfigID("test-1", test.GenDefaultCluster().Name),
 			ProjectID:          test.GenDefaultProject().Name,
 			ClusterID:          test.GenDefaultCluster().Name,
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", true),
-				test.GenEtcdBackupConfig("id-1", "test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 			ExpectedHTTPStatusCode: http.StatusOK,
-			ExpectedResponse:       test.GenAPIEtcdBackupConfig("id-1", "test-1", test.GenDefaultCluster().Name),
+			ExpectedResponse:       test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name),
 		},
 	}
 
@@ -248,14 +249,14 @@ func TestListEndpoint(t *testing.T) {
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
-				test.GenEtcdBackupConfig("id-1", "test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
-				test.GenEtcdBackupConfig("id-2", "test-2", test.GenDefaultCluster(), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-2", test.GenDefaultCluster(), test.GenDefaultProject().Name),
 			),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 			ExpectedHTTPStatusCode: http.StatusOK,
 			ExpectedResponse: []*apiv2.EtcdBackupConfig{
-				test.GenAPIEtcdBackupConfig("id-1", "test-1", test.GenDefaultCluster().Name),
-				test.GenAPIEtcdBackupConfig("id-2", "test-2", test.GenDefaultCluster().Name),
+				test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name),
+				test.GenAPIEtcdBackupConfig("test-2", test.GenDefaultCluster().Name),
 			},
 		},
 		{
@@ -266,8 +267,8 @@ func TestListEndpoint(t *testing.T) {
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", false),
-				test.GenEtcdBackupConfig("id-1", "test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
-				test.GenEtcdBackupConfig("id-2", "test-2", test.GenDefaultCluster(), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-2", test.GenDefaultCluster(), test.GenDefaultProject().Name),
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 			ExpectedHTTPStatusCode: http.StatusForbidden,
@@ -280,14 +281,14 @@ func TestListEndpoint(t *testing.T) {
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", true),
-				test.GenEtcdBackupConfig("id-1", "test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
-				test.GenEtcdBackupConfig("id-2", "test-2", test.GenDefaultCluster(), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-2", test.GenDefaultCluster(), test.GenDefaultProject().Name),
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 			ExpectedHTTPStatusCode: http.StatusOK,
 			ExpectedResponse: []*apiv2.EtcdBackupConfig{
-				test.GenAPIEtcdBackupConfig("id-1", "test-1", test.GenDefaultCluster().Name),
-				test.GenAPIEtcdBackupConfig("id-2", "test-2", test.GenDefaultCluster().Name),
+				test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name),
+				test.GenAPIEtcdBackupConfig("test-2", test.GenDefaultCluster().Name),
 			},
 		},
 	}
@@ -334,20 +335,20 @@ func TestDeleteEndpoint(t *testing.T) {
 	}{
 		{
 			Name:               "delete etcdbackupconfig that belongs to the given cluster",
-			EtcdBackupConfigID: "id-1",
+			EtcdBackupConfigID: etcdbackupconfig.GenEtcdBackupConfigID("test-1", test.GenDefaultCluster().Name),
 			ProjectID:          test.GenDefaultProject().Name,
 			ClusterID:          test.GenDefaultCluster().Name,
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
-				test.GenEtcdBackupConfig("id-1", "test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
 			),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 			ExpectedHTTPStatusCode: http.StatusOK,
 		},
 		{
 			Name:               "delete etcdbackupconfig which doesn't exist",
-			EtcdBackupConfigID: "id-1",
+			EtcdBackupConfigID: etcdbackupconfig.GenEtcdBackupConfigID("test-1", test.GenDefaultCluster().Name),
 			ProjectID:          test.GenDefaultProject().Name,
 			ClusterID:          test.GenDefaultCluster().Name,
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
@@ -359,28 +360,28 @@ func TestDeleteEndpoint(t *testing.T) {
 		},
 		{
 			Name:               "user john cannot delete etcdbackupconfig that belongs to bob's cluster",
-			EtcdBackupConfigID: "id-1",
+			EtcdBackupConfigID: etcdbackupconfig.GenEtcdBackupConfigID("test-1", test.GenDefaultCluster().Name),
 			ProjectID:          test.GenDefaultProject().Name,
 			ClusterID:          test.GenDefaultCluster().Name,
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", false),
-				test.GenEtcdBackupConfig("id-1", "test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 			ExpectedHTTPStatusCode: http.StatusForbidden,
 		},
 		{
 			Name:               "admin user john can delete etcdbackupconfig that belongs to bob's cluster",
-			EtcdBackupConfigID: "id-1",
+			EtcdBackupConfigID: etcdbackupconfig.GenEtcdBackupConfigID("test-1", test.GenDefaultCluster().Name),
 			ProjectID:          test.GenDefaultProject().Name,
 			ClusterID:          test.GenDefaultCluster().Name,
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", true),
-				test.GenEtcdBackupConfig("id-1", "test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 			ExpectedHTTPStatusCode: http.StatusOK,
@@ -421,9 +422,9 @@ func TestPatchEndpoint(t *testing.T) {
 	}{
 		{
 			Name:               "patch etcdbackupconfig",
-			EtcdBackupConfigID: "id-1",
+			EtcdBackupConfigID: etcdbackupconfig.GenEtcdBackupConfigID("test-1", test.GenDefaultCluster().Name),
 			PatchSpec: func() *apiv2.EtcdBackupConfigSpec {
-				spec := test.GenAPIEtcdBackupConfig("id-1", "test-1", test.GenDefaultCluster().Name).Spec
+				spec := test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name).Spec
 				spec.Schedule = modifiedSchedule
 				return &spec
 			}(),
@@ -432,21 +433,21 @@ func TestPatchEndpoint(t *testing.T) {
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
-				test.GenEtcdBackupConfig("id-1", "test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
 			),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 			ExpectedHTTPStatusCode: http.StatusOK,
 			ExpectedResponse: func() *apiv2.EtcdBackupConfig {
-				ebc := test.GenAPIEtcdBackupConfig("id-1", "test-1", test.GenDefaultCluster().Name)
+				ebc := test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name)
 				ebc.Spec.Schedule = modifiedSchedule
 				return ebc
 			}(),
 		},
 		{
 			Name:               "patch etcdbackupconfig which doesn't exist",
-			EtcdBackupConfigID: "id-1",
+			EtcdBackupConfigID: etcdbackupconfig.GenEtcdBackupConfigID("test-1", test.GenDefaultCluster().Name),
 			PatchSpec: func() *apiv2.EtcdBackupConfigSpec {
-				spec := test.GenAPIEtcdBackupConfig("id-1", "test-1", test.GenDefaultCluster().Name).Spec
+				spec := test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name).Spec
 				spec.Schedule = modifiedSchedule
 				return &spec
 			}(),
@@ -461,9 +462,9 @@ func TestPatchEndpoint(t *testing.T) {
 		},
 		{
 			Name:               "user john cannot patch etcdbackupconfig that belongs to bob's cluster",
-			EtcdBackupConfigID: "id-1",
+			EtcdBackupConfigID: etcdbackupconfig.GenEtcdBackupConfigID("test-1", test.GenDefaultCluster().Name),
 			PatchSpec: func() *apiv2.EtcdBackupConfigSpec {
-				spec := test.GenAPIEtcdBackupConfig("id-1", "test-1", test.GenDefaultCluster().Name).Spec
+				spec := test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name).Spec
 				spec.Schedule = modifiedSchedule
 				return &spec
 			}(),
@@ -473,16 +474,16 @@ func TestPatchEndpoint(t *testing.T) {
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", false),
-				test.GenEtcdBackupConfig("id-1", "test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 			ExpectedHTTPStatusCode: http.StatusForbidden,
 		},
 		{
 			Name:               "admin user john can patch etcdbackupconfig that belongs to bob's cluster",
-			EtcdBackupConfigID: "id-1",
+			EtcdBackupConfigID: etcdbackupconfig.GenEtcdBackupConfigID("test-1", test.GenDefaultCluster().Name),
 			PatchSpec: func() *apiv2.EtcdBackupConfigSpec {
-				spec := test.GenAPIEtcdBackupConfig("id-1", "test-1", test.GenDefaultCluster().Name).Spec
+				spec := test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name).Spec
 				spec.Schedule = modifiedSchedule
 				return &spec
 			}(),
@@ -492,12 +493,12 @@ func TestPatchEndpoint(t *testing.T) {
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", true),
-				test.GenEtcdBackupConfig("id-1", "test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 			ExpectedHTTPStatusCode: http.StatusOK,
 			ExpectedResponse: func() *apiv2.EtcdBackupConfig {
-				ebc := test.GenAPIEtcdBackupConfig("id-1", "test-1", test.GenDefaultCluster().Name)
+				ebc := test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name)
 				ebc.Spec.Schedule = modifiedSchedule
 				return ebc
 			}(),
@@ -553,11 +554,11 @@ func TestProjectListEndpoint(t *testing.T) {
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
-				test.GenEtcdBackupConfig("id-1", "test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
-				test.GenEtcdBackupConfig("id-2", "test-2", test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)), test.GenDefaultProject().Name),
-				test.GenEtcdBackupConfig("id-3", "test-3", test.GenDefaultCluster(), "some-different-project"),
+				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-2", test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-3", test.GenDefaultCluster(), "some-different-project"),
 				func() *kubermaticv1.EtcdBackupConfig {
-					ebc := test.GenEtcdBackupConfig("id-4", "test-4", test.GenDefaultCluster(), test.GenDefaultProject().Name)
+					ebc := test.GenEtcdBackupConfig("test-4", test.GenDefaultCluster(), test.GenDefaultProject().Name)
 					ebc.Spec.Schedule = ""
 					return ebc
 				}(),
@@ -565,10 +566,10 @@ func TestProjectListEndpoint(t *testing.T) {
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 			ExpectedHTTPStatusCode: http.StatusOK,
 			ExpectedResponse: []*apiv2.EtcdBackupConfig{
-				test.GenAPIEtcdBackupConfig("id-1", "test-1", test.GenDefaultCluster().Name),
-				test.GenAPIEtcdBackupConfig("id-2", "test-2", "clusterAbcID"),
+				test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name),
+				test.GenAPIEtcdBackupConfig("test-2", "clusterAbcID"),
 				func() *apiv2.EtcdBackupConfig {
-					ebc := test.GenAPIEtcdBackupConfig("id-4", "test-4", test.GenDefaultCluster().Name)
+					ebc := test.GenAPIEtcdBackupConfig("test-4", test.GenDefaultCluster().Name)
 					ebc.Spec.Schedule = ""
 					return ebc
 				}(),
@@ -581,8 +582,8 @@ func TestProjectListEndpoint(t *testing.T) {
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", false),
-				test.GenEtcdBackupConfig("id-1", "test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
-				test.GenEtcdBackupConfig("id-2", "test-2", test.GenDefaultCluster(), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-2", test.GenDefaultCluster(), test.GenDefaultProject().Name),
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 			ExpectedHTTPStatusCode: http.StatusForbidden,
@@ -594,11 +595,11 @@ func TestProjectListEndpoint(t *testing.T) {
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", true),
-				test.GenEtcdBackupConfig("id-1", "test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
-				test.GenEtcdBackupConfig("id-2", "test-2", test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)), test.GenDefaultProject().Name),
-				test.GenEtcdBackupConfig("id-3", "test-3", test.GenDefaultCluster(), "some-different-project"),
+				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-2", test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-3", test.GenDefaultCluster(), "some-different-project"),
 				func() *kubermaticv1.EtcdBackupConfig {
-					ebc := test.GenEtcdBackupConfig("id-4", "test-4", test.GenDefaultCluster(), test.GenDefaultProject().Name)
+					ebc := test.GenEtcdBackupConfig("test-4", test.GenDefaultCluster(), test.GenDefaultProject().Name)
 					ebc.Spec.Schedule = ""
 					return ebc
 				}(),
@@ -606,10 +607,10 @@ func TestProjectListEndpoint(t *testing.T) {
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 			ExpectedHTTPStatusCode: http.StatusOK,
 			ExpectedResponse: []*apiv2.EtcdBackupConfig{
-				test.GenAPIEtcdBackupConfig("id-1", "test-1", test.GenDefaultCluster().Name),
-				test.GenAPIEtcdBackupConfig("id-2", "test-2", "clusterAbcID"),
+				test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name),
+				test.GenAPIEtcdBackupConfig("test-2", "clusterAbcID"),
 				func() *apiv2.EtcdBackupConfig {
-					ebc := test.GenAPIEtcdBackupConfig("id-4", "test-4", test.GenDefaultCluster().Name)
+					ebc := test.GenAPIEtcdBackupConfig("test-4", test.GenDefaultCluster().Name)
 					ebc.Spec.Schedule = ""
 					return ebc
 				}(),
@@ -622,11 +623,11 @@ func TestProjectListEndpoint(t *testing.T) {
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
-				test.GenEtcdBackupConfig("id-1", "test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
-				test.GenEtcdBackupConfig("id-2", "test-2", test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)), test.GenDefaultProject().Name),
-				test.GenEtcdBackupConfig("id-3", "test-3", test.GenDefaultCluster(), "some-different-project"),
+				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-2", test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-3", test.GenDefaultCluster(), "some-different-project"),
 				func() *kubermaticv1.EtcdBackupConfig {
-					ebc := test.GenEtcdBackupConfig("id-4", "test-4", test.GenDefaultCluster(), test.GenDefaultProject().Name)
+					ebc := test.GenEtcdBackupConfig("test-4", test.GenDefaultCluster(), test.GenDefaultProject().Name)
 					ebc.Spec.Schedule = ""
 					return ebc
 				}(),
@@ -635,7 +636,7 @@ func TestProjectListEndpoint(t *testing.T) {
 			ExpectedHTTPStatusCode: http.StatusOK,
 			ExpectedResponse: []*apiv2.EtcdBackupConfig{
 				func() *apiv2.EtcdBackupConfig {
-					ebc := test.GenAPIEtcdBackupConfig("id-4", "test-4", test.GenDefaultCluster().Name)
+					ebc := test.GenAPIEtcdBackupConfig("test-4", test.GenDefaultCluster().Name)
 					ebc.Spec.Schedule = ""
 					return ebc
 				}(),
@@ -648,11 +649,11 @@ func TestProjectListEndpoint(t *testing.T) {
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
-				test.GenEtcdBackupConfig("id-1", "test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
-				test.GenEtcdBackupConfig("id-2", "test-2", test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)), test.GenDefaultProject().Name),
-				test.GenEtcdBackupConfig("id-3", "test-3", test.GenDefaultCluster(), "some-different-project"),
+				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-2", test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-3", test.GenDefaultCluster(), "some-different-project"),
 				func() *kubermaticv1.EtcdBackupConfig {
-					ebc := test.GenEtcdBackupConfig("id-4", "test-4", test.GenDefaultCluster(), test.GenDefaultProject().Name)
+					ebc := test.GenEtcdBackupConfig("test-4", test.GenDefaultCluster(), test.GenDefaultProject().Name)
 					ebc.Spec.Schedule = ""
 					return ebc
 				}(),
@@ -660,8 +661,8 @@ func TestProjectListEndpoint(t *testing.T) {
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 			ExpectedHTTPStatusCode: http.StatusOK,
 			ExpectedResponse: []*apiv2.EtcdBackupConfig{
-				test.GenAPIEtcdBackupConfig("id-1", "test-1", test.GenDefaultCluster().Name),
-				test.GenAPIEtcdBackupConfig("id-2", "test-2", "clusterAbcID"),
+				test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name),
+				test.GenAPIEtcdBackupConfig("test-2", "clusterAbcID"),
 			},
 		},
 		{
@@ -672,8 +673,8 @@ func TestProjectListEndpoint(t *testing.T) {
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", false),
-				test.GenEtcdBackupConfig("id-1", "test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
-				test.GenEtcdBackupConfig("id-2", "test-2", test.GenDefaultCluster(), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-2", test.GenDefaultCluster(), test.GenDefaultProject().Name),
 			),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 			ExpectedHTTPStatusCode: http.StatusBadRequest,
