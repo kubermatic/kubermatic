@@ -67,3 +67,5 @@ nginx:
     annotations:
       # make sure the LoadBalancer stays when this Helm release is ever removed
       "helm.sh/resource-policy": keep
+    # in case of azure, can specific a specific IP address for the nginx service
+    # loadBalancerIP: ""
