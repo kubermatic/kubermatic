@@ -1,5 +1,3 @@
-//go:build e2e
-
 /*
 Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 
@@ -26,6 +24,7 @@ import (
 	"github.com/onsi/gomega"
 
 	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/ccm-migration/providers"
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 )
 
@@ -37,7 +36,8 @@ type testOptions struct {
 	userClusterName   string
 	kubernetesVersion semver.Semver
 
-	osCredentials credentials
+	osCredentials      providers.OpenstackCredentialsType
+	vSphereCredentials providers.VsphereCredentialsType
 }
 
 var options = testOptions{
@@ -51,14 +51,18 @@ func init() {
 	flag.BoolVar(&options.debugLog, "debug-log", false, "Activate debug logs.")
 	flag.BoolVar(&options.skipCleanup, "skip-cleanup", false, "Skip clean-up of resources.")
 
-	flag.StringVar(&options.osCredentials.authURL, "openstack-auth-url", "", "openstack auth url")
-	flag.StringVar(&options.osCredentials.username, "openstack-username", "", "openstack username")
-	flag.StringVar(&options.osCredentials.password, "openstack-password", "", "openstack password")
-	flag.StringVar(&options.osCredentials.project, "openstack-project", "", "openstack project")
-	flag.StringVar(&options.osCredentials.domain, "openstack-domain", "", "openstack domain")
-	flag.StringVar(&options.osCredentials.region, "openstack-region", "", "openstack region")
-	flag.StringVar(&options.osCredentials.floatingIPPool, "openstack-floating-ip-pool", "", "openstack floating ip pool")
-	flag.StringVar(&options.osCredentials.network, "openstack-network", "", "openstack network")
+	flag.StringVar(&options.osCredentials.AuthURL, "openstack-auth-url", "", "openstack auth url")
+	flag.StringVar(&options.osCredentials.Username, "openstack-username", "", "openstack username")
+	flag.StringVar(&options.osCredentials.Password, "openstack-password", "", "openstack password")
+	flag.StringVar(&options.osCredentials.Tenant, "openstack-tenant", "", "openstack tenant")
+	flag.StringVar(&options.osCredentials.Domain, "openstack-domain", "", "openstack domain")
+	flag.StringVar(&options.osCredentials.Region, "openstack-region", "", "openstack region")
+	flag.StringVar(&options.osCredentials.FloatingIPPool, "openstack-floating-ip-pool", "", "openstack floating ip pool")
+	flag.StringVar(&options.osCredentials.Network, "openstack-network", "", "openstack network")
+
+	flag.StringVar(&options.vSphereCredentials.AuthURL, "vsphere-auth-url", "", "vsphere auth url")
+	flag.StringVar(&options.vSphereCredentials.Username, "vsphere-username", "", "vsphere username")
+	flag.StringVar(&options.vSphereCredentials.Password, "vsphere-password", "", "vsphere password")
 }
 
 func TestCCMMigration(t *testing.T) {
