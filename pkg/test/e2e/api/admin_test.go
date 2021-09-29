@@ -25,7 +25,6 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
-	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -69,7 +68,7 @@ func TestGetProjectByAdmin(t *testing.T) {
 
 			_, err = adminTestClient.GetProject(project.ID)
 			if err != nil {
-				t.Fatalf("admin failed to get other user project: %v", err)
+				t.Fatalf("admin failed to get other user project: %v", getErrorResponse(err))
 			}
 
 			projects, err := adminTestClient.ListProjects(true)
@@ -293,91 +292,6 @@ func TestManageProjectMembersByAdmin(t *testing.T) {
 			if err != nil {
 				t.Fatalf("admin failed to delete user from the project: %v", err)
 			}
-		})
-	}
-}
-
-// creates project + cluster + nodes
-func TestManageClusterByAdmin(t *testing.T) {
-	tests := []struct {
-		name           string
-		dc             string
-		location       string
-		version        string
-		credential     string
-		replicas       int32
-		patch          utils.PatchCluster
-		expectedName   string
-		expectedLabels map[string]string
-	}{
-		{
-			name:       "create cluster on DigitalOcean",
-			dc:         "kubermatic",
-			location:   "do-fra1",
-			version:    utils.KubernetesVersion(),
-			credential: "e2e-digitalocean",
-			replicas:   0,
-			patch: utils.PatchCluster{
-				Name:   "newName",
-				Labels: map[string]string{"a": "b"},
-			},
-			expectedName:   "newName",
-			expectedLabels: map[string]string{"a": "b"},
-		},
-	}
-
-	ctx := context.Background()
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			masterToken, err := utils.RetrieveMasterToken(ctx)
-			if err != nil {
-				t.Fatalf("failed to get master token: %v", err)
-			}
-
-			testClient := utils.NewTestClient(masterToken, t)
-			project, err := testClient.CreateProject(rand.String(10))
-			if err != nil {
-				t.Fatalf("failed to create project: %v", err)
-			}
-			defer cleanupProject(t, project.ID)
-
-			cluster, err := testClient.CreateDOCluster(project.ID, tc.dc, rand.String(10), tc.credential, tc.version, tc.location, tc.replicas)
-			if err != nil {
-				t.Fatalf("failed to create cluster: %v", err)
-			}
-
-			// change for admin user
-			adminMasterToken, err := utils.RetrieveAdminMasterToken(ctx)
-			if err != nil {
-				t.Fatalf("failed to get admin master token: %v", err)
-			}
-
-			adminTestClient := utils.NewTestClient(adminMasterToken, t)
-
-			if err := adminTestClient.WaitForClusterHealthy(project.ID, tc.dc, cluster.ID); err != nil {
-				t.Fatalf("cluster not ready: %v", err)
-			}
-
-			_, err = adminTestClient.UpdateCluster(project.ID, tc.dc, cluster.ID, tc.patch)
-			if err != nil {
-				t.Fatalf("failed to update cluster: %v", err)
-			}
-
-			updatedCluster, err := adminTestClient.GetCluster(project.ID, tc.dc, cluster.ID)
-			if err != nil {
-				t.Fatalf("failed to get cluster: %v", err)
-			}
-
-			if updatedCluster.Name != tc.expectedName {
-				t.Fatalf("expected new name %q, but got %q", tc.expectedName, updatedCluster.Name)
-			}
-
-			if !equality.Semantic.DeepEqual(updatedCluster.Labels, tc.expectedLabels) {
-				t.Fatalf("expected labels %v, but got %v", tc.expectedLabels, updatedCluster.Labels)
-			}
-
-			testClient.CleanupCluster(t, project.ID, tc.dc, cluster.ID)
 		})
 	}
 }
