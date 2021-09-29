@@ -35,11 +35,13 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	apiclient "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/admin"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/azure"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/constraint"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/constraints"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/constrainttemplates"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/credentials"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/datacenter"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/digitalocean"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/gcp"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/project"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/serviceaccounts"
@@ -1722,4 +1724,43 @@ func (r *TestClient) ListClusters(projectID string) ([]*apiv1.Cluster, error) {
 	}
 
 	return clusterList, nil
+}
+
+// ListDOSizes returns list DO sizes
+func (r *TestClient) ListDOSizes(credential string) (*models.DigitaloceanSizeList, error) {
+	params := &digitalocean.ListDigitaloceanSizesParams{
+		Credential: &credential,
+	}
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
+
+	sizesResponse, err := r.client.Digitalocean.ListDigitaloceanSizes(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return sizesResponse.Payload, nil
+}
+
+// ListAzureSizes returns list Azure sizes
+func (r *TestClient) ListAzureSizes(credential, location string) (models.AzureSizeList, error) {
+	params := &azure.ListAzureSizesParams{
+		Credential: &credential,
+		Location:   &location,
+	}
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
+
+	sizesResponse, err := r.client.Azure.ListAzureSizes(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return sizesResponse.Payload, nil
 }
