@@ -84,11 +84,6 @@ for ARCH in ${ARCHITECTURES}; do
   buildah manifest add "${DOCKER_REPO}/user-ssh-keys-agent:${PRIMARY_TAG}" "${DOCKER_REPO}/user-ssh-keys-agent-${ARCH}:${PRIMARY_TAG}"
 done
 
-# keep a mirror of the EE version in the old repo
-if [ "$KUBERMATIC_EDITION" == "ee" ]; then
-  docker tag "${DOCKER_REPO}/kubermatic${REPOSUFFIX}:${PRIMARY_TAG}" "${DOCKER_REPO}/api:${PRIMARY_TAG}"
-fi
-
 # for each given tag, tag and push the image
 for TAG in "$@"; do
   if [ -z "$TAG" ]; then
@@ -110,9 +105,4 @@ for TAG in "$@"; do
   docker push "${DOCKER_REPO}/addons:${TAG}"
   docker push "${DOCKER_REPO}/etcd-launcher:${TAG}"
   buildah manifest push --all "${DOCKER_REPO}/user-ssh-keys-agent:${TAG}" "docker://${DOCKER_REPO}/user-ssh-keys-agent:${TAG}"
-
-  if [ "$KUBERMATIC_EDITION" == "ee" ]; then
-    docker tag "${DOCKER_REPO}/api:${PRIMARY_TAG}" "${DOCKER_REPO}/api:${TAG}"
-    docker push "${DOCKER_REPO}/api:${TAG}"
-  fi
 done
