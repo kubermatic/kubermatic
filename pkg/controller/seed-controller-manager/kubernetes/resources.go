@@ -73,7 +73,7 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 	// strategy is used. Its required for all Kubeconfigs & triggers errors
 	// otherwise.
 	if cluster.Address.IP == "" && cluster.Spec.ExposeStrategy != kubermaticv1.ExposeStrategyTunneling {
-		return nil
+		return fmt.Errorf("cluster IP address is not set")
 	}
 
 	// check that all secrets are available // New way of handling secrets
@@ -263,7 +263,7 @@ func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedService
 	}
 
 	if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
-		creators = append(creators, nodeportproxy.FrontLoadBalancerServiceCreator())
+		creators = append(creators, nodeportproxy.FrontLoadBalancerServiceCreator(data))
 	}
 
 	if flag := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureRancherIntegration]; flag {

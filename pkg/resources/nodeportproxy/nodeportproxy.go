@@ -416,7 +416,7 @@ func podDisruptionBudget() reconciling.NamedPodDisruptionBudgetCreatorGetter {
 
 // FrontLoadBalancerServiceCreator returns the creator for the LoadBalancer that fronts apiserver
 // and openVPN when using exposeStrategy=LoadBalancer
-func FrontLoadBalancerServiceCreator() reconciling.NamedServiceCreatorGetter {
+func FrontLoadBalancerServiceCreator(data *resources.TemplateData) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.FrontLoadBalancerServiceName, func(s *corev1.Service) (*corev1.Service, error) {
 			// We don't actually manage this service, that is done by the nodeport proxy, we just
@@ -433,7 +433,14 @@ func FrontLoadBalancerServiceCreator() reconciling.NamedServiceCreatorGetter {
 					},
 				}
 			}
-
+			if data.Cluster().Spec.Cloud.AWS != nil {
+				if s.Annotations == nil {
+					s.Annotations = make(map[string]string)
+				}
+				s.Annotations["service.beta.kubernetes.io/aws-load-balancer-type"] = "nlb"
+				s.Annotations["service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout"] = "3600"
+				s.Annotations["service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled"] = "true"
+			}
 			s.Spec.Selector = resources.BaseAppLabels(envoyAppLabelValue, nil)
 			return s, nil
 		}
