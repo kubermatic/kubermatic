@@ -119,6 +119,12 @@ grafana:
       # the dashboards.
       viewers_can_edit: false
 
+      # Change this to the URL that will be used to expose 
+      # your Grafana installation. This is needed for Grafana to be aware
+      # where it is hosted. This address is used in some redirects 
+      # or for sharing dashboards. 
+      root_url: ""
+
   # If you manage your dashboards via your own configmaps,
   # you can add them here to have them automatically be
   # mounted in Grafana. For each volume, specify either a
