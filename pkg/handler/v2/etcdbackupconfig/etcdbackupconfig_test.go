@@ -201,6 +201,20 @@ func TestGetEndpoint(t *testing.T) {
 			ExpectedHTTPStatusCode: http.StatusOK,
 			ExpectedResponse:       test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name),
 		},
+		{
+			Name:               "get etcdbackupconfig with a complex cluster id",
+			EtcdBackupConfigID: etcdbackupconfig.GenEtcdBackupConfigID("test-1", "test-ab-cd"),
+			ProjectID:          test.GenDefaultProject().Name,
+			ClusterID:          "test-ab-cd",
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				genDefaultClusterWithName("test-ab-cd"),
+				test.GenEtcdBackupConfig("test-1", genDefaultClusterWithName("test-ab-cd"), test.GenDefaultProject().Name),
+			),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			ExpectedHTTPStatusCode: http.StatusOK,
+			ExpectedResponse:       test.GenAPIEtcdBackupConfig("test-1", "test-ab-cd"),
+		},
 	}
 
 	for _, tc := range testCases {
@@ -229,6 +243,12 @@ func TestGetEndpoint(t *testing.T) {
 
 		})
 	}
+}
+
+func genDefaultClusterWithName(name string) *kubermaticv1.Cluster {
+	c := test.GenDefaultCluster()
+	c.Name = name
+	return c
 }
 
 func TestListEndpoint(t *testing.T) {
