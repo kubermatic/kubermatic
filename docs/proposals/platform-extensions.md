@@ -94,6 +94,92 @@ interpreted as described in RFC 2119.*
 	  example a mapping of cluster users to SSH keys - to be used for
 	  authentication within an extension.
 
+## Competitive Landscape
+
+There are already some solutions out there that solve the problem of extending
+Kubernetes clusters. In the following we want to take a look at those and see
+if we can apply some of their concepts to solve our requirements.
+
+### KubeApps
+
+[KubeApps](https://kubeapps.com/docs/) offers two ways to extend a kubernetes
+cluster. Either directly via Helm charts or indirectly by adding operators to
+handle the life-cycle of extensions.
+
+Helm charts can be installed from public and private Helm repositories. By
+default some public Helm chart repositories are enabled, but other public
+repositories can be added easily. Private repositories like ChartMuseum, Harbor
+or Artifactory (pro) can also be added. There is a controller that watches an
+AppRepository CR and creates a cronjob for each. It repeatedly scans the Helm
+charts available and stores the chart's metadata in KubeApps internal database.
+
+Installation of Helm charts happens imperatively through the KubeApps API.
+Their roadmap states that they want to create plugin-based system and support
+both this imperative approach and also a declarative approach by adding flux as
+a plugin.
+
+If [OLM](https://olm.operatorframework.io) is installed the KubeApps Dashboard
+also allows to install operators from the operator hub (and other sources added
+to OLM). Once an operator is installed, applications managed by this operator
+get listed along with existing helm charts and are ready to be installed.
+
+### Flux
+
+[Flux](https://fluxcd.io) is a "GitOps toolkit" that provides tools to manage
+applications based on helm charts in a fully declarative approach.
+
+An operator watches HelmRelease CRs and creates artifacts from charts found in
+Git repositories, Helm repositories and S3 buckets. Another operator watches
+HelmChart CRs which use HelmRelease CRs as kind of template. It checks for the
+availability of the referenced chart artifact and all required dependencies.
+It then fetches the artifact and takes all required Helm actions like install
+or upgrade to reach the desired state of the application. Helm test actions are
+also executed if they are defined. Retries, rollback or uninstall are executed
+as configured if any Helm action fails.
+
+* https://fluxcd.io/docs/use-cases/helm/
+* https://fluxcd.io/docs/guides/helmreleases/
+* https://github.com/fluxcd/helm-controller/blob/main/docs/spec/README.md
+
+### Operator Lifecycle Manager
+
+[OLM](https://olm.operatorframework.io/docs/) provides a declarative way to
+handle the lifecycle and dependencies of Kubernetes operators.
+
+With the operator SDK simple operators can be generated directly from Helm
+charts.  After installing these operators CR of the corresponding kind has to
+be created so the operator takes care of bringing the application up.
+
+Operators from operatorhub can be installed natively. The catalog of operators
+can be extended by 3rd-party catalogs or by bundeling own operators into
+catalogs.
+
+### Kyma Service Calatlog: Helm Broker
+
+[Kyma's Helm Broker](https://kyma-project.io/docs/components/helm-broker/) is
+an abstraction layer on top of Helm to provide Helm chart based services in
+[Kyma's Service
+Catalog](https://kyma-project.io/docs/components/service-catalog/).
+
+Helm charts get wrapped with all necessary information and metadata into
+so-called Addons. These addons are bundled in repositories and exposed as
+Service Classes in the Service Catalog.
+
+To provision such a Service in the cluster the user creates a set of custom
+resources (ServiceInstance, ServiceBinding, ServiceBindingUsage). The service
+broker then creates an instance of that service and injects a set of user
+credentials to make it ready to use.
+
+### Comparison Matrix
+
+|                        | KubeApps | Flux |  OLM  | Kyma |
+|------------------------|:--------:|:----:|:-----:|:----:|
+| Extensible sources     |    ✅    |  ✅  |   ✅  |  ✅  |
+| Dependency management  |    ✅    |  ✅  |   ✅  |      |
+| Install/Update/Remove  |    ✅    |  ✅  |   ✅  |  ✅  |
+| Life-cycle tied to K8s |          |      |       |      |
+| Fully Declarative      |          |  ✅  |   ✅  |  ✅  |
+
 ## Implementation Proposals
 
 (unordered list)
