@@ -136,7 +136,7 @@ func TestSyncClusterAddress(t *testing.T) {
 			frontproxyService: corev1.Service{
 				Status: corev1.ServiceStatus{
 					LoadBalancer: corev1.LoadBalancerStatus{
-						Ingress: []corev1.LoadBalancerIngress{{Hostname: "xyz.eu-central-1.cloudprovider.test"}},
+						Ingress: []corev1.LoadBalancerIngress{{Hostname: loadbBalancerHostName}},
 					},
 				},
 			},

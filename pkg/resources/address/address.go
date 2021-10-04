@@ -161,7 +161,7 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 			ip = frontProxyLBServiceIP
 		} else {
 			var err error
-			// Always lookup IP address, in case it changes (IP's on AWS LB's change)
+			// Always lookup IP address, in case it changes
 			ip, err = m.getExternalIPv4(frontProxyLBServiceHostname)
 			if err != nil {
 				return nil, err

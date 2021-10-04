@@ -437,8 +437,14 @@ func FrontLoadBalancerServiceCreator(data *resources.TemplateData) reconciling.N
 				if s.Annotations == nil {
 					s.Annotations = make(map[string]string)
 				}
+				// NOTE: While KKP uses in-tree cloud provider for AWS, we use annotations defined in
+				// https://github.com/kubernetes/kubernetes/blob/v1.22.2/staging/src/k8s.io/legacy-cloud-providers/aws/aws.go
+
+				// Make sure to use Network Load Balancer with fixed IPs instead of Classic Load Balancer
 				s.Annotations["service.beta.kubernetes.io/aws-load-balancer-type"] = "nlb"
+				// Extend the default idle timeout (60s), e.g. to not timeout "kubectl logs -f"
 				s.Annotations["service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout"] = "3600"
+				// Load-balance across nodes in all zones to ensure HA if nodes in a DNS-selected zone are not available
 				s.Annotations["service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled"] = "true"
 			}
 			s.Spec.Selector = resources.BaseAppLabels(envoyAppLabelValue, nil)
