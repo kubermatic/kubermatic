@@ -49,9 +49,9 @@ func ClusterReconcileWrapper(
 	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != workerName {
 		return nil, nil
 	}
-	if cluster.Spec.Pause {
-		return nil, nil
-	}
+	//if cluster.Spec.Pause {
+	//	return nil, nil
+	//}
 
 	reconcilingStatus := corev1.ConditionFalse
 	result, err := reconcile()

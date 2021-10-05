@@ -283,13 +283,13 @@ func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuth
 	deployments := []reconciling.NamedDeploymentCreatorGetter{
 		openvpn.DeploymentCreator(data),
 		dns.DeploymentCreator(data),
-		apiserver.DeploymentCreator(data, enableAPIserverOIDCAuthentication),
+		//apiserver.DeploymentCreator(data, enableAPIserverOIDCAuthentication),
 		scheduler.DeploymentCreator(data),
 		controllermanager.DeploymentCreator(data),
 		machinecontroller.DeploymentCreator(data),
 		machinecontroller.WebhookDeploymentCreator(data),
-		metricsserver.DeploymentCreator(data),
-		usercluster.DeploymentCreator(data),
+		//metricsserver.DeploymentCreator(data),
+		//usercluster.DeploymentCreator(data),
 		kubernetesdashboard.DeploymentCreator(data),
 	}
 
