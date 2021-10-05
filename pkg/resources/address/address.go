@@ -109,9 +109,7 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 		if err := m.client.Get(ctx, nn, frontProxyLoadBalancerService); err != nil {
 			return nil, fmt.Errorf("failed to get the front-loadbalancer service: %v", err)
 		}
-		// Use this as default in case the implementation doesn't populate the status
-		frontProxyLBServiceIP = frontProxyLoadBalancerService.Spec.LoadBalancerIP
-		// Supposively there is only one if not..Good luck
+		frontProxyLBServiceIP = frontProxyLoadBalancerService.Spec.LoadBalancerIP // default in case the implementation doesn't populate the status
 		for _, ingress := range frontProxyLoadBalancerService.Status.LoadBalancer.Ingress {
 			if ingress.IP != "" {
 				frontProxyLBServiceIP = ingress.IP
@@ -119,6 +117,9 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 			if ingress.Hostname != "" {
 				frontProxyLBServiceHostname = ingress.Hostname
 			}
+		}
+		if len(frontProxyLoadBalancerService.Status.LoadBalancer.Ingress) > 1 {
+			m.log.Debugw("Multiple ingress values in LB status, the following values will be used", "ip", frontProxyLBServiceIP, "hostname", frontProxyLBServiceHostname)
 		}
 	}
 
@@ -159,7 +160,7 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 	case kubermaticv1.ExposeStrategyLoadBalancer:
 		if frontProxyLBServiceIP != "" {
 			ip = frontProxyLBServiceIP
-		} else {
+		} else if frontProxyLBServiceHostname != "" {
 			var err error
 			// Always lookup IP address, in case it changes
 			ip, err = m.getExternalIPv4(frontProxyLBServiceHostname)
