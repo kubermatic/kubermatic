@@ -110,6 +110,17 @@ func validateHelmValues(config *operatorv1alpha1.KubermaticConfiguration, helmVa
 		}
 	}
 
+	staticUser, ok := opt.HelmValues.Get(yamled.Path{"dex", "staticPasswords"})
+	if !ok {
+		logger.Warn("No user data in dex.staticPasswords block...")
+		failures = append(failures, errors.New("no user data found in helm-values file"))
+	}
+
+	if !validateStaticPassword(staticUser) {
+		logger.Warn("Failed to find a proper user data in dex.staticPasswords block...")
+		failures = append(failures, errors.New("invalid data in the dex.staticPasswords block"))
+	}
+
 	defaultedConfig, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
 	if err != nil {
 		failures = append(failures, fmt.Errorf("failed to process KubermaticConfiguration: %v", err))
@@ -172,4 +183,21 @@ func randomString() (string, error) {
 	}
 
 	return base64.RawURLEncoding.EncodeToString(b), nil
+}
+
+func validateStaticPassword(data interface{}) bool {
+	i, ok := data.([]interface{})
+	if !ok {
+		return false
+	}
+
+	if len(i) < 1 {
+		return false
+	}
+
+	if _, ok := i[0].(yaml.MapSlice); ok {
+		return false
+	}
+
+	return true
 }

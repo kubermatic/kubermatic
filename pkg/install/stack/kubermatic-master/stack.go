@@ -18,13 +18,16 @@ package kubermaticmaster
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/rand"
 	"path/filepath"
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v2"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
@@ -104,6 +107,10 @@ func (*MasterStack) Deploy(ctx context.Context, opt stack.DeployOptions) error {
 
 	if err := deployTelemetry(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
 		return fmt.Errorf("failed to deploy Telemetry: %w", err)
+	}
+
+	if err := createFirstUser(ctx, opt.Logger, opt.KubeClient, opt); err != nil {
+		return fmt.Errorf("failed to create first user: %w", err)
 	}
 
 	showDNSSettings(ctx, opt.Logger, opt.KubeClient, opt)
@@ -506,4 +513,49 @@ func showLoadBalancerDNSSettings(ctx context.Context, logger *logrus.Entry, kube
 	}
 
 	logger.Info("")
+}
+
+func createFirstUser(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) error {
+	logger.Infof("👤 Creating first user and assigning him as an admin...")
+
+	staticUser, ok := opt.HelmValues.Get(yamled.Path{"dex", "staticPasswords"})
+	if !ok {
+		logger.Warn("Failed to find a proper user data in dex.staticPasswords block...")
+		return errors.New("no user data found in helm-values file")
+	}
+
+	userData := staticUser.([]interface{})[0].(yaml.MapSlice)
+	user := &kubermaticv1.User{}
+	for _, item := range userData {
+		switch item.Key {
+		case "email":
+			user.Spec.Email = item.Value.(string)
+		case "userID":
+			user.Spec.ID = item.Value.(string)
+		case "username":
+			user.Name = item.Value.(string)
+		}
+	}
+	user.Spec.IsAdmin = true
+
+	existingUser := &kubermaticv1.User{}
+	if err := kubeClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: user.Name}, existingUser); err != nil {
+		if kerrors.IsNotFound(err) {
+			if err := kubeClient.Create(ctx, user); err != nil {
+				return fmt.Errorf("failed to create user: %v", err)
+			}
+
+			return fmt.Errorf("failed to get user: %v", err)
+		}
+	}
+
+	if !existingUser.Spec.IsAdmin {
+		existingUser.Spec.IsAdmin = true
+
+		if err := kubeClient.Update(ctx, existingUser); err != nil {
+			return fmt.Errorf("failed to update user: %v", err)
+		}
+	}
+
+	return nil
 }
