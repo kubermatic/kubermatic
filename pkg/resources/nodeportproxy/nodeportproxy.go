@@ -437,7 +437,7 @@ func FrontLoadBalancerServiceCreator(data *resources.TemplateData) reconciling.N
 				if s.Annotations == nil {
 					s.Annotations = make(map[string]string)
 				}
-				// NOTE: While KKP uses in-tree cloud provider for AWS, we use annotations defined in
+				// NOTE: While KKP uses in-tree CCM for AWS, we use annotations defined in
 				// https://github.com/kubernetes/kubernetes/blob/v1.22.2/staging/src/k8s.io/legacy-cloud-providers/aws/aws.go
 
 				// Make sure to use Network Load Balancer with fixed IPs instead of Classic Load Balancer
