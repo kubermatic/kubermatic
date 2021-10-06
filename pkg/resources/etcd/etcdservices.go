@@ -39,10 +39,8 @@ func ServiceCreator(data serviceCreatorData) reconciling.NamedServiceCreatorGett
 		return resources.EtcdServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = resources.EtcdServiceName
 			se.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-			se.Annotations = map[string]string{
-				"service.alpha.kubernetes.io/tolerate-unready-endpoints": "true",
-			}
 			se.Spec.ClusterIP = "None"
+			se.Spec.PublishNotReadyAddresses = true
 			se.Spec.Selector = map[string]string{
 				resources.AppLabelKey: name,
 				"cluster":             data.Cluster().Name,
