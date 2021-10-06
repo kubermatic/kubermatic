@@ -23,14 +23,10 @@ import (
 	"net/http"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/credentials"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/datacenter"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/project"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"k8s.io/apimachinery/pkg/util/rand"
 )
@@ -71,8 +67,8 @@ func TestLogout(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			// test projection creation
-			_, err = testClient.CreateProject(rand.String(10))
+			// test projection creation, ignore created result, or other error codes other then Unauthorized
+			_, err = testClient.CreateProject(rand.String(10), http.StatusCreated, http.StatusForbidden, http.StatusBadRequest, http.StatusConflict)
 			if err == nil {
 				t.Fatal("create project: expected error")
 			}

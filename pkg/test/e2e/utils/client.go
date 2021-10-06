@@ -84,7 +84,7 @@ func NewTestClient(token string, t *testing.T) *TestClient {
 }
 
 // CreateProject creates a new project and waits for it to become active (ready).
-func (r *TestClient) CreateProject(name string) (*apiv1.Project, error) {
+func (r *TestClient) CreateProject(name string, ignoredStatusCodes ...int) (*apiv1.Project, error) {
 	before := time.Now()
 	timeout := 30 * time.Second
 
@@ -93,7 +93,7 @@ func (r *TestClient) CreateProject(name string) (*apiv1.Project, error) {
 		Duration: 1 * time.Second,
 		Steps:    4,
 		Factor:   1.5,
-	})
+	}, ignoredStatusCodes...)
 
 	r.test.Logf("Creating project %s...", name)
 
@@ -1438,7 +1438,11 @@ func (r *TestClient) ListDC() ([]*models.Datacenter, error) {
 
 func (r *TestClient) Logout() error {
 	params := &users.LogoutCurrentUserParams{}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
 
 	_, err := r.client.Users.LogoutCurrentUser(params, r.bearerToken)
 	return err
