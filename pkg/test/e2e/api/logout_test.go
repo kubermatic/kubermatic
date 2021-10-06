@@ -23,10 +23,14 @@ import (
 	"net/http"
 	"testing"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/credentials"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/datacenter"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/project"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"k8s.io/apimachinery/pkg/util/rand"
 )
