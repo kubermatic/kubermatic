@@ -1251,7 +1251,11 @@ func (r *TestClient) ListDCForProvider(provider string) ([]*models.Datacenter, e
 	params := &datacenter.ListDCForProviderParams{
 		Provider: provider,
 	}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
 
 	list, err := r.client.Datacenter.ListDCForProvider(params, r.bearerToken)
 	if err != nil {
@@ -1266,7 +1270,11 @@ func (r *TestClient) GetDCForProvider(provider, dc string) (*models.Datacenter, 
 		Provider:   provider,
 		Datacenter: dc,
 	}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
 
 	receivedDC, err := r.client.Datacenter.GetDCForProvider(params, r.bearerToken)
 	if err != nil {
@@ -1284,7 +1292,11 @@ func (r *TestClient) CreateDC(seed string, dc *models.Datacenter) (*models.Datac
 		},
 		Seed: seed,
 	}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
 
 	createdDC, err := r.client.Datacenter.CreateDC(params, r.bearerToken)
 	if err != nil {
@@ -1300,7 +1312,11 @@ func (r *TestClient) DeleteDC(seed, dc string) error {
 		DC:   dc,
 	}
 	// HTTP400 is returned when the DC is not yet available in the Seed
-	SetupParams(r.test, params, 1*time.Second, 5*time.Minute, http.StatusBadRequest)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	}, http.StatusBadRequest)
 
 	_, err := r.client.Datacenter.DeleteDC(params, r.bearerToken)
 	return err
@@ -1335,7 +1351,11 @@ func (r *TestClient) PatchDC(seed, dcToPatch, patch string) (*models.Datacenter,
 		DCToPatch: dcToPatch,
 		Seed:      seed,
 	}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
 
 	patchedDC, err := r.client.Datacenter.PatchDC(params, r.bearerToken)
 	if err != nil {
@@ -1350,7 +1370,11 @@ func (r *TestClient) GetDCForSeed(seed, dc string) (*models.Datacenter, error) {
 		Seed: seed,
 		DC:   dc,
 	}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusNotFound)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	}, http.StatusNotFound)
 
 	receivedDC, err := r.client.Datacenter.GetDCForSeed(params, r.bearerToken)
 	if err != nil {
@@ -1364,7 +1388,11 @@ func (r *TestClient) ListDCForSeed(seed string) ([]*models.Datacenter, error) {
 	params := &datacenter.ListDCForSeedParams{
 		Seed: seed,
 	}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
 
 	list, err := r.client.Datacenter.ListDCForSeed(params, r.bearerToken)
 	if err != nil {
@@ -1378,7 +1406,11 @@ func (r *TestClient) GetDC(dc string) (*models.Datacenter, error) {
 	params := &datacenter.GetDatacenterParams{
 		DC: dc,
 	}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
 
 	receivedDC, err := r.client.Datacenter.GetDatacenter(params, r.bearerToken)
 	if err != nil {
@@ -1390,7 +1422,11 @@ func (r *TestClient) GetDC(dc string) (*models.Datacenter, error) {
 
 func (r *TestClient) ListDC() ([]*models.Datacenter, error) {
 	params := &datacenter.ListDatacentersParams{}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
 
 	list, err := r.client.Datacenter.ListDatacenters(params, r.bearerToken)
 	if err != nil {
