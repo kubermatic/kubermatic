@@ -519,7 +519,7 @@ func createFirstUser(ctx context.Context, logger *logrus.Entry, kubeClient ctrlr
 
 	staticUsers, ok := opt.HelmValues.Get(yamled.Path{"dex", "staticPasswords"})
 
-	//No user provided, skipping
+	// no user provided, skipping
 	if !ok {
 		return nil
 	}
