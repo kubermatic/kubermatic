@@ -101,27 +101,36 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 		subdomain = m.seed.Spec.SeedDNSOverwrite
 	}
 
-	frontProxyLoadBalancerServiceIP := ""
+	frontProxyLBServiceIP := ""
+	frontProxyLBServiceHostname := ""
 	if m.cluster.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
 		frontProxyLoadBalancerService := &corev1.Service{}
 		nn := types.NamespacedName{Namespace: m.cluster.Status.NamespaceName, Name: resources.FrontLoadBalancerServiceName}
 		if err := m.client.Get(ctx, nn, frontProxyLoadBalancerService); err != nil {
 			return nil, fmt.Errorf("failed to get the front-loadbalancer service: %v", err)
 		}
-		// Use this as default in case the implementation doesn't populate the status
-		frontProxyLoadBalancerServiceIP = frontProxyLoadBalancerService.Spec.LoadBalancerIP
-		// Supposively there is only one if not..Good luck
+		frontProxyLBServiceIP = frontProxyLoadBalancerService.Spec.LoadBalancerIP // default in case the implementation doesn't populate the status
 		for _, ingress := range frontProxyLoadBalancerService.Status.LoadBalancer.Ingress {
 			if ingress.IP != "" {
-				frontProxyLoadBalancerServiceIP = ingress.IP
+				frontProxyLBServiceIP = ingress.IP
 			}
+			if ingress.Hostname != "" {
+				frontProxyLBServiceHostname = ingress.Hostname
+			}
+		}
+		if len(frontProxyLoadBalancerService.Status.LoadBalancer.Ingress) > 1 {
+			m.log.Debugw("Multiple ingress values in LB status, the following values will be used", "ip", frontProxyLBServiceIP, "hostname", frontProxyLBServiceHostname)
 		}
 	}
 
 	// External Name
 	externalName := ""
 	if m.cluster.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
-		externalName = frontProxyLoadBalancerServiceIP
+		if frontProxyLBServiceIP != "" {
+			externalName = frontProxyLBServiceIP
+		} else {
+			externalName = frontProxyLBServiceHostname
+		}
 	} else {
 		externalName = fmt.Sprintf("%s.%s.%s", m.cluster.Name, subdomain, m.externalURL)
 	}
@@ -149,7 +158,16 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 	// controller manager.
 	switch m.cluster.Spec.ExposeStrategy {
 	case kubermaticv1.ExposeStrategyLoadBalancer:
-		ip = frontProxyLoadBalancerServiceIP
+		if frontProxyLBServiceIP != "" {
+			ip = frontProxyLBServiceIP
+		} else if frontProxyLBServiceHostname != "" {
+			var err error
+			// Always lookup IP address, in case it changes
+			ip, err = m.getExternalIPv4(frontProxyLBServiceHostname)
+			if err != nil {
+				return nil, err
+			}
+		}
 	case kubermaticv1.ExposeStrategyNodePort:
 		var err error
 		// Always lookup IP address, in case it changes (IP's on AWS LB's change)
