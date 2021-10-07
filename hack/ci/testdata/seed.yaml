@@ -136,3 +136,21 @@ spec:
             minimum_memory: 0
             minimum_vcpus: 0
           region: dbl
+    dc-to-delete:
+      location: Amsterdam
+      country: NL
+      spec:
+        digitalocean:
+          region: ams3
+    dc-to-update:
+      location: Amsterdam
+      country: NL
+      spec:
+        digitalocean:
+          region: ams3
+    dc-to-patch:
+      location: Amsterdam
+      country: NL
+      spec:
+        digitalocean:
+          region: ams3

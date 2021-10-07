@@ -35,8 +35,8 @@ func TestListDCForProvider(t *testing.T) {
 	}{
 		{
 			name:            "list DCs for Digital Ocean",
-			provider:        "digitalocean",
-			expectedDCNames: []string{"do-ams3", "do-fra1"},
+			provider:        "gcp",
+			expectedDCNames: []string{"gcp-westeurope"},
 		},
 	}
 
@@ -185,28 +185,14 @@ func TestCreateDC(t *testing.T) {
 
 func TestDeleteDC(t *testing.T) {
 	tests := []struct {
-		name string
-		seed string
-		dc   *models.Datacenter
+		name   string
+		seed   string
+		dcName string
 	}{
 		{
-			name: "delete DC",
-			seed: "kubermatic",
-			dc: &models.Datacenter{
-				Metadata: &models.DatacenterMeta{
-					Name: "dc-to-delete",
-				},
-				Spec: &models.DatacenterSpec{
-					Seed:     "kubermatic",
-					Provider: "digitalocean",
-					Location: "Hamburg",
-					Country:  "DE",
-					Digitalocean: &models.DatacenterSpecDigitalocean{
-						Region: "ham2",
-					},
-					Node: &models.NodeSettings{},
-				},
-			},
+			name:   "delete DC",
+			seed:   "kubermatic",
+			dcName: "dc-to-delete",
 		},
 	}
 
@@ -221,17 +207,12 @@ func TestDeleteDC(t *testing.T) {
 
 			adminTestClient := utils.NewTestClient(adminMasterToken, t)
 
-			_, err = adminTestClient.CreateDC(tc.seed, tc.dc)
-			if err != nil {
-				t.Fatalf("failed to create dc: %v", err)
-			}
-
-			_, err = adminTestClient.GetDCForSeed(tc.seed, tc.dc.Metadata.Name)
+			_, err = adminTestClient.GetDCForSeed(tc.seed, tc.dcName)
 			if err != nil {
 				t.Fatalf("failed to get dc: %v", err)
 			}
 
-			err = adminTestClient.DeleteDC(tc.seed, tc.dc.Metadata.Name)
+			err = adminTestClient.DeleteDC(tc.seed, tc.dcName)
 			if err != nil {
 				t.Fatalf("failed to delete dc: %v", err)
 			}
@@ -241,29 +222,15 @@ func TestDeleteDC(t *testing.T) {
 
 func TestUpdateDC(t *testing.T) {
 	tests := []struct {
-		name       string
-		seed       string
-		originalDC *models.Datacenter
-		updatedDC  *models.Datacenter
+		name      string
+		seed      string
+		dcName    string
+		updatedDC *models.Datacenter
 	}{
 		{
-			name: "update DC",
-			seed: "kubermatic",
-			originalDC: &models.Datacenter{
-				Metadata: &models.DatacenterMeta{
-					Name: "to-update-dc",
-				},
-				Spec: &models.DatacenterSpec{
-					Seed:     "kubermatic",
-					Provider: "digitalocean",
-					Location: "Hamburg",
-					Country:  "DE",
-					Digitalocean: &models.DatacenterSpecDigitalocean{
-						Region: "ham2",
-					},
-					Node: &models.NodeSettings{},
-				},
-			},
+			name:   "update DC",
+			seed:   "kubermatic",
+			dcName: "dc-to-update",
 			updatedDC: &models.Datacenter{
 				Metadata: &models.DatacenterMeta{
 					Name: "updated-dc",
@@ -293,22 +260,12 @@ func TestUpdateDC(t *testing.T) {
 
 			adminTestClient := utils.NewTestClient(adminMasterToken, t)
 
-			dc, err := adminTestClient.CreateDC(tc.seed, tc.originalDC)
-			if err != nil {
-				t.Fatalf("failed to create dc: %v", err)
-			}
-
-			if !reflect.DeepEqual(tc.originalDC, dc) {
-				t.Fatalf("Expected create result: [meta: %+v, spec:%+v, node: %+v] is not equal to the one received: [meta: %+v, spec:%+v, node: %+v]",
-					*tc.originalDC.Metadata, *tc.originalDC.Spec, *tc.originalDC.Spec.Node, *dc.Metadata, *dc.Spec, *dc.Spec.Node)
-			}
-
-			_, err = adminTestClient.GetDCForSeed(tc.seed, tc.originalDC.Metadata.Name)
+			_, err = adminTestClient.GetDCForSeed(tc.seed, tc.dcName)
 			if err != nil {
 				t.Fatalf("failed to get dc: %v", err)
 			}
 
-			updatedDC, err := adminTestClient.UpdateDC(tc.seed, tc.originalDC.Metadata.Name, tc.updatedDC)
+			updatedDC, err := adminTestClient.UpdateDC(tc.seed, tc.dcName, tc.updatedDC)
 			if err != nil {
 				t.Fatalf("failed to update dc: %v", err)
 			}
@@ -325,29 +282,15 @@ func TestPatchDC(t *testing.T) {
 	tests := []struct {
 		name       string
 		seed       string
-		originalDC *models.Datacenter
+		dcName     string
 		patch      string
 		expectedDC *models.Datacenter
 	}{
 		{
-			name: "patch DC",
-			seed: "kubermatic",
-			originalDC: &models.Datacenter{
-				Metadata: &models.DatacenterMeta{
-					Name: "to-patch-dc",
-				},
-				Spec: &models.DatacenterSpec{
-					Seed:     "kubermatic",
-					Provider: "digitalocean",
-					Location: "Hamburg",
-					Country:  "DE",
-					Digitalocean: &models.DatacenterSpecDigitalocean{
-						Region: "ham2",
-					},
-					Node: &models.NodeSettings{},
-				},
-			},
-			patch: `{"metadata":{"name":"patched-dc"},"spec":{"location":"Frankfurt","aws":{"region":"fra2"},"digitalocean":null}}`,
+			name:   "patch DC",
+			seed:   "kubermatic",
+			dcName: "dc-to-patch",
+			patch:  `{"metadata":{"name":"patched-dc"},"spec":{"location":"Frankfurt","aws":{"region":"fra2"},"digitalocean":null}}`,
 			expectedDC: &models.Datacenter{
 				Metadata: &models.DatacenterMeta{
 					Name: "patched-dc",
@@ -356,7 +299,7 @@ func TestPatchDC(t *testing.T) {
 					Seed:     "kubermatic",
 					Provider: "aws",
 					Location: "Frankfurt",
-					Country:  "DE",
+					Country:  "NL",
 					Aws: &models.DatacenterSpecAWS{
 						Region: "fra2",
 					},
@@ -377,22 +320,12 @@ func TestPatchDC(t *testing.T) {
 
 			adminTestClient := utils.NewTestClient(adminMasterToken, t)
 
-			dc, err := adminTestClient.CreateDC(tc.seed, tc.originalDC)
-			if err != nil {
-				t.Fatalf("failed to create dc: %v", err)
-			}
-
-			if !reflect.DeepEqual(tc.originalDC, dc) {
-				t.Fatalf("Expected create result: [meta: %+v, spec:%+v, node: %+v] is not equal to the one received: [meta: %+v, spec:%+v, node: %+v]",
-					*tc.originalDC.Metadata, *tc.originalDC.Spec, *tc.originalDC.Spec.Node, *dc.Metadata, *dc.Spec, *dc.Spec.Node)
-			}
-
-			_, err = adminTestClient.GetDCForSeed(tc.seed, tc.originalDC.Metadata.Name)
+			_, err = adminTestClient.GetDCForSeed(tc.seed, tc.dcName)
 			if err != nil {
 				t.Fatalf("failed to get dc: %v", err)
 			}
 
-			patchedDC, err := adminTestClient.PatchDC(tc.seed, tc.originalDC.Metadata.Name, tc.patch)
+			patchedDC, err := adminTestClient.PatchDC(tc.seed, tc.dcName, tc.patch)
 			if err != nil {
 				t.Fatalf("failed to patch dc: %v", err)
 			}
