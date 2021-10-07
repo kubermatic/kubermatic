@@ -210,11 +210,11 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		userClusterConnProvider: new(testUserClusterConnectionProvider),
 	}
 
-	if err := r.ensureResourcesAreDeployed(ctx, testCluster); err != nil {
+	if _, err := r.ensureResourcesAreDeployed(ctx, testCluster); err != nil {
 		t.Fatalf("Initial resource deployment failed, this indicates that some resources are invalid. Error: %v", err)
 	}
 
-	if err := r.ensureResourcesAreDeployed(ctx, testCluster); err != nil {
+	if _, err := r.ensureResourcesAreDeployed(ctx, testCluster); err != nil {
 		t.Fatalf("The second resource reconciliation failed, indicating we don't properly default some fields. Check the `Object differs from generated one` error for the object for which we timed out. Original error: %v", err)
 	}
 

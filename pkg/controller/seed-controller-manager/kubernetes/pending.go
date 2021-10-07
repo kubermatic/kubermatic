@@ -53,8 +53,12 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 	}
 
 	// Deploy & Update master components for Kubernetes
-	if err := r.ensureResourcesAreDeployed(ctx, cluster); err != nil {
+	res, err := r.ensureResourcesAreDeployed(ctx, cluster)
+	if err != nil {
 		return nil, err
+	}
+	if !res.IsZero() {
+		return res, nil
 	}
 
 	var finalizers []string

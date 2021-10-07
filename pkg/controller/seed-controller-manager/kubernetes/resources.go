@@ -19,6 +19,7 @@ package kubernetes
 import (
 	"context"
 	"fmt"
+	"time"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -47,71 +48,79 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+const (
+	clusterIPUnknownRetryTimeout = 5 * time.Second
+)
+
+func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	seed, err := r.seedGetter()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	data, err := r.getClusterTemplateData(ctx, cluster, seed)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// check that all services are available
 	if err := r.ensureServices(ctx, cluster, data); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Set the hostname & url
 	if err := r.syncAddress(ctx, r.log.With("cluster", cluster.Name), cluster, seed); err != nil {
-		return fmt.Errorf("failed to sync address: %v", err)
+		return nil, fmt.Errorf("failed to sync address: %v", err)
 	}
 
 	// We should not proceed without having an IP address unless tunneling
 	// strategy is used. Its required for all Kubeconfigs & triggers errors
 	// otherwise.
 	if cluster.Address.IP == "" && cluster.Spec.ExposeStrategy != kubermaticv1.ExposeStrategyTunneling {
-		return nil
+		// This can happen e.g. if a LB external IP address has not yet been allocated by a CCM.
+		// Try to reconcile after some time and do not return an error.
+		r.log.Debugf("Cluster IP address not known, retry after %.0f s", clusterIPUnknownRetryTimeout.Seconds())
+		return &reconcile.Result{RequeueAfter: clusterIPUnknownRetryTimeout}, nil
 	}
 
 	// check that all secrets are available // New way of handling secrets
 	if err := r.ensureSecrets(ctx, cluster, data); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := r.ensureServiceAccounts(ctx, cluster); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := r.ensureRoles(ctx, cluster); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := r.ensureRoleBindings(ctx, cluster); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := r.ensureClusterRoles(ctx); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := r.ensureClusterRoleBindings(ctx, cluster); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := r.ensureNetworkPolicies(ctx, cluster); err != nil {
-		return err
+		return nil, err
 	}
 
 	// check that all StatefulSets are created
 	if err := r.ensureStatefulSets(ctx, cluster, data); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := r.ensureEtcdBackupConfigs(ctx, cluster, data); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Wait until the cloud provider infra is ready before attempting
@@ -121,59 +130,59 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 	// isn't working correctly"
 	// https://github.com/kubermatic/kubermatic/issues/2948
 	if kubermaticv1.HealthStatusUp != cluster.Status.ExtendedHealth.CloudProviderInfrastructure {
-		return nil
+		return nil, nil
 	}
 
 	// check that all ConfigMaps are available
 	if err := r.ensureConfigMaps(ctx, cluster, data); err != nil {
-		return err
+		return nil, err
 	}
 
 	// check that all Deployments are available
 	if err := r.ensureDeployments(ctx, cluster, data); err != nil {
-		return err
+		return nil, err
 	}
 
 	// This needs to happen after other secrets are created
 	// because it uses some secrets created in previous steps.
 	if data.IsKonnectivityEnabled() {
 		if err := r.ensureKonnectivitySecrets(ctx, cluster, data); err != nil {
-			return err
+			return nil, err
 		}
 
 		// check that all Deployments are available
 		if err := r.ensureKonnectivityDeployments(ctx, cluster, data); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	// check that all CronJobs are created
 	if err := r.ensureCronJobs(ctx, cluster, data); err != nil {
-		return err
+		return nil, err
 	}
 
 	// check that all PodDisruptionBudgets are created
 	if err := r.ensurePodDisruptionBudgets(ctx, cluster, data); err != nil {
-		return err
+		return nil, err
 	}
 
 	// check that all VerticalPodAutoscalers are created
 	if err := r.ensureVerticalPodAutoscalers(ctx, cluster, data); err != nil {
-		return err
+		return nil, err
 	}
 
 	if cluster.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
 		if err := nodeportproxy.EnsureResources(ctx, r.Client, data); err != nil {
-			return fmt.Errorf("failed to ensure NodePortProxy resources: %v", err)
+			return nil, fmt.Errorf("failed to ensure NodePortProxy resources: %v", err)
 		}
 	}
 
 	// Remove possible leftovers of older version of Gatekeeper, remove this in 1.19
 	if err := r.ensureOldOPAIntegrationIsRemoved(ctx, data); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &reconcile.Result{}, nil
 }
 
 func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kubermaticv1.Cluster, seed *kubermaticv1.Seed) (*resources.TemplateData, error) {
@@ -263,7 +272,7 @@ func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedService
 	}
 
 	if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
-		creators = append(creators, nodeportproxy.FrontLoadBalancerServiceCreator())
+		creators = append(creators, nodeportproxy.FrontLoadBalancerServiceCreator(data))
 	}
 
 	if flag := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureRancherIntegration]; flag {
