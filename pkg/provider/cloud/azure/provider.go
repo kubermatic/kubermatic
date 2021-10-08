@@ -355,7 +355,7 @@ func ensureResourceGroup(ctx context.Context, cloud kubermaticv1.CloudSpec, loca
 }
 
 // ensureSecurityGroup will create or update an Azure security group. The call is idempotent.
-func (a *Azure) ensureSecurityGroup(cloud kubermaticv1.CloudSpec, location string, clusterName string, credentials Credentials) error {
+func (a *Azure) ensureSecurityGroup(cloud kubermaticv1.CloudSpec, location string, clusterName string, portRangeLow int, portRangeHigh int, credentials Credentials) error {
 	sgClient, err := getSecurityGroupsClient(cloud, credentials)
 	if err != nil {
 		return err
@@ -413,6 +413,20 @@ func (a *Azure) ensureSecurityGroup(cloud kubermaticv1.CloudSpec, location strin
 						DestinationPortRange:     to.StringPtr("*"),
 						Access:                   network.SecurityRuleAccessAllow,
 						Priority:                 to.Int32Ptr(300),
+					},
+				},
+				{
+					// Allow access to node ports from everywhere
+					Name: to.StringPtr("node_ports_ingress"),
+					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
+						Direction:                network.SecurityRuleDirectionInbound,
+						Protocol:                 network.SecurityRuleProtocolTCP,
+						SourceAddressPrefix:      to.StringPtr("*"),
+						SourcePortRange:          to.StringPtr("*"),
+						DestinationAddressPrefix: to.StringPtr("*"),
+						DestinationPortRange:     to.StringPtr(fmt.Sprintf("%d-%d", portRangeLow, portRangeHigh)),
+						Access:                   network.SecurityRuleAccessAllow,
+						Priority:                 to.Int32Ptr(400),
 					},
 				},
 				// outbound
@@ -620,8 +634,14 @@ func (a *Azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 	if cluster.Spec.Cloud.Azure.SecurityGroup == "" {
 		cluster.Spec.Cloud.Azure.SecurityGroup = resourceNamePrefix + cluster.Name
 
+		lowPort, highPort := kubermaticresources.NewTemplateDataBuilder().
+			WithNodePortRange(cluster.Spec.ComponentsOverride.Apiserver.NodePortRange).
+			WithCluster(cluster).
+			Build().
+			NodePorts()
+
 		logger.Infow("ensuring security group", "securityGroup", cluster.Spec.Cloud.Azure.SecurityGroup)
-		if err = a.ensureSecurityGroup(cluster.Spec.Cloud, location, cluster.Name, credentials); err != nil {
+		if err = a.ensureSecurityGroup(cluster.Spec.Cloud, location, cluster.Name, lowPort, highPort, credentials); err != nil {
 			return cluster, err
 		}
 
