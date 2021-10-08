@@ -45,7 +45,7 @@ require (
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/jetstack/cert-manager v1.1.0
 	github.com/kubermatic/grafanasdk v0.9.11
-	github.com/kubermatic/machine-controller v1.35.2
+	github.com/kubermatic/machine-controller v1.36.0
 	github.com/minio/minio-go v6.0.14+incompatible
 	github.com/minio/minio-go/v7 v7.0.13
 	github.com/onsi/ginkgo v1.16.4
