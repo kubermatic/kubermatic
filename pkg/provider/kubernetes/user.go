@@ -250,14 +250,15 @@ func ensureTokenBlacklistSecret(ctx context.Context, client ctrlruntimeclient.Cl
 	}
 
 	if user.Spec.TokenBlackListReference == nil {
+		oldUser := user.DeepCopy()
 		user.Spec.TokenBlackListReference = &providerconfig.GlobalSecretKeySelector{
 			ObjectReference: corev1.ObjectReference{
 				Name:      name,
 				Namespace: resources.KubermaticNamespace,
 			},
 		}
-		if err := client.Update(ctx, user); err != nil {
-			return nil, fmt.Errorf("failed to update user: %v", err)
+		if err := client.Patch(ctx, user, ctrlruntimeclient.MergeFrom(oldUser)); err != nil {
+			return nil, fmt.Errorf("failed to patch user: %v", err)
 		}
 	}
 
