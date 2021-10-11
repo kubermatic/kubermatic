@@ -47,7 +47,6 @@ spec:
 EOF
 retry 2 kubectl apply -f preset-digitalocean.yaml
 
-
 echodate "Running etcd-launcher tests..."
 go test -timeout 30m -tags e2e -v ./pkg/test/e2e/etcd-launcher -kubeconfig "$KUBECONFIG"
 echodate "Tests completed successfully!"

@@ -114,7 +114,7 @@ metadata:
 spec:
   email: roxy@loodse.com
   id: 226655708b35be078a9302f3c79bd7f3982f8cb03ae32872da8e7b23_KUBE
-  name: roxy2
+  name: roxy
   admin: false
 EOF
 retry 2 kubectl apply -f user.yaml
