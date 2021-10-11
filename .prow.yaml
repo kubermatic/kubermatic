@@ -1163,6 +1163,13 @@ presubmits:
         env:
         - name: VERSION_TO_TEST
           value: v1.22.2
+        - name: KUBERMATIC_EDITION
+          value: ee
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
         securityContext:
           privileged: true
         resources:
@@ -1171,15 +1178,6 @@ presubmits:
             cpu: 2
           limits:
             memory: 6Gi
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
-        - name: SERVICE_ACCOUNT_KEY
-          valueFrom:
-            secretKeyRef:
-              name: e2e-ci
-              key: serviceAccountSigningKey
-
   #########################################################
   # etcd-launcher e2e tests
   #########################################################
