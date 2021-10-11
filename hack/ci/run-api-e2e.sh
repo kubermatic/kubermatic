@@ -105,17 +105,17 @@ spec:
 EOF
 retry 2 kubectl apply -f preset-openstack.yaml
 
-echodate "Creating roxy2 user..."
+echodate "Creating roxy user..."
 cat << EOF > user.yaml
 apiVersion: kubermatic.k8s.io/v1
 kind: User
 metadata:
-  name: c41724e256445bf133d6af1168c2d96a7533cd437618fdbe6dc2ef1fee97acd3
+  name: 2d8e8de30d44c46bb0641315ff7b60f05ae92ab0818872f78dc43ebff8ed4614
 spec:
-  email: roxy2@loodse.com
-  id: 1413636a43ddc27da27e47614faedff24b4ab19c9d9f2b45dd1b89d9_KUBE
+  email: roxy@loodse.com
+  id: 226655708b35be078a9302f3c79bd7f3982f8cb03ae32872da8e7b23_KUBE
   name: roxy2
-  admin: true
+  admin: false
 EOF
 retry 2 kubectl apply -f user.yaml
 
