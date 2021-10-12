@@ -25,6 +25,7 @@ import (
 	"time"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
@@ -892,8 +893,8 @@ func TestNewUser(t *testing.T) {
 		ExistingAPIUser           *apiv1.User
 	}{
 		{
-			Name:             "scenario 1: successfully creates a new user resource",
-			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com"}`,
+			Name:             "scenario 1: successfully creates the initial new user resource",
+			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","isAdmin":true}`,
 			HTTPStatus:       http.StatusOK,
 			ExpectedKubermaticUser: func() *kubermaticapiv1.User {
 				expectedKubermaticUser := test.GenDefaultUser()

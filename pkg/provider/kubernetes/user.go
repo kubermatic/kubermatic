@@ -25,6 +25,7 @@ import (
 	"time"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticclientset "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -89,7 +90,7 @@ func (p *UserProvider) UserByEmail(email string) (*kubermaticv1.User, error) {
 	return nil, provider.ErrNotFound
 }
 
-// CreateUser creates a new user.
+// CreateUser creates a new user. If no user is found at all the created user is elected as the first admin.
 //
 // Note that:
 // The name of the newly created resource will be unique and it is derived from the user's email address (sha256(email)
@@ -116,6 +117,16 @@ func (p *UserProvider) CreateUser(id, name, email string) (*kubermaticv1.User, e
 			Name:  name,
 			Email: email,
 		},
+	}
+
+	var userList kubermaticv1.UserList
+	if err := p.runtimeClient.List(context.Background(), &userList); err != nil {
+		return nil, err
+	}
+
+	// Elect the first user as admin
+	if len(userList.Items) == 0 {
+		user.Spec.IsAdmin = true
 	}
 
 	if err := p.runtimeClient.Create(context.Background(), user); err != nil {
