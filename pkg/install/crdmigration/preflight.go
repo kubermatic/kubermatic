@@ -24,7 +24,8 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/kubermatic"
+	kubermaticmaster "k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/kubermatic"
+	kubermaticseed "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/kubermatic"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
@@ -36,16 +37,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-// phase 1: preflight checks
-
-// task 1.1: collect and check Seeds and verify that we can connect to all seed clusters
-// task 1.2: check that all KKP controllers in all clusters are down, including usercluster-cm
-// task 1.3: check that all KKP webhooks have been deleted
-// task 1.4: check that no clusters (Cluster objects and cluster namespaces)
-//           are stuck in deletion
-// task 1.5: make sure the user explicitly confirms that they want to migrate now, e.g.
-//           using --i-am-ready-now or --lets-get-dangerous
 
 func PerformPreflightChecks(ctx context.Context, logger logrus.FieldLogger, opt *Options) error {
 	success := true
@@ -113,7 +104,7 @@ func validateKubermaticNotRunning(ctx context.Context, logger logrus.FieldLogger
 	success := true
 
 	// check master cluster
-	if !validateKubermaticNotRunningInCluster(ctx, logger.WithField("cluster", "master"), opt.MasterClient, opt, false) {
+	if !validateKubermaticNotRunningInCluster(ctx, logger.WithField("master", true), opt.MasterClient, opt, false) {
 		success = false
 	}
 
@@ -139,7 +130,7 @@ func validateKubermaticNotRunningInCluster(ctx context.Context, logger logrus.Fi
 	deployments := []string{
 		"kubermatic-operator", // as named in our Helm chart
 		common.MasterControllerManagerDeploymentName,
-		"kubermatic-api", // TODO: make the constant for this public
+		kubermaticmaster.APIDeploymentName,
 	}
 
 	if isSeed {
@@ -155,7 +146,7 @@ func validateKubermaticNotRunningInCluster(ctx context.Context, logger logrus.Fi
 	logger.Info("Checking webhooks…")
 
 	webhooks := []string{
-		kubermatic.ClusterAdmissionWebhookName,
+		kubermaticseed.ClusterAdmissionWebhookName,
 		common.SeedAdmissionWebhookName(opt.KubermaticConfiguration),
 	}
 

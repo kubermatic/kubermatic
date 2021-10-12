@@ -137,7 +137,7 @@ func MigrateCRDsAction(logger *logrus.Logger) cli.ActionFunc {
 		//////////////////////////////////////
 		// phase 2: backups
 
-		// task 2.1: create a backup of all *.k8s.io KKP resources, one archive per seed cluste
+		// task 2.1: create a backup of all *.k8s.io KKP resources, one archive per seed cluster
 
 		//////////////////////////////////////
 		// phase 3: magic!
