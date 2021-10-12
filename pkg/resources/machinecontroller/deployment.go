@@ -133,8 +133,6 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 				return nil, err
 			}
 
-			envVars = sanatizeEnvVars(envVars)
-
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
@@ -255,7 +253,8 @@ func getEnvVars(data machinecontrollerData) ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "ANEXIA_TOKEN", Value: credentials.Anexia.Token})
 	}
 	vars = append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().Address.InternalName)...)
-	return vars, nil
+
+	return sanatizeEnvVars(vars), nil
 }
 
 func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings) []string {
