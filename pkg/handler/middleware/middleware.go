@@ -19,6 +19,7 @@ package middleware
 import (
 	"context"
 	"fmt"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"time"
 
@@ -184,6 +185,15 @@ func UserSaver(userProvider provider.UserProvider) endpoint.Middleware {
 					}
 				}
 			}
+
+			user.Spec.LastSeen = &[]metav1.Time{metav1.Now()}[0]
+			user, err = userProvider.UpdateUser(user)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+
+			fmt.Println(user.Spec)
+
 			return next(context.WithValue(ctx, kubermaticcontext.UserCRContextKey, user), request)
 		}
 	}

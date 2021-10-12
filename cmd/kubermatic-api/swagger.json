@@ -15876,6 +15876,41 @@
           }
         }
       }
+    },
+    "/api/v2/users": {
+      "get": {
+        "description": "List users",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "user"
+        ],
+        "operationId": "listUser",
+        "responses": {
+          "200": {
+            "description": "User",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/User"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -22436,6 +22471,9 @@
           "description": "IsAdmin indicates admin role",
           "type": "boolean",
           "x-go-name": "IsAdmin"
+        },
+        "lastSeen": {
+          "$ref": "#/definitions/Time"
         },
         "name": {
           "description": "Name represents human readable name for the resource",

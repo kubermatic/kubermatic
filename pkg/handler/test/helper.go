@@ -845,6 +845,13 @@ func GenAPIUser(name, email string) *apiv1.User {
 	}
 }
 
+// GenAPIAdminUser generates an admin API user
+func GenAPIAdminUser(name, email string, isAdmin bool) *apiv1.User {
+	user := GenAPIUser(name, email)
+	user.IsAdmin = isAdmin
+	return user
+}
+
 // DefaultCreationTimestamp returns default test timestamp
 func DefaultCreationTimestamp() time.Time {
 	return time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)
@@ -872,6 +879,13 @@ func GenDefaultAdminAPIUser() *apiv1.User {
 func GenDefaultUser() *kubermaticv1.User {
 	userEmail := "bob@acme.com"
 	return GenUser("", "Bob", userEmail)
+}
+
+// GenDefaultAdminUser generates a default admin user
+func GenDefaultAdminUser() *kubermaticv1.User {
+	user := GenDefaultUser()
+	user.Spec.IsAdmin = true
+	return user
 }
 
 // GenProject generates new empty project
