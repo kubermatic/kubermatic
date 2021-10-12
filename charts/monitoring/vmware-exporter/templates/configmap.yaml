@@ -1,0 +1,58 @@
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "vmware-exporter.fullname" . }}-config
+  labels:
+    app: {{ template "vmware-exporter.name" . }}
+    chart: {{ template "vmware-exporter.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  VSPHERE_USER: {{ .Values.vsphere.user | quote }}
+  VSPHERE_HOST: {{ .Values.vsphere.host | quote }}
+  VSPHERE_IGNORE_SSL: {{ .Values.vsphere.ignoressl | quote }}
+  VSPHERE_SPECS_SIZE: {{ .Values.vsphere.specsSize | quote }}
+  VSPHERE_FETCH_CUSTOM_ATTRIBUTES: {{ .Values.vsphere.fetchCustomAttributes | quote }}
+  VSPHERE_FETCH_TAGS: {{ .Values.vsphere.fetchTags | quote }}
+  VSPHERE_FETCH_ALARMS: {{ .Values.vsphere.fetchAlarms | quote }}
+  VSPHERE_COLLECT_HOSTS: {{ .Values.vsphere.collectors.hosts | quote }}
+  VSPHERE_COLLECT_DATASTORES: {{ default "True" .Values.vsphere.collectors.datastores | quote }}
+  VSPHERE_COLLECT_VMS: {{ .Values.vsphere.collectors.vms | quote }}
+  VSPHERE_COLLECT_VMGUESTS: {{ .Values.vsphere.collectors.vmguests | quote }}
+  VSPHERE_COLLECT_SNAPSHOTS: {{ .Values.vsphere.collectors.snapshots | quote }}
+{{- range $section := .Values.vsphere.sections }}
+{{- $key := $section.name }}
+  VSPHERE_{{ $key }}_USER: {{ $section.user | quote }}
+  VSPHERE_{{ $key }}_HOST: {{ $section.host | quote }}
+  VSPHERE_{{ $key }}_IGNORE_SSL: {{ $section.ignoressl | quote }}
+  {{- if $section.fetchCustomAttributes }}
+  VSPHERE_{{ $key }}_FETCH_CUSTOM_ATTRIBUTES: {{ $section.fetchCustomAttributes | quote }}
+  {{- end }}
+  {{- if $section.fetchTags }}
+  VSPHERE_{{ $key }}_FETCH_TAGS: {{ $section.fetchTags | quote }}
+  {{- end }}
+  {{- if $section.fetchAlarms }}
+  VSPHERE_{{ $key }}_FETCH_ALARMS: {{ $section.fetchAlarms | quote }}
+  {{- end }}
+{{- if $section.collectors }}
+  VSPHERE_{{ $key }}_COLLECT_HOSTS: {{ default $.Values.vsphere.collectors.hosts $section.collectors.hosts | quote }}
+  VSPHERE_{{ $key }}_COLLECT_DATASTORES: {{ default "True" $section.collectors.datastores | quote }}
+  VSPHERE_{{ $key }}_COLLECT_VMS: {{ default $.Values.vsphere.collectors.vms $section.collectors.vms | quote }}
+  VSPHERE_{{ $key }}_COLLECT_VMGUESTS: {{ default $.Values.vsphere.collectors.vmguests $section.collectors.vmguests | quote }}
+  VSPHERE_{{ $key }}_COLLECT_SNAPSHOTS: {{ default $.Values.vsphere.collectors.snapshots $section.collectors.snapshots | quote }}
+{{- end }}
+{{- end }}

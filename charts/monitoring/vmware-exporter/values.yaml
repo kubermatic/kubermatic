@@ -1,0 +1,116 @@
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+vmware-exporter:
+
+  replicaCount: 2
+  
+  vsphere:
+    user: user
+    password: na
+    existingSecret: {}
+    host: vcenter
+    ignoressl: true
+    fetchCustomAttributes: true
+    fetchTags: true
+    fetchAlarms: true
+    specsSize: 5000
+    sections: {}
+    collectors:
+      hosts: true
+      datastores: true
+      vms: true
+      vmguests: true
+      snapshots: true
+  
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9272"
+    prometheus.io/path: "/metrics"
+  
+  readinessProbe:
+    httpGet:
+      path: /healthz
+      port: 9272
+  
+  livenessProbe:
+    httpGet:
+      path: /healthz
+      port: 9272
+    initialDelaySeconds: 30
+    failureThreshold: 10
+  
+  image:
+    repository: pryorda/vmware_exporter
+    tag: v0.18.2
+    pullPolicy: IfNotPresent
+  
+  service:
+    enabled: false
+    type: ClusterIP
+    ## Provide optional annotations to the service i.e. for external-dns
+    # annotations:
+    ##   external-dns.alpha.kubernetes.io/hostname: yourservicename.k8s.yourcompany.com
+    ##
+    port: 80
+    targetport: 9272
+  
+  ingress:
+    enabled: true
+    annotations:
+      {}
+      # kubernetes.io/ingress.class: nginx
+      # kubernetes.io/tls-acme: "true"
+    path: /
+    hosts:
+      - chart-example.local
+    tls: []
+    #  - secretName: chart-example-tls
+    #    hosts:
+    #      - chart-example.local
+  
+  resources:
+    {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #  cpu: 100m
+    #  memory: 128Mi
+    # requests:
+    #  cpu: 100m
+    #  memory: 128Mi
+  
+  nodeSelector: {}
+  
+  tolerations: []
+  
+  affinity: {}
+  
+  # Set the container security context
+  securityContext:
+    {}
+    #  capabilities:
+    #    drop: [ALL]
+    #  readOnlyRootFilesystem: true
+    #  runAsGroup: 65532
+    #  runAsNonRoot: true
+    #  runAsUser: 65532
+  
+  # Set the Pod security context
+  podSecurityContext:
+    {}
+    #  fsGroup: 65532
+  
