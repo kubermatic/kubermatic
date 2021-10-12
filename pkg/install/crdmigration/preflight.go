@@ -19,19 +19,20 @@ package crdmigration
 import (
 	"context"
 	"errors"
-	"fmt"
-	"regexp"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/kubermatic"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -47,12 +48,25 @@ import (
 //           using --i-am-ready-now or --lets-get-dangerous
 
 func PerformPreflightChecks(ctx context.Context, logger logrus.FieldLogger, opt *Options) error {
+	success := true
+
 	if err := validateSeedClients(ctx, logger, opt); err != nil {
-		return err
+		logger.Errorf("Seed client validation failed: %v", err)
+		success = false
 	}
 
 	if err := validateKubermaticNotRunning(ctx, logger, opt); err != nil {
-		return err
+		logger.Errorf("KKP health check failed: %v", err)
+		success = false
+	}
+
+	if err := validateNoStuckResources(ctx, logger, opt); err != nil {
+		logger.Errorf("Resource health check failed: %v", err)
+		success = false
+	}
+
+	if !success {
+		return errors.New("please correct the errors noted above and try again")
 	}
 
 	return nil
@@ -94,7 +108,7 @@ func validateSeedClients(ctx context.Context, logger logrus.FieldLogger, opt *Op
 }
 
 func validateKubermaticNotRunning(ctx context.Context, logger logrus.FieldLogger, opt *Options) error {
-	logger.Info("Validating Validating that KKP is not running…")
+	logger.Info("Validating that KKP is not running…")
 
 	success := true
 
@@ -103,6 +117,7 @@ func validateKubermaticNotRunning(ctx context.Context, logger logrus.FieldLogger
 		success = false
 	}
 
+	// check seeds
 	for seedName, seedClient := range opt.SeedClients {
 		if !validateKubermaticNotRunningInCluster(ctx, logger.WithField("seed", seedName), seedClient, opt, true) {
 			success = false
@@ -219,26 +234,92 @@ func validateWebhookDoesNotExist(ctx context.Context, logger logrus.FieldLogger,
 	return false
 }
 
-var validClusterNamespace = regexp.MustCompile(`^cluster-[0-9a-z]{10}$`)
+func validateNoStuckResources(ctx context.Context, logger logrus.FieldLogger, opt *Options) error {
+	logger.Info("Validating all KKP resources are healthy…")
 
-// getUserclusterNamespaces is purposefully "dumb" and doesn't list Cluster
-// objects to deduce the namespaces or check whether the namespaces have
-// the proper ownerRef to a Cluster object, but instead basically just greps
-// all namespaces for "cluster-XXXXXXXXXX". This is to ensure even half broken
-// namespaces are not accidentally ignored during the preflight checks.
-func getUserclusterNamespaces(ctx context.Context, client ctrlruntimeclient.Client) ([]string, error) {
-	nsList := corev1.NamespaceList{}
+	success := true
 
-	if err := client.List(ctx, &nsList); err != nil {
-		return nil, fmt.Errorf("failed to list namespaces: %w", err)
+	// check master cluster
+	masterResources := []string{
+		"ClusterTemplate",
+		"User",
+		"UserProjectBinding",
+		"UserSSHKey",
 	}
 
-	namespaces := []string{}
-	for _, namespace := range nsList.Items {
-		if validClusterNamespace.MatchString(namespace.Name) {
-			namespaces = append(namespaces, namespace.Name)
+	if !validateNoStuckResourcesInCluster(ctx, logger.WithField("master", true), opt.MasterClient, masterResources) {
+		success = false
+	}
+
+	// check seed clusters
+	seedResources := []string{
+		"Cluster",
+	}
+
+	for seedName, seedClient := range opt.SeedClients {
+		seedLogger := logger.WithField("seed", seedName)
+
+		if !validateNoStuckResourcesInCluster(ctx, seedLogger, seedClient, seedResources) {
+			success = false
+		}
+
+		// check cluster namespaces as well
+		clusterNamespaces, err := getUserclusterNamespaces(ctx, seedClient)
+		if err != nil {
+			seedLogger.Warnf("Failed to get namespaces: %v", err)
+			success = false
+		} else {
+			for _, namespace := range clusterNamespaces {
+				nsLogger := seedLogger.WithField("namespace", namespace)
+				nsLogger.Debug("Validating…")
+
+				ns := corev1.Namespace{}
+				key := types.NamespacedName{Name: namespace}
+
+				if err := seedClient.Get(ctx, key, &ns); err != nil {
+					nsLogger.Warnf("Failed to get namespaces: %v", err)
+					success = false
+				} else {
+					if ns.DeletionTimestamp != nil {
+						nsLogger.Warn("Namespace is in deletion.")
+						success = false
+					}
+				}
+			}
 		}
 	}
 
-	return namespaces, nil
+	if !success {
+		return errors.New("please ensure that no KKP resource is stuck before continuing")
+	}
+
+	return nil
+}
+
+func validateNoStuckResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client, kinds []string) bool {
+	success := true
+
+	for _, kind := range kinds {
+		objectList := &metav1unstructured.UnstructuredList{}
+		objectList.SetAPIVersion(kubermaticv1.SchemeGroupVersion.String())
+		objectList.SetKind(kind)
+
+		if err := client.List(ctx, objectList); err != nil {
+			logger.Warnf("Failed to list %s objects: %v", kind, err)
+			success = false
+			continue
+		}
+
+		for _, object := range objectList.Items {
+			objectLogger := logger.WithField(strings.ToLower(object.GetKind()), object.GetName())
+			objectLogger.Debug("Validating…")
+
+			if object.GetDeletionTimestamp() != nil {
+				objectLogger.Warnf("%s is in deletion.", kind)
+				success = false
+			}
+		}
+	}
+
+	return success
 }
