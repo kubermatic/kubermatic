@@ -420,7 +420,7 @@ func (a *Azure) ensureSecurityGroup(cloud kubermaticv1.CloudSpec, location strin
 					Name: to.StringPtr("node_ports_ingress"),
 					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
 						Direction:                network.SecurityRuleDirectionInbound,
-						Protocol:                 network.SecurityRuleProtocolTCP,
+						Protocol:                 network.SecurityRuleProtocolAsterisk,
 						SourceAddressPrefix:      to.StringPtr("*"),
 						SourcePortRange:          to.StringPtr("*"),
 						DestinationAddressPrefix: to.StringPtr("*"),
