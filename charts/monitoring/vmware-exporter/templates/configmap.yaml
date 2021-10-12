@@ -22,19 +22,19 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 data:
-  VSPHERE_USER: {{ .Values.vsphere.user | quote }}
-  VSPHERE_HOST: {{ .Values.vsphere.host | quote }}
-  VSPHERE_IGNORE_SSL: {{ .Values.vsphere.ignoressl | quote }}
-  VSPHERE_SPECS_SIZE: {{ .Values.vsphere.specsSize | quote }}
-  VSPHERE_FETCH_CUSTOM_ATTRIBUTES: {{ .Values.vsphere.fetchCustomAttributes | quote }}
-  VSPHERE_FETCH_TAGS: {{ .Values.vsphere.fetchTags | quote }}
-  VSPHERE_FETCH_ALARMS: {{ .Values.vsphere.fetchAlarms | quote }}
-  VSPHERE_COLLECT_HOSTS: {{ .Values.vsphere.collectors.hosts | quote }}
-  VSPHERE_COLLECT_DATASTORES: {{ default "True" .Values.vsphere.collectors.datastores | quote }}
-  VSPHERE_COLLECT_VMS: {{ .Values.vsphere.collectors.vms | quote }}
-  VSPHERE_COLLECT_VMGUESTS: {{ .Values.vsphere.collectors.vmguests | quote }}
-  VSPHERE_COLLECT_SNAPSHOTS: {{ .Values.vsphere.collectors.snapshots | quote }}
-{{- range $section := .Values.vsphere.sections }}
+  VSPHERE_USER: {{ .Values.vmware-exporter.vsphere.user | quote }}
+  VSPHERE_HOST: {{ .Values.vmware-exporter.vsphere.host | quote }}
+  VSPHERE_IGNORE_SSL: {{ .Values.vmware-exporter.vsphere.ignoressl | quote }}
+  VSPHERE_SPECS_SIZE: {{ .Values.vmware-exporter.vsphere.specsSize | quote }}
+  VSPHERE_FETCH_CUSTOM_ATTRIBUTES: {{ .Values.vmware-exporter.vsphere.fetchCustomAttributes | quote }}
+  VSPHERE_FETCH_TAGS: {{ .Values.vmware-exporter.vsphere.fetchTags | quote }}
+  VSPHERE_FETCH_ALARMS: {{ .Values.vmware-exporter.vsphere.fetchAlarms | quote }}
+  VSPHERE_COLLECT_HOSTS: {{ .Values.vmware-exporter.vsphere.collectors.hosts | quote }}
+  VSPHERE_COLLECT_DATASTORES: {{ default "True" .Values.vmware-exporter.vsphere.collectors.datastores | quote }}
+  VSPHERE_COLLECT_VMS: {{ .Values.vmware-exporter.vsphere.collectors.vms | quote }}
+  VSPHERE_COLLECT_VMGUESTS: {{ .Values.vmware-exporter.vsphere.collectors.vmguests | quote }}
+  VSPHERE_COLLECT_SNAPSHOTS: {{ .Values.vmware-exporter.vsphere.collectors.snapshots | quote }}
+{{- range $section := .Values.vmware-exporter.vsphere.sections }}
 {{- $key := $section.name }}
   VSPHERE_{{ $key }}_USER: {{ $section.user | quote }}
   VSPHERE_{{ $key }}_HOST: {{ $section.host | quote }}
@@ -49,10 +49,10 @@ data:
   VSPHERE_{{ $key }}_FETCH_ALARMS: {{ $section.fetchAlarms | quote }}
   {{- end }}
 {{- if $section.collectors }}
-  VSPHERE_{{ $key }}_COLLECT_HOSTS: {{ default $.Values.vsphere.collectors.hosts $section.collectors.hosts | quote }}
+  VSPHERE_{{ $key }}_COLLECT_HOSTS: {{ default $.Values.vmware-exporter.vsphere.collectors.hosts $section.collectors.hosts | quote }}
   VSPHERE_{{ $key }}_COLLECT_DATASTORES: {{ default "True" $section.collectors.datastores | quote }}
-  VSPHERE_{{ $key }}_COLLECT_VMS: {{ default $.Values.vsphere.collectors.vms $section.collectors.vms | quote }}
-  VSPHERE_{{ $key }}_COLLECT_VMGUESTS: {{ default $.Values.vsphere.collectors.vmguests $section.collectors.vmguests | quote }}
-  VSPHERE_{{ $key }}_COLLECT_SNAPSHOTS: {{ default $.Values.vsphere.collectors.snapshots $section.collectors.snapshots | quote }}
+  VSPHERE_{{ $key }}_COLLECT_VMS: {{ default $.Values.vmware-exporter.vsphere.collectors.vms $section.collectors.vms | quote }}
+  VSPHERE_{{ $key }}_COLLECT_VMGUESTS: {{ default $.Values.vmware-exporter.vsphere.collectors.vmguests $section.collectors.vmguests | quote }}
+  VSPHERE_{{ $key }}_COLLECT_SNAPSHOTS: {{ default $.Values.vmware-exporter.vsphere.collectors.snapshots $section.collectors.snapshots | quote }}
 {{- end }}
 {{- end }}

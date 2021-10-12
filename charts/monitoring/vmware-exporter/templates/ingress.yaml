@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-{{- if .Values.ingress.enabled -}}
+{{- if .Values.vmware-exporter.ingress.enabled -}}
 {{- $fullName := include "vmware-exporter.fullname" . -}}
-{{- $servicePort := .Values.service.port -}}
-{{- $ingressPath := .Values.ingress.path -}}
+{{- $servicePort := .Values.vmware-exporter.service.port -}}
+{{- $ingressPath := .Values.vmware-exporter.ingress.path -}}
 {{- if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
 apiVersion: networking.k8s.io/v1beta1
 {{- else -}}
@@ -29,14 +29,14 @@ metadata:
     chart: {{ template "vmware-exporter.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
-{{- with .Values.ingress.annotations }}
+{{- with .Values.vmware-exporter.ingress.annotations }}
   annotations:
 {{ toYaml . | indent 4 }}
 {{- end }}
 spec:
-{{- if .Values.ingress.tls }}
+{{- if .Values.vmware-exporter.ingress.tls }}
   tls:
-  {{- range .Values.ingress.tls }}
+  {{- range .Values.vmware-exporter.ingress.tls }}
     - hosts:
       {{- range .hosts }}
         - {{ . }}
@@ -45,7 +45,7 @@ spec:
   {{- end }}
 {{- end }}
   rules:
-  {{- range .Values.ingress.hosts }}
+  {{- range .Values.vmware-exporter.ingress.hosts }}
     - host: {{ . }}
       http:
         paths:

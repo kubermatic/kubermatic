@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-{{- if .Values.service.enabled -}}
+{{- if .Values.vmware-exporter.service.enabled -}}
 apiVersion: v1
 kind: Service
 metadata:
@@ -22,15 +22,15 @@ metadata:
     chart: {{ template "vmware-exporter.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
-{{- with .Values.service.annotations }} 
+{{- with .Values.vmware-exporter.service.annotations }} 
   annotations: 
 {{ toYaml . | indent 4 }} 
 {{- end }} 
 spec:
-  type: {{ .Values.service.type }}
+  type: {{ .Values.vmware-exporter.service.type }}
   ports:
-    - port: {{ .Values.service.port }}
-      targetPort: {{ .Values.service.targetport }}
+    - port: {{ .Values.vmware-exporter.service.port }}
+      targetPort: {{ .Values.vmware-exporter.service.targetport }}
       protocol: TCP
       name: http
   selector:

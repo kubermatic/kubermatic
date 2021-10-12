@@ -113,4 +113,3 @@ vmware-exporter:
   podSecurityContext:
     {}
     #  fsGroup: 65532
-  
