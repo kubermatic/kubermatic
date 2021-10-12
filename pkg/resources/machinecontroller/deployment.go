@@ -182,19 +182,19 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 	}
 }
 
-// sanatizeEnvVar will take the value of a environment variable and sanatises it.
+// sanitizeEnvVar will take the value of a environment variable and sanatises it.
 // the need for this comes from github.com/kubermatic/kubermatic/issues/7960
-func sanatizeEnvVars(envVars []corev1.EnvVar) []corev1.EnvVar {
-	sanatizedEnvVars := make([]corev1.EnvVar, len(envVars))
+func sanitizeEnvVars(envVars []corev1.EnvVar) []corev1.EnvVar {
+	sanitizedEnvVars := make([]corev1.EnvVar, len(envVars))
 
 	for idx, envVar := range envVars {
-		sanatizedEnvVars[idx] = corev1.EnvVar{
+		sanitizedEnvVars[idx] = corev1.EnvVar{
 			Name:  envVar.Name,
 			Value: strings.ReplaceAll(envVar.Value, "$", "$$"),
 		}
 	}
 
-	return sanatizedEnvVars
+	return sanitizedEnvVars
 }
 
 func getEnvVars(data machinecontrollerData) ([]corev1.EnvVar, error) {
@@ -254,7 +254,7 @@ func getEnvVars(data machinecontrollerData) ([]corev1.EnvVar, error) {
 	}
 	vars = append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().Address.InternalName)...)
 
-	return sanatizeEnvVars(vars), nil
+	return sanitizeEnvVars(vars), nil
 }
 
 func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings) []string {
