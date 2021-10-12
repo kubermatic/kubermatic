@@ -23,12 +23,13 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	eeinstaller "k8c.io/kubermatic/v2/pkg/ee/cmd/kubermatic-installer"
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
+
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func commands(logger *logrus.Logger, versions kubermaticversion.Versions) []cli.Command {
