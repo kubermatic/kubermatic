@@ -51,7 +51,7 @@ func TestListAdmissionPluginEndpoint(t *testing.T) {
 			name:                   "scenario 1: not authorized user gets plugins",
 			expectedResponse:       `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't have admin rights"}}`,
 			httpStatus:             http.StatusForbidden,
-			existingKubermaticObjs: []ctrlruntimeclient.Object{},
+			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", false)},
 			existingAPIUser:        test.GenDefaultAPIUser(),
 		},
 		// scenario 2
@@ -133,7 +133,7 @@ func TestGetAdmissionPluginEndpoint(t *testing.T) {
 			plugin:                 "test",
 			expectedResponse:       `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't have admin rights"}}`,
 			httpStatus:             http.StatusForbidden,
-			existingKubermaticObjs: []ctrlruntimeclient.Object{},
+			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", false)},
 			existingAPIUser:        test.GenDefaultAPIUser(),
 		},
 		// scenario 2
@@ -217,7 +217,7 @@ func TestDeleteAdmissionPluginEndpoint(t *testing.T) {
 			plugin:                 "test",
 			expectedResponse:       `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't have admin rights"}}`,
 			httpStatus:             http.StatusForbidden,
-			existingKubermaticObjs: []ctrlruntimeclient.Object{},
+			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", false)},
 			existingAPIUser:        test.GenDefaultAPIUser(),
 		},
 		// scenario 2
@@ -303,7 +303,7 @@ func TestUpdateAdmissionPluginEndpoint(t *testing.T) {
 			body:                   `{"name":"eventRateLimit","plugin":"EventRateLimit","fromVersion":"1.13.0"}`,
 			expectedResponse:       `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't have admin rights"}}`,
 			httpStatus:             http.StatusForbidden,
-			existingKubermaticObjs: []ctrlruntimeclient.Object{},
+			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", false)},
 			existingAPIUser:        test.GenDefaultAPIUser(),
 		},
 		// scenario 2
