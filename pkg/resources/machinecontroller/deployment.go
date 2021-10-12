@@ -134,6 +134,8 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 				return nil, err
 			}
 
+			envVars = sanatizeEnvVars(envVars)
+
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 
 			repository := data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/machine-controller"
@@ -190,6 +192,21 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 			return dep, nil
 		}
 	}
+}
+
+// sanatizeEnvVar will take the value of a environment variable and sanatises it.
+// the need for this comes from github.com/kubermatic/kubermatic/issues/7960
+func sanatizeEnvVars(envVars []corev1.EnvVar) []corev1.EnvVar {
+	sanatizedEnvVars := make([]corev1.EnvVar, len(envVars))
+
+	for idx, envVar := range envVars {
+		sanatizedEnvVars[idx] = corev1.EnvVar{
+			Name:  envVar.Name,
+			Value: strings.ReplaceAll(envVar.Value, "$", "$$"),
+		}
+	}
+
+	return sanatizedEnvVars
 }
 
 func getEnvVars(data machinecontrollerData) ([]corev1.EnvVar, error) {
