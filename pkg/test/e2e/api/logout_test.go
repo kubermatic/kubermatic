@@ -61,8 +61,13 @@ func TestLogout(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to get master token: %v", err)
 			}
-
 			testClient := utils.NewTestClient(masterToken, t)
+			// user gets create when we do a first API action
+			_, err = testClient.ListDC()
+			if err != nil {
+				t.Fatal(err)
+			}
+
 			if err := testClient.Logout(); err != nil {
 				t.Fatal(err)
 			}
