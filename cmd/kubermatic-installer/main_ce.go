@@ -19,9 +19,14 @@ limitations under the License.
 package main
 
 import (
+	"context"
+
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 )
 
@@ -31,6 +36,7 @@ func commands(logger *logrus.Logger, versions kubermaticversion.Versions) []cli.
 		DeployCommand(logger, versions),
 		PrintCommand(),
 		ConvertKubeconfigCommand(logger),
+		MigrateCRDsCommand(logger),
 	}
 }
 
@@ -39,4 +45,12 @@ func flags() []cli.Flag {
 		verboseFlag,
 		chartsDirectoryFlag,
 	}
+}
+
+func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client) (provider.SeedsGetter, error) {
+	return provider.SeedsGetterFactory(ctx, client, kubermaticmaster.KubermaticOperatorNamespace)
+}
+
+func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client) (provider.SeedKubeconfigGetter, error) {
+	return provider.SeedKubeconfigGetterFactory(ctx, client)
 }
