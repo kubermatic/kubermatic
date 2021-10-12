@@ -1,8 +1,6 @@
 # This file has been generated, DO NOT EDIT.
 
 metadata:
-  annotations:
-    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
   creationTimestamp: null
   name: etcd
   ownerReferences:
@@ -23,6 +21,7 @@ spec:
     port: 2380
     protocol: TCP
     targetPort: 2380
+  publishNotReadyAddresses: true
   selector:
     app: etcd
     cluster: de-test-01
