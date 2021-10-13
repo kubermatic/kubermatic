@@ -19,8 +19,10 @@ package usersynchronizer
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"go.uber.org/zap"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -80,12 +82,37 @@ func Add(
 	}
 
 	if err := c.Watch(
-		&source.Kind{Type: &kubermaticv1.User{}}, &handler.EnqueueRequestForObject{}, serviceAccountPredicate,
+		&source.Kind{Type: &kubermaticv1.User{}}, &handler.EnqueueRequestForObject{}, serviceAccountPredicate, withEventFilter(),
 	); err != nil {
 		return fmt.Errorf("failed to create watch for user objects in master cluster: %w", err)
 	}
 
 	return nil
+}
+
+func withEventFilter() predicate.Predicate {
+	return predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool {
+			return true
+		},
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			oldUser, ok := e.ObjectOld.(*kubermaticv1.User)
+			if !ok {
+				return false
+			}
+			newUser, ok := e.ObjectNew.(*kubermaticv1.User)
+			if !ok {
+				return false
+			}
+			return !reflect.DeepEqual(oldUser.Spec, newUser.Spec)
+		},
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			return true
+		},
+		GenericFunc: func(e event.GenericEvent) bool {
+			return true
+		},
+	}
 }
 
 // Reconcile reconciles Kubermatic User objects (excluding service account users) on the master cluster to all seed clusters
