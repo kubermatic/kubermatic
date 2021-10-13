@@ -1138,7 +1138,7 @@ func (r Routing) listSSHKeysAssignedToCluster() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       201: Cluster
+//       201: ExternalCluster
 //       401: empty
 //       403: empty
 func (r Routing) createExternalCluster() http.Handler {
@@ -1187,7 +1187,7 @@ func (r Routing) deleteExternalCluster() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: ClusterList
+//       200: []ExternalCluster
 //       401: empty
 //       403: empty
 func (r Routing) listExternalClusters() http.Handler {
@@ -1212,7 +1212,7 @@ func (r Routing) listExternalClusters() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: Cluster
+//       200: ExternalCluster
 //       401: empty
 //       403: empty
 func (r Routing) getExternalCluster() http.Handler {
@@ -1237,7 +1237,7 @@ func (r Routing) getExternalCluster() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: Cluster
+//       200: ExternalCluster
 //       401: empty
 //       403: empty
 func (r Routing) updateExternalCluster() http.Handler {
@@ -1262,7 +1262,7 @@ func (r Routing) updateExternalCluster() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: []Node
+//       200: []ExternalClusterNode
 //       401: empty
 //       403: empty
 func (r Routing) listExternalClusterNodes() http.Handler {
@@ -1287,7 +1287,7 @@ func (r Routing) listExternalClusterNodes() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: Node
+//       200: ExternalClusterNode
 //       401: empty
 //       403: empty
 func (r Routing) getExternalClusterNode() http.Handler {

@@ -23,6 +23,8 @@ import (
 	"fmt"
 	"net/http"
 
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
+
 	"github.com/go-kit/kit/endpoint"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -208,7 +210,7 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		apiClusters := make([]*apiv1.Cluster, 0)
+		apiClusters := make([]*apiv2.ExternalCluster, 0)
 
 		for _, cluster := range clusterList.Items {
 			apiClusters = append(apiClusters, convertClusterToAPI(&cluster))
@@ -613,22 +615,24 @@ func createNewCluster(ctx context.Context, userInfoGetter provider.UserInfoGette
 	return clusterProvider.New(userInfo, project, cluster)
 }
 
-func convertClusterToAPI(internalCluster *kubermaticapiv1.ExternalCluster) *apiv1.Cluster {
-	cluster := &apiv1.Cluster{
-		ObjectMeta: apiv1.ObjectMeta{
-			ID:                internalCluster.Name,
-			Name:              internalCluster.Spec.HumanReadableName,
-			CreationTimestamp: apiv1.NewTime(internalCluster.CreationTimestamp.Time),
-			DeletionTimestamp: func() *apiv1.Time {
-				if internalCluster.DeletionTimestamp != nil {
-					deletionTimestamp := apiv1.NewTime(internalCluster.DeletionTimestamp.Time)
-					return &deletionTimestamp
-				}
-				return nil
-			}(),
+func convertClusterToAPI(internalCluster *kubermaticapiv1.ExternalCluster) *apiv2.ExternalCluster {
+	cluster := &apiv2.ExternalCluster{
+		Cluster: apiv1.Cluster{
+			ObjectMeta: apiv1.ObjectMeta{
+				ID:                internalCluster.Name,
+				Name:              internalCluster.Spec.HumanReadableName,
+				CreationTimestamp: apiv1.NewTime(internalCluster.CreationTimestamp.Time),
+				DeletionTimestamp: func() *apiv1.Time {
+					if internalCluster.DeletionTimestamp != nil {
+						deletionTimestamp := apiv1.NewTime(internalCluster.DeletionTimestamp.Time)
+						return &deletionTimestamp
+					}
+					return nil
+				}(),
+			},
+			Labels: internalCluster.Labels,
+			Type:   apiv1.KubernetesClusterType,
 		},
-		Labels: internalCluster.Labels,
-		Type:   apiv1.KubernetesClusterType,
 	}
 
 	return cluster
@@ -695,5 +699,14 @@ type body struct {
 	// Name is human readable name for the external cluster
 	Name string `json:"name"`
 	// Kubeconfig Base64 encoded kubeconfig
-	Kubeconfig string `json:"kubeconfig"`
+	Kubeconfig string    `json:"kubeconfig"`
+	Cloud      CloudSpec `json:"cloud,omitempty"`
+}
+
+type CloudSpec struct {
+	GKE *GKECloudSpec `json:"gke,omitempty"`
+}
+
+type GKECloudSpec struct {
+	ServiceAccount string `json:"serviceAccount"`
 }

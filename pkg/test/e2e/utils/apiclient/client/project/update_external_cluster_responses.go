@@ -60,22 +60,22 @@ func NewUpdateExternalClusterOK() *UpdateExternalClusterOK {
 
 /* UpdateExternalClusterOK describes a response with status code 200, with default header values.
 
-Cluster
+ExternalCluster
 */
 type UpdateExternalClusterOK struct {
-	Payload *models.Cluster
+	Payload *models.ExternalCluster
 }
 
 func (o *UpdateExternalClusterOK) Error() string {
 	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}][%d] updateExternalClusterOK  %+v", 200, o.Payload)
 }
-func (o *UpdateExternalClusterOK) GetPayload() *models.Cluster {
+func (o *UpdateExternalClusterOK) GetPayload() *models.ExternalCluster {
 	return o.Payload
 }
 
 func (o *UpdateExternalClusterOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Cluster)
+	o.Payload = new(models.ExternalCluster)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
