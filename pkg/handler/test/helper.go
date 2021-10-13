@@ -148,7 +148,7 @@ const (
 
 var (
 	// UserLastSeen hold a time the user was last seen
-	UserLastSeen = time.Date(2021, time.January, 1, 0, 0, 0, 0, time.Local)
+	UserLastSeen = time.Date(2020, time.December, 31, 23, 0, 0, 0, time.UTC)
 )
 
 // GetUser is a convenience function for generating apiv1.User
