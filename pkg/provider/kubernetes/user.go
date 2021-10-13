@@ -116,7 +116,6 @@ func (p *UserProvider) CreateUser(id, name, email string) (*kubermaticv1.User, e
 			ID:    id,
 			Name:  name,
 			Email: email,
-			LastSeen: &[]metav1.Time{metav1.Now()}[0],
 		},
 	}
 

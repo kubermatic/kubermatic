@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"net/http"
 	"net/http/httptest"
 	"sort"
@@ -96,6 +97,10 @@ func init() {
 	if err := gatekeeperconfigv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
 		kubermaticlog.Logger.Fatalw("failed to register scheme gatekeeperconfig/v1alpha1", "error", err)
 	}
+
+	middleware.Now = func() time.Time {
+		return UserLastSeen
+	}
 }
 
 const (
@@ -139,6 +144,11 @@ const (
 	DefaultKubernetesVersion = "1.22.2"
 	// Kubermatic namespace
 	KubermaticNamespace = "kubermatic"
+)
+
+var (
+	// UserLastSeen hold a time the user was last seen
+	UserLastSeen = time.Date(2021, time.January, 1, 0, 0, 0, 0, time.Local)
 )
 
 // GetUser is a convenience function for generating apiv1.User
@@ -790,9 +800,10 @@ func GenUser(id, name, email string) *kubermaticv1.User {
 			UID:  types.UID(fmt.Sprintf("fake-uid-%s", id)),
 		},
 		Spec: kubermaticv1.UserSpec{
-			ID:    specID,
-			Name:  name,
-			Email: email,
+			ID:       specID,
+			Name:     name,
+			Email:    email,
+			LastSeen: &[]metav1.Time{metav1.NewTime(UserLastSeen)}[0],
 		},
 	}
 }
@@ -864,7 +875,8 @@ func GenDefaultAPIUser() *apiv1.User {
 			ID:   GenDefaultUser().Name,
 			Name: GenDefaultUser().Spec.Name,
 		},
-		Email: GenDefaultUser().Spec.Email,
+		Email:    GenDefaultUser().Spec.Email,
+		LastSeen: &[]apiv1.Time{apiv1.NewTime(UserLastSeen)}[0],
 	}
 }
 

@@ -17,7 +17,6 @@ limitations under the License.
 package user_test
 
 import (
-	"fmt"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	"net/http"
 	"net/http/httptest"
@@ -42,7 +41,7 @@ func TestListEndpoint(t *testing.T) {
 			ExistingKubermaticObjects: []ctrlruntimeclient.Object{test.GenDefaultAdminUser()},
 			ExistingAPIUser:           test.GenDefaultAdminAPIUser(),
 			ExpectedHTTPStatusCode:    http.StatusOK,
-			ExpectedResponse:          []apiv1.User{
+			ExpectedResponse: []apiv1.User{
 				*test.GenDefaultAdminAPIUser(),
 			},
 		},
@@ -59,8 +58,7 @@ func TestListEndpoint(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
-			requestURL := fmt.Sprintf("/api/v2/users")
-			req := httptest.NewRequest(http.MethodGet, requestURL, nil)
+			req := httptest.NewRequest(http.MethodGet, "/api/v2/users", nil)
 			resp := httptest.NewRecorder()
 
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
