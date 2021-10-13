@@ -22,3 +22,5 @@ _cache
 _dist
 download-gocache
 /dev.*
+.vscode/**/*
+!.vscode/launch.json
