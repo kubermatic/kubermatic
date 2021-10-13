@@ -46,10 +46,11 @@ const (
 )
 
 type reconciler struct {
-	log          *zap.SugaredLogger
-	recorder     record.EventRecorder
-	masterClient ctrlruntimeclient.Client
-	seedClients  map[string]ctrlruntimeclient.Client
+	log             *zap.SugaredLogger
+	recorder        record.EventRecorder
+	masterClient    ctrlruntimeclient.Client
+	masterAPIReader ctrlruntimeclient.Reader
+	seedClients     map[string]ctrlruntimeclient.Client
 }
 
 func Add(
@@ -60,10 +61,11 @@ func Add(
 ) error {
 
 	r := &reconciler{
-		log:          log.Named(ControllerName),
-		recorder:     masterManager.GetEventRecorderFor(ControllerName),
-		masterClient: masterManager.GetClient(),
-		seedClients:  map[string]ctrlruntimeclient.Client{},
+		log:             log.Named(ControllerName),
+		recorder:        masterManager.GetEventRecorderFor(ControllerName),
+		masterClient:    masterManager.GetClient(),
+		masterAPIReader: masterManager.GetAPIReader(),
+		seedClients:     map[string]ctrlruntimeclient.Client{},
 	}
 
 	c, err := controller.New(ControllerName, masterManager, controller.Options{Reconciler: r, MaxConcurrentReconciles: numWorkers})
@@ -120,7 +122,10 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	log := r.log.With("request", request)
 
 	user := &kubermaticv1.User{}
-	if err := r.masterClient.Get(ctx, request.NamespacedName, user); err != nil {
+	// using the reader here to bypass the cache. It is necessary because we update the same object we are watching
+	// in the case when master and seed clusters are on the same cluster. Otherwise, the old cache state can overwrite
+	// the update.
+	if err := r.masterAPIReader.Get(ctx, request.NamespacedName, user); err != nil {
 		return reconcile.Result{}, ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
