@@ -103,6 +103,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: SSL_CERT_FILE
+              value: "/etc/kubermatic/certs/ca-bundle.pem"
           securityContext:
             privileged: true
             capabilities:
@@ -126,6 +128,9 @@ spec:
               mountPath: /sys/block
             - name: sys-devices-dir
               mountPath: /sys/devices
+            - mountPath: /etc/kubermatic/certs
+              name: ca-bundle
+              readOnly: true
           ports:
             - containerPort: 9808
               name: healthz
@@ -173,6 +178,9 @@ spec:
           hostPath:
             path: /sys/devices
             type: Directory
+        - name: ca-bundle
+          configMap:
+            name: ca-bundle
       tolerations:
         - effect: NoExecute
           operator: Exists

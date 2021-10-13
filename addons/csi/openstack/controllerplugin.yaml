@@ -142,6 +142,8 @@ spec:
               value: /etc/config/config
             - name: CLUSTER_NAME
               value: {{ .Cluster.Name }}
+            - name: SSL_CERT_FILE
+              value: "/etc/kubermatic/certs/ca-bundle.pem"
           imagePullPolicy: "IfNotPresent"
           ports:
             - containerPort: 9808
@@ -162,11 +164,17 @@ spec:
             - name: cloud-config
               mountPath: /etc/config
               readOnly: true
+            - mountPath: /etc/kubermatic/certs
+              name: ca-bundle
+              readOnly: true
       volumes:
         - name: socket-dir
           emptyDir:
         - name: cloud-config
           secret:
             secretName: cloud-config
+        - name: ca-bundle
+          configMap:
+            name: ca-bundle
 {{ end }}
 {{ end }}

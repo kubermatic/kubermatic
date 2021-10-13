@@ -100,12 +100,17 @@ spec:
                   fieldPath: metadata.namespace
             - name: X_CSI_SERIAL_VOL_ACCESS_TIMEOUT
               value: 3m
+            - name: SSL_CERT_FILE
+              value: "/etc/kubermatic/certs/ca-bundle.pem"
           volumeMounts:
             - mountPath: /etc/cloud
               name: vsphere-config-volume
               readOnly: true
             - mountPath: /csi
               name: socket-dir
+            - mountPath: /etc/kubermatic/certs
+              name: ca-bundle
+              readOnly: true
           ports:
             - name: healthz
               containerPort: 9808
@@ -155,9 +160,14 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: SSL_CERT_FILE
+              value: "/etc/kubermatic/certs/ca-bundle.pem"
           volumeMounts:
             - mountPath: /etc/cloud
               name: vsphere-config-volume
+              readOnly: true
+            - mountPath: /etc/kubermatic/certs
+              name: ca-bundle
               readOnly: true
         - name: csi-provisioner
           image: quay.io/k8scsi/csi-provisioner:v2.1.0
@@ -184,6 +194,9 @@ spec:
             secretName: cloud-config-csi
         - name: socket-dir
           emptyDir: {}
+        - name: ca-bundle
+          configMap:
+            name: ca-bundle
 ---
 apiVersion: v1
 data:
