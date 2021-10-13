@@ -15,7 +15,7 @@ A short description on where the scope of the proposal ends
 
 ## Motivation and Background
 
-*What is the background and why do we want to deplyo it e.g.*
+*What is the background and why do we want to deploy it e.g.*
 
 
 The current approaches to deploy and manage k8s nodes come with several downsides:
