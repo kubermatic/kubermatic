@@ -62,7 +62,7 @@ func TestLogout(t *testing.T) {
 				t.Fatalf("failed to get master token: %v", err)
 			}
 			testClient := utils.NewTestClient(masterToken, t)
-			// user gets create when we do a first API action
+			// user gets created when we do a first API action
 			_, err = testClient.ListDC()
 			if err != nil {
 				t.Fatal(err)
@@ -72,7 +72,7 @@ func TestLogout(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			// test projection creation, ignore created result, or other error codes other then Unauthorized
+			// test projection creation, ignore results that are not Unauthorized
 			_, err = testClient.CreateProject(rand.String(10), http.StatusCreated, http.StatusForbidden, http.StatusBadRequest, http.StatusConflict)
 			if err == nil {
 				t.Fatal("create project: expected error")
