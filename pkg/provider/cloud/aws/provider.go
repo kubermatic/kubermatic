@@ -419,8 +419,16 @@ func createSecurityGroup(client ec2iface.EC2API, vpcID, clusterName string, node
 				{CidrIpv6: aws.String("::/0")},
 			}),
 		(&ec2.IpPermission{}).
-			// nodeports in given range
-			SetIpProtocol("-1").
+			// tcp:nodeports in given range
+			SetIpProtocol("tcp").
+			SetFromPort(int64(nodeportLow)).
+			SetToPort(int64(nodeportHigh)).
+			SetIpRanges([]*ec2.IpRange{
+				{CidrIp: aws.String("0.0.0.0/0")},
+			}),
+		(&ec2.IpPermission{}).
+			// udp:nodeports in given range
+			SetIpProtocol("udp").
 			SetFromPort(int64(nodeportLow)).
 			SetToPort(int64(nodeportHigh)).
 			SetIpRanges([]*ec2.IpRange{
