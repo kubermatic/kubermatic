@@ -189,7 +189,7 @@ func UserSaver(userProvider provider.UserProvider) endpoint.Middleware {
 				}
 			}
 
-			user.Spec.LastSeen = &[]metav1.Time{metav1.NewTime(Now())}[0]
+			user.Spec.LastSeen = &[]metav1.Time{metav1.NewTime(Now().UTC())}[0]
 			user, err = userProvider.UpdateUser(user)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)

@@ -453,7 +453,9 @@ type User struct {
 	Projects []ProjectGroup `json:"projects,omitempty"`
 
 	Settings *kubermaticv1.UserSettings `json:"userSettings,omitempty"`
-	LastSeen *Time                      `json:"lastSeen,omitempty"`
+
+	// LastSeen holds a time in UTC format when the user has been using the API last time
+	LastSeen *Time `json:"lastSeen,omitempty"`
 }
 
 func ConvertInternalUserToExternal(internalUser *kubermaticv1.User, includeSettings bool, bindings ...*kubermaticv1.UserProjectBinding) *User {
