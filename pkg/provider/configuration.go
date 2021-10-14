@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"go.uber.org/zap"
+
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 

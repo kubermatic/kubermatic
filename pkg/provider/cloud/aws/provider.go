@@ -30,6 +30,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
 	httperror "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	"k8s.io/klog"
@@ -352,7 +353,7 @@ func getSecurityGroupByID(client ec2iface.EC2API, vpc *ec2.Vpc, id string) (*ec2
 // Create security group ("sg") with name `name` in `vpc`. The name
 // in a sg must be unique within the vpc (no pre-existing sg with
 // that name is allowed).
-func createSecurityGroup(client ec2iface.EC2API, vpcID, clusterName string) (string, error) {
+func createSecurityGroup(client ec2iface.EC2API, vpcID, clusterName string, nodeportLow, nodeportHigh int) (string, error) {
 	var securityGroupID string
 
 	newSecurityGroupName := resourceNamePrefix + clusterName
@@ -384,46 +385,63 @@ func createSecurityGroup(client ec2iface.EC2API, vpcID, clusterName string) (str
 	}
 	klog.V(2).Infof("Security group %s for cluster %s created with id %s.", newSecurityGroupName, clusterName, securityGroupID)
 
-	// Add permissions.
-	_, err = client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
-		GroupId: aws.String(securityGroupID),
-		IpPermissions: []*ec2.IpPermission{
-			(&ec2.IpPermission{}).
-				// all protocols from within the sg
-				SetIpProtocol("-1").
-				SetUserIdGroupPairs([]*ec2.UserIdGroupPair{
-					(&ec2.UserIdGroupPair{}).
-						SetGroupId(securityGroupID),
-				}),
-			(&ec2.IpPermission{}).
-				// tcp:22 from everywhere
-				SetIpProtocol("tcp").
-				SetFromPort(provider.DefaultSSHPort).
-				SetToPort(provider.DefaultSSHPort).
-				SetIpRanges([]*ec2.IpRange{
-					{CidrIp: aws.String("0.0.0.0/0")},
-				}),
-			(&ec2.IpPermission{}).
-				// ICMP from/to everywhere
-				SetIpProtocol("icmp").
-				SetFromPort(-1). // any port
-				SetToPort(-1).   // any port
-				SetIpRanges([]*ec2.IpRange{
-					{CidrIp: aws.String("0.0.0.0/0")},
-				}),
-			(&ec2.IpPermission{}).
-				// ICMPv6 from/to everywhere
-				SetIpProtocol("icmpv6").
-				SetFromPort(-1). // any port
-				SetToPort(-1).   // any port
-				SetIpv6Ranges([]*ec2.Ipv6Range{
-					{CidrIpv6: aws.String("::/0")},
-				}),
-		},
-	})
-	if err != nil {
-		if awsErr, ok := err.(awserr.Error); !ok || awsErr.Code() != "InvalidPermission.Duplicate" {
-			return "", fmt.Errorf("failed to authorize security group %s with id %s: %v", newSecurityGroupName, securityGroupID, err)
+	// define permissions
+	permissions := []*ec2.IpPermission{
+		(&ec2.IpPermission{}).
+			// all protocols from within the sg
+			SetIpProtocol("-1").
+			SetUserIdGroupPairs([]*ec2.UserIdGroupPair{
+				(&ec2.UserIdGroupPair{}).
+					SetGroupId(securityGroupID),
+			}),
+		(&ec2.IpPermission{}).
+			// tcp:22 from everywhere
+			SetIpProtocol("tcp").
+			SetFromPort(provider.DefaultSSHPort).
+			SetToPort(provider.DefaultSSHPort).
+			SetIpRanges([]*ec2.IpRange{
+				{CidrIp: aws.String("0.0.0.0/0")},
+			}),
+		(&ec2.IpPermission{}).
+			// ICMP from/to everywhere
+			SetIpProtocol("icmp").
+			SetFromPort(-1). // any port
+			SetToPort(-1).   // any port
+			SetIpRanges([]*ec2.IpRange{
+				{CidrIp: aws.String("0.0.0.0/0")},
+			}),
+		(&ec2.IpPermission{}).
+			// ICMPv6 from/to everywhere
+			SetIpProtocol("icmpv6").
+			SetFromPort(-1). // any port
+			SetToPort(-1).   // any port
+			SetIpv6Ranges([]*ec2.Ipv6Range{
+				{CidrIpv6: aws.String("::/0")},
+			}),
+		(&ec2.IpPermission{}).
+			// nodeports in given range
+			SetIpProtocol("-1").
+			SetFromPort(int64(nodeportLow)).
+			SetToPort(int64(nodeportHigh)).
+			SetIpRanges([]*ec2.IpRange{
+				{CidrIp: aws.String("0.0.0.0/0")},
+			}),
+	}
+
+	// Iterate over the permissions and add them one by one, because if an error occurs (e.g., one permission already exists)
+	// none of them will be created
+	for _, perm := range permissions {
+		// Add permission
+		_, err = client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
+			GroupId: aws.String(securityGroupID),
+			IpPermissions: []*ec2.IpPermission{
+				perm,
+			},
+		})
+		if err != nil {
+			if awsErr, ok := err.(awserr.Error); !ok || awsErr.Code() != "InvalidPermission.Duplicate" {
+				return "", fmt.Errorf("failed to authorize security group %s with id %s: %v", newSecurityGroupName, securityGroupID, err)
+			}
 		}
 	}
 
@@ -450,7 +468,13 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 	}
 
 	if cluster.Spec.Cloud.AWS.SecurityGroupID == "" {
-		securityGroupID, err := createSecurityGroup(client.EC2, cluster.Spec.Cloud.AWS.VPCID, cluster.Name)
+		lowPort, highPort := kubermaticresources.NewTemplateDataBuilder().
+			WithNodePortRange(cluster.Spec.ComponentsOverride.Apiserver.NodePortRange).
+			WithCluster(cluster).
+			Build().
+			NodePorts()
+
+		securityGroupID, err := createSecurityGroup(client.EC2, cluster.Spec.Cloud.AWS.VPCID, cluster.Name, lowPort, highPort)
 		if err != nil {
 			return nil, fmt.Errorf("failed to add security group for cluster %s: %v", cluster.Name, err)
 		}
