@@ -31,6 +31,7 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/compute/v1"
+	"google.golang.org/api/container/v1"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 
@@ -197,6 +198,36 @@ func ConnectToComputeService(serviceAccount string) (*compute.Service, string, e
 	ctx := context.Background()
 	client := conf.Client(ctx)
 	svc, err := compute.NewService(ctx, option.WithHTTPClient(client))
+	if err != nil {
+		return nil, "", fmt.Errorf("cannot connect to Google Cloud: %v", err)
+	}
+	return svc, projectID, nil
+}
+
+// ConnectToContainerService establishes a service connection to the Container Engine.
+func ConnectToContainerService(serviceAccount string) (*container.Service, string, error) {
+	b, err := base64.StdEncoding.DecodeString(serviceAccount)
+	if err != nil {
+		return nil, "", fmt.Errorf("error decoding service account: %v", err)
+	}
+	sam := map[string]string{}
+	err = json.Unmarshal(b, &sam)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed unmarshaling service account: %v", err)
+	}
+
+	projectID := sam["project_id"]
+	if projectID == "" {
+		return nil, "", errors.New("empty project_id")
+	}
+	conf, err := google.JWTConfigFromJSON(b, container.CloudPlatformScope)
+	if err != nil {
+		return nil, "", err
+	}
+	ctx := context.Background()
+	client := conf.Client(ctx)
+
+	svc, err := container.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
 		return nil, "", fmt.Errorf("cannot connect to Google Cloud: %v", err)
 	}

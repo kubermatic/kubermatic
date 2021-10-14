@@ -15537,6 +15537,44 @@
         }
       }
     },
+    "/api/v2/providers/gke/clusters": {
+      "get": {
+        "description": "Lists GKE clusters",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "gke"
+        ],
+        "operationId": "listGKEClusters",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "ServiceAccount",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "GKEClusterList",
+            "schema": {
+              "$ref": "#/definitions/GKEClusterList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/providers/vsphere/datastores": {
       "get": {
         "description": "Lists datastores from vsphere datacenter",
@@ -19186,6 +19224,29 @@
         "$ref": "#/definitions/GCPZone"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "GKECluster": {
+      "type": "object",
+      "title": "GKECluster represents a object of GKE cluster.",
+      "properties": {
+        "imported": {
+          "type": "boolean",
+          "x-go-name": "IsImported"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "GKEClusterList": {
+      "type": "array",
+      "title": "GKEClusterList represents an array of GKE clusters.",
+      "items": {
+        "$ref": "#/definitions/GKECluster"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "GVK": {
       "description": "GVK group version kind of a resource",

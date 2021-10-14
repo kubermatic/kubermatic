@@ -18,6 +18,7 @@ package provider
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -27,6 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 // gcpTypesNoCredentialReq represent a request for GCP machine or disk types.
@@ -138,5 +140,64 @@ func GCPSubnetworkWithClusterCredentialsEndpoint(projectProvider provider.Projec
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(gcpSubnetworksNoCredentialReq)
 		return providercommon.GCPSubnetworkWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID, req.ClusterID, req.Network)
+	}
+}
+
+// GKECommonReq represent a request with common parameters for GKE.
+type GKECommonReq struct {
+	// in: header
+	// name: ServiceAccount
+	ServiceAccount string
+	// in: header
+	// name: Credential
+	Credential string
+}
+
+// GKETypesReq represent a request for GKE types.
+// swagger:parameters listGKEClusters
+type GKETypesReq struct {
+	GKECommonReq
+}
+
+func DecodeGKECommonReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req GKECommonReq
+
+	req.ServiceAccount = r.Header.Get("ServiceAccount")
+	req.Credential = r.Header.Get("Credential")
+
+	return req, nil
+}
+
+func DecodeGKETypesReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req GKETypesReq
+
+	commonReq, err := DecodeGKECommonReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.GKECommonReq = commonReq.(GKECommonReq)
+
+	return req, nil
+}
+
+func GKEClustersEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(GKETypesReq)
+
+		sa := req.ServiceAccount
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		if len(req.Credential) > 0 {
+			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			}
+			if credentials := preset.Spec.GCP; credentials != nil {
+				sa = credentials.ServiceAccount
+			}
+		}
+		return providercommon.ListGKEClusters(ctx, sa)
 	}
 }
