@@ -22,7 +22,6 @@ import (
 	"reflect"
 
 	"go.uber.org/zap"
-	"sigs.k8s.io/controller-runtime/pkg/event"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -34,6 +33,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -124,7 +124,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	user := &kubermaticv1.User{}
 	// using the reader here to bypass the cache. It is necessary because we update the same object we are watching
 	// in the case when master and seed clusters are on the same cluster. Otherwise, the old cache state can overwrite
-	// the update.
+	// the update. Ideally, we would not reconcile the resource whose change caused the reconciliation.
 	if err := r.masterAPIReader.Get(ctx, request.NamespacedName, user); err != nil {
 		return reconcile.Result{}, ctrlruntimeclient.IgnoreNotFound(err)
 	}
