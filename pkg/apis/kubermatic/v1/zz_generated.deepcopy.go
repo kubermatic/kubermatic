@@ -4581,8 +4581,8 @@ func (in *UserSpec) DeepCopyInto(out *UserSpec) {
 		*out = new(UserSettings)
 		**out = **in
 	}
-	if in.TokenBlackListReference != nil {
-		in, out := &in.TokenBlackListReference, &out.TokenBlackListReference
+	if in.InvalidTokensReference != nil {
+		in, out := &in.InvalidTokensReference, &out.InvalidTokensReference
 		*out = new(types.GlobalSecretKeySelector)
 		**out = **in
 	}

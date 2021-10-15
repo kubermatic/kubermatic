@@ -1082,11 +1082,11 @@ func cloneUserResourcesInCluster(ctx context.Context, logger logrus.FieldLogger,
 		newObject := newv1.User{
 			ObjectMeta: cloneObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.UserSpec{
-				ID:                      oldObject.Spec.ID,
-				Name:                    oldObject.Spec.Name,
-				Email:                   oldObject.Spec.Email,
-				IsAdmin:                 oldObject.Spec.IsAdmin,
-				TokenBlackListReference: oldObject.Spec.TokenBlackListReference, // TODO: rename this to "forbiddenTokensReference" maybe?
+				ID:                     oldObject.Spec.ID,
+				Name:                   oldObject.Spec.Name,
+				Email:                  oldObject.Spec.Email,
+				IsAdmin:                oldObject.Spec.IsAdmin,
+				InvalidTokensReference: oldObject.Spec.TokenBlackListReference, // TODO: rename this to "forbiddenTokensReference" maybe?
 			},
 		}
 
