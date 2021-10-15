@@ -39,21 +39,17 @@ import (
 )
 
 var (
-	datacenter             = "kubermatic"
-	location               = "do-fra1"
-	version                = utils.KubernetesVersion()
-	credential             = "e2e-digitalocean"
-	ctKind                 = "RequiredLabels"
-	masterNamespace        = "kubermatic"
-	defaultConstraintName  = "testconstraint"
-	constraintTemplateName = "requiredlabels"
+	datacenter = "kubermatic"
+	location   = "do-fra1"
+	version    = utils.KubernetesVersion()
+	credential = "e2e-digitalocean"
 )
 
 func TestMLAIntegration(t *testing.T) {
 	ctx := context.Background()
 
 	if err := v1alpha1.AddToScheme(scheme.Scheme); err != nil {
-		t.Fatalf("failed to register gatekeeper scheme: %v", err)
+		t.Fatalf("failed to register operator scheme: %v", err)
 	}
 
 	seedClient, _, _, err := utils.GetClients()
@@ -219,13 +215,6 @@ func setMLAIntegration(ctx context.Context, client ctrlruntimeclient.Client, clu
 	}
 
 	return client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
-}
-
-func genTestConfigMap() *corev1.ConfigMap {
-	cm := &corev1.ConfigMap{}
-	cm.Namespace = corev1.NamespaceDefault
-	cm.Name = fmt.Sprintf("test-cm-%d", rand.Int())
-	return cm
 }
 
 func cleanupProject(t *testing.T, id string) {
