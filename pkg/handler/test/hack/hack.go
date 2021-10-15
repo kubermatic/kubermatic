@@ -39,6 +39,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/watcher"
 
 	"k8s.io/apimachinery/pkg/util/sets"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // NewTestRouting is a hack that helps us avoid circular imports
@@ -81,7 +82,8 @@ func NewTestRouting(
 	constraintTemplateProvider provider.ConstraintTemplateProvider,
 	constraintProvider provider.ConstraintProvider,
 	privilegedConstraintProvider provider.PrivilegedConstraintProvider,
-	kubermaticVersions kubermatic.Versions) http.Handler {
+	kubermaticVersions kubermatic.Versions,
+	masterClient client.Client) http.Handler {
 
 	updateManager := version.New(versions, updates)
 
@@ -129,7 +131,7 @@ func NewTestRouting(
 		Versions:                              kubermaticVersions,
 	}
 
-	r := handler.NewRouting(routingParams)
+	r := handler.NewRouting(routingParams, masterClient)
 	rv2 := v2.NewV2Routing(routingParams)
 
 	mainRouter := mux.NewRouter()
