@@ -92,7 +92,7 @@ type SeedSpec struct {
 	// DefaultComponentSettings are default values to set for newly created clusters.
 	DefaultComponentSettings ComponentSettings `json:"defaultComponentSettings,omitempty"`
 	// Metering configures the metering tool on user clusters across the seed.
-	Metering *MeteringConfigurations `json:"metering,omitempty"`
+	Metering *MeteringConfiguration `json:"metering,omitempty"`
 	// BackupRestore when set, enables backup and restore controllers with given configuration.
 	BackupRestore *SeedBackupRestoreConfiguration `json:"backupRestore,omitempty"`
 }
@@ -426,8 +426,8 @@ type SeedMLASettings struct {
 	UserClusterMLAEnabled bool `json:"userClusterMLAEnabled,omitempty"` //nolint:tagliatelle
 }
 
-// MeteringConfigurations contains all the configurations for the metering tool.
-type MeteringConfigurations struct {
+// MeteringConfiguration contains all the configuration for the metering tool.
+type MeteringConfiguration struct {
 	Enabled bool `json:"enabled"`
 	// StorageClassName is the name of the storage class that the metering tool uses to save processed files before
 	// exporting it to s3 bucket. Default value is kubermatic-fast.

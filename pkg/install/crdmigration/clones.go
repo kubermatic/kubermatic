@@ -853,9 +853,8 @@ func cloneSeedResourcesInCluster(ctx context.Context, logger logrus.FieldLogger,
 			}
 		}
 
-		// TODO: Rename this to MeteringConfiguration (singular)
 		if oldObject.Spec.Metering != nil {
-			newObject.Spec.Metering = &newv1.MeteringConfigurations{
+			newObject.Spec.Metering = &newv1.MeteringConfiguration{
 				Enabled:          oldObject.Spec.Metering.Enabled,
 				StorageClassName: oldObject.Spec.Metering.StorageClassName,
 				StorageSize:      oldObject.Spec.Metering.StorageSize,
