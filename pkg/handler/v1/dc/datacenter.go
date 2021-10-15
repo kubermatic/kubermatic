@@ -34,6 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/util/email"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -207,38 +208,25 @@ func filterDCsByName(dcs []apiv1.Datacenter, dcName string) (apiv1.Datacenter, e
 }
 
 func filterDCsByEmail(userInfo *provider.UserInfo, list []apiv1.Datacenter) ([]apiv1.Datacenter, error) {
-	var dcList []apiv1.Datacenter
+	var result []apiv1.Datacenter
 
-iterateOverDCs:
 	for _, dc := range list {
-		requiredEmailDomain := dc.Spec.RequiredEmailDomain
-		requiredEmailDomainsList := dc.Spec.RequiredEmailDomains
+		requirements := dc.Spec.RequiredEmailDomains
+		if legacy := dc.Spec.RequiredEmailDomain; len(legacy) != 0 {
+			requirements = append(requirements, legacy)
+		}
 
-		if requiredEmailDomain == "" && len(requiredEmailDomainsList) == 0 {
-			// find datacenter for "all" without RequiredEmailDomain(s) field
-			dcList = append(dcList, dc)
-		} else {
-			// find datacenter for specific email domain
-			split := strings.Split(userInfo.Email, "@")
-			if len(split) != 2 {
-				return nil, fmt.Errorf("invalid email address")
-			}
-			userDomain := split[1]
+		matches, err := email.MatchesRequirements(userInfo.Email, requirements)
+		if err != nil {
+			return nil, err
+		}
 
-			if requiredEmailDomain != "" && strings.EqualFold(userDomain, requiredEmailDomain) {
-				dcList = append(dcList, dc)
-				continue iterateOverDCs
-			}
-
-			for _, whitelistedDomain := range requiredEmailDomainsList {
-				if whitelistedDomain != "" && strings.EqualFold(userDomain, whitelistedDomain) {
-					dcList = append(dcList, dc)
-					continue iterateOverDCs
-				}
-			}
+		if matches {
+			result = append(result, dc)
 		}
 	}
-	return dcList, nil
+
+	return result, nil
 }
 
 func getAPIDCsFromSeedMap(seeds map[string]*kubermaticv1.Seed) []apiv1.Datacenter {

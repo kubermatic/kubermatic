@@ -135,7 +135,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		{
 			Name:             "scenario 9a: rejected an attempt to create a cluster in email-restricted datacenter - legacy single domain restriction with requiredEmailDomains",
 			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.22.2","cloud":{"fake":{"token":"dummy_token"},"dc":"restricted-fake-dc"}}}}`,
-			ExpectedResponse: `{"error":{"code":403,"message":"cannot access restricted-fake-dc datacenter due to email domain requirements"}}`,
+			ExpectedResponse: `{"error":{"code":403,"message":"cannot access restricted-fake-dc datacenter due to email requirements"}}`,
 			RewriteClusterID: false,
 			HTTPStatus:       http.StatusForbidden,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -147,7 +147,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		{
 			Name:             "scenario 9b: rejected an attempt to create a cluster in email-restricted datacenter - domain array restriction with `requiredEmailDomains`",
 			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.22.2","cloud":{"fake":{"token":"dummy_token"},"dc":"restricted-fake-dc2"}}}}`,
-			ExpectedResponse: `{"error":{"code":403,"message":"cannot access restricted-fake-dc2 datacenter due to email domain requirements"}}`,
+			ExpectedResponse: `{"error":{"code":403,"message":"cannot access restricted-fake-dc2 datacenter due to email requirements"}}`,
 			RewriteClusterID: false,
 			HTTPStatus:       http.StatusForbidden,
 			ProjectToSync:    test.GenDefaultProject().Name,

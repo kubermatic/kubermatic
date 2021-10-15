@@ -934,17 +934,17 @@ func convertDatacenter(oldDC kubermaticv1.Datacenter) newv1.Datacenter {
 		Spec: newv1.DatacenterSpec{
 			EnforceAuditLogging:      oldDC.Spec.EnforceAuditLogging,
 			EnforcePodSecurityPolicy: oldDC.Spec.EnforcePodSecurityPolicy,
-			RequiredEmailDomains:     oldDC.Spec.RequiredEmailDomains,
+			RequiredEmails:           oldDC.Spec.RequiredEmailDomains,
 		},
 	}
 
 	// migrate from the deprecated flag to finally get rid of RequiredEmailDomain
 	if oldDC.Spec.RequiredEmailDomain != "" {
-		if newDC.Spec.RequiredEmailDomains == nil {
-			newDC.Spec.RequiredEmailDomains = []string{}
+		if newDC.Spec.RequiredEmails == nil {
+			newDC.Spec.RequiredEmails = []string{}
 		}
 
-		newDC.Spec.RequiredEmailDomains = append(newDC.Spec.RequiredEmailDomains, oldDC.Spec.RequiredEmailDomain)
+		newDC.Spec.RequiredEmails = append(newDC.Spec.RequiredEmails, oldDC.Spec.RequiredEmailDomain)
 	}
 
 	if oldDC.Node != nil {

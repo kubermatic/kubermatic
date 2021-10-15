@@ -170,9 +170,7 @@ type DatacenterSpec struct {
 	// given domains can make use of this datacenter. You can define multiple
 	// domains, e.g. "example.com", one of which must match the email domain
 	// exactly (i.e. "example.com" will not match "user@test.example.com").
-	// RequiredEmailDomain is deprecated. Automatically migrated to the RequiredEmailDomains field.
-	RequiredEmailDomain  string   `json:"requiredEmailDomain,omitempty"`
-	RequiredEmailDomains []string `json:"requiredEmailDomains,omitempty"`
+	RequiredEmails []string `json:"requiredEmails,omitempty"`
 
 	// EnforceAuditLogging enforces audit logging on every cluster within the DC,
 	// ignoring cluster-specific settings.

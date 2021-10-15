@@ -106,17 +106,7 @@ type PresetSpec struct {
 	Alibaba      *Alibaba      `json:"alibaba,omitempty"`
 	Anexia       *Anexia       `json:"anexia,omitempty"`
 
-	Fake *Fake `json:"fake,omitempty"`
-	// see RequiredEmails
-	RequiredEmailDomain string `json:"requiredEmailDomain,omitempty"`
-	// RequiredEmails: specify emails and domains
-	// RequiredEmailDomain is appended to RequiredEmails for backward compatibility.
-	// e.g.:
-	//   RequiredEmailDomain: "example.com"
-	//   RequiredEmails: ["foo.com", "foo.bar@test.com"]
-	// Result:
-	//   *@example.com, *@foo.com and foo.bar@test.com can use the Preset
-	// TODO: Maybe get rid of this when we change API groups?
+	Fake           *Fake    `json:"fake,omitempty"`
 	RequiredEmails []string `json:"requiredEmails,omitempty"`
 	Enabled        *bool    `json:"enabled,omitempty"`
 }

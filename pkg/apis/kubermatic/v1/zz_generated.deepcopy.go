@@ -1638,8 +1638,8 @@ func (in *DatacenterSpec) DeepCopyInto(out *DatacenterSpec) {
 		*out = new(DatacenterSpecFake)
 		**out = **in
 	}
-	if in.RequiredEmailDomains != nil {
-		in, out := &in.RequiredEmailDomains, &out.RequiredEmailDomains
+	if in.RequiredEmails != nil {
+		in, out := &in.RequiredEmails, &out.RequiredEmails
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}

@@ -19,9 +19,9 @@ package provider
 import (
 	"fmt"
 	"net/http"
-	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/util/email"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
@@ -59,48 +59,23 @@ func DatacenterFromSeedMap(userInfo *UserInfo, seedsGetter SeedsGetter, datacent
 	matchingSeed := matchingSeeds[0]
 
 	if !userInfo.IsAdmin {
-		emailDomain, err := getUserEmailDomain(userInfo)
-		if err != nil {
-			return nil, nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("invalid email domain: %v", err))
-		}
-
-		if !canAccessDatacenter(matchingDatacenter, emailDomain) {
-			return nil, nil, errors.New(http.StatusForbidden, fmt.Sprintf("cannot access %s datacenter due to email domain requirements", datacenterName))
+		if !canAccessDatacenter(matchingDatacenter, userInfo.Email) {
+			return nil, nil, errors.New(http.StatusForbidden, fmt.Sprintf("cannot access %s datacenter due to email requirements", datacenterName))
 		}
 	}
 
 	return matchingSeed, &matchingDatacenter, nil
 }
 
-// canAccessDatacenter returns information if user with provided email domain can access given datacenter
-// based on the required email domains that are set on it.
-func canAccessDatacenter(dc kubermaticv1.Datacenter, emailDomain string) bool {
-	// Return false if required email domain is set, but it is different from user email domain.
-	if dc.Spec.RequiredEmailDomain != "" && !strings.EqualFold(emailDomain, dc.Spec.RequiredEmailDomain) {
-		return false
+// canAccessDatacenter returns information if user with provided email can access given datacenter
+// based on the required emails that are set on it.
+func canAccessDatacenter(dc kubermaticv1.Datacenter, emailAddress string) bool {
+	requirements := dc.Spec.RequiredEmailDomains
+	if legacy := dc.Spec.RequiredEmailDomain; len(legacy) != 0 {
+		requirements = append(requirements, legacy)
 	}
 
-	// Return false if required email domains are set, but all of them are different from user email domain.
-	if len(dc.Spec.RequiredEmailDomains) > 0 {
-		isMatching := false
-		for _, domain := range dc.Spec.RequiredEmailDomains {
-			if domain != "" && strings.EqualFold(emailDomain, domain) {
-				isMatching = true
-				break
-			}
-		}
-		if !isMatching {
-			return false
-		}
-	}
+	matches, _ := email.MatchesRequirements(emailAddress, requirements)
 
-	return true
-}
-
-func getUserEmailDomain(userInfo *UserInfo) (string, error) {
-	split := strings.Split(userInfo.Email, "@")
-	if len(split) != 2 {
-		return "", fmt.Errorf("invalid email address")
-	}
-	return split[1], nil
+	return matches == true
 }
