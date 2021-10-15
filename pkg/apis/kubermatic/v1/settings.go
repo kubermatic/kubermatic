@@ -45,7 +45,7 @@ type SettingSpec struct {
 	CustomLinks                 CustomLinks    `json:"customLinks"`
 	CleanupOptions              CleanupOptions `json:"cleanupOptions"`
 	DefaultNodeCount            int8           `json:"defaultNodeCount"`
-	ClusterTypeOptions          ClusterType    `json:"clusterTypeOptions"`
+	ClusterTypeOptions          ClusterType    `json:"clusterTypeOptions"` // TODO: make this a sub struct or do not call it "Options"
 	DisplayDemoInfo             bool           `json:"displayDemoInfo"`
 	DisplayAPIDocs              bool           `json:"displayAPIDocs"`
 	DisplayTermsOfService       bool           `json:"displayTermsOfService"`

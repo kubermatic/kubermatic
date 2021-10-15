@@ -56,6 +56,8 @@ func PerformPreflightChecks(ctx context.Context, logger logrus.FieldLogger, opt 
 		success = false
 	}
 
+	// TODO: check if the new CRDs are installed.
+
 	if !success {
 		return errors.New("please correct the errors noted above and try again")
 	}

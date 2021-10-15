@@ -116,6 +116,7 @@ type PresetSpec struct {
 	//   RequiredEmails: ["foo.com", "foo.bar@test.com"]
 	// Result:
 	//   *@example.com, *@foo.com and foo.bar@test.com can use the Preset
+	// TODO: Maybe get rid of this when we change API groups?
 	RequiredEmails []string `json:"requiredEmails,omitempty"`
 	Enabled        *bool    `json:"enabled,omitempty"`
 }
