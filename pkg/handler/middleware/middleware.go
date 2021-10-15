@@ -189,15 +189,23 @@ func UserSaver(userProvider provider.UserProvider) endpoint.Middleware {
 				}
 			}
 
-			user.Spec.LastSeen = &[]metav1.Time{metav1.NewTime(Now().UTC())}[0]
-			user, err = userProvider.UpdateUser(user)
+			updatedUser := user.DeepCopy()
+			updatedUser.Spec.LastSeen = &[]metav1.Time{metav1.NewTime(Now().UTC())}[0]
+			updatedUser, err = userProvider.UpdateUser(updatedUser)
+
+			// Since this update might be called very often, we should be
+			// able to safely assume that the conflict error means the user
+			// was already updated in another call and not throw an error
+			// in such case.
 			if err != nil {
+				if kerrors.IsConflict(err) {
+					return next(context.WithValue(ctx, kubermaticcontext.UserCRContextKey, user), request)
+				}
+
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 
-			fmt.Println(user.Spec)
-
-			return next(context.WithValue(ctx, kubermaticcontext.UserCRContextKey, user), request)
+			return next(context.WithValue(ctx, kubermaticcontext.UserCRContextKey, updatedUser), request)
 		}
 	}
 }
