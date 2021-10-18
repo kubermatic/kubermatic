@@ -8,11 +8,42 @@ This describes how to run e2e tests in local environment.
  - install [kind](https://kind.sigs.k8s.io/)
  - install [jq](https://stedolan.github.io/jq/download/)
 
-### dnsmasq
+### Local DNS resolver
+
+#### Network Manager with dnsmasq-base
+Take a look at https://fedoramagazine.org/using-the-networkmanagers-dnsmasq-plugin/
+
+#### Systemd-resolved with dnsmasq
 Install and configure `dnsmasq` to set up local domain for the KKP installation.
-You can use dnsmasq and systemd-resolved in parallel. The following link shows how to do it: [link](https://gist.github.com/frank-dspeed/6b6f1f720dd5e1c57eec8f1fdb2276df#full-dnsmasq-support-under-systemd-resolved)
-The installation script `run-kubermatic-kind.sh` uses `KUBERMATIC_DOMAIN` for this. The default value is: `kubermatic.local`.
-The same domain should be set in `/etc/dnsmasq.conf` file. The example looks like this:
+Dnsmasq is needed only for `local` dns resolution.
+
+Add the following configuration to `/etc/dnsmasq.conf`
+```
+bind-interfaces
+listen-address=127.0.0.1
+```
+create `kubermatic.local` entry by adding `/etc/dnsmasq.d/kubermatic.local` with
+```
+address=/.kubermatic.local/172.18.255.200
+```
+The `address` indicates wildcard subdomains. It's needed to be able to create user clusters.
+
+
+add a local DNS resolver to systemd-resolved by editing `/etc/systemd/resolved.conf`
+```
+[Resolve]
+DNS=127.0.0.1
+Domains=local
+```
+restart systemd-resolved and dnsmasq
+```
+systemctl restart dnsmasq
+systemctl restart systemd-resolved
+```
+
+#### Only dnsmasq
+Install dnsmasq and disable all DNS resolvers you have installed on the machine. 
+Edit configuration `/etc/dnsmasq.conf` file with:
 ```
 port=53
 no-resolv
@@ -26,7 +57,9 @@ cache-size=1000
 address=/kubermatic.local/172.18.255.200
 ```
 
-Make sure when you install and configure the `dnsmasq` the `kubermatic.local` is reachable.
+#### Test DNS local resolution
+The installation script `run-kubermatic-kind.sh` uses `KUBERMATIC_DOMAIN` env. The default value is: `kubermatic.local`.
+Make sure when you install and configure the local DNS resolver the `kubermatic.local` is reachable.
 ```
 $ nslookup kubermatic.local
 Server:		127.0.0.2
@@ -34,10 +67,8 @@ Address:	127.0.0.2#53
 
 Name:	kubermatic.local
 Address: 172.18.255.200
-
 ```
 
-The `address` indicates wildcard subdomains. It's needed to be able to create user clusters.
 The kind cluster uses [metallb](https://metallb.universe.tf/) to have LoadBalancer service type.
 After running `hack/local/run-kubermatic-kind.sh` check assigned external IP address to `nodeport-proxy` service and use it in 
 dnsmasq configuration file in `address` section.
