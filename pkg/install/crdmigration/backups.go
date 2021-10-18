@@ -127,7 +127,7 @@ func createClusterBackup(ctx context.Context, logger logrus.FieldLogger, ts time
 func getBackupResourceFilename(obj metav1unstructured.Unstructured, kind string) string {
 	filename := obj.GetName()
 	if obj.GetNamespace() != "" {
-		filename = fmt.Sprintf("%s-%s", filename, obj.GetNamespace())
+		filename = fmt.Sprintf("%s-%s", obj.GetNamespace(), filename)
 	}
 
 	return fmt.Sprintf("%s/%s.yaml", strings.ToLower(kind), filename)
