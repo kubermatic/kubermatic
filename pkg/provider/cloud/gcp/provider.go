@@ -317,7 +317,7 @@ func (g *gcp) ensureFirewallRules(cluster *kubermaticv1.Cluster, update provider
 		}).Do()
 		// we ignore a Google API "already exists" error
 		if err != nil && !isHTTPError(err, http.StatusConflict) {
-			return fmt.Errorf("failed to create firewall rule %s: %v", icmpRuleName, err)
+			return fmt.Errorf("failed to create firewall rule %s: %v", nodePortRuleName, err)
 		}
 
 		newCluster, err := update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
