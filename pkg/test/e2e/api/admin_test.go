@@ -246,7 +246,7 @@ func TestManageProjectMembersByAdmin(t *testing.T) {
 	}{
 		{
 			name:          "admin can manage project members for any project",
-			expectedUsers: sets.NewString("roxy@loodse.com"),
+			expectedUsers: sets.NewString("roxy@kubermatic.com"),
 		},
 	}
 
