@@ -524,7 +524,6 @@ func cloneKubermaticSettingResourcesInCluster(ctx context.Context, logger logrus
 				CustomLinks:                 newv1.CustomLinks{},
 				CleanupOptions:              newv1.CleanupOptions(oldObject.Spec.CleanupOptions),
 				DefaultNodeCount:            oldObject.Spec.DefaultNodeCount,
-				ClusterTypeOptions:          newv1.ClusterType(oldObject.Spec.ClusterTypeOptions),
 				DisplayDemoInfo:             oldObject.Spec.DisplayDemoInfo,
 				DisplayAPIDocs:              oldObject.Spec.DisplayAPIDocs,
 				DisplayTermsOfService:       oldObject.Spec.DisplayTermsOfService,
