@@ -42,6 +42,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/serviceaccounts"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/settings"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/tokens"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/user"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/users"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/version"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/versions"
@@ -122,6 +123,7 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Kubermatic
 	cli.Serviceaccounts = serviceaccounts.New(transport, formats)
 	cli.Settings = settings.New(transport, formats)
 	cli.Tokens = tokens.New(transport, formats)
+	cli.User = user.New(transport, formats)
 	cli.Users = users.New(transport, formats)
 	cli.Version = version.New(transport, formats)
 	cli.Versions = versions.New(transport, formats)
@@ -234,6 +236,8 @@ type KubermaticKubernetesPlatformAPI struct {
 
 	Tokens tokens.ClientService
 
+	User user.ClientService
+
 	Users users.ClientService
 
 	Version version.ClientService
@@ -280,6 +284,7 @@ func (c *KubermaticKubernetesPlatformAPI) SetTransport(transport runtime.ClientT
 	c.Serviceaccounts.SetTransport(transport)
 	c.Settings.SetTransport(transport)
 	c.Tokens.SetTransport(transport)
+	c.User.SetTransport(transport)
 	c.Users.SetTransport(transport)
 	c.Version.SetTransport(transport)
 	c.Versions.SetTransport(transport)

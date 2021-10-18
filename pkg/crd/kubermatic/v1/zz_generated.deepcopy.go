@@ -4115,6 +4115,10 @@ func (in *UserSpec) DeepCopyInto(out *UserSpec) {
 		*out = new(types.GlobalSecretKeySelector)
 		**out = **in
 	}
+	if in.LastSeen != nil {
+		in, out := &in.LastSeen, &out.LastSeen
+		*out = (*in).DeepCopy()
+	}
 	return
 }
 

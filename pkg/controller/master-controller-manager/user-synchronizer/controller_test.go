@@ -104,6 +104,9 @@ func TestReconcile(t *testing.T) {
 					t.Fatalf("failed to get user: %v", err)
 				}
 			} else {
+				seedUser = sanitize(seedUser)
+				tc.expectedUser = sanitize(tc.expectedUser)
+
 				if err != nil {
 					t.Fatalf("failed to get user: %v", err)
 				}
@@ -126,5 +129,12 @@ func generateUser(name string, deleted bool) *kubermaticv1.User {
 		user.DeletionTimestamp = &deleteTime
 		user.Finalizers = append(user.Finalizers, v1.SeedUserCleanupFinalizer)
 	}
+	return user
+}
+
+// Skip problematic fields from the comparison such as `LastSeen` Time field
+// as even DeepCopy does not result in equal internal location field value.
+func sanitize(user *kubermaticv1.User) *kubermaticv1.User {
+	user.Spec.LastSeen = nil
 	return user
 }

@@ -91,7 +91,8 @@ func TestGetUsersForProject(t *testing.T) {
 						Name:              "john",
 						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
 					},
-					Email: "john@acme.com",
+					Email:    "john@acme.com",
+					LastSeen: &[]apiv1.Time{apiv1.NewTime(test.UserLastSeen)}[0],
 					Projects: []apiv1.ProjectGroup{
 						{
 							GroupPrefix: "owners",
@@ -106,7 +107,8 @@ func TestGetUsersForProject(t *testing.T) {
 						Name:              "alice",
 						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 55, 0, 0, time.UTC),
 					},
-					Email: "alice@acme.com",
+					Email:    "alice@acme.com",
+					LastSeen: &[]apiv1.Time{apiv1.NewTime(test.UserLastSeen)}[0],
 					Projects: []apiv1.ProjectGroup{
 						{
 							GroupPrefix: "viewers",
@@ -121,7 +123,8 @@ func TestGetUsersForProject(t *testing.T) {
 						Name:              "bob",
 						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 56, 0, 0, time.UTC),
 					},
-					Email: "bob@acme.com",
+					Email:    "bob@acme.com",
+					LastSeen: &[]apiv1.Time{apiv1.NewTime(test.UserLastSeen)}[0],
 					Projects: []apiv1.ProjectGroup{
 						{
 							GroupPrefix: "editors",
@@ -192,7 +195,8 @@ func TestGetUsersForProject(t *testing.T) {
 						Name:              "john",
 						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
 					},
-					Email: "john@acme.com",
+					Email:    "john@acme.com",
+					LastSeen: &[]apiv1.Time{apiv1.NewTime(test.UserLastSeen)}[0],
 					Projects: []apiv1.ProjectGroup{
 						{
 							GroupPrefix: "owners",
@@ -207,7 +211,8 @@ func TestGetUsersForProject(t *testing.T) {
 						Name:              "alice",
 						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 55, 0, 0, time.UTC),
 					},
-					Email: "alice@acme.com",
+					Email:    "alice@acme.com",
+					LastSeen: &[]apiv1.Time{apiv1.NewTime(test.UserLastSeen)}[0],
 					Projects: []apiv1.ProjectGroup{
 						{
 							GroupPrefix: "viewers",
@@ -222,7 +227,8 @@ func TestGetUsersForProject(t *testing.T) {
 						Name:              "bob",
 						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 56, 0, 0, time.UTC),
 					},
-					Email: "bob@acme.com",
+					Email:    "bob@acme.com",
+					LastSeen: &[]apiv1.Time{apiv1.NewTime(test.UserLastSeen)}[0],
 					Projects: []apiv1.ProjectGroup{
 						{
 							GroupPrefix: "editors",
@@ -434,7 +440,7 @@ func TestEditUserInProject(t *testing.T) {
 		// scenario 1
 		{
 			Name:          "scenario 1: john the owner of the plan9 project changes the group for bob from viewers to editors",
-			Body:          `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6", "email":"bob@acme.com", "projects":[{"id":"plan9-ID", "group":"editors"}]}`,
+			Body:          `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6", "email":"bob@acme.com", "projects":[{"id":"plan9-ID", "group":"editors"}],"lastSeen":"2020-12-31T23:00:00Z"}`,
 			HTTPStatus:    http.StatusOK,
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
@@ -452,13 +458,13 @@ func TestEditUserInProject(t *testing.T) {
 			},
 			UserIDToUpdate:   genDefaultUser().Name,
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
-			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}]}`,
+			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}],"lastSeen":"2020-12-31T23:00:00Z"}`,
 		},
 
 		// scenario 2
 		{
 			Name:          "scenario 2: john the owner of the plan9 project changes the group for bob, but bob is not a member of the project",
-			Body:          `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6", "email":"bob@acme.com", "projects":[{"id":"plan9-ID", "group":"editors"}]}`,
+			Body:          `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6", "email":"bob@acme.com", "projects":[{"id":"plan9-ID", "group":"editors"}],"lastSeen":"2020-12-31T23:00:00Z"}`,
 			HTTPStatus:    http.StatusBadRequest,
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
@@ -481,7 +487,7 @@ func TestEditUserInProject(t *testing.T) {
 		// scenario 3
 		{
 			Name:          "scenario 3: john the owner of the plan9 project changes the group for bob from viewers to owners",
-			Body:          `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6", "email":"bob@acme.com", "projects":[{"id":"plan9-ID", "group":"owners"}]}`,
+			Body:          `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6", "email":"bob@acme.com", "projects":[{"id":"plan9-ID", "group":"owners"}],"lastSeen":"2020-12-31T23:00:00Z"}`,
 			HTTPStatus:    http.StatusOK,
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
@@ -498,13 +504,13 @@ func TestEditUserInProject(t *testing.T) {
 			},
 			UserIDToUpdate:   genDefaultUser().Name,
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
-			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"owners"}]}`,
+			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"owners"}],"lastSeen":"2020-12-31T23:00:00Z"}`,
 		},
 
 		// scenario 4
 		{
 			Name:          "scenario 4: john the owner of the plan9 project changes the group for bob from viewers to admins(wrong name)",
-			Body:          `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6", "email":"bob@acme.com", "projects":[{"id":"plan9-ID", "group":"admins"}]}`,
+			Body:          `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6", "email":"bob@acme.com", "projects":[{"id":"plan9-ID", "group":"admins"}],"lastSeen":"2020-12-31T23:00:00Z"}`,
 			HTTPStatus:    http.StatusBadRequest,
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
@@ -527,7 +533,7 @@ func TestEditUserInProject(t *testing.T) {
 		// scenario 5
 		{
 			Name:          "scenario 5: email case insensitive. Changes the group for bob from viewers to editors where email is BOB@ACME.COM instead bob@acme.com",
-			Body:          `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6", "email":"BOB@ACME.COM", "projects":[{"id":"plan9-ID", "group":"editors"}]}`,
+			Body:          `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6", "email":"BOB@ACME.COM", "projects":[{"id":"plan9-ID", "group":"editors"}],"lastSeen":"2020-12-31T23:00:00Z"}`,
 			HTTPStatus:    http.StatusOK,
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
@@ -545,12 +551,12 @@ func TestEditUserInProject(t *testing.T) {
 			},
 			UserIDToUpdate:   genDefaultUser().Name,
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
-			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}]}`,
+			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}],"lastSeen":"2020-12-31T23:00:00Z"}`,
 		},
 		// scenario 6
 		{
 			Name:          "scenario 6: the admin changes the group for bob from viewers to editors",
-			Body:          `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6", "email":"bob@acme.com", "projects":[{"id":"plan9-ID", "group":"editors"}]}`,
+			Body:          `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6", "email":"bob@acme.com", "projects":[{"id":"plan9-ID", "group":"editors"}],"lastSeen":"2020-12-31T23:00:00Z"}`,
 			HTTPStatus:    http.StatusOK,
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
@@ -569,7 +575,7 @@ func TestEditUserInProject(t *testing.T) {
 			},
 			UserIDToUpdate:   genDefaultUser().Name,
 			ExistingAPIUser:  *genAPIUser("admin", "admin@acme.com"),
-			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}]}`,
+			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}],"lastSeen":"2020-12-31T23:00:00Z"}`,
 		},
 	}
 	for _, tc := range testcases {
@@ -623,7 +629,7 @@ func TestAddUserToProject(t *testing.T) {
 				genDefaultUser(), /*bob*/
 			},
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
-			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}]}`,
+			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}],"lastSeen":"2020-12-31T23:00:00Z"}`,
 		},
 
 		{
@@ -689,7 +695,7 @@ func TestAddUserToProject(t *testing.T) {
 				genDefaultUser(), /*bob*/
 			},
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
-			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"owners"}]}`,
+			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"owners"}],"lastSeen":"2020-12-31T23:00:00Z"}`,
 		},
 
 		{
@@ -755,7 +761,7 @@ func TestAddUserToProject(t *testing.T) {
 				genDefaultUser(), /*bob*/
 			},
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
-			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}]}`,
+			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}],"lastSeen":"2020-12-31T23:00:00Z"}`,
 		},
 
 		{
@@ -800,7 +806,7 @@ func TestAddUserToProject(t *testing.T) {
 				genDefaultAdminUser(),
 			},
 			ExistingAPIUser:  *genAPIUser("admin", "admin@acme.com"),
-			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}]}`,
+			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}],"lastSeen":"2020-12-31T23:00:00Z"}`,
 		},
 	}
 
@@ -841,7 +847,7 @@ func TestGetCurrentUser(t *testing.T) {
 			},
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
 			ExpectedStatus:   http.StatusOK,
-			ExpectedResponse: `{"id":"4b2d8785b49bad23638b17d8db76857a79bf79441241a78a97d88cc64bbf766e","name":"john","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com"}`,
+			ExpectedResponse: `{"id":"4b2d8785b49bad23638b17d8db76857a79bf79441241a78a97d88cc64bbf766e","name":"john","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com","lastSeen":"2020-12-31T23:00:00Z"}`,
 		},
 
 		{
@@ -857,7 +863,7 @@ func TestGetCurrentUser(t *testing.T) {
 			},
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
 			ExpectedStatus:   http.StatusOK,
-			ExpectedResponse: `{"id":"4b2d8785b49bad23638b17d8db76857a79bf79441241a78a97d88cc64bbf766e","name":"john","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com","projects":[{"id":"plan9-ID","group":"owners"}]}`,
+			ExpectedResponse: `{"id":"4b2d8785b49bad23638b17d8db76857a79bf79441241a78a97d88cc64bbf766e","name":"john","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com","projects":[{"id":"plan9-ID","group":"owners"}],"lastSeen":"2020-12-31T23:00:00Z"}`,
 		},
 	}
 
@@ -894,7 +900,7 @@ func TestNewUser(t *testing.T) {
 	}{
 		{
 			Name:             "scenario 1: successfully creates the initial new user resource",
-			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","isAdmin":true}`,
+			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","isAdmin":true,"lastSeen":"2020-12-31T23:00:00Z"}`,
 			HTTPStatus:       http.StatusOK,
 			ExpectedKubermaticUser: func() *kubermaticapiv1.User {
 				expectedKubermaticUser := test.GenDefaultUser()
@@ -917,7 +923,7 @@ func TestNewUser(t *testing.T) {
 
 		{
 			Name:             "scenario 3: creating a user if already exists doesn't have effect",
-			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com"}`,
+			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","lastSeen":"2020-12-31T23:00:00Z"}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjects: []ctrlruntimeclient.Object{
 				genDefaultUser(),
