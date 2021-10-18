@@ -47,6 +47,10 @@ type User struct {
 	// along with the group names
 	Projects []*ProjectGroup `json:"projects"`
 
+	// last seen
+	// Format: date-time
+	LastSeen Time `json:"lastSeen,omitempty"`
+
 	// user settings
 	UserSettings *UserSettings `json:"userSettings,omitempty"`
 }
@@ -64,6 +68,10 @@ func (m *User) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateProjects(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateLastSeen(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -125,6 +133,21 @@ func (m *User) validateProjects(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *User) validateLastSeen(formats strfmt.Registry) error {
+	if swag.IsZero(m.LastSeen) { // not required
+		return nil
+	}
+
+	if err := m.LastSeen.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("lastSeen")
+		}
+		return err
+	}
+
+	return nil
+}
+
 func (m *User) validateUserSettings(formats strfmt.Registry) error {
 	if swag.IsZero(m.UserSettings) { // not required
 		return nil
@@ -147,6 +170,10 @@ func (m *User) ContextValidate(ctx context.Context, formats strfmt.Registry) err
 	var res []error
 
 	if err := m.contextValidateProjects(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateLastSeen(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -173,6 +200,18 @@ func (m *User) contextValidateProjects(ctx context.Context, formats strfmt.Regis
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *User) contextValidateLastSeen(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.LastSeen.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("lastSeen")
+		}
+		return err
 	}
 
 	return nil

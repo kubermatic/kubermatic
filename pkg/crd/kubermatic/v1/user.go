@@ -18,9 +18,7 @@ package v1
 
 import (
 	"fmt"
-
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -52,6 +50,7 @@ type UserSpec struct {
 	IsAdmin                 bool                                    `json:"admin"`
 	Settings                *UserSettings                           `json:"settings,omitempty"`
 	TokenBlackListReference *providerconfig.GlobalSecretKeySelector `json:"tokenBlackListReference,omitempty"`
+	LastSeen                *metav1.Time                            `json:"lastSeen,omitempty"`
 }
 
 // UserSettings represent an user settings

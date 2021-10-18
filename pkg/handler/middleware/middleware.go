@@ -19,6 +19,7 @@ package middleware
 import (
 	"context"
 	"fmt"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"time"
 
@@ -120,6 +121,9 @@ const (
 	SeedsGetterContextKey kubermaticcontext.Key = "seeds-getter"
 )
 
+// Now stubbed out to allow testing
+var Now = time.Now
+
 // seedClusterGetter defines functionality to retrieve a seed name
 type seedClusterGetter interface {
 	GetSeedCluster() apiv1.SeedCluster
@@ -184,7 +188,24 @@ func UserSaver(userProvider provider.UserProvider) endpoint.Middleware {
 					}
 				}
 			}
-			return next(context.WithValue(ctx, kubermaticcontext.UserCRContextKey, user), request)
+
+			updatedUser := user.DeepCopy()
+			updatedUser.Spec.LastSeen = &[]metav1.Time{metav1.NewTime(Now().UTC())}[0]
+			updatedUser, err = userProvider.UpdateUser(updatedUser)
+
+			// Since this update might be called very often, we should be
+			// able to safely assume that the conflict error means the user
+			// was already updated in another call and not throw an error
+			// in such case.
+			if err != nil {
+				if kerrors.IsConflict(err) {
+					return next(context.WithValue(ctx, kubermaticcontext.UserCRContextKey, user), request)
+				}
+
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+
+			return next(context.WithValue(ctx, kubermaticcontext.UserCRContextKey, updatedUser), request)
 		}
 	}
 }
