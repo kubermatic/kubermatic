@@ -1,3 +1,5 @@
+//go:build e2e
+
 /*
 Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 
@@ -109,6 +111,17 @@ func TestMLAIntegration(t *testing.T) {
 	if err := setMLAIntegration(ctx, seedClient, cluster, true); err != nil {
 		t.Fatalf("failed to set MLA integration to true: %v", err)
 	}
+
+	// if err := v1alpha1.AddToScheme(scheme.Scheme); err != nil {
+	// t.Fatalf("failed to register operator scheme: %v", err)
+	// }
+
+	// kconf := &v1alpha1.KubermaticConfiguration{}
+	// if err := seedClient.Get(ctx, types.NamespacedName{Name: "e2e", Namespace: "kubermatic"}, kconf); err != nil {
+	// t.Fatalf("failed to get kconf: %v", err)
+	// }
+	//
+	// kconf.Spec.FeatureGates.Insert(features.UserClusterMLA)
 
 	t.Log("waiting for project to get grafana org annotation")
 	p := &kubermaticv1.Project{}
