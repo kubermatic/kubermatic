@@ -42,11 +42,12 @@ import (
 )
 
 const (
-	DefaultNetwork               = "global/networks/default"
-	computeAPIEndpoint           = "https://www.googleapis.com/compute/v1/"
-	firewallSelfCleanupFinalizer = "kubermatic.io/cleanup-gcp-firewall-self"
-	firewallICMPCleanupFinalizer = "kubermatic.io/cleanup-gcp-firewall-icmp"
-	routesCleanupFinalizer       = "kubermatic.io/cleanup-gcp-routes"
+	DefaultNetwork                   = "global/networks/default"
+	computeAPIEndpoint               = "https://www.googleapis.com/compute/v1/"
+	firewallSelfCleanupFinalizer     = "kubermatic.io/cleanup-gcp-firewall-self"
+	firewallICMPCleanupFinalizer     = "kubermatic.io/cleanup-gcp-firewall-icmp"
+	firewallNodePortCleanupFinalizer = "kubermatic.io/cleanup-gcp-firewall-nodeport"
+	routesCleanupFinalizer           = "kubermatic.io/cleanup-gcp-routes"
 
 	k8sNodeRouteTag          = "k8s-node-route"
 	k8sNodeRoutePrefixRegexp = "kubernetes-.*"
@@ -214,10 +215,18 @@ func (g *gcp) ensureFirewallRules(cluster *kubermaticv1.Cluster, update provider
 		return err
 	}
 
+	// Retrieve nodePort range from cluster
+	nodePortRangeLow, nodePortRangeHigh := resources.NewTemplateDataBuilder().
+		WithNodePortRange(cluster.Spec.ComponentsOverride.Apiserver.NodePortRange).
+		WithCluster(cluster).
+		Build().
+		NodePorts()
+
 	firewallService := compute.NewFirewallsService(svc)
 	tag := fmt.Sprintf("kubernetes-cluster-%s", cluster.Name)
 	selfRuleName := fmt.Sprintf("firewall-%s-self", cluster.Name)
 	icmpRuleName := fmt.Sprintf("firewall-%s-icmp", cluster.Name)
+	nodePortRuleName := fmt.Sprintf("firewall-%s-nodeport", cluster.Name)
 
 	// allow traffic within the same cluster
 	if !kuberneteshelper.HasFinalizer(cluster, firewallSelfCleanupFinalizer) {
@@ -285,6 +294,37 @@ func (g *gcp) ensureFirewallRules(cluster *kubermaticv1.Cluster, update provider
 		})
 		if err != nil {
 			return fmt.Errorf("failed to add %s finalizer: %v", firewallICMPCleanupFinalizer, err)
+		}
+		*cluster = *newCluster
+	}
+
+	// open nodePorts for TCP and UDP
+	if !kuberneteshelper.HasFinalizer(cluster, firewallNodePortCleanupFinalizer) {
+		_, err = firewallService.Insert(projectID, &compute.Firewall{
+			Name:    nodePortRuleName,
+			Network: cluster.Spec.Cloud.GCP.Network,
+			Allowed: []*compute.FirewallAllowed{
+				{
+					IPProtocol: "tcp",
+					Ports:      []string{fmt.Sprintf("%d-%d", nodePortRangeLow, nodePortRangeHigh)},
+				},
+				{
+					IPProtocol: "udp",
+					Ports:      []string{fmt.Sprintf("%d-%d", nodePortRangeLow, nodePortRangeHigh)},
+				},
+			},
+			TargetTags: []string{tag},
+		}).Do()
+		// we ignore a Google API "already exists" error
+		if err != nil && !isHTTPError(err, http.StatusConflict) {
+			return fmt.Errorf("failed to create firewall rule %s: %v", icmpRuleName, err)
+		}
+
+		newCluster, err := update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			kuberneteshelper.AddFinalizer(cluster, firewallNodePortCleanupFinalizer)
+		})
+		if err != nil {
+			return fmt.Errorf("failed to add %s finalizer: %v", firewallNodePortCleanupFinalizer, err)
 		}
 		*cluster = *newCluster
 	}
