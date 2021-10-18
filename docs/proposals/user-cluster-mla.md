@@ -316,7 +316,7 @@ This proposal does not cover some advanced topics that are left for future enhan
 - High Availability Grafana setup.
 - Automated backups of data.
 
-## Alternatives Considered 
+## Alternatives Considered
 ### Decentralized Approach
 The Implementation section covers an alternative - “Decentralized” approach. Although it is very valid, it is left for
 the future.
@@ -336,16 +336,16 @@ spec:
     id: 92d86czsj5
     name: mla-project
   users:
-    - email: mla-user1@loodse.com
+    - email: mla-user1@kubermatic.com
       id: mla-user1-id
       name: User 1
-    - email: mla-user2@loodse.com
+    - email: mla-user2@kubermatic.com
       id: mla-user2-id
       name: User 2
 ```
 
 In this case, only `UserProjectMapping` objects will be propagated to Seed Cluster, which will reduce duplication of
-`UserProjectBinding` and `Project` in the Seed Cluster. However, in the scenario that Master Cluster and Seed 
+`UserProjectBinding` and `Project` in the Seed Cluster. However, in the scenario that Master Cluster and Seed
 Cluster are on the same Kubernetes cluster, `UserProejctMapping` will be redundant.
 
 In KKP, two synchronization controllers (master-constraint-template-controller, and seed-sync-controller) have been
