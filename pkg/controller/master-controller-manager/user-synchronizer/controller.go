@@ -137,9 +137,8 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	if !kuberneteshelper.HasFinalizer(user, kubermaticapiv1.SeedUserCleanupFinalizer) {
-		oldUser := user.DeepCopy()
 		kuberneteshelper.AddFinalizer(user, kubermaticapiv1.SeedUserCleanupFinalizer)
-		if err := r.masterClient.Patch(ctx, user, ctrlruntimeclient.MergeFrom(oldUser)); err != nil {
+		if err := r.masterClient.Update(ctx, user); err != nil {
 			return reconcile.Result{}, fmt.Errorf("failed to add user finalizer %s: %w", user.Name, err)
 		}
 	}
