@@ -25,7 +25,42 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var validClusterNamespace = regexp.MustCompile(`^cluster-[0-9a-z]{10}$`)
+var (
+	validClusterNamespace = regexp.MustCompile(`^cluster-[0-9a-z]{10}$`)
+
+	// oldAPIGroup is the group we migrate away from.
+	oldAPIGroup = "kubermatic.k8s.io"
+
+	// newAPIGroup is the group we migrate to.
+	newAPIGroup = "kubermatic.k8c.io"
+
+	// allKubermaticKinds is a list of all KKP CRDs;
+	// not all of these live on all clusters
+	allKubermaticKinds = []string{
+		"Addon",
+		"AddonConfig",
+		"AdmissionPlugin",
+		"Alertmanager",
+		"AllowedRegistry",
+		"Cluster",
+		"ClusterTemplate",
+		"ClusterTemplateInstance",
+		"Constraint",
+		"ConstraintTemplate",
+		"EtcdBackupConfig",
+		"EtcdRestore",
+		"ExternalCluster",
+		"KubermaticSetting",
+		"MLAAdminSetting",
+		"Preset",
+		"Project",
+		"RuleGroup",
+		"Seed",
+		"User",
+		"UserProjectBinding",
+		"UserSSHKey",
+	}
+)
 
 // getUserclusterNamespaces is purposefully "dumb" and doesn't list Cluster
 // objects to deduce the namespaces or check whether the namespaces have

@@ -19,6 +19,7 @@ package crdmigration
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/sirupsen/logrus"
@@ -27,14 +28,19 @@ import (
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/kubermatic"
 	kubermaticseed "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/kubermatic"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/crd/util"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	metav1unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -56,7 +62,10 @@ func PerformPreflightChecks(ctx context.Context, logger logrus.FieldLogger, opt 
 		success = false
 	}
 
-	// TODO: check if the new CRDs are installed.
+	if err := validateCRDsExist(ctx, logger, opt); err != nil {
+		logger.Errorf("CustomResourceDefinition check failed: %v", err)
+		success = false
+	}
 
 	if !success {
 		return errors.New("please correct the errors noted above and try again")
@@ -313,4 +322,54 @@ func validateNoStuckResourcesInCluster(ctx context.Context, logger logrus.FieldL
 	}
 
 	return success
+}
+
+// validateCRDsExist checks that the installer has access to the
+// *new* CRDs. This is mostly a sanity check to prevent users from
+// running the installer in weird ways or accidentally mix it with
+// the old CRDs.
+// The installer will later during the migration install/update the
+// CRDs itself and at that point we want to be sure everything's OK.
+func validateCRDsExist(ctx context.Context, logger logrus.FieldLogger, opt *Options) error {
+	logger.Info("Validating all new KKP CRDs exist…")
+
+	crdDirectory := "charts/kubermatic-operator/crd"
+
+	crds, err := util.LoadFromDirectory(crdDirectory)
+	if err != nil {
+		return fmt.Errorf("failed to load CRDs from %s: %w", crdDirectory, err)
+	}
+
+	checklist := sets.NewString(allKubermaticKinds...)
+
+	for _, crd := range crds {
+		// not actually a CRD
+		if crd.GetObjectKind().GroupVersionKind() != apiextensionsv1.SchemeGroupVersion.WithKind("CustomResourceDefinition") {
+			continue
+		}
+
+		crdUnstructured, ok := crd.(*unstructured.Unstructured)
+		if ok {
+			var crdObject apiextensionsv1.CustomResourceDefinition
+
+			// after the GVK check, this should only happen if someone manually breaks the YAML
+			if err = runtime.DefaultUnstructuredConverter.FromUnstructured(crdUnstructured.Object, &crdObject); err != nil {
+				continue
+			}
+
+			// This is important, we need to ensure that we actually found
+			// CRDs for the *new* API group.
+			if crdObject.Spec.Group != newAPIGroup {
+				continue
+			}
+
+			checklist.Delete(crdObject.Spec.Names.Kind)
+		}
+	}
+
+	if checklist.Len() > 0 {
+		return fmt.Errorf("could not find files containing the CRDs for %v", checklist.List())
+	}
+
+	return nil
 }

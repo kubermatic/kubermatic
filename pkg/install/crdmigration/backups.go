@@ -39,44 +39,18 @@ func CreateBackups(ctx context.Context, logger logrus.FieldLogger, opt *Options)
 	now := time.Now()
 	identifier := now.Format("kkpcrdmigration-2006-01-02T150405")
 
-	// not all of these live on all clusters, but that's okay
-	allResourceKinds := []string{
-		"Addon",
-		"AddonConfig",
-		"AdmissionPlugin",
-		"Alertmanager",
-		"AllowedRegistry",
-		"Cluster",
-		"ClusterTemplate",
-		"ClusterTemplateInstance",
-		"Constraint",
-		"ConstraintTemplate",
-		"EtcdBackupConfig",
-		"EtcdRestore",
-		"ExternalCluster",
-		"KubermaticSetting",
-		"MLAAdminSetting",
-		"Preset",
-		"Project",
-		"RuleGroup",
-		"Seed",
-		"User",
-		"UserProjectBinding",
-		"UserSSHKey",
-	}
-
 	logger.WithField("identifier", identifier).Info("Creating backups…")
 
 	// backup master cluster
 	filename := identifier + "-master.tar.gz"
-	if err := createClusterBackup(ctx, logger.WithField("master", true), now, opt.MasterClient, filename, allResourceKinds); err != nil {
+	if err := createClusterBackup(ctx, logger.WithField("master", true), now, opt.MasterClient, filename, allKubermaticKinds); err != nil {
 		return fmt.Errorf("backing up the master cluster failed: %w", err)
 	}
 
 	// backup seed clusters
 	for seedName, seedClient := range opt.SeedClients {
 		filename := fmt.Sprintf("%s-seed-%s.tar.gz", identifier, seedName)
-		if err := createClusterBackup(ctx, logger.WithField("seed", seedName), now, seedClient, filename, allResourceKinds); err != nil {
+		if err := createClusterBackup(ctx, logger.WithField("seed", seedName), now, seedClient, filename, allKubermaticKinds); err != nil {
 			return fmt.Errorf("backing up the seed cluster failed: %w", err)
 		}
 	}
