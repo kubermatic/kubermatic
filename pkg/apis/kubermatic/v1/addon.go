@@ -20,7 +20,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 const (
@@ -45,6 +44,14 @@ type Addon struct {
 	Status AddonStatus `json:"status,omitempty"`
 }
 
+// GroupVersionKind unambiguously identifies a kind.  It doesn't anonymously include GroupVersion
+// to avoid automatic coercion.  It doesn't use a GroupVersion to avoid custom marshalling
+type GroupVersionKind struct {
+	Group   string `json:"group,omitempty"`
+	Version string `json:"version,omitempty"`
+	Kind    string `json:"kind,omitempty"`
+}
+
 // AddonSpec specifies details of an addon
 type AddonSpec struct {
 	// Name defines the name of the addon to install
@@ -57,7 +64,7 @@ type AddonSpec struct {
 	// can be installed. This can be used to indicate that a specific CRD and/or extension
 	// apiserver must be installed before this addon can be installed. The addon will not
 	// be installed until that resource is served.
-	RequiredResourceTypes []schema.GroupVersionKind `json:"requiredResourceTypes,omitempty"`
+	RequiredResourceTypes []GroupVersionKind `json:"requiredResourceTypes,omitempty"`
 	// IsDefault indicates whether the addon is default
 	IsDefault bool `json:"isDefault,omitempty"`
 }

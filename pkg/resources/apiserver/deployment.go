@@ -359,7 +359,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 	// enable service account signing key and issuer in Kubernetes 1.20 or when
 	// explicitly enabled in the cluster object
 	saConfig := cluster.Spec.ServiceAccount
-	if cluster.Spec.Version.Minor() >= 20 || (saConfig != nil && saConfig.TokenVolumeProjectionEnabled) {
+	if cluster.Spec.Version.Semver().Minor() >= 20 || (saConfig != nil && saConfig.TokenVolumeProjectionEnabled) {
 		var audiences []string
 
 		issuer := cluster.Address.URL

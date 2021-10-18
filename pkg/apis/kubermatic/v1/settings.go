@@ -74,8 +74,8 @@ type CustomLink struct {
 }
 
 type CleanupOptions struct {
-	Enabled  bool
-	Enforced bool
+	Enabled  bool `json:"enabled"`
+	Enforced bool `json:"enforced"`
 }
 
 type MachineDeploymentVMResourceQuota struct {

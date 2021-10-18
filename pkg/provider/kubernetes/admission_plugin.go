@@ -73,7 +73,7 @@ func (p *AdmissionPluginsProvider) ListPluginNamesFromVersion(fromVersion string
 			continue
 		}
 		// version >= plugin.version
-		if v.Equal(plugin.Spec.FromVersion.Version) || v.GreaterThan(plugin.Spec.FromVersion.Version) {
+		if v.Equal(plugin.Spec.FromVersion.Semver()) || v.GreaterThan(plugin.Spec.FromVersion.Semver()) {
 			plugins = append(plugins, plugin.Spec.PluginName)
 		}
 	}

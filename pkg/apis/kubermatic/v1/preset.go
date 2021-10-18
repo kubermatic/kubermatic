@@ -173,6 +173,10 @@ func (s PresetSpec) Validate(providerType ProviderType) error {
 		return fmt.Errorf("missing provider configuration for: %s", providerType)
 	}
 
+	type Validateable interface {
+		IsValid() bool
+	}
+
 	validateableType := reflect.TypeOf(new(Validateable)).Elem()
 	if !providerField.Type().Implements(validateableType) {
 		return fmt.Errorf("provider %s does not implement Validateable interface", providerField.Type().Name())
@@ -203,10 +207,6 @@ func (s *PresetSpec) OverrideProvider(providerType ProviderType, spec *PresetSpe
 	dest := s.getProviderValue(providerType)
 	src := spec.getProviderValue(providerType)
 	dest.Set(src)
-}
-
-type Validateable interface {
-	IsValid() bool
 }
 
 type PresetProvider struct {
