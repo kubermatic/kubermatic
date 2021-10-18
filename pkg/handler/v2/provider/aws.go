@@ -88,3 +88,103 @@ func AWSSubnetNoCredentialsEndpoint(projectProvider provider.ProjectProvider, pr
 		return providercommon.AWSSubnetNoCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID, req.ClusterID)
 	}
 }
+
+// EKSCommonReq represent a request with common parameters for EKS.
+type EKSCommonReq struct {
+	// in: header
+	// name: AWSAccessKeyID
+	AccessKeyID string
+	// in: header
+	// name: SecretAccessKey
+	SecretAccessKey string
+	// in: header
+	// name: Credential
+	Credential string
+	// in: header
+	// name: Region
+	Region string
+}
+
+// EKSTypesReq represent a request for EKS types.
+// swagger:parameters listEKSClusters
+type EKSTypesReq struct {
+	EKSCommonReq
+}
+
+func DecodeEKSCommonReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req EKSCommonReq
+
+	req.AccessKeyID = r.Header.Get("AccessKeyID")
+	req.SecretAccessKey = r.Header.Get("SecretAccessKey")
+	req.Credential = r.Header.Get("Credential")
+	req.Region = r.Header.Get("Region")
+
+	return req, nil
+}
+
+func DecodeEKSTypesReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req EKSTypesReq
+
+	commonReq, err := DecodeEKSCommonReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.EKSCommonReq = commonReq.(EKSCommonReq)
+
+	return req, nil
+}
+
+type credentials struct {
+	accessKeyID     string
+	secretAccessKey string
+	region          string
+}
+
+func getPresetCredentials(userInfo *provider.UserInfo, presetName string, presetProvider provider.PresetProvider) (*credentials, error) {
+
+	preset, err := presetProvider.GetPreset(userInfo, presetName)
+
+	if err != nil {
+		return nil, fmt.Errorf("can not get preset %s for the user %s", presetName, userInfo.Email)
+	}
+	eks := preset.Spec.EKS
+	if eks == nil {
+		return nil, fmt.Errorf("credentials for EKS not present in preset %s for the user %s", presetName, userInfo.Email)
+	}
+	return &credentials{
+		accessKeyID:     eks.AccessKeyID,
+		secretAccessKey: eks.SecretAccessKey,
+		region:          eks.Region,
+	}, nil
+}
+
+func ListEKSClustersEndpoint(userInfoGetter provider.UserInfoGetter, presetsProvider provider.PresetProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		var accessKeyID, secretAccessKey, region string
+
+		req := request.(EKSTypesReq)
+
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		// No preset is used
+		presetName := req.Credential
+		if presetName == "" {
+			accessKeyID = req.AccessKeyID
+			secretAccessKey = req.SecretAccessKey
+			region = req.Region
+		} else {
+			// Preset is used
+			credentials, err := getPresetCredentials(userInfo, presetName, presetsProvider)
+			if err != nil {
+				return nil, fmt.Errorf("error getting preset credentials for AWS: %v", err)
+			}
+			accessKeyID = credentials.accessKeyID
+			secretAccessKey = credentials.secretAccessKey
+			region = req.Region
+		}
+		return providercommon.ListEKSClusters(ctx, accessKeyID, secretAccessKey, region)
+	}
+}

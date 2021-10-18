@@ -55,7 +55,7 @@ func OIDCAdminCredentials() (string, string, error) {
 		return "", "", fmt.Errorf("no OIDC password specified ($%s is unset)", PasswordEnvironmentVariable)
 	}
 
-	return "roxy2@loodse.com", password, nil
+	return "roxy2@kubermatic.com", password, nil
 }
 
 // these variables are runtime caches to not have to login to Dex

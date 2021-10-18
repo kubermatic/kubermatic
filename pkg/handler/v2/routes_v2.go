@@ -45,11 +45,18 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/rulegroup"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/seedsettings"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/user"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/version"
 )
 
 // RegisterV2 declares all router paths for v2
 func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
+
+	// Defines a set of HTTP endpoint for interacting with
+	// various cloud providers
+	mux.Methods(http.MethodGet).
+		Path("/providers/eks/clusters").
+		Handler(r.listEKSClusters())
 
 	// Defines a set of HTTP endpoints for cluster that belong to a project.
 	mux.Methods(http.MethodPost).
@@ -665,6 +672,11 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/clusters/{cluster_id}/mlaadminsetting").
 		Handler(r.deleteMLAAdminSetting())
+
+	// Defines a set of HTTP endpoints for managing users
+	mux.Methods(http.MethodGet).
+		Path("/users").
+		Handler(r.listUser())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -1138,7 +1150,7 @@ func (r Routing) listSSHKeysAssignedToCluster() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       201: Cluster
+//       201: ExternalCluster
 //       401: empty
 //       403: empty
 func (r Routing) createExternalCluster() http.Handler {
@@ -1187,7 +1199,7 @@ func (r Routing) deleteExternalCluster() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: ClusterList
+//       200: []ExternalCluster
 //       401: empty
 //       403: empty
 func (r Routing) listExternalClusters() http.Handler {
@@ -1212,7 +1224,7 @@ func (r Routing) listExternalClusters() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: Cluster
+//       200: ExternalCluster
 //       401: empty
 //       403: empty
 func (r Routing) getExternalCluster() http.Handler {
@@ -1237,7 +1249,7 @@ func (r Routing) getExternalCluster() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: Cluster
+//       200: ExternalCluster
 //       401: empty
 //       403: empty
 func (r Routing) updateExternalCluster() http.Handler {
@@ -1262,7 +1274,7 @@ func (r Routing) updateExternalCluster() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: []Node
+//       200: []ExternalClusterNode
 //       401: empty
 //       403: empty
 func (r Routing) listExternalClusterNodes() http.Handler {
@@ -1287,7 +1299,7 @@ func (r Routing) listExternalClusterNodes() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: Node
+//       200: ExternalClusterNode
 //       401: empty
 //       403: empty
 func (r Routing) getExternalClusterNode() http.Handler {
@@ -4595,6 +4607,52 @@ func (r Routing) deleteMLAAdminSetting() http.Handler {
 			middleware.PrivilegedMLAAdminSetting(r.clusterProviderGetter, r.privilegedMLAAdminSettingProviderGetter, r.seedsGetter),
 		)(mlaadminsetting.DeleteEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
 		mlaadminsetting.DecodeDeleteReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/users user listUser
+//
+//     List users
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []User
+//       401: empty
+//       403: empty
+func (r Routing) listUser() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(user.ListEndpoint(r.userInfoGetter, r.userProvider)),
+		common.DecodeEmptyReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/eks/clusters eks listEKSClusters
+//
+// Lists EKS clusters
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: EKSClusterList
+func (r Routing) listEKSClusters() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.ListEKSClustersEndpoint(r.userInfoGetter, r.presetsProvider)),
+		provider.DecodeEKSTypesReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

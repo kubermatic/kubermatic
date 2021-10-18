@@ -100,6 +100,7 @@ type PresetSpec struct {
 	Azure        *Azure        `json:"azure,omitempty"`
 	VSphere      *VSphere      `json:"vsphere,omitempty"`
 	AWS          *AWS          `json:"aws,omitempty"`
+	EKS          *EKS          `json:"eks,omitempty"`
 	Openstack    *Openstack    `json:"openstack,omitempty"`
 	Packet       *Packet       `json:"packet,omitempty"`
 	GCP          *GCP          `json:"gcp,omitempty"`
@@ -303,6 +304,15 @@ type AWS struct {
 	InstanceProfileName string `json:"instanceProfileName,omitempty"`
 	SecurityGroupID     string `json:"securityGroupID,omitempty"`
 	ControlPlaneRoleARN string `json:"roleARN,omitempty"`
+}
+
+type EKS struct {
+	PresetProvider `json:",inline"`
+
+	AccessKeyID     string `json:"accessKeyId"`
+	SecretAccessKey string `json:"secretAccessKey"`
+
+	Region string `json:"region,omitempty"`
 }
 
 func (s AWS) IsValid() bool {

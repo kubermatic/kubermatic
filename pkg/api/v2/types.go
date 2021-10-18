@@ -337,3 +337,26 @@ type MLAAdminSetting struct {
 	// LoggingRateLimits contains rate-limiting configuration logging in the user cluster.
 	LoggingRateLimits *crdapiv1.LoggingRateLimitSettings `json:"loggingRateLimits,omitempty"`
 }
+
+// EKSCluster represents a object of EKS cluster.
+// swagger:model EKSCluster
+type EKSCluster struct {
+	Name       string `json:"name"`
+	IsImported bool   `json:"imported"`
+}
+
+// EKSClusterList represents an array of EKS clusters.
+// swagger:model EKSClusterList
+type EKSClusterList []EKSCluster
+
+// ExternalCluster represents an object holding cluster details
+// swagger:model ExternalCluster
+type ExternalCluster struct {
+	apiv1.Cluster `json:",inline"`
+}
+
+// ExternalClusterNode represents an object holding external cluster node
+// swagger:model ExternalClusterNode
+type ExternalClusterNode struct {
+	apiv1.Node `json:",inline"`
+}

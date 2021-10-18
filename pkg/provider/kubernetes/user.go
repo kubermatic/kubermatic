@@ -219,7 +219,15 @@ func (p *UserProvider) GetUserBlacklistTokens(user *kubermaticv1.User) ([]string
 	}
 
 	return result, nil
+}
 
+func (p *UserProvider) List() ([]kubermaticv1.User, error) {
+	users, err := p.client.KubermaticV1().Users().List(context.Background(), v1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return users.Items, nil
 }
 
 func ensureTokenBlacklistSecret(ctx context.Context, client ctrlruntimeclient.Client, user *kubermaticv1.User) (*corev1.Secret, error) {

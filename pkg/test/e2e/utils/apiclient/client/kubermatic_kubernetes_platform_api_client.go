@@ -25,6 +25,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/credentials"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/datacenter"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/digitalocean"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/eks"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/etcdbackupconfig"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/etcdrestore"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/gcp"
@@ -42,6 +43,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/serviceaccounts"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/settings"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/tokens"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/user"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/users"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/version"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/versions"
@@ -105,6 +107,7 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Kubermatic
 	cli.Credentials = credentials.New(transport, formats)
 	cli.Datacenter = datacenter.New(transport, formats)
 	cli.Digitalocean = digitalocean.New(transport, formats)
+	cli.Eks = eks.New(transport, formats)
 	cli.Etcdbackupconfig = etcdbackupconfig.New(transport, formats)
 	cli.Etcdrestore = etcdrestore.New(transport, formats)
 	cli.Gcp = gcp.New(transport, formats)
@@ -122,6 +125,7 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Kubermatic
 	cli.Serviceaccounts = serviceaccounts.New(transport, formats)
 	cli.Settings = settings.New(transport, formats)
 	cli.Tokens = tokens.New(transport, formats)
+	cli.User = user.New(transport, formats)
 	cli.Users = users.New(transport, formats)
 	cli.Version = version.New(transport, formats)
 	cli.Versions = versions.New(transport, formats)
@@ -200,6 +204,8 @@ type KubermaticKubernetesPlatformAPI struct {
 
 	Digitalocean digitalocean.ClientService
 
+	Eks eks.ClientService
+
 	Etcdbackupconfig etcdbackupconfig.ClientService
 
 	Etcdrestore etcdrestore.ClientService
@@ -234,6 +240,8 @@ type KubermaticKubernetesPlatformAPI struct {
 
 	Tokens tokens.ClientService
 
+	User user.ClientService
+
 	Users users.ClientService
 
 	Version version.ClientService
@@ -263,6 +271,7 @@ func (c *KubermaticKubernetesPlatformAPI) SetTransport(transport runtime.ClientT
 	c.Credentials.SetTransport(transport)
 	c.Datacenter.SetTransport(transport)
 	c.Digitalocean.SetTransport(transport)
+	c.Eks.SetTransport(transport)
 	c.Etcdbackupconfig.SetTransport(transport)
 	c.Etcdrestore.SetTransport(transport)
 	c.Gcp.SetTransport(transport)
@@ -280,6 +289,7 @@ func (c *KubermaticKubernetesPlatformAPI) SetTransport(transport runtime.ClientT
 	c.Serviceaccounts.SetTransport(transport)
 	c.Settings.SetTransport(transport)
 	c.Tokens.SetTransport(transport)
+	c.User.SetTransport(transport)
 	c.Users.SetTransport(transport)
 	c.Version.SetTransport(transport)
 	c.Versions.SetTransport(transport)

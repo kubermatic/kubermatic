@@ -22,9 +22,14 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
+	"github.com/aws/aws-sdk-go/service/eks"
+	"github.com/aws/aws-sdk-go/service/eks/eksiface"
 	"github.com/aws/aws-sdk-go/service/iam"
+	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -54,6 +59,11 @@ const (
 type AmazonEC2 struct {
 	dc                *kubermaticv1.DatacenterSpecAWS
 	secretKeySelector provider.SecretKeySelectorValueFunc
+}
+
+type EKSClientSet struct {
+	EKS eksiface.EKSAPI
+	IAM iamiface.IAMAPI
 }
 
 func (a *AmazonEC2) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
@@ -765,4 +775,22 @@ func GetSecurityGroups(accessKeyID, secretAccessKey, region string) ([]*ec2.Secu
 	}
 
 	return sgOut.SecurityGroups, nil
+}
+
+// ConnectToEKSService establishes a service connection to the Container Engine.
+func ConnectToEKSService(accessKeyID, secretAccessKey, region string) (*EKSClientSet, error) {
+	config := aws.NewConfig()
+	config = config.WithRegion(region)
+
+	config = config.WithCredentials(credentials.NewStaticCredentials(accessKeyID, secretAccessKey, ""))
+	config = config.WithMaxRetries(3)
+
+	sess, err := session.NewSession(config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create API session: %v", err)
+	}
+
+	return &EKSClientSet{
+		EKS: eks.New(sess),
+	}, nil
 }

@@ -19,6 +19,7 @@ package externalcluster
 import (
 	"context"
 	"fmt"
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	"net/http"
 	"strings"
 
@@ -52,7 +53,7 @@ func ListNodesEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider p
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		var nodesV1 []*apiv1.Node
+		var nodesV1 []*apiv2.ExternalClusterNode
 
 		nodes, err := clusterProvider.ListNodes(cluster)
 		if err != nil {
@@ -237,7 +238,7 @@ func (req getNodeReq) Validate() error {
 	return nil
 }
 
-func outputNode(node corev1.Node) (*apiv1.Node, error) {
+func outputNode(node corev1.Node) (*apiv2.ExternalClusterNode, error) {
 	displayName := node.Name
 	nodeStatus := apiv1.NodeStatus{}
 	nodeStatus = apiNodeStatus(nodeStatus, node)
@@ -245,19 +246,21 @@ func outputNode(node corev1.Node) (*apiv1.Node, error) {
 	nodeStatus.ErrorReason = strings.TrimSuffix(nodeStatus.ErrorReason, errGlue)
 	nodeStatus.ErrorMessage = strings.TrimSuffix(nodeStatus.ErrorMessage, errGlue)
 
-	return &apiv1.Node{
-		ObjectMeta: apiv1.ObjectMeta{
-			ID:                node.Name,
-			Name:              displayName,
-			CreationTimestamp: apiv1.NewTime(node.CreationTimestamp.Time),
-		},
-		Spec: apiv1.NodeSpec{
-			Versions: apiv1.NodeVersionInfo{
-				Kubelet: node.Status.NodeInfo.KubeletVersion,
+	return &apiv2.ExternalClusterNode{
+		Node: apiv1.Node{
+			ObjectMeta: apiv1.ObjectMeta{
+				ID:                node.Name,
+				Name:              displayName,
+				CreationTimestamp: apiv1.NewTime(node.CreationTimestamp.Time),
 			},
-			Labels: node.Labels,
+			Spec: apiv1.NodeSpec{
+				Versions: apiv1.NodeVersionInfo{
+					Kubelet: node.Status.NodeInfo.KubeletVersion,
+				},
+				Labels: node.Labels,
+			},
+			Status: nodeStatus,
 		},
-		Status: nodeStatus,
 	}, nil
 }
 

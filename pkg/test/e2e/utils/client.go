@@ -84,7 +84,7 @@ func NewTestClient(token string, t *testing.T) *TestClient {
 }
 
 // CreateProject creates a new project and waits for it to become active (ready).
-func (r *TestClient) CreateProject(name string) (*apiv1.Project, error) {
+func (r *TestClient) CreateProject(name string, ignoredStatusCodes ...int) (*apiv1.Project, error) {
 	before := time.Now()
 	timeout := 30 * time.Second
 
@@ -93,7 +93,7 @@ func (r *TestClient) CreateProject(name string) (*apiv1.Project, error) {
 		Duration: 1 * time.Second,
 		Steps:    4,
 		Factor:   1.5,
-	})
+	}, ignoredStatusCodes...)
 
 	r.test.Logf("Creating project %s...", name)
 
@@ -492,6 +492,78 @@ func (r *TestClient) CreateAWSCluster(projectID, dc, name, secretAccessKey, acce
 	return convertCluster(clusterResponse.Payload)
 }
 
+// CreateKubevirtCluster creates cluster for Kubevirt provider
+func (r *TestClient) CreateKubevirtCluster(projectID, dc, name, credential, version, location string, replicas int32) (*apiv1.Cluster, error) {
+	vr, err := semver.NewVersion(version)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse version %s: %v", version, err)
+	}
+
+	clusterSpec := &models.CreateClusterSpec{}
+	clusterSpec.Cluster = &models.Cluster{
+		Type:       "kubernetes",
+		Name:       name,
+		Credential: credential,
+		Spec: &models.ClusterSpec{
+			Cloud: &models.CloudSpec{
+				DatacenterName: location,
+				Kubevirt:       &models.KubevirtCloudSpec{},
+			},
+			Version: vr,
+		},
+	}
+
+	if replicas > 0 {
+		cpu := "1"
+		memory := "2Gi"
+		namespace := "default"
+		pvcSize := "20Gi"
+		sourceURL := "http://vm-repo.default.svc.cluster.local/CentOS-7-x86_64-GenericCloud.qcow2"
+		storageClassName := "standard"
+
+		clusterSpec.NodeDeployment = &models.NodeDeployment{
+			Spec: &models.NodeDeploymentSpec{
+				Replicas: &replicas,
+				Template: &models.NodeSpec{
+					Cloud: &models.NodeCloudSpec{
+						Kubevirt: &models.KubevirtNodeSpec{
+							CPUs:             &cpu,
+							Memory:           &memory,
+							Namespace:        &namespace,
+							PVCSize:          &pvcSize,
+							SourceURL:        &sourceURL,
+							StorageClassName: &storageClassName,
+						},
+					},
+					OperatingSystem: &models.OperatingSystemSpec{
+						Centos: &models.CentOSSpec{
+							DistUpgradeOnBoot: false,
+						},
+					},
+				},
+			},
+		}
+	}
+
+	params := &project.CreateClusterParams{ProjectID: projectID, DC: dc, Body: clusterSpec}
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
+
+	r.test.Logf("Creating Kubevirt cluster %q (%s, %d nodes)...", name, version, replicas)
+
+	clusterResponse, err := r.client.Project.CreateCluster(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	r.test.Log("Cluster created successfully.")
+
+	return convertCluster(clusterResponse.Payload)
+}
+
 // CreateDOCluster creates cluster for DigitalOcean provider
 func (r *TestClient) CreateDOCluster(projectID, dc, name, credential, version, location string, replicas int32) (*apiv1.Cluster, error) {
 	vr, err := semver.NewVersion(version)
@@ -726,7 +798,7 @@ func (r *TestClient) WaitForClusterNodeDeploymentsToExist(projectID, dc, cluster
 }
 
 func (r *TestClient) WaitForClusterNodeDeploymentsToByReady(projectID, dc, clusterID string, replicas int32) error {
-	timeout := 10 * time.Minute
+	timeout := 15 * time.Minute
 	before := time.Now()
 
 	r.test.Logf("Waiting %v for NodeDeployment in cluster %s to become ready...", timeout, clusterID)
@@ -1438,7 +1510,11 @@ func (r *TestClient) ListDC() ([]*models.Datacenter, error) {
 
 func (r *TestClient) Logout() error {
 	params := &users.LogoutCurrentUserParams{}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
 
 	_, err := r.client.Users.LogoutCurrentUser(params, r.bearerToken)
 	return err
