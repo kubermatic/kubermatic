@@ -45,7 +45,7 @@ func DuplicateResources(ctx context.Context, logger logrus.FieldLogger, opt *Opt
 }
 
 func cloneResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client, isSeed bool) error {
-	// in general, the order in which resources are migrated is important, as they are interlinked via owner referenes
+	// in general, the order in which resources are migrated is important, as they are interlinked via owner references
 
 	if err := cloneClusterResourcesInCluster(ctx, logger, client); err != nil {
 		return fmt.Errorf("failed to clone Clusters: %w", err)
@@ -1085,7 +1085,7 @@ func cloneUserResourcesInCluster(ctx context.Context, logger logrus.FieldLogger,
 				Name:                   oldObject.Spec.Name,
 				Email:                  oldObject.Spec.Email,
 				IsAdmin:                oldObject.Spec.IsAdmin,
-				InvalidTokensReference: oldObject.Spec.TokenBlackListReference, // TODO: rename this to "forbiddenTokensReference" maybe?
+				InvalidTokensReference: oldObject.Spec.TokenBlackListReference,
 			},
 		}
 
