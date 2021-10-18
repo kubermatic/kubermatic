@@ -169,7 +169,7 @@ func migrateOwnerReferences(ownerRefs []metav1.OwnerReference) []metav1.OwnerRef
 		result = append(result, *newRef)
 	}
 
-	return ownerRefs
+	return result
 }
 
 func cloneClusterResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) error {

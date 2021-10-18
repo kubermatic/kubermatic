@@ -272,11 +272,9 @@ func validateNoStuckResources(ctx context.Context, logger logrus.FieldLogger, op
 				if err := seedClient.Get(ctx, key, &ns); err != nil {
 					nsLogger.Warnf("Failed to get namespaces: %v", err)
 					success = false
-				} else {
-					if ns.DeletionTimestamp != nil {
-						nsLogger.Warn("Namespace is in deletion.")
-						success = false
-					}
+				} else if ns.DeletionTimestamp != nil {
+					nsLogger.Warn("Namespace is in deletion.")
+					success = false
 				}
 			}
 		}

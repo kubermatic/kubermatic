@@ -77,5 +77,5 @@ func canAccessDatacenter(dc kubermaticv1.Datacenter, emailAddress string) bool {
 
 	matches, _ := email.MatchesRequirements(emailAddress, requirements)
 
-	return matches == true
+	return matches
 }
