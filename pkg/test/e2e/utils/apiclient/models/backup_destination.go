@@ -12,10 +12,10 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// SeedBackupRestoreConfiguration SeedBackupRestoreConfiguration are s3 settings used for backups and restores of user cluster etcds.
+// BackupDestination BackupDestination defines the bucket name and endpoint as a backup destination.
 //
-// swagger:model SeedBackupRestoreConfiguration
-type SeedBackupRestoreConfiguration struct {
+// swagger:model BackupDestination
+type BackupDestination struct {
 
 	// S3BucketName is the S3 bucket name to use for backup and restore.
 	S3BucketName string `json:"s3BucketName,omitempty"`
@@ -24,18 +24,18 @@ type SeedBackupRestoreConfiguration struct {
 	S3Endpoint string `json:"s3Endpoint,omitempty"`
 }
 
-// Validate validates this seed backup restore configuration
-func (m *SeedBackupRestoreConfiguration) Validate(formats strfmt.Registry) error {
+// Validate validates this backup destination
+func (m *BackupDestination) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-// ContextValidate validates this seed backup restore configuration based on context it is used
-func (m *SeedBackupRestoreConfiguration) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validates this backup destination based on context it is used
+func (m *BackupDestination) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 
 // MarshalBinary interface implementation
-func (m *SeedBackupRestoreConfiguration) MarshalBinary() ([]byte, error) {
+func (m *BackupDestination) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -43,8 +43,8 @@ func (m *SeedBackupRestoreConfiguration) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *SeedBackupRestoreConfiguration) UnmarshalBinary(b []byte) error {
-	var res SeedBackupRestoreConfiguration
+func (m *BackupDestination) UnmarshalBinary(b []byte) error {
+	var res BackupDestination
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

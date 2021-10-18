@@ -37,7 +37,7 @@ type SeedSpec struct {
 	SeedDatacenters map[string]Datacenter `json:"datacenters,omitempty"`
 
 	// backup restore
-	BackupRestore *SeedBackupRestoreConfiguration `json:"backupRestore,omitempty"`
+	BackupRestore *BackupDestination `json:"backupRestore,omitempty"`
 
 	// expose strategy
 	ExposeStrategy ExposeStrategy `json:"expose_strategy,omitempty"`
