@@ -1,4 +1,4 @@
-//go:build create
+//go:build kubevirt
 
 /*
 Copyright 2020 The Kubermatic Kubernetes Platform contributors.
@@ -28,14 +28,14 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 )
 
-func TestCreateUpdateDOCluster(t *testing.T) {
+func TestKubevirtCluster(t *testing.T) {
 	tests := []createCluster{
 		{
-			name:       "create cluster on DigitalOcean",
+			name:       "create cluster on Kubevirt",
 			dc:         "kubermatic",
-			location:   "do-fra1",
+			location:   "kubevirt-europe-west3-c",
 			version:    utils.KubernetesVersion(),
-			credential: "e2e-digitalocean",
+			credential: "e2e-kubevirt",
 			replicas:   1,
 			patch: utils.PatchCluster{
 				Name:   "newName",
@@ -64,14 +64,14 @@ func TestCreateUpdateDOCluster(t *testing.T) {
 			}
 
 			testClient := utils.NewTestClient(masterToken, t)
-			project, cluster := createProjectWithCluster(t, testClient, tc.dc, tc.credential, tc.version, tc.location, tc.replicas)
+			project, cluster := createKubevirtProjectWithCluster(t, testClient, tc.dc, tc.credential, tc.version, tc.location, tc.replicas)
 			defer cleanupProject(t, project.ID)
 			testCluster(ctx, project, cluster, testClient, tc, t)
 		})
 	}
 }
 
-func TestDeleteClusterBeforeIsUp(t *testing.T) {
+func TestDeleteKubevirtClusterBeforeIsUp(t *testing.T) {
 	tests := []struct {
 		name       string
 		dc         string
@@ -83,9 +83,9 @@ func TestDeleteClusterBeforeIsUp(t *testing.T) {
 		{
 			name:       "delete cluster before is up",
 			dc:         "kubermatic",
-			location:   "do-fra1",
+			location:   "kubevirt-europe-west3-c",
 			version:    utils.KubernetesVersion(),
-			credential: "e2e-digitalocean",
+			credential: "e2e-kubevirt",
 			replicas:   0,
 		},
 	}
@@ -106,9 +106,9 @@ func TestDeleteClusterBeforeIsUp(t *testing.T) {
 			}
 			defer cleanupProject(t, project.ID)
 
-			cluster, err := testClient.CreateDOCluster(project.ID, tc.dc, rand.String(10), tc.credential, tc.version, tc.location, tc.replicas)
+			cluster, err := testClient.CreateKubevirtCluster(project.ID, tc.dc, rand.String(10), tc.credential, tc.version, tc.location, tc.replicas)
 			if err != nil {
-				t.Fatalf("failed to create cluster: %v", err)
+				t.Fatalf("failed to create cluster: %v", getErrorResponse(err))
 			}
 
 			healthStatus, err := testClient.GetClusterHealthStatus(project.ID, tc.dc, cluster.ID)
@@ -124,15 +124,15 @@ func TestDeleteClusterBeforeIsUp(t *testing.T) {
 	}
 }
 
-func createProjectWithCluster(t *testing.T, testClient *utils.TestClient, dc, credential, version, location string, replicas int32) (*v1.Project, *v1.Cluster) {
+func createKubevirtProjectWithCluster(t *testing.T, testClient *utils.TestClient, dc, credential, version, location string, replicas int32) (*v1.Project, *v1.Cluster) {
 	project, err := testClient.CreateProject(rand.String(10))
 	if err != nil {
 		t.Fatalf("failed to create project %v", err)
 	}
 
-	cluster, err := testClient.CreateDOCluster(project.ID, dc, rand.String(10), credential, version, location, replicas)
+	cluster, err := testClient.CreateKubevirtCluster(project.ID, dc, rand.String(10), credential, version, location, replicas)
 	if err != nil {
-		t.Fatalf("failed to create cluster: %v", err)
+		t.Fatalf("failed to create cluster: %v", getErrorResponse(err))
 	}
 
 	if err := testClient.WaitForClusterHealthy(project.ID, dc, cluster.ID); err != nil {
