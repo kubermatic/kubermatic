@@ -30,6 +30,20 @@ karma:
       # prevent alerts from showing up multiple times
       - '@critical-alerts'
 
+    # If Prometheus is setup behind an authenticated proxy
+    # (like Keycloak-Gatekeeper or OAuth2-Proxy), Karma will
+    # not be able to reach Prometheus.
+    # For theses cases you can configure a rewrite rule to
+    # change the Prometheus address for example from "prometheus.example.com"
+    # to "prometheus.monitoring.svc.cluster.cluster" to use
+    # in-cluster access to Prometheus.
+    # See https://github.com/prymitive/karma/blob/main/docs/CONFIGURATION.md#alert-history
+    # for more information
+    # history:
+    #   rewrite:
+    #     - source: 'https://(.+).example.com'
+    #       uri: 'http://$1.monitoring.svc.cluster.local'
+
     alertmanager:
       interval: 60s
       servers:
