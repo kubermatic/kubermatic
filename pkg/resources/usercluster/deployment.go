@@ -211,7 +211,7 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    name,
-					Image:   "quay.io/kubermatic/kubermatic-ee:bce8de4099ce99487afeb8c46eb39308f16e0725",
+					Image:   data.KubermaticAPIImage() + ":" + data.KubermaticDockerTag(),
 					Command: []string{"/usr/local/bin/user-cluster-controller-manager"},
 					Args:    args,
 					Env: []corev1.EnvVar{

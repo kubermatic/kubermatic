@@ -171,7 +171,7 @@ func Add(
 		dockerPullConfigJSON:                             dockerPullConfigJSON,
 		kubermaticImage:                                  kubermaticImage,
 		etcdLauncherImage:                                etcdLauncherImage,
-		dnatControllerImage:                              "quay.io/kubermatic/kubeletdnat-controller:bce8de4099ce99487afeb8c46eb39308f16e0725",
+		dnatControllerImage:                              dnatControllerImage,
 		machineControllerImageTag:                        machineControllerImageTag,
 		machineControllerImageRepository:                 machineControllerImageRepository,
 		concurrentClusterUpdates:                         concurrentClusterUpdates,

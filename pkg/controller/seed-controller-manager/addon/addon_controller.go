@@ -243,15 +243,15 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 		return reqeueAfter, nil
 	}
 
-	//if addon.DeletionTimestamp != nil {
-	//	if err := r.cleanupManifests(ctx, log, addon, cluster); err != nil {
-	//		return nil, fmt.Errorf("failed to delete manifests from cluster: %v", err)
-	//	}
-	//	if err := r.removeCleanupFinalizer(ctx, log, addon); err != nil {
-	//		return nil, fmt.Errorf("failed to ensure that the cleanup finalizer got removed from the addon: %v", err)
-	//	}
-	//	return nil, nil
-	//}
+	if addon.DeletionTimestamp != nil {
+		if err := r.cleanupManifests(ctx, log, addon, cluster); err != nil {
+			return nil, fmt.Errorf("failed to delete manifests from cluster: %v", err)
+		}
+		if err := r.removeCleanupFinalizer(ctx, log, addon); err != nil {
+			return nil, fmt.Errorf("failed to ensure that the cleanup finalizer got removed from the addon: %v", err)
+		}
+		return nil, nil
+	}
 	// This is true when the addon: 1) is fully deployed, 2) doesn't have a `addonEnsureLabelKey` set to true.
 	// we do this to allow users to "edit/delete" resources deployed by unlabeled addons,
 	// while we enfornce the labeled ones
@@ -516,9 +516,7 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 			return err
 		}
 
-		//ioutil.WriteFile("/Users/moathqasim/go/src/github.com/moadqassem/kubermatic/starboard.yaml", rawFile, 0644)
-
-		manifestFilename = "/Users/moathqasim/go/src/github.com/moadqassem/kubermatic/starboard.yaml"
+		manifestFilename = addon.Spec.RawAddonReference
 	} else {
 		_, manifestFilename, done, err = r.setupManifestInteraction(ctx, log, addon, cluster)
 		if err != nil {
