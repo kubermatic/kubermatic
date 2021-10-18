@@ -21,8 +21,11 @@ import (
 	"fmt"
 
 	"github.com/sirupsen/logrus"
+
 	newv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -172,6 +175,17 @@ func migrateOwnerReferences(ownerRefs []metav1.OwnerReference) []metav1.OwnerRef
 	return result
 }
 
+func migrateObjectReference(objectRef corev1.ObjectReference) corev1.ObjectReference {
+	newRef := *objectRef.DeepCopy()
+
+	if newRef.APIVersion == "kubermatic.k8s.io/v1" {
+		newRef.APIVersion = "kubermatic.k8c.io/v1"
+		newRef.UID = ""
+	}
+
+	return newRef
+}
+
 func cloneClusterResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) error {
 	logger.Debug("Cloning Cluster objects…")
 
@@ -227,7 +241,7 @@ func cloneAddonResourcesInCluster(ctx context.Context, logger logrus.FieldLogger
 			ObjectMeta: cloneObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.AddonSpec{
 				Name:                  oldObject.Spec.Name,
-				Cluster:               oldObject.Spec.Cluster,
+				Cluster:               migrateObjectReference(oldObject.Spec.Cluster),
 				IsDefault:             oldObject.Spec.IsDefault,
 				RequiredResourceTypes: oldObject.Spec.RequiredResourceTypes,
 				Variables:             oldObject.Spec.Variables,
@@ -445,7 +459,7 @@ func cloneEtcdBackupConfigResourcesInCluster(ctx context.Context, logger logrus.
 				Name:     oldObject.Spec.Name,
 				Schedule: oldObject.Spec.Schedule,
 				Keep:     oldObject.Spec.Keep,
-				Cluster:  *oldObject.Spec.Cluster.DeepCopy(),
+				Cluster:  migrateObjectReference(oldObject.Spec.Cluster),
 			},
 		}
 
@@ -472,7 +486,7 @@ func cloneEtcdRestoreResourcesInCluster(ctx context.Context, logger logrus.Field
 				Name:                            oldObject.Spec.Name,
 				BackupDownloadCredentialsSecret: oldObject.Spec.BackupDownloadCredentialsSecret,
 				BackupName:                      oldObject.Spec.BackupName,
-				Cluster:                         *oldObject.Spec.Cluster.DeepCopy(),
+				Cluster:                         migrateObjectReference(oldObject.Spec.Cluster),
 			},
 		}
 
@@ -794,7 +808,7 @@ func cloneRuleGroupResourcesInCluster(ctx context.Context, logger logrus.FieldLo
 			Spec: newv1.RuleGroupSpec{
 				RuleGroupType: newv1.RuleGroupType(oldObject.Spec.RuleGroupType),
 				Data:          oldObject.Spec.Data,
-				Cluster:       *oldObject.Spec.Cluster.DeepCopy(),
+				Cluster:       migrateObjectReference(oldObject.Spec.Cluster),
 			},
 		}
 
@@ -820,7 +834,7 @@ func cloneSeedResourcesInCluster(ctx context.Context, logger logrus.FieldLogger,
 			Spec: newv1.SeedSpec{
 				Country:          oldObject.Spec.Country,
 				Location:         oldObject.Spec.Location,
-				Kubeconfig:       oldObject.Spec.Kubeconfig,
+				Kubeconfig:       migrateObjectReference(oldObject.Spec.Kubeconfig),
 				Datacenters:      map[string]newv1.Datacenter{},
 				SeedDNSOverwrite: oldObject.Spec.SeedDNSOverwrite,
 				NodeportProxy: newv1.NodeportProxyConfig{
