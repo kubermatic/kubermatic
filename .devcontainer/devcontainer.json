@@ -1,10 +1,11 @@
 // For format details, see https://aka.ms/vscode-remote/devcontainer.json or this file's README at:
 // https://github.com/microsoft/vscode-dev-containers/tree/v0.137.0/containers/go
 {
-	"name": "Go",
+	"name": "kubermatic-devcontainer",
 	"build": {
 		"dockerfile": "Dockerfile",
 	},
+	// This is required for delve to work
 	"runArgs": [
 		"--cap-add=SYS_PTRACE",
 		"--security-opt",
@@ -12,37 +13,16 @@
 	],
 	// Set *default* container specific settings.json values on container create.
 	"settings": {
-		"go.toolsManagement.autoUpdate": false,
+		"go.toolsManagement.autoUpdate": true,
 		"go.toolsManagement.checkForUpdates": "off",
 		"go.gopath": "/go",
 		"go.lintOnSave": "package",
+		"go.lintTool": "golangci-lint",
 		"go.vetOnSave": "package",
 		"go.formatTool": "goimports",
 		"go.useLanguageServer": true,
-		"go.autocompleteUnimportedPackages": true,
 		"go.gotoSymbol.includeImports": true,
 		"go.gotoSymbol.includeGoroot": true,
-		"go.editorContextMenuCommands": {
-			"toggleTestFile": true,
-			"addTags": true,
-			"removeTags": false,
-			"fillStruct": true,
-			"testAtCursor": true,
-			"testFile": false,
-			"testPackage": false,
-			"generateTestForFunction": true,
-			"generateTestForFile": false,
-			"generateTestForPackage": false,
-			"addImport": true,
-			"testCoverage": true,
-			"playground": true,
-			"debugTestAtCursor": true,
-			"benchmarkAtCursor": false
-		},
-		"go.enableCodeLens": {
-			"references": true,
-			"runtest": true
-		},
 		"codeQL.telemetry.enableTelemetry": false,
 		"codeQL.runningQueries.memory": 2048,
 		"codeQL.runningQueries.debug": true,
@@ -74,7 +54,6 @@
 		"eamodio.gitlens",
 		// Utilities
 		"bierner.emojisense",
-		"redhat.vscode-yaml",
 		"IBM.output-colorizer",
 		"lyyyuna.prow-sink",
 		"ms-kubernetes-tools.vscode-kubernetes-tools"
