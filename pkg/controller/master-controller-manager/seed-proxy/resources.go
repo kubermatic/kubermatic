@@ -378,7 +378,7 @@ echo "Starting kubectl proxy for $KUBERNETES_CONTEXT on port $PROXY_PORT..."
 kubectl proxy \
   --address=0.0.0.0 \
   --port=$PROXY_PORT \
-  --accept-hosts=''
+  --accept-hosts='^.*'
 `
 
 const grafanaDatasource = `
