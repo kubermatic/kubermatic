@@ -112,7 +112,7 @@ time retry 5 kind load docker-image "${DOCKER_REPO}/user-ssh-keys-agent:${TAG}" 
 export SEED_NAME=kubermatic
 
 # Tell the conformance tester what dummy account we configure for the e2e tests.
-export KUBERMATIC_OIDC_LOGIN="roxy@loodse.com"
+export KUBERMATIC_OIDC_LOGIN="roxy@kubermatic.com"
 export KUBERMATIC_OIDC_PASSWORD="password"
 
 # Build binaries and load the Docker images into the kind cluster
