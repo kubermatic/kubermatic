@@ -10,6 +10,7 @@ This describes how to run e2e tests in local environment.
 
 ### dnsmasq
 Install and configure `dnsmasq` to set up local domain for the KKP installation.
+You can use dnsmasq and systemd-resolved in parallel. The following link shows how to do it: [link](https://gist.github.com/frank-dspeed/6b6f1f720dd5e1c57eec8f1fdb2276df#full-dnsmasq-support-under-systemd-resolved)
 The installation script `run-kubermatic-kind.sh` uses `KUBERMATIC_DOMAIN` for this. The default value is: `kubermatic.local`.
 The same domain should be set in `/etc/dnsmasq.conf` file. The example looks like this:
 ```
@@ -18,7 +19,7 @@ no-resolv
 domain-needed
 server=8.8.8.8
 bogus-priv
-listen-address=127.0.0.1
+listen-address=127.0.0.2
 expand-hosts
 domain=kubermatic.local
 cache-size=1000
@@ -28,8 +29,8 @@ address=/kubermatic.local/172.18.255.200
 Make sure when you install and configure the `dnsmasq` the `kubermatic.local` is reachable.
 ```
 $ nslookup kubermatic.local
-Server:		127.0.0.1
-Address:	127.0.0.1#53
+Server:		127.0.0.2
+Address:	127.0.0.2#53
 
 Name:	kubermatic.local
 Address: 172.18.255.200

@@ -112,10 +112,8 @@ spec:
       country: DE
       spec:
         kubevirt:
-          dns_policy: "None"
           dns_config:
             nameservers:
-            - 10.96.0.10
             - 8.8.8.8
     syseleven-dbl1:
       country: DE
