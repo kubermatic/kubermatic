@@ -1,5 +1,6 @@
 !handler/fixtures/*
 **/_build
+.kube/
 *.iml*
 *.private.env.json
 .DS_Store
