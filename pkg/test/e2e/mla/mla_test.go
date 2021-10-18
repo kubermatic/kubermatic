@@ -112,17 +112,6 @@ func TestMLAIntegration(t *testing.T) {
 		t.Fatalf("failed to set MLA integration to true: %v", err)
 	}
 
-	// if err := v1alpha1.AddToScheme(scheme.Scheme); err != nil {
-	// t.Fatalf("failed to register operator scheme: %v", err)
-	// }
-
-	// kconf := &v1alpha1.KubermaticConfiguration{}
-	// if err := seedClient.Get(ctx, types.NamespacedName{Name: "e2e", Namespace: "kubermatic"}, kconf); err != nil {
-	// t.Fatalf("failed to get kconf: %v", err)
-	// }
-	//
-	// kconf.Spec.FeatureGates.Insert(features.UserClusterMLA)
-
 	t.Log("waiting for project to get grafana org annotation")
 	p := &kubermaticv1.Project{}
 	timeout := 300 * time.Second
@@ -186,13 +175,11 @@ func TestMLAIntegration(t *testing.T) {
 	}
 
 	grafanaClient.SetOrgIDHeader(org.ID)
-	for i := 0; i < 300; i++ {
+	if !utils.WaitFor(1*time.Second, timeout, func() bool {
 		_, err := grafanaClient.GetDatasourceByUID(ctx, fmt.Sprintf("%s-%s", "prometheus", cluster.Name))
-		if err != nil {
-			time.Sleep(time.Second)
-			continue
-		}
-		break
+		return err == nil
+	}) {
+		t.Fatalf("waiting for grafana datasource %s-%s", "prometheus", cluster.Name)
 	}
 
 	// Disable MLA Integration
