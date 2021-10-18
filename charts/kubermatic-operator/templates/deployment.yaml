@@ -21,6 +21,8 @@ metadata:
     app.kubernetes.io/version: '{{ .Values.kubermaticOperator.image.tag | default .Chart.AppVersion }}'
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: kubermatic-operator
