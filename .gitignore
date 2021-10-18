@@ -20,3 +20,4 @@ _build
 _cache
 _dist
 download-gocache
+/dev.*
