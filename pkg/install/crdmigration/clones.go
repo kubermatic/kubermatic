@@ -154,6 +154,10 @@ func ensureObject(ctx context.Context, client ctrlruntimeclient.Client, obj ctrl
 func cloneObjectMeta(om metav1.ObjectMeta) metav1.ObjectMeta {
 	om = *om.DeepCopy()
 	om.OwnerReferences = migrateOwnerReferences(om.OwnerReferences)
+	om.UID = ""
+	om.Generation = 0
+	om.ResourceVersion = ""
+	om.CreationTimestamp = metav1.Time{}
 
 	return om
 }

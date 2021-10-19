@@ -144,6 +144,10 @@ func MigrateCRDsAction(logger *logrus.Logger) cli.ActionFunc {
 		// ////////////////////////////////////
 		// phase 3: magic!
 
+		if err := crdmigration.DuplicateResources(appContext, logger.WithField("phase", "cloning"), &opt); err != nil {
+			return fmt.Errorf("resource cloning failed: %w", err)
+		}
+
 		// task 3.1: create new KKP CRDs
 		// task 3.2: create copies of all kkp resources, but using the new API groups
 		// task 3.3: remove ownerReferences from all old KKP resources
