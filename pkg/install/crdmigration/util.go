@@ -25,6 +25,19 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+type Kind struct {
+	// Name is the name of the Kind, e.g. "Cluster"
+	Name string
+	// Namespaced is true if the Kind is namespaced.
+	Namespaced bool
+	// MasterCluster is true if resources of this kind exist on master clusters.
+	MasterCluster bool
+	// SeedCluster is true if resources of this kind exist on seed clusters;
+	// this includes resources that are just mirrored into seeds, like Users, of which the
+	// primary resource lives on the master.
+	SeedCluster bool
+}
+
 var (
 	validClusterNamespace = regexp.MustCompile(`^cluster-[0-9a-z]{10}$`)
 
@@ -37,72 +50,82 @@ var (
 	// newAPIGroup is the group we migrate to.
 	newAPIGroup = "kubermatic.k8c.io"
 
-	// allKubermaticKinds is a list of all KKP CRDs;
-	// not all of these live on all clusters
-	allKubermaticKinds = []string{
-		"Addon",
-		"AddonConfig",
-		"AdmissionPlugin",
-		"Alertmanager",
-		"AllowedRegistry",
-		"Cluster",
-		"ClusterTemplate",
-		"ClusterTemplateInstance",
-		"Constraint",
-		"ConstraintTemplate",
-		"EtcdBackupConfig",
-		"EtcdRestore",
-		"ExternalCluster",
-		"KubermaticSetting",
-		"MLAAdminSetting",
-		"Preset",
-		"Project",
-		"RuleGroup",
-		"Seed",
-		"User",
-		"UserProjectBinding",
-		"UserSSHKey",
-	}
-
-	// allKubermaticMasterKinds is a list of resource kinds that exist on the master cluster
-	allKubermaticMasterKinds = []string{
-		"AddonConfig",
-		"AdmissionPlugin",
-		"AllowedRegistry",
-		"ClusterTemplate",
-		"Constraint",
-		"ConstraintTemplate",
-		"ExternalCluster",
-		"KubermaticSetting",
-		"Preset",
-		"Project",
-		"Seed",
-		"User",
-		"UserProjectBinding",
-		"UserSSHKey",
-	}
-
-	// allKubermaticSeedKinds is a list of resource kinds that exist on seed clusters;
-	// this includes resources that are just mirrored into seeds, like Users, of which the
-	// primary resource lives on the master.
-	allKubermaticSeedKinds = []string{
-		"Addon",
-		"Alertmanager",
-		"Cluster",
-		"ClusterTemplate",
-		"ClusterTemplateInstance",
-		"Constraint",
-		"ConstraintTemplate",
-		"EtcdBackupConfig",
-		"EtcdRestore",
-		"MLAAdminSetting",
-		"Project",
-		"RuleGroup",
-		"Seed",
-		"User",
-		"UserProjectBinding",
+	// allKubermaticKinds is a list of all KKP CRDs
+	allKubermaticKinds = []Kind{
+		{Name: "Addon", Namespaced: true, MasterCluster: false, SeedCluster: true},
+		{Name: "AddonConfig", Namespaced: false, MasterCluster: true, SeedCluster: false},
+		{Name: "AdmissionPlugin", Namespaced: false, MasterCluster: true, SeedCluster: false},
+		{Name: "Alertmanager", Namespaced: true, MasterCluster: false, SeedCluster: true},
+		{Name: "AllowedRegistry", Namespaced: false, MasterCluster: true, SeedCluster: false},
+		{Name: "Cluster", Namespaced: false, MasterCluster: false, SeedCluster: true},
+		{Name: "ClusterTemplate", Namespaced: false, MasterCluster: true, SeedCluster: true},
+		{Name: "ClusterTemplateInstance", Namespaced: false, MasterCluster: false, SeedCluster: true},
+		{Name: "Constraint", Namespaced: true, MasterCluster: false, SeedCluster: true},
+		{Name: "ConstraintTemplate", Namespaced: false, MasterCluster: false, SeedCluster: true},
+		{Name: "EtcdBackupConfig", Namespaced: true, MasterCluster: false, SeedCluster: true},
+		{Name: "EtcdRestore", Namespaced: true, MasterCluster: false, SeedCluster: true},
+		{Name: "ExternalCluster", Namespaced: false, MasterCluster: true, SeedCluster: false},
+		{Name: "KubermaticSetting", Namespaced: false, MasterCluster: true, SeedCluster: false},
+		{Name: "MLAAdminSetting", Namespaced: true, MasterCluster: false, SeedCluster: true},
+		{Name: "Preset", Namespaced: false, MasterCluster: true, SeedCluster: false},
+		{Name: "Project", Namespaced: false, MasterCluster: true, SeedCluster: true},
+		{Name: "RuleGroup", Namespaced: true, MasterCluster: false, SeedCluster: true},
+		{Name: "Seed", Namespaced: true, MasterCluster: true, SeedCluster: true},
+		{Name: "User", Namespaced: false, MasterCluster: true, SeedCluster: true},
+		{Name: "UserProjectBinding", Namespaced: false, MasterCluster: true, SeedCluster: true},
+		{Name: "UserSSHKey", Namespaced: false, MasterCluster: true, SeedCluster: false},
 	}
 )
+
+func getKind(name string) Kind {
+	for i, kind := range allKubermaticKinds {
+		if kind.Name == name {
+			return allKubermaticKinds[i]
+		}
+	}
+
+	panic(fmt.Sprintf("Kind %s is not a KKP CRD and not applicable for the migration.", name))
+}
+
+func isNamespacedKind(name string) bool {
+	return getKind(name).Namespaced
+}
+
+func isMasterClusterKind(name string) bool {
+	return getKind(name).MasterCluster
+}
+
+func isSeedClusterKind(name string) bool {
+	return getKind(name).SeedCluster
+}
+
+func filterKinds(predicate func(Kind) bool) []Kind {
+	result := []Kind{}
+
+	for i, kind := range allKubermaticKinds {
+		if predicate(kind) {
+			result = append(result, allKubermaticKinds[i])
+		}
+	}
+
+	return result
+}
+
+func getMasterClusterKinds() []Kind {
+	return filterKinds(func(k Kind) bool { return k.MasterCluster })
+}
+
+func getSeedClusterKinds() []Kind {
+	return filterKinds(func(k Kind) bool { return k.SeedCluster })
+}
+
+func getNamespacedKinds() []Kind {
+	return filterKinds(func(k Kind) bool { return k.Namespaced })
+}
+
+func getGlobalKinds() []Kind {
+	return filterKinds(func(k Kind) bool { return !k.Namespaced })
+}
 
 // getUserclusterNamespaces is purposefully "dumb" and doesn't list Cluster
 // objects to deduce the namespaces or check whether the namespaces have

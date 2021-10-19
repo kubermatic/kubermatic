@@ -28,6 +28,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -48,112 +49,95 @@ func DuplicateResources(ctx context.Context, logger logrus.FieldLogger, opt *Opt
 }
 
 func cloneResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client, isSeed bool) error {
-	// in general, the order in which resources are migrated is important, as they are interlinked via owner references
+	logger.Info("Duplicating resources into new API group…")
 
-	if err := cloneClusterResourcesInCluster(ctx, logger, client); err != nil {
-		return fmt.Errorf("failed to clone Clusters: %w", err)
+	type cloneFn func(context.Context, logrus.FieldLogger, ctrlruntimeclient.Client) (int, error)
+
+	// the order in which resources are migrated is important, as they are interlinked via owner references
+	tasks := []struct {
+		Kind   string
+		cloner cloneFn
+	}{
+		{Kind: "User", cloner: cloneUserResourcesInCluster},
+		{Kind: "Project", cloner: cloneProjectResourcesInCluster},
+		{Kind: "Cluster", cloner: cloneClusterResourcesInCluster},
+		{Kind: "Addon", cloner: cloneAddonResourcesInCluster},
+		{Kind: "AddonConfig", cloner: cloneAddonConfigResourcesInCluster},
+		{Kind: "AdmissionPlugin", cloner: cloneAdmissionPluginResourcesInCluster},
+		{Kind: "Alertmanager", cloner: cloneAlertmanagerResourcesInCluster},
+		{Kind: "AllowedRegistrie", cloner: cloneAllowedRegistryResourcesInCluster},
+		{Kind: "ClusterTemplate", cloner: cloneClusterTemplateResourcesInCluster},
+		{Kind: "ClusterTemplateInstance", cloner: cloneClusterTemplateInstanceResourcesInCluster},
+		{Kind: "ConstraintTemplate", cloner: cloneConstraintTemplateResourcesInCluster},
+		{Kind: "Constraint", cloner: cloneConstraintResourcesInCluster},
+		{Kind: "EtcdBackupConfig", cloner: cloneEtcdBackupConfigResourcesInCluster},
+		{Kind: "EtcdRestore", cloner: cloneEtcdRestoreResourcesInCluster},
+		{Kind: "ExternalCluster", cloner: cloneExternalClusterResourcesInCluster},
+		{Kind: "KubermaticSetting", cloner: cloneKubermaticSettingResourcesInCluster},
+		{Kind: "MLAAdminSetting", cloner: cloneMLAAdminSettingResourcesInCluster},
+		{Kind: "Preset", cloner: clonePresetResourcesInCluster},
+		{Kind: "RuleGroup", cloner: cloneRuleGroupResourcesInCluster},
+		{Kind: "Seed", cloner: cloneSeedResourcesInCluster},
+		{Kind: "UserProjectBinding", cloner: cloneUserProjectBindingResourcesInCluster},
+		{Kind: "UserSSHKey", cloner: cloneUserSSHKeyResourcesInCluster},
 	}
 
-	if err := cloneAddonResourcesInCluster(ctx, logger, client); err != nil {
-		return fmt.Errorf("failed to clone Addons: %w", err)
-	}
+	for _, task := range tasks {
+		logger.Debugf("Duplicating %s objects…", task.Kind)
 
-	if err := cloneAddonConfigResourcesInCluster(ctx, logger, client); err != nil {
-		return fmt.Errorf("failed to clone AddonConfigs: %w", err)
-	}
+		cloned, err := task.cloner(ctx, logger, client)
+		if err != nil {
+			return fmt.Errorf("failed to clone %s: %w", task.Kind, err)
+		}
 
-	if err := cloneAdmissionPluginResourcesInCluster(ctx, logger, client); err != nil {
-		return fmt.Errorf("failed to clone AdmissionPlugins: %w", err)
-	}
-
-	if err := cloneAlertmanagerResourcesInCluster(ctx, logger, client); err != nil {
-		return fmt.Errorf("failed to clone Alertmanagers: %w", err)
-	}
-
-	if err := cloneAllowedRegistryResourcesInCluster(ctx, logger, client); err != nil {
-		return fmt.Errorf("failed to clone AllowedRegistries: %w", err)
-	}
-
-	if err := cloneClusterTemplateResourcesInCluster(ctx, logger, client); err != nil {
-		return fmt.Errorf("failed to clone ClusterTemplates: %w", err)
-	}
-
-	if err := cloneClusterTemplateInstanceResourcesInCluster(ctx, logger, client); err != nil {
-		return fmt.Errorf("failed to clone ClusterTemplateInstances: %w", err)
-	}
-
-	if err := cloneConstraintTemplateResourcesInCluster(ctx, logger, client); err != nil {
-		return fmt.Errorf("failed to clone ConstraintTemplates: %w", err)
-	}
-
-	if err := cloneConstraintTemplateResourcesInCluster(ctx, logger, client); err != nil {
-		return fmt.Errorf("failed to clone ConstraintTemplates: %w", err)
-	}
-
-	if err := cloneEtcdBackupConfigResourcesInCluster(ctx, logger, client); err != nil {
-		return fmt.Errorf("failed to clone EtcdBackupConfigs: %w", err)
-	}
-
-	if err := cloneEtcdRestoreResourcesInCluster(ctx, logger, client); err != nil {
-		return fmt.Errorf("failed to clone EtcdRestores: %w", err)
-	}
-
-	if err := cloneExternalClusterResourcesInCluster(ctx, logger, client); err != nil {
-		return fmt.Errorf("failed to clone ExternalClusters: %w", err)
-	}
-
-	if err := cloneKubermaticSettingResourcesInCluster(ctx, logger, client); err != nil {
-		return fmt.Errorf("failed to clone KubermaticSettings: %w", err)
-	}
-
-	if err := cloneMLAAdminSettingResourcesInCluster(ctx, logger, client); err != nil {
-		return fmt.Errorf("failed to clone MLAAdminSettings: %w", err)
-	}
-
-	if err := clonePresetResourcesInCluster(ctx, logger, client); err != nil {
-		return fmt.Errorf("failed to clone Presets: %w", err)
-	}
-
-	if err := cloneProjectResourcesInCluster(ctx, logger, client); err != nil {
-		return fmt.Errorf("failed to clone Projects: %w", err)
-	}
-
-	if err := cloneRuleGroupResourcesInCluster(ctx, logger, client); err != nil {
-		return fmt.Errorf("failed to clone RuleGroups: %w", err)
-	}
-
-	if err := cloneSeedResourcesInCluster(ctx, logger, client); err != nil {
-		return fmt.Errorf("failed to clone Seeds: %w", err)
-	}
-
-	if err := cloneUserResourcesInCluster(ctx, logger, client); err != nil {
-		return fmt.Errorf("failed to clone Users: %w", err)
-	}
-
-	if err := cloneUserProjectBindingResourcesInCluster(ctx, logger, client); err != nil {
-		return fmt.Errorf("failed to clone UserProjectBindings: %w", err)
-	}
-
-	if err := cloneUserSSHKeyResourcesInCluster(ctx, logger, client); err != nil {
-		return fmt.Errorf("failed to clone UserSSHKeys: %w", err)
+		logger.Infof("Duplicated %d %s objects.", cloned, task.Kind)
 	}
 
 	return nil
 }
 
-func ensureObject(ctx context.Context, client ctrlruntimeclient.Client, obj ctrlruntimeclient.Object) error {
+// uidCache is a primitive runtime cache for the UIDs of
+// objects created via ensureObject. It is used to fill in
+// the UID for owner and object references.
+var uidCache = map[string]types.UID{}
+
+func getUIDCacheKey(kind, namespace, name string) string {
+	if isNamespacedKind(kind) {
+		return fmt.Sprintf("%s/%s/%s", kind, namespace, name)
+	}
+
+	return fmt.Sprintf("%s/%s", kind, name)
+}
+
+func getUIDCacheKeyForObject(obj ctrlruntimeclient.Object) string {
+	return getUIDCacheKey(obj.GetObjectKind().GroupVersionKind().Kind, obj.GetNamespace(), obj.GetName())
+}
+
+func ensureObject(ctx context.Context, client ctrlruntimeclient.Client, obj ctrlruntimeclient.Object, cacheUID bool) error {
 	if err := client.Create(ctx, obj); err != nil {
 		if !apierrors.IsAlreadyExists(err) {
 			return err
 		}
 	}
 
+	// re-fetch the object to
+	//    1. fill in its UID so we can cache it
+	//    2. get the ResourceVersion, so we can later update any subresources like "status"
+	//    3. fill in the APIVersion and Kind, to make building a cache key easier
+	if err := client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(obj), obj); err != nil {
+		return err
+	}
+
+	if cacheUID {
+		uidCache[getUIDCacheKeyForObject(obj)] = obj.GetUID()
+	}
+
 	return nil
 }
 
-func cloneObjectMeta(om metav1.ObjectMeta) metav1.ObjectMeta {
+func convertObjectMeta(om metav1.ObjectMeta) metav1.ObjectMeta {
 	om = *om.DeepCopy()
-	om.OwnerReferences = migrateOwnerReferences(om.OwnerReferences)
+	om.OwnerReferences = migrateOwnerReferences(om.OwnerReferences, om.Namespace)
 	om.UID = ""
 	om.Generation = 0
 	om.ResourceVersion = ""
@@ -162,7 +146,7 @@ func cloneObjectMeta(om metav1.ObjectMeta) metav1.ObjectMeta {
 	return om
 }
 
-func migrateOwnerReferences(ownerRefs []metav1.OwnerReference) []metav1.OwnerReference {
+func migrateOwnerReferences(ownerRefs []metav1.OwnerReference, namespace string) []metav1.OwnerReference {
 	result := []metav1.OwnerReference{}
 
 	for _, ref := range ownerRefs {
@@ -170,7 +154,14 @@ func migrateOwnerReferences(ownerRefs []metav1.OwnerReference) []metav1.OwnerRef
 
 		if newRef.APIVersion == "kubermatic.k8s.io/v1" {
 			newRef.APIVersion = "kubermatic.k8c.io/v1"
-			newRef.UID = ""
+
+			cacheKey := getUIDCacheKey(newRef.Kind, namespace, newRef.Name)
+			uid, exists := uidCache[cacheKey]
+			if !exists {
+				panic(fmt.Sprintf("Cannot find UID for %s in cache. Make sure to create %s first.", cacheKey, newRef.Kind))
+			}
+
+			newRef.UID = uid
 		}
 
 		result = append(result, *newRef)
@@ -179,29 +170,39 @@ func migrateOwnerReferences(ownerRefs []metav1.OwnerReference) []metav1.OwnerRef
 	return result
 }
 
-func migrateObjectReference(objectRef corev1.ObjectReference) corev1.ObjectReference {
+func migrateObjectReference(objectRef corev1.ObjectReference, namespace string) corev1.ObjectReference {
 	newRef := *objectRef.DeepCopy()
 
 	if newRef.APIVersion == "kubermatic.k8s.io/v1" {
 		newRef.APIVersion = "kubermatic.k8c.io/v1"
-		newRef.UID = ""
+
+		if newRef.Namespace != "" {
+			namespace = newRef.Namespace
+		}
+
+		cacheKey := getUIDCacheKey(newRef.Kind, namespace, newRef.Name)
+		uid, exists := uidCache[cacheKey]
+		if !exists {
+			panic(fmt.Sprintf("Cannot find UID for %s in cache. Make sure to create %s first.", cacheKey, newRef.Kind))
+		}
+
+		newRef.UID = uid
 	}
 
 	return newRef
 }
 
-func cloneClusterResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) error {
-	logger.Debug("Cloning Cluster objects…")
-
+func cloneClusterResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) (int, error) {
 	oldObjects := &kubermaticv1.ClusterList{}
 	if err := client.List(ctx, oldObjects); err != nil {
-		return fmt.Errorf("failed to list Cluster objects: %w", err)
+		return 0, fmt.Errorf("failed to list objects: %w", err)
 	}
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.Cluster{
-			ObjectMeta: cloneObjectMeta(oldObject.ObjectMeta),
+			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Address:    newv1.ClusterAddress(oldObject.Address),
+			Spec:       convertClusterSpec(oldObject.Spec),
 			Status: newv1.ClusterStatus{
 				KubermaticVersion:      oldObject.Status.KubermaticVersion,
 				NamespaceName:          oldObject.Status.NamespaceName,
@@ -224,53 +225,150 @@ func cloneClusterResourcesInCluster(ctx context.Context, logger logrus.FieldLogg
 			},
 		}
 
-		if err := ensureObject(ctx, client, &newObject); err != nil {
-			return fmt.Errorf("failed to clone Cluster %s: %w", oldObject.Name, err)
+		if err := ensureObject(ctx, client, &newObject, true); err != nil {
+			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
+		}
+
+		if err := client.Status().Update(ctx, &newObject); err != nil {
+			return 0, fmt.Errorf("failed to update status on %s: %w", oldObject.Name, err)
 		}
 	}
 
-	return nil
+	return len(oldObjects.Items), nil
 }
 
-func cloneAddonResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) error {
-	logger.Debug("Cloning Addon objects…")
+func convertClusterSpec(old kubermaticv1.ClusterSpec) newv1.ClusterSpec {
+	result := newv1.ClusterSpec{
+		Cloud: newv1.CloudSpec{
+			DatacenterName: old.Cloud.DatacenterName,
 
+			// Azure and VSphere need special treatment further down
+			AWS:          (*newv1.AWSCloudSpec)(old.Cloud.AWS),
+			Alibaba:      (*newv1.AlibabaCloudSpec)(old.Cloud.Alibaba),
+			Anexia:       (*newv1.AnexiaCloudSpec)(old.Cloud.Anexia),
+			BringYourOwn: (*newv1.BringYourOwnCloudSpec)(old.Cloud.BringYourOwn),
+			Digitalocean: (*newv1.DigitaloceanCloudSpec)(old.Cloud.Digitalocean),
+			Fake:         (*newv1.FakeCloudSpec)(old.Cloud.Fake),
+			GCP:          (*newv1.GCPCloudSpec)(old.Cloud.GCP),
+			Hetzner:      (*newv1.HetznerCloudSpec)(old.Cloud.Hetzner),
+			Kubevirt:     (*newv1.KubevirtCloudSpec)(old.Cloud.Kubevirt),
+			Openstack:    (*newv1.OpenstackCloudSpec)(old.Cloud.Openstack),
+			Packet:       (*newv1.PacketCloudSpec)(old.Cloud.Packet),
+		},
+		ClusterNetwork: newv1.ClusterNetworkingConfig{
+			Pods:                     newv1.NetworkRanges(old.ClusterNetwork.Pods),
+			Services:                 newv1.NetworkRanges(old.ClusterNetwork.Services),
+			DNSDomain:                old.ClusterNetwork.DNSDomain,
+			ProxyMode:                old.ClusterNetwork.ProxyMode,
+			IPVS:                     (*newv1.IPVSConfiguration)(old.ClusterNetwork.IPVS),
+			NodeLocalDNSCacheEnabled: old.ClusterNetwork.NodeLocalDNSCacheEnabled,
+			KonnectivityEnabled:      old.ClusterNetwork.KonnectivityEnabled,
+		},
+		Version:                              old.Version,
+		MasterVersion:                        old.MasterVersion,
+		HumanReadableName:                    old.HumanReadableName,
+		ExposeStrategy:                       newv1.ExposeStrategy(old.ExposeStrategy),
+		Pause:                                old.Pause,
+		PauseReason:                          old.PauseReason,
+		ComponentsOverride:                   convertComponentSettings(old.ComponentsOverride),
+		OIDC:                                 newv1.OIDCSettings(old.OIDC),
+		Features:                             old.Features,
+		UpdateWindow:                         (*newv1.UpdateWindow)(old.UpdateWindow),
+		UsePodSecurityPolicyAdmissionPlugin:  old.UsePodSecurityPolicyAdmissionPlugin,
+		UsePodNodeSelectorAdmissionPlugin:    old.UsePodNodeSelectorAdmissionPlugin,
+		EnableUserSSHKeyAgent:                old.EnableUserSSHKeyAgent,
+		PodNodeSelectorAdmissionPluginConfig: old.PodNodeSelectorAdmissionPluginConfig,
+		AdmissionPlugins:                     old.AdmissionPlugins,
+		AuditLogging:                         (*newv1.AuditLoggingSettings)(old.AuditLogging),
+		OPAIntegration:                       (*newv1.OPAIntegrationSettings)(old.OPAIntegration),
+		ServiceAccount:                       (*newv1.ServiceAccountSettings)(old.ServiceAccount),
+		MLA:                                  (*newv1.MLASettings)(old.MLA),
+		ContainerRuntime:                     old.ContainerRuntime,
+	}
+
+	if old := old.Cloud.Azure; old != nil {
+		result.Cloud.Azure = &newv1.AzureCloudSpec{
+			CredentialsReference:  old.CredentialsReference,
+			TenantID:              old.TenantID,
+			SubscriptionID:        old.SubscriptionID,
+			ClientID:              old.ClientID,
+			ClientSecret:          old.ClientSecret,
+			ResourceGroup:         old.ResourceGroup,
+			VNetResourceGroup:     old.VNetResourceGroup,
+			VNetName:              old.VNetName,
+			SubnetName:            old.SubnetName,
+			RouteTableName:        old.RouteTableName,
+			SecurityGroup:         old.SecurityGroup,
+			AssignAvailabilitySet: old.AssignAvailabilitySet,
+			AvailabilitySet:       old.AvailabilitySet,
+			LoadBalancerSKU:       newv1.LBSKU(old.LoadBalancerSKU),
+		}
+	}
+
+	if old := old.Cloud.VSphere; old != nil {
+		result.Cloud.VSphere = &newv1.VSphereCloudSpec{
+			CredentialsReference: old.CredentialsReference,
+			Username:             old.Username,
+			Password:             old.Password,
+			VMNetName:            old.VMNetName,
+			Folder:               old.Folder,
+			Datastore:            old.Datastore,
+			DatastoreCluster:     old.DatastoreCluster,
+			StoragePolicy:        old.StoragePolicy,
+			ResourcePool:         old.ResourcePool,
+			InfraManagementUser:  newv1.VSphereCredentials(old.InfraManagementUser),
+		}
+	}
+
+	if old := old.CNIPlugin; old != nil {
+		result.CNIPlugin = &newv1.CNIPluginSettings{
+			Type:    newv1.CNIPluginType(old.Type),
+			Version: old.Version,
+		}
+	}
+
+	for _, network := range old.MachineNetworks {
+		result.MachineNetworks = append(result.MachineNetworks, newv1.MachineNetworkingConfig(network))
+	}
+
+	return result
+}
+
+func cloneAddonResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) (int, error) {
 	oldObjects := &kubermaticv1.AddonList{}
 	if err := client.List(ctx, oldObjects); err != nil {
-		return fmt.Errorf("failed to list Addon objects: %w", err)
+		return 0, fmt.Errorf("failed to list Addon objects: %w", err)
 	}
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.Addon{
-			ObjectMeta: cloneObjectMeta(oldObject.ObjectMeta),
+			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.AddonSpec{
 				Name:                  oldObject.Spec.Name,
-				Cluster:               migrateObjectReference(oldObject.Spec.Cluster),
+				Cluster:               migrateObjectReference(oldObject.Spec.Cluster, ""),
 				IsDefault:             oldObject.Spec.IsDefault,
 				RequiredResourceTypes: oldObject.Spec.RequiredResourceTypes,
 				Variables:             oldObject.Spec.Variables,
 			},
 		}
 
-		if err := ensureObject(ctx, client, &newObject); err != nil {
-			return fmt.Errorf("failed to clone Addon %s: %w", oldObject.Name, err)
+		if err := ensureObject(ctx, client, &newObject, false); err != nil {
+			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
 	}
 
-	return nil
+	return len(oldObjects.Items), nil
 }
 
-func cloneAddonConfigResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) error {
-	logger.Debug("Cloning AddonConfig objects…")
-
+func cloneAddonConfigResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) (int, error) {
 	oldObjects := &kubermaticv1.AddonConfigList{}
 	if err := client.List(ctx, oldObjects); err != nil {
-		return fmt.Errorf("failed to list AddonConfig objects: %w", err)
+		return 0, fmt.Errorf("failed to list objects: %w", err)
 	}
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.AddonConfig{
-			ObjectMeta: cloneObjectMeta(oldObject.ObjectMeta),
+			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.AddonConfigSpec{
 				ShortDescription: oldObject.Spec.ShortDescription,
 				Description:      oldObject.Spec.Description,
@@ -284,102 +382,94 @@ func cloneAddonConfigResourcesInCluster(ctx context.Context, logger logrus.Field
 			newObject.Spec.Controls = append(newObject.Spec.Controls, newv1.AddonFormControl(ctrl))
 		}
 
-		if err := ensureObject(ctx, client, &newObject); err != nil {
-			return fmt.Errorf("failed to clone AddonConfig %s: %w", oldObject.Name, err)
+		if err := ensureObject(ctx, client, &newObject, false); err != nil {
+			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
 	}
 
-	return nil
+	return len(oldObjects.Items), nil
 }
 
-func cloneAdmissionPluginResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) error {
-	logger.Debug("Cloning AdmissionPlugin objects…")
-
+func cloneAdmissionPluginResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) (int, error) {
 	oldObjects := &kubermaticv1.AdmissionPluginList{}
 	if err := client.List(ctx, oldObjects); err != nil {
-		return fmt.Errorf("failed to list AdmissionPlugin objects: %w", err)
+		return 0, fmt.Errorf("failed to list objects: %w", err)
 	}
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.AdmissionPlugin{
-			ObjectMeta: cloneObjectMeta(oldObject.ObjectMeta),
+			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.AdmissionPluginSpec{
 				PluginName:  oldObject.Spec.PluginName,
 				FromVersion: oldObject.Spec.DeepCopy().FromVersion,
 			},
 		}
 
-		if err := ensureObject(ctx, client, &newObject); err != nil {
-			return fmt.Errorf("failed to clone AdmissionPlugin %s: %w", oldObject.Name, err)
+		if err := ensureObject(ctx, client, &newObject, false); err != nil {
+			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
 	}
 
-	return nil
+	return len(oldObjects.Items), nil
 }
 
-func cloneAlertmanagerResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) error {
-	logger.Debug("Cloning Alertmanager objects…")
-
+func cloneAlertmanagerResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) (int, error) {
 	oldObjects := &kubermaticv1.AlertmanagerList{}
 	if err := client.List(ctx, oldObjects); err != nil {
-		return fmt.Errorf("failed to list Alertmanager objects: %w", err)
+		return 0, fmt.Errorf("failed to list objects: %w", err)
 	}
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.Alertmanager{
-			ObjectMeta: cloneObjectMeta(oldObject.ObjectMeta),
+			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.AlertmanagerSpec{
 				ConfigSecret: oldObject.Spec.DeepCopy().ConfigSecret,
 			},
 		}
 
-		if err := ensureObject(ctx, client, &newObject); err != nil {
-			return fmt.Errorf("failed to clone Alertmanager %s: %w", oldObject.Name, err)
+		if err := ensureObject(ctx, client, &newObject, false); err != nil {
+			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
 	}
 
-	return nil
+	return len(oldObjects.Items), nil
 }
 
-func cloneAllowedRegistryResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) error {
-	logger.Debug("Cloning AllowedRegistry objects…")
-
+func cloneAllowedRegistryResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) (int, error) {
 	oldObjects := &kubermaticv1.AllowedRegistryList{}
 	if err := client.List(ctx, oldObjects); err != nil {
-		return fmt.Errorf("failed to list AllowedRegistry objects: %w", err)
+		return 0, fmt.Errorf("failed to list objects: %w", err)
 	}
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.AllowedRegistry{
-			ObjectMeta: cloneObjectMeta(oldObject.ObjectMeta),
+			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.AllowedRegistrySpec{
 				RegistryPrefix: oldObject.Spec.RegistryPrefix,
 			},
 		}
 
-		if err := ensureObject(ctx, client, &newObject); err != nil {
-			return fmt.Errorf("failed to clone AllowedRegistry %s: %w", oldObject.Name, err)
+		if err := ensureObject(ctx, client, &newObject, false); err != nil {
+			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
 	}
 
-	return nil
+	return len(oldObjects.Items), nil
 }
 
-func cloneClusterTemplateResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) error {
-	logger.Debug("Cloning ClusterTemplate objects…")
-
+func cloneClusterTemplateResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) (int, error) {
 	oldObjects := &kubermaticv1.ClusterTemplateList{}
 	if err := client.List(ctx, oldObjects); err != nil {
-		return fmt.Errorf("failed to list ClusterTemplate objects: %w", err)
+		return 0, fmt.Errorf("failed to list objects: %w", err)
 	}
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.ClusterTemplate{
-			ObjectMeta:             cloneObjectMeta(oldObject.ObjectMeta),
+			ObjectMeta:             convertObjectMeta(oldObject.ObjectMeta),
 			Credential:             oldObject.Credential,
 			ClusterLabels:          oldObject.ClusterLabels,
 			InheritedClusterLabels: oldObject.InheritedClusterLabels,
-			Spec:                   newv1.ClusterSpec{},
+			Spec:                   convertClusterSpec(oldObject.Spec),
 			UserSSHKeys:            []newv1.ClusterTemplateSSHKey{},
 		}
 
@@ -387,25 +477,23 @@ func cloneClusterTemplateResourcesInCluster(ctx context.Context, logger logrus.F
 			newObject.UserSSHKeys = append(newObject.UserSSHKeys, newv1.ClusterTemplateSSHKey(key))
 		}
 
-		if err := ensureObject(ctx, client, &newObject); err != nil {
-			return fmt.Errorf("failed to clone ClusterTemplate %s: %w", oldObject.Name, err)
+		if err := ensureObject(ctx, client, &newObject, false); err != nil {
+			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
 	}
 
-	return nil
+	return len(oldObjects.Items), nil
 }
 
-func cloneClusterTemplateInstanceResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) error {
-	logger.Debug("Cloning ClusterTemplateInstance objects…")
-
+func cloneClusterTemplateInstanceResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) (int, error) {
 	oldObjects := &kubermaticv1.ClusterTemplateInstanceList{}
 	if err := client.List(ctx, oldObjects); err != nil {
-		return fmt.Errorf("failed to list ClusterTemplateInstance objects: %w", err)
+		return 0, fmt.Errorf("failed to list objects: %w", err)
 	}
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.ClusterTemplateInstance{
-			ObjectMeta: cloneObjectMeta(oldObject.ObjectMeta),
+			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.ClusterTemplateInstanceSpec{
 				ProjectID:           oldObject.Spec.ProjectID,
 				ClusterTemplateID:   oldObject.Spec.ClusterTemplateID,
@@ -414,25 +502,23 @@ func cloneClusterTemplateInstanceResourcesInCluster(ctx context.Context, logger 
 			},
 		}
 
-		if err := ensureObject(ctx, client, &newObject); err != nil {
-			return fmt.Errorf("failed to clone ClusterTemplateInstance %s: %w", oldObject.Name, err)
+		if err := ensureObject(ctx, client, &newObject, false); err != nil {
+			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
 	}
 
-	return nil
+	return len(oldObjects.Items), nil
 }
 
-func cloneConstraintTemplateResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) error {
-	logger.Debug("Cloning ConstraintTemplate objects…")
-
+func cloneConstraintTemplateResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) (int, error) {
 	oldObjects := &kubermaticv1.ConstraintTemplateList{}
 	if err := client.List(ctx, oldObjects); err != nil {
-		return fmt.Errorf("failed to list ConstraintTemplate objects: %w", err)
+		return 0, fmt.Errorf("failed to list objects: %w", err)
 	}
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.ConstraintTemplate{
-			ObjectMeta: cloneObjectMeta(oldObject.ObjectMeta),
+			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.ConstraintTemplateSpec{
 				CRD:      oldObject.Spec.CRD,
 				Selector: newv1.ConstraintTemplateSelector(oldObject.Spec.Selector),
@@ -440,104 +526,132 @@ func cloneConstraintTemplateResourcesInCluster(ctx context.Context, logger logru
 			},
 		}
 
-		if err := ensureObject(ctx, client, &newObject); err != nil {
-			return fmt.Errorf("failed to clone ConstraintTemplate %s: %w", oldObject.Name, err)
+		if err := ensureObject(ctx, client, &newObject, false); err != nil {
+			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
 	}
 
-	return nil
+	return len(oldObjects.Items), nil
 }
 
-func cloneEtcdBackupConfigResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) error {
-	logger.Debug("Cloning EtcdBackupConfig objects…")
+func cloneConstraintResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) (int, error) {
+	oldObjects := &kubermaticv1.ConstraintList{}
+	if err := client.List(ctx, oldObjects); err != nil {
+		return 0, fmt.Errorf("failed to list objects: %w", err)
+	}
 
+	for _, oldObject := range oldObjects.Items {
+		newObject := newv1.Constraint{
+			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
+			Spec: newv1.ConstraintSpec{
+				ConstraintType: oldObject.Spec.ConstraintType,
+				Disabled:       oldObject.Spec.Disabled,
+				Match: newv1.Match{
+					Scope:              oldObject.Spec.Match.Scope,
+					Namespaces:         oldObject.Spec.Match.Namespaces,
+					ExcludedNamespaces: oldObject.Spec.Match.ExcludedNamespaces,
+					LabelSelector:      oldObject.Spec.Match.LabelSelector,
+					NamespaceSelector:  oldObject.Spec.Match.NamespaceSelector,
+				},
+				Parameters: newv1.Parameters(oldObject.Spec.Parameters),
+				Selector:   newv1.ConstraintSelector(oldObject.Spec.Selector),
+			},
+		}
+
+		for _, kind := range oldObject.Spec.Match.Kinds {
+			newObject.Spec.Match.Kinds = append(newObject.Spec.Match.Kinds, newv1.Kind(kind))
+		}
+
+		if err := ensureObject(ctx, client, &newObject, false); err != nil {
+			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
+		}
+	}
+
+	return len(oldObjects.Items), nil
+}
+
+func cloneEtcdBackupConfigResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) (int, error) {
 	oldObjects := &kubermaticv1.EtcdBackupConfigList{}
 	if err := client.List(ctx, oldObjects); err != nil {
-		return fmt.Errorf("failed to list EtcdBackupConfig objects: %w", err)
+		return 0, fmt.Errorf("failed to list objects: %w", err)
 	}
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.EtcdBackupConfig{
-			ObjectMeta: cloneObjectMeta(oldObject.ObjectMeta),
+			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.EtcdBackupConfigSpec{
 				Name:     oldObject.Spec.Name,
 				Schedule: oldObject.Spec.Schedule,
 				Keep:     oldObject.Spec.Keep,
-				Cluster:  migrateObjectReference(oldObject.Spec.Cluster),
+				Cluster:  migrateObjectReference(oldObject.Spec.Cluster, ""),
 			},
 		}
 
-		if err := ensureObject(ctx, client, &newObject); err != nil {
-			return fmt.Errorf("failed to clone EtcdBackupConfig %s: %w", oldObject.Name, err)
+		if err := ensureObject(ctx, client, &newObject, false); err != nil {
+			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
 	}
 
-	return nil
+	return len(oldObjects.Items), nil
 }
 
-func cloneEtcdRestoreResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) error {
-	logger.Debug("Cloning EtcdRestore objects…")
-
+func cloneEtcdRestoreResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) (int, error) {
 	oldObjects := &kubermaticv1.EtcdRestoreList{}
 	if err := client.List(ctx, oldObjects); err != nil {
-		return fmt.Errorf("failed to list EtcdRestore objects: %w", err)
+		return 0, fmt.Errorf("failed to list objects: %w", err)
 	}
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.EtcdRestore{
-			ObjectMeta: cloneObjectMeta(oldObject.ObjectMeta),
+			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.EtcdRestoreSpec{
 				Name:                            oldObject.Spec.Name,
 				BackupDownloadCredentialsSecret: oldObject.Spec.BackupDownloadCredentialsSecret,
 				BackupName:                      oldObject.Spec.BackupName,
-				Cluster:                         migrateObjectReference(oldObject.Spec.Cluster),
+				Cluster:                         migrateObjectReference(oldObject.Spec.Cluster, ""),
 			},
 		}
 
-		if err := ensureObject(ctx, client, &newObject); err != nil {
-			return fmt.Errorf("failed to clone EtcdRestore %s: %w", oldObject.Name, err)
+		if err := ensureObject(ctx, client, &newObject, false); err != nil {
+			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
 	}
 
-	return nil
+	return len(oldObjects.Items), nil
 }
 
-func cloneExternalClusterResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) error {
-	logger.Debug("Cloning ExternalCluster objects…")
-
+func cloneExternalClusterResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) (int, error) {
 	oldObjects := &kubermaticv1.ExternalClusterList{}
 	if err := client.List(ctx, oldObjects); err != nil {
-		return fmt.Errorf("failed to list ExternalCluster objects: %w", err)
+		return 0, fmt.Errorf("failed to list objects: %w", err)
 	}
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.ExternalCluster{
-			ObjectMeta: cloneObjectMeta(oldObject.ObjectMeta),
+			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.ExternalClusterSpec{
 				HumanReadableName:   oldObject.Spec.HumanReadableName,
 				KubeconfigReference: oldObject.Spec.KubeconfigReference,
 			},
 		}
 
-		if err := ensureObject(ctx, client, &newObject); err != nil {
-			return fmt.Errorf("failed to clone ExternalCluster %s: %w", oldObject.Name, err)
+		if err := ensureObject(ctx, client, &newObject, false); err != nil {
+			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
 	}
 
-	return nil
+	return len(oldObjects.Items), nil
 }
 
-func cloneKubermaticSettingResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) error {
-	logger.Debug("Cloning KubermaticSetting objects…")
-
+func cloneKubermaticSettingResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) (int, error) {
 	oldObjects := &kubermaticv1.KubermaticSettingList{}
 	if err := client.List(ctx, oldObjects); err != nil {
-		return fmt.Errorf("failed to list KubermaticSetting objects: %w", err)
+		return 0, fmt.Errorf("failed to list objects: %w", err)
 	}
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.KubermaticSetting{
-			ObjectMeta: cloneObjectMeta(oldObject.ObjectMeta),
+			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.SettingSpec{
 				CustomLinks:                 newv1.CustomLinks{},
 				CleanupOptions:              newv1.CleanupOptions(oldObject.Spec.CleanupOptions),
@@ -561,25 +675,23 @@ func cloneKubermaticSettingResourcesInCluster(ctx context.Context, logger logrus
 			newObject.Spec.CustomLinks = append(newObject.Spec.CustomLinks, newv1.CustomLink(link))
 		}
 
-		if err := ensureObject(ctx, client, &newObject); err != nil {
-			return fmt.Errorf("failed to clone KubermaticSetting %s: %w", oldObject.Name, err)
+		if err := ensureObject(ctx, client, &newObject, false); err != nil {
+			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
 	}
 
-	return nil
+	return len(oldObjects.Items), nil
 }
 
-func cloneMLAAdminSettingResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) error {
-	logger.Debug("Cloning MLAAdminSetting objects…")
-
+func cloneMLAAdminSettingResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) (int, error) {
 	oldObjects := &kubermaticv1.MLAAdminSettingList{}
 	if err := client.List(ctx, oldObjects); err != nil {
-		return fmt.Errorf("failed to list MLAAdminSetting objects: %w", err)
+		return 0, fmt.Errorf("failed to list objects: %w", err)
 	}
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.MLAAdminSetting{
-			ObjectMeta: cloneObjectMeta(oldObject.ObjectMeta),
+			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.MLAAdminSettingSpec{
 				ClusterName: oldObject.Spec.ClusterName,
 				MonitoringRateLimits: &newv1.MonitoringRateLimitSettings{
@@ -601,25 +713,23 @@ func cloneMLAAdminSettingResourcesInCluster(ctx context.Context, logger logrus.F
 			},
 		}
 
-		if err := ensureObject(ctx, client, &newObject); err != nil {
-			return fmt.Errorf("failed to clone MLAAdminSetting %s: %w", oldObject.Name, err)
+		if err := ensureObject(ctx, client, &newObject, false); err != nil {
+			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
 	}
 
-	return nil
+	return len(oldObjects.Items), nil
 }
 
-func clonePresetResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) error {
-	logger.Debug("Cloning Preset objects…")
-
+func clonePresetResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) (int, error) {
 	oldObjects := &kubermaticv1.PresetList{}
 	if err := client.List(ctx, oldObjects); err != nil {
-		return fmt.Errorf("failed to list Preset objects: %w", err)
+		return 0, fmt.Errorf("failed to list objects: %w", err)
 	}
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.Preset{
-			ObjectMeta: cloneObjectMeta(oldObject.ObjectMeta),
+			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.PresetSpec{
 				Enabled:        oldObject.Spec.Enabled,
 				RequiredEmails: oldObject.Spec.RequiredEmails,
@@ -763,25 +873,23 @@ func clonePresetResourcesInCluster(ctx context.Context, logger logrus.FieldLogge
 			}
 		}
 
-		if err := ensureObject(ctx, client, &newObject); err != nil {
-			return fmt.Errorf("failed to clone Preset %s: %w", oldObject.Name, err)
+		if err := ensureObject(ctx, client, &newObject, false); err != nil {
+			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
 	}
 
-	return nil
+	return len(oldObjects.Items), nil
 }
 
-func cloneProjectResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) error {
-	logger.Debug("Cloning Project objects…")
-
+func cloneProjectResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) (int, error) {
 	oldObjects := &kubermaticv1.ProjectList{}
 	if err := client.List(ctx, oldObjects); err != nil {
-		return fmt.Errorf("failed to list Project objects: %w", err)
+		return 0, fmt.Errorf("failed to list Project objects: %w", err)
 	}
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.Project{
-			ObjectMeta: cloneObjectMeta(oldObject.ObjectMeta),
+			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.ProjectSpec{
 				Name: oldObject.Spec.Name,
 			},
@@ -790,55 +898,55 @@ func cloneProjectResourcesInCluster(ctx context.Context, logger logrus.FieldLogg
 			},
 		}
 
-		if err := ensureObject(ctx, client, &newObject); err != nil {
-			return fmt.Errorf("failed to clone Project %s: %w", oldObject.Name, err)
+		if err := ensureObject(ctx, client, &newObject, true); err != nil {
+			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
+		}
+
+		if err := client.Status().Update(ctx, &newObject); err != nil {
+			return 0, fmt.Errorf("failed to update status on %s: %w", oldObject.Name, err)
 		}
 	}
 
-	return nil
+	return len(oldObjects.Items), nil
 }
 
-func cloneRuleGroupResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) error {
-	logger.Debug("Cloning RuleGroup objects…")
-
+func cloneRuleGroupResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) (int, error) {
 	oldObjects := &kubermaticv1.RuleGroupList{}
 	if err := client.List(ctx, oldObjects); err != nil {
-		return fmt.Errorf("failed to list RuleGroup objects: %w", err)
+		return 0, fmt.Errorf("failed to list RuleGroup objects: %w", err)
 	}
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.RuleGroup{
-			ObjectMeta: cloneObjectMeta(oldObject.ObjectMeta),
+			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.RuleGroupSpec{
 				RuleGroupType: newv1.RuleGroupType(oldObject.Spec.RuleGroupType),
 				Data:          oldObject.Spec.Data,
-				Cluster:       migrateObjectReference(oldObject.Spec.Cluster),
+				Cluster:       migrateObjectReference(oldObject.Spec.Cluster, ""),
 			},
 		}
 
-		if err := ensureObject(ctx, client, &newObject); err != nil {
-			return fmt.Errorf("failed to clone RuleGroup %s: %w", oldObject.Name, err)
+		if err := ensureObject(ctx, client, &newObject, false); err != nil {
+			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
 	}
 
-	return nil
+	return len(oldObjects.Items), nil
 }
 
-func cloneSeedResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) error {
-	logger.Debug("Cloning Seed objects…")
-
+func cloneSeedResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) (int, error) {
 	oldObjects := &kubermaticv1.SeedList{}
 	if err := client.List(ctx, oldObjects); err != nil {
-		return fmt.Errorf("failed to list Seed objects: %w", err)
+		return 0, fmt.Errorf("failed to list Seed objects: %w", err)
 	}
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.Seed{
-			ObjectMeta: cloneObjectMeta(oldObject.ObjectMeta),
+			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.SeedSpec{
 				Country:          oldObject.Spec.Country,
 				Location:         oldObject.Spec.Location,
-				Kubeconfig:       migrateObjectReference(oldObject.Spec.Kubeconfig),
+				Kubeconfig:       migrateObjectReference(oldObject.Spec.Kubeconfig, oldObject.Namespace),
 				Datacenters:      map[string]newv1.Datacenter{},
 				SeedDNSOverwrite: oldObject.Spec.SeedDNSOverwrite,
 				NodeportProxy: newv1.NodeportProxyConfig{
@@ -885,12 +993,12 @@ func cloneSeedResourcesInCluster(ctx context.Context, logger logrus.FieldLogger,
 			}
 		}
 
-		if err := ensureObject(ctx, client, &newObject); err != nil {
-			return fmt.Errorf("failed to clone Seed %s: %w", oldObject.Name, err)
+		if err := ensureObject(ctx, client, &newObject, false); err != nil {
+			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
 	}
 
-	return nil
+	return len(oldObjects.Items), nil
 }
 
 func convertComponentSettings(oldSettings kubermaticv1.ComponentSettings) newv1.ComponentSettings {
@@ -1087,17 +1195,15 @@ func convertDatacenter(oldDC kubermaticv1.Datacenter) newv1.Datacenter {
 	return newDC
 }
 
-func cloneUserResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) error {
-	logger.Debug("Cloning User objects…")
-
+func cloneUserResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) (int, error) {
 	oldObjects := &kubermaticv1.UserList{}
 	if err := client.List(ctx, oldObjects); err != nil {
-		return fmt.Errorf("failed to list User objects: %w", err)
+		return 0, fmt.Errorf("failed to list User objects: %w", err)
 	}
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.User{
-			ObjectMeta: cloneObjectMeta(oldObject.ObjectMeta),
+			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.UserSpec{
 				ID:                     oldObject.Spec.ID,
 				Name:                   oldObject.Spec.Name,
@@ -1119,25 +1225,23 @@ func cloneUserResourcesInCluster(ctx context.Context, logger logrus.FieldLogger,
 			}
 		}
 
-		if err := ensureObject(ctx, client, &newObject); err != nil {
-			return fmt.Errorf("failed to clone User %s: %w", oldObject.Name, err)
+		if err := ensureObject(ctx, client, &newObject, true); err != nil {
+			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
 	}
 
-	return nil
+	return len(oldObjects.Items), nil
 }
 
-func cloneUserProjectBindingResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) error {
-	logger.Debug("Cloning UserProjectBinding objects…")
-
+func cloneUserProjectBindingResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) (int, error) {
 	oldObjects := &kubermaticv1.UserProjectBindingList{}
 	if err := client.List(ctx, oldObjects); err != nil {
-		return fmt.Errorf("failed to list UserProjectBinding objects: %w", err)
+		return 0, fmt.Errorf("failed to list UserProjectBinding objects: %w", err)
 	}
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.UserProjectBinding{
-			ObjectMeta: cloneObjectMeta(oldObject.ObjectMeta),
+			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.UserProjectBindingSpec{
 				UserEmail: oldObject.Spec.UserEmail,
 				ProjectID: oldObject.Spec.ProjectID,
@@ -1145,25 +1249,23 @@ func cloneUserProjectBindingResourcesInCluster(ctx context.Context, logger logru
 			},
 		}
 
-		if err := ensureObject(ctx, client, &newObject); err != nil {
-			return fmt.Errorf("failed to clone UserProjectBinding %s: %w", oldObject.Name, err)
+		if err := ensureObject(ctx, client, &newObject, false); err != nil {
+			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
 	}
 
-	return nil
+	return len(oldObjects.Items), nil
 }
 
-func cloneUserSSHKeyResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) error {
-	logger.Debug("Cloning UserSSHKey objects…")
-
+func cloneUserSSHKeyResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) (int, error) {
 	oldObjects := &kubermaticv1.UserSSHKeyList{}
 	if err := client.List(ctx, oldObjects); err != nil {
-		return fmt.Errorf("failed to list UserSSHKey objects: %w", err)
+		return 0, fmt.Errorf("failed to list UserSSHKey objects: %w", err)
 	}
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.UserSSHKey{
-			ObjectMeta: cloneObjectMeta(oldObject.ObjectMeta),
+			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.SSHKeySpec{
 				Owner:       oldObject.Spec.Owner,
 				Name:        oldObject.Spec.Name,
@@ -1173,10 +1275,10 @@ func cloneUserSSHKeyResourcesInCluster(ctx context.Context, logger logrus.FieldL
 			},
 		}
 
-		if err := ensureObject(ctx, client, &newObject); err != nil {
-			return fmt.Errorf("failed to clone UserSSHKey %s: %w", oldObject.Name, err)
+		if err := ensureObject(ctx, client, &newObject, false); err != nil {
+			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
 	}
 
-	return nil
+	return len(oldObjects.Items), nil
 }

@@ -242,15 +242,17 @@ func validateNoStuckResources(ctx context.Context, logger logrus.FieldLogger, op
 	success := true
 
 	// check master cluster
-	if !validateNoStuckResourcesInCluster(ctx, logger.WithField("master", true), opt.MasterClient, allKubermaticMasterKinds) {
+	if !validateNoStuckResourcesInCluster(ctx, logger.WithField("master", true), opt.MasterClient, getMasterClusterKinds()) {
 		success = false
 	}
 
 	// check seed clusters
+	seedClusterKinds := getSeedClusterKinds()
+
 	for seedName, seedClient := range opt.SeedClients {
 		seedLogger := logger.WithField("seed", seedName)
 
-		if !validateNoStuckResourcesInCluster(ctx, seedLogger, seedClient, allKubermaticSeedKinds) {
+		if !validateNoStuckResourcesInCluster(ctx, seedLogger, seedClient, seedClusterKinds) {
 			success = false
 		}
 
@@ -285,13 +287,13 @@ func validateNoStuckResources(ctx context.Context, logger logrus.FieldLogger, op
 	return nil
 }
 
-func validateNoStuckResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client, kinds []string) bool {
+func validateNoStuckResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client, kinds []Kind) bool {
 	success := true
 
 	for _, kind := range kinds {
 		objectList := &metav1unstructured.UnstructuredList{}
 		objectList.SetAPIVersion(kubermaticv1.SchemeGroupVersion.String())
-		objectList.SetKind(kind)
+		objectList.SetKind(kind.Name)
 
 		if err := client.List(ctx, objectList); err != nil {
 			logger.Warnf("Failed to list %s objects: %v", kind, err)
@@ -329,7 +331,10 @@ func validateCRDsExist(ctx context.Context, logger logrus.FieldLogger, opt *Opti
 		return fmt.Errorf("failed to load CRDs from %s: %w", crdDirectory, err)
 	}
 
-	checklist := sets.NewString(allKubermaticKinds...)
+	checklist := sets.NewString()
+	for _, kind := range allKubermaticKinds {
+		checklist.Insert(kind.Name)
+	}
 
 	for _, crd := range crds {
 		// not actually a CRD

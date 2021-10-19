@@ -130,16 +130,16 @@ func MigrateCRDsAction(logger *logrus.Logger) cli.ActionFunc {
 		// ////////////////////////////////////
 		// phase 1: preflight checks
 
-		if err := crdmigration.PerformPreflightChecks(appContext, logger.WithField("phase", "preflight"), &opt); err != nil {
-			return fmt.Errorf("preflight checks failed: %w", err)
-		}
+		// if err := crdmigration.PerformPreflightChecks(appContext, logger.WithField("phase", "preflight"), &opt); err != nil {
+		// 	return fmt.Errorf("preflight checks failed: %w", err)
+		// }
 
 		// ////////////////////////////////////
 		// phase 2: backups
 
-		if err := crdmigration.CreateBackups(appContext, logger.WithField("phase", "backup"), &opt); err != nil {
-			return fmt.Errorf("backups failed: %w", err)
-		}
+		// if err := crdmigration.CreateBackups(appContext, logger.WithField("phase", "backup"), &opt); err != nil {
+		// 	return fmt.Errorf("backups failed: %w", err)
+		// }
 
 		// ////////////////////////////////////
 		// phase 3: magic!

@@ -58,14 +58,16 @@ func CreateBackups(ctx context.Context, logger logrus.FieldLogger, opt *Options)
 	defer tarWriter.Close()
 
 	// backup master cluster
-	if err := createClusterBackup(ctx, logger.WithField("master", true), now, opt.MasterClient, tarWriter, "master", allKubermaticMasterKinds); err != nil {
+	if err := createClusterBackup(ctx, logger.WithField("master", true), now, opt.MasterClient, tarWriter, "master", getMasterClusterKinds()); err != nil {
 		return fmt.Errorf("backing up the master cluster failed: %w", err)
 	}
 
 	// backup seed clusters
+	seedClusterKinds := getSeedClusterKinds()
+
 	for seedName, seedClient := range opt.SeedClients {
 		directory := fmt.Sprintf("seed-%s", seedName)
-		if err := createClusterBackup(ctx, logger.WithField("seed", seedName), now, seedClient, tarWriter, directory, allKubermaticSeedKinds); err != nil {
+		if err := createClusterBackup(ctx, logger.WithField("seed", seedName), now, seedClient, tarWriter, directory, seedClusterKinds); err != nil {
 			return fmt.Errorf("backing up the seed cluster failed: %w", err)
 		}
 	}
@@ -73,7 +75,7 @@ func CreateBackups(ctx context.Context, logger logrus.FieldLogger, opt *Options)
 	return nil
 }
 
-func createClusterBackup(ctx context.Context, logger logrus.FieldLogger, ts time.Time, client ctrlruntimeclient.Client, tarWriter *tar.Writer, pathPrefix string, kinds []string) error {
+func createClusterBackup(ctx context.Context, logger logrus.FieldLogger, ts time.Time, client ctrlruntimeclient.Client, tarWriter *tar.Writer, pathPrefix string, kinds []Kind) error {
 	logger.Info("Creating backup…")
 
 	for _, kind := range kinds {
@@ -81,10 +83,10 @@ func createClusterBackup(ctx context.Context, logger logrus.FieldLogger, ts time
 
 		objectList := &metav1unstructured.UnstructuredList{}
 		objectList.SetAPIVersion(kubermaticv1.SchemeGroupVersion.String())
-		objectList.SetKind(kind)
+		objectList.SetKind(kind.Name)
 
 		if err := client.List(ctx, objectList); err != nil {
-			return fmt.Errorf("failed to list %s objects: %w", kind, err)
+			return fmt.Errorf("failed to list %s objects: %w", kind.Name, err)
 		}
 
 		for _, object := range objectList.Items {
@@ -92,12 +94,12 @@ func createClusterBackup(ctx context.Context, logger logrus.FieldLogger, ts time
 			objectLogger.Debug("Dumping…")
 
 			// create a filename like "cluster/3948rfhsf.yaml"
-			filename := getBackupResourceFilename(pathPrefix, object, kind)
+			filename := getBackupResourceFilename(pathPrefix, object, kind.Name)
 
 			// encode resource as YAML
 			encoded, err := encodeResourceAsYAML(object)
 			if err != nil {
-				return fmt.Errorf("failed to encode %s as YAML: %w", kind, err)
+				return fmt.Errorf("failed to encode %s as YAML: %w", kind.Name, err)
 			}
 
 			// write file header
