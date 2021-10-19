@@ -13,6 +13,8 @@
 # limitations under the License.
 
 promtail:
+  fullnameOverride: promtail
+
   deploymentStrategy: RollingUpdate
 
   image:
