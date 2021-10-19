@@ -29,6 +29,7 @@ import (
 	"time"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
+	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
 	"k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/scheme"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
@@ -72,7 +73,7 @@ func TestMLAIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create project: %v", getErrorResponse(err))
 	}
-	defer cleanupProject(t, project.ID)
+	defer masterClient.CleanupProject(t, project.ID)
 
 	t.Log("creating cluster...")
 	apiCluster, err := masterClient.CreateDOCluster(project.ID, datacenter, rand.String(10), credential, version, location, 1)
@@ -120,7 +121,7 @@ func TestMLAIntegration(t *testing.T) {
 			t.Fatalf("failed to get project: %v", err)
 		}
 
-		_, ok := p.GetAnnotations()["mla.k8c.io/organization"]
+		_, ok := p.GetAnnotations()[mla.GrafanaOrgAnnotationKey]
 		return ok
 	}) {
 		t.Fatalf("waiting for project annotation %+v", p)
@@ -139,15 +140,13 @@ func TestMLAIntegration(t *testing.T) {
 	if err := seedClient.Get(ctx, types.NamespacedName{Name: split[1], Namespace: split[0]}, &secret); err != nil {
 		t.Fatalf("failed to get Grafana Secret: %v", err)
 	}
-	grafanaUserKey := "admin-user"
-	grafanaPasswordKey := "admin-password"
-	adminName, ok := secret.Data[grafanaUserKey]
+	adminName, ok := secret.Data[mla.GrafanaUserKey]
 	if !ok {
-		t.Fatalf("Grafana Secret %q does not contain %s key", grafanaSecret, grafanaUserKey)
+		t.Fatalf("Grafana Secret %q does not contain %s key", grafanaSecret, mla.GrafanaUserKey)
 	}
-	adminPass, ok := secret.Data[grafanaPasswordKey]
+	adminPass, ok := secret.Data[mla.GrafanaPasswordKey]
 	if !ok {
-		t.Fatalf("Grafana Secret %q does not contain %s key", grafanaSecret, grafanaPasswordKey)
+		t.Fatalf("Grafana Secret %q does not contain %s key", grafanaSecret, mla.GrafanaPasswordKey)
 	}
 	grafanaAuth := fmt.Sprintf("%s:%s", adminName, adminPass)
 	httpClient := &http.Client{Timeout: 15 * time.Second}
@@ -157,7 +156,7 @@ func TestMLAIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to initialize grafana client")
 	}
-	orgID, ok := p.GetAnnotations()["mla.k8c.io/organization"]
+	orgID, ok := p.GetAnnotations()[mla.GrafanaOrgAnnotationKey]
 	if !ok {
 		t.Fatal("project should have grafana org annotation set")
 	}
@@ -169,17 +168,19 @@ func TestMLAIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error while getting grafana org:  %s", err)
 	}
+	t.Log("org added to Grafana")
 
 	if err := seedClient.Get(ctx, types.NamespacedName{Name: apiCluster.ID}, cluster); err != nil {
 		t.Fatalf("failed to get cluster: %v", err)
 	}
 
 	grafanaClient.SetOrgIDHeader(org.ID)
+	t.Log("waiting for datasource added to grafana")
 	if !utils.WaitFor(1*time.Second, timeout, func() bool {
-		_, err := grafanaClient.GetDatasourceByUID(ctx, fmt.Sprintf("%s-%s", "prometheus", cluster.Name))
+		_, err := grafanaClient.GetDatasourceByUID(ctx, fmt.Sprintf("%s-%s", mla.PrometheusType, cluster.Name))
 		return err == nil
 	}) {
-		t.Fatalf("waiting for grafana datasource %s-%s", "prometheus", cluster.Name)
+		t.Fatalf("waiting for grafana datasource %s-%s", mla.PrometheusType, cluster.Name)
 	}
 
 	// Disable MLA Integration
@@ -188,10 +189,29 @@ func TestMLAIntegration(t *testing.T) {
 		t.Fatalf("failed to set MLA integration to false: %v", err)
 	}
 
+	seed.Spec.MLA = &kubermaticv1.SeedMLASettings{
+		UserClusterMLAEnabled: false,
+	}
+	if err := seedClient.Update(ctx, seed); err != nil {
+		t.Fatalf("failed to update seed: %v", err)
+	}
+
 	// Check that cluster is healthy
 	t.Log("waiting for cluster to healthy after disabling MLA...")
 	if err := masterClient.WaitForClusterHealthy(project.ID, datacenter, apiCluster.ID); err != nil {
 		t.Fatalf("cluster not healthy: %v", err)
+	}
+
+	t.Log("waiting for project to get rid of grafana org annotation")
+	if !utils.WaitFor(1*time.Second, timeout, func() bool {
+		if err := seedClient.Get(ctx, types.NamespacedName{Name: project.ID}, p); err != nil {
+			t.Fatalf("failed to get project: %v", err)
+		}
+
+		_, ok := p.GetAnnotations()[mla.GrafanaOrgAnnotationKey]
+		return !ok
+	}) {
+		t.Fatalf("waiting for project annotation removed %+v", p)
 	}
 
 	// Test that cluster deletes cleanly
@@ -215,17 +235,4 @@ func setMLAIntegration(ctx context.Context, client ctrlruntimeclient.Client, clu
 	}
 
 	return client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
-}
-
-func cleanupProject(t *testing.T, id string) {
-	t.Log("cleaning up project and cluster...")
-
-	// use a dedicated context so that cleanups always run, even
-	// if the context inside a test was already cancelled
-	token, err := utils.RetrieveAdminMasterToken(context.Background())
-	if err != nil {
-		t.Fatalf("failed to get master token: %v", err)
-	}
-
-	utils.NewTestClient(token, t).CleanupProject(t, id)
 }
