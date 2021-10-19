@@ -1,512 +1,182 @@
 ---
-# Source: promtail/templates/serviceaccount.yaml
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+# Source: promtail/charts/promtail/templates/serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  labels:
-    app.kubernetes.io/name: RELEASE-NAME
-    app.kubernetes.io/instance: 'RELEASE-NAME'
-    app.kubernetes.io/version: '0.2.6'
-    app.kubernetes.io/managed-by: helm
-  name: RELEASE-NAME
+  name: promtail
   namespace: default
+  labels:
+    helm.sh/chart: promtail-3.8.1
+    app.kubernetes.io/name: promtail
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/version: "2.3.0"
+    app.kubernetes.io/managed-by: Helm
 ---
-# Source: promtail/templates/configmap.yaml
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+# Source: promtail/charts/promtail/templates/secret.yaml
 apiVersion: v1
-kind: ConfigMap
+kind: Secret
 metadata:
-  name: RELEASE-NAME
+  name: promtail
   namespace: default
   labels:
-    app.kubernetes.io/name: RELEASE-NAME
-    app.kubernetes.io/instance: 'RELEASE-NAME'
-    app.kubernetes.io/version: '0.2.6'
-    app.kubernetes.io/managed-by: helm
-data:
+    helm.sh/chart: promtail-3.8.1
+    app.kubernetes.io/name: promtail
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/version: "2.3.0"
+    app.kubernetes.io/managed-by: Helm
+stringData:
   promtail.yaml: |
+    server:
+      log_level: info
+      http_listen_port: 3101
+    
     client:
-      backoff_config:
-        max_period: 5s
-        max_retries: 20
-        min_period: 100ms
-      batchsize: 102400
-      batchwait: 1s
-      external_labels: {}
-      timeout: 10s
+      url: http://loki-gateway/loki/api/v1/push
+      
+    
     positions:
       filename: /run/promtail/positions.yaml
-    server:
-      http_listen_port: 3101
-    target_config:
-      sync_period: 10s
+    
     scrape_configs:
-    - job_name: kubernetes-pods-name
-      kubernetes_sd_configs:
-      - role: pod
-      relabel_configs:
-      - source_labels:
-        - __meta_kubernetes_pod_label_name
-        target_label: __service__
-      - source_labels:
-        - __meta_kubernetes_pod_node_name
-        target_label: __host__
-      - action: drop
-        regex: ""
-        source_labels:
-        - __service__
-      - action: labelmap
-        regex: __meta_kubernetes_pod_label_(.+)
-      - action: replace
-        replacement: $1
-        separator: /
-        source_labels:
-        - __meta_kubernetes_namespace
-        - __service__
-        target_label: job
-      - action: replace
-        source_labels:
-        - __meta_kubernetes_namespace
-        target_label: namespace
-      - action: replace
-        source_labels:
-        - __meta_kubernetes_pod_name
-        target_label: instance
-      - action: replace
-        source_labels:
-        - __meta_kubernetes_pod_container_name
-        target_label: container_name
-      - replacement: /var/log/pods/*$1/*.log
-        separator: /
-        source_labels:
-        - __meta_kubernetes_pod_uid
-        - __meta_kubernetes_pod_container_name
-        target_label: __path__
-    - job_name: kubernetes-pods-app
-      kubernetes_sd_configs:
-      - role: pod
-      relabel_configs:
-      - action: drop
-        regex: .+
-        source_labels:
-        - __meta_kubernetes_pod_label_name
-      - source_labels:
-        - __meta_kubernetes_pod_label_app
-        target_label: __service__
-      - source_labels:
-        - __meta_kubernetes_pod_node_name
-        target_label: __host__
-      - action: drop
-        regex: ""
-        source_labels:
-        - __service__
-      - action: labelmap
-        regex: __meta_kubernetes_pod_label_(.+)
-      - action: replace
-        replacement: $1
-        separator: /
-        source_labels:
-        - __meta_kubernetes_namespace
-        - __service__
-        target_label: job
-      - action: replace
-        source_labels:
-        - __meta_kubernetes_namespace
-        target_label: namespace
-      - action: replace
-        source_labels:
-        - __meta_kubernetes_pod_name
-        target_label: instance
-      - action: replace
-        source_labels:
-        - __meta_kubernetes_pod_container_name
-        target_label: container_name
-      - replacement: /var/log/pods/*$1/*.log
-        separator: /
-        source_labels:
-        - __meta_kubernetes_pod_uid
-        - __meta_kubernetes_pod_container_name
-        target_label: __path__
-    - job_name: kubernetes-pods-direct-controllers
-      kubernetes_sd_configs:
-      - role: pod
-      relabel_configs:
-      - action: drop
-        regex: .+
-        separator: ""
-        source_labels:
-        - __meta_kubernetes_pod_label_name
-        - __meta_kubernetes_pod_label_app
-      - action: drop
-        regex: '[0-9a-z-.]+-[0-9a-f]{8,10}'
-        source_labels:
-        - __meta_kubernetes_pod_controller_name
-      - source_labels:
-        - __meta_kubernetes_pod_controller_name
-        target_label: __service__
-      - source_labels:
-        - __meta_kubernetes_pod_node_name
-        target_label: __host__
-      - action: drop
-        regex: ""
-        source_labels:
-        - __service__
-      - action: labelmap
-        regex: __meta_kubernetes_pod_label_(.+)
-      - action: replace
-        replacement: $1
-        separator: /
-        source_labels:
-        - __meta_kubernetes_namespace
-        - __service__
-        target_label: job
-      - action: replace
-        source_labels:
-        - __meta_kubernetes_namespace
-        target_label: namespace
-      - action: replace
-        source_labels:
-        - __meta_kubernetes_pod_name
-        target_label: instance
-      - action: replace
-        source_labels:
-        - __meta_kubernetes_pod_container_name
-        target_label: container_name
-      - replacement: /var/log/pods/*$1/*.log
-        separator: /
-        source_labels:
-        - __meta_kubernetes_pod_uid
-        - __meta_kubernetes_pod_container_name
-        target_label: __path__
-    - job_name: kubernetes-pods-indirect-controller
-      kubernetes_sd_configs:
-      - role: pod
-      relabel_configs:
-      - action: drop
-        regex: .+
-        separator: ""
-        source_labels:
-        - __meta_kubernetes_pod_label_name
-        - __meta_kubernetes_pod_label_app
-      - action: keep
-        regex: '[0-9a-z-.]+-[0-9a-f]{8,10}'
-        source_labels:
-        - __meta_kubernetes_pod_controller_name
-      - action: replace
-        regex: ([0-9a-z-.]+)-[0-9a-f]{8,10}
-        source_labels:
-        - __meta_kubernetes_pod_controller_name
-        target_label: __service__
-      - source_labels:
-        - __meta_kubernetes_pod_node_name
-        target_label: __host__
-      - action: drop
-        regex: ""
-        source_labels:
-        - __service__
-      - action: labelmap
-        regex: __meta_kubernetes_pod_label_(.+)
-      - action: replace
-        replacement: $1
-        separator: /
-        source_labels:
-        - __meta_kubernetes_namespace
-        - __service__
-        target_label: job
-      - action: replace
-        source_labels:
-        - __meta_kubernetes_namespace
-        target_label: namespace
-      - action: replace
-        source_labels:
-        - __meta_kubernetes_pod_name
-        target_label: instance
-      - action: replace
-        source_labels:
-        - __meta_kubernetes_pod_container_name
-        target_label: container_name
-      - replacement: /var/log/pods/*$1/*.log
-        separator: /
-        source_labels:
-        - __meta_kubernetes_pod_uid
-        - __meta_kubernetes_pod_container_name
-        target_label: __path__
-    - job_name: kubernetes-pods-static
-      kubernetes_sd_configs:
-      - role: pod
-      relabel_configs:
-      - action: drop
-        regex: ""
-        source_labels:
-        - __meta_kubernetes_pod_annotation_kubernetes_io_config_mirror
-      - action: replace
-        source_labels:
-        - __meta_kubernetes_pod_label_component
-        target_label: __service__
-      - source_labels:
-        - __meta_kubernetes_pod_node_name
-        target_label: __host__
-      - action: drop
-        regex: ""
-        source_labels:
-        - __service__
-      - action: labelmap
-        regex: __meta_kubernetes_pod_label_(.+)
-      - action: replace
-        replacement: $1
-        separator: /
-        source_labels:
-        - __meta_kubernetes_namespace
-        - __service__
-        target_label: job
-      - action: replace
-        source_labels:
-        - __meta_kubernetes_namespace
-        target_label: namespace
-      - action: replace
-        source_labels:
-        - __meta_kubernetes_pod_name
-        target_label: instance
-      - action: replace
-        source_labels:
-        - __meta_kubernetes_pod_container_name
-        target_label: container_name
-      - replacement: /var/log/pods/*$1/*.log
-        separator: /
-        source_labels:
-        - __meta_kubernetes_pod_annotation_kubernetes_io_config_mirror
-        - __meta_kubernetes_pod_container_name
-        target_label: __path__
-    - job_name: kubelet-journal-logs
-      journal:
-        labels:
-          job: systemd-journal
-        max_age: 12h
-        path: /var/log/journal
-      pipeline_stages:
-      - match:
-          action: drop
-          selector: '{unit!="kubelet.service"}'
-      relabel_configs:
-      - source_labels:
-        - __journal__systemd_unit
-        target_label: unit
-      - source_labels:
-        - __journal__hostname
-        target_label: hostname
-    - job_name: kubernetes-events
-      kubernetes_sd_configs:
-      - role: pod
-      pipeline_stages:
-      - match:
-          selector: '{app="eventrouter"}'
-          stages:
-          - json:
-              expressions:
-                namespace: event.metadata.namespace
-          - labels:
-              namespace: ""
+      # See also https://github.com/grafana/loki/blob/master/production/ksonnet/promtail/scrape_config.libsonnet for reference
+      - job_name: kubernetes-pods
+        pipeline_stages:
+          - cri: {}
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels:
+              - __meta_kubernetes_pod_controller_name
+            regex: ([0-9a-z-.]+?)(-[0-9a-f]{8,10})?
+            action: replace
+            target_label: __tmp_controller_name
+          - source_labels:
+              - __meta_kubernetes_pod_label_app_kubernetes_io_name
+              - __meta_kubernetes_pod_label_app
+              - __tmp_controller_name
+              - __meta_kubernetes_pod_name
+            regex: ^;*([^;]+)(;.*)?$
+            action: replace
+            target_label: app
+          - source_labels:
+              - __meta_kubernetes_pod_label_app_kubernetes_io_component
+              - __meta_kubernetes_pod_label_component
+            regex: ^;*([^;]+)(;.*)?$
+            action: replace
+            target_label: component
+          - action: replace
+            source_labels:
+            - __meta_kubernetes_pod_node_name
+            target_label: node_name
+          - action: replace
+            source_labels:
+            - __meta_kubernetes_namespace
+            target_label: namespace
+          - action: replace
+            replacement: $1
+            separator: /
+            source_labels:
+            - namespace
+            - app
+            target_label: job
+          - action: replace
+            source_labels:
+            - __meta_kubernetes_pod_name
+            target_label: pod
+          - action: replace
+            source_labels:
+            - __meta_kubernetes_pod_container_name
+            target_label: container
+          - action: replace
+            replacement: /var/log/pods/*$1/*.log
+            separator: /
+            source_labels:
+            - __meta_kubernetes_pod_uid
+            - __meta_kubernetes_pod_container_name
+            target_label: __path__
+          - action: replace
+            regex: true/(.*)
+            replacement: /var/log/pods/*$1/*.log
+            separator: /
+            source_labels:
+            - __meta_kubernetes_pod_annotationpresent_kubernetes_io_config_hash
+            - __meta_kubernetes_pod_annotation_kubernetes_io_config_hash
+            - __meta_kubernetes_pod_container_name
+            target_label: __path__
 ---
-# Source: promtail/templates/clusterrole.yaml
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-apiVersion: rbac.authorization.k8s.io/v1
+# Source: promtail/charts/promtail/templates/clusterrole.yaml
 kind: ClusterRole
-metadata:
-  labels:
-    app.kubernetes.io/name: RELEASE-NAME
-    app.kubernetes.io/instance: 'RELEASE-NAME'
-    app.kubernetes.io/version: '0.2.6'
-    app.kubernetes.io/managed-by: helm
-  name: RELEASE-NAME-clusterrole
-  namespace: default
-rules:
-- apiGroups: [""] # "" indicates the core API group
-  resources:
-  - nodes
-  - nodes/proxy
-  - services
-  - endpoints
-  - pods
-  verbs: ["get", "watch", "list"]
----
-# Source: promtail/templates/clusterrolebinding.yaml
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
 metadata:
-  name: RELEASE-NAME-clusterrolebinding
+  name: promtail
   labels:
-    app.kubernetes.io/name: RELEASE-NAME
-    app.kubernetes.io/instance: 'RELEASE-NAME'
-    app.kubernetes.io/version: '0.2.6'
-    app.kubernetes.io/managed-by: helm
+    helm.sh/chart: promtail-3.8.1
+    app.kubernetes.io/name: promtail
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/version: "2.3.0"
+    app.kubernetes.io/managed-by: Helm
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+      - nodes/proxy
+      - services
+      - endpoints
+      - pods
+    verbs:
+      - get
+      - watch
+      - list
+---
+# Source: promtail/charts/promtail/templates/clusterrolebinding.yaml
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: promtail
+  labels:
+    helm.sh/chart: promtail-3.8.1
+    app.kubernetes.io/name: promtail
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/version: "2.3.0"
+    app.kubernetes.io/managed-by: Helm
 subjects:
   - kind: ServiceAccount
-    name: RELEASE-NAME
+    name: promtail
     namespace: default
 roleRef:
   kind: ClusterRole
-  name: RELEASE-NAME-clusterrole
+  name: promtail
   apiGroup: rbac.authorization.k8s.io
 ---
-# Source: promtail/templates/role.yaml
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: RELEASE-NAME
-  namespace: default
-  labels:
-    app.kubernetes.io/name: RELEASE-NAME
-    app.kubernetes.io/instance: 'RELEASE-NAME'
-    app.kubernetes.io/version: '0.2.6'
-    app.kubernetes.io/managed-by: helm
----
-# Source: promtail/templates/rolebinding.yaml
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: RELEASE-NAME
-  namespace: default
-  labels:
-    app.kubernetes.io/name: RELEASE-NAME
-    app.kubernetes.io/instance: 'RELEASE-NAME'
-    app.kubernetes.io/version: '0.2.6'
-    app.kubernetes.io/managed-by: helm
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: RELEASE-NAME
-subjects:
-- kind: ServiceAccount
-  name: RELEASE-NAME
----
-# Source: promtail/templates/daemonset.yaml
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+# Source: promtail/charts/promtail/templates/daemonset.yaml
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: RELEASE-NAME
+  name: promtail
   namespace: default
   labels:
-    app.kubernetes.io/name: RELEASE-NAME
-    app.kubernetes.io/instance: 'RELEASE-NAME'
-    app.kubernetes.io/version: '0.2.6'
-    app.kubernetes.io/managed-by: helm
-  annotations:
-    null
+    helm.sh/chart: promtail-3.8.1
+    app.kubernetes.io/name: promtail
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/version: "2.3.0"
+    app.kubernetes.io/managed-by: Helm
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/name: RELEASE-NAME
-      app.kubernetes.io/instance: 'RELEASE-NAME'
+      app.kubernetes.io/name: promtail
+      app.kubernetes.io/instance: RELEASE-NAME
   updateStrategy:
-    type: RollingUpdate
+    {}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: RELEASE-NAME
-        app.kubernetes.io/instance: 'RELEASE-NAME'
+        app.kubernetes.io/name: promtail
+        app.kubernetes.io/instance: RELEASE-NAME
       annotations:
-        checksum/config: a4d98be1ce2b11abb5ee803092074a4d08a850c21728cc98176f1dec49436fab
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "3101"
-        kubermatic.io/chart: promtail
+        checksum/config: 524ed2b5e7f28a48e8cb6050fdf8b1322a022acb6e5a0308c9e631ac797f2450
     spec:
-      serviceAccountName: RELEASE-NAME
+      serviceAccountName: promtail
       initContainers:
         - name: init
           image: "docker.io/busybox:1.33"
@@ -517,35 +187,44 @@ spec:
             - sysctl -w fs.inotify.max_user_instances=256
           securityContext:
             privileged: true
+      securityContext:
+        runAsGroup: 0
+        runAsUser: 0
       containers:
         - name: promtail
-          image: "docker.io/grafana/promtail:2.1.0"
+          image: "docker.io/docker.io/grafana/promtail:2.1.0"
           imagePullPolicy: IfNotPresent
           args:
             - "-config.file=/etc/promtail/promtail.yaml"
-            - "-client.url=http://loki:3100/loki/api/v1/push"
           volumeMounts:
-          - name: config
-            mountPath: /etc/promtail
-          - name: run
-            mountPath: /run/promtail
-          - name: docker
-            mountPath: /var/lib/docker/containers
-            readOnly: true
-          - name: pods
-            mountPath: /var/log/pods
-            readOnly: true
-          - mountPath: /var/log/journal
-            name: journal
-            readOnly: true
+            - name: config
+              mountPath: /etc/promtail
+            - name: run
+              mountPath: /run/promtail
+            - mountPath: /var/lib/docker/containers
+              name: containers
+              readOnly: true
+            - mountPath: /var/log/pods
+              name: pods
+              readOnly: true
+            - mountPath: /var/log/journal
+              name: journal
+              readOnly: true
           env:
-          - name: HOSTNAME
-            valueFrom:
-              fieldRef:
-                fieldPath: spec.nodeName
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
           ports:
-            - containerPort: 3101
-              name: http-metrics
+            - name: http-metrics
+              containerPort: 3101
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
           readinessProbe:
             failureThreshold: 5
             httpGet:
@@ -562,27 +241,23 @@ spec:
             requests:
               cpu: 50m
               memory: 64Mi
-      nodeSelector:
-        {}
-      affinity:
-        {}
       tolerations:
         - effect: NoSchedule
           key: node-role.kubernetes.io/master
           operator: Exists
       volumes:
         - name: config
-          configMap:
-            name: RELEASE-NAME
+          secret:
+            secretName: promtail
         - name: run
           hostPath:
             path: /run/promtail
-        - name: docker
-          hostPath:
+        - hostPath:
             path: /var/lib/docker/containers
-        - name: pods
-          hostPath:
+          name: containers
+        - hostPath:
             path: /var/log/pods
+          name: pods
         - hostPath:
             path: /var/log/journal
           name: journal
