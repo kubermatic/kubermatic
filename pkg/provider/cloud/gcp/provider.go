@@ -179,6 +179,9 @@ func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provide
 func ConnectToComputeService(serviceAccount string) (*compute.Service, string, error) {
 	ctx := context.Background()
 	client, projectID, err := createClient(ctx, serviceAccount, compute.ComputeScope)
+	if err != nil {
+		return nil, "", fmt.Errorf("cannot create Google Cloud client: %v", err)
+	}
 	svc, err := compute.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
 		return nil, "", fmt.Errorf("cannot connect to Google Cloud: %v", err)
@@ -190,7 +193,9 @@ func ConnectToComputeService(serviceAccount string) (*compute.Service, string, e
 func ConnectToContainerService(serviceAccount string) (*container.Service, string, error) {
 	ctx := context.Background()
 	client, projectID, err := createClient(ctx, serviceAccount, container.CloudPlatformScope)
-
+	if err != nil {
+		return nil, "", fmt.Errorf("cannot create Google Cloud client: %v", err)
+	}
 	svc, err := container.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
 		return nil, "", fmt.Errorf("cannot connect to Google Cloud: %v", err)

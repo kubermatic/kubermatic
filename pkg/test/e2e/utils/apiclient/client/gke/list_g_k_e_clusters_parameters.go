@@ -59,10 +59,16 @@ func NewListGKEClustersParamsWithHTTPClient(client *http.Client) *ListGKECluster
 */
 type ListGKEClustersParams struct {
 
-	// Credential.
+	/* Credential.
+
+	   The credential name used in the preset for the GCP provider
+	*/
 	Credential *string
 
-	// ServiceAccount.
+	/* ServiceAccount.
+
+	   The plain GCP service account
+	*/
 	ServiceAccount *string
 
 	timeout    time.Duration

@@ -15550,11 +15550,13 @@
         "parameters": [
           {
             "type": "string",
+            "description": "The plain GCP service account",
             "name": "ServiceAccount",
             "in": "header"
           },
           {
             "type": "string",
+            "description": "The credential name used in the preset for the GCP provider",
             "name": "Credential",
             "in": "header"
           }
