@@ -337,3 +337,15 @@ type MLAAdminSetting struct {
 	// LoggingRateLimits contains rate-limiting configuration logging in the user cluster.
 	LoggingRateLimits *crdapiv1.LoggingRateLimitSettings `json:"loggingRateLimits,omitempty"`
 }
+
+// ExternalCluster represents an object holding cluster details
+// swagger:model ExternalCluster
+type ExternalCluster struct {
+	apiv1.Cluster `json:",inline"`
+}
+
+// ExternalClusterNode represents an object holding external cluster node
+// swagger:model ExternalClusterNode
+type ExternalClusterNode struct {
+	apiv1.Node `json:",inline"`
+}
