@@ -94,9 +94,14 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: SSL_CERT_FILE
+              value: "/etc/kubermatic/certs/ca-bundle.pem"
           volumeMounts:
             - mountPath: /etc/webhook
               name: webhook-certs
+              readOnly: true
+            - mountPath: /etc/kubermatic/certs
+              name: ca-bundle
               readOnly: true
       volumes:
         - name: socket-dir
@@ -104,6 +109,9 @@ spec:
         - name: webhook-certs
           secret:
             secretName: csi-migration-webhook-certs
+        - name: ca-bundle
+          configMap:
+            name: ca-bundle
 {{ end }}
 {{ end }}
 {{ end }}

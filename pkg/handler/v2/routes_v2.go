@@ -17,6 +17,7 @@ limitations under the License.
 package v2
 
 import (
+	"k8c.io/kubermatic/v2/pkg/handler/v2/user"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -665,6 +666,11 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/clusters/{cluster_id}/mlaadminsetting").
 		Handler(r.deleteMLAAdminSetting())
+
+	// Defines a set of HTTP endpoints for managing users
+	mux.Methods(http.MethodGet).
+		Path("/users").
+		Handler(r.listUser())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -1138,7 +1144,7 @@ func (r Routing) listSSHKeysAssignedToCluster() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       201: Cluster
+//       201: ExternalCluster
 //       401: empty
 //       403: empty
 func (r Routing) createExternalCluster() http.Handler {
@@ -1187,7 +1193,7 @@ func (r Routing) deleteExternalCluster() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: ClusterList
+//       200: []ExternalCluster
 //       401: empty
 //       403: empty
 func (r Routing) listExternalClusters() http.Handler {
@@ -1212,7 +1218,7 @@ func (r Routing) listExternalClusters() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: Cluster
+//       200: ExternalCluster
 //       401: empty
 //       403: empty
 func (r Routing) getExternalCluster() http.Handler {
@@ -1237,7 +1243,7 @@ func (r Routing) getExternalCluster() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: Cluster
+//       200: ExternalCluster
 //       401: empty
 //       403: empty
 func (r Routing) updateExternalCluster() http.Handler {
@@ -1262,7 +1268,7 @@ func (r Routing) updateExternalCluster() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: []Node
+//       200: []ExternalClusterNode
 //       401: empty
 //       403: empty
 func (r Routing) listExternalClusterNodes() http.Handler {
@@ -1287,7 +1293,7 @@ func (r Routing) listExternalClusterNodes() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: Node
+//       200: ExternalClusterNode
 //       401: empty
 //       403: empty
 func (r Routing) getExternalClusterNode() http.Handler {
@@ -4595,6 +4601,30 @@ func (r Routing) deleteMLAAdminSetting() http.Handler {
 			middleware.PrivilegedMLAAdminSetting(r.clusterProviderGetter, r.privilegedMLAAdminSettingProviderGetter, r.seedsGetter),
 		)(mlaadminsetting.DeleteEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
 		mlaadminsetting.DecodeDeleteReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/users user listUser
+//
+//     List users
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []User
+//       401: empty
+//       403: empty
+func (r Routing) listUser() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(user.ListEndpoint(r.userInfoGetter, r.userProvider)),
+		common.DecodeEmptyReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

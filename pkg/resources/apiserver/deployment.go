@@ -315,6 +315,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"--client-ca-file", "/etc/kubernetes/pki/ca/ca.crt",
 		"--kubelet-client-certificate", "/etc/kubernetes/kubelet/kubelet-client.crt",
 		"--kubelet-client-key", "/etc/kubernetes/kubelet/kubelet-client.key",
+		"--kubelet-certificate-authority", "/etc/kubernetes/pki/ca/ca.crt",
 		"--requestheader-client-ca-file", "/etc/kubernetes/pki/front-proxy/ca/ca.crt",
 		"--requestheader-allowed-names", "apiserver-aggregator",
 		"--requestheader-extra-headers-prefix", "X-Remote-Extra-",

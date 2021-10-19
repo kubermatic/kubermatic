@@ -8,26 +8,31 @@ aliases:
 
   sig-app-management:
     - aborilov
+    - dermorz
+    - hdurand0710
     - jiachengxu
     - rastislavs
-    - thetechnick
+    - sankalp-r
+    - themue
+    - vgramer
+    - wurbanski
     - xrstf
     - zyanichaimaa
 
   sig-cluster-management:
     - kron4eg
     - mfranczy
+    - mlavacca
     - moadqassem
     - moelsayed
     - xmudrii
     - xrstf
-    - youssefazrak
 
   sig-networking:
     - moadqassem
     - moelsayed
     - rastislavs
-    - youssefazrak
+    - weirdmachine
 
   sig-ui:
     - floreks

@@ -44,7 +44,7 @@ func TestListSeedsEndpoint(t *testing.T) {
 			name:                   "scenario 1: not authorized user gets seeds",
 			expectedResponse:       `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't have admin rights"}}`,
 			httpStatus:             http.StatusForbidden,
-			existingKubermaticObjs: []ctrlruntimeclient.Object{test.GenTestSeed()},
+			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", false), test.GenTestSeed()},
 			existingAPIUser:        test.GenDefaultAPIUser(),
 		},
 		// scenario 2
@@ -97,7 +97,7 @@ func TestGetSeedEndpoint(t *testing.T) {
 			seedName:               "test",
 			expectedResponse:       `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't have admin rights"}}`,
 			httpStatus:             http.StatusForbidden,
-			existingKubermaticObjs: []ctrlruntimeclient.Object{test.GenTestSeed()},
+			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", false), test.GenTestSeed()},
 			existingAPIUser:        test.GenDefaultAPIUser(),
 		},
 		// scenario 2
@@ -161,7 +161,7 @@ func TestUpdateSeedEndpoint(t *testing.T) {
 			seedName:               "us-central1",
 			expectedResponse:       `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't have admin rights"}}`,
 			httpStatus:             http.StatusForbidden,
-			existingKubermaticObjs: []ctrlruntimeclient.Object{test.GenTestSeed()},
+			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", false), test.GenTestSeed()},
 			existingAPIUser:        test.GenDefaultAPIUser(),
 		},
 		// scenario 2
@@ -246,7 +246,7 @@ func TestDeleteSeedEndpoint(t *testing.T) {
 			seedName:               "test",
 			expectedResponse:       `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't have admin rights"}}`,
 			httpStatus:             http.StatusForbidden,
-			existingKubermaticObjs: []ctrlruntimeclient.Object{test.GenTestSeed()},
+			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", false), test.GenTestSeed()},
 			existingAPIUser:        test.GenDefaultAPIUser(),
 		},
 		// scenario 2

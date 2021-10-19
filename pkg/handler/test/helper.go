@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"net/http"
 	"net/http/httptest"
 	"sort"
@@ -45,6 +46,7 @@ import (
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/handler/auth"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/etcdbackupconfig"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -95,6 +97,10 @@ func init() {
 	if err := gatekeeperconfigv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
 		kubermaticlog.Logger.Fatalw("failed to register scheme gatekeeperconfig/v1alpha1", "error", err)
 	}
+
+	middleware.Now = func() time.Time {
+		return UserLastSeen
+	}
 }
 
 const (
@@ -138,6 +144,11 @@ const (
 	DefaultKubernetesVersion = "1.22.2"
 	// Kubermatic namespace
 	KubermaticNamespace = "kubermatic"
+)
+
+var (
+	// UserLastSeen hold a time the user was last seen
+	UserLastSeen = time.Date(2020, time.December, 31, 23, 0, 0, 0, time.UTC)
 )
 
 // GetUser is a convenience function for generating apiv1.User
@@ -789,9 +800,10 @@ func GenUser(id, name, email string) *kubermaticv1.User {
 			UID:  types.UID(fmt.Sprintf("fake-uid-%s", id)),
 		},
 		Spec: kubermaticv1.UserSpec{
-			ID:    specID,
-			Name:  name,
-			Email: email,
+			ID:       specID,
+			Name:     name,
+			Email:    email,
+			LastSeen: &[]metav1.Time{metav1.NewTime(UserLastSeen)}[0],
 		},
 	}
 }
@@ -844,6 +856,13 @@ func GenAPIUser(name, email string) *apiv1.User {
 	}
 }
 
+// GenAPIAdminUser generates an admin API user
+func GenAPIAdminUser(name, email string, isAdmin bool) *apiv1.User {
+	user := GenAPIUser(name, email)
+	user.IsAdmin = isAdmin
+	return user
+}
+
 // DefaultCreationTimestamp returns default test timestamp
 func DefaultCreationTimestamp() time.Time {
 	return time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)
@@ -856,7 +875,8 @@ func GenDefaultAPIUser() *apiv1.User {
 			ID:   GenDefaultUser().Name,
 			Name: GenDefaultUser().Spec.Name,
 		},
-		Email: GenDefaultUser().Spec.Email,
+		Email:    GenDefaultUser().Spec.Email,
+		LastSeen: &[]apiv1.Time{apiv1.NewTime(UserLastSeen)}[0],
 	}
 }
 
@@ -871,6 +891,13 @@ func GenDefaultAdminAPIUser() *apiv1.User {
 func GenDefaultUser() *kubermaticv1.User {
 	userEmail := "bob@acme.com"
 	return GenUser("", "Bob", userEmail)
+}
+
+// GenDefaultAdminUser generates a default admin user
+func GenDefaultAdminUser() *kubermaticv1.User {
+	user := GenDefaultUser()
+	user.Spec.IsAdmin = true
+	return user
 }
 
 // GenProject generates new empty project
@@ -1850,12 +1877,12 @@ func GenAllowedRegistry(name, registryPrefix string) *kubermaticv1.AllowedRegist
 	return wr
 }
 
-func GenAPIEtcdBackupConfig(id, name, clusterID string) *apiv2.EtcdBackupConfig {
+func GenAPIEtcdBackupConfig(name, clusterID string) *apiv2.EtcdBackupConfig {
 	keep := 5
 	return &apiv2.EtcdBackupConfig{
 		ObjectMeta: apiv1.ObjectMeta{
 			Name:              name,
-			ID:                id,
+			ID:                etcdbackupconfig.GenEtcdBackupConfigID(name, clusterID),
 			Annotations:       nil,
 			CreationTimestamp: apiv1.Date(0001, 01, 01, 00, 00, 0, 0, time.UTC),
 		},
@@ -1867,13 +1894,13 @@ func GenAPIEtcdBackupConfig(id, name, clusterID string) *apiv2.EtcdBackupConfig 
 	}
 }
 
-func GenEtcdBackupConfig(id, name string, cluster *kubermaticv1.Cluster, projectID string) *kubermaticv1.EtcdBackupConfig {
+func GenEtcdBackupConfig(name string, cluster *kubermaticv1.Cluster, projectID string) *kubermaticv1.EtcdBackupConfig {
 	keep := 5
 	clusterObjectRef, _ := reference.GetReference(scheme.Scheme, cluster)
 
 	return &kubermaticv1.EtcdBackupConfig{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      id,
+			Name:      name,
 			Namespace: cluster.Status.NamespaceName,
 			Labels: map[string]string{
 				kubermaticv1.ProjectIDLabelKey: projectID,

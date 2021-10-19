@@ -35,11 +35,13 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	apiclient "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/admin"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/azure"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/constraint"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/constraints"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/constrainttemplates"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/credentials"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/datacenter"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/digitalocean"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/gcp"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/project"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/serviceaccounts"
@@ -82,7 +84,7 @@ func NewTestClient(token string, t *testing.T) *TestClient {
 }
 
 // CreateProject creates a new project and waits for it to become active (ready).
-func (r *TestClient) CreateProject(name string) (*apiv1.Project, error) {
+func (r *TestClient) CreateProject(name string, ignoredStatusCodes ...int) (*apiv1.Project, error) {
 	before := time.Now()
 	timeout := 30 * time.Second
 
@@ -91,7 +93,7 @@ func (r *TestClient) CreateProject(name string) (*apiv1.Project, error) {
 		Duration: 1 * time.Second,
 		Steps:    4,
 		Factor:   1.5,
-	})
+	}, ignoredStatusCodes...)
 
 	r.test.Logf("Creating project %s...", name)
 
@@ -490,6 +492,78 @@ func (r *TestClient) CreateAWSCluster(projectID, dc, name, secretAccessKey, acce
 	return convertCluster(clusterResponse.Payload)
 }
 
+// CreateKubevirtCluster creates cluster for Kubevirt provider
+func (r *TestClient) CreateKubevirtCluster(projectID, dc, name, credential, version, location string, replicas int32) (*apiv1.Cluster, error) {
+	vr, err := semver.NewVersion(version)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse version %s: %v", version, err)
+	}
+
+	clusterSpec := &models.CreateClusterSpec{}
+	clusterSpec.Cluster = &models.Cluster{
+		Type:       "kubernetes",
+		Name:       name,
+		Credential: credential,
+		Spec: &models.ClusterSpec{
+			Cloud: &models.CloudSpec{
+				DatacenterName: location,
+				Kubevirt:       &models.KubevirtCloudSpec{},
+			},
+			Version: vr,
+		},
+	}
+
+	if replicas > 0 {
+		cpu := "1"
+		memory := "2Gi"
+		namespace := "default"
+		pvcSize := "20Gi"
+		sourceURL := "http://vm-repo.default.svc.cluster.local/CentOS-7-x86_64-GenericCloud.qcow2"
+		storageClassName := "standard"
+
+		clusterSpec.NodeDeployment = &models.NodeDeployment{
+			Spec: &models.NodeDeploymentSpec{
+				Replicas: &replicas,
+				Template: &models.NodeSpec{
+					Cloud: &models.NodeCloudSpec{
+						Kubevirt: &models.KubevirtNodeSpec{
+							CPUs:             &cpu,
+							Memory:           &memory,
+							Namespace:        &namespace,
+							PVCSize:          &pvcSize,
+							SourceURL:        &sourceURL,
+							StorageClassName: &storageClassName,
+						},
+					},
+					OperatingSystem: &models.OperatingSystemSpec{
+						Centos: &models.CentOSSpec{
+							DistUpgradeOnBoot: false,
+						},
+					},
+				},
+			},
+		}
+	}
+
+	params := &project.CreateClusterParams{ProjectID: projectID, DC: dc, Body: clusterSpec}
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
+
+	r.test.Logf("Creating Kubevirt cluster %q (%s, %d nodes)...", name, version, replicas)
+
+	clusterResponse, err := r.client.Project.CreateCluster(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	r.test.Log("Cluster created successfully.")
+
+	return convertCluster(clusterResponse.Payload)
+}
+
 // CreateDOCluster creates cluster for DigitalOcean provider
 func (r *TestClient) CreateDOCluster(projectID, dc, name, credential, version, location string, replicas int32) (*apiv1.Cluster, error) {
 	vr, err := semver.NewVersion(version)
@@ -724,7 +798,7 @@ func (r *TestClient) WaitForClusterNodeDeploymentsToExist(projectID, dc, cluster
 }
 
 func (r *TestClient) WaitForClusterNodeDeploymentsToByReady(projectID, dc, clusterID string, replicas int32) error {
-	timeout := 10 * time.Minute
+	timeout := 15 * time.Minute
 	before := time.Now()
 
 	r.test.Logf("Waiting %v for NodeDeployment in cluster %s to become ready...", timeout, clusterID)
@@ -1249,7 +1323,11 @@ func (r *TestClient) ListDCForProvider(provider string) ([]*models.Datacenter, e
 	params := &datacenter.ListDCForProviderParams{
 		Provider: provider,
 	}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
 
 	list, err := r.client.Datacenter.ListDCForProvider(params, r.bearerToken)
 	if err != nil {
@@ -1264,7 +1342,11 @@ func (r *TestClient) GetDCForProvider(provider, dc string) (*models.Datacenter, 
 		Provider:   provider,
 		Datacenter: dc,
 	}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
 
 	receivedDC, err := r.client.Datacenter.GetDCForProvider(params, r.bearerToken)
 	if err != nil {
@@ -1282,7 +1364,11 @@ func (r *TestClient) CreateDC(seed string, dc *models.Datacenter) (*models.Datac
 		},
 		Seed: seed,
 	}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
 
 	createdDC, err := r.client.Datacenter.CreateDC(params, r.bearerToken)
 	if err != nil {
@@ -1298,7 +1384,11 @@ func (r *TestClient) DeleteDC(seed, dc string) error {
 		DC:   dc,
 	}
 	// HTTP400 is returned when the DC is not yet available in the Seed
-	SetupParams(r.test, params, 1*time.Second, 5*time.Minute, http.StatusBadRequest)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	}, http.StatusBadRequest)
 
 	_, err := r.client.Datacenter.DeleteDC(params, r.bearerToken)
 	return err
@@ -1333,7 +1423,11 @@ func (r *TestClient) PatchDC(seed, dcToPatch, patch string) (*models.Datacenter,
 		DCToPatch: dcToPatch,
 		Seed:      seed,
 	}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
 
 	patchedDC, err := r.client.Datacenter.PatchDC(params, r.bearerToken)
 	if err != nil {
@@ -1348,7 +1442,11 @@ func (r *TestClient) GetDCForSeed(seed, dc string) (*models.Datacenter, error) {
 		Seed: seed,
 		DC:   dc,
 	}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusNotFound)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	}, http.StatusNotFound)
 
 	receivedDC, err := r.client.Datacenter.GetDCForSeed(params, r.bearerToken)
 	if err != nil {
@@ -1362,7 +1460,11 @@ func (r *TestClient) ListDCForSeed(seed string) ([]*models.Datacenter, error) {
 	params := &datacenter.ListDCForSeedParams{
 		Seed: seed,
 	}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
 
 	list, err := r.client.Datacenter.ListDCForSeed(params, r.bearerToken)
 	if err != nil {
@@ -1376,7 +1478,11 @@ func (r *TestClient) GetDC(dc string) (*models.Datacenter, error) {
 	params := &datacenter.GetDatacenterParams{
 		DC: dc,
 	}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
 
 	receivedDC, err := r.client.Datacenter.GetDatacenter(params, r.bearerToken)
 	if err != nil {
@@ -1388,7 +1494,11 @@ func (r *TestClient) GetDC(dc string) (*models.Datacenter, error) {
 
 func (r *TestClient) ListDC() ([]*models.Datacenter, error) {
 	params := &datacenter.ListDatacentersParams{}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
 
 	list, err := r.client.Datacenter.ListDatacenters(params, r.bearerToken)
 	if err != nil {
@@ -1400,7 +1510,11 @@ func (r *TestClient) ListDC() ([]*models.Datacenter, error) {
 
 func (r *TestClient) Logout() error {
 	params := &users.LogoutCurrentUserParams{}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
 
 	_, err := r.client.Users.LogoutCurrentUser(params, r.bearerToken)
 	return err
@@ -1722,4 +1836,43 @@ func (r *TestClient) ListClusters(projectID string) ([]*apiv1.Cluster, error) {
 	}
 
 	return clusterList, nil
+}
+
+// ListDOSizes returns list DO sizes
+func (r *TestClient) ListDOSizes(credential string) (*models.DigitaloceanSizeList, error) {
+	params := &digitalocean.ListDigitaloceanSizesParams{
+		Credential: &credential,
+	}
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
+
+	sizesResponse, err := r.client.Digitalocean.ListDigitaloceanSizes(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return sizesResponse.Payload, nil
+}
+
+// ListAzureSizes returns list Azure sizes
+func (r *TestClient) ListAzureSizes(credential, location string) (models.AzureSizeList, error) {
+	params := &azure.ListAzureSizesParams{
+		Credential: &credential,
+		Location:   &location,
+	}
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
+
+	sizesResponse, err := r.client.Azure.ListAzureSizes(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return sizesResponse.Payload, nil
 }

@@ -1,5 +1,18 @@
 # Kubermatic 2.18
 
+## [v2.18.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.1)
+
+This release primarily improves support for Kubernetes 1.22 master/seed clusters.
+
+### Misc
+
+- Update nginx-ingress-controller to 1.0.2 ([#7845](https://github.com/kubermatic/kubermatic/issues/7845), [#7875](https://github.com/kubermatic/kubermatic/issues/7875))
+- Update Dex to 2.30.0 ([#7846](https://github.com/kubermatic/kubermatic/issues/7846))
+- Fix user cluster MLA certificate issue by LoadBalancer expose strategy ([#7877](https://github.com/kubermatic/kubermatic/issues/7877))
+- Fix styling of very long labels ([#3730](https://github.com/kubermatic/dashboard/pull/3730))
+
+
+
 ## [v2.18.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.0)
 
 Before upgrading, make sure to read the [general upgrade guidelines](https://docs.kubermatic.com/kubermatic/v2.18/upgrading/guidelines/). Consider tweaking `seedControllerManager.maximumParallelReconciles` to ensure usercluster reconciliations will not cause resource exhausting on seed clusters.
