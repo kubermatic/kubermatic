@@ -1,0 +1,148 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.7.0
+  creationTimestamp: null
+  name: constrainttemplates.kubermatic.k8c.io
+spec:
+  group: kubermatic.k8c.io
+  names:
+    kind: ConstraintTemplate
+    listKind: ConstraintTemplateList
+    plural: constrainttemplates
+    singular: constrainttemplate
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: ConstraintTemplate is the object representing a kubermatic wrapper
+          for a gatekeeper constraint template.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ConstraintTemplateSpec is the object representing the gatekeeper
+              constraint template spec and kubermatic related spec
+            properties:
+              crd:
+                properties:
+                  spec:
+                    properties:
+                      names:
+                        properties:
+                          kind:
+                            type: string
+                          shortNames:
+                            items:
+                              type: string
+                            type: array
+                        type: object
+                      validation:
+                        default:
+                          legacySchema: true
+                        properties:
+                          legacySchema:
+                            default: true
+                            type: boolean
+                          openAPIV3Schema:
+                            type: object
+                            x-kubernetes-preserve-unknown-fields: true
+                        type: object
+                    type: object
+                type: object
+              selector:
+                description: ConstraintTemplateSelector is the object holding the
+                  cluster selection filters
+                properties:
+                  labelSelector:
+                    description: LabelSelector selects the Clusters to which the Constraint
+                      Template applies based on their labels
+                    properties:
+                      matchExpressions:
+                        description: matchExpressions is a list of label selector
+                          requirements. The requirements are ANDed.
+                        items:
+                          description: A label selector requirement is a selector
+                            that contains values, a key, and an operator that relates
+                            the key and values.
+                          properties:
+                            key:
+                              description: key is the label key that the selector
+                                applies to.
+                              type: string
+                            operator:
+                              description: operator represents a key's relationship
+                                to a set of values. Valid operators are In, NotIn,
+                                Exists and DoesNotExist.
+                              type: string
+                            values:
+                              description: values is an array of string values. If
+                                the operator is In or NotIn, the values array must
+                                be non-empty. If the operator is Exists or DoesNotExist,
+                                the values array must be empty. This array is replaced
+                                during a strategic merge patch.
+                              items:
+                                type: string
+                              type: array
+                          required:
+                          - key
+                          - operator
+                          type: object
+                        type: array
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: matchLabels is a map of {key,value} pairs. A
+                          single {key,value} in the matchLabels map is equivalent
+                          to an element of matchExpressions, whose key field is "key",
+                          the operator is "In", and the values array contains only
+                          "value". The requirements are ANDed.
+                        type: object
+                    type: object
+                  providers:
+                    description: Providers is a list of cloud providers to which the
+                      Constraint Template applies to. Empty means all providers are
+                      selected.
+                    items:
+                      type: string
+                    type: array
+                type: object
+              targets:
+                items:
+                  properties:
+                    libs:
+                      items:
+                        type: string
+                      type: array
+                    rego:
+                      type: string
+                    target:
+                      type: string
+                  type: object
+                type: array
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
