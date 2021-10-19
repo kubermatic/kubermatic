@@ -88,7 +88,7 @@ func TestOrgUserGrafanaReconcile(t *testing.T) {
 				&kubermaticv1.Project{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:        "projectID",
-						Annotations: map[string]string{grafanaOrgAnnotationKey: "1"},
+						Annotations: map[string]string{GrafanaOrgAnnotationKey: "1"},
 					},
 					Spec: kubermaticv1.ProjectSpec{
 						Name: "projectName",
@@ -121,7 +121,7 @@ func TestOrgUserGrafanaReconcile(t *testing.T) {
 				&kubermaticv1.Project{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:        "projectID",
-						Annotations: map[string]string{grafanaOrgAnnotationKey: "1"},
+						Annotations: map[string]string{GrafanaOrgAnnotationKey: "1"},
 					},
 					Spec: kubermaticv1.ProjectSpec{
 						Name: "projectName",
@@ -169,7 +169,7 @@ func TestOrgUserGrafanaReconcile(t *testing.T) {
 				&kubermaticv1.Project{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:        "projectID",
-						Annotations: map[string]string{grafanaOrgAnnotationKey: "1"},
+						Annotations: map[string]string{GrafanaOrgAnnotationKey: "1"},
 					},
 					Spec: kubermaticv1.ProjectSpec{
 						Name: "projectName",
@@ -219,7 +219,7 @@ func TestOrgUserGrafanaReconcile(t *testing.T) {
 				&kubermaticv1.Project{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:        "projectID",
-						Annotations: map[string]string{grafanaOrgAnnotationKey: "1"},
+						Annotations: map[string]string{GrafanaOrgAnnotationKey: "1"},
 					},
 					Spec: kubermaticv1.ProjectSpec{
 						Name: "projectName",

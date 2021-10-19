@@ -50,7 +50,7 @@ import (
 )
 
 const (
-	prometheusType = "prometheus"
+	PrometheusType = "prometheus"
 	lokiType       = "loki"
 )
 
@@ -260,9 +260,9 @@ func (r *datasourceGrafanaController) reconcile(ctx context.Context, cluster *ku
 
 	prometheusDS := grafanasdk.Datasource{
 		OrgID:  org.ID,
-		UID:    getDatasourceUIDForCluster(prometheusType, cluster),
+		UID:    getDatasourceUIDForCluster(PrometheusType, cluster),
 		Name:   getPrometheusDatasourceNameForCluster(cluster),
-		Type:   prometheusType,
+		Type:   PrometheusType,
 		Access: "proxy",
 		URL:    fmt.Sprintf("http://mla-gateway.%s.svc.cluster.local/api/prom", cluster.Status.NamespaceName),
 	}
@@ -367,7 +367,7 @@ func (r *datasourceGrafanaController) handleDeletion(ctx context.Context, grafan
 			return fmt.Errorf("unable to delete datasource: %w (status: %s, message: %s)",
 				err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 		}
-		if status, err := grafanaClient.DeleteDatasourceByUID(ctx, getDatasourceUIDForCluster(prometheusType, cluster)); err != nil {
+		if status, err := grafanaClient.DeleteDatasourceByUID(ctx, getDatasourceUIDForCluster(PrometheusType, cluster)); err != nil {
 			return fmt.Errorf("unable to delete datasource: %w (status: %s, message: %s)",
 				err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 		}

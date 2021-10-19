@@ -212,7 +212,7 @@ func TestOrgGrafanaReconcile(t *testing.T) {
 			objects: []ctrlruntimeclient.Object{&kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        "create",
-					Annotations: map[string]string{grafanaOrgAnnotationKey: "1"},
+					Annotations: map[string]string{GrafanaOrgAnnotationKey: "1"},
 				},
 				Spec: kubermaticv1.ProjectSpec{
 					Name: "projectName",
@@ -244,7 +244,7 @@ func TestOrgGrafanaReconcile(t *testing.T) {
 			objects: []ctrlruntimeclient.Object{&kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        "create",
-					Annotations: map[string]string{grafanaOrgAnnotationKey: "1"},
+					Annotations: map[string]string{GrafanaOrgAnnotationKey: "1"},
 				},
 				Spec: kubermaticv1.ProjectSpec{
 					Name: "projectName",
@@ -272,7 +272,7 @@ func TestOrgGrafanaReconcile(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:              "delete",
 					DeletionTimestamp: &metav1.Time{Time: time.Now()},
-					Annotations:       map[string]string{grafanaOrgAnnotationKey: "1"},
+					Annotations:       map[string]string{GrafanaOrgAnnotationKey: "1"},
 					Finalizers:        []string{"just-a-test-do-not-delete-thanks"},
 				},
 				Spec: kubermaticv1.ProjectSpec{

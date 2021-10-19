@@ -38,6 +38,7 @@ trap "rm -rf '$tempdir'" EXIT
 git clone "$URL" "$tempdir"
 (
   cd "$tempdir"
+  git checkout loki-timeout
   helm --namespace mla upgrade --atomic --create-namespace --install mla-secrets charts/mla-secrets --values config/mla-secrets/values.yaml
   ./hack/deploy-seed.sh
 )
