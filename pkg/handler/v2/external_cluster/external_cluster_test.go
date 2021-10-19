@@ -106,6 +106,17 @@ func TestCreateClusterEndpoint(t *testing.T) {
 			),
 			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 		},
+		// scenario 5
+		{
+			Name:                   "scenario 5: create GKE cluster",
+			Body:                   `{"name":"test", "cloud":{"gke":{"serviceAccount":"abc"}}}`,
+			ExpectedResponse:       `{"id":"%s","name":"test","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"type":"kubernetes","spec":{"cloud":{"dc":""},"version":"","oidc":{}},"status":{"version":"","url":"","externalCCMMigration":""}}`,
+			RewriteClusterID:       true,
+			HTTPStatus:             http.StatusCreated,
+			ProjectToSync:          test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+		},
 	}
 
 	dummyKubermaticConfiguration := operatorv1alpha1.KubermaticConfiguration{

@@ -344,6 +344,17 @@ type ExternalCluster struct {
 	apiv1.Cluster `json:",inline"`
 }
 
+// ExternalClusterCloudSpec represents an object holding cluster cloud details
+// swagger:model ExternalClusterCloudSpec
+type ExternalClusterCloudSpec struct {
+	GKE *GKECloudSpec `json:"gke,omitempty"`
+}
+
+type GKECloudSpec struct {
+	Name           string `json:"name"`
+	ServiceAccount string `json:"serviceAccount,omitempty"`
+}
+
 // ExternalClusterNode represents an object holding external cluster node
 // swagger:model ExternalClusterNode
 type ExternalClusterNode struct {

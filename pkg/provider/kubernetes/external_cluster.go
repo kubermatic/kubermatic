@@ -24,6 +24,8 @@ import (
 	"fmt"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -412,4 +414,28 @@ func getRestConfig(cfg *clientcmdapi.Config) (*rest.Config, error) {
 	clientConfig.Burst = 50
 
 	return clientConfig, nil
+}
+
+func (p *ExternalClusterProvider) CreateOrUpdateCredentialSecretForCluster(ctx context.Context, cloud *apiv2.ExternalClusterCloudSpec, projectID, clusterID string) (*providerconfig.GlobalSecretKeySelector, error) {
+	cluster := &kubermaticapiv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   clusterID,
+			Labels: map[string]string{kubermaticv1.ProjectIDLabelKey: projectID},
+		},
+		Spec: kubermaticapiv1.ClusterSpec{
+			Cloud: kubermaticapiv1.CloudSpec{},
+		},
+	}
+	if cloud.GKE != nil {
+		cluster.Spec.Cloud.GCP = &kubermaticapiv1.GCPCloudSpec{
+			ServiceAccount: cloud.GKE.ServiceAccount,
+		}
+		err := CreateOrUpdateCredentialSecretForCluster(ctx, p.clientPrivileged, cluster)
+		if err != nil {
+			return nil, err
+		}
+		return cluster.Spec.Cloud.GCP.CredentialsReference, nil
+	}
+
+	return nil, fmt.Errorf("can't create credential secret for unsupported provider")
 }
