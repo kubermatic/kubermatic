@@ -177,26 +177,8 @@ func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provide
 
 // ConnectToComputeService establishes a service connection to the Compute Engine.
 func ConnectToComputeService(serviceAccount string) (*compute.Service, string, error) {
-	b, err := base64.StdEncoding.DecodeString(serviceAccount)
-	if err != nil {
-		return nil, "", fmt.Errorf("error decoding service account: %v", err)
-	}
-	sam := map[string]string{}
-	err = json.Unmarshal(b, &sam)
-	if err != nil {
-		return nil, "", fmt.Errorf("failed unmarshaling service account: %v", err)
-	}
-
-	projectID := sam["project_id"]
-	if projectID == "" {
-		return nil, "", errors.New("empty project_id")
-	}
-	conf, err := google.JWTConfigFromJSON(b, compute.ComputeScope)
-	if err != nil {
-		return nil, "", err
-	}
 	ctx := context.Background()
-	client := conf.Client(ctx)
+	client, projectID, err := createClient(ctx, serviceAccount, compute.ComputeScope)
 	svc, err := compute.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
 		return nil, "", fmt.Errorf("cannot connect to Google Cloud: %v", err)
@@ -206,6 +188,17 @@ func ConnectToComputeService(serviceAccount string) (*compute.Service, string, e
 
 // ConnectToContainerService establishes a service connection to the Container Engine.
 func ConnectToContainerService(serviceAccount string) (*container.Service, string, error) {
+	ctx := context.Background()
+	client, projectID, err := createClient(ctx, serviceAccount, container.CloudPlatformScope)
+
+	svc, err := container.NewService(ctx, option.WithHTTPClient(client))
+	if err != nil {
+		return nil, "", fmt.Errorf("cannot connect to Google Cloud: %v", err)
+	}
+	return svc, projectID, nil
+}
+
+func createClient(ctx context.Context, serviceAccount string, scope string) (*http.Client, string, error) {
 	b, err := base64.StdEncoding.DecodeString(serviceAccount)
 	if err != nil {
 		return nil, "", fmt.Errorf("error decoding service account: %v", err)
@@ -220,18 +213,13 @@ func ConnectToContainerService(serviceAccount string) (*container.Service, strin
 	if projectID == "" {
 		return nil, "", errors.New("empty project_id")
 	}
-	conf, err := google.JWTConfigFromJSON(b, container.CloudPlatformScope)
+	conf, err := google.JWTConfigFromJSON(b, scope)
 	if err != nil {
 		return nil, "", err
 	}
-	ctx := context.Background()
-	client := conf.Client(ctx)
 
-	svc, err := container.NewService(ctx, option.WithHTTPClient(client))
-	if err != nil {
-		return nil, "", fmt.Errorf("cannot connect to Google Cloud: %v", err)
-	}
-	return svc, projectID, nil
+	client := conf.Client(ctx)
+	return client, projectID, nil
 }
 
 func (g *gcp) ensureFirewallRules(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) error {

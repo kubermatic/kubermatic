@@ -145,9 +145,11 @@ func GCPSubnetworkWithClusterCredentialsEndpoint(projectProvider provider.Projec
 
 // GKECommonReq represent a request with common parameters for GKE.
 type GKECommonReq struct {
+	// The plain GCP service account
 	// in: header
 	// name: ServiceAccount
 	ServiceAccount string
+	// The credential name used in the preset for the GCP provider
 	// in: header
 	// name: Credential
 	Credential string

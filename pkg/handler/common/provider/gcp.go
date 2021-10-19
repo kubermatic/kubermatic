@@ -40,6 +40,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
+const allZones = "-"
+
 func GCPSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, settingsProvider provider.SettingsProvider, projectID, clusterID, zone string) (interface{}, error) {
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
@@ -363,7 +365,7 @@ func ListGKEClusters(ctx context.Context, sa string) (apiv2.GKEClusterList, erro
 		return clusters, err
 	}
 
-	req := svc.Projects.Zones.Clusters.List(project, "-")
+	req := svc.Projects.Zones.Clusters.List(project, allZones)
 	resp, err := req.Context(ctx).Do()
 	if err != nil {
 		return clusters, fmt.Errorf("clusters list project=%s: %w", project, err)
