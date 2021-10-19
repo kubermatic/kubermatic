@@ -14,7 +14,7 @@ spec:
     listKind: KubermaticSettingList
     plural: kubermaticsettings
     singular: kubermaticsetting
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1
     schema:

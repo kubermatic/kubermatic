@@ -14,7 +14,7 @@ spec:
     listKind: UserList
     plural: users
     singular: user
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1
     schema:

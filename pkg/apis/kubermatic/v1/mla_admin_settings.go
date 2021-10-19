@@ -28,8 +28,8 @@ const (
 	MLAAdminSettingKindName = "MLAAdminSetting"
 )
 
-//+genclient
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 // MLAAdminSetting is the object representing cluster-specific administrator settings
 // for KKP user cluster MLA (monitoring, logging & alerting) stack.
@@ -85,7 +85,8 @@ type LoggingRateLimitSettings struct {
 	QueryBurstSize int32 `json:"queryBurstSize,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 // MLAAdminSettingList specifies a list of administrtor settings for KKP
 // user cluster MLA (monitoring, logging & alerting) stack

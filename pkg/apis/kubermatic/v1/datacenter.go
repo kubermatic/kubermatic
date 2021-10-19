@@ -23,9 +23,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
-// SeedDatacenterList is the type representing a SeedDatacenterList
+// SeedList is the type representing a SeedList
 type SeedList struct {
 	metav1.TypeMeta `json:",inline"`
 	// Standard list metadata.
@@ -38,7 +39,8 @@ type SeedList struct {
 	Items []Seed `json:"items" protobuf:"bytes,2,rep,name=items"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 // Seed is the type representing a SeedDatacenter
 type Seed struct {

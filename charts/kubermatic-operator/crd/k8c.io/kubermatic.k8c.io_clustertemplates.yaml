@@ -14,7 +14,7 @@ spec:
     listKind: ClusterTemplateList
     plural: clustertemplates
     singular: clustertemplate
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1
     schema:

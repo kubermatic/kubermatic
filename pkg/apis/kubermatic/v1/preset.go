@@ -68,7 +68,8 @@ func IsProviderSupported(name string) bool {
 	return false
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 // PresetList is the type representing a PresetList
 type PresetList struct {
@@ -83,7 +84,9 @@ type PresetList struct {
 	Items []Preset `json:"items" protobuf:"bytes,2,rep,name=items"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 // Preset is the type representing a Preset
 type Preset struct {

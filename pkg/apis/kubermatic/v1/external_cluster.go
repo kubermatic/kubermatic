@@ -33,9 +33,9 @@ const (
 	ExternalClusterKind = "ExternalCluster"
 )
 
-//+genclient
-//+genclient:nonNamespaced
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 // ExternalCluster is the object representing an external kubernetes cluster.
 type ExternalCluster struct {
@@ -43,16 +43,6 @@ type ExternalCluster struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec ExternalClusterSpec `json:"spec"`
-}
-
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// ExternalClusterList specifies a list of external kubernetes clusters
-type ExternalClusterList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-
-	Items []ExternalCluster `json:"items"`
 }
 
 // ExternalClusterSpec specifies the data for a new external kubernetes cluster.
@@ -66,4 +56,15 @@ type ExternalClusterSpec struct {
 
 func (i *ExternalCluster) GetKubeconfigSecretName() string {
 	return fmt.Sprintf("kubeconfig-external-cluster-%s", i.Name)
+}
+
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
+
+// ExternalClusterList specifies a list of external kubernetes clusters
+type ExternalClusterList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+
+	Items []ExternalCluster `json:"items"`
 }

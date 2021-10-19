@@ -22,7 +22,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 // AdmissionPluginList is the type representing a AdmissionPluginList
 type AdmissionPluginList struct {
@@ -37,7 +38,9 @@ type AdmissionPluginList struct {
 	Items []AdmissionPlugin `json:"items" protobuf:"bytes,2,rep,name=items"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 // AdmissionPlugin is the type representing a AdmissionPlugin
 type AdmissionPlugin struct {

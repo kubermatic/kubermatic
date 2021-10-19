@@ -14,7 +14,7 @@ spec:
     listKind: ExternalClusterList
     plural: externalclusters
     singular: externalcluster
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1
     schema:

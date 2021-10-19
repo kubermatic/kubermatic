@@ -40,9 +40,10 @@ const (
 	ProjectKindName = "Project"
 )
 
-//+genclient
-//+genclient:nonNamespaced
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 
 // Project is the type describing a project.
 type Project struct {
@@ -63,7 +64,8 @@ type ProjectStatus struct {
 	Phase string `json:"phase"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 // ProjectList is a collection of projects.
 type ProjectList struct {

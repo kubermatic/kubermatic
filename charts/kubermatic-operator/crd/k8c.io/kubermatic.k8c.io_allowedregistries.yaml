@@ -14,7 +14,7 @@ spec:
     listKind: AllowedRegistryList
     plural: allowedregistries
     singular: allowedregistry
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1
     schema:

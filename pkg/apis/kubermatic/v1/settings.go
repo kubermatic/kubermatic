@@ -29,9 +29,9 @@ const (
 	ClusterTypeKubernetes
 )
 
-//+genclient
-//+genclient:nonNamespaced
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 // KubermaticSetting is the type representing a KubermaticSetting
 type KubermaticSetting struct {
@@ -103,7 +103,8 @@ type MlaOptions struct {
 	MonitoringEnforced bool `json:"monitoringEnforced"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 // KubermaticSettingList is a list of settings
 type KubermaticSettingList struct {

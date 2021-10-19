@@ -32,10 +32,11 @@ const (
 	AddonResourcesCreated AddonConditionType = "AddonResourcesCreatedSuccessfully"
 )
 
-//+genclient
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 
 // Addon specifies a add-on
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type Addon struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -69,8 +70,10 @@ type AddonSpec struct {
 	IsDefault bool `json:"isDefault,omitempty"`
 }
 
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
+
 // AddonList is a list of addons
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AddonList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

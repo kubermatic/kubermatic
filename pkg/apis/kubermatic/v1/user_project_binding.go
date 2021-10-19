@@ -29,9 +29,9 @@ const (
 	UserProjectBindingKind = "UserProjectBinding"
 )
 
-//+genclient
-//+genclient:nonNamespaced
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 // UserProjectBinding specifies a binding between a user and a project
 // This resource is used by the user management to manipulate members of the given project
@@ -49,7 +49,8 @@ type UserProjectBindingSpec struct {
 	Group     string `json:"group"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 // UserProjectBindingList is a list of users
 type UserProjectBindingList struct {

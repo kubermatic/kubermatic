@@ -14,7 +14,7 @@ spec:
     listKind: PresetList
     plural: presets
     singular: preset
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1
     schema:

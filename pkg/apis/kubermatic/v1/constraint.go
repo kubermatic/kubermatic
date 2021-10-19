@@ -31,8 +31,8 @@ const (
 	ConstraintKind = "Constraint"
 )
 
-//+genclient
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 // Constraint specifies a kubermatic wrapper for the gatekeeper constraints.
 type Constraint struct {
@@ -105,7 +105,8 @@ type Kind struct {
 	APIGroups []string `json:"apiGroups,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 // ConstraintList specifies a list of constraints
 type ConstraintList struct {

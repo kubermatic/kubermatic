@@ -14,7 +14,7 @@ spec:
     listKind: ConstraintTemplateList
     plural: constrainttemplates
     singular: constrainttemplate
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1
     schema:

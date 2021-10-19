@@ -31,9 +31,9 @@ const (
 	ConstraintTemplateKind = "ConstraintTemplate"
 )
 
-//+genclient
-//+genclient:nonNamespaced
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 // ConstraintTemplate is the object representing a kubermatic wrapper for a gatekeeper constraint template.
 type ConstraintTemplate struct {
@@ -58,7 +58,8 @@ type ConstraintTemplateSelector struct {
 	LabelSelector metav1.LabelSelector `json:"labelSelector,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 // ConstraintTemplateList specifies a list of constraint templates
 type ConstraintTemplateList struct {

@@ -28,9 +28,9 @@ const (
 	SSHKeyKind = "UserSSHKey"
 )
 
-//+genclient
-//+genclient:nonNamespaced
-//+resourceName=usersshkeies
+// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 // UserSSHKey specifies a users UserSSHKey
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -75,8 +75,10 @@ func (sk *UserSSHKey) AddToCluster(clustername string) {
 	sk.Spec.Clusters = append(sk.Spec.Clusters, clustername)
 }
 
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
+
 // UserSSHKeyList specifies a users UserSSHKey
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type UserSSHKeyList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

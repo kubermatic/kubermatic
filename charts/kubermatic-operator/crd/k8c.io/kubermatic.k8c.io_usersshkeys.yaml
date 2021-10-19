@@ -14,7 +14,7 @@ spec:
     listKind: UserSSHKeyList
     plural: usersshkeys
     singular: usersshkey
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1
     schema:
