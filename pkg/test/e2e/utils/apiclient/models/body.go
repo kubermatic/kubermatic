@@ -8,6 +8,7 @@ package models
 import (
 	"context"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -22,15 +23,67 @@ type Body struct {
 
 	// Name is human readable name for the external cluster
 	Name string `json:"name,omitempty"`
+
+	// cloud
+	Cloud *CloudSpec `json:"cloud,omitempty"`
 }
 
 // Validate validates this body
 func (m *Body) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateCloud(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this body based on context it is used
+func (m *Body) validateCloud(formats strfmt.Registry) error {
+	if swag.IsZero(m.Cloud) { // not required
+		return nil
+	}
+
+	if m.Cloud != nil {
+		if err := m.Cloud.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("cloud")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this body based on the context it is used
 func (m *Body) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateCloud(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *Body) contextValidateCloud(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Cloud != nil {
+		if err := m.Cloud.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("cloud")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 
