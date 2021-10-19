@@ -314,6 +314,9 @@ type AWS struct {
 	AccessKeyID     string `json:"accessKeyId"`
 	SecretAccessKey string `json:"secretAccessKey"`
 
+	AssumeRoleARN        string `json:"assumeRoleARN"`
+	AssumeRoleExternalID string `json:"assumeRoleExternalID,omitempty"`
+
 	VPCID               string `json:"vpcId,omitempty"`
 	RouteTableID        string `json:"routeTableId,omitempty"`
 	InstanceProfileName string `json:"instanceProfileName,omitempty"`

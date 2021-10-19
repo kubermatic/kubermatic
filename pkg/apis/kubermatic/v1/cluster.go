@@ -726,9 +726,11 @@ type BringYourOwnCloudSpec struct{}
 type AWSCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
-	AccessKeyID     string `json:"accessKeyID,omitempty"`
-	SecretAccessKey string `json:"secretAccessKey,omitempty"`
-	VPCID           string `json:"vpcID"`
+	AccessKeyID          string `json:"accessKeyID,omitempty"`
+	SecretAccessKey      string `json:"secretAccessKey,omitempty"`
+	AssumeRoleARN        string `json:"assumeRoleARN,omitempty"` //nolint:tagliatelle
+	AssumeRoleExternalID string `json:"assumeRoleExternalID,omitempty"`
+	VPCID                string `json:"vpcID"`
 	// The IAM role, the control plane will use. The control plane will perform an assume-role
 	ControlPlaneRoleARN string `json:"roleARN"` //nolint:tagliatelle
 	RouteTableID        string `json:"routeTableID"`

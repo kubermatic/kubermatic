@@ -72,12 +72,12 @@ func (a *AmazonEC2) getClientSet(cloud kubermaticv1.CloudSpec) (*ClientSet, erro
 		return a.clientSet, nil
 	}
 
-	accessKeyID, secretAccessKey, err := GetCredentialsForCluster(cloud, a.secretKeySelector)
+	accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, err := GetCredentialsForCluster(cloud, a.secretKeySelector)
 	if err != nil {
 		return nil, err
 	}
 
-	return GetClientSet(accessKeyID, secretAccessKey, a.dc.Region)
+	return GetClientSet(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, a.dc.Region)
 }
 
 func (a *AmazonEC2) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {

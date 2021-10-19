@@ -203,6 +203,10 @@ spec:
                     properties:
                       accessKeyID:
                         type: string
+                      assumeRoleArn:
+                        type: string
+                      assumeRoleExternalID:
+                        type: string
                       credentialsReference:
                         description: GlobalObjectKeySelector is needed as we can not
                           use v1.SecretKeySelector because it is not cross namespace

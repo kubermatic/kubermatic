@@ -39,7 +39,7 @@ func getTestClientSet(t *testing.T) *ClientSet {
 		t.Skip("Skipping because $AWS_TEST_ENDPOINT is not set.")
 	}
 
-	cs, err := getClientSet(os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), os.Getenv(awsRegionEnvName), endpoint)
+	cs, err := getClientSet(os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), "", "", os.Getenv(awsRegionEnvName), endpoint)
 	if err != nil {
 		t.Fatalf("Failed to create AWS ClientSet: %v", err)
 	}

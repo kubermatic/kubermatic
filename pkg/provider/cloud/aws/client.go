@@ -29,6 +29,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
+	"github.com/aws/aws-sdk-go/service/sts"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -39,11 +40,11 @@ type ClientSet struct {
 	IAM iamiface.IAMAPI
 }
 
-func GetClientSet(accessKeyID, secretAccessKey, region string) (*ClientSet, error) {
-	return getClientSet(accessKeyID, secretAccessKey, region, "")
+func GetClientSet(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region string) (*ClientSet, error) {
+	return getClientSet(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, "")
 }
 
-func getAWSSession(accessKeyID, secretAccessKey, region, endpoint string) (*session.Session, error) {
+func getAWSSession(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, endpoint string) (*session.Session, error) {
 	config := aws.
 		NewConfig().
 		WithRegion(region).
@@ -56,11 +57,21 @@ func getAWSSession(accessKeyID, secretAccessKey, region, endpoint string) (*sess
 		config = config.WithEndpoint(endpoint)
 	}
 
-	return session.NewSession(config)
+	awsSession, err := session.NewSession(config)
+	if err != nil {
+		return awsSession, err
+	}
+
+	// Assume IAM role of e.g. external AWS account if configured
+	if assumeRoleARN != "" {
+		return getAssumeRoleSession(awsSession, assumeRoleARN, assumeRoleExternalID, region, endpoint)
+	}
+
+	return awsSession, nil
 }
 
-func getClientSet(accessKeyID, secretAccessKey, region, endpoint string) (*ClientSet, error) {
-	sess, err := getAWSSession(accessKeyID, secretAccessKey, region, endpoint)
+func getClientSet(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, endpoint string) (*ClientSet, error) {
+	sess, err := getAWSSession(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create API session: %v", err)
 	}
@@ -81,4 +92,53 @@ func isNotFound(err error) bool {
 		}
 	}
 	return false
+}
+
+// getAssumeRoleSession uses an existing AWS session to assume an IAM role which may be in an external AWS account.
+func getAssumeRoleSession(awsSession *session.Session, assumeRoleARN, assumeRoleExternalID, region, endpoint string) (*session.Session, error) {
+	assumeRoleOutput, err := getAssumeRoleCredentials(awsSession, assumeRoleARN, assumeRoleExternalID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve temporary AWS credentials for assumed role: %v", err)
+	}
+
+	assumedRoleConfig := aws.NewConfig()
+	assumedRoleConfig = assumedRoleConfig.WithRegion(region)
+	assumedRoleConfig = assumedRoleConfig.WithCredentials(credentials.NewStaticCredentials(*assumeRoleOutput.Credentials.AccessKeyId,
+		*assumeRoleOutput.Credentials.SecretAccessKey,
+		*assumeRoleOutput.Credentials.SessionToken))
+	assumedRoleConfig = assumedRoleConfig.WithMaxRetries(3)
+
+	if endpoint != "" {
+		assumedRoleConfig = assumedRoleConfig.WithEndpoint(endpoint)
+	}
+
+	awsSession, err = session.NewSession(assumedRoleConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create API session with temporary credentials for an assumed IAM role: %v", err)
+	}
+
+	return awsSession, err
+}
+
+// getAssumeRoleCredentials calls the AWS Security Token Service to retrieve temporary credentials for an assumed IAM role.
+func getAssumeRoleCredentials(session *session.Session, assumeRoleARN string, assumeRoleExternalID string) (*sts.AssumeRoleOutput, error) {
+	stsSession := sts.New(session)
+	sessionName := "kubermatic-machine-controller-assume-role"
+
+	assumeRoleInput := sts.AssumeRoleInput{
+		RoleArn:         &assumeRoleARN,
+		RoleSessionName: &sessionName,
+	}
+
+	// External IDs are optional
+	if assumeRoleExternalID != "" {
+		assumeRoleInput.ExternalId = &assumeRoleExternalID
+	}
+
+	output, err := stsSession.AssumeRole(&assumeRoleInput)
+	if err != nil {
+		return nil, fmt.Errorf("failed to call AWS STS to assume IAM role: %v", err)
+	}
+
+	return output, nil
 }

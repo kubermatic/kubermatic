@@ -6765,6 +6765,16 @@
           },
           {
             "type": "string",
+            "name": "AssumeRoleARN",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "AssumeRoleExternalID",
+            "in": "header"
+          },
+          {
+            "type": "string",
             "x-go-name": "DC",
             "name": "dc",
             "in": "path",
@@ -6811,6 +6821,16 @@
           {
             "type": "string",
             "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "AssumeRoleARN",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "AssumeRoleExternalID",
             "in": "header"
           },
           {
@@ -6867,6 +6887,16 @@
           {
             "type": "string",
             "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "AssumeRoleARN",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "AssumeRoleExternalID",
             "in": "header"
           },
           {
@@ -16354,6 +16384,16 @@
           },
           {
             "type": "string",
+            "name": "AssumeRoleARN",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "AssumeRoleExternalID",
+            "in": "header"
+          },
+          {
+            "type": "string",
             "name": "Region",
             "in": "header"
           }
@@ -17151,6 +17191,14 @@
           "type": "string",
           "x-go-name": "AccessKeyID"
         },
+        "assumeRoleARN": {
+          "type": "string",
+          "x-go-name": "AssumeRoleARN"
+        },
+        "assumeRoleExternalID": {
+          "type": "string",
+          "x-go-name": "AssumeRoleExternalID"
+        },
         "credentialsReference": {
           "$ref": "#/definitions/GlobalSecretKeySelector"
         },
@@ -17205,6 +17253,16 @@
           "description": "This flag controls a property of the AWS instance. When set the AWS instance will get a public IP address\nassigned during launch overriding a possible setting in the used AWS subnet.",
           "type": "boolean",
           "x-go-name": "AssignPublicIP"
+        },
+        "assumeRoleARN": {
+          "description": "AssumeRoleARN defines the ARN for an IAM role that should be assumed when handling resources on AWS. It will be used\nto acquire temporary security credentials using an STS AssumeRole API operation whenever creating an AWS session.",
+          "type": "string",
+          "x-go-name": "AssumeRoleARN"
+        },
+        "assumeRoleExternalID": {
+          "description": "AssumeRoleExternalID is an arbitrary string that may be needed when calling the STS AssumeRole API operation.\nUsing an external ID can help to prevent the \"confused deputy problem\".",
+          "type": "string",
+          "x-go-name": "AssumeRoleExternalID"
         },
         "availabilityZone": {
           "description": "Availability zone in which to place the node. It is coupled with the subnet to which the node will belong.",

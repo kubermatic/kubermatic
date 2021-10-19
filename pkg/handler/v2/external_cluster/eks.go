@@ -69,7 +69,7 @@ func patchEKSCluster(old, new *apiv2.ExternalCluster, secretKeySelector provider
 		return nil, err
 	}
 
-	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, cloudSpec.EKS.Region)
+	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, "", "", cloudSpec.EKS.Region)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +96,7 @@ func getEKSNodeGroups(cluster *kubermaticapiv1.ExternalCluster, secretKeySelecto
 		return nil, err
 	}
 
-	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, cloudSpec.EKS.Region)
+	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, "", "", cloudSpec.EKS.Region)
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +153,7 @@ func getEKSNodeGroup(cluster *kubermaticapiv1.ExternalCluster, nodeGroupName str
 		return nil, err
 	}
 
-	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, cloudSpec.EKS.Region)
+	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, "", "", cloudSpec.EKS.Region)
 	if err != nil {
 		return nil, err
 	}
@@ -224,7 +224,7 @@ func patchEKSMachineDeployment(old, new *apiv2.ExternalClusterMachineDeployment,
 		return nil, err
 	}
 
-	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, cloudSpec.EKS.Region)
+	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, "", "", cloudSpec.EKS.Region)
 	if err != nil {
 		return nil, err
 	}
@@ -356,7 +356,7 @@ func deleteEKSNodeGroup(cluster *kubermaticapiv1.ExternalCluster, nodeGroupName 
 	}
 
 	cloudSpec := cluster.Spec.CloudSpec
-	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, cloudSpec.EKS.Region)
+	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, "", "", cloudSpec.EKS.Region)
 	if err != nil {
 		return err
 	}
