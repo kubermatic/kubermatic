@@ -41,27 +41,8 @@ func CreateBackups(ctx context.Context, logger logrus.FieldLogger, opt *Options)
 
 	logger.WithField("identifier", identifier).Info("Creating backups…")
 
-	// backup master cluster
-	filename := identifier + "-master.tar.gz"
-	if err := createClusterBackup(ctx, logger.WithField("master", true), now, opt.MasterClient, filename, allKubermaticKinds); err != nil {
-		return fmt.Errorf("backing up the master cluster failed: %w", err)
-	}
-
-	// backup seed clusters
-	for seedName, seedClient := range opt.SeedClients {
-		filename := fmt.Sprintf("%s-seed-%s.tar.gz", identifier, seedName)
-		if err := createClusterBackup(ctx, logger.WithField("seed", seedName), now, seedClient, filename, allKubermaticKinds); err != nil {
-			return fmt.Errorf("backing up the seed cluster failed: %w", err)
-		}
-	}
-
-	return nil
-}
-
-func createClusterBackup(ctx context.Context, logger logrus.FieldLogger, ts time.Time, client ctrlruntimeclient.Client, filename string, kinds []string) error {
-	logger.Info("Creating backup…")
-
 	// Create output file
+	filename := fmt.Sprintf("%s.tar.gz", identifier)
 	backupFile, err := os.Create(filename)
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
@@ -75,6 +56,25 @@ func createClusterBackup(ctx context.Context, logger logrus.FieldLogger, ts time
 	// create a tar writer
 	tarWriter := tar.NewWriter(gzipWriter)
 	defer tarWriter.Close()
+
+	// backup master cluster
+	if err := createClusterBackup(ctx, logger.WithField("master", true), now, opt.MasterClient, tarWriter, "master", allKubermaticMasterKinds); err != nil {
+		return fmt.Errorf("backing up the master cluster failed: %w", err)
+	}
+
+	// backup seed clusters
+	for seedName, seedClient := range opt.SeedClients {
+		directory := fmt.Sprintf("seed-%s", seedName)
+		if err := createClusterBackup(ctx, logger.WithField("seed", seedName), now, seedClient, tarWriter, directory, allKubermaticSeedKinds); err != nil {
+			return fmt.Errorf("backing up the seed cluster failed: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func createClusterBackup(ctx context.Context, logger logrus.FieldLogger, ts time.Time, client ctrlruntimeclient.Client, tarWriter *tar.Writer, pathPrefix string, kinds []string) error {
+	logger.Info("Creating backup…")
 
 	for _, kind := range kinds {
 		logger.Debugf("Backing up %s resources…", kind)
@@ -92,7 +92,7 @@ func createClusterBackup(ctx context.Context, logger logrus.FieldLogger, ts time
 			objectLogger.Debug("Dumping…")
 
 			// create a filename like "cluster/3948rfhsf.yaml"
-			filename := getBackupResourceFilename(object, kind)
+			filename := getBackupResourceFilename(pathPrefix, object, kind)
 
 			// encode resource as YAML
 			encoded, err := encodeResourceAsYAML(object)
@@ -124,13 +124,13 @@ func createClusterBackup(ctx context.Context, logger logrus.FieldLogger, ts time
 	return nil
 }
 
-func getBackupResourceFilename(obj metav1unstructured.Unstructured, kind string) string {
+func getBackupResourceFilename(prefix string, obj metav1unstructured.Unstructured, kind string) string {
 	filename := obj.GetName()
 	if obj.GetNamespace() != "" {
 		filename = fmt.Sprintf("%s-%s", obj.GetNamespace(), filename)
 	}
 
-	return fmt.Sprintf("%s/%s.yaml", strings.ToLower(kind), filename)
+	return fmt.Sprintf("%s/%s/%s.yaml", prefix, strings.ToLower(kind), filename)
 }
 
 func encodeResourceAsYAML(obj metav1unstructured.Unstructured) ([]byte, error) {

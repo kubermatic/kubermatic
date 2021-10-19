@@ -31,6 +31,9 @@ var (
 	// oldAPIGroup is the group we migrate away from.
 	oldAPIGroup = "kubermatic.k8s.io"
 
+	// oldOperatorAPIGroup is the old API group used by the KKP operator.
+	oldOperatorAPIGroup = "operator.kubermatic.io"
+
 	// newAPIGroup is the group we migrate to.
 	newAPIGroup = "kubermatic.k8c.io"
 
@@ -59,6 +62,45 @@ var (
 		"User",
 		"UserProjectBinding",
 		"UserSSHKey",
+	}
+
+	// allKubermaticMasterKinds is a list of resource kinds that exist on the master cluster
+	allKubermaticMasterKinds = []string{
+		"AddonConfig",
+		"AdmissionPlugin",
+		"AllowedRegistry",
+		"ClusterTemplate",
+		"Constraint",
+		"ConstraintTemplate",
+		"ExternalCluster",
+		"KubermaticSetting",
+		"Preset",
+		"Project",
+		"Seed",
+		"User",
+		"UserProjectBinding",
+		"UserSSHKey",
+	}
+
+	// allKubermaticSeedKinds is a list of resource kinds that exist on seed clusters;
+	// this includes resources that are just mirrored into seeds, like Users, of which the
+	// primary resource lives on the master.
+	allKubermaticSeedKinds = []string{
+		"Addon",
+		"Alertmanager",
+		"Cluster",
+		"ClusterTemplate",
+		"ClusterTemplateInstance",
+		"Constraint",
+		"ConstraintTemplate",
+		"EtcdBackupConfig",
+		"EtcdRestore",
+		"MLAAdminSetting",
+		"Project",
+		"RuleGroup",
+		"Seed",
+		"User",
+		"UserProjectBinding",
 	}
 )
 

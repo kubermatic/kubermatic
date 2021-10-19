@@ -242,26 +242,15 @@ func validateNoStuckResources(ctx context.Context, logger logrus.FieldLogger, op
 	success := true
 
 	// check master cluster
-	masterResources := []string{
-		"ClusterTemplate",
-		"User",
-		"UserProjectBinding",
-		"UserSSHKey",
-	}
-
-	if !validateNoStuckResourcesInCluster(ctx, logger.WithField("master", true), opt.MasterClient, masterResources) {
+	if !validateNoStuckResourcesInCluster(ctx, logger.WithField("master", true), opt.MasterClient, allKubermaticMasterKinds) {
 		success = false
 	}
 
 	// check seed clusters
-	seedResources := []string{
-		"Cluster",
-	}
-
 	for seedName, seedClient := range opt.SeedClients {
 		seedLogger := logger.WithField("seed", seedName)
 
-		if !validateNoStuckResourcesInCluster(ctx, seedLogger, seedClient, seedResources) {
+		if !validateNoStuckResourcesInCluster(ctx, seedLogger, seedClient, allKubermaticSeedKinds) {
 			success = false
 		}
 
