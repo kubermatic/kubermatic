@@ -153,7 +153,7 @@ spec:
         - --storage-backend
         - etcd3
         - --enable-admission-plugins
-        - DefaultStorageClass,DefaultTolerationSeconds,LimitRanger,MutatingAdmissionWebhook,NamespaceLifecycle,Priority,ResourceQuota,ServiceAccount,ValidatingAdmissionWebhook
+        - DefaultStorageClass,DefaultTolerationSeconds,LimitRanger,MutatingAdmissionWebhook,NamespaceLifecycle,NodeRestriction,Priority,ResourceQuota,ServiceAccount,ValidatingAdmissionWebhook
         - --admission-control-config-file
         - /etc/kubernetes/adm-control/admission-control.yaml
         - --authorization-mode
