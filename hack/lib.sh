@@ -95,6 +95,10 @@ containerize() {
   local cmd="$1"
   local image="${CONTAINERIZE_IMAGE:-quay.io/kubermatic/util:2.0.0}"
   local gocache="${CONTAINERIZE_GOCACHE:-/tmp/.gocache}"
+  local skip="${NO_CONTAINERIZE:-}"
+
+  # short-circuit containerize when in some cases it needs to be avoided
+  [ -n "$skip" ] && return
 
   if ! [ -f /.dockerenv ]; then
     echodate "Running $cmd in a Docker container using $image..."
