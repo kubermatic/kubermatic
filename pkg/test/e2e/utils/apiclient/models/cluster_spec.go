@@ -79,7 +79,7 @@ type ClusterSpec struct {
 	UpdateWindow *UpdateWindow `json:"updateWindow,omitempty"`
 
 	// version
-	Version Semver `json:"version,omitempty"`
+	Version *Semver `json:"version,omitempty"`
 }
 
 // Validate validates this cluster spec
@@ -123,6 +123,10 @@ func (m *ClusterSpec) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateUpdateWindow(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateVersion(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -309,6 +313,23 @@ func (m *ClusterSpec) validateUpdateWindow(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *ClusterSpec) validateVersion(formats strfmt.Registry) error {
+	if swag.IsZero(m.Version) { // not required
+		return nil
+	}
+
+	if m.Version != nil {
+		if err := m.Version.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("version")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ContextValidate validate this cluster spec based on the context it is used
 func (m *ClusterSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
@@ -350,6 +371,10 @@ func (m *ClusterSpec) ContextValidate(ctx context.Context, formats strfmt.Regist
 	}
 
 	if err := m.contextValidateUpdateWindow(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateVersion(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -495,6 +520,20 @@ func (m *ClusterSpec) contextValidateUpdateWindow(ctx context.Context, formats s
 		if err := m.UpdateWindow.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("updateWindow")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ClusterSpec) contextValidateVersion(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Version != nil {
+		if err := m.Version.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("version")
 			}
 			return err
 		}

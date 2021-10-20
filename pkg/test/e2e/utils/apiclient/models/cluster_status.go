@@ -25,7 +25,7 @@ type ClusterStatus struct {
 	ExternalCCMMigration ExternalCCMMigrationStatus `json:"externalCCMMigration,omitempty"`
 
 	// version
-	Version Semver `json:"version,omitempty"`
+	Version *Semver `json:"version,omitempty"`
 }
 
 // Validate validates this cluster status
@@ -33,6 +33,10 @@ func (m *ClusterStatus) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateExternalCCMMigration(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateVersion(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -57,11 +61,32 @@ func (m *ClusterStatus) validateExternalCCMMigration(formats strfmt.Registry) er
 	return nil
 }
 
+func (m *ClusterStatus) validateVersion(formats strfmt.Registry) error {
+	if swag.IsZero(m.Version) { // not required
+		return nil
+	}
+
+	if m.Version != nil {
+		if err := m.Version.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("version")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ContextValidate validate this cluster status based on the context it is used
 func (m *ClusterStatus) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateExternalCCMMigration(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateVersion(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -78,6 +103,20 @@ func (m *ClusterStatus) contextValidateExternalCCMMigration(ctx context.Context,
 			return ve.ValidateName("externalCCMMigration")
 		}
 		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterStatus) contextValidateVersion(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Version != nil {
+		if err := m.Version.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("version")
+			}
+			return err
+		}
 	}
 
 	return nil

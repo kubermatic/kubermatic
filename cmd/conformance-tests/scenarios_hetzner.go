@@ -67,7 +67,9 @@ func (s *hetznerScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec 
 						Token: secrets.Hetzner.Token,
 					},
 				},
-				Version: s.version.String(),
+				Version: &apimodels.Semver{
+					Version: s.version.String(),
+				},
 			},
 		},
 	}

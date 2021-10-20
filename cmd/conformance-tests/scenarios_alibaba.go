@@ -69,7 +69,9 @@ func (s *alibabaScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec 
 						AccessKeyID:     secrets.Alibaba.AccessKeyID,
 					},
 				},
-				Version: s.version,
+				Version: &apimodels.Semver{
+					Version: s.version.String(),
+				},
 			},
 		},
 	}

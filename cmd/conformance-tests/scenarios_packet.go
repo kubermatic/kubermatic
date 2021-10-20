@@ -68,7 +68,9 @@ func (s *packetScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
 						ProjectID: secrets.Packet.ProjectID,
 					},
 				},
-				Version: s.version.String(),
+				Version: &apimodels.Semver{
+					Version: s.version.String(),
+				},
 			},
 		},
 	}

@@ -22,6 +22,8 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
+CONTAINERIZE_IMAGE=golang:1.17.1 containerize ./hack/gen-api-client.sh
+
 cd cmd/kubermatic-api/
 SWAGGER_FILE="swagger.json"
 TMP_SWAGGER="${SWAGGER_FILE}.tmp"
