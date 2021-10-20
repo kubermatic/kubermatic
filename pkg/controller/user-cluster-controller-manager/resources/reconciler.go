@@ -771,7 +771,7 @@ func (r *reconciler) reconcileNamespaces(ctx context.Context) error {
 func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileData) error {
 	// Kubernetes Dashboard and related resources
 	creators := []reconciling.NamedDeploymentCreatorGetter{
-		kubernetesdashboard.DeploymentCreator(),
+		kubernetesdashboard.DeploymentCreator(r.registryWithOverwrite),
 	}
 	if err := reconciling.ReconcileDeployments(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Deployments in namespace %s: %v", kubernetesdashboard.Namespace, err)
