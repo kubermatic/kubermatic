@@ -268,6 +268,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 
 	admissionPlugins := sets.NewString(
 		"NamespaceLifecycle",
+		"NodeRestriction",
 		"LimitRanger",
 		"ServiceAccount",
 		"DefaultStorageClass",
