@@ -788,8 +788,8 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 	// OPA related resources
 	if r.opaIntegration {
 		creators := []reconciling.NamedDeploymentCreatorGetter{
-			gatekeeper.ControllerDeploymentCreator(r.opaEnableMutation),
-			gatekeeper.AuditDeploymentCreator(),
+			gatekeeper.ControllerDeploymentCreator(r.opaEnableMutation, r.registryWithOverwrite),
+			gatekeeper.AuditDeploymentCreator(r.registryWithOverwrite),
 		}
 
 		if err := reconciling.ReconcileDeployments(ctx, creators, resources.GatekeeperNamespace, r.Client); err != nil {
