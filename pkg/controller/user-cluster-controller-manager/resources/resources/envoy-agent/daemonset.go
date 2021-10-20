@@ -51,7 +51,7 @@ const (
 )
 
 // DaemonSetCreator returns the function to create and update the Envoy DaemonSet
-func DaemonSetCreator(agentIP net.IP, versions kubermatic.Versions) reconciling.NamedDaemonSetCreatorGetter {
+func DaemonSetCreator(agentIP net.IP, versions kubermatic.Versions, registryWithOverwrite func(string) string) reconciling.NamedDaemonSetCreatorGetter {
 	return func() (string, reconciling.DaemonSetCreator) {
 		return resources.EnvoyAgentDaemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
 			ds.Name = resources.EnvoyAgentDaemonSetName
@@ -69,7 +69,19 @@ func DaemonSetCreator(agentIP net.IP, versions kubermatic.Versions) reconciling.
 					map[string]string{"app.kubernetes.io/name": "envoy-agent"}),
 			}
 
-			ds.Spec.Template.Spec = getAgentPodSpec(agentIP, versions)
+			ds.Spec.Template.Spec = corev1.PodSpec{
+				InitContainers: getInitContainers(agentIP, versions, registryWithOverwrite(resources.RegistryQuay)),
+				Containers:     getContainers(versions, registryWithOverwrite(resources.RegistryDocker)),
+				// TODO(youssefazrak) needed?
+				PriorityClassName:             "system-cluster-critical",
+				DNSPolicy:                     corev1.DNSClusterFirst,
+				HostNetwork:                   true,
+				Volumes:                       getVolumes(),
+				RestartPolicy:                 corev1.RestartPolicyAlways,
+				TerminationGracePeriodSeconds: utilpointer.Int64Ptr(30),
+				SecurityContext:               &corev1.PodSecurityContext{},
+				SchedulerName:                 corev1.DefaultSchedulerName,
+			}
 			if err := resources.SetResourceRequirements(ds.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, ds.Annotations); err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}
@@ -79,23 +91,7 @@ func DaemonSetCreator(agentIP net.IP, versions kubermatic.Versions) reconciling.
 	}
 }
 
-func getAgentPodSpec(agentIP net.IP, versions kubermatic.Versions) corev1.PodSpec {
-	return corev1.PodSpec{
-		InitContainers: getInitContainers(agentIP, versions),
-		Containers:     getContainers(versions),
-		// TODO(youssefazrak) needed?
-		PriorityClassName:             "system-cluster-critical",
-		DNSPolicy:                     corev1.DNSClusterFirst,
-		HostNetwork:                   true,
-		Volumes:                       getVolumes(),
-		RestartPolicy:                 corev1.RestartPolicyAlways,
-		TerminationGracePeriodSeconds: utilpointer.Int64Ptr(30),
-		SecurityContext:               &corev1.PodSecurityContext{},
-		SchedulerName:                 corev1.DefaultSchedulerName,
-	}
-}
-
-func getInitContainers(ip net.IP, v kubermatic.Versions) []corev1.Container {
+func getInitContainers(ip net.IP, versions kubermatic.Versions, registry string) []corev1.Container {
 	// TODO: we are creating and configuring the a dummy interface
 	// using init containers. This approach is good enough for the tech preview
 	// but it is definitely not production ready. This should be replaced with
@@ -105,7 +101,7 @@ func getInitContainers(ip net.IP, v kubermatic.Versions) []corev1.Container {
 		{
 			Name: resources.EnvoyAgentCreateInterfaceInitContainerName,
 			// TODO: the registry should be overridable.
-			Image:   fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, resources.EnvoyAgentDeviceSetupImage, v.Kubermatic),
+			Image:   fmt.Sprintf("%s/%s:%s", registry, resources.EnvoyAgentDeviceSetupImage, versions.Kubermatic),
 			Command: []string{"sh", "-c", "ip link add envoyagent type dummy || true"},
 			SecurityContext: &corev1.SecurityContext{
 				Capabilities: &corev1.Capabilities{
@@ -120,7 +116,7 @@ func getInitContainers(ip net.IP, v kubermatic.Versions) []corev1.Container {
 		},
 		{
 			Name:    resources.EnvoyAgentAssignAddressInitContainerName,
-			Image:   fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, resources.EnvoyAgentDeviceSetupImage, v.Kubermatic),
+			Image:   fmt.Sprintf("%s/%s:%s", registry, resources.EnvoyAgentDeviceSetupImage, versions.Kubermatic),
 			Command: []string{"sh", "-c", fmt.Sprintf("ip addr add %s/32 dev envoyagent scope host || true", ip.String())},
 			SecurityContext: &corev1.SecurityContext{
 				Capabilities: &corev1.Capabilities{
@@ -136,11 +132,11 @@ func getInitContainers(ip net.IP, v kubermatic.Versions) []corev1.Container {
 	}
 }
 
-func getContainers(v kubermatic.Versions) []corev1.Container {
+func getContainers(versions kubermatic.Versions, registry string) []corev1.Container {
 	return []corev1.Container{
 		{
 			Name:            resources.EnvoyAgentDaemonSetName,
-			Image:           fmt.Sprintf("%s/%s:%s", resources.RegistryDocker, envoyImageName, v.Envoy),
+			Image:           fmt.Sprintf("%s/%s:%s", registry, envoyImageName, versions.Envoy),
 			ImagePullPolicy: corev1.PullIfNotPresent,
 
 			// This amount of logs will be kept for the Tech Preview of
