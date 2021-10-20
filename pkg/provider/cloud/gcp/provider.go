@@ -31,6 +31,7 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/compute/v1"
+	"google.golang.org/api/container/v1"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 
@@ -194,6 +195,33 @@ func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provide
 
 // ConnectToComputeService establishes a service connection to the Compute Engine.
 func ConnectToComputeService(serviceAccount string) (*compute.Service, string, error) {
+	ctx := context.Background()
+	client, projectID, err := createClient(ctx, serviceAccount, compute.ComputeScope)
+	if err != nil {
+		return nil, "", fmt.Errorf("cannot create Google Cloud client: %v", err)
+	}
+	svc, err := compute.NewService(ctx, option.WithHTTPClient(client))
+	if err != nil {
+		return nil, "", fmt.Errorf("cannot connect to Google Cloud: %v", err)
+	}
+	return svc, projectID, nil
+}
+
+// ConnectToContainerService establishes a service connection to the Container Engine.
+func ConnectToContainerService(serviceAccount string) (*container.Service, string, error) {
+	ctx := context.Background()
+	client, projectID, err := createClient(ctx, serviceAccount, container.CloudPlatformScope)
+	if err != nil {
+		return nil, "", fmt.Errorf("cannot create Google Cloud client: %v", err)
+	}
+	svc, err := container.NewService(ctx, option.WithHTTPClient(client))
+	if err != nil {
+		return nil, "", fmt.Errorf("cannot connect to Google Cloud: %v", err)
+	}
+	return svc, projectID, nil
+}
+
+func createClient(ctx context.Context, serviceAccount string, scope string) (*http.Client, string, error) {
 	b, err := base64.StdEncoding.DecodeString(serviceAccount)
 	if err != nil {
 		return nil, "", fmt.Errorf("error decoding service account: %v", err)
@@ -208,17 +236,13 @@ func ConnectToComputeService(serviceAccount string) (*compute.Service, string, e
 	if projectID == "" {
 		return nil, "", errors.New("empty project_id")
 	}
-	conf, err := google.JWTConfigFromJSON(b, compute.ComputeScope)
+	conf, err := google.JWTConfigFromJSON(b, scope)
 	if err != nil {
 		return nil, "", err
 	}
-	ctx := context.Background()
+
 	client := conf.Client(ctx)
-	svc, err := compute.NewService(ctx, option.WithHTTPClient(client))
-	if err != nil {
-		return nil, "", fmt.Errorf("cannot connect to Google Cloud: %v", err)
-	}
-	return svc, projectID, nil
+	return client, projectID, nil
 }
 
 func (g *gcp) ensureFirewallRules(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) error {
