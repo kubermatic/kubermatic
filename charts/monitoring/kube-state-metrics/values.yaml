@@ -15,14 +15,14 @@
 kubeStateMetrics:
   image:
     repository: k8s.gcr.io/kube-state-metrics/kube-state-metrics
-    tag: v2.2.0
+    tag: v2.2.3
   resources:
     requests:
       cpu: 250m
-      memory: 32Mi
-    limits:
-      cpu: 1
       memory: 128Mi
+    limits:
+      cpu: 2
+      memory: 384Mi
 
   resizer:
     image:
