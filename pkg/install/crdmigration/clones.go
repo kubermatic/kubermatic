@@ -30,17 +30,18 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
 func DuplicateResources(ctx context.Context, logger logrus.FieldLogger, opt *Options) error {
 	// clone master cluster resources
-	if err := cloneResourcesInCluster(ctx, logger.WithField("master", true), opt.MasterClient, false); err != nil {
+	if err := cloneResourcesInCluster(ctx, logger.WithField("master", true), opt.MasterClient); err != nil {
 		return fmt.Errorf("processing the master cluster failed: %w", err)
 	}
 
 	// clone seed cluster resources
 	for seedName, seedClient := range opt.SeedClients {
-		if err := cloneResourcesInCluster(ctx, logger.WithField("seed", seedName), seedClient, true); err != nil {
+		if err := cloneResourcesInCluster(ctx, logger.WithField("seed", seedName), seedClient); err != nil {
 			return fmt.Errorf("processing the seed cluster failed: %w", err)
 		}
 	}
@@ -48,8 +49,11 @@ func DuplicateResources(ctx context.Context, logger logrus.FieldLogger, opt *Opt
 	return nil
 }
 
-func cloneResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client, isSeed bool) error {
+func cloneResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) error {
 	logger.Info("Duplicating resources into new API group…")
+
+	// reset our runtime UID cache
+	uidCache = map[string]types.UID{}
 
 	type cloneFn func(context.Context, logrus.FieldLogger, ctrlruntimeclient.Client) (int, error)
 
@@ -109,8 +113,13 @@ func getUIDCacheKey(kind, namespace, name string) string {
 	return fmt.Sprintf("%s/%s", kind, name)
 }
 
-func getUIDCacheKeyForObject(obj ctrlruntimeclient.Object) string {
-	return getUIDCacheKey(obj.GetObjectKind().GroupVersionKind().Kind, obj.GetNamespace(), obj.GetName())
+func getUIDCacheKeyForObject(obj ctrlruntimeclient.Object, client ctrlruntimeclient.Client) string {
+	gvk, err := apiutil.GVKForObject(obj, client.Scheme())
+	if err != nil {
+		panic(err)
+	}
+
+	return getUIDCacheKey(gvk.Kind, obj.GetNamespace(), obj.GetName())
 }
 
 func ensureObject(ctx context.Context, client ctrlruntimeclient.Client, obj ctrlruntimeclient.Object, cacheUID bool) error {
@@ -123,13 +132,15 @@ func ensureObject(ctx context.Context, client ctrlruntimeclient.Client, obj ctrl
 	// re-fetch the object to
 	//    1. fill in its UID so we can cache it
 	//    2. get the ResourceVersion, so we can later update any subresources like "status"
-	//    3. fill in the APIVersion and Kind, to make building a cache key easier
+	// Get()ing an object fills in the APIVersion and Kind too, but only if the client
+	// is backed by a cache (e.g. ctrlruntime's delegatingClient). Since the clients our
+	// seedClientGetter provides do not have caches attached, this won't work.
 	if err := client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(obj), obj); err != nil {
 		return err
 	}
 
 	if cacheUID {
-		uidCache[getUIDCacheKeyForObject(obj)] = obj.GetUID()
+		uidCache[getUIDCacheKeyForObject(obj, client)] = obj.GetUID()
 	}
 
 	return nil

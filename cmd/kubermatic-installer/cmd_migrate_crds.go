@@ -24,6 +24,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
+	newv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/install/crdmigration"
@@ -176,11 +177,15 @@ func getKubeClient(ctx context.Context, logger logrus.FieldLogger, kubeContext s
 	}
 
 	if err := kubermaticv1.AddToScheme(mgr.GetScheme()); err != nil {
-		return nil, fmt.Errorf("failed to add scheme: %v", err)
+		return nil, fmt.Errorf("failed to add scheme: %w", err)
+	}
+
+	if err := newv1.AddToScheme(mgr.GetScheme()); err != nil {
+		return nil, fmt.Errorf("failed to add scheme: %w", err)
 	}
 
 	if err := operatorv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
-		return nil, fmt.Errorf("failed to add scheme: %v", err)
+		return nil, fmt.Errorf("failed to add scheme: %w", err)
 	}
 
 	// start the manager in its own goroutine

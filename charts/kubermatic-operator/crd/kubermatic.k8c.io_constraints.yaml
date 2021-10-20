@@ -1,0 +1,261 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.7.0
+  creationTimestamp: null
+  name: constraints.kubermatic.k8c.io
+spec:
+  group: kubermatic.k8c.io
+  names:
+    kind: Constraint
+    listKind: ConstraintList
+    plural: constraints
+    singular: constraint
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: Constraint specifies a kubermatic wrapper for the gatekeeper
+          constraints.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ConstraintSpec specifies the data for the constraint.
+            properties:
+              constraintType:
+                description: ConstraintType specifies the type of gatekeeper constraint
+                  that the constraint applies to
+                type: string
+              disabled:
+                description: Disabled  is the flag for disabling OPA constraints
+                type: boolean
+              match:
+                description: Match contains the constraint to resource matching data
+                properties:
+                  excludedNamespaces:
+                    description: ExcludedNamespaces is a list of namespace names.
+                      If defined, a constraint will only apply to resources not in
+                      a listed namespace.
+                    items:
+                      type: string
+                    type: array
+                  kinds:
+                    description: Kinds accepts a list of objects with apiGroups and
+                      kinds fields that list the groups/kinds of objects to which
+                      the constraint will apply. If multiple groups/kinds objects
+                      are specified, only one match is needed for the resource to
+                      be in scope
+                    items:
+                      description: Kind specifies the resource Kind and APIGroup
+                      properties:
+                        apiGroups:
+                          description: APIGroups specifies the APIGroups of the resources
+                          items:
+                            type: string
+                          type: array
+                        kinds:
+                          description: Kinds specifies the kinds of the resources
+                          items:
+                            type: string
+                          type: array
+                      type: object
+                    type: array
+                  labelSelector:
+                    description: LabelSelector is a standard Kubernetes label selector.
+                    properties:
+                      matchExpressions:
+                        description: matchExpressions is a list of label selector
+                          requirements. The requirements are ANDed.
+                        items:
+                          description: A label selector requirement is a selector
+                            that contains values, a key, and an operator that relates
+                            the key and values.
+                          properties:
+                            key:
+                              description: key is the label key that the selector
+                                applies to.
+                              type: string
+                            operator:
+                              description: operator represents a key's relationship
+                                to a set of values. Valid operators are In, NotIn,
+                                Exists and DoesNotExist.
+                              type: string
+                            values:
+                              description: values is an array of string values. If
+                                the operator is In or NotIn, the values array must
+                                be non-empty. If the operator is Exists or DoesNotExist,
+                                the values array must be empty. This array is replaced
+                                during a strategic merge patch.
+                              items:
+                                type: string
+                              type: array
+                          required:
+                          - key
+                          - operator
+                          type: object
+                        type: array
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: matchLabels is a map of {key,value} pairs. A
+                          single {key,value} in the matchLabels map is equivalent
+                          to an element of matchExpressions, whose key field is "key",
+                          the operator is "In", and the values array contains only
+                          "value". The requirements are ANDed.
+                        type: object
+                    type: object
+                  namespaceSelector:
+                    description: NamespaceSelector  is a standard Kubernetes namespace
+                      selector. If defined, make sure to add Namespaces to your configs.config.gatekeeper.sh
+                      object to ensure namespaces are synced into OPA
+                    properties:
+                      matchExpressions:
+                        description: matchExpressions is a list of label selector
+                          requirements. The requirements are ANDed.
+                        items:
+                          description: A label selector requirement is a selector
+                            that contains values, a key, and an operator that relates
+                            the key and values.
+                          properties:
+                            key:
+                              description: key is the label key that the selector
+                                applies to.
+                              type: string
+                            operator:
+                              description: operator represents a key's relationship
+                                to a set of values. Valid operators are In, NotIn,
+                                Exists and DoesNotExist.
+                              type: string
+                            values:
+                              description: values is an array of string values. If
+                                the operator is In or NotIn, the values array must
+                                be non-empty. If the operator is Exists or DoesNotExist,
+                                the values array must be empty. This array is replaced
+                                during a strategic merge patch.
+                              items:
+                                type: string
+                              type: array
+                          required:
+                          - key
+                          - operator
+                          type: object
+                        type: array
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: matchLabels is a map of {key,value} pairs. A
+                          single {key,value} in the matchLabels map is equivalent
+                          to an element of matchExpressions, whose key field is "key",
+                          the operator is "In", and the values array contains only
+                          "value". The requirements are ANDed.
+                        type: object
+                    type: object
+                  namespaces:
+                    description: Namespaces is a list of namespace names. If defined,
+                      a constraint will only apply to resources in a listed namespace.
+                    items:
+                      type: string
+                    type: array
+                  scope:
+                    description: Scope accepts *, Cluster, or Namespaced which determines
+                      if cluster-scoped and/or namesapced-scoped resources are selected.
+                      (defaults to *)
+                    type: string
+                type: object
+              parameters:
+                additionalProperties:
+                  description: RawMessage is a raw encoded JSON value. It implements
+                    Marshaler and Unmarshaler and can be used to delay JSON decoding
+                    or precompute a JSON encoding.
+                  format: byte
+                  type: string
+                description: "Parameters specifies the parameters used by the constraint
+                  template REGO. It supports both the legacy rawJSON parameters, in
+                  which all the parameters are set in a JSON string, and regular parameters
+                  like in Gatekeeper Constraints. If rawJSON is set, during constraint
+                  syncing to the user cluster, the other parameters are ignored Example
+                  with rawJSON parameters: \n parameters:   rawJSON: '{\"labels\":[\"gatekeeper\"]}'
+                  \n And with regular parameters: \n parameters:   labels: [\"gatekeeper\"]"
+                type: object
+              selector:
+                description: Selector specifies the cluster selection filters
+                properties:
+                  labelSelector:
+                    description: LabelSelector selects the Clusters to which the Constraint
+                      applies based on their labels
+                    properties:
+                      matchExpressions:
+                        description: matchExpressions is a list of label selector
+                          requirements. The requirements are ANDed.
+                        items:
+                          description: A label selector requirement is a selector
+                            that contains values, a key, and an operator that relates
+                            the key and values.
+                          properties:
+                            key:
+                              description: key is the label key that the selector
+                                applies to.
+                              type: string
+                            operator:
+                              description: operator represents a key's relationship
+                                to a set of values. Valid operators are In, NotIn,
+                                Exists and DoesNotExist.
+                              type: string
+                            values:
+                              description: values is an array of string values. If
+                                the operator is In or NotIn, the values array must
+                                be non-empty. If the operator is Exists or DoesNotExist,
+                                the values array must be empty. This array is replaced
+                                during a strategic merge patch.
+                              items:
+                                type: string
+                              type: array
+                          required:
+                          - key
+                          - operator
+                          type: object
+                        type: array
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: matchLabels is a map of {key,value} pairs. A
+                          single {key,value} in the matchLabels map is equivalent
+                          to an element of matchExpressions, whose key field is "key",
+                          the operator is "In", and the values array contains only
+                          "value". The requirements are ANDed.
+                        type: object
+                    type: object
+                  providers:
+                    description: Providers is a list of cloud providers to which the
+                      Constraint applies to. Empty means all providers are selected.
+                    items:
+                      type: string
+                    type: array
+                type: object
+            required:
+            - constraintType
+            type: object
+        type: object
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

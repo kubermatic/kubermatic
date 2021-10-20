@@ -1,0 +1,159 @@
+apiVersion: kubermatic.k8s.io/v1
+kind: Cluster
+metadata:
+  annotations:
+    kubermatic.io/aws-region: eu-central-1
+  finalizers:
+    - kubermatic.io/alertmanager
+    - kubermatic.io/cleanup-aws-control-plane-role
+    - kubermatic.io/cleanup-aws-instance-profile
+    - kubermatic.io/cleanup-aws-security-group
+    - kubermatic.io/cleanup-aws-tags
+    - kubermatic.io/cleanup-cluster-role-bindings
+    - kubermatic.io/cleanup-credentials-secrets
+    - kubermatic.io/cleanup-etcdbackupconfigs
+    - kubermatic.io/cleanup-kubermatic-constraints
+    - kubermatic.io/cleanup-usersshkeys-cluster-ids
+    - kubermatic.io/delete-nodes
+    - kubermatic.io/mla
+  labels:
+    project-id: kkpproject
+  name: kkpcluster
+spec:
+  auditLogging: {}
+  cloud:
+    aws:
+      credentialsReference:
+        name: credential-aws-kkpcluster
+        namespace: kubermatic
+      instanceProfileName: kubernetes-kkpcluster
+      roleARN: kubernetes-kkpcluster-control-plane
+      routeTableId: rtb-12345678
+      securityGroupID: sg-XXXXXXXXXXXX
+      vpcId: vpc-12345678
+    dc: aws-eu-central-1a
+  clusterNetwork:
+    dnsDomain: cluster.local
+    nodeLocalDNSCacheEnabled: true
+    pods:
+      cidrBlocks:
+        - 172.25.0.0/16
+    proxyMode: ipvs
+    services:
+      cidrBlocks:
+        - 10.240.16.0/20
+  cniPlugin:
+    type: canal
+    version: v3.19
+  componentsOverride:
+    apiserver:
+      nodePortRange: 30000-32767
+      replicas: 2
+    controllerManager:
+      leaderElection: {}
+      replicas: 1
+    etcd:
+      clusterSize: 3
+    prometheus: {}
+    scheduler:
+      leaderElection: {}
+      replicas: 1
+  containerRuntime: containerd
+  enableUserSSHKeyAgent: true
+  exposeStrategy: Tunneling
+  features:
+    apiserverNetworkPolicy: true
+  humanReadableName: test-cluster
+  mla:
+    loggingEnabled: true
+    monitoringEnabled: true
+  oidc: {}
+  opaIntegration: {}
+  pause: false
+  version: 1.21.5
+status:
+  cloudMigrationRevision: 2
+  conditions:
+    - kubermatic_version: 7587984156f59a6e3f69f2956b67a348e7b97fdc
+      lastHeartbeatTime: "2021-10-18T16:35:13Z"
+      lastTransitionTime: "2021-10-18T16:35:13Z"
+      status: "True"
+      type: AddonControllerReconciledSuccessfully
+    - kubermatic_version: 7587984156f59a6e3f69f2956b67a348e7b97fdc
+      lastHeartbeatTime: "2021-10-18T16:34:57Z"
+      lastTransitionTime: "2021-10-18T16:34:57Z"
+      status: "True"
+      type: AddonInstallerControllerReconciledSuccessfully
+    - kubermatic_version: 7587984156f59a6e3f69f2956b67a348e7b97fdc
+      lastHeartbeatTime: "2021-10-18T16:34:21Z"
+      lastTransitionTime: null
+      status: "True"
+      type: BackupControllerReconciledSuccessfully
+    - kubermatic_version: 7587984156f59a6e3f69f2956b67a348e7b97fdc
+      lastHeartbeatTime: "2021-10-18T16:34:08Z"
+      lastTransitionTime: null
+      status: "True"
+      type: CloudControllerReconcilledSuccessfully
+    - kubermatic_version: 7587984156f59a6e3f69f2956b67a348e7b97fdc
+      lastHeartbeatTime: "2021-10-18T16:35:04Z"
+      lastTransitionTime: "2021-10-18T16:35:04Z"
+      status: "True"
+      type: ClusterControllerReconciledSuccessfully
+    - kubermatic_version: 50ee269602f89fcd2715f1f43bf53f373752ab49
+      lastHeartbeatTime: "2021-10-18T07:53:44Z"
+      lastTransitionTime: null
+      message: Cluster has been initialized successfully
+      status: "True"
+      type: ClusterInitialized
+    - kubermatic_version: 50ee269602f89fcd2715f1f43bf53f373752ab49
+      lastHeartbeatTime: "2021-10-18T07:52:53Z"
+      lastTransitionTime: null
+      message: Etcd Cluster has been initialized successfully
+      status: "True"
+      type: EtcdClusterInitialized
+    - kubermatic_version: 7587984156f59a6e3f69f2956b67a348e7b97fdc
+      lastHeartbeatTime: "2021-10-18T16:34:27Z"
+      lastTransitionTime: null
+      status: "True"
+      type: MLAControllerReconciledSuccessfully
+    - kubermatic_version: 7587984156f59a6e3f69f2956b67a348e7b97fdc
+      lastHeartbeatTime: "2021-10-18T16:34:30Z"
+      lastTransitionTime: null
+      status: "True"
+      type: MachineDeploymentReconciledSuccessfully
+    - kubermatic_version: 7587984156f59a6e3f69f2956b67a348e7b97fdc
+      lastHeartbeatTime: "2021-10-18T16:34:06Z"
+      lastTransitionTime: null
+      status: "True"
+      type: MonitoringControllerReconciledSuccessfully
+    - kubermatic_version: 7587984156f59a6e3f69f2956b67a348e7b97fdc
+      lastHeartbeatTime: "2021-10-18T16:35:04Z"
+      lastTransitionTime: "2021-10-18T16:35:04Z"
+      message: All control plane components are up to date
+      reason: ClusterUpdateSuccessful
+      status: "True"
+      type: SeedResourcesUpToDate
+    - kubermatic_version: 7587984156f59a6e3f69f2956b67a348e7b97fdc
+      lastHeartbeatTime: "2021-10-18T16:34:32Z"
+      lastTransitionTime: null
+      status: "True"
+      type: UpdateControllerReconciledSuccessfully
+  extendedHealth:
+    apiserver: 1
+    cloudProviderInfrastructure: 1
+    controller: 1
+    etcd: 1
+    machineController: 1
+    openvpn: 1
+    scheduler: 1
+    userClusterControllerManager: 1
+  kubermatic_version: weekly-2021-41
+  namespaceName: cluster-kkpcluster
+  userEmail: roxy@kubermatic.com
+address:
+  adminToken: XXXXXX.XXXXXXXXXXXXXXXX
+  externalName: kkpcluster.europe-west3-c.dev.kubermatic.io
+  internalURL: apiserver-external.cluster-kkpcluster.svc.cluster.local.
+  ip: 192.168.30.10
+  port: 6443
+  url: https://kkpcluster.europe-west3-c.dev.kubermatic.io:6443
