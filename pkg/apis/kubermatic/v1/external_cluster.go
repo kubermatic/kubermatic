@@ -42,7 +42,7 @@ type ExternalCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec ExternalClusterSpec `json:"spec"`
+	Spec ExternalClusterSpec `json:"spec,omitempty"`
 }
 
 // ExternalClusterSpec specifies the data for a new external kubernetes cluster.

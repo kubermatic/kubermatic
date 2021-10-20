@@ -49,8 +49,6 @@ spec:
             - projectID
             - userEmail
             type: object
-        required:
-        - spec
         type: object
     served: true
     storage: true

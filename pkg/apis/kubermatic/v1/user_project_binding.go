@@ -39,7 +39,7 @@ type UserProjectBinding struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec UserProjectBindingSpec `json:"spec"`
+	Spec UserProjectBindingSpec `json:"spec,omitempty"`
 }
 
 // UserProjectBindingSpec specifies a user

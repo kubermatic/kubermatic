@@ -50,8 +50,8 @@ type Project struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ProjectSpec   `json:"spec"`
-	Status ProjectStatus `json:"status"`
+	Spec   ProjectSpec   `json:"spec,omitempty"`
+	Status ProjectStatus `json:"status,omitempty"`
 }
 
 // ProjectSpec is a specification of a project.

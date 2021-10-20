@@ -29,14 +29,10 @@ import (
 // SeedList is the type representing a SeedList
 type SeedList struct {
 	metav1.TypeMeta `json:",inline"`
-	// Standard list metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
-	// +optional
-	metav1.ListMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+	metav1.ListMeta `json:"metadata,omitempty"`
 
 	// List of seeds
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md
-	Items []Seed `json:"items" protobuf:"bytes,2,rep,name=items"`
+	Items []Seed `json:"items"`
 }
 
 // +kubebuilder:object:generate=true
@@ -47,7 +43,7 @@ type Seed struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec SeedSpec `json:"spec"`
+	Spec SeedSpec `json:"spec,omitempty"`
 }
 
 func (s *Seed) SetDefaults() {

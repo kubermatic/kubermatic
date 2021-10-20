@@ -41,7 +41,7 @@ type User struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec UserSpec `json:"spec"`
+	Spec UserSpec `json:"spec,omitempty"`
 }
 
 // UserSpec specifies a user

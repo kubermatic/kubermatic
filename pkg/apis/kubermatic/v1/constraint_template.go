@@ -40,7 +40,7 @@ type ConstraintTemplate struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec ConstraintTemplateSpec `json:"spec"`
+	Spec ConstraintTemplateSpec `json:"spec,omitempty"`
 }
 
 // ConstraintTemplateSpec is the object representing the gatekeeper constraint template spec and kubermatic related spec

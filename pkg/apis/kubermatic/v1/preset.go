@@ -74,14 +74,10 @@ func IsProviderSupported(name string) bool {
 // PresetList is the type representing a PresetList
 type PresetList struct {
 	metav1.TypeMeta `json:",inline"`
-	// Standard list metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
-	// +optional
-	metav1.ListMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+	metav1.ListMeta `json:"metadata,omitempty"`
 
 	// List of presets
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md
-	Items []Preset `json:"items" protobuf:"bytes,2,rep,name=items"`
+	Items []Preset `json:"items"`
 }
 
 // +kubebuilder:resource:scope=Cluster
@@ -93,7 +89,7 @@ type Preset struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec PresetSpec `json:"spec"`
+	Spec PresetSpec `json:"spec,omitempty"`
 }
 
 // Presets specifies default presets for supported providers

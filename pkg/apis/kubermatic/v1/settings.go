@@ -38,7 +38,7 @@ type KubermaticSetting struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec SettingSpec `json:"spec"`
+	Spec SettingSpec `json:"spec,omitempty"`
 }
 
 type SettingSpec struct {

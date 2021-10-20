@@ -29,7 +29,7 @@ type AddonConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec AddonConfigSpec `json:"spec"`
+	Spec AddonConfigSpec `json:"spec,omitempty"`
 }
 
 // AddonConfigSpec specifies configuration of addon

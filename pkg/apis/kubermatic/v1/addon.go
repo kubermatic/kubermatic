@@ -41,7 +41,7 @@ type Addon struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   AddonSpec   `json:"spec"`
+	Spec   AddonSpec   `json:"spec,omitempty"`
 	Status AddonStatus `json:"status,omitempty"`
 }
 

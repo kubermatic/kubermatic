@@ -85,7 +85,7 @@ type Cluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec    ClusterSpec    `json:"spec"`
+	Spec    ClusterSpec    `json:"spec,omitempty"`
 	Address ClusterAddress `json:"address,omitempty"`
 	Status  ClusterStatus  `json:"status,omitempty"`
 }

@@ -33,12 +33,11 @@ const (
 // +kubebuilder:object:root=true
 
 // UserSSHKey specifies a users UserSSHKey
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type UserSSHKey struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec SSHKeySpec `json:"spec"`
+	Spec SSHKeySpec `json:"spec,omitempty"`
 }
 
 type SSHKeySpec struct {

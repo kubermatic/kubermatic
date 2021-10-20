@@ -50,7 +50,7 @@ type EtcdBackupConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   EtcdBackupConfigSpec   `json:"spec"`
+	Spec   EtcdBackupConfigSpec   `json:"spec,omitempty"`
 	Status EtcdBackupConfigStatus `json:"status,omitempty"`
 }
 

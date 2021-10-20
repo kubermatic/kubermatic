@@ -37,7 +37,7 @@ type MLAAdminSetting struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec MLAAdminSettingSpec `json:"spec"`
+	Spec MLAAdminSettingSpec `json:"spec,omitempty"`
 }
 
 // MLAAdminSettingSpec specifies the cluster-specific administrator settings

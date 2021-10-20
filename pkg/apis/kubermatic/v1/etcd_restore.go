@@ -50,7 +50,7 @@ type EtcdRestore struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   EtcdRestoreSpec   `json:"spec"`
+	Spec   EtcdRestoreSpec   `json:"spec,omitempty"`
 	Status EtcdRestoreStatus `json:"status,omitempty"`
 }
 

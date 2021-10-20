@@ -1462,7 +1462,6 @@ spec:
             type: array
         required:
         - credential
-        - spec
         - userSSHKeys
         type: object
     served: true
