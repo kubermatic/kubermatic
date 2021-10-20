@@ -129,6 +129,7 @@ func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provide
 
 	selfRuleName := fmt.Sprintf("firewall-%s-self", cluster.Name)
 	icmpRuleName := fmt.Sprintf("firewall-%s-icmp", cluster.Name)
+	nodePortRuleName := fmt.Sprintf("firewall-%s-nodeport", cluster.Name)
 
 	if kuberneteshelper.HasFinalizer(cluster, firewallSelfCleanupFinalizer) {
 		_, err = firewallService.Delete(projectID, selfRuleName).Do()
@@ -149,7 +150,7 @@ func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provide
 		_, err = firewallService.Delete(projectID, icmpRuleName).Do()
 		// we ignore a Google API "not found" error
 		if err != nil && !isHTTPError(err, http.StatusNotFound) {
-			return nil, fmt.Errorf("failed to delete firewall rule %s: %v", selfRuleName, err)
+			return nil, fmt.Errorf("failed to delete firewall rule %s: %v", icmpRuleName, err)
 		}
 
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
@@ -159,6 +160,23 @@ func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provide
 			return nil, fmt.Errorf("failed to remove %s finalizer: %v", firewallICMPCleanupFinalizer, err)
 		}
 	}
+
+	// remove the nodeport firewall rule
+	if kuberneteshelper.HasFinalizer(cluster, firewallNodePortCleanupFinalizer) {
+		_, err = firewallService.Delete(projectID, nodePortRuleName).Do()
+		// we ignore a Google API "not found" error
+		if err != nil && !isHTTPError(err, http.StatusNotFound) {
+			return nil, fmt.Errorf("failed to delete firewall rule %s: %v", nodePortRuleName, err)
+		}
+
+		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			kuberneteshelper.RemoveFinalizer(cluster, firewallNodePortCleanupFinalizer)
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to remove %s finalizer: %v", firewallNodePortCleanupFinalizer, err)
+		}
+	}
+
 
 	if kuberneteshelper.HasFinalizer(cluster, routesCleanupFinalizer) {
 		if err := g.cleanUnusedRoutes(cluster); err != nil {
