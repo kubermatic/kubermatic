@@ -22,10 +22,12 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/aws/aws-sdk-go/service/eks"
 	ec2 "github.com/cristim/ec2-instances-info"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
@@ -314,4 +316,21 @@ func filterAWSByQuota(instances apiv1.AWSSizeList, quota kubermaticv1.MachineDep
 	}
 
 	return filteredRecords
+}
+
+func ListEKSClusters(ctx context.Context, accessKeyID, secretAccessKey, region string) (apiv2.EKSClusterList, error) {
+	clusters := apiv2.EKSClusterList{}
+	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, region)
+	if err != nil {
+		return clusters, err
+	}
+
+	list, err := client.EKS.ListClusters(&eks.ListClustersInput{})
+	if err != nil {
+		return clusters, fmt.Errorf("cannot list clusters in region=%s: %w", region, err)
+	}
+	for _, f := range list.Clusters {
+		clusters = append(clusters, apiv2.EKSCluster{Name: *f})
+	}
+	return clusters, nil
 }

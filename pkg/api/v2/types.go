@@ -360,3 +360,14 @@ type GKECluster struct {
 // GKEClusterList represents an array of GKE clusters.
 // swagger:model GKEClusterList
 type GKEClusterList []GKECluster
+
+// EKSCluster represents a object of EKS cluster.
+// swagger:model EKSCluster
+type EKSCluster struct {
+	Name       string `json:"name"`
+	IsImported bool   `json:"imported"`
+}
+
+// EKSClusterList represents an list of EKS clusters.
+// swagger:model EKSClusterList
+type EKSClusterList []EKSCluster

@@ -15537,6 +15537,54 @@
         }
       }
     },
+    "/api/v2/providers/eks/clusters": {
+      "get": {
+        "description": "Lists EKS clusters",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "eks"
+        ],
+        "operationId": "listEKSClusters",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "AccessKeyID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "SecretAccessKey",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Region",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "EKSClusterList",
+            "schema": {
+              "$ref": "#/definitions/EKSClusterList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/providers/gke/clusters": {
       "get": {
         "description": "Lists GKE clusters",
@@ -18555,6 +18603,29 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "EKSCluster": {
+      "type": "object",
+      "title": "EKSCluster represents a object of EKS cluster.",
+      "properties": {
+        "imported": {
+          "type": "boolean",
+          "x-go-name": "IsImported"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EKSClusterList": {
+      "type": "array",
+      "title": "EKSClusterList represents an list of EKS clusters.",
+      "items": {
+        "$ref": "#/definitions/EKSCluster"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "ErrorDetails": {
       "description": "ErrorDetails contains details about the error",
