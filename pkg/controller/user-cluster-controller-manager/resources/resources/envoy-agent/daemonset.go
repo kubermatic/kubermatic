@@ -99,8 +99,7 @@ func getInitContainers(ip net.IP, versions kubermatic.Versions, registry string)
 	// interface in a loop.
 	return []corev1.Container{
 		{
-			Name: resources.EnvoyAgentCreateInterfaceInitContainerName,
-			// TODO: the registry should be overridable.
+			Name:    resources.EnvoyAgentCreateInterfaceInitContainerName,
 			Image:   fmt.Sprintf("%s/%s:%s", registry, resources.EnvoyAgentDeviceSetupImage, versions.Kubermatic),
 			Command: []string{"sh", "-c", "ip link add envoyagent type dummy || true"},
 			SecurityContext: &corev1.SecurityContext{
