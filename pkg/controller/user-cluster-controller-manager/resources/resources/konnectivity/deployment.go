@@ -21,6 +21,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -29,7 +30,7 @@ import (
 )
 
 // DeploymentCreator returns function to create/update deployment for konnectivity agents in user cluster.
-func DeploymentCreator(clusterHostname string, registryWithOverwrite func(string) string) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(clusterHostname string, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		const (
 			name    = "k8s-artifacts-prod/kas-network-proxy/proxy-agent"

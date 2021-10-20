@@ -24,6 +24,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/dns"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -50,7 +51,7 @@ var (
 )
 
 // DeploymentCreator returns the function to create and update the CoreDNS deployment
-func DeploymentCreator(kubernetesVersion *semver.Version, registryWithOverwrite func(string) string) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(kubernetesVersion *semver.Version, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.CoreDNSDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.CoreDNSDeploymentName
@@ -117,7 +118,10 @@ func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGet
 	}
 }
 
-func getContainers(clusterVersion *semver.Version, registryWithOverwrite func(string) string) []corev1.Container {
+func getContainers(
+	clusterVersion *semver.Version,
+	registryWithOverwrite registry.WithOverwriteFunc,
+) []corev1.Container {
 	return []corev1.Container{
 		{
 			Name:            resources.CoreDNSDeploymentName,

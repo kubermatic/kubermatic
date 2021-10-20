@@ -21,6 +21,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -69,7 +70,7 @@ var (
 	}
 )
 
-func DeploymentCreator(overrides *corev1.ResourceRequirements, registryWithOverwrite func(string) string) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(overrides *corev1.ResourceRequirements, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.UserClusterPrometheusDeploymentName, func(deployment *appsv1.Deployment) (*appsv1.Deployment, error) {
 			deployment.Labels = resources.BaseAppLabels(appName, nil)

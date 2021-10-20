@@ -21,6 +21,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -80,7 +81,7 @@ var (
 )
 
 // ControllerDeploymentCreator returns the function to create and update the Gatekeeper controller deployment
-func ControllerDeploymentCreator(enableMutation bool, registryWithOverwrite func(string) string) reconciling.NamedDeploymentCreatorGetter {
+func ControllerDeploymentCreator(enableMutation bool, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return controllerName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = controllerName
@@ -127,7 +128,7 @@ func ControllerDeploymentCreator(enableMutation bool, registryWithOverwrite func
 }
 
 // AuditDeploymentCreator returns the function to create and update the Gatekeeper audit deployment
-func AuditDeploymentCreator(registryWithOverwrite func(string) string) reconciling.NamedDeploymentCreatorGetter {
+func AuditDeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return auditName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = auditName
@@ -164,7 +165,7 @@ func AuditDeploymentCreator(registryWithOverwrite func(string) string) reconcili
 	}
 }
 
-func getControllerContainers(enableMutation bool, registryWithOverwrite func(string) string) []corev1.Container {
+func getControllerContainers(enableMutation bool, registryWithOverwrite registry.WithOverwriteFunc) []corev1.Container {
 
 	return []corev1.Container{{
 		Name:            controllerName,
@@ -252,7 +253,7 @@ func getControllerContainers(enableMutation bool, registryWithOverwrite func(str
 	}}
 }
 
-func getAuditContainers(registryWithOverwrite func(string) string) []corev1.Container {
+func getAuditContainers(registryWithOverwrite registry.WithOverwriteFunc) []corev1.Container {
 
 	return []corev1.Container{{
 		Name:            auditName,

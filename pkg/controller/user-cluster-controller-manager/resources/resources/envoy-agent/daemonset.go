@@ -22,6 +22,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -51,7 +52,7 @@ const (
 )
 
 // DaemonSetCreator returns the function to create and update the Envoy DaemonSet
-func DaemonSetCreator(agentIP net.IP, versions kubermatic.Versions, registryWithOverwrite func(string) string) reconciling.NamedDaemonSetCreatorGetter {
+func DaemonSetCreator(agentIP net.IP, versions kubermatic.Versions, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDaemonSetCreatorGetter {
 	return func() (string, reconciling.DaemonSetCreator) {
 		return resources.EnvoyAgentDaemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
 			ds.Name = resources.EnvoyAgentDaemonSetName
