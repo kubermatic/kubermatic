@@ -177,7 +177,6 @@ func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provide
 		}
 	}
 
-
 	if kuberneteshelper.HasFinalizer(cluster, routesCleanupFinalizer) {
 		if err := g.cleanUnusedRoutes(cluster); err != nil {
 			return nil, err
