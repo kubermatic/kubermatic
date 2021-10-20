@@ -19,6 +19,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -31,6 +32,7 @@ import (
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -131,24 +133,29 @@ func MigrateCRDsAction(logger *logrus.Logger) cli.ActionFunc {
 			MasterClient:            kubeClient,
 			Seeds:                   allSeeds,
 			SeedClients:             seedClients,
+			CRDDirectory:            filepath.Join(ctx.GlobalString(chartsDirectoryFlag.Name), "kubermatic-operator", "crd"),
 		}
 
 		// ////////////////////////////////////
 		// phase 1: preflight checks
 
-		// if err := crdmigration.PerformPreflightChecks(appContext, logger.WithField("phase", "preflight"), &opt); err != nil {
-		// 	return fmt.Errorf("preflight checks failed: %w", err)
-		// }
+		if err := crdmigration.PerformPreflightChecks(appContext, logger.WithField("phase", "preflight"), &opt); err != nil {
+			return fmt.Errorf("preflight checks failed: %w", err)
+		}
 
 		// ////////////////////////////////////
 		// phase 2: backups
 
-		// if err := crdmigration.CreateBackups(appContext, logger.WithField("phase", "backup"), &opt); err != nil {
-		// 	return fmt.Errorf("backups failed: %w", err)
-		// }
+		if err := crdmigration.CreateBackups(appContext, logger.WithField("phase", "backup"), &opt); err != nil {
+			return fmt.Errorf("backups failed: %w", err)
+		}
 
 		// ////////////////////////////////////
 		// phase 3: magic!
+
+		if err := crdmigration.InstallCRDs(appContext, logger.WithField("phase", "setup"), &opt); err != nil {
+			return fmt.Errorf("CRD setup failed: %w", err)
+		}
 
 		if err := crdmigration.DuplicateResources(appContext, logger.WithField("phase", "cloning"), &opt); err != nil {
 			return fmt.Errorf("resource cloning failed: %w", err)
@@ -165,6 +172,11 @@ func MigrateCRDsAction(logger *logrus.Logger) cli.ActionFunc {
 
 		logger.Info("All Done :)")
 		logger.Info("All KKP resources have been successfully migrated to the new API group.")
+
+		if ctx.Bool(keepOldResourcesFlag.Name) {
+			logger.Info("You can remove the resources from the old group, kubermatic.k8s.io, manually at a later time.")
+		}
+
 		logger.Info("Please scale up the kubermatic-operator Deployment to 1 to let it reboot KKP across all clusters.")
 
 		return nil
@@ -195,6 +207,10 @@ func getKubeClient(ctx context.Context, logger logrus.FieldLogger, kubeContext s
 	}
 
 	if err := operatorv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
+		return nil, fmt.Errorf("failed to add scheme: %w", err)
+	}
+
+	if err := apiextensionsv1.AddToScheme(mgr.GetScheme()); err != nil {
 		return nil, fmt.Errorf("failed to add scheme: %w", err)
 	}
 

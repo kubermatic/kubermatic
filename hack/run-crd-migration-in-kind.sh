@@ -48,7 +48,7 @@ if [ -z "${KEEP_CLUSTERS:-}" ]; then
   kind delete cluster --name "$SEED_CLUSTER_NAME"
 fi
 
-echodate "Ensuring master and seed clusters..."
+echodate "Ensuring master and seed clusters (tip: set \$KEEP_CLUSTERS=yes to keep your kind clusters from the previous run)..."
 ensure_cluster "$MASTER_CLUSTER_NAME" "$MASTER_KUBECONFIG"
 ensure_cluster "$SEED_CLUSTER_NAME" "$SEED_KUBECONFIG"
 
@@ -118,4 +118,4 @@ export KUBERMATIC_EDITION=ee
 make clean kubermatic-installer
 
 export KUBECONFIG="$MASTER_KUBECONFIG"
-_build/kubermatic-installer --verbose migrate-crds
+_build/kubermatic-installer migrate-crds

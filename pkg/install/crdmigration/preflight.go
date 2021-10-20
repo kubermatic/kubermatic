@@ -324,11 +324,9 @@ func validateNoStuckResourcesInCluster(ctx context.Context, logger logrus.FieldL
 func validateCRDsExist(ctx context.Context, logger logrus.FieldLogger, opt *Options) error {
 	logger.Info("Validating all new KKP CRDs exist…")
 
-	crdDirectory := "charts/kubermatic-operator/crd"
-
-	crds, err := util.LoadFromDirectory(crdDirectory)
+	crds, err := util.LoadFromDirectory(opt.CRDDirectory)
 	if err != nil {
-		return fmt.Errorf("failed to load CRDs from %s: %w", crdDirectory, err)
+		return fmt.Errorf("failed to load CRDs from %s: %w", opt.CRDDirectory, err)
 	}
 
 	checklist := sets.NewString()

@@ -29,4 +29,5 @@ type Options struct {
 	MasterClient            ctrlruntimeclient.Client
 	Seeds                   map[string]*kubermaticv1.Seed
 	SeedClients             map[string]ctrlruntimeclient.Client
+	CRDDirectory            string
 }
