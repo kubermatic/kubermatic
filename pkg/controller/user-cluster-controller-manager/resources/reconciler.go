@@ -778,7 +778,7 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 	}
 
 	kubeSystemCreators := []reconciling.NamedDeploymentCreatorGetter{
-		coredns.DeploymentCreator(r.clusterSemVer),
+		coredns.DeploymentCreator(r.clusterSemVer, r.registryWithOverwrite),
 	}
 
 	if err := reconciling.ReconcileDeployments(ctx, kubeSystemCreators, metav1.NamespaceSystem, r.Client); err != nil {

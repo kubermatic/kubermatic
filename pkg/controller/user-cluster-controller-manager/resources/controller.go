@@ -342,3 +342,10 @@ func (r *reconciler) mlaResourceRequirements(ctx context.Context) (monitoring, l
 	}
 	return cluster.Spec.MLA.MonitoringResources, cluster.Spec.MLA.LoggingResources, nil
 }
+
+func (r *reconciler) registryWithOverwrite(registry string) string {
+	if r.overwriteRegistry != "" {
+		return r.overwriteRegistry
+	}
+	return registry
+}
