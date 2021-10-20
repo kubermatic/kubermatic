@@ -39,6 +39,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -199,9 +200,7 @@ func allowedRegistryConstraintCreatorGetter(regSet sets.String) reconciling.Name
 			}
 			ct.Spec.ConstraintType = AllowedRegistryCTName
 			ct.Spec.Disabled = regSet.Len() == 0
-			ct.Spec.Parameters = kubermaticv1.Parameters{
-				AllowedRegistryField: regSet.List(),
-			}
+			ct.Spec.Parameters = runtime.RawExtension{Raw: []byte(fmt.Sprintf("{\"%s\":\"%v\"}", AllowedRegistryField, regSet.List()))}
 
 			return ct, nil
 		}

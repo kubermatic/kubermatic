@@ -17,9 +17,8 @@ limitations under the License.
 package v1
 
 import (
-	"k8c.io/kubermatic/v2/pkg/util/deepcopy"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -64,7 +63,7 @@ type ConstraintSpec struct {
 	// parameters:
 	//   labels: ["gatekeeper"]
 	//
-	Parameters Parameters `json:"parameters,omitempty"`
+	Parameters runtime.RawExtension `json:"parameters,omitempty"`
 	// Selector specifies the cluster selection filters
 	Selector ConstraintSelector `json:"selector,omitempty"`
 }
@@ -75,27 +74,6 @@ type ConstraintSelector struct {
 	Providers []string `json:"providers,omitempty"`
 	// LabelSelector selects the Clusters to which the Constraint applies based on their labels
 	LabelSelector metav1.LabelSelector `json:"labelSelector,omitempty"`
-}
-
-type Parameters map[string]interface{}
-
-func (in *Parameters) DeepCopyInto(out *Parameters) {
-	// controller-gen cannot handle the map[string]interface{} type thus we write our own DeepCopyInto function.
-	if out != nil {
-		casted := (*in)
-		// as there is no way to report error we skip it here
-		_ = deepcopy.StringInterfaceMapCopy(casted, *out)
-	}
-}
-
-// DeepCopy copies the receiver, creating a new Parameter.
-func (in *Parameters) DeepCopy() *Parameters {
-	if in == nil {
-		return nil
-	}
-	out := &Parameters{}
-	in.DeepCopyInto(out)
-	return out
 }
 
 // Match contains the constraint to resource matching data

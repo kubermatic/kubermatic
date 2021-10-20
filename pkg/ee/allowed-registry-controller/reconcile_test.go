@@ -26,6 +26,7 @@ package allowedregistrycontroller_test
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -40,6 +41,7 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -265,10 +267,8 @@ func genWRConstraint(registrySet sets.String) *kubermaticv1.Constraint {
 				},
 			},
 		},
-		Parameters: kubermaticv1.Parameters{
-			allowedregistrycontroller.AllowedRegistryField: interfaceList,
-		},
-		Disabled: registrySet.Len() == 0,
+		Parameters: runtime.RawExtension{Raw: []byte(fmt.Sprintf("{\"%s\":\"%v\"}", allowedregistrycontroller.AllowedRegistryField, interfaceList))},
+		Disabled:   registrySet.Len() == 0,
 	}
 	return ct
 }

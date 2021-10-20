@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"net/http"
 	"net/http/httptest"
 	"sort"
@@ -46,6 +45,7 @@ import (
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/handler/auth"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
+	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/etcdbackupconfig"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -1680,9 +1680,7 @@ func GenConstraint(name, namespace, kind string) *kubermaticv1.Constraint {
 				{Kinds: []string{"namespace"}, APIGroups: []string{""}},
 			},
 		},
-		Parameters: kubermaticv1.Parameters{
-			"labels": []interface{}{"gatekeeper", "opa"},
-		},
+		Parameters: runtime.RawExtension{Raw: []byte(`{"labels":["gatekeeper","opa"]}`)},
 		Selector: kubermaticv1.ConstraintSelector{
 			Providers: []string{"aws", "gcp"},
 			LabelSelector: metav1.LabelSelector{
@@ -1713,9 +1711,7 @@ func GenDefaultAPIConstraint(name, kind string) apiv2.Constraint {
 					{Kinds: []string{"namespace"}, APIGroups: []string{""}},
 				},
 			},
-			Parameters: kubermaticv1.Parameters{
-				"labels": []interface{}{"gatekeeper", "opa"},
-			},
+			Parameters: runtime.RawExtension{Raw: []byte(`{"labels":["gatekeeper","opa"]}`)},
 			Selector: kubermaticv1.ConstraintSelector{
 				Providers: []string{"aws", "gcp"},
 				LabelSelector: metav1.LabelSelector{

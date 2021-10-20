@@ -400,24 +400,25 @@ func validateConstraint(constraintTemplateProvider provider.ConstraintTemplatePr
 		}
 
 		// Set up parameters
-		parameters := map[string]interface{}{}
+		var parameters map[string]interface{}
 
-		// if legacy rawJSON is used, we need to use it
-		if rawJSON, ok := constraint.Spec.Parameters["rawJSON"]; ok {
-			err = json.Unmarshal([]byte(rawJSON.(string)), &parameters)
-			if err != nil {
-				return utilerrors.NewBadRequest("Validation failed, failed unmarshalling body parameters: %v", err)
-			}
-		} else {
-			rawParameters, err := json.Marshal(constraint.Spec.Parameters)
-			if err != nil {
-				return utilerrors.NewBadRequest("Validation failed, failed marshalling body parameters: %v", err)
-			}
+		err = json.Unmarshal(constraint.Spec.Parameters.Raw, &parameters)
+		if err != nil {
+			return utilerrors.NewBadRequest("Validation failed, failed unmarshalling body parameters: %v", err)
+		}
 
-			err = json.Unmarshal(rawParameters, &parameters)
-			if err != nil {
-				return utilerrors.NewBadRequest("Validation failed, failed unmarshalling body parameters: %v", err)
+		// if legacy rawJSON is used, we need to use it. rawJSON is deprecated and should be removed for 2.19
+		if rawJson, ok := parameters["rawJSON"]; ok {
+			var rawJsonParams map[string]interface{}
+			rawJson, ok := rawJson.(string)
+			if !ok {
+				return utilerrors.NewBadRequest("error converting raw json parameters to string %v", rawJson)
 			}
+			err := json.Unmarshal([]byte(rawJson), &rawJsonParams)
+			if err != nil {
+				return utilerrors.NewBadRequest("error unmarshalling raw json parameters: %v", err)
+			}
+			parameters = rawJsonParams
 		}
 
 		// Validate

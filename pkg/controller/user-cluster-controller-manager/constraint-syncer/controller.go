@@ -48,6 +48,7 @@ const (
 	spec                 = "spec"
 	parametersField      = "parameters"
 	matchField           = "match"
+	rawJsonField         = "rawJSON"
 )
 
 type reconciler struct {
@@ -150,24 +151,30 @@ func (r *reconciler) cleanupConstraint(ctx context.Context, constraint *kubermat
 func constraintCreatorGetter(constraint *kubermaticv1.Constraint) reconciling.NamedUnstructuredCreatorGetter {
 	return func() (string, string, string, reconciling.UnstructuredCreator) {
 		return constraint.Name, constraint.Spec.ConstraintType, constraintAPIVersion, func(u *unstructured.Unstructured) (*unstructured.Unstructured, error) {
-			var params map[string]interface{}
+			if len(constraint.Spec.Parameters.Raw) > 0 {
+				var params map[string]interface{}
 
-			// first check if the Constraint is using the deprecated rawJSON parameters, if yes, we should use them
-			rawJSON, ok, err := unstructured.NestedString(constraint.Spec.Parameters, "rawJSON")
-			if err != nil {
-				return nil, fmt.Errorf("error getting constraint rawJSON parameters %s", err)
-			}
-			if ok {
-				err = json.Unmarshal([]byte(rawJSON), &params)
-				if err != nil {
-					return nil, fmt.Errorf("error unmarshalling constraint params: %v", err)
+				if err := json.Unmarshal(constraint.Spec.Parameters.Raw, &params); err != nil {
+					return nil, fmt.Errorf("error unmarshalling constraint parameters: %v", err)
 				}
-			} else {
-				params = *constraint.Spec.Parameters.DeepCopy()
-			}
 
-			if err = unstructured.SetNestedField(u.Object, params, spec, parametersField); err != nil {
-				return nil, fmt.Errorf("error setting constraint nested parameters: %v", err)
+				// To keep backwards compatibility for Constraints that still use rawJSON. Support for this should be removed for 2.19
+				if rawJson, ok := params[rawJsonField]; ok {
+					var rawJsonParams map[string]interface{}
+					rawJson, ok := rawJson.(string)
+					if !ok {
+						return nil, fmt.Errorf("error converting raw json parameters")
+					}
+					err := json.Unmarshal([]byte(rawJson), &rawJsonParams)
+					if err != nil {
+						return nil, fmt.Errorf("error unmarshalling raw json parameters: %v", err)
+					}
+					params = rawJsonParams
+				}
+
+				if err := unstructured.SetNestedField(u.Object, params, spec, parametersField); err != nil {
+					return nil, fmt.Errorf("error setting constraint nested parameters: %v", err)
+				}
 			}
 
 			// set Match
