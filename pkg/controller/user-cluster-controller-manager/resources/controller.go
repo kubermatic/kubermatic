@@ -77,6 +77,7 @@ func Add(
 	cloudProviderName string,
 	clusterURL *url.URL,
 	clusterIsPaused userclustercontrollermanager.IsPausedChecker,
+	overwriteRegistry string,
 	openvpnServerPort uint32,
 	kasSecurePort uint32,
 	tunnelingAgentIP net.IP,
@@ -101,6 +102,7 @@ func Add(
 		namespace:             namespace,
 		clusterURL:            clusterURL,
 		clusterIsPaused:       clusterIsPaused,
+		overwriteRegistry:     overwriteRegistry,
 		openvpnServerPort:     openvpnServerPort,
 		kasSecurePort:         kasSecurePort,
 		tunnelingAgentIP:      tunnelingAgentIP,
@@ -244,6 +246,7 @@ type reconciler struct {
 	namespace             string
 	clusterURL            *url.URL
 	clusterIsPaused       userclustercontrollermanager.IsPausedChecker
+	overwriteRegistry     string
 	openvpnServerPort     uint32
 	kasSecurePort         uint32
 	tunnelingAgentIP      net.IP
