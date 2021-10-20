@@ -810,7 +810,10 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 }
 
 func (r *reconciler) reconcileKonnectivityDeployments(ctx context.Context) error {
-	if err := reconciling.ReconcileDeployments(ctx, []reconciling.NamedDeploymentCreatorGetter{konnectivity.DeploymentCreator(r.clusterURL.Hostname())}, metav1.NamespaceSystem, r.Client); err != nil {
+	creators := []reconciling.NamedDeploymentCreatorGetter{
+		konnectivity.DeploymentCreator(r.clusterURL.Hostname(), r.registryWithOverwrite),
+	}
+	if err := reconciling.ReconcileDeployments(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Deployments in namespace %s: %v", metav1.NamespaceSystem, err)
 	}
 	return nil
