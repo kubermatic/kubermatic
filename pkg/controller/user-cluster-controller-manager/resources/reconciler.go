@@ -799,7 +799,7 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 
 	if r.userClusterMLA.Monitoring {
 		creators := []reconciling.NamedDeploymentCreatorGetter{
-			userclusterprometheus.DeploymentCreator(data.monitoringRequirements),
+			userclusterprometheus.DeploymentCreator(data.monitoringRequirements, r.registryWithOverwrite),
 		}
 		if err := reconciling.ReconcileDeployments(ctx, creators, resources.UserClusterMLANamespace, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile Deployments in namespace %s: %v", resources.UserClusterMLANamespace, err)
