@@ -95,6 +95,7 @@ containerize() {
   local cmd="$1"
   local image="${CONTAINERIZE_IMAGE:-quay.io/kubermatic/util:2.0.0}"
   local gocache="${CONTAINERIZE_GOCACHE:-/tmp/.gocache}"
+  local gomodcache="${CONTAINERIZE_GOMODCACHE:-/tmp/.gomodcache}"
   local skip="${NO_CONTAINERIZE:-}"
 
   # short-circuit containerize when in some cases it needs to be avoided
@@ -102,11 +103,16 @@ containerize() {
 
   if ! [ -f /.dockerenv ]; then
     echodate "Running $cmd in a Docker container using $image..."
+    mkdir -p "$gocache"
+    mkdir -p "$gomodcache"
 
     exec docker run \
-      -v $PWD:/go/src/k8c.io/kubermatic \
+      -v "$PWD":/go/src/k8c.io/kubermatic \
+      -v "$gocache":"$gocache" \
+      -v "$gomodcache":"$gomodcache" \
       -w /go/src/k8c.io/kubermatic \
       -e "GOCACHE=$gocache" \
+      -e "GOMODCACHE=$gomodcache" \
       -u "$(id -u):$(id -g)" \
       --entrypoint="$cmd" \
       --rm \
