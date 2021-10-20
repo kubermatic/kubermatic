@@ -364,8 +364,8 @@ func (in *AdmissionPluginSpec) DeepCopyInto(out *AdmissionPluginSpec) {
 	*out = *in
 	if in.FromVersion != nil {
 		in, out := &in.FromVersion, &out.FromVersion
-		x := (*in).DeepCopy()
-		*out = &x
+		*out = new(semver.Semver)
+		**out = **in
 	}
 }
 
@@ -964,7 +964,6 @@ func (in *ClusterSpec) DeepCopyInto(out *ClusterSpec) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-	out.Version = in.Version.DeepCopy()
 	in.ComponentsOverride.DeepCopyInto(&out.ComponentsOverride)
 	out.OIDC = in.OIDC
 	if in.Features != nil {
@@ -3011,13 +3010,17 @@ func (in *KubermaticVersioningConfiguration) DeepCopyInto(out *KubermaticVersion
 		in, out := &in.Versions, &out.Versions
 		*out = make([]*semver.Semver, len(*in))
 		for i := range *in {
-			(*in)[i].DeepCopyInto(&(*out)[i])
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(semver.Semver)
+				**out = **in
+			}
 		}
 	}
 	if in.Default != nil {
 		in, out := &in.Default, &out.Default
-		x := (*in).DeepCopy()
-		*out = &x
+		*out = new(semver.Semver)
+		**out = **in
 	}
 	if in.Updates != nil {
 		in, out := &in.Updates, &out.Updates

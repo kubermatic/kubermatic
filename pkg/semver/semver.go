@@ -126,7 +126,7 @@ func (s Semver) MarshalJSON() ([]byte, error) {
 
 // DeepCopy copies value of Semver struct and returns a new struct.
 // If passed Semver struct is nil, it is assumed zero value is being copied
-func (s Semver) DeepCopy() Semver {
+func (s *Semver) DeepCopy() Semver {
 	if s.Semver() == nil {
 		return ""
 	}
