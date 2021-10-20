@@ -17,10 +17,18 @@ limitations under the License.
 package semver
 
 import (
+	"encoding/json"
+	"flag"
 	"fmt"
 	"strconv"
 
 	semverlib "github.com/Masterminds/semver/v3"
+)
+
+var (
+	_ flag.Value       = new(Semver)
+	_ json.Marshaler   = new(Semver)
+	_ json.Unmarshaler = new(Semver)
 )
 
 // Semver is struct that encapsulates semver.Semver struct so we can use it in API
@@ -29,12 +37,12 @@ type Semver string
 
 // NewSemver creates new Semver version struct and returns pointer to it
 func NewSemver(ver string) (*Semver, error) {
-	v := Semver("")
+	v := new(Semver)
 	if err := v.Set(ver); err != nil {
 		return nil, err
 	}
 
-	return &v, nil
+	return v, nil
 }
 
 // NewSemverOrDie behaves similar to NewVersion, i.e. it creates new Semver version struct, but panics if an error happens
