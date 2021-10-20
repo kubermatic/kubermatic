@@ -340,13 +340,26 @@ func etcdCmd(config *etcdCluster) []string {
 		fmt.Sprintf("--advertise-client-urls=https://%s.etcd.%s.svc.cluster.local:2379,https://%s:2379", config.podName, config.namespace, config.podIP),
 		fmt.Sprintf("--listen-client-urls=https://%s:2379,https://127.0.0.1:2379", config.podIP),
 		fmt.Sprintf("--listen-metrics-urls=http://%s:2378,http://127.0.0.1:2378", config.podIP),
-		fmt.Sprintf("--listen-peer-urls=http://%s:2380", config.podIP),
 		fmt.Sprintf("--initial-advertise-peer-urls=http://%s.etcd.%s.svc.cluster.local:2380", config.podName, config.namespace),
 		"--client-cert-auth",
 		fmt.Sprintf("--trusted-ca-file=%s", resources.EtcdTrustedCAFile),
 		fmt.Sprintf("--cert-file=%s", resources.EtcdCertFile),
 		fmt.Sprintf("--key-file=%s", resources.EtcdKetFile),
 		"--auto-compaction-retention=8",
+	}
+
+	if config.initialState == initialStateNew {
+		cmd = append(cmd, []string{
+			fmt.Sprintf("--listen-peer-urls=https://%s:2381", config.podIP),
+			fmt.Sprintf("--peer-cert-file=%s", resources.EtcdCertFile),
+			fmt.Sprintf("--peer-key-file=%s", resources.EtcdKetFile),
+			fmt.Sprintf("--peer-trusted-ca-file=%s", resources.EtcdTrustedCAFile),
+			"--peer-client-cert-auth",
+		}...)
+	} else {
+		cmd = append(cmd, []string{
+			fmt.Sprintf("--listen-peer-urls=http://%s:2380", config.podIP),
+		}...)
 	}
 
 	if config.enableCorruptionCheck {
