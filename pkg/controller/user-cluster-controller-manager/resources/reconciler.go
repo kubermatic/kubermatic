@@ -740,7 +740,7 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData)
 
 	if r.userClusterMLA.Logging {
 		dsCreators = []reconciling.NamedDaemonSetCreatorGetter{
-			promtail.DaemonSetCreator(data.loggingRequirements),
+			promtail.DaemonSetCreator(data.loggingRequirements, r.registryWithOverwrite),
 		}
 		if err := reconciling.ReconcileDaemonSets(ctx, dsCreators, resources.UserClusterMLANamespace, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile the DaemonSet: %v", err)

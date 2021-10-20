@@ -72,7 +72,7 @@ var (
 	}
 )
 
-func DaemonSetCreator(overrides *corev1.ResourceRequirements) reconciling.NamedDaemonSetCreatorGetter {
+func DaemonSetCreator(overrides *corev1.ResourceRequirements, registryWithOverwrite func(string) string) reconciling.NamedDaemonSetCreatorGetter {
 	return func() (string, reconciling.DaemonSetCreator) {
 		return resources.PromtailDaemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
 			ds.Labels = resources.BaseAppLabels(appName, nil)
@@ -90,7 +90,7 @@ func DaemonSetCreator(overrides *corev1.ResourceRequirements) reconciling.NamedD
 			ds.Spec.Template.Spec.InitContainers = []corev1.Container{
 				{
 					Name:            "init-inotify",
-					Image:           fmt.Sprintf("%s/%s:%s", resources.RegistryDocker, initImageName, initImageTag),
+					Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryDocker), initImageName, initImageTag),
 					ImagePullPolicy: corev1.PullAlways,
 					Command: []string{
 						"sh",
@@ -105,7 +105,7 @@ func DaemonSetCreator(overrides *corev1.ResourceRequirements) reconciling.NamedD
 			ds.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            containerName,
-					Image:           fmt.Sprintf("%s/%s:%s", resources.RegistryDocker, imageName, imageTag),
+					Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryDocker), imageName, imageTag),
 					ImagePullPolicy: corev1.PullAlways,
 					Args: []string{
 						"-config.file=/etc/promtail/promtail.yaml",
