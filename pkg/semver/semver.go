@@ -31,9 +31,12 @@ var (
 	_ json.Unmarshaler = new(Semver)
 )
 
-// Semver is struct that encapsulates semver.Semver struct so we can use it in API
 // +k8s:deepcopy-gen=true
-type Semver string
+
+// Semver is struct that encapsulates semver.Semver struct so we can use it in API
+type Semver struct {
+	Version string `json:"version"`
+}
 
 // NewSemver creates new Semver version struct and returns pointer to it
 func NewSemver(ver string) (*Semver, error) {
@@ -60,14 +63,14 @@ func (s *Semver) Set(ver string) error {
 	if _, err := semverlib.NewVersion(ver); err != nil {
 		return err
 	}
-	*s = Semver(ver)
+	s.Version = ver
 
 	return nil
 }
 
 // Semver returns library semver struct
 func (s *Semver) Semver() *semverlib.Version {
-	sver, err := semverlib.NewVersion(string(*s))
+	sver, err := semverlib.NewVersion(s.Version)
 	if err != nil {
 		return nil
 	}
@@ -126,9 +129,9 @@ func (s Semver) MarshalJSON() ([]byte, error) {
 
 // DeepCopy copies value of Semver struct and returns a new struct.
 // If passed Semver struct is nil, it is assumed zero value is being copied
-func (s *Semver) DeepCopy() Semver {
+func (s Semver) DeepCopy() Semver {
 	if s.Semver() == nil {
-		return ""
+		return Semver{}
 	}
 
 	return *NewSemverOrDie(s.String())

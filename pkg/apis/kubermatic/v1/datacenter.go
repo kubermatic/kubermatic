@@ -38,7 +38,7 @@ type SeedList struct {
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 
-// Seed is the type representing a SeedDatacenter
+// Seed is the type representing a Seed
 type Seed struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

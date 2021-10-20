@@ -536,7 +536,12 @@ spec:
                     properties:
                       default:
                         description: Default is the default version to offer users.
-                        type: string
+                        properties:
+                          version:
+                            type: string
+                        required:
+                        - version
+                        type: object
                       providerIncompatibilities:
                         description: ProviderIncompatibilities lists all the Kubernetes
                           version incompatibilities
@@ -603,7 +608,12 @@ spec:
                         items:
                           description: Semver is struct that encapsulates semver.Semver
                             struct so we can use it in API
-                          type: string
+                          properties:
+                            version:
+                              type: string
+                          required:
+                          - version
+                          type: object
                         type: array
                     type: object
                 type: object
