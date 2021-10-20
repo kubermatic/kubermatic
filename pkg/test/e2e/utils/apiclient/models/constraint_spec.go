@@ -28,7 +28,7 @@ type ConstraintSpec struct {
 	Match *Match `json:"match,omitempty"`
 
 	// parameters
-	Parameters Parameters `json:"parameters,omitempty"`
+	Parameters RawExtension `json:"parameters,omitempty"`
 
 	// selector
 	Selector *ConstraintSelector `json:"selector,omitempty"`
@@ -39,10 +39,6 @@ func (m *ConstraintSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateMatch(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateParameters(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -65,23 +61,6 @@ func (m *ConstraintSpec) validateMatch(formats strfmt.Registry) error {
 		if err := m.Match.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("match")
-			}
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *ConstraintSpec) validateParameters(formats strfmt.Registry) error {
-	if swag.IsZero(m.Parameters) { // not required
-		return nil
-	}
-
-	if m.Parameters != nil {
-		if err := m.Parameters.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("parameters")
 			}
 			return err
 		}
@@ -115,10 +94,6 @@ func (m *ConstraintSpec) ContextValidate(ctx context.Context, formats strfmt.Reg
 		res = append(res, err)
 	}
 
-	if err := m.contextValidateParameters(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.contextValidateSelector(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -138,18 +113,6 @@ func (m *ConstraintSpec) contextValidateMatch(ctx context.Context, formats strfm
 			}
 			return err
 		}
-	}
-
-	return nil
-}
-
-func (m *ConstraintSpec) contextValidateParameters(ctx context.Context, formats strfmt.Registry) error {
-
-	if err := m.Parameters.ContextValidate(ctx, formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("parameters")
-		}
-		return err
 	}
 
 	return nil
