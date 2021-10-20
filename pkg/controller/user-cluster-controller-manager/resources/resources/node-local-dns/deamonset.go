@@ -29,7 +29,7 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
+func DaemonSetCreator(registryWithOverwrite func(string) string) reconciling.NamedDaemonSetCreatorGetter {
 	return func() (string, reconciling.DaemonSetCreator) {
 		return resources.NodeLocalDNSDaemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
 			maxUnvailable := intstr.FromString("10%")
@@ -70,8 +70,8 @@ func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 			ds.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            "node-cache",
+					Image:           fmt.Sprintf("%s/k8s-dns-node-cache:1.15.7", registryWithOverwrite(resources.RegistryK8SGCR)),
 					ImagePullPolicy: corev1.PullAlways,
-					Image:           fmt.Sprintf("%s/k8s-dns-node-cache:1.15.7", resources.RegistryK8SGCR),
 					Args: []string{
 						"-localip",
 						"169.254.20.10",

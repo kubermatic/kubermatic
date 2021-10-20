@@ -723,7 +723,7 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData)
 	var dsCreators []reconciling.NamedDaemonSetCreatorGetter
 
 	if r.nodeLocalDNSCache {
-		dsCreators = append(dsCreators, nodelocaldns.DaemonSetCreator())
+		dsCreators = append(dsCreators, nodelocaldns.DaemonSetCreator(r.registryWithOverwrite))
 	}
 
 	if r.userSSHKeyAgent {
