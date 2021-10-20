@@ -19,6 +19,8 @@ package v2
 import (
 	"net/http"
 
+	"k8c.io/kubermatic/v2/pkg/handler/v2/user"
+
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
@@ -45,7 +47,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/rulegroup"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/seedsettings"
-	"k8c.io/kubermatic/v2/pkg/handler/v2/user"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/version"
 )
 
@@ -677,6 +678,11 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/users").
 		Handler(r.listUser())
+
+	// Defines a set of HTTP endpoints for interacting with EKS clusters
+	mux.Methods(http.MethodGet).
+		Path("/providers/eks/clusters").
+		Handler(r.listEKSClusters())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -4653,6 +4659,28 @@ func (r Routing) listGKEClusters() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.GKEClustersEndpoint(r.presetsProvider, r.userInfoGetter)),
 		provider.DecodeGKETypesReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/eks/clusters eks listEKSClusters
+//
+// Lists EKS clusters
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: EKSClusterList
+func (r Routing) listEKSClusters() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.ListEKSClustersEndpoint(r.userInfoGetter, r.presetsProvider)),
+		provider.DecodeEKSTypesReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

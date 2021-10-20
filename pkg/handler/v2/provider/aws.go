@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 // AWSSizeNoCredentialsEndpoint handles the request to list available AWS sizes.
@@ -86,5 +87,114 @@ func AWSSubnetNoCredentialsEndpoint(projectProvider provider.ProjectProvider, pr
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(cluster.GetClusterReq)
 		return providercommon.AWSSubnetNoCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID, req.ClusterID)
+	}
+}
+
+// EKSCommonReq represent a request with common parameters for EKS.
+type EKSCommonReq struct {
+	// in: header
+	// name: AccessKeyID
+	AccessKeyID string
+	// in: header
+	// name: SecretAccessKey
+	SecretAccessKey string
+	// in: header
+	// name: Credential
+	Credential string
+	// in: header
+	// name: Region
+	Region string
+}
+
+// EKSTypesReq represent a request for EKS types.
+// swagger:parameters listEKSClusters
+type EKSTypesReq struct {
+	EKSCommonReq
+}
+
+func DecodeEKSCommonReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req EKSCommonReq
+
+	req.AccessKeyID = r.Header.Get("AccessKeyID")
+	req.SecretAccessKey = r.Header.Get("SecretAccessKey")
+	req.Credential = r.Header.Get("Credential")
+	req.Region = r.Header.Get("Region")
+
+	return req, nil
+}
+
+func DecodeEKSTypesReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req EKSTypesReq
+
+	commonReq, err := DecodeEKSCommonReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.EKSCommonReq = commonReq.(EKSCommonReq)
+
+	return req, nil
+}
+
+type credentials struct {
+	accessKeyID     string
+	secretAccessKey string
+}
+
+func getPresetCredentials(userInfo *provider.UserInfo, presetName string, presetProvider provider.PresetProvider) (*credentials, error) {
+
+	preset, err := presetProvider.GetPreset(userInfo, presetName)
+	if err != nil {
+		return nil, fmt.Errorf("can not get preset %s for the user %s", presetName, userInfo.Email)
+	}
+
+	aws := preset.Spec.AWS
+	if aws == nil {
+		return nil, fmt.Errorf("credentials for AWS not present in preset %s for the user %s", presetName, userInfo.Email)
+	}
+	return &credentials{
+		accessKeyID:     aws.AccessKeyID,
+		secretAccessKey: aws.SecretAccessKey,
+	}, nil
+}
+
+// Validate validates EKSCommonReq request
+func (req EKSCommonReq) Validate() error {
+	if len(req.Credential) == 0 && len(req.AccessKeyID) == 0 && len(req.SecretAccessKey) == 0 {
+		return fmt.Errorf("AWS credentials cannot be empty")
+	}
+	if len(req.Region) == 0 {
+		return fmt.Errorf("AWS region cannot be empty")
+	}
+	return nil
+}
+
+func ListEKSClustersEndpoint(userInfoGetter provider.UserInfoGetter, presetsProvider provider.PresetProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+
+		req := request.(EKSTypesReq)
+		if err := req.Validate(); err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
+
+		accessKeyID := req.AccessKeyID
+		secretAccessKey := req.SecretAccessKey
+		presetName := req.Credential
+		region := req.Region
+
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		// Preset is used
+		if len(presetName) > 0 {
+			credentials, err := getPresetCredentials(userInfo, presetName, presetsProvider)
+			if err != nil {
+				return nil, fmt.Errorf("error getting preset credentials for AWS: %v", err)
+			}
+			accessKeyID = credentials.accessKeyID
+			secretAccessKey = credentials.secretAccessKey
+		}
+		return providercommon.ListEKSClusters(ctx, accessKeyID, secretAccessKey, region)
 	}
 }
