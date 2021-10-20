@@ -42,6 +42,10 @@ var (
 		Usage:  "Context to use from the given kubeconfig",
 		EnvVar: "KUBE_CONTEXT",
 	}
+	keepOldResourcesFlag = cli.BoolFlag{
+		Name:  "keep-resources",
+		Usage: "Do not delete resources in the old API group when the migration is completed",
+	}
 )
 
 func MigrateCRDsCommand(logger *logrus.Logger) cli.Command {
@@ -51,6 +55,7 @@ func MigrateCRDsCommand(logger *logrus.Logger) cli.Command {
 		Action: MigrateCRDsAction(logger),
 		Flags: []cli.Flag{
 			migrateCRDsKubeContextFlag,
+			keepOldResourcesFlag,
 		},
 	}
 }
@@ -149,13 +154,18 @@ func MigrateCRDsAction(logger *logrus.Logger) cli.ActionFunc {
 			return fmt.Errorf("resource cloning failed: %w", err)
 		}
 
-		// task 3.1: create new KKP CRDs
-		// task 3.2: create copies of all kkp resources, but using the new API groups
-		// task 3.3: remove ownerReferences from all old KKP resources
-		// task 3.4: remove finalizers from all old KKP resources
-		// task 3.5: remove all old KKP resources
+		if !ctx.Bool(keepOldResourcesFlag.Name) {
+			if err := crdmigration.RemoveOldResources(appContext, logger.WithField("phase", "cleanup"), &opt); err != nil {
+				return fmt.Errorf("resource cleanup failed: %w", err)
+			}
+		}
 
-		logger.Info("All Done")
+		// ////////////////////////////////////
+		// phase 4: time for cigars
+
+		logger.Info("All Done :)")
+		logger.Info("All KKP resources have been successfully migrated to the new API group.")
+		logger.Info("Please scale up the kubermatic-operator Deployment to 1 to let it reboot KKP across all clusters.")
 
 		return nil
 	}))

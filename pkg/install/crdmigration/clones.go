@@ -77,7 +77,7 @@ func cloneResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, cli
 		{Kind: "EtcdBackupConfig", cloner: cloneEtcdBackupConfigResourcesInCluster},
 		{Kind: "EtcdRestore", cloner: cloneEtcdRestoreResourcesInCluster},
 		{Kind: "ExternalCluster", cloner: cloneExternalClusterResourcesInCluster},
-		{Kind: "KubermaticSetting", cloner: cloneKubermaticSettingResourcesInCluster},
+		// {Kind: "KubermaticSetting", cloner: cloneKubermaticSettingResourcesInCluster},
 		{Kind: "MLAAdminSetting", cloner: cloneMLAAdminSettingResourcesInCluster},
 		{Kind: "Preset", cloner: clonePresetResourcesInCluster},
 		{Kind: "RuleGroup", cloner: cloneRuleGroupResourcesInCluster},

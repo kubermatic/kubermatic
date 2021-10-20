@@ -50,14 +50,31 @@ var (
 	// newAPIGroup is the group we migrate to.
 	newAPIGroup = "kubermatic.k8c.io"
 
-	// allKubermaticKinds is a list of all KKP CRDs
+	// allKubermaticKinds is a list of all KKP CRDs, sorted by ownership,
+	// i.e. the first item (User) owns stuff, whereas items further down
+	// do not own anything. For creating new resources, follow the given
+	// order, when cleaning up, go in reverse.
+	// Current ownerships are as follows:
+	//
+	// User      owns   Project
+	//
+	// Project   owns   UserProjectBinding
+	// Project   owns   UserSSHKey
+	// Project   owns   ExternalCluster
+	//
+	// Cluster   owns   Addon [why? it's in the cluster namespace anyway]
+	// Cluster   owns   EtcdBackupConfig
 	allKubermaticKinds = []Kind{
+		{Name: "User", Namespaced: false, MasterCluster: true, SeedCluster: true},
+
+		{Name: "Project", Namespaced: false, MasterCluster: true, SeedCluster: true},
+		{Name: "Cluster", Namespaced: false, MasterCluster: false, SeedCluster: true},
+
 		{Name: "Addon", Namespaced: true, MasterCluster: false, SeedCluster: true},
 		{Name: "AddonConfig", Namespaced: false, MasterCluster: true, SeedCluster: false},
 		{Name: "AdmissionPlugin", Namespaced: false, MasterCluster: true, SeedCluster: false},
 		{Name: "Alertmanager", Namespaced: true, MasterCluster: false, SeedCluster: true},
 		{Name: "AllowedRegistry", Namespaced: false, MasterCluster: true, SeedCluster: false},
-		{Name: "Cluster", Namespaced: false, MasterCluster: false, SeedCluster: true},
 		{Name: "ClusterTemplate", Namespaced: false, MasterCluster: true, SeedCluster: true},
 		{Name: "ClusterTemplateInstance", Namespaced: false, MasterCluster: false, SeedCluster: true},
 		{Name: "Constraint", Namespaced: true, MasterCluster: false, SeedCluster: true},
@@ -68,10 +85,8 @@ var (
 		{Name: "KubermaticSetting", Namespaced: false, MasterCluster: true, SeedCluster: false},
 		{Name: "MLAAdminSetting", Namespaced: true, MasterCluster: false, SeedCluster: true},
 		{Name: "Preset", Namespaced: false, MasterCluster: true, SeedCluster: false},
-		{Name: "Project", Namespaced: false, MasterCluster: true, SeedCluster: true},
 		{Name: "RuleGroup", Namespaced: true, MasterCluster: false, SeedCluster: true},
 		{Name: "Seed", Namespaced: true, MasterCluster: true, SeedCluster: true},
-		{Name: "User", Namespaced: false, MasterCluster: true, SeedCluster: true},
 		{Name: "UserProjectBinding", Namespaced: false, MasterCluster: true, SeedCluster: true},
 		{Name: "UserSSHKey", Namespaced: false, MasterCluster: true, SeedCluster: false},
 	}
@@ -85,6 +100,17 @@ func getKind(name string) Kind {
 	}
 
 	panic(fmt.Sprintf("Kind %s is not a KKP CRD and not applicable for the migration.", name))
+}
+
+func reverseKinds(kinds []Kind) []Kind {
+	result := make([]Kind, len(kinds))
+	end := len(kinds) - 1
+
+	for i := end; i >= 0; i-- {
+		result[end-i] = kinds[i]
+	}
+
+	return result
 }
 
 func isNamespacedKind(name string) bool {
