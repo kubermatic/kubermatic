@@ -18,13 +18,15 @@ package provider
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
 
-	compute "google.golang.org/api/compute/v1"
+	"google.golang.org/api/compute/v1"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
@@ -37,6 +39,8 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
+
+const allZones = "-"
 
 func GCPSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, settingsProvider provider.SettingsProvider, projectID, clusterID, zone string) (interface{}, error) {
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -352,4 +356,22 @@ func filterGCPByQuota(instances apiv1.GCPMachineSizeList, quota kubermaticv1.Mac
 	}
 
 	return filteredRecords
+}
+
+func ListGKEClusters(ctx context.Context, sa string) (apiv2.GKEClusterList, error) {
+	clusters := apiv2.GKEClusterList{}
+	svc, project, err := gcp.ConnectToContainerService(sa)
+	if err != nil {
+		return clusters, err
+	}
+
+	req := svc.Projects.Zones.Clusters.List(project, allZones)
+	resp, err := req.Context(ctx).Do()
+	if err != nil {
+		return clusters, fmt.Errorf("clusters list project=%s: %w", project, err)
+	}
+	for _, f := range resp.Clusters {
+		clusters = append(clusters, apiv2.GKECluster{Name: f.Name})
+	}
+	return clusters, nil
 }

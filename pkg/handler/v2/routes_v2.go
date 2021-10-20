@@ -17,7 +17,6 @@ limitations under the License.
 package v2
 
 import (
-	"k8c.io/kubermatic/v2/pkg/handler/v2/user"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -46,11 +45,18 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/rulegroup"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/seedsettings"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/user"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/version"
 )
 
 // RegisterV2 declares all router paths for v2
 func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
+
+	// Defines a set of HTTP endpoint for interacting with
+	// various cloud providers
+	mux.Methods(http.MethodGet).
+		Path("/providers/gke/clusters").
+		Handler(r.listGKEClusters())
 
 	// Defines a set of HTTP endpoints for cluster that belong to a project.
 	mux.Methods(http.MethodPost).
@@ -4625,6 +4631,28 @@ func (r Routing) listUser() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(user.ListEndpoint(r.userInfoGetter, r.userProvider)),
 		common.DecodeEmptyReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/gke/clusters gke listGKEClusters
+//
+// Lists GKE clusters
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: GKEClusterList
+func (r Routing) listGKEClusters() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.GKEClustersEndpoint(r.presetsProvider, r.userInfoGetter)),
+		provider.DecodeGKETypesReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

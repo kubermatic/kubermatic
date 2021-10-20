@@ -349,3 +349,14 @@ type ExternalCluster struct {
 type ExternalClusterNode struct {
 	apiv1.Node `json:",inline"`
 }
+
+// GKECluster represents a object of GKE cluster.
+// swagger:model GKECluster
+type GKECluster struct {
+	Name       string `json:"name"`
+	IsImported bool   `json:"imported"`
+}
+
+// GKEClusterList represents an array of GKE clusters.
+// swagger:model GKEClusterList
+type GKEClusterList []GKECluster

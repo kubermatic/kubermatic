@@ -28,6 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/etcdbackupconfig"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/etcdrestore"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/gcp"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/gke"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/hetzner"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/metering"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/metric"
@@ -109,6 +110,7 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Kubermatic
 	cli.Etcdbackupconfig = etcdbackupconfig.New(transport, formats)
 	cli.Etcdrestore = etcdrestore.New(transport, formats)
 	cli.Gcp = gcp.New(transport, formats)
+	cli.Gke = gke.New(transport, formats)
 	cli.Hetzner = hetzner.New(transport, formats)
 	cli.Metering = metering.New(transport, formats)
 	cli.Metric = metric.New(transport, formats)
@@ -208,6 +210,8 @@ type KubermaticKubernetesPlatformAPI struct {
 
 	Gcp gcp.ClientService
 
+	Gke gke.ClientService
+
 	Hetzner hetzner.ClientService
 
 	Metering metering.ClientService
@@ -270,6 +274,7 @@ func (c *KubermaticKubernetesPlatformAPI) SetTransport(transport runtime.ClientT
 	c.Etcdbackupconfig.SetTransport(transport)
 	c.Etcdrestore.SetTransport(transport)
 	c.Gcp.SetTransport(transport)
+	c.Gke.SetTransport(transport)
 	c.Hetzner.SetTransport(transport)
 	c.Metering.SetTransport(transport)
 	c.Metric.SetTransport(transport)
