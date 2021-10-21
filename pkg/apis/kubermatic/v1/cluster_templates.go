@@ -41,9 +41,9 @@ const (
 	ClusterTemplateKindName = "ClusterTemplate"
 )
 
-//+genclient
-//+genclient:nonNamespaced
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 // ClusterTemplate is the object representing a cluster template.
 type ClusterTemplate struct {
@@ -54,10 +54,12 @@ type ClusterTemplate struct {
 	InheritedClusterLabels map[string]string       `json:"inheritedClusterLabels,omitempty"`
 	Credential             string                  `json:"credential"`
 	UserSSHKeys            []ClusterTemplateSSHKey `json:"userSSHKeys"`
-	Spec                   ClusterSpec             `json:"spec"`
+
+	Spec ClusterSpec `json:"spec,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 // ClusterTemplateList specifies a list of cluster templates
 type ClusterTemplateList struct {

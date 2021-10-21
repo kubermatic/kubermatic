@@ -106,8 +106,8 @@ func (cj *clientJig) QueryApiserverVersion(kasHostPort string, insecure bool, ex
 				cj.Log.Errorf("Failed to unmarshal output of kubeclt version command: %v", err)
 				continue
 			}
-			if v.ServerVersion.MajorVersion() == expectServerVersion.Major() &&
-				v.ServerVersion.MinorVersion() == expectServerVersion.Minor() {
+			if v.ServerVersion.MajorVersion() == expectServerVersion.Semver().Major() &&
+				v.ServerVersion.MinorVersion() == expectServerVersion.Semver().Minor() {
 				s++
 			}
 		}

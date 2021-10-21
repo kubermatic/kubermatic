@@ -48,15 +48,12 @@ echodate "Generating operator:v1alpha1"
   "operator:v1alpha1" \
   --go-header-file /tmp/headerfile
 
+sed="sed"
+[ "$(command -v gsed)" ] && sed="gsed"
+
 # Temporary fixes due to: https://github.com/kubernetes/kubernetes/issues/71655
 GENERIC_FILE="v2/pkg/crd/client/informers/externalversions/generic.go"
-sed -i s/usersshkeys/usersshkeies/g ${GENERIC_FILE}
-
-echodate "Generating deepcopy funcs for other packages"
-go run k8s.io/code-generator/cmd/deepcopy-gen \
-  --input-dirs k8c.io/kubermatic/v2/pkg/semver \
-  -O zz_generated.deepcopy \
-  --go-header-file /tmp/headerfile
+$sed -i s/usersshkeys/usersshkeies/g ${GENERIC_FILE}
 
 # move files into their correct location, generate-groups.sh does not handle
 # non-v1 module names very well
@@ -67,3 +64,10 @@ rm /tmp/headerfile
 
 echodate "Generating reconciling functions"
 go generate pkg/resources/reconciling/ensure.go
+
+echodate "Generating openAPI v3 CRDs"
+go run sigs.k8s.io/controller-tools/cmd/controller-gen \
+  crd \
+  object:headerFile=./hack/boilerplate/ce/boilerplate.go.txt \
+  paths=./pkg/apis/kubermatic/... \
+  output:crd:dir=./charts/kubermatic-operator/crd/k8c.io

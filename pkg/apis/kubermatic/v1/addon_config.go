@@ -20,16 +20,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-//+genclient
-//+genclient:nonNamespaced
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 // AddonConfig specifies addon configuration
 type AddonConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec AddonConfigSpec `json:"spec"`
+	Spec AddonConfigSpec `json:"spec,omitempty"`
 }
 
 // AddonConfigSpec specifies configuration of addon
@@ -61,7 +61,8 @@ type AddonFormControl struct {
 	Type string `json:"type,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 // AddonConfigList is a list of addon configs
 type AddonConfigList struct {

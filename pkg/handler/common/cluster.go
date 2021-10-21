@@ -1025,7 +1025,7 @@ func ValidateClusterSpec(clusterType kubermaticv1.ClusterType, updateManager com
 	if clusterType != kubermaticv1.ClusterTypeAll && clusterType != apiv1.ToInternalClusterType(body.Cluster.Type) {
 		return fmt.Errorf("disabled cluster type %s", body.Cluster.Type)
 	}
-	if body.Cluster.Spec.Version.Version == nil {
+	if body.Cluster.Spec.Version.Semver() == nil {
 		return fmt.Errorf("invalid cluster: invalid cloud spec \"Version\" is required but was not specified")
 	}
 
@@ -1038,12 +1038,12 @@ func ValidateClusterSpec(clusterType kubermaticv1.ClusterType, updateManager com
 		return fmt.Errorf("failed to get available cluster versions: %v", err)
 	}
 	for _, availableVersion := range versions {
-		if body.Cluster.Spec.Version.Version.Equal(availableVersion.Version) {
+		if body.Cluster.Spec.Version.Semver().Equal(availableVersion.Version) {
 			return nil
 		}
 	}
 
-	return fmt.Errorf("invalid cluster: invalid cloud spec: unsupported version %v", body.Cluster.Spec.Version.Version)
+	return fmt.Errorf("invalid cluster: invalid cloud spec: unsupported version %v", body.Cluster.Spec.Version.Semver())
 }
 
 func ConvertClusterMetrics(podMetrics *v1beta1.PodMetricsList, nodeMetrics []v1beta1.NodeMetrics, availableNodesResources map[string]corev1.ResourceList, clusterName string) (*apiv1.ClusterMetrics, error) {

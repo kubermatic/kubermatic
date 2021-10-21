@@ -59,7 +59,7 @@ func DeploymentCreator(data clusterautoscalerData) reconciling.NamedDeploymentCr
 		return resources.ClusterAutoscalerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			tag := getTag(data.Cluster())
 			if tag == "" {
-				return nil, fmt.Errorf("no matching autoscaler tag found for version %d", data.Cluster().Spec.Version.Minor())
+				return nil, fmt.Errorf("no matching autoscaler tag found for version %d", data.Cluster().Spec.Version.Semver().Minor())
 			}
 
 			dep.Name = resources.ClusterAutoscalerDeploymentName
@@ -160,7 +160,7 @@ func DeploymentCreator(data clusterautoscalerData) reconciling.NamedDeploymentCr
 // version for each Kubernetes version, because the CA imports the scheduler code and the
 // behaviour of that imported code has to match with what the actual scheduler does
 func getTag(cluster *kubermaticv1.Cluster) string {
-	switch cluster.Spec.Version.Minor() {
+	switch cluster.Spec.Version.Semver().Minor() {
 	case 14:
 		return "fe5bee817ad9d37c8ce5e473af201c2f3fdf5b94-1"
 	}

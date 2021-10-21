@@ -1134,7 +1134,6 @@ func (r *testRunner) getGinkgoRuns(
 ) ([]*ginkgoRun, error) {
 	kubeconfigFilename = path.Clean(kubeconfigFilename)
 	repoRoot := path.Clean(r.repoRoot)
-	MajorMinor := fmt.Sprintf("%d.%d", cluster.Spec.Version.Major(), cluster.Spec.Version.Minor())
 
 	nodeNumberTotal := int32(r.nodeCount)
 
@@ -1173,7 +1172,7 @@ func (r *testRunner) getGinkgoRuns(
 			timeout:       60 * time.Minute,
 		},
 	}
-	versionRoot := path.Join(repoRoot, MajorMinor)
+	versionRoot := path.Join(repoRoot, cluster.Spec.Version.MajorMinor())
 	binRoot := path.Join(versionRoot, "/platforms/linux/amd64")
 	var ginkgoRuns []*ginkgoRun
 	for _, run := range runs {

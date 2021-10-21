@@ -29,8 +29,8 @@ const (
 	RuleGroupKindName = "RuleGroup"
 )
 
-//+genclient
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 type RuleGroup struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -57,7 +57,8 @@ const (
 	RuleGroupTypeLogs RuleGroupType = "Logs"
 )
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 type RuleGroupList struct {
 	metav1.TypeMeta `json:",inline"`
