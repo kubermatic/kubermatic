@@ -243,13 +243,11 @@ func cloneKubermaticConfigurationResourcesInCluster(ctx context.Context, logger 
 					Replicas:         oldObject.Spec.MasterController.Replicas,
 				},
 				UserCluster: newv1.KubermaticUserClusterConfiguration{
-					KubermaticDockerRepository:     oldObject.Spec.UserCluster.KubermaticDockerRepository,
-					DNATControllerDockerRepository: oldObject.Spec.UserCluster.DNATControllerDockerRepository,
-					EtcdLauncherDockerRepository:   oldObject.Spec.UserCluster.EtcdLauncherDockerRepository,
-					OverwriteRegistry:              oldObject.Spec.UserCluster.OverwriteRegistry,
-					Addons: newv1.KubermaticAddonsConfiguration{
-						Kubernetes: newv1.KubermaticAddonConfiguration(oldObject.Spec.UserCluster.Addons.Kubernetes),
-					},
+					KubermaticDockerRepository:          oldObject.Spec.UserCluster.KubermaticDockerRepository,
+					DNATControllerDockerRepository:      oldObject.Spec.UserCluster.DNATControllerDockerRepository,
+					EtcdLauncherDockerRepository:        oldObject.Spec.UserCluster.EtcdLauncherDockerRepository,
+					OverwriteRegistry:                   oldObject.Spec.UserCluster.OverwriteRegistry,
+					Addons:                              newv1.KubermaticAddonsConfiguration(oldObject.Spec.UserCluster.Addons.Kubernetes),
 					NodePortRange:                       oldObject.Spec.UserCluster.NodePortRange,
 					Monitoring:                          newv1.KubermaticUserClusterMonitoringConfiguration(oldObject.Spec.UserCluster.Monitoring),
 					DisableAPIServerEndpointReconciling: oldObject.Spec.UserCluster.DisableAPIServerEndpointReconciling,
@@ -259,9 +257,7 @@ func cloneKubermaticConfigurationResourcesInCluster(ctx context.Context, logger 
 				},
 				ExposeStrategy: oldObject.Spec.ExposeStrategy,
 				Ingress:        newv1.KubermaticIngressConfiguration(oldObject.Spec.Ingress),
-				Versions: newv1.KubermaticVersionsConfiguration{
-					Kubernetes: convertKubermaticVersioningConfiguration(oldObject.Spec.Versions.Kubernetes),
-				},
+				Versions:       convertKubermaticVersioningConfiguration(oldObject.Spec.Versions.Kubernetes),
 				VerticalPodAutoscaler: newv1.KubermaticVPAConfiguration{
 					Recommender:         newv1.KubermaticVPAComponent(oldObject.Spec.VerticalPodAutoscaler.Recommender),
 					Updater:             newv1.KubermaticVPAComponent(oldObject.Spec.VerticalPodAutoscaler.Updater),

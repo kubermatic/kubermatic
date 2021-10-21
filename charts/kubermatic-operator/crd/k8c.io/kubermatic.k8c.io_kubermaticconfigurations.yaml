@@ -417,33 +417,26 @@ spec:
                     description: Addons controls the optional additions installed
                       into each user cluster.
                     properties:
-                      kubernetes:
-                        description: Kubernetes controls the addons for Kubernetes-based
-                          clusters.
-                        properties:
-                          default:
-                            description: Default is the list of addons to be installed
-                              by default into each cluster. Mutually exclusive with
-                              "defaultManifests".
-                            items:
-                              type: string
-                            type: array
-                          defaultManifests:
-                            description: DefaultManifests is a list of addon manifests
-                              to install into all clusters. Mutually exclusive with
-                              "default".
-                            type: string
-                          dockerRepository:
-                            description: DockerRepository is the repository containing
-                              the Docker image containing the possible addon manifests.
-                            type: string
-                          dockerTagSuffix:
-                            description: DockerTagSuffix is appended to the tag used
-                              for referring to the addons image. If left empty, the
-                              tag will be the KKP version (e.g. "v2.15.0"), with a
-                              suffix it becomes "v2.15.0-SUFFIX".
-                            type: string
-                        type: object
+                      default:
+                        description: Default is the list of addons to be installed
+                          by default into each cluster. Mutually exclusive with "defaultManifests".
+                        items:
+                          type: string
+                        type: array
+                      defaultManifests:
+                        description: DefaultManifests is a list of addon manifests
+                          to install into all clusters. Mutually exclusive with "default".
+                        type: string
+                      dockerRepository:
+                        description: DockerRepository is the repository containing
+                          the Docker image containing the possible addon manifests.
+                        type: string
+                      dockerTagSuffix:
+                        description: DockerTagSuffix is appended to the tag used for
+                          referring to the addons image. If left empty, the tag will
+                          be the KKP version (e.g. "v2.15.0"), with a suffix it becomes
+                          "v2.15.0-SUFFIX".
+                        type: string
                     type: object
                   apiserverReplicas:
                     description: APIServerReplicas configures the replica count for
@@ -530,82 +523,76 @@ spec:
                 description: Versions configures the available and default Kubernetes
                   versions and updates.
                 properties:
-                  kubernetes:
-                    description: Kubernetes configures the Kubernetes versions and
-                      updates.
-                    properties:
-                      default:
-                        description: Default is the default version to offer users.
-                        type: string
-                      providerIncompatibilities:
-                        description: ProviderIncompatibilities lists all the Kubernetes
-                          version incompatibilities
-                        items:
-                          description: Incompatibility represents a version incompatibility
-                            for a user cluster
-                          properties:
-                            condition:
-                              description: Condition is the cluster or datacenter
-                                condition that must be met to block a specific version
-                              type: string
-                            operation:
-                              description: Operation is the operation triggering the
-                                compatibility check (CREATE or UPDATE)
-                              type: string
-                            provider:
-                              description: Provider to which to apply the compatibility
-                                check
-                              type: string
-                            version:
-                              description: Version is the Kubernetes version that
-                                must be checked. Wildcards are allowed, e.g. "1.22.*".
-                              type: string
-                          type: object
-                        type: array
-                      updates:
-                        description: 'Updates is a list of available and automatic
-                          upgrades. All ''to'' versions must be configured in the
-                          version list for this orchestrator. Each update may optionally
-                          be configured to be ''automatic: true'', in which case the
-                          controlplane of all clusters whose version matches the ''from''
-                          directive will get updated to the ''to'' version. If automatic
-                          is enabled, the ''to'' version must be a version and not
-                          a version range. Also, updates may set ''automaticNodeUpdate:
-                          true'', in which case Nodes will get updates as well. ''automaticNodeUpdate:
-                          true'' implies ''automatic: true'' as well, because Nodes
-                          may not have a newer version than the controlplane.'
-                        items:
-                          description: Update represents an update option for a user
-                            cluster.
-                          properties:
-                            automatic:
-                              description: Automatic controls whether this update
-                                is executed automatically for the control plane of
-                                all matching user clusters. ---
-                              type: boolean
-                            automaticNodeUpdate:
-                              description: Automatic controls whether this update
-                                is executed automatically for the worker nodes of
-                                all matching user clusters. ---
-                              type: boolean
-                            from:
-                              description: From is the version from which an update
-                                is allowed. Wildcards are allowed, e.g. "1.18.*".
-                              type: string
-                            to:
-                              description: From is the version to which an update
-                                is allowed. Wildcards are allowed, e.g. "1.18.*".
-                              type: string
-                          type: object
-                        type: array
-                      versions:
-                        description: Versions lists the available versions.
-                        items:
-                          description: Semver is a type that encapsulates github.com/Masterminds/semver/v3.Version
-                            struct so it can be used in our API
+                  default:
+                    description: Default is the default version to offer users.
+                    type: string
+                  providerIncompatibilities:
+                    description: ProviderIncompatibilities lists all the Kubernetes
+                      version incompatibilities
+                    items:
+                      description: Incompatibility represents a version incompatibility
+                        for a user cluster
+                      properties:
+                        condition:
+                          description: Condition is the cluster or datacenter condition
+                            that must be met to block a specific version
                           type: string
-                        type: array
-                    type: object
+                        operation:
+                          description: Operation is the operation triggering the compatibility
+                            check (CREATE or UPDATE)
+                          type: string
+                        provider:
+                          description: Provider to which to apply the compatibility
+                            check
+                          type: string
+                        version:
+                          description: Version is the Kubernetes version that must
+                            be checked. Wildcards are allowed, e.g. "1.22.*".
+                          type: string
+                      type: object
+                    type: array
+                  updates:
+                    description: 'Updates is a list of available and automatic upgrades.
+                      All ''to'' versions must be configured in the version list for
+                      this orchestrator. Each update may optionally be configured
+                      to be ''automatic: true'', in which case the controlplane of
+                      all clusters whose version matches the ''from'' directive will
+                      get updated to the ''to'' version. If automatic is enabled,
+                      the ''to'' version must be a version and not a version range.
+                      Also, updates may set ''automaticNodeUpdate: true'', in which
+                      case Nodes will get updates as well. ''automaticNodeUpdate:
+                      true'' implies ''automatic: true'' as well, because Nodes may
+                      not have a newer version than the controlplane.'
+                    items:
+                      description: Update represents an update option for a user cluster.
+                      properties:
+                        automatic:
+                          description: Automatic controls whether this update is executed
+                            automatically for the control plane of all matching user
+                            clusters. ---
+                          type: boolean
+                        automaticNodeUpdate:
+                          description: Automatic controls whether this update is executed
+                            automatically for the worker nodes of all matching user
+                            clusters. ---
+                          type: boolean
+                        from:
+                          description: From is the version from which an update is
+                            allowed. Wildcards are allowed, e.g. "1.18.*".
+                          type: string
+                        to:
+                          description: From is the version to which an update is allowed.
+                            Wildcards are allowed, e.g. "1.18.*".
+                          type: string
+                      type: object
+                    type: array
+                  versions:
+                    description: Versions lists the available versions.
+                    items:
+                      description: Semver is a type that encapsulates github.com/Masterminds/semver/v3.Version
+                        struct so it can be used in our API
+                      type: string
+                    type: array
                 type: object
               verticalPodAutoscaler:
                 description: VerticalPodAutoscaler configures the Kubernetes VPA integration.
