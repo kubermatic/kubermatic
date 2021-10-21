@@ -371,3 +371,7 @@ type EKSCluster struct {
 // EKSClusterList represents an list of EKS clusters.
 // swagger:model EKSClusterList
 type EKSClusterList []EKSCluster
+
+// Regions represents an list of EC2 regions.
+// swagger:model Regions
+type Regions []string
