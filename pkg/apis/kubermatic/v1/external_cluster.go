@@ -52,6 +52,24 @@ type ExternalClusterSpec struct {
 	HumanReadableName string `json:"humanReadableName"`
 
 	KubeconfigReference *providerconfig.GlobalSecretKeySelector `json:"kubeconfigReference,omitempty"`
+	CloudSpec           *ExternalClusterCloudSpec               `json:"cloudSpec,omitempty"`
+}
+
+// ExternalClusterCloudSpec mutually stores access data to a cloud provider.
+type ExternalClusterCloudSpec struct {
+	GKE *ExternalClusterGKECloudSpec `json:"gke,omitempty"`
+	EKS *ExternalClusterEKSCloudSpec `json:"eks,omitempty"`
+}
+
+type ExternalClusterGKECloudSpec struct {
+	Name                 string                                  `json:"name"`
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+}
+
+type ExternalClusterEKSCloudSpec struct {
+	Name                 string                                  `json:"name"`
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+	Region               string                                  `json:"region"`
 }
 
 func (i *ExternalCluster) GetKubeconfigSecretName() string {

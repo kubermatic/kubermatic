@@ -52,6 +52,7 @@ type UserSpec struct {
 	IsAdmin                 bool                                    `json:"admin"`
 	Settings                *UserSettings                           `json:"settings,omitempty"`
 	TokenBlackListReference *providerconfig.GlobalSecretKeySelector `json:"tokenBlackListReference,omitempty"`
+	LastSeen                *metav1.Time                            `json:"lastSeen,omitempty"`
 }
 
 // UserSettings represent an user settings
