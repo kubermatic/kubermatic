@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"strings"
 
+	ec2service "github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/eks"
 	ec2 "github.com/cristim/ec2-instances-info"
 
@@ -333,4 +334,25 @@ func ListEKSClusters(ctx context.Context, accessKeyID, secretAccessKey, region s
 		clusters = append(clusters, apiv2.EKSCluster{Name: *f})
 	}
 	return clusters, nil
+}
+
+func ListEC2Regions(ctx context.Context, accessKeyID, secretAccessKey, endpoint string) (apiv2.Regions, error) {
+	regionInput := &ec2service.DescribeRegionsInput{}
+
+	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	// Retrieves all regions/endpoints that work with EC2
+	regionOutput, err := client.EC2.DescribeRegions(regionInput)
+	if err != nil {
+		return nil, fmt.Errorf("cannot list regions: %w", err)
+	}
+
+	var regionList []string
+	for _, region := range regionOutput.Regions {
+		regionList = append(regionList, *region.RegionName)
+	}
+	return regionList, nil
 }

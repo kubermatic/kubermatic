@@ -683,6 +683,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/providers/eks/clusters").
 		Handler(r.listEKSClusters())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/eks/regions").
+		Handler(r.listEC2Regions())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -4681,6 +4685,31 @@ func (r Routing) listEKSClusters() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.ListEKSClustersEndpoint(r.userInfoGetter, r.presetsProvider)),
 		provider.DecodeEKSTypesReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/eks/regions regions listEC2Regions
+//
+//     List EC2 regions.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []Regions
+//       401: empty
+//       403: empty
+func (r Routing) listEC2Regions() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.ListEC2RegionsEndpoint(r.userInfoGetter, r.presetsProvider)),
+		provider.DecodeEC2RegionReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
