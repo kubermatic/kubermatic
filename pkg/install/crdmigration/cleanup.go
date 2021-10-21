@@ -52,7 +52,7 @@ func removeResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, cl
 
 	oldAPIVersion := oldAPIGroup + "/v1"
 
-	// reversing the kind is allows to unravel the owner references
+	// reversing the kind allows to unravel the owner references
 	// without objects getting "stuck" and instead being deleted immediately
 	for _, kind := range reverseKinds(allKubermaticKinds) {
 		removeResourcesOfKindInCluster(ctx, logger.WithField("kind", kind.Name), client, oldAPIVersion, kind)

@@ -27,12 +27,12 @@ import (
 )
 
 func InstallCRDs(ctx context.Context, logger logrus.FieldLogger, opt *Options) error {
-	// remove master cluster resources
+	// process master cluster
 	if err := installCRDsInCluster(ctx, logger.WithField("master", true), opt.MasterClient, opt.CRDDirectory); err != nil {
 		return fmt.Errorf("processing the master cluster failed: %w", err)
 	}
 
-	// remove seed cluster resources
+	// process seed clusters
 	for seedName, seedClient := range opt.SeedClients {
 		if err := installCRDsInCluster(ctx, logger.WithField("seed", seedName), seedClient, opt.CRDDirectory); err != nil {
 			return fmt.Errorf("processing the seed cluster failed: %w", err)
