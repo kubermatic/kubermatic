@@ -41,15 +41,16 @@ const (
 // EtcdRestorePhase represents the lifecycle phase of an EtcdRestore.
 type EtcdRestorePhase string
 
-//+genclient
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 
 // EtcdRestore specifies a add-on
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type EtcdRestore struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   EtcdRestoreSpec   `json:"spec"`
+	Spec   EtcdRestoreSpec   `json:"spec,omitempty"`
 	Status EtcdRestoreStatus `json:"status,omitempty"`
 }
 
@@ -68,16 +69,18 @@ type EtcdRestoreSpec struct {
 	BackupDownloadCredentialsSecret string `json:"backupDownloadCredentialsSecret,omitempty"`
 }
 
+type EtcdRestoreStatus struct {
+	Phase       EtcdRestorePhase `json:"phase"`
+	RestoreTime *metav1.Time     `json:"restoreTime,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
+
 // EtcdRestoreList is a list of etcd restores
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type EtcdRestoreList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
 	Items []EtcdRestore `json:"items"`
-}
-
-type EtcdRestoreStatus struct {
-	Phase       EtcdRestorePhase `json:"phase"`
-	RestoreTime *metav1.Time     `json:"restoreTime,omitempty"`
 }

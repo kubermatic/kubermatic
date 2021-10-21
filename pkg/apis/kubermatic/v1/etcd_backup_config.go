@@ -41,15 +41,16 @@ const (
 	BackupStatusPhaseFailed = "Failed"
 )
 
-//+genclient
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 
 // EtcdBackupConfig specifies a add-on
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type EtcdBackupConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   EtcdBackupConfigSpec   `json:"spec"`
+	Spec   EtcdBackupConfigSpec   `json:"spec,omitempty"`
 	Status EtcdBackupConfigStatus `json:"status,omitempty"`
 }
 
@@ -70,15 +71,6 @@ type EtcdBackupConfigSpec struct {
 	Keep *int `json:"keep,omitempty"`
 }
 
-// EtcdBackupConfigList is a list of etcd backup configs
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-type EtcdBackupConfigList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-
-	Items []EtcdBackupConfig `json:"items"`
-}
-
 type EtcdBackupConfigStatus struct {
 	// CurrentBackups tracks the creation and deletion progress if all backups managed by the EtcdBackupConfig
 	CurrentBackups []BackupStatus `json:"lastBackups,omitempty"`
@@ -86,6 +78,17 @@ type EtcdBackupConfigStatus struct {
 	Conditions []EtcdBackupConfigCondition `json:"conditions,omitempty"`
 	// If the controller was configured with a cleanupContainer, CleanupRunning keeps track of the corresponding job
 	CleanupRunning bool `json:"cleanupRunning,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
+
+// EtcdBackupConfigList is a list of etcd backup configs
+type EtcdBackupConfigList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+
+	Items []EtcdBackupConfig `json:"items"`
 }
 
 type BackupStatusPhase string

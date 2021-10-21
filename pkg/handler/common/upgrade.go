@@ -114,7 +114,7 @@ func UpgradeNodeDeploymentsEndpoint(ctx context.Context, userInfoGetter provider
 		return nil, errors.NewBadRequest(err.Error())
 	}
 
-	if err = nodeupdate.EnsureVersionCompatible(cluster.Spec.Version.Version, requestedKubeletVersion); err != nil {
+	if err = nodeupdate.EnsureVersionCompatible(cluster.Spec.Version.Semver(), requestedKubeletVersion); err != nil {
 		return nil, errors.NewBadRequest(err.Error())
 	}
 

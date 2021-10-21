@@ -20,8 +20,6 @@ import (
 	"reflect"
 	"testing"
 
-	semverlib "github.com/Masterminds/semver/v3"
-
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/semver"
@@ -31,8 +29,11 @@ import (
 )
 
 func TestExternalCCMMigration(t *testing.T) {
+	const (
+		kubernetesVersionToTest = "1.21.0"
+	)
+
 	t.Parallel()
-	version, _ := semverlib.NewVersion("1.21.0")
 	testCases := []struct {
 		Name           string
 		Datacenter     *kubermaticv1.Datacenter
@@ -52,9 +53,7 @@ func TestExternalCCMMigration(t *testing.T) {
 					Features: map[string]bool{
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
 					},
-					Version: semver.Semver{
-						Version: version,
-					},
+					Version: *semver.NewSemverOrDie(kubernetesVersionToTest),
 				},
 			},
 			ExpectedStatus: apiv1.ExternalCCMMigrationNotNeeded,
@@ -78,9 +77,7 @@ func TestExternalCCMMigration(t *testing.T) {
 					Features: map[string]bool{
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
 					},
-					Version: semver.Semver{
-						Version: version,
-					},
+					Version: *semver.NewSemverOrDie(kubernetesVersionToTest),
 				},
 				Status: kubermaticv1.ClusterStatus{
 					Conditions: []kubermaticv1.ClusterCondition{
@@ -103,9 +100,7 @@ func TestExternalCCMMigration(t *testing.T) {
 					Cloud: kubermaticv1.CloudSpec{
 						Openstack: &kubermaticv1.OpenstackCloudSpec{},
 					},
-					Version: semver.Semver{
-						Version: version,
-					},
+					Version: *semver.NewSemverOrDie(kubernetesVersionToTest),
 				},
 			},
 			ExpectedStatus: apiv1.ExternalCCMMigrationSupported,
@@ -120,9 +115,7 @@ func TestExternalCCMMigration(t *testing.T) {
 					Cloud: kubermaticv1.CloudSpec{
 						Fake: &kubermaticv1.FakeCloudSpec{},
 					},
-					Version: semver.Semver{
-						Version: version,
-					},
+					Version: *semver.NewSemverOrDie(kubernetesVersionToTest),
 				},
 			},
 			ExpectedStatus: apiv1.ExternalCCMMigrationUnsupported,
@@ -146,9 +139,7 @@ func TestExternalCCMMigration(t *testing.T) {
 					Features: map[string]bool{
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
 					},
-					Version: semver.Semver{
-						Version: version,
-					},
+					Version: *semver.NewSemverOrDie(kubernetesVersionToTest),
 				},
 				Status: kubermaticv1.ClusterStatus{
 					Conditions: []kubermaticv1.ClusterCondition{
@@ -180,9 +171,7 @@ func TestExternalCCMMigration(t *testing.T) {
 					Features: map[string]bool{
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
 					},
-					Version: semver.Semver{
-						Version: version,
-					},
+					Version: *semver.NewSemverOrDie(kubernetesVersionToTest),
 				},
 			},
 			ExpectedStatus: apiv1.ExternalCCMMigrationInProgress,

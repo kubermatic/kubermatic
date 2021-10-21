@@ -68,29 +68,28 @@ func IsProviderSupported(name string) bool {
 	return false
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 // PresetList is the type representing a PresetList
 type PresetList struct {
 	metav1.TypeMeta `json:",inline"`
-	// Standard list metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
-	// +optional
-	metav1.ListMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+	metav1.ListMeta `json:"metadata,omitempty"`
 
 	// List of presets
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md
-	Items []Preset `json:"items" protobuf:"bytes,2,rep,name=items"`
+	Items []Preset `json:"items"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 // Preset is the type representing a Preset
 type Preset struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec PresetSpec `json:"spec"`
+	Spec PresetSpec `json:"spec,omitempty"`
 }
 
 // Presets specifies default presets for supported providers
@@ -173,6 +172,10 @@ func (s PresetSpec) Validate(providerType ProviderType) error {
 		return fmt.Errorf("missing provider configuration for: %s", providerType)
 	}
 
+	type Validateable interface {
+		IsValid() bool
+	}
+
 	validateableType := reflect.TypeOf(new(Validateable)).Elem()
 	if !providerField.Type().Implements(validateableType) {
 		return fmt.Errorf("provider %s does not implement Validateable interface", providerField.Type().Name())
@@ -203,10 +206,6 @@ func (s *PresetSpec) OverrideProvider(providerType ProviderType, spec *PresetSpe
 	dest := s.getProviderValue(providerType)
 	src := spec.getProviderValue(providerType)
 	dest.Set(src)
-}
-
-type Validateable interface {
-	IsValid() bool
 }
 
 type PresetProvider struct {

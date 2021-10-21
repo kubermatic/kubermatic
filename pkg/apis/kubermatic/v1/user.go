@@ -32,16 +32,16 @@ const (
 	UserKindName = "User"
 )
 
-//+genclient
-//+genclient:nonNamespaced
+// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 // User specifies a user
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type User struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec UserSpec `json:"spec"`
+	Spec UserSpec `json:"spec,omitempty"`
 }
 
 // UserSpec specifies a user
@@ -52,6 +52,7 @@ type UserSpec struct {
 	IsAdmin                 bool                                    `json:"admin"`
 	Settings                *UserSettings                           `json:"settings,omitempty"`
 	TokenBlackListReference *providerconfig.GlobalSecretKeySelector `json:"tokenBlackListReference,omitempty"`
+	LastSeen                *metav1.Time                            `json:"lastSeen,omitempty"`
 }
 
 // UserSettings represent an user settings
@@ -65,15 +66,6 @@ type UserSettings struct {
 	LastSeenChangelogVersion   string `json:"lastSeenChangelogVersion,omitempty"`
 }
 
-// UserList is a list of users
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-type UserList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-
-	Items []User `json:"items"`
-}
-
 // ProjectGroup is a helper data structure that
 // stores the information about a project and a group that
 // a user belongs to
@@ -84,4 +76,15 @@ type ProjectGroup struct {
 
 func (u *User) GetTokenBlackListSecretName() string {
 	return fmt.Sprintf("token-blacklist-%s", u.Name)
+}
+
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
+
+// UserList is a list of users
+type UserList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+
+	Items []User `json:"items"`
 }

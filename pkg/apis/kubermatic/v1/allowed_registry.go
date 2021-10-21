@@ -26,9 +26,9 @@ const (
 	AllowedRegistryKindName = "AllowedRegistry"
 )
 
-//+genclient
-//+genclient:nonNamespaced
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 // AllowedRegistry is the object representing an allowed registry.
 type AllowedRegistry struct {
@@ -45,7 +45,8 @@ type AllowedRegistrySpec struct {
 	RegistryPrefix string `json:"registryPrefix"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 // AllowedRegistryList specifies a list of allowed registries
 type AllowedRegistryList struct {

@@ -574,7 +574,7 @@ func ValidateContainerRuntime(spec *kubermaticv1.ClusterSpec) error {
 	}
 
 	dockerSupportLimit := semver.MustParse("1.22.1")
-	if spec.ContainerRuntime == "docker" && !spec.Version.LessThan(dockerSupportLimit) {
+	if spec.ContainerRuntime == "docker" && !spec.Version.Semver().LessThan(dockerSupportLimit) {
 		return fmt.Errorf("docker not supported from version 1.22: %s", spec.ContainerRuntime)
 	}
 

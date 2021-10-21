@@ -29,8 +29,8 @@ const (
 	AlertmanagerKindName = "Alertmanager"
 )
 
-//+genclient
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 type Alertmanager struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -45,7 +45,8 @@ type AlertmanagerSpec struct {
 	ConfigSecret corev1.LocalObjectReference `json:"configSecret"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 type AlertmanagerList struct {
 	metav1.TypeMeta `json:",inline"`
