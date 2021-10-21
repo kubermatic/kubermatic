@@ -67,6 +67,7 @@ type etcdCluster struct {
 	token                 string
 	enableCorruptionCheck bool
 	initialState          string
+	usePeerTLSOnly        bool
 }
 
 func main() {
@@ -93,9 +94,13 @@ func main() {
 		log.Panicw("failed to set initialState", zap.Error(err))
 	}
 
+	// TODO: update this to upgrade from mixed mode to TLS only
+	// currently only runs strict peer TLS mode on new clusters
+	e.usePeerTLSOnly = e.initialState == initialStateNew
+
 	log.Info("initializing etcd..")
 	log.Infof("initial-state: %s", e.initialState)
-	log.Infof("initial-cluster: %s", strings.Join(initialMemberList(e.clusterSize, e.namespace), ","))
+	log.Infof("initial-cluster: %s", strings.Join(initialMemberList(e.clusterSize, e.namespace, e.usePeerTLSOnly), ","))
 
 	// setup and start etcd command
 	etcdCmd, err := startEtcdCmd(e, log)
@@ -136,8 +141,9 @@ func main() {
 		log.Panicw("join cluster as fresh member", zap.Error(err))
 	}
 
-	// handle changes to peerURLs (https -> http)
-	if err := e.updatePeerURLToHTTP(log); err != nil {
+	// make sure that peer URLs in the cluster member data is
+	// updated / in sync with the etcd node's configuration
+	if err := e.updatePeerURLs(log); err != nil {
 		log.Panicw("failed to update peerURL", zap.Error(err))
 	}
 
@@ -234,7 +240,17 @@ func joinCluster(e *etcdCluster, log *zap.SugaredLogger) error {
 		return errors.Wrap(err, "can't find cluster client")
 	}
 
-	if _, err := client.MemberAdd(context.Background(), []string{fmt.Sprintf("http://%s.etcd.%s.svc.cluster.local:2380", e.podName, e.namespace)}); err != nil {
+	// construct peer URLs for this new node
+
+	peerURLs := []string{}
+
+	if !e.usePeerTLSOnly {
+		peerURLs = append(peerURLs, fmt.Sprintf("http://%s.etcd.%s.svc.cluster.local:2380", e.podName, e.namespace))
+	}
+
+	peerURLs = append(peerURLs, fmt.Sprintf("https://%s.etcd.%s.svc.cluster.local:2381", e.podName, e.namespace))
+
+	if _, err := client.MemberAdd(context.Background(), peerURLs); err != nil {
 		close(client, log)
 		return errors.Wrap(err, "add itself as a member")
 	}
@@ -245,7 +261,7 @@ func joinCluster(e *etcdCluster, log *zap.SugaredLogger) error {
 	return nil
 }
 
-func (e *etcdCluster) updatePeerURLToHTTP(log *zap.SugaredLogger) error {
+func (e *etcdCluster) updatePeerURLs(log *zap.SugaredLogger) error {
 	members, err := e.listMembers(log)
 	if err != nil {
 		return err
@@ -254,33 +270,57 @@ func (e *etcdCluster) updatePeerURLToHTTP(log *zap.SugaredLogger) error {
 	if err != nil {
 		return err
 	}
+
 	defer close(client, log)
+
 	for _, member := range members {
 		peerURL, err := url.Parse(member.PeerURLs[0])
 		if err != nil {
 			return err
 		}
-		if member.Name == e.podName && peerURL.Scheme == "https" {
-			peerURL.Scheme = "http"
-			_, err = client.MemberUpdate(context.Background(), member.ID, []string{peerURL.String()})
+
+		// if only a plaintext peer URL is present in etcd, add the https peer URL too
+		if member.Name == e.podName && len(member.PeerURLs) == 1 && peerURL.Scheme == "http" {
+			tlsPeerURL, err := url.Parse(fmt.Sprintf("https://%s:2381", peerURL.Hostname()))
+			if err != nil {
+				return err
+			}
+
+			_, err = client.MemberUpdate(
+				context.Background(),
+				member.ID,
+				[]string{peerURL.String(), tlsPeerURL.String()},
+			)
 			return err
 		}
 	}
 	return nil
 }
 
-func initialMemberList(n int, namespace string) []string {
+func initialMemberList(n int, namespace string, useTLSPeer bool) []string {
+	format := "etcd-%d=http://etcd-%d.etcd.%s.svc.cluster.local:2380"
+
+	if useTLSPeer {
+		format = "etcd-%d=https://etcd-%d.etcd.%s.svc.cluster.local:2381"
+	}
+
 	members := []string{}
 	for i := 0; i < n; i++ {
-		members = append(members, fmt.Sprintf("etcd-%d=http://etcd-%d.etcd.%s.svc.cluster.local:2380", i, i, namespace))
+		members = append(members, fmt.Sprintf(format, i, i, namespace))
 	}
 	return members
 }
 
-func peerURLsList(n int, namespace string) []string {
+func peerURLsList(n int, namespace string, useTLSPeer bool) []string {
+	format := "etcd-%d.etcd.%s.svc.cluster.local:2380"
+
+	if useTLSPeer {
+		format = "etcd-%d.etcd.%s.svc.cluster.local:2381"
+	}
+
 	urls := []string{}
 	for i := 0; i < n; i++ {
-		urls = append(urls, fmt.Sprintf("etcd-%d.etcd.%s.svc.cluster.local:2380", i, namespace))
+		urls = append(urls, fmt.Sprintf(format, i, namespace))
 	}
 	return urls
 }
@@ -334,31 +374,34 @@ func etcdCmd(config *etcdCluster) []string {
 	cmd := []string{
 		fmt.Sprintf("--name=%s", config.podName),
 		fmt.Sprintf("--data-dir=%s", config.dataDir),
-		fmt.Sprintf("--initial-cluster=%s", strings.Join(initialMemberList(config.clusterSize, config.namespace), ",")),
+		fmt.Sprintf("--initial-cluster=%s", strings.Join(initialMemberList(config.clusterSize, config.namespace, config.usePeerTLSOnly), ",")),
 		fmt.Sprintf("--initial-cluster-token=%s", config.token),
 		fmt.Sprintf("--initial-cluster-state=%s", config.initialState),
 		fmt.Sprintf("--advertise-client-urls=https://%s.etcd.%s.svc.cluster.local:2379,https://%s:2379", config.podName, config.namespace, config.podIP),
 		fmt.Sprintf("--listen-client-urls=https://%s:2379,https://127.0.0.1:2379", config.podIP),
 		fmt.Sprintf("--listen-metrics-urls=http://%s:2378,http://127.0.0.1:2378", config.podIP),
-		fmt.Sprintf("--initial-advertise-peer-urls=http://%s.etcd.%s.svc.cluster.local:2380", config.podName, config.namespace),
 		"--client-cert-auth",
 		fmt.Sprintf("--trusted-ca-file=%s", resources.EtcdTrustedCAFile),
 		fmt.Sprintf("--cert-file=%s", resources.EtcdCertFile),
 		fmt.Sprintf("--key-file=%s", resources.EtcdKetFile),
+		fmt.Sprintf("--peer-cert-file=%s", resources.EtcdCertFile),
+		fmt.Sprintf("--peer-key-file=%s", resources.EtcdKetFile),
+		fmt.Sprintf("--peer-trusted-ca-file=%s", resources.EtcdTrustedCAFile),
 		"--auto-compaction-retention=8",
 	}
 
-	if config.initialState == initialStateNew {
+	// set TLS only peer URLs
+	if config.usePeerTLSOnly {
 		cmd = append(cmd, []string{
 			fmt.Sprintf("--listen-peer-urls=https://%s:2381", config.podIP),
-			fmt.Sprintf("--peer-cert-file=%s", resources.EtcdCertFile),
-			fmt.Sprintf("--peer-key-file=%s", resources.EtcdKetFile),
-			fmt.Sprintf("--peer-trusted-ca-file=%s", resources.EtcdTrustedCAFile),
+			fmt.Sprintf("--initial-advertise-peer-urls=https://%s.etd.%s.svc.cluster.local:2381", config.podName, config.namespace),
 			"--peer-client-cert-auth",
 		}...)
 	} else {
+		// existing clusters should start with both plaintext and HTTPS peer ports
 		cmd = append(cmd, []string{
-			fmt.Sprintf("--listen-peer-urls=http://%s:2380", config.podIP),
+			fmt.Sprintf("--listen-peer-urls=http://%s:2380,https://%s:2381", config.podIP, config.podIP),
+			fmt.Sprintf("--initial-advertise-peer-urls=http://%s.etcd.%s.svc.cluster.local:2380,https://%s.etd.%s.svc.cluster.local:2381", config.podName, config.namespace, config.podName, config.namespace),
 		}...)
 	}
 
@@ -444,17 +487,21 @@ func (e *etcdCluster) containsUnwantedMembers(log *zap.SugaredLogger) (bool, err
 	if err != nil {
 		return false, err
 	}
-	expectedMembers := peerURLsList(e.clusterSize, e.namespace)
+	expectedMembers := peerURLsList(e.clusterSize, e.namespace, e.usePeerTLSOnly)
 	for _, member := range members {
-		if len(member.GetPeerURLs()) != 1 {
+		if len(member.GetPeerURLs()) != 1 || len(member.GetPeerURLs()) != 2 {
 			return true, nil
 		}
-		peerURL, err := url.Parse(member.PeerURLs[0])
-		if err != nil {
-			return false, err
-		}
-		if !contains(expectedMembers, peerURL.Host) {
-			return true, nil
+
+		// check all found peer URLs for being valid
+		for i := 0; i < len(member.PeerURLs); i++ {
+			peerURL, err := url.Parse(member.PeerURLs[i])
+			if err != nil {
+				return false, err
+			}
+			if !contains(expectedMembers, peerURL.Host) {
+				return true, nil
+			}
 		}
 	}
 	return false, nil
@@ -584,8 +631,8 @@ func (e *etcdCluster) restoreDatadirFromBackupIfNeeded(ctx context.Context, k8cC
 		Name:                e.podName,
 		OutputDataDir:       e.dataDir,
 		OutputWALDir:        filepath.Join(e.dataDir, "member", "wal"),
-		PeerURLs:            []string{fmt.Sprintf("http://%s.etcd.%s.svc.cluster.local:2380", e.podName, e.namespace)},
-		InitialCluster:      strings.Join(initialMemberList(e.clusterSize, e.namespace), ","),
+		PeerURLs:            []string{fmt.Sprintf("https://%s.etcd.%s.svc.cluster.local:2381", e.podName, e.namespace)},
+		InitialCluster:      strings.Join(initialMemberList(e.clusterSize, e.namespace, e.usePeerTLSOnly), ","),
 		InitialClusterToken: e.token,
 		SkipHashCheck:       false,
 	})

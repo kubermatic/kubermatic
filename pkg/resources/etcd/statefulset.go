@@ -100,6 +100,11 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 
 			launcherEnabled := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher]
 			if launcherEnabled {
+				// TODO: check for a better annotation scheme
+				set.Spec.Template.ObjectMeta.Annotations = map[string]string{
+					"etcd-launcher.k8c.io/tls-peer-enabled": "",
+				}
+
 				set.Spec.Template.Spec.InitContainers = []corev1.Container{
 					{
 						Name:            "etcd-launcher-init",
@@ -189,6 +194,11 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 							ContainerPort: 2380,
 							Protocol:      corev1.ProtocolTCP,
 							Name:          "peer",
+						},
+						{
+							ContainerPort: 2381,
+							Protocol:      corev1.ProtocolTCP,
+							Name:          "peer-tls",
 						},
 					},
 					ReadinessProbe: &corev1.Probe{
