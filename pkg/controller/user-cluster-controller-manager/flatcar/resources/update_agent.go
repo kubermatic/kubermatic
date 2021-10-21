@@ -20,6 +20,7 @@ import (
 	nodelabelerapi "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/node-labeler/api"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -36,7 +37,7 @@ var (
 	hostPathType            = corev1.HostPathUnset
 )
 
-func AgentDaemonSetCreator(getRegistry GetImageRegistry) reconciling.NamedDaemonSetCreatorGetter {
+func AgentDaemonSetCreator(getRegistry registry.WithOverwriteFunc) reconciling.NamedDaemonSetCreatorGetter {
 	var userCore int64 = 500 // UID of the flatcar admin user 'core'
 
 	return func() (string, reconciling.DaemonSetCreator) {
