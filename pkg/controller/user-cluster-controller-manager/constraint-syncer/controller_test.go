@@ -76,8 +76,8 @@ func TestReconcile(t *testing.T) {
 				WithObjects(
 					func() ctrlruntimeclient.Object {
 						c := test.GenConstraint(constraintName, "namespace", kind)
-						c.Spec.Parameters = map[string]interface{}{
-							"rawJSON": `{"labels":["gatekeeper","opa"]}`,
+						c.Spec.Parameters = map[string]json.RawMessage{
+							"rawJSON": []byte(`"{\"labels\":[\"gatekeeper\",\"opa\"]}"`),
 						}
 						return c
 					}()).
@@ -263,7 +263,6 @@ func TestReconcile(t *testing.T) {
 			if !reflect.DeepEqual(matchMap, resultMatch) {
 				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(matchMap, matchMap))
 			}
-
 			// cast params to bytes for comparison
 			expectedParamsBytes, err := json.Marshal(tc.expectedConstraint.Spec.Parameters)
 			if err != nil {
@@ -276,7 +275,7 @@ func TestReconcile(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(expectedParamsBytes, resultParamsBytes) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(expectedParamsBytes, resultParamsBytes))
+				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(tc.expectedConstraint.Spec.Parameters, resultParamsBytes))
 			}
 
 			if !reflect.DeepEqual(reqLabel.GetName(), tc.expectedConstraint.Name) {

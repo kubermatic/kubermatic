@@ -24,6 +24,7 @@ import (
 	"github.com/go-test/deep"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
@@ -38,6 +39,7 @@ const (
 	testClusterName         = "test-constraints"
 	testNamespace           = "cluster-test-constraints"
 	testKubermaticNamespace = "kubermatic"
+	testKind                = "reqlabel"
 )
 
 func TestListConstraints(t *testing.T) {
@@ -51,12 +53,12 @@ func TestListConstraints(t *testing.T) {
 		{
 			name: "scenario 1: list constraints",
 			existingObjects: []ctrlruntimeclient.Object{
-				genConstraint("ct1", testNamespace),
-				genConstraint("ct2", testNamespace),
-				genConstraint("ct3", "other-ns"),
+				test.GenConstraint("ct1", testNamespace, testKind),
+				test.GenConstraint("ct2", testNamespace, testKind),
+				test.GenConstraint("ct3", "other-ns", testKind),
 			},
 			cluster:             genCluster(testClusterName, "kubernetes", "my-first-project-ID", "test-constraints", "john@acme.com"),
-			expectedConstraints: []*kubermaticv1.Constraint{genConstraint("ct1", testNamespace), genConstraint("ct2", testNamespace)},
+			expectedConstraints: []*kubermaticv1.Constraint{test.GenConstraint("ct1", testNamespace, testKind), test.GenConstraint("ct2", testNamespace, testKind)},
 		},
 	}
 
@@ -115,12 +117,12 @@ func TestGetConstraint(t *testing.T) {
 		{
 			name: "scenario 1: get constraint",
 			existingObjects: []ctrlruntimeclient.Object{
-				genConstraint("ct1", testNamespace),
-				genConstraint("ct2", testNamespace),
-				genConstraint("ct3", "other-ns"),
+				test.GenConstraint("ct1", testNamespace, testKind),
+				test.GenConstraint("ct2", testNamespace, testKind),
+				test.GenConstraint("ct3", "other-ns", testKind),
 			},
 			cluster:            genCluster(testClusterName, "kubernetes", "my-first-project-ID", "test-constraints", "john@acme.com"),
-			expectedConstraint: genConstraint("ct1", testNamespace),
+			expectedConstraint: test.GenConstraint("ct1", testNamespace, testKind),
 		},
 	}
 
@@ -168,7 +170,7 @@ func TestDeleteConstraint(t *testing.T) {
 		{
 			name: "scenario 1: delete constraint",
 			existingObjects: []ctrlruntimeclient.Object{
-				genConstraint("ct1", testNamespace),
+				test.GenConstraint("ct1", testNamespace, testKind),
 			},
 			userInfo:       &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			cluster:        genCluster(testClusterName, "kubernetes", "my-first-project-ID", "test-constraints", "john@acme.com"),
@@ -214,7 +216,7 @@ func TestCreateConstraint(t *testing.T) {
 			name:       "scenario 1: create constraint",
 			cluster:    genCluster(testClusterName, "kubernetes", "my-first-project-ID", "test-constraints", "john@acme.com"),
 			userInfo:   &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
-			constraint: genConstraint("ct1", testNamespace),
+			constraint: test.GenConstraint("ct1", testNamespace, testKind),
 		},
 	}
 
@@ -264,7 +266,7 @@ func TestUpdateConstraint(t *testing.T) {
 				ct.Spec.Match.Scope = "*"
 			},
 			existingObjects: []ctrlruntimeclient.Object{
-				genConstraint("ct1", testNamespace),
+				test.GenConstraint("ct1", testNamespace, testKind),
 			},
 			cluster:  genCluster(testClusterName, "kubernetes", "my-first-project-ID", "test-constraints", "john@acme.com"),
 			userInfo: &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
@@ -310,27 +312,6 @@ func TestUpdateConstraint(t *testing.T) {
 	}
 }
 
-func genConstraint(name, namespace string) *kubermaticv1.Constraint {
-	ct := &kubermaticv1.Constraint{}
-	ct.Kind = kubermaticv1.ConstraintKind
-	ct.APIVersion = kubermaticv1.SchemeGroupVersion.String()
-	ct.Name = name
-	ct.Namespace = namespace
-	ct.Spec = kubermaticv1.ConstraintSpec{
-		ConstraintType: "requiredlabels",
-		Match: kubermaticv1.Match{
-			Kinds: []kubermaticv1.Kind{
-				{Kinds: []string{"namespace"}, APIGroups: []string{""}},
-			},
-		},
-		Parameters: kubermaticv1.Parameters{
-			"rawJSON": `{"labels":[ "gatekeeper", "opa"]}`,
-		},
-	}
-
-	return ct
-}
-
 func TestCreateDefaultConstraint(t *testing.T) {
 
 	testCases := []struct {
@@ -340,8 +321,8 @@ func TestCreateDefaultConstraint(t *testing.T) {
 	}{
 		{
 			name:       "scenario 1: create constraint",
-			ctToCreate: genConstraint("ct", testKubermaticNamespace),
-			expectedCT: genConstraint("ct", testKubermaticNamespace),
+			ctToCreate: test.GenConstraint("ct", testKubermaticNamespace, testKind),
+			expectedCT: test.GenConstraint("ct", testKubermaticNamespace, testKind),
 		},
 	}
 
@@ -382,11 +363,11 @@ func TestListDefaultConstraints(t *testing.T) {
 		{
 			name: "scenario 1: list constraints",
 			existingObjects: []ctrlruntimeclient.Object{
-				genConstraint("ct1", testKubermaticNamespace),
-				genConstraint("ct2", testKubermaticNamespace),
-				genConstraint("ct3", "other-ns"),
+				test.GenConstraint("ct1", testKubermaticNamespace, testKind),
+				test.GenConstraint("ct2", testKubermaticNamespace, testKind),
+				test.GenConstraint("ct3", "other-ns", testKind),
 			},
-			expectedConstraints: []*kubermaticv1.Constraint{genConstraint("ct1", testKubermaticNamespace), genConstraint("ct2", testKubermaticNamespace)},
+			expectedConstraints: []*kubermaticv1.Constraint{test.GenConstraint("ct1", testKubermaticNamespace, testKind), test.GenConstraint("ct2", testKubermaticNamespace, testKind)},
 		},
 	}
 
@@ -444,11 +425,11 @@ func TestGetDefaultConstraint(t *testing.T) {
 		{
 			name: "scenario 1: get constraint",
 			existingObjects: []ctrlruntimeclient.Object{
-				genConstraint("ct1", testKubermaticNamespace),
-				genConstraint("ct2", testKubermaticNamespace),
-				genConstraint("ct3", "other-ns"),
+				test.GenConstraint("ct1", testKubermaticNamespace, testKind),
+				test.GenConstraint("ct2", testKubermaticNamespace, testKind),
+				test.GenConstraint("ct3", "other-ns", testKind),
 			},
-			expectedConstraint: genConstraint("ct1", testKubermaticNamespace),
+			expectedConstraint: test.GenConstraint("ct1", testKubermaticNamespace, testKind),
 		},
 	}
 
@@ -492,8 +473,8 @@ func TestDeleteDefaultConstraint(t *testing.T) {
 	}{
 		{
 			name:            "test: delete default constraint",
-			existingObjects: []ctrlruntimeclient.Object{genConstraint("ct", testKubermaticNamespace)},
-			CTtoDelete:      genConstraint("ct", testKubermaticNamespace),
+			existingObjects: []ctrlruntimeclient.Object{test.GenConstraint("ct", testKubermaticNamespace, testKind)},
+			CTtoDelete:      test.GenConstraint("ct", testKubermaticNamespace, testKind),
 		},
 	}
 
@@ -538,7 +519,7 @@ func TestUpdateDefaultConstraint(t *testing.T) {
 				ct.Spec.Match.Scope = "*"
 			},
 			existingObjects: []ctrlruntimeclient.Object{
-				genConstraint("ct1", testKubermaticNamespace),
+				test.GenConstraint("ct1", testKubermaticNamespace, testKind),
 			},
 		},
 	}
