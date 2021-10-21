@@ -44,7 +44,7 @@ func (a *Client) ListEC2Regions(params *ListEC2RegionsParams, authInfo runtime.C
 	op := &runtime.ClientOperation{
 		ID:                 "listEC2Regions",
 		Method:             "GET",
-		PathPattern:        "/api/v2/providers/eks/regions",
+		PathPattern:        "/api/v2/providers/ec2/regions",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},

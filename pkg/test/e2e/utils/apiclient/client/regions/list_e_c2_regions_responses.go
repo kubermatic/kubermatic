@@ -67,7 +67,7 @@ type ListEC2RegionsOK struct {
 }
 
 func (o *ListEC2RegionsOK) Error() string {
-	return fmt.Sprintf("[GET /api/v2/providers/eks/regions][%d] listEC2RegionsOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[GET /api/v2/providers/ec2/regions][%d] listEC2RegionsOK  %+v", 200, o.Payload)
 }
 func (o *ListEC2RegionsOK) GetPayload() []models.Regions {
 	return o.Payload
@@ -96,7 +96,7 @@ type ListEC2RegionsUnauthorized struct {
 }
 
 func (o *ListEC2RegionsUnauthorized) Error() string {
-	return fmt.Sprintf("[GET /api/v2/providers/eks/regions][%d] listEC2RegionsUnauthorized ", 401)
+	return fmt.Sprintf("[GET /api/v2/providers/ec2/regions][%d] listEC2RegionsUnauthorized ", 401)
 }
 
 func (o *ListEC2RegionsUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -117,7 +117,7 @@ type ListEC2RegionsForbidden struct {
 }
 
 func (o *ListEC2RegionsForbidden) Error() string {
-	return fmt.Sprintf("[GET /api/v2/providers/eks/regions][%d] listEC2RegionsForbidden ", 403)
+	return fmt.Sprintf("[GET /api/v2/providers/ec2/regions][%d] listEC2RegionsForbidden ", 403)
 }
 
 func (o *ListEC2RegionsForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -148,7 +148,7 @@ func (o *ListEC2RegionsDefault) Code() int {
 }
 
 func (o *ListEC2RegionsDefault) Error() string {
-	return fmt.Sprintf("[GET /api/v2/providers/eks/regions][%d] listEC2Regions default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[GET /api/v2/providers/ec2/regions][%d] listEC2Regions default  %+v", o._statusCode, o.Payload)
 }
 func (o *ListEC2RegionsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload

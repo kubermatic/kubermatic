@@ -685,7 +685,7 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listEKSClusters())
 
 	mux.Methods(http.MethodGet).
-		Path("/providers/eks/regions").
+		Path("/providers/ec2/regions").
 		Handler(r.listEC2Regions())
 }
 
@@ -4690,7 +4690,7 @@ func (r Routing) listEKSClusters() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v2/providers/eks/regions regions listEC2Regions
+// swagger:route GET /api/v2/providers/ec2/regions regions listEC2Regions
 //
 //     List EC2 regions.
 //
@@ -4709,7 +4709,7 @@ func (r Routing) listEC2Regions() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(provider.ListEC2RegionsEndpoint(r.userInfoGetter, r.presetsProvider)),
-		provider.DecodeEC2RegionReq,
+		provider.DecodeEC2CommonReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

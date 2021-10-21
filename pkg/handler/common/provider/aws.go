@@ -51,6 +51,10 @@ func init() {
 	data, _ = ec2.Data()
 }
 
+// Region value will instruct the SDK where to make service API requests to.
+// Region must be provided before a service client request is made.
+const RegionEndpoint = "eu-central-1"
+
 func AWSSubnetNoCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID, clusterID string) (interface{}, error) {
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
@@ -336,10 +340,12 @@ func ListEKSClusters(ctx context.Context, accessKeyID, secretAccessKey, region s
 	return clusters, nil
 }
 
-func ListEC2Regions(ctx context.Context, accessKeyID, secretAccessKey, endpoint string) (apiv2.Regions, error) {
+func ListEC2Regions(ctx context.Context, accessKeyID, secretAccessKey string) (apiv2.Regions, error) {
 	regionInput := &ec2service.DescribeRegionsInput{}
 
-	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, endpoint)
+	// Must provide either a region or endpoint configured to use the SDK, even for operations that may enumerate other regions
+	// See https://github.com/aws/aws-sdk-go/issues/224 for more details
+	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, RegionEndpoint)
 	if err != nil {
 		return nil, err
 	}

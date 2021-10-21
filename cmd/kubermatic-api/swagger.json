@@ -15537,6 +15537,41 @@
         }
       }
     },
+    "/api/v2/providers/ec2/regions": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "regions"
+        ],
+        "summary": "List EC2 regions.",
+        "operationId": "listEC2Regions",
+        "responses": {
+          "200": {
+            "description": "Regions",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Regions"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/providers/eks/clusters": {
       "get": {
         "description": "Lists EKS clusters",
@@ -15575,41 +15610,6 @@
             "schema": {
               "$ref": "#/definitions/EKSClusterList"
             }
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/providers/eks/regions": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "regions"
-        ],
-        "summary": "List EC2 regions.",
-        "operationId": "listEC2Regions",
-        "responses": {
-          "200": {
-            "description": "Regions",
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/Regions"
-              }
-            }
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
           },
           "default": {
             "description": "errorResponse",

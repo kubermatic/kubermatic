@@ -199,8 +199,8 @@ func ListEKSClustersEndpoint(userInfoGetter provider.UserInfoGetter, presetsProv
 	}
 }
 
-// EC2RegionReq represent a request with common parameters for .
-type EC2RegionReq struct {
+// EC2CommonReq represent a request with common parameters for .
+type EC2CommonReq struct {
 	// in: header
 	// name: AccessKeyID
 	AccessKeyID string
@@ -210,29 +210,22 @@ type EC2RegionReq struct {
 	// in: header
 	// name: Credential
 	Credential string
-	// in: header
-	// name: Endpoint
-	Endpoint string
 }
 
-func DecodeEC2RegionReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req EC2RegionReq
+func DecodeEC2CommonReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req EC2CommonReq
 
 	req.AccessKeyID = r.Header.Get("AccessKeyID")
 	req.SecretAccessKey = r.Header.Get("SecretAccessKey")
 	req.Credential = r.Header.Get("Credential")
-	req.Endpoint = r.Header.Get("Endpoint")
 
 	return req, nil
 }
 
 // Validate validates EC2RegionReq request
-func (req EC2RegionReq) Validate() error {
+func (req EC2CommonReq) Validate() error {
 	if len(req.Credential) == 0 && len(req.AccessKeyID) == 0 && len(req.SecretAccessKey) == 0 {
 		return fmt.Errorf("AWS credentials cannot be empty")
-	}
-	if len(req.Endpoint) == 0 {
-		return fmt.Errorf("MissingRegion: AWS region endpoint cannot be empty")
 	}
 	return nil
 }
@@ -240,7 +233,7 @@ func (req EC2RegionReq) Validate() error {
 func ListEC2RegionsEndpoint(userInfoGetter provider.UserInfoGetter, presetsProvider provider.PresetProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 
-		req := request.(EC2RegionReq)
+		req := request.(EC2CommonReq)
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
@@ -248,7 +241,6 @@ func ListEC2RegionsEndpoint(userInfoGetter provider.UserInfoGetter, presetsProvi
 		accessKeyID := req.AccessKeyID
 		secretAccessKey := req.SecretAccessKey
 		presetName := req.Credential
-		endpoint := req.Endpoint
 
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
@@ -264,6 +256,6 @@ func ListEC2RegionsEndpoint(userInfoGetter provider.UserInfoGetter, presetsProvi
 			accessKeyID = credentials.accessKeyID
 			secretAccessKey = credentials.secretAccessKey
 		}
-		return providercommon.ListEC2Regions(ctx, accessKeyID, secretAccessKey, endpoint)
+		return providercommon.ListEC2Regions(ctx, accessKeyID, secretAccessKey)
 	}
 }
