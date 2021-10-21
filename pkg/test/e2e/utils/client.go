@@ -1583,7 +1583,7 @@ func (r *TestClient) CreateConstraint(name, ctKind string) (*kubermaticv1.Constr
 			Kinds: []*models.Kind{kind},
 		},
 		Parameters: models.Parameters{
-			"rawJSON": `{"labels":["gatekeeper"]}`,
+			"labels": json.RawMessage(`["gatekeeper"]`),
 		},
 	}
 
