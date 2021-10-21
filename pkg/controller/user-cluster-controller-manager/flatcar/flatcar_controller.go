@@ -27,6 +27,7 @@ import (
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -126,23 +127,14 @@ func (r *Reconciler) reconcileUpdateOperatorResources(ctx context.Context) error
 	return nil
 }
 
-func getRegistryDefaultFunc(overwriteRegistry string) func(defaultRegistry string) string {
-	return func(defaultRegistry string) string {
-		if overwriteRegistry != "" {
-			return overwriteRegistry
-		}
-		return defaultRegistry
-	}
-}
-
 func getDeploymentCreators(overwriteRegistry string, updateWindow kubermaticv1.UpdateWindow) []reconciling.NamedDeploymentCreatorGetter {
 	return []reconciling.NamedDeploymentCreatorGetter{
-		resources.OperatorDeploymentCreator(getRegistryDefaultFunc(overwriteRegistry), updateWindow),
+		resources.OperatorDeploymentCreator(registry.GetOverwriteFunc(overwriteRegistry), updateWindow),
 	}
 }
 
 func getDaemonSetCreators(overwriteRegistry string) []reconciling.NamedDaemonSetCreatorGetter {
 	return []reconciling.NamedDaemonSetCreatorGetter{
-		resources.AgentDaemonSetCreator(getRegistryDefaultFunc(overwriteRegistry)),
+		resources.AgentDaemonSetCreator(registry.GetOverwriteFunc(overwriteRegistry)),
 	}
 }
