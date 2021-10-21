@@ -276,8 +276,10 @@ func cloneKubermaticConfigurationResourcesInCluster(ctx context.Context, logger 
 }
 
 func convertKubermaticVersioningConfiguration(old operatorv1alpha1.KubermaticVersioningConfiguration) newv1.KubermaticVersioningConfiguration {
-	result := newv1.KubermaticVersioningConfiguration{
-		Default: semver.Semver(old.Default.String()),
+	result := newv1.KubermaticVersioningConfiguration{}
+
+	if old.Default != nil {
+		result.Default = semver.Semver(old.Default.String())
 	}
 
 	for _, v := range old.Versions {
