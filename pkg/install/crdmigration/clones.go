@@ -24,6 +24,8 @@ import (
 
 	newv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -62,6 +64,7 @@ func cloneResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, cli
 		Kind   string
 		cloner cloneFn
 	}{
+		{Kind: "KubermaticConfiguration", cloner: cloneKubermaticConfigurationResourcesInCluster},
 		{Kind: "User", cloner: cloneUserResourcesInCluster},
 		{Kind: "Project", cloner: cloneProjectResourcesInCluster},
 		{Kind: "Cluster", cloner: cloneClusterResourcesInCluster},
@@ -77,7 +80,7 @@ func cloneResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, cli
 		{Kind: "EtcdBackupConfig", cloner: cloneEtcdBackupConfigResourcesInCluster},
 		{Kind: "EtcdRestore", cloner: cloneEtcdRestoreResourcesInCluster},
 		{Kind: "ExternalCluster", cloner: cloneExternalClusterResourcesInCluster},
-		// {Kind: "KubermaticSetting", cloner: cloneKubermaticSettingResourcesInCluster},
+		{Kind: "KubermaticSetting", cloner: cloneKubermaticSettingResourcesInCluster},
 		{Kind: "MLAAdminSetting", cloner: cloneMLAAdminSettingResourcesInCluster},
 		{Kind: "Preset", cloner: clonePresetResourcesInCluster},
 		{Kind: "RuleGroup", cloner: cloneRuleGroupResourcesInCluster},
@@ -201,6 +204,104 @@ func migrateObjectReference(objectRef corev1.ObjectReference, namespace string) 
 	}
 
 	return newRef
+}
+
+func cloneKubermaticConfigurationResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) (int, error) {
+	oldObjects := &operatorv1alpha1.KubermaticConfigurationList{}
+	if err := client.List(ctx, oldObjects); err != nil {
+		return 0, fmt.Errorf("failed to list objects: %w", err)
+	}
+
+	for _, oldObject := range oldObjects.Items {
+		newObject := newv1.KubermaticConfiguration{
+			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
+			Spec: newv1.KubermaticConfigurationSpec{
+				CABundle:        oldObject.Spec.CABundle,
+				ImagePullSecret: oldObject.Spec.ImagePullSecret,
+				Auth:            newv1.KubermaticAuthConfiguration(oldObject.Spec.Auth),
+				FeatureGates:    oldObject.Spec.FeatureGates,
+				UI:              newv1.KubermaticUIConfiguration(oldObject.Spec.UI),
+				API:             newv1.KubermaticAPIConfiguration(oldObject.Spec.API),
+				SeedController: newv1.KubermaticSeedControllerConfiguration{
+					DockerRepository:          oldObject.Spec.SeedController.DockerRepository,
+					BackupStoreContainer:      oldObject.Spec.SeedController.BackupStoreContainer,
+					BackupDeleteContainer:     oldObject.Spec.SeedController.BackupDeleteContainer,
+					BackupCleanupContainer:    oldObject.Spec.SeedController.BackupCleanupContainer,
+					BackupRestore:             newv1.LegacyKubermaticBackupRestoreConfiguration(oldObject.Spec.SeedController.BackupRestore),
+					MaximumParallelReconciles: oldObject.Spec.SeedController.MaximumParallelReconciles,
+					PProfEndpoint:             oldObject.Spec.SeedController.PProfEndpoint,
+					Resources:                 oldObject.Spec.SeedController.Resources,
+					DebugLog:                  oldObject.Spec.SeedController.DebugLog,
+					Replicas:                  oldObject.Spec.SeedController.Replicas,
+				},
+				MasterController: newv1.KubermaticMasterControllerConfiguration{
+					DockerRepository: oldObject.Spec.MasterController.DockerRepository,
+					ProjectsMigrator: newv1.KubermaticProjectsMigratorConfiguration(oldObject.Spec.MasterController.ProjectsMigrator),
+					PProfEndpoint:    oldObject.Spec.MasterController.PProfEndpoint,
+					Resources:        oldObject.Spec.MasterController.Resources,
+					DebugLog:         oldObject.Spec.MasterController.DebugLog,
+					Replicas:         oldObject.Spec.MasterController.Replicas,
+				},
+				UserCluster: newv1.KubermaticUserClusterConfiguration{
+					KubermaticDockerRepository:     oldObject.Spec.UserCluster.KubermaticDockerRepository,
+					DNATControllerDockerRepository: oldObject.Spec.UserCluster.DNATControllerDockerRepository,
+					EtcdLauncherDockerRepository:   oldObject.Spec.UserCluster.EtcdLauncherDockerRepository,
+					OverwriteRegistry:              oldObject.Spec.UserCluster.OverwriteRegistry,
+					Addons: newv1.KubermaticAddonsConfiguration{
+						Kubernetes: newv1.KubermaticAddonConfiguration(oldObject.Spec.UserCluster.Addons.Kubernetes),
+					},
+					NodePortRange:                       oldObject.Spec.UserCluster.NodePortRange,
+					Monitoring:                          newv1.KubermaticUserClusterMonitoringConfiguration(oldObject.Spec.UserCluster.Monitoring),
+					DisableAPIServerEndpointReconciling: oldObject.Spec.UserCluster.DisableAPIServerEndpointReconciling,
+					EtcdVolumeSize:                      oldObject.Spec.UserCluster.EtcdVolumeSize,
+					APIServerReplicas:                   oldObject.Spec.UserCluster.APIServerReplicas,
+					MachineController:                   newv1.MachineControllerConfiguration(oldObject.Spec.UserCluster.MachineController),
+				},
+				ExposeStrategy: oldObject.Spec.ExposeStrategy,
+				Ingress:        newv1.KubermaticIngressConfiguration(oldObject.Spec.Ingress),
+				Versions: newv1.KubermaticVersionsConfiguration{
+					Kubernetes: convertKubermaticVersioningConfiguration(oldObject.Spec.Versions.Kubernetes),
+				},
+				VerticalPodAutoscaler: newv1.KubermaticVPAConfiguration{
+					Recommender:         newv1.KubermaticVPAComponent(oldObject.Spec.VerticalPodAutoscaler.Recommender),
+					Updater:             newv1.KubermaticVPAComponent(oldObject.Spec.VerticalPodAutoscaler.Updater),
+					AdmissionController: newv1.KubermaticVPAComponent(oldObject.Spec.VerticalPodAutoscaler.AdmissionController),
+				},
+				Proxy: newv1.KubermaticProxyConfiguration(oldObject.Spec.Proxy),
+			},
+		}
+
+		if err := ensureObject(ctx, client, &newObject, false); err != nil {
+			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
+		}
+	}
+
+	return len(oldObjects.Items), nil
+}
+
+func convertKubermaticVersioningConfiguration(old operatorv1alpha1.KubermaticVersioningConfiguration) newv1.KubermaticVersioningConfiguration {
+	result := newv1.KubermaticVersioningConfiguration{
+		Default: semver.Semver(old.Default.String()),
+	}
+
+	for _, v := range old.Versions {
+		result.Versions = append(result.Versions, semver.Semver(v.String()))
+	}
+
+	for _, u := range old.Updates {
+		result.Updates = append(result.Updates, newv1.Update(u))
+	}
+
+	for _, i := range old.ProviderIncompatibilities {
+		result.ProviderIncompatibilities = append(result.ProviderIncompatibilities, newv1.Incompatibility{
+			Provider:  i.Provider,
+			Version:   i.Version,
+			Condition: newv1.ConditionType(i.Condition),
+			Operation: newv1.OperationType(i.Operation),
+		})
+	}
+
+	return result
 }
 
 func cloneClusterResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) (int, error) {
@@ -355,12 +456,15 @@ func cloneAddonResourcesInCluster(ctx context.Context, logger logrus.FieldLogger
 		newObject := newv1.Addon{
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.AddonSpec{
-				Name:                  oldObject.Spec.Name,
-				Cluster:               migrateObjectReference(oldObject.Spec.Cluster, ""),
-				IsDefault:             oldObject.Spec.IsDefault,
-				RequiredResourceTypes: oldObject.Spec.RequiredResourceTypes,
-				Variables:             oldObject.Spec.Variables,
+				Name:      oldObject.Spec.Name,
+				Cluster:   migrateObjectReference(oldObject.Spec.Cluster, ""),
+				IsDefault: oldObject.Spec.IsDefault,
+				Variables: oldObject.Spec.Variables,
 			},
+		}
+
+		for _, t := range oldObject.Spec.RequiredResourceTypes {
+			newObject.Spec.RequiredResourceTypes = append(newObject.Spec.RequiredResourceTypes, newv1.GroupVersionKind(t))
 		}
 
 		if err := ensureObject(ctx, client, &newObject, false); err != nil {

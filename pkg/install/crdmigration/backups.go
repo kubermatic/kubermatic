@@ -30,6 +30,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 
 	metav1unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -56,6 +57,11 @@ func CreateBackups(ctx context.Context, logger logrus.FieldLogger, opt *Options)
 	// create a tar writer
 	tarWriter := tar.NewWriter(gzipWriter)
 	defer tarWriter.Close()
+
+	// add KubermaticConfiguration
+	if err := addKubermaticConfigurationToBackup(tarWriter, now, opt.KubermaticConfiguration); err != nil {
+		return fmt.Errorf("backing up KubermaticConfiguration failed: %w", err)
+	}
 
 	// backup master cluster
 	if err := createClusterBackup(ctx, logger.WithField("master", true), now, opt.MasterClient, tarWriter, "master", getMasterClusterKinds()); err != nil {
@@ -94,7 +100,7 @@ func createClusterBackup(ctx context.Context, logger logrus.FieldLogger, ts time
 			objectLogger.Debug("Dumping…")
 
 			// create a filename like "cluster/3948rfhsf.yaml"
-			filename := getBackupResourceFilename(pathPrefix, object, kind.Name)
+			filename := getBackupResourceFilenameForObject(pathPrefix, object, kind.Name)
 
 			// encode resource as YAML
 			encoded, err := encodeResourceAsYAML(object)
@@ -102,23 +108,8 @@ func createClusterBackup(ctx context.Context, logger logrus.FieldLogger, ts time
 				return fmt.Errorf("failed to encode %s as YAML: %w", kind.Name, err)
 			}
 
-			// write file header
-			err = tarWriter.WriteHeader(&tar.Header{
-				Name:     filename,
-				ModTime:  ts,
-				Mode:     int64(0644),
-				Typeflag: tar.TypeReg,
-				Size:     int64(len(encoded)),
-				Uid:      os.Getuid(),
-				Gid:      os.Getgid(),
-			})
-			if err != nil {
-				return fmt.Errorf("failed to write tar file header: %w", err)
-			}
-
-			// write file contents
-			if _, err := tarWriter.Write(encoded); err != nil {
-				return fmt.Errorf("failed to append file to backup: %w", err)
+			if err := addDataToBackup(tarWriter, ts, encoded, filename); err != nil {
+				return err
 			}
 		}
 	}
@@ -126,10 +117,56 @@ func createClusterBackup(ctx context.Context, logger logrus.FieldLogger, ts time
 	return nil
 }
 
-func getBackupResourceFilename(prefix string, obj metav1unstructured.Unstructured, kind string) string {
-	filename := obj.GetName()
-	if obj.GetNamespace() != "" {
-		filename = fmt.Sprintf("%s-%s", obj.GetNamespace(), filename)
+func addKubermaticConfigurationToBackup(out *tar.Writer, t time.Time, config *operatorv1alpha1.KubermaticConfiguration) error {
+	filename := getBackupResourceFilename("master", "KubermaticConfiguration", config.GetNamespace(), config.GetName())
+
+	var buf bytes.Buffer
+
+	encoder := yaml.NewEncoder(&buf)
+	encoder.SetIndent(2)
+
+	// do not output grepping noise
+	config.SetManagedFields(nil)
+
+	err := encoder.Encode(config)
+	if err != nil {
+		return fmt.Errorf("failed to encode KubermaticConfiguration as YAML: %w", err)
+	}
+
+	return addDataToBackup(out, t, buf.Bytes(), filename)
+}
+
+func addDataToBackup(out *tar.Writer, t time.Time, data []byte, filename string) error {
+	// write file header
+	err := out.WriteHeader(&tar.Header{
+		Name:     filename,
+		ModTime:  t,
+		Mode:     int64(0644),
+		Typeflag: tar.TypeReg,
+		Size:     int64(len(data)),
+		Uid:      os.Getuid(),
+		Gid:      os.Getgid(),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to write tar file header: %w", err)
+	}
+
+	// write file contents
+	if _, err := out.Write(data); err != nil {
+		return fmt.Errorf("failed to append file to backup: %w", err)
+	}
+
+	return nil
+}
+
+func getBackupResourceFilenameForObject(prefix string, obj metav1unstructured.Unstructured, kind string) string {
+	return getBackupResourceFilename(prefix, kind, obj.GetNamespace(), obj.GetName())
+}
+
+func getBackupResourceFilename(prefix string, kind string, namespace string, name string) string {
+	filename := name
+	if namespace != "" {
+		filename = fmt.Sprintf("%s-%s", namespace, filename)
 	}
 
 	return fmt.Sprintf("%s/%s/%s.yaml", prefix, strings.ToLower(kind), filename)

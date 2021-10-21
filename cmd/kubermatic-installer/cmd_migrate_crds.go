@@ -133,7 +133,7 @@ func MigrateCRDsAction(logger *logrus.Logger) cli.ActionFunc {
 			MasterClient:            kubeClient,
 			Seeds:                   allSeeds,
 			SeedClients:             seedClients,
-			CRDDirectory:            filepath.Join(ctx.GlobalString(chartsDirectoryFlag.Name), "kubermatic-operator", "crd"),
+			CRDDirectory:            filepath.Join(ctx.GlobalString(chartsDirectoryFlag.Name), "kubermatic-operator", "crd", "k8c.io"),
 		}
 
 		// ////////////////////////////////////

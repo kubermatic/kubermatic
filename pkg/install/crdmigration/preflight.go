@@ -47,6 +47,11 @@ import (
 func PerformPreflightChecks(ctx context.Context, logger logrus.FieldLogger, opt *Options) error {
 	success := true
 
+	if opt.KubermaticConfiguration.DeletionTimestamp != nil {
+		logger.Error("KubermaticConfiguration is in deletion.")
+		success = false
+	}
+
 	if err := validateSeedClients(ctx, logger, opt); err != nil {
 		logger.Errorf("Seed client validation failed: %v", err)
 		success = false

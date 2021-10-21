@@ -39,6 +39,11 @@ func RemoveOldResources(ctx context.Context, logger logrus.FieldLogger, opt *Opt
 		return fmt.Errorf("processing the master cluster failed: %w", err)
 	}
 
+	// remove old KubermaticConfiguration
+	if err := removeObject(ctx, opt.MasterClient, opt.KubermaticConfiguration); err != nil {
+		return fmt.Errorf("processing the KubermaticConfiguration failed: %w", err)
+	}
+
 	return nil
 }
 
