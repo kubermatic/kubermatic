@@ -116,7 +116,7 @@ func getInitContainers(ip net.IP, versions kubermatic.Versions, registryWithOver
 		},
 		{
 			Name:    resources.EnvoyAgentAssignAddressInitContainerName,
-			Image:   fmt.Sprintf("%s/%s:%s", registry, resources.EnvoyAgentDeviceSetupImage, versions.Kubermatic),
+			Image:   fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryQuay), resources.EnvoyAgentDeviceSetupImage, versions.Kubermatic),
 			Command: []string{"sh", "-c", fmt.Sprintf("ip addr add %s/32 dev envoyagent scope host || true", ip.String())},
 			SecurityContext: &corev1.SecurityContext{
 				Capabilities: &corev1.Capabilities{
