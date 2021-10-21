@@ -18,23 +18,6 @@ spec:
 
 ---
 apiVersion: kubermatic.k8s.io/v1
-kind: UserSSHKey
-metadata:
-  name: key-3a0104584f2c5d7b6e4c3bdc7ead9b35-roxy
-  ownerReferences:
-    - apiVersion: kubermatic.k8s.io/v1
-      kind: Project
-      name: kkpproject
-      uid: __PROJECT_UID__
-spec:
-  clusters: []
-  fingerprint: XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX
-  name: roxy@kubermatic.com
-  owner: ""
-  publicKey: ssh-rsa not-actually-an-ssh-key roxy@kubermatic.com
-
----
-apiVersion: kubermatic.k8s.io/v1
 kind: ClusterTemplate
 metadata:
   annotations:

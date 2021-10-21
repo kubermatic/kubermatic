@@ -89,13 +89,19 @@ function setup_resources() {
   sed -i "s/__PROJECT_UID__/$projectUID/g" $WORK_DIR/*
 
   kubectl apply --filename "$WORK_DIR/04-project-contents.yaml"
-  kubectl apply --filename "$WORK_DIR/05-cluster.yaml"
 
-  clusterUID="$(kubectl get clusters.kubermatic.k8s.io kkpcluster -o jsonpath='{.metadata.uid}')"
-  sed -i "s/__CLUSTER_UID__/$clusterUID/g" $WORK_DIR/*
+  if [ -f "$WORK_DIR/05-cluster.yaml" ]; then
+    kubectl apply --filename "$WORK_DIR/05-cluster.yaml"
 
-  kubectl apply --filename "$WORK_DIR/06-cluster-contents.yaml"
-  kubectl apply --filename "$WORK_DIR/07-misc.yaml"
+    clusterUID="$(kubectl get clusters.kubermatic.k8s.io kkpcluster -o jsonpath='{.metadata.uid}')"
+    sed -i "s/__CLUSTER_UID__/$clusterUID/g" $WORK_DIR/*
+
+    kubectl apply --filename "$WORK_DIR/06-cluster-contents.yaml"
+  fi
+
+  if [ -f "$WORK_DIR/07-misc.yaml" ]; then
+    kubectl apply --filename "$WORK_DIR/07-misc.yaml"
+  fi
 }
 
 echodate "Creating resources in master cluster..."
