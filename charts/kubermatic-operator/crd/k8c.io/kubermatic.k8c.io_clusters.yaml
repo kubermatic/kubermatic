@@ -1460,12 +1460,7 @@ spec:
                 type: boolean
               version:
                 description: Version defines the wanted version of the control plane
-                properties:
-                  version:
-                    type: string
-                required:
-                - version
-                type: object
+                type: string
             required:
             - cloud
             - clusterNetwork

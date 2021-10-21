@@ -446,9 +446,7 @@ func (r *TestClient) CreateAWSCluster(projectID, dc, name, secretAccessKey, acce
 					AccessKeyID:     accessKeyID,
 				},
 			},
-			Version: &models.Semver{
-				Version: version,
-			},
+			Version: models.Semver(version),
 		},
 	}
 
@@ -511,9 +509,7 @@ func (r *TestClient) CreateKubevirtCluster(projectID, dc, name, credential, vers
 				DatacenterName: location,
 				Kubevirt:       &models.KubevirtCloudSpec{},
 			},
-			Version: &models.Semver{
-				Version: version,
-			},
+			Version: models.Semver(version),
 		},
 	}
 
@@ -585,9 +581,7 @@ func (r *TestClient) CreateDOCluster(projectID, dc, name, credential, version, l
 				DatacenterName: location,
 				Digitalocean:   &models.DigitaloceanCloudSpec{},
 			},
-			Version: &models.Semver{
-				Version: version,
-			},
+			Version: models.Semver(version),
 		},
 	}
 
@@ -1741,9 +1735,7 @@ func (r *TestClient) CreateClusterTemplate(projectID, name, scope, credential, v
 						DatacenterName: location,
 						Digitalocean:   &models.DigitaloceanCloudSpec{},
 					},
-					Version: &models.Semver{
-						Version: version,
-					},
+					Version: models.Semver(version),
 				},
 			},
 			NodeDeployment: nil,

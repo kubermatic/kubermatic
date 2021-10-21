@@ -74,9 +74,7 @@ func (s *kubevirtScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec
 					},
 					DatacenterName: "kubevirt-europe-west3-c",
 				},
-				Version: &apimodels.Semver{
-					Version: s.version.String(),
-				},
+				Version: apimodels.Semver(s.version.String()),
 			},
 		},
 	}

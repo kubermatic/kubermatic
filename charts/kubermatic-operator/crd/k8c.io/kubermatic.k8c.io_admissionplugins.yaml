@@ -40,12 +40,7 @@ spec:
               fromVersion:
                 description: FromVersion flag can be empty. It means the plugin fit
                   to all k8s versions
-                properties:
-                  version:
-                    type: string
-                required:
-                - version
-                type: object
+                type: string
               pluginName:
                 type: string
             required:

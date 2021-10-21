@@ -85,9 +85,7 @@ func (s *awsScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
 						AccessKeyID:     secrets.AWS.AccessKeyID,
 					},
 				},
-				Version: &apimodels.Semver{
-					Version: s.version.String(),
-				},
+				Version: apimodels.Semver(s.version.String()),
 			},
 		},
 	}

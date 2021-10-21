@@ -90,9 +90,7 @@ func (s *vSphereScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec 
 						Datastore: "exsi-nas",
 					},
 				},
-				Version: &apimodels.Semver{
-					Version: s.version.String(),
-				},
+				Version: apimodels.Semver(s.version.String()),
 			},
 		},
 	}

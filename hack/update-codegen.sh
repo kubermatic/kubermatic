@@ -55,12 +55,6 @@ sed="sed"
 GENERIC_FILE="v2/pkg/crd/client/informers/externalversions/generic.go"
 $sed -i s/usersshkeys/usersshkeies/g ${GENERIC_FILE}
 
-echodate "Generating deepcopy funcs for other packages"
-go run k8s.io/code-generator/cmd/deepcopy-gen \
-  --input-dirs k8c.io/kubermatic/v2/pkg/semver \
-  -O zz_generated.deepcopy \
-  --go-header-file /tmp/headerfile
-
 # move files into their correct location, generate-groups.sh does not handle
 # non-v1 module names very well
 cp -r v2/* .

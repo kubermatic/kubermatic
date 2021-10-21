@@ -9,42 +9,19 @@ import (
 	"context"
 
 	"github.com/go-openapi/strfmt"
-	"github.com/go-openapi/swag"
 )
 
-// Semver Semver is struct that encapsulates semver.Semver struct so we can use it in API
+// Semver Semver is a type that encapsulates github.com/Masterminds/semver/v3.Version struct so it can be used in our API
 //
 // swagger:model Semver
-type Semver struct {
-
-	// version
-	Version string `json:"version,omitempty"`
-}
+type Semver string
 
 // Validate validates this semver
-func (m *Semver) Validate(formats strfmt.Registry) error {
+func (m Semver) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
 // ContextValidate validates this semver based on context it is used
-func (m *Semver) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
-	return nil
-}
-
-// MarshalBinary interface implementation
-func (m *Semver) MarshalBinary() ([]byte, error) {
-	if m == nil {
-		return nil, nil
-	}
-	return swag.WriteJSON(m)
-}
-
-// UnmarshalBinary interface implementation
-func (m *Semver) UnmarshalBinary(b []byte) error {
-	var res Semver
-	if err := swag.ReadJSON(b, &res); err != nil {
-		return err
-	}
-	*m = res
+func (m Semver) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }

@@ -79,7 +79,7 @@ type ClusterSpec struct {
 	UpdateWindow *UpdateWindow `json:"updateWindow,omitempty"`
 
 	// version
-	Version *Semver `json:"version,omitempty"`
+	Version Semver `json:"version,omitempty"`
 }
 
 // Validate validates this cluster spec
@@ -318,13 +318,11 @@ func (m *ClusterSpec) validateVersion(formats strfmt.Registry) error {
 		return nil
 	}
 
-	if m.Version != nil {
-		if err := m.Version.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("version")
-			}
-			return err
+	if err := m.Version.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("version")
 		}
+		return err
 	}
 
 	return nil
@@ -530,13 +528,11 @@ func (m *ClusterSpec) contextValidateUpdateWindow(ctx context.Context, formats s
 
 func (m *ClusterSpec) contextValidateVersion(ctx context.Context, formats strfmt.Registry) error {
 
-	if m.Version != nil {
-		if err := m.Version.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("version")
-			}
-			return err
+	if err := m.Version.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("version")
 		}
+		return err
 	}
 
 	return nil

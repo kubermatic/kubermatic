@@ -25,7 +25,7 @@ type AdmissionPlugin struct {
 	Plugin string `json:"plugin,omitempty"`
 
 	// from version
-	FromVersion *Semver `json:"fromVersion,omitempty"`
+	FromVersion Semver `json:"fromVersion,omitempty"`
 }
 
 // Validate validates this admission plugin
@@ -47,13 +47,11 @@ func (m *AdmissionPlugin) validateFromVersion(formats strfmt.Registry) error {
 		return nil
 	}
 
-	if m.FromVersion != nil {
-		if err := m.FromVersion.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("fromVersion")
-			}
-			return err
+	if err := m.FromVersion.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("fromVersion")
 		}
+		return err
 	}
 
 	return nil
@@ -75,13 +73,11 @@ func (m *AdmissionPlugin) ContextValidate(ctx context.Context, formats strfmt.Re
 
 func (m *AdmissionPlugin) contextValidateFromVersion(ctx context.Context, formats strfmt.Registry) error {
 
-	if m.FromVersion != nil {
-		if err := m.FromVersion.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("fromVersion")
-			}
-			return err
+	if err := m.FromVersion.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("fromVersion")
 		}
+		return err
 	}
 
 	return nil
