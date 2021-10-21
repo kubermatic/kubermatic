@@ -227,7 +227,7 @@ func cloneKubermaticConfigurationResourcesInCluster(ctx context.Context, logger 
 					BackupStoreContainer:      oldObject.Spec.SeedController.BackupStoreContainer,
 					BackupDeleteContainer:     oldObject.Spec.SeedController.BackupDeleteContainer,
 					BackupCleanupContainer:    oldObject.Spec.SeedController.BackupCleanupContainer,
-					BackupRestore:             newv1.LegacyKubermaticBackupRestoreConfiguration(oldObject.Spec.SeedController.BackupRestore),
+					BackupRestore:             newv1.LegacyKubermaticBackupRestoreConfiguration(oldObject.Spec.SeedController.BackupRestore), //nolint:staticcheck
 					MaximumParallelReconciles: oldObject.Spec.SeedController.MaximumParallelReconciles,
 					PProfEndpoint:             oldObject.Spec.SeedController.PProfEndpoint,
 					Resources:                 oldObject.Spec.SeedController.Resources,

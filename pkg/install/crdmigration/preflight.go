@@ -311,7 +311,7 @@ func validateNoStuckResourcesInCluster(ctx context.Context, logger logrus.FieldL
 			objectLogger.Debug("Validating…")
 
 			if object.GetDeletionTimestamp() != nil {
-				objectLogger.Warnf("%s is in deletion.", kind)
+				objectLogger.Warnf("%s is in deletion.", kind.Name)
 				success = false
 			}
 		}

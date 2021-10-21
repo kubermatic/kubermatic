@@ -29,7 +29,7 @@ function ensure_cluster() {
   local name="$1"
   local kubeconfig="$2"
 
-  if kind get clusters | grep -E "^$name\$" >/dev/null; then
+  if kind get clusters | grep -E "^$name\$" > /dev/null; then
     echodate "Cluster $name exists already."
   else
     kind create cluster --kubeconfig "$kubeconfig" --name "$name"
@@ -112,10 +112,10 @@ kubectl \
   --kubeconfig="$MASTER_KUBECONFIG" \
   --namespace=kubermatic \
   create secret generic kubeconfig-crdmigration \
-    --from-file="kubeconfig=$SEED_KUBECONFIG" \
-    --dry-run=client \
-    --output=yaml |
-    kubectl apply --filename -
+  --from-file="kubeconfig=$SEED_KUBECONFIG" \
+  --dry-run=client \
+  --output=yaml |
+  kubectl apply --filename -
 
 echodate "Creating resources in seed cluster..."
 setup_resources "$SEED_KUBECONFIG" hack/ci/testdata/crdmigration/seed

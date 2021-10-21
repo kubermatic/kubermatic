@@ -178,7 +178,7 @@ func MigrateCRDsAction(logger *logrus.Logger) cli.ActionFunc {
 			logger.Info("You can remove the resources from the old group, kubermatic.k8s.io, manually at a later time.")
 		}
 
-		logger.Info("Please scale up the kubermatic-operator Deployment to 1 to let it reboot KKP across all clusters.")
+		logger.Info("Please run the `deploy` command now to update your KKP. The KKP Operator will reconcile and restart all controllers.")
 
 		return nil
 	}))

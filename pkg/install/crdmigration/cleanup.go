@@ -61,7 +61,7 @@ func removeResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, cl
 	return nil
 }
 
-func removeResourcesOfKindInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client, apiVersion string, kind Kind) error {
+func removeResourcesOfKindInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client, apiVersion string, kind Kind) {
 	logger.Debug("Removing…")
 
 	list := &unstructured.UnstructuredList{}
@@ -69,16 +69,15 @@ func removeResourcesOfKindInCluster(ctx context.Context, logger logrus.FieldLogg
 	list.SetAPIVersion(apiVersion)
 
 	if err := client.List(ctx, list); err != nil {
-		return fmt.Errorf("failed to list objects: %w", err)
+		logger.Warnf("Failed to list objects: %w", err)
+		return
 	}
 
 	for _, item := range list.Items {
 		if err := removeObject(ctx, client, &item); err != nil {
-			return fmt.Errorf("failed to remove %s: %w", item.GetName(), err)
+			logger.Warnf("Failed to remove %s: %w", item.GetName(), err)
 		}
 	}
-
-	return nil
 }
 
 func removeObject(ctx context.Context, client ctrlruntimeclient.Client, obj ctrlruntimeclient.Object) error {

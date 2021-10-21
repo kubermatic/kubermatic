@@ -44,9 +44,6 @@ var (
 	// oldAPIGroup is the group we migrate away from.
 	oldAPIGroup = "kubermatic.k8s.io"
 
-	// oldOperatorAPIGroup is the old API group used by the KKP operator.
-	oldOperatorAPIGroup = "operator.kubermatic.io"
-
 	// newAPIGroup is the group we migrate to.
 	newAPIGroup = "kubermatic.k8c.io"
 
@@ -117,14 +114,6 @@ func isNamespacedKind(name string) bool {
 	return getKind(name).Namespaced
 }
 
-func isMasterClusterKind(name string) bool {
-	return getKind(name).MasterCluster
-}
-
-func isSeedClusterKind(name string) bool {
-	return getKind(name).SeedCluster
-}
-
 func filterKinds(predicate func(Kind) bool) []Kind {
 	result := []Kind{}
 
@@ -143,14 +132,6 @@ func getMasterClusterKinds() []Kind {
 
 func getSeedClusterKinds() []Kind {
 	return filterKinds(func(k Kind) bool { return k.SeedCluster })
-}
-
-func getNamespacedKinds() []Kind {
-	return filterKinds(func(k Kind) bool { return k.Namespaced })
-}
-
-func getGlobalKinds() []Kind {
-	return filterKinds(func(k Kind) bool { return !k.Namespaced })
 }
 
 // getUserclusterNamespaces is purposefully "dumb" and doesn't list Cluster
