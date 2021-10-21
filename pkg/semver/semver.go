@@ -120,5 +120,4 @@ func (s Semver) DeepCopy() Semver {
 
 func (in *Semver) DeepCopyInto(out *Semver) {
 	*out = in.DeepCopy()
-	return
 }
