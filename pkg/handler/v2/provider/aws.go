@@ -198,3 +198,64 @@ func ListEKSClustersEndpoint(userInfoGetter provider.UserInfoGetter, presetsProv
 		return providercommon.ListEKSClusters(ctx, accessKeyID, secretAccessKey, region)
 	}
 }
+
+// EC2CommonReq represent a request with common parameters for .
+type EC2CommonReq struct {
+	// in: header
+	// name: AccessKeyID
+	AccessKeyID string
+	// in: header
+	// name: SecretAccessKey
+	SecretAccessKey string
+	// in: header
+	// name: Credential
+	Credential string
+}
+
+func DecodeEC2CommonReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req EC2CommonReq
+
+	req.AccessKeyID = r.Header.Get("AccessKeyID")
+	req.SecretAccessKey = r.Header.Get("SecretAccessKey")
+	req.Credential = r.Header.Get("Credential")
+
+	return req, nil
+}
+
+// Validate validates EC2RegionReq request
+func (req EC2CommonReq) Validate() error {
+	if len(req.Credential) == 0 && len(req.AccessKeyID) == 0 && len(req.SecretAccessKey) == 0 {
+		return fmt.Errorf("AWS credentials cannot be empty")
+	}
+	return nil
+}
+
+func ListEC2RegionsEndpoint(userInfoGetter provider.UserInfoGetter, presetsProvider provider.PresetProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+
+		req := request.(EC2CommonReq)
+		if err := req.Validate(); err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
+
+		accessKeyID := req.AccessKeyID
+		secretAccessKey := req.SecretAccessKey
+		presetName := req.Credential
+
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		// Preset is used
+		if len(presetName) > 0 {
+			credentials, err := getPresetCredentials(userInfo, presetName, presetsProvider)
+			if err != nil {
+				return nil, fmt.Errorf("error getting preset credentials for AWS: %v", err)
+			}
+			accessKeyID = credentials.accessKeyID
+			secretAccessKey = credentials.secretAccessKey
+		}
+		return providercommon.ListEC2Regions(ctx, accessKeyID, secretAccessKey)
+	}
+}
