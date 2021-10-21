@@ -17797,7 +17797,7 @@
           "$ref": "#/definitions/Match"
         },
         "parameters": {
-          "$ref": "#/definitions/RawExtension"
+          "$ref": "#/definitions/Parameters"
         },
         "selector": {
           "$ref": "#/definitions/ConstraintSelector"
@@ -21333,6 +21333,13 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
+    "Parameters": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
     "PodDNSConfig": {
       "description": "PodDNSConfig defines the DNS parameters of a pod in addition to\nthose generated from DNSPolicy.",
       "type": "object",
@@ -21802,12 +21809,6 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
-    },
-    "RawExtension": {
-      "description": "To use this, make a field which has RawExtension as its type in your external, versioned\nstruct, and Object in your internal struct. You also need to register your\nvarious plugin types.\n\nInternal package:\ntype MyAPIObject struct {\nruntime.TypeMeta `json:\",inline\"`\nMyPlugin runtime.Object `json:\"myPlugin\"`\n}\ntype PluginA struct {\nAOption string `json:\"aOption\"`\n}\n\nExternal package:\ntype MyAPIObject struct {\nruntime.TypeMeta `json:\",inline\"`\nMyPlugin runtime.RawExtension `json:\"myPlugin\"`\n}\ntype PluginA struct {\nAOption string `json:\"aOption\"`\n}\n\nOn the wire, the JSON will look something like this:\n{\n\"kind\":\"MyAPIObject\",\n\"apiVersion\":\"v1\",\n\"myPlugin\": {\n\"kind\":\"PluginA\",\n\"aOption\":\"foo\",\n},\n}\n\nSo what happens? Decode first uses json or yaml to unmarshal the serialized data into\nyour external MyAPIObject. That causes the raw JSON to be stored, but not unpacked.\nThe next step is to copy (using pkg/conversion) into the internal struct. The runtime\npackage's DefaultScheme has conversion functions installed which will unpack the\nJSON stored in RawExtension, turning it into the correct object type, and storing it\nin the Object. (TODO: In the case where the object is of an unknown type, a\nruntime.Unknown object will be created and stored.)\n\n+k8s:deepcopy-gen=true\n+protobuf=true\n+k8s:openapi-gen=true",
-      "type": "object",
-      "title": "RawExtension is used to hold extensions in external versions.",
-      "x-go-package": "k8s.io/apimachinery/pkg/runtime"
     },
     "ReadinessSpec": {
       "type": "object",
