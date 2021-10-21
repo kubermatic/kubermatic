@@ -71,8 +71,8 @@ func DaemonSetCreator(agentIP net.IP, versions kubermatic.Versions, registryWith
 			}
 
 			ds.Spec.Template.Spec = corev1.PodSpec{
-				InitContainers: getInitContainers(agentIP, versions, registryWithOverwrite(resources.RegistryQuay)),
-				Containers:     getContainers(versions, registryWithOverwrite(resources.RegistryDocker)),
+				InitContainers: getInitContainers(agentIP, versions, registryWithOverwrite),
+				Containers:     getContainers(versions, registryWithOverwrite),
 				// TODO(youssefazrak) needed?
 				PriorityClassName:             "system-cluster-critical",
 				DNSPolicy:                     corev1.DNSClusterFirst,
@@ -92,7 +92,7 @@ func DaemonSetCreator(agentIP net.IP, versions kubermatic.Versions, registryWith
 	}
 }
 
-func getInitContainers(ip net.IP, versions kubermatic.Versions, registry string) []corev1.Container {
+func getInitContainers(ip net.IP, versions kubermatic.Versions, registryWithOverwrite registry.WithOverwriteFunc) []corev1.Container {
 	// TODO: we are creating and configuring the a dummy interface
 	// using init containers. This approach is good enough for the tech preview
 	// but it is definitely not production ready. This should be replaced with
@@ -101,7 +101,7 @@ func getInitContainers(ip net.IP, versions kubermatic.Versions, registry string)
 	return []corev1.Container{
 		{
 			Name:    resources.EnvoyAgentCreateInterfaceInitContainerName,
-			Image:   fmt.Sprintf("%s/%s:%s", registry, resources.EnvoyAgentDeviceSetupImage, versions.Kubermatic),
+			Image:   fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryQuay), resources.EnvoyAgentDeviceSetupImage, versions.Kubermatic),
 			Command: []string{"sh", "-c", "ip link add envoyagent type dummy || true"},
 			SecurityContext: &corev1.SecurityContext{
 				Capabilities: &corev1.Capabilities{
@@ -132,11 +132,11 @@ func getInitContainers(ip net.IP, versions kubermatic.Versions, registry string)
 	}
 }
 
-func getContainers(versions kubermatic.Versions, registry string) []corev1.Container {
+func getContainers(versions kubermatic.Versions, registryWithOverwrite registry.WithOverwriteFunc) []corev1.Container {
 	return []corev1.Container{
 		{
 			Name:            resources.EnvoyAgentDaemonSetName,
-			Image:           fmt.Sprintf("%s/%s:%s", registry, envoyImageName, versions.Envoy),
+			Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryDocker), envoyImageName, versions.Envoy),
 			ImagePullPolicy: corev1.PullIfNotPresent,
 
 			// This amount of logs will be kept for the Tech Preview of
