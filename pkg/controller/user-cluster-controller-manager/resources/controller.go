@@ -33,6 +33,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -102,7 +103,7 @@ func Add(
 		namespace:             namespace,
 		clusterURL:            clusterURL,
 		clusterIsPaused:       clusterIsPaused,
-		overwriteRegistry:     overwriteRegistry,
+		overwriteRegistryFunc: registry.GetOverwriteFunc(overwriteRegistry),
 		openvpnServerPort:     openvpnServerPort,
 		kasSecurePort:         kasSecurePort,
 		tunnelingAgentIP:      tunnelingAgentIP,
@@ -246,7 +247,7 @@ type reconciler struct {
 	namespace             string
 	clusterURL            *url.URL
 	clusterIsPaused       userclustercontrollermanager.IsPausedChecker
-	overwriteRegistry     string
+	overwriteRegistryFunc registry.WithOverwriteFunc
 	openvpnServerPort     uint32
 	kasSecurePort         uint32
 	tunnelingAgentIP      net.IP
@@ -341,11 +342,4 @@ func (r *reconciler) mlaResourceRequirements(ctx context.Context) (monitoring, l
 		return nil, nil, fmt.Errorf("failed to get cluster: %w", err)
 	}
 	return cluster.Spec.MLA.MonitoringResources, cluster.Spec.MLA.LoggingResources, nil
-}
-
-func (r *reconciler) registryWithOverwrite(registry string) string {
-	if r.overwriteRegistry != "" {
-		return r.overwriteRegistry
-	}
-	return registry
 }

@@ -723,7 +723,7 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData)
 	var dsCreators []reconciling.NamedDaemonSetCreatorGetter
 
 	if r.nodeLocalDNSCache {
-		dsCreators = append(dsCreators, nodelocaldns.DaemonSetCreator(r.registryWithOverwrite))
+		dsCreators = append(dsCreators, nodelocaldns.DaemonSetCreator(r.overwriteRegistryFunc))
 	}
 
 	if r.userSSHKeyAgent {
@@ -731,7 +731,7 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData)
 	}
 
 	if len(r.tunnelingAgentIP) > 0 {
-		dsCreators = append(dsCreators, envoyagent.DaemonSetCreator(r.tunnelingAgentIP, r.versions, r.registryWithOverwrite))
+		dsCreators = append(dsCreators, envoyagent.DaemonSetCreator(r.tunnelingAgentIP, r.versions, r.overwriteRegistryFunc))
 	}
 
 	if err := reconciling.ReconcileDaemonSets(ctx, dsCreators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -740,7 +740,7 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData)
 
 	if r.userClusterMLA.Logging {
 		dsCreators = []reconciling.NamedDaemonSetCreatorGetter{
-			promtail.DaemonSetCreator(data.loggingRequirements, r.registryWithOverwrite),
+			promtail.DaemonSetCreator(data.loggingRequirements, r.overwriteRegistryFunc),
 		}
 		if err := reconciling.ReconcileDaemonSets(ctx, dsCreators, resources.UserClusterMLANamespace, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile the DaemonSet: %v", err)
@@ -771,14 +771,14 @@ func (r *reconciler) reconcileNamespaces(ctx context.Context) error {
 func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileData) error {
 	// Kubernetes Dashboard and related resources
 	creators := []reconciling.NamedDeploymentCreatorGetter{
-		kubernetesdashboard.DeploymentCreator(r.registryWithOverwrite),
+		kubernetesdashboard.DeploymentCreator(r.overwriteRegistryFunc),
 	}
 	if err := reconciling.ReconcileDeployments(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Deployments in namespace %s: %v", kubernetesdashboard.Namespace, err)
 	}
 
 	kubeSystemCreators := []reconciling.NamedDeploymentCreatorGetter{
-		coredns.DeploymentCreator(r.clusterSemVer, r.registryWithOverwrite),
+		coredns.DeploymentCreator(r.clusterSemVer, r.overwriteRegistryFunc),
 	}
 
 	if err := reconciling.ReconcileDeployments(ctx, kubeSystemCreators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -788,8 +788,8 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 	// OPA related resources
 	if r.opaIntegration {
 		creators := []reconciling.NamedDeploymentCreatorGetter{
-			gatekeeper.ControllerDeploymentCreator(r.opaEnableMutation, r.registryWithOverwrite),
-			gatekeeper.AuditDeploymentCreator(r.registryWithOverwrite),
+			gatekeeper.ControllerDeploymentCreator(r.opaEnableMutation, r.overwriteRegistryFunc),
+			gatekeeper.AuditDeploymentCreator(r.overwriteRegistryFunc),
 		}
 
 		if err := reconciling.ReconcileDeployments(ctx, creators, resources.GatekeeperNamespace, r.Client); err != nil {
@@ -799,7 +799,7 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 
 	if r.userClusterMLA.Monitoring {
 		creators := []reconciling.NamedDeploymentCreatorGetter{
-			userclusterprometheus.DeploymentCreator(data.monitoringRequirements, r.registryWithOverwrite),
+			userclusterprometheus.DeploymentCreator(data.monitoringRequirements, r.overwriteRegistryFunc),
 		}
 		if err := reconciling.ReconcileDeployments(ctx, creators, resources.UserClusterMLANamespace, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile Deployments in namespace %s: %v", resources.UserClusterMLANamespace, err)
@@ -811,7 +811,7 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 
 func (r *reconciler) reconcileKonnectivityDeployments(ctx context.Context) error {
 	creators := []reconciling.NamedDeploymentCreatorGetter{
-		konnectivity.DeploymentCreator(r.clusterURL.Hostname(), r.registryWithOverwrite),
+		konnectivity.DeploymentCreator(r.clusterURL.Hostname(), r.overwriteRegistryFunc),
 	}
 	if err := reconciling.ReconcileDeployments(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Deployments in namespace %s: %v", metav1.NamespaceSystem, err)

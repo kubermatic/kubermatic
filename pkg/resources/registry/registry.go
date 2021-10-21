@@ -19,3 +19,15 @@ package registry
 
 // WithOverwriteFunc is a function that takes a string and either returns that string or a defined override value.
 type WithOverwriteFunc func(string) string
+
+// GetOverwriteFunc returns a WithOverwriteFunc based on the given override value.
+func GetOverwriteFunc(overwriteRegistry string) WithOverwriteFunc {
+	if overwriteRegistry != "" {
+		return func(string) string {
+			return overwriteRegistry
+		}
+	}
+	return func(s string) string {
+		return s
+	}
+}
