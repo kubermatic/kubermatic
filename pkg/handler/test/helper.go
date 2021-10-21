@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"crypto/sha512"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -1680,7 +1681,9 @@ func GenConstraint(name, namespace, kind string) *kubermaticv1.Constraint {
 				{Kinds: []string{"namespace"}, APIGroups: []string{""}},
 			},
 		},
-		Parameters: runtime.RawExtension{Raw: []byte(`{"labels":["gatekeeper","opa"]}`)},
+		Parameters: map[string]json.RawMessage{
+			"labels": []byte(`["gatekeeper","opa"]`),
+		},
 		Selector: kubermaticv1.ConstraintSelector{
 			Providers: []string{"aws", "gcp"},
 			LabelSelector: metav1.LabelSelector{
@@ -1711,7 +1714,9 @@ func GenDefaultAPIConstraint(name, kind string) apiv2.Constraint {
 					{Kinds: []string{"namespace"}, APIGroups: []string{""}},
 				},
 			},
-			Parameters: runtime.RawExtension{Raw: []byte(`{"labels":["gatekeeper","opa"]}`)},
+			Parameters: map[string]json.RawMessage{
+				"labels": []byte(`["gatekeeper","opa"]`),
+			},
 			Selector: kubermaticv1.ConstraintSelector{
 				Providers: []string{"aws", "gcp"},
 				LabelSelector: metav1.LabelSelector{

@@ -402,7 +402,12 @@ func validateConstraint(constraintTemplateProvider provider.ConstraintTemplatePr
 		// Set up parameters
 		var parameters map[string]interface{}
 
-		err = json.Unmarshal(constraint.Spec.Parameters.Raw, &parameters)
+		rawParams, err := json.Marshal(constraint.Spec.Parameters)
+		if err != nil {
+			return utilerrors.NewBadRequest("Validation failed, failed marshalling body parameters: %v", err)
+		}
+
+		err = json.Unmarshal(rawParams, &parameters)
 		if err != nil {
 			return utilerrors.NewBadRequest("Validation failed, failed unmarshalling body parameters: %v", err)
 		}

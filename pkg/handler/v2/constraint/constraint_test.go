@@ -35,7 +35,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -538,7 +537,9 @@ func TestCreateConstraints(t *testing.T) {
 			Name: "scenario 5: cannot create constraint with invalid parameters",
 			Constraint: func() apiv2.Constraint {
 				c := test.GenConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel")
-				c.Spec.Parameters = runtime.RawExtension{Raw: []byte(`{"labels":"fail"}`)}
+				c.Spec.Parameters = map[string]json.RawMessage{
+					"labels": []byte(`"fail"`),
+				}
 				return apiv2.Constraint{
 					Name: "ct1",
 					Spec: c.Spec,
@@ -559,7 +560,9 @@ func TestCreateConstraints(t *testing.T) {
 			Name: "scenario 6: cannot create rawJSON constraint with invalid parameters",
 			Constraint: func() apiv2.Constraint {
 				c := test.GenConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel")
-				c.Spec.Parameters = runtime.RawExtension{Raw: []byte(`{"rawJSON":"{\"labels\":\"gatekeeper\"}"}`)}
+				c.Spec.Parameters = map[string]json.RawMessage{
+					"rawJSON": []byte(`"{\"labels\":\"gatekeeper\"}"`),
+				}
 				return apiv2.Constraint{
 					Name: "ct1",
 					Spec: c.Spec,

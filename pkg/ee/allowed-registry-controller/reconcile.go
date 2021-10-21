@@ -26,6 +26,7 @@ package allowedregistrycontroller
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	constrainttemplatev1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
@@ -39,7 +40,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -200,7 +200,15 @@ func allowedRegistryConstraintCreatorGetter(regSet sets.String) reconciling.Name
 			}
 			ct.Spec.ConstraintType = AllowedRegistryCTName
 			ct.Spec.Disabled = regSet.Len() == 0
-			ct.Spec.Parameters = runtime.RawExtension{Raw: []byte(fmt.Sprintf("{\"%s\":\"%v\"}", AllowedRegistryField, regSet.List()))}
+
+			jsonRegSet, err := json.Marshal(regSet)
+			if err != nil {
+				return nil, fmt.Errorf("error marshalling registry set: %v", err)
+			}
+
+			ct.Spec.Parameters = map[string]json.RawMessage{
+				AllowedRegistryField: jsonRegSet,
+			}
 
 			return ct, nil
 		}

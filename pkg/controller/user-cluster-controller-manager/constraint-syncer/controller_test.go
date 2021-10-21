@@ -35,7 +35,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
@@ -77,7 +76,9 @@ func TestReconcile(t *testing.T) {
 				WithObjects(
 					func() ctrlruntimeclient.Object {
 						c := test.GenConstraint(constraintName, "namespace", kind)
-						c.Spec.Parameters = runtime.RawExtension{Raw: []byte(`{"rawJSON":"{\"labels\":[\"gatekeeper\",\"opa\"]}"}`)}
+						c.Spec.Parameters = map[string]json.RawMessage{
+							"rawJSON": []byte(`"{\"labels\":[\"gatekeeper\",\"opa\"]}"`),
+						}
 						return c
 					}()).
 				Build(),
@@ -262,13 +263,18 @@ func TestReconcile(t *testing.T) {
 			if !reflect.DeepEqual(matchMap, resultMatch) {
 				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(matchMap, matchMap))
 			}
+			// cast params to bytes for comparison
+			expectedParamsBytes, err := json.Marshal(tc.expectedConstraint.Spec.Parameters)
+			if err != nil {
+				t.Fatal(err)
+			}
 
 			resultParamsBytes, err := json.Marshal(resultParams)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if !reflect.DeepEqual(tc.expectedConstraint.Spec.Parameters.Raw, resultParamsBytes) {
+			if !reflect.DeepEqual(expectedParamsBytes, resultParamsBytes) {
 				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(tc.expectedConstraint.Spec.Parameters, resultParamsBytes))
 			}
 

@@ -26,7 +26,7 @@ package allowedregistrycontroller_test
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
 	"reflect"
 	"testing"
 	"time"
@@ -41,7 +41,6 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -252,10 +251,7 @@ func genWRConstraint(registrySet sets.String) *kubermaticv1.Constraint {
 	ct.Name = allowedregistrycontroller.AllowedRegistryCTName
 	ct.Namespace = testNamespace
 
-	interfaceList := []interface{}{}
-	for _, registry := range registrySet.List() {
-		interfaceList = append(interfaceList, registry)
-	}
+	jsonRegSet, _ := json.Marshal(registrySet)
 
 	ct.Spec = kubermaticv1.ConstraintSpec{
 		ConstraintType: allowedregistrycontroller.AllowedRegistryCTName,
@@ -267,8 +263,10 @@ func genWRConstraint(registrySet sets.String) *kubermaticv1.Constraint {
 				},
 			},
 		},
-		Parameters: runtime.RawExtension{Raw: []byte(fmt.Sprintf("{\"%s\":\"%v\"}", allowedregistrycontroller.AllowedRegistryField, interfaceList))},
-		Disabled:   registrySet.Len() == 0,
+		Parameters: map[string]json.RawMessage{
+			allowedregistrycontroller.AllowedRegistryField: jsonRegSet,
+		},
+		Disabled: registrySet.Len() == 0,
 	}
 	return ct
 }

@@ -151,10 +151,15 @@ func (r *reconciler) cleanupConstraint(ctx context.Context, constraint *kubermat
 func constraintCreatorGetter(constraint *kubermaticv1.Constraint) reconciling.NamedUnstructuredCreatorGetter {
 	return func() (string, string, string, reconciling.UnstructuredCreator) {
 		return constraint.Name, constraint.Spec.ConstraintType, constraintAPIVersion, func(u *unstructured.Unstructured) (*unstructured.Unstructured, error) {
-			if len(constraint.Spec.Parameters.Raw) > 0 {
+			if len(constraint.Spec.Parameters) > 0 {
 				var params map[string]interface{}
 
-				if err := json.Unmarshal(constraint.Spec.Parameters.Raw, &params); err != nil {
+				rawParams, err := json.Marshal(constraint.Spec.Parameters)
+				if err != nil {
+					return nil, fmt.Errorf("error marshalling constraint parameters: %v", err)
+				}
+
+				if err := json.Unmarshal(rawParams, &params); err != nil {
 					return nil, fmt.Errorf("error unmarshalling constraint parameters: %v", err)
 				}
 

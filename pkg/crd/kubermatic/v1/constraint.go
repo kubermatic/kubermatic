@@ -17,8 +17,9 @@ limitations under the License.
 package v1
 
 import (
+	"encoding/json"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -63,10 +64,12 @@ type ConstraintSpec struct {
 	// parameters:
 	//   labels: ["gatekeeper"]
 	//
-	Parameters runtime.RawExtension `json:"parameters,omitempty"`
+	Parameters Parameters `json:"parameters,omitempty"`
 	// Selector specifies the cluster selection filters
 	Selector ConstraintSelector `json:"selector,omitempty"`
 }
+
+type Parameters map[string]json.RawMessage
 
 // ConstraintSelector is the object holding the cluster selection filters
 type ConstraintSelector struct {
