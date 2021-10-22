@@ -14792,6 +14792,12 @@
             "required": true
           },
           {
+            "type": "string",
+            "description": "The credential name used in the preset for the provider",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
             "name": "Body",
             "in": "body",
             "schema": {
@@ -19010,6 +19016,16 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
+    "ExternalClusterCloudSpec": {
+      "description": "ExternalClusterCloudSpec represents an object holding cluster cloud details",
+      "type": "object",
+      "properties": {
+        "gke": {
+          "$ref": "#/definitions/GKECloudSpec"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "ExternalClusterNode": {
       "description": "ExternalClusterNode represents an object holding external cluster node",
       "type": "object",
@@ -19332,6 +19348,20 @@
         "$ref": "#/definitions/GCPZone"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "GKECloudSpec": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "serviceAccount": {
+          "type": "string",
+          "x-go-name": "ServiceAccount"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "GKECluster": {
       "type": "object",
@@ -23032,7 +23062,7 @@
       "type": "object",
       "properties": {
         "cloud": {
-          "$ref": "#/definitions/CloudSpec"
+          "$ref": "#/definitions/ExternalClusterCloudSpec"
         },
         "kubeconfig": {
           "description": "Kubeconfig Base64 encoded kubeconfig",

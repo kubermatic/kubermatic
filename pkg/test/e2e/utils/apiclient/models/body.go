@@ -25,7 +25,7 @@ type Body struct {
 	Name string `json:"name,omitempty"`
 
 	// cloud
-	Cloud *CloudSpec `json:"cloud,omitempty"`
+	Cloud *ExternalClusterCloudSpec `json:"cloud,omitempty"`
 }
 
 // Validate validates this body
