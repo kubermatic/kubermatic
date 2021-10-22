@@ -75,21 +75,23 @@ const (
 // as they are security relevant.
 var ProtectedClusterLabels = sets.NewString(WorkerNameLabelKey, ProjectIDLabelKey)
 
-//+genclient
-//+genclient:nonNamespaced
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 
 // Cluster is the object representing a cluster.
 type Cluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec    ClusterSpec    `json:"spec"`
+	Spec    ClusterSpec    `json:"spec,omitempty"`
 	Address ClusterAddress `json:"address,omitempty"`
 	Status  ClusterStatus  `json:"status,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 // ClusterList specifies a list of clusters
 type ClusterList struct {
@@ -473,8 +475,8 @@ type ClusterNetworkingConfig struct {
 	// Domain name for services.
 	DNSDomain string `json:"dnsDomain"`
 
-	// ProxyMode defines the kube-proxy mode (ipvs/iptables).
-	// Defaults to ipvs.
+	// ProxyMode defines the kube-proxy mode ("ipvs" / "iptables" / "ebpf").
+	// Defaults to "ipvs". "ebpf" disables kube-proxy and requires CNI support.
 	ProxyMode string `json:"proxyMode"`
 
 	// IPVS defines kube-proxy ipvs configuration options

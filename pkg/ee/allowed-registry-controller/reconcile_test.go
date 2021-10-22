@@ -26,6 +26,7 @@ package allowedregistrycontroller_test
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 	"testing"
 	"time"
@@ -250,10 +251,7 @@ func genWRConstraint(registrySet sets.String) *kubermaticv1.Constraint {
 	ct.Name = allowedregistrycontroller.AllowedRegistryCTName
 	ct.Namespace = testNamespace
 
-	interfaceList := []interface{}{}
-	for _, registry := range registrySet.List() {
-		interfaceList = append(interfaceList, registry)
-	}
+	jsonRegSet, _ := json.Marshal(registrySet)
 
 	ct.Spec = kubermaticv1.ConstraintSpec{
 		ConstraintType: allowedregistrycontroller.AllowedRegistryCTName,
@@ -265,8 +263,8 @@ func genWRConstraint(registrySet sets.String) *kubermaticv1.Constraint {
 				},
 			},
 		},
-		Parameters: kubermaticv1.Parameters{
-			allowedregistrycontroller.AllowedRegistryField: interfaceList,
+		Parameters: map[string]json.RawMessage{
+			allowedregistrycontroller.AllowedRegistryField: jsonRegSet,
 		},
 		Disabled: registrySet.Len() == 0,
 	}

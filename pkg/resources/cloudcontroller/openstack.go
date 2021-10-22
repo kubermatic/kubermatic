@@ -167,7 +167,7 @@ func getOSFlags(data *resources.TemplateData) []string {
 }
 
 func getOSVersion(version semver.Semver) (string, error) {
-	switch version.Minor() {
+	switch version.Semver().Minor() {
 	case 19:
 		return "1.19.2", nil
 	case 20:

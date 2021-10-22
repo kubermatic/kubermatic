@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"strings"
 
+	ec2service "github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/eks"
 	ec2 "github.com/cristim/ec2-instances-info"
 
@@ -49,6 +50,10 @@ var data *ec2.InstanceData
 func init() {
 	data, _ = ec2.Data()
 }
+
+// Region value will instruct the SDK where to make service API requests to.
+// Region must be provided before a service client request is made.
+const RegionEndpoint = "eu-central-1"
 
 func AWSSubnetNoCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID, clusterID string) (interface{}, error) {
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -333,4 +338,27 @@ func ListEKSClusters(ctx context.Context, accessKeyID, secretAccessKey, region s
 		clusters = append(clusters, apiv2.EKSCluster{Name: *f})
 	}
 	return clusters, nil
+}
+
+func ListEC2Regions(ctx context.Context, accessKeyID, secretAccessKey string) (apiv2.Regions, error) {
+	regionInput := &ec2service.DescribeRegionsInput{}
+
+	// Must provide either a region or endpoint configured to use the SDK, even for operations that may enumerate other regions
+	// See https://github.com/aws/aws-sdk-go/issues/224 for more details
+	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, RegionEndpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	// Retrieves all regions/endpoints that work with EC2
+	regionOutput, err := client.EC2.DescribeRegions(regionInput)
+	if err != nil {
+		return nil, fmt.Errorf("cannot list regions: %w", err)
+	}
+
+	var regionList []string
+	for _, region := range regionOutput.Regions {
+		regionList = append(regionList, *region.RegionName)
+	}
+	return regionList, nil
 }

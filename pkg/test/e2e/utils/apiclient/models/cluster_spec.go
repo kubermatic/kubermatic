@@ -126,6 +126,10 @@ func (m *ClusterSpec) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateVersion(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
@@ -309,6 +313,21 @@ func (m *ClusterSpec) validateUpdateWindow(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *ClusterSpec) validateVersion(formats strfmt.Registry) error {
+	if swag.IsZero(m.Version) { // not required
+		return nil
+	}
+
+	if err := m.Version.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("version")
+		}
+		return err
+	}
+
+	return nil
+}
+
 // ContextValidate validate this cluster spec based on the context it is used
 func (m *ClusterSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
@@ -350,6 +369,10 @@ func (m *ClusterSpec) ContextValidate(ctx context.Context, formats strfmt.Regist
 	}
 
 	if err := m.contextValidateUpdateWindow(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateVersion(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -498,6 +521,18 @@ func (m *ClusterSpec) contextValidateUpdateWindow(ctx context.Context, formats s
 			}
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *ClusterSpec) contextValidateVersion(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.Version.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("version")
+		}
+		return err
 	}
 
 	return nil
