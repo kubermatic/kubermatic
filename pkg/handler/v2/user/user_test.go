@@ -17,13 +17,14 @@ limitations under the License.
 package user_test
 
 import (
-	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
+	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
+
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 

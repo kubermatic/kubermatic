@@ -25,6 +25,7 @@ import (
 
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
+
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"

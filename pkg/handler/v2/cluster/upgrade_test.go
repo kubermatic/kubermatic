@@ -27,7 +27,6 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver/v3"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -37,6 +36,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	k8csemver "k8c.io/kubermatic/v2/pkg/semver"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
