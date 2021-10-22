@@ -33,7 +33,7 @@ karma:
     # If Prometheus is setup behind an authenticated proxy
     # (like Keycloak-Gatekeeper or OAuth2-Proxy), Karma will
     # not be able to reach Prometheus.
-    # For theses cases you can configure a rewrite rule to
+    # For these cases you can configure a rewrite rule to
     # change the Prometheus address for example from "prometheus.example.com"
     # to "prometheus.monitoring.svc.cluster.cluster" to use
     # in-cluster access to Prometheus.
