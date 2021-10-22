@@ -139,7 +139,7 @@ func createGKECluster(ctx context.Context, name string, userInfoGetter provider.
 	kuberneteshelper.AddFinalizer(newCluster, apiv1.CredentialsSecretsCleanupFinalizer)
 	newCluster.Spec.CloudSpec.GKE.CredentialsReference = keyRef
 
-return createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, newCluster, project)
+	return createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, newCluster, project)
 }
 
 // createClusterReq defines HTTP request for createExternalCluster
