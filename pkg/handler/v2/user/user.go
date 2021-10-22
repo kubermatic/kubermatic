@@ -19,12 +19,14 @@ package user
 import (
 	"context"
 	"fmt"
+	"net/http"
+
 	"github.com/go-kit/kit/endpoint"
+
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
-	"net/http"
 )
 
 func ListEndpoint(userInfoGetter provider.UserInfoGetter, userProvider provider.UserProvider) endpoint.Endpoint {
