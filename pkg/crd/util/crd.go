@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -63,6 +64,14 @@ func LoadFromFile(filename string) ([]ctrlruntimeclient.Object, error) {
 		err = decoder.Decode(&crd)
 		if err != nil {
 			break
+		}
+
+		if crd.GetAPIVersion() != apiextensionsv1.SchemeGroupVersion.String() {
+			continue
+		}
+
+		if crd.GetKind() != "CustomResourceDefinition" {
+			continue
 		}
 
 		crds = append(crds, &crd)

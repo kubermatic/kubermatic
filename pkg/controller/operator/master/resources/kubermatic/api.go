@@ -36,13 +36,13 @@ import (
 
 func apiPodLabels() map[string]string {
 	return map[string]string{
-		common.NameLabel: apiDeploymentName,
+		common.NameLabel: APIDeploymentName,
 	}
 }
 
 func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerName string, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
-		return apiDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
+		return APIDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			probe := corev1.Probe{
 				InitialDelaySeconds: 3,
 				TimeoutSeconds:      2,

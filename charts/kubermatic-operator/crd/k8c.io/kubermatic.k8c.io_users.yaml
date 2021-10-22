@@ -42,30 +42,7 @@ spec:
                 type: string
               id:
                 type: string
-              lastSeen:
-                format: date-time
-                type: string
-              name:
-                type: string
-              settings:
-                description: UserSettings represent an user settings
-                properties:
-                  collapseSidenav:
-                    type: boolean
-                  displayAllProjectsForAdmin:
-                    type: boolean
-                  itemsPerPage:
-                    type: integer
-                  lastSeenChangelogVersion:
-                    type: string
-                  selectProjectTableView:
-                    type: boolean
-                  selectedProjectID:
-                    type: string
-                  selectedTheme:
-                    type: string
-                type: object
-              tokenBlackListReference:
+              invalidTokensReference:
                 description: GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector
                   because it is not cross namespace
                 properties:
@@ -102,6 +79,29 @@ spec:
                     type: string
                   uid:
                     description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
+                    type: string
+                type: object
+              lastSeen:
+                format: date-time
+                type: string
+              name:
+                type: string
+              settings:
+                description: UserSettings represent an user settings
+                properties:
+                  collapseSidenav:
+                    type: boolean
+                  displayAllProjectsForAdmin:
+                    type: boolean
+                  itemsPerPage:
+                    type: integer
+                  lastSeenChangelogVersion:
+                    type: string
+                  selectProjectTableView:
+                    type: boolean
+                  selectedProjectID:
+                    type: string
+                  selectedTheme:
                     type: string
                 type: object
             required:

@@ -1,0 +1,68 @@
+apiVersion: kubermatic.k8s.io/v1
+kind: UserProjectBinding
+metadata:
+  finalizers:
+    - kubermatic.io/cleanup-seed-user-project-bindings
+    - kubermatic.io/controller-manager-rbac-cleanup
+    - kubermatic.io/mla
+  name: test-user-kkpproject
+  ownerReferences:
+    - apiVersion: kubermatic.k8s.io/v1
+      kind: Project
+      name: kkpproject
+      uid: __PROJECT_UID__
+spec:
+  group: owners-kkpproject
+  projectId: kkpproject
+  userEmail: roxy@kubermatic.com
+
+---
+apiVersion: kubermatic.k8s.io/v1
+kind: ClusterTemplate
+metadata:
+  annotations:
+    kubermatic.io/initial-machinedeployment-request: ""
+    user: roxy@kubermatic.com
+  finalizers:
+    - kubermatic.io/cleanup-credentials-secrets
+    - kubermatic.io/cleanup-seed-cluster-template
+  labels:
+    name: p
+    project-id: kkpproject
+    scope: project
+  name: 2m26r56qdx
+spec:
+  auditLogging: {}
+  cloud:
+    bringyourown: {}
+    dc: byo-europe-west3-c
+  clusterNetwork:
+    dnsDomain: ""
+    pods:
+      cidrBlocks: []
+    proxyMode: ""
+    services:
+      cidrBlocks: []
+  componentsOverride:
+    apiserver: {}
+    controllerManager:
+      leaderElection: {}
+    etcd:
+      clusterSize: 3
+    prometheus: {}
+    scheduler:
+      leaderElection: {}
+  containerRuntime: containerd
+  enableUserSSHKeyAgent: true
+  exposeStrategy: Tunneling
+  humanReadableName: test-cluster-template
+  mla:
+    loggingEnabled: true
+    monitoringEnabled: true
+  oidc: {}
+  opaIntegration: {}
+  pause: false
+  version: 1.21.3
+clusterLabels:
+  project-id: kkpproject
+credential: ""

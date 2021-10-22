@@ -20,14 +20,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type ClusterType int8
-
 const GlobalSettingsName = "globalsettings"
-
-const (
-	ClusterTypeAll ClusterType = iota
-	ClusterTypeKubernetes
-)
 
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:object:generate=true
@@ -45,7 +38,6 @@ type SettingSpec struct {
 	CustomLinks                 CustomLinks    `json:"customLinks"`
 	CleanupOptions              CleanupOptions `json:"cleanupOptions"`
 	DefaultNodeCount            int8           `json:"defaultNodeCount"`
-	ClusterTypeOptions          ClusterType    `json:"clusterTypeOptions"`
 	DisplayDemoInfo             bool           `json:"displayDemoInfo"`
 	DisplayAPIDocs              bool           `json:"displayAPIDocs"`
 	DisplayTermsOfService       bool           `json:"displayTermsOfService"`

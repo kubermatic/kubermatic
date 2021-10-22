@@ -250,15 +250,7 @@ spec:
                 - apiKey
                 - projectID
                 type: object
-              requiredEmailDomain:
-                description: see RequiredEmails
-                type: string
               requiredEmails:
-                description: 'RequiredEmails: specify emails and domains RequiredEmailDomain
-                  is appended to RequiredEmails for backward compatibility. e.g.:   RequiredEmailDomain:
-                  "example.com"   RequiredEmails: ["foo.com", "foo.bar@test.com"]
-                  Result:   *@example.com, *@foo.com and foo.bar@test.com can use
-                  the Preset'
                 items:
                   type: string
                 type: array
