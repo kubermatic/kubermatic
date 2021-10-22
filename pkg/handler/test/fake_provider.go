@@ -22,6 +22,8 @@ import (
 	"net/http"
 	"time"
 
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -129,6 +131,10 @@ func createError(status int32, message string) error {
 type FakeExternalClusterProvider struct {
 	Provider   *kubernetes.ExternalClusterProvider
 	FakeClient ctrlruntimeclient.Client
+}
+
+func (p *FakeExternalClusterProvider) CreateOrUpdateCredentialSecretForCluster(ctx context.Context, cloud *apiv2.ExternalClusterCloudSpec, projectID, clusterID string) (*providerconfig.GlobalSecretKeySelector, error) {
+	return p.Provider.CreateOrUpdateCredentialSecretForCluster(ctx, cloud, projectID, clusterID)
 }
 
 func (p *FakeExternalClusterProvider) IsMetricServerAvailable(cluster *kubermaticapiv1.ExternalCluster) (bool, error) {

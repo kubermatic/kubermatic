@@ -64,6 +64,12 @@ type CreateExternalClusterParams struct {
 	// Body.
 	Body *models.Body
 
+	/* Credential.
+
+	   The credential name used in the preset for the provider
+	*/
+	Credential *string
+
 	// ProjectID.
 	ProjectID string
 
@@ -131,6 +137,17 @@ func (o *CreateExternalClusterParams) SetBody(body *models.Body) {
 	o.Body = body
 }
 
+// WithCredential adds the credential to the create external cluster params
+func (o *CreateExternalClusterParams) WithCredential(credential *string) *CreateExternalClusterParams {
+	o.SetCredential(credential)
+	return o
+}
+
+// SetCredential adds the credential to the create external cluster params
+func (o *CreateExternalClusterParams) SetCredential(credential *string) {
+	o.Credential = credential
+}
+
 // WithProjectID adds the projectID to the create external cluster params
 func (o *CreateExternalClusterParams) WithProjectID(projectID string) *CreateExternalClusterParams {
 	o.SetProjectID(projectID)
@@ -151,6 +168,14 @@ func (o *CreateExternalClusterParams) WriteToRequest(r runtime.ClientRequest, re
 	var res []error
 	if o.Body != nil {
 		if err := r.SetBodyParam(o.Body); err != nil {
+			return err
+		}
+	}
+
+	if o.Credential != nil {
+
+		// header param Credential
+		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
 			return err
 		}
 	}
