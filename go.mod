@@ -19,7 +19,7 @@ require (
 	github.com/cristim/ec2-instances-info v0.0.0-20201110114654-2dfcc09f67d4
 	github.com/digitalocean/godo v1.65.0
 	github.com/docker/distribution v2.7.1+incompatible
-	github.com/envoyproxy/go-control-plane v0.9.7
+	github.com/envoyproxy/go-control-plane v0.9.9-0.20210217033140-668b12f5399d
 	github.com/evanphx/json-patch v4.11.0+incompatible
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-ini/ini v1.62.0 // indirect
@@ -64,7 +64,10 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/urfave/cli v1.22.5
 	github.com/vmware/govmomi v0.23.1
-	go.etcd.io/etcd/v3 v3.3.0-rc.0.0.20200728214110-6c81b20ec8de
+	go.etcd.io/etcd/api/v3 v3.5.0
+	go.etcd.io/etcd/client/pkg/v3 v3.5.0
+	go.etcd.io/etcd/client/v3 v3.5.0
+	go.etcd.io/etcd/etcdutl/v3 v3.5.0
 	go.uber.org/zap v1.19.0
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
 	golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c
@@ -119,7 +122,7 @@ require (
 	github.com/census-instrumentation/opencensus-proto v0.2.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
 	github.com/clarketm/json v1.13.4 // indirect
-	github.com/cncf/udpa/go v0.0.0-20200629203442-efcf912fb354 // indirect
+	github.com/cncf/udpa/go v0.0.0-20201120205902-5459f2c99403 // indirect
 	github.com/coreos/container-linux-config-transpiler v0.9.0 // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf // indirect
@@ -127,7 +130,6 @@ require (
 	github.com/coreos/ignition v0.35.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/dimchansky/utfbom v1.1.1 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/emicklei/go-restful v2.11.2+incompatible // indirect
@@ -203,8 +205,17 @@ require (
 	github.com/vincent-petithory/dataurl v0.0.0-20160330182126-9a301d65acbb // indirect
 	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
+	go.etcd.io/etcd/client/v2 v2.305.0 // indirect
+	go.etcd.io/etcd/pkg/v3 v3.5.0 // indirect
+	go.etcd.io/etcd/raft/v3 v3.5.0 // indirect
+	go.etcd.io/etcd/server/v3 v3.5.0 // indirect
 	go.mongodb.org/mongo-driver v1.5.1 // indirect
 	go.opencensus.io v0.23.0 // indirect
+	go.opentelemetry.io/contrib v0.20.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.20.0 // indirect
+	go.opentelemetry.io/otel v0.20.0 // indirect
+	go.opentelemetry.io/otel/metric v0.20.0 // indirect
+	go.opentelemetry.io/otel/trace v0.20.0 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	go4.org v0.0.0-20201209231011-d4a079459e60 // indirect
@@ -229,8 +240,6 @@ require (
 )
 
 replace (
-	// etcd.v3 needs an old version for the google.golang.org/grpc/naming package, which got removed in grpc 1.30+
-	google.golang.org/grpc => google.golang.org/grpc v1.29.1
 	k8s.io/api => k8s.io/api v0.22.2
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.22.2
 	k8s.io/apimachinery => k8s.io/apimachinery v0.22.2

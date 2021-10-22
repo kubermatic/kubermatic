@@ -30,11 +30,11 @@ import (
 
 	"github.com/minio/minio-go"
 	"github.com/pkg/errors"
-	"go.etcd.io/etcd/v3/clientv3"
-	"go.etcd.io/etcd/v3/clientv3/snapshot"
-	"go.etcd.io/etcd/v3/etcdserver/api/v3rpc/rpctypes"
-	"go.etcd.io/etcd/v3/etcdserver/etcdserverpb"
-	"go.etcd.io/etcd/v3/pkg/transport"
+	"go.etcd.io/etcd/api/v3/etcdserverpb"
+	"go.etcd.io/etcd/api/v3/v3rpc/rpctypes"
+	"go.etcd.io/etcd/client/pkg/v3/transport"
+	client "go.etcd.io/etcd/client/v3"
+	"go.etcd.io/etcd/etcdutl/v3/snapshot"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -358,16 +358,16 @@ func etcdCmd(config *etcdCluster) []string {
 	return cmd
 }
 
-func (e *etcdCluster) getClusterClient() (*clientv3.Client, error) {
+func (e *etcdCluster) getClusterClient() (*client.Client, error) {
 	endpoints := clientEndpoints(e.clusterSize, e.namespace)
 	return e.getClientWithEndpoints(endpoints)
 }
 
-func (e *etcdCluster) getLocalClient() (*clientv3.Client, error) {
+func (e *etcdCluster) getLocalClient() (*client.Client, error) {
 	return e.getClientWithEndpoints([]string{e.endpoint()})
 }
 
-func (e *etcdCluster) getClientWithEndpoints(eps []string) (*clientv3.Client, error) {
+func (e *etcdCluster) getClientWithEndpoints(eps []string) (*client.Client, error) {
 	var err error
 	tlsInfo := transport.TLSInfo{
 		CertFile:       resources.EtcdClientCertFile,
@@ -380,7 +380,7 @@ func (e *etcdCluster) getClientWithEndpoints(eps []string) (*clientv3.Client, er
 		return nil, fmt.Errorf("failed to generate client TLS config: %v", err)
 	}
 	for i := 0; i < 5; i++ {
-		cli, err := clientv3.New(clientv3.Config{
+		cli, err := client.New(client.Config{
 			Endpoints:   eps,
 			DialTimeout: 2 * time.Second,
 			TLS:         tlsConfig,
