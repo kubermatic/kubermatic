@@ -142,10 +142,7 @@ spec:
                 type: string
               featureGates:
                 additionalProperties:
-                  description: Empty is public since it is used by some internal API
-                    objects for conversions between external string arrays and internal
-                    sets, and conversion logic requires public types today.
-                  type: object
+                  type: boolean
                 description: FeatureGates are used to optionally enable certain features.
                 type: object
               imagePullSecret:

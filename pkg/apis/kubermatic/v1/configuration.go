@@ -22,7 +22,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // ConditionType is the type defining the cluster or datacenter condition that must be met to block a specific version
@@ -70,7 +69,7 @@ type KubermaticConfigurationSpec struct {
 	// Auth defines keys and URLs for Dex.
 	Auth KubermaticAuthConfiguration `json:"auth"`
 	// FeatureGates are used to optionally enable certain features.
-	FeatureGates sets.String `json:"featureGates,omitempty"`
+	FeatureGates map[string]bool `json:"featureGates,omitempty"`
 	// UI configures the dashboard.
 	UI KubermaticUIConfiguration `json:"ui,omitempty"`
 	// API configures the frontend REST API used by the dashboard.

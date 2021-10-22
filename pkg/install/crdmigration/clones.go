@@ -219,7 +219,7 @@ func cloneKubermaticConfigurationResourcesInCluster(ctx context.Context, logger 
 				CABundle:        oldObject.Spec.CABundle,
 				ImagePullSecret: oldObject.Spec.ImagePullSecret,
 				Auth:            newv1.KubermaticAuthConfiguration(oldObject.Spec.Auth),
-				FeatureGates:    oldObject.Spec.FeatureGates,
+				FeatureGates:    map[string]bool{},
 				UI:              newv1.KubermaticUIConfiguration(oldObject.Spec.UI),
 				API:             newv1.KubermaticAPIConfiguration(oldObject.Spec.API),
 				SeedController: newv1.KubermaticSeedControllerConfiguration{
@@ -265,6 +265,10 @@ func cloneKubermaticConfigurationResourcesInCluster(ctx context.Context, logger 
 				},
 				Proxy: newv1.KubermaticProxyConfiguration(oldObject.Spec.Proxy),
 			},
+		}
+
+		for _, feature := range oldObject.Spec.FeatureGates.List() {
+			newObject.Spec.FeatureGates[feature] = true
 		}
 
 		if err := ensureObject(ctx, client, &newObject, false); err != nil {
