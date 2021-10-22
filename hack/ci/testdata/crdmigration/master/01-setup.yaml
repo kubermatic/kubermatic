@@ -1,0 +1,493 @@
+apiVersion: operator.kubermatic.io/v1alpha1
+kind: KubermaticConfiguration
+metadata:
+  finalizers:
+  - operator.kubermatic.io/cleanup
+  name: kubermatic
+  namespace: kubermatic
+spec:
+  api:
+    accessibleAddons:
+    - cluster-autoscaler
+    - node-exporter
+    - kube-state-metrics
+    - kubeflow
+    - kubevirt
+  auth:
+    issuerClientSecret: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    issuerCookieKey: YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
+    serviceAccountKey: ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
+  caBundle:
+    kind: ConfigMap
+    name: ca-bundle
+  exposeStrategy: Tunneling
+  featureGates:
+    KonnectivityService:
+      enabled: true
+    OIDCKubeCfgEndpoint:
+      enabled: true
+    OpenIDAuthPlugin:
+      enabled: true
+    TunnelingExposeStrategy:
+      enabled: true
+    UserClusterMLA:
+      enabled: true
+    VerticalPodAutoscaler:
+      enabled: true
+  imagePullSecret: |
+    {
+      "auths": {
+        "quay.io": {
+          "auth": "base64here",
+          "email": ""
+        }
+      }
+    }
+  ingress:
+    certificateIssuer:
+      kind: ClusterIssuer
+      name: letsencrypt-prod
+    domain: example.com
+  masterController:
+    resources:
+      limits:
+        cpu: 4
+        memory: 512Mi
+  ui:
+    config: |
+      {
+        "default_node_count": 1,
+        "share_kubeconfig": true,
+        "cleanup_cluster": true
+      }
+
+---
+apiVersion: kubermatic.k8s.io/v1
+kind: Seed
+metadata:
+  finalizers:
+    - kubermatic.io/cleanup-seed-sync
+  name: crdmigration
+  namespace: kubermatic
+spec:
+  country: IN
+  datacenters:
+    azure-southeastasia-asia:
+      country: HK
+      location: Azure South-East Asia
+      spec:
+        azure:
+          location: southeastasia
+    packet-nrt1-asia:
+      country: JP
+      location: Packet NRT1 (Tokyo)
+      spec:
+        packet:
+          facilities:
+            - nrt1
+    test:
+      country: DE
+      location: test
+      node: {}
+      spec:
+        anexia:
+          location_id: ""
+  defaultComponentSettings:
+    apiserver: {}
+    controllerManager:
+      leaderElection: {}
+    etcd: {}
+    prometheus: {}
+    scheduler:
+      leaderElection: {}
+  expose_strategy: NodePort
+  kubeconfig:
+    apiVersion: v1
+    fieldPath: kubeconfig
+    kind: Secret
+    name: kubeconfig-crdmigration
+    namespace: kubermatic
+  location: Mumbai
+  metering:
+    enabled: true
+    storageClassName: standard
+    storageSize: 75Gi
+  mla:
+    user_cluster_mla_enabled: true
+  nodeport_proxy:
+    envoy:
+      resources: {}
+    envoy_manager:
+      resources: {}
+    updater:
+      resources: {}
+
+---
+apiVersion: kubermatic.k8s.io/v1
+kind: Preset
+metadata:
+  name: test
+spec:
+  alibaba:
+    accessKeyId: XXXXXXXXXXXXXXXXXXXXXXXX
+    accessKeySecret: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+  anexia:
+    token: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+  aws:
+    accessKeyId: XXXXXXXXXXXXXXXXXXXX
+    datacenter: aws-eu-central-1a
+    enabled: true
+    secretAccessKey: YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
+    vpcId: vpc-TTTTTTTT
+  azure:
+    clientId: ATOTALLY-FAKE-UUID-HERE-XXXXXXXXXXXX
+    clientSecret: oooooooooooooooooooooooooooooooo
+    enabled: true
+    loadBalancerSKU: ""
+    subscriptionId: ATOTALLY-FAKE-UUID-HERE-XXXXXXXXXXXX
+    tenantId: ATOTALLY-FAKE-UUID-HERE-XXXXXXXXXXXX
+  digitalocean:
+    enabled: true
+    token: LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
+  enabled: true
+  gcp:
+    serviceAccount: lotsofbase64==
+  hetzner:
+    enabled: true
+    token: TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
+  kubevirt:
+    kubeconfig: '{"apiVersion":"v1"}'
+  openstack:
+    datacenter: DATACENTER-ABC123
+    domain: DEFAULT
+    enabled: true
+    floatingIpPool: ext-net
+    password: PAAAAAAAAASSWORD
+    tenant: the-tenant-next-door
+    username: UUUUUUUUUSERNAME
+  packet:
+    apiKey: KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
+    projectId: ATOTALLY-FAKE-UUID-HERE-XXXXXXXXXXXX
+  vsphere:
+    datastoreCluster: ABC-123
+    enabled: true
+    password: XXXXXXXXXXXXXXXXXXXX
+    username: root@vsphere.local
+
+---
+apiVersion: kubermatic.k8s.io/v1
+kind: AddonConfig
+metadata:
+  name: kube-state-metrics
+spec:
+  description: kube-state-metrics is an agent to generate and expose cluster-level metrics of Kubernetes API objects in Prometheus format.
+  logo: |
+    PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB4bWxucz0iaHR0cDov
+    L3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5
+    L3hsaW5rIiB3aWR0aD0iNDFwdCIgaGVpZ2h0PSI0MHB0IiB2aWV3Qm94PSIwIDAgNDEgNDAiIHZl
+    cnNpb249IjEuMSI+CjxnIGlkPSJzdXJmYWNlMSI+CjxwYXRoIHN0eWxlPSIgc3Ryb2tlOm5vbmU7
+    ZmlsbC1ydWxlOm5vbnplcm87ZmlsbDpyZ2IoMTkuNjA3ODQzJSw0Mi4zNTI5NDElLDg5LjgwMzky
+    MiUpO2ZpbGwtb3BhY2l0eToxOyIgZD0iTSAyMC4zNTkzNzUgMC41NzQyMTkgQyAyMC4wMDM5MDYg
+    MC41ODk4NDQgMTkuNjYwMTU2IDAuNjc5Njg4IDE5LjM0Mzc1IDAuODMyMDMxIEwgNS40ODQzNzUg
+    Ny40ODQzNzUgQyA0Ljc1NzgxMiA3LjgzMjAzMSA0LjIzMDQ2OSA4LjQ5MjE4OCA0LjA1MDc4MSA5
+    LjI3MzQzOCBMIDAuNjMyODEyIDI0LjIxODc1IEMgMC40NzI2NTYgMjQuOTE0MDYyIDAuNjA1NDY5
+    IDI1LjY0NDUzMSAwLjk5MjE4OCAyNi4yNDIxODggQyAxLjAzOTA2MiAyNi4zMTY0MDYgMS4wODk4
+    NDQgMjYuMzg2NzE5IDEuMTQ0NTMxIDI2LjQ1MzEyNSBMIDEwLjczNDM3NSAzOC40MzM1OTQgQyAx
+    MS4yMzgyODEgMzkuMDYyNSAxMiAzOS40Mjk2ODggMTIuODA0Njg4IDM5LjQyOTY4OCBMIDI4LjE4
+    NzUgMzkuNDI1NzgxIEMgMjguOTkyMTg4IDM5LjQyNTc4MSAyOS43NTM5MDYgMzkuMDU4NTk0IDMw
+    LjI1NzgxMiAzOC40MzM1OTQgTCAzOS44NDM3NSAyNi40NDkyMTkgQyA0MC4zNDc2NTYgMjUuODIw
+    MzEyIDQwLjUzOTA2MiAyNSA0MC4zNTkzNzUgMjQuMjE0ODQ0IEwgMzYuOTMzNTk0IDkuMjczNDM4
+    IEMgMzYuNzUzOTA2IDguNDg4MjgxIDM2LjIyNjU2MiA3LjgyODEyNSAzNS41IDcuNDgwNDY5IEwg
+    MjEuNjQwNjI1IDAuODMyMDMxIEMgMjEuMjQyMTg4IDAuNjQwNjI1IDIwLjgwMDc4MSAwLjU1MDc4
+    MSAyMC4zNTkzNzUgMC41NzQyMTkgWiBNIDIwLjM1OTM3NSAwLjU3NDIxOSAiLz4KPHBhdGggc3R5
+    bGU9ImZpbGwtcnVsZTpub256ZXJvO2ZpbGw6cmdiKDEwMCUsMTAwJSwxMDAlKTtmaWxsLW9wYWNp
+    dHk6MTtzdHJva2Utd2lkdGg6MC4yNTtzdHJva2UtbGluZWNhcDpidXR0O3N0cm9rZS1saW5lam9p
+    bjptaXRlcjtzdHJva2U6cmdiKDEwMCUsMTAwJSwxMDAlKTtzdHJva2Utb3BhY2l0eToxO3N0cm9r
+    ZS1taXRlcmxpbWl0OjQ7IiBkPSJNIDM2Ny43NTcyMTEgMjc0LjA4ODE0MiBDIDM1OS42Mjg5NzEg
+    Mjc0LjA4ODE0MiAzNTMuMDg1MDUgMjgxLjM1NDkzOSAzNTMuMDg1MDUgMjkwLjMzNTYwMyBDIDM1
+    My4wODUwNSAyOTAuNDcyNzEzIDM1My4xNTM5MzMgMjkwLjYwOTgyMiAzNTMuMTUzOTMzIDI5MC43
+    NDY5MzEgQyAzNTMuMTUzOTMzIDI5MS45MTIzNjEgMzUzLjA4NTA1IDI5My40MjA1NjQgMzUzLjA4
+    NTA1IDI5NC40NDg4ODQgQyAzNTMuMjkxNyAyOTkuNjU5MDQxIDM1NC40NjI3MTggMzAzLjYzNTIx
+    MyAzNTUuMDgyNjY4IDMwOC4zNjU0ODYgQyAzNTYuMzIyNTY5IDMxOC41ODAxMzQgMzU3LjM1NTgy
+    IDMyNy4wMTIzNjEgMzU2LjczNTg2OSAzMzQuODk2MTUgQyAzNTYuMTE1OTE5IDMzNy44NDQwMDIg
+    MzUzLjkxMTY1MSAzNDAuNTg2MTg5IDM1MS45ODI5MTYgMzQyLjQzNzE2NiBMIDM1MS42Mzg0OTkg
+    MzQ4LjY3NTY0MiBDIDM0Mi44OTAzMDkgMzQ5LjM2MTE4OSAzMzQuMDA0MzUzIDM1MC43MzIyODMg
+    MzI1LjE4NzI3OSAzNTIuNzIwMzY5IEMgMjg3LjIzMjUzNSAzNjEuMzU4MjU5IDI1NC41MTI5Mjcg
+    MzgwLjg5NjM0NSAyMjkuNjQ2MDI2IDQwNy4yODk5IEMgMjI3Ljk5MjgyNCA0MDYuMTkzMDI1IDIy
+    NS4xNjg2MDYgNDA0LjIwNDkzOSAyMjQuMzQyMDA1IDQwMy41ODc5NDcgQyAyMjEuNzI0NDM2IDQw
+    My45MzA3MiAyMTkuMTA2ODY4IDQwNC42ODQ4MjIgMjE1LjY2MjY5OSA0MDIuNjk2NzM2IEMgMjA5
+    LjExODc3NyAzOTguMzA5MjM2IDIwMy4xOTQ4MDYgMzkyLjIwNzg2OSAxOTUuOTYyMDUxIDM4NC44
+    NzI1MTcgQyAxOTIuNjU1NjQ4IDM4MS4zNzYyMjggMTkwLjI0NDczIDM3OC4wODU2MDMgMTg2LjMx
+    ODM3NyAzNzQuNjU3ODY5IEMgMTg1LjQyMjg5MyAzNzMuOTAzNzY3IDE4NC4wNDUyMjUgMzcyLjg3
+    NTQ0NyAxODMuMDgwODU4IDM3Mi4xMjEzNDUgQyAxNzkuOTgxMTA2IDM2OS42NTMzNzcgMTc2LjM5
+    OTE3IDM2OC4zNTA4MzggMTcyLjg4NjExNyAzNjguMjEzNzI4IEMgMTY4LjQwODY5NyAzNjguMDc2
+    NjE5IDE2NC4wNjkwNDQgMzY5Ljg1OTA0MSAxNjEuMjQ0ODI1IDM3My40MjM4ODQgQyAxNTYuMjE2
+    MzM4IDM3OS43MzA5MTYgMTU3LjgwMDY1NiAzODkuMzk3MTI3IDE2NC44MjY3NjEgMzk0Ljk1MDA1
+    NiBDIDE2NC44OTU2NDUgMzk1LjAxODYxMSAxNjQuOTY0NTI4IDM5NS4wODcxNjYgMTY1LjAzMzQx
+    MSAzOTUuMTU1NzIgQyAxNjUuOTk3Nzc5IDM5NS45MDk4MjIgMTY3LjE2ODc5NiAzOTYuOTM4MTQy
+    IDE2OC4wNjQyOCAzOTcuNTU1MTM0IEMgMTcyLjI2NjE2NyA0MDAuNjQwMDk1IDE3Ni4wNTQ3NTMg
+    NDAyLjIxNjg1MyAxODAuMTg3NzU2IDQwNC42ODQ4MjIgQyAxODguOTM1OTQ2IDQxMC4wMzIwODgg
+    MTk2LjE2ODcwMSA0MTQuNTU2Njk3IDIwMS45NTQ5MDUgNDE5LjkwMzk2MyBDIDIwNC4yMjgwNTcg
+    NDIyLjMwMzM3NyAyMDQuNTcyNDc0IDQyNi41NTM3NjcgMjA0LjkxNjg5MSA0MjguNDA0NzQ0IEwg
+    MjA5LjYwMDk2MSA0MzIuNTg2NTggQyAxODQuNDU4NTI2IDQ3MC4yOTE2NTggMTcyLjg4NjExNyA1
+    MTYuOTc3NCAxNzkuNzA1NTcyIDU2NC40ODU3OTggTCAxNzMuNTc0OTUxIDU2Ni4yNjgyMiBDIDE3
+    MS45OTA2MzMgNTY4LjM5MzQxNiAxNjkuNzE3NDgxIDU3MS42MTU0ODYgMTY3LjMwNjU2MyA1NzIu
+    NjQzODA2IEMgMTU5Ljc5ODI3NCA1NzQuOTc0NjY2IDE1MS4zMjU2MTggNTc1Ljg2NTg3NyAxNDEu
+    MTMwODc3IDU3Ni45NjI3NTIgQyAxMzYuMzA5MDQgNTc3LjMwNTUyNSAxMzIuMTc2MDM3IDU3Ny4w
+    OTk4NjEgMTI3LjA3ODY2NyA1NzguMDU5NjI3IEMgMTI1Ljk3NjUzMiA1NzguMjY1MjkxIDEyNC4z
+    OTIyMTUgNTc4LjY3NjYxOSAxMjMuMTUyMzE0IDU3OC45NTA4MzggQyAxMjMuMTUyMzE0IDU3OC45
+    NTA4MzggMTIzLjA4MzQzIDU3OS4wMTkzOTIgMTIzLjAxNDU0NyA1NzkuMDE5MzkyIEMgMTIyLjk0
+    NTY2NCA1NzkuMDE5MzkyIDEyMi44NzY3OCA1NzkuMDE5MzkyIDEyMi44MDc4OTcgNTc5LjA4Nzk0
+    NyBDIDExNC4xOTc0NzQgNTgxLjE0NDU4OCAxMDguNjg2ODAzIDU4OS4wOTY5MzEgMTEwLjQ3Nzc3
+    MSA1OTYuODQzNjExIEMgMTEyLjI2ODczOSA2MDQuNjU4ODQ1IDEyMC42NzI1MTIgNjA5LjQ1NzY3
+    MyAxMjkuMzUxODE4IDYwNy41MzgxNDIgQyAxMjkuNDIwNzAyIDYwNy41MzgxNDIgMTI5LjQ4OTU4
+    NSA2MDcuNTM4MTQyIDEyOS41NTg0NjggNjA3LjUzODE0MiBDIDEyOS42MjczNTIgNjA3LjUzODE0
+    MiAxMjkuNjk2MjM1IDYwNy40Njk1ODcgMTI5LjgzNDAwMiA2MDcuNDAxMDMzIEMgMTMxLjAwNTAy
+    IDYwNy4xOTUzNjkgMTMyLjUyMDQ1NCA2MDYuODUyNTk1IDEzMy42MjI1ODggNjA2LjU3ODM3NyBD
+    IDEzOC41ODIxOTIgNjA1LjI3NTgzOCAxNDIuMjMzMDExIDYwMy4yODc3NTIgMTQ2LjcxMDQzMSA2
+    MDEuNTczODg0IEMgMTU2LjQyMjk4OCA1OTguMDc3NTk1IDE2NC40MTM0NjEgNTk1LjE5ODI5OCAx
+    NzIuMjY2MTY3IDU5NC4wMzI4NjkgQyAxNzUuNTAzNjg2IDU5My44MjcyMDUgMTc4Ljk0Nzg1NSA1
+    OTYuMDg5NTA5IDE4MC42Njk5MzkgNTk3LjA0OTI3NSBMIDE4Ny4wMDcyMTEgNTk1Ljk1MjQgQyAy
+    MDEuNjc5MzcyIDY0MS40MDQxNTggMjMyLjQwMTM2MSA2NzguMTQ5NDcgMjcxLjM4OTM1NiA3MDEu
+    MjUyNCBMIDI2OC43MDI5MDQgNzA3LjYyNzk4NiBDIDI2OS42NjcyNzIgNzEwLjA5NTk1NSAyNzAu
+    NzAwNTIzIDcxMy40NTUxMzQgMjcwLjAxMTY4OSA3MTUuOTIzMTAzIEMgMjY3LjE4NzQ3IDcyMy4y
+    NTg0NTUgMjYyLjI5Njc1IDczMS4wMDUxMzQgMjU2Ljc4NjA3OSA3MzkuNzExNTggQyAyNTQuMDk5
+    NjI3IDc0My42ODc3NTIgMjUxLjM0NDI5MiA3NDYuNzcyNzEzIDI0OC45MzMzNzMgNzUxLjM2NTg3
+    NyBDIDI0OC4zMTM0MjMgNzUyLjQ2Mjc1MiAyNDcuNjI0NTg5IDc1NC4xNzY2MTkgMjQ3LjA3MzUy
+    MiA3NTUuMzQyMDQ4IEMgMjQzLjI4NDkzNiA3NjMuMzYyOTQ3IDI0Ni4wNDAyNzEgNzcyLjYxNzgz
+    IDI1My4yNzMwMjYgNzc2LjExNDExOSBDIDI2MC41MDU3ODIgNzc5LjYxMDQwOCAyNjkuNTI5NTA1
+    IDc3NS45MDg0NTUgMjczLjQ1NTg1OCA3NjcuODE5MDAyIEMgMjczLjQ1NTg1OCA3NjcuODE5MDAy
+    IDI3My40NTU4NTggNzY3LjgxOTAwMiAyNzMuNDU1ODU4IDc2Ny43NTA0NDcgQyAyNzQuMDA2OTI1
+    IDc2Ni42NTM1NzIgMjc0LjgzMzUyNiA3NjUuMTQ1MzY5IDI3NS4zMTU3MDkgNzY0LjA0ODQ5NCBD
+    IDI3Ny4zODIyMTEgNzU5LjMxODIyIDI3OC4wNzEwNDUgNzU1LjI3MzQ5NCAyNzkuNTE3NTk2IDc1
+    MC42ODAzMyBDIDI4My4zNzUwNjUgNzQwLjk0NTU2NCAyODUuNTEwNDUgNzMwLjczMDkxNiAyOTAu
+    ODE0NDcxIDcyNC4zNTUzMyBDIDI5Mi4zMjk5MDUgNzIyLjY0MTQ2MiAyOTQuNjcxOTQgNzIxLjk1
+    NTkxNiAyOTcuMTUxNzQyIDcyMS4zMzg5MjMgTCAzMDAuNDU4MTQ1IDcxNS4zMDYxMTEgQyAzMzQu
+    NDE3NjUzIDcyOC4zMzE1MDIgMzcyLjM3MjM5OCA3MzEuODI3NzkxIDQxMC4zMjcxNDIgNzIzLjE4
+    OTkgQyA0MTkuMDA2NDQ5IDcyMS4yNzAzNjkgNDI3LjM0MTMzOCA3MTguNzMzODQ1IDQzNS40MDA2
+    OTQgNzE1LjY0ODg4NCBDIDQzNi4zNjUwNjEgNzE3LjI5NDE5NyA0MzguMDg3MTQ2IDcyMC40NDc3
+    MTMgNDM4LjU2OTMzIDcyMS4yNzAzNjkgQyA0NDEuMDQ5MTMyIDcyMi4wOTMwMjUgNDQzLjgwNDQ2
+    NyA3MjIuNTA0MzUzIDQ0Ni4wMDg3MzUgNzI1Ljc5NDk3OCBDIDQ1MC4wMDM5NzEgNzMyLjY1MDQ0
+    NyA0NTIuNzU5MzA3IDc0MC42NzEzNDUgNDU2LjA2NTcwOSA3NTAuNDA2MTExIEMgNDU3LjUxMjI2
+    IDc1NC45OTkyNzUgNDU4LjIwMTA5NCA3NTkuMDQ0MDAyIDQ2MC4yNjc1OTYgNzYzLjg0MjgzIEMg
+    NDYwLjc0OTc3OSA3NjQuODcxMTUgNDYxLjU3NjM4IDc2Ni40NDc5MDggNDYyLjEyNzQ0NyA3Njcu
+    NTQ0NzgzIEMgNDY1Ljk4NDkxNyA3NzUuNjM0MjM2IDQ3NS4wNzc1MjMgNzc5LjMzNjE4OSA0ODIu
+    MzEwMjc5IDc3NS44Mzk5IEMgNDg5LjU0MzAzNCA3NzIuMzQzNjExIDQ5Mi4yOTgzNjkgNzYzLjA4
+    ODcyOCA0ODguNTc4NjY3IDc1NS4wNjc4MyBDIDQ4Ny45NTg3MTYgNzUzLjkwMjQgNDg3LjIwMDk5
+    OSA3NTIuMTg4NTMzIDQ4Ni42NDk5MzIgNzUxLjA5MTY1OCBDIDQ4NC4yMzkwMTMgNzQ2LjU2NzA0
+    OCA0ODEuNDgzNjc4IDc0My40ODIwODggNDc4Ljc5NzIyNiA3MzkuNDM3MzYxIEMgNDczLjI4NjU1
+    NSA3MzAuNzk5NDcgNDY4LjY3MTM2OSA3MjMuNjAxMjI4IDQ2NS44NDcxNSA3MTYuMjY1ODc3IEMg
+    NDY0LjYwNzI0OSA3MTIuNDI2ODE0IDQ2Ni4wNTM4IDcxMC4wOTU5NTUgNDY2Ljk0OTI4NCA3MDcu
+    NjI3OTg2IEMgNDY2LjM5ODIxNyA3MDcuMDEwOTk0IDQ2NS4yMjcxOTkgNzAzLjM3NzU5NSA0NjQu
+    NTM4MzY2IDcwMS43MzIyODMgQyA1MDQuOTcyOTEyIDY3Ny44MDY2OTcgNTM0Ljc5OTQxNyA2Mzku
+    NjkwMjkxIDU0OC44NTE2MjggNTk1LjY3ODE4MSBDIDU1MC43MTE0NzkgNTk1Ljk1MjQgNTU0LjAx
+    Nzg4MiA1OTYuNTAwODM3IDU1NS4wNTExMzIgNTk2Ljc3NTA1NiBDIDU1Ny4yNTU0MDEgNTk1LjI2
+    Njg1MyA1NTkuMzIxOTAyIDU5My40MTU4NzcgNTYzLjI0ODI1NSA1OTMuNjkwMDk1IEMgNTcxLjEw
+    MDk2MSA1OTQuODU1NTI1IDU3OS4wOTE0MzMgNTk3LjczNDgyMiA1ODguNzM1MTA3IDYwMS4yMzEx
+    MTEgQyA1OTMuMjgxNDExIDYwMi45NDQ5NzggNTk2Ljg2MzM0NiA2MDQuOTMzMDY0IDYwMS44OTE4
+    MzQgNjA2LjMwNDE1OCBDIDYwMi45MjUwODQgNjA2LjU3ODM3NyA2MDQuNDQwNTE5IDYwNi44NTI1
+    OTUgNjA1LjY4MDQyIDYwNy4wNTgyNTkgQyA2MDUuNzQ5MzAzIDYwNy4xMjY4MTQgNjA1Ljg4NzA3
+    IDYwNy4xOTUzNjkgNjA1Ljk1NTk1MyA2MDcuMTk1MzY5IEMgNjA2LjAyNDgzNyA2MDcuMTk1MzY5
+    IDYwNi4wOTM3MiA2MDcuMTk1MzY5IDYwNi4xNjI2MDMgNjA3LjE5NTM2OSBDIDYxNC44NDE5MSA2
+    MDkuMTE0OSA2MjMuMjQ1NjgzIDYwNC4zMTYwNzIgNjI1LjAzNjY1MSA1OTYuNTAwODM3IEMgNjI2
+    LjgyNzYxOSA1ODguNzU0MTU4IDYyMS4zMTY5NDggNTgwLjgwMTgxNCA2MTIuNjM3NjQxIDU3OC43
+    NDUxNzMgQyA2MTEuMzk3NzQxIDU3OC40MDI0IDYwOS42MDY3NzMgNTc3LjkyMjUxNyA2MDguNDM1
+    NzU1IDU3Ny43MTY4NTMgQyA2MDMuMzM4Mzg1IDU3Ni43NTcwODggNTk5LjIwNTM4MiA1NzYuOTYy
+    NzUyIDU5NC4zODM1NDUgNTc2LjYxOTk3OCBDIDU4NC4xODg4MDQgNTc1LjUyMzEwMyA1NzUuNzE2
+    MTQ4IDU3NC42MzE4OTIgNTY4LjEzODk3NSA1NzIuMzAxMDMzIEMgNTY1LjEwODEwNiA1NzEuMDY3
+    MDQ4IDU2Mi45MDM4MzggNTY3LjQzMzY1IDU2MS44NzA1ODcgNTY1LjkyNTQ0NyBMIDU1NS45NDY2
+    MTYgNTY0LjIxMTU4IEMgNTU5LjA0NjM2OSA1NDIuMDY4NDE2IDU1OC4yMTk3NjggNTE5LjAzNDA0
+    MSA1NTIuOTE1NzQ3IDQ5NS45MzExMTEgQyA1NDcuNTQyODQzIDQ3Mi42MjI1MTcgNTM4LjEwNTgy
+    IDQ1MS4zNzA1NjQgNTI1LjUwMDE2MSA0MzIuNTg2NTggQyA1MjcuMDE1NTk1IDQzMS4yMTU0ODYg
+    NTI5LjgzOTgxNCA0MjguNjc4OTYzIDUzMC42NjY0MTQgNDI3LjkyNDg2MSBDIDUzMC45NDE5NDgg
+    NDI1LjMxOTc4MyA1MzAuNzM1Mjk4IDQyMi41Nzc1OTUgNTMzLjQyMTc1IDQxOS42Mjk3NDQgQyA1
+    MzkuMTM5MDcxIDQxNC4yODI0NzggNTQ2LjQ0MDcwOSA0MDkuNzU3ODY5IDU1NS4xODg4OTkgNDA0
+    LjM0MjA0OCBDIDU1OS4zMjE5MDIgNDAxLjk0MjYzNCA1NjMuMTc5MzcyIDQwMC4zNjU4NzcgNTY3
+    LjMxMjM3NSAzOTcuMjgwOTE2IEMgNTY4LjI3Njc0MiAzOTYuNTk1MzY5IDU2OS41ODU1MjYgMzk1
+    LjQ5ODQ5NCA1NzAuNTQ5ODk0IDM5NC42NzU4MzggQyA1NzcuNTc1OTk5IDM4OS4wNTQzNTMgNTc5
+    LjE2MDMxNyAzNzkuNDU2Njk3IDU3NC4xMzE4MyAzNzMuMTQ5NjY2IEMgNTY5LjEwMzM0MyAzNjYu
+    Nzc0MDggNTU5LjMyMTkwMiAzNjYuMjI1NjQyIDU1Mi4yOTU3OTcgMzcxLjc3ODU3MiBDIDU1MS4z
+    MzE0MyAzNzIuNjAxMjI4IDU0OS45NTM3NjIgMzczLjYyOTU0OCA1NDkuMDU4Mjc4IDM3NC4zODM2
+    NSBDIDU0NS4xMzE5MjUgMzc3LjgxMTM4NCA1NDIuNzIxMDA3IDM4MS4xMDIwMDkgNTM5LjQxNDYw
+    NCAzODQuNTk4Mjk4IEMgNTMyLjE4MTg0OSAzOTEuOTMzNjUgNTI2LjI1Nzg3OCAzOTguMDM1MDE3
+    IDUxOS43MTM5NTYgNDAyLjQ5MTA3MiBDIDUxNi44ODk3MzcgNDA0LjEzNjM4NCA1MTIuNjg3ODUx
+    IDQwMy41MTkzOTIgNTEwLjgyOCA0MDMuNDUwODM4IEwgNTA1LjI0ODQ0NiA0MDcuNDI3MDA5IEMg
+    NDczLjU2MjA4OSAzNzQuMTA5NDMxIDQzMC4zNzIyMDcgMzUyLjg1NzQ3OCAzODMuODc1OTIzIDM0
+    OC43NDQxOTcgQyAzODMuNzM4MTU2IDM0Ni44MjQ2NjYgMzgzLjUzMTUwNiAzNDMuMjU5ODIyIDM4
+    My41MzE1MDYgMzQyLjIzMTUwMiBDIDM4MS42MDI3NzEgMzQwLjM4MDUyNSAzNzkuMzI5NjE5IDMz
+    OC44NzIzMjIgMzc4LjcwOTY2OSAzMzQuODk2MTUgQyAzNzguMDg5NzE4IDMyNy4wMTIzNjEgMzc5
+    LjE5MTg1MyAzMTguNTgwMTM0IDM4MC4zNjI4NyAzMDguMzY1NDg2IEMgMzgxLjA1MTcwNCAzMDMu
+    NjM1MjEzIDM4Mi4yMjI3MjEgMjk5LjY1OTA0MSAzODIuMzYwNDg4IDI5NC40NDg4ODQgQyAzODIu
+    NDI5MzcyIDI5My4yODM0NTUgMzgyLjM2MDQ4OCAyOTEuNTY5NTg4IDM4Mi4zNjA0ODggMjkwLjMz
+    NTYwMyBDIDM4Mi4zNjA0ODggMjgxLjM1NDkzOSAzNzUuODE2NTY3IDI3NC4wODgxNDIgMzY3Ljc1
+    NzIxMSAyNzQuMDg4MTQyIFogTSAzNDkuNDM0MjMxIDM4Ny40Nzc1OTUgTCAzNDUuMDk0NTc3IDQ2
+    NC4xOTAyOTEgTCAzNDQuNzUwMTYxIDQ2NC4zOTU5NTUgQyAzNDQuNDc0NjI3IDQ3MS4yNTE0MjMg
+    MzM4LjgyNjE4OSA0NzYuNzM1Nzk4IDMzMS44Njg5NjggNDc2LjczNTc5OCBDIDMyOS4wNDQ3NDkg
+    NDc2LjczNTc5OCAzMjYuNDI3MTggNDc1Ljc3NjAzMyAzMjQuMjkxNzk1IDQ3NC4yNjc4MyBMIDMy
+    NC4xNTQwMjkgNDc0LjMzNjM4NCBMIDI2MS4yNjM0OTkgNDI5LjcwNzI4MyBDIDI4MC42MTk3MyA0
+    MTAuNzE3NjM0IDMwNS4zNDg4NjUgMzk2LjY2MzkyMyAzMzMuNzk3NzAyIDM5MC4xNTEyMjggQyAz
+    MzkuMDMyODQgMzg4Ljk4NTc5OCAzNDQuMjY3OTc3IDM4OC4wOTQ1ODggMzQ5LjQzNDIzMSAzODcu
+    NDc3NTk1IFogTSAzODYuMDgwMTkxIDM4Ny40Nzc1OTUgQyA0MTkuMzUwODY2IDM5MS41OTA4Nzcg
+    NDUwLjE0MTczOCA0MDYuNjcyOTA4IDQ3My42OTk4NTYgNDI5Ljc3NTgzOCBMIDQxMS4yMjI2MjYg
+    NDc0LjA2MjE2NiBMIDQxMS4wMTU5NzYgNDczLjk5MzYxMSBDIDQwNS40MzY0MjIgNDc4LjAzODMz
+    OCAzOTcuNjUyNiA0NzcuMDEwMDE3IDM5My4zMTI5NDYgNDcxLjU5NDE5NyBDIDM5MS41MjE5Nzgg
+    NDY5LjQwMDQ0NyAzOTAuNjI2NDk0IDQ2Ni43MjY4MTQgMzkwLjQ4ODcyOCA0NjQuMTIxNzM2IEwg
+    MzkwLjQxOTg0NCA0NjQuMTIxNzM2IFogTSAyMzguNDYzMDk5IDQ1OC4zNjMxNDIgTCAyOTUuOTEx
+    ODQxIDUwOS43NzkxNTggTCAyOTUuODQyOTU4IDUxMC4wNTMzNzcgQyAzMDEuMDA5MjEyIDUxNC41
+    Nzc5ODYgMzAxLjc2NjkyOSA1MjIuMzkzMjIgMjk3LjQyNzI3NiA1MjcuODA5MDQxIEMgMjk1Ljcw
+    NTE5MSA1MzAuMDAyNzkxIDI5My4yOTQyNzMgNTMxLjUxMDk5NCAyOTAuNzQ1NTg3IDUzMi4xOTY1
+    NDEgTCAyOTAuNjc2NzA0IDUzMi40NzA3NTkgTCAyMTcuMTA5MjUgNTUzLjcyMjcxMyBDIDIxMy4z
+    MjA2NjQgNTE5LjQ0NTM2OSAyMjEuMzgwMDIgNDg2LjEyNzc5MSAyMzguNDYzMDk5IDQ1OC4zNjMx
+    NDIgWiBNIDQ5Ni42MzgwMjMgNDU4LjQzMTY5NyBDIDUwNS4xMTA2NzkgNDcyLjIxMTE4OSA1MTEu
+    NTg1NzE3IDQ4Ny43MDQ1NDggNTE1LjQ0MzE4NiA1MDQuNDMxODkyIEMgNTE5LjIzMTc3MyA1MjAu
+    OTUzNTcyIDUyMC4xOTYxNCA1MzcuNDc1MjUyIDUxOC42MTE4MjIgNTUzLjQ0ODQ5NCBMIDQ0NC42
+    MzEwNjggNTMyLjEyNzk4NiBMIDQ0NC41NjIxODQgNTMxLjg1Mzc2NyBDIDQzNy45NDkzNzkgNTMw
+    LjAwMjc5MSA0MzMuODg1MjYgNTIzLjI4NDQzMSA0MzUuNDAwNjk0IDUxNi40OTc1MTcgQyA0MzYu
+    MDIwNjQ1IDUxMy43NTUzMyA0MzcuNTM2MDc5IDUxMS40MjQ0NyA0MzkuNTMzNjk3IDUwOS43MTA2
+    MDMgTCA0MzkuNDY0ODE0IDUwOS41MDQ5MzkgWiBNIDM1NS45NzgxNTIgNTEzLjY4Njc3NSBMIDM3
+    OS40NjczODYgNTEzLjY4Njc3NSBMIDM5NC4xMzk1NDcgNTMxLjk5MDg3NyBMIDM4OC44MzU1MjYg
+    NTU0LjgxOTU4OCBMIDM2Ny43NTcyMTEgNTY0Ljk2NTY4MSBMIDM0Ni41NDExMjggNTU0Ljc1MTAz
+    MyBMIDM0MS4zMDU5OTEgNTMxLjk5MDg3NyBaIE0gNDMxLjQwNTQ1OCA1NzYuMjc3MjA1IEMgNDMy
+    LjM2OTgyNSA1NzYuMjA4NjUgNDMzLjQwMzA3NiA1NzYuMzQ1NzU5IDQzNC4zNjc0NDMgNTc2LjQ4
+    Mjg2OSBMIDQzNC41MDUyMSA1NzYuMzQ1NzU5IEwgNTEwLjYyMTM1IDU4OS4yMzQwNDEgQyA0OTku
+    NDYyMjQxIDYyMC40OTQ5NzggNDc4LjE3NzI3NiA2NDcuNjQyNjM0IDQ0OS42NTk1NTUgNjY1Ljgw
+    OTYyNyBMIDQyMC4xMDg1ODMgNTk0LjM3NTY0MiBMIDQyMC4xNzc0NjYgNTk0LjMwNzA4OCBDIDQx
+    Ny40OTEwMTQgNTg4LjAwMDA1NiA0MjAuMTc3NDY2IDU4MC41OTYxNSA0MjYuNDQ1ODU0IDU3Ny41
+    Nzk3NDQgQyA0MjguMDMwMTcyIDU3Ni43NTcwODggNDI5Ljc1MjI1NyA1NzYuMzQ1NzU5IDQzMS40
+    MDU0NTggNTc2LjI3NzIwNSBaIE0gMzAzLjQ4OTAxMyA1NzYuNjE5OTc4IEMgMzA5LjI3NTIxOCA1
+    NzYuNjg4NTMzIDMxNC41MTAzNTUgNTgwLjczMzI1OSAzMTUuODg4MDIzIDU4Ni42Mjg5NjMgQyAz
+    MTYuNTA3OTczIDU4OS4zNzExNSAzMTYuMTYzNTU2IDU5Mi4xMTMzMzggMzE1LjEzMDMwNSA1OTQu
+    NTgxMzA2IEwgMzE1LjMzNjk1NSA1OTQuODU1NTI1IEwgMjg2LjEzMDQwMSA2NjUuNTM1NDA4IEMg
+    MjU4Ljc4MzY5NyA2NDcuOTg1NDA4IDIzNi45NDc2NjQgNjIxLjcyODk2MyAyMjUuMzA2MzcyIDU4
+    OS40Mzk3MDUgTCAzMDAuODAyNTYxIDU3Ni42MTk5NzggTCAzMDAuOTQwMzI4IDU3Ni44MjU2NDIg
+    QyAzMDEuNzY2OTI5IDU3Ni42MTk5NzggMzAyLjY2MjQxMyA1NzYuNTUxNDIzIDMwMy40ODkwMTMg
+    NTc2LjYxOTk3OCBaIE0gMzY3LjI3NTAyNyA2MDcuNTM4MTQyIEMgMzY5LjI3MjY0NSA2MDcuNDY5
+    NTg3IDM3MS4zMzkxNDcgNjA3Ljg4MDkxNiAzNzMuMjY3ODgyIDYwOC44NDA2ODEgQyAzNzUuODg1
+    NDUgNjEwLjA3NDY2NiAzNzcuODE0MTg1IDYxMS45OTQxOTcgMzc5LjA1NDA4NiA2MTQuMzI1MDU2
+    IEwgMzc5LjMyOTYxOSA2MTQuMzI1MDU2IEwgNDE2LjU5NTUzIDY4MS41NzcyMDUgQyA0MTEuNzcz
+    NjkzIDY4My4yMjI1MTcgNDA2LjgxNDA5IDY4NC41OTM2MTEgNDAxLjcxNjcxOSA2ODUuNzU5MDQx
+    IEMgMzczLjI2Nzg4MiA2OTIuMjAzMTgxIDM0NC44ODc5MjcgNjkwLjI4MzY1IDMxOS4xOTQ0MjUg
+    NjgxLjUwODY1IEwgMzU2LjMyMjU2OSA2MTQuMzkzNjExIEwgMzU2LjM5MTQ1MiA2MTQuMzkzNjEx
+    IEMgMzU4LjU5NTcyMSA2MTAuMjExNzc1IDM2Mi43OTc2MDcgNjA3Ljc0MzgwNiAzNjcuMjc1MDI3
+    IDYwNy41MzgxNDIgWiBNIDM2Ny4yNzUwMjcgNjA3LjUzODE0MiAiIHRyYW5zZm9ybT0ibWF0cml4
+    KDAuMDU2NzA4MiwwLDAsMC4wNTY5ODAxLC0wLjM1ODc0MSwtOS45NTc0MDIpIi8+CjwvZz4KPC9z
+    dmc+Cg==
+  logoFormat: svg+xml
+  shortDescription: kube-state-metrics exposes cluster-level metrics.
+
+---
+apiVersion: kubermatic.k8s.io/v1
+kind: KubermaticSetting
+metadata:
+  name: globalsettings
+spec:
+  cleanupOptions:
+    Enabled: true
+    Enforced: false
+  clusterTypeOptions: 0
+  customLinks:
+    - icon: ""
+      label: GitHub
+      location: footer
+      url: https://github.com/kubermatic
+  defaultNodeCount: 1
+  displayAPIDocs: true
+  displayDemoInfo: false
+  displayTermsOfService: true
+  enableDashboard: true
+  enableExternalClusterImport: true
+  enableOIDCKubeconfig: false
+  machineDeploymentVMResourceQuota:
+    enableGPU: false
+    maxCPU: 0
+    maxRAM: 0
+    minCPU: 2
+    minRAM: 2
+  mlaAlertmanagerPrefix: alertmanager
+  mlaGrafanaPrefix: grafana
+  mlaOptions:
+    loggingEnabled: true
+    loggingEnforced: false
+    monitoringEnabled: true
+    monitoringEnforced: false
+  opaOptions:
+    enabled: false
+    enforced: false
+  restrictProjectCreation: false
+  userProjectsLimit: 0
+
+---
+apiVersion: kubermatic.k8s.io/v1
+kind: ConstraintTemplate
+metadata:
+  finalizers:
+    - kubermatic.io/cleanup-gatekeeper-constraint-templates
+    - kubermatic.io/cleanup-gatekeeper-master-constraint-templates
+  generation: 1
+  name: allowedregistry
+spec:
+  crd:
+    spec:
+      names:
+        kind: allowedregistry
+      validation:
+        openAPIV3Schema:
+          properties:
+            allowed_registry:
+              items:
+                type: string
+              type: array
+  selector:
+    labelSelector: {}
+  targets:
+    - rego: |-
+        package allowedregistry
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          satisfied := [good | repo = input.parameters.allowed_registry[_] ; good = startswith(container.image, repo)]
+          not any(satisfied)
+          msg := sprintf("container <%v> has an invalid image registry <%v>, allowed image registries are %v", [container.name, container.image, input.parameters.allowed_registry])
+        }
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.initContainers[_]
+          satisfied := [good | repo = input.parameters.allowed_registry[_] ; good = startswith(container.image, repo)]
+          not any(satisfied)
+          msg := sprintf("container <%v> has an invalid image registry <%v>, allowed image registries are %v", [container.name, container.image, input.parameters.allowed_registry])
+        }
+      target: admission.k8s.gatekeeper.sh
+
+---
+apiVersion: kubermatic.k8s.io/v1
+kind: Constraint
+metadata:
+  finalizers:
+    - kubermatic.io/cleanup-gatekeeper-seed-constraint
+    - kubermatic.io/cleanup-kubermatic-usercluster-ns-default-constraints
+  name: allowedregistry
+  namespace: kubermatic
+spec:
+  constraintType: allowedregistry
+  match:
+    kinds:
+      - apiGroups:
+          - ""
+        kinds:
+          - Pod
+    labelSelector: {}
+    namespaceSelector: {}
+  parameters:
+    allowed_registry:
+      - quay.io
+  selector:
+    labelSelector: {}
+
+---
+apiVersion: kubermatic.k8s.io/v1
+kind: AllowedRegistry
+metadata:
+  finalizers:
+    - kubermatic.io/cleanup-allowed-registry
+  name: test
+spec:
+  registryPrefix: quay.io

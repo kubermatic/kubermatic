@@ -19,10 +19,17 @@ limitations under the License.
 package main
 
 import (
+	"context"
+
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
+	eeinstaller "k8c.io/kubermatic/v2/pkg/ee/cmd/kubermatic-installer"
+	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
+
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func commands(logger *logrus.Logger, versions kubermaticversion.Versions) []cli.Command {
@@ -30,6 +37,7 @@ func commands(logger *logrus.Logger, versions kubermaticversion.Versions) []cli.
 		VersionCommand(logger, versions),
 		DeployCommand(logger, versions),
 		ConvertKubeconfigCommand(logger),
+		MigrateCRDsCommand(logger),
 		PrintCommand(),
 	}
 }
@@ -39,4 +47,12 @@ func flags() []cli.Flag {
 		verboseFlag,
 		chartsDirectoryFlag,
 	}
+}
+
+func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client) (provider.SeedsGetter, error) {
+	return eeinstaller.SeedsGetterFactory(ctx, client, kubermaticmaster.KubermaticOperatorNamespace)
+}
+
+func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client) (provider.SeedKubeconfigGetter, error) {
+	return eeinstaller.SeedKubeconfigGetterFactory(ctx, client)
 }

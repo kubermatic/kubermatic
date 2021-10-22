@@ -46,13 +46,13 @@ type User struct {
 
 // UserSpec specifies a user
 type UserSpec struct {
-	ID                      string                                  `json:"id"`
-	Name                    string                                  `json:"name"`
-	Email                   string                                  `json:"email"`
-	IsAdmin                 bool                                    `json:"admin"`
-	Settings                *UserSettings                           `json:"settings,omitempty"`
-	TokenBlackListReference *providerconfig.GlobalSecretKeySelector `json:"tokenBlackListReference,omitempty"`
-	LastSeen                *metav1.Time                            `json:"lastSeen,omitempty"`
+	ID                     string                                  `json:"id"`
+	Name                   string                                  `json:"name"`
+	Email                  string                                  `json:"email"`
+	IsAdmin                bool                                    `json:"admin"`
+	Settings               *UserSettings                           `json:"settings,omitempty"`
+	InvalidTokensReference *providerconfig.GlobalSecretKeySelector `json:"invalidTokensReference,omitempty"`
+	LastSeen               *metav1.Time                            `json:"lastSeen,omitempty"`
 }
 
 // UserSettings represent an user settings

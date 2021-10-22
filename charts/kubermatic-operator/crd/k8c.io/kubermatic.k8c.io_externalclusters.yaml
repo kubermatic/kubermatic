@@ -89,7 +89,6 @@ spec:
                       region:
                         type: string
                     required:
-                    - credentialsReference
                     - name
                     - region
                     type: object

@@ -45,8 +45,6 @@ spec:
                 - enabled
                 - enforced
                 type: object
-              clusterTypeOptions:
-                type: integer
               customLinks:
                 items:
                   properties:
@@ -139,7 +137,6 @@ spec:
                 type: integer
             required:
             - cleanupOptions
-            - clusterTypeOptions
             - customLinks
             - defaultNodeCount
             - displayAPIDocs

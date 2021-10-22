@@ -22,7 +22,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // ConditionType is the type defining the cluster or datacenter condition that must be met to block a specific version
@@ -70,7 +69,7 @@ type KubermaticConfigurationSpec struct {
 	// Auth defines keys and URLs for Dex.
 	Auth KubermaticAuthConfiguration `json:"auth"`
 	// FeatureGates are used to optionally enable certain features.
-	FeatureGates sets.String `json:"featureGates,omitempty"`
+	FeatureGates map[string]bool `json:"featureGates,omitempty"`
 	// UI configures the dashboard.
 	UI KubermaticUIConfiguration `json:"ui,omitempty"`
 	// API configures the frontend REST API used by the dashboard.
@@ -88,7 +87,7 @@ type KubermaticConfigurationSpec struct {
 	// Ingress contains settings for making the API and UI accessible remotely.
 	Ingress KubermaticIngressConfiguration `json:"ingress,omitempty"`
 	// Versions configures the available and default Kubernetes versions and updates.
-	Versions KubermaticVersionsConfiguration `json:"versions,omitempty"`
+	Versions KubermaticVersioningConfiguration `json:"versions,omitempty"`
 	// VerticalPodAutoscaler configures the Kubernetes VPA integration.
 	VerticalPodAutoscaler KubermaticVPAConfiguration `json:"verticalPodAutoscaler,omitempty"`
 	// Proxy allows to configure Kubermatic to use proxies to talk to the
@@ -213,12 +212,6 @@ type KubermaticUserClusterConfiguration struct {
 	MachineController MachineControllerConfiguration `json:"machineController,omitempty"`
 }
 
-// KubermaticAddonsConfiguration controls the optional additions installed into each user cluster.
-type KubermaticAddonsConfiguration struct {
-	// Kubernetes controls the addons for Kubernetes-based clusters.
-	Kubernetes KubermaticAddonConfiguration `json:"kubernetes,omitempty"`
-}
-
 // KubermaticUserClusterMonitoringConfiguration can be used to fine-tune to in-cluster Prometheus.
 type KubermaticUserClusterMonitoringConfiguration struct {
 	// DisableDefaultRules disables the recording and alerting rules.
@@ -249,7 +242,7 @@ type MachineControllerConfiguration struct {
 }
 
 // KubermaticAddonConfiguration describes the addons for a given cluster runtime.
-type KubermaticAddonConfiguration struct {
+type KubermaticAddonsConfiguration struct {
 	// Default is the list of addons to be installed by default into each cluster.
 	// Mutually exclusive with "defaultManifests".
 	Default []string `json:"default,omitempty"`
@@ -309,12 +302,6 @@ type KubermaticMasterControllerConfiguration struct {
 type KubermaticProjectsMigratorConfiguration struct {
 	// DryRun makes the migrator only log the actions it would take.
 	DryRun bool `json:"dryRun,omitempty"`
-}
-
-// KubermaticVersionsConfiguration configures the available and default Kubernetes versions.
-type KubermaticVersionsConfiguration struct {
-	// Kubernetes configures the Kubernetes versions and updates.
-	Kubernetes KubermaticVersioningConfiguration `json:"kubernetes,omitempty"`
 }
 
 // KubermaticVersioningConfiguration configures the available and default Kubernetes versions.

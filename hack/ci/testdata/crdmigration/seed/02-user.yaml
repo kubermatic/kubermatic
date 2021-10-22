@@ -1,0 +1,12 @@
+apiVersion: kubermatic.k8s.io/v1
+kind: User
+metadata:
+  finalizers:
+    - kubermatic.io/cleanup-seed-users
+    - kubermatic.io/mla
+  name: test-user
+spec:
+  admin: true
+  email: roxy@kubermatic.com
+  id: b803ca8dd9d0673c35ff398975bb0f8281f827bde4aa5eb4ca288965_KUBE
+  name: Roxy Matic

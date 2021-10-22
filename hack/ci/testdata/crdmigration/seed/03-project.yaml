@@ -1,0 +1,19 @@
+apiVersion: kubermatic.k8s.io/v1
+kind: Project
+metadata:
+  annotations:
+    mla.k8c.io/organization: "434"
+  finalizers:
+    - kubermatic.io/cleanup-seed-projects
+    - kubermatic.io/controller-manager-rbac-cleanup
+    - kubermatic.io/mla
+  name: kkpproject
+  ownerReferences:
+    - apiVersion: kubermatic.k8s.io/v1
+      kind: User
+      name: test-user
+      uid: __USER_UID__
+spec:
+  name: test-project
+status:
+  phase: Active
