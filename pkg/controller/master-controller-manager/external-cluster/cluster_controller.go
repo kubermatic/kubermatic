@@ -18,13 +18,17 @@ package externalcluster
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 
 	"go.uber.org/zap"
+	"k8s.io/client-go/tools/clientcmd"
 
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
@@ -86,19 +90,44 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	if icl.DeletionTimestamp != nil {
-		if kuberneteshelper.HasOnlyFinalizer(icl, kubermaticapiv1.ExternalClusterKubeconfigCleanupFinalizer) {
+		if kuberneteshelper.HasFinalizer(icl, kubermaticapiv1.ExternalClusterKubeconfigCleanupFinalizer) {
 			if err := r.cleanUpKubeconfigSecret(ctx, icl); err != nil {
 				log.Errorf("Could not delete kubeconfig secret, %v", err)
 				return reconcile.Result{}, err
 			}
 		}
+		if kuberneteshelper.HasFinalizer(icl, kubermaticapiv1.CredentialsSecretsCleanupFinalizer) {
+			if err := r.cleanUpCredentialsSecret(ctx, icl); err != nil {
+				log.Errorf("Could not delete credentials secret, %v", err)
+				return reconcile.Result{}, err
+			}
+		}
 	}
 
-	return reconcile.Result{}, nil
+	err := r.reconcile(ctx, icl)
+	if err != nil {
+		log.Errorw("ReconcilingError", zap.Error(err))
+	}
+
+	return reconcile.Result{}, err
+}
+
+func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
+	cloud := cluster.Spec.CloudSpec
+	if cloud == nil {
+		return nil
+	}
+	if cloud.GKE != nil {
+		r.log.Debugf("reconcile GKE cluster")
+		if cluster.Spec.KubeconfigReference == nil {
+			return r.createGKEKubeconfig(ctx, cluster)
+		}
+	}
+	return nil
 }
 
 func (r *Reconciler) cleanUpKubeconfigSecret(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
-	if err := r.deleteSecret(ctx, cluster); err != nil {
+	if err := r.deleteSecret(ctx, cluster.GetKubeconfigSecretName()); err != nil {
 		return err
 	}
 
@@ -107,8 +136,17 @@ func (r *Reconciler) cleanUpKubeconfigSecret(ctx context.Context, cluster *kuber
 	return r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
 }
 
-func (r *Reconciler) deleteSecret(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
-	secretName := cluster.GetKubeconfigSecretName()
+func (r *Reconciler) cleanUpCredentialsSecret(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
+	if err := r.deleteSecret(ctx, cluster.GetCredentialsSecretName()); err != nil {
+		return err
+	}
+
+	oldCluster := cluster.DeepCopy()
+	kuberneteshelper.RemoveFinalizer(cluster, kubermaticapiv1.CredentialsSecretsCleanupFinalizer)
+	return r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
+}
+
+func (r *Reconciler) deleteSecret(ctx context.Context, secretName string) error {
 	if secretName == "" {
 		return nil
 	}
@@ -132,4 +170,80 @@ func (r *Reconciler) deleteSecret(ctx context.Context, cluster *kubermaticv1.Ext
 
 	// We successfully deleted the secret
 	return nil
+}
+
+func (r *Reconciler) getGKECredentials(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (string, error) {
+	cloud := cluster.Spec.CloudSpec
+	if cloud == nil {
+		return "", fmt.Errorf("cloud struct is empty")
+	}
+	if cloud.GKE == nil {
+		return "", fmt.Errorf("gke cloud struct is empty")
+	}
+	if cloud.GKE.CredentialsReference == nil {
+		return "", fmt.Errorf("no credentials provided")
+	}
+	secret := &corev1.Secret{}
+	namespacedName := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: cluster.GetCredentialsSecretName()}
+	if err := r.Get(ctx, namespacedName, secret); err != nil {
+		return "", fmt.Errorf("failed to get secret %q: %v", namespacedName.String(), err)
+	}
+
+	if _, ok := secret.Data[resources.GCPServiceAccount]; !ok {
+		return "", fmt.Errorf("secret %q has no key %q", namespacedName.String(), resources.GCPServiceAccount)
+	}
+	return string(secret.Data[resources.GCPServiceAccount]), nil
+}
+
+func createKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client, name, projectID string, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: resources.KubermaticNamespace,
+			Labels:    map[string]string{kubermaticv1.ProjectIDLabelKey: projectID},
+		},
+		Type: corev1.SecretTypeOpaque,
+		Data: secretData,
+	}
+	if err := client.Create(ctx, secret); err != nil {
+		return nil, fmt.Errorf("failed to create kubeconfig secret: %v", err)
+	}
+	return &providerconfig.GlobalSecretKeySelector{
+		ObjectReference: corev1.ObjectReference{
+			Name:      name,
+			Namespace: resources.KubermaticNamespace,
+		},
+	}, nil
+}
+
+func (r *Reconciler) createGKEKubeconfig(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
+	cloud := cluster.Spec.CloudSpec
+	sa, err := r.getGKECredentials(ctx, cluster)
+	if err != nil {
+		return err
+	}
+	config, err := gcp.GetGKECLusterConfig(ctx, sa, cloud.GKE.Name, cloud.GKE.Zone)
+	if err != nil {
+		return err
+	}
+	kubeconfigSecretName := cluster.GetKubeconfigSecretName()
+	kubeconfig, err := clientcmd.Write(*config)
+	if err != nil {
+		return err
+	}
+
+	projectID := ""
+	if cluster.Labels != nil {
+		projectID = cluster.Labels[kubermaticv1.ProjectIDLabelKey]
+	}
+
+	keyRef, err := createKubeconfigSecret(ctx, r.Client, kubeconfigSecretName, projectID, map[string][]byte{
+		resources.ExternalClusterKubeconfig: []byte(base64.StdEncoding.EncodeToString(kubeconfig)),
+	})
+	if err != nil {
+		return err
+	}
+	cluster.Spec.KubeconfigReference = keyRef
+	kuberneteshelper.AddFinalizer(cluster, kubermaticapiv1.ExternalClusterKubeconfigCleanupFinalizer)
+	return r.Update(ctx, cluster)
 }
