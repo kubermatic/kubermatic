@@ -323,29 +323,17 @@ func filterAWSByQuota(instances apiv1.AWSSizeList, quota kubermaticv1.MachineDep
 	return filteredRecords
 }
 
-func ListEKSClusters(ctx context.Context, accessKeyID, secretAccessKey, region string) (apiv2.EKSClusterList, error) {
-	clusters := apiv2.EKSClusterList{}
-	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, region)
-	if err != nil {
-		return clusters, err
-	}
-
-	list, err := client.EKS.ListClusters(&eks.ListClustersInput{})
-	if err != nil {
-		return clusters, fmt.Errorf("cannot list clusters in region=%s: %w", region, err)
-	}
-	for _, f := range list.Clusters {
-		clusters = append(clusters, apiv2.EKSCluster{Name: *f})
-	}
-	return clusters, nil
+type Credential struct {
+	AccessKeyID     string
+	SecretAccessKey string
 }
 
-func ListEC2Regions(ctx context.Context, accessKeyID, secretAccessKey string) (apiv2.Regions, error) {
+func ListEC2Regions(ctx context.Context, credential Credential) (apiv2.Regions, error) {
 	regionInput := &ec2service.DescribeRegionsInput{}
 
 	// Must provide either a region or endpoint configured to use the SDK, even for operations that may enumerate other regions
 	// See https://github.com/aws/aws-sdk-go/issues/224 for more details
-	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, RegionEndpoint)
+	client, err := awsprovider.GetClientSet(credential.AccessKeyID, credential.SecretAccessKey, RegionEndpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -361,4 +349,66 @@ func ListEC2Regions(ctx context.Context, accessKeyID, secretAccessKey string) (a
 		regionList = append(regionList, *region.RegionName)
 	}
 	return regionList, nil
+}
+
+type listClusters func(Credential, string) (apiv2.EKSClusterList, error)
+
+func listEKSClusters(credential Credential, region string) (apiv2.EKSClusterList, error) {
+	clusters := apiv2.EKSClusterList{}
+	client, err := awsprovider.GetClientSet(credential.AccessKeyID, credential.SecretAccessKey, region)
+	if err != nil {
+		return clusters, err
+	}
+
+	clusterList, err := client.EKS.ListClusters(&eks.ListClustersInput{})
+	if err != nil {
+		return clusters, fmt.Errorf("cannot list clusters in region=%s: %w", region, err)
+	}
+
+	for _, clusterName := range clusterList.Clusters {
+		eksCluster := apiv2.EKSCluster{
+			Name:   *clusterName,
+			Region: region,
+		}
+		clusters = append(clusters, eksCluster)
+	}
+	return clusters, nil
+}
+
+func mapClusters(credential Credential, fn listClusters, list []string) (apiv2.EKSClusterList, error) {
+	var clusterList apiv2.EKSClusterList
+
+	for _, region := range list {
+		clusters, err := fn(credential, region)
+		if err != nil {
+			return nil, fmt.Errorf("cannot list regions: %w", err)
+		}
+		clusterList = append(clusterList, clusters...)
+	}
+	return clusterList, nil
+}
+
+func ListEKSClusters(ctx context.Context, cred Credential, region string) (apiv2.EKSClusterList, error) {
+
+	var err error
+	var clusterList apiv2.EKSClusterList
+
+	// list EKS clusters for user specified region
+	if region != "" {
+		clusterList, err = listEKSClusters(cred, region)
+		if err != nil {
+			return nil, fmt.Errorf("cannot list clusters: %w", err)
+		}
+	} else {
+		// list EKS clusters for all regions
+		regions, err := ListEC2Regions(ctx, cred)
+		if err != nil {
+			return nil, fmt.Errorf("cannot list regions: %w", err)
+		}
+		clusterList, err = mapClusters(cred, listEKSClusters, regions)
+		if err != nil {
+			return nil, fmt.Errorf("cannot list clusters: %w", err)
+		}
+	}
+	return clusterList, nil
 }
