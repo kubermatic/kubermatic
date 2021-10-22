@@ -295,31 +295,32 @@ func (e *etcdCluster) updatePeerURLs(log *zap.SugaredLogger) error {
 		if member.Name == e.podName {
 			// if both plaintext and TLS peer URLs are supposed to be present
 			// update the member to include both plaintext and TLS peer URLs
-			if !e.usePeerTLSOnly && len(member.PeerURLs) == 1 {
+			if !e.usePeerTLSOnly && (len(member.PeerURLs) == 1 || peerURL.Scheme != "http") {
+				plainPeerURL, err := url.Parse(fmt.Sprintf("http://%s:2380", peerURL.Hostname()))
 				tlsPeerURL, err := url.Parse(fmt.Sprintf("https://%s:2381", peerURL.Hostname()))
 				if err != nil {
 					return err
 				}
 
-				log.Infof("updating member %s to include plaintext and tls peer ports", member.ID)
+				log.Infof("updating member %d to include plaintext and tls peer ports", member.ID)
 
 				_, err = client.MemberUpdate(
 					context.Background(),
 					member.ID,
-					[]string{peerURL.String(), tlsPeerURL.String()},
+					[]string{plainPeerURL.String(), tlsPeerURL.String()},
 				)
 				return err
 			}
 
-			// if we're supposed to run with TLS peer endpoints only, remove the plaintext url
-			// if it is still present
-			if len(member.PeerURLs) == 2 && peerURL.Scheme == "http" && e.usePeerTLSOnly {
+			// if we're supposed to run with TLS peer endpoints only, two peer URLs are
+			// not a valid configuration and should be replaced with TLS only
+			if len(member.PeerURLs) == 2 && e.usePeerTLSOnly {
 				tlsPeerURL, err := url.Parse(fmt.Sprintf("https://%s:2381", peerURL.Hostname()))
 				if err != nil {
 					return err
 				}
 
-				log.Infof("updating member %s to set tls peer port only", member.ID)
+				log.Infof("updating member %d to set tls peer port only", member.ID)
 
 				_, err = client.MemberUpdate(
 					context.Background(),
@@ -505,8 +506,8 @@ func (e *etcdCluster) getMemberByName(name string, log *zap.SugaredLogger) (*etc
 		if err != nil {
 			return nil, err
 		}
-		// if the member is not started yet, its name would be empty, in that case, we match for peerURL host.
-		if member.Name == name || url.Host == fmt.Sprintf("%s.etcd.%s.svc.cluster.local:2380", e.podName, e.namespace) {
+		// if the member is not started yet, its name would be empty, in that case, we match for peerURL hostname
+		if member.Name == name || url.Hostname() == fmt.Sprintf("%s.etcd.%s.svc.cluster.local", e.podName, e.namespace) {
 			return member, nil
 		}
 	}
