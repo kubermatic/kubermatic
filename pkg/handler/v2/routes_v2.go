@@ -19,8 +19,6 @@ package v2
 import (
 	"net/http"
 
-	"k8c.io/kubermatic/v2/pkg/handler/v2/user"
-
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
@@ -47,6 +45,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/rulegroup"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/seedsettings"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/user"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/version"
 )
 
