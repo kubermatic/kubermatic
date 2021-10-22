@@ -64,6 +64,7 @@ const (
 	MaxEtcdClusterSize     = 9
 )
 
+// +kubebuilder:validation:Enum=standard;basic
 type LBSKU string
 
 const (
@@ -171,6 +172,9 @@ type ClusterSpec struct {
 	// MLA contains monitoring, logging and alerting related settings for the user cluster.
 	MLA *MLASettings `json:"mla,omitempty"`
 
+	// +kubebuilder:validation:Enum=docker;containerd
+	// +kubebuilder:default=containerd
+
 	// ContainerRuntime to use, i.e. Docker or containerd. By default containerd will be used.
 	ContainerRuntime string `json:"containerRuntime,omitempty"`
 
@@ -183,6 +187,8 @@ type CNIPluginSettings struct {
 	Type    CNIPluginType `json:"type"`
 	Version string        `json:"version"`
 }
+
+// +kubebuilder:validation:Enum=canal;cilium
 
 // CNIPluginType define the type of CNI plugin installed. e.g. Canal
 type CNIPluginType string
@@ -222,6 +228,8 @@ const (
 	// restrict the egress traffic from Apiserver pods.
 	ApiserverNetworkPolicy = "apiserverNetworkPolicy"
 )
+
+// +kubebuilder:validation:Enum="";SeedResourcesUpToDate;ClusterControllerReconciledSuccessfully;AddonControllerReconciledSuccessfully;AddonInstallerControllerReconciledSuccessfully;BackupControllerReconciledSuccessfully;CloudControllerReconcilledSuccessfully;UpdateControllerReconciledSuccessfully;MonitoringControllerReconciledSuccessfully;MachineDeploymentReconciledSuccessfully;MLAControllerReconciledSuccessfully;ClusterInitialized;RancherInitializedSuccessfully;RancherClusterImportedSuccessfully;EtcdClusterInitialized;CSIKubeletMigrationCompleted;ClusterUpdateSuccessful;ClusterUpdateInProgress;CSIKubeletMigrationSuccess;CSIKubeletMigrationInProgress;
 
 // ClusterConditionType is used to indicate the type of a cluster condition. For all condition
 // types, the `true` value must indicate success. All condition types must be registered within
@@ -356,6 +364,8 @@ func (cs *ClusterStatus) HasConditionValue(conditionType ClusterConditionType, c
 	return false
 }
 
+// +kubebuilder:validation:Enum=InvalidConfiguration;UnsupportedChange;ReconcileError
+
 type ClusterStatusError string
 
 const (
@@ -381,6 +391,9 @@ type AuditLoggingSettings struct {
 type OPAIntegrationSettings struct {
 	// Enabled is the flag for enabling OPA integration
 	Enabled bool `json:"enabled,omitempty"`
+
+	// +kubebuilder:default=10
+
 	// WebhookTimeout is the timeout that is set for the gatekeeper validating webhook admission review calls.
 	// By default 10 seconds.
 	WebhookTimeoutSeconds *int32 `json:"webhookTimeoutSeconds,omitempty"`
@@ -475,12 +488,17 @@ type ClusterNetworkingConfig struct {
 	// Domain name for services.
 	DNSDomain string `json:"dnsDomain"`
 
+	// +kubebuilder:validation:Enum=ipvs;iptables;ebpf
+	// +kubebuilder:default=ipvs
+
 	// ProxyMode defines the kube-proxy mode ("ipvs" / "iptables" / "ebpf").
 	// Defaults to "ipvs". "ebpf" disables kube-proxy and requires CNI support.
 	ProxyMode string `json:"proxyMode"`
 
 	// IPVS defines kube-proxy ipvs configuration options
 	IPVS *IPVSConfiguration `json:"ipvs,omitempty"`
+
+	// +kubebuilder:default=true
 
 	// NodeLocalDNSCacheEnabled controls whether the NodeLocal DNS Cache feature is enabled.
 	// Defaults to true.
@@ -520,6 +538,8 @@ type ClusterAddress struct {
 
 // IPVSConfiguration contains ipvs-related configuration details for kube-proxy.
 type IPVSConfiguration struct {
+	// +kubebuilder:default=true
+
 	// StrictArp configure arp_ignore and arp_announce to avoid answering ARP queries from kube-ipvs0 interface.
 	// defaults to true.
 	StrictArp *bool `json:"strictArp,omitempty"`
@@ -757,12 +777,13 @@ type AnexiaCloudSpec struct {
 	Token string `json:"token,omitempty"`
 }
 
+// +kubebuilder:validation:Enum=0;1;2
 type HealthStatus int
 
 const (
-	HealthStatusDown         HealthStatus = iota
-	HealthStatusUp           HealthStatus = iota
-	HealthStatusProvisioning HealthStatus = iota
+	HealthStatusDown HealthStatus = iota
+	HealthStatusUp
+	HealthStatusProvisioning
 )
 
 // ExtendedClusterHealth stores health information of a cluster.

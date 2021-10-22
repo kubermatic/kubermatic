@@ -128,6 +128,8 @@ type EtcdBackupConfigCondition struct {
 	Message string `json:"message,omitempty"`
 }
 
+// +kubebuilder:validation:Enum=SchedulingActive
+
 // EtcdBackupConfigConditionType is used to indicate the type of a EtcdBackupConfig condition. For all condition
 // types, the `true` value must indicate success. All condition types must be registered within
 // the `AllClusterConditionTypes` variable.

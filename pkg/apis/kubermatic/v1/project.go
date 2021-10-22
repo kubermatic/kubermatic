@@ -20,6 +20,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// +kubebuilder:validation:Enum=Active;Inactive;Terminating
+
+type ProjectPhase string
+
 // These are the valid phases of a project.
 const (
 	// ProjectActive means the project is available for use in the system
@@ -61,7 +65,7 @@ type ProjectSpec struct {
 
 // ProjectStatus represents the current status of a project.
 type ProjectStatus struct {
-	Phase string `json:"phase"`
+	Phase ProjectPhase `json:"phase"`
 }
 
 // +kubebuilder:object:generate=true

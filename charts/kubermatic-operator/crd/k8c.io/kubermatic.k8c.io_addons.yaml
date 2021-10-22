@@ -125,6 +125,8 @@ spec:
                       type: string
                     type:
                       description: Type of addon condition.
+                      enum:
+                      - AddonResourcesCreatedSuccessfully
                       type: string
                   required:
                   - status

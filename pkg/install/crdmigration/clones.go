@@ -255,7 +255,7 @@ func cloneKubermaticConfigurationResourcesInCluster(ctx context.Context, logger 
 					APIServerReplicas:                   oldObject.Spec.UserCluster.APIServerReplicas,
 					MachineController:                   newv1.MachineControllerConfiguration(oldObject.Spec.UserCluster.MachineController),
 				},
-				ExposeStrategy: oldObject.Spec.ExposeStrategy,
+				ExposeStrategy: newv1.ExposeStrategy(oldObject.Spec.ExposeStrategy),
 				Ingress:        newv1.KubermaticIngressConfiguration(oldObject.Spec.Ingress),
 				Versions:       convertKubermaticVersioningConfiguration(oldObject.Spec.Versions.Kubernetes),
 				VerticalPodAutoscaler: newv1.KubermaticVPAConfiguration{
@@ -296,7 +296,7 @@ func convertKubermaticVersioningConfiguration(old operatorv1alpha1.KubermaticVer
 
 	for _, i := range old.ProviderIncompatibilities {
 		result.ProviderIncompatibilities = append(result.ProviderIncompatibilities, newv1.Incompatibility{
-			Provider:  i.Provider,
+			Provider:  newv1.ProviderType(i.Provider),
 			Version:   i.Version,
 			Condition: newv1.ConditionType(i.Condition),
 			Operation: newv1.OperationType(i.Operation),
@@ -1012,7 +1012,7 @@ func cloneProjectResourcesInCluster(ctx context.Context, logger logrus.FieldLogg
 				Name: oldObject.Spec.Name,
 			},
 			Status: newv1.ProjectStatus{
-				Phase: oldObject.Status.Phase,
+				Phase: newv1.ProjectPhase(oldObject.Status.Phase),
 			},
 		}
 

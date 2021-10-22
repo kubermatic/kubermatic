@@ -96,6 +96,10 @@ spec:
               phase:
                 description: EtcdRestorePhase represents the lifecycle phase of an
                   EtcdRestore.
+                enum:
+                - Started
+                - StsRebuilding
+                - Completed
                 type: string
               restoreTime:
                 format: date-time

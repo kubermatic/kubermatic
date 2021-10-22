@@ -99,6 +99,8 @@ type SeedSpec struct {
 
 // SeedBackupRestoreConfiguration are s3 settings used for backups and restores of user cluster etcds.
 type SeedBackupRestoreConfiguration struct {
+	// +kubebuilder:default=s3.amazonaws.com
+
 	// S3Endpoint is the S3 API endpoint to use for backup and restore. Defaults to s3.amazonaws.com.
 	S3Endpoint string `json:"s3Endpoint,omitempty"`
 	// S3BucketName is the S3 bucket name to use for backup and restore.
@@ -330,6 +332,9 @@ type DatacenterSpecFake struct {
 
 // DatacenterSpecKubevirt describes a kubevirt datacenter.
 type DatacenterSpecKubevirt struct {
+	// +kubebuilder:validation:Enum=ClusterFirstWithHostNet;ClusterFirst;Default;None
+	// +kubebuilder:default=ClusterFirst
+
 	// DNSPolicy represents the dns policy for the pod. Valid values are 'ClusterFirstWithHostNet', 'ClusterFirst',
 	// 'Default' or 'None'. Defaults to "ClusterFirst". DNS parameters given in DNSConfig will be merged with the
 	// policy selected with DNSPolicy.

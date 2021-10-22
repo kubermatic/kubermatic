@@ -85,6 +85,8 @@ type AddonStatus struct {
 	Conditions []AddonCondition `json:"conditions,omitempty"`
 }
 
+// +kubebuilder:validation:Enum=AddonResourcesCreatedSuccessfully
+
 type AddonConditionType string
 
 type AddonCondition struct {

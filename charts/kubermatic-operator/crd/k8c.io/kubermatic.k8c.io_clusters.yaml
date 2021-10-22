@@ -304,6 +304,9 @@ spec:
                         description: LoadBalancerSKU sets the LB type that will be
                           used for the Azure cluster, possible values are "basic"
                           and "standard", if empty, "basic" will be used
+                        enum:
+                        - standard
+                        - basic
                         type: string
                       resourceGroup:
                         type: string
@@ -800,6 +803,7 @@ spec:
                     description: IPVS defines kube-proxy ipvs configuration options
                     properties:
                       strictArp:
+                        default: true
                         description: StrictArp configure arp_ignore and arp_announce
                           to avoid answering ARP queries from kube-ipvs0 interface.
                           defaults to true.
@@ -810,6 +814,7 @@ spec:
                       to node network communication.
                     type: boolean
                   nodeLocalDNSCacheEnabled:
+                    default: true
                     description: NodeLocalDNSCacheEnabled controls whether the NodeLocal
                       DNS Cache feature is enabled. Defaults to true.
                     type: boolean
@@ -824,9 +829,14 @@ spec:
                     - cidrBlocks
                     type: object
                   proxyMode:
+                    default: ipvs
                     description: ProxyMode defines the kube-proxy mode ("ipvs" / "iptables"
                       / "ebpf"). Defaults to "ipvs". "ebpf" disables kube-proxy and
                       requires CNI support.
+                    enum:
+                    - ipvs
+                    - iptables
+                    - ebpf
                     type: string
                   services:
                     description: The network ranges from which service VIPs are allocated.
@@ -851,6 +861,9 @@ spec:
                   type:
                     description: CNIPluginType define the type of CNI plugin installed.
                       e.g. Canal
+                    enum:
+                    - canal
+                    - cilium
                     type: string
                   version:
                     type: string
@@ -1256,8 +1269,12 @@ spec:
                 - scheduler
                 type: object
               containerRuntime:
+                default: containerd
                 description: ContainerRuntime to use, i.e. Docker or containerd. By
                   default containerd will be used.
+                enum:
+                - docker
+                - containerd
                 type: string
               enableUserSSHKeyAgent:
                 description: EnableUserSSHKeyAgent control whether the UserSSHKeyAgent
@@ -1272,6 +1289,10 @@ spec:
               exposeStrategy:
                 description: ExposeStrategy is the approach we use to expose this
                   cluster, either via NodePort or via a dedicated LoadBalancer
+                enum:
+                - NodePort
+                - LoadBalancer
+                - Tunneling
                 type: string
               features:
                 additionalProperties:
@@ -1403,6 +1424,7 @@ spec:
                     description: Enable mutation
                     type: boolean
                   webhookTimeoutSeconds:
+                    default: 10
                     description: WebhookTimeout is the timeout that is set for the
                       gatekeeper validating webhook admission review calls. By default
                       10 seconds.
@@ -1535,6 +1557,27 @@ spec:
                       type: string
                     type:
                       description: Type of cluster condition.
+                      enum:
+                      - ""
+                      - SeedResourcesUpToDate
+                      - ClusterControllerReconciledSuccessfully
+                      - AddonControllerReconciledSuccessfully
+                      - AddonInstallerControllerReconciledSuccessfully
+                      - BackupControllerReconciledSuccessfully
+                      - CloudControllerReconcilledSuccessfully
+                      - UpdateControllerReconciledSuccessfully
+                      - MonitoringControllerReconciledSuccessfully
+                      - MachineDeploymentReconciledSuccessfully
+                      - MLAControllerReconciledSuccessfully
+                      - ClusterInitialized
+                      - RancherInitializedSuccessfully
+                      - RancherClusterImportedSuccessfully
+                      - EtcdClusterInitialized
+                      - CSIKubeletMigrationCompleted
+                      - ClusterUpdateSuccessful
+                      - ClusterUpdateInProgress
+                      - CSIKubeletMigrationSuccess
+                      - CSIKubeletMigrationInProgress
                       type: string
                   required:
                   - kubermaticVersion
@@ -1550,30 +1593,74 @@ spec:
               errorReason:
                 description: ErrorReason contains a error reason in case the controller
                   encountered an error. Will be reset if the error was resolved
+                enum:
+                - InvalidConfiguration
+                - UnsupportedChange
+                - ReconcileError
                 type: string
               extendedHealth:
                 description: ExtendedHealth exposes information about the current
                   health state. Extends standard health status for new states.
                 properties:
                   apiserver:
+                    enum:
+                    - 0
+                    - 1
+                    - 2
                     type: integer
                   cloudProviderInfrastructure:
+                    enum:
+                    - 0
+                    - 1
+                    - 2
                     type: integer
                   controller:
+                    enum:
+                    - 0
+                    - 1
+                    - 2
                     type: integer
                   etcd:
+                    enum:
+                    - 0
+                    - 1
+                    - 2
                     type: integer
                   gatekeeperAudit:
+                    enum:
+                    - 0
+                    - 1
+                    - 2
                     type: integer
                   gatekeeperController:
+                    enum:
+                    - 0
+                    - 1
+                    - 2
                     type: integer
                   machineController:
+                    enum:
+                    - 0
+                    - 1
+                    - 2
                     type: integer
                   openvpn:
+                    enum:
+                    - 0
+                    - 1
+                    - 2
                     type: integer
                   scheduler:
+                    enum:
+                    - 0
+                    - 1
+                    - 2
                     type: integer
                   userClusterControllerManager:
+                    enum:
+                    - 0
+                    - 1
+                    - 2
                     type: integer
                 required:
                 - apiserver

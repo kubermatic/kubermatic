@@ -78,6 +78,9 @@ spec:
               ruleGroupType:
                 description: RuleGroupType is the type of this ruleGroup applies to.
                   It can be `Metrics`.
+                enum:
+                - Metrics
+                - Logs
                 type: string
             required:
             - cluster

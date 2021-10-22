@@ -29,14 +29,16 @@ const (
 	EtcdRestoreKindName = "EtcdRestore"
 
 	// EtcdRestorePhase value indicating that the restore has started
-	EtcdRestorePhaseStarted = "Started"
+	EtcdRestorePhaseStarted EtcdRestorePhase = "Started"
 
 	// EtcdRestorePhase value indicating that the old Etcd statefulset has been deleted and is now rebuilding
-	EtcdRestorePhaseStsRebuilding = "StsRebuilding"
+	EtcdRestorePhaseStsRebuilding EtcdRestorePhase = "StsRebuilding"
 
 	// EtcdRestorePhase value indicating that the old Etcd statefulset has completed successfully
-	EtcdRestorePhaseCompleted = "Completed"
+	EtcdRestorePhaseCompleted EtcdRestorePhase = "Completed"
 )
+
+// +kubebuilder:validation:Enum=Started;StsRebuilding;Completed
 
 // EtcdRestorePhase represents the lifecycle phase of an EtcdRestore.
 type EtcdRestorePhase string
