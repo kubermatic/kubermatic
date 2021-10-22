@@ -50,7 +50,7 @@ spec:
       hostNetwork: true
       containers:
         - name: node-driver-registrar
-          image: k8s.gcr.io/sig-storage/csi-node-driver-registrar:v1.3.0
+          image: '{{ Registry "k8s.gcr.io" }}/sig-storage/csi-node-driver-registrar:v1.3.0'
           args:
             - "--csi-address=$(ADDRESS)"
             - "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"
@@ -74,7 +74,7 @@ spec:
             - name: registration-dir
               mountPath: /registration
         - name: liveness-probe
-          image: k8s.gcr.io/sig-storage/livenessprobe:v2.4.0
+          image: '{{ Registry "k8s.gcr.io" }}/sig-storage/livenessprobe:v2.4.0'
           args:
             - --csi-address=/csi/csi.sock
           volumeMounts:
@@ -86,7 +86,7 @@ spec:
             capabilities:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
-          image: docker.io/k8scloudprovider/cinder-csi-plugin:{{ $version }}
+          image: '{{ Registry "docker.io" }}/k8scloudprovider/cinder-csi-plugin:{{ $version }}'
           args:
             - /bin/cinder-csi-plugin
             - "--nodeid=$(NODE_ID)"

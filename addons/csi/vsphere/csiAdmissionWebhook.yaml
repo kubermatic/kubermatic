@@ -80,7 +80,7 @@ spec:
       serviceAccountName: csi-migration-webhook
       containers:
         - name: vsphere-webhook
-          image: gcr.io/cloud-provider-vsphere/csi/release/syncer:v2.3.0
+          image: '{{ Registry "gcr.io" }}/cloud-provider-vsphere/csi/release/syncer:v2.3.0'
           args:
             - "--operation-mode=WEBHOOK_SERVER"
             - "--fss-name=internal-feature-states.csi.vsphere.vmware.com"

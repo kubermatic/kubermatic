@@ -47,7 +47,7 @@ spec:
       dnsPolicy: "Default"
       containers:
         - name: csi-attacher
-          image: quay.io/k8scsi/csi-attacher:v3.1.0
+          image: '{{ Registry "quay.io" }}/k8scsi/csi-attacher:v3.1.0'
           args:
             - "--v=4"
             - "--timeout=300s"
@@ -60,7 +60,7 @@ spec:
             - mountPath: /csi
               name: socket-dir
         - name: csi-resizer
-          image: quay.io/k8scsi/csi-resizer:v1.1.0
+          image: '{{ Registry "quay.io" }}/k8scsi/csi-resizer:v1.1.0'
           args:
             - "--v=4"
             - "--timeout=300s"
@@ -76,7 +76,7 @@ spec:
             - mountPath: /csi
               name: socket-dir
         - name: vsphere-csi-controller
-          image: gcr.io/cloud-provider-vsphere/csi/release/driver:{{ $version }}
+          image: '{{ Registry "gcr.io" }}/cloud-provider-vsphere/csi/release/driver:{{ $version }}'
           args:
             - "--fss-name=internal-feature-states.csi.vsphere.vmware.com"
             - "--fss-namespace=$(CSI_NAMESPACE)"
@@ -127,7 +127,7 @@ spec:
             periodSeconds: 5
             failureThreshold: 3
         - name: liveness-probe
-          image: quay.io/k8scsi/livenessprobe:v2.2.0
+          image: '{{ Registry "quay.io" }}/k8scsi/livenessprobe:v2.2.0'
           args:
             - "--v=4"
             - "--csi-address=/csi/csi.sock"
@@ -135,7 +135,7 @@ spec:
             - name: socket-dir
               mountPath: /csi
         - name: vsphere-syncer
-          image: gcr.io/cloud-provider-vsphere/csi/release/syncer:{{ $version }}
+          image: '{{ Registry "gcr.io" }}/cloud-provider-vsphere/csi/release/syncer:{{ $version }}'
           args:
             - "--leader-election"
             - "--fss-name=internal-feature-states.csi.vsphere.vmware.com"
@@ -170,7 +170,7 @@ spec:
               name: ca-bundle
               readOnly: true
         - name: csi-provisioner
-          image: quay.io/k8scsi/csi-provisioner:v2.1.0
+          image: '{{ Registry "quay.io" }}/k8scsi/csi-provisioner:v2.1.0'
           args:
             - "--v=4"
             - "--timeout=300s"

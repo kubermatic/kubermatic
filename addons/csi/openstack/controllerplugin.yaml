@@ -64,7 +64,7 @@ spec:
       serviceAccount: csi-cinder-controller-sa
       containers:
         - name: csi-attacher
-          image: k8s.gcr.io/sig-storage/csi-attacher:v3.1.0
+          image: '{{ Registry "k8s.gcr.io" }}/sig-storage/csi-attacher:v3.1.0'
           args:
             - "--csi-address=$(ADDRESS)"
             - "--timeout=3m"
@@ -76,7 +76,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-provisioner
-          image: k8s.gcr.io/sig-storage/csi-provisioner:v2.1.0
+          image: '{{ Registry "k8s.gcr.io" }}/sig-storage/csi-provisioner:v2.1.0'
           args:
             - "--csi-address=$(ADDRESS)"
             - "--timeout=3m"
@@ -89,7 +89,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-snapshotter
-          image: k8s.gcr.io/sig-storage/csi-snapshotter:v2.1.3
+          image: '{{ Registry "k8s.gcr.io" }}/sig-storage/csi-snapshotter:v2.1.3'
           args:
             - "--csi-address=$(ADDRESS)"
             - "--timeout=3m"
@@ -101,7 +101,7 @@ spec:
             - mountPath: /var/lib/csi/sockets/pluginproxy/
               name: socket-dir
         - name: csi-resizer
-          image: k8s.gcr.io/sig-storage/csi-resizer:v1.1.0
+          image: '{{ Registry "k8s.gcr.io" }}/sig-storage/csi-resizer:v1.1.0'
           args:
             - "--csi-address=$(ADDRESS)"
             - "--timeout=3m"
@@ -114,7 +114,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: liveness-probe
-          image: k8s.gcr.io/sig-storage/livenessprobe:v2.4.0
+          image: '{{ Registry "k8s.gcr.io" }}/sig-storage/livenessprobe:v2.4.0'
           args:
             - "--csi-address=$(ADDRESS)"
           env:
@@ -124,7 +124,7 @@ spec:
             - mountPath: /var/lib/csi/sockets/pluginproxy/
               name: socket-dir
         - name: cinder-csi-plugin
-          image: docker.io/k8scloudprovider/cinder-csi-plugin:{{ $version }}
+          image: '{{ Registry "docker.io" }}/k8scloudprovider/cinder-csi-plugin:{{ $version }}'
           args:
             - /bin/cinder-csi-plugin
             - "--nodeid=$(NODE_ID)"
