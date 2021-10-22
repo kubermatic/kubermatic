@@ -363,7 +363,7 @@ func TestSync(t *testing.T) {
 			gotClusters := map[string]*envoyclusterv3.Cluster{}
 			s, _ := c.cache.GetSnapshot(c.EnvoyNodeName)
 			for name, res := range s.Resources[envoycachetype.Cluster].Items {
-				gotClusters[name] = res.(*envoyclusterv3.Cluster)
+				gotClusters[name] = res.Resource.(*envoyclusterv3.Cluster)
 			}
 			// Delete the admin cluster. We're not going to bother comparing it here, as its a static resource.
 			// It would just pollute the testing code
@@ -375,7 +375,7 @@ func TestSync(t *testing.T) {
 
 			gotListeners := map[string]*envoylistenerv3.Listener{}
 			for name, res := range s.Resources[envoycachetype.Listener].Items {
-				gotListeners[name] = res.(*envoylistenerv3.Listener)
+				gotListeners[name] = res.Resource.(*envoylistenerv3.Listener)
 			}
 			delete(gotListeners, "service_stats")
 
