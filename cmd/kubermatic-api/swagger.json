@@ -18650,6 +18650,10 @@
         "name": {
           "type": "string",
           "x-go-name": "Name"
+        },
+        "region": {
+          "type": "string",
+          "x-go-name": "Region"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"

@@ -364,8 +364,13 @@ func listEKSClusters(credential Credential, region string) (apiv2.EKSClusterList
 	if err != nil {
 		return clusters, fmt.Errorf("cannot list clusters in region=%s: %w", region, err)
 	}
-	for _, cluster := range clusterList.Clusters {
-		clusters = append(clusters, apiv2.EKSCluster{Name: *cluster})
+
+	for _, clusterName := range clusterList.Clusters {
+		eksCluster := apiv2.EKSCluster{
+			Name:   *clusterName,
+			Region: region,
+		}
+		clusters = append(clusters, eksCluster)
 	}
 	return clusters, nil
 }

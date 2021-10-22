@@ -365,6 +365,7 @@ type GKEClusterList []GKECluster
 // swagger:model EKSCluster
 type EKSCluster struct {
 	Name       string `json:"name"`
+	Region     string `json:"region"`
 	IsImported bool   `json:"imported"`
 }
 
