@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package userprojectbindingsync
+package userprojectbindingsynchronizer
 
 import (
 	"context"
@@ -25,7 +25,6 @@ import (
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -47,25 +46,31 @@ const (
 )
 
 type reconciler struct {
-	log              *zap.SugaredLogger
-	recorder         record.EventRecorder
-	masterClient     ctrlruntimeclient.Client
-	seedClientGetter provider.SeedClientGetter
+	log          *zap.SugaredLogger
+	recorder     record.EventRecorder
+	masterClient ctrlruntimeclient.Client
+	seedClients  map[string]ctrlruntimeclient.Client
 }
 
-func Add(mgr manager.Manager,
+func Add(
+	masterManager manager.Manager,
+	seedManagers map[string]manager.Manager,
 	log *zap.SugaredLogger,
 	numWorkers int,
-	seedKubeconfigGetter provider.SeedKubeconfigGetter) error {
+) error {
 
-	reconciler := &reconciler{
-		log:              log.Named(ControllerName),
-		recorder:         mgr.GetEventRecorderFor(ControllerName),
-		masterClient:     mgr.GetClient(),
-		seedClientGetter: provider.SeedClientGetterFactory(seedKubeconfigGetter),
+	r := &reconciler{
+		log:          log.Named(ControllerName),
+		recorder:     masterManager.GetEventRecorderFor(ControllerName),
+		masterClient: masterManager.GetClient(),
+		seedClients:  map[string]ctrlruntimeclient.Client{},
 	}
 
-	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
+	for seedName, seedManager := range seedManagers {
+		r.seedClients[seedName] = seedManager.GetClient()
+	}
+
+	c, err := controller.New(ControllerName, masterManager, controller.Options{Reconciler: r, MaxConcurrentReconciles: numWorkers})
 	if err != nil {
 		return fmt.Errorf("failed to construct controller: %v", err)
 	}
@@ -86,7 +91,7 @@ func Add(mgr manager.Manager,
 
 	if err := c.Watch(
 		&source.Kind{Type: &kubermaticv1.Seed{}},
-		enqueueUserProjectBindingsForSeed(reconciler.masterClient, reconciler.log),
+		enqueueUserProjectBindingsForSeed(r.masterClient, r.log),
 	); err != nil {
 		return fmt.Errorf("failed to create watch for seeds: %v", err)
 	}
@@ -121,7 +126,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		userProjectBindingCreatorGetter(userProjectBinding),
 	}
 
-	err := r.syncAllSeeds(ctx, log, userProjectBinding, func(seedClusterClient ctrlruntimeclient.Client, userProjectBinding *kubermaticv1.UserProjectBinding) error {
+	err := r.syncAllSeeds(log, userProjectBinding, func(seedClusterClient ctrlruntimeclient.Client, userProjectBinding *kubermaticv1.UserProjectBinding) error {
 		return reconciling.ReconcileKubermaticV1UserProjectBindings(ctx, userProjectBindingCreatorGetters, "", seedClusterClient)
 	})
 
@@ -133,7 +138,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, userProjectBinding *kubermaticv1.UserProjectBinding) error {
-	err := r.syncAllSeeds(ctx, log, userProjectBinding, func(seedClusterClient ctrlruntimeclient.Client, userProjectBinding *kubermaticv1.UserProjectBinding) error {
+	err := r.syncAllSeeds(log, userProjectBinding, func(seedClusterClient ctrlruntimeclient.Client, userProjectBinding *kubermaticv1.UserProjectBinding) error {
 		if err := seedClusterClient.Delete(ctx, userProjectBinding); err != nil {
 			return ctrlruntimeclient.IgnoreNotFound(err)
 		}
@@ -152,27 +157,14 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 }
 
 func (r *reconciler) syncAllSeeds(
-	ctx context.Context,
 	log *zap.SugaredLogger,
 	userProjectBinding *kubermaticv1.UserProjectBinding,
 	action func(seedClusterClient ctrlruntimeclient.Client, userProjectBinding *kubermaticv1.UserProjectBinding) error) error {
-
-	seedList := &kubermaticv1.SeedList{}
-	if err := r.masterClient.List(ctx, seedList); err != nil {
-		return fmt.Errorf("failed listing seeds: %w", err)
-	}
-
-	for _, seed := range seedList.Items {
-		seedClient, err := r.seedClientGetter(&seed)
-		if err != nil {
-			return fmt.Errorf("failed getting seed client for seed %s: %w", seed.Name, err)
+	for seedName, seedClient := range r.seedClients {
+		if err := action(seedClient, userProjectBinding); err != nil {
+			return fmt.Errorf("failed syncing userprojectbinding for seed %s: %w", seedName, err)
 		}
-
-		err = action(seedClient, userProjectBinding)
-		if err != nil {
-			return fmt.Errorf("failed syncing userprojectbinding for seed %s: %w", seed.Name, err)
-		}
-		log.Debugw("Reconciled userprojectbinding with seed", "seed", seed.Name)
+		log.Debugw("Reconciled userprojectbinding with seed", "seed", seedName)
 	}
 	return nil
 }
