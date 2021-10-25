@@ -299,7 +299,7 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 
 	eventRecorderProvider := kubernetesprovider.NewEventRecorder()
 
-	addonProviderGetter := kubernetesprovider.AddonProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter, options.accessibleAddons)
+	addonProviderGetter := kubernetesprovider.AddonProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter, configGetter)
 
 	alertmanagerProviderGetter := kubernetesprovider.AlertmanagerProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter)
 
@@ -467,7 +467,6 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		SATokenGenerator:                        serviceAccountTokenGenerator,
 		EventRecorderProvider:                   prov.eventRecorderProvider,
 		ExposeStrategy:                          options.exposeStrategy,
-		AccessibleAddons:                        options.accessibleAddons,
 		UserInfoGetter:                          prov.userInfoGetter,
 		SettingsProvider:                        prov.settingsProvider,
 		AdminProvider:                           prov.adminProvider,
