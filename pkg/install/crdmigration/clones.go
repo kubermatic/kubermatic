@@ -760,6 +760,10 @@ func cloneExternalClusterResourcesInCluster(ctx context.Context, logger logrus.F
 			Spec: newv1.ExternalClusterSpec{
 				HumanReadableName:   oldObject.Spec.HumanReadableName,
 				KubeconfigReference: oldObject.Spec.KubeconfigReference,
+				CloudSpec: &newv1.ExternalClusterCloudSpec{
+					GKE: (*newv1.ExternalClusterGKECloudSpec)(oldObject.Spec.CloudSpec.GKE),
+					EKS: (*newv1.ExternalClusterEKSCloudSpec)(oldObject.Spec.CloudSpec.EKS),
+				},
 			},
 		}
 
