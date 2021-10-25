@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 /*
-Package projectsync contains a controller that is responsible for ensuring that the
+Package projectsynchronizer contains a controller that is responsible for ensuring that the
 Kubermatic Project objects are synced from master to the seed clusters.
 */
-package projectsync
+package projectsynchronizer
