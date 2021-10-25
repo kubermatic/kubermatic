@@ -74,14 +74,6 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 
 			volumes := []corev1.Volume{
 				{
-					Name: "extra-files",
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: common.ExtraFilesSecretName,
-						},
-					},
-				},
-				{
 					Name: "ca-bundle",
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
@@ -94,11 +86,6 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 			}
 
 			volumeMounts := []corev1.VolumeMount{
-				{
-					MountPath: "/opt/extra-files/",
-					Name:      "extra-files",
-					ReadOnly:  true,
-				},
 				{
 					Name:      "ca-bundle",
 					MountPath: "/opt/ca-bundle/",

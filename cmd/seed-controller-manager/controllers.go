@@ -371,7 +371,7 @@ func createAddonController(ctrlCtx *controllerContext) error {
 				"NodeAccessNetwork": ctrlCtx.runOptions.nodeAccessNetwork,
 			},
 		},
-		ctrlCtx.runOptions.kubernetesAddonsPath,
+		ctrlCtx.runOptions.addonsPath,
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.clientProvider,
 		ctrlCtx.versions,
@@ -384,7 +384,7 @@ func createAddonInstallerController(ctrlCtx *controllerContext) error {
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
-		ctrlCtx.runOptions.kubernetesAddons,
+		ctrlCtx.configGetter,
 		ctrlCtx.versions,
 	)
 }

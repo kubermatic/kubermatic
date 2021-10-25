@@ -46,12 +46,7 @@ const (
 	// VersionLabel is the label containing the application's version.
 	VersionLabel = "app.kubernetes.io/version"
 
-	// KubernetesAddonsFileName is the name of the kubernetes addons manifest file
-	// in the master files.
-	KubernetesAddonsFileName = "kubernetes-addons.yaml"
-
-	DockercfgSecretName  = "dockercfg"
-	ExtraFilesSecretName = "extra-files"
+	DockercfgSecretName = "dockercfg"
 
 	SeedWebhookServiceName    = "seed-webhook"
 	ClusterWebhookServiceName = "cluster-webhook"

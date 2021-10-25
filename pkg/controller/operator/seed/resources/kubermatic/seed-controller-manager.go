@@ -18,7 +18,6 @@ package kubermatic
 
 import (
 	"fmt"
-	"strings"
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -61,7 +60,6 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 			args := []string{
 				"-logtostderr",
 				"-internal-address=0.0.0.0:8085",
-				"-kubernetes-addons-path=/opt/addons/kubernetes",
 				"-worker-count=4",
 				"-admissionwebhook-cert-dir=/opt/webhook-serving-cert/",
 				fmt.Sprintf("-ca-bundle=/opt/ca-bundle/%s", resources.CABundleConfigMapKey),
@@ -203,27 +201,6 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 				})
 			}
 
-			if cfg.Spec.UserCluster.Addons.Kubernetes.DefaultManifests != "" {
-				args = append(args, "-kubernetes-addons-file=/opt/extra-files/"+common.KubernetesAddonsFileName)
-			} else {
-				args = append(args, fmt.Sprintf("-kubernetes-addons-list=%s", strings.Join(cfg.Spec.UserCluster.Addons.Kubernetes.Default, ",")))
-			}
-
-			volumes = append(volumes, corev1.Volume{
-				Name: "extra-files",
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: common.ExtraFilesSecretName,
-					},
-				},
-			})
-
-			volumeMounts = append(volumeMounts, corev1.VolumeMount{
-				MountPath: "/opt/extra-files/",
-				Name:      "extra-files",
-				ReadOnly:  true,
-			})
-
 			if cfg.Spec.FeatureGates.Has(features.OpenIDAuthPlugin) {
 				args = append(args,
 					fmt.Sprintf("-oidc-issuer-url=%s", cfg.Spec.Auth.TokenIssuer),
@@ -278,7 +255,7 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 
 			d.Spec.Template.Spec.Volumes = volumes
 			d.Spec.Template.Spec.InitContainers = []corev1.Container{
-				createKubernetesAddonsInitContainer(cfg.Spec.UserCluster.Addons.Kubernetes, sharedAddonVolume, versions.Kubermatic),
+				createAddonsInitContainer(cfg.Spec.UserCluster.Addons.Kubernetes, sharedAddonVolume, versions.Kubermatic),
 			}
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
@@ -304,14 +281,14 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 	}
 }
 
-func createKubernetesAddonsInitContainer(cfg operatorv1alpha1.KubermaticAddonConfiguration, addonVolume string, version string) corev1.Container {
+func createAddonsInitContainer(cfg operatorv1alpha1.KubermaticAddonConfiguration, addonVolume string, version string) corev1.Container {
 	return corev1.Container{
-		Name:    "copy-addons-kubernetes",
+		Name:    "copy-addons",
 		Image:   cfg.DockerRepository + ":" + getAddonDockerTag(cfg, version),
 		Command: []string{"/bin/sh"},
 		Args: []string{
 			"-c",
-			"mkdir -p /opt/addons/kubernetes && cp -r /addons/* /opt/addons/kubernetes",
+			"mkdir -p /opt/addons && cp -r /addons/* /opt/addons",
 		},
 		VolumeMounts: []corev1.VolumeMount{
 			{

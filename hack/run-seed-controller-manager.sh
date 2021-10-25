@@ -66,8 +66,7 @@ set -x
   -seed-name=europe-west3-c \
   -kubeconfig=$KUBECONFIG \
   -ca-bundle=$CA_BUNDLE \
-  -kubernetes-addons-path=addons \
-  -kubernetes-addons-file=charts/kubermatic/static/master/kubernetes-addons.yaml \
+  -addons-path=addons \
   -feature-gates=OpenIDAuthPlugin=true,KonnectivityService=true \
   -worker-name="$(worker_name)" \
   -external-url=dev.kubermatic.io \
