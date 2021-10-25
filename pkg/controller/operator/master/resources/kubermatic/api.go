@@ -112,7 +112,6 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 				"-internal-address=0.0.0.0:8085",
 				"-dynamic-presets=true",
 				"-swagger=/opt/swagger.json",
-				"-master-resources=/opt/extra-files",
 				fmt.Sprintf("-ca-bundle=/opt/ca-bundle/%s", resources.CABundleConfigMapKey),
 				fmt.Sprintf("-namespace=%s", cfg.Namespace),
 				fmt.Sprintf("-oidc-url=%s", cfg.Spec.Auth.TokenIssuer),

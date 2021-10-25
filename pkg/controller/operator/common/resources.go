@@ -46,18 +46,6 @@ const (
 	// VersionLabel is the label containing the application's version.
 	VersionLabel = "app.kubernetes.io/version"
 
-	// VersionsFileName is the name of the YAML file containing the enabled and
-	// default Kubernetes versions.
-	VersionsFileName = "versions.yaml"
-
-	// UpdatesFileName is the name of the YAML file containing the configured
-	// cluster upgrade rules.
-	UpdatesFileName = "updates.yaml"
-
-	// ProviderIncompatibilitiesFileName is the name of the YAML file containing the configured
-	// cluster provider incompatibility rules.
-	ProviderIncompatibilitiesFileName = "provider-incompatibilities.yaml"
-
 	// KubernetesAddonsFileName is the name of the kubernetes addons manifest file
 	// in the master files.
 	KubernetesAddonsFileName = "kubernetes-addons.yaml"
@@ -109,18 +97,6 @@ func DockercfgSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) recon
 			return createSecretData(s, map[string]string{
 				corev1.DockerConfigJsonKey: cfg.Spec.ImagePullSecret,
 			}), nil
-		}
-	}
-}
-
-func ExtraFilesSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
-		return ExtraFilesSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
-			data := map[string]string{
-				KubernetesAddonsFileName: cfg.Spec.UserCluster.Addons.Kubernetes.DefaultManifests,
-			}
-
-			return createSecretData(s, data), nil
 		}
 	}
 }

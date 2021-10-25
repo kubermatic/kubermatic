@@ -442,7 +442,6 @@ func (r *Reconciler) reconcileSecrets(ctx context.Context, cfg *operatorv1alpha1
 	log.Debug("reconciling Secrets")
 
 	creators := []reconciling.NamedSecretCreatorGetter{
-		common.ExtraFilesSecretCreator(cfg),
 		common.WebhookServingCASecretCreator(cfg),
 		common.WebhookServingCertSecretCreator(cfg, client),
 	}

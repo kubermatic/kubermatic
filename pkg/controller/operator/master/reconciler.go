@@ -206,7 +206,6 @@ func (r *Reconciler) reconcileSecrets(ctx context.Context, config *operatorv1alp
 	creators := []reconciling.NamedSecretCreatorGetter{
 		common.WebhookServingCASecretCreator(config),
 		common.WebhookServingCertSecretCreator(config, r.Client),
-		common.ExtraFilesSecretCreator(config),
 	}
 
 	if config.Spec.ImagePullSecret != "" {
