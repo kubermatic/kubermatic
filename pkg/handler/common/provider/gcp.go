@@ -371,7 +371,7 @@ func ListGKEClusters(ctx context.Context, sa string) (apiv2.GKEClusterList, erro
 		return clusters, fmt.Errorf("clusters list project=%s: %w", project, err)
 	}
 	for _, f := range resp.Clusters {
-		clusters = append(clusters, apiv2.GKECluster{Name: f.Name})
+		clusters = append(clusters, apiv2.GKECluster{Name: f.Name, Zone: f.Zone})
 	}
 	return clusters, nil
 }
