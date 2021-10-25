@@ -47,7 +47,7 @@ func HealthyDeployment(ctx context.Context, client ctrlruntimeclient.Client, nn 
 	return kubermaticv1.HealthStatusUp, nil
 }
 
-// HealthyStatefulSe tells if the deployment has a minimum of minReady replicas in Ready status
+// HealthyStatefulSet tells if the deployment has a minimum of minReady replicas in Ready status
 func HealthyStatefulSet(ctx context.Context, client ctrlruntimeclient.Client, nn types.NamespacedName, minReady int32) (kubermaticv1.HealthStatus, error) {
 	statefulSet := &appsv1.StatefulSet{}
 	if err := client.Get(ctx, nn, statefulSet); err != nil {
@@ -61,6 +61,25 @@ func HealthyStatefulSet(ctx context.Context, client ctrlruntimeclient.Client, nn
 		return kubermaticv1.HealthStatusDown, nil
 	}
 	if statefulSet.Status.UpdatedReplicas != *statefulSet.Spec.Replicas || statefulSet.Status.ReadyReplicas != *statefulSet.Spec.Replicas || statefulSet.Status.Replicas != *statefulSet.Spec.Replicas {
+		return kubermaticv1.HealthStatusProvisioning, nil
+	}
+	return kubermaticv1.HealthStatusUp, nil
+}
+
+// HealthyDaemonSet tells if the minReady nodes have one Ready pod
+func HealthyDaemonSet(ctx context.Context, client ctrlruntimeclient.Client, nn types.NamespacedName, minReady int32) (kubermaticv1.HealthStatus, error) {
+	daemonSet := &appsv1.DaemonSet{}
+	if err := client.Get(ctx, nn, daemonSet); err != nil {
+		if kerrors.IsNotFound(err) {
+			return kubermaticv1.HealthStatusDown, nil
+		}
+		return kubermaticv1.HealthStatusDown, err
+	}
+
+	if daemonSet.Status.NumberReady < minReady {
+		return kubermaticv1.HealthStatusDown, nil
+	}
+	if daemonSet.Status.NumberReady != daemonSet.Status.DesiredNumberScheduled {
 		return kubermaticv1.HealthStatusProvisioning, nil
 	}
 	return kubermaticv1.HealthStatusUp, nil

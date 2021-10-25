@@ -44,6 +44,12 @@ type ClusterHealth struct {
 
 	// user cluster controller manager
 	UserClusterControllerManager HealthStatus `json:"userClusterControllerManager,omitempty"`
+
+	// user cluster mla logging
+	UserClusterMlaLogging HealthStatus `json:"userClusterMlaLogging,omitempty"`
+
+	// user cluster mla monitoring
+	UserClusterMlaMonitoring HealthStatus `json:"userClusterMlaMonitoring,omitempty"`
 }
 
 // Validate validates this cluster health
@@ -83,6 +89,14 @@ func (m *ClusterHealth) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateUserClusterControllerManager(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateUserClusterMlaLogging(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateUserClusterMlaMonitoring(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -227,6 +241,36 @@ func (m *ClusterHealth) validateUserClusterControllerManager(formats strfmt.Regi
 	return nil
 }
 
+func (m *ClusterHealth) validateUserClusterMlaLogging(formats strfmt.Registry) error {
+	if swag.IsZero(m.UserClusterMlaLogging) { // not required
+		return nil
+	}
+
+	if err := m.UserClusterMlaLogging.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("userClusterMlaLogging")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) validateUserClusterMlaMonitoring(formats strfmt.Registry) error {
+	if swag.IsZero(m.UserClusterMlaMonitoring) { // not required
+		return nil
+	}
+
+	if err := m.UserClusterMlaMonitoring.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("userClusterMlaMonitoring")
+		}
+		return err
+	}
+
+	return nil
+}
+
 // ContextValidate validate this cluster health based on the context it is used
 func (m *ClusterHealth) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
@@ -264,6 +308,14 @@ func (m *ClusterHealth) ContextValidate(ctx context.Context, formats strfmt.Regi
 	}
 
 	if err := m.contextValidateUserClusterControllerManager(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateUserClusterMlaLogging(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateUserClusterMlaMonitoring(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -374,6 +426,30 @@ func (m *ClusterHealth) contextValidateUserClusterControllerManager(ctx context.
 	if err := m.UserClusterControllerManager.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("userClusterControllerManager")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) contextValidateUserClusterMlaLogging(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.UserClusterMlaLogging.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("userClusterMlaLogging")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) contextValidateUserClusterMlaMonitoring(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.UserClusterMlaMonitoring.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("userClusterMlaMonitoring")
 		}
 		return err
 	}

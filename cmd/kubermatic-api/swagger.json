@@ -17501,6 +17501,12 @@
         },
         "userClusterControllerManager": {
           "$ref": "#/definitions/HealthStatus"
+        },
+        "userClusterMlaLogging": {
+          "$ref": "#/definitions/HealthStatus"
+        },
+        "userClusterMlaMonitoring": {
+          "$ref": "#/definitions/HealthStatus"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"

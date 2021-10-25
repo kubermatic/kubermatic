@@ -60,7 +60,11 @@ kubectl config view --flatten --minify -ojson |
 
 CLUSTER_VERSION="$(echo $CLUSTER_RAW | jq -r '.spec.version')"
 CLUSTER_URL="$(echo $CLUSTER_RAW | jq -r .address.url)"
-OPENVPN_SERVER_NODEPORT="$(echo ${OPENVPN_SERVER_SERVICE_RAW} | jq -r .spec.ports[0].nodePort)"
+if $(echo ${OPENVPN_SERVER_SERVICE_RAW} | jq -r .spec.ports[0].nodePort); then
+  OPENVPN_SERVER_NODEPORT="$(echo ${OPENVPN_SERVER_SERVICE_RAW} | jq -r .spec.ports[0].nodePort)"
+else
+  OPENVPN_SERVER_NODEPORT="$(echo ${OPENVPN_SERVER_SERVICE_RAW} | jq -r .spec.ports[0].port)"
+fi
 
 ARGS=""
 if echo $CLUSTER_RAW | grep -i aws -q; then
