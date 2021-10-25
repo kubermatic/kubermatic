@@ -72,7 +72,7 @@ func MigrateCRDsAction(logger *logrus.Logger) cli.ActionFunc {
 		// phase 0: preparations
 
 		// get kube client to master cluster
-		kubeContext := ctx.String(deployKubeContextFlag.Name)
+		kubeContext := ctx.String(migrateCRDsKubeContextFlag.Name)
 
 		logger.Info("Creating Kubernetes client to the master cluster…")
 
