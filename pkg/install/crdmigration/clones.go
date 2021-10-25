@@ -306,6 +306,17 @@ func convertKubermaticVersioningConfiguration(old operatorv1alpha1.KubermaticVer
 	return result
 }
 
+func convertHealthStatus(oldHs kubermaticv1.HealthStatus) newv1.HealthStatus {
+	switch oldHs {
+	case kubermaticv1.HealthStatusUp:
+		return newv1.HealthStatusUp
+	case kubermaticv1.HealthStatusProvisioning:
+		return newv1.HealthStatusProvisioning
+	}
+
+	return newv1.HealthStatusDown
+}
+
 func cloneClusterResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) (int, error) {
 	oldObjects := &kubermaticv1.ClusterList{}
 	if err := client.List(ctx, oldObjects); err != nil {
@@ -325,16 +336,16 @@ func cloneClusterResourcesInCluster(ctx context.Context, logger logrus.FieldLogg
 				UserName:               oldObject.Status.UserName,
 				UserEmail:              oldObject.Status.UserEmail,
 				ExtendedHealth: newv1.ExtendedClusterHealth{
-					Apiserver:                    newv1.HealthStatus(oldObject.Status.ExtendedHealth.Apiserver),
-					Scheduler:                    newv1.HealthStatus(oldObject.Status.ExtendedHealth.Scheduler),
-					Controller:                   newv1.HealthStatus(oldObject.Status.ExtendedHealth.Controller),
-					MachineController:            newv1.HealthStatus(oldObject.Status.ExtendedHealth.MachineController),
-					Etcd:                         newv1.HealthStatus(oldObject.Status.ExtendedHealth.Etcd),
-					OpenVPN:                      newv1.HealthStatus(oldObject.Status.ExtendedHealth.OpenVPN),
-					CloudProviderInfrastructure:  newv1.HealthStatus(oldObject.Status.ExtendedHealth.CloudProviderInfrastructure),
-					UserClusterControllerManager: newv1.HealthStatus(oldObject.Status.ExtendedHealth.UserClusterControllerManager),
-					GatekeeperController:         newv1.HealthStatus(oldObject.Status.ExtendedHealth.GatekeeperController),
-					GatekeeperAudit:              newv1.HealthStatus(oldObject.Status.ExtendedHealth.GatekeeperAudit),
+					Apiserver:                    convertHealthStatus(oldObject.Status.ExtendedHealth.Apiserver),
+					Scheduler:                    convertHealthStatus(oldObject.Status.ExtendedHealth.Scheduler),
+					Controller:                   convertHealthStatus(oldObject.Status.ExtendedHealth.Controller),
+					MachineController:            convertHealthStatus(oldObject.Status.ExtendedHealth.MachineController),
+					Etcd:                         convertHealthStatus(oldObject.Status.ExtendedHealth.Etcd),
+					OpenVPN:                      convertHealthStatus(oldObject.Status.ExtendedHealth.OpenVPN),
+					CloudProviderInfrastructure:  convertHealthStatus(oldObject.Status.ExtendedHealth.CloudProviderInfrastructure),
+					UserClusterControllerManager: convertHealthStatus(oldObject.Status.ExtendedHealth.UserClusterControllerManager),
+					GatekeeperController:         convertHealthStatus(oldObject.Status.ExtendedHealth.GatekeeperController),
+					GatekeeperAudit:              convertHealthStatus(oldObject.Status.ExtendedHealth.GatekeeperAudit),
 				},
 			},
 		}

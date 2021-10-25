@@ -777,13 +777,14 @@ type AnexiaCloudSpec struct {
 	Token string `json:"token,omitempty"`
 }
 
-// +kubebuilder:validation:Enum=0;1;2
-type HealthStatus int
+// +kubebuilder:validation:Enum=HealthStatusDown;HealthStatusUp;HealthStatusProvisioning
+
+type HealthStatus string
 
 const (
-	HealthStatusDown HealthStatus = iota
-	HealthStatusUp
-	HealthStatusProvisioning
+	HealthStatusDown         = HealthStatus("HealthStatusDown")
+	HealthStatusUp           = HealthStatus("HealthStatusUp")
+	HealthStatusProvisioning = HealthStatus("HealthStatusProvisioning")
 )
 
 // ExtendedClusterHealth stores health information of a cluster.

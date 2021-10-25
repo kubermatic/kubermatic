@@ -1604,64 +1604,64 @@ spec:
                 properties:
                   apiserver:
                     enum:
-                    - 0
-                    - 1
-                    - 2
-                    type: integer
+                    - HealthStatusDown
+                    - HealthStatusUp
+                    - HealthStatusProvisioning
+                    type: string
                   cloudProviderInfrastructure:
                     enum:
-                    - 0
-                    - 1
-                    - 2
-                    type: integer
+                    - HealthStatusDown
+                    - HealthStatusUp
+                    - HealthStatusProvisioning
+                    type: string
                   controller:
                     enum:
-                    - 0
-                    - 1
-                    - 2
-                    type: integer
+                    - HealthStatusDown
+                    - HealthStatusUp
+                    - HealthStatusProvisioning
+                    type: string
                   etcd:
                     enum:
-                    - 0
-                    - 1
-                    - 2
-                    type: integer
+                    - HealthStatusDown
+                    - HealthStatusUp
+                    - HealthStatusProvisioning
+                    type: string
                   gatekeeperAudit:
                     enum:
-                    - 0
-                    - 1
-                    - 2
-                    type: integer
+                    - HealthStatusDown
+                    - HealthStatusUp
+                    - HealthStatusProvisioning
+                    type: string
                   gatekeeperController:
                     enum:
-                    - 0
-                    - 1
-                    - 2
-                    type: integer
+                    - HealthStatusDown
+                    - HealthStatusUp
+                    - HealthStatusProvisioning
+                    type: string
                   machineController:
                     enum:
-                    - 0
-                    - 1
-                    - 2
-                    type: integer
+                    - HealthStatusDown
+                    - HealthStatusUp
+                    - HealthStatusProvisioning
+                    type: string
                   openvpn:
                     enum:
-                    - 0
-                    - 1
-                    - 2
-                    type: integer
+                    - HealthStatusDown
+                    - HealthStatusUp
+                    - HealthStatusProvisioning
+                    type: string
                   scheduler:
                     enum:
-                    - 0
-                    - 1
-                    - 2
-                    type: integer
+                    - HealthStatusDown
+                    - HealthStatusUp
+                    - HealthStatusProvisioning
+                    type: string
                   userClusterControllerManager:
                     enum:
-                    - 0
-                    - 1
-                    - 2
-                    type: integer
+                    - HealthStatusDown
+                    - HealthStatusUp
+                    - HealthStatusProvisioning
+                    type: string
                 required:
                 - apiserver
                 - cloudProviderInfrastructure
