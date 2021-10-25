@@ -40,6 +40,7 @@ const (
 	defaultKubeconfig      = "YXBpVmVyc2lvbjogdjEKY2x1c3RlcnM6Ci0gY2x1c3RlcjoKICAgIGNlcnRpZmljYXRlLWF1dGhvcml0eS1kYXRhOiBZWEJwVm1WeWMybHZiam9nZGpFS1kyeDFjM1JsY25NNkNpMGdZMngxYzNSbGNqb0tJQ0FnSUdObGNuUnBabWxqWVhSbExXRjFkR2h2Y21sMGVTMWtZWFJoT2lCaFltTUtJQ0FnSUhObGNuWmxjam9nYUhSMGNITTZMeTlzYzJoNmRtTm5PR3RrTG1WMWNtOXdaUzEzWlhOME15MWpMbVJsZGk1cmRXSmxjbTFoZEdsakxtbHZPak14TWpjMUNpQWdibUZ0WlRvZ2JITm9lblpqWnpoclpBcGpiMjUwWlhoMGN6b0tMU0JqYjI1MFpYaDBPZ29nSUNBZ1kyeDFjM1JsY2pvZ2JITm9lblpqWnpoclpBb2dJQ0FnZFhObGNqb2daR1ZtWVhWc2RBb2dJRzVoYldVNklHUmxabUYxYkhRS1kzVnljbVZ1ZEMxamIyNTBaWGgwT2lCa1pXWmhkV3gwQ210cGJtUTZJRU52Ym1acFp3cHdjbVZtWlhKbGJtTmxjem9nZTMwS2RYTmxjbk02Q2kwZ2JtRnRaVG9nWkdWbVlYVnNkQW9nSUhWelpYSTZDaUFnSUNCMGIydGxiam9nWVdGaExtSmlZZ289CiAgICBzZXJ2ZXI6IGh0dHBzOi8vbG9jYWxob3N0OjMwODA4CiAgbmFtZTogaHZ3OWs0c2djbApjb250ZXh0czoKLSBjb250ZXh0OgogICAgY2x1c3RlcjogaHZ3OWs0c2djbAogICAgdXNlcjogZGVmYXVsdAogIG5hbWU6IGRlZmF1bHQKY3VycmVudC1jb250ZXh0OiBkZWZhdWx0CmtpbmQ6IENvbmZpZwpwcmVmZXJlbmNlczoge30KdXNlcnM6Ci0gbmFtZTogZGVmYXVsdAogIHVzZXI6CiAgICB0b2tlbjogejlzaDc2LjI0ZGNkaDU3czR6ZGt4OGwK"
 	defaultAccessKeyID     = "abc"
 	defaultSecretAccessKey = "abc"
+	defaultServiceAccount  = "abc"
 )
 
 func TestCreateOrUpdateKubeconfigSecretForCluster(t *testing.T) {
@@ -147,12 +148,20 @@ func TestCreateOrUpdateCloudSecretForCluster(t *testing.T) {
 		externalCluster *kubermaticapiv1.Cluster
 		existingObjects []ctrlruntimeclient.Object
 		expectedSecret  *corev1.Secret
+		cloudSpec       *apiv2.ExternalClusterCloudSpec
 	}{
 		{
 			name:            "test: create a new eks secret",
 			projectID:       "projectID",
 			clusterID:       "test",
 			existingObjects: []ctrlruntimeclient.Object{},
+			cloudSpec: &apiv2.ExternalClusterCloudSpec{
+				EKS: &apiv2.EKSCloudSpec{
+					Name:            "test",
+					AccessKeyID:     defaultAccessKeyID,
+					SecretAccessKey: defaultSecretAccessKey,
+				},
+			},
 			externalCluster: genEKSCluster("test", "eu-central-1", "projectID"),
 			expectedSecret: &corev1.Secret{
 				TypeMeta: metav1.TypeMeta{
@@ -165,6 +174,32 @@ func TestCreateOrUpdateCloudSecretForCluster(t *testing.T) {
 					Namespace:       resources.KubermaticNamespace,
 				},
 				Data: map[string][]byte{resources.ExternalEKSClusterAccessKeyID: []byte(defaultAccessKeyID), resources.ExternalEKSClusterSecretAccessKey: []byte(defaultSecretAccessKey)},
+				Type: corev1.SecretTypeOpaque,
+			},
+		},
+		{
+			name:            "test: create a new gke secret",
+			projectID:       "projectID",
+			clusterID:       "test",
+			existingObjects: []ctrlruntimeclient.Object{},
+			cloudSpec: &apiv2.ExternalClusterCloudSpec{
+				GKE: &apiv2.GKECloudSpec{
+					Name:           "test",
+					ServiceAccount: defaultAccessKeyID,
+				},
+			},
+			externalCluster: genGKECluster("test", "eu-central-1", "projectID"),
+			expectedSecret: &corev1.Secret{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Secret",
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					ResourceVersion: "1",
+					Name:            genGKECluster("test", "eu-central-1", "projectID").GetSecretName(),
+					Namespace:       resources.KubermaticNamespace,
+				},
+				Data: map[string][]byte{resources.ExternalGKEClusterSeriveAccount: []byte(defaultAccessKeyID)},
 				Type: corev1.SecretTypeOpaque,
 			},
 		},
@@ -186,15 +221,7 @@ func TestCreateOrUpdateCloudSecretForCluster(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cloudSpec := apiv2.ExternalClusterCloudSpec{
-				EKS: &apiv2.EKSCloudSpec{
-					Name:            "test",
-					AccessKeyID:     defaultAccessKeyID,
-					SecretAccessKey: defaultSecretAccessKey,
-					Region:          "eu-central-1",
-				},
-			}
-			credentialRef, err := provider.CreateOrUpdateCredentialSecretForCluster(context.Background(), &cloudSpec, tc.projectID, tc.clusterID)
+			credentialRef, err := provider.CreateOrUpdateCredentialSecretForCluster(context.Background(), tc.cloudSpec, tc.projectID, tc.clusterID)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -237,6 +264,22 @@ func genEKSCluster(name, region, projectID string) *kubermaticapiv1.Cluster {
 	cluster.Spec.Cloud.AWS = &kubermaticapiv1.AWSCloudSpec{
 		AccessKeyID:     defaultAccessKeyID,
 		SecretAccessKey: defaultSecretAccessKey,
+	}
+	return cluster
+}
+
+func genGKECluster(name, region, projectID string) *kubermaticapiv1.Cluster {
+	cluster := &kubermaticapiv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+			Labels: map[string]string{kubermaticv1.ProjectIDLabelKey: projectID},
+		},
+		Spec: kubermaticapiv1.ClusterSpec{
+			Cloud: kubermaticapiv1.CloudSpec{},
+		},
+	}
+	cluster.Spec.Cloud.GCP = &kubermaticapiv1.GCPCloudSpec{
+		ServiceAccount: defaultServiceAccount,
 	}
 	return cluster
 }

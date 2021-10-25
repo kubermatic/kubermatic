@@ -109,7 +109,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		// scenario 5
 		{
 			Name:                   "scenario 5: create GKE cluster",
-			Body:                   `{"name":"test", "cloud":{"gke":{"serviceAccount":"abc"}}}`,
+			Body:                   `{"name":"test", "cloud":{"gke":{"name":"gke-cluster","serviceAccount":"abc","zone":"abc"}}}`,
 			ExpectedResponse:       `{"id":"%s","name":"test","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"type":"kubernetes","spec":{"cloud":{"dc":""},"version":"","oidc":{}},"status":{"version":"","url":"","externalCCMMigration":""}}`,
 			RewriteClusterID:       true,
 			HTTPStatus:             http.StatusCreated,
@@ -119,10 +119,28 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		},
 		{
 			Name:                   "scenario 6: create EKS cluster",
-			Body:                   `{"name":"test", "cloud":{"eks":{"accessKeyID":"abc", "secretAccessKey":"abc"}}}`,
+			Body:                   `{"name":"test", "cloud":{"eks":{"name":"eks-cluster","accessKeyID":"abc","secretAccessKey": "abc", "region":"abc"}}}`,
 			ExpectedResponse:       `{"id":"%s","name":"test","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"type":"kubernetes","spec":{"cloud":{"dc":""},"version":"","oidc":{}},"status":{"version":"","url":"","externalCCMMigration":""}}`,
 			RewriteClusterID:       true,
 			HTTPStatus:             http.StatusCreated,
+			ProjectToSync:          test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+		},
+		{
+			Name:                   "scenario 7: create EKS cluster with empty region",
+			Body:                   `{"name":"test", "cloud":{"eks":{"name":"eks-cluster","accessKeyID":"abc","secretAccessKey": "abc"}}}`,
+			ExpectedResponse:       `{"error":{"code":400,"message":"the EKS cluster name, region or credentials can not be empty"}}`,
+			HTTPStatus:             http.StatusBadRequest,
+			ProjectToSync:          test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+		},
+		{
+			Name:                   "scenario 8: create EKS cluster with empty AccessKeyID or SecretAccessKey",
+			Body:                   `{"name":"test", "cloud":{"eks":{"name":"eks-cluster","region":"abc"}}}`,
+			ExpectedResponse:       `{"error":{"code":400,"message":"the EKS cluster name, region or credentials can not be empty"}}`,
+			HTTPStatus:             http.StatusBadRequest,
 			ProjectToSync:          test.GenDefaultProject().Name,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
