@@ -21,7 +21,9 @@ import (
 	"reflect"
 	"testing"
 
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
@@ -34,7 +36,11 @@ import (
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-const defaultKubeconfig = "YXBpVmVyc2lvbjogdjEKY2x1c3RlcnM6Ci0gY2x1c3RlcjoKICAgIGNlcnRpZmljYXRlLWF1dGhvcml0eS1kYXRhOiBZWEJwVm1WeWMybHZiam9nZGpFS1kyeDFjM1JsY25NNkNpMGdZMngxYzNSbGNqb0tJQ0FnSUdObGNuUnBabWxqWVhSbExXRjFkR2h2Y21sMGVTMWtZWFJoT2lCaFltTUtJQ0FnSUhObGNuWmxjam9nYUhSMGNITTZMeTlzYzJoNmRtTm5PR3RrTG1WMWNtOXdaUzEzWlhOME15MWpMbVJsZGk1cmRXSmxjbTFoZEdsakxtbHZPak14TWpjMUNpQWdibUZ0WlRvZ2JITm9lblpqWnpoclpBcGpiMjUwWlhoMGN6b0tMU0JqYjI1MFpYaDBPZ29nSUNBZ1kyeDFjM1JsY2pvZ2JITm9lblpqWnpoclpBb2dJQ0FnZFhObGNqb2daR1ZtWVhWc2RBb2dJRzVoYldVNklHUmxabUYxYkhRS1kzVnljbVZ1ZEMxamIyNTBaWGgwT2lCa1pXWmhkV3gwQ210cGJtUTZJRU52Ym1acFp3cHdjbVZtWlhKbGJtTmxjem9nZTMwS2RYTmxjbk02Q2kwZ2JtRnRaVG9nWkdWbVlYVnNkQW9nSUhWelpYSTZDaUFnSUNCMGIydGxiam9nWVdGaExtSmlZZ289CiAgICBzZXJ2ZXI6IGh0dHBzOi8vbG9jYWxob3N0OjMwODA4CiAgbmFtZTogaHZ3OWs0c2djbApjb250ZXh0czoKLSBjb250ZXh0OgogICAgY2x1c3RlcjogaHZ3OWs0c2djbAogICAgdXNlcjogZGVmYXVsdAogIG5hbWU6IGRlZmF1bHQKY3VycmVudC1jb250ZXh0OiBkZWZhdWx0CmtpbmQ6IENvbmZpZwpwcmVmZXJlbmNlczoge30KdXNlcnM6Ci0gbmFtZTogZGVmYXVsdAogIHVzZXI6CiAgICB0b2tlbjogejlzaDc2LjI0ZGNkaDU3czR6ZGt4OGwK"
+const (
+	defaultKubeconfig      = "YXBpVmVyc2lvbjogdjEKY2x1c3RlcnM6Ci0gY2x1c3RlcjoKICAgIGNlcnRpZmljYXRlLWF1dGhvcml0eS1kYXRhOiBZWEJwVm1WeWMybHZiam9nZGpFS1kyeDFjM1JsY25NNkNpMGdZMngxYzNSbGNqb0tJQ0FnSUdObGNuUnBabWxqWVhSbExXRjFkR2h2Y21sMGVTMWtZWFJoT2lCaFltTUtJQ0FnSUhObGNuWmxjam9nYUhSMGNITTZMeTlzYzJoNmRtTm5PR3RrTG1WMWNtOXdaUzEzWlhOME15MWpMbVJsZGk1cmRXSmxjbTFoZEdsakxtbHZPak14TWpjMUNpQWdibUZ0WlRvZ2JITm9lblpqWnpoclpBcGpiMjUwWlhoMGN6b0tMU0JqYjI1MFpYaDBPZ29nSUNBZ1kyeDFjM1JsY2pvZ2JITm9lblpqWnpoclpBb2dJQ0FnZFhObGNqb2daR1ZtWVhWc2RBb2dJRzVoYldVNklHUmxabUYxYkhRS1kzVnljbVZ1ZEMxamIyNTBaWGgwT2lCa1pXWmhkV3gwQ210cGJtUTZJRU52Ym1acFp3cHdjbVZtWlhKbGJtTmxjem9nZTMwS2RYTmxjbk02Q2kwZ2JtRnRaVG9nWkdWbVlYVnNkQW9nSUhWelpYSTZDaUFnSUNCMGIydGxiam9nWVdGaExtSmlZZ289CiAgICBzZXJ2ZXI6IGh0dHBzOi8vbG9jYWxob3N0OjMwODA4CiAgbmFtZTogaHZ3OWs0c2djbApjb250ZXh0czoKLSBjb250ZXh0OgogICAgY2x1c3RlcjogaHZ3OWs0c2djbAogICAgdXNlcjogZGVmYXVsdAogIG5hbWU6IGRlZmF1bHQKY3VycmVudC1jb250ZXh0OiBkZWZhdWx0CmtpbmQ6IENvbmZpZwpwcmVmZXJlbmNlczoge30KdXNlcnM6Ci0gbmFtZTogZGVmYXVsdAogIHVzZXI6CiAgICB0b2tlbjogejlzaDc2LjI0ZGNkaDU3czR6ZGt4OGwK"
+	defaultAccessKeyID     = "abc"
+	defaultSecretAccessKey = "abc"
+)
 
 func TestCreateOrUpdateKubeconfigSecretForCluster(t *testing.T) {
 	testCases := []struct {
@@ -133,6 +139,79 @@ func TestCreateOrUpdateKubeconfigSecretForCluster(t *testing.T) {
 	}
 }
 
+func TestCreateOrUpdateCloudSecretForCluster(t *testing.T) {
+	testCases := []struct {
+		name            string
+		projectID       string
+		clusterID       string
+		externalCluster *kubermaticapiv1.Cluster
+		existingObjects []ctrlruntimeclient.Object
+		expectedSecret  *corev1.Secret
+	}{
+		{
+			name:            "test: create a new eks secret",
+			projectID:       "projectID",
+			clusterID:       "test",
+			existingObjects: []ctrlruntimeclient.Object{},
+			externalCluster: genEKSCluster("test", "eu-central-1", "projectID"),
+			expectedSecret: &corev1.Secret{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Secret",
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					ResourceVersion: "1",
+					Name:            genEKSCluster("test", "eu-central-1", "projectID").GetSecretName(),
+					Namespace:       resources.KubermaticNamespace,
+				},
+				Data: map[string][]byte{resources.ExternalEKSClusterAccessKeyID: []byte(defaultAccessKeyID), resources.ExternalEKSClusterSecretAccessKey: []byte(defaultSecretAccessKey)},
+				Type: corev1.SecretTypeOpaque,
+			},
+		},
+	}
+	for idx := range testCases {
+		tc := testCases[idx]
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			client := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(tc.existingObjects...).
+				Build()
+
+			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
+				return client, nil
+			}
+			provider, err := kubernetes.NewExternalClusterProvider(fakeImpersonationClient, client)
+			if err != nil {
+				t.Fatal(err)
+			}
+			cloudSpec := apiv2.ExternalClusterCloudSpec{
+				EKS: &apiv2.EKSCloudSpec{
+					Name:            "test",
+					AccessKeyID:     defaultAccessKeyID,
+					SecretAccessKey: defaultSecretAccessKey,
+					Region:          "eu-central-1",
+				},
+			}
+			credentialRef, err := provider.CreateOrUpdateCredentialSecretForCluster(context.Background(), &cloudSpec, tc.projectID, tc.clusterID)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			secret := &corev1.Secret{}
+			if err := client.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: credentialRef.Name, Namespace: resources.KubermaticNamespace}, secret); err != nil {
+				t.Fatal(err)
+			}
+			tc.expectedSecret.ObjectMeta.Labels = secret.ObjectMeta.Labels
+			tc.expectedSecret.Data = secret.Data
+			if !reflect.DeepEqual(tc.expectedSecret, secret) {
+				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(tc.expectedSecret, secret))
+			}
+		})
+	}
+}
+
 func genExternalCluster(name, projectID string) *kubermaticapiv1.ExternalCluster {
 	return &kubermaticapiv1.ExternalCluster{
 		ObjectMeta: metav1.ObjectMeta{
@@ -143,4 +222,21 @@ func genExternalCluster(name, projectID string) *kubermaticapiv1.ExternalCluster
 			HumanReadableName: name,
 		},
 	}
+}
+
+func genEKSCluster(name, region, projectID string) *kubermaticapiv1.Cluster {
+	cluster := &kubermaticapiv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+			Labels: map[string]string{kubermaticv1.ProjectIDLabelKey: projectID},
+		},
+		Spec: kubermaticapiv1.ClusterSpec{
+			Cloud: kubermaticapiv1.CloudSpec{},
+		},
+	}
+	cluster.Spec.Cloud.AWS = &kubermaticapiv1.AWSCloudSpec{
+		AccessKeyID:     defaultAccessKeyID,
+		SecretAccessKey: defaultSecretAccessKey,
+	}
+	return cluster
 }

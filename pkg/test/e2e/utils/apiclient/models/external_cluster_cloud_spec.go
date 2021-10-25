@@ -18,6 +18,9 @@ import (
 // swagger:model ExternalClusterCloudSpec
 type ExternalClusterCloudSpec struct {
 
+	// eks
+	Eks *EKSCloudSpec `json:"eks,omitempty"`
+
 	// gke
 	Gke *GKECloudSpec `json:"gke,omitempty"`
 }
@@ -26,6 +29,10 @@ type ExternalClusterCloudSpec struct {
 func (m *ExternalClusterCloudSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateEks(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateGke(formats); err != nil {
 		res = append(res, err)
 	}
@@ -33,6 +40,23 @@ func (m *ExternalClusterCloudSpec) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ExternalClusterCloudSpec) validateEks(formats strfmt.Registry) error {
+	if swag.IsZero(m.Eks) { // not required
+		return nil
+	}
+
+	if m.Eks != nil {
+		if err := m.Eks.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("eks")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -57,6 +81,10 @@ func (m *ExternalClusterCloudSpec) validateGke(formats strfmt.Registry) error {
 func (m *ExternalClusterCloudSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateEks(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateGke(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -64,6 +92,20 @@ func (m *ExternalClusterCloudSpec) ContextValidate(ctx context.Context, formats 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ExternalClusterCloudSpec) contextValidateEks(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Eks != nil {
+		if err := m.Eks.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("eks")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 

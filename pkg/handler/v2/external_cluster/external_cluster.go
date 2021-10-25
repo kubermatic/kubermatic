@@ -114,13 +114,28 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 					req.Body.Cloud.GKE.ServiceAccount = credentials.ServiceAccount
 				}
 			}
-			createdCluster, err := createGKECluster(ctx, req.Body.Name, userInfoGetter, project, req.Body.Cloud, clusterProvider, privilegedClusterProvider)
+			createdCluster, err := createGKECluster(ctx, req.Body.Name, userInfoGetter, project, cloud, clusterProvider, privilegedClusterProvider)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 			return convertClusterToAPI(createdCluster), nil
 		}
+		// import EKS cluster
+		if cloud.EKS != nil {
+			if preset != nil {
+				if credentials := preset.Spec.AWS; credentials != nil {
+					cloud.EKS.AccessKeyID = credentials.AccessKeyID
+					cloud.EKS.SecretAccessKey = credentials.SecretAccessKey
+				}
+			}
 
+			createdCluster, err := createEKSCluster(ctx, req.Body.Name, userInfoGetter, project, cloud, clusterProvider, privilegedClusterProvider)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+
+			return convertClusterToAPI(createdCluster), nil
+		}
 		return nil, errors.NewBadRequest("kubeconfig or provider structure missing")
 	}
 }
@@ -138,6 +153,28 @@ func createGKECluster(ctx context.Context, name string, userInfoGetter provider.
 	}
 	kuberneteshelper.AddFinalizer(newCluster, apiv1.CredentialsSecretsCleanupFinalizer)
 	newCluster.Spec.CloudSpec.GKE.CredentialsReference = keyRef
+
+	return createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, newCluster, project)
+}
+
+func createEKSCluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticapiv1.ExternalCluster, error) {
+	if cloud.EKS.Name == "" || cloud.EKS.Region == "" || cloud.EKS.AccessKeyID == "" || cloud.EKS.SecretAccessKey == "" {
+		return nil, errors.NewBadRequest("the EKS cluster name, region or credentials can not be empty")
+	}
+
+	newCluster := genExternalCluster(name, project.Name)
+	newCluster.Spec.CloudSpec = &kubermaticapiv1.ExternalClusterCloudSpec{
+		EKS: &kubermaticapiv1.ExternalClusterEKSCloudSpec{
+			Name:   cloud.EKS.Name,
+			Region: cloud.EKS.Region,
+		},
+	}
+	keyRef, err := clusterProvider.CreateOrUpdateCredentialSecretForCluster(ctx, cloud, project.Name, newCluster.Name)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	kuberneteshelper.AddFinalizer(newCluster, apiv1.CredentialsSecretsCleanupFinalizer)
+	newCluster.Spec.CloudSpec.EKS.CredentialsReference = keyRef
 
 	return createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, newCluster, project)
 }

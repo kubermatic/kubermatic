@@ -117,6 +117,16 @@ func TestCreateClusterEndpoint(t *testing.T) {
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 		},
+		{
+			Name:                   "scenario 6: create EKS cluster",
+			Body:                   `{"name":"test", "cloud":{"eks":{"accessKeyID":"abc", "secretAccessKey":"abc"}}}`,
+			ExpectedResponse:       `{"id":"%s","name":"test","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"type":"kubernetes","spec":{"cloud":{"dc":""},"version":"","oidc":{}},"status":{"version":"","url":"","externalCCMMigration":""}}`,
+			RewriteClusterID:       true,
+			HTTPStatus:             http.StatusCreated,
+			ProjectToSync:          test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+		},
 	}
 
 	dummyKubermaticConfiguration := operatorv1alpha1.KubermaticConfiguration{

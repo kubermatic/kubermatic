@@ -436,6 +436,19 @@ func (p *ExternalClusterProvider) CreateOrUpdateCredentialSecretForCluster(ctx c
 		}
 		return cluster.Spec.Cloud.GCP.CredentialsReference, nil
 	}
+	if cloud.EKS != nil {
+		accessKeyID := cloud.EKS.AccessKeyID
+		secretAccessKey := cloud.EKS.SecretAccessKey
+		cluster.Spec.Cloud.AWS = &kubermaticapiv1.AWSCloudSpec{
+			AccessKeyID:     accessKeyID,
+			SecretAccessKey: secretAccessKey,
+		}
+		err := CreateOrUpdateCredentialSecretForCluster(ctx, p.clientPrivileged, cluster)
+		if err != nil {
+			return nil, err
+		}
+		return cluster.Spec.Cloud.AWS.CredentialsReference, nil
+	}
 
 	return nil, fmt.Errorf("can't create credential secret for unsupported provider")
 }
