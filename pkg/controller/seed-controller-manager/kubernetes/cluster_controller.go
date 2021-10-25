@@ -165,8 +165,9 @@ func Add(
 		etcdBackupRestoreController:      etcdBackupRestoreController,
 		backupSchedule:                   backupSchedule,
 
-		externalURL: externalURL,
-		seedGetter:  seedGetter,
+		externalURL:  externalURL,
+		seedGetter:   seedGetter,
+		configGetter: configGetter,
 
 		oidcIssuerURL:      oidcIssuerURL,
 		oidcIssuerClientID: oidcIssuerClientID,
