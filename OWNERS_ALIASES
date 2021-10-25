@@ -43,3 +43,8 @@ aliases:
   sig-virtualization:
     - mfranczy
     - moadqassem
+
+  # temporary SIG to oversee the API group migration
+  sig-crd:
+    - kron4eg
+    - xrstf

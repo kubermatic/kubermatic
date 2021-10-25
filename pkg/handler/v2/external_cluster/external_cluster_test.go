@@ -109,10 +109,30 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		// scenario 5
 		{
 			Name:                   "scenario 5: create GKE cluster",
-			Body:                   `{"name":"test", "cloud":{"gke":{"serviceAccount":"abc"}}}`,
+			Body:                   `{"name":"test", "cloud":{"gke":{"name":"gke-cluster","serviceAccount":"abc","zone":"abc"}}}`,
 			ExpectedResponse:       `{"id":"%s","name":"test","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"type":"kubernetes","spec":{"cloud":{"dc":""},"version":"","oidc":{}},"status":{"version":"","url":"","externalCCMMigration":""}}`,
 			RewriteClusterID:       true,
 			HTTPStatus:             http.StatusCreated,
+			ProjectToSync:          test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+		},
+		// scenario 6
+		{
+			Name:                   "scenario 6: create GKE cluster with empty zone",
+			Body:                   `{"name":"test", "cloud":{"gke":{"name":"gke-cluster","serviceAccount":"abc"}}}`,
+			ExpectedResponse:       `{"error":{"code":400,"message":"the GKE cluster name, zone or service account can not be empty"}}`,
+			HTTPStatus:             http.StatusBadRequest,
+			ProjectToSync:          test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+		},
+		// scenario 7
+		{
+			Name:                   "scenario 7: create GKE cluster with empty SA",
+			Body:                   `{"name":"test", "cloud":{"gke":{"name":"gke-cluster","zone":"abc"}}}`,
+			ExpectedResponse:       `{"error":{"code":400,"message":"the GKE cluster name, zone or service account can not be empty"}}`,
+			HTTPStatus:             http.StatusBadRequest,
 			ProjectToSync:          test.GenDefaultProject().Name,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
