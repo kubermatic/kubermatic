@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package projectsync
+package projectsynchronizer
 
 import (
 	"context"
@@ -25,7 +25,6 @@ import (
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -45,25 +44,31 @@ const (
 )
 
 type reconciler struct {
-	log              *zap.SugaredLogger
-	recorder         record.EventRecorder
-	masterClient     ctrlruntimeclient.Client
-	seedClientGetter provider.SeedClientGetter
+	log          *zap.SugaredLogger
+	recorder     record.EventRecorder
+	masterClient ctrlruntimeclient.Client
+	seedClients  map[string]ctrlruntimeclient.Client
 }
 
-func Add(mgr manager.Manager,
+func Add(
+	masterManager manager.Manager,
+	seedManagers map[string]manager.Manager,
 	log *zap.SugaredLogger,
 	numWorkers int,
-	seedKubeconfigGetter provider.SeedKubeconfigGetter) error {
+) error {
 
-	reconciler := &reconciler{
-		log:              log.Named(ControllerName),
-		recorder:         mgr.GetEventRecorderFor(ControllerName),
-		masterClient:     mgr.GetClient(),
-		seedClientGetter: provider.SeedClientGetterFactory(seedKubeconfigGetter),
+	r := &reconciler{
+		log:          log.Named(ControllerName),
+		recorder:     masterManager.GetEventRecorderFor(ControllerName),
+		masterClient: masterManager.GetClient(),
+		seedClients:  map[string]ctrlruntimeclient.Client{},
 	}
 
-	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
+	for seedName, seedManager := range seedManagers {
+		r.seedClients[seedName] = seedManager.GetClient()
+	}
+
+	c, err := controller.New(ControllerName, masterManager, controller.Options{Reconciler: r, MaxConcurrentReconciles: numWorkers})
 	if err != nil {
 		return fmt.Errorf("failed to construct controller: %v", err)
 	}
@@ -77,7 +82,7 @@ func Add(mgr manager.Manager,
 
 	if err := c.Watch(
 		&source.Kind{Type: &kubermaticv1.Seed{}},
-		enqueueAllProjects(reconciler.masterClient, reconciler.log),
+		enqueueAllProjects(r.masterClient, r.log),
 	); err != nil {
 		return fmt.Errorf("failed to create watch for seeds: %v", err)
 	}
@@ -112,7 +117,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		projectCreatorGetter(project),
 	}
 
-	err := r.syncAllSeeds(ctx, log, project, func(seedClusterClient ctrlruntimeclient.Client, project *kubermaticv1.Project) error {
+	err := r.syncAllSeeds(log, project, func(seedClusterClient ctrlruntimeclient.Client, project *kubermaticv1.Project) error {
 		return reconciling.ReconcileKubermaticV1Projects(ctx, projectCreatorGetters, "", seedClusterClient)
 	})
 
@@ -124,7 +129,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, project *kubermaticv1.Project) error {
-	err := r.syncAllSeeds(ctx, log, project, func(seedClusterClient ctrlruntimeclient.Client, project *kubermaticv1.Project) error {
+	err := r.syncAllSeeds(log, project, func(seedClusterClient ctrlruntimeclient.Client, project *kubermaticv1.Project) error {
 		if err := seedClusterClient.Delete(ctx, project); err != nil {
 			return ctrlruntimeclient.IgnoreNotFound(err)
 		}
@@ -143,27 +148,14 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 }
 
 func (r *reconciler) syncAllSeeds(
-	ctx context.Context,
 	log *zap.SugaredLogger,
 	project *kubermaticv1.Project,
 	action func(seedClusterClient ctrlruntimeclient.Client, project *kubermaticv1.Project) error) error {
-
-	seedList := &kubermaticv1.SeedList{}
-	if err := r.masterClient.List(ctx, seedList); err != nil {
-		return fmt.Errorf("failed listing seeds: %w", err)
-	}
-
-	for _, seed := range seedList.Items {
-		seedClient, err := r.seedClientGetter(&seed)
-		if err != nil {
-			return fmt.Errorf("failed getting seed client for seed %s: %w", seed.Name, err)
+	for seedName, seedClient := range r.seedClients {
+		if err := action(seedClient, project); err != nil {
+			return fmt.Errorf("failed syncing project for seed %s: %w", seedName, err)
 		}
-
-		err = action(seedClient, project)
-		if err != nil {
-			return fmt.Errorf("failed syncing project for seed %s: %w", seed.Name, err)
-		}
-		log.Debugw("Reconciled project with seed", "seed", seed.Name)
+		log.Debugw("Reconciled project with seed", "seed", seedName)
 	}
 	return nil
 }

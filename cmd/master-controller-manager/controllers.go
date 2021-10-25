@@ -28,7 +28,7 @@ import (
 	masterconstraintsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/master-constraint-controller"
 	masterconstrainttemplatecontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/master-constraint-template-controller"
 	projectlabelsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/project-label-synchronizer"
-	projectsync "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/project-sync"
+	projectsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/project-synchronizer"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	seedproxy "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/seed-proxy"
 	seedsync "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/seed-sync"
@@ -61,6 +61,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	masterconstraintSynchronizerFactory := masterconstraintSynchronizerFactoryCreator(ctrlCtx)
 	userSynchronizerFactory := userSynchronizerFactoryCreator(ctrlCtx)
 	clusterTemplateSynchronizerFactory := clusterTemplateSynchronizerFactoryCreator(ctrlCtx)
+	projectSynchronizerFactory := projectSynchronizerFactoryCreator(ctrlCtx)
 
 	if err := seedcontrollerlifecycle.Add(ctrlCtx.ctx,
 		kubermaticlog.Logger,
@@ -73,7 +74,8 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		userSSHKeysSynchronizerFactory,
 		masterconstraintSynchronizerFactory,
 		userSynchronizerFactory,
-		clusterTemplateSynchronizerFactory); err != nil {
+		clusterTemplateSynchronizerFactory,
+		projectSynchronizerFactory); err != nil {
 		//TODO: Find a better name
 		return fmt.Errorf("failed to create seedcontrollerlifecycle: %v", err)
 	}
@@ -94,9 +96,6 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	}
 	if err := masterconstrainttemplatecontroller.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log, 1, ctrlCtx.namespace, ctrlCtx.seedKubeconfigGetter); err != nil {
 		return fmt.Errorf("failed to create master constraint template controller: %v", err)
-	}
-	if err := projectsync.Add(ctrlCtx.mgr, ctrlCtx.log, 1, ctrlCtx.seedKubeconfigGetter); err != nil {
-		return fmt.Errorf("failed to create projectsync controller: %v", err)
 	}
 	if err := userprojectbindingsync.Add(ctrlCtx.mgr, ctrlCtx.log, 1, ctrlCtx.seedKubeconfigGetter); err != nil {
 		return fmt.Errorf("failed to create userprojectbindingsync controller: %v", err)
@@ -183,6 +182,17 @@ func clusterTemplateSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedc
 			masterMgr,
 			seedManagerMap,
 			ctrlCtx.log,
+		)
+	}
+}
+
+func projectSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
+	return func(ctx context.Context, masterMgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
+		return projectsynchronizer.ControllerName, projectsynchronizer.Add(
+			masterMgr,
+			seedManagerMap,
+			ctrlCtx.log,
+			ctrlCtx.workerCount,
 		)
 	}
 }
