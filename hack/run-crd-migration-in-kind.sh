@@ -124,4 +124,5 @@ export KUBERMATIC_EDITION=ee
 make clean kubermatic-installer
 
 export KUBECONFIG="$MASTER_KUBECONFIG"
-_build/kubermatic-installer migrate-crds
+_build/kubermatic-installer shutdown
+# migrate-crds
