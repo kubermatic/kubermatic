@@ -19363,6 +19363,10 @@
         "serviceAccount": {
           "type": "string",
           "x-go-name": "ServiceAccount"
+        },
+        "zone": {
+          "type": "string",
+          "x-go-name": "Zone"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -19378,6 +19382,10 @@
         "name": {
           "type": "string",
           "x-go-name": "Name"
+        },
+        "zone": {
+          "type": "string",
+          "x-go-name": "Zone"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"

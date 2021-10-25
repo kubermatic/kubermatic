@@ -22,6 +22,9 @@ type GKECloudSpec struct {
 
 	// service account
 	ServiceAccount string `json:"serviceAccount,omitempty"`
+
+	// zone
+	Zone string `json:"zone,omitempty"`
 }
 
 // Validate validates this g k e cloud spec
