@@ -76,7 +76,6 @@ set -x
   -oidc-issuer-url=$OIDC_ISSUER_URL \
   -oidc-issuer-client-id=$OIDC_ISSUER_CLIENT_ID \
   -oidc-issuer-client-secret=$OIDC_ISSUER_CLIENT_SECRET \
-  -monitoring-scrape-annotation-prefix='kubermatic.io' \
   -log-debug=$KUBERMATIC_DEBUG \
   -log-format=Console \
   -max-parallel-reconcile=10 \
