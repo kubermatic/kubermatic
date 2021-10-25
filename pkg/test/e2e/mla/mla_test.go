@@ -183,6 +183,10 @@ func TestMLAIntegration(t *testing.T) {
 		t.Fatalf("waiting for grafana datasource %s-%s", mla.PrometheusType, cluster.Name)
 	}
 
+	user, err := grafanaClient.LookupUser(ctx, "roxy@kubermatic.com")
+	t.Fatalf("waiting for grafana user: %v", err)
+	t.Logf("have user: %+v", user)
+
 	// Disable MLA Integration
 	t.Log("disabling MLA...")
 	if err := setMLAIntegration(ctx, seedClient, cluster, false); err != nil {
