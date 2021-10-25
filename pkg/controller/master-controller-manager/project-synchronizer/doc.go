@@ -15,8 +15,7 @@ limitations under the License.
 */
 
 /*
-Package userproejctbindingsync contains a controller that is responsible for ensuring that the
-kubermatic UserProjectBinding objects are synced from master to the seed clusters.
+Package projectsynchronizer contains a controller that is responsible for ensuring that the
+Kubermatic Project objects are synced from master to the seed clusters.
 */
-
-package userprojectbindingsync
+package projectsynchronizer

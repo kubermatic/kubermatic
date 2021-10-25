@@ -141,10 +141,15 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 }
 
 func createGKECluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticapiv1.ExternalCluster, error) {
+	if cloud.GKE.Name == "" || cloud.GKE.Zone == "" || cloud.GKE.ServiceAccount == "" {
+		return nil, errors.NewBadRequest("the GKE cluster name, zone or service account can not be empty")
+	}
+
 	newCluster := genExternalCluster(name, project.Name)
 	newCluster.Spec.CloudSpec = &kubermaticapiv1.ExternalClusterCloudSpec{
 		GKE: &kubermaticapiv1.ExternalClusterGKECloudSpec{
 			Name: cloud.GKE.Name,
+			Zone: cloud.GKE.Zone,
 		},
 	}
 	keyRef, err := clusterProvider.CreateOrUpdateCredentialSecretForCluster(ctx, cloud, project.Name, newCluster.Name)

@@ -591,7 +591,7 @@ const (
 
 const (
 	ExternalClusterKubeconfig         = "kubeconfig"
-	ExternalEKSClusterAccessKeyID     = "accessKeyID"
+	ExternalEKSClusterAccessKeyID     = "accessKeyId"
 	ExternalEKSClusterSecretAccessKey = "secretAccessKey"
 	ExternalGKEClusterSeriveAccount   = "serviceAccount"
 )

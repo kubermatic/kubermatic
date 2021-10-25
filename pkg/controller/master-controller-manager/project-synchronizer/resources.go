@@ -14,8 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-/*
-Package projectsync contains a controller that is responsible for ensuring that the
-Kubermatic Project objects are synced from master to the seed clusters.
-*/
-package projectsync
+package projectsynchronizer
+
+import (
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+)
+
+func projectCreatorGetter(project *kubermaticv1.Project) reconciling.NamedKubermaticV1ProjectCreatorGetter {
+	return func() (string, reconciling.KubermaticV1ProjectCreator) {
+		return project.Name, func(p *kubermaticv1.Project) (*kubermaticv1.Project, error) {
+			p.Name = project.Name
+			p.Spec = project.Spec
+			p.Status = project.Status
+			return p, nil
+		}
+	}
+}

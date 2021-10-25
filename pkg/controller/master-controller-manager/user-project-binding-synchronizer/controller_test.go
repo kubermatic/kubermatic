@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package userprojectbindingsync
+package userprojectbindingsynchronizer
 
 import (
 	"context"
@@ -88,9 +88,7 @@ func TestReconcile(t *testing.T) {
 				log:          kubermaticlog.Logger,
 				recorder:     &record.FakeRecorder{},
 				masterClient: tc.masterClient,
-				seedClientGetter: func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
-					return tc.seedClient, nil
-				},
+				seedClients:  map[string]ctrlruntimeclient.Client{"test": tc.seedClient},
 			}
 
 			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: tc.requestName}}

@@ -354,6 +354,7 @@ type ExternalClusterCloudSpec struct {
 type GKECloudSpec struct {
 	Name           string `json:"name"`
 	ServiceAccount string `json:"serviceAccount,omitempty"`
+	Zone           string `json:"zone"`
 }
 
 type EKSCloudSpec struct {
@@ -374,6 +375,7 @@ type ExternalClusterNode struct {
 type GKECluster struct {
 	Name       string `json:"name"`
 	IsImported bool   `json:"imported"`
+	Zone       string `json:"zone"`
 }
 
 // GKEClusterList represents an array of GKE clusters.
