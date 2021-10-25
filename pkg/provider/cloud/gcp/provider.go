@@ -28,8 +28,6 @@ import (
 	"path"
 	"strings"
 
-	"k8s.io/client-go/tools/clientcmd/api"
-
 	"go.uber.org/zap"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/compute/v1"
@@ -42,6 +40,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+
+	"k8s.io/client-go/tools/clientcmd/api"
 )
 
 const (
