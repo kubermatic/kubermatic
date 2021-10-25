@@ -119,6 +119,7 @@ func Add(
 		dockerPullConfigJSON:     dockerPullConfigJSON,
 		concurrentClusterUpdates: concurrentClusterUpdates,
 		seedGetter:               seedGetter,
+		configGetter:             configGetter,
 
 		features: features,
 		versions: versions,
