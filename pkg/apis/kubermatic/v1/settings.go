@@ -22,15 +22,6 @@ import (
 
 const GlobalSettingsName = "globalsettings"
 
-// +kubebuilder:validation:Enum=0;1
-
-type ClusterType int8
-
-const (
-	ClusterTypeAll ClusterType = iota
-	ClusterTypeKubernetes
-)
-
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
