@@ -76,7 +76,6 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		masterconstraintSynchronizerFactory,
 		userSynchronizerFactory,
 		clusterTemplateSynchronizerFactory,
-		clusterTemplateSynchronizerFactory,
 		userProjectBindingSynchronizerFactory,
 		projectSynchronizerFactory,
 	); err != nil {
