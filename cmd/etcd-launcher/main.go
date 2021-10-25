@@ -101,13 +101,15 @@ func main() {
 
 	// in addition, if "strict" mode is enforced, set it up for existing clusters too
 	if os.Getenv(envPeerTLSMode) == peerTLSModeStrict {
-		log.Info("peer-tls-mode: strict")
 		e.usePeerTLSOnly = true
 	}
 
 	log.Info("initializing etcd..")
 	log.Infof("initial-state: %s", e.initialState)
 	log.Infof("initial-cluster: %s", strings.Join(initialMemberList(e.clusterSize, e.namespace, e.usePeerTLSOnly), ","))
+	if e.usePeerTLSOnly {
+		log.Info("peer-tls-mode: strict")
+	}
 
 	// setup and start etcd command
 	etcdCmd, err := startEtcdCmd(e, log)
@@ -602,10 +604,16 @@ func (e *etcdCluster) removeDeadMembers(log *zap.SugaredLogger, unwantedMembers 
 	defer close(client, log)
 
 	for _, member := range unwantedMembers {
+		log.Infow("removing cluster member", "member-name", member.Name)
+
 		if member.Name == e.podName {
 			continue
 		}
 		if err = wait.Poll(1*time.Second, 15*time.Second, func() (bool, error) {
+			if len(member.ClientURLs) == 0 {
+				return false, nil
+			}
+
 			// we use the cluster FQDN endpoint url here. Using the IP endpoint will
 			// fail because the certificates don't include Pod IP addresses.
 			return e.isHealthyWithEndpoints(member.ClientURLs[len(member.ClientURLs)-1:], log)

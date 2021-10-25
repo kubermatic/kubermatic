@@ -25,7 +25,9 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -113,4 +115,21 @@ func (r *Reconciler) syncHealth(ctx context.Context, cluster *kubermaticv1.Clust
 	}
 
 	return err
+}
+
+func (r *Reconciler) statefulSetHealthCheck(ctx context.Context, c *kubermaticv1.Cluster) (bool, error) {
+	// check the etcd
+	statefulSet := &appsv1.StatefulSet{}
+	err := r.Client.Get(ctx, types.NamespacedName{Namespace: c.Status.NamespaceName, Name: resources.EtcdStatefulSetName}, statefulSet)
+
+	if err != nil {
+		// if the StatefulSet for etcd doesn't exist yet, there's nothing to worry about
+		if kerrors.IsNotFound(err) {
+			return true, nil
+		} else {
+			return false, err
+		}
+	}
+
+	return statefulSet.Status.Replicas == statefulSet.Status.ReadyReplicas, nil
 }
