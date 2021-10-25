@@ -532,9 +532,9 @@ func (r *Reconciler) ensureConfigMaps(ctx context.Context, c *kubermaticv1.Clust
 }
 
 // GetStatefulSetCreators returns all StatefulSetCreators that are currently in use
-func GetStatefulSetCreators(data *resources.TemplateData, enableDataCorruptionChecks bool) []reconciling.NamedStatefulSetCreatorGetter {
+func GetStatefulSetCreators(data *resources.TemplateData, enableDataCorruptionChecks bool, enableTSOnly bool) []reconciling.NamedStatefulSetCreatorGetter {
 	creators := []reconciling.NamedStatefulSetCreatorGetter{
-		etcd.StatefulSetCreator(data, enableDataCorruptionChecks),
+		etcd.StatefulSetCreator(data, enableDataCorruptionChecks, enableTSOnly),
 	}
 	if flag := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureRancherIntegration]; flag {
 		creators = append(creators, rancherserver.StatefulSetCreator(data))
@@ -608,7 +608,12 @@ func (r *Reconciler) ensureVerticalPodAutoscalers(ctx context.Context, c *kuberm
 }
 
 func (r *Reconciler) ensureStatefulSets(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	creators := GetStatefulSetCreators(data, r.features.EtcdDataCorruptionChecks)
+	useTLSOnly, err := r.etcdUseStrictTLS(ctx, c)
+	if err != nil {
+		return err
+	}
+
+	creators := GetStatefulSetCreators(data, r.features.EtcdDataCorruptionChecks, useTLSOnly)
 
 	return reconciling.ReconcileStatefulSets(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c)))
 }

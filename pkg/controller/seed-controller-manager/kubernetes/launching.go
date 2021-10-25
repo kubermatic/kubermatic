@@ -20,10 +20,17 @@ import (
 	"context"
 
 	"go.uber.org/zap"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/etcd"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // clusterIsReachable checks if the cluster is reachable via its external name
@@ -39,4 +46,40 @@ func (r *Reconciler) clusterIsReachable(ctx context.Context, c *kubermaticv1.Clu
 	}
 
 	return true, nil
+}
+
+func (r *Reconciler) etcdUseStrictTLS(ctx context.Context, c *kubermaticv1.Cluster) (bool, error) {
+	statefulSet := &appsv1.StatefulSet{}
+	err := r.Client.Get(ctx, types.NamespacedName{Namespace: c.Status.NamespaceName, Name: resources.EtcdStatefulSetName}, statefulSet)
+
+	if err != nil {
+		// if the StatefulSet for etcd doesn't exist yet, a new one can be deployed with strict TLS peers
+		if kerrors.IsNotFound(err) {
+			return true, nil
+		} else {
+			return false, err
+		}
+	}
+
+	pods := &corev1.PodList{}
+	labelSet := etcd.GetBasePodLabels(c)
+
+	err = r.Client.List(ctx, pods, &client.ListOptions{
+		Namespace:     c.Status.NamespaceName,
+		LabelSelector: labels.SelectorFromSet(labelSet),
+	})
+
+	if err != nil {
+		return false, err
+	}
+
+	useStrictTls := true
+
+	for _, pod := range pods.Items {
+		if _, ok := pod.Annotations[resources.EtcdTLSEnabledAnnotation]; !ok {
+			useStrictTls = false
+		}
+	}
+
+	return useStrictTls, nil
 }
