@@ -403,14 +403,6 @@ func (r *Reconciler) reconcileConfigMaps(ctx context.Context, cfg *operatorv1alp
 		kubermaticseed.CABundleConfigMapCreator(caBundle),
 	}
 
-	if creator := kubermaticseed.ClusterNamespacePrometheusScrapingConfigsConfigMapCreator(cfg); creator != nil {
-		creators = append(creators, creator)
-	}
-
-	if creator := kubermaticseed.ClusterNamespacePrometheusRulesConfigMapCreator(cfg); creator != nil {
-		creators = append(creators, creator)
-	}
-
 	if err := reconciling.ReconcileConfigMaps(ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile ConfigMaps: %v", err)
 	}

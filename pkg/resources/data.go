@@ -32,6 +32,7 @@ import (
 	httpproberapi "k8c.io/kubermatic/v2/cmd/http-prober/api"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
+	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
@@ -64,6 +65,7 @@ type TemplateData struct {
 	cluster                          *kubermaticv1.Cluster
 	dc                               *kubermaticv1.Datacenter
 	seed                             *kubermaticv1.Seed
+	config                           *operatorv1alpha1.KubermaticConfiguration
 	OverwriteRegistry                string
 	nodePortRange                    string
 	nodeAccessNetwork                string
@@ -80,12 +82,6 @@ type TemplateData struct {
 	caBundle                         CABundle
 
 	supportsFailureDomainZoneAntiAffinity bool
-
-	monitoringScrapeAnnotationPrefix                 string
-	inClusterPrometheusRulesFile                     string
-	inClusterPrometheusDisableDefaultRules           bool
-	inClusterPrometheusDisableDefaultScrapingConfigs bool
-	inClusterPrometheusScrapingConfigsFile           string
 
 	userClusterMLAEnabled bool
 	isKonnectivityEnabled bool
@@ -124,6 +120,11 @@ func (td *TemplateDataBuilder) WithSeed(s *kubermaticv1.Seed) *TemplateDataBuild
 	return td
 }
 
+func (td *TemplateDataBuilder) WithKubermaticConfiguration(cfg *operatorv1alpha1.KubermaticConfiguration) *TemplateDataBuilder {
+	td.data.config = cfg
+	return td
+}
+
 func (td *TemplateDataBuilder) WithOverwriteRegistry(overwriteRegistry string) *TemplateDataBuilder {
 	td.data.OverwriteRegistry = overwriteRegistry
 	return td
@@ -141,31 +142,6 @@ func (td *TemplateDataBuilder) WithNodeAccessNetwork(nodeAccessNetwork string) *
 
 func (td *TemplateDataBuilder) WithEtcdDiskSize(etcdDiskSize resource.Quantity) *TemplateDataBuilder {
 	td.data.etcdDiskSize = etcdDiskSize
-	return td
-}
-
-func (td *TemplateDataBuilder) WithMonitoringScrapeAnnotationPrefix(prefix string) *TemplateDataBuilder {
-	td.data.monitoringScrapeAnnotationPrefix = prefix
-	return td
-}
-
-func (td *TemplateDataBuilder) WithInClusterPrometheusRulesFile(file string) *TemplateDataBuilder {
-	td.data.inClusterPrometheusRulesFile = file
-	return td
-}
-
-func (td *TemplateDataBuilder) WithInClusterPrometheusDefaultRulesDisabled(disabled bool) *TemplateDataBuilder {
-	td.data.inClusterPrometheusDisableDefaultRules = disabled
-	return td
-}
-
-func (td *TemplateDataBuilder) WithInClusterPrometheusDefaultScrapingConfigsDisabled(disabled bool) *TemplateDataBuilder {
-	td.data.inClusterPrometheusDisableDefaultScrapingConfigs = disabled
-	return td
-}
-
-func (td *TemplateDataBuilder) WithInClusterPrometheusScrapingConfigsFile(file string) *TemplateDataBuilder {
-	td.data.inClusterPrometheusScrapingConfigsFile = file
 	return td
 }
 
@@ -294,31 +270,6 @@ func (d *TemplateData) EtcdLauncherTag() string {
 
 func (d *TemplateData) NodePortProxyTag() string {
 	return d.versions.Kubermatic
-}
-
-// MonitoringScrapeAnnotationPrefix returns the scrape annotation prefix
-func (d *TemplateData) MonitoringScrapeAnnotationPrefix() string {
-	return strings.NewReplacer(".", "_", "/", "").Replace(d.monitoringScrapeAnnotationPrefix)
-}
-
-// InClusterPrometheusRulesFile returns inClusterPrometheusRulesFile
-func (d *TemplateData) InClusterPrometheusRulesFile() string {
-	return d.inClusterPrometheusRulesFile
-}
-
-// InClusterPrometheusDisableDefaultRules returns whether to disable default rules
-func (d *TemplateData) InClusterPrometheusDisableDefaultRules() bool {
-	return d.inClusterPrometheusDisableDefaultRules
-}
-
-// InClusterPrometheusDisableDefaultScrapingConfigs returns whether to disable default scrape configs
-func (d *TemplateData) InClusterPrometheusDisableDefaultScrapingConfigs() bool {
-	return d.inClusterPrometheusDisableDefaultScrapingConfigs
-}
-
-// InClusterPrometheusScrapingConfigsFile returns inClusterPrometheusScrapingConfigsFile
-func (d *TemplateData) InClusterPrometheusScrapingConfigsFile() string {
-	return d.inClusterPrometheusScrapingConfigsFile
 }
 
 // UserClusterMLAEnabled returns userClusterMLAEnabled
@@ -723,4 +674,8 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 
 func (d *TemplateData) Seed() *kubermaticv1.Seed {
 	return d.seed
+}
+
+func (d *TemplateData) KubermaticConfiguration() *operatorv1alpha1.KubermaticConfiguration {
+	return d.config
 }

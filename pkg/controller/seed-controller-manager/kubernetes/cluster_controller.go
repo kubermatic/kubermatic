@@ -77,30 +77,26 @@ type Reconciler struct {
 	userClusterConnProvider userClusterConnectionProvider
 	workerName              string
 
-	externalURL string
-	seedGetter  provider.SeedGetter
+	externalURL  string
+	seedGetter   provider.SeedGetter
+	configGetter provider.KubermaticConfigurationGetter
 
 	recorder record.EventRecorder
 
-	overwriteRegistry                                string
-	nodePortRange                                    string
-	nodeAccessNetwork                                string
-	etcdDiskSize                                     resource.Quantity
-	inClusterPrometheusRulesFile                     string
-	inClusterPrometheusDisableDefaultRules           bool
-	inClusterPrometheusDisableDefaultScrapingConfigs bool
-	inClusterPrometheusScrapingConfigsFile           string
-	monitoringScrapeAnnotationPrefix                 string
-	userClusterMLAEnabled                            bool
-	dockerPullConfigJSON                             []byte
-	kubermaticImage                                  string
-	etcdLauncherImage                                string
-	dnatControllerImage                              string
-	machineControllerImageTag                        string
-	machineControllerImageRepository                 string
-	concurrentClusterUpdates                         int
-	etcdBackupRestoreController                      bool
-	backupSchedule                                   time.Duration
+	overwriteRegistry                string
+	nodePortRange                    string
+	nodeAccessNetwork                string
+	etcdDiskSize                     resource.Quantity
+	userClusterMLAEnabled            bool
+	dockerPullConfigJSON             []byte
+	kubermaticImage                  string
+	etcdLauncherImage                string
+	dnatControllerImage              string
+	machineControllerImageTag        string
+	machineControllerImageRepository string
+	concurrentClusterUpdates         int
+	etcdBackupRestoreController      bool
+	backupSchedule                   time.Duration
 
 	oidcIssuerURL      string
 	oidcIssuerClientID string
@@ -120,16 +116,12 @@ func Add(
 	workerName string,
 	externalURL string,
 	seedGetter provider.SeedGetter,
+	configGetter provider.KubermaticConfigurationGetter,
 	userClusterConnProvider userClusterConnectionProvider,
 	overwriteRegistry string,
 	nodePortRange string,
 	nodeAccessNetwork string,
 	etcdDiskSize resource.Quantity,
-	monitoringScrapeAnnotationPrefix string,
-	inClusterPrometheusRulesFile string,
-	inClusterPrometheusDisableDefaultRules bool,
-	inClusterPrometheusDisableDefaultScrapingConfigs bool,
-	inClusterPrometheusScrapingConfigsFile string,
 	userClusterMLAEnabled bool,
 	dockerPullConfigJSON []byte,
 	concurrentClusterUpdates int,
@@ -158,25 +150,20 @@ func Add(
 
 		recorder: mgr.GetEventRecorderFor(ControllerName),
 
-		overwriteRegistry:                      overwriteRegistry,
-		nodePortRange:                          nodePortRange,
-		nodeAccessNetwork:                      nodeAccessNetwork,
-		etcdDiskSize:                           etcdDiskSize,
-		inClusterPrometheusRulesFile:           inClusterPrometheusRulesFile,
-		inClusterPrometheusDisableDefaultRules: inClusterPrometheusDisableDefaultRules,
-		inClusterPrometheusDisableDefaultScrapingConfigs: inClusterPrometheusDisableDefaultScrapingConfigs,
-		inClusterPrometheusScrapingConfigsFile:           inClusterPrometheusScrapingConfigsFile,
-		monitoringScrapeAnnotationPrefix:                 monitoringScrapeAnnotationPrefix,
-		userClusterMLAEnabled:                            userClusterMLAEnabled,
-		dockerPullConfigJSON:                             dockerPullConfigJSON,
-		kubermaticImage:                                  kubermaticImage,
-		etcdLauncherImage:                                etcdLauncherImage,
-		dnatControllerImage:                              dnatControllerImage,
-		machineControllerImageTag:                        machineControllerImageTag,
-		machineControllerImageRepository:                 machineControllerImageRepository,
-		concurrentClusterUpdates:                         concurrentClusterUpdates,
-		etcdBackupRestoreController:                      etcdBackupRestoreController,
-		backupSchedule:                                   backupSchedule,
+		overwriteRegistry:                overwriteRegistry,
+		nodePortRange:                    nodePortRange,
+		nodeAccessNetwork:                nodeAccessNetwork,
+		etcdDiskSize:                     etcdDiskSize,
+		userClusterMLAEnabled:            userClusterMLAEnabled,
+		dockerPullConfigJSON:             dockerPullConfigJSON,
+		kubermaticImage:                  kubermaticImage,
+		etcdLauncherImage:                etcdLauncherImage,
+		dnatControllerImage:              dnatControllerImage,
+		machineControllerImageTag:        machineControllerImageTag,
+		machineControllerImageRepository: machineControllerImageRepository,
+		concurrentClusterUpdates:         concurrentClusterUpdates,
+		etcdBackupRestoreController:      etcdBackupRestoreController,
+		backupSchedule:                   backupSchedule,
 
 		externalURL: externalURL,
 		seedGetter:  seedGetter,

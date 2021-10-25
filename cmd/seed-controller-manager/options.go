@@ -52,39 +52,34 @@ type controllerRunOptions struct {
 	enableLeaderElection    bool
 	leaderElectionNamespace string
 
-	externalURL                                      string
-	seedName                                         string
-	workerName                                       string
-	workerCount                                      int
-	overwriteRegistry                                string
-	nodePortRange                                    string
-	nodeAccessNetwork                                string
-	addonsPath                                       string
-	backupContainerFile                              string
-	backupDeleteContainerFile                        string
-	cleanupContainerFile                             string
-	backupContainerImage                             string
-	backupInterval                                   string
-	etcdDiskSize                                     resource.Quantity
-	inClusterPrometheusRulesFile                     string
-	inClusterPrometheusDisableDefaultRules           bool
-	inClusterPrometheusDisableDefaultScrapingConfigs bool
-	inClusterPrometheusScrapingConfigsFile           string
-	monitoringScrapeAnnotationPrefix                 string
-	dockerPullConfigJSONFile                         string
-	kubermaticImage                                  string
-	etcdLauncherImage                                string
-	enableEtcdBackupRestoreController                bool
-	dnatControllerImage                              string
-	namespace                                        string
-	apiServerDefaultReplicas                         int
-	apiServerEndpointReconcilingDisabled             bool
-	controllerManagerDefaultReplicas                 int
-	schedulerDefaultReplicas                         int
-	admissionWebhook                                 webhook.Options
-	concurrentClusterUpdate                          int
-	addonEnforceInterval                             int
-	caBundle                                         *certificates.CABundle
+	externalURL                          string
+	seedName                             string
+	workerName                           string
+	workerCount                          int
+	overwriteRegistry                    string
+	nodePortRange                        string
+	nodeAccessNetwork                    string
+	addonsPath                           string
+	backupContainerFile                  string
+	backupDeleteContainerFile            string
+	cleanupContainerFile                 string
+	backupContainerImage                 string
+	backupInterval                       string
+	etcdDiskSize                         resource.Quantity
+	dockerPullConfigJSONFile             string
+	kubermaticImage                      string
+	etcdLauncherImage                    string
+	enableEtcdBackupRestoreController    bool
+	dnatControllerImage                  string
+	namespace                            string
+	apiServerDefaultReplicas             int
+	apiServerEndpointReconcilingDisabled bool
+	controllerManagerDefaultReplicas     int
+	schedulerDefaultReplicas             int
+	admissionWebhook                     webhook.Options
+	concurrentClusterUpdate              int
+	addonEnforceInterval                 int
+	caBundle                             *certificates.CABundle
 
 	// for development purposes, a local configuration file
 	// can be used to provide the KubermaticConfiguration
@@ -145,12 +140,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.backupContainerImage, "backup-container-init-image", backupcontroller.DefaultBackupContainerImage, "Docker image to use for the init container in the backup job, must be an etcd v3 image. Only set this if your cluster can not use the public quay.io registry")
 	flag.StringVar(&c.backupInterval, "backup-interval", backupcontroller.DefaultBackupInterval, "Interval in which the etcd gets backed up")
 	flag.StringVar(&rawEtcdDiskSize, "etcd-disk-size", "5Gi", "Size for the etcd PV's. Only applies to new clusters.")
-	flag.StringVar(&c.inClusterPrometheusRulesFile, "in-cluster-prometheus-rules-file", "", "The file containing the custom alerting rules for the prometheus running in the cluster-foo namespaces.")
-	flag.BoolVar(&c.inClusterPrometheusDisableDefaultRules, "in-cluster-prometheus-disable-default-rules", false, "A flag indicating whether the default rules for the prometheus running in the cluster-foo namespaces should be deployed.")
 	flag.StringVar(&c.dockerPullConfigJSONFile, "docker-pull-config-json-file", "", "The file containing the docker auth config.")
-	flag.BoolVar(&c.inClusterPrometheusDisableDefaultScrapingConfigs, "in-cluster-prometheus-disable-default-scraping-configs", false, "A flag indicating whether the default scraping configs for the prometheus running in the cluster-foo namespaces should be deployed.")
-	flag.StringVar(&c.inClusterPrometheusScrapingConfigsFile, "in-cluster-prometheus-scraping-configs-file", "", "The file containing the custom scraping configs for the prometheus running in the cluster-foo namespaces.")
-	flag.StringVar(&c.monitoringScrapeAnnotationPrefix, "monitoring-scrape-annotation-prefix", "monitoring.kubermatic.io", "The prefix for monitoring annotations in the user cluster. Default: monitoring.kubermatic.io -> monitoring.kubermatic.io/port, monitoring.kubermatic.io/path")
 	flag.Var(&c.featureGates, "feature-gates", "A set of key=value pairs that describe feature gates for various features.")
 	flag.StringVar(&c.oidcIssuerURL, "oidc-issuer-url", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
 	flag.StringVar(&c.oidcIssuerClientID, "oidc-issuer-client-id", "", "Issuer client ID")
@@ -241,10 +231,6 @@ func (o controllerRunOptions) validate() error {
 
 	if o.backupContainerFile == "" {
 		return fmt.Errorf("backup-container is undefined")
-	}
-
-	if o.monitoringScrapeAnnotationPrefix == "" {
-		return fmt.Errorf("monitoring-scrape-annotation-prefix is undefined")
 	}
 
 	if o.apiServerDefaultReplicas < 1 {

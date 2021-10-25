@@ -82,8 +82,6 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 				fmt.Sprintf("-max-parallel-reconcile=%d", cfg.Spec.SeedController.MaximumParallelReconciles),
 				fmt.Sprintf("-apiserver-reconciling-disabled-by-default=%v", cfg.Spec.UserCluster.DisableAPIServerEndpointReconciling),
 				fmt.Sprintf("-pprof-listen-address=%s", *cfg.Spec.SeedController.PProfEndpoint),
-				fmt.Sprintf("-in-cluster-prometheus-disable-default-rules=%v", cfg.Spec.UserCluster.Monitoring.DisableDefaultRules),
-				fmt.Sprintf("-in-cluster-prometheus-disable-default-scraping-configs=%v", cfg.Spec.UserCluster.Monitoring.DisableDefaultScrapingConfigs),
 				fmt.Sprintf("-backup-container=/opt/backup/%s", storeContainerKey),
 			}
 
@@ -100,10 +98,6 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 
 			if cfg.Spec.ImagePullSecret != "" {
 				args = append(args, fmt.Sprintf("-docker-pull-config-json-file=/opt/docker/%s", corev1.DockerConfigJsonKey))
-			}
-
-			if cfg.Spec.UserCluster.Monitoring.ScrapeAnnotationPrefix != "" {
-				args = append(args, fmt.Sprintf("-monitoring-scrape-annotation-prefix=%s", cfg.Spec.UserCluster.Monitoring.ScrapeAnnotationPrefix))
 			}
 
 			if seed.Spec.MLA != nil && seed.Spec.MLA.UserClusterMLAEnabled {
@@ -207,50 +201,6 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 					fmt.Sprintf("-oidc-issuer-client-id=%s", cfg.Spec.Auth.IssuerClientID),
 					fmt.Sprintf("-oidc-issuer-client-secret=%s", cfg.Spec.Auth.IssuerClientSecret),
 				)
-			}
-
-			if len(cfg.Spec.UserCluster.Monitoring.CustomScrapingConfigs) > 0 {
-				path := "/opt/" + clusterNamespacePrometheusScrapingConfigsConfigMapName
-				args = append(args, fmt.Sprintf("-in-cluster-prometheus-scraping-configs-file=%s/%s", path, clusterNamespacePrometheusScrapingConfigsKey))
-
-				volumes = append(volumes, corev1.Volume{
-					Name: clusterNamespacePrometheusScrapingConfigsConfigMapName,
-					VolumeSource: corev1.VolumeSource{
-						ConfigMap: &corev1.ConfigMapVolumeSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: clusterNamespacePrometheusScrapingConfigsConfigMapName,
-							},
-						},
-					},
-				})
-
-				volumeMounts = append(volumeMounts, corev1.VolumeMount{
-					Name:      clusterNamespacePrometheusScrapingConfigsConfigMapName,
-					MountPath: path,
-					ReadOnly:  true,
-				})
-			}
-
-			if len(cfg.Spec.UserCluster.Monitoring.CustomRules) > 0 {
-				path := "/opt/" + clusterNamespacePrometheusRulesConfigMapName
-				args = append(args, fmt.Sprintf("-in-cluster-prometheus-rules-file=%s/%s", path, clusterNamespacePrometheusRulesKey))
-
-				volumes = append(volumes, corev1.Volume{
-					Name: clusterNamespacePrometheusRulesConfigMapName,
-					VolumeSource: corev1.VolumeSource{
-						ConfigMap: &corev1.ConfigMapVolumeSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: clusterNamespacePrometheusRulesConfigMapName,
-							},
-						},
-					},
-				})
-
-				volumeMounts = append(volumeMounts, corev1.VolumeMount{
-					Name:      clusterNamespacePrometheusRulesConfigMapName,
-					MountPath: path,
-					ReadOnly:  true,
-				})
 			}
 
 			d.Spec.Template.Spec.Volumes = volumes

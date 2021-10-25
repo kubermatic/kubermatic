@@ -37,6 +37,10 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, client ctrlrunt
 	if err != nil {
 		return nil, err
 	}
+	config, err := r.configGetter(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	datacenter, found := seed.Spec.Datacenters[cluster.Spec.Cloud.DatacenterName]
 	if !found {
@@ -49,15 +53,11 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, client ctrlrunt
 		WithCluster(cluster).
 		WithDatacenter(&datacenter).
 		WithSeed(seed.DeepCopy()).
+		WithKubermaticConfiguration(config.DeepCopy()).
 		WithOverwriteRegistry(r.overwriteRegistry).
 		WithNodePortRange(r.nodePortRange).
 		WithNodeAccessNetwork(r.nodeAccessNetwork).
 		WithEtcdDiskSize(resource.Quantity{}).
-		WithMonitoringScrapeAnnotationPrefix(r.monitoringScrapeAnnotationPrefix).
-		WithInClusterPrometheusRulesFile(r.inClusterPrometheusRulesFile).
-		WithInClusterPrometheusDefaultRulesDisabled(r.inClusterPrometheusDisableDefaultRules).
-		WithInClusterPrometheusDefaultScrapingConfigsDisabled(r.inClusterPrometheusDisableDefaultScrapingConfigs).
-		WithInClusterPrometheusScrapingConfigsFile(r.inClusterPrometheusScrapingConfigsFile).
 		WithBackupPeriod(20 * time.Minute).
 		WithVersions(r.versions).
 		Build(), nil

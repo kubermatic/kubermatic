@@ -19,7 +19,6 @@ package prometheus
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"strings"
 	"text/template"
 
@@ -55,6 +54,8 @@ type configTemplateData struct {
 	EtcdTLSConfig         string
 	ApiserverTLSConfig    string
 	CustomScrapingConfigs string
+	// ScrapingAnnotationPrefix is normalized to fit into a Prometheus rewrite rule.
+	ScrapingAnnotationPrefix string
 }
 
 // ConfigMapCreator returns a ConfigMapCreator containing the prometheus config for the supplied data
@@ -62,6 +63,7 @@ func ConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapCr
 	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.PrometheusConfigConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			cluster := data.Cluster()
+			kubermaticConfig := data.KubermaticConfiguration()
 
 			// prepare TLS config
 			etcdTLS := tlsConfig{
@@ -76,25 +78,26 @@ func ConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapCr
 				KeyFile:  "/etc/kubernetes/prometheus-client.key",
 			}
 
+			// normalize the custom scraping prefix to be a valid YAML identifier
+			scrapeAnnotationPrefix := strings.NewReplacer(".", "_", "/", "").Replace(kubermaticConfig.Spec.UserCluster.Monitoring.ScrapeAnnotationPrefix)
+
 			// get custom scraping configs and rules
 			customData := &customizationData{
 				Cluster:                  cluster,
 				APIServerHost:            cluster.Address.InternalName,
 				EtcdTLS:                  etcdTLS,
 				ApiserverTLS:             apiserverTLS,
-				ScrapingAnnotationPrefix: data.MonitoringScrapeAnnotationPrefix(),
+				ScrapingAnnotationPrefix: scrapeAnnotationPrefix,
 			}
 
-			customScrapingFile := data.InClusterPrometheusScrapingConfigsFile()
-			customScrapingConfigs, err := loadTemplatedFile(customScrapingFile, customData)
+			customScrapingConfigs, err := renderTemplate(kubermaticConfig.Spec.UserCluster.Monitoring.CustomScrapingConfigs, customData)
 			if err != nil {
-				return nil, fmt.Errorf("failed to load custom scraping configs file %s: %v", customScrapingFile, err)
+				return nil, fmt.Errorf("custom scraping configuration could not be parsed as a Go template: %w", err)
 			}
 
-			customRulesFile := data.InClusterPrometheusRulesFile()
-			customRules, err := loadTemplatedFile(customRulesFile, customData)
+			customRules, err := renderTemplate(kubermaticConfig.Spec.UserCluster.Monitoring.CustomRules, customData)
 			if err != nil {
-				return nil, fmt.Errorf("failed to load custom rules file %s: %v", customRulesFile, err)
+				return nil, fmt.Errorf("custom scraping rules could not be parsed as a Go template: %w", err)
 			}
 
 			// prepare tls_config stanza
@@ -110,11 +113,12 @@ func ConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapCr
 
 			// prepare config template
 			configData := &configTemplateData{
-				TemplateData:          data,
-				APIServerHost:         customData.APIServerHost,
-				CustomScrapingConfigs: customScrapingConfigs,
-				EtcdTLSConfig:         strings.TrimSpace(string(etcdTLSYaml)),
-				ApiserverTLSConfig:    strings.TrimSpace(string(apiserverTLSYaml)),
+				TemplateData:             data,
+				APIServerHost:            customData.APIServerHost,
+				CustomScrapingConfigs:    customScrapingConfigs,
+				EtcdTLSConfig:            strings.TrimSpace(string(etcdTLSYaml)),
+				ApiserverTLSConfig:       strings.TrimSpace(string(apiserverTLSYaml)),
+				ScrapingAnnotationPrefix: scrapeAnnotationPrefix,
 			}
 
 			config, err := renderTemplate(prometheusConfig, configData)
@@ -131,7 +135,7 @@ func ConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapCr
 
 			cm.Data["prometheus.yaml"] = config
 
-			if data.InClusterPrometheusDisableDefaultRules() {
+			if kubermaticConfig.Spec.UserCluster.Monitoring.DisableDefaultRules {
 				delete(cm.Data, "rules.yaml")
 			} else {
 				cm.Data["rules.yaml"] = prometheusRules
@@ -151,19 +155,6 @@ func ConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapCr
 			return cm, nil
 		}
 	}
-}
-
-func loadTemplatedFile(file string, data *customizationData) (string, error) {
-	if file == "" {
-		return "", nil
-	}
-
-	content, err := ioutil.ReadFile(file)
-	if err != nil {
-		return "", fmt.Errorf("couldn't read file: %v", err)
-	}
-
-	return renderTemplate(string(content), data)
 }
 
 func renderTemplate(tpl string, data interface{}) (string, error) {
@@ -201,7 +192,7 @@ alerting:
       port: 9093
 
 scrape_configs:
-{{- if not .TemplateData.InClusterPrometheusDisableDefaultScrapingConfigs }}
+{{- if not .TemplateData.KubermaticConfiguration.Spec.UserCluster.Monitoring.DisableDefaultScrapingConfigs }}
 #######################################################################
 # These rules will scrape pods running inside the seed cluster.
 
@@ -367,14 +358,14 @@ scrape_configs:
 {{ .ApiserverTLSConfig | indent 6 }}
 
   relabel_configs:
-  - source_labels: [__meta_kubernetes_pod_annotation_{{ .TemplateData.MonitoringScrapeAnnotationPrefix }}_port]
+  - source_labels: [__meta_kubernetes_pod_annotation_{{ .ScrapingAnnotationPrefix }}_port]
     action: keep
     regex: \d+
-  - source_labels: [__meta_kubernetes_pod_annotation_{{ .TemplateData.MonitoringScrapeAnnotationPrefix }}_path]
+  - source_labels: [__meta_kubernetes_pod_annotation_{{ .ScrapingAnnotationPrefix }}_path]
     regex: (.+)
     action: replace
     target_label: __metrics_path__
-  - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_pod_name, __meta_kubernetes_pod_annotation_{{ .TemplateData.MonitoringScrapeAnnotationPrefix }}_port, __metrics_path__]
+  - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_pod_name, __meta_kubernetes_pod_annotation_{{ .ScrapingAnnotationPrefix }}_port, __metrics_path__]
     action: replace
     regex: (.*);(.*);(.*);(.*)
     target_label: __metrics_path__

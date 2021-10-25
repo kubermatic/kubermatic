@@ -71,19 +71,13 @@ type Reconciler struct {
 	log                     *zap.SugaredLogger
 	recorder                record.EventRecorder
 
-	seedGetter                                       provider.SeedGetter
-	overwriteRegistry                                string
-	nodePortRange                                    string
-	nodeAccessNetwork                                string
-	inClusterPrometheusRulesFile                     string
-	inClusterPrometheusDisableDefaultRules           bool
-	inClusterPrometheusDisableDefaultScrapingConfigs bool
-	inClusterPrometheusScrapingConfigsFile           string
-	dockerPullConfigJSON                             []byte
-	// Annotation prefix to discover user cluster resources
-	// example: kubermatic.io -> kubermatic.io/path,kubermatic.io/port
-	monitoringScrapeAnnotationPrefix string
-	concurrentClusterUpdates         int
+	seedGetter               provider.SeedGetter
+	configGetter             provider.KubermaticConfigurationGetter
+	overwriteRegistry        string
+	nodePortRange            string
+	nodeAccessNetwork        string
+	dockerPullConfigJSON     []byte
+	concurrentClusterUpdates int
 
 	features Features
 	versions kubermatic.Versions
@@ -99,14 +93,10 @@ func Add(
 
 	userClusterConnProvider userClusterConnectionProvider,
 	seedGetter provider.SeedGetter,
+	configGetter provider.KubermaticConfigurationGetter,
 	overwriteRegistry string,
 	nodePortRange string,
 	nodeAccessNetwork string,
-	monitoringScrapeAnnotationPrefix string,
-	inClusterPrometheusRulesFile string,
-	inClusterPrometheusDisableDefaultRules bool,
-	inClusterPrometheusDisableDefaultScrapingConfigs bool,
-	inClusterPrometheusScrapingConfigsFile string,
 	dockerPullConfigJSON []byte,
 	concurrentClusterUpdates int,
 
@@ -123,17 +113,12 @@ func Add(
 		log:                     log,
 		recorder:                mgr.GetEventRecorderFor(ControllerName),
 
-		overwriteRegistry:                                overwriteRegistry,
-		nodePortRange:                                    nodePortRange,
-		nodeAccessNetwork:                                nodeAccessNetwork,
-		monitoringScrapeAnnotationPrefix:                 monitoringScrapeAnnotationPrefix,
-		inClusterPrometheusRulesFile:                     inClusterPrometheusRulesFile,
-		inClusterPrometheusDisableDefaultRules:           inClusterPrometheusDisableDefaultRules,
-		inClusterPrometheusDisableDefaultScrapingConfigs: inClusterPrometheusDisableDefaultScrapingConfigs,
-		inClusterPrometheusScrapingConfigsFile:           inClusterPrometheusScrapingConfigsFile,
-		dockerPullConfigJSON:                             dockerPullConfigJSON,
-		concurrentClusterUpdates:                         concurrentClusterUpdates,
-		seedGetter:                                       seedGetter,
+		overwriteRegistry:        overwriteRegistry,
+		nodePortRange:            nodePortRange,
+		nodeAccessNetwork:        nodeAccessNetwork,
+		dockerPullConfigJSON:     dockerPullConfigJSON,
+		concurrentClusterUpdates: concurrentClusterUpdates,
+		seedGetter:               seedGetter,
 
 		features: features,
 		versions: versions,
