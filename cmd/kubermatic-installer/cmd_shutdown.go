@@ -18,7 +18,9 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
@@ -36,6 +38,10 @@ var (
 		Usage:  "Context to use from the given kubeconfig",
 		EnvVar: "KUBE_CONTEXT",
 	}
+	safetyFlag = cli.StringFlag{
+		Name:  "stop-the-world",
+		Usage: "Safety flag, must be set to 'yes' to continue",
+	}
 )
 
 func ShutdownCommand(logger *logrus.Logger) cli.Command {
@@ -46,12 +52,17 @@ func ShutdownCommand(logger *logrus.Logger) cli.Command {
 		Hidden: true, // users should not run this before it's released
 		Flags: []cli.Flag{
 			shutdownKubeContextFlag,
+			safetyFlag,
 		},
 	}
 }
 
 func ShutdownAction(logger *logrus.Logger) cli.ActionFunc {
 	return handleErrors(logger, setupLogger(logger, func(ctx *cli.Context) error {
+		if strings.ToLower(ctx.String(safetyFlag.Name)) != "yes" {
+			return errors.New("to prevent accidental shutdowns, the --stop-the-world flag must be set to 'yes'")
+		}
+
 		appContext := context.Background()
 		namespace := kubermaticmaster.KubermaticOperatorNamespace
 

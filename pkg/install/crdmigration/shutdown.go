@@ -26,6 +26,7 @@ import (
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/kubermatic"
 	kubermaticseed "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/kubermatic"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	"k8c.io/kubermatic/v2/pkg/resources"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -37,13 +38,13 @@ import (
 
 func ShutdownControllers(ctx context.Context, logger logrus.FieldLogger, opt *Options) error {
 	// master cluster
-	if err := shutdownCluster(ctx, logger.WithField("master", true), opt.MasterClient, opt); err != nil {
+	if err := shutdownCluster(ctx, logger.WithField("master", true), opt.MasterClient, opt, false); err != nil {
 		return fmt.Errorf("shutting down the master cluster failed: %w", err)
 	}
 
 	// seed clusters
 	for seedName, seedClient := range opt.SeedClients {
-		if err := shutdownCluster(ctx, logger.WithField("seed", seedName), seedClient, opt); err != nil {
+		if err := shutdownCluster(ctx, logger.WithField("seed", seedName), seedClient, opt, true); err != nil {
 			return fmt.Errorf("shutting down the seed cluster failed: %w", err)
 		}
 	}
@@ -51,10 +52,10 @@ func ShutdownControllers(ctx context.Context, logger logrus.FieldLogger, opt *Op
 	return nil
 }
 
-func shutdownCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client, opt *Options) error {
+func shutdownCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client, opt *Options, isSeed bool) error {
 	logger.Info("Shutting down in cluster…")
 
-	if err := shutdownDeploymentsInCluster(ctx, logger, client, opt.KubermaticNamespace); err != nil {
+	if err := shutdownDeploymentsInCluster(ctx, logger, client, opt.KubermaticNamespace, isSeed); err != nil {
 		return err
 	}
 
@@ -65,7 +66,7 @@ func shutdownCluster(ctx context.Context, logger logrus.FieldLogger, client ctrl
 	return nil
 }
 
-func shutdownDeploymentsInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client, kubermaticNamespace string) error {
+func shutdownDeploymentsInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client, kubermaticNamespace string, isSeed bool) error {
 	deployments := []string{
 		"kubermatic-operator", // as named in our Helm chart
 		common.MasterControllerManagerDeploymentName,
@@ -74,30 +75,54 @@ func shutdownDeploymentsInCluster(ctx context.Context, logger logrus.FieldLogger
 	}
 
 	for _, deploymentName := range deployments {
-		depLogger := logger.WithField("deployment", deploymentName)
+		if err := shutdownDeployment(ctx, logger, client, kubermaticNamespace, deploymentName); err != nil {
+			return err
+		}
+	}
 
-		deployment := appsv1.Deployment{}
-		key := types.NamespacedName{Name: deploymentName, Namespace: kubermaticNamespace}
-
-		if err := client.Get(ctx, key, &deployment); err != nil {
-			// not all deployments need to exist in all clusters
-			if apierrors.IsNotFound(err) {
-				depLogger.Debug("Deployment not found.")
-				continue
-			}
-
-			return fmt.Errorf("failed to get Deployment %s: %w", deploymentName, err)
+	// It would be harmless to check for userclusters on the master, as it
+	// would simply find no namespaces, but on shared master/seed clusters,
+	// this would lead to problems with userclusters reported twice.
+	if isSeed {
+		clusterNamespaces, err := getUserclusterNamespaces(ctx, client)
+		if err != nil {
+			return err
 		}
 
-		if deployment.Spec.Replicas != nil && *deployment.Spec.Replicas > 0 {
-			depLogger.Debug("Scaling down…")
-
-			oldDeployment := deployment.DeepCopy()
-			deployment.Spec.Replicas = pointer.Int32(0)
-
-			if err := client.Patch(ctx, &deployment, ctrlruntimeclient.MergeFrom(oldDeployment)); err != nil {
-				return fmt.Errorf("failed to scale down Deployment %s: %w", deploymentName, err)
+		for _, namespace := range clusterNamespaces {
+			if err := shutdownDeployment(ctx, logger, client, namespace, resources.UserClusterControllerDeploymentName); err != nil {
+				return err
 			}
+		}
+	}
+
+	return nil
+}
+
+func shutdownDeployment(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client, namespace string, name string) error {
+	depLogger := logger.WithField("deployment", name).WithField("namespace", namespace)
+
+	deployment := appsv1.Deployment{}
+	key := types.NamespacedName{Name: name, Namespace: namespace}
+
+	if err := client.Get(ctx, key, &deployment); err != nil {
+		// not all deployments need to exist in all clusters
+		if apierrors.IsNotFound(err) {
+			depLogger.Debug("Deployment not found.")
+			return nil
+		}
+
+		return fmt.Errorf("failed to get Deployment %s: %w", name, err)
+	}
+
+	if deployment.Spec.Replicas != nil && *deployment.Spec.Replicas > 0 {
+		depLogger.Debug("Scaling down…")
+
+		oldDeployment := deployment.DeepCopy()
+		deployment.Spec.Replicas = pointer.Int32(0)
+
+		if err := client.Patch(ctx, &deployment, ctrlruntimeclient.MergeFrom(oldDeployment)); err != nil {
+			return fmt.Errorf("failed to scale down Deployment %s: %w", name, err)
 		}
 	}
 
@@ -126,6 +151,8 @@ func shutdownWebhooksInCluster(ctx context.Context, logger logrus.FieldLogger, c
 
 			return fmt.Errorf("failed to get Webhook %s: %w", webhookName, err)
 		}
+
+		hookLogger.Debug("Removing…")
 
 		if err := client.Delete(ctx, &webhook); err != nil {
 			return fmt.Errorf("failed to remove Webhook %s: %w", webhookName, err)
