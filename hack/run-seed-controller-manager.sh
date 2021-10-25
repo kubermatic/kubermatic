@@ -63,7 +63,7 @@ set -x
 ./_build/seed-controller-manager $CTRL_EXTRA_ARGS \
   -namespace=kubermatic \
   -enable-leader-election=false \
-  -datacenter-name=europe-west3-c \
+  -seed-name=europe-west3-c \
   -kubeconfig=$KUBECONFIG \
   -ca-bundle=$CA_BUNDLE \
   -kubernetes-addons-path=addons \
