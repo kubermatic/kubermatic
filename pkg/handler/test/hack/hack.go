@@ -37,7 +37,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/watcher"
 
-	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -122,7 +121,6 @@ func NewTestRouting(
 		SATokenGenerator:                        saTokenGenerator,
 		EventRecorderProvider:                   eventRecorderProvider,
 		ExposeStrategy:                          kubermaticv1.ExposeStrategyNodePort,
-		AccessibleAddons:                        sets.String{},
 		UserInfoGetter:                          userInfoGetter,
 		SettingsProvider:                        settingsProvider,
 		AdminProvider:                           adminProvider,
