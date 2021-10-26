@@ -153,6 +153,8 @@ func disableLauncher(ctx context.Context, t *testing.T, client ctrlruntimeclient
 	if err := disableEtcdlauncherForCluster(ctx, client, cluster); err == nil {
 		return fmt.Errorf("no error disabling etcd-launcher, expected validation to fail")
 	}
+
+	return nil
 }
 
 func scaleUp(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
@@ -307,7 +309,7 @@ func waitForClusterHealthy(ctx context.Context, t *testing.T, client ctrlruntime
 	return nil
 }
 
-func waitForStrictTLSMode(ctx context.Context, t *testing.T, client ctrlruntimeclient.Clientn, cluster *kubermaticv1.Cluster) error {
+func waitForStrictTLSMode(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
 	before := time.Now()
 	if err := wait.PollImmediate(3*time.Second, 10*time.Minute, func() (bool, error) {
 		healthy, err := isStrictTLSEnabled(ctx, client, cluster)
