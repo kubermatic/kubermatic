@@ -52,7 +52,6 @@ func TestHandle(t *testing.T) {
 	tests := []struct {
 		name                   string
 		req                    webhook.AdmissionRequest
-		componentSettings      kubermaticv1.ComponentSettings
 		defaultClusterTemplate kubermaticv1.ClusterTemplate
 		wantAllowed            bool
 		wantPatches            []jsonpatch.JsonPatchOperation
@@ -88,88 +87,96 @@ func TestHandle(t *testing.T) {
 					},
 				},
 			},
-			componentSettings: kubermaticv1.ComponentSettings{
-				Apiserver: kubermaticv1.APIServerSettings{
-					DeploymentSettings: kubermaticv1.DeploymentSettings{
-						Replicas: pointer.Int32Ptr(2),
-						Resources: &corev1.ResourceRequirements{
-							Requests: map[corev1.ResourceName]resource.Quantity{
-								"memory": resource.MustParse("500M"),
+			defaultClusterTemplate: kubermaticv1.ClusterTemplate{
+				Spec: kubermaticv1.ClusterSpec{
+					CNIPlugin: &kubermaticv1.CNIPluginSettings{
+						Type: kubermaticv1.CNIPluginTypeCilium,
+					},
+					ComponentsOverride: kubermaticv1.ComponentSettings{
+						Apiserver: kubermaticv1.APIServerSettings{
+							DeploymentSettings: kubermaticv1.DeploymentSettings{
+								Replicas: pointer.Int32Ptr(2),
+								Resources: &corev1.ResourceRequirements{
+									Requests: map[corev1.ResourceName]resource.Quantity{
+										"memory": resource.MustParse("500M"),
+									},
+								},
+								Tolerations: []corev1.Toleration{
+									{
+										Key:      "test-no-schedule",
+										Operator: corev1.TolerationOpExists,
+										Effect:   corev1.TaintEffectPreferNoSchedule,
+									},
+								},
+							},
+							EndpointReconcilingDisabled: pointer.BoolPtr(true),
+							NodePortRange:               "30000-32768",
+						},
+						ControllerManager: kubermaticv1.ControllerSettings{
+							DeploymentSettings: kubermaticv1.DeploymentSettings{
+								Replicas: pointer.Int32Ptr(2),
+								Resources: &corev1.ResourceRequirements{
+									Requests: map[corev1.ResourceName]resource.Quantity{
+										"memory": resource.MustParse("500M"),
+									},
+								},
+								Tolerations: []corev1.Toleration{
+									{
+										Key:      "test-no-schedule",
+										Operator: corev1.TolerationOpExists,
+										Effect:   corev1.TaintEffectPreferNoSchedule,
+									},
+								},
+							},
+							LeaderElectionSettings: kubermaticv1.LeaderElectionSettings{
+								LeaseDurationSeconds: pointer.Int32Ptr(10),
+								RenewDeadlineSeconds: pointer.Int32Ptr(5),
+								RetryPeriodSeconds:   pointer.Int32Ptr(2),
 							},
 						},
-						Tolerations: []corev1.Toleration{
-							{
-								Key:      "test-no-schedule",
-								Operator: corev1.TolerationOpExists,
-								Effect:   corev1.TaintEffectPreferNoSchedule,
+						Scheduler: kubermaticv1.ControllerSettings{
+							DeploymentSettings: kubermaticv1.DeploymentSettings{
+								Replicas: pointer.Int32Ptr(2),
+								Resources: &corev1.ResourceRequirements{
+									Requests: map[corev1.ResourceName]resource.Quantity{
+										"memory": resource.MustParse("500M"),
+									},
+								},
+								Tolerations: []corev1.Toleration{
+									{
+										Key:      "test-no-schedule",
+										Operator: corev1.TolerationOpExists,
+										Effect:   corev1.TaintEffectPreferNoSchedule,
+									},
+								},
+							},
+							LeaderElectionSettings: kubermaticv1.LeaderElectionSettings{
+								LeaseDurationSeconds: pointer.Int32Ptr(10),
+								RenewDeadlineSeconds: pointer.Int32Ptr(5),
+								RetryPeriodSeconds:   pointer.Int32Ptr(2),
 							},
 						},
-					},
-					EndpointReconcilingDisabled: pointer.BoolPtr(true),
-					NodePortRange:               "30000-32768",
-				},
-				ControllerManager: kubermaticv1.ControllerSettings{
-					DeploymentSettings: kubermaticv1.DeploymentSettings{
-						Replicas: pointer.Int32Ptr(2),
-						Resources: &corev1.ResourceRequirements{
-							Requests: map[corev1.ResourceName]resource.Quantity{
-								"memory": resource.MustParse("500M"),
+						Etcd: kubermaticv1.EtcdStatefulSetSettings{
+							ClusterSize:  pointer.Int32Ptr(7),
+							StorageClass: "fast-storage",
+							DiskSize:     &oneGB,
+							Resources: &corev1.ResourceRequirements{
+								Requests: map[corev1.ResourceName]resource.Quantity{
+									"memory": resource.MustParse("500M"),
+								},
 							},
 						},
-						Tolerations: []corev1.Toleration{
-							{
-								Key:      "test-no-schedule",
-								Operator: corev1.TolerationOpExists,
-								Effect:   corev1.TaintEffectPreferNoSchedule,
+						Prometheus: kubermaticv1.StatefulSetSettings{
+							Resources: &corev1.ResourceRequirements{
+								Requests: map[corev1.ResourceName]resource.Quantity{
+									"memory": resource.MustParse("500M"),
+								},
 							},
-						},
-					},
-					LeaderElectionSettings: kubermaticv1.LeaderElectionSettings{
-						LeaseDurationSeconds: pointer.Int32Ptr(10),
-						RenewDeadlineSeconds: pointer.Int32Ptr(5),
-						RetryPeriodSeconds:   pointer.Int32Ptr(2),
-					},
-				},
-				Scheduler: kubermaticv1.ControllerSettings{
-					DeploymentSettings: kubermaticv1.DeploymentSettings{
-						Replicas: pointer.Int32Ptr(2),
-						Resources: &corev1.ResourceRequirements{
-							Requests: map[corev1.ResourceName]resource.Quantity{
-								"memory": resource.MustParse("500M"),
-							},
-						},
-						Tolerations: []corev1.Toleration{
-							{
-								Key:      "test-no-schedule",
-								Operator: corev1.TolerationOpExists,
-								Effect:   corev1.TaintEffectPreferNoSchedule,
-							},
-						},
-					},
-					LeaderElectionSettings: kubermaticv1.LeaderElectionSettings{
-						LeaseDurationSeconds: pointer.Int32Ptr(10),
-						RenewDeadlineSeconds: pointer.Int32Ptr(5),
-						RetryPeriodSeconds:   pointer.Int32Ptr(2),
-					},
-				},
-				Etcd: kubermaticv1.EtcdStatefulSetSettings{
-					ClusterSize:  pointer.Int32Ptr(7),
-					StorageClass: "fast-storage",
-					DiskSize:     &oneGB,
-					Resources: &corev1.ResourceRequirements{
-						Requests: map[corev1.ResourceName]resource.Quantity{
-							"memory": resource.MustParse("500M"),
-						},
-					},
-				},
-				Prometheus: kubermaticv1.StatefulSetSettings{
-					Resources: &corev1.ResourceRequirements{
-						Requests: map[corev1.ResourceName]resource.Quantity{
-							"memory": resource.MustParse("500M"),
 						},
 					},
 				},
 			},
+
 			wantAllowed: true,
 			wantPatches: []jsonpatch.JsonPatchOperation{
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/nodePortRange", "30000-32768"),
@@ -195,6 +202,55 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/diskSize", "1G"),
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/resources", map[string]interface{}{"requests": map[string]interface{}{"memory": "500M"}}),
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/prometheus/resources", map[string]interface{}{"requests": map[string]interface{}{"memory": "500M"}}),
+				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
+			},
+		},
+		{
+			name: "Create cluster sets default cni settings",
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Create,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   kubermaticv1.GroupName,
+						Version: kubermaticv1.GroupVersion,
+						Kind:    "Cluster",
+					},
+					Name: "foo",
+					Object: runtime.RawExtension{
+						Raw: rawClusterGen{
+							Name:                  "foo",
+							CloudSpec:             kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{}},
+							ExternalCloudProvider: true,
+						}.Do(),
+					},
+				},
+			},
+			defaultClusterTemplate: kubermaticv1.ClusterTemplate{
+				Spec: kubermaticv1.ClusterSpec{
+					CNIPlugin: &kubermaticv1.CNIPluginSettings{
+						Type: kubermaticv1.CNIPluginTypeCilium,
+					},
+					ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+						Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+						Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
+						DNSDomain:                "example.local",
+						ProxyMode:                resources.EBPFProxyMode,
+						NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+					},
+				},
+			},
+
+			wantAllowed: true,
+			wantPatches: []jsonpatch.JsonPatchOperation{
+				jsonpatch.NewOperation("add", "/spec/cniPlugin", map[string]interface{}{
+					"type":    "cilium",
+					"version": "v1.10",
+				}),
+				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/services/cidrBlocks", []interface{}{"10.240.32.0/20"}),
+				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/pods/cidrBlocks", []interface{}{"10.241.0.0/16"}),
+				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/dnsDomain", "example.local"),
+				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", resources.EBPFProxyMode),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", true),
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
 			},
 		},
@@ -517,13 +573,9 @@ func TestHandle(t *testing.T) {
 		}
 		t.Run(tt.name, func(t *testing.T) {
 			handler := AdmissionHandler{
-				log:     logr.Discard(),
-				decoder: d,
-				defaultTemplate: kubermaticv1.ClusterTemplate{
-					Spec: kubermaticv1.ClusterSpec{
-						ComponentsOverride: tt.componentSettings,
-					},
-				},
+				log:             logr.Discard(),
+				decoder:         d,
+				defaultTemplate: tt.defaultClusterTemplate,
 			}
 			res := handler.Handle(context.Background(), tt.req)
 			if res.Allowed != tt.wantAllowed {
