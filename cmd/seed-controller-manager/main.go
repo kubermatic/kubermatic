@@ -28,10 +28,13 @@ import (
 	gatekeeperv1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
+	"k8s.io/apimachinery/pkg/types"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/collectors"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/metrics"
@@ -214,11 +217,30 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		if err != nil {
 			log.Fatalf("could not get seed resource: %v", err)
 		}
-		settings, err := defaultComponentSettings(ctrlCtx.runOptions, seed)
-		if err != nil {
-			log.Fatal(err)
+
+		var defaultingTemplate kubermaticv1.ClusterTemplate
+
+		if seed.Spec.DefaultClusterTemplate == "" {
+
+			settings, err := defaultComponentSettings(ctrlCtx.runOptions, seed.Spec.DefaultComponentSettings)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			defaultingTemplate.Spec.ComponentsOverride = settings
+
+		} else {
+			err = mgr.GetClient().Get(context.Background(), types.NamespacedName{
+				Namespace: options.namespace,
+				Name:      seed.Spec.DefaultClusterTemplate,
+			}, &defaultingTemplate)
+			if err != nil {
+				log.Fatal(err)
+			}
+
 		}
-		clustermutation.NewAdmissionHandler(settings).SetupWebhookWithManager(mgr)
+
+		clustermutation.NewAdmissionHandler(defaultingTemplate).SetupWebhookWithManager(mgr)
 	}
 
 	if err := createAllControllers(ctrlCtx); err != nil {

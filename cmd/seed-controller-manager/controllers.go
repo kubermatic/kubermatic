@@ -92,9 +92,9 @@ func createSeedConditionUpToDateController(ctrlCtx *controllerContext) error {
 	)
 }
 
-func defaultComponentSettings(runOptions controllerRunOptions, seed *kubermaticv1.Seed) (kubermaticv1.ComponentSettings, error) {
+func defaultComponentSettings(runOptions controllerRunOptions, defaultComponentSettings kubermaticv1.ComponentSettings) (kubermaticv1.ComponentSettings, error) {
 	// Copy default settings.
-	settings := seed.Spec.DefaultComponentSettings
+	settings := defaultComponentSettings
 
 	if replicas := runOptions.apiServerDefaultReplicas; replicas != 0 {
 		if settings.Apiserver.Replicas != nil && replicas != int(*settings.Apiserver.Replicas) {

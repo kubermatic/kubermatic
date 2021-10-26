@@ -50,11 +50,12 @@ func init() {
 func TestHandle(t *testing.T) {
 	oneGB := resource.MustParse("1G")
 	tests := []struct {
-		name              string
-		req               webhook.AdmissionRequest
-		componentSettings kubermaticv1.ComponentSettings
-		wantAllowed       bool
-		wantPatches       []jsonpatch.JsonPatchOperation
+		name                   string
+		req                    webhook.AdmissionRequest
+		componentSettings      kubermaticv1.ComponentSettings
+		defaultClusterTemplate kubermaticv1.ClusterTemplate
+		wantAllowed            bool
+		wantPatches            []jsonpatch.JsonPatchOperation
 	}{
 		{
 			name: "Create cluster sets default component settings",
@@ -174,6 +175,7 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/nodePortRange", "30000-32768"),
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/replicas", float64(2)),
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/resources", map[string]interface{}{"requests": map[string]interface{}{"memory": "500M"}}),
+				jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/tolerations", []interface{}{map[string]interface{}{"effect": "PreferNoSchedule", "key": "test-no-schedule", "operator": "Exists"}}),
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/endpointReconcilingDisabled", true),
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/controllerManager/replicas", float64(2)),
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/controllerManager/resources", map[string]interface{}{"requests": map[string]interface{}{"memory": "500M"}}),
@@ -515,11 +517,15 @@ func TestHandle(t *testing.T) {
 		}
 		t.Run(tt.name, func(t *testing.T) {
 			handler := AdmissionHandler{
-				log:                      logr.Discard(),
-				decoder:                  d,
-				defaultComponentSettings: tt.componentSettings,
+				log:     logr.Discard(),
+				decoder: d,
+				defaultTemplate: kubermaticv1.ClusterTemplate{
+					Spec: kubermaticv1.ClusterSpec{
+						ComponentsOverride: tt.componentSettings,
+					},
+				},
 			}
-			res := handler.Handle(context.TODO(), tt.req)
+			res := handler.Handle(context.Background(), tt.req)
 			if res.Allowed != tt.wantAllowed {
 				t.Logf("Response: %v", res)
 				t.Fatalf("Allowed %t, but wanted %t", res.Allowed, tt.wantAllowed)
