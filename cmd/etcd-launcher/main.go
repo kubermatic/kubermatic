@@ -220,9 +220,10 @@ func deleteUnwantedDeadMembers(e *etcdCluster, log *zap.SugaredLogger) (bool, er
 	}
 	// we only need to reconcile if we have members that we shouldn't have
 	if len(unwantedMembers) == 0 {
-		log.Info("no unwanted members present")
+		log.Debug("no unwanted members present")
 		return true, nil
 	}
+
 	// to avoide race conditions, we will run only on the cluster leader
 	leader, err := e.isLeader(log)
 	if err != nil {
@@ -526,7 +527,7 @@ func (e *etcdCluster) getUnwantedMembers(log *zap.SugaredLogger) ([]*etcdserverp
 
 	expectedMembers := peerHostsList(e.clusterSize, e.namespace)
 	for _, member := range members {
-		if len(member.GetPeerURLs()) != 1 || len(member.GetPeerURLs()) != 2 {
+		if len(member.GetPeerURLs()) != 1 && len(member.GetPeerURLs()) != 2 {
 			unwantedMembers = append(unwantedMembers, member)
 			continue
 		}
@@ -604,7 +605,7 @@ func (e *etcdCluster) removeDeadMembers(log *zap.SugaredLogger, unwantedMembers 
 	defer close(client, log)
 
 	for _, member := range unwantedMembers {
-		log.Infow("removing cluster member", "member-name", member.Name)
+		log.Infow("checking cluster member for removal", "member-name", member.Name)
 
 		if member.Name == e.podName {
 			continue

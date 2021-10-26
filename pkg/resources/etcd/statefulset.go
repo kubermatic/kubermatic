@@ -167,11 +167,6 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 
 			launcherEnabled := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher]
 			if launcherEnabled {
-				// TODO: check for a better annotation scheme
-				set.Spec.Template.ObjectMeta.Annotations = map[string]string{
-					resources.EtcdTLSEnabledAnnotation: "",
-				}
-
 				set.Spec.Template.Spec.InitContainers = []corev1.Container{
 					{
 						Name:            "etcd-launcher-init",
@@ -187,15 +182,19 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 					},
 				}
 
-				if enableTLSOnly {
-					etcdEnv = append(etcdEnv, corev1.EnvVar{Name: "PEER_TLS_MODE", Value: "strict"})
-				}
-
 				etcdPorts = append(etcdPorts, corev1.ContainerPort{
 					ContainerPort: 2381,
 					Protocol:      corev1.ProtocolTCP,
 					Name:          "peer-tls",
 				})
+
+				set.Spec.Template.ObjectMeta.Annotations = map[string]string{
+					resources.EtcdTLSEnabledAnnotation: "",
+				}
+
+				if enableTLSOnly {
+					etcdEnv = append(etcdEnv, corev1.EnvVar{Name: "PEER_TLS_MODE", Value: "strict"})
+				}
 			}
 
 			etcdStartCmd, err := getEtcdCommand(data.Cluster().Name, data.Cluster().Status.NamespaceName, enableDataCorruptionChecks, launcherEnabled)
