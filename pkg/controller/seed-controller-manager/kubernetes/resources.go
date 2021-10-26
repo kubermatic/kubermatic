@@ -119,15 +119,13 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return nil, err
 	}
 
-	// ensure StatefulSet health, requeue otherwise
-	if ok, err := r.statefulSetHealthCheck(ctx, cluster); !ok || err != nil {
-		r.log.Info("StatefulSets not healthy yet, requeuing request")
-		return &reconcile.Result{RequeueAfter: time.Second * 10}, err
-	}
-
 	// check that all StatefulSets are created
-	if err := r.ensureStatefulSets(ctx, cluster, data); err != nil {
-		return nil, err
+	if ok, err := r.statefulSetHealthCheck(ctx, cluster); !ok || err != nil {
+		r.log.Info("Skipping reconcile for StatefulSets, not healthy yet")
+	} else {
+		if err := r.ensureStatefulSets(ctx, cluster, data); err != nil {
+			return nil, err
+		}
 	}
 
 	if err := r.ensureEtcdBackupConfigs(ctx, cluster, data); err != nil {

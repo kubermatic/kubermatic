@@ -131,5 +131,5 @@ func (r *Reconciler) statefulSetHealthCheck(ctx context.Context, c *kubermaticv1
 		}
 	}
 
-	return statefulSet.Status.Replicas == statefulSet.Status.ReadyReplicas, nil
+	return statefulSet.Status.Replicas == statefulSet.Status.ReadyReplicas && statefulSet.Status.Replicas == statefulSet.Status.UpdatedReplicas, nil
 }
