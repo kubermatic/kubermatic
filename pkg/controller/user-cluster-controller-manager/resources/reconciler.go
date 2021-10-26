@@ -959,7 +959,7 @@ func (r *reconciler) getMLALoggingHealth(ctx context.Context) (kubermaticv1.Heal
 		types.NamespacedName{Namespace: resources.UserClusterMLANamespace, Name: resources.PromtailDaemonSetName},
 		1)
 	if err != nil {
-		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to get ds health %q: %v", resources.PromtailDaemonSetName, err)
+		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to get ds health %s: %w", resources.PromtailDaemonSetName, err)
 	}
 	return loggingHealth, nil
 }
