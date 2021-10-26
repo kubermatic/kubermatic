@@ -16,7 +16,8 @@
 # Modifications:
 #   - templated net-conf.json Network
 #   - templated container image registry in all containers
-#   - removed the flexvolume installation as its broken for Flatcar Linux & only required for application policies (which we don't use)
+#   - removed the flexvolume installation as it does not work on Flatcar Linux & is only required for application policies
+#     (https://docs.projectcalico.org/reference/faq#are-the-calico-manifests-compatible-with-coreos)
 #   - added envoyagent interface to the exclusion list for Calico IP autodetection
 
 {{ if eq .Cluster.CNIPlugin.Type "canal" }}
