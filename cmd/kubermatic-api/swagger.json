@@ -15870,6 +15870,54 @@
         }
       }
     },
+    "/api/v2/providers/{provider_name}/presets/{preset_name}": {
+      "delete": {
+        "description": "Deletes provider preset",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "preset"
+        ],
+        "operationId": "deletePreset",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProviderName",
+            "name": "provider_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "PresetName",
+            "name": "preset_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/providers/{provider_name}/versions": {
       "get": {
         "description": "Lists all versions which don't result in automatic updates for a given provider",
