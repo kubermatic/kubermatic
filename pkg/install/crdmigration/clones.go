@@ -255,7 +255,7 @@ func cloneKubermaticConfigurationResourcesInCluster(ctx context.Context, logger 
 					APIServerReplicas:                   oldObject.Spec.UserCluster.APIServerReplicas,
 					MachineController:                   newv1.MachineControllerConfiguration(oldObject.Spec.UserCluster.MachineController),
 				},
-				ExposeStrategy: oldObject.Spec.ExposeStrategy,
+				ExposeStrategy: newv1.ExposeStrategy(oldObject.Spec.ExposeStrategy),
 				Ingress:        newv1.KubermaticIngressConfiguration(oldObject.Spec.Ingress),
 				Versions:       convertKubermaticVersioningConfiguration(oldObject.Spec.Versions.Kubernetes),
 				VerticalPodAutoscaler: newv1.KubermaticVPAConfiguration{
@@ -296,7 +296,7 @@ func convertKubermaticVersioningConfiguration(old operatorv1alpha1.KubermaticVer
 
 	for _, i := range old.ProviderIncompatibilities {
 		result.ProviderIncompatibilities = append(result.ProviderIncompatibilities, newv1.Incompatibility{
-			Provider:  i.Provider,
+			Provider:  newv1.ProviderType(i.Provider),
 			Version:   i.Version,
 			Condition: newv1.ConditionType(i.Condition),
 			Operation: newv1.OperationType(i.Operation),
@@ -304,6 +304,17 @@ func convertKubermaticVersioningConfiguration(old operatorv1alpha1.KubermaticVer
 	}
 
 	return result
+}
+
+func convertHealthStatus(oldHs kubermaticv1.HealthStatus) newv1.HealthStatus {
+	switch oldHs {
+	case kubermaticv1.HealthStatusUp:
+		return newv1.HealthStatusUp
+	case kubermaticv1.HealthStatusProvisioning:
+		return newv1.HealthStatusProvisioning
+	}
+
+	return newv1.HealthStatusDown
 }
 
 func cloneClusterResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) (int, error) {
@@ -325,16 +336,16 @@ func cloneClusterResourcesInCluster(ctx context.Context, logger logrus.FieldLogg
 				UserName:               oldObject.Status.UserName,
 				UserEmail:              oldObject.Status.UserEmail,
 				ExtendedHealth: newv1.ExtendedClusterHealth{
-					Apiserver:                    newv1.HealthStatus(oldObject.Status.ExtendedHealth.Apiserver),
-					Scheduler:                    newv1.HealthStatus(oldObject.Status.ExtendedHealth.Scheduler),
-					Controller:                   newv1.HealthStatus(oldObject.Status.ExtendedHealth.Controller),
-					MachineController:            newv1.HealthStatus(oldObject.Status.ExtendedHealth.MachineController),
-					Etcd:                         newv1.HealthStatus(oldObject.Status.ExtendedHealth.Etcd),
-					OpenVPN:                      newv1.HealthStatus(oldObject.Status.ExtendedHealth.OpenVPN),
-					CloudProviderInfrastructure:  newv1.HealthStatus(oldObject.Status.ExtendedHealth.CloudProviderInfrastructure),
-					UserClusterControllerManager: newv1.HealthStatus(oldObject.Status.ExtendedHealth.UserClusterControllerManager),
-					GatekeeperController:         newv1.HealthStatus(oldObject.Status.ExtendedHealth.GatekeeperController),
-					GatekeeperAudit:              newv1.HealthStatus(oldObject.Status.ExtendedHealth.GatekeeperAudit),
+					Apiserver:                    convertHealthStatus(oldObject.Status.ExtendedHealth.Apiserver),
+					Scheduler:                    convertHealthStatus(oldObject.Status.ExtendedHealth.Scheduler),
+					Controller:                   convertHealthStatus(oldObject.Status.ExtendedHealth.Controller),
+					MachineController:            convertHealthStatus(oldObject.Status.ExtendedHealth.MachineController),
+					Etcd:                         convertHealthStatus(oldObject.Status.ExtendedHealth.Etcd),
+					OpenVPN:                      convertHealthStatus(oldObject.Status.ExtendedHealth.OpenVPN),
+					CloudProviderInfrastructure:  convertHealthStatus(oldObject.Status.ExtendedHealth.CloudProviderInfrastructure),
+					UserClusterControllerManager: convertHealthStatus(oldObject.Status.ExtendedHealth.UserClusterControllerManager),
+					GatekeeperController:         convertHealthStatus(oldObject.Status.ExtendedHealth.GatekeeperController),
+					GatekeeperAudit:              convertHealthStatus(oldObject.Status.ExtendedHealth.GatekeeperAudit),
 				},
 			},
 		}
@@ -749,6 +760,10 @@ func cloneExternalClusterResourcesInCluster(ctx context.Context, logger logrus.F
 			Spec: newv1.ExternalClusterSpec{
 				HumanReadableName:   oldObject.Spec.HumanReadableName,
 				KubeconfigReference: oldObject.Spec.KubeconfigReference,
+				CloudSpec: &newv1.ExternalClusterCloudSpec{
+					GKE: (*newv1.ExternalClusterGKECloudSpec)(oldObject.Spec.CloudSpec.GKE),
+					EKS: (*newv1.ExternalClusterEKSCloudSpec)(oldObject.Spec.CloudSpec.EKS),
+				},
 			},
 		}
 
@@ -1012,7 +1027,7 @@ func cloneProjectResourcesInCluster(ctx context.Context, logger logrus.FieldLogg
 				Name: oldObject.Spec.Name,
 			},
 			Status: newv1.ProjectStatus{
-				Phase: oldObject.Status.Phase,
+				Phase: newv1.ProjectPhase(oldObject.Status.Phase),
 			},
 		}
 

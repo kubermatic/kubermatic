@@ -45,6 +45,7 @@ spec:
                       and restore.
                     type: string
                   s3Endpoint:
+                    default: s3.amazonaws.com
                     description: S3Endpoint is the S3 API endpoint to use for backup
                       and restore. Defaults to s3.amazonaws.com.
                     type: string
@@ -283,11 +284,17 @@ spec:
                                   type: array
                               type: object
                             dnsPolicy:
+                              default: ClusterFirst
                               description: DNSPolicy represents the dns policy for
                                 the pod. Valid values are 'ClusterFirstWithHostNet',
                                 'ClusterFirst', 'Default' or 'None'. Defaults to "ClusterFirst".
                                 DNS parameters given in DNSConfig will be merged with
                                 the policy selected with DNSPolicy.
+                              enum:
+                              - ClusterFirstWithHostNet
+                              - ClusterFirst
+                              - Default
+                              - None
                               type: string
                           type: object
                         openstack:
@@ -864,6 +871,10 @@ spec:
                 description: 'Optional: ExposeStrategy explicitly sets the expose
                   strategy for this seed cluster, if not set, the default provided
                   by the master is used.'
+                enum:
+                - NodePort
+                - LoadBalancer
+                - Tunneling
                 type: string
               kubeconfig:
                 description: A reference to the Kubeconfig of this cluster. The Kubeconfig

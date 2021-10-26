@@ -136,6 +136,8 @@ spec:
                         type: object
                       name:
                         type: string
+                      zone:
+                        type: string
                     required:
                     - name
                     type: object

@@ -48,6 +48,8 @@ type RuleGroupSpec struct {
 	Data []byte `json:"data"`
 }
 
+// +kubebuilder:validation:Enum=Metrics;Logs
+
 type RuleGroupType string
 
 const (
