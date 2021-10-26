@@ -254,7 +254,7 @@ func isStrictTLSEnabled(ctx context.Context, client ctrlruntimeclient.Client, cl
 
 	for _, env := range sts.Spec.Template.Spec.Containers[0].Env {
 		if env.Name == "PEER_TLS_MODE" && env.Value == "strict" {
-			strictModeEnvSet := true
+			strictModeEnvSet = true
 		}
 	}
 
