@@ -1073,7 +1073,7 @@ func TestGetClusterHealth(t *testing.T) {
 		{
 			Name:             "scenario 5: get existing cluster health status with MLA Monitoring enabled",
 			Body:             ``,
-			ExpectedResponse: `{"apiserver":1,"scheduler":0,"controller":1,"machineController":0,"etcd":1,"cloudProviderInfrastructure":1,"userClusterControllerManager":1,"mlaMonitoring":1}`,
+			ExpectedResponse: `{"apiserver":1,"scheduler":0,"controller":1,"machineController":0,"etcd":1,"cloudProviderInfrastructure":1,"userClusterControllerManager":1,"monitoring":1}`,
 			HTTPStatus:       http.StatusOK,
 			ClusterToGet:     "keen-snyder",
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -1093,7 +1093,7 @@ func TestGetClusterHealth(t *testing.T) {
 						Etcd:                         kubermaticv1.HealthStatusUp,
 						CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 						UserClusterControllerManager: kubermaticv1.HealthStatusUp,
-						MlaMonitoring:                kubermaticv1.HealthStatusUp,
+						Monitoring:                   kubermaticv1.HealthStatusUp,
 					}
 					cluster.Spec.MLA = &kubermaticv1.MLASettings{MonitoringEnabled: true}
 					return cluster
@@ -1105,7 +1105,7 @@ func TestGetClusterHealth(t *testing.T) {
 		{
 			Name:             "scenario 6: get existing cluster health status with MLA Logging enabled",
 			Body:             ``,
-			ExpectedResponse: `{"apiserver":1,"scheduler":0,"controller":1,"machineController":0,"etcd":1,"cloudProviderInfrastructure":1,"userClusterControllerManager":1,"mlaLogging":1}`,
+			ExpectedResponse: `{"apiserver":1,"scheduler":0,"controller":1,"machineController":0,"etcd":1,"cloudProviderInfrastructure":1,"userClusterControllerManager":1,"logging":1}`,
 			HTTPStatus:       http.StatusOK,
 			ClusterToGet:     "keen-snyder",
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -1125,7 +1125,7 @@ func TestGetClusterHealth(t *testing.T) {
 						Etcd:                         kubermaticv1.HealthStatusUp,
 						CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 						UserClusterControllerManager: kubermaticv1.HealthStatusUp,
-						MlaLogging:                   kubermaticv1.HealthStatusUp,
+						Logging:                      kubermaticv1.HealthStatusUp,
 					}
 					cluster.Spec.MLA = &kubermaticv1.MLASettings{LoggingEnabled: true}
 					return cluster

@@ -890,21 +890,21 @@ func (r *reconciler) healthCheck(ctx context.Context) error {
 	}
 
 	if r.userClusterMLA.Monitoring {
-		mlaMonitoring, err := r.getMLAMonitoringHealth(ctx)
+		monitoring, err := r.getMLAMonitoringHealth(ctx)
 		if err != nil {
 			return err
 		}
 
-		cluster.Status.ExtendedHealth.MlaMonitoring = mlaMonitoring
+		cluster.Status.ExtendedHealth.Monitoring = monitoring
 	}
 
 	if r.userClusterMLA.Logging {
-		mlaLogging, err := r.getMLALoggingHealth(ctx)
+		logging, err := r.getMLALoggingHealth(ctx)
 		if err != nil {
 			return err
 		}
 
-		cluster.Status.ExtendedHealth.MlaLogging = mlaLogging
+		cluster.Status.ExtendedHealth.Logging = logging
 	}
 
 	if oldCluster.Status.ExtendedHealth != cluster.Status.ExtendedHealth {

@@ -36,14 +36,14 @@ type ClusterHealth struct {
 	// gatekeeper controller
 	GatekeeperController HealthStatus `json:"gatekeeperController,omitempty"`
 
+	// logging
+	Logging HealthStatus `json:"logging,omitempty"`
+
 	// machine controller
 	MachineController HealthStatus `json:"machineController,omitempty"`
 
-	// mla logging
-	MlaLogging HealthStatus `json:"mlaLogging,omitempty"`
-
-	// mla monitoring
-	MlaMonitoring HealthStatus `json:"mlaMonitoring,omitempty"`
+	// monitoring
+	Monitoring HealthStatus `json:"monitoring,omitempty"`
 
 	// scheduler
 	Scheduler HealthStatus `json:"scheduler,omitempty"`
@@ -80,15 +80,15 @@ func (m *ClusterHealth) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateLogging(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateMachineController(formats); err != nil {
 		res = append(res, err)
 	}
 
-	if err := m.validateMlaLogging(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateMlaMonitoring(formats); err != nil {
+	if err := m.validateMonitoring(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -196,6 +196,21 @@ func (m *ClusterHealth) validateGatekeeperController(formats strfmt.Registry) er
 	return nil
 }
 
+func (m *ClusterHealth) validateLogging(formats strfmt.Registry) error {
+	if swag.IsZero(m.Logging) { // not required
+		return nil
+	}
+
+	if err := m.Logging.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("logging")
+		}
+		return err
+	}
+
+	return nil
+}
+
 func (m *ClusterHealth) validateMachineController(formats strfmt.Registry) error {
 	if swag.IsZero(m.MachineController) { // not required
 		return nil
@@ -211,29 +226,14 @@ func (m *ClusterHealth) validateMachineController(formats strfmt.Registry) error
 	return nil
 }
 
-func (m *ClusterHealth) validateMlaLogging(formats strfmt.Registry) error {
-	if swag.IsZero(m.MlaLogging) { // not required
+func (m *ClusterHealth) validateMonitoring(formats strfmt.Registry) error {
+	if swag.IsZero(m.Monitoring) { // not required
 		return nil
 	}
 
-	if err := m.MlaLogging.Validate(formats); err != nil {
+	if err := m.Monitoring.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("mlaLogging")
-		}
-		return err
-	}
-
-	return nil
-}
-
-func (m *ClusterHealth) validateMlaMonitoring(formats strfmt.Registry) error {
-	if swag.IsZero(m.MlaMonitoring) { // not required
-		return nil
-	}
-
-	if err := m.MlaMonitoring.Validate(formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("mlaMonitoring")
+			return ve.ValidateName("monitoring")
 		}
 		return err
 	}
@@ -299,15 +299,15 @@ func (m *ClusterHealth) ContextValidate(ctx context.Context, formats strfmt.Regi
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateLogging(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateMachineController(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
-	if err := m.contextValidateMlaLogging(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidateMlaMonitoring(ctx, formats); err != nil {
+	if err := m.contextValidateMonitoring(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -397,6 +397,18 @@ func (m *ClusterHealth) contextValidateGatekeeperController(ctx context.Context,
 	return nil
 }
 
+func (m *ClusterHealth) contextValidateLogging(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.Logging.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("logging")
+		}
+		return err
+	}
+
+	return nil
+}
+
 func (m *ClusterHealth) contextValidateMachineController(ctx context.Context, formats strfmt.Registry) error {
 
 	if err := m.MachineController.ContextValidate(ctx, formats); err != nil {
@@ -409,23 +421,11 @@ func (m *ClusterHealth) contextValidateMachineController(ctx context.Context, fo
 	return nil
 }
 
-func (m *ClusterHealth) contextValidateMlaLogging(ctx context.Context, formats strfmt.Registry) error {
+func (m *ClusterHealth) contextValidateMonitoring(ctx context.Context, formats strfmt.Registry) error {
 
-	if err := m.MlaLogging.ContextValidate(ctx, formats); err != nil {
+	if err := m.Monitoring.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("mlaLogging")
-		}
-		return err
-	}
-
-	return nil
-}
-
-func (m *ClusterHealth) contextValidateMlaMonitoring(ctx context.Context, formats strfmt.Registry) error {
-
-	if err := m.MlaMonitoring.ContextValidate(ctx, formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("mlaMonitoring")
+			return ve.ValidateName("monitoring")
 		}
 		return err
 	}
