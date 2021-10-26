@@ -115,8 +115,8 @@ func TestScaling(t *testing.T) {
 	}
 	waitForQuorum(t)
 
-	if err := disableLauncher(ctx, t, client, cluster); err != nil {
-		t.Fatalf("failed to disable etcd-launcher: %v", err)
+	if err := disableLauncher(ctx, t, client, cluster); err == nil {
+		t.Fatalf("succeeded in disabling immutable feature etcd-launcher: %v", err)
 	}
 
 	t.Log("tests succeeded")
@@ -132,6 +132,10 @@ func enableLauncher(ctx context.Context, t *testing.T, client ctrlruntimeclient.
 		return fmt.Errorf("etcd cluster is not healthy: %v", err)
 	}
 
+	if err := waitForStrictTLSMode(ctx, t, client, cluster); err != nil {
+		return fmt.Errorf("etcd cluster is not running in strict TLS peer mode: %v", err)
+	}
+
 	active, err := isEtcdLauncherActive(ctx, client, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to check StatefulSet command: %v", err)
@@ -145,25 +149,10 @@ func enableLauncher(ctx context.Context, t *testing.T, client ctrlruntimeclient.
 }
 
 func disableLauncher(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
-	t.Log("disabling etcd-launcher...")
-	if err := disableEtcdlauncherForCluster(ctx, client, cluster); err != nil {
-		return fmt.Errorf("failed to disable etcd-launcher: %v", err)
+	t.Log("trying to disable etcd-launcher...")
+	if err := disableEtcdlauncherForCluster(ctx, client, cluster); err == nil {
+		return fmt.Errorf("no error disabling etcd-launcher, expected validation to fail")
 	}
-
-	if err := waitForClusterHealthy(ctx, t, client, cluster); err != nil {
-		return fmt.Errorf("etcd cluster is not healthy: %v", err)
-	}
-
-	active, err := isEtcdLauncherActive(ctx, client, cluster)
-	if err != nil {
-		return fmt.Errorf("failed to check StatefulSet command: %v", err)
-	}
-
-	if active {
-		return errors.New("removing the feature flag had no effect on the StatefulSet")
-	}
-
-	return nil
 }
 
 func scaleUp(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
@@ -248,6 +237,28 @@ func isClusterEtcdHealthy(ctx context.Context, client ctrlruntimeclient.Client, 
 		*sts.Spec.Replicas == sts.Status.ReadyReplicas, nil
 }
 
+func isStrictTLSEnabled(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (bool, error) {
+	etcdHealthy, err := isClusterEtcdHealthy(ctx, client, cluster)
+	if err != nil {
+		return false, fmt.Errorf("etcd health check failed: %v", err)
+	}
+
+	sts := &appsv1.StatefulSet{}
+	if err := client.Get(ctx, types.NamespacedName{Name: "etcd", Namespace: clusterNamespace(cluster)}, sts); err != nil {
+		return false, fmt.Errorf("failed to get StatefulSet: %v", err)
+	}
+
+	strictModeEnvSet := false
+
+	for _, env := range sts.Spec.Template.Spec.Containers[0].Env {
+		if env.Name == "PEER_TLS_MODE" && env.Value == "strict" {
+			strictModeEnvSet := true
+		}
+	}
+
+	return etcdHealthy && strictModeEnvSet, nil
+}
+
 // isEtcdLauncherActive deduces from the StatefulSet's current spec whether or
 // or not the etcd-launcher is enabled (and reconciled).
 func isEtcdLauncherActive(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (bool, error) {
@@ -282,6 +293,24 @@ func waitForClusterHealthy(ctx context.Context, t *testing.T, client ctrlruntime
 
 	if err := wait.PollImmediate(3*time.Second, 10*time.Minute, func() (bool, error) {
 		healthy, err := isClusterEtcdHealthy(ctx, client, cluster)
+		if err != nil {
+			t.Logf("failed to check cluster etcd health status: %v", err)
+			return false, nil
+		}
+		return healthy, nil
+	}); err != nil {
+		return fmt.Errorf("failed to check etcd health status: %v", err)
+	}
+
+	t.Logf("cluster became healthy after %v.", time.Since(before))
+
+	return nil
+}
+
+func waitForStrictTLSMode(ctx context.Context, t *testing.T, client ctrlruntimeclient.Clientn, cluster *kubermaticv1.Cluster) error {
+	before := time.Now()
+	if err := wait.PollImmediate(3*time.Second, 10*time.Minute, func() (bool, error) {
+		healthy, err := isStrictTLSEnabled(ctx, client, cluster)
 		if err != nil {
 			t.Logf("failed to check cluster etcd health status: %v", err)
 			return false, nil
