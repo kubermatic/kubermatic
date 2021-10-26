@@ -245,7 +245,7 @@ func GetGKECLusterConfig(ctx context.Context, sa, clusterName, zone string) (*ap
 	req := svc.Projects.Zones.Clusters.Get(project, zone, clusterName)
 	resp, err := req.Context(ctx).Do()
 	if err != nil {
-		return nil, fmt.Errorf("clusters list project=%s: %w", project, err)
+		return nil, fmt.Errorf("get cluster for project=%s: %w", project, err)
 	}
 	config := api.Config{
 		APIVersion: "v1",
@@ -263,7 +263,6 @@ func GetGKECLusterConfig(ctx context.Context, sa, clusterName, zone string) (*ap
 	if err != nil {
 		return nil, fmt.Errorf("can't get token %w", err)
 	}
-
 	name := fmt.Sprintf("gke_%s_%s_%s", project, resp.Zone, resp.Name)
 	cert, err := base64.StdEncoding.DecodeString(resp.MasterAuth.ClusterCaCertificate)
 	if err != nil {

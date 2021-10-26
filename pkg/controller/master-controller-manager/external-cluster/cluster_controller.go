@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -104,26 +105,25 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		}
 	}
 
-	err := r.reconcile(ctx, icl)
-	if err != nil {
-		log.Errorw("ReconcilingError", zap.Error(err))
-	}
-
-	return reconcile.Result{}, err
+	return r.reconcile(ctx, icl)
 }
 
-func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
+func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (reconcile.Result, error) {
 	cloud := cluster.Spec.CloudSpec
 	if cloud == nil {
-		return nil
+		return reconcile.Result{}, nil
 	}
 	if cloud.GKE != nil {
 		r.log.Debugf("reconcile GKE cluster")
-		if cluster.Spec.KubeconfigReference == nil {
-			return r.createGKEKubeconfig(ctx, cluster)
+		err := r.createOrUpdateGKEKubeconfig(ctx, cluster)
+		if err != nil {
+			r.log.Errorf("failed to create or update kubeconfig secret %v", err)
+			return reconcile.Result{}, err
 		}
+		// the kubeconfig token is valid 1h, it will update token every 30min
+		return reconcile.Result{RequeueAfter: time.Minute * 30}, nil
 	}
-	return nil
+	return reconcile.Result{}, nil
 }
 
 func (r *Reconciler) cleanUpKubeconfigSecret(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
@@ -216,7 +216,7 @@ func createKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client
 	}, nil
 }
 
-func (r *Reconciler) createGKEKubeconfig(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
+func (r *Reconciler) createOrUpdateGKEKubeconfig(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
 	cloud := cluster.Spec.CloudSpec
 	sa, err := r.getGKECredentials(ctx, cluster)
 	if err != nil {
@@ -235,6 +235,22 @@ func (r *Reconciler) createGKEKubeconfig(ctx context.Context, cluster *kubermati
 	projectID := ""
 	if cluster.Labels != nil {
 		projectID = cluster.Labels[kubermaticv1.ProjectIDLabelKey]
+	}
+
+	namespacedName := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: kubeconfigSecretName}
+	existingSecret := &corev1.Secret{}
+	if err := r.Get(ctx, namespacedName, existingSecret); err != nil && !kerrors.IsNotFound(err) {
+		return fmt.Errorf("failed to probe for secret %v: %v", namespacedName, err)
+	}
+
+	// update if already exists
+	if existingSecret.Name != "" {
+		existingSecret.Data = map[string][]byte{
+			resources.ExternalClusterKubeconfig: []byte(base64.StdEncoding.EncodeToString(kubeconfig)),
+		}
+		r.log.Debugf("update kubeconfig for cluster %s", cluster.Name)
+
+		return r.Update(ctx, existingSecret)
 	}
 
 	keyRef, err := createKubeconfigSecret(ctx, r.Client, kubeconfigSecretName, projectID, map[string][]byte{
