@@ -28,14 +28,10 @@ import (
 // AdmissionPluginList is the type representing a AdmissionPluginList
 type AdmissionPluginList struct {
 	metav1.TypeMeta `json:",inline"`
-	// Standard list metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
-	// +optional
-	metav1.ListMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+	metav1.ListMeta `json:"metadata,omitempty"`
 
 	// List of Admission Plugins
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md
-	Items []AdmissionPlugin `json:"items" protobuf:"bytes,2,rep,name=items"`
+	Items []AdmissionPlugin `json:"items"`
 }
 
 // +kubebuilder:resource:scope=Cluster

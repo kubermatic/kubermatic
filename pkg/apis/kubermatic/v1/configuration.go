@@ -17,12 +17,13 @@ limitations under the License.
 package v1
 
 import (
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+// +kubebuilder:validation:Enum=always;externalCloudProvider
 
 // ConditionType is the type defining the cluster or datacenter condition that must be met to block a specific version
 type ConditionType string
@@ -31,8 +32,10 @@ const (
 	// AlwaysCondition represent an always true matching condition used while checking provider incompatibilities
 	AlwaysCondition ConditionType = "always"
 	// ExternalCloudProviderCondition is an incompatibility condition that represents the usage of the external Cloud Provider
-	ExternalCloudProviderCondition ConditionType = kubermaticv1.ClusterFeatureExternalCloudProvider
+	ExternalCloudProviderCondition ConditionType = ClusterFeatureExternalCloudProvider
 )
+
+// +kubebuilder:validation:Enum=CREATE;UPGRADE;SUPPORT
 
 // OperationType is the type defining the operations triggering the compatibility check (CREATE or UPDATE)
 type OperationType string
@@ -83,7 +86,7 @@ type KubermaticConfigurationSpec struct {
 	// ExposeStrategy is the strategy to expose the cluster with.
 	// Note: The `seed_dns_overwrite` setting of a Seed's datacenter doesn't have any effect
 	// if this is set to LoadBalancerStrategy.
-	ExposeStrategy kubermaticv1.ExposeStrategy `json:"exposeStrategy,omitempty"`
+	ExposeStrategy ExposeStrategy `json:"exposeStrategy,omitempty"`
 	// Ingress contains settings for making the API and UI accessible remotely.
 	Ingress KubermaticIngressConfiguration `json:"ingress,omitempty"`
 	// Versions configures the available and default Kubernetes versions and updates.
@@ -174,6 +177,9 @@ type KubermaticSeedControllerConfiguration struct {
 type LegacyKubermaticBackupRestoreConfiguration struct {
 	// Enabled enables the new etcd backup and restore controllers.
 	Enabled bool `json:"enabled,omitempty"`
+
+	// +kubebuilder:default=s3.amazonaws.com
+
 	// S3Endpoint is the S3 API endpoint to use for backup and restore. Defaults to s3.amazonaws.com.
 	S3Endpoint string `json:"s3Endpoint,omitempty"`
 	// S3BucketName is the S3 bucket name to use for backup and restore.
@@ -349,7 +355,7 @@ type Update struct {
 // Incompatibility represents a version incompatibility for a user cluster
 type Incompatibility struct {
 	// Provider to which to apply the compatibility check
-	Provider kubermaticv1.ProviderType `json:"provider,omitempty"`
+	Provider ProviderType `json:"provider,omitempty"`
 	// Version is the Kubernetes version that must be checked. Wildcards are allowed, e.g. "1.22.*".
 	Version string `json:"version,omitempty"`
 	// Condition is the cluster or datacenter condition that must be met to block a specific version

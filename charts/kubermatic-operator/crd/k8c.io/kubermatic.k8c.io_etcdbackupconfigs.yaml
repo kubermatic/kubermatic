@@ -122,6 +122,8 @@ spec:
                       type: string
                     type:
                       description: Type of EtcdBackupConfig condition.
+                      enum:
+                      - SchedulingActive
                       type: string
                   required:
                   - status

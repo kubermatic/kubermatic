@@ -139,6 +139,10 @@ spec:
                 description: 'ExposeStrategy is the strategy to expose the cluster
                   with. Note: The `seed_dns_overwrite` setting of a Seed''s datacenter
                   doesn''t have any effect if this is set to LoadBalancerStrategy.'
+                enum:
+                - NodePort
+                - LoadBalancer
+                - Tunneling
                 type: string
               featureGates:
                 additionalProperties:
@@ -301,6 +305,7 @@ spec:
                           backup and restore.
                         type: string
                       s3Endpoint:
+                        default: s3.amazonaws.com
                         description: S3Endpoint is the S3 API endpoint to use for
                           backup and restore. Defaults to s3.amazonaws.com.
                         type: string
@@ -533,14 +538,34 @@ spec:
                         condition:
                           description: Condition is the cluster or datacenter condition
                             that must be met to block a specific version
+                          enum:
+                          - always
+                          - externalCloudProvider
                           type: string
                         operation:
                           description: Operation is the operation triggering the compatibility
                             check (CREATE or UPDATE)
+                          enum:
+                          - CREATE
+                          - UPGRADE
+                          - SUPPORT
                           type: string
                         provider:
                           description: Provider to which to apply the compatibility
                             check
+                          enum:
+                          - digitalocean
+                          - hetzner
+                          - azure
+                          - vsphere
+                          - aws
+                          - openstack
+                          - packet
+                          - gcp
+                          - kubevirt
+                          - alibaba
+                          - anexia
+                          - fake
                           type: string
                         version:
                           description: Version is the Kubernetes version that must

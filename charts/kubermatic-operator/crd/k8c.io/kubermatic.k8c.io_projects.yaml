@@ -45,6 +45,10 @@ spec:
             description: ProjectStatus represents the current status of a project.
             properties:
               phase:
+                enum:
+                - Active
+                - Inactive
+                - Terminating
                 type: string
             required:
             - phase

@@ -62,8 +62,8 @@ rm -rf v2/
 
 rm /tmp/headerfile
 
-echodate "Generating reconciling functions"
-go generate pkg/resources/reconciling/ensure.go
+echodate "Running go generate"
+go generate ./pkg/...
 
 echodate "Generating openAPI v3 CRDs"
 go run sigs.k8s.io/controller-tools/cmd/controller-gen \
