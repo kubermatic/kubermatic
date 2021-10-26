@@ -13,10 +13,11 @@
 # limitations under the License.
 
 # Source: https://docs.projectcalico.org/v3.20/manifests/canal.yaml
-# 3 modifications:
-#   - Remove the flexvolume installation as its broken for Flatcar Linux & only required for application policies (which we don't use).
-#   - Add envoyagent interface to the exclusion list for Calico IP autodetection.
-#   - Allow overriding registry in images.
+# Modifications:
+#   - templated net-conf.json Network
+#   - templated container image registry in all containers
+#   - removed the flexvolume installation as its broken for Flatcar Linux & only required for application policies (which we don't use)
+#   - added envoyagent interface to the exclusion list for Calico IP autodetection
 
 {{ if eq .Cluster.CNIPlugin.Type "canal" }}
 {{ if eq .Cluster.CNIPlugin.Version "v3.20" }}
@@ -86,7 +87,7 @@ data:
   # Flannel network configuration. Mounted into the flannel container.
   net-conf.json: |
     {
-      "Network": "10.244.0.0/16",
+      "Network": "{{ first .Cluster.Network.PodCIDRBlocks }}",
       "Backend": {
         "Type": "vxlan"
       }
