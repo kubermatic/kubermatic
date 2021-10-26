@@ -880,13 +880,13 @@ func (r *reconciler) healthCheck(ctx context.Context) error {
 	oldCluster := cluster.DeepCopy()
 
 	if r.opaIntegration {
-		ctrlGateKeeperHealth, auditGateKeeperHealth, err := r.getGatekeeperHealth(ctx)
+		ctrlGatekeeperHealth, auditGatekeeperHealth, err := r.getGatekeeperHealth(ctx)
 		if err != nil {
 			return err
 		}
 
-		cluster.Status.ExtendedHealth.GatekeeperController = ctrlGateKeeperHealth
-		cluster.Status.ExtendedHealth.GatekeeperAudit = auditGateKeeperHealth
+		cluster.Status.ExtendedHealth.GatekeeperController = ctrlGatekeeperHealth
+		cluster.Status.ExtendedHealth.GatekeeperAudit = auditGatekeeperHealth
 	}
 
 	if r.userClusterMLA.Monitoring {
@@ -895,7 +895,7 @@ func (r *reconciler) healthCheck(ctx context.Context) error {
 			return err
 		}
 
-		cluster.Status.ExtendedHealth.UserClusterMLAMonitoring = mlaMonitoring
+		cluster.Status.ExtendedHealth.MlaMonitoring = mlaMonitoring
 	}
 
 	if r.userClusterMLA.Logging {
@@ -904,7 +904,7 @@ func (r *reconciler) healthCheck(ctx context.Context) error {
 			return err
 		}
 
-		cluster.Status.ExtendedHealth.UserClusterMLALogging = mlaLogging
+		cluster.Status.ExtendedHealth.MlaLogging = mlaLogging
 	}
 
 	if oldCluster.Status.ExtendedHealth != cluster.Status.ExtendedHealth {
@@ -924,7 +924,7 @@ func (r *reconciler) getGatekeeperHealth(ctx context.Context) (
 		1)
 	if err != nil {
 		return kubermaticv1.HealthStatusDown, kubermaticv1.HealthStatusDown,
-			fmt.Errorf("failed to get dep health %q: %v", resources.GatekeeperControllerDeploymentName, err)
+			fmt.Errorf("failed to get dep health %s: %w", resources.GatekeeperControllerDeploymentName, err)
 	}
 
 	auditHealth, err = resources.HealthyDeployment(ctx,
@@ -933,7 +933,7 @@ func (r *reconciler) getGatekeeperHealth(ctx context.Context) (
 		1)
 	if err != nil {
 		return kubermaticv1.HealthStatusDown, kubermaticv1.HealthStatusDown,
-			fmt.Errorf("failed to get dep health %q: %v", resources.GatekeeperAuditDeploymentName, err)
+			fmt.Errorf("failed to get dep health %s: %w", resources.GatekeeperAuditDeploymentName, err)
 	}
 	return ctlrHealth, auditHealth, nil
 }
@@ -947,7 +947,7 @@ func (r *reconciler) getMLAMonitoringHealth(ctx context.Context) (
 		1)
 	if err != nil {
 		return kubermaticv1.HealthStatusDown,
-			fmt.Errorf("failed to get dep health %q: %v", resources.UserClusterPrometheusDeploymentName, err)
+			fmt.Errorf("failed to get dep health %s: %w", resources.UserClusterPrometheusDeploymentName, err)
 	}
 
 	return health, nil

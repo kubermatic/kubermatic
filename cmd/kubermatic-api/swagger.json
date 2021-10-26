@@ -17496,16 +17496,16 @@
         "machineController": {
           "$ref": "#/definitions/HealthStatus"
         },
+        "mlaLogging": {
+          "$ref": "#/definitions/HealthStatus"
+        },
+        "mlaMonitoring": {
+          "$ref": "#/definitions/HealthStatus"
+        },
         "scheduler": {
           "$ref": "#/definitions/HealthStatus"
         },
         "userClusterControllerManager": {
-          "$ref": "#/definitions/HealthStatus"
-        },
-        "userClusterMlaLogging": {
-          "$ref": "#/definitions/HealthStatus"
-        },
-        "userClusterMlaMonitoring": {
           "$ref": "#/definitions/HealthStatus"
         }
       },

@@ -39,17 +39,17 @@ type ClusterHealth struct {
 	// machine controller
 	MachineController HealthStatus `json:"machineController,omitempty"`
 
+	// mla logging
+	MlaLogging HealthStatus `json:"mlaLogging,omitempty"`
+
+	// mla monitoring
+	MlaMonitoring HealthStatus `json:"mlaMonitoring,omitempty"`
+
 	// scheduler
 	Scheduler HealthStatus `json:"scheduler,omitempty"`
 
 	// user cluster controller manager
 	UserClusterControllerManager HealthStatus `json:"userClusterControllerManager,omitempty"`
-
-	// user cluster mla logging
-	UserClusterMlaLogging HealthStatus `json:"userClusterMlaLogging,omitempty"`
-
-	// user cluster mla monitoring
-	UserClusterMlaMonitoring HealthStatus `json:"userClusterMlaMonitoring,omitempty"`
 }
 
 // Validate validates this cluster health
@@ -84,19 +84,19 @@ func (m *ClusterHealth) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateMlaLogging(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateMlaMonitoring(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateScheduler(formats); err != nil {
 		res = append(res, err)
 	}
 
 	if err := m.validateUserClusterControllerManager(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateUserClusterMlaLogging(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateUserClusterMlaMonitoring(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -211,6 +211,36 @@ func (m *ClusterHealth) validateMachineController(formats strfmt.Registry) error
 	return nil
 }
 
+func (m *ClusterHealth) validateMlaLogging(formats strfmt.Registry) error {
+	if swag.IsZero(m.MlaLogging) { // not required
+		return nil
+	}
+
+	if err := m.MlaLogging.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("mlaLogging")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) validateMlaMonitoring(formats strfmt.Registry) error {
+	if swag.IsZero(m.MlaMonitoring) { // not required
+		return nil
+	}
+
+	if err := m.MlaMonitoring.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("mlaMonitoring")
+		}
+		return err
+	}
+
+	return nil
+}
+
 func (m *ClusterHealth) validateScheduler(formats strfmt.Registry) error {
 	if swag.IsZero(m.Scheduler) { // not required
 		return nil
@@ -234,36 +264,6 @@ func (m *ClusterHealth) validateUserClusterControllerManager(formats strfmt.Regi
 	if err := m.UserClusterControllerManager.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("userClusterControllerManager")
-		}
-		return err
-	}
-
-	return nil
-}
-
-func (m *ClusterHealth) validateUserClusterMlaLogging(formats strfmt.Registry) error {
-	if swag.IsZero(m.UserClusterMlaLogging) { // not required
-		return nil
-	}
-
-	if err := m.UserClusterMlaLogging.Validate(formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("userClusterMlaLogging")
-		}
-		return err
-	}
-
-	return nil
-}
-
-func (m *ClusterHealth) validateUserClusterMlaMonitoring(formats strfmt.Registry) error {
-	if swag.IsZero(m.UserClusterMlaMonitoring) { // not required
-		return nil
-	}
-
-	if err := m.UserClusterMlaMonitoring.Validate(formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("userClusterMlaMonitoring")
 		}
 		return err
 	}
@@ -303,19 +303,19 @@ func (m *ClusterHealth) ContextValidate(ctx context.Context, formats strfmt.Regi
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateMlaLogging(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateMlaMonitoring(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateScheduler(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
 	if err := m.contextValidateUserClusterControllerManager(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidateUserClusterMlaLogging(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidateUserClusterMlaMonitoring(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -409,6 +409,30 @@ func (m *ClusterHealth) contextValidateMachineController(ctx context.Context, fo
 	return nil
 }
 
+func (m *ClusterHealth) contextValidateMlaLogging(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.MlaLogging.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("mlaLogging")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) contextValidateMlaMonitoring(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.MlaMonitoring.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("mlaMonitoring")
+		}
+		return err
+	}
+
+	return nil
+}
+
 func (m *ClusterHealth) contextValidateScheduler(ctx context.Context, formats strfmt.Registry) error {
 
 	if err := m.Scheduler.ContextValidate(ctx, formats); err != nil {
@@ -426,30 +450,6 @@ func (m *ClusterHealth) contextValidateUserClusterControllerManager(ctx context.
 	if err := m.UserClusterControllerManager.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("userClusterControllerManager")
-		}
-		return err
-	}
-
-	return nil
-}
-
-func (m *ClusterHealth) contextValidateUserClusterMlaLogging(ctx context.Context, formats strfmt.Registry) error {
-
-	if err := m.UserClusterMlaLogging.ContextValidate(ctx, formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("userClusterMlaLogging")
-		}
-		return err
-	}
-
-	return nil
-}
-
-func (m *ClusterHealth) contextValidateUserClusterMlaMonitoring(ctx context.Context, formats strfmt.Registry) error {
-
-	if err := m.UserClusterMlaMonitoring.ContextValidate(ctx, formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("userClusterMlaMonitoring")
 		}
 		return err
 	}

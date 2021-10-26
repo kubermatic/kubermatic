@@ -775,8 +775,8 @@ type ExtendedClusterHealth struct {
 	UserClusterControllerManager HealthStatus `json:"userClusterControllerManager"`
 	GatekeeperController         HealthStatus `json:"gatekeeperController,omitempty"`
 	GatekeeperAudit              HealthStatus `json:"gatekeeperAudit,omitempty"`
-	UserClusterMLAMonitoring     HealthStatus `json:"userClusterMlaMonitoring,omitempty"`
-	UserClusterMLALogging        HealthStatus `json:"userClusterMlaLogging,omitempty"`
+	MlaMonitoring                HealthStatus `json:"mlaMonitoring,omitempty"`
+	MlaLogging                   HealthStatus `json:"mlaLogging,omitempty"`
 }
 
 // AllHealthy returns if all components are healthy. Gatekeeper components not included as they are optional and not
