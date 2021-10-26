@@ -206,7 +206,7 @@ func filterOutPresets(userInfo *provider.UserInfo, list *kubermaticv1.PresetList
 			return nil, err
 		}
 
-		if matches {
+		if matches || userInfo.IsAdmin {
 			result = append(result, preset)
 		}
 	}

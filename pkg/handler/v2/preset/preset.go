@@ -424,6 +424,8 @@ func UpdatePreset(presetsProvider provider.PresetProvider, userInfoGetter provid
 
 func mergePresets(oldPreset *crdapiv1.Preset, newPreset *crdapiv1.Preset, providerType crdapiv1.ProviderType) *crdapiv1.Preset {
 	oldPreset.Spec.OverrideProvider(providerType, &newPreset.Spec)
+	oldPreset.Spec.RequiredEmails = newPreset.Spec.RequiredEmails
+	oldPreset.Spec.RequiredEmailDomain = newPreset.Spec.RequiredEmailDomain
 	return oldPreset
 }
 
