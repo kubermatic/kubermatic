@@ -21,7 +21,6 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"strings"
 
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
@@ -36,28 +35,21 @@ import (
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/watcher"
-
-	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 type serverRunOptions struct {
-	listenAddress                 string
-	internalAddr                  string
-	prometheusURL                 string
-	masterResources               string
-	workerName                    string
-	versionsFile                  string
-	updatesFile                   string
-	providerIncompatibilitiesFile string
-	presetsFile                   string
-	swaggerFile                   string
-	domain                        string
-	exposeStrategy                kubermaticv1.ExposeStrategy
-	dynamicPresets                bool
-	namespace                     string
-	log                           kubermaticlog.Options
-	accessibleAddons              sets.String
-	caBundle                      *certificates.CABundle
+	listenAddress  string
+	internalAddr   string
+	prometheusURL  string
+	workerName     string
+	presetsFile    string
+	swaggerFile    string
+	domain         string
+	exposeStrategy kubermaticv1.ExposeStrategy
+	dynamicPresets bool
+	namespace      string
+	log            kubermaticlog.Options
+	caBundle       *certificates.CABundle
 
 	// for development purposes, a local configuration file
 	// can be used to provide the KubermaticConfiguration
@@ -84,10 +76,9 @@ type serverRunOptions struct {
 func newServerRunOptions() (serverRunOptions, error) {
 	s := serverRunOptions{featureGates: features.FeatureGate{}}
 	var (
-		rawExposeStrategy   string
-		rawAccessibleAddons string
-		caBundleFile        string
-		configFile          string
+		rawExposeStrategy string
+		caBundleFile      string
+		configFile        string
 	)
 
 	s.log = kubermaticlog.NewDefaultOptions()
@@ -96,14 +87,9 @@ func newServerRunOptions() (serverRunOptions, error) {
 	flag.StringVar(&s.listenAddress, "address", ":8080", "The address to listen on")
 	flag.StringVar(&s.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the internal handler should be exposed")
 	flag.StringVar(&s.prometheusURL, "prometheus-url", "http://prometheus.monitoring.svc.local:web", "The URL on which this API can talk to Prometheus")
-	flag.StringVar(&s.masterResources, "master-resources", "", "The path to the master resources (Required).")
 	flag.StringVar(&s.workerName, "worker-name", "", "Create clusters only processed by worker-name cluster controller")
-	flag.StringVar(&s.versionsFile, "versions", "versions.yaml", "The versions.yaml file path")
-	flag.StringVar(&s.updatesFile, "updates", "updates.yaml", "The updates.yaml file path")
-	flag.StringVar(&s.providerIncompatibilitiesFile, "provider-incompatibilities", "provider-incompatibilities.yaml", "The provider-incompatibilities.yaml file path")
 	flag.StringVar(&s.presetsFile, "presets", "", "The optional file path for a file containing presets")
 	flag.StringVar(&s.swaggerFile, "swagger", "./cmd/kubermatic-api/swagger.json", "The swagger.json file path")
-	flag.StringVar(&rawAccessibleAddons, "accessible-addons", "", "Comma-separated list of user cluster addons to expose via the API")
 	flag.StringVar(&caBundleFile, "ca-bundle", "", "The path to the certificate for the CA that signed your identity provider’s web certificate.")
 	flag.StringVar(&s.oidcURL, "oidc-url", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
 	flag.BoolVar(&s.oidcSkipTLSVerify, "oidc-skip-tls-verify", false, "Skip TLS verification for the token issuer")
@@ -129,9 +115,6 @@ func newServerRunOptions() (serverRunOptions, error) {
 	if !validExposeStrategy {
 		return s, fmt.Errorf("--expose-strategy must be one of: %s, got %q", kubermaticv1.AllExposeStrategies, rawExposeStrategy)
 	}
-
-	s.accessibleAddons = sets.NewString(strings.Split(rawAccessibleAddons, ",")...)
-	s.accessibleAddons.Delete("")
 
 	if configFile != "" {
 		var err error

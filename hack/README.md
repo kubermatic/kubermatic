@@ -13,7 +13,7 @@ Create a changelog since last release, commit and create a new release tag
 
 Generate test coverage statistics for Go packages.
 
-Works around the fact that `go test -coverprofile` currently does not work  
+Works around the fact that `go test -coverprofile` currently does not work
 with multiple packages, see https://code.google.com/p/go/issues/detail?id=6909
 
     Usage: cover.sh [--html]
@@ -46,7 +46,6 @@ Builds and pushes all KKP Docker images:
 
 * quay.io/kubermatic/kubermatic[-ee]
 * quay.io/kubermatic/addons
-* quay.io/kubermatic/openshift-addons
 * quay.io/kubermatic/nodeport-proxy
 * quay.io/kubermatic/kubeletdnat-controller
 * quay.io/kubermatic/user-ssh-keys-agent
@@ -159,9 +158,9 @@ TBD
 
 ## update-openshift-version-codegen.sh
 
-This script can be used to update the generated image names for Openshift.  
-The desired versions msut be configured first in  
-codegen/openshift_versions/main.go and a const for each version must be  
+This script can be used to update the generated image names for Openshift.
+The desired versions msut be configured first in
+codegen/openshift_versions/main.go and a const for each version must be
 added to pkg/controller/openshift/resources/const.go
 
 Also, executing this script requires access to the ocp quay repo.
