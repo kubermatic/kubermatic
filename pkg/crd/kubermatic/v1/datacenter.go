@@ -187,6 +187,15 @@ type DatacenterSpec struct {
 	// EnforcePodSecurityPolicy enforces pod security policy plugin on every clusters within the DC,
 	// ignoring cluster-specific settings
 	EnforcePodSecurityPolicy bool `json:"enforcePodSecurityPolicy,omitempty"`
+
+	// ProviderReconciliationInterval is the time that must have passed since a
+	// Cluster's status.lastProviderReconciliation to make the cliuster controller
+	// perform an in-depth provider reconciliation, where for example missing security
+	// groups will be reconciled.
+	// Setting this too low can cause rate limits by the cloud provider, setting this
+	// too high means that *if* a resource at a cloud provider is removed/changed outside
+	// of KKP, it will take this long to fix it.
+	ProviderReconciliationInterval *metav1.Duration `json:"providerReconciliationInterval,omitempty"`
 }
 
 // ImageList defines a map of operating system and the image to use

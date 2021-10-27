@@ -138,7 +138,7 @@ func getVMRootPath(dc *kubermaticv1.DatacenterSpecVSphere) string {
 }
 
 // InitializeCloudProvider initializes the vsphere cloud provider by setting up vm folders for the cluster.
-func (v *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (v *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, reconcile bool) (*kubermaticv1.Cluster, error) {
 	ctx := context.Background()
 
 	username, password, err := GetCredentialsForCluster(cluster.Spec.Cloud, v.secretKeySelector, v.dc)

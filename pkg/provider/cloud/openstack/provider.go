@@ -163,7 +163,7 @@ func validateExistingSubnetOverlap(networkID string, netClient *gophercloud.Serv
 
 // InitializeCloudProvider initializes a cluster, in particular
 // creates security group and network configuration
-func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, reconcile bool) (*kubermaticv1.Cluster, error) {
 
 	netClient, err := os.getClientFunc(cluster.Spec.Cloud, os.dc, os.secretKeySelector, os.caBundle)
 	if err != nil {

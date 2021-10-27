@@ -553,7 +553,7 @@ func ensureRouteTable(ctx context.Context, cloud kubermaticv1.CloudSpec, locatio
 	return nil
 }
 
-func (a *Azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (a *Azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, reconcile bool) (*kubermaticv1.Cluster, error) {
 	var err error
 	logger := a.log.With("cluster", cluster.Name)
 	location := a.dc.Location

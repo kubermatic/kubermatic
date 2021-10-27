@@ -19,6 +19,7 @@ package defaults
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/docker/distribution/reference"
@@ -53,6 +54,10 @@ const (
 	DefaultUserClusterScrapeAnnotationPrefix      = "monitoring.kubermatic.io"
 	DefaultMaximumParallelReconciles              = 10
 	DefaultS3Endpoint                             = "s3.amazonaws.com"
+
+	// DefaultCloudProviderReconciliationInterval is the time in between deep cloud provider reconciliations
+	// in case the user did not configure a special interval for the given datacenter.
+	DefaultCloudProviderReconciliationInterval = 6 * time.Hour
 
 	// DefaultNoProxy is a set of domains/networks that should never be
 	// routed through a proxy. All user-supplied values are appended to

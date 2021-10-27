@@ -462,7 +462,7 @@ func createSecurityGroup(client ec2iface.EC2API, vpcID, clusterName string, node
 	return securityGroupID, nil
 }
 
-func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, reconcile bool) (*kubermaticv1.Cluster, error) {
 	client, err := a.getClientSet(cluster.Spec.Cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get API client: %v", err)

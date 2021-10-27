@@ -98,7 +98,7 @@ func IsProviderSupported(name string) bool {
 
 // CloudProvider declares a set of methods for interacting with a cloud provider
 type CloudProvider interface {
-	InitializeCloudProvider(*kubermaticv1.Cluster, ClusterUpdater) (*kubermaticv1.Cluster, error)
+	InitializeCloudProvider(*kubermaticv1.Cluster, ClusterUpdater, bool) (*kubermaticv1.Cluster, error)
 	CleanUpCloudProvider(*kubermaticv1.Cluster, ClusterUpdater) (*kubermaticv1.Cluster, error)
 	DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error
 	ValidateCloudSpec(spec kubermaticv1.CloudSpec) error

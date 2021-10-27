@@ -27,6 +27,7 @@ import (
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -38,6 +39,8 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/record"
@@ -182,7 +185,28 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		}
 	}
 
-	if _, err := prov.InitializeCloudProvider(cluster, r.updateCluster); err != nil {
+	// Normally, only during the initial initialization (sic) will the cloud provider
+	// actually check if all required resources exist. Afterwards it will remember the
+	// names of the relevant resources and assume that they still exist.
+	// To prevent accidental deletions outside of KKP from disrupting a cluster, KKP
+	// needs to periodically reconcile the cloud provider, but not every time, as this
+	// would quickly lead to rate limits.
+	// So we only perform a "deep reconciliation" if enough time has passed, as configured
+	// by the KKP administrator.
+	deep := false
+	now := v1.Now()
+
+	// default the interval to a safe value
+	interval := datacenter.Spec.ProviderReconciliationInterval
+	if interval == nil || interval.Duration == 0 {
+		interval = &metav1.Duration{Duration: defaults.DefaultCloudProviderReconciliationInterval}
+	}
+
+	if last := cluster.Status.LastProviderReconciliation; last != nil && interval.Duration > 0 && time.Since(last.Time) >= interval.Duration {
+		deep = true
+	}
+
+	if _, err := prov.InitializeCloudProvider(cluster, r.updateCluster, deep); err != nil {
 		if kerrors.IsConflict(err) {
 			// In case of conflict we just re-enqueue the item for later
 			// processing without returning an error.
@@ -194,6 +218,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 
 	if _, err := r.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
 		c.Status.ExtendedHealth.CloudProviderInfrastructure = kubermaticv1.HealthStatusUp
+		c.Status.LastProviderReconciliation = &now
 	}); err != nil {
 		return nil, fmt.Errorf("failed to set cluster health: %v", err)
 	}

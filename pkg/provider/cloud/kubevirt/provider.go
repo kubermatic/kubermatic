@@ -64,7 +64,7 @@ func (k *kubevirt) ValidateCloudSpec(spec v1.CloudSpec) error {
 	return nil
 }
 
-func (k *kubevirt) InitializeCloudProvider(c *v1.Cluster, p provider.ClusterUpdater) (*v1.Cluster, error) {
+func (k *kubevirt) InitializeCloudProvider(c *v1.Cluster, p provider.ClusterUpdater, reconcile bool) (*v1.Cluster, error) {
 	return c, nil
 }
 

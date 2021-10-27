@@ -56,7 +56,7 @@ func (do *digitalocean) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	return err
 }
 
-func (do *digitalocean) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (do *digitalocean) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, reconcile bool) (*kubermaticv1.Cluster, error) {
 	return cluster, nil
 }
 
