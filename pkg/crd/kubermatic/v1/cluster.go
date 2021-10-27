@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -485,7 +486,7 @@ type ClusterNetworkingConfig struct {
 	NodeLocalDNSCacheEnabled *bool `json:"nodeLocalDNSCacheEnabled,omitempty"`
 
 	// KonnectivityEnabled enables konnectivity for controlplane to node network communication.
-	KonnectivityEnabled bool `json:"konnectivityEnabled,omitempty"`
+	KonnectivityEnabled *bool `json:"konnectivityEnabled,omitempty"`
 }
 
 // MachineNetworkingConfig specifies the networking parameters used for IPAM.

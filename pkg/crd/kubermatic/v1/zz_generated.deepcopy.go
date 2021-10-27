@@ -962,6 +962,11 @@ func (in *ClusterNetworkingConfig) DeepCopyInto(out *ClusterNetworkingConfig) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.KonnectivityEnabled != nil {
+		in, out := &in.KonnectivityEnabled, &out.KonnectivityEnabled
+		*out = new(bool)
+		**out = **in
+	}
 	return
 }
 
