@@ -219,6 +219,9 @@ sed --in-place "s/__DASHBOARD_TAG__/$DASHBOARD_GIT_TAG/g" charts/*/*.yaml
 
 mkdir -p _dist
 
+echodate "Fetching upstream charts..."
+hack/ci/fetch-chart-dependencies.sh
+
 for buildTarget in $RELEASE_PLATFORMS; do
   rm -rf _build
 
