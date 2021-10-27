@@ -245,7 +245,7 @@ func GetGKECLusterConfig(ctx context.Context, sa, clusterName, zone string) (*ap
 	req := svc.Projects.Zones.Clusters.Get(project, zone, clusterName)
 	resp, err := req.Context(ctx).Do()
 	if err != nil {
-		return nil, fmt.Errorf("get cluster for project=%s: %w", project, err)
+		return nil, fmt.Errorf("cannot get cluster for project=%s: %w", project, err)
 	}
 	config := api.Config{
 		APIVersion: "v1",

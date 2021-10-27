@@ -28,6 +28,7 @@ import (
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
@@ -36,6 +37,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/clientcmd/api"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -123,6 +125,16 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Extern
 		// the kubeconfig token is valid 1h, it will update token every 30min
 		return reconcile.Result{RequeueAfter: time.Minute * 30}, nil
 	}
+	if cloud.EKS != nil {
+		r.log.Debugf("reconcile EKS cluster")
+		err := r.createOrUpdateEKSKubeconfig(ctx, cluster)
+		if err != nil {
+			r.log.Errorf("failed to create or update kubeconfig secret %v", err)
+			return reconcile.Result{}, err
+		}
+		// the kubeconfig token is valid 1h, it will update token every 30min
+		return reconcile.Result{RequeueAfter: time.Minute * 30}, nil
+	}
 	return reconcile.Result{}, nil
 }
 
@@ -195,6 +207,33 @@ func (r *Reconciler) getGKECredentials(ctx context.Context, cluster *kubermaticv
 	return string(secret.Data[resources.GCPServiceAccount]), nil
 }
 
+func (r *Reconciler) getEKSCredentials(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (string, string, error) {
+	cloud := cluster.Spec.CloudSpec
+	if cloud == nil {
+		return "", "", fmt.Errorf("cloud struct is empty")
+	}
+	if cloud.EKS == nil {
+		return "", "", fmt.Errorf("eks cloud struct is empty")
+	}
+	if cloud.EKS.CredentialsReference == nil {
+		return "", "", fmt.Errorf("no credentials provided")
+	}
+	secret := &corev1.Secret{}
+	namespacedName := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: cluster.GetCredentialsSecretName()}
+	if err := r.Get(ctx, namespacedName, secret); err != nil {
+		return "", "", fmt.Errorf("failed to get secret %q: %v", namespacedName.String(), err)
+	}
+	accessKeyID, ok := secret.Data[resources.AWSAccessKeyID]
+	if !ok {
+		return "", "", fmt.Errorf("secret %q has no AWS access key ID %q", namespacedName.String(), resources.AWSAccessKeyID)
+	}
+	secretAccessKey, ok := secret.Data[resources.AWSSecretAccessKey]
+	if !ok {
+		return "", "", fmt.Errorf("secret %q has no AWS secret access key %q", namespacedName.String(), resources.AWSSecretAccessKey)
+	}
+	return string(accessKeyID), string(secretAccessKey), nil
+}
+
 func createKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client, name, projectID string, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -226,6 +265,32 @@ func (r *Reconciler) createOrUpdateGKEKubeconfig(ctx context.Context, cluster *k
 	if err != nil {
 		return err
 	}
+	err = r.updateKubeconfigSecret(ctx, config, cluster)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *Reconciler) createOrUpdateEKSKubeconfig(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
+	cloud := cluster.Spec.CloudSpec
+	accessKeyID, secretAccessKey, err := r.getEKSCredentials(ctx, cluster)
+	if err != nil {
+		return err
+	}
+	config, err := aws.GetEKSCLusterConfig(ctx, accessKeyID, secretAccessKey, cloud.EKS.Name, cloud.EKS.Region)
+	if err != nil {
+		return err
+	}
+	err = r.updateKubeconfigSecret(ctx, config, cluster)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *Reconciler) updateKubeconfigSecret(ctx context.Context, config *api.Config, cluster *kubermaticv1.ExternalCluster) error {
+
 	kubeconfigSecretName := cluster.GetKubeconfigSecretName()
 	kubeconfig, err := clientcmd.Write(*config)
 	if err != nil {
@@ -238,6 +303,7 @@ func (r *Reconciler) createOrUpdateGKEKubeconfig(ctx context.Context, cluster *k
 	}
 
 	namespacedName := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: kubeconfigSecretName}
+
 	existingSecret := &corev1.Secret{}
 	if err := r.Get(ctx, namespacedName, existingSecret); err != nil && !kerrors.IsNotFound(err) {
 		return fmt.Errorf("failed to probe for secret %v: %v", namespacedName, err)
@@ -261,5 +327,6 @@ func (r *Reconciler) createOrUpdateGKEKubeconfig(ctx context.Context, cluster *k
 	}
 	cluster.Spec.KubeconfigReference = keyRef
 	kuberneteshelper.AddFinalizer(cluster, kubermaticapiv1.ExternalClusterKubeconfigCleanupFinalizer)
+
 	return r.Update(ctx, cluster)
 }
