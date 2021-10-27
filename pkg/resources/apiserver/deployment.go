@@ -310,7 +310,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"--audit-log-maxsize", "100",
 		"--audit-log-path", "/var/log/kubernetes/audit/audit.log",
 		"--tls-cert-file", "/etc/kubernetes/tls/apiserver-tls.crt",
-		"--tls-cipher-suites", "TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384,TLS_CHACHA20_POLY1305_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305",
+		"--tls-cipher-suites", resources.KubeAPIServerTLSCypherSuites,
 		"--tls-private-key-file", "/etc/kubernetes/tls/apiserver-tls.key",
 		"--proxy-client-cert-file", "/etc/kubernetes/pki/front-proxy/client/" + resources.ApiserverProxyClientCertificateCertSecretKey,
 		"--proxy-client-key-file", "/etc/kubernetes/pki/front-proxy/client/" + resources.ApiserverProxyClientCertificateKeySecretKey,
