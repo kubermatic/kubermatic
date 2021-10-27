@@ -516,11 +516,6 @@ const (
 )
 
 const (
-	// List of allowed TLS cipher suites for kube-apiserver
-	KubeAPIServerTLSCypherSuites = "TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384,TLS_CHACHA20_POLY1305_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305"
-)
-
-const (
 	minimumCertValidity30d = 30 * 24 * time.Hour
 )
 
@@ -703,6 +698,21 @@ alertmanager_config: |
 	KonnectivityUDS                        = "konnectivity-uds"
 )
 
+// List of allowed TLS cipher suites
+var allowedTLSCipherSuites = []string{
+	// TLS 1.3 cipher suites
+	"TLS_AES_128_GCM_SHA256",
+	"TLS_AES_256_GCM_SHA384",
+	"TLS_CHACHA20_POLY1305_SHA256",
+	// TLS 1.0 - 1.2 cipher suites
+	"TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+	"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+	"TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305",
+	"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+	"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+	"TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305",
+}
+
 // ECDSAKeyPair is a ECDSA x509 certificate and private key
 type ECDSAKeyPair struct {
 	Key  *ecdsa.PrivateKey
@@ -713,6 +723,11 @@ type ECDSAKeyPair struct {
 type Requirements struct {
 	Name     string                       `json:"name,omitempty"`
 	Requires *corev1.ResourceRequirements `json:"requires,omitempty"`
+}
+
+// GetAllowedTLSCipherSuites returns a list of allowed TLS cipher suites
+func GetAllowedTLSCipherSuites() []string {
+	return allowedTLSCipherSuites
 }
 
 // GetClusterExternalIP returns a net.IP for the given Cluster
