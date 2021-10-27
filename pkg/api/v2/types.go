@@ -348,12 +348,20 @@ type ExternalCluster struct {
 // swagger:model ExternalClusterCloudSpec
 type ExternalClusterCloudSpec struct {
 	GKE *GKECloudSpec `json:"gke,omitempty"`
+	EKS *EKSCloudSpec `json:"eks,omitempty"`
 }
 
 type GKECloudSpec struct {
 	Name           string `json:"name"`
 	ServiceAccount string `json:"serviceAccount,omitempty"`
 	Zone           string `json:"zone"`
+}
+
+type EKSCloudSpec struct {
+	Name            string `json:"name"`
+	AccessKeyID     string `json:"accessKeyID"`
+	SecretAccessKey string `json:"secretAccessKey"`
+	Region          string `json:"region"`
 }
 
 // ExternalClusterNode represents an object holding external cluster node
