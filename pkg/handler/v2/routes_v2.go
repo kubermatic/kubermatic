@@ -537,6 +537,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/providers/{provider_name}/presets").
 		Handler(r.updatePreset())
 
+	mux.Methods(http.MethodDelete).
+		Path("/providers/{provider_name}/presets/{preset_name}").
+		Handler(r.deletePreset())
+
 	mux.Methods(http.MethodGet).
 		Path("/seeds/{seed_name}/settings").
 		Handler(r.getSeedSettings())
@@ -3590,6 +3594,33 @@ func (r Routing) updatePreset() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(preset.UpdatePreset(r.presetsProvider, r.userInfoGetter)),
 		preset.DecodeUpdatePreset,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v2/providers/{provider_name}/presets/{preset_name} preset deletePreset
+//
+//	   Deletes provider preset
+//
+//     Consumes:
+//	   - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) deletePreset() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(preset.DeletePreset(r.presetsProvider, r.userInfoGetter)),
+		preset.DecodeDeletePreset,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
