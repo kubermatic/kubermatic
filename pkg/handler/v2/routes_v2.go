@@ -2494,7 +2494,7 @@ func (r Routing) listInstallableAddons() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.Addons(r.clusterProviderGetter, r.addonProviderGetter, r.seedsGetter),
 			middleware.PrivilegedAddons(r.clusterProviderGetter, r.addonProviderGetter, r.seedsGetter),
-		)(addon.ListInstallableAddonEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.accessibleAddons)),
+		)(addon.ListInstallableAddonEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.kubermaticConfigGetter)),
 		addon.DecodeListAddons,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,

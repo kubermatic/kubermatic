@@ -29,8 +29,6 @@ import (
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-
-	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // addonReq defines HTTP request for getAddonV2 and deleteAddonV2
@@ -192,10 +190,10 @@ func decodeAddonID(c context.Context, r *http.Request) (string, error) {
 	return addonID, nil
 }
 
-func ListInstallableAddonEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, accessibleAddons sets.String) endpoint.Endpoint {
+func ListInstallableAddonEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, configGetter provider.KubermaticConfigurationGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listReq)
-		return handlercommon.ListInstallableAddonEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, accessibleAddons, req.ProjectID, req.ClusterID)
+		return handlercommon.ListInstallableAddonEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, configGetter, req.ProjectID, req.ClusterID)
 	}
 }
 

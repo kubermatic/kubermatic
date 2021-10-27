@@ -18,6 +18,7 @@ package addoninstaller
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -25,8 +26,10 @@ import (
 
 	"go.uber.org/zap"
 
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -42,6 +45,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -52,11 +56,11 @@ const (
 type Reconciler struct {
 	ctrlruntimeclient.Client
 
-	log              *zap.SugaredLogger
-	kubernetesAddons kubermaticv1.AddonList
-	workerName       string
-	recorder         record.EventRecorder
-	versions         kubermatic.Versions
+	log          *zap.SugaredLogger
+	configGetter provider.KubermaticConfigurationGetter
+	workerName   string
+	recorder     record.EventRecorder
+	versions     kubermatic.Versions
 }
 
 func Add(
@@ -64,18 +68,18 @@ func Add(
 	mgr manager.Manager,
 	numWorkers int,
 	workerName string,
-	kubernetesAddons kubermaticv1.AddonList,
+	configGetter provider.KubermaticConfigurationGetter,
 	versions kubermatic.Versions,
 ) error {
 	log = log.Named(ControllerName)
 
 	reconciler := &Reconciler{
-		Client:           mgr.GetClient(),
-		log:              log,
-		workerName:       workerName,
-		kubernetesAddons: kubernetesAddons,
-		recorder:         mgr.GetEventRecorderFor(ControllerName),
-		versions:         versions,
+		Client:       mgr.GetClient(),
+		log:          log,
+		workerName:   workerName,
+		configGetter: configGetter,
+		recorder:     mgr.GetEventRecorderFor(ControllerName),
+		versions:     versions,
 	}
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{
@@ -155,15 +159,88 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
-
-	// Wait until the Apiserver is running to ensure the namespace exists at least.
+	// Wait until the kube-apiserver is running to ensure the namespace exists at least.
 	// Just checking for cluster.status.namespaceName is not enough as it gets set before the namespace exists
 	if cluster.Status.ExtendedHealth.Apiserver != kubermaticv1.HealthStatusUp {
 		log.Debug("Skipping because the API server is not running")
 		return &reconcile.Result{RequeueAfter: 1 * time.Second}, nil
 	}
 
-	return nil, r.ensureAddons(ctx, log, cluster, *r.kubernetesAddons.DeepCopy())
+	// determine the addon list that is currently configured for clusters
+	addons, err := r.getAddons(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to determine addons to install: %w", err)
+	}
+
+	return nil, r.ensureAddons(ctx, log, cluster, *addons)
+}
+
+func (r *Reconciler) getAddons(ctx context.Context) (*kubermaticv1.AddonList, error) {
+	cfg, err := r.configGetter(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get KubermaticConfiguration: %w", err)
+	}
+
+	c := cfg.Spec.UserCluster.Addons.Kubernetes
+
+	if len(c.Default) > 0 && c.DefaultManifests != "" {
+		return nil, errors.New("default addons are configured both as a list and a default manifest, which are mutually exclusive; configure addons using one of the two mechanisms")
+	}
+
+	result := &kubermaticv1.AddonList{}
+
+	if len(c.Default) > 0 {
+		defaultManifests, err := getDefaultAddonManifests()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get default addon manifests: %w", err)
+		}
+
+		for _, addonName := range c.Default {
+			labels := map[string]string{}
+
+			for _, addon := range defaultManifests.Items {
+				if addon.Name == addonName {
+					labels = addon.Labels
+					break
+				}
+			}
+
+			result.Items = append(result.Items, kubermaticv1.Addon{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:   addonName,
+					Labels: labels,
+				},
+			})
+		}
+	}
+
+	if c.DefaultManifests != "" {
+		if err := yaml.Unmarshal([]byte(c.DefaultManifests), result); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal default addon list: %w", err)
+		}
+	}
+
+	// Validate the metrics-server addon is disabled, otherwise it creates conflicts with the resources
+	// we create for the metrics-server running in the seed and will render the latter unusable
+	for _, addon := range result.Items {
+		if addon.Name == "metrics-server" {
+			return nil, errors.New("the metrics-server addon must be disabled, it is now deployed inside the seed cluster")
+		}
+	}
+
+	return result, nil
+}
+
+// getDefaultAddonManifests returns the default addons, parsed as an AddonList.
+// This is used to fill in labels for when the admin used the legacy configuration
+// mechanism where instead of an AddonList, only a []string is given.
+func getDefaultAddonManifests() (*kubermaticv1.AddonList, error) {
+	defaultAddonList := kubermaticv1.AddonList{}
+	if err := yaml.Unmarshal([]byte(defaults.DefaultKubernetesAddons), &defaultAddonList); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal default addon list: %w", err)
+	}
+
+	return &defaultAddonList, nil
 }
 
 func (r *Reconciler) ensureAddons(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, addons kubermaticv1.AddonList) error {
@@ -235,7 +312,7 @@ func (r *Reconciler) createAddon(ctx context.Context, log *zap.SugaredLogger, ad
 	// Swallow IsAlreadyExists, we have predictable names and our cache may not be
 	// up to date, leading us to think the addon wasn't installed yet.
 	if err := r.Create(ctx, &addon); err != nil && !kerrors.IsAlreadyExists(err) {
-		return fmt.Errorf("failed to create addon %q: %v", addon.Name, err)
+		return fmt.Errorf("failed to create addon: %v", err)
 	}
 
 	log.Info("Addon successfully created")

@@ -134,7 +134,12 @@ func GetAddonEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGette
 	return result, nil
 }
 
-func ListInstallableAddonEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, accessibleAddons sets.String, projectID, clusterID string) (interface{}, error) {
+func ListInstallableAddonEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, configGetter provider.KubermaticConfigurationGetter, projectID, clusterID string) (interface{}, error) {
+	config, err := configGetter(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, nil)
 	if err != nil {
 		return nil, err
@@ -150,7 +155,7 @@ func ListInstallableAddonEndpoint(ctx context.Context, userInfoGetter provider.U
 		installedAddons.Insert(addon.Name)
 	}
 
-	return accessibleAddons.Difference(installedAddons).UnsortedList(), nil
+	return sets.NewString(config.Spec.API.AccessibleAddons...).Difference(installedAddons).UnsortedList(), nil
 }
 
 func DeleteAddonEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID, clusterID, addonID string) (interface{}, error) {

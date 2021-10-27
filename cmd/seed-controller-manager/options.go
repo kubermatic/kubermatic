@@ -18,7 +18,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -43,7 +42,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/webhook"
 
 	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	knet "k8s.io/apimachinery/pkg/util/net"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/yaml"
@@ -54,40 +52,34 @@ type controllerRunOptions struct {
 	enableLeaderElection    bool
 	leaderElectionNamespace string
 
-	externalURL                                      string
-	dc                                               string
-	workerName                                       string
-	workerCount                                      int
-	overwriteRegistry                                string
-	nodePortRange                                    string
-	nodeAccessNetwork                                string
-	kubernetesAddonsPath                             string
-	kubernetesAddons                                 kubermaticv1.AddonList
-	backupContainerFile                              string
-	backupDeleteContainerFile                        string
-	cleanupContainerFile                             string
-	backupContainerImage                             string
-	backupInterval                                   string
-	etcdDiskSize                                     resource.Quantity
-	inClusterPrometheusRulesFile                     string
-	inClusterPrometheusDisableDefaultRules           bool
-	inClusterPrometheusDisableDefaultScrapingConfigs bool
-	inClusterPrometheusScrapingConfigsFile           string
-	monitoringScrapeAnnotationPrefix                 string
-	dockerPullConfigJSONFile                         string
-	kubermaticImage                                  string
-	etcdLauncherImage                                string
-	enableEtcdBackupRestoreController                bool
-	dnatControllerImage                              string
-	namespace                                        string
-	apiServerDefaultReplicas                         int
-	apiServerEndpointReconcilingDisabled             bool
-	controllerManagerDefaultReplicas                 int
-	schedulerDefaultReplicas                         int
-	admissionWebhook                                 webhook.Options
-	concurrentClusterUpdate                          int
-	addonEnforceInterval                             int
-	caBundle                                         *certificates.CABundle
+	externalURL                          string
+	seedName                             string
+	workerName                           string
+	workerCount                          int
+	overwriteRegistry                    string
+	nodePortRange                        string
+	nodeAccessNetwork                    string
+	addonsPath                           string
+	backupContainerFile                  string
+	backupDeleteContainerFile            string
+	cleanupContainerFile                 string
+	backupContainerImage                 string
+	backupInterval                       string
+	etcdDiskSize                         resource.Quantity
+	dockerPullConfigJSONFile             string
+	kubermaticImage                      string
+	etcdLauncherImage                    string
+	enableEtcdBackupRestoreController    bool
+	dnatControllerImage                  string
+	namespace                            string
+	apiServerDefaultReplicas             int
+	apiServerEndpointReconcilingDisabled bool
+	controllerManagerDefaultReplicas     int
+	schedulerDefaultReplicas             int
+	admissionWebhook                     webhook.Options
+	concurrentClusterUpdate              int
+	addonEnforceInterval                 int
+	caBundle                             *certificates.CABundle
 
 	// for development purposes, a local configuration file
 	// can be used to provide the KubermaticConfiguration
@@ -126,38 +118,29 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	}
 
 	var (
-		rawEtcdDiskSize             string
-		caBundleFile                string
-		defaultKubernetesAddonsList string
-		defaultKubernetesAddonsFile string
-		configFile                  string
+		rawEtcdDiskSize string
+		caBundleFile    string
+		configFile      string
 	)
 
 	flag.BoolVar(&c.enableLeaderElection, "enable-leader-election", true, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
 	flag.StringVar(&c.leaderElectionNamespace, "leader-election-namespace", "", "Leader election namespace. In-cluster discovery will be attempted in such case.")
 	flag.StringVar(&c.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the internal server is running on")
 	flag.StringVar(&c.externalURL, "external-url", "", "The external url for the apiserver host and the the dc.(Required)")
-	flag.StringVar(&c.dc, "datacenter-name", "", "The name of the seed datacenter, the controller is running in. It will be used to build the absolute url for a customer cluster.")
+	flag.StringVar(&c.seedName, "seed-name", "", "The name of the seed this controller is running in. It will be used to build the absolute url for a customer cluster.")
 	flag.StringVar(&c.workerName, "worker-name", "", "The name of the worker that will only processes resources with label=worker-name.")
 	flag.IntVar(&c.workerCount, "worker-count", 4, "Number of workers which process the clusters in parallel.")
 	flag.StringVar(&c.overwriteRegistry, "overwrite-registry", "", "registry to use for all images")
 	flag.StringVar(&c.nodePortRange, "nodeport-range", resources.DefaultNodePortRange, "Deprecated: configure defaultComponentSettings on Seed resource. NodePort range to use for new clusters. It must be within the NodePort range of the seed-cluster")
 	flag.StringVar(&c.nodeAccessNetwork, "node-access-network", kubermaticv1.DefaultNodeAccessNetwork, "A network which allows direct access to nodes via VPN. Uses CIDR notation.")
-	flag.StringVar(&c.kubernetesAddonsPath, "kubernetes-addons-path", "/opt/addons/kubernetes", "Path to addon manifests. Should contain sub-folders for each addon")
-	flag.StringVar(&defaultKubernetesAddonsList, "kubernetes-addons-list", "", "Comma separated list of Addons to install into every user-cluster. Mutually exclusive with `--kubernetes-addons-file`")
-	flag.StringVar(&defaultKubernetesAddonsFile, "kubernetes-addons-file", "", "File that contains a list of default kubernetes addons. Mutually exclusive with `--kubernetes-addons-list`")
+	flag.StringVar(&c.addonsPath, "addons-path", "/opt/addons", "Path to addon manifests. Should contain sub-folders for each addon")
 	flag.StringVar(&c.backupContainerFile, "backup-container", "", fmt.Sprintf("[Required] Filepath of a backup container yaml. It must mount a volume named %s from which it reads the etcd backups", backupcontroller.SharedVolumeName))
 	flag.StringVar(&c.backupDeleteContainerFile, "backup-delete-container", "", "Filepath of a backup deletion container yaml. It receives the name of the backup to delete in an env variable ($BACKUP_TO_DELETE). If not specified, the backup container must handle deletion.")
 	flag.StringVar(&c.cleanupContainerFile, "cleanup-container", "", "(Only required for the old backup controller) Filepath of a cleanup container yaml. The container will be used to cleanup the backup directory for a cluster after it got deleted.")
 	flag.StringVar(&c.backupContainerImage, "backup-container-init-image", backupcontroller.DefaultBackupContainerImage, "Docker image to use for the init container in the backup job, must be an etcd v3 image. Only set this if your cluster can not use the public quay.io registry")
 	flag.StringVar(&c.backupInterval, "backup-interval", backupcontroller.DefaultBackupInterval, "Interval in which the etcd gets backed up")
 	flag.StringVar(&rawEtcdDiskSize, "etcd-disk-size", "5Gi", "Size for the etcd PV's. Only applies to new clusters.")
-	flag.StringVar(&c.inClusterPrometheusRulesFile, "in-cluster-prometheus-rules-file", "", "The file containing the custom alerting rules for the prometheus running in the cluster-foo namespaces.")
-	flag.BoolVar(&c.inClusterPrometheusDisableDefaultRules, "in-cluster-prometheus-disable-default-rules", false, "A flag indicating whether the default rules for the prometheus running in the cluster-foo namespaces should be deployed.")
 	flag.StringVar(&c.dockerPullConfigJSONFile, "docker-pull-config-json-file", "", "The file containing the docker auth config.")
-	flag.BoolVar(&c.inClusterPrometheusDisableDefaultScrapingConfigs, "in-cluster-prometheus-disable-default-scraping-configs", false, "A flag indicating whether the default scraping configs for the prometheus running in the cluster-foo namespaces should be deployed.")
-	flag.StringVar(&c.inClusterPrometheusScrapingConfigsFile, "in-cluster-prometheus-scraping-configs-file", "", "The file containing the custom scraping configs for the prometheus running in the cluster-foo namespaces.")
-	flag.StringVar(&c.monitoringScrapeAnnotationPrefix, "monitoring-scrape-annotation-prefix", "monitoring.kubermatic.io", "The prefix for monitoring annotations in the user cluster. Default: monitoring.kubermatic.io -> monitoring.kubermatic.io/port, monitoring.kubermatic.io/path")
 	flag.Var(&c.featureGates, "feature-gates", "A set of key=value pairs that describe feature gates for various features.")
 	flag.StringVar(&c.oidcIssuerURL, "oidc-issuer-url", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
 	flag.StringVar(&c.oidcIssuerClientID, "oidc-issuer-client-id", "", "Issuer client ID")
@@ -166,7 +149,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.etcdLauncherImage, "etcd-launcher-image", defaults.DefaultEtcdLauncherImage, "The location from which to pull the etcd launcher image")
 	flag.BoolVar(&c.enableEtcdBackupRestoreController, "enable-etcd-backups-restores", false, "Whether to enable the new etcd backup and restore controllers")
 	flag.StringVar(&c.dnatControllerImage, "dnatcontroller-image", defaults.DefaultDNATControllerImage, "The location of the dnatcontroller-image")
-	flag.StringVar(&c.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for datacenter custom resources")
+	flag.StringVar(&c.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for Seed resources")
 	flag.IntVar(&c.apiServerDefaultReplicas, "apiserver-default-replicas", 2, "Deprecated: configure defaultComponentSettings on Seed resource. The default number of replicas for usercluster api servers")
 	flag.BoolVar(&c.apiServerEndpointReconcilingDisabled, "apiserver-reconciling-disabled-by-default", false, "Deprecated: configure defaultComponentSettings on Seed resource. Whether to disable reconciling for the apiserver endpoints by default")
 	flag.IntVar(&c.controllerManagerDefaultReplicas, "controller-manager-default-replicas", 1, "Deprecated: configure defaultComponentSettings on Seed resource. The default number of replicas for usercluster controller managers")
@@ -210,11 +193,6 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 		}
 	}
 
-	c.kubernetesAddons, err = loadAddons(defaultKubernetesAddonsList, defaultKubernetesAddonsFile)
-	if err != nil {
-		return c, err
-	}
-
 	caBundle, err := certificates.NewCABundleFromFile(caBundleFile)
 	if err != nil {
 		return c, fmt.Errorf("invalid CA bundle file (%q): %v", caBundleFile, err)
@@ -247,16 +225,12 @@ func (o controllerRunOptions) validate() error {
 		return fmt.Errorf("external-url is undefined")
 	}
 
-	if o.dc == "" {
-		return fmt.Errorf("datacenter-name is undefined")
+	if o.seedName == "" {
+		return fmt.Errorf("seed-name is undefined")
 	}
 
 	if o.backupContainerFile == "" {
 		return fmt.Errorf("backup-container is undefined")
-	}
-
-	if o.monitoringScrapeAnnotationPrefix == "" {
-		return fmt.Errorf("monitoring-scrape-annotation-prefix is undefined")
 	}
 
 	if o.apiServerDefaultReplicas < 1 {
@@ -277,14 +251,6 @@ func (o controllerRunOptions) validate() error {
 		return fmt.Errorf("failed to parse nodePortRange: %v", err)
 	}
 
-	// Validate the metrics-server addon is disabled, otherwise it creates conflicts with the resources
-	// we create for the metrics-server running in the seed and will render the latter unusable
-	for _, addon := range o.kubernetesAddons.Items {
-		if addon.Name == "metrics-server" {
-			return errors.New("the metrics-server addon must be disabled, it is now deployed inside the seed cluster")
-		}
-	}
-
 	return nil
 }
 
@@ -300,46 +266,6 @@ type controllerContext struct {
 	dockerPullConfigJSON []byte
 	log                  *zap.SugaredLogger
 	versions             kubermatic.Versions
-}
-
-func loadAddons(listOpt, fileOpt string) (kubermaticv1.AddonList, error) {
-	addonList := kubermaticv1.AddonList{}
-	if listOpt != "" && fileOpt != "" {
-		return addonList, errors.New("addon-list and addon-path are mutually exclusive")
-	}
-	if listOpt != "" {
-		for _, addonName := range strings.Split(listOpt, ",") {
-			labels, err := getAddonDefaultLabels(addonName)
-			if err != nil {
-				return addonList, fmt.Errorf("failed to get default addon labels: %v", err)
-			}
-			addonList.Items = append(addonList.Items, kubermaticv1.Addon{ObjectMeta: metav1.ObjectMeta{Name: addonName, Labels: labels}})
-		}
-	}
-	if fileOpt != "" {
-		data, err := ioutil.ReadFile(fileOpt)
-		if err != nil {
-			return addonList, fmt.Errorf("failed to read %q: %v", fileOpt, err)
-		}
-		if err := yaml.Unmarshal(data, &addonList); err != nil {
-			return addonList, fmt.Errorf("failed to parse file from addon-path %q: %v", fileOpt, err)
-		}
-	}
-
-	return addonList, nil
-}
-
-func getAddonDefaultLabels(addonName string) (map[string]string, error) {
-	defaultAddonList := kubermaticv1.AddonList{}
-	if err := yaml.Unmarshal([]byte(defaults.DefaultKubernetesAddons), &defaultAddonList); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal default addon list: %v", err)
-	}
-	for _, addon := range defaultAddonList.Items {
-		if addon.Name == addonName {
-			return addon.Labels, nil
-		}
-	}
-	return nil, nil
 }
 
 func loadKubermaticConfiguration(filename string) (*operatorv1alpha1.KubermaticConfiguration, error) {

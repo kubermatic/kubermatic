@@ -22,6 +22,7 @@ import (
 	"time"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
@@ -60,7 +61,11 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 	if err != nil {
 		return nil, err
 	}
-	data, err := r.getClusterTemplateData(ctx, cluster, seed)
+	config, err := r.configGetter(ctx)
+	if err != nil {
+		return nil, err
+	}
+	data, err := r.getClusterTemplateData(ctx, cluster, seed, config)
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +190,7 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 	return &reconcile.Result{}, nil
 }
 
-func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kubermaticv1.Cluster, seed *kubermaticv1.Seed) (*resources.TemplateData, error) {
+func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kubermaticv1.Cluster, seed *kubermaticv1.Seed, config *operatorv1alpha1.KubermaticConfiguration) (*resources.TemplateData, error) {
 	datacenter, found := seed.Spec.Datacenters[cluster.Spec.Cloud.DatacenterName]
 	if !found {
 		return nil, fmt.Errorf("failed to get datacenter %s", cluster.Spec.Cloud.DatacenterName)
@@ -202,15 +207,11 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		WithCluster(cluster).
 		WithDatacenter(&datacenter).
 		WithSeed(seed.DeepCopy()).
+		WithKubermaticConfiguration(config.DeepCopy()).
 		WithOverwriteRegistry(r.overwriteRegistry).
 		WithNodePortRange(r.nodePortRange).
 		WithNodeAccessNetwork(r.nodeAccessNetwork).
 		WithEtcdDiskSize(r.etcdDiskSize).
-		WithMonitoringScrapeAnnotationPrefix(r.monitoringScrapeAnnotationPrefix).
-		WithInClusterPrometheusRulesFile(r.inClusterPrometheusRulesFile).
-		WithInClusterPrometheusDefaultRulesDisabled(r.inClusterPrometheusDisableDefaultRules).
-		WithInClusterPrometheusDefaultScrapingConfigsDisabled(r.inClusterPrometheusDisableDefaultScrapingConfigs).
-		WithInClusterPrometheusScrapingConfigsFile(r.inClusterPrometheusScrapingConfigsFile).
 		WithUserClusterMLAEnabled(r.userClusterMLAEnabled).
 		WithKonnectivityEnabled(r.features.Konnectivity && cluster.Spec.ClusterNetwork.KonnectivityEnabled).
 		WithCABundle(r.caBundle).

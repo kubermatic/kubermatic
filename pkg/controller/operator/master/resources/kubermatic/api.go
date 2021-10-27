@@ -18,7 +18,6 @@ package kubermatic
 
 import (
 	"fmt"
-	"strings"
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
@@ -74,14 +73,6 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 
 			volumes := []corev1.Volume{
 				{
-					Name: "extra-files",
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: common.ExtraFilesSecretName,
-						},
-					},
-				},
-				{
 					Name: "ca-bundle",
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
@@ -95,11 +86,6 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 
 			volumeMounts := []corev1.VolumeMount{
 				{
-					MountPath: "/opt/extra-files/",
-					Name:      "extra-files",
-					ReadOnly:  true,
-				},
-				{
 					Name:      "ca-bundle",
 					MountPath: "/opt/ca-bundle/",
 					ReadOnly:  true,
@@ -112,7 +98,6 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 				"-internal-address=0.0.0.0:8085",
 				"-dynamic-presets=true",
 				"-swagger=/opt/swagger.json",
-				"-master-resources=/opt/extra-files",
 				fmt.Sprintf("-ca-bundle=/opt/ca-bundle/%s", resources.CABundleConfigMapKey),
 				fmt.Sprintf("-namespace=%s", cfg.Namespace),
 				fmt.Sprintf("-oidc-url=%s", cfg.Spec.Auth.TokenIssuer),
@@ -123,7 +108,6 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 				fmt.Sprintf("-expose-strategy=%s", cfg.Spec.ExposeStrategy),
 				fmt.Sprintf("-feature-gates=%s", featureGates(cfg)),
 				fmt.Sprintf("-pprof-listen-address=%s", *cfg.Spec.API.PProfEndpoint),
-				fmt.Sprintf("-accessible-addons=%s", strings.Join(cfg.Spec.API.AccessibleAddons, ",")),
 			}
 
 			if cfg.Spec.API.DebugLog {
