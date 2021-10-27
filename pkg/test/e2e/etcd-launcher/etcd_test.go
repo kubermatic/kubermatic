@@ -115,7 +115,7 @@ func TestScaling(t *testing.T) {
 	}
 	waitForQuorum(t)
 
-	if err := disableLauncher(ctx, t, client, cluster); err == nil {
+	if err := disableLauncher(ctx, t, client, cluster); err != nil {
 		t.Fatalf("succeeded in disabling immutable feature etcd-launcher: %v", err)
 	}
 
@@ -149,7 +149,7 @@ func enableLauncher(ctx context.Context, t *testing.T, client ctrlruntimeclient.
 }
 
 func disableLauncher(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
-	t.Log("trying to disable etcd-launcher...")
+	t.Log("trying to disable etcd-launcher (not expected to succeed) ...")
 	if err := disableEtcdlauncherForCluster(ctx, client, cluster); err == nil {
 		return fmt.Errorf("no error disabling etcd-launcher, expected validation to fail")
 	}
