@@ -18651,6 +18651,28 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
+    "EKSCloudSpec": {
+      "type": "object",
+      "properties": {
+         "accessKeyID": {
+            "type": "string",
+            "x-go-name": "AccessKeyID"
+          },
+          "name": {
+            "type": "string",
+            "x-go-name": "Name"
+          },
+          "region": {
+            "type": "string",
+            "x-go-name": "Region"
+          },
+          "secretAccessKey": {
+            "type": "string",
+            "x-go-name": "SecretAccessKey"
+       }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "EKSCluster": {
       "type": "object",
       "title": "EKSCluster represents a object of EKS cluster.",
@@ -19030,6 +19052,9 @@
       "description": "ExternalClusterCloudSpec represents an object holding cluster cloud details",
       "type": "object",
       "properties": {
+        "eks": {
+          "$ref": "#/definitions/EKSCloudSpec"
+        },
         "gke": {
           "$ref": "#/definitions/GKECloudSpec"
         }
