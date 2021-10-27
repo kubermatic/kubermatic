@@ -17493,7 +17493,13 @@
         "gatekeeperController": {
           "$ref": "#/definitions/HealthStatus"
         },
+        "logging": {
+          "$ref": "#/definitions/HealthStatus"
+        },
         "machineController": {
+          "$ref": "#/definitions/HealthStatus"
+        },
+        "monitoring": {
           "$ref": "#/definitions/HealthStatus"
         },
         "scheduler": {
