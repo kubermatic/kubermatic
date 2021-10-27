@@ -178,10 +178,6 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		if err := r.ensureOPAIntegrationIsRemoved(ctx); err != nil {
 			return err
 		}
-	} else {
-		if err := r.healthCheck(ctx); err != nil {
-			return err
-		}
 	}
 
 	if r.opaIntegration && !r.opaEnableMutation {
@@ -200,6 +196,13 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 			return err
 		}
 	}
+
+	if r.opaIntegration || r.userClusterMLA.Logging || r.userClusterMLA.Monitoring {
+		if err := r.healthCheck(ctx); err != nil {
+			return err
+		}
+	}
+
 	if !r.userClusterMLA.Logging && !r.userClusterMLA.Monitoring {
 		if err := r.ensureMLAIsRemoved(ctx); err != nil {
 			return err
@@ -876,13 +879,33 @@ func (r *reconciler) healthCheck(ctx context.Context) error {
 	}
 	oldCluster := cluster.DeepCopy()
 
-	ctrlHealth, auditHealth, err := r.getGatekeeperHealth(ctx)
-	if err != nil {
-		return err
+	if r.opaIntegration {
+		ctrlGatekeeperHealth, auditGatekeeperHealth, err := r.getGatekeeperHealth(ctx)
+		if err != nil {
+			return err
+		}
+
+		cluster.Status.ExtendedHealth.GatekeeperController = ctrlGatekeeperHealth
+		cluster.Status.ExtendedHealth.GatekeeperAudit = auditGatekeeperHealth
 	}
 
-	cluster.Status.ExtendedHealth.GatekeeperController = ctrlHealth
-	cluster.Status.ExtendedHealth.GatekeeperAudit = auditHealth
+	if r.userClusterMLA.Monitoring {
+		monitoring, err := r.getMLAMonitoringHealth(ctx)
+		if err != nil {
+			return err
+		}
+
+		cluster.Status.ExtendedHealth.Monitoring = monitoring
+	}
+
+	if r.userClusterMLA.Logging {
+		logging, err := r.getMLALoggingHealth(ctx)
+		if err != nil {
+			return err
+		}
+
+		cluster.Status.ExtendedHealth.Logging = logging
+	}
 
 	if oldCluster.Status.ExtendedHealth != cluster.Status.ExtendedHealth {
 		if err := r.seedClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
@@ -901,7 +924,7 @@ func (r *reconciler) getGatekeeperHealth(ctx context.Context) (
 		1)
 	if err != nil {
 		return kubermaticv1.HealthStatusDown, kubermaticv1.HealthStatusDown,
-			fmt.Errorf("failed to get dep health %q: %v", resources.GatekeeperControllerDeploymentName, err)
+			fmt.Errorf("failed to get dep health %s: %w", resources.GatekeeperControllerDeploymentName, err)
 	}
 
 	auditHealth, err = resources.HealthyDeployment(ctx,
@@ -910,9 +933,35 @@ func (r *reconciler) getGatekeeperHealth(ctx context.Context) (
 		1)
 	if err != nil {
 		return kubermaticv1.HealthStatusDown, kubermaticv1.HealthStatusDown,
-			fmt.Errorf("failed to get dep health %q: %v", resources.GatekeeperAuditDeploymentName, err)
+			fmt.Errorf("failed to get dep health %s: %w", resources.GatekeeperAuditDeploymentName, err)
 	}
 	return ctlrHealth, auditHealth, nil
+}
+
+func (r *reconciler) getMLAMonitoringHealth(ctx context.Context) (
+	health kubermaticv1.HealthStatus, err error) {
+
+	health, err = resources.HealthyDeployment(ctx,
+		r.Client,
+		types.NamespacedName{Namespace: resources.UserClusterMLANamespace, Name: resources.UserClusterPrometheusDeploymentName},
+		1)
+	if err != nil {
+		return kubermaticv1.HealthStatusDown,
+			fmt.Errorf("failed to get dep health %s: %w", resources.UserClusterPrometheusDeploymentName, err)
+	}
+
+	return health, nil
+}
+
+func (r *reconciler) getMLALoggingHealth(ctx context.Context) (kubermaticv1.HealthStatus, error) {
+	loggingHealth, err := resources.HealthyDaemonSet(ctx,
+		r.Client,
+		types.NamespacedName{Namespace: resources.UserClusterMLANamespace, Name: resources.PromtailDaemonSetName},
+		1)
+	if err != nil {
+		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to get ds health %s: %w", resources.PromtailDaemonSetName, err)
+	}
+	return loggingHealth, nil
 }
 
 func (r *reconciler) ensurePromtailIsRemoved(ctx context.Context) error {

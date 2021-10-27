@@ -36,8 +36,14 @@ type ClusterHealth struct {
 	// gatekeeper controller
 	GatekeeperController HealthStatus `json:"gatekeeperController,omitempty"`
 
+	// logging
+	Logging HealthStatus `json:"logging,omitempty"`
+
 	// machine controller
 	MachineController HealthStatus `json:"machineController,omitempty"`
+
+	// monitoring
+	Monitoring HealthStatus `json:"monitoring,omitempty"`
 
 	// scheduler
 	Scheduler HealthStatus `json:"scheduler,omitempty"`
@@ -74,7 +80,15 @@ func (m *ClusterHealth) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateLogging(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateMachineController(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateMonitoring(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -182,6 +196,21 @@ func (m *ClusterHealth) validateGatekeeperController(formats strfmt.Registry) er
 	return nil
 }
 
+func (m *ClusterHealth) validateLogging(formats strfmt.Registry) error {
+	if swag.IsZero(m.Logging) { // not required
+		return nil
+	}
+
+	if err := m.Logging.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("logging")
+		}
+		return err
+	}
+
+	return nil
+}
+
 func (m *ClusterHealth) validateMachineController(formats strfmt.Registry) error {
 	if swag.IsZero(m.MachineController) { // not required
 		return nil
@@ -190,6 +219,21 @@ func (m *ClusterHealth) validateMachineController(formats strfmt.Registry) error
 	if err := m.MachineController.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("machineController")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) validateMonitoring(formats strfmt.Registry) error {
+	if swag.IsZero(m.Monitoring) { // not required
+		return nil
+	}
+
+	if err := m.Monitoring.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("monitoring")
 		}
 		return err
 	}
@@ -255,7 +299,15 @@ func (m *ClusterHealth) ContextValidate(ctx context.Context, formats strfmt.Regi
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateLogging(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateMachineController(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateMonitoring(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -345,11 +397,35 @@ func (m *ClusterHealth) contextValidateGatekeeperController(ctx context.Context,
 	return nil
 }
 
+func (m *ClusterHealth) contextValidateLogging(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.Logging.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("logging")
+		}
+		return err
+	}
+
+	return nil
+}
+
 func (m *ClusterHealth) contextValidateMachineController(ctx context.Context, formats strfmt.Registry) error {
 
 	if err := m.MachineController.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("machineController")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) contextValidateMonitoring(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.Monitoring.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("monitoring")
 		}
 		return err
 	}

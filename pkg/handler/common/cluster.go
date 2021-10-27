@@ -578,6 +578,8 @@ func HealthEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter,
 		UserClusterControllerManager: existingCluster.Status.ExtendedHealth.UserClusterControllerManager,
 		GatekeeperController:         existingCluster.Status.ExtendedHealth.GatekeeperController,
 		GatekeeperAudit:              existingCluster.Status.ExtendedHealth.GatekeeperAudit,
+		Monitoring:                   existingCluster.Status.ExtendedHealth.Monitoring,
+		Logging:                      existingCluster.Status.ExtendedHealth.Logging,
 	}, nil
 }
 
