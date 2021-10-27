@@ -300,6 +300,10 @@ func (e *etcdCluster) updatePeerURLs(log *zap.SugaredLogger) error {
 			// update the member to include both plaintext and TLS peer URLs
 			if !e.usePeerTLSOnly && (len(member.PeerURLs) == 1 || peerURL.Scheme != "http") {
 				plainPeerURL, err := url.Parse(fmt.Sprintf("http://%s:2380", peerURL.Hostname()))
+				if err != nil {
+					return err
+				}
+
 				tlsPeerURL, err := url.Parse(fmt.Sprintf("https://%s:2381", peerURL.Hostname()))
 				if err != nil {
 					return err
