@@ -155,6 +155,17 @@ func (s PresetSpec) HasProvider(providerType ProviderType) (bool, reflect.Value)
 	return !provider.IsZero(), provider
 }
 
+func (s PresetSpec) GetProviderList() []ProviderType {
+	existingProviders := []ProviderType{}
+	for _, provType := range SupportedProviders() {
+		hasProvider, _ := s.HasProvider(provType)
+		if hasProvider {
+			existingProviders = append(existingProviders, provType)
+		}
+	}
+	return existingProviders
+}
+
 func (s PresetSpec) GetPresetProvider(providerType ProviderType) *PresetProvider {
 	hasProvider, providerField := s.HasProvider(providerType)
 	if !hasProvider {
@@ -203,6 +214,11 @@ func (s *PresetSpec) OverrideProvider(providerType ProviderType, spec *PresetSpe
 	dest := s.getProviderValue(providerType)
 	src := spec.getProviderValue(providerType)
 	dest.Set(src)
+}
+
+func (s *PresetSpec) RemoveProvider(providerType ProviderType) {
+	provider := s.getProviderValue(providerType)
+	provider.Set(reflect.Zero(provider.Type()))
 }
 
 type Validateable interface {

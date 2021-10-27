@@ -422,6 +422,87 @@ func UpdatePreset(presetsProvider provider.PresetProvider, userInfoGetter provid
 	}
 }
 
+// deletePresetReq represents a request to delete a new preset
+// swagger:parameters deletePreset
+type deletePresetReq struct {
+	// in: path
+	// required: true
+	ProviderName string `json:"provider_name"`
+	// in: path
+	// required: true
+	PresetName string `json:"preset_name"`
+}
+
+// Validate validates deletePresetReq request
+func (r deletePresetReq) Validate() error {
+	if len(r.ProviderName) == 0 {
+		return fmt.Errorf("the provider name cannot be empty")
+	}
+
+	if !crdapiv1.IsProviderSupported(r.ProviderName) {
+		return fmt.Errorf("invalid provider name %s", r.ProviderName)
+	}
+
+	if len(r.PresetName) == 0 {
+		return fmt.Errorf("preset name cannot be empty")
+	}
+	return nil
+}
+
+func DecodeDeletePreset(_ context.Context, r *http.Request) (interface{}, error) {
+	var req deletePresetReq
+
+	req.ProviderName = mux.Vars(r)["provider_name"]
+	req.PresetName = mux.Vars(r)["preset_name"]
+
+	return req, nil
+}
+
+// DeletePreset deletes the given provider from the preset AND if there is only one provider left, the preset gets deleted
+func DeletePreset(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(deletePresetReq)
+		if !ok {
+			return nil, errors.NewBadRequest("invalid request")
+		}
+
+		err := req.Validate()
+		if err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		if !userInfo.IsAdmin {
+			return "", errors.New(http.StatusForbidden, "only admins can delete presets")
+		}
+
+		preset, err := presetsProvider.GetPreset(userInfo, req.PresetName)
+		if k8serrors.IsNotFound(err) {
+			return nil, errors.NewBadRequest("preset was not found.")
+		}
+
+		if err != nil && !k8serrors.IsNotFound(err) {
+			return nil, err
+		}
+
+		// remove provider from preset
+		preset.Spec.RemoveProvider(crdapiv1.ProviderType(req.ProviderName))
+
+		// Delete the provider from the preset OR the whole preset
+		preset, err = presetsProvider.DeletePreset(preset)
+		if err != nil {
+			return nil, err
+		}
+
+		enabled := preset.Spec.IsEnabled()
+		return newAPIPreset(preset, enabled), nil
+	}
+}
+
 func mergePresets(oldPreset *crdapiv1.Preset, newPreset *crdapiv1.Preset, providerType crdapiv1.ProviderType) *crdapiv1.Preset {
 	oldPreset.Spec.OverrideProvider(providerType, &newPreset.Spec)
 	oldPreset.Spec.RequiredEmails = newPreset.Spec.RequiredEmails

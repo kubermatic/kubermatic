@@ -777,6 +777,7 @@ type PresetProvider interface {
 	UpdatePreset(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
 	GetPresets(userInfo *UserInfo) ([]kubermaticv1.Preset, error)
 	GetPreset(userInfo *UserInfo, name string) (*kubermaticv1.Preset, error)
+	DeletePreset(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
 	SetCloudCredentials(userInfo *UserInfo, presetName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) (*kubermaticv1.CloudSpec, error)
 }
 

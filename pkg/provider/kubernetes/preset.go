@@ -41,6 +41,9 @@ type presetCreator = func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, er
 // presetUpdater is a function to update a preset
 type presetUpdater = func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
 
+// presetDeleter is a function to delete a preset
+type presetDeleter = func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
+
 // LoadPresets loads the custom presets for supported providers
 func LoadPresets(yamlContent []byte) (*kubermaticv1.PresetList, error) {
 	s := struct {
@@ -134,11 +137,21 @@ func presetUpdaterFactory(ctx context.Context, client ctrlruntimeclient.Client, 
 	}, nil
 }
 
+func presetDeleterFactory(ctx context.Context, client ctrlruntimeclient.Client) (presetDeleter, error) {
+	return func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
+		if err := client.Delete(ctx, preset); err != nil {
+			return &kubermaticv1.Preset{}, err
+		}
+		return &kubermaticv1.Preset{}, nil
+	}, nil
+}
+
 // PresetsProvider is a object to handle presets from a predefined config
 type PresetsProvider struct {
 	getter  presetsGetter
 	creator presetCreator
 	patcher presetUpdater
+	deleter presetDeleter
 }
 
 func NewPresetsProvider(ctx context.Context, client ctrlruntimeclient.Client, presetsFile string, dynamicPresets bool) (*PresetsProvider, error) {
@@ -157,7 +170,12 @@ func NewPresetsProvider(ctx context.Context, client ctrlruntimeclient.Client, pr
 		return nil, err
 	}
 
-	return &PresetsProvider{getter, creator, patcher}, nil
+	deleter, err := presetDeleterFactory(ctx, client)
+	if err != nil {
+		return nil, err
+	}
+
+	return &PresetsProvider{getter, creator, patcher, deleter}, nil
 }
 
 func (m *PresetsProvider) CreatePreset(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
@@ -186,6 +204,18 @@ func (m *PresetsProvider) GetPreset(userInfo *provider.UserInfo, name string) (*
 	}
 
 	return nil, errors.NewNotFound(kubermaticv1.Resource("preset"), name)
+}
+
+// DeletePreset Provider or delete Preset completely if empty
+func (m *PresetsProvider) DeletePreset(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
+	existingProviders := preset.Spec.GetProviderList()
+	if len(existingProviders) > 0 {
+		// Case: Remove provider from the preset
+		return m.patcher(preset)
+	} else {
+		// Case: Delete the whole preset
+		return m.deleter(preset)
+	}
 }
 
 func filterOutPresets(userInfo *provider.UserInfo, list *kubermaticv1.PresetList) ([]kubermaticv1.Preset, error) {
