@@ -238,6 +238,11 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 				log.Fatal(err)
 			}
 
+			scope, ok := defaultingTemplate.Labels["scope"]
+			if !ok || scope != kubermaticv1.SeedTemplateScope {
+				log.Fatalf("invalid scope of default cluster template: %s", seed.Spec.DefaultClusterTemplate)
+			}
+
 		}
 
 		clustermutation.NewAdmissionHandler(defaultingTemplate).SetupWebhookWithManager(mgr)
