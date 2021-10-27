@@ -41,7 +41,7 @@ type presetCreator = func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, er
 // presetUpdater is a function to update a preset
 type presetUpdater = func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
 
-// presetDeleter is a fucntion to delete a preset
+// presetDeleter is a function to delete a preset
 type presetDeleter = func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
 
 // LoadPresets loads the custom presets for supported providers
