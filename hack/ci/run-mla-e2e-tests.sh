@@ -33,7 +33,6 @@ export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
 
 source hack/ci/setup-kind-cluster.sh
 source hack/ci/setup-kubermatic-mla-in-kind.sh
-source hack/ci/setup-mla.sh
 
 echodate "Creating UI DigitalOcean preset..."
 cat << EOF > preset-digitalocean.yaml
