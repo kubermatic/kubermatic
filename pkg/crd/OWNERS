@@ -8,6 +8,7 @@ reviewers:
 
 labels:
   - sig/cluster-management
+  - sig/crd
 
 options:
   no_parent_owners: true
