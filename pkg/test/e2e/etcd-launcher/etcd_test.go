@@ -234,9 +234,15 @@ func isClusterEtcdHealthy(ctx context.Context, client ctrlruntimeclient.Client, 
 		return false, fmt.Errorf("failed to get StatefulSet: %v", err)
 	}
 
-	// we are healthy if the cluster controller is happy and the sts is ready
+	clusterSize := 3
+	if size := cluster.Spec.ComponentsOverride.Etcd.ClusterSize; size != nil {
+		clusterSize = *size
+	}
+
+	// we are healthy if the cluster controller is happy and the sts has ready replicas
+	// matching the cluster's expected etcd cluster size
 	return cluster.Status.ExtendedHealth.Etcd == kubermaticv1.HealthStatusUp &&
-		*sts.Spec.Replicas == sts.Status.ReadyReplicas, nil
+		clusterSize == sts.Status.ReadyReplicas, nil
 }
 
 func isStrictTLSEnabled(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (bool, error) {
@@ -294,6 +300,11 @@ func waitForClusterHealthy(ctx context.Context, t *testing.T, client ctrlruntime
 	before := time.Now()
 
 	if err := wait.PollImmediate(3*time.Second, 10*time.Minute, func() (bool, error) {
+		// refresh cluster object for updated health status
+		if err := client.Get(ctx, types.NamespacedName{Name: cluster.Name}, cluster); err != nil {
+			return false, fmt.Errorf("failed to get cluster: %v", err)
+		}
+
 		healthy, err := isClusterEtcdHealthy(ctx, client, cluster)
 		if err != nil {
 			t.Logf("failed to check cluster etcd health status: %v", err)
@@ -312,6 +323,11 @@ func waitForClusterHealthy(ctx context.Context, t *testing.T, client ctrlruntime
 func waitForStrictTLSMode(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
 	before := time.Now()
 	if err := wait.PollImmediate(3*time.Second, 10*time.Minute, func() (bool, error) {
+		// refresh cluster object for updated health status
+		if err := client.Get(ctx, types.NamespacedName{Name: cluster.Name}, cluster); err != nil {
+			return false, fmt.Errorf("failed to get cluster: %v", err)
+		}
+
 		healthy, err := isStrictTLSEnabled(ctx, client, cluster)
 		if err != nil {
 			t.Logf("failed to check cluster etcd health status: %v", err)

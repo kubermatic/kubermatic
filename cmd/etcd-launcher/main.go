@@ -159,7 +159,10 @@ func main() {
 	// reconcile dead members continuously. Initially we did this once as a step at the end of start up. We did that because scale up/down operations required a full restart of the ring with each node add/remove. However, this is no longer the case, so we need to separate the reconcile from the start up process and do it continuously.
 	go func() {
 		wait.Forever(func() {
-			if _, err := deleteUnwantedDeadMembers(e, log); err != nil {
+			// refresh the cluster size so the etcd-launcher is aware of scaling operations
+			if err := e.setClusterSize(clusterClient); err != nil {
+				log.Warnw("failed to refresh cluster size", zap.Error(err))
+			} else if _, err := deleteUnwantedDeadMembers(e, log); err != nil {
 				log.Warnw("failed to remove dead members", zap.Error(err))
 			}
 		}, 30*time.Second)
