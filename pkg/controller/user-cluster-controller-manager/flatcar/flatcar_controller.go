@@ -64,7 +64,8 @@ func Add(mgr manager.Manager, overwriteRegistry string, updateWindow kubermaticv
 	}
 
 	predicate := predicateutil.Factory(func(o ctrlruntimeclient.Object) bool {
-		return o.GetLabels()[nodelabelerapi.DistributionLabelKey] == nodelabelerapi.FlatcarLabelValue
+		node := o.(*corev1.Node)
+		return o.GetLabels()[nodelabelerapi.DistributionLabelKey] == nodelabelerapi.FlatcarLabelValue && !node.Spec.Unschedulable
 	})
 
 	return c.Watch(&source.Kind{Type: &corev1.Node{}}, controllerutil.EnqueueConst(""), predicate)
