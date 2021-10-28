@@ -236,7 +236,7 @@ func isClusterEtcdHealthy(ctx context.Context, client ctrlruntimeclient.Client, 
 
 	clusterSize := 3
 	if size := cluster.Spec.ComponentsOverride.Etcd.ClusterSize; size != nil {
-		clusterSize = *size
+		clusterSize = int(*size)
 	}
 
 	// we are healthy if the cluster controller is happy and the sts has ready replicas
