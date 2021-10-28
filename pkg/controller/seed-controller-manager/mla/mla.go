@@ -44,8 +44,8 @@ const (
 	ControllerName     = "kubermatic_mla_controller"
 	mlaFinalizer       = "kubermatic.io/mla"
 	defaultOrgID       = 1
-	grafanaUserKey     = "admin-user"
-	grafanaPasswordKey = "admin-password"
+	GrafanaUserKey     = "admin-user"
+	GrafanaPasswordKey = "admin-password"
 )
 
 var (
@@ -103,13 +103,13 @@ func Add(
 		}
 		return fmt.Errorf("failed to get Grafana Secret: %v", err)
 	}
-	adminName, ok := secret.Data[grafanaUserKey]
+	adminName, ok := secret.Data[GrafanaUserKey]
 	if !ok {
-		return fmt.Errorf("Grafana Secret %q does not contain %s key", grafanaSecret, grafanaUserKey)
+		return fmt.Errorf("Grafana Secret %q does not contain %s key", grafanaSecret, GrafanaUserKey)
 	}
-	adminPass, ok := secret.Data[grafanaPasswordKey]
+	adminPass, ok := secret.Data[GrafanaPasswordKey]
 	if !ok {
-		return fmt.Errorf("Grafana Secret %q does not contain %s key", grafanaSecret, grafanaPasswordKey)
+		return fmt.Errorf("Grafana Secret %q does not contain %s key", grafanaSecret, GrafanaPasswordKey)
 	}
 	grafanaAuth := fmt.Sprintf("%s:%s", adminName, adminPass)
 	httpClient := &http.Client{Timeout: 15 * time.Second}

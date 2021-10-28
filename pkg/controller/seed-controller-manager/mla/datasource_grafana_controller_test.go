@@ -84,7 +84,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 				&kubermaticv1.Project{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:        "projectUID",
-						Annotations: map[string]string{grafanaOrgAnnotationKey: "1"},
+						Annotations: map[string]string{GrafanaOrgAnnotationKey: "1"},
 					},
 					Spec: kubermaticv1.ProjectSpec{
 						Name: "projectName",
@@ -164,7 +164,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 				&kubermaticv1.Project{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:        "projectUID",
-						Annotations: map[string]string{grafanaOrgAnnotationKey: "1"},
+						Annotations: map[string]string{GrafanaOrgAnnotationKey: "1"},
 					},
 					Spec: kubermaticv1.ProjectSpec{
 						Name: "projectName",
@@ -223,7 +223,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 				&kubermaticv1.Project{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:        "projectUID",
-						Annotations: map[string]string{grafanaOrgAnnotationKey: "1"},
+						Annotations: map[string]string{GrafanaOrgAnnotationKey: "1"},
 					},
 					Spec: kubermaticv1.ProjectSpec{
 						Name: "projectName",
@@ -325,7 +325,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 				&kubermaticv1.Project{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:        "projectUID",
-						Annotations: map[string]string{grafanaOrgAnnotationKey: "1"},
+						Annotations: map[string]string{GrafanaOrgAnnotationKey: "1"},
 					},
 					Spec: kubermaticv1.ProjectSpec{
 						Name: "projectName",
@@ -380,7 +380,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 				&kubermaticv1.Project{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:        "projectUID",
-						Annotations: map[string]string{grafanaOrgAnnotationKey: "1"},
+						Annotations: map[string]string{GrafanaOrgAnnotationKey: "1"},
 					},
 					Spec: kubermaticv1.ProjectSpec{
 						Name: "projectName",
@@ -454,7 +454,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 				&kubermaticv1.Project{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:        "projectUID",
-						Annotations: map[string]string{grafanaOrgAnnotationKey: "1"},
+						Annotations: map[string]string{GrafanaOrgAnnotationKey: "1"},
 					},
 					Spec: kubermaticv1.ProjectSpec{
 						Name: "projectName",

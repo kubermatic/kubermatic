@@ -1401,3 +1401,43 @@ presubmits:
         env:
         - name: KUBERMATIC_EDITION
           value: ee
+
+  #########################################################
+  # User cluster MLA e2e tests
+  #########################################################
+
+  - name: pre-kubermatic-mla-e2e
+    run_if_changed: "(go.mod|go.sum|pkg/|.prow.yaml)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-digitalocean: "true"
+      preset-kubeconfig-ci: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-vault: "true"
+      preset-goproxy: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.17-node-14-kind-0.11-1
+          command:
+            - "./hack/ci/run-mla-e2e-tests.sh"
+          env:
+            - name: VERSION_TO_TEST
+              value: v1.22.2
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 14Gi
+              cpu: 4
+            limits:
+              memory: 18Gi
