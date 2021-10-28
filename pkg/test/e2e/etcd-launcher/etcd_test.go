@@ -234,9 +234,9 @@ func isClusterEtcdHealthy(ctx context.Context, client ctrlruntimeclient.Client, 
 		return false, fmt.Errorf("failed to get StatefulSet: %v", err)
 	}
 
-	clusterSize := 3
+	clusterSize := int32(3)
 	if size := cluster.Spec.ComponentsOverride.Etcd.ClusterSize; size != nil {
-		clusterSize = int(*size)
+		clusterSize = *size
 	}
 
 	// we are healthy if the cluster controller is happy and the sts has ready replicas
