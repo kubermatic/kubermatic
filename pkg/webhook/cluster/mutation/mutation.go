@@ -23,6 +23,7 @@ import (
 	"net/http"
 
 	"github.com/go-logr/logr"
+	"github.com/imdario/mergo"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -46,13 +47,13 @@ type AdmissionHandler struct {
 	log     logr.Logger
 	decoder *admission.Decoder
 
-	defaultComponentSettings kubermaticv1.ComponentSettings
+	defaultTemplate kubermaticv1.ClusterTemplate
 }
 
 // NewAdmissionHandler returns a new cluster mutation AdmissionHandler.
-func NewAdmissionHandler(defaults kubermaticv1.ComponentSettings) *AdmissionHandler {
+func NewAdmissionHandler(defaults kubermaticv1.ClusterTemplate) *AdmissionHandler {
 	return &AdmissionHandler{
-		defaultComponentSettings: defaults,
+		defaultTemplate: defaults,
 	}
 }
 
@@ -75,7 +76,10 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 		if err := h.decoder.Decode(req, cluster); err != nil {
 			return admission.Errored(http.StatusBadRequest, err)
 		}
-		h.applyDefaults(cluster)
+		err := h.applyDefaults(cluster)
+		if err != nil {
+			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("applying default template failed: %v", err))
+		}
 	case admissionv1.Update:
 		if err := h.decoder.Decode(req, cluster); err != nil {
 			return admission.Errored(http.StatusBadRequest, err)
@@ -84,7 +88,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 			return admission.Errored(http.StatusBadRequest, err)
 		}
 
-		if err := h.mutateUpdate(ctx, oldCluster, cluster); err != nil {
+		if err := h.mutateUpdate(oldCluster, cluster); err != nil {
 			h.log.Info("cluster mutation failed", "error", err)
 			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %v", req.UID, err))
 		}
@@ -102,7 +106,14 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 	return admission.PatchResponseFromRaw(req.Object.Raw, mutatedCluster)
 }
 
-func (h *AdmissionHandler) applyDefaults(c *kubermaticv1.Cluster) {
+func (h *AdmissionHandler) applyDefaults(c *kubermaticv1.Cluster) error {
+
+	// merge provided defaults into newly created cluster
+	err := mergo.Merge(&c.Spec, h.defaultTemplate.Spec)
+	if err != nil {
+		return err
+	}
+
 	// Add default CNI plugin settings if not present.
 	if c.Spec.CNIPlugin == nil {
 		c.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
@@ -163,85 +174,16 @@ func (h *AdmissionHandler) applyDefaults(c *kubermaticv1.Cluster) {
 		c.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled = pointer.BoolPtr(true)
 	}
 
-	// Default component settings
-	h.defaultClusterComponentSettings(c)
-}
-
-func (h *AdmissionHandler) defaultClusterComponentSettings(c *kubermaticv1.Cluster) {
-	if c.Spec.ComponentsOverride.Apiserver.Replicas == nil {
-		c.Spec.ComponentsOverride.Apiserver.Replicas = h.defaultComponentSettings.Apiserver.Replicas
-	}
-	if c.Spec.ComponentsOverride.Apiserver.Resources == nil {
-		c.Spec.ComponentsOverride.Apiserver.Resources = h.defaultComponentSettings.Apiserver.Resources
-	}
-	if c.Spec.ComponentsOverride.Apiserver.EndpointReconcilingDisabled == nil {
-		c.Spec.ComponentsOverride.Apiserver.EndpointReconcilingDisabled = h.defaultComponentSettings.Apiserver.EndpointReconcilingDisabled
-	}
-	if c.Spec.ComponentsOverride.Apiserver.NodePortRange == "" {
-		c.Spec.ComponentsOverride.Apiserver.NodePortRange = h.defaultComponentSettings.Apiserver.NodePortRange
-	}
-	if c.Spec.ComponentsOverride.ControllerManager.Replicas == nil {
-		c.Spec.ComponentsOverride.ControllerManager.Replicas = h.defaultComponentSettings.ControllerManager.Replicas
-	}
-	if c.Spec.ComponentsOverride.ControllerManager.Resources == nil {
-		c.Spec.ComponentsOverride.ControllerManager.Resources = h.defaultComponentSettings.ControllerManager.Resources
-	}
-	if c.Spec.ComponentsOverride.ControllerManager.Tolerations == nil {
-		c.Spec.ComponentsOverride.ControllerManager.Tolerations = h.defaultComponentSettings.ControllerManager.Tolerations
-	}
-	if c.Spec.ComponentsOverride.ControllerManager.LeaseDurationSeconds == nil {
-		c.Spec.ComponentsOverride.ControllerManager.LeaseDurationSeconds = h.defaultComponentSettings.ControllerManager.LeaseDurationSeconds
-	}
-	if c.Spec.ComponentsOverride.ControllerManager.RenewDeadlineSeconds == nil {
-		c.Spec.ComponentsOverride.ControllerManager.RenewDeadlineSeconds = h.defaultComponentSettings.ControllerManager.RenewDeadlineSeconds
-	}
-	if c.Spec.ComponentsOverride.ControllerManager.RetryPeriodSeconds == nil {
-		c.Spec.ComponentsOverride.ControllerManager.RetryPeriodSeconds = h.defaultComponentSettings.ControllerManager.RetryPeriodSeconds
-	}
-	if c.Spec.ComponentsOverride.Scheduler.Replicas == nil {
-		c.Spec.ComponentsOverride.Scheduler.Replicas = h.defaultComponentSettings.Scheduler.Replicas
-	}
-	if c.Spec.ComponentsOverride.Scheduler.Resources == nil {
-		c.Spec.ComponentsOverride.Scheduler.Resources = h.defaultComponentSettings.Scheduler.Resources
-	}
-	if c.Spec.ComponentsOverride.Scheduler.Tolerations == nil {
-		c.Spec.ComponentsOverride.Scheduler.Tolerations = h.defaultComponentSettings.Scheduler.Tolerations
-	}
-	if c.Spec.ComponentsOverride.Scheduler.LeaseDurationSeconds == nil {
-		c.Spec.ComponentsOverride.Scheduler.LeaseDurationSeconds = h.defaultComponentSettings.Scheduler.LeaseDurationSeconds
-	}
-	if c.Spec.ComponentsOverride.Scheduler.RenewDeadlineSeconds == nil {
-		c.Spec.ComponentsOverride.Scheduler.RenewDeadlineSeconds = h.defaultComponentSettings.Scheduler.RenewDeadlineSeconds
-	}
-	if c.Spec.ComponentsOverride.Scheduler.RetryPeriodSeconds == nil {
-		c.Spec.ComponentsOverride.Scheduler.RetryPeriodSeconds = h.defaultComponentSettings.Scheduler.RetryPeriodSeconds
-	}
-	if c.Spec.ComponentsOverride.Etcd.ClusterSize == nil {
-		c.Spec.ComponentsOverride.Etcd.ClusterSize = h.defaultComponentSettings.Etcd.ClusterSize
-	}
-	if c.Spec.ComponentsOverride.Etcd.Resources == nil {
-		c.Spec.ComponentsOverride.Etcd.Resources = h.defaultComponentSettings.Etcd.Resources
-	}
-	if c.Spec.ComponentsOverride.Etcd.Tolerations == nil {
-		c.Spec.ComponentsOverride.Etcd.Tolerations = h.defaultComponentSettings.Etcd.Tolerations
-	}
-	if c.Spec.ComponentsOverride.Etcd.DiskSize == nil {
-		c.Spec.ComponentsOverride.Etcd.DiskSize = h.defaultComponentSettings.Etcd.DiskSize
-	}
-	if c.Spec.ComponentsOverride.Etcd.StorageClass == "" {
-		c.Spec.ComponentsOverride.Etcd.StorageClass = h.defaultComponentSettings.Etcd.StorageClass
-	}
-	if c.Spec.ComponentsOverride.Prometheus.Resources == nil {
-		c.Spec.ComponentsOverride.Prometheus.Resources = h.defaultComponentSettings.Prometheus.Resources
-	}
-
 	// Always enable external CCM
 	if c.Spec.Cloud.Anexia != nil || c.Spec.Cloud.Kubevirt != nil {
 		c.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] = true
 	}
+
+	return nil
+
 }
 
-func (h *AdmissionHandler) mutateUpdate(ctx context.Context, oldCluster, newCluster *kubermaticv1.Cluster) error {
+func (h *AdmissionHandler) mutateUpdate(oldCluster, newCluster *kubermaticv1.Cluster) error {
 	// This part of the code handles the CCM/CSI migration. It currently works
 	// only for OpenStack clusters, in the following way:
 	//   * Add the CCM/CSI migration annotations
