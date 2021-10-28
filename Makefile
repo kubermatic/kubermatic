@@ -21,6 +21,7 @@ REPO = $(DOCKER_REPO)/kubermatic$(shell [ "$(KUBERMATIC_EDITION)" != "ce" ] && e
 CMD = $(filter-out OWNERS nodeport-proxy kubeletdnat-controller, $(notdir $(wildcard ./cmd/*)))
 GOBUILDFLAGS ?= -v
 GOOS ?= $(shell go env GOOS)
+GOARCH ?= $(shell go env GOARCH)
 TAGS ?= $(shell git describe --tags --always)
 DOCKERTAGS = $(TAGS) latestbuild
 DOCKER_BUILD_FLAG += $(foreach tag, $(DOCKERTAGS), -t $(REPO):$(tag))
@@ -47,7 +48,7 @@ build: $(CMD)
 $(CMD): %: $(BUILD_DEST)/%
 
 $(BUILD_DEST)/%: cmd/% download-gocache
-	GOOS=$(GOOS) go build -tags "$(KUBERMATIC_EDITION)" $(GOTOOLFLAGS) -o $@ ./cmd/$*
+	GOARCH=$(GOARCH) GOOS=$(GOOS) go build -tags "$(KUBERMATIC_EDITION)" $(GOTOOLFLAGS) -o $@ ./cmd/$*
 
 .PHONY: install
 install:
