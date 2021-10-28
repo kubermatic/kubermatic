@@ -46,7 +46,7 @@ export KUBERMATIC_API_ENDPOINT="http://localhost:8080"
 
 # Tell the conformance tester what dummy account we configure for the e2e tests.
 export KUBERMATIC_DEX_VALUES_FILE=$(realpath hack/ci/testdata/oauth_values.yaml)
-export KUBERMATIC_OIDC_LOGIN="roxy@loodse.com"
+export KUBERMATIC_OIDC_LOGIN="roxy@kubermatic.com"
 export KUBERMATIC_OIDC_PASSWORD="password"
 
 # Set docker config
