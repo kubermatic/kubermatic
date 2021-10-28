@@ -17,6 +17,7 @@ presubmits:
   #########################################################
   # unit tests
   #########################################################
+
   - name: pre-kubermatic-test
     run_if_changed: "^(cmd|codegen|hack|pkg)/"
     decorate: true
@@ -37,7 +38,7 @@ presubmits:
         env:
         - name: KUBERMATIC_EDITION
           value: ee
- 
+
   - name: pre-kubermatic-verify
     run_if_changed: "^(cmd|codegen|hack|pkg)/"
     decorate: true
@@ -59,7 +60,7 @@ presubmits:
         env:
         - name: KUBERMATIC_EDITION
           value: ee
-  
+
   - name: pre-kubermatic-verify-charts
     run_if_changed: "^charts/"
     decorate: true
@@ -81,7 +82,7 @@ presubmits:
         env:
         - name: KUBERMATIC_EDITION
           value: ee
-  
+
   - name: pre-kubermatic-verify-shfmt
     run_if_changed: "^hack/"
     decorate: true
@@ -110,7 +111,7 @@ presubmits:
           limits:
             memory: 256Mi
             cpu: 250m
-  
+
   - name: pre-kubermatic-verify-kubermatic-chart
     run_if_changed: "^(cmd|codegen|hack|pkg|charts)/"
     decorate: true
@@ -129,7 +130,7 @@ presubmits:
         env:
         - name: KUBERMATIC_EDITION
           value: ee
-  
+
   - name: pre-kubermatic-verify-grafana-dashboards
     run_if_changed: "^charts/monitoring/grafana/"
     decorate: true
@@ -151,7 +152,7 @@ presubmits:
         env:
         - name: KUBERMATIC_EDITION
           value: ee
-  
+
   - name: pre-kubermatic-verify-docs
     run_if_changed: "^(cmd|codegen|hack|pkg|docs)/"
     decorate: true
@@ -170,7 +171,7 @@ presubmits:
         env:
         - name: KUBERMATIC_EDITION
           value: ee
-  
+
   - name: pre-kubermatic-lint
     run_if_changed: "^(cmd|codegen|hack|pkg)/"
     decorate: true
@@ -191,7 +192,7 @@ presubmits:
         env:
         - name: KUBERMATIC_EDITION
           value: ee
-  
+
   - name: pre-kubermatic-spellcheck
     always_run: true
     decorate: true
@@ -207,7 +208,7 @@ presubmits:
           requests:
             memory: 512Mi
             cpu: 0.5
-  
+
   - name: pre-kubermatic-dependencies
     run_if_changed: "^(cmd/|codegen/|hack/|pkg/|go.mod|go.sum)"
     decorate: true
@@ -228,7 +229,7 @@ presubmits:
         env:
         - name: KUBERMATIC_EDITION
           value: ee
-  
+
   - name: pre-kubermatic-shellcheck
     optional: true
     decorate: true
@@ -250,7 +251,7 @@ presubmits:
         env:
         - name: KUBERMATIC_EDITION
           value: ee
-  
+
   - name: pre-kubermatic-license-validation
     run_if_changed: "^go.(mod|sum)$"
     decorate: true
@@ -266,7 +267,7 @@ presubmits:
           requests:
             memory: 512Mi
             cpu: 1
-  
+
   - name: pre-kubermatic-verify-boilerplate
     always_run: true
     decorate: true
@@ -282,7 +283,7 @@ presubmits:
           requests:
             memory: 256Mi
             cpu: 100m
-  
+
   - name: pre-kubermatic-prometheus-rules-validation
     run_if_changed: "charts/monitoring"
     decorate: true
@@ -297,7 +298,7 @@ presubmits:
         env:
         - name: KUBERMATIC_EDITION
           value: ee
-  
+
   - name: pre-kubermatic-user-cluster-prometheus-config-validation
     run_if_changed: "pkg/resources/prometheus"
     decorate: true
@@ -314,7 +315,7 @@ presubmits:
           value: ee
       imagePullSecrets:
       - name: quay
-  
+
   - name: pre-kubermatic-simulate-github-release
     run_if_changed: "hack/ci/github-release.sh"
     decorate: true
@@ -330,7 +331,7 @@ presubmits:
           requests:
             memory: 3Gi
             cpu: 2
-  
+
   - name: pre-kubermatic-test-helm-charts
     run_if_changed: "charts/"
     decorate: true
@@ -356,7 +357,7 @@ presubmits:
               cpu: 2
             limits:
               memory: 6Gi
-  
+
   - name: pre-kubermatic-test-user-ssh-key-agent-multiarch
     decorate: true
     always_run: false
@@ -382,10 +383,11 @@ presubmits:
           limits:
             memory: 4Gi
             cpu: 3
-  
+
   #########################################################
   # Base Kubernetes Tests (AWS, Flatcar)
   #########################################################
+
   - name: pre-kubermatic-e2e-aws-ubuntu-1.19
     decorate: true
     run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
@@ -426,7 +428,7 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
-  
+
   - name: pre-kubermatic-e2e-aws-ubuntu-1.20
     decorate: true
     run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
@@ -467,7 +469,7 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
-  
+
   - name: pre-kubermatic-e2e-aws-ubuntu-1.21
     decorate: true
     run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
@@ -508,7 +510,7 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
-  
+
   - name: pre-kubermatic-e2e-aws-ubuntu-1.22
     decorate: true
     run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
@@ -549,7 +551,7 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
-  
+
   - name: pre-kubermatic-e2e-aws-ubuntu-1.22-ce
     decorate: true
     run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
@@ -592,10 +594,11 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
-  
+
   #########################################################
   # Extended Kubernetes Tests (various cloud providers, OS)
   #########################################################
+
   - name: pre-kubermatic-e2e-azure-ubuntu-1.22
     decorate: true
     optional: true
@@ -640,7 +643,7 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
-  
+
   - name: pre-kubermatic-e2e-gcp-ubuntu-1.22
     decorate: true
     always_run: false
@@ -684,7 +687,7 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
-  
+
   - name: pre-kubermatic-e2e-gcp-ubuntu-1.22-psp
     decorate: true
     optional: true
@@ -731,7 +734,7 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
-  
+
   - name: pre-kubermatic-e2e-do-centos-1.22
     decorate: true
     always_run: false
@@ -775,7 +778,7 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
-  
+
   - name: pre-kubermatic-e2e-packet-ubuntu-1.22
     decorate: true
     optional: true
@@ -818,7 +821,7 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
-  
+
   - name: pre-kubermatic-e2e-kubevirt-centos-1.22
     decorate: true
     optional: true
@@ -861,7 +864,7 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
-  
+
   - name: pre-kubermatic-e2e-hetzner-ubuntu-1.22
     decorate: true
     optional: true
@@ -906,7 +909,7 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
-  
+
   - name: pre-kubermatic-e2e-openstack-ubuntu-1.22
     decorate: true
     optional: true
@@ -951,7 +954,7 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
-  
+
   - name: pre-kubermatic-e2e-openstack-centos-1.22
     decorate: true
     optional: true
@@ -996,7 +999,7 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
-  
+
   - name: pre-kubermatic-e2e-vsphere-ubuntu-1.21
     decorate: true
     run_if_changed: "pkg/provider/cloud/vsphere"
@@ -1039,7 +1042,7 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
-  
+
   - name: pre-kubermatic-e2e-vsphere-ubuntu-1.21-customfolder
     decorate: true
     optional: true
@@ -1085,7 +1088,7 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
-  
+
   - name: pre-kubermatic-e2e-vsphere-ubuntu-1.21-datastore-cluster
     decorate: true
     optional: true
@@ -1131,10 +1134,11 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
-  
+
   #########################################################
   # REST API e2e tests
   #########################################################
+
   - name: pre-kubermatic-api-e2e
     run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|.prow.yaml)"
     decorate: true
@@ -1175,10 +1179,11 @@ presubmits:
             secretKeyRef:
               name: e2e-ci
               key: serviceAccountSigningKey
-  
+
   #########################################################
   # etcd-launcher e2e tests
   #########################################################
+
   - name: pre-kubermatic-etcd-launcher-e2e
     run_if_changed: "(cmd/etcd-launcher/|pkg/|.prow.yaml)"
     decorate: true
@@ -1214,10 +1219,11 @@ presubmits:
             cpu: 2
           limits:
             memory: 6Gi
-  
+
   #########################################################
   # NodePort Proxy e2e tests
   #########################################################
+
   - name: pre-kubermatic-nodeport-proxy-e2e
     run_if_changed: "(cmd/nodeport-proxy/|pkg/controller/operator/seed/nodeportproxy/|pkg/controller/nodeport-proxy|.prow.yaml)"
     decorate: true
@@ -1241,10 +1247,11 @@ presubmits:
             cpu: 2
           limits:
             memory: 6Gi
-  
+
   #########################################################
   # opa e2e tests
   #########################################################
+
   - name: pre-kubermatic-opa-e2e
     run_if_changed: "(go.mod|go.sum|pkg/|.prow.yaml)"
     decorate: true
@@ -1280,10 +1287,11 @@ presubmits:
               cpu: 2
             limits:
               memory: 6Gi
-  
+
   #########################################################
   # Expose Strategy e2e tests
   #########################################################
+
   - name: pre-kubermatic-expose-strategy-e2e
     run_if_changed: "(cmd/nodeport-proxy/|pkg/|.prow.yaml)"
     decorate: true
@@ -1307,10 +1315,11 @@ presubmits:
             cpu: 2
           limits:
             memory: 6Gi
-  
+
   #########################################################
   # external ccm migration e2e tests
   #########################################################
+
   - name: pre-kubermatic-ccm-migration-e2e
     run_if_changed: "(pkg/|.prow.yaml)"
     decorate: true
@@ -1338,10 +1347,11 @@ presubmits:
               cpu: 3.5
             limits:
               memory: 4Gi
-  
+
   #########################################################
   # misc
   #########################################################
+
   - name: pre-kubermatic-e2e-gcp-offline
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -1366,7 +1376,7 @@ presubmits:
           limits:
             memory: 4Gi
             cpu: 2
-  
+
   - name: pre-kubermatic-test-integration
     run_if_changed: "^(cmd|codegen|hack|pkg)/"
     decorate: true
@@ -1395,6 +1405,7 @@ presubmits:
   #########################################################
   # User cluster MLA e2e tests
   #########################################################
+
   - name: pre-kubermatic-mla-e2e
     run_if_changed: "(go.mod|go.sum|pkg/|.prow.yaml)"
     decorate: true
