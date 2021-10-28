@@ -33,7 +33,7 @@ import (
 )
 
 func getOrgByProject(ctx context.Context, grafanaClient *grafanasdk.Client, project *kubermaticv1.Project) (grafanasdk.Org, error) {
-	orgID, ok := project.GetAnnotations()[grafanaOrgAnnotationKey]
+	orgID, ok := project.GetAnnotations()[GrafanaOrgAnnotationKey]
 	if !ok {
 		return grafanasdk.Org{}, fmt.Errorf("project should have grafana org annotation set")
 	}

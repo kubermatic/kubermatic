@@ -176,7 +176,7 @@ func (r *dashboardGrafanaController) handleDeletion(ctx context.Context, log *za
 		return fmt.Errorf("failed to list Projects: %w", err)
 	}
 	for _, project := range projectList.Items {
-		orgID, ok := project.GetAnnotations()[grafanaOrgAnnotationKey]
+		orgID, ok := project.GetAnnotations()[GrafanaOrgAnnotationKey]
 		if !ok {
 			// looks like corresponding Grafana Org already remove, so we can skip this project
 			log.Debugf("project %+v doesn't have grafana org annotation, skipping", project)
@@ -206,7 +206,7 @@ func (r *dashboardGrafanaController) ensureDashboards(ctx context.Context, log *
 		return fmt.Errorf("failed to list Projects: %w", err)
 	}
 	for _, project := range projectList.Items {
-		orgID, ok := project.GetAnnotations()[grafanaOrgAnnotationKey]
+		orgID, ok := project.GetAnnotations()[GrafanaOrgAnnotationKey]
 		if !ok {
 			// looks like this project doesn't have corresponding Grafana Organization yet,
 			// we can skip it for now and it will be reconciled by org_grafana_controller later

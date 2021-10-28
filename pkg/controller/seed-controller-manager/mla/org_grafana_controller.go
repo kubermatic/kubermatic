@@ -42,7 +42,7 @@ import (
 )
 
 const (
-	grafanaOrgAnnotationKey = "mla.k8c.io/organization"
+	GrafanaOrgAnnotationKey = "mla.k8c.io/organization"
 )
 
 // orgGrafanaReconciler stores necessary components that are required to manage MLA(Monitoring, Logging, and Alerting) setup.
@@ -119,7 +119,7 @@ func (r *orgGrafanaReconciler) Reconcile(ctx context.Context, request reconcile.
 	org := grafanasdk.Org{
 		Name: getOrgNameForProject(project),
 	}
-	orgID, err := r.orgGrafanaController.ensureOrganization(ctx, log, project, org, grafanaOrgAnnotationKey)
+	orgID, err := r.orgGrafanaController.ensureOrganization(ctx, log, project, org, GrafanaOrgAnnotationKey)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to ensure Grafana Organization: %w", err)
 	}
@@ -169,10 +169,10 @@ func (r *orgGrafanaController) cleanUp(ctx context.Context) error {
 
 func (r *orgGrafanaController) handleDeletion(ctx context.Context, project *kubermaticv1.Project) error {
 	update := false
-	orgID, ok := project.GetAnnotations()[grafanaOrgAnnotationKey]
+	orgID, ok := project.GetAnnotations()[GrafanaOrgAnnotationKey]
 	if ok {
 		update = true
-		delete(project.Annotations, grafanaOrgAnnotationKey)
+		delete(project.Annotations, GrafanaOrgAnnotationKey)
 		id, err := strconv.ParseUint(orgID, 10, 32)
 		if err != nil {
 			return err
