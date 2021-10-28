@@ -17,7 +17,6 @@ presubmits:
   #########################################################
   # unit tests
   #########################################################
-  
   - name: pre-kubermatic-test
     run_if_changed: "^(cmd|codegen|hack|pkg)/"
     decorate: true
@@ -387,7 +386,6 @@ presubmits:
   #########################################################
   # Base Kubernetes Tests (AWS, Flatcar)
   #########################################################
-  
   - name: pre-kubermatic-e2e-aws-ubuntu-1.19
     decorate: true
     run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
@@ -598,7 +596,6 @@ presubmits:
   #########################################################
   # Extended Kubernetes Tests (various cloud providers, OS)
   #########################################################
-  
   - name: pre-kubermatic-e2e-azure-ubuntu-1.22
     decorate: true
     optional: true
@@ -1138,7 +1135,6 @@ presubmits:
   #########################################################
   # REST API e2e tests
   #########################################################
-  
   - name: pre-kubermatic-api-e2e
     run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|.prow.yaml)"
     decorate: true
@@ -1183,7 +1179,6 @@ presubmits:
   #########################################################
   # etcd-launcher e2e tests
   #########################################################
-  
   - name: pre-kubermatic-etcd-launcher-e2e
     run_if_changed: "(cmd/etcd-launcher/|pkg/|.prow.yaml)"
     decorate: true
@@ -1223,7 +1218,6 @@ presubmits:
   #########################################################
   # NodePort Proxy e2e tests
   #########################################################
-  
   - name: pre-kubermatic-nodeport-proxy-e2e
     run_if_changed: "(cmd/nodeport-proxy/|pkg/controller/operator/seed/nodeportproxy/|pkg/controller/nodeport-proxy|.prow.yaml)"
     decorate: true
@@ -1251,7 +1245,6 @@ presubmits:
   #########################################################
   # opa e2e tests
   #########################################################
-  
   - name: pre-kubermatic-opa-e2e
     run_if_changed: "(go.mod|go.sum|pkg/|.prow.yaml)"
     decorate: true
@@ -1291,7 +1284,6 @@ presubmits:
   #########################################################
   # Expose Strategy e2e tests
   #########################################################
-  
   - name: pre-kubermatic-expose-strategy-e2e
     run_if_changed: "(cmd/nodeport-proxy/|pkg/|.prow.yaml)"
     decorate: true
@@ -1319,7 +1311,6 @@ presubmits:
   #########################################################
   # external ccm migration e2e tests
   #########################################################
-  
   - name: pre-kubermatic-ccm-migration-e2e
     run_if_changed: "(pkg/|.prow.yaml)"
     decorate: true
@@ -1351,7 +1342,6 @@ presubmits:
   #########################################################
   # misc
   #########################################################
-  
   - name: pre-kubermatic-e2e-gcp-offline
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -1405,7 +1395,6 @@ presubmits:
   #########################################################
   # User cluster MLA e2e tests
   #########################################################
-
   - name: pre-kubermatic-mla-e2e
     run_if_changed: "(go.mod|go.sum|pkg/|.prow.yaml)"
     decorate: true
