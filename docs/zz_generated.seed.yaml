@@ -215,7 +215,11 @@ spec:
             rhel: ""
             sles: ""
             ubuntu: ""
+  # DefaultClusterTemplate is the name of a cluster template of scope "seed" that is used
+  # to default all new created clusters
+  defaultClusterTemplate: ""
   # DefaultComponentSettings are default values to set for newly created clusters.
+  # Deprecated: Use DefaultClusterTemplate instead.
   defaultComponentSettings:
     apiserver:
       endpointReconcilingDisabled: null
