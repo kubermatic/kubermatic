@@ -14,13 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -o nounset
-set -o errexit
+set -euo pipefail
 
-### README
-# Symlink this script to a directory called "test" in the root directory of a chart
-# test fixtures end with .yaml, results end with .yaml.out
-# Script exits with 1 if the output of rendering is different than what is stored the .yaml.out file
+### Used for "golden master" testing.
+### Symlink this script to a directory called "test" in the root directory of a chart.
+### Prepared test fixtures should end with .yaml, results will end with .yaml.out.
+### Script exits with 1 if the output of rendering is different than what is stored the .yaml.out file
 
 # root directory of a chart
 BASEDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/.."

@@ -14,11 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-### README
-# This script fetches dependencies for a chart, based on the lock file
+### This script fetches dependencies for a chart, based on the lock file
+### contained within the charts' directory. The script iterates over all charts.
 
-set -o nounset
-set -o errexit
+set -euo pipefail
 
 BASEDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../.."
 REALDIR="$(cd "$(dirname $(readlink -f "${BASH_SOURCE[0]}"))" && pwd)"
