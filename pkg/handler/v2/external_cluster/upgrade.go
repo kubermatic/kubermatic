@@ -68,6 +68,6 @@ func GetUpgradesEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider
 			return providercommon.ListGKEUpgrades(ctx, sa, cloud.GKE.Zone)
 		}
 
-		return nil, fmt.Errorf("wrong cloud structure")
+		return nil, fmt.Errorf("can not find any upgrades for the given cloud provider")
 	}
 }
