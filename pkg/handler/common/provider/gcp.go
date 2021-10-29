@@ -35,6 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -374,4 +375,35 @@ func ListGKEClusters(ctx context.Context, sa string) (apiv2.GKEClusterList, erro
 		clusters = append(clusters, apiv2.GKECluster{Name: f.Name, Zone: f.Zone})
 	}
 	return clusters, nil
+}
+
+func ListGKEUpgrades(ctx context.Context, sa, zone string) ([]*apiv1.MasterVersion, error) {
+	upgrades := make([]*apiv1.MasterVersion, 0)
+	svc, project, err := gcp.ConnectToContainerService(sa)
+	if err != nil {
+		return nil, err
+	}
+	req := svc.Projects.Zones.GetServerconfig(project, zone)
+	resp, err := req.Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+	upgradesMap := map[string]bool{}
+	for _, channel := range resp.Channels {
+		for _, v := range channel.ValidVersions {
+			upgradesMap[v] = v == channel.DefaultVersion
+		}
+	}
+	for version, isDefault := range upgradesMap {
+		v, err := ksemver.NewSemver(version)
+		if err != nil {
+			return nil, err
+		}
+		upgrades = append(upgrades, &apiv1.MasterVersion{
+			Version: v.Semver(),
+			Default: isDefault,
+		})
+	}
+
+	return upgrades, nil
 }
