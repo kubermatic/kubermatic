@@ -841,6 +841,7 @@ spec:
                     enum:
                     - canal
                     - cilium
+                    - none
                     type: string
                   version:
                     type: string
