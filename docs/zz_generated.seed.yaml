@@ -58,6 +58,7 @@ spec:
           # when machines are created, so under normal circumstances it is not necessary
           # to define the AMIs statically.
           images:
+            amzn2: ""
             centos: ""
             flatcar: ""
             rhel: ""
@@ -139,6 +140,7 @@ spec:
           ignore_volume_az: false
           # Images to use for each supported operating system.
           images:
+            amzn2: ""
             centos: ""
             flatcar: ""
             rhel: ""
@@ -207,6 +209,7 @@ spec:
           # define at least one template.
           # See: https://github.com/kubermatic/machine-controller/blob/master/docs/vsphere.md#template-vms-preparation
           templates:
+            amzn2: ""
             centos: ""
             flatcar: ""
             rhel: ""
