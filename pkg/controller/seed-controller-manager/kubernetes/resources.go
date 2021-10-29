@@ -202,7 +202,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 	}
 
 	// Enable by default if not explicit set to false or feature is not enabled
-	konnectivityEnabled := r.features.Konnectivity && (cluster.Spec.ClusterNetwork.KonnectivityEnabled == nil || !*cluster.Spec.ClusterNetwork.KonnectivityEnabled)
+	konnectivityEnabled := r.features.Konnectivity && cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled
 
 	return resources.NewTemplateDataBuilder().
 		WithContext(ctx).
