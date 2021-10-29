@@ -844,6 +844,12 @@ type PrivilegedExternalClusterProvider interface {
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to update the resources
 	UpdateUnsecured(cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error)
+
+	// GetMasterClient returns master client
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to update the resources
+	GetMasterClient() ctrlruntimeclient.Client
 }
 
 // ConstraintTemplateProvider declares the set of method for interacting with gatekeeper's constraint templates
