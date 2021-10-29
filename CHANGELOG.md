@@ -1,5 +1,23 @@
 # Kubermatic 2.18
 
+## [v2.18.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.2)
+
+### Bugfixes
+
+- Fix a bug where `$$` in the environment-variables for machine-controller was interpreted in the Kubernetes Manifest and caused machine-controller to be unable to deploy resources, when for e.g. the password contains two consecutive `$` signs ([#7984](https://github.com/kubermatic/kubermatic/issues/7984))
+- Fix issue with EtcdBackupConfigs from multiple clusters having the same ID, which was causing a bug in the UI ([#7896](https://github.com/kubermatic/kubermatic/issues/7896))
+- Fix nginx-ingress Role to allow update of leader ConfigMap ([#7942](https://github.com/kubermatic/kubermatic/issues/7942))
+- Fix seed-proxy forbidding all traffic, breaking Karma dashboards ([#8016](https://github.com/kubermatic/kubermatic/issues/8016))
+
+### Misc
+
+- Add configurable `root_url` option for Grafana Helm chart ([#7930](https://github.com/kubermatic/kubermatic/issues/7930))
+- Update machine controller to 1.36.1 ([#8099](https://github.com/kubermatic/kubermatic/issues/8099))
+- Usercluster etcd services now use `spec.publishNotReadyAddresses` instead of the `service.alpha.kubernetes.io/tolerate-unready-endpoints` annotation (deprecated in Kubernetes v1.11) to ensure compatibility with `EndpointSlice` consumers ([#7968](https://github.com/kubermatic/kubermatic/issues/7968))
+
+
+
+
 ## [v2.18.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.1)
 
 This release primarily improves support for Kubernetes 1.22 master/seed clusters.
