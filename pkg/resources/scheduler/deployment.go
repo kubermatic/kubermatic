@@ -65,6 +65,8 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 				"--client-ca-file", "/etc/kubernetes/pki/ca/ca.crt",
 				// We're going to use the https endpoints for scraping the metrics starting from 1.13. Thus we can deactivate the http endpoint
 				"--port", "0",
+				// this can't be passed as two strings as the other parameters
+				"--profiling=false",
 			}
 
 			// Apply leader election settings

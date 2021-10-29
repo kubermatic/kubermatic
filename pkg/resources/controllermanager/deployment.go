@@ -219,6 +219,8 @@ func getFlags(data *resources.TemplateData) ([]string, error) {
 		"--allocate-node-cidrs",
 		"--controllers", strings.Join(controllers, ","),
 		"--use-service-account-credentials",
+		// this can't be passed as two strings as the other parameters
+		"--profiling=false",
 	}
 
 	featureGates := []string{"RotateKubeletServerCertificate=true"}
