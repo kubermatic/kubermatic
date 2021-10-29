@@ -64,6 +64,7 @@ type Routing struct {
 	prometheusClient                      prometheusapi.Client
 	projectMemberProvider                 provider.ProjectMemberProvider
 	privilegedProjectMemberProvider       provider.PrivilegedProjectMemberProvider
+	featureGatesProvider                  provider.FeatureGatesProvider
 	userProjectMapper                     provider.ProjectMemberMapper
 	saTokenAuthenticator                  serviceaccount.TokenAuthenticator
 	saTokenGenerator                      serviceaccount.TokenGenerator
@@ -106,6 +107,7 @@ func NewRouting(routingParams RoutingParams, masterClient client.Client) Routing
 		prometheusClient:                      routingParams.PrometheusClient,
 		projectMemberProvider:                 routingParams.ProjectMemberProvider,
 		privilegedProjectMemberProvider:       routingParams.PrivilegedProjectMemberProvider,
+		featureGatesProvider:                  routingParams.FeatureGatesProvider,
 		userProjectMapper:                     routingParams.UserProjectMapper,
 		saTokenAuthenticator:                  routingParams.SATokenAuthenticator,
 		saTokenGenerator:                      routingParams.SATokenGenerator,
@@ -167,6 +169,7 @@ type RoutingParams struct {
 	UserWatcher                             watcher.UserWatcher
 	ExternalClusterProvider                 provider.ExternalClusterProvider
 	PrivilegedExternalClusterProvider       provider.PrivilegedExternalClusterProvider
+	FeatureGatesProvider                    provider.FeatureGatesProvider //TODO: which package?
 	DefaultConstraintProvider               provider.DefaultConstraintProvider
 	ConstraintTemplateProvider              provider.ConstraintTemplateProvider
 	ConstraintProviderGetter                provider.ConstraintProviderGetter

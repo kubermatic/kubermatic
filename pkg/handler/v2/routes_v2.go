@@ -17,6 +17,7 @@ limitations under the License.
 package v2
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -57,6 +58,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/providers/gke/clusters").
 		Handler(r.listGKEClusters())
+
+	mux.Methods(http.MethodGet).
+		Path("/featuregates").
+		Handler(r.getFeatureGates())
 
 	// Defines a set of HTTP endpoints for cluster that belong to a project.
 	mux.Methods(http.MethodPost).
@@ -4696,6 +4701,27 @@ func (r Routing) listGKEClusters() http.Handler {
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
+}
+
+func (r Routing) getFeatureGates() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(func(ctx context.Context, request interface{}) (interface{}, error) {
+			return r.featureGatesProvider.GetFeatureGates()
+		}),
+		func (c context.Context, r *http.Request) (interface{}, error) {
+			return r, nil
+        },
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+
+	//return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	//	w.WriteHeader(http.StatusOK)
+    //    w.Write([]byte("foo"))
+	//})
 }
 
 // swagger:route GET /api/v2/providers/eks/clusters eks listEKSClusters

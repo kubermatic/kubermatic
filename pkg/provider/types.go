@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"k8c.io/kubermatic/v2/pkg/features"
 	"strings"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
@@ -1223,6 +1224,11 @@ type PrivilegedEtcdRestoreProjectProvider interface {
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to list the resources
 	ListUnsecured(projectID string) ([]*kubermaticv1.EtcdRestoreList, error)
+}
+
+// FeatureGatesProvider declares the set of method for getting currently subset of provided feature gates.
+type FeatureGatesProvider interface {
+	GetFeatureGates() (features.FeatureGate, error)
 }
 
 // BackupCredentialsProvider declares the set of method for interacting with etcd backup credentials using a privileged client
