@@ -17,23 +17,29 @@ limitations under the License.
 package aws
 
 import (
+	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
+	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/iam"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
 	httperror "k8c.io/kubermatic/v2/pkg/util/errors"
 
+	"k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/klog"
+	"sigs.k8s.io/aws-iam-authenticator/pkg/token"
 )
 
 const (
@@ -579,7 +585,7 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 		if cloud.AWS.CredentialsReference == nil {
 			return "", "", errors.New("no credentials provided")
 		}
-		accessKeyID, err = secretKeySelector(cloud.AWS.CredentialsReference, resources.AWSAccessKeyID)
+		accessKeyID, err = secretKeySelector(cloud.AWS.CredentialsReference, kubermaticresources.AWSAccessKeyID)
 		if err != nil {
 			return "", "", err
 		}
@@ -589,7 +595,7 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 		if cloud.AWS.CredentialsReference == nil {
 			return "", "", errors.New("no credentials provided")
 		}
-		secretAccessKey, err = secretKeySelector(cloud.AWS.CredentialsReference, resources.AWSSecretAccessKey)
+		secretAccessKey, err = secretKeySelector(cloud.AWS.CredentialsReference, kubermaticresources.AWSSecretAccessKey)
 		if err != nil {
 			return "", "", err
 		}
@@ -765,4 +771,84 @@ func GetSecurityGroups(accessKeyID, secretAccessKey, region string) ([]*ec2.Secu
 	}
 
 	return sgOut.SecurityGroups, nil
+}
+
+func GetEKSCLusterConfig(ctx context.Context, accessKeyID, secretAccessKey, clusterName, region string) (*api.Config, error) {
+	sess, err := getAWSSession(accessKeyID, secretAccessKey, region)
+	if err != nil {
+		return nil, err
+	}
+	eksSvc := eks.New(sess)
+
+	clusterInput := &eks.DescribeClusterInput{
+		Name: aws.String(clusterName),
+	}
+	clusterOutput, err := eksSvc.DescribeCluster(clusterInput)
+	if err != nil {
+		return nil, fmt.Errorf("error calling DescribeCluster: %v", err)
+	}
+
+	cluster := clusterOutput.Cluster
+	eksclusterName := cluster.Name
+
+	config := api.Config{
+		APIVersion: "v1",
+		Kind:       "Config",
+		Clusters:   map[string]*api.Cluster{},  // Clusters is a map of referencable names to cluster configs
+		AuthInfos:  map[string]*api.AuthInfo{}, // AuthInfos is a map of referencable names to user configs
+		Contexts:   map[string]*api.Context{},  // Contexts is a map of referencable names to context configs
+	}
+
+	gen, err := token.NewGenerator(true, false)
+	if err != nil {
+		return nil, err
+	}
+
+	opts := &token.GetTokenOptions{
+		ClusterID: *eksclusterName,
+		Session:   sess,
+	}
+	token, err := gen.GetWithOptions(opts)
+	if err != nil {
+		return nil, err
+	}
+
+	// example: eks_eu-central-1_cluster-1 => https://XX.XX.XX.XX
+	name := fmt.Sprintf("eks_%s_%s", region, *eksclusterName)
+
+	cert, err := base64.StdEncoding.DecodeString(aws.StringValue(cluster.CertificateAuthority.Data))
+	if err != nil {
+		return nil, err
+	}
+
+	config.Clusters[name] = &api.Cluster{
+		CertificateAuthorityData: cert,
+		Server:                   *cluster.Endpoint,
+	}
+	config.CurrentContext = name
+
+	// Just reuse the context name as an auth name.
+	config.Contexts[name] = &api.Context{
+		Cluster:  name,
+		AuthInfo: name,
+	}
+	// AWS specific configation; use cloud platform scope.
+	config.AuthInfos[name] = &api.AuthInfo{
+		Token: token.Token,
+	}
+	return &config, nil
+}
+
+func getAWSSession(accessKeyID, secretAccessKey, region string) (*session.Session, error) {
+	config := aws.NewConfig()
+	config = config.WithRegion(region)
+	config = config.WithCredentials(credentials.NewStaticCredentials(accessKeyID, secretAccessKey, ""))
+	config = config.WithMaxRetries(3)
+
+	sess, err := session.NewSession(config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create API session: %v", err)
+	}
+
+	return sess, nil
 }
