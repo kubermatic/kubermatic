@@ -197,6 +197,11 @@ func main() {
 				ImportAlias:        "networkingv1",
 				ResourceImportPath: "k8s.io/api/networking/v1",
 			},
+			{
+				ResourceName:     "RuleGroup",
+				ImportAlias:      "kubermaticv1",
+				APIVersionPrefix: "KubermaticV1",
+			},
 		},
 	}
 
