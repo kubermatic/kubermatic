@@ -452,3 +452,7 @@ func (p *ExternalClusterProvider) CreateOrUpdateCredentialSecretForCluster(ctx c
 
 	return nil, fmt.Errorf("can't create credential secret for unsupported provider")
 }
+
+func (p *ExternalClusterProvider) GetMasterClient() ctrlruntimeclient.Client {
+	return p.clientPrivileged
+}
