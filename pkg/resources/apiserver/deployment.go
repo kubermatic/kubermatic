@@ -323,6 +323,8 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"--requestheader-extra-headers-prefix", "X-Remote-Extra-",
 		"--requestheader-group-headers", "X-Remote-Group",
 		"--requestheader-username-headers", "X-Remote-User",
+		// this can't be passed as two strings as the other parameters
+		"--profiling=false",
 	}
 
 	if cluster.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
