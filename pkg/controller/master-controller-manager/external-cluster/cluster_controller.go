@@ -132,8 +132,8 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Extern
 			r.log.Errorf("failed to create or update kubeconfig secret %v", err)
 			return reconcile.Result{}, err
 		}
-		// the kubeconfig token is valid 1h, it will update token every 30min
-		return reconcile.Result{RequeueAfter: time.Minute * 30}, nil
+		// the kubeconfig token is valid 14min, it will update token every 10min
+		return reconcile.Result{RequeueAfter: time.Minute * 10}, nil
 	}
 	return reconcile.Result{}, nil
 }
@@ -309,19 +309,19 @@ func (r *Reconciler) updateKubeconfigSecret(ctx context.Context, config *api.Con
 		return fmt.Errorf("failed to probe for secret %v: %v", namespacedName, err)
 	}
 
+	secretData := map[string][]byte{
+		resources.ExternalClusterKubeconfig: []byte(base64.StdEncoding.EncodeToString(kubeconfig)),
+	}
+
 	// update if already exists
 	if existingSecret.Name != "" {
-		existingSecret.Data = map[string][]byte{
-			resources.ExternalClusterKubeconfig: []byte(base64.StdEncoding.EncodeToString(kubeconfig)),
-		}
+		existingSecret.Data = secretData
 		r.log.Debugf("update kubeconfig for cluster %s", cluster.Name)
 
 		return r.Update(ctx, existingSecret)
 	}
 
-	keyRef, err := createKubeconfigSecret(ctx, r.Client, kubeconfigSecretName, projectID, map[string][]byte{
-		resources.ExternalClusterKubeconfig: []byte(base64.StdEncoding.EncodeToString(kubeconfig)),
-	})
+	keyRef, err := createKubeconfigSecret(ctx, r.Client, kubeconfigSecretName, projectID, secretData)
 	if err != nil {
 		return err
 	}
