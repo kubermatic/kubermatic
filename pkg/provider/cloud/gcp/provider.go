@@ -31,6 +31,7 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/compute/v1"
+	"google.golang.org/api/container/v1"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 
@@ -39,14 +40,17 @@ import (
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+
+	"k8s.io/client-go/tools/clientcmd/api"
 )
 
 const (
-	DefaultNetwork               = "global/networks/default"
-	computeAPIEndpoint           = "https://www.googleapis.com/compute/v1/"
-	firewallSelfCleanupFinalizer = "kubermatic.io/cleanup-gcp-firewall-self"
-	firewallICMPCleanupFinalizer = "kubermatic.io/cleanup-gcp-firewall-icmp"
-	routesCleanupFinalizer       = "kubermatic.io/cleanup-gcp-routes"
+	DefaultNetwork                   = "global/networks/default"
+	computeAPIEndpoint               = "https://www.googleapis.com/compute/v1/"
+	firewallSelfCleanupFinalizer     = "kubermatic.io/cleanup-gcp-firewall-self"
+	firewallICMPCleanupFinalizer     = "kubermatic.io/cleanup-gcp-firewall-icmp"
+	firewallNodePortCleanupFinalizer = "kubermatic.io/cleanup-gcp-firewall-nodeport"
+	routesCleanupFinalizer           = "kubermatic.io/cleanup-gcp-routes"
 
 	k8sNodeRouteTag          = "k8s-node-route"
 	k8sNodeRoutePrefixRegexp = "kubernetes-.*"
@@ -128,6 +132,7 @@ func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provide
 
 	selfRuleName := fmt.Sprintf("firewall-%s-self", cluster.Name)
 	icmpRuleName := fmt.Sprintf("firewall-%s-icmp", cluster.Name)
+	nodePortRuleName := fmt.Sprintf("firewall-%s-nodeport", cluster.Name)
 
 	if kuberneteshelper.HasFinalizer(cluster, firewallSelfCleanupFinalizer) {
 		_, err = firewallService.Delete(projectID, selfRuleName).Do()
@@ -148,7 +153,7 @@ func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provide
 		_, err = firewallService.Delete(projectID, icmpRuleName).Do()
 		// we ignore a Google API "not found" error
 		if err != nil && !isHTTPError(err, http.StatusNotFound) {
-			return nil, fmt.Errorf("failed to delete firewall rule %s: %v", selfRuleName, err)
+			return nil, fmt.Errorf("failed to delete firewall rule %s: %v", icmpRuleName, err)
 		}
 
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
@@ -156,6 +161,22 @@ func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provide
 		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to remove %s finalizer: %v", firewallICMPCleanupFinalizer, err)
+		}
+	}
+
+	// remove the nodeport firewall rule
+	if kuberneteshelper.HasFinalizer(cluster, firewallNodePortCleanupFinalizer) {
+		_, err = firewallService.Delete(projectID, nodePortRuleName).Do()
+		// we ignore a Google API "not found" error
+		if err != nil && !isHTTPError(err, http.StatusNotFound) {
+			return nil, fmt.Errorf("failed to delete firewall rule %s: %v", nodePortRuleName, err)
+		}
+
+		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			kuberneteshelper.RemoveFinalizer(cluster, firewallNodePortCleanupFinalizer)
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to remove %s finalizer: %v", firewallNodePortCleanupFinalizer, err)
 		}
 	}
 
@@ -176,6 +197,96 @@ func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provide
 
 // ConnectToComputeService establishes a service connection to the Compute Engine.
 func ConnectToComputeService(serviceAccount string) (*compute.Service, string, error) {
+	ctx := context.Background()
+	client, projectID, err := createClient(ctx, serviceAccount, compute.ComputeScope)
+	if err != nil {
+		return nil, "", fmt.Errorf("cannot create Google Cloud client: %v", err)
+	}
+	svc, err := compute.NewService(ctx, option.WithHTTPClient(client))
+	if err != nil {
+		return nil, "", fmt.Errorf("cannot connect to Google Cloud: %v", err)
+	}
+	return svc, projectID, nil
+}
+
+// ConnectToContainerService establishes a service connection to the Container Engine.
+func ConnectToContainerService(serviceAccount string) (*container.Service, string, error) {
+	ctx := context.Background()
+	client, projectID, err := createClient(ctx, serviceAccount, container.CloudPlatformScope)
+	if err != nil {
+		return nil, "", fmt.Errorf("cannot create Google Cloud client: %v", err)
+	}
+	svc, err := container.NewService(ctx, option.WithHTTPClient(client))
+	if err != nil {
+		return nil, "", fmt.Errorf("cannot connect to Google Cloud: %v", err)
+	}
+	return svc, projectID, nil
+}
+
+func getCredentials(serviceAccount string) (*google.Credentials, error) {
+	ctx := context.Background()
+	b, err := base64.StdEncoding.DecodeString(serviceAccount)
+	if err != nil {
+		return nil, fmt.Errorf("error decoding service account: %v", err)
+	}
+	sam := map[string]string{}
+	err = json.Unmarshal(b, &sam)
+	if err != nil {
+		return nil, fmt.Errorf("failed unmarshaling service account: %v", err)
+	}
+	return google.CredentialsFromJSON(ctx, b, container.CloudPlatformScope)
+}
+
+func GetGKECLusterConfig(ctx context.Context, sa, clusterName, zone string) (*api.Config, error) {
+	svc, project, err := ConnectToContainerService(sa)
+	if err != nil {
+		return nil, err
+	}
+	req := svc.Projects.Zones.Clusters.Get(project, zone, clusterName)
+	resp, err := req.Context(ctx).Do()
+	if err != nil {
+		return nil, fmt.Errorf("get cluster for project=%s: %w", project, err)
+	}
+	config := api.Config{
+		APIVersion: "v1",
+		Kind:       "Config",
+		Clusters:   map[string]*api.Cluster{},  // Clusters is a map of referencable names to cluster configs
+		AuthInfos:  map[string]*api.AuthInfo{}, // AuthInfos is a map of referencable names to user configs
+		Contexts:   map[string]*api.Context{},  // Contexts is a map of referencable names to context configs
+	}
+
+	cred, err := getCredentials(sa)
+	if err != nil {
+		return nil, fmt.Errorf("can't get credentials %w", err)
+	}
+	token, err := cred.TokenSource.Token()
+	if err != nil {
+		return nil, fmt.Errorf("can't get token %w", err)
+	}
+	name := fmt.Sprintf("gke_%s_%s_%s", project, resp.Zone, resp.Name)
+	cert, err := base64.StdEncoding.DecodeString(resp.MasterAuth.ClusterCaCertificate)
+	if err != nil {
+		return nil, fmt.Errorf("invalid certificate cluster=%s cert=%s: %w", name, resp.MasterAuth.ClusterCaCertificate, err)
+	}
+	// example: gke_my-project_us-central1-b_cluster-1 => https://XX.XX.XX.XX
+	config.Clusters[name] = &api.Cluster{
+		CertificateAuthorityData: cert,
+		Server:                   "https://" + resp.Endpoint,
+	}
+	config.CurrentContext = name
+	// Just reuse the context name as an auth name.
+	config.Contexts[name] = &api.Context{
+		Cluster:  name,
+		AuthInfo: name,
+	}
+	// GCP specific configation; use cloud platform scope.
+	config.AuthInfos[name] = &api.AuthInfo{
+		Token: token.AccessToken,
+	}
+	return &config, nil
+}
+
+func createClient(ctx context.Context, serviceAccount string, scope string) (*http.Client, string, error) {
 	b, err := base64.StdEncoding.DecodeString(serviceAccount)
 	if err != nil {
 		return nil, "", fmt.Errorf("error decoding service account: %v", err)
@@ -190,17 +301,14 @@ func ConnectToComputeService(serviceAccount string) (*compute.Service, string, e
 	if projectID == "" {
 		return nil, "", errors.New("empty project_id")
 	}
-	conf, err := google.JWTConfigFromJSON(b, compute.ComputeScope)
+	conf, err := google.JWTConfigFromJSON(b, scope)
 	if err != nil {
 		return nil, "", err
 	}
-	ctx := context.Background()
+
 	client := conf.Client(ctx)
-	svc, err := compute.NewService(ctx, option.WithHTTPClient(client))
-	if err != nil {
-		return nil, "", fmt.Errorf("cannot connect to Google Cloud: %v", err)
-	}
-	return svc, projectID, nil
+
+	return client, projectID, nil
 }
 
 func (g *gcp) ensureFirewallRules(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) error {
@@ -214,10 +322,18 @@ func (g *gcp) ensureFirewallRules(cluster *kubermaticv1.Cluster, update provider
 		return err
 	}
 
+	// Retrieve nodePort range from cluster
+	nodePortRangeLow, nodePortRangeHigh := resources.NewTemplateDataBuilder().
+		WithNodePortRange(cluster.Spec.ComponentsOverride.Apiserver.NodePortRange).
+		WithCluster(cluster).
+		Build().
+		NodePorts()
+
 	firewallService := compute.NewFirewallsService(svc)
 	tag := fmt.Sprintf("kubernetes-cluster-%s", cluster.Name)
 	selfRuleName := fmt.Sprintf("firewall-%s-self", cluster.Name)
 	icmpRuleName := fmt.Sprintf("firewall-%s-icmp", cluster.Name)
+	nodePortRuleName := fmt.Sprintf("firewall-%s-nodeport", cluster.Name)
 
 	// allow traffic within the same cluster
 	if !kuberneteshelper.HasFinalizer(cluster, firewallSelfCleanupFinalizer) {
@@ -285,6 +401,37 @@ func (g *gcp) ensureFirewallRules(cluster *kubermaticv1.Cluster, update provider
 		})
 		if err != nil {
 			return fmt.Errorf("failed to add %s finalizer: %v", firewallICMPCleanupFinalizer, err)
+		}
+		*cluster = *newCluster
+	}
+
+	// open nodePorts for TCP and UDP
+	if !kuberneteshelper.HasFinalizer(cluster, firewallNodePortCleanupFinalizer) {
+		_, err = firewallService.Insert(projectID, &compute.Firewall{
+			Name:    nodePortRuleName,
+			Network: cluster.Spec.Cloud.GCP.Network,
+			Allowed: []*compute.FirewallAllowed{
+				{
+					IPProtocol: "tcp",
+					Ports:      []string{fmt.Sprintf("%d-%d", nodePortRangeLow, nodePortRangeHigh)},
+				},
+				{
+					IPProtocol: "udp",
+					Ports:      []string{fmt.Sprintf("%d-%d", nodePortRangeLow, nodePortRangeHigh)},
+				},
+			},
+			TargetTags: []string{tag},
+		}).Do()
+		// we ignore a Google API "already exists" error
+		if err != nil && !isHTTPError(err, http.StatusConflict) {
+			return fmt.Errorf("failed to create firewall rule %s: %v", nodePortRuleName, err)
+		}
+
+		newCluster, err := update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			kuberneteshelper.AddFinalizer(cluster, firewallNodePortCleanupFinalizer)
+		})
+		if err != nil {
+			return fmt.Errorf("failed to add %s finalizer: %v", firewallNodePortCleanupFinalizer, err)
 		}
 		*cluster = *newCluster
 	}

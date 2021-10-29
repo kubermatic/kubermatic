@@ -23,29 +23,27 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
-// SeedDatacenterList is the type representing a SeedDatacenterList
+// SeedList is the type representing a SeedList
 type SeedList struct {
 	metav1.TypeMeta `json:",inline"`
-	// Standard list metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
-	// +optional
-	metav1.ListMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+	metav1.ListMeta `json:"metadata,omitempty"`
 
 	// List of seeds
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md
-	Items []Seed `json:"items" protobuf:"bytes,2,rep,name=items"`
+	Items []Seed `json:"items"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
-// Seed is the type representing a SeedDatacenter
+// Seed is the type representing a Seed
 type Seed struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec SeedSpec `json:"spec"`
+	Spec SeedSpec `json:"spec,omitempty"`
 }
 
 func (s *Seed) SetDefaults() {
@@ -94,13 +92,15 @@ type SeedSpec struct {
 	// DefaultComponentSettings are default values to set for newly created clusters.
 	DefaultComponentSettings ComponentSettings `json:"defaultComponentSettings,omitempty"`
 	// Metering configures the metering tool on user clusters across the seed.
-	Metering *MeteringConfigurations `json:"metering,omitempty"`
+	Metering *MeteringConfiguration `json:"metering,omitempty"`
 	// BackupRestore when set, enables backup and restore controllers with given configuration.
 	BackupRestore *SeedBackupRestoreConfiguration `json:"backupRestore,omitempty"`
 }
 
 // SeedBackupRestoreConfiguration are s3 settings used for backups and restores of user cluster etcds.
 type SeedBackupRestoreConfiguration struct {
+	// +kubebuilder:default=s3.amazonaws.com
+
 	// S3Endpoint is the S3 API endpoint to use for backup and restore. Defaults to s3.amazonaws.com.
 	S3Endpoint string `json:"s3Endpoint,omitempty"`
 	// S3BucketName is the S3 bucket name to use for backup and restore.
@@ -172,9 +172,7 @@ type DatacenterSpec struct {
 	// given domains can make use of this datacenter. You can define multiple
 	// domains, e.g. "example.com", one of which must match the email domain
 	// exactly (i.e. "example.com" will not match "user@test.example.com").
-	// RequiredEmailDomain is deprecated. Automatically migrated to the RequiredEmailDomains field.
-	RequiredEmailDomain  string   `json:"requiredEmailDomain,omitempty"`
-	RequiredEmailDomains []string `json:"requiredEmailDomains,omitempty"`
+	RequiredEmails []string `json:"requiredEmails,omitempty"`
 
 	// EnforceAuditLogging enforces audit logging on every cluster within the DC,
 	// ignoring cluster-specific settings.
@@ -334,6 +332,9 @@ type DatacenterSpecFake struct {
 
 // DatacenterSpecKubevirt describes a kubevirt datacenter.
 type DatacenterSpecKubevirt struct {
+	// +kubebuilder:validation:Enum=ClusterFirstWithHostNet;ClusterFirst;Default;None
+	// +kubebuilder:default=ClusterFirst
+
 	// DNSPolicy represents the dns policy for the pod. Valid values are 'ClusterFirstWithHostNet', 'ClusterFirst',
 	// 'Default' or 'None'. Defaults to "ClusterFirst". DNS parameters given in DNSConfig will be merged with the
 	// policy selected with DNSPolicy.
@@ -430,8 +431,8 @@ type SeedMLASettings struct {
 	UserClusterMLAEnabled bool `json:"userClusterMLAEnabled,omitempty"` //nolint:tagliatelle
 }
 
-// MeteringConfigurations contains all the configurations for the metering tool.
-type MeteringConfigurations struct {
+// MeteringConfiguration contains all the configuration for the metering tool.
+type MeteringConfiguration struct {
 	Enabled bool `json:"enabled"`
 	// StorageClassName is the name of the storage class that the metering tool uses to save processed files before
 	// exporting it to s3 bucket. Default value is kubermatic-fast.

@@ -71,7 +71,7 @@ func (s *openStackScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpe
 						FloatingIPPool: "ext-net",
 					},
 				},
-				Version: s.version.String(),
+				Version: apimodels.Semver(s.version.String()),
 			},
 		},
 	}

@@ -173,6 +173,7 @@ func createExampleSeed() *kubermaticv1.Seed {
 				StorageClassName: "kubermatic-fast",
 				StorageSize:      "100Gi",
 			},
+			MLA: &kubermaticv1.SeedMLASettings{},
 		},
 	}
 

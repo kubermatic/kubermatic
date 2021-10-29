@@ -69,7 +69,7 @@ func (s *azureScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
 						TenantID:       secrets.Azure.TenantID,
 					},
 				},
-				Version: s.version.String(),
+				Version: apimodels.Semver(s.version.String()),
 			},
 		},
 	}

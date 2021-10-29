@@ -224,7 +224,7 @@ func getFlags(data *resources.TemplateData) ([]string, error) {
 	featureGates := []string{"RotateKubeletServerCertificate=true"}
 
 	// starting with k8s 1.21, this is always true and cannot be toggled anymore
-	if data.Cluster().Spec.Version.Minor() < 21 {
+	if data.Cluster().Spec.Version.Semver().Minor() < 21 {
 		featureGates = append(featureGates, "RotateKubeletClientCertificate=true")
 	}
 

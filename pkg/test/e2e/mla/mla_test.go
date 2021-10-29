@@ -1,4 +1,4 @@
-//go:build e2e
+//go:build mla
 
 /*
 Copyright 2021 The Kubermatic Kubernetes Platform contributors.

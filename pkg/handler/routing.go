@@ -33,7 +33,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/watcher"
 
-	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -70,7 +69,6 @@ type Routing struct {
 	saTokenGenerator                      serviceaccount.TokenGenerator
 	eventRecorderProvider                 provider.EventRecorderProvider
 	exposeStrategy                        kubermaticv1.ExposeStrategy
-	accessibleAddons                      sets.String
 	userInfoGetter                        provider.UserInfoGetter
 	settingsProvider                      provider.SettingsProvider
 	adminProvider                         provider.AdminProvider
@@ -113,7 +111,6 @@ func NewRouting(routingParams RoutingParams, masterClient client.Client) Routing
 		saTokenGenerator:                      routingParams.SATokenGenerator,
 		eventRecorderProvider:                 routingParams.EventRecorderProvider,
 		exposeStrategy:                        routingParams.ExposeStrategy,
-		accessibleAddons:                      routingParams.AccessibleAddons,
 		userInfoGetter:                        routingParams.UserInfoGetter,
 		settingsProvider:                      routingParams.SettingsProvider,
 		adminProvider:                         routingParams.AdminProvider,
@@ -162,7 +159,6 @@ type RoutingParams struct {
 	SATokenGenerator                        serviceaccount.TokenGenerator
 	EventRecorderProvider                   provider.EventRecorderProvider
 	ExposeStrategy                          kubermaticv1.ExposeStrategy
-	AccessibleAddons                        sets.String
 	UserInfoGetter                          provider.UserInfoGetter
 	SettingsProvider                        provider.SettingsProvider
 	AdminProvider                           provider.AdminProvider

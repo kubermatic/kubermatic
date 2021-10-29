@@ -473,8 +473,6 @@ func getTemplateData(clusterVersion *kubermaticversion.Version, kubermaticVersio
 		WithSeed(&kubermaticv1.Seed{}).
 		WithNodeAccessNetwork("192.0.2.0/24").
 		WithEtcdDiskSize(resource.Quantity{}).
-		WithInClusterPrometheusDefaultRulesDisabled(false).
-		WithInClusterPrometheusDefaultScrapingConfigsDisabled(false).
 		WithKubermaticImage(defaults.DefaultKubermaticImage).
 		WithEtcdLauncherImage(defaults.DefaultEtcdLauncherImage).
 		WithDnatControllerImage(defaults.DefaultDNATControllerImage).

@@ -17,30 +17,26 @@ limitations under the License.
 package semver
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
-	"strconv"
 
 	semverlib "github.com/Masterminds/semver/v3"
 )
 
-// ensure that Semver implements flag.Value interface.
-var _ flag.Value = &Semver{}
+var (
+	_ flag.Value = new(Semver)
+)
 
-// Semver is struct that encapsulates semver.Semver struct so we can use it in API
-// +k8s:deepcopy-gen=true
-type Semver struct {
-	*semverlib.Version
-}
+// Semver is a type that encapsulates github.com/Masterminds/semver/v3.Version struct so it can be used in our API
+type Semver string
 
 // NewSemver creates new Semver version struct and returns pointer to it
 func NewSemver(ver string) (*Semver, error) {
-	v := &Semver{}
-	err := v.Set(ver)
-	if err != nil {
+	v := new(Semver)
+	if err := v.Set(ver); err != nil {
 		return nil, err
 	}
+
 	return v, nil
 }
 
@@ -50,67 +46,78 @@ func NewSemverOrDie(ver string) *Semver {
 	if err != nil {
 		panic(err)
 	}
+
 	return sv
 }
 
 // Set initializes semver struct and sets version
 func (s *Semver) Set(ver string) error {
-	sv, err := semverlib.NewVersion(ver)
-	if err != nil {
+	if _, err := semverlib.NewVersion(ver); err != nil {
 		return err
 	}
-	s.Version = sv
+	*s = Semver(ver)
+
 	return nil
 }
 
-// Semver returns library semver struct
+// Semver returns github.com/Masterminds/semver/v3 struct.
+// In case when Semver is nil, nil will be returned.
+// In case of parsing error, nil will be returned
 func (s *Semver) Semver() *semverlib.Version {
-	return s.Version
+	if s == nil {
+		return nil
+	}
+
+	sver, err := semverlib.NewVersion(string(*s))
+	if err != nil {
+		return nil
+	}
+
+	return sver
 }
 
 // Equal compares two version structs by comparing Semver values
 func (s *Semver) Equal(b *Semver) bool {
-	return s.Version.Equal(b.Version)
+	if s == nil || b == nil {
+		return false
+	}
+
+	sver, bver := s.Semver(), b.Semver()
+	if sver == nil || bver == nil {
+		return false
+	}
+
+	return sver.Equal(bver)
 }
 
 // String returns string representation of Semver version
 func (s *Semver) String() string {
-	if s.Version == nil {
+	sver := s.Semver()
+	if sver == nil {
 		return ""
 	}
-	return s.Version.String()
+
+	return sver.String()
 }
 
 // MajorMinor returns a string like "Major.Minor"
 func (s *Semver) MajorMinor() string {
-	return fmt.Sprintf("%d.%d", s.Major(), s.Minor())
-}
-
-// UnmarshalJSON converts JSON to Semver struct
-func (s *Semver) UnmarshalJSON(data []byte) error {
-	ver, err := strconv.Unquote(string(data))
-	if err != nil {
-		return err
+	sver := s.Semver()
+	if sver == nil {
+		return ""
 	}
-	if ver == "" {
-		return nil
-	}
-	return s.Set(ver)
+
+	return fmt.Sprintf("%d.%d", sver.Major(), sver.Minor())
 }
 
-// MarshalJSON converts Semver struct to JSON
-func (s Semver) MarshalJSON() ([]byte, error) {
-	return []byte(strconv.Quote(s.String())), nil
-}
-
-var _ json.Marshaler = &Semver{}
-var _ json.Unmarshaler = &Semver{}
-
-// DeepCopy copies value of Semver struct and returns a new struct.
-// If passed Semver struct is nil, it is assumed zero value is being copied
 func (s Semver) DeepCopy() Semver {
-	if s.Version == nil {
-		return Semver{}
+	if s.Semver() == nil {
+		return ""
 	}
+
 	return *NewSemverOrDie(s.String())
+}
+
+func (in *Semver) DeepCopyInto(out *Semver) {
+	*out = in.DeepCopy()
 }

@@ -20,10 +20,10 @@ import (
 	"context"
 	"crypto/sha256"
 	"crypto/sha512"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"net/http"
 	"net/http/httptest"
 	"sort"
@@ -46,6 +46,7 @@ import (
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/handler/auth"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
+	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/etcdbackupconfig"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -65,7 +66,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	k8sjson "k8s.io/apimachinery/pkg/util/json"
-	"k8s.io/apimachinery/pkg/util/sets"
 	kubernetesclientset "k8s.io/client-go/kubernetes"
 	fakerestclient "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -243,6 +243,11 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 				Name:      "kubermatic",
 				Namespace: KubermaticNamespace,
 			},
+			Spec: operatorv1alpha1.KubermaticConfigurationSpec{
+				API: operatorv1alpha1.KubermaticAPIConfiguration{
+					AccessibleAddons: []string{"addon1", "addon2"},
+				},
+			},
 		}
 	}
 
@@ -339,19 +344,6 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		return nil, fmt.Errorf("can not find clusterprovider for cluster %q", seed.Name)
 	}
 
-	addonProvider := kubernetes.NewAddonProvider(
-		fakeClient,
-		fakeImpersonationClient,
-		sets.NewString("addon1", "addon2"),
-	)
-	addonProviders := map[string]provider.AddonProvider{"us-central1": addonProvider}
-	addonProviderGetter := func(seed *kubermaticv1.Seed) (provider.AddonProvider, error) {
-		if addonProvider, exists := addonProviders[seed.Name]; exists {
-			return addonProvider, nil
-		}
-		return nil, fmt.Errorf("can not find addonprovider for cluster %q", seed.Name)
-	}
-
 	credentialsManager, err := kubernetes.NewPresetsProvider(ctx, fakeClient, "", true)
 	if err != nil {
 		return nil, nil, err
@@ -371,6 +363,19 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	configGetter, err := provider.DynamicKubermaticConfigurationGetterFactory(fakeClient, KubermaticNamespace)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	addonProvider := kubernetes.NewAddonProvider(
+		fakeClient,
+		fakeImpersonationClient,
+		configGetter,
+	)
+	addonProviders := map[string]provider.AddonProvider{"us-central1": addonProvider}
+	addonProviderGetter := func(seed *kubermaticv1.Seed) (provider.AddonProvider, error) {
+		if addonProvider, exists := addonProviders[seed.Name]; exists {
+			return addonProvider, nil
+		}
+		return nil, fmt.Errorf("can not find addonprovider for cluster %q", seed.Name)
 	}
 
 	externalClusterProvider, err := kubernetes.NewExternalClusterProvider(fakeImpersonationClient, fakeClient)
@@ -1680,8 +1685,8 @@ func GenConstraint(name, namespace, kind string) *kubermaticv1.Constraint {
 				{Kinds: []string{"namespace"}, APIGroups: []string{""}},
 			},
 		},
-		Parameters: kubermaticv1.Parameters{
-			"labels": []interface{}{"gatekeeper", "opa"},
+		Parameters: map[string]json.RawMessage{
+			"labels": []byte(`["gatekeeper","opa"]`),
 		},
 		Selector: kubermaticv1.ConstraintSelector{
 			Providers: []string{"aws", "gcp"},
@@ -1713,8 +1718,8 @@ func GenDefaultAPIConstraint(name, kind string) apiv2.Constraint {
 					{Kinds: []string{"namespace"}, APIGroups: []string{""}},
 				},
 			},
-			Parameters: kubermaticv1.Parameters{
-				"labels": []interface{}{"gatekeeper", "opa"},
+			Parameters: map[string]json.RawMessage{
+				"labels": []byte(`["gatekeeper","opa"]`),
 			},
 			Selector: kubermaticv1.ConstraintSelector{
 				Providers: []string{"aws", "gcp"},

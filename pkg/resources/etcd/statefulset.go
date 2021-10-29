@@ -347,7 +347,7 @@ func getBasePodLabels(cluster *kubermaticv1.Cluster) map[string]string {
 // ImageTag returns the correct etcd image tag for a given Cluster
 // TODO: Other functions use this function, switch them to getLauncherImage
 func ImageTag(c *kubermaticv1.Cluster) string {
-	if c.Spec.Version.Minor() < 22 {
+	if c.Spec.Version.Semver().Minor() < 22 {
 		return "v3.4.3"
 	}
 

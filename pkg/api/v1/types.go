@@ -26,7 +26,6 @@ import (
 
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/userdata/flatcar"
-
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
@@ -1099,6 +1098,8 @@ type ClusterHealth struct {
 	UserClusterControllerManager kubermaticv1.HealthStatus `json:"userClusterControllerManager"`
 	GatekeeperController         kubermaticv1.HealthStatus `json:"gatekeeperController,omitempty"`
 	GatekeeperAudit              kubermaticv1.HealthStatus `json:"gatekeeperAudit,omitempty"`
+	Monitoring                   kubermaticv1.HealthStatus `json:"monitoring,omitempty"`
+	Logging                      kubermaticv1.HealthStatus `json:"logging,omitempty"`
 }
 
 // AccessibleAddons represents an array of addons that can be configured in the user clusters.

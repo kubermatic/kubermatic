@@ -153,7 +153,7 @@ spec:
         - --storage-backend
         - etcd3
         - --enable-admission-plugins
-        - DefaultStorageClass,DefaultTolerationSeconds,LimitRanger,MutatingAdmissionWebhook,NamespaceLifecycle,Priority,ResourceQuota,ServiceAccount,ValidatingAdmissionWebhook
+        - DefaultStorageClass,DefaultTolerationSeconds,LimitRanger,MutatingAdmissionWebhook,NamespaceLifecycle,NodeRestriction,Priority,ResourceQuota,ServiceAccount,ValidatingAdmissionWebhook
         - --admission-control-config-file
         - /etc/kubernetes/adm-control/admission-control.yaml
         - --authorization-mode
@@ -180,6 +180,8 @@ spec:
         - /var/log/kubernetes/audit/audit.log
         - --tls-cert-file
         - /etc/kubernetes/tls/apiserver-tls.crt
+        - --tls-cipher-suites
+        - TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384,TLS_CHACHA20_POLY1305_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305
         - --tls-private-key-file
         - /etc/kubernetes/tls/apiserver-tls.key
         - --proxy-client-cert-file

@@ -14792,6 +14792,12 @@
             "required": true
           },
           {
+            "type": "string",
+            "description": "The credential name used in the preset for the provider",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
             "name": "Body",
             "in": "body",
             "schema": {
@@ -15537,6 +15543,129 @@
         }
       }
     },
+    "/api/v2/providers/ec2/regions": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "regions"
+        ],
+        "summary": "List EC2 regions.",
+        "operationId": "listEC2Regions",
+        "responses": {
+          "200": {
+            "description": "Regions",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Regions"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/providers/eks/clusters": {
+      "get": {
+        "description": "Lists EKS clusters",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "eks"
+        ],
+        "operationId": "listEKSClusters",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "AccessKeyID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "SecretAccessKey",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Region",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "EKSClusterList",
+            "schema": {
+              "$ref": "#/definitions/EKSClusterList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/providers/gke/clusters": {
+      "get": {
+        "description": "Lists GKE clusters",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "gke"
+        ],
+        "operationId": "listGKEClusters",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "The plain GCP service account",
+            "name": "ServiceAccount",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "description": "The credential name used in the preset for the GCP provider",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "GKEClusterList",
+            "schema": {
+              "$ref": "#/definitions/GKEClusterList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/providers/vsphere/datastores": {
       "get": {
         "description": "Lists datastores from vsphere datacenter",
@@ -15725,6 +15854,54 @@
             "schema": {
               "$ref": "#/definitions/Preset"
             }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/providers/{provider_name}/presets/{preset_name}": {
+      "delete": {
+        "description": "Deletes provider preset",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "preset"
+        ],
+        "operationId": "deletePreset",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProviderName",
+            "name": "provider_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "PresetName",
+            "name": "preset_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
           },
           "401": {
             "$ref": "#/responses/empty"
@@ -17364,7 +17541,13 @@
         "gatekeeperController": {
           "$ref": "#/definitions/HealthStatus"
         },
+        "logging": {
+          "$ref": "#/definitions/HealthStatus"
+        },
         "machineController": {
+          "$ref": "#/definitions/HealthStatus"
+        },
+        "monitoring": {
           "$ref": "#/definitions/HealthStatus"
         },
         "scheduler": {
@@ -18516,6 +18699,55 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
+    "EKSCloudSpec": {
+      "type": "object",
+      "properties": {
+         "accessKeyID": {
+            "type": "string",
+            "x-go-name": "AccessKeyID"
+          },
+          "name": {
+            "type": "string",
+            "x-go-name": "Name"
+          },
+          "region": {
+            "type": "string",
+            "x-go-name": "Region"
+          },
+          "secretAccessKey": {
+            "type": "string",
+            "x-go-name": "SecretAccessKey"
+       }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EKSCluster": {
+      "type": "object",
+      "title": "EKSCluster represents a object of EKS cluster.",
+      "properties": {
+        "imported": {
+          "type": "boolean",
+          "x-go-name": "IsImported"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "region": {
+          "type": "string",
+          "x-go-name": "Region"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EKSClusterList": {
+      "type": "array",
+      "title": "EKSClusterList represents an list of EKS clusters.",
+      "items": {
+        "$ref": "#/definitions/EKSCluster"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "ErrorDetails": {
       "description": "ErrorDetails contains details about the error",
       "type": "object",
@@ -18864,6 +19096,19 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
+    "ExternalClusterCloudSpec": {
+      "description": "ExternalClusterCloudSpec represents an object holding cluster cloud details",
+      "type": "object",
+      "properties": {
+        "eks": {
+          "$ref": "#/definitions/EKSCloudSpec"
+        },
+        "gke": {
+          "$ref": "#/definitions/GKECloudSpec"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "ExternalClusterNode": {
       "description": "ExternalClusterNode represents an object holding external cluster node",
       "type": "object",
@@ -19186,6 +19431,51 @@
         "$ref": "#/definitions/GCPZone"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "GKECloudSpec": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "serviceAccount": {
+          "type": "string",
+          "x-go-name": "ServiceAccount"
+        },
+        "zone": {
+          "type": "string",
+          "x-go-name": "Zone"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "GKECluster": {
+      "type": "object",
+      "title": "GKECluster represents a object of GKE cluster.",
+      "properties": {
+        "imported": {
+          "type": "boolean",
+          "x-go-name": "IsImported"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "zone": {
+          "type": "string",
+          "x-go-name": "Zone"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "GKEClusterList": {
+      "type": "array",
+      "title": "GKEClusterList represents an array of GKE clusters.",
+      "items": {
+        "$ref": "#/definitions/GKECluster"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "GVK": {
       "description": "GVK group version kind of a resource",
@@ -21821,6 +22111,14 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
+    "Regions": {
+      "type": "array",
+      "title": "Regions represents an list of EC2 regions.",
+      "items": {
+        "type": "string"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "ResourceLabelMap": {
       "type": "object",
       "title": "ResourceLabelMap defines list of labels grouped by specific resource types.",
@@ -22213,8 +22511,8 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "Semver": {
-      "description": "Semver is struct that encapsulates semver.Semver struct so we can use it in API\n+k8s:deepcopy-gen=true",
-      "type": "object",
+      "description": "Semver is a type that encapsulates github.com/Masterminds/semver/v3.Version struct so it can be used in our API",
+      "type": "string",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/semver"
     },
     "ServiceAccount": {
@@ -22855,7 +23153,7 @@
       "type": "object",
       "properties": {
         "cloud": {
-          "$ref": "#/definitions/CloudSpec"
+          "$ref": "#/definitions/ExternalClusterCloudSpec"
         },
         "kubeconfig": {
           "description": "Kubeconfig Base64 encoded kubeconfig",

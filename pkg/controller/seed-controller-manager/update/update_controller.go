@@ -194,7 +194,12 @@ func (r *Reconciler) controlPlaneUpgrade(ctx context.Context, cluster *kubermati
 	}
 	oldCluster := cluster.DeepCopy()
 
-	cluster.Spec.Version = *semver.NewSemverOrDie(update.Version.String())
+	sver, err := semver.NewSemver(update.Version.String())
+	if err != nil {
+		return false, fmt.Errorf("failed to parse version %q: %v", update.Version.String(), err)
+	}
+
+	cluster.Spec.Version = *sver
 	// Invalidating the health to prevent automatic updates directly on the next processing.
 	cluster.Status.ExtendedHealth.Apiserver = kubermaticv1.HealthStatusDown
 	cluster.Status.ExtendedHealth.Controller = kubermaticv1.HealthStatusDown

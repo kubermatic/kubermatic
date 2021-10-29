@@ -46,7 +46,7 @@ export KUBERMATIC_API_ENDPOINT="http://localhost:8080"
 
 # Tell the conformance tester what dummy account we configure for the e2e tests.
 export KUBERMATIC_DEX_VALUES_FILE=$(realpath hack/ci/testdata/oauth_values.yaml)
-export KUBERMATIC_OIDC_LOGIN="roxy@loodse.com"
+export KUBERMATIC_OIDC_LOGIN="roxy@kubermatic.com"
 export KUBERMATIC_OIDC_PASSWORD="password"
 
 # Set docker config
@@ -195,4 +195,5 @@ TEST_NAME="Expose Dex and Kubermatic API"
 echodate "Exposing Dex and Kubermatic API to localhost..."
 kubectl port-forward --address 0.0.0.0 -n oauth svc/dex 5556 > /dev/null &
 kubectl port-forward --address 0.0.0.0 -n kubermatic svc/kubermatic-api 8080:80 > /dev/null &
+hack/ci/setup-mla.sh
 echodate "Finished exposing components"

@@ -339,7 +339,7 @@ func (r *Reconciler) applyRancherRegstrationCommand(ctx context.Context, log *za
 		return fmt.Errorf("failed to write the admin kubeconfig to the local filesystem: %v", err)
 	}
 	defer kubeconfigDone()
-	cmd, err := getApplyCommand(ctx, kubeconfigFilename, cluster.Spec.Version.Version)
+	cmd, err := getApplyCommand(ctx, kubeconfigFilename, cluster.Spec.Version.Semver())
 	if err != nil {
 		return fmt.Errorf("failed to create command: %v", err)
 	}

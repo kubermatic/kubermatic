@@ -25,7 +25,7 @@ import (
 	"testing"
 	"time"
 
-	semver "github.com/Masterminds/semver/v3"
+	"github.com/Masterminds/semver/v3"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 
@@ -429,7 +429,7 @@ func (r *TestClient) ListCredentials(providerName, datacenter string) ([]string,
 
 // CreateAWSCluster creates cluster for AWS provider
 func (r *TestClient) CreateAWSCluster(projectID, dc, name, secretAccessKey, accessKeyID, version, location, availabilityZone string, replicas int32) (*apiv1.Cluster, error) {
-	vr, err := semver.NewVersion(version)
+	_, err := semver.NewVersion(version)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse version %s: %v", version, err)
 	}
@@ -446,7 +446,7 @@ func (r *TestClient) CreateAWSCluster(projectID, dc, name, secretAccessKey, acce
 					AccessKeyID:     accessKeyID,
 				},
 			},
-			Version: vr,
+			Version: models.Semver(version),
 		},
 	}
 
@@ -494,7 +494,7 @@ func (r *TestClient) CreateAWSCluster(projectID, dc, name, secretAccessKey, acce
 
 // CreateKubevirtCluster creates cluster for Kubevirt provider
 func (r *TestClient) CreateKubevirtCluster(projectID, dc, name, credential, version, location string, replicas int32) (*apiv1.Cluster, error) {
-	vr, err := semver.NewVersion(version)
+	_, err := semver.NewVersion(version)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse version %s: %v", version, err)
 	}
@@ -509,7 +509,7 @@ func (r *TestClient) CreateKubevirtCluster(projectID, dc, name, credential, vers
 				DatacenterName: location,
 				Kubevirt:       &models.KubevirtCloudSpec{},
 			},
-			Version: vr,
+			Version: models.Semver(version),
 		},
 	}
 
@@ -566,7 +566,7 @@ func (r *TestClient) CreateKubevirtCluster(projectID, dc, name, credential, vers
 
 // CreateDOCluster creates cluster for DigitalOcean provider
 func (r *TestClient) CreateDOCluster(projectID, dc, name, credential, version, location string, replicas int32) (*apiv1.Cluster, error) {
-	vr, err := semver.NewVersion(version)
+	_, err := semver.NewVersion(version)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse version %s: %v", version, err)
 	}
@@ -581,7 +581,7 @@ func (r *TestClient) CreateDOCluster(projectID, dc, name, credential, version, l
 				DatacenterName: location,
 				Digitalocean:   &models.DigitaloceanCloudSpec{},
 			},
-			Version: vr,
+			Version: models.Semver(version),
 		},
 	}
 
@@ -1583,7 +1583,7 @@ func (r *TestClient) CreateConstraint(name, ctKind string) (*kubermaticv1.Constr
 			Kinds: []*models.Kind{kind},
 		},
 		Parameters: models.Parameters{
-			"rawJSON": `{"labels":["gatekeeper"]}`,
+			"labels": json.RawMessage(`["gatekeeper"]`),
 		},
 	}
 
@@ -1717,11 +1717,11 @@ func (r *TestClient) DeleteConstraint(name string) error {
 
 // CreateClusterTemplate method creates cluster template object
 func (r *TestClient) CreateClusterTemplate(projectID, name, scope, credential, version, location string) (*apiv2.ClusterTemplate, error) {
-
-	vr, err := semver.NewVersion(version)
+	_, err := semver.NewVersion(version)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse version %s: %v", version, err)
 	}
+
 	params := &project.CreateClusterTemplateParams{
 		Body: project.CreateClusterTemplateBody{
 			Name:  name,
@@ -1735,7 +1735,7 @@ func (r *TestClient) CreateClusterTemplate(projectID, name, scope, credential, v
 						DatacenterName: location,
 						Digitalocean:   &models.DigitaloceanCloudSpec{},
 					},
-					Version: vr,
+					Version: models.Semver(version),
 				},
 			},
 			NodeDeployment: nil,

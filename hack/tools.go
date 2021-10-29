@@ -1,4 +1,5 @@
 //go:build tools
+
 /*
 Copyright 2020 The Kubermatic Kubernetes Platform contributors.
 
@@ -27,4 +28,5 @@ import (
 	_ "k8s.io/code-generator/cmd/defaulter-gen"
 	_ "k8s.io/code-generator/cmd/informer-gen"
 	_ "k8s.io/code-generator/cmd/lister-gen"
+	_ "sigs.k8s.io/controller-tools/cmd/controller-gen"
 )

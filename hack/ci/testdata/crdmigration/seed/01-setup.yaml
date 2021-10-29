@@ -1,0 +1,191 @@
+apiVersion: operator.kubermatic.io/v1alpha1
+kind: KubermaticConfiguration
+metadata:
+  finalizers:
+  - operator.kubermatic.io/cleanup
+  labels:
+    app.kubernetes.io/managed-by: seed-sync-controller
+  name: kubermatic
+  namespace: kubermatic
+spec:
+  api:
+    accessibleAddons:
+    - cluster-autoscaler
+    - node-exporter
+    - kube-state-metrics
+    - kubeflow
+    - kubevirt
+  auth:
+    issuerClientSecret: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    issuerCookieKey: YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
+    serviceAccountKey: ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
+  caBundle:
+    kind: ConfigMap
+    name: ca-bundle
+  exposeStrategy: Tunneling
+  featureGates:
+    KonnectivityService:
+      enabled: true
+    OIDCKubeCfgEndpoint:
+      enabled: true
+    OpenIDAuthPlugin:
+      enabled: true
+    TunnelingExposeStrategy:
+      enabled: true
+    UserClusterMLA:
+      enabled: true
+    VerticalPodAutoscaler:
+      enabled: true
+  imagePullSecret: |
+    {
+      "auths": {
+        "quay.io": {
+          "auth": "base64here",
+          "email": ""
+        }
+      }
+    }
+  ingress:
+    certificateIssuer:
+      kind: ClusterIssuer
+      name: letsencrypt-prod
+    domain: example.com
+  masterController:
+    resources:
+      limits:
+        cpu: 4
+        memory: 512Mi
+  ui:
+    config: |
+      {
+        "default_node_count": 1,
+        "share_kubeconfig": true,
+        "cleanup_cluster": true
+      }
+
+---
+apiVersion: kubermatic.k8s.io/v1
+kind: Seed
+metadata:
+  finalizers:
+    - kubermatic.io/cleanup-seed-sync
+  name: crdmigration
+  namespace: kubermatic
+spec:
+  country: IN
+  datacenters:
+    azure-southeastasia-asia:
+      country: HK
+      location: Azure South-East Asia
+      spec:
+        azure:
+          location: southeastasia
+    packet-nrt1-asia:
+      country: JP
+      location: Packet NRT1 (Tokyo)
+      spec:
+        packet:
+          facilities:
+            - nrt1
+    test:
+      country: DE
+      location: test
+      node: {}
+      spec:
+        anexia:
+          location_id: ""
+  defaultComponentSettings:
+    apiserver: {}
+    controllerManager:
+      leaderElection: {}
+    etcd: {}
+    prometheus: {}
+    scheduler:
+      leaderElection: {}
+  expose_strategy: NodePort
+  kubeconfig:
+    apiVersion: v1
+    fieldPath: kubeconfig
+    kind: Secret
+    name: kubeconfig-crdmigration
+    namespace: kubermatic
+  location: Mumbai
+  metering:
+    enabled: true
+    storageClassName: standard
+    storageSize: 75Gi
+  mla:
+    user_cluster_mla_enabled: true
+  nodeport_proxy:
+    envoy:
+      resources: {}
+    envoy_manager:
+      resources: {}
+    updater:
+      resources: {}
+
+---
+apiVersion: kubermatic.k8s.io/v1
+kind: ConstraintTemplate
+metadata:
+  finalizers:
+    - kubermatic.io/cleanup-gatekeeper-constraint-templates
+    - kubermatic.io/cleanup-gatekeeper-master-constraint-templates
+  generation: 1
+  name: allowedregistry
+spec:
+  crd:
+    spec:
+      names:
+        kind: allowedregistry
+      validation:
+        openAPIV3Schema:
+          properties:
+            allowed_registry:
+              items:
+                type: string
+              type: array
+  selector:
+    labelSelector: {}
+  targets:
+    - rego: |-
+        package allowedregistry
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          satisfied := [good | repo = input.parameters.allowed_registry[_] ; good = startswith(container.image, repo)]
+          not any(satisfied)
+          msg := sprintf("container <%v> has an invalid image registry <%v>, allowed image registries are %v", [container.name, container.image, input.parameters.allowed_registry])
+        }
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.initContainers[_]
+          satisfied := [good | repo = input.parameters.allowed_registry[_] ; good = startswith(container.image, repo)]
+          not any(satisfied)
+          msg := sprintf("container <%v> has an invalid image registry <%v>, allowed image registries are %v", [container.name, container.image, input.parameters.allowed_registry])
+        }
+      target: admission.k8s.gatekeeper.sh
+
+---
+apiVersion: kubermatic.k8s.io/v1
+kind: Constraint
+metadata:
+  finalizers:
+    - kubermatic.io/cleanup-gatekeeper-seed-constraint
+    - kubermatic.io/cleanup-kubermatic-usercluster-ns-default-constraints
+  name: allowedregistry
+  namespace: kubermatic
+spec:
+  constraintType: allowedregistry
+  match:
+    kinds:
+      - apiGroups:
+          - ""
+        kinds:
+          - Pod
+    labelSelector: {}
+    namespaceSelector: {}
+  parameters:
+    allowed_registry:
+      - quay.io
+  selector:
+    labelSelector: {}

@@ -32,7 +32,7 @@ import (
 	osextnetwork "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/external"
 	osrouters "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/layer3/routers"
 	ossecuritygroups "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/groups"
-	osecuritygrouprules "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/rules"
+	ossecuritygrouprules "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/rules"
 	osnetworks "github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
 	osports "github.com/gophercloud/gophercloud/openstack/networking/v2/ports"
 	ossubnets "github.com/gophercloud/gophercloud/openstack/networking/v2/subnets"
@@ -186,65 +186,74 @@ func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, req cre
 			len(secGroups), secGroupName)
 	}
 
-	rules := []osecuritygrouprules.CreateOpts{
+	rules := []ossecuritygrouprules.CreateOpts{
 		{
 			// Allows ipv4 traffic within this group
-			Direction:     osecuritygrouprules.DirIngress,
-			EtherType:     osecuritygrouprules.EtherType4,
+			Direction:     ossecuritygrouprules.DirIngress,
+			EtherType:     ossecuritygrouprules.EtherType4,
 			SecGroupID:    securityGroupID,
 			RemoteGroupID: securityGroupID,
 		},
 		{
 			// Allows ipv6 traffic within this group
-			Direction:     osecuritygrouprules.DirIngress,
-			EtherType:     osecuritygrouprules.EtherType6,
+			Direction:     ossecuritygrouprules.DirIngress,
+			EtherType:     ossecuritygrouprules.EtherType6,
 			SecGroupID:    securityGroupID,
 			RemoteGroupID: securityGroupID,
 		},
 		{
 			// Allows ssh from external
-			Direction:    osecuritygrouprules.DirIngress,
-			EtherType:    osecuritygrouprules.EtherType4,
+			Direction:    ossecuritygrouprules.DirIngress,
+			EtherType:    ossecuritygrouprules.EtherType4,
 			SecGroupID:   securityGroupID,
 			PortRangeMin: provider.DefaultSSHPort,
 			PortRangeMax: provider.DefaultSSHPort,
-			Protocol:     osecuritygrouprules.ProtocolTCP,
+			Protocol:     ossecuritygrouprules.ProtocolTCP,
 		},
 		{
 			// Allows nodePorts from external
-			Direction:    osecuritygrouprules.DirIngress,
-			EtherType:    osecuritygrouprules.EtherType4,
+			Direction:    ossecuritygrouprules.DirIngress,
+			EtherType:    ossecuritygrouprules.EtherType4,
 			SecGroupID:   securityGroupID,
 			PortRangeMin: req.lowPort,
 			PortRangeMax: req.highPort,
-			Protocol:     osecuritygrouprules.ProtocolTCP,
+			Protocol:     ossecuritygrouprules.ProtocolTCP,
+		},
+		{
+			// Allows nodePorts from external
+			Direction:    ossecuritygrouprules.DirIngress,
+			EtherType:    ossecuritygrouprules.EtherType4,
+			SecGroupID:   securityGroupID,
+			PortRangeMin: req.lowPort,
+			PortRangeMax: req.highPort,
+			Protocol:     ossecuritygrouprules.ProtocolUDP,
 		},
 		{
 			// Allows ICMP traffic
-			Direction:  osecuritygrouprules.DirIngress,
-			EtherType:  osecuritygrouprules.EtherType4,
+			Direction:  ossecuritygrouprules.DirIngress,
+			EtherType:  ossecuritygrouprules.EtherType4,
 			SecGroupID: securityGroupID,
-			Protocol:   osecuritygrouprules.ProtocolICMP,
+			Protocol:   ossecuritygrouprules.ProtocolICMP,
 		},
 		{
 			// Allows ICMPv6 traffic
-			Direction:  osecuritygrouprules.DirIngress,
-			EtherType:  osecuritygrouprules.EtherType6,
+			Direction:  ossecuritygrouprules.DirIngress,
+			EtherType:  ossecuritygrouprules.EtherType6,
 			SecGroupID: securityGroupID,
-			Protocol:   osecuritygrouprules.ProtocolIPv6ICMP,
+			Protocol:   ossecuritygrouprules.ProtocolIPv6ICMP,
 		},
 	}
 
 	for _, opts := range rules {
 	reiterate:
-		rres := osecuritygrouprules.Create(netClient, opts)
+		rres := ossecuritygrouprules.Create(netClient, opts)
 		if rres.Err != nil {
 			if e, ok := rres.Err.(gophercloud.ErrUnexpectedResponseCode); ok && e.Actual == http.StatusConflict {
 				// already exists
 				continue
 			}
 
-			if _, ok := rres.Err.(gophercloud.ErrDefault400); ok && opts.Protocol == osecuritygrouprules.ProtocolIPv6ICMP {
+			if _, ok := rres.Err.(gophercloud.ErrDefault400); ok && opts.Protocol == ossecuritygrouprules.ProtocolIPv6ICMP {
 				// workaround for old versions of Opnestack with different protocol name,
 				// from before https://review.opendev.org/#/c/252155/
 				opts.Protocol = "icmpv6"

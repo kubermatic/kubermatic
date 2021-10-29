@@ -33,8 +33,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/watcher"
-
-	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // Routing represents an object which binds endpoints to http handlers.
@@ -68,7 +66,6 @@ type Routing struct {
 	saTokenGenerator                        serviceaccount.TokenGenerator
 	eventRecorderProvider                   provider.EventRecorderProvider
 	exposeStrategy                          kubermaticv1.ExposeStrategy
-	accessibleAddons                        sets.String
 	userInfoGetter                          provider.UserInfoGetter
 	settingsProvider                        provider.SettingsProvider
 	adminProvider                           provider.AdminProvider
@@ -127,7 +124,6 @@ func NewV2Routing(routingParams handler.RoutingParams) Routing {
 		saTokenGenerator:                        routingParams.SATokenGenerator,
 		eventRecorderProvider:                   routingParams.EventRecorderProvider,
 		exposeStrategy:                          routingParams.ExposeStrategy,
-		accessibleAddons:                        routingParams.AccessibleAddons,
 		userInfoGetter:                          routingParams.UserInfoGetter,
 		settingsProvider:                        routingParams.SettingsProvider,
 		adminProvider:                           routingParams.AdminProvider,

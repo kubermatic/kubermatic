@@ -3479,7 +3479,7 @@ func (r Routing) listAccessibleAddons() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(addon.ListAccessibleAddons(r.accessibleAddons)),
+		)(addon.ListAccessibleAddons(r.kubermaticConfigGetter)),
 		common.DecodeEmptyReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
@@ -3507,7 +3507,7 @@ func (r Routing) listInstallableAddons() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.Addons(r.clusterProviderGetter, r.addonProviderGetter, r.seedsGetter),
 			middleware.PrivilegedAddons(r.clusterProviderGetter, r.addonProviderGetter, r.seedsGetter),
-		)(addon.ListInstallableAddonEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.accessibleAddons)),
+		)(addon.ListInstallableAddonEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.kubermaticConfigGetter)),
 		addon.DecodeListAddons,
 		EncodeJSON,
 		r.defaultServerOptions()...,

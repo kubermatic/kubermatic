@@ -33,13 +33,13 @@ func addFlags(fs *flag.FlagSet) {
 }
 
 func seedGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader, options controllerRunOptions) (provider.SeedGetter, error) {
-	return provider.SeedGetterFactory(ctx, client, options.dc, options.namespace)
+	return provider.SeedGetterFactory(ctx, client, options.seedName, options.namespace)
 }
 
 func seedValidationHandler(ctx context.Context, client ctrlruntimeclient.Client, options controllerRunOptions) (seedwebhook.AdmissionHandler, error) {
 	return (&seedwebhook.ValidationHandlerBuilder{}).
 		Client(client).
-		SeedName(options.dc).
+		SeedName(options.seedName).
 		WorkerName(options.workerName).
 		AllowedSeed(options.namespace, provider.DefaultSeedName).
 		FeatureGates(options.featureGates).

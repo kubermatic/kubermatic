@@ -22,10 +22,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/util/email"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -40,6 +40,9 @@ type presetCreator = func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, er
 
 // presetUpdater is a function to update a preset
 type presetUpdater = func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
+
+// presetDeleter is a function to delete a preset
+type presetDeleter = func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
 
 // LoadPresets loads the custom presets for supported providers
 func LoadPresets(yamlContent []byte) (*kubermaticv1.PresetList, error) {
@@ -134,11 +137,21 @@ func presetUpdaterFactory(ctx context.Context, client ctrlruntimeclient.Client, 
 	}, nil
 }
 
+func presetDeleterFactory(ctx context.Context, client ctrlruntimeclient.Client) (presetDeleter, error) {
+	return func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
+		if err := client.Delete(ctx, preset); err != nil {
+			return &kubermaticv1.Preset{}, err
+		}
+		return &kubermaticv1.Preset{}, nil
+	}, nil
+}
+
 // PresetsProvider is a object to handle presets from a predefined config
 type PresetsProvider struct {
 	getter  presetsGetter
 	creator presetCreator
 	patcher presetUpdater
+	deleter presetDeleter
 }
 
 func NewPresetsProvider(ctx context.Context, client ctrlruntimeclient.Client, presetsFile string, dynamicPresets bool) (*PresetsProvider, error) {
@@ -157,7 +170,12 @@ func NewPresetsProvider(ctx context.Context, client ctrlruntimeclient.Client, pr
 		return nil, err
 	}
 
-	return &PresetsProvider{getter, creator, patcher}, nil
+	deleter, err := presetDeleterFactory(ctx, client)
+	if err != nil {
+		return nil, err
+	}
+
+	return &PresetsProvider{getter, creator, patcher, deleter}, nil
 }
 
 func (m *PresetsProvider) CreatePreset(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
@@ -188,56 +206,42 @@ func (m *PresetsProvider) GetPreset(userInfo *provider.UserInfo, name string) (*
 	return nil, errors.NewNotFound(kubermaticv1.Resource("preset"), name)
 }
 
+// DeletePreset Provider or delete Preset completely if empty
+func (m *PresetsProvider) DeletePreset(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
+	existingProviders := preset.Spec.GetProviderList()
+	if len(existingProviders) > 0 {
+		// Case: Remove provider from the preset
+		return m.patcher(preset)
+	} else {
+		// Case: Delete the whole preset
+		return m.deleter(preset)
+	}
+}
+
 func filterOutPresets(userInfo *provider.UserInfo, list *kubermaticv1.PresetList) ([]kubermaticv1.Preset, error) {
 	if list == nil {
 		return nil, fmt.Errorf("the preset list can not be nil")
 	}
-	var presetList []kubermaticv1.Preset
+
+	var result []kubermaticv1.Preset
 
 	for _, preset := range list.Items {
-		// find preset based on domains and emails
-		// Example: [ "example.com", "foobar@example.com", "foo.bar@test.com"]
-		// --> all "example.com" emails and "foo.bar@test.com" will get the preset
-		requiredEmails := preset.Spec.RequiredEmails
-
-		// assure backwards compatibility
-		requiredEmailDomain := preset.Spec.RequiredEmailDomain
-		if requiredEmailDomain != "" {
-			requiredEmails = append(requiredEmails, requiredEmailDomain)
+		requirements := preset.Spec.RequiredEmails
+		if legacy := preset.Spec.RequiredEmailDomain; len(legacy) != 0 {
+			requirements = append(requirements, legacy)
 		}
 
-		if len(requiredEmails) != 0 {
-			userDomain := strings.Split(userInfo.Email, "@")
-			for _, emailItem := range requiredEmails {
-				// Special case:
-				//   userDomain = foo@bar@acme.com
-				//     user: foo@bar
-				//     domain: acme.com
-				//   --> take last element: userDomain[len(userDomain)-1]
-				reqEmail := strings.Split(emailItem, "@")
+		matches, err := email.MatchesRequirements(userInfo.Email, requirements)
+		if err != nil {
+			return nil, err
+		}
 
-				// if it's a domain, we compare it against the userDomain,
-				// otherwise, it has to match the whole email
-				if len(reqEmail) == 1 {
-					// domain provided
-					if len(userDomain) >= 2 && strings.EqualFold(userDomain[len(userDomain)-1], reqEmail[0]) {
-						presetList = append(presetList, preset)
-						break
-					}
-				} else {
-					// email provided
-					if strings.EqualFold(userInfo.Email, emailItem) {
-						presetList = append(presetList, preset)
-						break
-					}
-				}
-			}
-		} else {
-			// find preset for "all" without RequiredEmailDomain field
-			presetList = append(presetList, preset)
+		if matches || userInfo.IsAdmin {
+			result = append(result, preset)
 		}
 	}
-	return presetList, nil
+
+	return result, nil
 }
 
 func (m *PresetsProvider) SetCloudCredentials(userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) (*kubermaticv1.CloudSpec, error) {

@@ -37,8 +37,9 @@ type AddonProvider struct {
 	// createSeedImpersonatedClient is used as a ground for impersonation
 	// whenever a connection to Seed API server is required
 	createSeedImpersonatedClient ImpersonationClient
-	// accessibleAddons is the set of addons that the provider should provide CRUD access to
-	accessibleAddons sets.String
+	// configGetter is a KubermaticConfigurationGetter to retrieve the currently active
+	// configuration live from the cluster.
+	configGetter provider.KubermaticConfigurationGetter
 	// clientPrivileged is used for privileged operations
 	clientPrivileged ctrlruntimeclient.Client
 }
@@ -48,18 +49,40 @@ type AddonProvider struct {
 func NewAddonProvider(
 	clientPrivileged ctrlruntimeclient.Client,
 	createSeedImpersonatedClient ImpersonationClient,
-	accessibleAddons sets.String) *AddonProvider {
+	configGetter provider.KubermaticConfigurationGetter) *AddonProvider {
 	return &AddonProvider{
 		createSeedImpersonatedClient: createSeedImpersonatedClient,
-		accessibleAddons:             accessibleAddons,
+		configGetter:                 configGetter,
 		clientPrivileged:             clientPrivileged,
 	}
 }
 
+func (p *AddonProvider) getAccessibleAddons() (sets.String, error) {
+	config, err := p.configGetter(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
+	return sets.NewString(config.Spec.API.AccessibleAddons...), nil
+}
+
+func (p *AddonProvider) checkAddonAccessible(addonName string) error {
+	accessible, err := p.getAccessibleAddons()
+	if err != nil {
+		return err
+	}
+
+	if !accessible.Has(addonName) {
+		return kerrors.NewUnauthorized(fmt.Sprintf("addon not accessible: %v", addonName))
+	}
+
+	return nil
+}
+
 // New creates a new addon in the given cluster
 func (p *AddonProvider) New(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, addonName string, variables *runtime.RawExtension, labels map[string]string) (*kubermaticv1.Addon, error) {
-	if !p.accessibleAddons.Has(addonName) {
-		return nil, kerrors.NewUnauthorized(fmt.Sprintf("addon not accessible: %v", addonName))
+	if err := p.checkAddonAccessible(addonName); err != nil {
+		return nil, err
 	}
 
 	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
@@ -81,8 +104,8 @@ func (p *AddonProvider) New(userInfo *provider.UserInfo, cluster *kubermaticv1.C
 // Note that this function:
 // is unsafe in a sense that it uses privileged account to create the resource
 func (p *AddonProvider) NewUnsecured(cluster *kubermaticv1.Cluster, addonName string, variables *runtime.RawExtension, labels map[string]string) (*kubermaticv1.Addon, error) {
-	if !p.accessibleAddons.Has(addonName) {
-		return nil, kerrors.NewUnauthorized(fmt.Sprintf("addon not accessible: %v", addonName))
+	if err := p.checkAddonAccessible(addonName); err != nil {
+		return nil, err
 	}
 
 	addon := genAddon(cluster, addonName, variables, labels)
@@ -122,9 +145,10 @@ func genAddon(cluster *kubermaticv1.Cluster, addonName string, variables *runtim
 
 // Get returns the given addon, it uses the projectInternalName to determine the group the user belongs to
 func (p *AddonProvider) Get(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, addonName string) (*kubermaticv1.Addon, error) {
-	if !p.accessibleAddons.Has(addonName) {
-		return nil, kerrors.NewUnauthorized(fmt.Sprintf("addon not accessible: %v", addonName))
+	if err := p.checkAddonAccessible(addonName); err != nil {
+		return nil, err
 	}
+
 	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
@@ -142,9 +166,10 @@ func (p *AddonProvider) Get(userInfo *provider.UserInfo, cluster *kubermaticv1.C
 // Note that this function:
 // is unsafe in a sense that it uses privileged account to get the resource
 func (p *AddonProvider) GetUnsecured(cluster *kubermaticv1.Cluster, addonName string) (*kubermaticv1.Addon, error) {
-	if !p.accessibleAddons.Has(addonName) {
-		return nil, kerrors.NewUnauthorized(fmt.Sprintf("addon not accessible: %v", addonName))
+	if err := p.checkAddonAccessible(addonName); err != nil {
+		return nil, err
 	}
+
 	addon := &kubermaticv1.Addon{}
 	if err := p.clientPrivileged.Get(context.Background(), ctrlruntimeclient.ObjectKey{Namespace: cluster.Status.NamespaceName, Name: addonName}, addon); err != nil {
 		return nil, err
@@ -163,9 +188,14 @@ func (p *AddonProvider) List(userInfo *provider.UserInfo, cluster *kubermaticv1.
 		return nil, err
 	}
 
+	accessible, err := p.getAccessibleAddons()
+	if err != nil {
+		return nil, err
+	}
+
 	result := []*kubermaticv1.Addon{}
 	for _, addon := range addonList.Items {
-		if p.accessibleAddons.Has(addon.Name) {
+		if accessible.Has(addon.Name) {
 			result = append(result, addon.DeepCopy())
 		}
 	}
@@ -174,15 +204,19 @@ func (p *AddonProvider) List(userInfo *provider.UserInfo, cluster *kubermaticv1.
 }
 
 func (p *AddonProvider) ListUnsecured(cluster *kubermaticv1.Cluster) ([]*kubermaticv1.Addon, error) {
-
 	addonList := &kubermaticv1.AddonList{}
 	if err := p.clientPrivileged.List(context.Background(), addonList, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName)); err != nil {
 		return nil, err
 	}
 
+	accessible, err := p.getAccessibleAddons()
+	if err != nil {
+		return nil, err
+	}
+
 	result := []*kubermaticv1.Addon{}
 	for _, addon := range addonList.Items {
-		if p.accessibleAddons.Has(addon.Name) {
+		if accessible.Has(addon.Name) {
 			result = append(result, addon.DeepCopy())
 		}
 	}
@@ -192,8 +226,8 @@ func (p *AddonProvider) ListUnsecured(cluster *kubermaticv1.Cluster) ([]*kuberma
 
 // Update updates an addon
 func (p *AddonProvider) Update(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, addon *kubermaticv1.Addon) (*kubermaticv1.Addon, error) {
-	if !p.accessibleAddons.Has(addon.Name) {
-		return nil, kerrors.NewUnauthorized(fmt.Sprintf("addon not accessible: %v", addon.Name))
+	if err := p.checkAddonAccessible(addon.Name); err != nil {
+		return nil, err
 	}
 
 	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
@@ -211,8 +245,8 @@ func (p *AddonProvider) Update(userInfo *provider.UserInfo, cluster *kubermaticv
 
 // Delete deletes the given addon
 func (p *AddonProvider) Delete(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, addonName string) error {
-	if !p.accessibleAddons.Has(addonName) {
-		return kerrors.NewUnauthorized(fmt.Sprintf("addon not accessible: %v", addonName))
+	if err := p.checkAddonAccessible(addonName); err != nil {
+		return err
 	}
 
 	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
@@ -228,8 +262,8 @@ func (p *AddonProvider) Delete(userInfo *provider.UserInfo, cluster *kubermaticv
 // Note that this function:
 // is unsafe in a sense that it uses privileged account to update the resource
 func (p *AddonProvider) UpdateUnsecured(cluster *kubermaticv1.Cluster, addon *kubermaticv1.Addon) (*kubermaticv1.Addon, error) {
-	if !p.accessibleAddons.Has(addon.Name) {
-		return nil, kerrors.NewUnauthorized(fmt.Sprintf("addon not accessible: %v", addon.Name))
+	if err := p.checkAddonAccessible(addon.Name); err != nil {
+		return nil, err
 	}
 
 	addon.Namespace = cluster.Status.NamespaceName
@@ -245,14 +279,14 @@ func (p *AddonProvider) UpdateUnsecured(cluster *kubermaticv1.Cluster, addon *ku
 // Note that this function:
 // is unsafe in a sense that it uses privileged account to delete the resource
 func (p *AddonProvider) DeleteUnsecured(cluster *kubermaticv1.Cluster, addonName string) error {
-	if !p.accessibleAddons.Has(addonName) {
-		return kerrors.NewUnauthorized(fmt.Sprintf("addon not accessible: %v", addonName))
+	if err := p.checkAddonAccessible(addonName); err != nil {
+		return err
 	}
 
 	return p.clientPrivileged.Delete(context.Background(), &kubermaticv1.Addon{ObjectMeta: metav1.ObjectMeta{Name: addonName, Namespace: cluster.Status.NamespaceName}})
 }
 
-func AddonProviderFactory(mapper meta.RESTMapper, seedKubeconfigGetter provider.SeedKubeconfigGetter, accessibleAddons sets.String) provider.AddonProviderGetter {
+func AddonProviderFactory(mapper meta.RESTMapper, seedKubeconfigGetter provider.SeedKubeconfigGetter, configGetter provider.KubermaticConfigurationGetter) provider.AddonProviderGetter {
 	return func(seed *kubermaticv1.Seed) (provider.AddonProvider, error) {
 		cfg, err := seedKubeconfigGetter(seed)
 		if err != nil {
@@ -266,7 +300,7 @@ func AddonProviderFactory(mapper meta.RESTMapper, seedKubeconfigGetter provider.
 		return NewAddonProvider(
 			clientPrivileged,
 			defaultImpersonationClientForSeed.CreateImpersonatedClient,
-			accessibleAddons,
+			configGetter,
 		), nil
 	}
 }

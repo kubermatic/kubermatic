@@ -18,19 +18,23 @@ package addoninstaller
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/go-test/deep"
 
 	"k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/scheme"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/provider"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/yaml"
 )
 
 var addons = kubermaticv1.AddonList{Items: []kubermaticv1.Addon{
@@ -134,7 +138,6 @@ func TestCreateAddon(t *testing.T) {
 	}
 
 	for _, test := range tests {
-
 		t.Run(test.name, func(t *testing.T) {
 			client := ctrlruntimefakeclient.
 				NewClientBuilder().
@@ -142,10 +145,16 @@ func TestCreateAddon(t *testing.T) {
 				WithObjects(test.cluster).
 				Build()
 
+			config := createKubermaticConfiguration(addons)
+			configGetter, err := provider.StaticKubermaticConfigurationGetterFactory(config)
+			if err != nil {
+				t.Fatalf("Failed to create Config Getter: %v", err)
+			}
+
 			reconciler := Reconciler{
-				log:              kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-				Client:           client,
-				kubernetesAddons: addons,
+				log:          kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
+				Client:       client,
+				configGetter: configGetter,
 			}
 
 			if _, err := reconciler.reconcile(context.Background(), reconciler.log, test.cluster); err != nil {
@@ -165,6 +174,25 @@ func TestCreateAddon(t *testing.T) {
 			}
 
 		})
+	}
+}
+
+func createKubermaticConfiguration(addons kubermaticv1.AddonList) *operatorv1alpha1.KubermaticConfiguration {
+	encoded, err := yaml.Marshal(addons)
+	if err != nil {
+		panic(fmt.Sprintf("failed to marshal addon list: %v", err))
+	}
+
+	return &operatorv1alpha1.KubermaticConfiguration{
+		Spec: operatorv1alpha1.KubermaticConfigurationSpec{
+			UserCluster: operatorv1alpha1.KubermaticUserClusterConfiguration{
+				Addons: operatorv1alpha1.KubermaticAddonsConfiguration{
+					Kubernetes: operatorv1alpha1.KubermaticAddonConfiguration{
+						DefaultManifests: string(encoded),
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -396,7 +424,6 @@ func TestUpdateAddon(t *testing.T) {
 	}
 
 	for _, test := range tests {
-
 		t.Run(test.name, func(t *testing.T) {
 			objs := []ctrlruntimeclient.Object{test.cluster}
 			for _, a := range test.existingClusterAddons {
@@ -405,10 +432,16 @@ func TestUpdateAddon(t *testing.T) {
 
 			client := ctrlruntimefakeclient.NewClientBuilder().WithObjects(objs...).Build()
 
+			config := createKubermaticConfiguration(addons)
+			configGetter, err := provider.StaticKubermaticConfigurationGetterFactory(config)
+			if err != nil {
+				t.Fatalf("Failed to create Config Getter: %v", err)
+			}
+
 			reconciler := Reconciler{
-				log:              kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-				Client:           client,
-				kubernetesAddons: addons,
+				log:          kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
+				Client:       client,
+				configGetter: configGetter,
 			}
 
 			if _, err := reconciler.reconcile(context.Background(), reconciler.log, test.cluster); err != nil {
@@ -426,7 +459,6 @@ func TestUpdateAddon(t *testing.T) {
 					t.Errorf("created addon is not equal to expected addon, diff: %v", diff)
 				}
 			}
-
 		})
 	}
 }

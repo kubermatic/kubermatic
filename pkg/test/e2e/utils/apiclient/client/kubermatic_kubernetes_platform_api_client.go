@@ -25,9 +25,11 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/credentials"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/datacenter"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/digitalocean"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/eks"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/etcdbackupconfig"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/etcdrestore"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/gcp"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/gke"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/hetzner"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/metering"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/metric"
@@ -37,6 +39,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/packet"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/preset"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/project"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/regions"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/rulegroup"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/seed"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/serviceaccounts"
@@ -106,9 +109,11 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Kubermatic
 	cli.Credentials = credentials.New(transport, formats)
 	cli.Datacenter = datacenter.New(transport, formats)
 	cli.Digitalocean = digitalocean.New(transport, formats)
+	cli.Eks = eks.New(transport, formats)
 	cli.Etcdbackupconfig = etcdbackupconfig.New(transport, formats)
 	cli.Etcdrestore = etcdrestore.New(transport, formats)
 	cli.Gcp = gcp.New(transport, formats)
+	cli.Gke = gke.New(transport, formats)
 	cli.Hetzner = hetzner.New(transport, formats)
 	cli.Metering = metering.New(transport, formats)
 	cli.Metric = metric.New(transport, formats)
@@ -118,6 +123,7 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Kubermatic
 	cli.Packet = packet.New(transport, formats)
 	cli.Preset = preset.New(transport, formats)
 	cli.Project = project.New(transport, formats)
+	cli.Regions = regions.New(transport, formats)
 	cli.Rulegroup = rulegroup.New(transport, formats)
 	cli.Seed = seed.New(transport, formats)
 	cli.Serviceaccounts = serviceaccounts.New(transport, formats)
@@ -202,11 +208,15 @@ type KubermaticKubernetesPlatformAPI struct {
 
 	Digitalocean digitalocean.ClientService
 
+	Eks eks.ClientService
+
 	Etcdbackupconfig etcdbackupconfig.ClientService
 
 	Etcdrestore etcdrestore.ClientService
 
 	Gcp gcp.ClientService
+
+	Gke gke.ClientService
 
 	Hetzner hetzner.ClientService
 
@@ -225,6 +235,8 @@ type KubermaticKubernetesPlatformAPI struct {
 	Preset preset.ClientService
 
 	Project project.ClientService
+
+	Regions regions.ClientService
 
 	Rulegroup rulegroup.ClientService
 
@@ -267,9 +279,11 @@ func (c *KubermaticKubernetesPlatformAPI) SetTransport(transport runtime.ClientT
 	c.Credentials.SetTransport(transport)
 	c.Datacenter.SetTransport(transport)
 	c.Digitalocean.SetTransport(transport)
+	c.Eks.SetTransport(transport)
 	c.Etcdbackupconfig.SetTransport(transport)
 	c.Etcdrestore.SetTransport(transport)
 	c.Gcp.SetTransport(transport)
+	c.Gke.SetTransport(transport)
 	c.Hetzner.SetTransport(transport)
 	c.Metering.SetTransport(transport)
 	c.Metric.SetTransport(transport)
@@ -279,6 +293,7 @@ func (c *KubermaticKubernetesPlatformAPI) SetTransport(transport runtime.ClientT
 	c.Packet.SetTransport(transport)
 	c.Preset.SetTransport(transport)
 	c.Project.SetTransport(transport)
+	c.Regions.SetTransport(transport)
 	c.Rulegroup.SetTransport(transport)
 	c.Seed.SetTransport(transport)
 	c.Serviceaccounts.SetTransport(transport)

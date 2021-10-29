@@ -501,7 +501,7 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 
 	// We delete all resources with this label which are not in the combined manifest
 	selector := labels.SelectorFromSet(r.getAddonLabel(addon))
-	cmd, err := r.getApplyCommand(ctx, kubeconfigFilename, manifestFilename, selector, cluster.Spec.Version.Version)
+	cmd, err := r.getApplyCommand(ctx, kubeconfigFilename, manifestFilename, selector, cluster.Spec.Version.Semver())
 	if err != nil {
 		return fmt.Errorf("failed to create command: %w", err)
 	}
@@ -549,7 +549,7 @@ func (r *Reconciler) cleanupManifests(ctx context.Context, log *zap.SugaredLogge
 	}
 	defer done()
 
-	binary, err := kubectl.BinaryForClusterVersion(cluster.Spec.Version.Version)
+	binary, err := kubectl.BinaryForClusterVersion(cluster.Spec.Version.Semver())
 	if err != nil {
 		return fmt.Errorf("failed to determine kubectl binary to use: %w", err)
 	}

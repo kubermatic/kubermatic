@@ -260,7 +260,7 @@ func (r CreateReq) Validate(clusterType kubermaticv1.ClusterType, updateManager 
 		return fmt.Errorf("disabled cluster type %s", r.Body.Cluster.Type)
 	}
 
-	if r.Body.Cluster.Spec.Version.Version == nil {
+	if r.Body.Cluster.Spec.Version.Semver() == nil {
 		return fmt.Errorf("invalid cluster: invalid cloud spec \"Version\" is required but was not specified")
 	}
 
@@ -273,12 +273,12 @@ func (r CreateReq) Validate(clusterType kubermaticv1.ClusterType, updateManager 
 		return fmt.Errorf("failed to get available cluster versions: %v", err)
 	}
 	for _, availableVersion := range versions {
-		if r.Body.Cluster.Spec.Version.Version.Equal(availableVersion.Version) {
+		if r.Body.Cluster.Spec.Version.Semver().Equal(availableVersion.Version) {
 			return nil
 		}
 	}
 
-	return fmt.Errorf("invalid cluster: invalid cloud spec: unsupported version %v", r.Body.Cluster.Spec.Version.Version)
+	return fmt.Errorf("invalid cluster: invalid cloud spec: unsupported version %v", r.Body.Cluster.Spec.Version.Semver())
 }
 
 func DecodeCreateReq(c context.Context, r *http.Request) (interface{}, error) {

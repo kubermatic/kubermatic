@@ -26,9 +26,9 @@ const (
 	ClusterTemplateInstanceKindName = "ClusterTemplateInstance"
 )
 
-//+genclient
-//+genclient:nonNamespaced
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 // ClusterTemplateInstance is the object representing a cluster template instance.
 type ClusterTemplateInstance struct {
@@ -46,7 +46,8 @@ type ClusterTemplateInstanceSpec struct {
 	Replicas            int64  `json:"replicas"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
 
 // ClusterTemplateInstanceList specifies a list of cluster template instances
 type ClusterTemplateInstanceList struct {

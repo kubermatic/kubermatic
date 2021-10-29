@@ -17,7 +17,6 @@ limitations under the License.
 package v2
 
 import (
-	"k8c.io/kubermatic/v2/pkg/handler/v2/user"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -46,11 +45,18 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/rulegroup"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/seedsettings"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/user"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/version"
 )
 
 // RegisterV2 declares all router paths for v2
 func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
+
+	// Defines a set of HTTP endpoint for interacting with
+	// various cloud providers
+	mux.Methods(http.MethodGet).
+		Path("/providers/gke/clusters").
+		Handler(r.listGKEClusters())
 
 	// Defines a set of HTTP endpoints for cluster that belong to a project.
 	mux.Methods(http.MethodPost).
@@ -531,6 +537,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/providers/{provider_name}/presets").
 		Handler(r.updatePreset())
 
+	mux.Methods(http.MethodDelete).
+		Path("/providers/{provider_name}/presets/{preset_name}").
+		Handler(r.deletePreset())
+
 	mux.Methods(http.MethodGet).
 		Path("/seeds/{seed_name}/settings").
 		Handler(r.getSeedSettings())
@@ -671,6 +681,15 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/users").
 		Handler(r.listUser())
+
+	// Defines a set of HTTP endpoints for interacting with EKS clusters
+	mux.Methods(http.MethodGet).
+		Path("/providers/eks/clusters").
+		Handler(r.listEKSClusters())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/ec2/regions").
+		Handler(r.listEC2Regions())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -1152,7 +1171,7 @@ func (r Routing) createExternalCluster() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(externalcluster.CreateEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
+		)(externalcluster.CreateEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider, r.presetsProvider)),
 		externalcluster.DecodeCreateReq,
 		handler.SetStatusCreatedHeader(handler.EncodeJSON),
 		r.defaultServerOptions()...,
@@ -2479,7 +2498,7 @@ func (r Routing) listInstallableAddons() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.Addons(r.clusterProviderGetter, r.addonProviderGetter, r.seedsGetter),
 			middleware.PrivilegedAddons(r.clusterProviderGetter, r.addonProviderGetter, r.seedsGetter),
-		)(addon.ListInstallableAddonEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.accessibleAddons)),
+		)(addon.ListInstallableAddonEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.kubermaticConfigGetter)),
 		addon.DecodeListAddons,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -3580,6 +3599,33 @@ func (r Routing) updatePreset() http.Handler {
 	)
 }
 
+// swagger:route DELETE /api/v2/providers/{provider_name}/presets/{preset_name} preset deletePreset
+//
+//	   Deletes provider preset
+//
+//     Consumes:
+//	   - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) deletePreset() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(preset.DeletePreset(r.presetsProvider, r.userInfoGetter)),
+		preset.DecodeDeletePreset,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route GET /api/v2/providers/{provider_name}/versions version listVersionsByProvider
 //
 // Lists all versions which don't result in automatic updates for a given provider
@@ -4625,6 +4671,75 @@ func (r Routing) listUser() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(user.ListEndpoint(r.userInfoGetter, r.userProvider)),
 		common.DecodeEmptyReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/gke/clusters gke listGKEClusters
+//
+// Lists GKE clusters
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: GKEClusterList
+func (r Routing) listGKEClusters() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.GKEClustersEndpoint(r.presetsProvider, r.userInfoGetter)),
+		provider.DecodeGKETypesReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/eks/clusters eks listEKSClusters
+//
+// Lists EKS clusters
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: EKSClusterList
+func (r Routing) listEKSClusters() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.ListEKSClustersEndpoint(r.userInfoGetter, r.presetsProvider)),
+		provider.DecodeEKSTypesReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/ec2/regions regions listEC2Regions
+//
+//     List EC2 regions.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []Regions
+//       401: empty
+//       403: empty
+func (r Routing) listEC2Regions() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.ListEC2RegionsEndpoint(r.userInfoGetter, r.presetsProvider)),
+		provider.DecodeEC2CommonReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

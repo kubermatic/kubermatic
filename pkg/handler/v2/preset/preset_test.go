@@ -197,7 +197,8 @@ func TestListPresets(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v2/presets?disabled=%v", tc.Disabled), strings.NewReader(""))
 			res := httptest.NewRecorder()
-			kubermaticObj := make([]ctrlruntimeclient.Object, 0)
+			// Tests need a default user otherwise, the GenDefaultAPIUser gets admin
+			kubermaticObj := []ctrlruntimeclient.Object{test.GenDefaultUser()}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
@@ -338,7 +339,8 @@ func TestListProviderPresets(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v2/providers/%s/presets?disabled=%v&datacenter=%s", tc.Provider, tc.Disabled, tc.Datacenter), strings.NewReader(""))
 			res := httptest.NewRecorder()
-			kubermaticObj := make([]ctrlruntimeclient.Object, 0)
+			// Tests need a default user otherwise, the GenDefaultAPIUser gets admin
+			kubermaticObj := []ctrlruntimeclient.Object{test.GenDefaultUser()}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
@@ -1029,6 +1031,126 @@ func TestUpdatePreset(t *testing.T) {
 			HTTPStatus:      http.StatusForbidden,
 			ExistingAPIUser: test.GenDefaultAPIUser(),
 		},
+
+		// scenario 6
+		{
+			Name:       "scenario 6: add requiredEmails",
+			PresetName: "do-preset",
+			Provider:   v2.PresetProvider{Name: kubermaticv1.ProviderDigitalocean, Enabled: true},
+			Body: `{
+					  "metadata": {
+						"name": "do-preset"
+					  },
+					  "spec": {
+						"requiredEmails": ["foo.bar@example.com"],
+						"digitalocean": {
+						  "token": "test"
+						}
+					  }
+			}`,
+			ExistingPreset: &kubermaticv1.Preset{
+				ObjectMeta: v1.ObjectMeta{Name: "do-preset"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				Spec: kubermaticv1.PresetSpec{
+					Digitalocean: &kubermaticv1.Digitalocean{
+						Token: "test",
+					},
+				},
+			},
+			ExpectedPreset: &kubermaticv1.Preset{
+				ObjectMeta: v1.ObjectMeta{Name: "do-preset", ResourceVersion: "1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				Spec: kubermaticv1.PresetSpec{
+					RequiredEmails: []string{"foo.bar@example.com"},
+					Digitalocean: &kubermaticv1.Digitalocean{
+						PresetProvider: kubermaticv1.PresetProvider{Enabled: boolPtr(true)},
+						Token:          "test",
+					},
+				},
+			},
+			HTTPStatus:      http.StatusOK,
+			ExistingAPIUser: test.GenDefaultAdminAPIUser(),
+		},
+
+		// scenario 7
+		{
+			Name:       "scenario 7: update requiredEmails",
+			PresetName: "do-preset",
+			Provider:   v2.PresetProvider{Name: kubermaticv1.ProviderDigitalocean, Enabled: true},
+			Body: `{
+					  "metadata": {
+						"name": "do-preset"
+					  },
+					  "spec": {
+						"requiredEmails": ["foobar.com","test.com"],
+						"digitalocean": {
+							"token": "test"
+						}
+					  }
+			}`,
+			ExistingPreset: &kubermaticv1.Preset{
+				ObjectMeta: v1.ObjectMeta{Name: "do-preset"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				Spec: kubermaticv1.PresetSpec{
+					// use a domain that is not the domain of the admin (i.e. acme.com)!
+					RequiredEmails: []string{"foobar.com"},
+					Digitalocean: &kubermaticv1.Digitalocean{
+						Token: "test",
+					},
+				},
+			},
+			ExpectedPreset: &kubermaticv1.Preset{
+				ObjectMeta: v1.ObjectMeta{Name: "do-preset", ResourceVersion: "1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				Spec: kubermaticv1.PresetSpec{
+					RequiredEmails: []string{"foobar.com", "test.com"},
+					Digitalocean: &kubermaticv1.Digitalocean{
+						Token: "test",
+					},
+				},
+			},
+			HTTPStatus:      http.StatusOK,
+			ExistingAPIUser: test.GenDefaultAdminAPIUser(),
+		},
+
+		// scenario 8
+		{
+			Name:       "scenario 8: remove requiredEmails",
+			PresetName: "do-preset",
+			Provider:   v2.PresetProvider{Name: kubermaticv1.ProviderDigitalocean, Enabled: true},
+			Body: `{
+					  "metadata": {
+						"name": "do-preset"
+					  },
+					  "spec": {
+						"digitalocean": {
+							"token": "test"
+						}
+					  }
+			}`,
+			ExistingPreset: &kubermaticv1.Preset{
+				ObjectMeta: v1.ObjectMeta{Name: "do-preset"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				Spec: kubermaticv1.PresetSpec{
+					// use a domain that is not the domain of the admin (i.e. acme.com)!
+					RequiredEmails: []string{"foobar.com"},
+					Digitalocean: &kubermaticv1.Digitalocean{
+						Token: "test",
+					},
+				},
+			},
+			ExpectedPreset: &kubermaticv1.Preset{
+				ObjectMeta: v1.ObjectMeta{Name: "do-preset", ResourceVersion: "1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				Spec: kubermaticv1.PresetSpec{
+					Digitalocean: &kubermaticv1.Digitalocean{
+						Token: "test",
+					},
+				},
+			},
+			HTTPStatus:      http.StatusOK,
+			ExistingAPIUser: test.GenDefaultAdminAPIUser(),
+		},
 	}
 
 	for _, tc := range testcases {
@@ -1056,6 +1178,110 @@ func TestUpdatePreset(t *testing.T) {
 			preset := &kubermaticv1.Preset{}
 			if err := clientSets.FakeClient.Get(context.TODO(), ctrlruntimeclient.ObjectKey{Namespace: "", Name: tc.PresetName}, preset); err != nil {
 				t.Fatalf("failed to get preset: %+v", err)
+			}
+
+			if diff := deep.Equal(tc.ExpectedPreset, preset); diff != nil {
+				t.Errorf("Got different preset than expected.\nDiff: %v", diff)
+			}
+		})
+	}
+}
+
+func TestDeletePreset(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name            string
+		PresetName      string
+		Provider        v2.PresetProvider
+		Body            string
+		ExistingPreset  *kubermaticv1.Preset
+		ExpectedPreset  *kubermaticv1.Preset
+		IsDeleted       bool
+		HTTPStatus      int
+		ExistingAPIUser *apiv1.User
+	}{
+		// scenario 1
+		{
+			Name:       "scenario 1: delete digitalocean preset",
+			PresetName: "do-preset",
+			Provider:   v2.PresetProvider{Name: kubermaticv1.ProviderDigitalocean, Enabled: true},
+			ExistingPreset: &kubermaticv1.Preset{
+				ObjectMeta: v1.ObjectMeta{Name: "do-preset"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				Spec: kubermaticv1.PresetSpec{
+					Digitalocean: &kubermaticv1.Digitalocean{
+						Token: "test",
+					},
+				},
+			},
+			ExpectedPreset:  &kubermaticv1.Preset{},
+			IsDeleted:       true,
+			HTTPStatus:      http.StatusOK,
+			ExistingAPIUser: test.GenDefaultAdminAPIUser(),
+		},
+		// scenario 2
+		{
+			Name:       "scenario 2: delete digitalocean preset but keep the preset",
+			PresetName: "do-os-preset",
+			Provider:   v2.PresetProvider{Name: kubermaticv1.ProviderDigitalocean, Enabled: true},
+			ExistingPreset: &kubermaticv1.Preset{
+				ObjectMeta: v1.ObjectMeta{Name: "do-os-preset"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				Spec: kubermaticv1.PresetSpec{
+					Digitalocean: &kubermaticv1.Digitalocean{
+						Token: "test",
+					},
+					Openstack: &kubermaticv1.Openstack{
+						Username: "username",
+						Password: "password",
+						Tenant:   "tenant",
+						Domain:   "domain",
+					},
+				},
+			},
+			ExpectedPreset: &kubermaticv1.Preset{
+				ObjectMeta: v1.ObjectMeta{Name: "do-os-preset", ResourceVersion: "1000"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				Spec: kubermaticv1.PresetSpec{
+					Openstack: &kubermaticv1.Openstack{
+						Username: "username",
+						Password: "password",
+						Tenant:   "tenant",
+						Domain:   "domain",
+					},
+				},
+			},
+			HTTPStatus:      http.StatusOK,
+			IsDeleted:       false,
+			ExistingAPIUser: test.GenDefaultAdminAPIUser(),
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/api/v2/providers/%s/presets/%s", tc.Provider.Name, tc.PresetName), nil)
+			res := httptest.NewRecorder()
+
+			existingKubermaticObjs := []ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.ExistingAPIUser)}
+			if tc.ExistingPreset != nil {
+				existingKubermaticObjs = append(existingKubermaticObjs, tc.ExistingPreset)
+			}
+
+			ep, clientSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, []ctrlruntimeclient.Object{}, []ctrlruntimeclient.Object{}, existingKubermaticObjs, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+			assert.Equal(t, tc.HTTPStatus, res.Code)
+
+			preset := &kubermaticv1.Preset{}
+			if err := clientSets.FakeClient.Get(context.TODO(), ctrlruntimeclient.ObjectKey{Namespace: "", Name: tc.PresetName}, preset); err != nil {
+				if !tc.IsDeleted {
+					t.Fatalf("failed to get preset: %+v", err)
+				} else {
+					return
+				}
 			}
 
 			if diff := deep.Equal(tc.ExpectedPreset, preset); diff != nil {

@@ -18,7 +18,6 @@ package kubermatic
 
 import (
 	"fmt"
-	"strings"
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -61,7 +60,6 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 			args := []string{
 				"-logtostderr",
 				"-internal-address=0.0.0.0:8085",
-				"-kubernetes-addons-path=/opt/addons/kubernetes",
 				"-worker-count=4",
 				"-admissionwebhook-cert-dir=/opt/webhook-serving-cert/",
 				fmt.Sprintf("-ca-bundle=/opt/ca-bundle/%s", resources.CABundleConfigMapKey),
@@ -69,7 +67,7 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 				fmt.Sprintf("-admissionwebhook-key-name=%s", resources.ServingCertKeySecretKey),
 				fmt.Sprintf("-namespace=%s", cfg.Namespace),
 				fmt.Sprintf("-external-url=%s", cfg.Spec.Ingress.Domain),
-				fmt.Sprintf("-datacenter-name=%s", seed.Name),
+				fmt.Sprintf("-seed-name=%s", seed.Name),
 				fmt.Sprintf("-etcd-disk-size=%s", cfg.Spec.UserCluster.EtcdVolumeSize),
 				fmt.Sprintf("-feature-gates=%s", common.StringifyFeatureGates(cfg)),
 				fmt.Sprintf("-nodeport-range=%s", cfg.Spec.UserCluster.NodePortRange),
@@ -84,8 +82,6 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 				fmt.Sprintf("-max-parallel-reconcile=%d", cfg.Spec.SeedController.MaximumParallelReconciles),
 				fmt.Sprintf("-apiserver-reconciling-disabled-by-default=%v", cfg.Spec.UserCluster.DisableAPIServerEndpointReconciling),
 				fmt.Sprintf("-pprof-listen-address=%s", *cfg.Spec.SeedController.PProfEndpoint),
-				fmt.Sprintf("-in-cluster-prometheus-disable-default-rules=%v", cfg.Spec.UserCluster.Monitoring.DisableDefaultRules),
-				fmt.Sprintf("-in-cluster-prometheus-disable-default-scraping-configs=%v", cfg.Spec.UserCluster.Monitoring.DisableDefaultScrapingConfigs),
 				fmt.Sprintf("-backup-container=/opt/backup/%s", storeContainerKey),
 			}
 
@@ -102,10 +98,6 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 
 			if cfg.Spec.ImagePullSecret != "" {
 				args = append(args, fmt.Sprintf("-docker-pull-config-json-file=/opt/docker/%s", corev1.DockerConfigJsonKey))
-			}
-
-			if cfg.Spec.UserCluster.Monitoring.ScrapeAnnotationPrefix != "" {
-				args = append(args, fmt.Sprintf("-monitoring-scrape-annotation-prefix=%s", cfg.Spec.UserCluster.Monitoring.ScrapeAnnotationPrefix))
 			}
 
 			if seed.Spec.MLA != nil && seed.Spec.MLA.UserClusterMLAEnabled {
@@ -203,27 +195,6 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 				})
 			}
 
-			if cfg.Spec.UserCluster.Addons.Kubernetes.DefaultManifests != "" {
-				args = append(args, "-kubernetes-addons-file=/opt/extra-files/"+common.KubernetesAddonsFileName)
-			} else {
-				args = append(args, fmt.Sprintf("-kubernetes-addons-list=%s", strings.Join(cfg.Spec.UserCluster.Addons.Kubernetes.Default, ",")))
-			}
-
-			volumes = append(volumes, corev1.Volume{
-				Name: "extra-files",
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: common.ExtraFilesSecretName,
-					},
-				},
-			})
-
-			volumeMounts = append(volumeMounts, corev1.VolumeMount{
-				MountPath: "/opt/extra-files/",
-				Name:      "extra-files",
-				ReadOnly:  true,
-			})
-
 			if cfg.Spec.FeatureGates.Has(features.OpenIDAuthPlugin) {
 				args = append(args,
 					fmt.Sprintf("-oidc-issuer-url=%s", cfg.Spec.Auth.TokenIssuer),
@@ -232,53 +203,9 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 				)
 			}
 
-			if len(cfg.Spec.UserCluster.Monitoring.CustomScrapingConfigs) > 0 {
-				path := "/opt/" + clusterNamespacePrometheusScrapingConfigsConfigMapName
-				args = append(args, fmt.Sprintf("-in-cluster-prometheus-scraping-configs-file=%s/%s", path, clusterNamespacePrometheusScrapingConfigsKey))
-
-				volumes = append(volumes, corev1.Volume{
-					Name: clusterNamespacePrometheusScrapingConfigsConfigMapName,
-					VolumeSource: corev1.VolumeSource{
-						ConfigMap: &corev1.ConfigMapVolumeSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: clusterNamespacePrometheusScrapingConfigsConfigMapName,
-							},
-						},
-					},
-				})
-
-				volumeMounts = append(volumeMounts, corev1.VolumeMount{
-					Name:      clusterNamespacePrometheusScrapingConfigsConfigMapName,
-					MountPath: path,
-					ReadOnly:  true,
-				})
-			}
-
-			if len(cfg.Spec.UserCluster.Monitoring.CustomRules) > 0 {
-				path := "/opt/" + clusterNamespacePrometheusRulesConfigMapName
-				args = append(args, fmt.Sprintf("-in-cluster-prometheus-rules-file=%s/%s", path, clusterNamespacePrometheusRulesKey))
-
-				volumes = append(volumes, corev1.Volume{
-					Name: clusterNamespacePrometheusRulesConfigMapName,
-					VolumeSource: corev1.VolumeSource{
-						ConfigMap: &corev1.ConfigMapVolumeSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: clusterNamespacePrometheusRulesConfigMapName,
-							},
-						},
-					},
-				})
-
-				volumeMounts = append(volumeMounts, corev1.VolumeMount{
-					Name:      clusterNamespacePrometheusRulesConfigMapName,
-					MountPath: path,
-					ReadOnly:  true,
-				})
-			}
-
 			d.Spec.Template.Spec.Volumes = volumes
 			d.Spec.Template.Spec.InitContainers = []corev1.Container{
-				createKubernetesAddonsInitContainer(cfg.Spec.UserCluster.Addons.Kubernetes, sharedAddonVolume, versions.Kubermatic),
+				createAddonsInitContainer(cfg.Spec.UserCluster.Addons.Kubernetes, sharedAddonVolume, versions.Kubermatic),
 			}
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
@@ -304,14 +231,14 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 	}
 }
 
-func createKubernetesAddonsInitContainer(cfg operatorv1alpha1.KubermaticAddonConfiguration, addonVolume string, version string) corev1.Container {
+func createAddonsInitContainer(cfg operatorv1alpha1.KubermaticAddonConfiguration, addonVolume string, version string) corev1.Container {
 	return corev1.Container{
-		Name:    "copy-addons-kubernetes",
+		Name:    "copy-addons",
 		Image:   cfg.DockerRepository + ":" + getAddonDockerTag(cfg, version),
 		Command: []string{"/bin/sh"},
 		Args: []string{
 			"-c",
-			"mkdir -p /opt/addons/kubernetes && cp -r /addons/* /opt/addons/kubernetes",
+			"mkdir -p /opt/addons && cp -r /addons/* /opt/addons",
 		},
 		VolumeMounts: []corev1.VolumeMount{
 			{

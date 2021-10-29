@@ -22,7 +22,6 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -33,9 +32,11 @@ import (
 	"github.com/pmezard/go-difflib/difflib"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes"
 	monitoringcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
@@ -261,6 +262,24 @@ func TestLoadFiles(t *testing.T) {
 
 	kubermaticVersions := kubermatic.NewFakeVersions()
 	caBundle := certificates.NewFakeCABundle()
+
+	config := &operatorv1alpha1.KubermaticConfiguration{
+		Spec: operatorv1alpha1.KubermaticConfigurationSpec{
+			UserCluster: operatorv1alpha1.KubermaticUserClusterConfiguration{
+				Monitoring: operatorv1alpha1.KubermaticUserClusterMonitoringConfiguration{
+					ScrapeAnnotationPrefix: defaults.DefaultUserClusterScrapeAnnotationPrefix,
+					CustomScrapingConfigs: `
+- job_name: custom-test-config
+  scheme: https
+  metrics_path: '/metrics'
+  static_configs:
+  - targets:
+    - 'foo.bar:12345'
+`,
+				},
+			},
+		},
+	}
 
 	for _, ver := range versions {
 		for prov, cloudspec := range clouds {
@@ -633,29 +652,6 @@ func TestLoadFiles(t *testing.T) {
 						close(stopCh)
 					}()
 
-					promTmpFile, err := ioutil.TempFile("", "kubermatic")
-					if err != nil {
-						t.Fatalf("couldn't create temp file, see: %v", err)
-					}
-
-					promTmpFilePath := promTmpFile.Name()
-					_, err = promTmpFile.WriteString(`- job_name: custom-test-config
-  scheme: https
-  metrics_path: '/metrics'
-  static_configs:
-  - targets:
-    - 'foo.bar:12345'
-`)
-					if err != nil {
-						t.Fatalf("couldn't write to temp file, see: %v", err)
-					}
-					defer (func() {
-						err = os.Remove(promTmpFilePath)
-						if err != nil {
-							t.Fatalf("couldn't delete temp file, see: %v", err)
-						}
-					})()
-
 					ctx := context.Background()
 					data := resources.NewTemplateDataBuilder().
 						WithContext(ctx).
@@ -673,11 +669,10 @@ func TestLoadFiles(t *testing.T) {
 								},
 							},
 						}).
+						WithKubermaticConfiguration(config).
 						WithNodeAccessNetwork("192.0.2.0/24").
 						WithEtcdDiskSize(resource.MustParse("5Gi")).
 						WithBackupPeriod(20 * time.Minute).
-						WithMonitoringScrapeAnnotationPrefix("kubermatic_io_monitoring").
-						WithInClusterPrometheusScrapingConfigsFile(promTmpFilePath).
 						WithUserClusterMLAEnabled(true).
 						WithCABundle(caBundle).
 						WithOIDCIssuerURL("https://dev.kubermatic.io/dex").

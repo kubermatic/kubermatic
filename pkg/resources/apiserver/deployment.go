@@ -268,6 +268,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 
 	admissionPlugins := sets.NewString(
 		"NamespaceLifecycle",
+		"NodeRestriction",
 		"LimitRanger",
 		"ServiceAccount",
 		"DefaultStorageClass",
@@ -309,6 +310,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"--audit-log-maxsize", "100",
 		"--audit-log-path", "/var/log/kubernetes/audit/audit.log",
 		"--tls-cert-file", "/etc/kubernetes/tls/apiserver-tls.crt",
+		"--tls-cipher-suites", strings.Join(resources.GetAllowedTLSCipherSuites(), ","),
 		"--tls-private-key-file", "/etc/kubernetes/tls/apiserver-tls.key",
 		"--proxy-client-cert-file", "/etc/kubernetes/pki/front-proxy/client/" + resources.ApiserverProxyClientCertificateCertSecretKey,
 		"--proxy-client-key-file", "/etc/kubernetes/pki/front-proxy/client/" + resources.ApiserverProxyClientCertificateKeySecretKey,
@@ -358,7 +360,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 	// enable service account signing key and issuer in Kubernetes 1.20 or when
 	// explicitly enabled in the cluster object
 	saConfig := cluster.Spec.ServiceAccount
-	if cluster.Spec.Version.Minor() >= 20 || (saConfig != nil && saConfig.TokenVolumeProjectionEnabled) {
+	if cluster.Spec.Version.Semver().Minor() >= 20 || (saConfig != nil && saConfig.TokenVolumeProjectionEnabled) {
 		var audiences []string
 
 		issuer := cluster.Address.URL

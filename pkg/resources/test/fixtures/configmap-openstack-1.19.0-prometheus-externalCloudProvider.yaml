@@ -203,14 +203,14 @@ data:
           key_file: /etc/kubernetes/prometheus-client.key
 
       relabel_configs:
-      - source_labels: [__meta_kubernetes_pod_annotation_kubermatic_io_monitoring_port]
+      - source_labels: [__meta_kubernetes_pod_annotation_monitoring_kubermatic_io_port]
         action: keep
         regex: \d+
-      - source_labels: [__meta_kubernetes_pod_annotation_kubermatic_io_monitoring_path]
+      - source_labels: [__meta_kubernetes_pod_annotation_monitoring_kubermatic_io_path]
         regex: (.+)
         action: replace
         target_label: __metrics_path__
-      - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_pod_name, __meta_kubernetes_pod_annotation_kubermatic_io_monitoring_port, __metrics_path__]
+      - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_pod_name, __meta_kubernetes_pod_annotation_monitoring_kubermatic_io_port, __metrics_path__]
         action: replace
         regex: (.*);(.*);(.*);(.*)
         target_label: __metrics_path__

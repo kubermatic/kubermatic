@@ -26,6 +26,7 @@ package allowedregistrycontroller
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	constrainttemplatev1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
@@ -199,8 +200,14 @@ func allowedRegistryConstraintCreatorGetter(regSet sets.String) reconciling.Name
 			}
 			ct.Spec.ConstraintType = AllowedRegistryCTName
 			ct.Spec.Disabled = regSet.Len() == 0
-			ct.Spec.Parameters = kubermaticv1.Parameters{
-				AllowedRegistryField: regSet.List(),
+
+			jsonRegSet, err := json.Marshal(regSet)
+			if err != nil {
+				return nil, fmt.Errorf("error marshalling registry set: %v", err)
+			}
+
+			ct.Spec.Parameters = map[string]json.RawMessage{
+				AllowedRegistryField: jsonRegSet,
 			}
 
 			return ct, nil

@@ -16,6 +16,8 @@ limitations under the License.
 
 package v1
 
+// +kubebuilder:validation:Enum=NodePort;LoadBalancer;Tunneling
+
 // ExposeStrategy is the strategy to expose the cluster with.
 type ExposeStrategy string
 

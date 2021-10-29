@@ -63,11 +63,10 @@ set -x
 ./_build/seed-controller-manager $CTRL_EXTRA_ARGS \
   -namespace=kubermatic \
   -enable-leader-election=false \
-  -datacenter-name=europe-west3-c \
+  -seed-name=europe-west3-c \
   -kubeconfig=$KUBECONFIG \
   -ca-bundle=$CA_BUNDLE \
-  -kubernetes-addons-path=addons \
-  -kubernetes-addons-file=charts/kubermatic/static/master/kubernetes-addons.yaml \
+  -addons-path=addons \
   -feature-gates=OpenIDAuthPlugin=true,KonnectivityService=true \
   -worker-name="$(worker_name)" \
   -external-url=dev.kubermatic.io \
@@ -77,7 +76,6 @@ set -x
   -oidc-issuer-url=$OIDC_ISSUER_URL \
   -oidc-issuer-client-id=$OIDC_ISSUER_CLIENT_ID \
   -oidc-issuer-client-secret=$OIDC_ISSUER_CLIENT_SECRET \
-  -monitoring-scrape-annotation-prefix='kubermatic.io' \
   -log-debug=$KUBERMATIC_DEBUG \
   -log-format=Console \
   -max-parallel-reconcile=10 \

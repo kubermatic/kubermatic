@@ -24,12 +24,15 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
+	"github.com/aws/aws-sdk-go/service/eks"
+	"github.com/aws/aws-sdk-go/service/eks/eksiface"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 )
 
 type ClientSet struct {
 	EC2 ec2iface.EC2API
+	EKS eksiface.EKSAPI
 	IAM iamiface.IAMAPI
 }
 
@@ -46,6 +49,7 @@ func GetClientSet(accessKeyID, secretAccessKey, region string) (*ClientSet, erro
 
 	return &ClientSet{
 		EC2: ec2.New(sess),
+		EKS: eks.New(sess),
 		IAM: iam.New(sess),
 	}, nil
 }
