@@ -230,7 +230,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 			defaultingTemplate.Spec.ComponentsOverride = settings
 
 		} else {
-			err = mgr.GetClient().Get(context.Background(), types.NamespacedName{
+			err = mgr.GetAPIReader().Get(context.Background(), types.NamespacedName{
 				Namespace: options.namespace,
 				Name:      seed.Spec.DefaultClusterTemplate,
 			}, &defaultingTemplate)
