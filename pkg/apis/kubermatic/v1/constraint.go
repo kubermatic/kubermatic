@@ -69,6 +69,8 @@ type ConstraintSpec struct {
 	Selector ConstraintSelector `json:"selector,omitempty"`
 }
 
+type Parameters map[string]json.RawMessage
+
 // ConstraintSelector is the object holding the cluster selection filters
 type ConstraintSelector struct {
 	// Providers is a list of cloud providers to which the Constraint applies to. Empty means all providers are selected.
@@ -76,8 +78,6 @@ type ConstraintSelector struct {
 	// LabelSelector selects the Clusters to which the Constraint applies based on their labels
 	LabelSelector metav1.LabelSelector `json:"labelSelector,omitempty"`
 }
-
-type Parameters map[string]json.RawMessage
 
 // Match contains the constraint to resource matching data
 type Match struct {

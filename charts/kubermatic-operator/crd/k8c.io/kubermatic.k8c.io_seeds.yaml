@@ -469,9 +469,13 @@ spec:
                   (DCs) in this seed. Each DC must have a globally unique identifier
                   (i.e. names must be unique across all seeds).
                 type: object
+              defaultClusterTemplate:
+                description: DefaultClusterTemplate is the name of a cluster template
+                  of scope "seed" that is used to default all new created clusters
+                type: string
               defaultComponentSettings:
-                description: DefaultComponentSettings are default values to set for
-                  newly created clusters.
+                description: 'DefaultComponentSettings are default values to set for
+                  newly created clusters. Deprecated: Use DefaultClusterTemplate instead.'
                 properties:
                   apiserver:
                     properties:
