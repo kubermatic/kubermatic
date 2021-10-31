@@ -24,6 +24,7 @@ const (
 	UserClusterTemplateScope    = "user"
 	ProjectClusterTemplateScope = "project"
 	GlobalClusterTemplateScope  = "global"
+	SeedTemplateScope           = "seed"
 )
 
 const (
