@@ -1639,7 +1639,19 @@ spec:
                     - HealthStatusUp
                     - HealthStatusProvisioning
                     type: string
+                  logging:
+                    enum:
+                    - HealthStatusDown
+                    - HealthStatusUp
+                    - HealthStatusProvisioning
+                    type: string
                   machineController:
+                    enum:
+                    - HealthStatusDown
+                    - HealthStatusUp
+                    - HealthStatusProvisioning
+                    type: string
+                  monitoring:
                     enum:
                     - HealthStatusDown
                     - HealthStatusUp

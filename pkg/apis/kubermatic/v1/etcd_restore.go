@@ -71,11 +71,6 @@ type EtcdRestoreSpec struct {
 	BackupDownloadCredentialsSecret string `json:"backupDownloadCredentialsSecret,omitempty"`
 }
 
-type EtcdRestoreStatus struct {
-	Phase       EtcdRestorePhase `json:"phase"`
-	RestoreTime *metav1.Time     `json:"restoreTime,omitempty"`
-}
-
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 
@@ -85,4 +80,9 @@ type EtcdRestoreList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 
 	Items []EtcdRestore `json:"items"`
+}
+
+type EtcdRestoreStatus struct {
+	Phase       EtcdRestorePhase `json:"phase"`
+	RestoreTime *metav1.Time     `json:"restoreTime,omitempty"`
 }

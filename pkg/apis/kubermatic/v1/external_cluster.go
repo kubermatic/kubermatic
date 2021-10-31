@@ -45,6 +45,17 @@ type ExternalCluster struct {
 	Spec ExternalClusterSpec `json:"spec,omitempty"`
 }
 
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
+
+// ExternalClusterList specifies a list of external kubernetes clusters
+type ExternalClusterList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+
+	Items []ExternalCluster `json:"items"`
+}
+
 // ExternalClusterSpec specifies the data for a new external kubernetes cluster.
 type ExternalClusterSpec struct {
 
@@ -77,13 +88,26 @@ func (i *ExternalCluster) GetKubeconfigSecretName() string {
 	return fmt.Sprintf("kubeconfig-external-cluster-%s", i.Name)
 }
 
-// +kubebuilder:object:generate=true
-// +kubebuilder:object:root=true
-
-// ExternalClusterList specifies a list of external kubernetes clusters
-type ExternalClusterList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-
-	Items []ExternalCluster `json:"items"`
+func (i *ExternalCluster) GetCredentialsSecretName() string {
+	// The kubermatic cluster `GetSecretName` method is used to get credential secret name for external cluster
+	// The same is used for the external cluster creation when secret is created
+	cluster := &Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: i.Name,
+		},
+		Spec: ClusterSpec{
+			Cloud: CloudSpec{},
+		},
+	}
+	cloud := i.Spec.CloudSpec
+	if cloud == nil {
+		return ""
+	}
+	if cloud.GKE != nil {
+		cluster.Spec.Cloud.GCP = &GCPCloudSpec{}
+	}
+	if cloud.EKS != nil {
+		cluster.Spec.Cloud.AWS = &AWSCloudSpec{}
+	}
+	return cluster.GetSecretName()
 }

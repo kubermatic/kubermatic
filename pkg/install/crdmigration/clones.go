@@ -346,6 +346,8 @@ func cloneClusterResourcesInCluster(ctx context.Context, logger logrus.FieldLogg
 					UserClusterControllerManager: convertHealthStatus(oldObject.Status.ExtendedHealth.UserClusterControllerManager),
 					GatekeeperController:         convertHealthStatus(oldObject.Status.ExtendedHealth.GatekeeperController),
 					GatekeeperAudit:              convertHealthStatus(oldObject.Status.ExtendedHealth.GatekeeperAudit),
+					Monitoring:                   convertHealthStatus(oldObject.Status.ExtendedHealth.Monitoring),
+					Logging:                      convertHealthStatus(oldObject.Status.ExtendedHealth.Logging),
 				},
 			},
 		}
@@ -1091,6 +1093,7 @@ func cloneSeedResourcesInCluster(ctx context.Context, logger logrus.FieldLogger,
 				},
 				ExposeStrategy:           newv1.ExposeStrategy(oldObject.Spec.ExposeStrategy),
 				DefaultComponentSettings: convertComponentSettings(oldObject.Spec.DefaultComponentSettings),
+				DefaultClusterTemplate:   oldObject.Spec.DefaultClusterTemplate,
 			},
 		}
 

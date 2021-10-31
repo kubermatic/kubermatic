@@ -71,15 +71,6 @@ type EtcdBackupConfigSpec struct {
 	Keep *int `json:"keep,omitempty"`
 }
 
-type EtcdBackupConfigStatus struct {
-	// CurrentBackups tracks the creation and deletion progress if all backups managed by the EtcdBackupConfig
-	CurrentBackups []BackupStatus `json:"lastBackups,omitempty"`
-	// Conditions contains conditions of the EtcdBackupConfig
-	Conditions []EtcdBackupConfigCondition `json:"conditions,omitempty"`
-	// If the controller was configured with a cleanupContainer, CleanupRunning keeps track of the corresponding job
-	CleanupRunning bool `json:"cleanupRunning,omitempty"`
-}
-
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 
@@ -89,6 +80,15 @@ type EtcdBackupConfigList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 
 	Items []EtcdBackupConfig `json:"items"`
+}
+
+type EtcdBackupConfigStatus struct {
+	// CurrentBackups tracks the creation and deletion progress if all backups managed by the EtcdBackupConfig
+	CurrentBackups []BackupStatus `json:"lastBackups,omitempty"`
+	// Conditions contains conditions of the EtcdBackupConfig
+	Conditions []EtcdBackupConfigCondition `json:"conditions,omitempty"`
+	// If the controller was configured with a cleanupContainer, CleanupRunning keeps track of the corresponding job
+	CleanupRunning bool `json:"cleanupRunning,omitempty"`
 }
 
 type BackupStatusPhase string
