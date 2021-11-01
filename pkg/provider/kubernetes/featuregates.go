@@ -16,11 +16,14 @@ limitations under the License.
 
 package kubernetes
 
-import "k8c.io/kubermatic/v2/pkg/features"
+import (
+	"k8c.io/kubermatic/v2/pkg/features"
+	"k8c.io/kubermatic/v2/pkg/provider"
+)
 
 type featureGatesProvider features.FeatureGate
 
-func NewFeatureGatesProvider(featureGates features.FeatureGate) featureGatesProvider {
+func NewFeatureGatesProvider(featureGates features.FeatureGate) provider.FeatureGatesProvider {
 	return featureGatesProvider(featureGates)
 }
 
