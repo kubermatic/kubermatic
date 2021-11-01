@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -52,4 +53,21 @@ func GetClientSet(accessKeyID, secretAccessKey, region string) (*ClientSet, erro
 		EKS: eks.New(sess),
 		IAM: iam.New(sess),
 	}, nil
+}
+
+func isEntityAlreadyExists(err error) bool {
+	aerr, ok := err.(awserr.Error)
+	if !ok {
+		return false
+	}
+	return aerr.Code() == "EntityAlreadyExists"
+}
+
+func isNotFound(err error) bool {
+	if awsErr, ok := err.(awserr.Error); ok {
+		if awsErr.Code() == "NoSuchEntity" {
+			return true
+		}
+	}
+	return false
 }

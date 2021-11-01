@@ -22,6 +22,10 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
+
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
 const (
@@ -29,113 +33,177 @@ const (
 	controlPlanePolicyName = "kubernetes-control-plane"
 )
 
+// /////////////////////////
+// worker role (part of the worker instance profile)
+
 func workerRoleName(clusterName string) string {
 	return fmt.Sprintf("%s%s-worker", resourceNamePrefix, clusterName)
 }
 
-func createWorkerRole(client iamiface.IAMAPI, clusterName string) (*iam.Role, error) {
+func reconcileWorkerRole(client iamiface.IAMAPI, cluster *kubermaticv1.Cluster) error {
 	policies := map[string]string{workerPolicyName: workerRolePolicy}
-	return createRole(client, workerRoleName(clusterName), assumeRolePolicy, policies)
+	roleName := workerRoleName(cluster.Name)
+
+	return ensureRole(client, cluster, roleName, policies)
 }
+
+// func deleteWorkerRole(client iamiface.IAMAPI, cluster *kubermaticv1.Cluster) error {
+// 	return deleteRole(client, workerRoleName(cluster.Name))
+// }
+
+// /////////////////////////
+// control plane role
 
 func controlPlaneRoleName(clusterName string) string {
 	return fmt.Sprintf("%s%s-control-plane", resourceNamePrefix, clusterName)
 }
 
-func createControlPlaneRole(client iamiface.IAMAPI, clusterName string) (*iam.Role, error) {
-	policy, err := getControlPlanePolicy(clusterName)
+func reconcileControlPlaneRole(cs *ClientSet, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	policy, err := getControlPlanePolicy(cluster.Name)
 	if err != nil {
-		return nil, fmt.Errorf("failed to build the control plane policy: %v", err)
+		return cluster, fmt.Errorf("failed to build the control plane policy: %v", err)
 	}
+
 	policies := map[string]string{controlPlanePolicyName: policy}
-	return createRole(client, controlPlaneRoleName(clusterName), assumeRolePolicy, policies)
+
+	// default the role name
+	roleName := cluster.Spec.Cloud.AWS.ControlPlaneRoleARN
+	if roleName == "" {
+		roleName = controlPlaneRoleName(cluster.Name)
+	}
+
+	// ensure role exists and is assigned to the given policies
+	if err := ensureRole(cs.IAM, cluster, roleName, policies); err != nil {
+		return cluster, err
+	}
+
+	return update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		kuberneteshelper.AddFinalizer(cluster, controlPlaneRoleCleanupFinalizer)
+		cluster.Spec.Cloud.AWS.ControlPlaneRoleARN = roleName
+	})
 }
 
-func createRole(client iamiface.IAMAPI, roleName, assumeRolePolicy string, rolePolicies map[string]string) (*iam.Role, error) {
-	createRoleInput := &iam.CreateRoleInput{
-		AssumeRolePolicyDocument: aws.String(assumeRolePolicy),
-		RoleName:                 aws.String(roleName),
+func cleanUpControlPlaneRole(client iamiface.IAMAPI, cluster *kubermaticv1.Cluster) error {
+	// default the role name
+	roleName := cluster.Spec.Cloud.AWS.ControlPlaneRoleARN
+	if roleName == "" {
+		roleName = controlPlaneRoleName(cluster.Name)
 	}
 
-	_, err := client.CreateRole(createRoleInput)
-	// If the role already exists, we consider it as success.
-	if err != nil && !isEntityAlreadyExists(err) {
-		return nil, err
-	}
-
-	// We fetch the role here so we keep the logic here simple.
-	// Sure it causes an additional API call, but the simpler code is preferable over 1 saved API call (the client retries those anyway).
-	getRoleInput := &iam.GetRoleInput{RoleName: aws.String(roleName)}
-	roleOut, err := client.GetRole(getRoleInput)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load the created role %q: %v", roleName, err)
-	}
-	role := roleOut.Role
-
-	for policyName, policyTpl := range rolePolicies {
-		// The AWS API allows us to issue a PUT request, which has the create-or-update/upsert semantics
-		putRolePolicyInput := &iam.PutRolePolicyInput{
-			RoleName:       role.RoleName,
-			PolicyName:     aws.String(policyName),
-			PolicyDocument: aws.String(policyTpl),
-		}
-		if _, err := client.PutRolePolicy(putRolePolicyInput); err != nil {
-			return nil, fmt.Errorf("failed to create/update the policy %q for role %q: %v", policyName, *role.RoleName, err)
-		}
-	}
-
-	return role, nil
+	return deleteRole(client, cluster, roleName, []string{controlPlanePolicyName})
 }
 
-func deleteRole(client iamiface.IAMAPI, roleName string) error {
+// /////////////////////////
+// commonly shared functions
+
+func ensureRole(client iamiface.IAMAPI, cluster *kubermaticv1.Cluster, roleName string, policies map[string]string) error {
+	// check if it still exists
 	getRoleInput := &iam.GetRoleInput{
 		RoleName: aws.String(roleName),
 	}
-	if _, err := client.GetRole(getRoleInput); err != nil {
-		// If the profile is already gone: Success!
+
+	_, err := client.GetRole(getRoleInput)
+	if err != nil && !isNotFound(err) {
+		return fmt.Errorf("failed to get role: %w", err)
+	}
+
+	// create missing role
+	if isNotFound(err) {
+		createRoleInput := &iam.CreateRoleInput{
+			AssumeRolePolicyDocument: aws.String(assumeRolePolicy),
+			RoleName:                 aws.String(roleName),
+			Tags:                     []*iam.Tag{iamOwnershipTag(cluster.Name)},
+		}
+
+		if _, err := client.CreateRole(createRoleInput); err != nil {
+			return fmt.Errorf("failed to create role: %w", err)
+		}
+	}
+
+	// attach policies
+	for policyName, policyTpl := range policies {
+		// The AWS API allows us to issue a PUT request, which has the create-or-update/upsert semantics
+		putRolePolicyInput := &iam.PutRolePolicyInput{
+			RoleName:       aws.String(roleName),
+			PolicyName:     aws.String(policyName),
+			PolicyDocument: aws.String(policyTpl),
+		}
+
+		if _, err := client.PutRolePolicy(putRolePolicyInput); err != nil {
+			return fmt.Errorf("failed to ensure policy %q for role %q: %w", policyName, roleName, err)
+		}
+	}
+
+	return nil
+}
+
+func deleteRole(client iamiface.IAMAPI, cluster *kubermaticv1.Cluster, roleName string, policies []string) error {
+	// check if it still exists
+	output, err := client.GetRole(&iam.GetRoleInput{RoleName: aws.String(roleName)})
+	if err != nil {
+		// nothing more to do here
 		if isNotFound(err) {
 			return nil
 		}
-		return fmt.Errorf("failed to get role %q: %v", roleName, err)
+
+		return fmt.Errorf("failed to get role: %w", err)
 	}
 
-	// List & delete the custom policies
-	listPoliciesOut, err := client.ListRolePolicies(&iam.ListRolePoliciesInput{
-		RoleName: aws.String(roleName),
-	})
-	if err != nil {
-		return fmt.Errorf("failed to list policies for role %q: %v", roleName, err)
+	// delete policies
+	if policies == nil {
+		// list all custom policies
+		listPoliciesOut, err := client.ListRolePolicies(&iam.ListRolePoliciesInput{
+			RoleName: aws.String(roleName),
+		})
+		if err != nil {
+			return fmt.Errorf("failed to list policies for role %q: %w", roleName, err)
+		}
+
+		policies := []string{}
+
+		for _, policyName := range listPoliciesOut.PolicyNames {
+			policies = append(policies, *policyName)
+		}
 	}
-	for _, policyName := range listPoliciesOut.PolicyNames {
+
+	// delete policies from role
+	for _, policyName := range policies {
 		deleteRolePolicyInput := &iam.DeleteRolePolicyInput{
-			PolicyName: policyName,
+			PolicyName: aws.String(policyName),
 			RoleName:   aws.String(roleName),
 		}
 		if _, err = client.DeleteRolePolicy(deleteRolePolicyInput); err != nil {
-			return fmt.Errorf("failed to delete role policy %q: %v", *policyName, err)
+			return fmt.Errorf("failed to delete role policy %q: %w", policyName, err)
 		}
 	}
 
-	// Detach potential AWS managed policies
+	// Deleting the cluster policy above always needs to happen,
+	// but unless we actually own the role, we must stop here and not
+	// detach AWS policies or even delete the role entirely.
+	if !hasIAMTag(iamOwnershipTag(cluster.Name), output.Role.Tags) {
+		return nil
+	}
+
+	// detach potential AWS managed policies
 	listAttachedPoliciesOut, err := client.ListAttachedRolePolicies(&iam.ListAttachedRolePoliciesInput{
 		RoleName: aws.String(roleName),
 	})
 	if err != nil {
-		return fmt.Errorf("failed to list attached policies for role %q: %v", roleName, err)
+		return fmt.Errorf("failed to list attached policies for role %q: %w", roleName, err)
 	}
+
 	for _, policy := range listAttachedPoliciesOut.AttachedPolicies {
 		detachRolePolicyInput := &iam.DetachRolePolicyInput{
 			RoleName:  aws.String(roleName),
 			PolicyArn: policy.PolicyArn,
 		}
 		if _, err := client.DetachRolePolicy(detachRolePolicyInput); err != nil {
-			return fmt.Errorf("failed to detach policy %q: %v", *policy.PolicyName, err)
+			return fmt.Errorf("failed to detach policy %q: %w", *policy.PolicyName, err)
 		}
 	}
 
-	deleteRoleInput := &iam.DeleteRoleInput{
-		RoleName: aws.String(roleName),
-	}
-	_, err = client.DeleteRole(deleteRoleInput)
+	// delete the role itself
+	_, err = client.DeleteRole(&iam.DeleteRoleInput{RoleName: aws.String(roleName)})
+
 	return err
 }
