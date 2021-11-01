@@ -9076,6 +9076,38 @@
         }
       }
     },
+    "/api/v2/featuregates": {
+      "get": {
+        "description": "Status of feature gates",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "get",
+          "status",
+          "of",
+          "feature"
+        ],
+        "operationId": "gates",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/map[string]bool"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/presets": {
       "get": {
         "description": "Lists presets",
@@ -18702,22 +18734,22 @@
     "EKSCloudSpec": {
       "type": "object",
       "properties": {
-         "accessKeyID": {
-            "type": "string",
-            "x-go-name": "AccessKeyID"
-          },
-          "name": {
-            "type": "string",
-            "x-go-name": "Name"
-          },
-          "region": {
-            "type": "string",
-            "x-go-name": "Region"
-          },
-          "secretAccessKey": {
-            "type": "string",
-            "x-go-name": "SecretAccessKey"
-       }
+        "accessKeyID": {
+          "type": "string",
+          "x-go-name": "AccessKeyID"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "region": {
+          "type": "string",
+          "x-go-name": "Region"
+        },
+        "secretAccessKey": {
+          "type": "string",
+          "x-go-name": "SecretAccessKey"
+        }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
