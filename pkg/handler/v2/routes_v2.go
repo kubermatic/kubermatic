@@ -694,6 +694,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/providers/ec2/regions").
 		Handler(r.listEC2Regions())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/kubeconfig").
+		Handler(r.getKubeconfig())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -4769,6 +4773,30 @@ func (r Routing) listEC2Regions() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.ListEC2RegionsEndpoint(r.userInfoGetter, r.presetsProvider)),
 		provider.DecodeEC2CommonReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/kubeconfig project getkubeconfig
+//
+//     Get External Cluster Kubeconfig
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: Kubeconfig
+//       401: empty
+//       403: empty
+func (r Routing) getKubeconfig() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.GetKubeconfigEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
+		externalcluster.DecodeGetReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

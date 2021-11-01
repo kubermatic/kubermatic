@@ -154,6 +154,8 @@ type ClientService interface {
 
 	GetRole(params *GetRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRoleOK, error)
 
+	Getkubeconfig(params *GetkubeconfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetkubeconfigOK, error)
+
 	ListClusterRole(params *ListClusterRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterRoleOK, error)
 
 	ListClusterRoleBinding(params *ListClusterRoleBindingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterRoleBindingOK, error)
@@ -2666,6 +2668,44 @@ func (a *Client) GetRole(params *GetRoleParams, authInfo runtime.ClientAuthInfoW
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*GetRoleDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  Getkubeconfig Get External Cluster Kubeconfig
+*/
+func (a *Client) Getkubeconfig(params *GetkubeconfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetkubeconfigOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetkubeconfigParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "getkubeconfig",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/kubeconfig",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetkubeconfigReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetkubeconfigOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetkubeconfigDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

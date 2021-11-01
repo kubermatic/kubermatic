@@ -32,6 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
@@ -40,6 +41,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -375,7 +377,7 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 }
 
 // getClusterReq defines HTTP request for getExternalCluster
-// swagger:parameters getExternalCluster getExternalClusterMetrics getExternalClusterUpgrades
+// swagger:parameters getExternalCluster getExternalClusterMetrics getExternalClusterUpgrades getkubeconfig
 type getClusterReq struct {
 	common.ProjectReq
 	// in: path
@@ -794,4 +796,51 @@ type body struct {
 	// Kubeconfig Base64 encoded kubeconfig
 	Kubeconfig string                          `json:"kubeconfig,omitempty"`
 	Cloud      *apiv2.ExternalClusterCloudSpec `json:"cloud,omitempty"`
+}
+
+func GetKubeconfigEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		if !AreExternalClustersEnabled(settingsProvider) {
+			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
+		}
+
+		req := request.(getClusterReq)
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := getCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, req.ClusterID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		kubeconfigReference := cluster.Spec.KubeconfigReference
+		if kubeconfigReference == nil {
+			return nil, fmt.Errorf("kubeconfig not available for the Cluster")
+		}
+
+		secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(context.Background(), privilegedClusterProvider.GetMasterClient())
+
+		rawKubeconfig, err := secretKeyGetter(kubeconfigReference, resources.KubeconfigSecretKey)
+		if err != nil {
+			return nil, err
+		}
+
+		kubeconfig, err := base64.StdEncoding.DecodeString(rawKubeconfig)
+		if err != nil {
+			panic(fmt.Sprintf("Invalid base64 string %q", rawKubeconfig))
+		}
+
+		kubeconfigYaml, err := yaml.JSONToYAML(kubeconfig)
+		if err != nil {
+			return nil, err
+		}
+
+		return string(kubeconfigYaml), nil
+	}
 }
