@@ -35,12 +35,12 @@ func ec2VPCFilter(vpcID string) *ec2.Filter {
 	}
 }
 
-func reconcileVPC(cs *ClientSet, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func reconcileVPC(client ec2iface.EC2API, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	vpcID := cluster.Spec.Cloud.AWS.VPCID
 
 	// check if the VPC exists, if we have an ID cached
 	if vpcID != "" {
-		out, err := cs.EC2.DescribeVpcs(&ec2.DescribeVpcsInput{
+		out, err := client.DescribeVpcs(&ec2.DescribeVpcsInput{
 			VpcIds: aws.StringSlice([]string{vpcID}),
 		})
 		if err != nil {
@@ -59,7 +59,7 @@ func reconcileVPC(cs *ClientSet, cluster *kubermaticv1.Cluster, update provider.
 	}
 
 	// re-find the default VPC
-	defaultVPC, err := getDefaultVPC(cs.EC2)
+	defaultVPC, err := getDefaultVPC(client)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get default VPC: %w", err)
 	}
@@ -88,7 +88,7 @@ func getDefaultVPC(client ec2iface.EC2API) (*ec2.Vpc, error) {
 	return vpcOut.Vpcs[0], nil
 }
 
-func getVPCByID(vpcID string, client ec2iface.EC2API) (*ec2.Vpc, error) {
+func getVPCByID(client ec2iface.EC2API, vpcID string) (*ec2.Vpc, error) {
 	vpcOut, err := client.DescribeVpcs(&ec2.DescribeVpcsInput{
 		Filters: []*ec2.Filter{ec2VPCFilter(vpcID)},
 	})

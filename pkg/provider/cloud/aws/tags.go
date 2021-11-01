@@ -21,9 +21,12 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/iam"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
 func ec2ClusterTag(clusterName string) *ec2.Tag {
@@ -54,20 +57,17 @@ func iamOwnershipTag(clusterName string) *iam.Tag {
 	}
 }
 
-func tagResources(client *ClientSet, cluster *kubermaticv1.Cluster) error {
+func reconcileClusterTags(client ec2iface.EC2API, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	resourceIDs := []*string{
 		&cluster.Spec.Cloud.AWS.SecurityGroupID,
 		&cluster.Spec.Cloud.AWS.RouteTableID,
 	}
 
-	sOut, err := client.EC2.DescribeSubnets(&ec2.DescribeSubnetsInput{
-		Filters: []*ec2.Filter{{
-			Name:   aws.String("vpc-id"),
-			Values: aws.StringSlice([]string{cluster.Spec.Cloud.AWS.VPCID}),
-		}},
+	sOut, err := client.DescribeSubnets(&ec2.DescribeSubnetsInput{
+		Filters: []*ec2.Filter{ec2VPCFilter(cluster.Spec.Cloud.AWS.VPCID)},
 	})
 	if err != nil {
-		return fmt.Errorf("failed to list subnets: %w", err)
+		return cluster, fmt.Errorf("failed to list subnets: %w", err)
 	}
 
 	var subnetIDs []string
@@ -76,21 +76,21 @@ func tagResources(client *ClientSet, cluster *kubermaticv1.Cluster) error {
 		subnetIDs = append(subnetIDs, *subnet.SubnetId)
 	}
 
-	_, err = client.EC2.CreateTags(&ec2.CreateTagsInput{
+	_, err = client.CreateTags(&ec2.CreateTagsInput{
 		Resources: resourceIDs,
 		Tags:      []*ec2.Tag{ec2ClusterTag(cluster.Name)},
 	})
 	if err != nil {
-		return fmt.Errorf("failed to tag resources (one of securityGroup (%s), routeTable (%s) and/or subnets (%v)): %w",
+		return cluster, fmt.Errorf("failed to tag resources (one of securityGroup (%s), routeTable (%s) and/or subnets (%v)): %w",
 			cluster.Spec.Cloud.AWS.SecurityGroupID, cluster.Spec.Cloud.AWS.RouteTableID, subnetIDs, err)
 	}
 
-	// TODO: tag IAM resources
-
-	return nil
+	return update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		kuberneteshelper.AddFinalizer(cluster, tagCleanupFinalizer)
+	})
 }
 
-func deleteTags(client *ClientSet, cluster *kubermaticv1.Cluster) error {
+func cleanUpTags(client ec2iface.EC2API, cluster *kubermaticv1.Cluster) error {
 	// Instead of trying to keep track of all the things we might have
 	// tagged, we instead simply list all tagged resources. It's a few
 	// more API calls, but saves us a lot of trouble in the code w.r.t.
@@ -99,36 +99,23 @@ func deleteTags(client *ClientSet, cluster *kubermaticv1.Cluster) error {
 	// This means that even if the security group ID is already missing
 	// on the cluster object, we still do not want to accidentally orphan
 	// it.
-	// Both the EC2 and IAM functions implement this "catch all" behaviour.
+	// Ownership tags do not need to be deleted, as they disappear when their
+	// objects are deleted.
 
-	if err := deleteEC2Tags(client, cluster); err != nil {
-		return fmt.Errorf("failed to delete EC2 tags: %w", err)
-	}
-
-	// if err := deleteIAMTags(client, cluster); err != nil {
-	// 	return fmt.Errorf("failed to delete IAM tags: %w", err)
-	// }
-
-	return nil
-}
-
-func deleteEC2Tags(client *ClientSet, cluster *kubermaticv1.Cluster) error {
 	tag := ec2ClusterTag(cluster.Name)
 
 	resourceIDs := []*string{}
-	filters := []*ec2.Filter{{
-		Name:   aws.String("vpc-id"),
-		Values: aws.StringSlice([]string{cluster.Spec.Cloud.AWS.VPCID}),
-	}, {
-		Name:   aws.String("tag-key"),
-		Values: aws.StringSlice([]string{*tag.Key}),
-	}}
+	filters := []*ec2.Filter{
+		ec2VPCFilter(cluster.Spec.Cloud.AWS.VPCID),
+		{
+			Name:   aws.String("tag-key"),
+			Values: aws.StringSlice([]string{*tag.Key}),
+		},
+	}
 
 	// list subnets (we do not create subnets, but we tagged all of them
 	// to make the AWS CCM LoadBalancer integration work)
-	subnets, err := client.EC2.DescribeSubnets(&ec2.DescribeSubnetsInput{
-		Filters: filters,
-	})
+	subnets, err := client.DescribeSubnets(&ec2.DescribeSubnetsInput{Filters: filters})
 	if err != nil {
 		return fmt.Errorf("failed to list subnets: %w", err)
 	}
@@ -138,9 +125,7 @@ func deleteEC2Tags(client *ClientSet, cluster *kubermaticv1.Cluster) error {
 	}
 
 	// list security groups
-	securityGroups, err := client.EC2.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
-		Filters: filters,
-	})
+	securityGroups, err := client.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{Filters: filters})
 	if err != nil {
 		return fmt.Errorf("failed to list security groups: %w", err)
 	}
@@ -150,9 +135,7 @@ func deleteEC2Tags(client *ClientSet, cluster *kubermaticv1.Cluster) error {
 	}
 
 	// list route tables
-	routeTables, err := client.EC2.DescribeRouteTables(&ec2.DescribeRouteTablesInput{
-		Filters: filters,
-	})
+	routeTables, err := client.DescribeRouteTables(&ec2.DescribeRouteTablesInput{Filters: filters})
 	if err != nil {
 		return fmt.Errorf("failed to list route tables: %w", err)
 	}
@@ -161,68 +144,11 @@ func deleteEC2Tags(client *ClientSet, cluster *kubermaticv1.Cluster) error {
 		resourceIDs = append(resourceIDs, rt.RouteTableId)
 	}
 
-	// remove tags
-	_, err = client.EC2.DeleteTags(&ec2.DeleteTagsInput{
+	// remove tag
+	_, err = client.DeleteTags(&ec2.DeleteTagsInput{
 		Resources: resourceIDs,
 		Tags:      []*ec2.Tag{tag},
 	})
 
 	return err
 }
-
-// func deleteIAMTags(client *ClientSet, cluster *kubermaticv1.Cluster) error {
-// 	tag := iamClusterTag(cluster.Name)
-
-// 	resourceIDs := []*string{}
-// 	filters := []*ec2.Filter{{
-// 		Name:   aws.String("vpc-id"),
-// 		Values: aws.StringSlice([]string{cluster.Spec.Cloud.AWS.VPCID}),
-// 	}, {
-// 		Name:   aws.String("tag-key"),
-// 		Values: aws.StringSlice([]string{*tag.Key}),
-// 	}}
-
-// 	// list instance profiles
-// 	subnets, err := client.EC2.DescribeSubnets(&ec2.DescribeSubnetsInput{
-// 		Filters: filters,
-// 	})
-// 	if err != nil {
-// 		return fmt.Errorf("failed to list subnets: %w", err)
-// 	}
-
-// 	for _, subnet := range subnets.Subnets {
-// 		resourceIDs = append(resourceIDs, subnet.SubnetId)
-// 	}
-
-// 	// list security groups
-// 	securityGroups, err := client.EC2.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
-// 		Filters: filters,
-// 	})
-// 	if err != nil {
-// 		return fmt.Errorf("failed to list security groups: %w", err)
-// 	}
-
-// 	for _, group := range securityGroups.SecurityGroups {
-// 		resourceIDs = append(resourceIDs, group.GroupId)
-// 	}
-
-// 	// list route tables
-// 	routeTables, err := client.EC2.DescribeRouteTables(&ec2.DescribeRouteTablesInput{
-// 		Filters: filters,
-// 	})
-// 	if err != nil {
-// 		return fmt.Errorf("failed to list route tables: %w", err)
-// 	}
-
-// 	for _, rt := range routeTables.RouteTables {
-// 		resourceIDs = append(resourceIDs, rt.RouteTableId)
-// 	}
-
-// 	// remove tags
-// 	_, err = client.EC2.DeleteTags(&ec2.DeleteTagsInput{
-// 		Resources: resourceIDs,
-// 		Tags:      []*ec2.Tag{tag},
-// 	})
-
-// 	return err
-// }

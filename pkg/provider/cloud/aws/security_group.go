@@ -51,7 +51,7 @@ func getSecurityGroupByID(client ec2iface.EC2API, vpc *ec2.Vpc, id string) (*ec2
 	return dsgOut.SecurityGroups[0], nil
 }
 
-func reconcileSecurityGroup(cs *ClientSet, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func reconcileSecurityGroup(client ec2iface.EC2API, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	lowPort, highPort := kubermaticresources.NewTemplateDataBuilder().
 		WithNodePortRange(cluster.Spec.ComponentsOverride.Apiserver.NodePortRange).
 		WithCluster(cluster).
@@ -63,7 +63,7 @@ func reconcileSecurityGroup(cs *ClientSet, cluster *kubermaticv1.Cluster, update
 
 	// if we already have an ID on the cluster, check if that group still exists
 	if groupID != "" {
-		describeOut, err := cs.EC2.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
+		describeOut, err := client.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
 			GroupIds: aws.StringSlice([]string{groupID}),
 			Filters:  []*ec2.Filter{ec2VPCFilter(vpcID)},
 		})
@@ -83,7 +83,7 @@ func reconcileSecurityGroup(cs *ClientSet, cluster *kubermaticv1.Cluster, update
 	groupName := securityGroupName(cluster)
 
 	if groupID == "" {
-		describeOut, err := cs.EC2.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
+		describeOut, err := client.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
 			Filters: []*ec2.Filter{
 				ec2VPCFilter(vpcID),
 				{
@@ -104,7 +104,7 @@ func reconcileSecurityGroup(cs *ClientSet, cluster *kubermaticv1.Cluster, update
 
 	// if we still have no ID, we must create a new group
 	if groupID == "" {
-		out, err := cs.EC2.CreateSecurityGroup(&ec2.CreateSecurityGroupInput{
+		out, err := client.CreateSecurityGroup(&ec2.CreateSecurityGroupInput{
 			VpcId:       &vpcID,
 			GroupName:   aws.String(groupName),
 			Description: aws.String(fmt.Sprintf("Security group for the Kubernetes cluster %s", cluster.Name)),
@@ -186,7 +186,7 @@ func reconcileSecurityGroup(cs *ClientSet, cluster *kubermaticv1.Cluster, update
 	// (e.g., one permission already exists) none of them would be created
 	for _, perm := range permissions {
 		// try to add permission
-		_, err := cs.EC2.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
+		_, err := client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
 			GroupId: aws.String(groupID),
 			IpPermissions: []*ec2.IpPermission{
 				perm,

@@ -58,7 +58,7 @@ func controlPlaneRoleName(clusterName string) string {
 	return fmt.Sprintf("%s%s-control-plane", resourceNamePrefix, clusterName)
 }
 
-func reconcileControlPlaneRole(cs *ClientSet, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func reconcileControlPlaneRole(client iamiface.IAMAPI, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	policy, err := getControlPlanePolicy(cluster.Name)
 	if err != nil {
 		return cluster, fmt.Errorf("failed to build the control plane policy: %v", err)
@@ -73,7 +73,7 @@ func reconcileControlPlaneRole(cs *ClientSet, cluster *kubermaticv1.Cluster, upd
 	}
 
 	// ensure role exists and is assigned to the given policies
-	if err := ensureRole(cs.IAM, cluster, roleName, policies); err != nil {
+	if err := ensureRole(client, cluster, roleName, policies); err != nil {
 		return cluster, err
 	}
 

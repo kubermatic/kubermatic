@@ -21,18 +21,19 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
-func reconcileRouteTable(cs *ClientSet, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func reconcileRouteTable(client ec2iface.EC2API, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	vpcID := cluster.Spec.Cloud.AWS.VPCID
 	tableID := cluster.Spec.Cloud.AWS.RouteTableID
 
 	// check if the RT exists, if we have an ID cached
 	if tableID != "" {
-		out, err := cs.EC2.DescribeRouteTables(&ec2.DescribeRouteTablesInput{
+		out, err := client.DescribeRouteTables(&ec2.DescribeRouteTablesInput{
 			RouteTableIds: aws.StringSlice([]string{cluster.Spec.Cloud.AWS.RouteTableID}),
 			Filters:       []*ec2.Filter{ec2VPCFilter(vpcID)},
 		})
@@ -52,7 +53,7 @@ func reconcileRouteTable(cs *ClientSet, cluster *kubermaticv1.Cluster, update pr
 	}
 
 	// re-find the default route table
-	table, err := getDefaultRouteTable(cs, vpcID)
+	table, err := getDefaultRouteTable(client, vpcID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get default route table: %w", err)
 	}
@@ -62,8 +63,8 @@ func reconcileRouteTable(cs *ClientSet, cluster *kubermaticv1.Cluster, update pr
 	})
 }
 
-func getDefaultRouteTable(cs *ClientSet, vpcID string) (*ec2.RouteTable, error) {
-	out, err := cs.EC2.DescribeRouteTables(&ec2.DescribeRouteTablesInput{
+func getDefaultRouteTable(client ec2iface.EC2API, vpcID string) (*ec2.RouteTable, error) {
+	out, err := client.DescribeRouteTables(&ec2.DescribeRouteTablesInput{
 		Filters: []*ec2.Filter{
 			ec2VPCFilter(vpcID),
 			{

@@ -57,6 +57,9 @@ const (
 type AmazonEC2 struct {
 	dc                *kubermaticv1.DatacenterSpecAWS
 	secretKeySelector provider.SecretKeySelectorValueFunc
+
+	// clientSet is used during tests only
+	clientSet *ClientSet
 }
 
 // NewCloudProvider returns a new AmazonEC2 provider.
@@ -72,6 +75,10 @@ func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 }
 
 func (a *AmazonEC2) getClientSet(cloud kubermaticv1.CloudSpec) (*ClientSet, error) {
+	if a.clientSet != nil {
+		return a.clientSet, nil
+	}
+
 	accessKeyID, secretAccessKey, err := GetCredentialsForCluster(cloud, a.secretKeySelector)
 	if err != nil {
 		return nil, err
@@ -104,7 +111,7 @@ func (a *AmazonEC2) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	}
 
 	if spec.AWS.VPCID != "" {
-		vpc, err := getVPCByID(spec.AWS.VPCID, client.EC2)
+		vpc, err := getVPCByID(client.EC2, spec.AWS.VPCID)
 		if err != nil {
 			return err
 		}
@@ -247,48 +254,48 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 	// check if all the resources still exist, happens in ReconcileCluster().
 
 	if cluster.Spec.Cloud.AWS.VPCID == "" {
-		cluster, err = reconcileVPC(client, cluster, update)
+		cluster, err = reconcileVPC(client.EC2, cluster, update)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	if cluster.Spec.Cloud.AWS.RouteTableID == "" {
-		cluster, err = reconcileRouteTable(client, cluster, update)
+		cluster, err = reconcileRouteTable(client.EC2, cluster, update)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	if cluster.Spec.Cloud.AWS.SecurityGroupID == "" {
-		cluster, err = reconcileSecurityGroup(client, cluster, update)
+		cluster, err = reconcileSecurityGroup(client.EC2, cluster, update)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	if cluster.Spec.Cloud.AWS.ControlPlaneRoleARN == "" {
-		cluster, err = reconcileControlPlaneRole(client, cluster, update)
+		cluster, err = reconcileControlPlaneRole(client.IAM, cluster, update)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	if cluster.Spec.Cloud.AWS.InstanceProfileName == "" {
-		cluster, err = reconcileWorkerInstanceProfile(client, cluster, update)
+		cluster, err = reconcileWorkerInstanceProfile(client.IAM, cluster, update)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	if !kuberneteshelper.HasFinalizer(cluster, tagCleanupFinalizer) {
-		cluster, err = updateTags(client, cluster, update)
+		cluster, err = reconcileClusterTags(client.EC2, cluster, update)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	cluster, err = updateRegionAnnotation(client, cluster, update, a.dc.Region)
+	cluster, err = reconcileRegionAnnotation(client, cluster, update, a.dc.Region)
 	if err != nil {
 		return nil, err
 	}
@@ -303,72 +310,49 @@ func (a *AmazonEC2) ReconcileCluster(cluster *kubermaticv1.Cluster, update provi
 	}
 
 	// update VPC ID
-	cluster, err = reconcileVPC(client, cluster, update)
+	cluster, err = reconcileVPC(client.EC2, cluster, update)
 	if err != nil {
 		return nil, err
 	}
 
 	// update route table ID
-	cluster, err = reconcileRouteTable(client, cluster, update)
+	cluster, err = reconcileRouteTable(client.EC2, cluster, update)
 	if err != nil {
 		return nil, err
 	}
 
 	// All machines will live in one dedicated security group.
-	cluster, err = reconcileSecurityGroup(client, cluster, update)
+	cluster, err = reconcileSecurityGroup(client.EC2, cluster, update)
 	if err != nil {
 		return nil, err
 	}
 
 	// We create a dedicated role for the control plane.
-	cluster, err = reconcileControlPlaneRole(client, cluster, update)
+	cluster, err = reconcileControlPlaneRole(client.IAM, cluster, update)
 	if err != nil {
 		return nil, err
 	}
 
 	// instance profile and role for worker nodes
-	cluster, err = reconcileWorkerInstanceProfile(client, cluster, update)
+	cluster, err = reconcileWorkerInstanceProfile(client.IAM, cluster, update)
 	if err != nil {
 		return nil, err
 	}
 
 	// tag all resources
-	cluster, err = updateTags(client, cluster, update)
+	cluster, err = reconcileClusterTags(client.EC2, cluster, update)
 	if err != nil {
 		return nil, err
 	}
 
 	// We put this as an annotation on the cluster to allow addons to read this
 	// information.
-	cluster, err = updateRegionAnnotation(client, cluster, update, a.dc.Region)
+	cluster, err = reconcileRegionAnnotation(client, cluster, update, a.dc.Region)
 	if err != nil {
 		return nil, err
 	}
 
 	return cluster, nil
-}
-
-func updateRegionAnnotation(cs *ClientSet, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, region string) (*kubermaticv1.Cluster, error) {
-	if cluster.Annotations[regionAnnotationKey] == region {
-		return cluster, nil
-	}
-
-	return update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-		if cluster.Annotations == nil {
-			cluster.Annotations = map[string]string{}
-		}
-		cluster.Annotations[regionAnnotationKey] = region
-	})
-}
-
-func updateTags(cs *ClientSet, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	if err := tagResources(cs, cluster); err != nil {
-		return nil, err
-	}
-
-	return update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-		kuberneteshelper.AddFinalizer(cluster, tagCleanupFinalizer)
-	})
 }
 
 func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, updater provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
@@ -413,19 +397,16 @@ func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, updater 
 	// No cleanup required for the route table itself.
 	// No cleanup required for the VPC itself.
 
-	// TODO: Remove tags
-
-	// if kuberneteshelper.HasFinalizer(cluster, tagCleanupFinalizer) {
-	// 	if err := deleteTags(cluster, client.EC2); err != nil {
-	// 		return nil, fmt.Errorf("failed to cleanup tags: %v", err)
-	// 	}
-	// 	cluster, err = updater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-	// 		kuberneteshelper.RemoveFinalizer(cluster, tagCleanupFinalizer)
-	// 	})
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// }
+	// tags
+	if err := cleanUpTags(client.EC2, cluster); err != nil {
+		return nil, fmt.Errorf("failed to clean up tags: %w", err)
+	}
+	cluster, err = updater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		kuberneteshelper.RemoveFinalizer(cluster, tagCleanupFinalizer)
+	})
+	if err != nil {
+		return nil, err
+	}
 
 	return cluster, nil
 }

@@ -32,7 +32,7 @@ func workerInstanceProfileName(clusterName string) string {
 	return resourceNamePrefix + clusterName
 }
 
-func reconcileWorkerInstanceProfile(cs *ClientSet, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func reconcileWorkerInstanceProfile(client iamiface.IAMAPI, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	// Even though the profile depends upon the role (the role is assigned to it),
 	// the decision whether or not to reconcile any role depends on whether KKP
 	// owns the profile. If a user-supplied profile is used, then no role will
@@ -43,7 +43,7 @@ func reconcileWorkerInstanceProfile(cs *ClientSet, cluster *kubermaticv1.Cluster
 		profileName = workerInstanceProfileName(cluster.Name)
 	}
 
-	profile, err := ensureInstanceProfile(cs.IAM, cluster, profileName)
+	profile, err := ensureInstanceProfile(client, cluster, profileName)
 	if err != nil {
 		return cluster, fmt.Errorf("failed to ensure instance profile %q: %w", profileName, err)
 	}
@@ -51,7 +51,7 @@ func reconcileWorkerInstanceProfile(cs *ClientSet, cluster *kubermaticv1.Cluster
 	// if we own the profile, we must also take care of the worker role
 	if hasIAMTag(iamOwnershipTag(cluster.Name), profile.Tags) {
 		// ensure the role exists
-		if err := reconcileWorkerRole(cs.IAM, cluster); err != nil {
+		if err := reconcileWorkerRole(client, cluster); err != nil {
 			return nil, fmt.Errorf("failed to reconcile worker role: %w", err)
 		}
 
@@ -72,7 +72,7 @@ func reconcileWorkerInstanceProfile(cs *ClientSet, cluster *kubermaticv1.Cluster
 				RoleName:            aws.String(roleName),
 			}
 
-			if _, err = cs.IAM.AddRoleToInstanceProfile(addRoleInput); err != nil {
+			if _, err = client.AddRoleToInstanceProfile(addRoleInput); err != nil {
 				return cluster, fmt.Errorf("failed to add role to the instance profile: %w", err)
 			}
 		}
