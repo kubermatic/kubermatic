@@ -4690,9 +4690,9 @@ func (r Routing) listUser() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: map[string]bool
-//       401: empty
-//       403: empty
+//       200: FeatureGate
+//       401: errorResponse
+//       403: errorResponse
 func (r Routing) getFeatureGates() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(

@@ -23,10 +23,12 @@ import (
 
 type featureGatesProvider features.FeatureGate
 
+// NewFeatureGatesProvider returns a new provider for feature gates
 func NewFeatureGatesProvider(featureGates features.FeatureGate) provider.FeatureGatesProvider {
 	return featureGatesProvider(featureGates)
 }
 
+// GetFeatureGates returns feature gates
 func (fg featureGatesProvider) GetFeatureGates() (features.FeatureGate, error) {
 	return features.FeatureGate(fg), nil
 }

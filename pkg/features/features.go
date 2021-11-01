@@ -61,6 +61,7 @@ const (
 )
 
 // FeatureGate is map of key=value pairs that enables/disables various features.
+// swagger:model FeatureGate
 type FeatureGate map[string]bool
 
 // NewFeatures takes comma separated key=value pairs for features
