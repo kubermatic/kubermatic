@@ -171,7 +171,6 @@ func DecodeGKECommonReq(c context.Context, r *http.Request) (interface{}, error)
 }
 
 func DecodeGKETypesReq(c context.Context, r *http.Request) (interface{}, error) {
-	fmt.Println("here 2")
 	var req GKETypesReq
 
 	commonReq, err := DecodeGKECommonReq(c, r)
@@ -185,9 +184,6 @@ func DecodeGKETypesReq(c context.Context, r *http.Request) (interface{}, error) 
 
 func GKEClustersEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-
-		fmt.Println("here ")
-
 		req := request.(GKETypesReq)
 
 		sa := req.ServiceAccount
