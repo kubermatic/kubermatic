@@ -169,7 +169,7 @@ type RoutingParams struct {
 	UserWatcher                             watcher.UserWatcher
 	ExternalClusterProvider                 provider.ExternalClusterProvider
 	PrivilegedExternalClusterProvider       provider.PrivilegedExternalClusterProvider
-	FeatureGatesProvider                    provider.FeatureGatesProvider //TODO: which package?
+	FeatureGatesProvider                    provider.FeatureGatesProvider
 	DefaultConstraintProvider               provider.DefaultConstraintProvider
 	ConstraintTemplateProvider              provider.ConstraintTemplateProvider
 	ConstraintProviderGetter                provider.ConstraintProviderGetter
