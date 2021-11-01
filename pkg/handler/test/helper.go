@@ -524,10 +524,12 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 
 	// Disable the metrics endpoint in tests
 	var prometheusClient prometheusapi.Client
+
 	featureGates, err := features.NewFeatures(strings.Join(kubermaticConfiguration.Spec.FeatureGates.List(), ","))
 	if err != nil {
 		return nil, nil, err
 	}
+
 	featureGatesProvider := kubernetes.NewFeatureGatesProvider(featureGates)
 
 	mainRouter := routingFunc(
