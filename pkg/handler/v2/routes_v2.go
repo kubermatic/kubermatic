@@ -4681,6 +4681,36 @@ func (r Routing) listUser() http.Handler {
 	)
 }
 
+// swagger:route GET /api/v2/featuregates get status of feature gates
+//
+//     Status of feature gates
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: map[string]bool
+//       401: empty
+//       403: empty
+func (r Routing) getFeatureGates() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(
+			func(ctx context.Context, request interface{}) (interface{}, error) {
+				return r.featureGatesProvider.GetFeatureGates()
+			},
+		),
+		func(_ context.Context, r *http.Request) (interface{}, error) {
+			return r, nil
+		},
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route GET /api/v2/providers/gke/clusters gke listGKEClusters
 //
 // Lists GKE clusters
@@ -4701,27 +4731,6 @@ func (r Routing) listGKEClusters() http.Handler {
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
-}
-
-func (r Routing) getFeatureGates() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
-			middleware.UserSaver(r.userProvider),
-		)(func(ctx context.Context, request interface{}) (interface{}, error) {
-			return r.featureGatesProvider.GetFeatureGates()
-		}),
-		func (c context.Context, r *http.Request) (interface{}, error) {
-			return r, nil
-        },
-		handler.EncodeJSON,
-		r.defaultServerOptions()...,
-	)
-
-	//return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	//	w.WriteHeader(http.StatusOK)
-    //    w.Write([]byte("foo"))
-	//})
 }
 
 // swagger:route GET /api/v2/providers/eks/clusters eks listEKSClusters
