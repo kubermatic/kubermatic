@@ -18,6 +18,9 @@ import (
 // swagger:model ClusterHealth
 type ClusterHealth struct {
 
+	// alertmanager config
+	AlertmanagerConfig HealthStatus `json:"alertmanagerConfig,omitempty"`
+
 	// apiserver
 	Apiserver HealthStatus `json:"apiserver,omitempty"`
 
@@ -55,6 +58,10 @@ type ClusterHealth struct {
 // Validate validates this cluster health
 func (m *ClusterHealth) Validate(formats strfmt.Registry) error {
 	var res []error
+
+	if err := m.validateAlertmanagerConfig(formats); err != nil {
+		res = append(res, err)
+	}
 
 	if err := m.validateApiserver(formats); err != nil {
 		res = append(res, err)
@@ -103,6 +110,21 @@ func (m *ClusterHealth) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ClusterHealth) validateAlertmanagerConfig(formats strfmt.Registry) error {
+	if swag.IsZero(m.AlertmanagerConfig) { // not required
+		return nil
+	}
+
+	if err := m.AlertmanagerConfig.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("alertmanagerConfig")
+		}
+		return err
+	}
+
 	return nil
 }
 
@@ -275,6 +297,10 @@ func (m *ClusterHealth) validateUserClusterControllerManager(formats strfmt.Regi
 func (m *ClusterHealth) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateAlertmanagerConfig(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateApiserver(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -322,6 +348,18 @@ func (m *ClusterHealth) ContextValidate(ctx context.Context, formats strfmt.Regi
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ClusterHealth) contextValidateAlertmanagerConfig(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.AlertmanagerConfig.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("alertmanagerConfig")
+		}
+		return err
+	}
+
 	return nil
 }
 

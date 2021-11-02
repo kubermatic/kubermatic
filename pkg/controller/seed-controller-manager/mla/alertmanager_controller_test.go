@@ -20,8 +20,10 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -70,16 +72,54 @@ func newTestAlertmanagerReconciler(objects []ctrlruntimeclient.Object, handler h
 	return &reconciler, ts
 }
 
+type alertmanagerConfigStatus struct {
+	clusterStatus      kubermaticv1.HealthStatus                    // Alertmanager config status in the Cluster CR
+	alertmanagerStatus kubermaticv1.AlertManagerConfigurationStatus // Alertmanager config status in the Alertmanager CR
+}
+
+// getAlertmanagerConfigStatusDown returns the needed information when the alertmanager config status is OK:
+// - Cluster CR: HealthStatusUp
+// - Alertmanager CR :
+//    - Status True
+//    - No Error message
+//    - LastUpdated to now
+func getAlertmanagerConfigStatusUp() alertmanagerConfigStatus {
+	return alertmanagerConfigStatus{
+		clusterStatus: kubermaticv1.HealthStatusUp,
+		alertmanagerStatus: kubermaticv1.AlertManagerConfigurationStatus{
+			Status:      corev1.ConditionTrue,
+			LastUpdated: metav1.Now(),
+		},
+	}
+}
+
+// getAlertmanagerConfigStatusDown returns the needed information when the alertmanager config status is KO:
+// - Cluster CR: HealthStatusDown
+// - Alertmanager CR :
+//    - Status False
+//    - Error message
+//    - No LastUpdated
+func getAlertmanagerConfigStatusDown() alertmanagerConfigStatus {
+	return alertmanagerConfigStatus{
+		clusterStatus: kubermaticv1.HealthStatusDown,
+		alertmanagerStatus: kubermaticv1.AlertManagerConfigurationStatus{
+			Status:       corev1.ConditionFalse,
+			ErrorMessage: "status code: 400, response body: \"error validating Alertmanager config: some explanation\"",
+		},
+	}
+}
+
 func TestAlertmanagerReconcile(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
-		name         string
-		requestName  string
-		objects      []ctrlruntimeclient.Object
-		requests     []request
-		expectedErr  bool
-		hasFinalizer bool
-		hasResources bool
+		name                             string
+		requestName                      string
+		objects                          []ctrlruntimeclient.Object
+		requests                         []request
+		expectedErr                      bool
+		hasFinalizer                     bool
+		hasResources                     bool
+		expectedAlertmanagerConfigStatus alertmanagerConfigStatus
 	}{
 		{
 			name:        "create default alertmanager configuration when no alertmanager is created",
@@ -101,74 +141,12 @@ func TestAlertmanagerReconcile(t *testing.T) {
 					response: &http.Response{StatusCode: http.StatusCreated},
 				},
 			},
-			hasFinalizer: true,
-			hasResources: true,
+			hasFinalizer:                     true,
+			hasResources:                     true,
+			expectedAlertmanagerConfigStatus: getAlertmanagerConfigStatusUp(),
 		},
 		{
-			name:        "create default alertmanager configuration if alertmanager is found but config secret is not set",
-			requestName: "test",
-			objects: []ctrlruntimeclient.Object{
-				generateCluster("test", false, true, false),
-				&kubermaticv1.Alertmanager{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      resources.AlertmanagerName,
-						Namespace: "cluster-test",
-					},
-				},
-			},
-			requests: []request{
-				{
-					name:     "get",
-					request:  httptest.NewRequest(http.MethodGet, alertmanagerConfigEndpoint, nil),
-					response: &http.Response{StatusCode: http.StatusNotFound},
-				},
-				{
-					name: "post",
-					request: httptest.NewRequest(http.MethodPost,
-						alertmanagerConfigEndpoint,
-						bytes.NewBuffer([]byte(resources.DefaultAlertmanagerConfig))),
-					response: &http.Response{StatusCode: http.StatusCreated},
-				},
-			},
-			hasFinalizer: true,
-			hasResources: true,
-		},
-		{
-			name:        "create default alertmanager configuration if config secret is set but not found",
-			requestName: "test",
-			objects: []ctrlruntimeclient.Object{
-				generateCluster("test", true, false, false),
-				&kubermaticv1.Alertmanager{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      resources.AlertmanagerName,
-						Namespace: "cluster-test",
-					},
-					Spec: kubermaticv1.AlertmanagerSpec{
-						ConfigSecret: corev1.LocalObjectReference{
-							Name: "config-secret",
-						},
-					},
-				},
-			},
-			requests: []request{
-				{
-					name:     "get",
-					request:  httptest.NewRequest(http.MethodGet, alertmanagerConfigEndpoint, nil),
-					response: &http.Response{StatusCode: http.StatusNotFound},
-				},
-				{
-					name: "post",
-					request: httptest.NewRequest(http.MethodPost,
-						alertmanagerConfigEndpoint,
-						bytes.NewBuffer([]byte(resources.DefaultAlertmanagerConfig))),
-					response: &http.Response{StatusCode: http.StatusCreated},
-				},
-			},
-			hasFinalizer: true,
-			hasResources: true,
-		},
-		{
-			name:        "create alertmanager configuration based on the config secret",
+			name:        "create alertmanager configuration based on the config secret failure, check health status",
 			requestName: "test",
 			objects: []ctrlruntimeclient.Object{
 				generateCluster("test", false, true, false),
@@ -204,11 +182,15 @@ func TestAlertmanagerReconcile(t *testing.T) {
 					request: httptest.NewRequest(http.MethodPost,
 						alertmanagerConfigEndpoint,
 						bytes.NewBuffer([]byte(generateAlertmanagerConfig("test-user")))),
-					response: &http.Response{StatusCode: http.StatusCreated},
+					response: &http.Response{
+						StatusCode: http.StatusBadRequest, // any StatusCode != http.StatusCreated
+						Body:       ioutil.NopCloser(strings.NewReader(`"error validating Alertmanager config: some explanation"`))},
 				},
 			},
-			hasFinalizer: true,
-			hasResources: true,
+			hasFinalizer:                     true,
+			hasResources:                     true,
+			expectedErr:                      true,
+			expectedAlertmanagerConfigStatus: getAlertmanagerConfigStatusDown(),
 		},
 		{
 			name:        "clean up alertmanager configuration when mla is disabled",
@@ -247,6 +229,48 @@ func TestAlertmanagerReconcile(t *testing.T) {
 			},
 			hasFinalizer: false,
 			hasResources: false,
+		},
+		{
+			name:        "clean up alertmanager configuration when mla is disabled - delete configuration failed",
+			requestName: "test",
+			objects: []ctrlruntimeclient.Object{
+				generateCluster("test", false, false, false),
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "config-secret",
+						Namespace: "cluster-test",
+					},
+					Data: map[string][]byte{
+						resources.AlertmanagerConfigSecretKey: []byte(generateAlertmanagerConfig("test-user")),
+					},
+				},
+				&kubermaticv1.Alertmanager{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      resources.AlertmanagerName,
+						Namespace: "cluster-test",
+					},
+					Spec: kubermaticv1.AlertmanagerSpec{
+						ConfigSecret: corev1.LocalObjectReference{
+							Name: "config-secret",
+						},
+					},
+				},
+			},
+			requests: []request{
+				{
+					name: "delete",
+					request: httptest.NewRequest(http.MethodDelete,
+						alertmanagerConfigEndpoint,
+						nil),
+					response: &http.Response{
+						StatusCode: http.StatusBadRequest, // any StatusCode != http.StatusOK
+						Body:       ioutil.NopCloser(strings.NewReader(`"error validating Alertmanager config: some explanation"`))},
+				},
+			},
+			hasFinalizer:                     false,
+			hasResources:                     true,
+			expectedErr:                      true,
+			expectedAlertmanagerConfigStatus: getAlertmanagerConfigStatusDown(),
 		},
 		{
 			name:        "clean up alertmanager configuration when cluster is removed",
@@ -299,12 +323,20 @@ func TestAlertmanagerReconcile(t *testing.T) {
 					Namespace: cluster.Status.NamespaceName,
 				}, secret)
 				assert.Nil(t, err)
+				assert.Equal(t, testcase.expectedAlertmanagerConfigStatus.clusterStatus, *cluster.Status.ExtendedHealth.AlertmanagerConfig)
+				assert.Equal(t, testcase.expectedAlertmanagerConfigStatus.alertmanagerStatus.Status, alertmanager.Status.ConfigStatus.Status)
+				assert.Equal(t, testcase.expectedAlertmanagerConfigStatus.alertmanagerStatus.ErrorMessage, alertmanager.Status.ConfigStatus.ErrorMessage)
+				if testcase.expectedAlertmanagerConfigStatus.alertmanagerStatus.Status == corev1.ConditionTrue {
+					assert.False(t, alertmanager.Status.ConfigStatus.LastUpdated.IsZero())
+				}
 			} else {
 				assert.True(t, errors.IsNotFound(err))
 				secretList := &corev1.SecretList{}
 				err = reconciler.List(ctx, secretList, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName))
 				assert.Nil(t, err)
 				assert.Len(t, secretList.Items, 0)
+				// No alertmanager config status any more in Cluster CR
+				assert.Nil(t, cluster.Status.ExtendedHealth.AlertmanagerConfig)
 			}
 			assertExpectation()
 			server.Close()
