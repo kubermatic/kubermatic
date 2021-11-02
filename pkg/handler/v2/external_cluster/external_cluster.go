@@ -32,7 +32,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
@@ -41,7 +40,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -377,7 +375,7 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 }
 
 // getClusterReq defines HTTP request for getExternalCluster
-// swagger:parameters getExternalCluster getExternalClusterMetrics getExternalClusterUpgrades getkubeconfig
+// swagger:parameters getExternalCluster getExternalClusterMetrics getExternalClusterUpgrades getExternalClusterKubeconfig
 type getClusterReq struct {
 	common.ProjectReq
 	// in: path
@@ -819,28 +817,6 @@ func GetKubeconfigEndpoint(userInfoGetter provider.UserInfoGetter, projectProvid
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		kubeconfigReference := cluster.Spec.KubeconfigReference
-		if kubeconfigReference == nil {
-			return nil, fmt.Errorf("kubeconfig not available for the Cluster")
-		}
-
-		secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(context.Background(), privilegedClusterProvider.GetMasterClient())
-
-		rawKubeconfig, err := secretKeyGetter(kubeconfigReference, resources.KubeconfigSecretKey)
-		if err != nil {
-			return nil, err
-		}
-
-		kubeconfig, err := base64.StdEncoding.DecodeString(rawKubeconfig)
-		if err != nil {
-			panic(fmt.Sprintf("Invalid base64 string %q", rawKubeconfig))
-		}
-
-		kubeconfigYaml, err := yaml.JSONToYAML(kubeconfig)
-		if err != nil {
-			return nil, err
-		}
-
-		return string(kubeconfigYaml), nil
+		return handlercommon.GetKubeconfigEndpoint(cluster, privilegedClusterProvider)
 	}
 }

@@ -15030,14 +15030,14 @@
     },
     "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/kubeconfig": {
       "get": {
-        "description": "Get External Cluster Kubeconfig",
         "produces": [
           "application/json"
         ],
         "tags": [
           "project"
         ],
-        "operationId": "getkubeconfig",
+        "summary": "Gets the kubeconfig for the specified external cluster.",
+        "operationId": "getExternalClusterKubeconfig",
         "parameters": [
           {
             "type": "string",
