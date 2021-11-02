@@ -195,6 +195,15 @@ func TestMLAIntegration(t *testing.T) {
 		t.Fatalf("user[%v] expected to be Grafana Admin and has orgID=%d", user, org.ID)
 	}
 
+	orgUser, err := mla.GetGrafanaOrgUser(ctx, grafanaClient, org.ID, user.ID)
+	if err != nil {
+		t.Fatalf("failed to get grafana org user: %v", err)
+	}
+
+	if orgUser.Role != string(grafanasdk.ROLE_EDITOR) {
+		t.Fatalf("orgUser[%v] expected to be had Editor role", orgUser)
+	}
+
 	// Disable MLA Integration
 	t.Log("disabling MLA...")
 	if err := setMLAIntegration(ctx, seedClient, cluster, false); err != nil {
