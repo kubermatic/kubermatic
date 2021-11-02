@@ -111,6 +111,16 @@ func main() {
 		log.Info("peer-tls-mode: strict")
 	}
 
+	// if the cluster already exists, try to connect and update peer URLs that might be out of sync.
+	// etcd might fail to start if peer URLs in the etcd member state and the flags passed to it are different
+	if e.initialState == initialStateExisting {
+		// make sure that peer URLs in the cluster member data is
+		// updated / in sync with the etcd node's configuration
+		if err := e.updatePeerURLs(log); err != nil {
+			log.Warnw("failed to update peerURL, etcd node might fail to start ...", zap.Error(err))
+		}
+	}
+
 	// setup and start etcd command
 	etcdCmd, err := startEtcdCmd(e, log)
 	if err != nil {
@@ -148,12 +158,6 @@ func main() {
 		}
 	} else if err := joinCluster(e, log); err != nil {
 		log.Panicw("join cluster as fresh member", zap.Error(err))
-	}
-
-	// make sure that peer URLs in the cluster member data is
-	// updated / in sync with the etcd node's configuration
-	if err := e.updatePeerURLs(log); err != nil {
-		log.Panicw("failed to update peerURL", zap.Error(err))
 	}
 
 	// reconcile dead members continuously. Initially we did this once as a step at the end of start up. We did that because scale up/down operations required a full restart of the ring with each node add/remove. However, this is no longer the case, so we need to separate the reconcile from the start up process and do it continuously.
