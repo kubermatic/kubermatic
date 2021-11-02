@@ -24,7 +24,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
-func CreateEndpoint(featureGatesProvider provider.FeatureGatesProvider) endpoint.Endpoint {
+func GetEndpoint(featureGatesProvider provider.FeatureGatesProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		return featureGatesProvider.GetFeatureGates()
 	}

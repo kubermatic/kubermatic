@@ -17,7 +17,6 @@ limitations under the License.
 package v2
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -4699,10 +4698,8 @@ func (r Routing) getFeatureGates() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(featuregates.CreateEndpoint(r.featureGatesProvider)),
-		func(_ context.Context, r *http.Request) (interface{}, error) {
-			return r, nil
-		},
+		)(featuregates.GetEndpoint(r.featureGatesProvider)),
+		common.DecodeEmptyReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
