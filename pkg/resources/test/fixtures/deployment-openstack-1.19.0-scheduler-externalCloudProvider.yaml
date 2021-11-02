@@ -86,7 +86,7 @@ spec:
         name: openvpn-client
         resources:
           limits:
-            cpu: 100m
+            cpu: "1"
             memory: 32Mi
           requests:
             cpu: 5m
