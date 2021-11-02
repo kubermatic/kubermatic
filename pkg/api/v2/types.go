@@ -397,3 +397,9 @@ type EKSClusterList []EKSCluster
 // Regions represents an list of EC2 regions.
 // swagger:model Regions
 type Regions []string
+
+// FeatureGates represents an object holding feature gate settings
+// swagger:model FeatureGates
+type FeatureGates struct {
+	KonnectivityService *bool `json:"konnectivityService,omitempty"`
+}

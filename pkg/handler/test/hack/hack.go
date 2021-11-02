@@ -91,7 +91,8 @@ func NewTestRouting(
 	etcdRestoreProjectProviderGetter provider.EtcdRestoreProjectProviderGetter,
 	backupCredentialsProviderGetter provider.BackupCredentialsProviderGetter,
 	privilegedMLAAdminSettingProviderGetter provider.PrivilegedMLAAdminSettingProviderGetter,
-	masterClient client.Client) http.Handler {
+	masterClient client.Client,
+	featureGatesProvider provider.FeatureGatesProvider) http.Handler {
 	routingParams := handler.RoutingParams{
 		Log:                                     kubermaticlog.Logger,
 		PresetsProvider:                         presetsProvider,
@@ -129,9 +130,10 @@ func NewTestRouting(
 		UserWatcher:                             userWatcher,
 		ExternalClusterProvider:                 externalClusterProvider,
 		PrivilegedExternalClusterProvider:       privilegedExternalClusterProvider,
+		FeatureGatesProvider:                    featureGatesProvider,
+		DefaultConstraintProvider:               defaultConstraintProvider,
 		ConstraintTemplateProvider:              constraintTemplateProvider,
 		ConstraintProviderGetter:                constraintProviderGetter,
-		DefaultConstraintProvider:               defaultConstraintProvider,
 		AlertmanagerProviderGetter:              alertmanagerProviderGetter,
 		ClusterTemplateProvider:                 clusterTemplateProvider,
 		ClusterTemplateInstanceProviderGetter:   clusterTemplateInstanceProviderGetter,

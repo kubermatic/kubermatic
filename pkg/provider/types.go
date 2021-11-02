@@ -1231,6 +1231,11 @@ type PrivilegedEtcdRestoreProjectProvider interface {
 	ListUnsecured(projectID string) ([]*kubermaticv1.EtcdRestoreList, error)
 }
 
+// FeatureGatesProvider declares the set of method for getting currently subset of provided feature gates.
+type FeatureGatesProvider interface {
+	GetFeatureGates() (apiv2.FeatureGates, error)
+}
+
 // BackupCredentialsProvider declares the set of method for interacting with etcd backup credentials using a privileged client
 type BackupCredentialsProvider interface {
 	// CreateUnsecured creates the backup credentials

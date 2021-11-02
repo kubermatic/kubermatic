@@ -37,6 +37,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/etcdbackupconfig"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/etcdrestore"
 	externalcluster "k8c.io/kubermatic/v2/pkg/handler/v2/external_cluster"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/feature_gates"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/gatekeeperconfig"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/handler/v2/kubernetes-dashboard"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/machine"
@@ -57,6 +58,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/providers/gke/clusters").
 		Handler(r.listGKEClusters())
+
+	mux.Methods(http.MethodGet).
+		Path("/featuregates").
+		Handler(r.getFeatureGates())
 
 	// Defines a set of HTTP endpoints for cluster that belong to a project.
 	mux.Methods(http.MethodPost).
@@ -4699,6 +4704,30 @@ func (r Routing) listUser() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(user.ListEndpoint(r.userInfoGetter, r.userProvider)),
+		common.DecodeEmptyReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/featuregates get status of feature gates
+//
+//     Status of feature gates
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: FeatureGates
+//       401: errorResponse
+//       403: errorResponse
+func (r Routing) getFeatureGates() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(featuregates.GetEndpoint(r.featureGatesProvider)),
 		common.DecodeEmptyReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
