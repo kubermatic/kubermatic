@@ -52,8 +52,7 @@ type AlertmanagerList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
-	Items  []Alertmanager     `json:"items"`
-	Status AlertManagerStatus `json:"status,omitempty"`
+	Items []Alertmanager `json:"items"`
 }
 
 // AlertManagerStatus stores status information about the AlertManager

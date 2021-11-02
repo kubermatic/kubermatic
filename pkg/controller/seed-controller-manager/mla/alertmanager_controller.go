@@ -489,17 +489,17 @@ func (r *alertmanagerController) ensureAlertManagerConfigStatus(ctx context.Cont
 	oldAlertmanager := alertmanager.DeepCopy()
 	oldCluster := cluster.DeepCopy()
 
+	alertmanager.Status.ConfigStatus.ErrorMessage = "" // reset error message
+	alertmanager.Status.ConfigStatus.Status = corev1.ConditionTrue
+	status := kubermaticv1.HealthStatusUp
+	cluster.Status.ExtendedHealth.AlertmanagerConfig = &status
+	alertmanager.Status.ConfigStatus.LastUpdated = metav1.Now()
 	if configErr != nil {
 		alertmanager.Status.ConfigStatus.ErrorMessage = configErr.Error()
 		alertmanager.Status.ConfigStatus.Status = corev1.ConditionFalse
 		status := kubermaticv1.HealthStatusDown
 		cluster.Status.ExtendedHealth.AlertmanagerConfig = &status
-	} else {
-		alertmanager.Status.ConfigStatus.ErrorMessage = "" // reset error message
-		alertmanager.Status.ConfigStatus.Status = corev1.ConditionTrue
-		alertmanager.Status.ConfigStatus.LastUpdated = metav1.Now()
-		status := kubermaticv1.HealthStatusUp
-		cluster.Status.ExtendedHealth.AlertmanagerConfig = &status
+		alertmanager.Status.ConfigStatus.LastUpdated = oldAlertmanager.Status.ConfigStatus.LastUpdated
 	}
 
 	// Update alertmanager config status in Alertmanager CR

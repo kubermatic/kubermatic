@@ -452,7 +452,6 @@ func (in *AlertmanagerList) DeepCopyInto(out *AlertmanagerList) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-	in.Status.DeepCopyInto(&out.Status)
 	return
 }
 
