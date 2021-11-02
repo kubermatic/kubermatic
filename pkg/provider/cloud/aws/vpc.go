@@ -43,12 +43,12 @@ func reconcileVPC(client ec2iface.EC2API, cluster *kubermaticv1.Cluster, update 
 		out, err := client.DescribeVpcs(&ec2.DescribeVpcsInput{
 			VpcIds: aws.StringSlice([]string{vpcID}),
 		})
-		if err != nil {
+		if err != nil && !isNotFound(err) {
 			return nil, fmt.Errorf("failed to list VPCs: %w", err)
 		}
 
 		// not found
-		if len(out.Vpcs) == 0 {
+		if out == nil || len(out.Vpcs) == 0 {
 			vpcID = ""
 		}
 	}
@@ -78,7 +78,7 @@ func getDefaultVPC(client ec2iface.EC2API) (*ec2.Vpc, error) {
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to list VPCs: %v", err)
+		return nil, fmt.Errorf("failed to list VPCs: %w", err)
 	}
 
 	if len(vpcOut.Vpcs) != 1 {
@@ -94,11 +94,11 @@ func getVPCByID(client ec2iface.EC2API, vpcID string) (*ec2.Vpc, error) {
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to list vpc's: %v", err)
+		return nil, fmt.Errorf("failed to list VPCs: %w", err)
 	}
 
 	if len(vpcOut.Vpcs) != 1 {
-		return nil, fmt.Errorf("unable to find specified vpc with id %q", vpcID)
+		return nil, fmt.Errorf("unable to find specified VPC with ID %q", vpcID)
 	}
 
 	return vpcOut.Vpcs[0], nil

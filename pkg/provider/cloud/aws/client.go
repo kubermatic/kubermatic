@@ -29,6 +29,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 type ClientSet struct {
@@ -38,10 +39,21 @@ type ClientSet struct {
 }
 
 func GetClientSet(accessKeyID, secretAccessKey, region string) (*ClientSet, error) {
-	config := aws.NewConfig()
-	config = config.WithRegion(region)
-	config = config.WithCredentials(credentials.NewStaticCredentials(accessKeyID, secretAccessKey, ""))
-	config = config.WithMaxRetries(3)
+	return getClientSet(accessKeyID, secretAccessKey, region, "")
+}
+
+func getClientSet(accessKeyID, secretAccessKey, region, endpoint string) (*ClientSet, error) {
+	config := aws.
+		NewConfig().
+		WithRegion(region).
+		WithCredentials(credentials.NewStaticCredentials(accessKeyID, secretAccessKey, "")).
+		WithMaxRetries(3)
+
+	// Overriding the API endpoint is mostly useful for integration tests,
+	// when running against a localstack container, for example.
+	if endpoint != "" {
+		config = config.WithEndpoint(endpoint)
+	}
 
 	sess, err := session.NewSession(config)
 	if err != nil {
@@ -63,9 +75,11 @@ func isEntityAlreadyExists(err error) bool {
 	return aerr.Code() == "EntityAlreadyExists"
 }
 
+var notFoundErrors = sets.NewString("NoSuchEntity", "InvalidVpcID.NotFound")
+
 func isNotFound(err error) bool {
 	if awsErr, ok := err.(awserr.Error); ok {
-		if awsErr.Code() == "NoSuchEntity" {
+		if notFoundErrors.Has(awsErr.Code()) {
 			return true
 		}
 	}
