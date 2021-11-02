@@ -253,7 +253,7 @@ func (r *alertmanagerController) handleDeletion(ctx context.Context, cluster *ku
 	err := r.cleanUpAlertmanagerConfiguration(cluster)
 	// Do not return immmediatly if alertmanger configuration update failed. Update the configuration health status first.
 	if errC := r.ensureAlertManagerConfigStatus(ctx, cluster, err); errC != nil && !errors.IsNotFound(errC) {
-		return fmt.Errorf("failed to udpate alertmanager configuration status in cluster: %w", err)
+		return fmt.Errorf("failed to update alertmanager configuration status in cluster: %w", err)
 	}
 	if err != nil {
 		return fmt.Errorf("failed to delete alertmanager configuration: %w", err)
@@ -263,7 +263,7 @@ func (r *alertmanagerController) handleDeletion(ctx context.Context, cluster *ku
 		err := r.cleanUpAlertmanagerObjects(ctx, cluster)
 		// Do not return immmediatly if alertmanger configuration update failed. Update the configuration health status first.
 		if errC := r.cleanUpAlertmanagerConfigurationStatus(ctx, cluster); errC != nil {
-			return fmt.Errorf("failed to udpate alertmanager configuration status in cluster: %w", err)
+			return fmt.Errorf("failed to update alertmanager configuration status in cluster: %w", err)
 		}
 		if err != nil {
 			return fmt.Errorf("failed to remove alertmanager objects: %w", err)
