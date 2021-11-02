@@ -212,10 +212,9 @@ func (m *PresetsProvider) DeletePreset(preset *kubermaticv1.Preset) (*kubermatic
 	if len(existingProviders) > 0 {
 		// Case: Remove provider from the preset
 		return m.patcher(preset)
-	} else {
-		// Case: Delete the whole preset
-		return m.deleter(preset)
 	}
+	// Case: Delete the whole preset
+	return m.deleter(preset)
 }
 
 func filterOutPresets(userInfo *provider.UserInfo, list *kubermaticv1.PresetList) ([]kubermaticv1.Preset, error) {
