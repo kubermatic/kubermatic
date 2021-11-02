@@ -9076,6 +9076,47 @@
         }
       }
     },
+    "/api/v2/featuregates": {
+      "get": {
+        "description": "Status of feature gates",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "get",
+          "status",
+          "of",
+          "feature"
+        ],
+        "operationId": "gates",
+        "responses": {
+          "200": {
+            "description": "FeatureGates",
+            "schema": {
+              "$ref": "#/definitions/FeatureGates"
+            }
+          },
+          "401": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          },
+          "403": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/presets": {
       "get": {
         "description": "Lists presets",
@@ -19228,6 +19269,17 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
+    "FeatureGates": {
+      "description": "FeatureGates represents an object holding feature gate settings",
+      "type": "object",
+      "properties": {
+        "konnectivityService": {
+          "type": "boolean",
+          "x-go-name": "KonnectivityService"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "FlatcarSpec": {
       "description": "FlatcarSpec contains Flatcar Linux specific settings",
