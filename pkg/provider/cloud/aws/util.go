@@ -23,6 +23,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/iam"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -79,7 +80,11 @@ func GetSecurityGroups(accessKeyID, secretAccessKey, region string) ([]*ec2.Secu
 		return nil, err
 	}
 
-	sgOut, err := client.EC2.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{})
+	return getSecurityGroupsWithClient(client.EC2)
+}
+
+func getSecurityGroupsWithClient(client ec2iface.EC2API) ([]*ec2.SecurityGroup, error) {
+	sgOut, err := client.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{})
 
 	if err != nil {
 		if awsErr, ok := err.(awserr.Error); ok && awsErr.Code() == authFailure {

@@ -47,10 +47,6 @@ func reconcileWorkerRole(client iamiface.IAMAPI, cluster *kubermaticv1.Cluster) 
 	return ensureRole(client, cluster, roleName, policies)
 }
 
-// func deleteWorkerRole(client iamiface.IAMAPI, cluster *kubermaticv1.Cluster) error {
-// 	return deleteRole(client, workerRoleName(cluster.Name))
-// }
-
 // /////////////////////////
 // control plane role
 

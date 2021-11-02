@@ -19,10 +19,20 @@ package aws
 import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
+
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/rand"
 )
 
+// makeCluster returns a KKP Cluster object with the AWS cloud spec inserted.
+// The cluster will have a random name, which helps to re-use the same localstack
+// test environment without causing name clashes (or having to restart the
+// test env in between every test).
 func makeCluster(cloudSpec *kubermaticv1.AWSCloudSpec) *kubermaticv1.Cluster {
 	return &kubermaticv1.Cluster{
+		ObjectMeta: v1.ObjectMeta{
+			Name: rand.String(10),
+		},
 		Spec: kubermaticv1.ClusterSpec{
 			Cloud: kubermaticv1.CloudSpec{
 				AWS: cloudSpec,

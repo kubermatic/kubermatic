@@ -17,6 +17,7 @@ limitations under the License.
 package aws
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -37,11 +38,15 @@ func securityGroupName(cluster *kubermaticv1.Cluster) string {
 // Get security group by aws generated id string (sg-xxxxx).
 // Error is returned in case no such group exists.
 func getSecurityGroupByID(client ec2iface.EC2API, vpc *ec2.Vpc, id string) (*ec2.SecurityGroup, error) {
+	if vpc == nil {
+		return nil, errors.New("no VPC given")
+	}
+
 	dsgOut, err := client.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
 		GroupIds: aws.StringSlice([]string{id}),
 		Filters:  []*ec2.Filter{ec2VPCFilter(*vpc.VpcId)},
 	})
-	if err != nil {
+	if err != nil && !isNotFound(err) {
 		return nil, fmt.Errorf("failed to get security group: %v", err)
 	}
 	if len(dsgOut.SecurityGroups) == 0 {
@@ -52,12 +57,6 @@ func getSecurityGroupByID(client ec2iface.EC2API, vpc *ec2.Vpc, id string) (*ec2
 }
 
 func reconcileSecurityGroup(client ec2iface.EC2API, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	lowPort, highPort := kubermaticresources.NewTemplateDataBuilder().
-		WithNodePortRange(cluster.Spec.ComponentsOverride.Apiserver.NodePortRange).
-		WithCluster(cluster).
-		Build().
-		NodePorts()
-
 	vpcID := cluster.Spec.Cloud.AWS.VPCID
 	groupID := cluster.Spec.Cloud.AWS.SecurityGroupID
 
@@ -67,12 +66,12 @@ func reconcileSecurityGroup(client ec2iface.EC2API, cluster *kubermaticv1.Cluste
 			GroupIds: aws.StringSlice([]string{groupID}),
 			Filters:  []*ec2.Filter{ec2VPCFilter(vpcID)},
 		})
-		if err != nil {
+		if err != nil && !isNotFound(err) {
 			return cluster, fmt.Errorf("failed to get security groups: %w", err)
 		}
 
 		// not found
-		if len(describeOut.SecurityGroups) >= 1 {
+		if describeOut == nil || len(describeOut.SecurityGroups) == 0 {
 			groupID = ""
 		}
 	}
@@ -109,6 +108,7 @@ func reconcileSecurityGroup(client ec2iface.EC2API, cluster *kubermaticv1.Cluste
 			GroupName:   aws.String(groupName),
 			Description: aws.String(fmt.Sprintf("Security group for the Kubernetes cluster %s", cluster.Name)),
 			TagSpecifications: []*ec2.TagSpecification{{
+				ResourceType: aws.String("security-group"),
 				Tags: []*ec2.Tag{
 					ec2OwnershipTag(cluster.Name),
 				},
@@ -121,13 +121,47 @@ func reconcileSecurityGroup(client ec2iface.EC2API, cluster *kubermaticv1.Cluste
 		groupID = *out.GroupId
 	}
 
-	// define permissions
-	permissions := []*ec2.IpPermission{
+	// Iterate over the permissions and add them one by one, because if an error occurs
+	// (e.g., one permission already exists) none of them would be created
+	lowPort, highPort := getNodePortRange(cluster)
+	permissions := getSecurityGroupPermissions(groupID, lowPort, highPort)
+
+	for _, perm := range permissions {
+		// try to add permission
+		_, err := client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
+			GroupId: aws.String(groupID),
+			IpPermissions: []*ec2.IpPermission{
+				perm,
+			},
+		})
+		if err != nil {
+			if awsErr, ok := err.(awserr.Error); !ok || awsErr.Code() != "InvalidPermission.Duplicate" {
+				return cluster, fmt.Errorf("failed to authorize security group %s with id %s: %w", groupName, groupID, err)
+			}
+		}
+	}
+
+	return update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		kuberneteshelper.AddFinalizer(cluster, securityGroupCleanupFinalizer)
+		cluster.Spec.Cloud.AWS.SecurityGroupID = groupID
+	})
+}
+
+func getNodePortRange(cluster *kubermaticv1.Cluster) (int, int) {
+	return kubermaticresources.NewTemplateDataBuilder().
+		WithNodePortRange(cluster.Spec.ComponentsOverride.Apiserver.NodePortRange).
+		WithCluster(cluster).
+		Build().
+		NodePorts()
+}
+
+func getSecurityGroupPermissions(securityGroupID string, lowPort, highPort int) []*ec2.IpPermission {
+	return []*ec2.IpPermission{
 		// all protocols from within the sg
 		{
 			IpProtocol: aws.String("-1"),
 			UserIdGroupPairs: []*ec2.UserIdGroupPair{{
-				GroupId: aws.String(groupID),
+				GroupId: aws.String(securityGroupID),
 			}},
 		},
 
@@ -156,8 +190,8 @@ func reconcileSecurityGroup(client ec2iface.EC2API, cluster *kubermaticv1.Cluste
 			IpProtocol: aws.String("icmpv6"),
 			FromPort:   aws.Int64(-1), // any port
 			ToPort:     aws.Int64(-1), // any port
-			IpRanges: []*ec2.IpRange{{
-				CidrIp: aws.String("::/0"),
+			Ipv6Ranges: []*ec2.Ipv6Range{{
+				CidrIpv6: aws.String("::/0"),
 			}},
 		},
 
@@ -181,28 +215,6 @@ func reconcileSecurityGroup(client ec2iface.EC2API, cluster *kubermaticv1.Cluste
 			}},
 		},
 	}
-
-	// Iterate over the permissions and add them one by one, because if an error occurs
-	// (e.g., one permission already exists) none of them would be created
-	for _, perm := range permissions {
-		// try to add permission
-		_, err := client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
-			GroupId: aws.String(groupID),
-			IpPermissions: []*ec2.IpPermission{
-				perm,
-			},
-		})
-		if err != nil {
-			if awsErr, ok := err.(awserr.Error); !ok || awsErr.Code() != "InvalidPermission.Duplicate" {
-				return cluster, fmt.Errorf("failed to authorize security group %s with id %s: %w", groupName, groupID, err)
-			}
-		}
-	}
-
-	return update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-		kuberneteshelper.AddFinalizer(cluster, securityGroupCleanupFinalizer)
-		cluster.Spec.Cloud.AWS.SecurityGroupID = groupID
-	})
 }
 
 func cleanUpSecurityGroup(client ec2iface.EC2API, cluster *kubermaticv1.Cluster) error {

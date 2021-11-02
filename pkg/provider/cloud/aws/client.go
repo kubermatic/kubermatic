@@ -29,6 +29,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
+
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -75,7 +76,7 @@ func isEntityAlreadyExists(err error) bool {
 	return aerr.Code() == "EntityAlreadyExists"
 }
 
-var notFoundErrors = sets.NewString("NoSuchEntity", "InvalidVpcID.NotFound", "InvalidRouteTableID.NotFound")
+var notFoundErrors = sets.NewString("NoSuchEntity", "InvalidVpcID.NotFound", "InvalidRouteTableID.NotFound", "InvalidGroup.NotFound")
 
 func isNotFound(err error) bool {
 	if awsErr, ok := err.(awserr.Error); ok {
