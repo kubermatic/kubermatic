@@ -14,17 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package kubernetes_test
+package featuregates_test
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/google/go-cmp/cmp"
+	v2 "k8c.io/kubermatic/v2/pkg/api/v2"
+	"k8c.io/kubermatic/v2/pkg/features"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
-	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 
@@ -35,11 +38,14 @@ import (
 
 func TestFeatureGatesEndpoint(t *testing.T) {
 	t.Parallel()
+
+	valTrue := true
+
 	testCases := []struct {
 		Name                      string
 		ExistingKubermaticObjects []ctrlruntimeclient.Object
 		ExistingAPIUser           *apiv1.User
-		ExpectedResponse          features.FeatureGate
+		ExpectedResponse          v2.FeatureGates
 		ExpectedHTTPStatusCode    int
 	}{
 		{
@@ -47,9 +53,8 @@ func TestFeatureGatesEndpoint(t *testing.T) {
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(),
 			ExistingAPIUser:           test.GenDefaultAPIUser(),
 			ExpectedHTTPStatusCode:    http.StatusOK,
-			ExpectedResponse: features.FeatureGate{
-				"feature-gate-test":         true,
-				"feature-gate-test-another": false,
+			ExpectedResponse: v2.FeatureGates{
+				KonnectivityService: &valTrue,
 			},
 		},
 	}
@@ -66,8 +71,7 @@ func TestFeatureGatesEndpoint(t *testing.T) {
 				},
 			},
 			FeatureGates: map[string]sets.Empty{
-				"feature-gate-test=true":          {},
-				"feature-gate-test-another=false": {},
+				fmt.Sprintf("%s=true", features.KonnectivityService): {},
 			},
 		},
 	}
@@ -87,20 +91,12 @@ func TestFeatureGatesEndpoint(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.ExpectedHTTPStatusCode, resp.Code, resp.Body.String())
 			}
 			if resp.Code == http.StatusOK {
-				var featureGates features.FeatureGate
+				var featureGates v2.FeatureGates
 				if err := json.Unmarshal(resp.Body.Bytes(), &featureGates); err != nil {
 					t.Fatalf("failed to unmarshal response due to: %v", err)
 				}
-
-				if len(tc.ExpectedResponse) != len(featureGates) {
-					t.Fatalf("expected %d feature gates, got %d", len(tc.ExpectedResponse), len(featureGates))
-				}
-
-				for key, val := range tc.ExpectedResponse {
-					v, ok := featureGates[key]
-					if !ok || v != val {
-						t.Fatalf("expected %s to be %t, got %t", key, val, v)
-					}
+				if !cmp.Equal(tc.ExpectedResponse, featureGates) {
+					t.Fatalf(cmp.Diff(tc.ExpectedResponse, featureGates))
 				}
 			}
 		})

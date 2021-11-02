@@ -60,23 +60,25 @@ func NewGatesOK() *GatesOK {
 
 /* GatesOK describes a response with status code 200, with default header values.
 
-FeatureGate
+FeatureGates
 */
 type GatesOK struct {
-	Payload models.FeatureGate
+	Payload *models.FeatureGates
 }
 
 func (o *GatesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/featuregates][%d] gatesOK  %+v", 200, o.Payload)
 }
-func (o *GatesOK) GetPayload() models.FeatureGate {
+func (o *GatesOK) GetPayload() *models.FeatureGates {
 	return o.Payload
 }
 
 func (o *GatesOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
+	o.Payload = new(models.FeatureGates)
+
 	// response payload
-	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && err != io.EOF {
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
 		return err
 	}
 

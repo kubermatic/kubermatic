@@ -9091,9 +9091,9 @@
         "operationId": "gates",
         "responses": {
           "200": {
-            "description": "FeatureGate",
+            "description": "FeatureGates",
             "schema": {
-              "$ref": "#/definitions/FeatureGate"
+              "$ref": "#/definitions/FeatureGates"
             }
           },
           "401": {
@@ -19219,13 +19219,16 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
-    "FeatureGate": {
+    "FeatureGates": {
+      "description": "FeatureGates represents an object holding feature gate settings",
       "type": "object",
-      "title": "FeatureGate is map of key=value pairs that enables/disables various features.",
-      "additionalProperties": {
-        "type": "boolean"
+      "properties": {
+        "konnectivityService": {
+          "type": "boolean",
+          "x-go-name": "KonnectivityService"
+        }
       },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/features"
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "FlatcarSpec": {
       "description": "FlatcarSpec contains Flatcar Linux specific settings",

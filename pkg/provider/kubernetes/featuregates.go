@@ -17,6 +17,7 @@ limitations under the License.
 package kubernetes
 
 import (
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
@@ -29,6 +30,13 @@ func NewFeatureGatesProvider(featureGates features.FeatureGate) provider.Feature
 }
 
 // GetFeatureGates returns feature gates
-func (fg featureGatesProvider) GetFeatureGates() (features.FeatureGate, error) {
-	return features.FeatureGate(fg), nil
+func (fg featureGatesProvider) GetFeatureGates() (apiv2.FeatureGates, error) {
+	var f apiv2.FeatureGates
+
+	v, ok := fg[features.KonnectivityService]
+	if ok {
+		f.KonnectivityService = &v
+	}
+
+	return f, nil
 }

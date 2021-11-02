@@ -26,7 +26,6 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/features"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -1228,7 +1227,7 @@ type PrivilegedEtcdRestoreProjectProvider interface {
 
 // FeatureGatesProvider declares the set of method for getting currently subset of provided feature gates.
 type FeatureGatesProvider interface {
-	GetFeatureGates() (features.FeatureGate, error)
+	GetFeatureGates() (apiv2.FeatureGates, error)
 }
 
 // BackupCredentialsProvider declares the set of method for interacting with etcd backup credentials using a privileged client

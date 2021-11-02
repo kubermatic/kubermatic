@@ -38,6 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/etcdbackupconfig"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/etcdrestore"
 	externalcluster "k8c.io/kubermatic/v2/pkg/handler/v2/external_cluster"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/feature_gates"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/gatekeeperconfig"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/handler/v2/kubernetes-dashboard"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/machine"
@@ -4690,7 +4691,7 @@ func (r Routing) listUser() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: FeatureGate
+//       200: FeatureGates
 //       401: errorResponse
 //       403: errorResponse
 func (r Routing) getFeatureGates() http.Handler {
@@ -4698,11 +4699,7 @@ func (r Routing) getFeatureGates() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(
-			func(ctx context.Context, request interface{}) (interface{}, error) {
-				return r.featureGatesProvider.GetFeatureGates()
-			},
-		),
+		)(featuregates.CreateEndpoint(r.featureGatesProvider)),
 		func(_ context.Context, r *http.Request) (interface{}, error) {
 			return r, nil
 		},
