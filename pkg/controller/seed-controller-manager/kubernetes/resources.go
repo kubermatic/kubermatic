@@ -95,23 +95,7 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return nil, err
 	}
 
-	if err := r.ensureServiceAccounts(ctx, cluster); err != nil {
-		return nil, err
-	}
-
-	if err := r.ensureRoles(ctx, cluster); err != nil {
-		return nil, err
-	}
-
-	if err := r.ensureRoleBindings(ctx, cluster); err != nil {
-		return nil, err
-	}
-
-	if err := r.ensureClusterRoles(ctx); err != nil {
-		return nil, err
-	}
-
-	if err := r.ensureClusterRoleBindings(ctx, cluster); err != nil {
+	if err := r.ensureRBAC(ctx, cluster); err != nil {
 		return nil, err
 	}
 
@@ -631,6 +615,30 @@ func (r *Reconciler) ensureOldOPAIntegrationIsRemoved(ctx context.Context, data 
 		if err := r.Client.Delete(ctx, resource); err != nil && !errors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure old OPA integration version resources are removed/not present: %v", err)
 		}
+	}
+
+	return nil
+}
+
+func (r *Reconciler) ensureRBAC(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	if err := r.ensureServiceAccounts(ctx, cluster); err != nil {
+		return err
+	}
+
+	if err := r.ensureRoles(ctx, cluster); err != nil {
+		return err
+	}
+
+	if err := r.ensureRoleBindings(ctx, cluster); err != nil {
+		return err
+	}
+
+	if err := r.ensureClusterRoles(ctx); err != nil {
+		return err
+	}
+
+	if err := r.ensureClusterRoleBindings(ctx, cluster); err != nil {
+		return err
 	}
 
 	return nil
