@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
 func TestGetDefaultVPC(t *testing.T) {
@@ -68,23 +67,6 @@ func TestGetVPCByID(t *testing.T) {
 			t.Fatalf("getVPCByID should have errored, but returned %v", err)
 		}
 	})
-}
-
-func makeCluster(cloudSpec *kubermaticv1.AWSCloudSpec) *kubermaticv1.Cluster {
-	return &kubermaticv1.Cluster{
-		Spec: kubermaticv1.ClusterSpec{
-			Cloud: kubermaticv1.CloudSpec{
-				AWS: cloudSpec,
-			},
-		},
-	}
-}
-
-func testClusterUpdater(cluster *kubermaticv1.Cluster) provider.ClusterUpdater {
-	return func(clusterName string, patcher func(*kubermaticv1.Cluster), opts ...provider.UpdaterOption) (*kubermaticv1.Cluster, error) {
-		patcher(cluster)
-		return cluster, nil
-	}
 }
 
 func TestReconcileVPC(t *testing.T) {

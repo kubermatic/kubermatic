@@ -75,7 +75,7 @@ func isEntityAlreadyExists(err error) bool {
 	return aerr.Code() == "EntityAlreadyExists"
 }
 
-var notFoundErrors = sets.NewString("NoSuchEntity", "InvalidVpcID.NotFound")
+var notFoundErrors = sets.NewString("NoSuchEntity", "InvalidVpcID.NotFound", "InvalidRouteTableID.NotFound")
 
 func isNotFound(err error) bool {
 	if awsErr, ok := err.(awserr.Error); ok {

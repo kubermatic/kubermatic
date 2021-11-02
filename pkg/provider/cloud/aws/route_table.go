@@ -37,12 +37,12 @@ func reconcileRouteTable(client ec2iface.EC2API, cluster *kubermaticv1.Cluster, 
 			RouteTableIds: aws.StringSlice([]string{cluster.Spec.Cloud.AWS.RouteTableID}),
 			Filters:       []*ec2.Filter{ec2VPCFilter(vpcID)},
 		})
-		if err != nil {
+		if err != nil && !isNotFound(err) {
 			return nil, fmt.Errorf("failed to list route tables: %w", err)
 		}
 
 		// not found
-		if len(out.RouteTables) == 0 {
+		if out == nil || len(out.RouteTables) == 0 {
 			tableID = ""
 		}
 	}
