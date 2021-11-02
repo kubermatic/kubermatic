@@ -106,7 +106,7 @@ spec:
           timeoutSeconds: 1
         resources:
           limits:
-            cpu: 100m
+            cpu: "1"
             memory: 50Mi
           requests:
             cpu: 5m
@@ -161,7 +161,7 @@ spec:
           protocol: TCP
         resources:
           limits:
-            cpu: 100m
+            cpu: "1"
             memory: 50Mi
           requests:
             cpu: 5m
@@ -195,7 +195,7 @@ spec:
         name: iptables-init
         resources:
           limits:
-            cpu: 100m
+            cpu: "1"
             memory: 50Mi
           requests:
             cpu: 5m

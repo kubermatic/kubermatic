@@ -32,7 +32,7 @@ var (
 		},
 		Limits: corev1.ResourceList{
 			corev1.ResourceMemory: resource.MustParse("32Mi"),
-			corev1.ResourceCPU:    resource.MustParse("100m"),
+			corev1.ResourceCPU:    resource.MustParse("1"),
 		},
 	}
 )
