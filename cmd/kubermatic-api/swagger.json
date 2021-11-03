@@ -17615,6 +17615,9 @@
       "type": "object",
       "title": "ClusterHealth stores health information about the cluster's components.",
       "properties": {
+        "alertmanagerConfig": {
+          "$ref": "#/definitions/HealthStatus"
+        },
         "apiserver": {
           "$ref": "#/definitions/HealthStatus"
         },

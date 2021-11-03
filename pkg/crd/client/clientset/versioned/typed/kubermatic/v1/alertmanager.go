@@ -24,6 +24,7 @@ type AlertmanagersGetter interface {
 type AlertmanagerInterface interface {
 	Create(ctx context.Context, alertmanager *v1.Alertmanager, opts metav1.CreateOptions) (*v1.Alertmanager, error)
 	Update(ctx context.Context, alertmanager *v1.Alertmanager, opts metav1.UpdateOptions) (*v1.Alertmanager, error)
+	UpdateStatus(ctx context.Context, alertmanager *v1.Alertmanager, opts metav1.UpdateOptions) (*v1.Alertmanager, error)
 	Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts metav1.DeleteOptions, listOpts metav1.ListOptions) error
 	Get(ctx context.Context, name string, opts metav1.GetOptions) (*v1.Alertmanager, error)
@@ -112,6 +113,22 @@ func (c *alertmanagers) Update(ctx context.Context, alertmanager *v1.Alertmanage
 		Namespace(c.ns).
 		Resource("alertmanagers").
 		Name(alertmanager.Name).
+		VersionedParams(&opts, scheme.ParameterCodec).
+		Body(alertmanager).
+		Do(ctx).
+		Into(result)
+	return
+}
+
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+func (c *alertmanagers) UpdateStatus(ctx context.Context, alertmanager *v1.Alertmanager, opts metav1.UpdateOptions) (result *v1.Alertmanager, err error) {
+	result = &v1.Alertmanager{}
+	err = c.client.Put().
+		Namespace(c.ns).
+		Resource("alertmanagers").
+		Name(alertmanager.Name).
+		SubResource("status").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(alertmanager).
 		Do(ctx).
