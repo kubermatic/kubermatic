@@ -77,7 +77,7 @@ type alertmanagerConfigStatus struct {
 	alertmanagerStatus kubermaticv1.AlertManagerConfigurationStatus // Alertmanager config status in the Alertmanager CR
 }
 
-// getAlertmanagerConfigStatusDown returns the needed information when the alertmanager config status is OK:
+// getAlertmanagerConfigStatusUp returns the needed information when the alertmanager config status is OK:
 // - Cluster CR: HealthStatusUp
 // - Alertmanager CR :
 //    - Status True

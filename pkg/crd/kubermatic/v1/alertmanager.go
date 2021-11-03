@@ -61,7 +61,6 @@ type AlertManagerStatus struct {
 }
 
 // AlertManagerConfigurationStatus stores status information about the AlertManager configuration
-
 type AlertManagerConfigurationStatus struct {
 	// LastUpdated stores the last successful time when the configuration was successfully applied
 	LastUpdated metav1.Time `json:"lastUpdated,omitempty"`
