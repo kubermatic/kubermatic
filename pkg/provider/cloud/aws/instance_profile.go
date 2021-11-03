@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -151,6 +151,11 @@ func cleanUpWorkerInstanceProfile(client iamiface.IAMAPI, cluster *kubermaticv1.
 		if _, err = client.RemoveRoleFromInstanceProfile(removeRoleInput); err != nil {
 			return fmt.Errorf("failed to remove role %q from instance profile %q: %w", *role.RoleName, profileName, err)
 		}
+	}
+
+	// delete the worker-role we created
+	if err := deleteRole(client, cluster, workerRoleName(cluster.Name), nil); err != nil {
+		return fmt.Errorf("failed to delete worker role: %w", err)
 	}
 
 	// delete the profile itself
