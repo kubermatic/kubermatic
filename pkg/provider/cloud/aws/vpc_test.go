@@ -1,3 +1,5 @@
+//go:build integration
+
 /*
 Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 
@@ -23,10 +25,7 @@ import (
 )
 
 func TestGetDefaultVPC(t *testing.T) {
-	cs, err := getClientSet("test", "test", "eu-west-1", "http://localhost:4566")
-	if err != nil {
-		t.Fatalf("Failed to create AWS ClientSet: %v", err)
-	}
+	cs := getTestClientSet(t)
 
 	result, err := getDefaultVPC(cs.EC2)
 	if err != nil {
@@ -39,10 +38,7 @@ func TestGetDefaultVPC(t *testing.T) {
 }
 
 func TestGetVPCByID(t *testing.T) {
-	cs, err := getClientSet("test", "test", "eu-west-1", "http://localhost:4566")
-	if err != nil {
-		t.Fatalf("Failed to create AWS ClientSet: %v", err)
-	}
+	cs := getTestClientSet(t)
 
 	t.Run("default-vpc", func(t *testing.T) {
 		defaultVPC, err := getDefaultVPC(cs.EC2)
@@ -70,10 +66,7 @@ func TestGetVPCByID(t *testing.T) {
 }
 
 func TestReconcileVPC(t *testing.T) {
-	cs, err := getClientSet("test", "test", "eu-west-1", "http://localhost:4566")
-	if err != nil {
-		t.Fatalf("Failed to create AWS ClientSet: %v", err)
-	}
+	cs := getTestClientSet(t)
 
 	defaultVPC, err := getDefaultVPC(cs.EC2)
 	if err != nil {

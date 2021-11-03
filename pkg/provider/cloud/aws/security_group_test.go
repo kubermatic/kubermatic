@@ -1,3 +1,5 @@
+//go:build integration
+
 /*
 Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 
@@ -27,10 +29,7 @@ import (
 )
 
 func TestGetSecurityGroupByID(t *testing.T) {
-	cs, err := getClientSet("test", "test", "eu-west-1", "http://localhost:4566")
-	if err != nil {
-		t.Fatalf("Failed to create AWS ClientSet: %v", err)
-	}
+	cs := getTestClientSet(t)
 
 	defaultVPC, err := getDefaultVPC(cs.EC2)
 	if err != nil {
@@ -101,10 +100,7 @@ func assertSecurityGroup(t *testing.T, cluster *kubermaticv1.Cluster, group *ec2
 }
 
 func TestReconcileSecurityGroup(t *testing.T) {
-	cs, err := getClientSet("test", "test", "eu-west-1", "http://localhost:4566")
-	if err != nil {
-		t.Fatalf("Failed to create AWS ClientSet: %v", err)
-	}
+	cs := getTestClientSet(t)
 
 	defaultVPC, err := getDefaultVPC(cs.EC2)
 	if err != nil {
@@ -267,10 +263,7 @@ func TestReconcileSecurityGroup(t *testing.T) {
 }
 
 func TestCleanUpSecurityGroup(t *testing.T) {
-	cs, err := getClientSet("test", "test", "eu-west-1", "http://localhost:4566")
-	if err != nil {
-		t.Fatalf("Failed to create AWS ClientSet: %v", err)
-	}
+	cs := getTestClientSet(t)
 
 	defaultVPC, err := getDefaultVPC(cs.EC2)
 	if err != nil {

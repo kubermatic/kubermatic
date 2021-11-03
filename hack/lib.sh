@@ -292,8 +292,8 @@ pushMetric() {
   local help="${5:-}"
   local pushgateway="${PUSHGATEWAY_URL:-}"
   local job="ci"
-  local instance="$PROW_JOB_ID"
-  local prowjob="$JOB_NAME"
+  local instance="${PROW_JOB_ID:-}"
+  local prowjob="${JOB_NAME:-}"
 
   if [ -z "$pushgateway" ]; then
     return

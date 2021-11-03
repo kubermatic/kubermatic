@@ -1,3 +1,5 @@
+//go:build integration
+
 /*
 Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 
@@ -17,12 +19,33 @@ limitations under the License.
 package aws
 
 import (
+	"os"
+	"testing"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
 )
+
+const (
+	awsRegionEnvName = "AWS_REGION"
+)
+
+func getTestClientSet(t *testing.T) *ClientSet {
+	endpoint := os.Getenv("AWS_TEST_ENDPOINT")
+	if endpoint == "" {
+		t.Skip("Skipping because $AWS_TEST_ENDPOINT is not set.")
+	}
+
+	cs, err := getClientSet(os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), os.Getenv(awsRegionEnvName), endpoint)
+	if err != nil {
+		t.Fatalf("Failed to create AWS ClientSet: %v", err)
+	}
+
+	return cs
+}
 
 // makeCluster returns a KKP Cluster object with the AWS cloud spec inserted.
 // The cluster will have a random name, which helps to re-use the same localstack

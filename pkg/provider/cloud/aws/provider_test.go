@@ -1,3 +1,5 @@
+//go:build integration
+
 /*
 Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 
@@ -17,21 +19,19 @@ limitations under the License.
 package aws
 
 import (
+	"os"
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 )
 
 func newCloudProvider(t *testing.T) *AmazonEC2 {
-	cs, err := getClientSet("test", "test", "eu-west-1", "http://localhost:4566")
-	if err != nil {
-		t.Fatalf("Failed to create AWS ClientSet: %v", err)
-	}
+	cs := getTestClientSet(t)
 
 	provider, err := NewCloudProvider(&kubermaticv1.Datacenter{
 		Spec: kubermaticv1.DatacenterSpec{
 			AWS: &kubermaticv1.DatacenterSpecAWS{
-				Region: "eu-west-1",
+				Region: os.Getenv(awsRegionEnvName),
 			},
 		},
 	}, nil)

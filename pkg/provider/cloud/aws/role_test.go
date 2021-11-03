@@ -1,3 +1,5 @@
+//go:build integration
+
 /*
 Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 
@@ -96,10 +98,7 @@ func assertRolePolicies(t *testing.T, client iamiface.IAMAPI, roleName string, e
 }
 
 func TestEnsureRole(t *testing.T) {
-	cs, err := getClientSet("test", "test", "eu-west-1", "http://localhost:4566")
-	if err != nil {
-		t.Fatalf("Failed to create AWS ClientSet: %v", err)
-	}
+	cs := getTestClientSet(t)
 
 	t.Run("role-does-not-exist-yet", func(t *testing.T) {
 		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{})
@@ -141,10 +140,7 @@ func TestEnsureRole(t *testing.T) {
 }
 
 func TestReconcileWorkerRole(t *testing.T) {
-	cs, err := getClientSet("test", "test", "eu-west-1", "http://localhost:4566")
-	if err != nil {
-		t.Fatalf("Failed to create AWS ClientSet: %v", err)
-	}
+	cs := getTestClientSet(t)
 
 	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{})
 	roleName := workerRoleName(cluster.Name)
@@ -158,10 +154,7 @@ func TestReconcileWorkerRole(t *testing.T) {
 }
 
 func TestReconcileControlPlaneRole(t *testing.T) {
-	cs, err := getClientSet("test", "test", "eu-west-1", "http://localhost:4566")
-	if err != nil {
-		t.Fatalf("Failed to create AWS ClientSet: %v", err)
-	}
+	cs := getTestClientSet(t)
 
 	t.Run("no-role-yet", func(t *testing.T) {
 		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{})
@@ -193,7 +186,7 @@ func TestReconcileControlPlaneRole(t *testing.T) {
 		})
 		updater := testClusterUpdater(cluster)
 
-		cluster, err = reconcileControlPlaneRole(cs.IAM, cluster, updater)
+		cluster, err := reconcileControlPlaneRole(cs.IAM, cluster, updater)
 		if err != nil {
 			t.Fatalf("reconcileControlPlaneRole should have not errored, but returned %v", err)
 		}
@@ -208,17 +201,14 @@ func TestReconcileControlPlaneRole(t *testing.T) {
 }
 
 func TestDeleteRole(t *testing.T) {
-	cs, err := getClientSet("test", "test", "eu-west-1", "http://localhost:4566")
-	if err != nil {
-		t.Fatalf("Failed to create AWS ClientSet: %v", err)
-	}
+	cs := getTestClientSet(t)
 
 	t.Run("fully-owned-role", func(t *testing.T) {
 		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{})
 		updater := testClusterUpdater(cluster)
 
 		// reconcile to create the control plane role
-		cluster, err = reconcileControlPlaneRole(cs.IAM, cluster, updater)
+		cluster, err := reconcileControlPlaneRole(cs.IAM, cluster, updater)
 		if err != nil {
 			t.Fatalf("reconcileControlPlaneRole should have not errored, but returned %v", err)
 		}
@@ -256,7 +246,7 @@ func TestDeleteRole(t *testing.T) {
 		}
 
 		// reconcile the role to assign policies to it, but not the owner tag
-		cluster, err = reconcileControlPlaneRole(cs.IAM, cluster, updater)
+		cluster, err := reconcileControlPlaneRole(cs.IAM, cluster, updater)
 		if err != nil {
 			t.Fatalf("reconcileControlPlaneRole should have not errored, but returned %v", err)
 		}
@@ -287,17 +277,14 @@ func TestDeleteRole(t *testing.T) {
 
 // TestCleanUpControlPlaneRole is very similar to TestDeleteRole, but nontheless we test it.
 func TestCleanUpControlPlaneRole(t *testing.T) {
-	cs, err := getClientSet("test", "test", "eu-west-1", "http://localhost:4566")
-	if err != nil {
-		t.Fatalf("Failed to create AWS ClientSet: %v", err)
-	}
+	cs := getTestClientSet(t)
 
 	t.Run("fully-owned-role", func(t *testing.T) {
 		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{})
 		updater := testClusterUpdater(cluster)
 
 		// reconcile to create the control plane role
-		cluster, err = reconcileControlPlaneRole(cs.IAM, cluster, updater)
+		cluster, err := reconcileControlPlaneRole(cs.IAM, cluster, updater)
 		if err != nil {
 			t.Fatalf("reconcileControlPlaneRole should have not errored, but returned %v", err)
 		}
@@ -329,7 +316,7 @@ func TestCleanUpControlPlaneRole(t *testing.T) {
 		}
 
 		// reconcile the role to assign policies to it, but not the owner tag
-		cluster, err = reconcileControlPlaneRole(cs.IAM, cluster, updater)
+		cluster, err := reconcileControlPlaneRole(cs.IAM, cluster, updater)
 		if err != nil {
 			t.Fatalf("reconcileControlPlaneRole should have not errored, but returned %v", err)
 		}
