@@ -57,6 +57,11 @@ const (
 	initialStateNew          = "new"
 	envPeerTLSMode           = "PEER_TLS_MODE"
 	peerTLSModeStrict        = "strict"
+
+	timeoutListMembers    = time.Second * 5
+	timeoutAddMember      = time.Second * 15
+	timeoutRemoveMember   = time.Second * 30
+	timeoutUpdatePeerURLs = time.Second * 10
 )
 
 type etcdCluster struct {
@@ -273,7 +278,10 @@ func joinCluster(e *etcdCluster, log *zap.SugaredLogger) error {
 
 	peerURLs = append(peerURLs, fmt.Sprintf("https://%s.etcd.%s.svc.cluster.local:2381", e.podName, e.namespace))
 
-	if _, err := client.MemberAdd(context.Background(), peerURLs); err != nil {
+	ctx, cancelFunc := context.WithTimeout(context.Background(), timeoutAddMember)
+	defer cancelFunc()
+
+	if _, err := client.MemberAdd(ctx, peerURLs); err != nil {
 		close(client, log)
 		return errors.Wrap(err, "add itself as a member")
 	}
@@ -303,6 +311,8 @@ func (e *etcdCluster) updatePeerURLs(log *zap.SugaredLogger) error {
 		}
 
 		if member.Name == e.podName {
+			ctx, cancelFunc := context.WithTimeout(context.Background(), timeoutUpdatePeerURLs)
+			defer cancelFunc()
 			// if both plaintext and TLS peer URLs are supposed to be present
 			// update the member to include both plaintext and TLS peer URLs
 			if !e.usePeerTLSOnly && (len(member.PeerURLs) == 1 || peerURL.Scheme != "http") {
@@ -319,7 +329,7 @@ func (e *etcdCluster) updatePeerURLs(log *zap.SugaredLogger) error {
 				log.Infof("updating member %d to include plaintext and tls peer ports", member.ID)
 
 				_, err = client.MemberUpdate(
-					context.Background(),
+					ctx,
 					member.ID,
 					[]string{plainPeerURL.String(), tlsPeerURL.String()},
 				)
@@ -337,7 +347,7 @@ func (e *etcdCluster) updatePeerURLs(log *zap.SugaredLogger) error {
 				log.Infof("updating member %d to set tls peer port only", member.ID)
 
 				_, err = client.MemberUpdate(
-					context.Background(),
+					ctx,
 					member.ID,
 					[]string{tlsPeerURL.String()},
 				)
@@ -503,7 +513,10 @@ func (e *etcdCluster) listMembers(log *zap.SugaredLogger) ([]*etcdserverpb.Membe
 	}
 	defer close(client, log)
 
-	resp, err := client.MemberList(context.Background())
+	ctx, cancelFunc := context.WithTimeout(context.Background(), timeoutListMembers)
+	defer cancelFunc()
+
+	resp, err := client.MemberList(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -631,7 +644,9 @@ func (e *etcdCluster) removeDeadMembers(log *zap.SugaredLogger, unwantedMembers 
 			return e.isHealthyWithEndpoints(member.ClientURLs[len(member.ClientURLs)-1:], log)
 		}); err != nil {
 			log.Infow("member is not responding, removing from cluster", "member-name", member.Name)
-			_, err = client.MemberRemove(context.Background(), member.ID)
+			ctx, cancelFunc := context.WithTimeout(context.Background(), timeoutRemoveMember)
+			defer cancelFunc()
+			_, err = client.MemberRemove(ctx, member.ID)
 			return err
 		}
 	}
