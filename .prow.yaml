@@ -1349,6 +1349,9 @@ presubmits:
         - make
         args:
         - test-integration
+        # docker-in-docker (for localstack) needs privileged mode
+        securityContext:
+          privileged: true
         resources:
           requests:
             memory: 4Gi
