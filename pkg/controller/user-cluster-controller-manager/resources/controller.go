@@ -33,6 +33,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -77,6 +78,7 @@ func Add(
 	cloudProviderName string,
 	clusterURL *url.URL,
 	clusterIsPaused userclustercontrollermanager.IsPausedChecker,
+	overwriteRegistry string,
 	openvpnServerPort uint32,
 	kasSecurePort uint32,
 	tunnelingAgentIP net.IP,
@@ -101,6 +103,7 @@ func Add(
 		namespace:             namespace,
 		clusterURL:            clusterURL,
 		clusterIsPaused:       clusterIsPaused,
+		overwriteRegistryFunc: registry.GetOverwriteFunc(overwriteRegistry),
 		openvpnServerPort:     openvpnServerPort,
 		kasSecurePort:         kasSecurePort,
 		tunnelingAgentIP:      tunnelingAgentIP,
@@ -244,6 +247,7 @@ type reconciler struct {
 	namespace             string
 	clusterURL            *url.URL
 	clusterIsPaused       userclustercontrollermanager.IsPausedChecker
+	overwriteRegistryFunc registry.WithOverwriteFunc
 	openvpnServerPort     uint32
 	kasSecurePort         uint32
 	tunnelingAgentIP      net.IP
