@@ -68,14 +68,6 @@ func getClientSet(accessKeyID, secretAccessKey, region, endpoint string) (*Clien
 	}, nil
 }
 
-func isEntityAlreadyExists(err error) bool {
-	aerr, ok := err.(awserr.Error)
-	if !ok {
-		return false
-	}
-	return aerr.Code() == "EntityAlreadyExists"
-}
-
 var notFoundErrors = sets.NewString("NoSuchEntity", "InvalidVpcID.NotFound", "InvalidRouteTableID.NotFound", "InvalidGroup.NotFound")
 
 func isNotFound(err error) bool {

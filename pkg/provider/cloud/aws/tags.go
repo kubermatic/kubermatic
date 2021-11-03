@@ -43,13 +43,6 @@ func ec2OwnershipTag(clusterName string) *ec2.Tag {
 	}
 }
 
-func iamClusterTag(clusterName string) *iam.Tag {
-	return &iam.Tag{
-		Key:   aws.String(tagNameKubernetesClusterPrefix + clusterName),
-		Value: aws.String(""),
-	}
-}
-
 func iamOwnershipTag(clusterName string) *iam.Tag {
 	return &iam.Tag{
 		Key:   aws.String(ownershipTagPrefix + clusterName),

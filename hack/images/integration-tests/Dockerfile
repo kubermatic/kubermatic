@@ -12,15 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang:1.17.1
+FROM quay.io/kubermatic/build:go-1.17-node-14-kind-0.11-1
 LABEL maintainer="support@kubermatic.com"
 
-ENV KUBEBUILDER_VERSION=2.3.1 \
-    KUBE_VERSION=v1.18.10
+# TODO: Make this whole image optional and just include kubebuilder in the base image.
+
+ENV KUBEBUILDER_VERSION=2.3.2 \
+    KUBE_VERSION=v1.21.6
 
 RUN os=$(go env GOOS) && \
     arch=$(go env GOARCH) && \
-    curl --fail -sL https://go.kubebuilder.io/dl/${KUBEBUILDER_VERSION}/${os}/${arch} | tar -xz -C /tmp/ && \
+    curl --fail -sL https://github.com/kubernetes-sigs/kubebuilder/releases/download/v${KUBEBUILDER_VERSION}/kubebuilder_${KUBEBUILDER_VERSION}_${os}_${arch}.tar.gz | tar -xz -C /tmp/ && \
     mv /tmp/kubebuilder_${KUBEBUILDER_VERSION}_${os}_${arch} /usr/local/kubebuilder && \
     curl --fail https://storage.googleapis.com/kubernetes-release/release/$KUBE_VERSION/bin/$os/${arch}/kube-apiserver -L -o /tmp/kube-apiserver && \
     chmod +x /tmp/kube-apiserver && \
