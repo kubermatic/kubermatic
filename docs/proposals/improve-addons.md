@@ -65,6 +65,8 @@ The current implementation of Addons has some flaws that make the usage and main
 - Notifying users if a new version of an addon is available or showing in the UI that a new version of an installed addon is available. While we think this is quite valuable for end-users, we have decided to leave this out for know in order to keep proposal scope manageable. The good news is that the core principles of this proposal will make it possible to implement this feature later on. It is definitely a feature that should be on roadmap for addons after the implementation of this proposal is done
 - Adding kustomize as a rendering method. We did have a longer discussion to decide which rendering methods should be included in the first version. In order to keep the size of this proposal manageable, we have decided to postpone adding kustomize as a rendering method. It is definitely a feature that should be on roadmap for addons after the implementation of this proposal is done and should fit right in the current architecture
 - Generic Pull from object storage. It is definitely a feature that should be on roadmap for addons after the implementation of this proposal is done and should fit right in the current architecture. We have made this decision after consulting with PS. It was decided to go implement Git as an external source first, as this is going to reach the majority of customers
+- Reworking of the [dashboard into an addon](https://github.com/kubermatic/dashboard/issues/3666). In order to keep the size of this proposal manageable, we have decided to postpone this. It is definitely a feature that should be on roadmap for addons after the implementation of this proposal is done and should fit right in the current architecture
+- Handling Logos. The previous version for addons allows to base64 encode logos into the CR for display in the UI. Currently there are some size concerns raised by @kubermatic/sig-api and @kubermatic/sig-ui. In order to move forward, we have decided to exclude logos for now, until a KKP wide solution has been found. However it should be no problem with the current architecture to add them later on. Either as base64 encoded field or a reference to an external source
 
 # Implementation
 
@@ -134,43 +136,41 @@ kind: AddonCatalogue
 metadata:
  name: custom-catalogue
 spec:
- addons:
-     - prometheus:
-            description: "The Prometheus Node Exporter exposes a wide variety of hardware- and kernel-related metrics."
-            logoFormat: "svg+xml"
-            logo: # logo must be base64 encoded.
-            versions:
-             - v1:
-                 template: 
-                     method: go-template # plain manifest templated with go-template
-                        requiredResourceTypes:
-                          - group: "monitoring.coreos.com"
-                            kind: "prometheuses"
-                            version: "v1"
-                        formSpec:
-                            - displayName: Replicas
-                              internalName: spec.replicas
-                              required: true
-                              type: number
-                              helpText: "Number of replicas."
-                            - displayName: Description
-                              internalName: desc
-                              required: false
-                              type: text
-                    source:
-                     type: docker
-                        # docker related params...
-                    constraints:
-                     kkpVersion:
-                        k8sVersion:
-
-          - v2:
-                 template:
-                     method: helm
-                    source:
-                     type: git
-                        # git related params...
-                    constraints: # omitted for clarity
+  addons:
+    - name: "prometheus"
+      description: "The Prometheus Node Exporter exposes a wide variety of hardware- and kernel-related metrics."
+      versions:
+        - version: "v1"
+          template:
+            method: go-template # plain manifest templated with go-template
+            requiredResourceTypes:
+              - group: "monitoring.coreos.com"
+                kind: "prometheuses"
+                version: "v1"
+            formSpec:
+              - displayName: Replicas
+                internalName: spec.replicas
+                required: true
+                type: number
+                helpText: "Number of replicas."
+              - displayName: Description
+                internalName: desc
+                required: false
+                type: text
+            source:
+              type:
+                docker:
+                  # docker related params...
+            constraints:
+              kkpVersion:
+              k8sVersion:
+        - version: "v2"
+          template:
+              method: helm
+            source:
+              type: git
+                # git related params...
+            constraints: # omitted for clarity
 ```
 
 Note on CRDs in general: The AddonCatalogue strongly benefits from [OpenAPIv3's `oneOf` functionality](https://swagger.io/docs/specification/data-models/oneof-anyof-allof-not/), which is supported by Kubernetes. For example in the yaml above, you could say a source must be `oneOf` `docker` or `git`. The cool thing about `oneOf` is that `docker` and `git` can have totally have different fields from each other, but still would be statically validated. However, syntax like this is [not yet supported in kubebuilder](https://github.com/kubernetes-sigs/controller-tools/issues/461), which we use to generate the CRDs. Nonetheless, we would still propose to use kubebuilder for now as the advantages of an automated generation outweigh the downside of not being able to do oneOf (yet).
@@ -203,8 +203,8 @@ metadata:
     namespace: cluster-47s2ddlfgj
 spec:
   coreAddon: false #This can be omitted, false will be the default
-    targetNamespace: monitoring
-    createNamespace: true # flag to create the targetNamespace
+  targetNamespace: monitoring
+  createNamespace: true # flag to create the targetNamespace
   addonRef:
     name: prometheus
     version: v1
@@ -221,7 +221,7 @@ In order to know which UserCluster requires which CoreAddons, the CoreAddonContr
 - cluster.kubermatic.io/v1 CR → Will be used for CoreAddons that depend on a clusters configuration (e.g. cilium vs canal). The logic for this will be coded directly into CoreAddonController as it can become quite complicated
 - CustomCoreAddon configmap →A configmap that contains a list of addons that should be added to every cluster. This map can be edited by the Cluster Admin. This allows Cluster Admins to specify their own Addons that should be shipped with every cluster, which is in line with the current [defaultManifests](https://docs.kubermatic.com/kubermatic/v2.18/guides/addons/) functionality
 
-In order to protect against accidental deletion of an AddonInstallation of type Core, we propose to make use of k8s [finalizers](https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/)*.*In this case the CoreAddonController would automatically add itself as a finalizer to any AddonInstallation it creates. Then whenever an AddonInstallation is being deleted, kubernetes will wait with the deletion until the finalizer is removed. Afterwards CoreAddonController is going to run a couple of checks internally:
+In order to protect against accidental deletion of an AddonInstallation of type Core, we propose to make use of k8s [finalizers](https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/). In this case the CoreAddonController would automatically add itself as a finalizer to any AddonInstallation it creates. Then whenever an AddonInstallation is being deleted, kubernetes will wait with the deletion until the finalizer is removed. Afterwards CoreAddonController is going to run a couple of checks internally:
 
 1. Ask KKP api if the cluster was marked for deletion → if yes, remove finalizer and internal addon list; We need this check to ensure that CoreAddonController is not blocking the deletion of a cluster
 2. Check if the CoreAddon is still in internal list
@@ -234,14 +234,14 @@ An AddonInstallation CR by the CoreAddonController could look like this. Note th
 apiVersion: kubermatic.k8c.io/v1
 kind: AddonInstallation
 metadata:
- name: OpenVPN
+  name: OpenVPN
     namespace: cluster-47s2ddlfgj
     finalizers:
      - kubermatic.CoreAddonController
 spec:
- coreAddon: true
-    targetNamespace: openvpn
-    createNamespace: true
+  coreAddon: true
+  targetNamespace: openvpn
+  createNamespace: true
  addonRef:
   name: openvpn
   version: v1
