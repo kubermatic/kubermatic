@@ -101,7 +101,7 @@ func Add(
 	addonEnforceInterval int,
 	addonCtxVariables map[string]interface{},
 	kubernetesAddonDir,
-	overwriteRegistey string,
+	overwriteRegistry string,
 	kubeconfigProvider KubeconfigProvider,
 	versions kubermatic.Versions,
 ) error {
@@ -118,7 +118,7 @@ func Add(
 		KubeconfigProvider:   kubeconfigProvider,
 		workerName:           workerName,
 		recorder:             mgr.GetEventRecorderFor(ControllerName),
-		overwriteRegistry:    overwriteRegistey,
+		overwriteRegistry:    overwriteRegistry,
 		versions:             versions,
 	}
 
