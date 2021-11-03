@@ -275,7 +275,7 @@ func TestDeleteRole(t *testing.T) {
 	})
 }
 
-// TestCleanUpControlPlaneRole is very similar to TestDeleteRole, but nontheless we test it.
+// TestCleanUpControlPlaneRole is very similar to TestDeleteRole, but nonetheless we test it.
 func TestCleanUpControlPlaneRole(t *testing.T) {
 	cs := getTestClientSet(t)
 
