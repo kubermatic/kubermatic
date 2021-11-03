@@ -410,7 +410,8 @@ func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, updater 
 
 	return cluster, nil
 }
-func GetEKSCLusterConfig(ctx context.Context, accessKeyID, secretAccessKey, clusterName, region string) (*api.Config, error) {
+
+func GetEKSClusterConfig(ctx context.Context, accessKeyID, secretAccessKey, clusterName, region string) (*api.Config, error) {
 	sess, err := getAWSSession(accessKeyID, secretAccessKey, region)
 	if err != nil {
 		return nil, err
@@ -477,10 +478,11 @@ func GetEKSCLusterConfig(ctx context.Context, accessKeyID, secretAccessKey, clus
 }
 
 func getAWSSession(accessKeyID, secretAccessKey, region string) (*session.Session, error) {
-	config := aws.NewConfig()
-	config = config.WithRegion(region)
-	config = config.WithCredentials(credentials.NewStaticCredentials(accessKeyID, secretAccessKey, ""))
-	config = config.WithMaxRetries(3)
+	config := aws.
+		NewConfig().
+		WithRegion(region).
+		WithCredentials(credentials.NewStaticCredentials(accessKeyID, secretAccessKey, "")).
+		WithMaxRetries(3)
 
 	sess, err := session.NewSession(config)
 	if err != nil {
