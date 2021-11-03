@@ -145,8 +145,12 @@ func deleteRole(client iamiface.IAMAPI, cluster *kubermaticv1.Cluster, roleName 
 		return fmt.Errorf("failed to get role: %w", err)
 	}
 
-	// delete policies
-	if policies == nil {
+	owned := hasIAMTag(iamOwnershipTag(cluster.Name), output.Role.Tags)
+
+	// delete policies; by default we only delete those that are specified, but when
+	// we fully own the role, we must remove all policies, regardless of the policies
+	// parameter
+	if policies == nil || owned {
 		// list all custom policies
 		listPoliciesOut, err := client.ListRolePolicies(&iam.ListRolePoliciesInput{
 			RoleName: aws.String(roleName),
@@ -155,7 +159,7 @@ func deleteRole(client iamiface.IAMAPI, cluster *kubermaticv1.Cluster, roleName 
 			return fmt.Errorf("failed to list policies for role %q: %w", roleName, err)
 		}
 
-		policies := []string{}
+		policies = []string{}
 
 		for _, policyName := range listPoliciesOut.PolicyNames {
 			policies = append(policies, *policyName)
@@ -176,7 +180,7 @@ func deleteRole(client iamiface.IAMAPI, cluster *kubermaticv1.Cluster, roleName 
 	// Deleting the cluster policy above always needs to happen,
 	// but unless we actually own the role, we must stop here and not
 	// detach AWS policies or even delete the role entirely.
-	if !hasIAMTag(iamOwnershipTag(cluster.Name), output.Role.Tags) {
+	if !owned {
 		return nil
 	}
 
