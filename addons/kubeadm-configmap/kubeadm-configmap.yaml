@@ -23,12 +23,20 @@ data:
       extraArgs:
         authorization-mode: Webhook
       timeoutForControlPlane: 4m0s
-    apiVersion: kubeadm.k8s.io/v1beta1
+    {{- if and (eq .Cluster.Version.Major 1) (le .Cluster.Version.Minor 21) }}
+    apiVersion: kubeadm.k8s.io/v1beta2
+    {{- else if and (eq .Cluster.Version.Major 1) (ge .Cluster.Version.Minor 22) }}
+    apiVersion: kubeadm.k8s.io/v1beta3
+    {{- end }}
     certificatesDir: /etc/kubernetes/pki
     imageRepository: k8s.gcr.io
     kind: ClusterConfiguration
     kubernetesVersion: {{ .Cluster.Version }}
   ClusterStatus: |
-    apiVersion: kubeadm.k8s.io/v1beta1
+    {{- if and (eq .Cluster.Version.Major 1) (le .Cluster.Version.Minor 21) }}
+    apiVersion: kubeadm.k8s.io/v1beta2
+    {{- else if and (eq .Cluster.Version.Major 1) (ge .Cluster.Version.Minor 22) }}
+    apiVersion: kubeadm.k8s.io/v1beta3
+    {{- end }}
     kind: ClusterStatus
     apiEndpoints:
