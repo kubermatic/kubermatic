@@ -19,6 +19,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
@@ -411,4 +412,89 @@ func ListEKSClusters(ctx context.Context, cred Credential, region string) (apiv2
 		}
 	}
 	return clusterList, nil
+}
+
+func GetEKSNodeGroup(ctx context.Context, accessKeyID, secretAccessKey, clusterName, nodeGroupName string) (*apiv2.NodeGroup, error) {
+	nodeGroupInput := eks.DescribeNodegroupInput{
+		ClusterName:   &clusterName,
+		NodegroupName: &nodeGroupName,
+	}
+
+	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, RegionEndpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	nodeGroup, err := client.EKS.DescribeNodegroup(&nodeGroupInput)
+	if err != nil {
+		log.Fatalf("Error calling DescribeNodeGroup: %v", err)
+	}
+
+	n := nodeGroup.Nodegroup
+	nodegroup := apiv2.NodeGroup{
+		ClusterName: *n.ClusterName,
+		DiskSize:    int(*n.DiskSize),
+		Subnets:     n.Subnets,
+		Version:     *n.Version,
+		Status:      *n.Status,
+	}
+	return &nodegroup, nil
+}
+
+func ResizeEKSNodeGroup(ctx context.Context, accessKeyID, secretAccessKey, clusterName, nodeGroupName string, desiredSize int64) (*string, error) {
+
+	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, RegionEndpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	nodeGroup, err := GetEKSNodeGroup(ctx, accessKeyID, secretAccessKey, clusterName, nodeGroupName)
+	if err != nil {
+		return nil, err
+	}
+	status := "ACTIVE"
+	if nodeGroup.Status != status {
+		return nil, fmt.Errorf("cluster nodes not active")
+	}
+
+	scalingConfig := nodeGroup.ScalingConfig
+	currentSize := (scalingConfig.DesiredSize)
+	maxSize := scalingConfig.MaxSize
+	minSize := scalingConfig.MinSize
+
+	var newScalingConfig eks.NodegroupScalingConfig
+	newScalingConfig.DesiredSize = &desiredSize
+
+	if currentSize == desiredSize {
+		return nil, fmt.Errorf("cluster nodes are already of size: %d", desiredSize)
+	} else if desiredSize > maxSize {
+		desiredMaxSize := desiredSize
+		newScalingConfig.MaxSize = &desiredMaxSize
+	} else if desiredSize < minSize {
+		desiredMinSize := desiredSize
+		newScalingConfig.MinSize = &desiredMinSize
+	}
+
+	configInput := eks.UpdateNodegroupConfigInput{
+		ClusterName:   &clusterName,
+		NodegroupName: &nodeGroupName,
+		ScalingConfig: &newScalingConfig,
+	}
+
+	updateOutput, err := client.EKS.UpdateNodegroupConfig(&configInput)
+	if err != nil {
+		return nil, err
+	}
+	id := *updateOutput.Update.Id
+	describeUpdateInput := eks.DescribeUpdateInput{
+		Name:          &clusterName,
+		NodegroupName: &nodeGroupName,
+		UpdateId:      &id,
+	}
+	describeUpdateOutput, err := client.EKS.DescribeUpdate(&describeUpdateInput)
+	if err != nil {
+		return nil, err
+	}
+
+	return describeUpdateOutput.Update.Status, nil
 }
