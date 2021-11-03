@@ -183,6 +183,27 @@ func TestMLAIntegration(t *testing.T) {
 		t.Fatalf("waiting for grafana datasource %s-%s", mla.PrometheusType, cluster.Name)
 	}
 
+	user := grafanasdk.User{}
+	if !utils.WaitFor(1*time.Second, timeout, func() bool {
+		user, err = grafanaClient.LookupUser(ctx, "roxy2@kubermatic.com")
+		return err == nil
+	}) {
+		t.Fatalf("waiting for grafana user: %v", err)
+	}
+	t.Log("user added to Grafana")
+	if user.IsGrafanaAdmin != true || user.OrgID != org.ID {
+		t.Fatalf("user[%v] expected to be Grafana Admin and has orgID=%d", user, org.ID)
+	}
+
+	orgUser, err := mla.GetGrafanaOrgUser(ctx, grafanaClient, org.ID, user.ID)
+	if err != nil {
+		t.Fatalf("failed to get grafana org user: %v", err)
+	}
+
+	if orgUser.Role != string(grafanasdk.ROLE_EDITOR) {
+		t.Fatalf("orgUser[%v] expected to be had Editor role", orgUser)
+	}
+
 	// Disable MLA Integration
 	t.Log("disabling MLA...")
 	if err := setMLAIntegration(ctx, seedClient, cluster, false); err != nil {
