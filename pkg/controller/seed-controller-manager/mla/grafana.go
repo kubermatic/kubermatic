@@ -44,7 +44,7 @@ func getOrgByProject(ctx context.Context, grafanaClient *grafanasdk.Client, proj
 	return grafanaClient.GetOrgById(ctx, uint(id))
 }
 
-func getGrafanaOrgUser(ctx context.Context, grafanaClient *grafanasdk.Client, orgID, uid uint) (*grafanasdk.OrgUser, error) {
+func GetGrafanaOrgUser(ctx context.Context, grafanaClient *grafanasdk.Client, orgID, uid uint) (*grafanasdk.OrgUser, error) {
 	users, err := grafanaClient.GetOrgUsers(ctx, orgID)
 	if err != nil {
 		return nil, err
@@ -60,7 +60,7 @@ func getGrafanaOrgUser(ctx context.Context, grafanaClient *grafanasdk.Client, or
 
 func addUserToOrg(ctx context.Context, grafanaClient *grafanasdk.Client, org grafanasdk.Org, user *grafanasdk.User, role grafanasdk.RoleType) error {
 	// checking if user already exists in the corresponding organization
-	orgUser, err := getGrafanaOrgUser(ctx, grafanaClient, org.ID, user.ID)
+	orgUser, err := GetGrafanaOrgUser(ctx, grafanaClient, org.ID, user.ID)
 	if err != nil {
 		return fmt.Errorf("unable to get user : %w", err)
 	}
