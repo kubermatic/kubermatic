@@ -1173,3 +1173,40 @@ func ReconcileNetworkPolicies(ctx context.Context, namedGetters []NamedNetworkPo
 
 	return nil
 }
+
+// KubermaticV1RuleGroupCreator defines an interface to create/update RuleGroups
+type KubermaticV1RuleGroupCreator = func(existing *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error)
+
+// NamedKubermaticV1RuleGroupCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedKubermaticV1RuleGroupCreatorGetter = func() (name string, create KubermaticV1RuleGroupCreator)
+
+// KubermaticV1RuleGroupObjectWrapper adds a wrapper so the KubermaticV1RuleGroupCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func KubermaticV1RuleGroupObjectWrapper(create KubermaticV1RuleGroupCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*kubermaticv1.RuleGroup))
+		}
+		return create(&kubermaticv1.RuleGroup{})
+	}
+}
+
+// ReconcileKubermaticV1RuleGroups will create and update the KubermaticV1RuleGroups coming from the passed KubermaticV1RuleGroupCreator slice
+func ReconcileKubermaticV1RuleGroups(ctx context.Context, namedGetters []NamedKubermaticV1RuleGroupCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := KubermaticV1RuleGroupObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kubermaticv1.RuleGroup{}, false); err != nil {
+			return fmt.Errorf("failed to ensure RuleGroup %s/%s: %v", namespace, name, err)
+		}
+	}
+
+	return nil
+}
