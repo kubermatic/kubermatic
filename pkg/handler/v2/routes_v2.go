@@ -247,6 +247,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}").
 		Handler(r.getExternalCluster())
 
+	mux.Methods(http.MethodPatch).
+		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}").
+		Handler(r.patchExternalCluster())
+
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/metrics").
 		Handler(r.getExternalClusterMetrics())
@@ -1256,6 +1260,31 @@ func (r Routing) getExternalCluster() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(externalcluster.GetEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
 		externalcluster.DecodeGetReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PATCH /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id} project patchExternalCluster
+//
+//     Patches the given cluster using JSON Merge Patch method (https://tools.ietf.org/html/rfc7396).
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ExternalCluster
+//       401: empty
+//       403: empty
+func (r Routing) patchExternalCluster() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.PatchEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
+		externalcluster.DecodePatchReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

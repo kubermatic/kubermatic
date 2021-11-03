@@ -230,6 +230,8 @@ type ClientService interface {
 
 	PatchConstraint(params *PatchConstraintParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchConstraintOK, error)
 
+	PatchExternalCluster(params *PatchExternalClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchExternalClusterOK, error)
+
 	PatchGatekeeperConfig(params *PatchGatekeeperConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchGatekeeperConfigOK, error)
 
 	PatchMachineDeployment(params *PatchMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchMachineDeploymentOK, error)
@@ -4118,6 +4120,44 @@ func (a *Client) PatchConstraint(params *PatchConstraintParams, authInfo runtime
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*PatchConstraintDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  PatchExternalCluster patches the given cluster using JSON merge patch method https tools ietf org html rfc7396
+*/
+func (a *Client) PatchExternalCluster(params *PatchExternalClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchExternalClusterOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewPatchExternalClusterParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "patchExternalCluster",
+		Method:             "PATCH",
+		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &PatchExternalClusterReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*PatchExternalClusterOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*PatchExternalClusterDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

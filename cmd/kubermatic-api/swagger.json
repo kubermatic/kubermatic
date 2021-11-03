@@ -14943,7 +14943,19 @@
             "name": "Body",
             "in": "body",
             "schema": {
-              "$ref": "#/definitions/body"
+              "type": "object",
+              "properties": {
+                "kubeconfig": {
+                  "description": "Kubeconfig Base64 encoded kubeconfig",
+                  "type": "string",
+                  "x-go-name": "Kubeconfig"
+                },
+                "name": {
+                  "description": "Name is human readable name for the external cluster",
+                  "type": "string",
+                  "x-go-name": "Name"
+                }
+              }
             }
           }
         ],
@@ -14996,6 +15008,59 @@
         "responses": {
           "200": {
             "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "patch": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Patches the given cluster using JSON Merge Patch method (https://tools.ietf.org/html/rfc7396).",
+        "operationId": "patchExternalCluster",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Patch",
+            "in": "body",
+            "schema": {
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ExternalCluster",
+            "schema": {
+              "$ref": "#/definitions/ExternalCluster"
+            }
           },
           "401": {
             "$ref": "#/responses/empty"
@@ -19137,6 +19202,9 @@
             "type": "string"
           },
           "x-go-name": "Annotations"
+        },
+        "cloud": {
+          "$ref": "#/definitions/ExternalClusterCloudSpec"
         },
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",

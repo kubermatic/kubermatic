@@ -342,6 +342,7 @@ type MLAAdminSetting struct {
 // swagger:model ExternalCluster
 type ExternalCluster struct {
 	apiv1.Cluster `json:",inline"`
+	Cloud         *ExternalClusterCloudSpec `json:"cloud,omitempty"`
 }
 
 // ExternalClusterCloudSpec represents an object holding cluster cloud details
