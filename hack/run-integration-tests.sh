@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+# Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,12 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-### This script was used to run KKP conformance tests inside an offline
-### environment.
-###
-### TODO: This needs to be cleaned up greatly and adjusted to the KKP
-### Operator. The presubmit job for this script is currently not used.
 
 set -euo pipefail
 # Required for signal propagation to work so
@@ -78,4 +72,4 @@ echodate "Running integration tests..."
 grep --files-with-matches --recursive --extended-regexp '//go:build.+integration' cmd/ pkg/ |
   xargs dirname |
   sort -u |
-  xargs --max-args=1 -I ^ go test -tags "integration ${KUBERMATIC_EDITION:-ce}"  -race ./^
+  xargs --max-args=1 -I ^ go test -tags "integration ${KUBERMATIC_EDITION:-ce}" -race ./^
