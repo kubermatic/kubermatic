@@ -1089,17 +1089,18 @@ var (
 // ClusterHealth stores health information about the cluster's components.
 // swagger:model ClusterHealth
 type ClusterHealth struct {
-	Apiserver                    kubermaticv1.HealthStatus `json:"apiserver"`
-	Scheduler                    kubermaticv1.HealthStatus `json:"scheduler"`
-	Controller                   kubermaticv1.HealthStatus `json:"controller"`
-	MachineController            kubermaticv1.HealthStatus `json:"machineController"`
-	Etcd                         kubermaticv1.HealthStatus `json:"etcd"`
-	CloudProviderInfrastructure  kubermaticv1.HealthStatus `json:"cloudProviderInfrastructure"`
-	UserClusterControllerManager kubermaticv1.HealthStatus `json:"userClusterControllerManager"`
-	GatekeeperController         kubermaticv1.HealthStatus `json:"gatekeeperController,omitempty"`
-	GatekeeperAudit              kubermaticv1.HealthStatus `json:"gatekeeperAudit,omitempty"`
-	Monitoring                   kubermaticv1.HealthStatus `json:"monitoring,omitempty"`
-	Logging                      kubermaticv1.HealthStatus `json:"logging,omitempty"`
+	Apiserver                    kubermaticv1.HealthStatus  `json:"apiserver"`
+	Scheduler                    kubermaticv1.HealthStatus  `json:"scheduler"`
+	Controller                   kubermaticv1.HealthStatus  `json:"controller"`
+	MachineController            kubermaticv1.HealthStatus  `json:"machineController"`
+	Etcd                         kubermaticv1.HealthStatus  `json:"etcd"`
+	CloudProviderInfrastructure  kubermaticv1.HealthStatus  `json:"cloudProviderInfrastructure"`
+	UserClusterControllerManager kubermaticv1.HealthStatus  `json:"userClusterControllerManager"`
+	GatekeeperController         kubermaticv1.HealthStatus  `json:"gatekeeperController,omitempty"`
+	GatekeeperAudit              kubermaticv1.HealthStatus  `json:"gatekeeperAudit,omitempty"`
+	Monitoring                   kubermaticv1.HealthStatus  `json:"monitoring,omitempty"`
+	Logging                      kubermaticv1.HealthStatus  `json:"logging,omitempty"`
+	AlertmanagerConfig           *kubermaticv1.HealthStatus `json:"alertmanagerConfig,omitempty"`
 }
 
 // AccessibleAddons represents an array of addons that can be configured in the user clusters.
