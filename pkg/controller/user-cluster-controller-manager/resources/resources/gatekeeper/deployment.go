@@ -21,6 +21,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -80,7 +81,7 @@ var (
 )
 
 // ControllerDeploymentCreator returns the function to create and update the Gatekeeper controller deployment
-func ControllerDeploymentCreator(enableMutation bool) reconciling.NamedDeploymentCreatorGetter {
+func ControllerDeploymentCreator(enableMutation bool, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return controllerName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = controllerName
@@ -104,7 +105,7 @@ func ControllerDeploymentCreator(enableMutation bool) reconciling.NamedDeploymen
 			dep.Spec.Template.Spec.NodeSelector = map[string]string{"kubernetes.io/os": "linux"}
 			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 			dep.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
-			dep.Spec.Template.Spec.Containers = getControllerContainers(enableMutation)
+			dep.Spec.Template.Spec.Containers = getControllerContainers(enableMutation, registryWithOverwrite)
 			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
@@ -127,7 +128,7 @@ func ControllerDeploymentCreator(enableMutation bool) reconciling.NamedDeploymen
 }
 
 // AuditDeploymentCreator returns the function to create and update the Gatekeeper audit deployment
-func AuditDeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
+func AuditDeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return auditName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = auditName
@@ -153,7 +154,7 @@ func AuditDeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.BoolPtr(true)
 			dep.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
 
-			dep.Spec.Template.Spec.Containers = getAuditContainers()
+			dep.Spec.Template.Spec.Containers = getAuditContainers(registryWithOverwrite)
 			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
@@ -164,11 +165,11 @@ func AuditDeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 	}
 }
 
-func getControllerContainers(enableMutation bool) []corev1.Container {
+func getControllerContainers(enableMutation bool, registryWithOverwrite registry.WithOverwriteFunc) []corev1.Container {
 
 	return []corev1.Container{{
 		Name:            controllerName,
-		Image:           fmt.Sprintf("%s/%s:%s", resources.RegistryDocker, imageName, tag),
+		Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryDocker), imageName, tag),
 		ImagePullPolicy: corev1.PullAlways,
 		Command:         []string{"/manager"},
 		Args: []string{
@@ -252,11 +253,11 @@ func getControllerContainers(enableMutation bool) []corev1.Container {
 	}}
 }
 
-func getAuditContainers() []corev1.Container {
+func getAuditContainers(registryWithOverwrite registry.WithOverwriteFunc) []corev1.Container {
 
 	return []corev1.Container{{
 		Name:            auditName,
-		Image:           fmt.Sprintf("%s/%s:%s", resources.RegistryDocker, imageName, tag),
+		Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryDocker), imageName, tag),
 		ImagePullPolicy: corev1.PullAlways,
 		Command:         []string{"/manager"},
 		Args: []string{

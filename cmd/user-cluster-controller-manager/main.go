@@ -254,6 +254,7 @@ func main() {
 		runOp.cloudProviderName,
 		clusterURL,
 		isPausedChecker,
+		runOp.overwriteRegistry,
 		uint32(runOp.openvpnServerPort),
 		uint32(runOp.kasSecurePort),
 		runOp.tunnelingAgentIP.IP,

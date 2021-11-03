@@ -50,7 +50,7 @@ spec:
       dnsPolicy: "Default"
       containers:
         - name: node-driver-registrar
-          image: quay.io/k8scsi/csi-node-driver-registrar:v2.1.0
+          image: '{{ Registry "quay.io" }}/k8scsi/csi-node-driver-registrar:v2.1.0'
           args:
             - "--v=5"
             - "--csi-address=$(ADDRESS)"
@@ -76,7 +76,7 @@ spec:
             initialDelaySeconds: 5
             timeoutSeconds: 5
         - name: vsphere-csi-node
-          image: gcr.io/cloud-provider-vsphere/csi/release/driver:{{ $version }}
+          image: '{{ Registry "gcr.io" }}/cloud-provider-vsphere/csi/release/driver:{{ $version }}'
           args:
             - "--fss-name=internal-feature-states.csi.vsphere.vmware.com"
             - "--fss-namespace=$(CSI_NAMESPACE)"
@@ -143,7 +143,7 @@ spec:
             periodSeconds: 5
             failureThreshold: 3
         - name: liveness-probe
-          image: quay.io/k8scsi/livenessprobe:v2.2.0
+          image: '{{ Registry "quay.io" }}/k8scsi/livenessprobe:v2.2.0'
           args:
             - "--v=4"
             - "--csi-address=/csi/csi.sock"
