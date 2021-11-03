@@ -255,7 +255,7 @@ func cleanUpSecurityGroup(client ec2iface.EC2API, cluster *kubermaticv1.Cluster)
 		GroupIds: aws.StringSlice([]string{groupID}),
 		Filters:  []*ec2.Filter{ec2VPCFilter(vpcID)},
 	})
-	if err != nil {
+	if err != nil && !isNotFound(err) {
 		return fmt.Errorf("failed to get security groups: %w", err)
 	}
 

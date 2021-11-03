@@ -265,3 +265,128 @@ func TestReconcileSecurityGroup(t *testing.T) {
 		assertSecurityGroup(t, cluster, group, true)
 	})
 }
+
+func TestCleanUpSecurityGroup(t *testing.T) {
+	cs, err := getClientSet("test", "test", "eu-west-1", "http://localhost:4566")
+	if err != nil {
+		t.Fatalf("Failed to create AWS ClientSet: %v", err)
+	}
+
+	defaultVPC, err := getDefaultVPC(cs.EC2)
+	if err != nil {
+		t.Fatalf("getDefaultVPC should not have errored, but returned %v", err)
+	}
+
+	defaultVPCID := *defaultVPC.VpcId
+
+	t.Run("everything-is-fine", func(t *testing.T) {
+		// reconcile once to create a new SG with ownership tag
+		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
+			VPCID: defaultVPCID,
+		})
+
+		cluster, err = reconcileSecurityGroup(cs.EC2, cluster, testClusterUpdater(cluster))
+		if err != nil {
+			t.Fatalf("reconcileSecurityGroup should not have errored, but returned %v", err)
+		}
+
+		// assert that the group exists now
+		if _, err := getSecurityGroupByID(cs.EC2, defaultVPC, cluster.Spec.Cloud.AWS.SecurityGroupID); err != nil {
+			t.Fatalf("getSecurityGroupByID should have not errored, but returned %v", err)
+		}
+
+		// and now get rid of it again
+		if err = cleanUpSecurityGroup(cs.EC2, cluster); err != nil {
+			t.Fatalf("cleanUpSecurityGroup should not have errored, but returned %v", err)
+		}
+
+		// assert that the group is gone
+		if _, err := getSecurityGroupByID(cs.EC2, defaultVPC, cluster.Spec.Cloud.AWS.SecurityGroupID); err == nil {
+			t.Fatal("getSecurityGroupByID should have errored, but did not")
+		}
+	})
+
+	t.Run("group-exists-but-id-is-missing", func(t *testing.T) {
+		// reconcile once to create a new SG with ownership tag
+		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
+			VPCID: defaultVPCID,
+		})
+
+		cluster, err = reconcileSecurityGroup(cs.EC2, cluster, testClusterUpdater(cluster))
+		if err != nil {
+			t.Fatalf("reconcileSecurityGroup should not have errored, but returned %v", err)
+		}
+
+		// assert that the group exists now
+		if _, err := getSecurityGroupByID(cs.EC2, defaultVPC, cluster.Spec.Cloud.AWS.SecurityGroupID); err != nil {
+			t.Fatalf("getSecurityGroupByID should have not errored, but returned %v", err)
+		}
+
+		// break the cluster
+		cluster.Spec.Cloud.AWS.SecurityGroupID = ""
+
+		// and now get rid of it again
+		if err = cleanUpSecurityGroup(cs.EC2, cluster); err != nil {
+			t.Fatalf("cleanUpSecurityGroup should not have errored, but returned %v", err)
+		}
+
+		// assert that the group is gone
+		if _, err := getSecurityGroupByID(cs.EC2, defaultVPC, cluster.Spec.Cloud.AWS.SecurityGroupID); err == nil {
+			t.Fatal("getSecurityGroupByID should have errored, but did not")
+		}
+	})
+
+	t.Run("already-cleaned", func(t *testing.T) {
+		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
+			VPCID: defaultVPCID,
+		})
+
+		// this should not do anything
+		if err = cleanUpSecurityGroup(cs.EC2, cluster); err != nil {
+			t.Fatalf("cleanUpSecurityGroup should not have errored, but returned %v", err)
+		}
+	})
+
+	t.Run("bogus-security-group-id", func(t *testing.T) {
+		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
+			VPCID:           defaultVPCID,
+			SecurityGroupID: "does-not-exist",
+		})
+
+		// this should not do anything
+		if err = cleanUpSecurityGroup(cs.EC2, cluster); err != nil {
+			t.Fatalf("cleanUpSecurityGroup should not have errored, but returned %v", err)
+		}
+	})
+
+	t.Run("use-foreign-group-that-must-not-be-deleted", func(t *testing.T) {
+		// reconcile a dummy cluster to create a security group
+		dummyCluster := makeCluster(&kubermaticv1.AWSCloudSpec{VPCID: defaultVPCID})
+
+		dummyCluster, err = reconcileSecurityGroup(cs.EC2, dummyCluster, testClusterUpdater(dummyCluster))
+		if err != nil {
+			t.Fatalf("reconcileSecurityGroup should not have errored, but returned %v", err)
+		}
+
+		// assert that the group exists now
+		if _, err := getSecurityGroupByID(cs.EC2, defaultVPC, dummyCluster.Spec.Cloud.AWS.SecurityGroupID); err != nil {
+			t.Fatalf("getSecurityGroupByID should have not errored, but returned %v", err)
+		}
+
+		// and now use the dummyCluster's SG for another cluster, which will not own the SG.
+		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
+			VPCID:           defaultVPCID,
+			SecurityGroupID: dummyCluster.Spec.Cloud.AWS.SecurityGroupID,
+		})
+
+		// clean up
+		if err = cleanUpSecurityGroup(cs.EC2, cluster); err != nil {
+			t.Fatalf("cleanUpSecurityGroup should not have errored, but returned %v", err)
+		}
+
+		// assert that the group still exists
+		if _, err := getSecurityGroupByID(cs.EC2, defaultVPC, dummyCluster.Spec.Cloud.AWS.SecurityGroupID); err != nil {
+			t.Fatal("getSecurityGroupByID should have remained, but was removed")
+		}
+	})
+}

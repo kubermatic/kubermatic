@@ -21,7 +21,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
-func reconcileRegionAnnotation(cs *ClientSet, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, region string) (*kubermaticv1.Cluster, error) {
+func reconcileRegionAnnotation(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, region string) (*kubermaticv1.Cluster, error) {
 	if cluster.Annotations[regionAnnotationKey] == region {
 		return cluster, nil
 	}

@@ -295,7 +295,7 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		}
 	}
 
-	cluster, err = reconcileRegionAnnotation(client, cluster, update, a.dc.Region)
+	cluster, err = reconcileRegionAnnotation(cluster, update, a.dc.Region)
 	if err != nil {
 		return nil, err
 	}
@@ -347,7 +347,7 @@ func (a *AmazonEC2) ReconcileCluster(cluster *kubermaticv1.Cluster, update provi
 
 	// We put this as an annotation on the cluster to allow addons to read this
 	// information.
-	cluster, err = reconcileRegionAnnotation(client, cluster, update, a.dc.Region)
+	cluster, err = reconcileRegionAnnotation(cluster, update, a.dc.Region)
 	if err != nil {
 		return nil, err
 	}
