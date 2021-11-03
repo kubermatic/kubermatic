@@ -1101,6 +1101,7 @@ type ClusterHealth struct {
 	Monitoring                   kubermaticv1.HealthStatus  `json:"monitoring,omitempty"`
 	Logging                      kubermaticv1.HealthStatus  `json:"logging,omitempty"`
 	AlertmanagerConfig           *kubermaticv1.HealthStatus `json:"alertmanagerConfig,omitempty"`
+	MLAGateway                   kubermaticv1.HealthStatus  `json:"mlaGateway,omitempty"`
 }
 
 // AccessibleAddons represents an array of addons that can be configured in the user clusters.

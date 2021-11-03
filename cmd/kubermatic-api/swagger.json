@@ -17642,6 +17642,9 @@
         "machineController": {
           "$ref": "#/definitions/HealthStatus"
         },
+        "mlaGateway": {
+          "$ref": "#/definitions/HealthStatus"
+        },
         "monitoring": {
           "$ref": "#/definitions/HealthStatus"
         },
