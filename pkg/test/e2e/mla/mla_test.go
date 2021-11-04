@@ -21,6 +21,7 @@ package mla
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -221,6 +222,20 @@ func TestMLAIntegration(t *testing.T) {
 	t.Log("waiting for cluster to healthy after disabling MLA...")
 	if err := masterClient.WaitForClusterHealthy(project.ID, datacenter, apiCluster.ID); err != nil {
 		t.Fatalf("cluster not healthy: %v", err)
+	}
+	if !utils.WaitFor(1*time.Second, timeout, func() bool {
+		_, err = grafanaClient.GetOrgById(ctx, org.ID)
+		return err != nil
+	}) {
+		t.Fatal("grafana org not cleaned up")
+	}
+
+	if !utils.WaitFor(1*time.Second, timeout, func() bool {
+		_, err = grafanaClient.LookupUser(ctx, "roxy2@kubermatic.com")
+		return errors.As(err, &grafanasdk.ErrNotFound{})
+	}) {
+
+		t.Fatal("grafana user not cleaned up")
 	}
 
 	t.Log("waiting for project to get rid of grafana org annotation")
