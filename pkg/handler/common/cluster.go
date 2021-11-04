@@ -476,6 +476,7 @@ func PatchEndpoint(
 	newInternalCluster.Spec.ServiceAccount = patchedCluster.Spec.ServiceAccount
 	newInternalCluster.Spec.MLA = patchedCluster.Spec.MLA
 	newInternalCluster.Spec.ContainerRuntime = patchedCluster.Spec.ContainerRuntime
+	newInternalCluster.Spec.ClusterNetwork.KonnectivityEnabled = patchedCluster.Spec.ClusterNetwork.KonnectivityEnabled
 
 	incompatibleKubelets, err := common.CheckClusterVersionSkew(ctx, userInfoGetter, clusterProvider, newInternalCluster, projectID)
 	if err != nil {
