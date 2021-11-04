@@ -983,7 +983,7 @@ presubmits:
         - name: PROVIDER
           value: "vsphere"
         - name: DISTRIBUTIONS
-          value: ubuntu
+          value: flatcar
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
