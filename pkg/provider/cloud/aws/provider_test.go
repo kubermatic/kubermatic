@@ -1,4 +1,4 @@
-//go:build integration
+//--go:build integration
 
 /*
 Copyright 2021 The Kubermatic Kubernetes Platform contributors.
@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 )
 
 func newCloudProvider(t *testing.T) *AmazonEC2 {
@@ -166,5 +167,50 @@ func TestInitializeCloudProvider(t *testing.T) {
 
 	if cluster.Annotations[regionAnnotationKey] == "" {
 		t.Error("cloud spec should have a region annotation")
+	}
+}
+
+func TestInitializeCloudProviderKeepsAnyData(t *testing.T) {
+	provider := newCloudProvider(t)
+	nope := "does-not-exist"
+
+	// create a cluster with lots of broken data of which we expect
+	// the InitializeCloudProvider() to NOT fix them.
+	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
+		VPCID:               nope,
+		SecurityGroupID:     nope,
+		ControlPlaneRoleARN: nope,
+		RouteTableID:        nope,
+		InstanceProfileName: nope,
+	})
+
+	// As this is a somewhat syntetic usecase, we need to properly simulate that
+	// the cluster was already reconciled, which includes having this finalizer.
+	// Otherwise the code would try to tag the non-existing resources and fail.
+	kuberneteshelper.AddFinalizer(cluster, tagCleanupFinalizer)
+
+	cluster, err := provider.InitializeCloudProvider(cluster, testClusterUpdater(cluster), false)
+	if err != nil {
+		t.Fatalf("InitializeCloudProvider should not have failed, but returned: %v", err)
+	}
+
+	if cluster.Spec.Cloud.AWS.VPCID != nope {
+		t.Error("cloud spec should have retained the VPC ID")
+	}
+
+	if cluster.Spec.Cloud.AWS.RouteTableID != nope {
+		t.Error("cloud spec should have retained the route table ID")
+	}
+
+	if cluster.Spec.Cloud.AWS.SecurityGroupID != nope {
+		t.Error("cloud spec should have retained the security group ID")
+	}
+
+	if cluster.Spec.Cloud.AWS.ControlPlaneRoleARN != nope {
+		t.Error("cloud spec should have retained the control plane role name")
+	}
+
+	if cluster.Spec.Cloud.AWS.InstanceProfileName != nope {
+		t.Error("cloud spec should have retained the instance profile name")
 	}
 }

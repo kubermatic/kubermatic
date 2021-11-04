@@ -43,7 +43,7 @@ func GetClientSet(accessKeyID, secretAccessKey, region string) (*ClientSet, erro
 	return getClientSet(accessKeyID, secretAccessKey, region, "")
 }
 
-func getClientSet(accessKeyID, secretAccessKey, region, endpoint string) (*ClientSet, error) {
+func getAWSSession(accessKeyID, secretAccessKey, region, endpoint string) (*session.Session, error) {
 	config := aws.
 		NewConfig().
 		WithRegion(region).
@@ -56,7 +56,11 @@ func getClientSet(accessKeyID, secretAccessKey, region, endpoint string) (*Clien
 		config = config.WithEndpoint(endpoint)
 	}
 
-	sess, err := session.NewSession(config)
+	return session.NewSession(config)
+}
+
+func getClientSet(accessKeyID, secretAccessKey, region, endpoint string) (*ClientSet, error) {
+	sess, err := getAWSSession(accessKeyID, secretAccessKey, region, endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create API session: %v", err)
 	}

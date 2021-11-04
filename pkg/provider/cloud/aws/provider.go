@@ -23,8 +23,6 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/iam"
@@ -412,7 +410,7 @@ func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, updater 
 }
 
 func GetEKSClusterConfig(ctx context.Context, accessKeyID, secretAccessKey, clusterName, region string) (*api.Config, error) {
-	sess, err := getAWSSession(accessKeyID, secretAccessKey, region)
+	sess, err := getAWSSession(accessKeyID, secretAccessKey, region, "")
 	if err != nil {
 		return nil, err
 	}
@@ -423,7 +421,7 @@ func GetEKSClusterConfig(ctx context.Context, accessKeyID, secretAccessKey, clus
 	}
 	clusterOutput, err := eksSvc.DescribeCluster(clusterInput)
 	if err != nil {
-		return nil, fmt.Errorf("error calling DescribeCluster: %v", err)
+		return nil, fmt.Errorf("error calling DescribeCluster: %w", err)
 	}
 
 	cluster := clusterOutput.Cluster
@@ -432,9 +430,9 @@ func GetEKSClusterConfig(ctx context.Context, accessKeyID, secretAccessKey, clus
 	config := api.Config{
 		APIVersion: "v1",
 		Kind:       "Config",
-		Clusters:   map[string]*api.Cluster{},  // Clusters is a map of referencable names to cluster configs
-		AuthInfos:  map[string]*api.AuthInfo{}, // AuthInfos is a map of referencable names to user configs
-		Contexts:   map[string]*api.Context{},  // Contexts is a map of referencable names to context configs
+		Clusters:   map[string]*api.Cluster{},
+		AuthInfos:  map[string]*api.AuthInfo{},
+		Contexts:   map[string]*api.Context{},
 	}
 
 	gen, err := token.NewGenerator(true, false)
@@ -475,19 +473,4 @@ func GetEKSClusterConfig(ctx context.Context, accessKeyID, secretAccessKey, clus
 		Token: token.Token,
 	}
 	return &config, nil
-}
-
-func getAWSSession(accessKeyID, secretAccessKey, region string) (*session.Session, error) {
-	config := aws.
-		NewConfig().
-		WithRegion(region).
-		WithCredentials(credentials.NewStaticCredentials(accessKeyID, secretAccessKey, "")).
-		WithMaxRetries(3)
-
-	sess, err := session.NewSession(config)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create API session: %v", err)
-	}
-
-	return sess, nil
 }
