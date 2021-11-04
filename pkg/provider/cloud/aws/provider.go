@@ -23,7 +23,6 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/iam"
 
@@ -32,7 +31,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	"k8s.io/client-go/tools/clientcmd/api"
-	"k8s.io/klog"
 	"sigs.k8s.io/aws-iam-authenticator/pkg/token"
 )
 
@@ -156,87 +154,6 @@ func (a *AmazonEC2) MigrateToMultiAZ(cluster *kubermaticv1.Cluster, clusterUpdat
 			return err
 		}
 		*cluster = *newCluster
-	}
-
-	return nil
-}
-
-// AddICMPRulesIfRequired will create security rules that allow ICMP traffic if these do not yet exist.
-// It is a part of a migration for older clusers (migrationRevision < 1) that didn't have these rules.
-func (a *AmazonEC2) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error {
-	if cluster.Spec.Cloud.AWS.SecurityGroupID == "" {
-		klog.Infof("Not adding ICMP allow rules for cluster %q as it has no securityGroupID set",
-			cluster.Name)
-		return nil
-	}
-
-	client, err := a.getClientSet(cluster.Spec.Cloud)
-	if err != nil {
-		return fmt.Errorf("failed to get API client: %v", err)
-	}
-	out, err := client.EC2.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
-		GroupIds: aws.StringSlice([]string{cluster.Spec.Cloud.AWS.SecurityGroupID}),
-	})
-	if err != nil {
-		return fmt.Errorf("failed to get security group %q: %v", cluster.Spec.Cloud.AWS.SecurityGroupID, err)
-	}
-
-	// Should never happen
-	if len(out.SecurityGroups) > 1 {
-		return fmt.Errorf("got more than one(%d) security group for id %q",
-			(len(out.SecurityGroups)), cluster.Spec.Cloud.AWS.SecurityGroupID)
-	}
-	if len(out.SecurityGroups) == 0 {
-		return fmt.Errorf("did not find a security group for id %q",
-			cluster.Spec.Cloud.AWS.SecurityGroupID)
-	}
-
-	var hasIPV4ICMPRule, hasIPV6ICMPRule bool
-	for _, rule := range out.SecurityGroups[0].IpPermissions {
-		if rule.FromPort != nil && *rule.FromPort == -1 && rule.ToPort != nil && *rule.ToPort == -1 {
-
-			if *rule.IpProtocol == "icmp" && len(rule.IpRanges) == 1 && *rule.IpRanges[0].CidrIp == "0.0.0.0/0" {
-				hasIPV4ICMPRule = true
-			}
-			if *rule.IpProtocol == "icmpv6" && len(rule.Ipv6Ranges) == 1 && *rule.Ipv6Ranges[0].CidrIpv6 == "::/0" {
-				hasIPV6ICMPRule = true
-			}
-		}
-	}
-
-	var secGroupRules []*ec2.IpPermission
-	if !hasIPV4ICMPRule {
-		klog.Infof("Adding allow rule for icmp to cluster %q", cluster.Name)
-		secGroupRules = append(secGroupRules,
-			(&ec2.IpPermission{}).
-				SetIpProtocol("icmp").
-				SetFromPort(-1).
-				SetToPort(-1).
-				SetIpRanges([]*ec2.IpRange{
-					{CidrIp: aws.String("0.0.0.0/0")},
-				}))
-	}
-	if !hasIPV6ICMPRule {
-		klog.Infof("Adding allow rule for icmpv6 to cluster %q", cluster.Name)
-		secGroupRules = append(secGroupRules,
-			(&ec2.IpPermission{}).
-				SetIpProtocol("icmpv6").
-				SetFromPort(-1).
-				SetToPort(-1).
-				SetIpv6Ranges([]*ec2.Ipv6Range{
-					{CidrIpv6: aws.String("::/0")},
-				}))
-	}
-
-	if len(secGroupRules) > 0 {
-		_, err = client.EC2.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
-			GroupId:       aws.String(cluster.Spec.Cloud.AWS.SecurityGroupID),
-			IpPermissions: secGroupRules,
-		})
-		if err != nil {
-			return fmt.Errorf("failed to add ICMP rules to security group %q: %v",
-				cluster.Spec.Cloud.AWS.SecurityGroupID, err)
-		}
 	}
 
 	return nil

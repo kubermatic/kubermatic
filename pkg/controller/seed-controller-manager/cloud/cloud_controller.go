@@ -228,11 +228,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 
 func (r *Reconciler) migrateICMP(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, cloudProvider provider.CloudProvider) error {
 	switch prov := cloudProvider.(type) {
-	case *aws.AmazonEC2:
-		if err := prov.AddICMPRulesIfRequired(cluster); err != nil {
-			return fmt.Errorf("failed to ensure ICMP rules for cluster %q: %v", cluster.Name, err)
-		}
-		log.Info("Successfully ensured ICMP rules in security group of cluster")
 	case *openstack.Provider:
 		if err := prov.AddICMPRulesIfRequired(cluster); err != nil {
 			return fmt.Errorf("failed to ensure ICMP rules for cluster %q: %v", cluster.Name, err)
