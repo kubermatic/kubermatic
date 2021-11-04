@@ -25,7 +25,7 @@ data:
       timeoutForControlPlane: 4m0s
     {{- if and (eq .Cluster.Version.Major 1) (le .Cluster.Version.Minor 21) }}
     apiVersion: kubeadm.k8s.io/v1beta2
-    {{- else if and (eq .Cluster.Version.Major 1) (ge .Cluster.Version.Minor 22) }}
+    {{- else }}
     apiVersion: kubeadm.k8s.io/v1beta3
     {{- end }}
     certificatesDir: /etc/kubernetes/pki
@@ -35,7 +35,7 @@ data:
   ClusterStatus: |
     {{- if and (eq .Cluster.Version.Major 1) (le .Cluster.Version.Minor 21) }}
     apiVersion: kubeadm.k8s.io/v1beta2
-    {{- else if and (eq .Cluster.Version.Major 1) (ge .Cluster.Version.Minor 22) }}
+    {{- else }}
     apiVersion: kubeadm.k8s.io/v1beta3
     {{- end }}
     kind: ClusterStatus
