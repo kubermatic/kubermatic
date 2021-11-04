@@ -68,11 +68,7 @@ func assertOwnership(t *testing.T, client iamiface.IAMAPI, cluster *kubermaticv1
 }
 
 func assertRoleIsGone(t *testing.T, client iamiface.IAMAPI, roleName string) {
-	getRoleInput := &iam.GetRoleInput{
-		RoleName: aws.String(roleName),
-	}
-
-	if _, err := client.GetRole(getRoleInput); err == nil {
+	if _, err := getRole(client, roleName); err == nil {
 		t.Fatal("GetRole did not return an error, indicating that the role still exists.")
 	}
 }

@@ -19,12 +19,10 @@ limitations under the License.
 package aws
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/iam"
-	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 
@@ -100,32 +98,6 @@ func TestEnsureInstanceProfile(t *testing.T) {
 			t.Errorf("expected profile to not have ownership tag, but it does")
 		}
 	})
-}
-
-func getInstanceProfile(client iamiface.IAMAPI, profileName string) (*iam.InstanceProfile, error) {
-	getProfileInput := &iam.GetInstanceProfileInput{
-		InstanceProfileName: aws.String(profileName),
-	}
-
-	profileOut, err := client.GetInstanceProfile(getProfileInput)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get instance profile %q: %w", profileName, err)
-	}
-
-	return profileOut.InstanceProfile, nil
-}
-
-func getRole(client iamiface.IAMAPI, roleName string) (*iam.Role, error) {
-	getRoleInput := &iam.GetRoleInput{
-		RoleName: aws.String(roleName),
-	}
-
-	role, err := client.GetRole(getRoleInput)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get role: %w", err)
-	}
-
-	return role.Role, nil
 }
 
 func profileHasRole(profile *iam.InstanceProfile, roleName string) bool {

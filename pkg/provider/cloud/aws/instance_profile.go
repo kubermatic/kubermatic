@@ -24,12 +24,24 @@ import (
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
 func workerInstanceProfileName(clusterName string) string {
 	return resourceNamePrefix + clusterName
+}
+
+func getInstanceProfile(client iamiface.IAMAPI, name string) (*iam.InstanceProfile, error) {
+	getProfileInput := &iam.GetInstanceProfileInput{
+		InstanceProfileName: aws.String(name),
+	}
+
+	profileOut, err := client.GetInstanceProfile(getProfileInput)
+	if err != nil {
+		return nil, err
+	}
+
+	return profileOut.InstanceProfile, nil
 }
 
 func reconcileWorkerInstanceProfile(client iamiface.IAMAPI, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
@@ -79,25 +91,20 @@ func reconcileWorkerInstanceProfile(client iamiface.IAMAPI, cluster *kubermaticv
 	}
 
 	return update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-		kuberneteshelper.AddFinalizer(cluster, instanceProfileCleanupFinalizer)
 		cluster.Spec.Cloud.AWS.InstanceProfileName = profileName
 	})
 }
 
 func ensureInstanceProfile(client iamiface.IAMAPI, cluster *kubermaticv1.Cluster, profileName string) (*iam.InstanceProfile, error) {
 	// check if it exists
-	getProfileInput := &iam.GetInstanceProfileInput{
-		InstanceProfileName: aws.String(profileName),
-	}
-
-	profileOut, err := client.GetInstanceProfile(getProfileInput)
+	profile, err := getInstanceProfile(client, profileName)
 	if err != nil && !isNotFound(err) {
 		return nil, fmt.Errorf("failed to get instance profile %q: %w", profileName, err)
 	}
 
 	// found it
 	if err == nil {
-		return profileOut.InstanceProfile, nil
+		return profile, nil
 	}
 
 	// create missing profile
@@ -121,11 +128,7 @@ func cleanUpWorkerInstanceProfile(client iamiface.IAMAPI, cluster *kubermaticv1.
 	}
 
 	// check if the profile still exists
-	getProfileInput := &iam.GetInstanceProfileInput{
-		InstanceProfileName: aws.String(profileName),
-	}
-
-	profileOutput, err := client.GetInstanceProfile(getProfileInput)
+	profile, err := getInstanceProfile(client, profileName)
 	if err != nil {
 		// the profile is already gone
 		if isNotFound(err) {
@@ -134,8 +137,6 @@ func cleanUpWorkerInstanceProfile(client iamiface.IAMAPI, cluster *kubermaticv1.
 
 		return fmt.Errorf("failed to get instance profile: %w", err)
 	}
-
-	profile := profileOutput.InstanceProfile
 
 	// we only clean up if we actually own the profile
 	if !hasIAMTag(iamOwnershipTag(cluster.Name), profile.Tags) {

@@ -24,7 +24,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
@@ -74,7 +73,6 @@ func reconcileControlPlaneRole(client iamiface.IAMAPI, cluster *kubermaticv1.Clu
 	}
 
 	return update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-		kuberneteshelper.AddFinalizer(cluster, controlPlaneRoleCleanupFinalizer)
 		cluster.Spec.Cloud.AWS.ControlPlaneRoleARN = roleName
 	})
 }
@@ -92,13 +90,22 @@ func cleanUpControlPlaneRole(client iamiface.IAMAPI, cluster *kubermaticv1.Clust
 // /////////////////////////
 // commonly shared functions
 
-func ensureRole(client iamiface.IAMAPI, cluster *kubermaticv1.Cluster, roleName string, policies map[string]string) error {
-	// check if it still exists
+func getRole(client iamiface.IAMAPI, roleName string) (*iam.Role, error) {
 	getRoleInput := &iam.GetRoleInput{
 		RoleName: aws.String(roleName),
 	}
 
-	_, err := client.GetRole(getRoleInput)
+	out, err := client.GetRole(getRoleInput)
+	if err != nil {
+		return nil, err
+	}
+
+	return out.Role, nil
+}
+
+func ensureRole(client iamiface.IAMAPI, cluster *kubermaticv1.Cluster, roleName string, policies map[string]string) error {
+	// check if it still exists
+	_, err := getRole(client, roleName)
 	if err != nil && !isNotFound(err) {
 		return fmt.Errorf("failed to get role: %w", err)
 	}
@@ -135,7 +142,7 @@ func ensureRole(client iamiface.IAMAPI, cluster *kubermaticv1.Cluster, roleName 
 
 func deleteRole(client iamiface.IAMAPI, cluster *kubermaticv1.Cluster, roleName string, policies []string) error {
 	// check if it still exists
-	output, err := client.GetRole(&iam.GetRoleInput{RoleName: aws.String(roleName)})
+	role, err := getRole(client, roleName)
 	if err != nil {
 		// nothing more to do here
 		if isNotFound(err) {
@@ -145,7 +152,7 @@ func deleteRole(client iamiface.IAMAPI, cluster *kubermaticv1.Cluster, roleName 
 		return fmt.Errorf("failed to get role: %w", err)
 	}
 
-	owned := hasIAMTag(iamOwnershipTag(cluster.Name), output.Role.Tags)
+	owned := hasIAMTag(iamOwnershipTag(cluster.Name), role.Tags)
 
 	// delete policies; by default we only delete those that are specified, but when
 	// we fully own the role, we must remove all policies, regardless of the policies

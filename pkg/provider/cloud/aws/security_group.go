@@ -26,7 +26,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
 )
@@ -142,7 +141,6 @@ func reconcileSecurityGroup(client ec2iface.EC2API, cluster *kubermaticv1.Cluste
 	}
 
 	return update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-		kuberneteshelper.AddFinalizer(cluster, securityGroupCleanupFinalizer)
 		cluster.Spec.Cloud.AWS.SecurityGroupID = groupID
 	})
 }

@@ -25,13 +25,12 @@ import (
 	"github.com/aws/aws-sdk-go/service/iam"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
 func ec2ClusterTag(clusterName string) *ec2.Tag {
 	return &ec2.Tag{
-		Key:   aws.String(tagNameKubernetesClusterPrefix + clusterName),
+		Key:   aws.String(kubernetesClusterTagPrefix + clusterName),
 		Value: aws.String(""),
 	}
 }
@@ -79,9 +78,7 @@ func reconcileClusterTags(client ec2iface.EC2API, cluster *kubermaticv1.Cluster,
 			cluster.Spec.Cloud.AWS.SecurityGroupID, cluster.Spec.Cloud.AWS.RouteTableID, subnetIDs, err)
 	}
 
-	return update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-		kuberneteshelper.AddFinalizer(cluster, tagCleanupFinalizer)
-	})
+	return cluster, nil
 }
 
 func cleanUpTags(client ec2iface.EC2API, cluster *kubermaticv1.Cluster) error {

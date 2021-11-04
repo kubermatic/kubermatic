@@ -1,4 +1,4 @@
-//go:build integration
+//--go:build integration
 
 /*
 Copyright 2021 The Kubermatic Kubernetes Platform contributors.
@@ -270,5 +270,41 @@ func TestReconcileClusterFixesProblems(t *testing.T) {
 
 	if cluster.Spec.Cloud.AWS.SecurityGroupID == "does-not-exist" {
 		t.Error("cloud spec should have fixed the security group ID")
+	}
+}
+
+func TestCleanUpCloudProvider(t *testing.T) {
+	provider := newCloudProvider(t)
+	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{})
+
+	// create a vanilla cluster
+	cluster, err := provider.ReconcileCluster(cluster, testClusterUpdater(cluster))
+	if err != nil {
+		t.Fatalf("ReconcileCluster should not have failed, but returned: %v", err)
+	}
+
+	// quick sanity check
+	if cluster.Spec.Cloud.AWS.SecurityGroupID == "" {
+		t.Error("cloud spec should have a security group ID")
+	}
+
+	// clean it up
+	cluster, err = provider.CleanUpCloudProvider(cluster, testClusterUpdater(cluster))
+	if err != nil {
+		t.Fatalf("CleanUpCloudProvider should not have failed, but returned: %v", err)
+	}
+
+	// The actual cleanup logic is tested for each resource individually,
+	// in this test we're interested in the provider's additional logic.
+
+	// ensure no finalizer remains
+	if kuberneteshelper.HasAnyFinalizer(cluster,
+		cleanupFinalizer,
+		securityGroupCleanupFinalizer,
+		instanceProfileCleanupFinalizer,
+		controlPlaneRoleCleanupFinalizer,
+		tagCleanupFinalizer,
+	) {
+		t.Errorf("Cleaning up should have left no AWS finalizers on the cluster, but %v remained.", cluster.Finalizers)
 	}
 }
