@@ -29,6 +29,34 @@ import (
 )
 
 func TestBackfillOwnershipTags(t *testing.T) {
+	provider := newCloudProvider(t)
+	finalizer := tagCleanupFinalizer
+
+	// create a vanilla cluster
+	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{})
+	kuberneteshelper.AddFinalizer(cluster, finalizer)
+
+	cluster, err := provider.ReconcileCluster(cluster, testClusterUpdater(cluster))
+	if err != nil {
+		t.Fatalf("ReconcileCluster should not have failed, but returned: %v", err)
+	}
+
+	// the finalizer should be gone
+	if kuberneteshelper.HasFinalizer(cluster, finalizer) {
+		t.Fatalf("Reconciling should have removed the %q finalizer", finalizer)
+	}
+}
+
+// All three tests below follow the same pattern:
+// 1. reconcile a cluster that uses pre-existing resources
+// 2. ensure no tags and no finalizers are set
+// 3. add the finalizer
+// 4. reconcile, i.e. backfill, again
+// 5. ensure owner tag is set and finalizer is gone
+// 6. add the finalizer again
+// 7. reconcile, i.e. backfill, again to see if "double tagging" does not cause problems
+
+func TestBackfillOwnershipTagsAdoptsSecurityGroup(t *testing.T) {
 	cs := getTestClientSet(t)
 	provider := newCloudProvider(t)
 
@@ -36,14 +64,6 @@ func TestBackfillOwnershipTags(t *testing.T) {
 	if err != nil {
 		t.Fatalf("getDefaultVPC should not have errored, but returned %v", err)
 	}
-
-	// defaultRT, err := getDefaultRouteTable(cs.EC2, *defaultVPC.VpcId)
-	// if err != nil {
-	// 	t.Fatalf("getDefaultRouteTable should not have errored, but returned %v", err)
-	// }
-
-	// defaultVPCID := *defaultVPC.VpcId
-	// defaultRouteTableID := *defaultRT.RouteTableId
 
 	// to properly test, we need the ID of a pre-existing security group
 	sGroups, err := getSecurityGroupsWithClient(provider.clientSet.EC2)
@@ -55,242 +75,215 @@ func TestBackfillOwnershipTags(t *testing.T) {
 	}
 
 	securityGroupID := *sGroups[0].GroupId
+	finalizer := securityGroupCleanupFinalizer
 
-	t.Run("always-remove-tags-finalizer", func(t *testing.T) {
-		finalizer := tagCleanupFinalizer
-
-		// create a vanilla cluster
-		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{})
-		kuberneteshelper.AddFinalizer(cluster, finalizer)
-
-		cluster, err = provider.ReconcileCluster(cluster, testClusterUpdater(cluster))
-		if err != nil {
-			t.Fatalf("ReconcileCluster should not have failed, but returned: %v", err)
-		}
-
-		// the finalizer should be gone
-		if kuberneteshelper.HasFinalizer(cluster, finalizer) {
-			t.Fatalf("Reconciling should have removed the %q finalizer", finalizer)
-		}
+	// create a vanilla cluster that uses an existing SG;
+	// this will not put an owner tag on the SG
+	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
+		SecurityGroupID: securityGroupID,
 	})
+	cluster, err = provider.ReconcileCluster(cluster, testClusterUpdater(cluster))
+	if err != nil {
+		t.Fatalf("ReconcileCluster should not have failed, but returned: %v", err)
+	}
 
-	// All three tests below follow the same pattern:
-	// 1. reconcile a cluster that uses pre-existing resources
-	// 2. ensure no tags and no finalizers are set
-	// 3. add the finalizer
-	// 4. reconcile, i.e. backfill, again
-	// 5. ensure owner tag is set and finalizer is gone
-	// 6. add the finalizer again
-	// 7. reconcile, i.e. backfill, again to see if "double tagging" does not cause problems
+	ownerTag := ec2OwnershipTag(cluster.Name)
 
-	t.Run("adopt-security-group", func(t *testing.T) {
-		finalizer := securityGroupCleanupFinalizer
+	// assert that there really is no owner tag
+	group, err := getSecurityGroupByID(cs.EC2, defaultVPC, securityGroupID)
+	if err != nil {
+		t.Fatalf("Failed to get security group: %v", err)
+	}
 
-		// create a vanilla cluster that uses an existing SG;
-		// this will not put an owner tag on the SG
-		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
-			SecurityGroupID: securityGroupID,
-		})
-		cluster, err = provider.ReconcileCluster(cluster, testClusterUpdater(cluster))
-		if err != nil {
-			t.Fatalf("ReconcileCluster should not have failed, but returned: %v", err)
-		}
+	if hasEC2Tag(ownerTag, group.Tags) {
+		t.Fatalf("Security group should not have received an owner tag, but did.")
+	}
 
-		ownerTag := ec2OwnershipTag(cluster.Name)
+	// ... and no finalizer
+	if kuberneteshelper.HasFinalizer(cluster, finalizer) {
+		t.Fatalf("Reconciling should never add the legacy %q finalizer, but it did.", finalizer)
+	}
 
-		// assert that there really is no owner tag
-		group, err := getSecurityGroupByID(cs.EC2, defaultVPC, securityGroupID)
-		if err != nil {
-			t.Fatalf("Failed to get security group: %v", err)
-		}
+	// now add the finalizer and thereby signify that a backfilling needs to happen
+	kuberneteshelper.AddFinalizer(cluster, finalizer)
 
-		if hasEC2Tag(ownerTag, group.Tags) {
-			t.Fatalf("Security group should not have received an owner tag, but did.")
-		}
+	// migrate!
+	cluster, err = provider.ReconcileCluster(cluster, testClusterUpdater(cluster))
+	if err != nil {
+		t.Fatalf("ReconcileCluster (2) should not have failed, but returned: %v", err)
+	}
 
-		// ... and no finalizer
-		if kuberneteshelper.HasFinalizer(cluster, finalizer) {
-			t.Fatalf("Reconciling should never add the legacy %q finalizer, but it did.", finalizer)
-		}
+	// finalizer should be gone
+	if kuberneteshelper.HasFinalizer(cluster, finalizer) {
+		t.Fatalf("Backfilling should have removed the %q finalizer, but did not.", finalizer)
+	}
 
-		// now add the finalizer and thereby signify that a backfilling needs to happen
-		kuberneteshelper.AddFinalizer(cluster, finalizer)
+	// and an owner tag should have appeared
+	group, err = getSecurityGroupByID(cs.EC2, defaultVPC, securityGroupID)
+	if err != nil {
+		t.Fatalf("Failed to get security group: %v", err)
+	}
 
-		// migrate!
-		cluster, err = provider.ReconcileCluster(cluster, testClusterUpdater(cluster))
-		if err != nil {
-			t.Fatalf("ReconcileCluster (2) should not have failed, but returned: %v", err)
-		}
+	if !hasEC2Tag(ownerTag, group.Tags) {
+		t.Fatalf("Security group should have received an owner tag, but did not.")
+	}
 
-		// finalizer should be gone
-		if kuberneteshelper.HasFinalizer(cluster, finalizer) {
-			t.Fatalf("Backfilling should have removed the %q finalizer, but did not.", finalizer)
-		}
+	// pretend that we haven't backfilled yet, so we can see what happens if we try to add the owner tag again
+	kuberneteshelper.AddFinalizer(cluster, finalizer)
 
-		// and an owner tag should have appeared
-		group, err = getSecurityGroupByID(cs.EC2, defaultVPC, securityGroupID)
-		if err != nil {
-			t.Fatalf("Failed to get security group: %v", err)
-		}
+	// This should be a NOP.
+	if _, err = provider.ReconcileCluster(cluster, testClusterUpdater(cluster)); err != nil {
+		t.Fatalf("ReconcileCluster (3) should not have failed, but returned: %v", err)
+	}
+}
 
-		if !hasEC2Tag(ownerTag, group.Tags) {
-			t.Fatalf("Security group should have received an owner tag, but did not.")
-		}
+func TestBackfillOwnershipTagsAdoptsInstanceProfile(t *testing.T) {
+	cs := getTestClientSet(t)
+	provider := newCloudProvider(t)
 
-		// pretend that we haven't backfilled yet, so we can see what happens if we try to add the owner tag again
-		kuberneteshelper.AddFinalizer(cluster, finalizer)
+	profileName := "adopt-me-" + rand.String(10)
+	finalizer := instanceProfileCleanupFinalizer
 
-		// This should be a NOP.
-		cluster, err = provider.ReconcileCluster(cluster, testClusterUpdater(cluster))
-		if err != nil {
-			t.Fatalf("ReconcileCluster (3) should not have failed, but returned: %v", err)
-		}
+	// create an instance profile
+	createProfileInput := &iam.CreateInstanceProfileInput{
+		InstanceProfileName: aws.String(profileName),
+	}
+
+	if _, err := cs.IAM.CreateInstanceProfile(createProfileInput); err != nil {
+		t.Fatalf("Failed to create dummy instance profile: %v", err)
+	}
+
+	// this will not put an owner tag on the profile
+	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
+		InstanceProfileName: profileName,
 	})
+	cluster, err := provider.ReconcileCluster(cluster, testClusterUpdater(cluster))
+	if err != nil {
+		t.Fatalf("ReconcileCluster should not have failed, but returned: %v", err)
+	}
 
-	t.Run("adopt-instance-profile", func(t *testing.T) {
-		profileName := "adopt-me-" + rand.String(10)
-		finalizer := instanceProfileCleanupFinalizer
+	ownerTag := iamOwnershipTag(cluster.Name)
 
-		// create an instance profile
-		createProfileInput := &iam.CreateInstanceProfileInput{
-			InstanceProfileName: aws.String(profileName),
-		}
+	// assert that there really is no owner tag
+	profile, err := getInstanceProfile(cs.IAM, profileName)
+	if err != nil {
+		t.Fatalf("Failed to get instance profile: %v", err)
+	}
 
-		if _, err := cs.IAM.CreateInstanceProfile(createProfileInput); err != nil {
-			t.Fatalf("Failed to create dummy instance profile: %v", err)
-		}
+	if hasIAMTag(ownerTag, profile.Tags) {
+		t.Fatalf("Instance profile should not have received an owner tag, but did.")
+	}
 
-		// this will not put an owner tag on the profile
-		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
-			InstanceProfileName: profileName,
-		})
-		cluster, err = provider.ReconcileCluster(cluster, testClusterUpdater(cluster))
-		if err != nil {
-			t.Fatalf("ReconcileCluster should not have failed, but returned: %v", err)
-		}
+	// ... and no finalizer
+	if kuberneteshelper.HasFinalizer(cluster, finalizer) {
+		t.Fatalf("Reconciling should never add the legacy %q finalizer, but it did.", finalizer)
+	}
 
-		ownerTag := iamOwnershipTag(cluster.Name)
+	// now add the finalizer and thereby signify that a backfilling needs to happen
+	kuberneteshelper.AddFinalizer(cluster, finalizer)
 
-		// assert that there really is no owner tag
-		profile, err := getInstanceProfile(cs.IAM, profileName)
-		if err != nil {
-			t.Fatalf("Failed to get instance profile: %v", err)
-		}
+	// migrate!
+	cluster, err = provider.ReconcileCluster(cluster, testClusterUpdater(cluster))
+	if err != nil {
+		t.Fatalf("ReconcileCluster (2) should not have failed, but returned: %v", err)
+	}
 
-		if hasIAMTag(ownerTag, profile.Tags) {
-			t.Fatalf("Instance profile should not have received an owner tag, but did.")
-		}
+	// finalizer should be gone
+	if kuberneteshelper.HasFinalizer(cluster, finalizer) {
+		t.Fatalf("Backfilling should have removed the %q finalizer, but did not.", finalizer)
+	}
 
-		// ... and no finalizer
-		if kuberneteshelper.HasFinalizer(cluster, finalizer) {
-			t.Fatalf("Reconciling should never add the legacy %q finalizer, but it did.", finalizer)
-		}
+	// and an owner tag should have appeared
+	profile, err = getInstanceProfile(cs.IAM, profileName)
+	if err != nil {
+		t.Fatalf("Failed to get instance profile: %v", err)
+	}
 
-		// now add the finalizer and thereby signify that a backfilling needs to happen
-		kuberneteshelper.AddFinalizer(cluster, finalizer)
+	if !hasIAMTag(ownerTag, profile.Tags) {
+		t.Fatalf("Instance profile should have received an owner tag, but did not.")
+	}
 
-		// migrate!
-		cluster, err = provider.ReconcileCluster(cluster, testClusterUpdater(cluster))
-		if err != nil {
-			t.Fatalf("ReconcileCluster (2) should not have failed, but returned: %v", err)
-		}
+	// pretend that we haven't backfilled yet, so we can see what happens if we try to add the owner tag again
+	kuberneteshelper.AddFinalizer(cluster, finalizer)
 
-		// finalizer should be gone
-		if kuberneteshelper.HasFinalizer(cluster, finalizer) {
-			t.Fatalf("Backfilling should have removed the %q finalizer, but did not.", finalizer)
-		}
+	// This should be a NOP.
+	if _, err = provider.ReconcileCluster(cluster, testClusterUpdater(cluster)); err != nil {
+		t.Fatalf("ReconcileCluster (3) should not have failed, but returned: %v", err)
+	}
+}
 
-		// and an owner tag should have appeared
-		profile, err = getInstanceProfile(cs.IAM, profileName)
-		if err != nil {
-			t.Fatalf("Failed to get instance profile: %v", err)
-		}
+func TestBackfillOwnershipTagsAdoptsControlPlaneRole(t *testing.T) {
+	cs := getTestClientSet(t)
+	provider := newCloudProvider(t)
 
-		if !hasIAMTag(ownerTag, profile.Tags) {
-			t.Fatalf("Instance profile should have received an owner tag, but did not.")
-		}
+	roleName := "adopt-me-" + rand.String(10)
+	finalizer := controlPlaneRoleCleanupFinalizer
 
-		// pretend that we haven't backfilled yet, so we can see what happens if we try to add the owner tag again
-		kuberneteshelper.AddFinalizer(cluster, finalizer)
+	// create a role
+	createRoleInput := &iam.CreateRoleInput{
+		AssumeRolePolicyDocument: aws.String(assumeRolePolicy),
+		RoleName:                 aws.String(roleName),
+	}
 
-		// This should be a NOP.
-		cluster, err = provider.ReconcileCluster(cluster, testClusterUpdater(cluster))
-		if err != nil {
-			t.Fatalf("ReconcileCluster (3) should not have failed, but returned: %v", err)
-		}
+	if _, err := cs.IAM.CreateRole(createRoleInput); err != nil {
+		t.Fatalf("Failed to create dummy role: %v", err)
+	}
+
+	// this will not put an owner tag on the role
+	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
+		ControlPlaneRoleARN: roleName,
 	})
+	cluster, err := provider.ReconcileCluster(cluster, testClusterUpdater(cluster))
+	if err != nil {
+		t.Fatalf("ReconcileCluster should not have failed, but returned: %v", err)
+	}
 
-	t.Run("adopt-control-plane-role", func(t *testing.T) {
-		roleName := "adopt-me-" + rand.String(10)
-		finalizer := controlPlaneRoleCleanupFinalizer
+	ownerTag := iamOwnershipTag(cluster.Name)
 
-		// create a role
-		createRoleInput := &iam.CreateRoleInput{
-			AssumeRolePolicyDocument: aws.String(assumeRolePolicy),
-			RoleName:                 aws.String(roleName),
-		}
+	// assert that there really is no owner tag
+	role, err := getRole(cs.IAM, roleName)
+	if err != nil {
+		t.Fatalf("Failed to get role: %v", err)
+	}
 
-		if _, err := cs.IAM.CreateRole(createRoleInput); err != nil {
-			t.Fatalf("Failed to create dummy role: %v", err)
-		}
+	if hasIAMTag(ownerTag, role.Tags) {
+		t.Fatalf("role should not have received an owner tag, but did.")
+	}
 
-		// this will not put an owner tag on the role
-		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
-			ControlPlaneRoleARN: roleName,
-		})
-		cluster, err = provider.ReconcileCluster(cluster, testClusterUpdater(cluster))
-		if err != nil {
-			t.Fatalf("ReconcileCluster should not have failed, but returned: %v", err)
-		}
+	// ... and no finalizer
+	if kuberneteshelper.HasFinalizer(cluster, finalizer) {
+		t.Fatalf("Reconciling should never add the legacy %q finalizer, but it did.", finalizer)
+	}
 
-		ownerTag := iamOwnershipTag(cluster.Name)
+	// now add the finalizer and thereby signify that a backfilling needs to happen
+	kuberneteshelper.AddFinalizer(cluster, finalizer)
 
-		// assert that there really is no owner tag
-		role, err := getRole(cs.IAM, roleName)
-		if err != nil {
-			t.Fatalf("Failed to get role: %v", err)
-		}
+	// migrate!
+	cluster, err = provider.ReconcileCluster(cluster, testClusterUpdater(cluster))
+	if err != nil {
+		t.Fatalf("ReconcileCluster (2) should not have failed, but returned: %v", err)
+	}
 
-		if hasIAMTag(ownerTag, role.Tags) {
-			t.Fatalf("role should not have received an owner tag, but did.")
-		}
+	// finalizer should be gone
+	if kuberneteshelper.HasFinalizer(cluster, finalizer) {
+		t.Fatalf("Backfilling should have removed the %q finalizer, but did not.", finalizer)
+	}
 
-		// ... and no finalizer
-		if kuberneteshelper.HasFinalizer(cluster, finalizer) {
-			t.Fatalf("Reconciling should never add the legacy %q finalizer, but it did.", finalizer)
-		}
+	// and an owner tag should have appeared
+	role, err = getRole(cs.IAM, roleName)
+	if err != nil {
+		t.Fatalf("Failed to get role: %v", err)
+	}
 
-		// now add the finalizer and thereby signify that a backfilling needs to happen
-		kuberneteshelper.AddFinalizer(cluster, finalizer)
+	if !hasIAMTag(ownerTag, role.Tags) {
+		t.Fatalf("role should have received an owner tag, but did not.")
+	}
 
-		// migrate!
-		cluster, err = provider.ReconcileCluster(cluster, testClusterUpdater(cluster))
-		if err != nil {
-			t.Fatalf("ReconcileCluster (2) should not have failed, but returned: %v", err)
-		}
+	// pretend that we haven't backfilled yet, so we can see what happens if we try to add the owner tag again
+	kuberneteshelper.AddFinalizer(cluster, finalizer)
 
-		// finalizer should be gone
-		if kuberneteshelper.HasFinalizer(cluster, finalizer) {
-			t.Fatalf("Backfilling should have removed the %q finalizer, but did not.", finalizer)
-		}
-
-		// and an owner tag should have appeared
-		role, err = getRole(cs.IAM, roleName)
-		if err != nil {
-			t.Fatalf("Failed to get role: %v", err)
-		}
-
-		if !hasIAMTag(ownerTag, role.Tags) {
-			t.Fatalf("role should have received an owner tag, but did not.")
-		}
-
-		// pretend that we haven't backfilled yet, so we can see what happens if we try to add the owner tag again
-		kuberneteshelper.AddFinalizer(cluster, finalizer)
-
-		// This should be a NOP.
-		cluster, err = provider.ReconcileCluster(cluster, testClusterUpdater(cluster))
-		if err != nil {
-			t.Fatalf("ReconcileCluster (3) should not have failed, but returned: %v", err)
-		}
-	})
+	// This should be a NOP.
+	if _, err = provider.ReconcileCluster(cluster, testClusterUpdater(cluster)); err != nil {
+		t.Fatalf("ReconcileCluster (3) should not have failed, but returned: %v", err)
+	}
 }

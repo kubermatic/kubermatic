@@ -46,16 +46,11 @@ import (
 // reconciling functions have been called, so that this function can
 // assume this like the security group ID are set and valid.
 func backfillOwnershipTags(cs *ClientSet, cluster *kubermaticv1.Cluster, updater provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	var (
-		vpc *ec2.Vpc
-		err error
-	)
-
 	ec2Tag := ec2OwnershipTag(cluster.Name)
 	iamTag := iamOwnershipTag(cluster.Name)
 
 	// the tag finalizer is of no use at all
-	cluster, err = updater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+	cluster, err := updater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 		kuberneteshelper.RemoveFinalizer(cluster, tagCleanupFinalizer)
 	})
 	if err != nil {
@@ -64,7 +59,7 @@ func backfillOwnershipTags(cs *ClientSet, cluster *kubermaticv1.Cluster, updater
 
 	// security group
 	if kuberneteshelper.HasFinalizer(cluster, securityGroupCleanupFinalizer) {
-		vpc, err = getVPCByID(cs.EC2, cluster.Spec.Cloud.AWS.VPCID)
+		vpc, err := getVPCByID(cs.EC2, cluster.Spec.Cloud.AWS.VPCID)
 		if err != nil {
 			return cluster, fmt.Errorf("failed to get VPC: %w", err)
 		}
@@ -94,13 +89,6 @@ func backfillOwnershipTags(cs *ClientSet, cluster *kubermaticv1.Cluster, updater
 
 	// instance profile
 	if kuberneteshelper.HasFinalizer(cluster, instanceProfileCleanupFinalizer) {
-		if vpc == nil {
-			vpc, err = getVPCByID(cs.EC2, cluster.Spec.Cloud.AWS.VPCID)
-			if err != nil {
-				return cluster, fmt.Errorf("failed to get VPC: %w", err)
-			}
-		}
-
 		profile, err := getInstanceProfile(cs.IAM, cluster.Spec.Cloud.AWS.InstanceProfileName)
 		if err != nil {
 			return cluster, fmt.Errorf("failed to get instance profile: %w", err)
@@ -126,13 +114,6 @@ func backfillOwnershipTags(cs *ClientSet, cluster *kubermaticv1.Cluster, updater
 
 	// control plane role
 	if kuberneteshelper.HasFinalizer(cluster, controlPlaneRoleCleanupFinalizer) {
-		if vpc == nil {
-			vpc, err = getVPCByID(cs.EC2, cluster.Spec.Cloud.AWS.VPCID)
-			if err != nil {
-				return cluster, fmt.Errorf("failed to get VPC: %w", err)
-			}
-		}
-
 		role, err := getRole(cs.IAM, cluster.Spec.Cloud.AWS.ControlPlaneRoleARN)
 		if err != nil {
 			return cluster, fmt.Errorf("failed to get control plane role: %w", err)
