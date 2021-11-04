@@ -28,17 +28,65 @@ type ClientOption func(*runtime.ClientOperation)
 
 // ClientService is the interface for Client methods
 type ClientService interface {
+	CreateAdminRuleGroup(params *CreateAdminRuleGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAdminRuleGroupCreated, error)
+
 	CreateRuleGroup(params *CreateRuleGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRuleGroupCreated, error)
+
+	DeleteAdminRuleGroup(params *DeleteAdminRuleGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAdminRuleGroupOK, error)
 
 	DeleteRuleGroup(params *DeleteRuleGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteRuleGroupOK, error)
 
+	GetAdminRuleGroup(params *GetAdminRuleGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAdminRuleGroupOK, error)
+
 	GetRuleGroup(params *GetRuleGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRuleGroupOK, error)
 
+	ListAdminRuleGroups(params *ListAdminRuleGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAdminRuleGroupsOK, error)
+
 	ListRuleGroups(params *ListRuleGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRuleGroupsOK, error)
+
+	UpdateAdminRuleGroup(params *UpdateAdminRuleGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateAdminRuleGroupOK, error)
 
 	UpdateRuleGroup(params *UpdateRuleGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRuleGroupOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+  CreateAdminRuleGroup Creates a rule group that will belong to the given Seed
+*/
+func (a *Client) CreateAdminRuleGroup(params *CreateAdminRuleGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAdminRuleGroupCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewCreateAdminRuleGroupParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "createAdminRuleGroup",
+		Method:             "POST",
+		PathPattern:        "/api/v2/seeds/{seed_name}/rulegroups",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateAdminRuleGroupReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*CreateAdminRuleGroupCreated)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*CreateAdminRuleGroupDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
@@ -76,6 +124,44 @@ func (a *Client) CreateRuleGroup(params *CreateRuleGroupParams, authInfo runtime
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*CreateRuleGroupDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  DeleteAdminRuleGroup deletes the given rule group that belongs to the seed
+*/
+func (a *Client) DeleteAdminRuleGroup(params *DeleteAdminRuleGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAdminRuleGroupOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewDeleteAdminRuleGroupParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "deleteAdminRuleGroup",
+		Method:             "DELETE",
+		PathPattern:        "/api/v2/seeds/{seed_name}/rulegroups/{rulegroup_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteAdminRuleGroupReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*DeleteAdminRuleGroupOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DeleteAdminRuleGroupDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
@@ -118,6 +204,44 @@ func (a *Client) DeleteRuleGroup(params *DeleteRuleGroupParams, authInfo runtime
 }
 
 /*
+  GetAdminRuleGroup gets a specified rule group for a given seed
+*/
+func (a *Client) GetAdminRuleGroup(params *GetAdminRuleGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAdminRuleGroupOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetAdminRuleGroupParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "getAdminRuleGroup",
+		Method:             "GET",
+		PathPattern:        "/api/v2/seeds/{seed_name}/rulegroups/{rulegroup_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetAdminRuleGroupReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetAdminRuleGroupOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetAdminRuleGroupDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   GetRuleGroup gets a specified rule group for the given cluster
 */
 func (a *Client) GetRuleGroup(params *GetRuleGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRuleGroupOK, error) {
@@ -156,6 +280,44 @@ func (a *Client) GetRuleGroup(params *GetRuleGroupParams, authInfo runtime.Clien
 }
 
 /*
+  ListAdminRuleGroups lists rule groups that belong to a given seed
+*/
+func (a *Client) ListAdminRuleGroups(params *ListAdminRuleGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAdminRuleGroupsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListAdminRuleGroupsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listAdminRuleGroups",
+		Method:             "GET",
+		PathPattern:        "/api/v2/seeds/{seed_name}/rulegroups",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListAdminRuleGroupsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListAdminRuleGroupsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListAdminRuleGroupsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   ListRuleGroups Lists rule groups that belong to the given cluster
 */
 func (a *Client) ListRuleGroups(params *ListRuleGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRuleGroupsOK, error) {
@@ -190,6 +352,44 @@ func (a *Client) ListRuleGroups(params *ListRuleGroupsParams, authInfo runtime.C
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListRuleGroupsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  UpdateAdminRuleGroup updates the specified rule group for the given seed
+*/
+func (a *Client) UpdateAdminRuleGroup(params *UpdateAdminRuleGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateAdminRuleGroupOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewUpdateAdminRuleGroupParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "updateAdminRuleGroup",
+		Method:             "PUT",
+		PathPattern:        "/api/v2/seeds/{seed_name}/rulegroups/{rulegroup_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateAdminRuleGroupReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*UpdateAdminRuleGroupOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*UpdateAdminRuleGroupDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

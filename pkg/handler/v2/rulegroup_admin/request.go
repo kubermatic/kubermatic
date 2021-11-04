@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package rulegroup
+package rulegroupadmin
 
 import (
 	"context"
@@ -23,49 +23,74 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/rulegroup"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticcrdv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
-
-	"sigs.k8s.io/yaml"
 )
 
 // getReq defines HTTP request for getting ruleGroup
-// swagger:parameters getRuleGroup
+// swagger:parameters getAdminRuleGroup
 type getReq struct {
-	cluster.GetClusterReq
+	// in: path
+	// required: true
+	SeedName string `json:"seed_name"`
 	// in: path
 	// required: true
 	RuleGroupID string `json:"rulegroup_id"`
 }
 
+func (req getReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
+		SeedName: req.SeedName,
+	}
+}
+
 // listReq defines HTTP request for listing ruleGroups
-// swagger:parameters listRuleGroups
+// swagger:parameters listAdminRuleGroups
 type listReq struct {
-	cluster.GetClusterReq
+	// in: path
+	// required: true
+	SeedName string `json:"seed_name"`
 	// in: query
 	Type string `json:"type,omitempty"`
 }
 
+func (req listReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
+		SeedName: req.SeedName,
+	}
+}
+
 // createReq defines HTTP request for creating ruleGroup
-// swagger:parameters createRuleGroup
+// swagger:parameters createAdminRuleGroup
 type createReq struct {
-	cluster.GetClusterReq
+	// in: path
+	// required: true
+	SeedName string `json:"seed_name"`
 	// in: body
 	// required: true
 	Body apiv2.RuleGroup
 }
 
-func (req *createReq) validate() (ruleGroupName string, err error) {
-	return GetRuleGroupNameInData(req.Body.Data)
+func (req createReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
+		SeedName: req.SeedName,
+	}
+}
+
+func (req createReq) validate() (ruleGroupName string, err error) {
+	return rulegroup.GetRuleGroupNameInData(req.Body.Data)
 }
 
 // updateReq defines HTTP request for updating ruleGroup
-// swagger:parameters updateRuleGroup
+// swagger:parameters updateAdminRuleGroup
 type updateReq struct {
-	cluster.GetClusterReq
+	// in: path
+	// required: true
+	SeedName string `json:"seed_name"`
 	// in: path
 	// required: true
 	RuleGroupID string `json:"rulegroup_id"`
@@ -74,8 +99,14 @@ type updateReq struct {
 	Body apiv2.RuleGroup
 }
 
-func (req *updateReq) validate() error {
-	ruleGroupNameInData, err := GetRuleGroupNameInData(req.Body.Data)
+func (req updateReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
+		SeedName: req.SeedName,
+	}
+}
+
+func (req updateReq) validate() error {
+	ruleGroupNameInData, err := rulegroup.GetRuleGroupNameInData(req.Body.Data)
 	if err != nil {
 		return err
 	}
@@ -86,23 +117,30 @@ func (req *updateReq) validate() error {
 }
 
 // deleteReq defines HTTP request for deleting ruleGroup
-// swagger:parameters deleteRuleGroup
+// swagger:parameters deleteAdminRuleGroup
 type deleteReq struct {
-	cluster.GetClusterReq
+	// in: path
+	// required: true
+	SeedName string `json:"seed_name"`
 	// in: path
 	// required: true
 	RuleGroupID string `json:"rulegroup_id"`
 }
 
+func (req deleteReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
+		SeedName: req.SeedName,
+	}
+}
+
 func DecodeGetReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req getReq
-	cr, err := cluster.DecodeGetClusterReq(c, r)
+	seedName, err := getSeedName(r)
 	if err != nil {
 		return nil, err
 	}
-	req.GetClusterReq = cr.(cluster.GetClusterReq)
-
-	ruleGroupID, err := DecodeRuleGroupID(r)
+	req.SeedName = seedName
+	ruleGroupID, err := rulegroup.DecodeRuleGroupID(r)
 	if err != nil {
 		return nil, err
 	}
@@ -112,11 +150,11 @@ func DecodeGetReq(c context.Context, r *http.Request) (interface{}, error) {
 
 func DecodeListReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req listReq
-	cr, err := cluster.DecodeGetClusterReq(c, r)
+	seedName, err := getSeedName(r)
 	if err != nil {
 		return nil, err
 	}
-	req.GetClusterReq = cr.(cluster.GetClusterReq)
+	req.SeedName = seedName
 	req.Type = r.URL.Query().Get("type")
 	if len(req.Type) > 0 {
 		if (req.Type == string(kubermaticcrdv1.RuleGroupTypeMetrics)) ||
@@ -130,13 +168,12 @@ func DecodeListReq(c context.Context, r *http.Request) (interface{}, error) {
 
 func DecodeCreateReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req createReq
-	cr, err := cluster.DecodeGetClusterReq(c, r)
+	seedName, err := getSeedName(r)
 	if err != nil {
 		return nil, err
 	}
-	req.GetClusterReq = cr.(cluster.GetClusterReq)
-
-	if err = json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+	req.SeedName = seedName
+	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
 	}
 	return req, nil
@@ -144,12 +181,12 @@ func DecodeCreateReq(c context.Context, r *http.Request) (interface{}, error) {
 
 func DecodeUpdateReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req updateReq
-	cr, err := cluster.DecodeGetClusterReq(c, r)
+	seedName, err := getSeedName(r)
 	if err != nil {
 		return nil, err
 	}
-	req.GetClusterReq = cr.(cluster.GetClusterReq)
-	ruleGroupID, err := DecodeRuleGroupID(r)
+	req.SeedName = seedName
+	ruleGroupID, err := rulegroup.DecodeRuleGroupID(r)
 	if err != nil {
 		return nil, err
 	}
@@ -163,13 +200,12 @@ func DecodeUpdateReq(c context.Context, r *http.Request) (interface{}, error) {
 
 func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req deleteReq
-	cr, err := cluster.DecodeGetClusterReq(c, r)
+	seedName, err := getSeedName(r)
 	if err != nil {
 		return nil, err
 	}
-	req.GetClusterReq = cr.(cluster.GetClusterReq)
-
-	ruleGroupID, err := DecodeRuleGroupID(r)
+	req.SeedName = seedName
+	ruleGroupID, err := rulegroup.DecodeRuleGroupID(r)
 	if err != nil {
 		return nil, err
 	}
@@ -177,25 +213,10 @@ func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-func DecodeRuleGroupID(r *http.Request) (string, error) {
-	ruleGroupID := mux.Vars(r)["rulegroup_id"]
-	if ruleGroupID == "" {
-		return "", utilerrors.NewBadRequest("rulegroup_id parameter is required but was not provided")
+func getSeedName(r *http.Request) (string, error) {
+	seedName := mux.Vars(r)["seed_name"]
+	if seedName == "" {
+		return "", fmt.Errorf("'seed_name' parameter is required but was not provided")
 	}
-	return ruleGroupID, nil
-}
-
-func GetRuleGroupNameInData(data []byte) (string, error) {
-	bodyMap := map[string]interface{}{}
-	if err := yaml.Unmarshal(data, &bodyMap); err != nil {
-		return "", fmt.Errorf("cannot unmarshal rule group data in yaml: %w", err)
-	}
-	ruleGroupName, ok := bodyMap["name"].(string)
-	if !ok {
-		return "", fmt.Errorf("rule group name cannot be parsed in the data")
-	}
-	if ruleGroupName == "" {
-		return "", fmt.Errorf("rule group name cannot be empty in the data")
-	}
-	return ruleGroupName, nil
+	return seedName, nil
 }
