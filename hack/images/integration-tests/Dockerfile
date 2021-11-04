@@ -15,16 +15,14 @@
 FROM quay.io/kubermatic/build:go-1.17-node-14-kind-0.11-1
 LABEL maintainer="support@kubermatic.com"
 
-# TODO: Make this whole image optional and just include kubebuilder in the base image.
-
-ENV KUBEBUILDER_VERSION=2.3.2 \
-    KUBE_VERSION=v1.21.6
+# envtest binaries are not available for all k8s patch releases, so beware when updating
+ENV KUBE_VERSION=1.21.4
 
 RUN os=$(go env GOOS) && \
     arch=$(go env GOARCH) && \
-    curl --fail -sL https://github.com/kubernetes-sigs/kubebuilder/releases/download/v${KUBEBUILDER_VERSION}/kubebuilder_${KUBEBUILDER_VERSION}_${os}_${arch}.tar.gz | tar -xz -C /tmp/ && \
-    mv /tmp/kubebuilder_${KUBEBUILDER_VERSION}_${os}_${arch} /usr/local/kubebuilder && \
-    curl --fail https://storage.googleapis.com/kubernetes-release/release/$KUBE_VERSION/bin/$os/${arch}/kube-apiserver -L -o /tmp/kube-apiserver && \
+    mkdir -p /usr/local/kubebuilder/ && \
+    curl --fail -sL "https://go.kubebuilder.io/test-tools/${KUBE_VERSION}/$os/$arch" | tar -xz --strip-components=1 -C /usr/local/kubebuilder/ && \
+    curl --fail https://storage.googleapis.com/kubernetes-release/release/v$KUBE_VERSION/bin/$os/${arch}/kube-apiserver -L -o /tmp/kube-apiserver && \
     chmod +x /tmp/kube-apiserver && \
     mv /tmp/kube-apiserver /usr/local/kubebuilder/bin/kube-apiserver && \
     echo 'export PATH=$PATH:/usr/local/kubebuilder/bin' >> ~/.bashrc

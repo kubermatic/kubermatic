@@ -72,4 +72,4 @@ echodate "Running integration tests..."
 grep --files-with-matches --recursive --extended-regexp '//go:build.+integration' cmd/ pkg/ |
   xargs dirname |
   sort -u |
-  xargs --max-args=1 -I ^ go test -tags "integration ${KUBERMATIC_EDITION:-ce}" -race ./^
+  xargs -I ^ go test -tags "integration ${KUBERMATIC_EDITION:-ce}" -race ./^
