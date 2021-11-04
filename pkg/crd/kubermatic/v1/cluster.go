@@ -377,8 +377,17 @@ type OIDCSettings struct {
 	ExtraScopes   string `json:"extraScopes,omitempty"`
 }
 
+type AuditPolicyPreset string
+
+const (
+	AuditPolicyMetadata    AuditPolicyPreset = "metadata"
+	AuditPolicyRecommended AuditPolicyPreset = "recommended"
+	AuditPolicyMinimal     AuditPolicyPreset = "minimal"
+)
+
 type AuditLoggingSettings struct {
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled      bool              `json:"enabled,omitempty"`
+	PolicyPreset AuditPolicyPreset `json:"policyPreset,omitempty"`
 }
 
 type OPAIntegrationSettings struct {
