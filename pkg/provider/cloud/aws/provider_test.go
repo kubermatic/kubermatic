@@ -188,7 +188,7 @@ func TestInitializeCloudProviderKeepsAnyData(t *testing.T) {
 		InstanceProfileName: nope,
 	})
 
-	// As this is a somewhat syntetic usecase, we need to properly simulate that
+	// As this is a somewhat synthetic usecase, we need to properly simulate that
 	// the cluster was already reconciled, which includes having this finalizer.
 	// Otherwise the code would try to tag the non-existing resources and fail.
 	kuberneteshelper.AddFinalizer(cluster, cleanupFinalizer)

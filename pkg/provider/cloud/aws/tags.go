@@ -51,6 +51,7 @@ func iamOwnershipTag(clusterName string) *iam.Tag {
 }
 
 func reconcileClusterTags(client ec2iface.EC2API, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	// tagging happens after a successful reconciliation, so we can rely on these fields not being empty
 	resourceIDs := []*string{
 		&cluster.Spec.Cloud.AWS.SecurityGroupID,
 		&cluster.Spec.Cloud.AWS.RouteTableID,
