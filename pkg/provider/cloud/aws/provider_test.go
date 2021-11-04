@@ -1,4 +1,4 @@
-//--go:build integration
+//go:build integration
 
 /*
 Copyright 2021 The Kubermatic Kubernetes Platform contributors.
@@ -145,6 +145,10 @@ func TestInitializeCloudProvider(t *testing.T) {
 		t.Fatalf("InitializeCloudProvider should not have failed, but returned: %v", err)
 	}
 
+	if !kuberneteshelper.HasFinalizer(cluster, cleanupFinalizer) {
+		t.Error("cluster should have cleanup finalizer, but does not")
+	}
+
 	if cluster.Spec.Cloud.AWS.VPCID == "" {
 		t.Error("cloud spec should have a VPC ID")
 	}
@@ -187,7 +191,7 @@ func TestInitializeCloudProviderKeepsAnyData(t *testing.T) {
 	// As this is a somewhat syntetic usecase, we need to properly simulate that
 	// the cluster was already reconciled, which includes having this finalizer.
 	// Otherwise the code would try to tag the non-existing resources and fail.
-	kuberneteshelper.AddFinalizer(cluster, tagCleanupFinalizer)
+	kuberneteshelper.AddFinalizer(cluster, cleanupFinalizer)
 
 	cluster, err := provider.InitializeCloudProvider(cluster, testClusterUpdater(cluster), false)
 	if err != nil {
@@ -212,5 +216,59 @@ func TestInitializeCloudProviderKeepsAnyData(t *testing.T) {
 
 	if cluster.Spec.Cloud.AWS.InstanceProfileName != nope {
 		t.Error("cloud spec should have retained the instance profile name")
+	}
+}
+
+func TestReconcileCluster(t *testing.T) {
+	provider := newCloudProvider(t)
+	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{})
+
+	cluster, err := provider.ReconcileCluster(cluster, testClusterUpdater(cluster))
+	if err != nil {
+		t.Fatalf("ReconcileCluster should not have failed, but returned: %v", err)
+	}
+
+	if !kuberneteshelper.HasFinalizer(cluster, cleanupFinalizer) {
+		t.Error("cluster should have cleanup finalizer, but does not")
+	}
+
+	if cluster.Spec.Cloud.AWS.VPCID == "" {
+		t.Error("cloud spec should have a VPC ID")
+	}
+
+	if cluster.Spec.Cloud.AWS.RouteTableID == "" {
+		t.Error("cloud spec should have a route table ID")
+	}
+
+	if cluster.Spec.Cloud.AWS.SecurityGroupID == "" {
+		t.Error("cloud spec should have a security group ID")
+	}
+
+	if cluster.Spec.Cloud.AWS.ControlPlaneRoleARN == "" {
+		t.Error("cloud spec should have a control plane role name")
+	}
+
+	if cluster.Spec.Cloud.AWS.InstanceProfileName == "" {
+		t.Error("cloud spec should have a instance profile name")
+	}
+
+	if cluster.Annotations[regionAnnotationKey] == "" {
+		t.Error("cloud spec should have a region annotation")
+	}
+}
+
+func TestReconcileClusterFixesProblems(t *testing.T) {
+	provider := newCloudProvider(t)
+	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
+		SecurityGroupID: "does-not-exist",
+	})
+
+	cluster, err := provider.ReconcileCluster(cluster, testClusterUpdater(cluster))
+	if err != nil {
+		t.Fatalf("ReconcileCluster should not have failed, but returned: %v", err)
+	}
+
+	if cluster.Spec.Cloud.AWS.SecurityGroupID == "does-not-exist" {
+		t.Error("cloud spec should have fixed the security group ID")
 	}
 }

@@ -24,7 +24,6 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/eks"
-	"github.com/aws/aws-sdk-go/service/iam"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -38,6 +37,11 @@ const (
 	resourceNamePrefix = "kubernetes-"
 
 	regionAnnotationKey = "kubermatic.io/aws-region"
+
+	cleanupFinalizer = "kubermatic.io/cleanup-aws"
+
+	// The individual finalizers are deprecated and not used for newly reconciled
+	// clusters, where the single cleanupFinalizer is enough.
 
 	securityGroupCleanupFinalizer    = "kubermatic.io/cleanup-aws-security-group"
 	instanceProfileCleanupFinalizer  = "kubermatic.io/cleanup-aws-instance-profile"
@@ -127,42 +131,19 @@ func (a *AmazonEC2) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newS
 	return nil
 }
 
-// MigrateToMultiAZ migrates an AWS cluster from the old AZ-hardcoded spec to multi-AZ spec
-func (a *AmazonEC2) MigrateToMultiAZ(cluster *kubermaticv1.Cluster, clusterUpdater provider.ClusterUpdater) error {
-	// If not even the role name is set, then the cluster is not fully
-	// initialized and we don't need to worry about this migration just yet.
-	if cluster.Spec.Cloud.AWS.RoleName == "" {
-		return nil
-	}
-
-	if cluster.Spec.Cloud.AWS.ControlPlaneRoleARN == "" {
-		client, err := a.getClientSet(cluster.Spec.Cloud)
-		if err != nil {
-			return fmt.Errorf("failed to get API client: %v", err)
-		}
-
-		paramsRoleGet := &iam.GetRoleInput{RoleName: aws.String(cluster.Spec.Cloud.AWS.RoleName)}
-		getRoleOut, err := client.IAM.GetRole(paramsRoleGet)
-		if err != nil {
-			return fmt.Errorf("failed to get already existing aws IAM role %s: %v", cluster.Spec.Cloud.AWS.RoleName, err)
-		}
-
-		newCluster, err := clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Spec.Cloud.AWS.ControlPlaneRoleARN = *getRoleOut.Role.Arn
-		})
-		if err != nil {
-			return err
-		}
-		*cluster = *newCluster
-	}
-
-	return nil
-}
-
 func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, reconcile bool) (*kubermaticv1.Cluster, error) {
 	client, err := a.getClientSet(cluster.Spec.Cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get API client: %v", err)
+	}
+
+	firstInitialization := !kuberneteshelper.HasFinalizer(cluster, cleanupFinalizer)
+
+	cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		kuberneteshelper.AddFinalizer(cluster, cleanupFinalizer)
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
 	// Initialization should only occur once. The regular reconciling, where we
@@ -203,7 +184,7 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		}
 	}
 
-	if !kuberneteshelper.HasFinalizer(cluster, tagCleanupFinalizer) {
+	if firstInitialization {
 		cluster, err = reconcileClusterTags(client.EC2, cluster, update)
 		if err != nil {
 			return nil, err
@@ -222,6 +203,13 @@ func (a *AmazonEC2) ReconcileCluster(cluster *kubermaticv1.Cluster, update provi
 	client, err := a.getClientSet(cluster.Spec.Cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get API client: %v", err)
+	}
+
+	cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		kuberneteshelper.AddFinalizer(cluster, cleanupFinalizer)
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
 	// update VPC ID

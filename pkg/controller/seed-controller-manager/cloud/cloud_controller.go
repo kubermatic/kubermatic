@@ -32,7 +32,6 @@ import (
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/azure"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/openstack"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -179,12 +178,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		}
 	}
 
-	if cluster.Status.CloudMigrationRevision < awsHarcodedAZMigrationRevision {
-		if err := r.migrateAWSMultiAZ(ctx, cluster, prov); err != nil {
-			return nil, err
-		}
-	}
-
 	// Normally, only during the initial initialization (sic) will the cloud provider
 	// actually check if all required resources exist. Afterwards it will remember the
 	// names of the relevant resources and assume that they still exist.
@@ -243,24 +236,6 @@ func (r *Reconciler) migrateICMP(ctx context.Context, log *zap.SugaredLogger, cl
 	var err error
 	if cluster, err = r.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
 		c.Status.CloudMigrationRevision = icmpMigrationRevision
-	}); err != nil {
-		return fmt.Errorf("failed to update cluster %q after successfully executing its cloudProvider migration: %v",
-			cluster.Name, err)
-	}
-
-	return nil
-}
-
-func (r *Reconciler) migrateAWSMultiAZ(ctx context.Context, cluster *kubermaticv1.Cluster, cloudProvider provider.CloudProvider) error {
-	if prov, ok := cloudProvider.(*aws.AmazonEC2); ok {
-		if err := prov.MigrateToMultiAZ(cluster, r.updateCluster); err != nil {
-			return fmt.Errorf("failed to migrate AWS cluster %q to multi-AZ: %q", cluster.Name, err)
-		}
-	}
-
-	var err error
-	if cluster, err = r.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
-		c.Status.CloudMigrationRevision = awsHarcodedAZMigrationRevision
 	}); err != nil {
 		return fmt.Errorf("failed to update cluster %q after successfully executing its cloudProvider migration: %v",
 			cluster.Name, err)
