@@ -46,12 +46,10 @@ func GetSubnets(accessKeyID, secretAccessKey, region, vpcID string) ([]*ec2.Subn
 		return nil, err
 	}
 
-	filters := []*ec2.Filter{{
-		Name:   aws.String("vpc-id"),
-		Values: aws.StringSlice([]string{vpcID}),
-	}}
+	subnetsInput := &ec2.DescribeSubnetsInput{
+		Filters: []*ec2.Filter{ec2VPCFilter(vpcID)},
+	}
 
-	subnetsInput := &ec2.DescribeSubnetsInput{Filters: filters}
 	out, err := client.EC2.DescribeSubnets(subnetsInput)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list subnets: %w", err)

@@ -46,7 +46,7 @@ func getSecurityGroupByID(client ec2iface.EC2API, vpc *ec2.Vpc, id string) (*ec2
 		Filters:  []*ec2.Filter{ec2VPCFilter(*vpc.VpcId)},
 	})
 	if err != nil && !isNotFound(err) {
-		return nil, fmt.Errorf("failed to get security group: %v", err)
+		return nil, fmt.Errorf("failed to get security group: %w", err)
 	}
 	if len(dsgOut.SecurityGroups) == 0 {
 		return nil, fmt.Errorf("security group with id '%s' not found in VPC %s", id, *vpc.VpcId)

@@ -90,11 +90,11 @@ func getDefaultVPC(client ec2iface.EC2API) (*ec2.Vpc, error) {
 
 func getVPCByID(client ec2iface.EC2API, vpcID string) (*ec2.Vpc, error) {
 	vpcOut, err := client.DescribeVpcs(&ec2.DescribeVpcsInput{
-		Filters: []*ec2.Filter{ec2VPCFilter(vpcID)},
+		VpcIds: aws.StringSlice([]string{vpcID}),
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to list VPCs: %w", err)
+		return nil, err
 	}
 
 	if len(vpcOut.Vpcs) != 1 {
