@@ -274,7 +274,7 @@ func validateCNIUpdate(cni *kubermaticv1.CNIPluginSettings, oldCni *kubermaticv1
 			return field.ErrorList{field.Invalid(specFldPath.Child("cniPlugin", "version"), oldCni.Version,
 				fmt.Sprintf("couldn't parse CNI version `%s`: %v", oldCni.Version, err))}
 		}
-		if newV.Minor() != oldV.Minor()+1 && oldV.Minor() != newV.Minor()+1 {
+		if newV.Major() != oldV.Major() || (newV.Minor() != oldV.Minor()+1 && oldV.Minor() != newV.Minor()+1) {
 			if _, ok := labels[unsafeCNIUpgradeLabel]; !ok {
 				return field.ErrorList{field.Forbidden(specFldPath.Child("cniPlugin", "version"),
 					fmt.Sprintf("cannot upgrade CNI from %s to %s, only one minor version difference is allowed unless %s label is present", oldCni.Version, cni.Version, unsafeCNIUpgradeLabel))}
