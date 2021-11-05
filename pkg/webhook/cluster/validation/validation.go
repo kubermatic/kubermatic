@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/go-logr/logr"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -34,6 +35,13 @@ import (
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+)
+
+const (
+	// unsafeCNIUpgradeLabel allows unsafe CNI version upgrade (difference in versions more than one minor version).
+	unsafeCNIUpgradeLabel = "unsafe-cni-upgrade"
+	// unsafeCNIMigrationLabel allows unsafe CNI type migration.
+	unsafeCNIMigrationLabel = "unsafe-cni-migration"
 )
 
 var (
@@ -147,6 +155,7 @@ func (h *AdmissionHandler) validateUpdate(c, oldC *kubermaticv1.Cluster) field.E
 		specFldPath.Child("componentsOverride", "apiserver", "nodePortRange"), false)...)
 
 	allErrs = append(allErrs, validateUpdateImmutability(c, oldC)...)
+	allErrs = append(allErrs, validateCNIUpdate(c.Spec.CNIPlugin, oldC.Spec.CNIPlugin, c.Labels)...)
 
 	return allErrs
 }
@@ -161,22 +170,6 @@ func validateUpdateImmutability(c, oldC *kubermaticv1.Cluster) field.ErrorList {
 	if vOld, v := oldC.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider],
 		c.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; vOld && !v {
 		allErrs = append(allErrs, field.Invalid(specFldPath.Child("features").Key(kubermaticv1.ClusterFeatureExternalCloudProvider), v, fmt.Sprintf("feature gate %q cannot be disabled once it's enabled", kubermaticv1.ClusterFeatureExternalCloudProvider)))
-	}
-	if c.Spec.CNIPlugin != nil && oldC.Spec.CNIPlugin != nil {
-		// Immutable fields
-		// TODO: this constraint should be relaxed to provide the
-		// possibility to upgrade CNI plugin version.
-		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
-			*c.Spec.CNIPlugin,
-			*oldC.Spec.CNIPlugin,
-			specFldPath.Child("cniPlugin"),
-		)...)
-	} else {
-		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
-			c.Spec.CNIPlugin,
-			oldC.Spec.CNIPlugin,
-			specFldPath.Child("cniPlugin"),
-		)...)
 	}
 	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
 		c.Spec.ExposeStrategy,
@@ -245,6 +238,50 @@ func validateClusterNetworkingConfigUpdateImmutability(c, oldC *kubermaticv1.Clu
 	)...)
 
 	return allErrs
+}
+
+func validateCNIUpdate(cni *kubermaticv1.CNIPluginSettings, oldCni *kubermaticv1.CNIPluginSettings, labels map[string]string) field.ErrorList {
+	specFldPath := field.NewPath("spec")
+
+	if cni == nil && oldCni == nil {
+		return field.ErrorList{} // allowed for backward compatibility with older KKP with existing clusters with no CNI settings
+	}
+	if oldCni != nil && cni == nil {
+		return field.ErrorList{field.Required(specFldPath.Child("cniPlugin"), "CNI plugin settings cannot be removed")}
+	}
+	if oldCni == nil && cni != nil {
+		if _, ok := labels[unsafeCNIUpgradeLabel]; ok {
+			return field.ErrorList{} // allowed for migration path from older KKP with existing clusters with no CNI settings
+		}
+		return field.ErrorList{field.Forbidden(specFldPath.Child("cniPlugin"),
+			fmt.Sprintf("cannot add CNI plugin settings, unless %s label is present", unsafeCNIUpgradeLabel))}
+	}
+	if cni.Type != oldCni.Type {
+		if _, ok := labels[unsafeCNIMigrationLabel]; ok {
+			return field.ErrorList{} // allowed for CNI type migration path
+		}
+		return field.ErrorList{field.Forbidden(specFldPath.Child("cniPlugin", "type"),
+			fmt.Sprintf("cannot change CNI plugin type, unless %s label is present", unsafeCNIMigrationLabel))}
+	}
+	if cni.Version != oldCni.Version {
+		newV, err := semver.NewVersion(cni.Version)
+		if err != nil {
+			return field.ErrorList{field.Invalid(specFldPath.Child("cniPlugin", "version"), cni.Version,
+				fmt.Sprintf("couldn't parse CNI version `%s`: %v", cni.Version, err))}
+		}
+		oldV, err := semver.NewVersion(oldCni.Version)
+		if err != nil {
+			return field.ErrorList{field.Invalid(specFldPath.Child("cniPlugin", "version"), oldCni.Version,
+				fmt.Sprintf("couldn't parse CNI version `%s`: %v", oldCni.Version, err))}
+		}
+		if newV.Major() != oldV.Major() || (newV.Minor() != oldV.Minor()+1 && oldV.Minor() != newV.Minor()+1) {
+			if _, ok := labels[unsafeCNIUpgradeLabel]; !ok {
+				return field.ErrorList{field.Forbidden(specFldPath.Child("cniPlugin", "version"),
+					fmt.Sprintf("cannot upgrade CNI from %s to %s, only one minor version difference is allowed unless %s label is present", oldCni.Version, cni.Version, unsafeCNIUpgradeLabel))}
+			}
+		}
+	}
+	return field.ErrorList{}
 }
 
 func (h *AdmissionHandler) SetupWebhookWithManager(mgr ctrlruntime.Manager) {
