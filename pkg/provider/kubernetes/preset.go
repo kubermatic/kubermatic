@@ -446,8 +446,8 @@ func (m *PresetsProvider) setOpenStackCredentials(userInfo *provider.UserInfo, p
 	cloud.Openstack.Username = credentials.Username
 	cloud.Openstack.Password = credentials.Password
 	cloud.Openstack.Domain = credentials.Domain
-	cloud.Openstack.Tenant = credentials.Tenant
-	cloud.Openstack.TenantID = credentials.TenantID
+	cloud.Openstack.Tenant = credentials.GetProjectOrDefaultToTenant()
+	cloud.Openstack.TenantID = credentials.GetProjectIdOrDefaultToTenantId()
 
 	cloud.Openstack.UseToken = credentials.UseToken
 

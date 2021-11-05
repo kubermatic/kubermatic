@@ -420,8 +420,8 @@ func getPresetCredentials(userInfo *provider.UserInfo, presetName string, preset
 	credentials := &resources.OpenstackCredentials{
 		Username:                    p.Spec.Openstack.Username,
 		Password:                    p.Spec.Openstack.Password,
-		Tenant:                      p.Spec.Openstack.Tenant,
-		TenantID:                    p.Spec.Openstack.TenantID,
+		Tenant:                      p.Spec.Openstack.GetProjectOrDefaultToTenant(),
+		TenantID:                    p.Spec.Openstack.GetProjectIdOrDefaultToTenantId(),
 		Domain:                      p.Spec.Openstack.Domain,
 		ApplicationCredentialID:     p.Spec.Openstack.ApplicationCredentialID,
 		ApplicationCredentialSecret: p.Spec.Openstack.ApplicationCredentialSecret,
