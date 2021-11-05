@@ -389,7 +389,7 @@ type OIDCSettings struct {
 	ExtraScopes   string `json:"extraScopes,omitempty"`
 }
 
-// +kubebuilder:validation:Enum=metadata;recommended;minimal
+// +kubebuilder:validation:Enum="";metadata;recommended;minimal
 
 type AuditPolicyPreset string
 

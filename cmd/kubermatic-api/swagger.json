@@ -17084,8 +17084,15 @@
         "enabled": {
           "type": "boolean",
           "x-go-name": "Enabled"
+        },
+        "policyPreset": {
+          "$ref": "#/definitions/AuditPolicyPreset"
         }
       },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
+    "AuditPolicyPreset": {
+      "type": "string",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "AzureAvailabilityZonesList": {
