@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	tokensyncer "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/token-syncer"
 	"net/url"
 	"strings"
 
@@ -333,6 +334,13 @@ func main() {
 		log.Fatalw("Failed to register rolecloner controller", zap.Error(err))
 	}
 	log.Info("Registered rolecloner controller")
+
+	if runOp.isKonnectivityEnabled {
+		if err := tokensyncer.Add(rootCtx, log, seedMgr, mgr, runOp.namespace, isPausedChecker); err != nil {
+			log.Fatalw("Failed to register tokensyncer controller", zap.Error(err))
+		}
+		log.Info("Registered tokensyncer controller")
+	}
 
 	if err := ownerbindingcreator.Add(rootCtx, log, mgr, runOp.ownerEmail, isPausedChecker); err != nil {
 		log.Fatalw("Failed to register ownerbindingcreator controller", zap.Error(err))

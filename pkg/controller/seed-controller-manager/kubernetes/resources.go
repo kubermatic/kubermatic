@@ -48,7 +48,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -151,10 +150,6 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 	// This needs to happen after other secrets are created
 	// because it uses some secrets created in previous steps.
 	if data.IsKonnectivityEnabled() {
-		if err := r.ensureKonnectivitySecrets(ctx, cluster, data); err != nil {
-			return nil, err
-		}
-
 		// check that all Deployments are available
 		if err := r.ensureKonnectivityDeployments(ctx, cluster, data); err != nil {
 			return nil, err
@@ -386,31 +381,6 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 	}
 
 	return creators
-}
-
-// GetKonnectivitySecretCreators returns all SecretCreators for konnectivity
-func (r *Reconciler) GetKonnectivitySecretCreators(data *resources.TemplateData, userClusterClient ctrlruntimeclient.Client) []reconciling.NamedSecretCreatorGetter {
-	return []reconciling.NamedSecretCreatorGetter{
-		konnectivity.AgentTokenCreator(userClusterClient),
-	}
-}
-
-func (r *Reconciler) ensureKonnectivitySecrets(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	var userClusterClient ctrlruntimeclient.Client
-	var err error
-
-	userClusterClient, err = r.userClusterConnProvider.GetClient(ctx, c)
-	if err != nil {
-		return fmt.Errorf("failed to get user-cluster client: %v", err)
-	}
-
-	namedSecretCreatorGetters := r.GetKonnectivitySecretCreators(data, userClusterClient)
-
-	if err := reconciling.ReconcileSecrets(ctx, namedSecretCreatorGetters, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
-		return fmt.Errorf("failed to ensure that the Secret exists: %v", err)
-	}
-
-	return nil
 }
 
 func (r *Reconciler) ensureSecrets(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
