@@ -119,6 +119,7 @@ func EnvoyDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, seed 
 							MountPath: "/etc/envoy",
 						},
 					},
+					Resources: seed.Spec.NodeportProxy.EnvoyManager.Resources,
 				},
 
 				{
@@ -170,6 +171,7 @@ func EnvoyDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, seed 
 							},
 						},
 					},
+					Resources: seed.Spec.NodeportProxy.Envoy.Resources,
 				},
 			}
 
@@ -244,6 +246,7 @@ func UpdaterDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, see
 							},
 						},
 					},
+					Resources: seed.Spec.NodeportProxy.Updater.Resources,
 				},
 			}
 
