@@ -43,15 +43,6 @@ func getVSphereScenarios(scenarioOptions []string, versions []*semver.Semver) []
 
 	var scenarios []testScenario
 	for _, v := range versions {
-		// Flatcar
-		scenarios = append(scenarios, &vSphereScenario{
-			version: v,
-			nodeOsSpec: apimodels.OperatingSystemSpec{
-				Flatcar: &apimodels.FlatcarSpec{},
-			},
-			customFolder:     customFolder,
-			datastoreCluster: datastoreCluster,
-		})
 		// Ubuntu
 		scenarios = append(scenarios, &vSphereScenario{
 			version: v,
