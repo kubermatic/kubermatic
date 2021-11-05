@@ -19,15 +19,16 @@ package featuregates_test
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/google/go-cmp/cmp"
-	v2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	"k8c.io/kubermatic/v2/pkg/features"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	v2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 

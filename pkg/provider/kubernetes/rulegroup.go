@@ -78,7 +78,7 @@ func (r RuleGroupProvider) List(userInfo *provider.UserInfo, cluster *kubermatic
 	if err != nil {
 		return nil, err
 	}
-	return listRuleGroups(impersonationClient, cluster, options)
+	return listRuleGroups(impersonationClient, cluster.Status.NamespaceName, options)
 }
 
 func (r RuleGroupProvider) Get(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, ruleGroupName string) (*kubermaticv1.RuleGroup, error) {
@@ -118,19 +118,19 @@ func (r RuleGroupProvider) Delete(userInfo *provider.UserInfo, cluster *kubermat
 	})
 }
 
-func (r RuleGroupProvider) GetUnsecured(cluster *kubermaticv1.Cluster, ruleGroupName string) (*kubermaticv1.RuleGroup, error) {
+func (r RuleGroupProvider) GetUnsecured(ruleGroupName, namespace string) (*kubermaticv1.RuleGroup, error) {
 	ruleGroup := &kubermaticv1.RuleGroup{}
 	if err := r.privilegedClient.Get(context.Background(), types.NamespacedName{
 		Name:      ruleGroupName,
-		Namespace: cluster.Status.NamespaceName,
+		Namespace: namespace,
 	}, ruleGroup); err != nil {
 		return nil, err
 	}
 	return ruleGroup, nil
 }
 
-func (r RuleGroupProvider) ListUnsecured(cluster *kubermaticv1.Cluster, options *provider.RuleGroupListOptions) ([]*kubermaticv1.RuleGroup, error) {
-	return listRuleGroups(r.privilegedClient, cluster, options)
+func (r RuleGroupProvider) ListUnsecured(namespace string, options *provider.RuleGroupListOptions) ([]*kubermaticv1.RuleGroup, error) {
+	return listRuleGroups(r.privilegedClient, namespace, options)
 }
 
 func (r RuleGroupProvider) CreateUnsecured(ruleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error) {
@@ -143,21 +143,21 @@ func (r RuleGroupProvider) UpdateUnsecured(newRuleGroup *kubermaticv1.RuleGroup)
 	return newRuleGroup, err
 }
 
-func (r RuleGroupProvider) DeleteUnsecured(cluster *kubermaticv1.Cluster, ruleGroupName string) error {
+func (r RuleGroupProvider) DeleteUnsecured(ruleGroupName, namespace string) error {
 	return r.privilegedClient.Delete(context.Background(), &kubermaticv1.RuleGroup{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ruleGroupName,
-			Namespace: cluster.Status.NamespaceName,
+			Namespace: namespace,
 		},
 	})
 }
 
-func listRuleGroups(client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, options *provider.RuleGroupListOptions) ([]*kubermaticv1.RuleGroup, error) {
+func listRuleGroups(client ctrlruntimeclient.Client, namespace string, options *provider.RuleGroupListOptions) ([]*kubermaticv1.RuleGroup, error) {
 	if options == nil {
 		options = &provider.RuleGroupListOptions{}
 	}
 	ruleGroupList := &kubermaticv1.RuleGroupList{}
-	if err := client.List(context.Background(), ruleGroupList, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName)); err != nil {
+	if err := client.List(context.Background(), ruleGroupList, ctrlruntimeclient.InNamespace(namespace)); err != nil {
 		return nil, err
 	}
 	var res []*kubermaticv1.RuleGroup

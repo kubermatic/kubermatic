@@ -144,7 +144,7 @@ func getRuleGroup(ctx context.Context, userInfoGetter provider.UserInfoGetter, c
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedRuleGroupProvider.GetUnsecured(cluster, ruleGroupID)
+		return privilegedRuleGroupProvider.GetUnsecured(ruleGroupID, cluster.Status.NamespaceName)
 	}
 	userInfo, alertmanagerProvider, err := getUserInfoRuleGroupProvider(ctx, userInfoGetter, projectID)
 	if err != nil {
@@ -159,7 +159,7 @@ func listRuleGroups(ctx context.Context, userInfoGetter provider.UserInfoGetter,
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedRuleGroupProvider.ListUnsecured(cluster, options)
+		return privilegedRuleGroupProvider.ListUnsecured(cluster.Status.NamespaceName, options)
 	}
 	userInfo, alertmanagerProvider, err := getUserInfoRuleGroupProvider(ctx, userInfoGetter, projectID)
 	if err != nil {
@@ -204,7 +204,7 @@ func deleteRuleGroup(ctx context.Context, userInfoGetter provider.UserInfoGetter
 		return err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedRuleGroupProvider.DeleteUnsecured(cluster, ruleGroupID)
+		return privilegedRuleGroupProvider.DeleteUnsecured(ruleGroupID, cluster.Status.NamespaceName)
 	}
 	userInfo, alertmanagerProvider, err := getUserInfoRuleGroupProvider(ctx, userInfoGetter, projectID)
 	if err != nil {

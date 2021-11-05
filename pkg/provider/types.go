@@ -1047,14 +1047,14 @@ type PrivilegedRuleGroupProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	GetUnsecured(cluster *kubermaticv1.Cluster, ruleGroupName string) (*kubermaticv1.RuleGroup, error)
+	GetUnsecured(ruleGroupName, namespace string) (*kubermaticv1.RuleGroup, error)
 
 	// ListUnsecured gets a list of ruleGroups, by default it returns all ruleGroup objects.
 	// If you would like to filer the result, please set RuleGroupListOptions
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resources
-	ListUnsecured(cluster *kubermaticv1.Cluster, options *RuleGroupListOptions) ([]*kubermaticv1.RuleGroup, error)
+	ListUnsecured(namespace string, options *RuleGroupListOptions) ([]*kubermaticv1.RuleGroup, error)
 
 	// CreateUnsecured creates the given ruleGroup
 	//
@@ -1072,7 +1072,7 @@ type PrivilegedRuleGroupProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to delete the resource
-	DeleteUnsecured(cluster *kubermaticv1.Cluster, ruleGroupName string) error
+	DeleteUnsecured(ruleGroupName, namespace string) error
 }
 
 // PrivilegedAllowedRegistryProvider declares the set of method for interacting with allowed registries
