@@ -700,8 +700,8 @@ func (r *TestClient) GetClusterHealthStatus(projectID, dc, clusterID string) (*a
 	apiClusterHealth.MachineController = convertHealthStatus(response.Payload.MachineController)
 	apiClusterHealth.Scheduler = convertHealthStatus(response.Payload.Scheduler)
 	apiClusterHealth.UserClusterControllerManager = convertHealthStatus(response.Payload.UserClusterControllerManager)
-	apiClusterHealth.GatekeeperController = convertHealthStatus(response.Payload.GatekeeperController)
-	apiClusterHealth.GatekeeperAudit = convertHealthStatus(response.Payload.GatekeeperAudit)
+	apiClusterHealth.GatekeeperController = convertHealthStatus(response.Payload.GatekeeperController).Ptr()
+	apiClusterHealth.GatekeeperAudit = convertHealthStatus(response.Payload.GatekeeperAudit).Ptr()
 
 	return apiClusterHealth, nil
 }
@@ -732,8 +732,9 @@ func (r *TestClient) WaitForOPAEnabledClusterHealthy(projectID, dc, clusterID st
 	if !WaitFor(5*time.Second, timeout, func() bool {
 		healthStatus, _ := r.GetClusterHealthStatus(projectID, dc, clusterID)
 		return IsHealthyCluster(healthStatus) &&
-			healthStatus.GatekeeperController == kubermaticv1.HealthStatusUp &&
-			healthStatus.GatekeeperAudit == kubermaticv1.HealthStatusUp
+			healthStatus.GatekeeperController != nil &&
+			*healthStatus.GatekeeperController == kubermaticv1.HealthStatusUp &&
+			healthStatus.GatekeeperAudit == kubermaticv1.HealthStatusUp.Ptr()
 
 	}) {
 		return errors.New("OPA enabled cluster did not become healthy")

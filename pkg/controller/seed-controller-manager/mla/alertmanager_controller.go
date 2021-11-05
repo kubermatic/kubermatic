@@ -262,8 +262,8 @@ func (r *alertmanagerController) handleDeletion(ctx context.Context, cluster *ku
 		// if cluster is still there we need to delete objects manually
 		err := r.cleanUpAlertmanagerObjects(ctx, cluster)
 		// Do not return immmediatly if alertmanger configuration update failed. Update the configuration health status first.
-		if errC := r.cleanUpAlertmanagerConfigurationStatus(ctx, cluster); errC != nil {
-			return fmt.Errorf("failed to update alertmanager configuration status in cluster: %w", err)
+		if errC := r.cleanUpAlertmanagerConfigurationStatus(ctx, cluster, err); errC != nil {
+			return fmt.Errorf("failed to update alertmanager configuration status in cluster: %w", errC)
 		}
 		if err != nil {
 			return fmt.Errorf("failed to remove alertmanager objects: %w", err)
@@ -301,10 +301,13 @@ func (r *alertmanagerController) cleanUpAlertmanagerConfiguration(cluster *kuber
 	return nil
 }
 
-func (r *alertmanagerController) cleanUpAlertmanagerConfigurationStatus(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+func (r *alertmanagerController) cleanUpAlertmanagerConfigurationStatus(ctx context.Context, cluster *kubermaticv1.Cluster, errC error) error {
 	oldCluster := cluster.DeepCopy()
 	// Remove the alertmanager config status in Cluster CR
 	cluster.Status.ExtendedHealth.AlertmanagerConfig = nil
+	if errC != nil {
+		cluster.Status.ExtendedHealth.AlertmanagerConfig = kubermaticv1.HealthStatusDown.Ptr()
+	}
 
 	// Update alertmanager config status in Cluster CR
 	if oldCluster.Status.ExtendedHealth != cluster.Status.ExtendedHealth {
@@ -491,14 +494,12 @@ func (r *alertmanagerController) ensureAlertManagerConfigStatus(ctx context.Cont
 
 	alertmanager.Status.ConfigStatus.ErrorMessage = "" // reset error message
 	alertmanager.Status.ConfigStatus.Status = corev1.ConditionTrue
-	status := kubermaticv1.HealthStatusUp
-	cluster.Status.ExtendedHealth.AlertmanagerConfig = &status
+	cluster.Status.ExtendedHealth.AlertmanagerConfig = kubermaticv1.HealthStatusUp.Ptr()
 	alertmanager.Status.ConfigStatus.LastUpdated = metav1.Now()
 	if configErr != nil {
 		alertmanager.Status.ConfigStatus.ErrorMessage = configErr.Error()
 		alertmanager.Status.ConfigStatus.Status = corev1.ConditionFalse
-		status := kubermaticv1.HealthStatusDown
-		cluster.Status.ExtendedHealth.AlertmanagerConfig = &status
+		cluster.Status.ExtendedHealth.AlertmanagerConfig = kubermaticv1.HealthStatusDown.Ptr()
 		alertmanager.Status.ConfigStatus.LastUpdated = oldAlertmanager.Status.ConfigStatus.LastUpdated
 	}
 

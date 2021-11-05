@@ -317,6 +317,15 @@ func convertHealthStatus(oldHs kubermaticv1.HealthStatus) newv1.HealthStatus {
 	return newv1.HealthStatusDown
 }
 
+func convertHealthStatusPtr(oldHs *kubermaticv1.HealthStatus) *newv1.HealthStatus {
+	var status *newv1.HealthStatus
+	if oldHs != nil {
+		status1 := convertHealthStatus(*oldHs)
+		status = &status1
+	}
+	return status
+}
+
 func cloneClusterResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) (int, error) {
 	oldObjects := &kubermaticv1.ClusterList{}
 	if err := client.List(ctx, oldObjects); err != nil {
@@ -324,12 +333,6 @@ func cloneClusterResourcesInCluster(ctx context.Context, logger logrus.FieldLogg
 	}
 
 	for _, oldObject := range oldObjects.Items {
-		var alertmanagerConfig *newv1.HealthStatus
-		if oldObject.Status.ExtendedHealth.AlertmanagerConfig != nil {
-			alertmanagerConfig1 := convertHealthStatus(*oldObject.Status.ExtendedHealth.AlertmanagerConfig)
-			alertmanagerConfig = &alertmanagerConfig1
-		}
-
 		newObject := newv1.Cluster{
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Address:    newv1.ClusterAddress(oldObject.Address),
@@ -350,12 +353,12 @@ func cloneClusterResourcesInCluster(ctx context.Context, logger logrus.FieldLogg
 					OpenVPN:                      convertHealthStatus(oldObject.Status.ExtendedHealth.OpenVPN),
 					CloudProviderInfrastructure:  convertHealthStatus(oldObject.Status.ExtendedHealth.CloudProviderInfrastructure),
 					UserClusterControllerManager: convertHealthStatus(oldObject.Status.ExtendedHealth.UserClusterControllerManager),
-					GatekeeperController:         convertHealthStatus(oldObject.Status.ExtendedHealth.GatekeeperController),
-					GatekeeperAudit:              convertHealthStatus(oldObject.Status.ExtendedHealth.GatekeeperAudit),
-					Monitoring:                   convertHealthStatus(oldObject.Status.ExtendedHealth.Monitoring),
-					Logging:                      convertHealthStatus(oldObject.Status.ExtendedHealth.Logging),
-					AlertmanagerConfig:           alertmanagerConfig,
-					MLAGateway:                   convertHealthStatus(oldObject.Status.ExtendedHealth.MLAGateway),
+					GatekeeperController:         convertHealthStatusPtr(oldObject.Status.ExtendedHealth.GatekeeperController),
+					GatekeeperAudit:              convertHealthStatusPtr(oldObject.Status.ExtendedHealth.GatekeeperAudit),
+					Monitoring:                   convertHealthStatusPtr(oldObject.Status.ExtendedHealth.Monitoring),
+					Logging:                      convertHealthStatusPtr(oldObject.Status.ExtendedHealth.Logging),
+					AlertmanagerConfig:           convertHealthStatusPtr(oldObject.Status.ExtendedHealth.AlertmanagerConfig),
+					MLAGateway:                   convertHealthStatusPtr(oldObject.Status.ExtendedHealth.MLAGateway),
 				},
 			},
 		}
