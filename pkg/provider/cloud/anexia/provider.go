@@ -51,7 +51,7 @@ func (a *Anexia) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (a *Anexia) InitializeCloudProvider(c *kubermaticv1.Cluster, p provider.ClusterUpdater, reconcile bool) (*kubermaticv1.Cluster, error) {
+func (a *Anexia) InitializeCloudProvider(c *kubermaticv1.Cluster, p provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	return c, nil
 }
 

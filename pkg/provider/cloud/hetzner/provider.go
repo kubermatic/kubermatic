@@ -39,6 +39,8 @@ func NewCloudProvider(secretKeyGetter provider.SecretKeySelectorValueFunc) provi
 	}
 }
 
+var _ provider.CloudProvider = &hetzner{}
+
 // DefaultCloudSpec
 func (h *hetzner) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
 	return nil
@@ -68,7 +70,7 @@ func (h *hetzner) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 }
 
 // InitializeCloudProvider
-func (h *hetzner) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, reconcile bool) (*kubermaticv1.Cluster, error) {
+func (h *hetzner) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	return cluster, nil
 }
 

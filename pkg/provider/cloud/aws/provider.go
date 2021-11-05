@@ -65,6 +65,8 @@ func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 	}, nil
 }
 
+var _ provider.CloudProvider = &AmazonEC2{}
+
 func (a *AmazonEC2) getClientSet(cloud kubermaticv1.CloudSpec) (*ClientSet, error) {
 	if a.clientSet != nil {
 		return a.clientSet, nil
@@ -122,7 +124,7 @@ func (a *AmazonEC2) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newS
 	return nil
 }
 
-func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, reconcile bool) (*kubermaticv1.Cluster, error) {
+func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	// Initialization should only occur once.
 	firstInitialization := !kuberneteshelper.HasFinalizer(cluster, cleanupFinalizer)
 

@@ -98,11 +98,19 @@ func IsProviderSupported(name string) bool {
 
 // CloudProvider declares a set of methods for interacting with a cloud provider
 type CloudProvider interface {
-	InitializeCloudProvider(*kubermaticv1.Cluster, ClusterUpdater, bool) (*kubermaticv1.Cluster, error)
+	InitializeCloudProvider(*kubermaticv1.Cluster, ClusterUpdater) (*kubermaticv1.Cluster, error)
 	CleanUpCloudProvider(*kubermaticv1.Cluster, ClusterUpdater) (*kubermaticv1.Cluster, error)
 	DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error
 	ValidateCloudSpec(spec kubermaticv1.CloudSpec) error
 	ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error
+}
+
+// ReconcilingCloudProvider is a cloud provider that can not just created resources
+// once, but is capable of continuously reconciling annd fixing any problems with them.
+type ReconcilingCloudProvider interface {
+	CloudProvider
+
+	ReconcileCluster(*kubermaticv1.Cluster, ClusterUpdater) (*kubermaticv1.Cluster, error)
 }
 
 // UpdaterOption represent an option for the updater function.

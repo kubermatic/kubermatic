@@ -69,9 +69,11 @@ func NewCloudProvider(secretKeyGetter provider.SecretKeySelectorValueFunc) provi
 	}
 }
 
+var _ provider.CloudProvider = &gcp{}
+
 // TODO: update behaviour of all these methods
 // InitializeCloudProvider initializes a cluster.
-func (g *gcp) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, reconcile bool) (*kubermaticv1.Cluster, error) {
+func (g *gcp) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	var err error
 	if cluster.Spec.Cloud.GCP.Network == "" && cluster.Spec.Cloud.GCP.Subnetwork == "" {
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
@@ -97,6 +99,11 @@ func (g *gcp) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update prov
 	}
 	return cluster, nil
 }
+
+// TODO: Hey, you! Yes, you! Why don't you implement reconciling for GCP? Would be really cool :)
+// func (g *gcp) ReconcileCluster(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+// 	return cluster, nil
+// }
 
 // DefaultCloudSpec adds defaults to the cloud spec.
 func (g *gcp) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
