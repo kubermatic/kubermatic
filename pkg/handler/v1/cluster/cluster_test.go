@@ -1073,7 +1073,7 @@ func TestGetClusterHealth(t *testing.T) {
 		{
 			Name:             "scenario 5: get existing cluster health status with MLA Monitoring enabled",
 			Body:             ``,
-			ExpectedResponse: `{"apiserver":1,"scheduler":0,"controller":1,"machineController":0,"etcd":1,"cloudProviderInfrastructure":1,"userClusterControllerManager":1,"monitoring":1}`,
+			ExpectedResponse: `{"apiserver":1,"scheduler":0,"controller":1,"machineController":0,"etcd":1,"cloudProviderInfrastructure":1,"userClusterControllerManager":1,"monitoring":1,"mlaGateway":1}`,
 			HTTPStatus:       http.StatusOK,
 			ClusterToGet:     "keen-snyder",
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -1094,6 +1094,7 @@ func TestGetClusterHealth(t *testing.T) {
 						CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 						UserClusterControllerManager: kubermaticv1.HealthStatusUp,
 						Monitoring:                   kubermaticv1.HealthStatusUp,
+						MLAGateway:                   kubermaticv1.HealthStatusUp,
 					}
 					cluster.Spec.MLA = &kubermaticv1.MLASettings{MonitoringEnabled: true}
 					return cluster
@@ -1105,7 +1106,7 @@ func TestGetClusterHealth(t *testing.T) {
 		{
 			Name:             "scenario 6: get existing cluster health status with MLA Logging enabled",
 			Body:             ``,
-			ExpectedResponse: `{"apiserver":1,"scheduler":0,"controller":1,"machineController":0,"etcd":1,"cloudProviderInfrastructure":1,"userClusterControllerManager":1,"logging":1}`,
+			ExpectedResponse: `{"apiserver":1,"scheduler":0,"controller":1,"machineController":0,"etcd":1,"cloudProviderInfrastructure":1,"userClusterControllerManager":1,"logging":1,"mlaGateway":1}`,
 			HTTPStatus:       http.StatusOK,
 			ClusterToGet:     "keen-snyder",
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -1126,6 +1127,7 @@ func TestGetClusterHealth(t *testing.T) {
 						CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 						UserClusterControllerManager: kubermaticv1.HealthStatusUp,
 						Logging:                      kubermaticv1.HealthStatusUp,
+						MLAGateway:                   kubermaticv1.HealthStatusUp,
 					}
 					cluster.Spec.MLA = &kubermaticv1.MLASettings{LoggingEnabled: true}
 					return cluster
@@ -1137,7 +1139,7 @@ func TestGetClusterHealth(t *testing.T) {
 		{
 			Name:             "scenario 7: get existing cluster health status with MLA Logging enabled and alertmanager config",
 			Body:             ``,
-			ExpectedResponse: `{"apiserver":1,"scheduler":0,"controller":1,"machineController":0,"etcd":1,"cloudProviderInfrastructure":1,"userClusterControllerManager":1,"logging":1,"alertmanagerConfig":1}`,
+			ExpectedResponse: `{"apiserver":1,"scheduler":0,"controller":1,"machineController":0,"etcd":1,"cloudProviderInfrastructure":1,"userClusterControllerManager":1,"logging":1,"alertmanagerConfig":1,"mlaGateway":1}`,
 			HTTPStatus:       http.StatusOK,
 			ClusterToGet:     "keen-snyder",
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -1160,6 +1162,7 @@ func TestGetClusterHealth(t *testing.T) {
 						UserClusterControllerManager: kubermaticv1.HealthStatusUp,
 						Logging:                      kubermaticv1.HealthStatusUp,
 						AlertmanagerConfig:           &status,
+						MLAGateway:                   kubermaticv1.HealthStatusUp,
 					}
 					cluster.Spec.MLA = &kubermaticv1.MLASettings{LoggingEnabled: true}
 					return cluster
