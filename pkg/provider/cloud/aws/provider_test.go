@@ -140,7 +140,7 @@ func TestInitializeCloudProvider(t *testing.T) {
 	provider := newCloudProvider(t)
 	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{})
 
-	cluster, err := provider.InitializeCloudProvider(cluster, testClusterUpdater(cluster), false)
+	cluster, err := provider.InitializeCloudProvider(cluster, testClusterUpdater(cluster))
 	if err != nil {
 		t.Fatalf("InitializeCloudProvider should not have failed, but returned: %v", err)
 	}
@@ -193,7 +193,7 @@ func TestInitializeCloudProviderKeepsAnyData(t *testing.T) {
 	// Otherwise the code would try to tag the non-existing resources and fail.
 	kuberneteshelper.AddFinalizer(cluster, cleanupFinalizer)
 
-	cluster, err := provider.InitializeCloudProvider(cluster, testClusterUpdater(cluster), false)
+	cluster, err := provider.InitializeCloudProvider(cluster, testClusterUpdater(cluster))
 	if err != nil {
 		t.Fatalf("InitializeCloudProvider should not have failed, but returned: %v", err)
 	}
