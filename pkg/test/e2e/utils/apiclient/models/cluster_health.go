@@ -45,6 +45,9 @@ type ClusterHealth struct {
 	// machine controller
 	MachineController HealthStatus `json:"machineController,omitempty"`
 
+	// mla gateway
+	MlaGateway HealthStatus `json:"mlaGateway,omitempty"`
+
 	// monitoring
 	Monitoring HealthStatus `json:"monitoring,omitempty"`
 
@@ -92,6 +95,10 @@ func (m *ClusterHealth) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateMachineController(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateMlaGateway(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -248,6 +255,21 @@ func (m *ClusterHealth) validateMachineController(formats strfmt.Registry) error
 	return nil
 }
 
+func (m *ClusterHealth) validateMlaGateway(formats strfmt.Registry) error {
+	if swag.IsZero(m.MlaGateway) { // not required
+		return nil
+	}
+
+	if err := m.MlaGateway.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("mlaGateway")
+		}
+		return err
+	}
+
+	return nil
+}
+
 func (m *ClusterHealth) validateMonitoring(formats strfmt.Registry) error {
 	if swag.IsZero(m.Monitoring) { // not required
 		return nil
@@ -330,6 +352,10 @@ func (m *ClusterHealth) ContextValidate(ctx context.Context, formats strfmt.Regi
 	}
 
 	if err := m.contextValidateMachineController(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateMlaGateway(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -452,6 +478,18 @@ func (m *ClusterHealth) contextValidateMachineController(ctx context.Context, fo
 	if err := m.MachineController.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("machineController")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) contextValidateMlaGateway(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.MlaGateway.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("mlaGateway")
 		}
 		return err
 	}

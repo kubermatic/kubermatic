@@ -783,6 +783,7 @@ type ExtendedClusterHealth struct {
 	Monitoring                   HealthStatus  `json:"monitoring,omitempty"`
 	Logging                      HealthStatus  `json:"logging,omitempty"`
 	AlertmanagerConfig           *HealthStatus `json:"alertmanagerConfig,omitempty"`
+	MLAGateway                   HealthStatus  `json:"mlaGateway,omitempty"`
 }
 
 // AllHealthy returns if all components are healthy. Gatekeeper components not included as they are optional and not

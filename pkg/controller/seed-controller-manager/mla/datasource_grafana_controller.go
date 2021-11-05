@@ -242,6 +242,10 @@ func (r *datasourceGrafanaController) reconcile(ctx context.Context, cluster *ku
 	if err := r.ensureDeployments(ctx, cluster, data, settings); err != nil {
 		return nil, fmt.Errorf("failed to reconcile Deployments in namespace %s: %w", cluster.Status.NamespaceName, err)
 	}
+	err = r.mlaGatewayHealth(ctx, cluster)
+	if err != nil {
+		return nil, err
+	}
 	if err := r.ensureServices(ctx, cluster); err != nil {
 		return nil, fmt.Errorf("failed to reconcile Services in namespace %s: %w", "mla", err)
 	}
@@ -389,4 +393,21 @@ func (r *datasourceGrafanaController) handleDeletion(ctx context.Context, grafan
 	}
 
 	return nil
+}
+
+func (r *datasourceGrafanaController) mlaGatewayHealth(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	mlaGatewayHealth, err := resources.HealthyDeployment(ctx, r.Client, types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: gatewayName}, 1)
+	if err != nil {
+		return fmt.Errorf("failed to get dep health %s: %w", resources.UserClusterPrometheusDeploymentName, err)
+	}
+	oldCluster := cluster.DeepCopy()
+	cluster.Status.ExtendedHealth.MLAGateway = mlaGatewayHealth
+
+	if oldCluster != cluster {
+		if err := r.Client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+			return fmt.Errorf("error patching cluster health status: %v", err)
+		}
+	}
+	return nil
+
 }
