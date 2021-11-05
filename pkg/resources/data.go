@@ -440,7 +440,7 @@ func (d *TemplateData) KubermaticAPIImage() string {
 func (d *TemplateData) parseImage(image string) string {
 	named, _ := reference.ParseNormalizedNamed(image)
 	domain := reference.Domain(named)
-	reminder := reference.Path(named)
+	remainder := reference.Path(named)
 
 	if d.OverwriteRegistry != "" {
 		domain = d.OverwriteRegistry
@@ -449,7 +449,7 @@ func (d *TemplateData) parseImage(image string) string {
 		domain = RegistryDocker
 	}
 
-	return domain + "/" + reminder
+	return domain + "/" + remainder
 }
 
 func (d *TemplateData) KubermaticDockerTag() string {
