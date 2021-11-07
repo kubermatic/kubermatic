@@ -280,10 +280,10 @@ func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimecl
 		return err
 	}
 	if spec.Tenant == "" {
-		spec.Tenant = oldCred.Tenant
+		spec.Tenant = oldCred.Project
 	}
 	if spec.TenantID == "" {
-		spec.TenantID = oldCred.TenantID
+		spec.TenantID = oldCred.ProjectID
 	}
 	if spec.Domain == "" {
 		spec.Domain = oldCred.Domain

@@ -52,8 +52,8 @@ func getAuthInfo(ctx context.Context, req OpenstackReq, userInfoGetter provider.
 		credentials := &resources.OpenstackCredentials{
 			Username:                    req.Username,
 			Password:                    req.Password,
-			Tenant:                      req.Tenant,
-			TenantID:                    req.TenantID,
+			Project:                     req.Tenant,
+			ProjectID:                   req.TenantID,
 			Domain:                      req.Domain,
 			ApplicationCredentialID:     req.ApplicationCredentialID,
 			ApplicationCredentialSecret: req.ApplicationCredentialSecret,
@@ -420,8 +420,8 @@ func getPresetCredentials(userInfo *provider.UserInfo, presetName string, preset
 	credentials := &resources.OpenstackCredentials{
 		Username:                    p.Spec.Openstack.Username,
 		Password:                    p.Spec.Openstack.Password,
-		Tenant:                      p.Spec.Openstack.GetProjectOrDefaultToTenant(),
-		TenantID:                    p.Spec.Openstack.GetProjectIdOrDefaultToTenantId(),
+		Project:                     p.Spec.Openstack.GetProjectOrDefaultToTenant(),
+		ProjectID:                   p.Spec.Openstack.GetProjectIdOrDefaultToTenantId(),
 		Domain:                      p.Spec.Openstack.Domain,
 		ApplicationCredentialID:     p.Spec.Openstack.ApplicationCredentialID,
 		ApplicationCredentialSecret: p.Spec.Openstack.ApplicationCredentialSecret,
