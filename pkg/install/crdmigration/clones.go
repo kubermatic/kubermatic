@@ -324,6 +324,12 @@ func cloneClusterResourcesInCluster(ctx context.Context, logger logrus.FieldLogg
 	}
 
 	for _, oldObject := range oldObjects.Items {
+		var alertmanagerConfig *newv1.HealthStatus
+		if oldObject.Status.ExtendedHealth.AlertmanagerConfig != nil {
+			alertmanagerConfig1 := convertHealthStatus(*oldObject.Status.ExtendedHealth.AlertmanagerConfig)
+			alertmanagerConfig = &alertmanagerConfig1
+		}
+
 		newObject := newv1.Cluster{
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Address:    newv1.ClusterAddress(oldObject.Address),
@@ -348,6 +354,8 @@ func cloneClusterResourcesInCluster(ctx context.Context, logger logrus.FieldLogg
 					GatekeeperAudit:              convertHealthStatus(oldObject.Status.ExtendedHealth.GatekeeperAudit),
 					Monitoring:                   convertHealthStatus(oldObject.Status.ExtendedHealth.Monitoring),
 					Logging:                      convertHealthStatus(oldObject.Status.ExtendedHealth.Logging),
+					AlertmanagerConfig:           alertmanagerConfig,
+					MLAGateway:                   convertHealthStatus(oldObject.Status.ExtendedHealth.MLAGateway),
 				},
 			},
 		}

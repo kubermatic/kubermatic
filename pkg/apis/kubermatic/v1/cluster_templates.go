@@ -55,8 +55,7 @@ type ClusterTemplate struct {
 	InheritedClusterLabels map[string]string       `json:"inheritedClusterLabels,omitempty"`
 	Credential             string                  `json:"credential"`
 	UserSSHKeys            []ClusterTemplateSSHKey `json:"userSSHKeys"`
-
-	Spec ClusterSpec `json:"spec,omitempty"`
+	Spec                   ClusterSpec             `json:"spec,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

@@ -47,9 +47,36 @@ spec:
             required:
             - configSecret
             type: object
+          status:
+            description: AlertManagerStatus stores status information about the AlertManager
+            properties:
+              configStatus:
+                description: AlertManagerConfigurationStatus stores status information
+                  about the AlertManager configuration
+                properties:
+                  errorMessage:
+                    description: ErrorMessage contains a default error message in
+                      case the configuration could not be applied. Will be reset if
+                      the error was resolved and condition becomes True
+                    type: string
+                  lastUpdated:
+                    description: LastUpdated stores the last successful time when
+                      the configuration was successfully applied
+                    format: date-time
+                    type: string
+                  status:
+                    description: Status of whether the configuration was applied,
+                      one of True, False
+                    type: string
+                required:
+                - status
+                type: object
+            type: object
         type: object
     served: true
     storage: true
+    subresources:
+      status: {}
 status:
   acceptedNames:
     kind: ""

@@ -1610,6 +1610,12 @@ spec:
                 description: ExtendedHealth exposes information about the current
                   health state. Extends standard health status for new states.
                 properties:
+                  alertmanagerConfig:
+                    enum:
+                    - HealthStatusDown
+                    - HealthStatusUp
+                    - HealthStatusProvisioning
+                    type: string
                   apiserver:
                     enum:
                     - HealthStatusDown
@@ -1653,6 +1659,12 @@ spec:
                     - HealthStatusProvisioning
                     type: string
                   machineController:
+                    enum:
+                    - HealthStatusDown
+                    - HealthStatusUp
+                    - HealthStatusProvisioning
+                    type: string
+                  mlaGateway:
                     enum:
                     - HealthStatusDown
                     - HealthStatusUp
