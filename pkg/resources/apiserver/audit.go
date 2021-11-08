@@ -90,13 +90,22 @@ func AuditConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfig
 		return resources.AuditConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			// set the audit policy preset so we generate a ConfigMap in any case.
 			// It won't be used if audit logging is not enabled
-			preset := kubermaticv1.AuditPolicyMetadata
+			preset := kubermaticv1.AuditPolicyPreset("")
 			if data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.Enabled && data.Cluster().Spec.AuditLogging.PolicyPreset != "" {
 				preset = data.Cluster().Spec.AuditLogging.PolicyPreset
 			}
 
-			cm.Data = map[string]string{
-				"policy.yaml": auditPolicies[preset],
+			// if the policyPreset field is empty, only update the ConfigMap on creation
+			if preset != "" || cm.Data == nil {
+
+				// if the preset is empty, set it to 'metadata' to generate a valid audit policy
+				if preset == "" {
+					preset = kubermaticv1.AuditPolicyMetadata
+				}
+
+				cm.Data = map[string]string{
+					"policy.yaml": auditPolicies[preset],
+				}
 			}
 			return cm, nil
 		}
