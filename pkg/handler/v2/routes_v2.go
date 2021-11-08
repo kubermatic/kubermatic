@@ -37,7 +37,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/etcdbackupconfig"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/etcdrestore"
 	externalcluster "k8c.io/kubermatic/v2/pkg/handler/v2/external_cluster"
-	"k8c.io/kubermatic/v2/pkg/handler/v2/feature_gates"
+	featuregates "k8c.io/kubermatic/v2/pkg/handler/v2/feature_gates"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/gatekeeperconfig"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/handler/v2/kubernetes-dashboard"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/machine"
@@ -279,6 +279,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/events").
 		Handler(r.listExternalClusterEvents())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/kubeconfig").
+		Handler(r.getExternalClusterKubeconfig())
 
 	// Define a set of endpoints for gatekeeper constraint templates
 	mux.Methods(http.MethodGet).
@@ -4850,6 +4854,31 @@ func (r Routing) listEC2Regions() http.Handler {
 		)(provider.ListEC2RegionsEndpoint(r.userInfoGetter, r.presetsProvider)),
 		provider.DecodeEC2CommonReq,
 		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// getExternalClusterKubeconfig returns the kubeconfig for the external cluster.
+// swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/kubeconfig project getExternalClusterKubeconfig
+//
+//     Gets the kubeconfig for the specified external cluster.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: Kubeconfig
+//       401: empty
+//       403: empty
+func (r Routing) getExternalClusterKubeconfig() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.GetKubeconfigEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
+		externalcluster.DecodeGetReq,
+		cluster.EncodeKubeconfig,
 		r.defaultServerOptions()...,
 	)
 }

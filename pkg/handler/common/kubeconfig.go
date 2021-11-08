@@ -35,6 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	kcerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -92,6 +93,35 @@ func GetAdminKubeconfigEndpoint(ctx context.Context, userInfoGetter provider.Use
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 	return &encodeKubeConifgResponse{clientCfg: adminClientCfg, filePrefix: filePrefix}, nil
+}
+
+func GetKubeconfigEndpoint(cluster *kubermaticv1.ExternalCluster, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (interface{}, error) {
+
+	filePrefix := "external-cluster"
+
+	kubeconfigReference := cluster.Spec.KubeconfigReference
+	if kubeconfigReference == nil {
+		return nil, fmt.Errorf("kubeconfig not available for the Cluster")
+	}
+
+	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(context.Background(), privilegedClusterProvider.GetMasterClient())
+
+	rawKubeconfig, err := secretKeyGetter(kubeconfigReference, resources.KubeconfigSecretKey)
+	if err != nil {
+		return nil, err
+	}
+
+	kubeconfig, err := base64.StdEncoding.DecodeString(rawKubeconfig)
+	if err != nil {
+		panic(fmt.Sprintf("Invalid base64 string %q", rawKubeconfig))
+	}
+
+	cfg, err := clientcmd.Load(kubeconfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse kubeconfig: %v", err)
+	}
+
+	return &encodeKubeConifgResponse{clientCfg: cfg, filePrefix: filePrefix}, nil
 }
 
 func GetOidcKubeconfigEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID string, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider) (interface{}, error) {
