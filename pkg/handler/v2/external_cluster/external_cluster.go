@@ -355,7 +355,7 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 }
 
 // getClusterReq defines HTTP request for getExternalCluster
-// swagger:parameters getExternalCluster getExternalClusterMetrics getExternalClusterUpgrades
+// swagger:parameters getExternalCluster getExternalClusterMetrics getExternalClusterUpgrades getExternalClusterKubeconfig
 type getClusterReq struct {
 	common.ProjectReq
 	// in: path
@@ -897,4 +897,29 @@ type body struct {
 	// Kubeconfig Base64 encoded kubeconfig
 	Kubeconfig string                          `json:"kubeconfig,omitempty"`
 	Cloud      *apiv2.ExternalClusterCloudSpec `json:"cloud,omitempty"`
+}
+
+func GetKubeconfigEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		if !AreExternalClustersEnabled(settingsProvider) {
+			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
+		}
+
+		req := request.(getClusterReq)
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := getCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, req.ClusterID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return handlercommon.GetKubeconfigEndpoint(cluster, privilegedClusterProvider)
+	}
 }

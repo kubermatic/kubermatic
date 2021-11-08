@@ -134,6 +134,8 @@ type ClientService interface {
 
 	GetExternalCluster(params *GetExternalClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetExternalClusterOK, error)
 
+	GetExternalClusterKubeconfig(params *GetExternalClusterKubeconfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetExternalClusterKubeconfigOK, error)
+
 	GetExternalClusterMetrics(params *GetExternalClusterMetricsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetExternalClusterMetricsOK, error)
 
 	GetExternalClusterNode(params *GetExternalClusterNodeParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetExternalClusterNodeOK, error)
@@ -2288,6 +2290,44 @@ func (a *Client) GetExternalCluster(params *GetExternalClusterParams, authInfo r
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*GetExternalClusterDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  GetExternalClusterKubeconfig gets the kubeconfig for the specified external cluster
+*/
+func (a *Client) GetExternalClusterKubeconfig(params *GetExternalClusterKubeconfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetExternalClusterKubeconfigOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetExternalClusterKubeconfigParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "getExternalClusterKubeconfig",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/kubeconfig",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetExternalClusterKubeconfigReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetExternalClusterKubeconfigOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetExternalClusterKubeconfigDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
