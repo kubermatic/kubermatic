@@ -742,6 +742,7 @@ func cloneEtcdBackupConfigResourcesInCluster(ctx context.Context, logger logrus.
 				Destination: &newv1.BackupDestination{
 					S3Endpoint:   oldObject.Spec.Destination.S3Endpoint,
 					S3BucketName: oldObject.Spec.Destination.S3BucketName,
+					Credentials:  oldObject.Spec.Destination.Credentials,
 				},
 			},
 		}
@@ -1152,7 +1153,7 @@ func cloneSeedResourcesInCluster(ctx context.Context, logger logrus.FieldLogger,
 		}
 
 		if oldObject.Spec.BackupRestore != nil {
-			newObject.Spec.BackupRestore = &newv1.BackupDestination{
+			newObject.Spec.BackupRestore = &newv1.SeedBackupRestoreConfiguration{
 				S3Endpoint:   oldObject.Spec.BackupRestore.S3Endpoint,
 				S3BucketName: oldObject.Spec.BackupRestore.S3BucketName,
 			}
@@ -1164,6 +1165,7 @@ func cloneSeedResourcesInCluster(ctx context.Context, logger logrus.FieldLogger,
 				destinations[name] = &newv1.BackupDestination{
 					S3Endpoint:   destination.S3Endpoint,
 					S3BucketName: destination.S3BucketName,
+					Credentials:  destination.Credentials,
 				}
 			}
 			newObject.Spec.EtcdBackupRestore = &newv1.EtcdBackupRestore{

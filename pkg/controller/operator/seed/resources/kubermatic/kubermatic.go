@@ -109,7 +109,7 @@ func BackupContainersConfigMapCreator(cfg *operatorv1alpha1.KubermaticConfigurat
 	}
 }
 
-func RestoreS3SettingsConfigMapCreator(backupRestore *kubermaticv1.BackupDestination) reconciling.NamedConfigMapCreatorGetter {
+func RestoreS3SettingsConfigMapCreator(backupRestore *kubermaticv1.SeedBackupRestoreConfiguration) reconciling.NamedConfigMapCreatorGetter {
 	if backupRestore == nil {
 		return nil
 	}

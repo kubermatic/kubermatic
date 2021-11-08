@@ -99,17 +99,18 @@ type SeedSpec struct {
 	DefaultClusterTemplate string `json:"defaultClusterTemplate,omitempty"`
 	// Metering configures the metering tool on user clusters across the seed.
 	Metering *MeteringConfigurations `json:"metering,omitempty"`
-	// Deprecated: use EtcdBackupRestore instead which allows for multiple destinations. For now it's still supported and\
-	// will work if set.
 	// BackupRestore when set, enables backup and restore controllers with given configuration.
-	BackupRestore *BackupDestination `json:"backupRestore,omitempty"`
-	// EtcdBackupRestore holds the configuration of the automatic backup restores for the Seed
+	// Deprecated: use EtcdBackupRestore instead which allows for multiple destinations. For now, it's still supported and
+	// will work if set.
+	BackupRestore *SeedBackupRestoreConfiguration `json:"backupRestore,omitempty"`
+	// EtcdBackupRestore holds the configuration of the automatic etcd backup restores for the Seed
 	EtcdBackupRestore *EtcdBackupRestore `json:"etcdBackupRestore,omitempty"`
 }
 
-// BackupDestination defines the bucket name and endpoint as a backup destination.
-type BackupDestination struct {
-	// S3Endpoint is the S3 API endpoint to use for backup and restore. Defaults to s3.amazonaws.com.
+// SeedBackupRestoreConfiguration defines the bucket name and endpoint as a backup destination.
+// Deprecated: use EtcdBackupRestore
+type SeedBackupRestoreConfiguration struct {
+	// S3Endpoint is the S3 API endpoint to use for backup and restore.
 	S3Endpoint string `json:"s3Endpoint,omitempty"`
 	// S3BucketName is the S3 bucket name to use for backup and restore.
 	S3BucketName string `json:"s3BucketName,omitempty"`
@@ -120,6 +121,16 @@ type EtcdBackupRestore struct {
 	// Destinations stores all the possible destinations where the backups for the Seed can be stored. If not empty,
 	// it enables automatic backup and restore for the seed.
 	Destinations map[string]*BackupDestination `json:"destinations,omitempty"`
+}
+
+// BackupDestination defines the bucket name and endpoint as a backup destination, and holds reference to the credentials secret.
+type BackupDestination struct {
+	// S3Endpoint is the S3 API endpoint to use for backup and restore.
+	S3Endpoint string `json:"s3Endpoint,omitempty"`
+	// S3BucketName is the S3 bucket name to use for backup and restore.
+	S3BucketName string `json:"s3BucketName,omitempty"`
+	// Credentials hold the ref to the secret with backup credentials
+	Credentials corev1.ObjectReference `json:"credentials,omitempty"`
 }
 
 type NodeportProxyConfig struct {
