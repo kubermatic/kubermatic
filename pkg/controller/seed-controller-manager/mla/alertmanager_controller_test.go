@@ -74,7 +74,7 @@ func newTestAlertmanagerReconciler(objects []ctrlruntimeclient.Object, handler h
 
 type alertmanagerConfigStatus struct {
 	clusterStatus      kubermaticv1.HealthStatus                    // Alertmanager config status in the Cluster CR
-	alertmanagerStatus kubermaticv1.AlertManagerConfigurationStatus // Alertmanager config status in the Alertmanager CR
+	alertmanagerStatus kubermaticv1.AlertmanagerConfigurationStatus // Alertmanager config status in the Alertmanager CR
 }
 
 // getAlertmanagerConfigStatusUp returns the needed information when the alertmanager config status is OK:
@@ -86,7 +86,7 @@ type alertmanagerConfigStatus struct {
 func getAlertmanagerConfigStatusUp() alertmanagerConfigStatus {
 	return alertmanagerConfigStatus{
 		clusterStatus: kubermaticv1.HealthStatusUp,
-		alertmanagerStatus: kubermaticv1.AlertManagerConfigurationStatus{
+		alertmanagerStatus: kubermaticv1.AlertmanagerConfigurationStatus{
 			Status:      corev1.ConditionTrue,
 			LastUpdated: metav1.Now(),
 		},
@@ -102,7 +102,7 @@ func getAlertmanagerConfigStatusUp() alertmanagerConfigStatus {
 func getAlertmanagerConfigStatusDown() alertmanagerConfigStatus {
 	return alertmanagerConfigStatus{
 		clusterStatus: kubermaticv1.HealthStatusDown,
-		alertmanagerStatus: kubermaticv1.AlertManagerConfigurationStatus{
+		alertmanagerStatus: kubermaticv1.AlertmanagerConfigurationStatus{
 			Status:       corev1.ConditionFalse,
 			ErrorMessage: "status code: 400, response body: \"error validating Alertmanager config: some explanation\"",
 		},

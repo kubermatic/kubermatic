@@ -48,10 +48,10 @@ spec:
             - configSecret
             type: object
           status:
-            description: AlertManagerStatus stores status information about the AlertManager
+            description: AlertmanagerStatus stores status information about the AlertManager
             properties:
               configStatus:
-                description: AlertManagerConfigurationStatus stores status information
+                description: AlertmanagerConfigurationStatus stores status information
                   about the AlertManager configuration
                 properties:
                   errorMessage:

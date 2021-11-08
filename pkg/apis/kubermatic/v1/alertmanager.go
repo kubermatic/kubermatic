@@ -38,7 +38,7 @@ type Alertmanager struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   AlertmanagerSpec   `json:"spec,omitempty"`
-	Status AlertManagerStatus `json:"status,omitempty"`
+	Status AlertmanagerStatus `json:"status,omitempty"`
 }
 
 type AlertmanagerSpec struct {
@@ -57,13 +57,13 @@ type AlertmanagerList struct {
 	Items []Alertmanager `json:"items"`
 }
 
-// AlertManagerStatus stores status information about the AlertManager
-type AlertManagerStatus struct {
-	ConfigStatus AlertManagerConfigurationStatus `json:"configStatus,omitempty"`
+// AlertmanagerStatus stores status information about the AlertManager
+type AlertmanagerStatus struct {
+	ConfigStatus AlertmanagerConfigurationStatus `json:"configStatus,omitempty"`
 }
 
-// AlertManagerConfigurationStatus stores status information about the AlertManager configuration
-type AlertManagerConfigurationStatus struct {
+// AlertmanagerConfigurationStatus stores status information about the AlertManager configuration
+type AlertmanagerConfigurationStatus struct {
 	// LastUpdated stores the last successful time when the configuration was successfully applied
 	LastUpdated metav1.Time `json:"lastUpdated,omitempty"`
 	// Status of whether the configuration was applied, one of True, False

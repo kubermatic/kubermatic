@@ -569,10 +569,21 @@ func cloneAlertmanagerResourcesInCluster(ctx context.Context, logger logrus.Fiel
 			Spec: newv1.AlertmanagerSpec{
 				ConfigSecret: oldObject.Spec.DeepCopy().ConfigSecret,
 			},
+			Status: newv1.AlertmanagerStatus{
+				ConfigStatus: newv1.AlertmanagerConfigurationStatus{
+					LastUpdated:  oldObject.Status.ConfigStatus.LastUpdated,
+					Status:       oldObject.Status.ConfigStatus.Status,
+					ErrorMessage: oldObject.Status.ConfigStatus.ErrorMessage,
+				},
+			},
 		}
 
 		if err := ensureObject(ctx, client, &newObject, false); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
+		}
+
+		if err := client.Status().Update(ctx, &newObject); err != nil {
+			return 0, fmt.Errorf("failed to update status on %s: %w", oldObject.Name, err)
 		}
 	}
 
