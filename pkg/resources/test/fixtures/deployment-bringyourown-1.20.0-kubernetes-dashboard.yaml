@@ -50,7 +50,7 @@ spec:
         - '{"command":"/dashboard","args":["--kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--namespace","kubernetes-dashboard","--enable-insecure-login"]}'
         command:
         - /http-prober-bin/http-prober
-        image: docker.io/kubernetesui/dashboard:v2.0.4
+        image: docker.io/kubernetesui/dashboard:v2.4.0
         imagePullPolicy: IfNotPresent
         name: kubernetes-dashboard
         ports:
