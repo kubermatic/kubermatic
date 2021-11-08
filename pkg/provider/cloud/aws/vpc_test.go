@@ -108,13 +108,8 @@ func TestReconcileVPC(t *testing.T) {
 			VPCID: "does-not-exist",
 		})
 
-		cluster, err = reconcileVPC(cs.EC2, cluster, testClusterUpdater(cluster))
-		if err != nil {
-			t.Fatalf("reconcileVPC should not have errored, but returned %v", err)
-		}
-
-		if cluster.Spec.Cloud.AWS.VPCID != defaultVPCID {
-			t.Fatalf("cloud spec should have fixed the VPC to be the default with ID %q, but is now %q", defaultVPCID, cluster.Spec.Cloud.AWS.VPCID)
+		if _, err = reconcileVPC(cs.EC2, cluster, testClusterUpdater(cluster)); err != nil {
+			t.Fatalf("reconcileVPC should have errored, but returned %v", err)
 		}
 	})
 }

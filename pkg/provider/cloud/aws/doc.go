@@ -22,8 +22,9 @@ AWS cloud, some of which can pre-exist, some are always created explicitly
 for a given usercluster. These resources are:
 
 * EC2: VPC
-  A VPC must already exist and currently KKP always chooses the default VPC
-  in the given AWS account. There is no option to influence this.
+  A VPC must already exist. If the user doesn't specify a VPC, the provider chooses
+  the default VPC for the given AWS account. If during reconciliation the VPC
+  is not found, an error is raised and no further reconciliation can happen.
 
 * EC2: Route Table (RT)
   A usercluster can use its own RT, but if none is given by the user, the default

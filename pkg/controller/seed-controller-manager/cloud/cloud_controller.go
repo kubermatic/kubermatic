@@ -179,7 +179,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		}
 	}
 
-	hanndleProviderError := func(err error) (*reconcile.Result, error) {
+	handleProviderError := func(err error) (*reconcile.Result, error) {
 		if kerrors.IsConflict(err) {
 			// In case of conflict we just re-enqueue the item for later
 			// processing without returning an error.
@@ -216,7 +216,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 
 			cluster, err = betterProvider.ReconcileCluster(cluster, r.updateCluster)
 			if err != nil {
-				return hanndleProviderError(err)
+				return handleProviderError(err)
 			}
 
 			cluster, err = r.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
@@ -231,7 +231,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		// the provider only offers a one-time init :-(
 		cluster, err = prov.InitializeCloudProvider(cluster, r.updateCluster)
 		if err != nil {
-			return hanndleProviderError(err)
+			return handleProviderError(err)
 		}
 	}
 

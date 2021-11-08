@@ -49,7 +49,7 @@ func reconcileVPC(client ec2iface.EC2API, cluster *kubermaticv1.Cluster, update 
 
 		// not found
 		if out == nil || len(out.Vpcs) == 0 {
-			vpcID = ""
+			return nil, fmt.Errorf("the configured VPC %s does not exist", vpcID)
 		}
 	}
 
