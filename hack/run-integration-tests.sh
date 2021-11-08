@@ -32,6 +32,9 @@ pushElapsed gocache_download_duration_milliseconds $beforeGocache
 
 export CGO_ENABLED=1
 
+LOCALSTACK_TAG="${LOCALSTACK_TAG:-0.12.19}"
+LOCALSTACK_IMAGE="${LOCALSTACK_IMAGE:-localstack/localstack:$LOCALSTACK_TAG}"
+
 # For the AWS tests, we need a localstack container running.
 if [ -z "${SKIP_AWS_PROVIDER:-}" ]; then
   echodate "Setting up localstack container, set \$SKIP_AWS_PROVIDER to skip..."
@@ -47,7 +50,7 @@ if [ -z "${SKIP_AWS_PROVIDER:-}" ]; then
     --publish 4566:4566 \
     --publish 4571:4571 \
     --env "SERVICES=iam,ec2" \
-    localstack/localstack:0.12.19
+    "$LOCALSTACK_IMAGE"
 
   function stop_localstack() {
     echodate "Stopping localstack container..."

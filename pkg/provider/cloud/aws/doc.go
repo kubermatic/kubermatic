@@ -29,11 +29,12 @@ for a given usercluster. These resources are:
 * EC2: Route Table (RT)
   A usercluster can use its own RT, but if none is given by the user, the default
   RT for the VPC will be used (shared among many userclusters).
-  KKP never creates or deletes route tables, it only tags them.
+  KKP never creates or deletes route tables, it only tags them with the cluster tag.
 
 * EC2: Security Group (SG)
   This one can be specified by the user, but is otherwise created automatically.
-  Every usercluster lives in its own SG.
+  Every usercluster lives in its own SG and the SG is always tagged with the
+  cluster tag.
 
 * EC2: Subnets
   The AWS CCM requires that all subnets are tagged with the cluster name, as
@@ -43,15 +44,19 @@ for a given usercluster. These resources are:
 
 * IAM: Control plane role
   This one can be specified by the user, but is otherwise created automatically.
-  Every usercluster has its own control plan role.
+  Every usercluster has its own control plan role. If the specified role does not
+  exist, it is created.
 
 * IAM: Worker role & instance profile
   This one can be specified by the user, but is otherwise created automatically.
-  Every usercluster has its own worker role/profile.
+  Every usercluster has its own worker role/profile. If the specified profile does not
+  exist, it is created.
 
 During cluster deletion, KKP will try to clean up and remove unneeded resources again.
 However, if the user specified a given field (e.g. a SG ID), KKP does not remove
 the resource, assuming it is shared by either other userclusters or other things.
-To keep track of ownership, tags are used.
+To keep track of ownership, an owner tag is placed on all resources that KKP creates.
+The cluster tag for the AWS CCM is also removed, regardless whether the resource
+was created by KKP or not.
 */
 package aws
