@@ -105,7 +105,7 @@ type SeedSpec struct {
 type SeedBackupRestoreConfiguration struct {
 	// +kubebuilder:default=s3.amazonaws.com
 
-	// S3Endpoint is the S3 API endpoint to use for backup and restore. Defaults to s3.amazonaws.com.
+	// S3Endpoint is the S3 API endpoint to use for backup and restore.
 	S3Endpoint string `json:"s3Endpoint,omitempty"`
 	// S3BucketName is the S3 bucket name to use for backup and restore.
 	S3BucketName string `json:"s3BucketName,omitempty"`
