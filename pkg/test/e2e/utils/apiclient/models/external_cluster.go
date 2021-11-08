@@ -48,6 +48,9 @@ type ExternalCluster struct {
 	// type
 	Type string `json:"type,omitempty"`
 
+	// cloud
+	Cloud *ExternalClusterCloudSpec `json:"cloud,omitempty"`
+
 	// spec
 	Spec *ClusterSpec `json:"spec,omitempty"`
 
@@ -64,6 +67,10 @@ func (m *ExternalCluster) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateDeletionTimestamp(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateCloud(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -100,6 +107,23 @@ func (m *ExternalCluster) validateDeletionTimestamp(formats strfmt.Registry) err
 
 	if err := validate.FormatOf("deletionTimestamp", "body", "date-time", m.DeletionTimestamp.String(), formats); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (m *ExternalCluster) validateCloud(formats strfmt.Registry) error {
+	if swag.IsZero(m.Cloud) { // not required
+		return nil
+	}
+
+	if m.Cloud != nil {
+		if err := m.Cloud.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("cloud")
+			}
+			return err
+		}
 	}
 
 	return nil
@@ -143,6 +167,10 @@ func (m *ExternalCluster) validateStatus(formats strfmt.Registry) error {
 func (m *ExternalCluster) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateCloud(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateSpec(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -154,6 +182,20 @@ func (m *ExternalCluster) ContextValidate(ctx context.Context, formats strfmt.Re
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ExternalCluster) contextValidateCloud(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Cloud != nil {
+		if err := m.Cloud.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("cloud")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 

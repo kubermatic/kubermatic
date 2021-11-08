@@ -21,8 +21,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
+	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -138,28 +140,6 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 		}
 		return nil, errors.NewBadRequest("kubeconfig or provider structure missing")
 	}
-}
-
-func createGKECluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticapiv1.ExternalCluster, error) {
-	if cloud.GKE.Name == "" || cloud.GKE.Zone == "" || cloud.GKE.ServiceAccount == "" {
-		return nil, errors.NewBadRequest("the GKE cluster name, zone or service account can not be empty")
-	}
-
-	newCluster := genExternalCluster(name, project.Name)
-	newCluster.Spec.CloudSpec = &kubermaticapiv1.ExternalClusterCloudSpec{
-		GKE: &kubermaticapiv1.ExternalClusterGKECloudSpec{
-			Name: cloud.GKE.Name,
-			Zone: cloud.GKE.Zone,
-		},
-	}
-	keyRef, err := clusterProvider.CreateOrUpdateCredentialSecretForCluster(ctx, cloud, project.Name, newCluster.Name)
-	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-	kuberneteshelper.AddFinalizer(newCluster, apiv1.CredentialsSecretsCleanupFinalizer)
-	newCluster.Spec.CloudSpec.GKE.CredentialsReference = keyRef
-
-	return createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, newCluster, project)
 }
 
 func createEKSCluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticapiv1.ExternalCluster, error) {
@@ -461,6 +441,107 @@ func UpdateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 	}
 }
 
+func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		if !AreExternalClustersEnabled(settingsProvider) {
+			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
+		}
+
+		req := request.(patchClusterReq)
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		cluster, err := getCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, req.ClusterID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		version, err := clusterProvider.GetVersion(cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		clusterToPatch := convertClusterToAPI(cluster)
+		clusterToPatch.Spec = apiv1.ClusterSpec{
+			Version: *version,
+		}
+
+		existingClusterJSON, err := json.Marshal(clusterToPatch)
+		if err != nil {
+			return nil, errors.NewBadRequest("cannot decode existing cluster: %v", err)
+		}
+		patchedClusterJSON, err := jsonpatch.MergePatch(existingClusterJSON, req.Patch)
+		if err != nil {
+			return nil, errors.NewBadRequest("cannot patch cluster: %v", err)
+		}
+		var patchedCluster *apiv2.ExternalCluster
+		err = json.Unmarshal(patchedClusterJSON, &patchedCluster)
+		if err != nil {
+			return nil, errors.NewBadRequest("cannot decode patched cluster: %v", err)
+		}
+
+		cloud := cluster.Spec.CloudSpec
+		if cloud != nil {
+
+			secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+
+			if cloud.GKE != nil {
+				return patchGKECluster(ctx, clusterToPatch, patchedCluster, secretKeySelector, cloud.GKE.CredentialsReference)
+			}
+		}
+		return convertClusterToAPI(cluster), nil
+	}
+}
+
+// patchClusterReq defines HTTP request for patchExternalCluster
+// swagger:parameters patchExternalCluster
+type patchClusterReq struct {
+	common.ProjectReq
+	// in: path
+	// required: true
+	ClusterID string `json:"cluster_id"`
+	// in: body
+	Patch json.RawMessage
+}
+
+// Validate validates CreateEndpoint request
+func (req patchClusterReq) Validate() error {
+	if len(req.ProjectID) == 0 {
+		return fmt.Errorf("the project ID cannot be empty")
+	}
+	if len(req.ClusterID) == 0 {
+		return fmt.Errorf("the cluster ID cannot be empty")
+	}
+	return nil
+}
+
+func DecodePatchReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req patchClusterReq
+
+	pr, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = pr.(common.ProjectReq)
+
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ClusterID = clusterID
+
+	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // updateClusterReq defines HTTP request for updateExternalCluster
 // swagger:parameters updateExternalCluster
 type updateClusterReq struct {
@@ -469,7 +550,12 @@ type updateClusterReq struct {
 	// required: true
 	ClusterID string `json:"cluster_id"`
 	// in: body
-	Body body
+	Body struct {
+		// Name is human readable name for the external cluster
+		Name string `json:"name"`
+		// Kubeconfig Base64 encoded kubeconfig
+		Kubeconfig string `json:"kubeconfig,omitempty"`
+	}
 }
 
 func DecodeUpdateReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -726,6 +812,23 @@ func convertClusterToAPI(internalCluster *kubermaticapiv1.ExternalCluster) *apiv
 			Labels: internalCluster.Labels,
 			Type:   apiv1.KubernetesClusterType,
 		},
+	}
+
+	cloud := internalCluster.Spec.CloudSpec
+	if cloud != nil {
+		cluster.Cloud = &apiv2.ExternalClusterCloudSpec{}
+		if cloud.EKS != nil {
+			cluster.Cloud.EKS = &apiv2.EKSCloudSpec{
+				Name:   cloud.EKS.Name,
+				Region: cloud.EKS.Region,
+			}
+		}
+		if cloud.GKE != nil {
+			cluster.Cloud.GKE = &apiv2.GKECloudSpec{
+				Name: cloud.GKE.Name,
+				Zone: cloud.GKE.Zone,
+			}
+		}
 	}
 
 	return cluster

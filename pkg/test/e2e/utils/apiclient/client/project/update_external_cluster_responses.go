@@ -6,11 +6,13 @@ package project
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"fmt"
 	"io"
 
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
+	"github.com/go-openapi/swag"
 
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
@@ -165,5 +167,45 @@ func (o *UpdateExternalClusterDefault) readResponse(response runtime.ClientRespo
 		return err
 	}
 
+	return nil
+}
+
+/*UpdateExternalClusterBody update external cluster body
+swagger:model UpdateExternalClusterBody
+*/
+type UpdateExternalClusterBody struct {
+
+	// Kubeconfig Base64 encoded kubeconfig
+	Kubeconfig string `json:"kubeconfig,omitempty"`
+
+	// Name is human readable name for the external cluster
+	Name string `json:"name,omitempty"`
+}
+
+// Validate validates this update external cluster body
+func (o *UpdateExternalClusterBody) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this update external cluster body based on context it is used
+func (o *UpdateExternalClusterBody) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	return nil
+}
+
+// MarshalBinary interface implementation
+func (o *UpdateExternalClusterBody) MarshalBinary() ([]byte, error) {
+	if o == nil {
+		return nil, nil
+	}
+	return swag.WriteJSON(o)
+}
+
+// UnmarshalBinary interface implementation
+func (o *UpdateExternalClusterBody) UnmarshalBinary(b []byte) error {
+	var res UpdateExternalClusterBody
+	if err := swag.ReadJSON(b, &res); err != nil {
+		return err
+	}
+	*o = res
 	return nil
 }
