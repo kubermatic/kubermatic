@@ -735,15 +735,11 @@ func cloneEtcdBackupConfigResourcesInCluster(ctx context.Context, logger logrus.
 		newObject := newv1.EtcdBackupConfig{
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.EtcdBackupConfigSpec{
-				Name:     oldObject.Spec.Name,
-				Schedule: oldObject.Spec.Schedule,
-				Keep:     oldObject.Spec.Keep,
-				Cluster:  migrateObjectReference(oldObject.Spec.Cluster, ""),
-				Destination: &newv1.BackupDestination{
-					S3Endpoint:   oldObject.Spec.Destination.S3Endpoint,
-					S3BucketName: oldObject.Spec.Destination.S3BucketName,
-					Credentials:  oldObject.Spec.Destination.Credentials,
-				},
+				Name:        oldObject.Spec.Name,
+				Schedule:    oldObject.Spec.Schedule,
+				Keep:        oldObject.Spec.Keep,
+				Cluster:     migrateObjectReference(oldObject.Spec.Cluster, ""),
+				Destination: oldObject.Spec.Destination,
 			},
 		}
 
