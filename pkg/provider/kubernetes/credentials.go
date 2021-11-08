@@ -270,7 +270,7 @@ func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimecl
 	spec := cluster.Spec.Cloud.Openstack
 
 	// already migrated
-	if spec.Username == "" && spec.Password == "" && spec.Tenant == "" && spec.TenantID == "" && spec.Domain == "" && spec.ApplicationCredentialID == "" && spec.ApplicationCredentialSecret == "" && !spec.UseToken {
+	if spec.Username == "" && spec.Password == "" && spec.Tenant == "" && spec.TenantID == "" && spec.Project == "" && spec.ProjectID == "" && spec.Domain == "" && spec.ApplicationCredentialID == "" && spec.ApplicationCredentialSecret == "" && !spec.UseToken {
 		return nil
 	}
 
@@ -279,11 +279,11 @@ func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimecl
 	if err != nil {
 		return err
 	}
-	if spec.Tenant == "" {
-		spec.Tenant = oldCred.Project
+	if spec.GetProjectOrDefaultToTenant() == "" {
+		spec.Project = oldCred.Project
 	}
-	if spec.TenantID == "" {
-		spec.TenantID = oldCred.ProjectID
+	if spec.GetProjectIdOrDefaultToTenantId() == "" {
+		spec.ProjectID = oldCred.ProjectID
 	}
 	if spec.Domain == "" {
 		spec.Domain = oldCred.Domain
@@ -302,8 +302,8 @@ func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimecl
 	credentialRef, err := ensureCredentialSecret(ctx, seedClient, cluster, map[string][]byte{
 		resources.OpenstackUsername:                    []byte(spec.Username),
 		resources.OpenstackPassword:                    []byte(spec.Password),
-		resources.OpenstackTenant:                      []byte(spec.Tenant),
-		resources.OpenstackTenantID:                    []byte(spec.TenantID),
+		resources.OpenstackTenant:                      []byte(spec.GetProjectOrDefaultToTenant()),
+		resources.OpenstackTenantID:                    []byte(spec.GetProjectIdOrDefaultToTenantId()),
 		resources.OpenstackDomain:                      []byte(spec.Domain),
 		resources.OpenstackApplicationCredentialID:     []byte(spec.ApplicationCredentialID),
 		resources.OpenstackApplicationCredentialSecret: []byte(spec.ApplicationCredentialSecret),
@@ -321,6 +321,8 @@ func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimecl
 	cluster.Spec.Cloud.Openstack.Password = ""
 	cluster.Spec.Cloud.Openstack.Tenant = ""
 	cluster.Spec.Cloud.Openstack.TenantID = ""
+	cluster.Spec.Cloud.Openstack.Project = ""
+	cluster.Spec.Cloud.Openstack.ProjectID = ""
 	cluster.Spec.Cloud.Openstack.Domain = ""
 	cluster.Spec.Cloud.Openstack.ApplicationCredentialSecret = ""
 	cluster.Spec.Cloud.Openstack.ApplicationCredentialID = ""

@@ -388,10 +388,12 @@ func validateOpenStackCloudSpec(spec *kubermaticv1.OpenstackCloudSpec, dc *kuber
 	}
 
 	var errs []error
-	if spec.Tenant == "" && spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
+	if spec.GetProjectOrDefaultToTenant() == "" && spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
+		errs = append(errs, kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OpenstackProject))
 		errs = append(errs, kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OpenstackTenant))
 	}
-	if spec.TenantID == "" && spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
+	if spec.GetProjectIdOrDefaultToTenantId() == "" && spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
+		errs = append(errs, kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OpenstackProjectID))
 		errs = append(errs, kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OpenstackTenantID))
 	}
 	if utilerror.NewAggregate(errs) != nil {

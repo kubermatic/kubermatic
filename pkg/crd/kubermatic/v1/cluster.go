@@ -698,6 +698,8 @@ type OpenstackCloudSpec struct {
 
 	Username                    string `json:"username,omitempty"`
 	Password                    string `json:"password,omitempty"`
+	Project                     string `json:"project,omitempty"`
+	ProjectID                   string `json:"projectID,omitempty"`
 	Tenant                      string `json:"tenant,omitempty"`
 	TenantID                    string `json:"tenantID,omitempty"`
 	Domain                      string `json:"domain,omitempty"`
@@ -732,6 +734,26 @@ type OpenstackCloudSpec struct {
 	// level if both are specified.
 	// +optional
 	UseOctavia *bool `json:"useOctavia,omitempty"`
+}
+
+// GetProjectOrDefaultToTenant returns the the project if defined otherwise fallback to tenant
+// Deprecated: the tenant auth var is depreciated in openstack. In pkg/apis/kubermatic/v1/cluster.go we will only use Project
+func (s OpenstackCloudSpec) GetProjectOrDefaultToTenant() string {
+	if len(s.Project) > 0 {
+		return s.Project
+	} else {
+		return s.Tenant
+	}
+}
+
+// GetProjectIdOrDefaultToTenantId returns the the projectID if defined otherwise fallback to tenantID
+// Deprecated: the tenantID auth var is depreciated in openstack. In pkg/apis/kubermatic/v1/cluster.go we will only use ProjectID
+func (s OpenstackCloudSpec) GetProjectIdOrDefaultToTenantId() string {
+	if len(s.ProjectID) > 0 {
+		return s.ProjectID
+	} else {
+		return s.TenantID
+	}
 }
 
 // PacketCloudSpec specifies access data to a Packet cloud.

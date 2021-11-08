@@ -229,8 +229,8 @@ func CopyCredentials(data CredentialsData, cluster *kubermaticv1.Cluster) error 
 			return err
 		}
 		cluster.Spec.Cloud.Openstack.Token = credentials.Openstack.Token
-		cluster.Spec.Cloud.Openstack.TenantID = credentials.Openstack.ProjectID
-		cluster.Spec.Cloud.Openstack.Tenant = credentials.Openstack.Project
+		cluster.Spec.Cloud.Openstack.ProjectID = credentials.Openstack.ProjectID
+		cluster.Spec.Cloud.Openstack.Project = credentials.Openstack.Project
 		cluster.Spec.Cloud.Openstack.Domain = credentials.Openstack.Domain
 		cluster.Spec.Cloud.Openstack.ApplicationCredentialID = credentials.Openstack.ApplicationCredentialID
 		cluster.Spec.Cloud.Openstack.ApplicationCredentialSecret = credentials.Openstack.ApplicationCredentialSecret
@@ -405,16 +405,16 @@ func GetOpenstackCredentials(data CredentialsData) (OpenstackCredentials, error)
 		return OpenstackCredentials{}, err
 	}
 
-	if spec.Tenant != "" {
-		openstackCredentials.Project = spec.Tenant
+	if spec.GetProjectOrDefaultToTenant() != "" {
+		openstackCredentials.Project = spec.GetProjectOrDefaultToTenant()
 	} else if spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
 		if openstackCredentials.Project, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackTenant); err != nil {
 			return OpenstackCredentials{}, err
 		}
 	}
 
-	if spec.TenantID != "" {
-		openstackCredentials.ProjectID = spec.TenantID
+	if spec.GetProjectIdOrDefaultToTenantId() != "" {
+		openstackCredentials.ProjectID = spec.GetProjectIdOrDefaultToTenantId()
 	} else if spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
 		if openstackCredentials.ProjectID, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackTenantID); err != nil {
 			return OpenstackCredentials{}, err

@@ -998,8 +998,8 @@ func newPublicOpenstackCloudSpec(internal *kubermaticv1.OpenstackCloudSpec) (pub
 
 	return &PublicOpenstackCloudSpec{
 		FloatingIPPool: internal.FloatingIPPool,
-		Tenant:         internal.Tenant,
-		TenantID:       internal.TenantID,
+		Tenant:         internal.GetProjectOrDefaultToTenant(),
+		TenantID:       internal.GetProjectIdOrDefaultToTenantId(),
 		Domain:         internal.Domain,
 		Network:        internal.Network,
 		SecurityGroups: internal.SecurityGroups,

@@ -623,15 +623,19 @@ spec:
                         type: string
                       password:
                         type: string
+                      project:
+                        description: project id, formally known as tenantID. Tenant
+                          is depreciated in Openstack
+                        type: string
+                      projectID:
+                        description: project id, formally known as tenantID. TenantID
+                          is depreciated in Openstack
+                        type: string
                       routerID:
                         type: string
                       securityGroups:
                         type: string
                       subnetID:
-                        type: string
-                      tenant:
-                        type: string
-                      tenantID:
                         type: string
                       token:
                         description: Used internally during cluster creation

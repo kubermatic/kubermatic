@@ -21977,6 +21977,14 @@
           "type": "string",
           "x-go-name": "Password"
         },
+        "project": {
+          "type": "string",
+          "x-go-name": "Project"
+        },
+        "projectID": {
+          "type": "string",
+          "x-go-name": "ProjectID"
+        },
         "routerID": {
           "type": "string",
           "x-go-name": "RouterID"
