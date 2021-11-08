@@ -201,6 +201,9 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		return nil, err
 	}
 
+	// Enable by default if not explicit set to false or feature is not enabled
+	konnectivityEnabled := r.features.Konnectivity && cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled
+
 	return resources.NewTemplateDataBuilder().
 		WithContext(ctx).
 		WithClient(r).
@@ -213,7 +216,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		WithNodeAccessNetwork(r.nodeAccessNetwork).
 		WithEtcdDiskSize(r.etcdDiskSize).
 		WithUserClusterMLAEnabled(r.userClusterMLAEnabled).
-		WithKonnectivityEnabled(r.features.Konnectivity && cluster.Spec.ClusterNetwork.KonnectivityEnabled).
+		WithKonnectivityEnabled(konnectivityEnabled).
 		WithCABundle(r.caBundle).
 		WithOIDCIssuerURL(r.oidcIssuerURL).
 		WithOIDCIssuerClientID(r.oidcIssuerClientID).
@@ -502,7 +505,7 @@ func GetConfigMapCreators(data *resources.TemplateData) []reconciling.NamedConfi
 		cloudconfig.ConfigMapCreator(data),
 		openvpn.ServerClientConfigsConfigMapCreator(data),
 		dns.ConfigMapCreator(data),
-		apiserver.AuditConfigMapCreator(),
+		apiserver.AuditConfigMapCreator(data),
 		apiserver.AdmissionControlCreator(data),
 		apiserver.CABundleCreator(data),
 	}

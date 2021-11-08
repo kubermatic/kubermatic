@@ -1073,7 +1073,7 @@ func TestGetClusterHealth(t *testing.T) {
 		{
 			Name:             "scenario 5: get existing cluster health status with MLA Monitoring enabled",
 			Body:             ``,
-			ExpectedResponse: `{"apiserver":1,"scheduler":0,"controller":1,"machineController":0,"etcd":1,"cloudProviderInfrastructure":1,"userClusterControllerManager":1,"monitoring":1}`,
+			ExpectedResponse: `{"apiserver":1,"scheduler":0,"controller":1,"machineController":0,"etcd":1,"cloudProviderInfrastructure":1,"userClusterControllerManager":1,"monitoring":1,"mlaGateway":1}`,
 			HTTPStatus:       http.StatusOK,
 			ClusterToGet:     "keen-snyder",
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -1094,6 +1094,7 @@ func TestGetClusterHealth(t *testing.T) {
 						CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 						UserClusterControllerManager: kubermaticv1.HealthStatusUp,
 						Monitoring:                   kubermaticv1.HealthStatusUp,
+						MLAGateway:                   kubermaticv1.HealthStatusUp,
 					}
 					cluster.Spec.MLA = &kubermaticv1.MLASettings{MonitoringEnabled: true}
 					return cluster
@@ -1105,7 +1106,7 @@ func TestGetClusterHealth(t *testing.T) {
 		{
 			Name:             "scenario 6: get existing cluster health status with MLA Logging enabled",
 			Body:             ``,
-			ExpectedResponse: `{"apiserver":1,"scheduler":0,"controller":1,"machineController":0,"etcd":1,"cloudProviderInfrastructure":1,"userClusterControllerManager":1,"logging":1}`,
+			ExpectedResponse: `{"apiserver":1,"scheduler":0,"controller":1,"machineController":0,"etcd":1,"cloudProviderInfrastructure":1,"userClusterControllerManager":1,"logging":1,"mlaGateway":1}`,
 			HTTPStatus:       http.StatusOK,
 			ClusterToGet:     "keen-snyder",
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -1126,6 +1127,42 @@ func TestGetClusterHealth(t *testing.T) {
 						CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 						UserClusterControllerManager: kubermaticv1.HealthStatusUp,
 						Logging:                      kubermaticv1.HealthStatusUp,
+						MLAGateway:                   kubermaticv1.HealthStatusUp,
+					}
+					cluster.Spec.MLA = &kubermaticv1.MLASettings{LoggingEnabled: true}
+					return cluster
+				}(),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+		// scenario 7
+		{
+			Name:             "scenario 7: get existing cluster health status with MLA Logging enabled and alertmanager config",
+			Body:             ``,
+			ExpectedResponse: `{"apiserver":1,"scheduler":0,"controller":1,"machineController":0,"etcd":1,"cloudProviderInfrastructure":1,"userClusterControllerManager":1,"logging":1,"alertmanagerConfig":1,"mlaGateway":1}`,
+			HTTPStatus:       http.StatusOK,
+			ClusterToGet:     "keen-snyder",
+			ProjectToSync:    test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				// add a cluster
+				test.GenCluster("clusterDefID", "clusterDef", test.GenDefaultProject().Name, time.Date(2013, 02, 04, 01, 54, 0, 0, time.UTC)),
+				// add another cluster
+				func() *kubermaticv1.Cluster {
+					cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
+					status := kubermaticv1.HealthStatusUp
+					cluster.Status.ExtendedHealth = kubermaticv1.ExtendedClusterHealth{
+
+						Apiserver:                    kubermaticv1.HealthStatusUp,
+						Scheduler:                    kubermaticv1.HealthStatusDown,
+						Controller:                   kubermaticv1.HealthStatusUp,
+						MachineController:            kubermaticv1.HealthStatusDown,
+						Etcd:                         kubermaticv1.HealthStatusUp,
+						CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
+						UserClusterControllerManager: kubermaticv1.HealthStatusUp,
+						Logging:                      kubermaticv1.HealthStatusUp,
+						AlertmanagerConfig:           &status,
+						MLAGateway:                   kubermaticv1.HealthStatusUp,
 					}
 					cluster.Spec.MLA = &kubermaticv1.MLASettings{LoggingEnabled: true}
 					return cluster

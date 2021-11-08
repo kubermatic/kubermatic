@@ -18,6 +18,9 @@ import (
 // swagger:model ClusterHealth
 type ClusterHealth struct {
 
+	// alertmanager config
+	AlertmanagerConfig HealthStatus `json:"alertmanagerConfig,omitempty"`
+
 	// apiserver
 	Apiserver HealthStatus `json:"apiserver,omitempty"`
 
@@ -42,6 +45,9 @@ type ClusterHealth struct {
 	// machine controller
 	MachineController HealthStatus `json:"machineController,omitempty"`
 
+	// mla gateway
+	MlaGateway HealthStatus `json:"mlaGateway,omitempty"`
+
 	// monitoring
 	Monitoring HealthStatus `json:"monitoring,omitempty"`
 
@@ -55,6 +61,10 @@ type ClusterHealth struct {
 // Validate validates this cluster health
 func (m *ClusterHealth) Validate(formats strfmt.Registry) error {
 	var res []error
+
+	if err := m.validateAlertmanagerConfig(formats); err != nil {
+		res = append(res, err)
+	}
 
 	if err := m.validateApiserver(formats); err != nil {
 		res = append(res, err)
@@ -88,6 +98,10 @@ func (m *ClusterHealth) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateMlaGateway(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateMonitoring(formats); err != nil {
 		res = append(res, err)
 	}
@@ -103,6 +117,21 @@ func (m *ClusterHealth) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ClusterHealth) validateAlertmanagerConfig(formats strfmt.Registry) error {
+	if swag.IsZero(m.AlertmanagerConfig) { // not required
+		return nil
+	}
+
+	if err := m.AlertmanagerConfig.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("alertmanagerConfig")
+		}
+		return err
+	}
+
 	return nil
 }
 
@@ -226,6 +255,21 @@ func (m *ClusterHealth) validateMachineController(formats strfmt.Registry) error
 	return nil
 }
 
+func (m *ClusterHealth) validateMlaGateway(formats strfmt.Registry) error {
+	if swag.IsZero(m.MlaGateway) { // not required
+		return nil
+	}
+
+	if err := m.MlaGateway.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("mlaGateway")
+		}
+		return err
+	}
+
+	return nil
+}
+
 func (m *ClusterHealth) validateMonitoring(formats strfmt.Registry) error {
 	if swag.IsZero(m.Monitoring) { // not required
 		return nil
@@ -275,6 +319,10 @@ func (m *ClusterHealth) validateUserClusterControllerManager(formats strfmt.Regi
 func (m *ClusterHealth) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateAlertmanagerConfig(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateApiserver(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -307,6 +355,10 @@ func (m *ClusterHealth) ContextValidate(ctx context.Context, formats strfmt.Regi
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateMlaGateway(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateMonitoring(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -322,6 +374,18 @@ func (m *ClusterHealth) ContextValidate(ctx context.Context, formats strfmt.Regi
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ClusterHealth) contextValidateAlertmanagerConfig(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.AlertmanagerConfig.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("alertmanagerConfig")
+		}
+		return err
+	}
+
 	return nil
 }
 
@@ -414,6 +478,18 @@ func (m *ClusterHealth) contextValidateMachineController(ctx context.Context, fo
 	if err := m.MachineController.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("machineController")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) contextValidateMlaGateway(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.MlaGateway.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("mlaGateway")
 		}
 		return err
 	}

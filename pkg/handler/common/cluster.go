@@ -476,6 +476,7 @@ func PatchEndpoint(
 	newInternalCluster.Spec.ServiceAccount = patchedCluster.Spec.ServiceAccount
 	newInternalCluster.Spec.MLA = patchedCluster.Spec.MLA
 	newInternalCluster.Spec.ContainerRuntime = patchedCluster.Spec.ContainerRuntime
+	newInternalCluster.Spec.ClusterNetwork.KonnectivityEnabled = patchedCluster.Spec.ClusterNetwork.KonnectivityEnabled
 
 	incompatibleKubelets, err := common.CheckClusterVersionSkew(ctx, userInfoGetter, clusterProvider, newInternalCluster, projectID)
 	if err != nil {
@@ -580,6 +581,8 @@ func HealthEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter,
 		GatekeeperAudit:              existingCluster.Status.ExtendedHealth.GatekeeperAudit,
 		Monitoring:                   existingCluster.Status.ExtendedHealth.Monitoring,
 		Logging:                      existingCluster.Status.ExtendedHealth.Logging,
+		AlertmanagerConfig:           existingCluster.Status.ExtendedHealth.AlertmanagerConfig,
+		MLAGateway:                   existingCluster.Status.ExtendedHealth.MLAGateway,
 	}, nil
 }
 

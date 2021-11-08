@@ -21,6 +21,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -69,7 +70,7 @@ var (
 	}
 )
 
-func DeploymentCreator(overrides *corev1.ResourceRequirements) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(overrides *corev1.ResourceRequirements, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.UserClusterPrometheusDeploymentName, func(deployment *appsv1.Deployment) (*appsv1.Deployment, error) {
 			deployment.Labels = resources.BaseAppLabels(appName, nil)
@@ -89,7 +90,7 @@ func DeploymentCreator(overrides *corev1.ResourceRequirements) reconciling.Named
 			deployment.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            containerName,
-					Image:           fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, imageName, tag),
+					Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryQuay), imageName, tag),
 					ImagePullPolicy: corev1.PullAlways,
 					Args: []string{
 						fmt.Sprintf("--config.file=%s/prometheus.yaml", configPath),
@@ -151,7 +152,7 @@ func DeploymentCreator(overrides *corev1.ResourceRequirements) reconciling.Named
 				},
 				{
 					Name:            "prometheus-config-reloader",
-					Image:           fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, reloaderImageName, reloaderTag),
+					Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryQuay), reloaderImageName, reloaderTag),
 					ImagePullPolicy: corev1.PullAlways,
 					Args: []string{
 						// Full usage of prometheus-config-reloader:

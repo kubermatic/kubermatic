@@ -406,7 +406,6 @@ func convertClusterSpec(old kubermaticv1.ClusterSpec) newv1.ClusterSpec {
 		EnableUserSSHKeyAgent:                old.EnableUserSSHKeyAgent,
 		PodNodeSelectorAdmissionPluginConfig: old.PodNodeSelectorAdmissionPluginConfig,
 		AdmissionPlugins:                     old.AdmissionPlugins,
-		AuditLogging:                         (*newv1.AuditLoggingSettings)(old.AuditLogging),
 		OPAIntegration:                       (*newv1.OPAIntegrationSettings)(old.OPAIntegration),
 		ServiceAccount:                       (*newv1.ServiceAccountSettings)(old.ServiceAccount),
 		MLA:                                  (*newv1.MLASettings)(old.MLA),
@@ -451,6 +450,13 @@ func convertClusterSpec(old kubermaticv1.ClusterSpec) newv1.ClusterSpec {
 		result.CNIPlugin = &newv1.CNIPluginSettings{
 			Type:    newv1.CNIPluginType(old.Type),
 			Version: old.Version,
+		}
+	}
+
+	if old := old.AuditLogging; old != nil {
+		result.AuditLogging = &newv1.AuditLoggingSettings{
+			Enabled:      old.Enabled,
+			PolicyPreset: newv1.AuditPolicyPreset(old.PolicyPreset),
 		}
 	}
 

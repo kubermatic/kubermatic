@@ -13,17 +13,14 @@
 # limitations under the License.
 
 {{ $version := "UNSUPPORTED" }}
-{{ if eq .Cluster.MajorMinorVersion "1.19" }}
-{{ $version = "v1.19.0 "}}
-{{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.20" }}
-{{ $version = "v1.20.0 "}}
+{{ $version = "v1.20.0"}}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.21" }}
-{{ $version = "v1.21.0 "}}
+{{ $version = "v1.21.0"}}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.22" }}
-{{ $version = "v1.22.0 "}}
+{{ $version = "v1.22.0"}}
 {{ end }}
 
 {{ if not (eq $version "UNSUPPORTED") }}
@@ -176,7 +173,7 @@ spec:
         app: cluster-autoscaler
     spec:
       containers:
-      - image: k8s.gcr.io/autoscaling/cluster-autoscaler:{{ $version }}
+      - image: '{{ Registry "k8s.gcr.io" }}/autoscaling/cluster-autoscaler:{{ $version }}'
         name: cluster-autoscaler
         command:
         - /cluster-autoscaler

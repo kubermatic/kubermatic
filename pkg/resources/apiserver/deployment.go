@@ -54,22 +54,6 @@ const (
 	name = "apiserver"
 )
 
-func AuditConfigMapCreator() reconciling.NamedConfigMapCreatorGetter {
-	return func() (string, reconciling.ConfigMapCreator) {
-		return resources.AuditConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
-			if cm.Data == nil {
-				cm.Data = map[string]string{
-					"policy.yaml": `apiVersion: audit.k8s.io/v1
-kind: Policy
-rules:
-- level: Metadata
-`}
-			}
-			return cm, nil
-		}
-	}
-}
-
 // DeploymentCreator returns the function to create and update the API server deployment
 func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bool) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
@@ -223,7 +207,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}
 
-			if data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.Enabled {
+			if auditLogEnabled {
 				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers,
 					corev1.Container{
 						Name:    "audit-logs",

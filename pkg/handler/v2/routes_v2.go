@@ -37,6 +37,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/etcdbackupconfig"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/etcdrestore"
 	externalcluster "k8c.io/kubermatic/v2/pkg/handler/v2/external_cluster"
+	featuregates "k8c.io/kubermatic/v2/pkg/handler/v2/feature_gates"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/gatekeeperconfig"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/handler/v2/kubernetes-dashboard"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/machine"
@@ -44,6 +45,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/preset"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/rulegroup"
+	rulegroupadmin "k8c.io/kubermatic/v2/pkg/handler/v2/rulegroup_admin"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/seedsettings"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/user"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/version"
@@ -57,6 +59,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/providers/gke/clusters").
 		Handler(r.listGKEClusters())
+
+	mux.Methods(http.MethodGet).
+		Path("/featuregates").
+		Handler(r.getFeatureGates())
 
 	// Defines a set of HTTP endpoints for cluster that belong to a project.
 	mux.Methods(http.MethodPost).
@@ -269,6 +275,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/events").
 		Handler(r.listExternalClusterEvents())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/kubeconfig").
+		Handler(r.getExternalClusterKubeconfig())
 
 	// Define a set of endpoints for gatekeeper constraint templates
 	mux.Methods(http.MethodGet).
@@ -695,9 +705,26 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/providers/ec2/regions").
 		Handler(r.listEC2Regions())
 
+	// Defines a set of HTTP endpoints for managing rule groups for admins
 	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/kubeconfig").
-		Handler(r.getExternalClusterKubeconfig())
+		Path("/seeds/{seed_name}/rulegroups/{rulegroup_id}").
+		Handler(r.getAdminRuleGroup())
+
+	mux.Methods(http.MethodGet).
+		Path("/seeds/{seed_name}/rulegroups").
+		Handler(r.listAdminRuleGroups())
+
+	mux.Methods(http.MethodPost).
+		Path("/seeds/{seed_name}/rulegroups").
+		Handler(r.createAdminRuleGroup())
+
+	mux.Methods(http.MethodPut).
+		Path("/seeds/{seed_name}/rulegroups/{rulegroup_id}").
+		Handler(r.updateAdminRuleGroup())
+
+	mux.Methods(http.MethodDelete).
+		Path("/seeds/{seed_name}/rulegroups/{rulegroup_id}").
+		Handler(r.deleteAdminRuleGroup())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -4709,6 +4736,30 @@ func (r Routing) listUser() http.Handler {
 	)
 }
 
+// swagger:route GET /api/v2/featuregates get status of feature gates
+//
+//     Status of feature gates
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: FeatureGates
+//       401: errorResponse
+//       403: errorResponse
+func (r Routing) getFeatureGates() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(featuregates.GetEndpoint(r.featureGatesProvider)),
+		common.DecodeEmptyReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route GET /api/v2/providers/gke/clusters gke listGKEClusters
 //
 // Lists GKE clusters
@@ -4799,6 +4850,137 @@ func (r Routing) getExternalClusterKubeconfig() http.Handler {
 		)(externalcluster.GetKubeconfigEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
 		externalcluster.DecodeGetReq,
 		cluster.EncodeKubeconfig,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/seeds/{seed_name}/rulegroups/{rulegroup_id} rulegroup getAdminRuleGroup
+//
+//     Gets a specified rule group for a given Seed.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: RuleGroup
+//       401: empty
+//       403: empty
+func (r Routing) getAdminRuleGroup() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.PrivilegedRuleGroups(r.clusterProviderGetter, r.ruleGroupProviderGetter, r.seedsGetter),
+		)(rulegroupadmin.GetEndpoint(r.userInfoGetter)),
+		rulegroupadmin.DecodeGetReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/seeds/{seed_name}/rulegroups rulegroup listAdminRuleGroups
+//
+//     Lists rule groups that belong to a given Seed.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []RuleGroup
+//       401: empty
+//       403: empty
+func (r Routing) listAdminRuleGroups() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.PrivilegedRuleGroups(r.clusterProviderGetter, r.ruleGroupProviderGetter, r.seedsGetter),
+		)(rulegroupadmin.ListEndpoint(r.userInfoGetter)),
+		rulegroupadmin.DecodeListReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v2/seeds/{seed_name}/rulegroups rulegroup createAdminRuleGroup
+//
+//     Creates a rule group that will belong to the given Seed
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: RuleGroup
+//       401: empty
+//       403: empty
+func (r Routing) createAdminRuleGroup() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.PrivilegedRuleGroups(r.clusterProviderGetter, r.ruleGroupProviderGetter, r.seedsGetter),
+		)(rulegroupadmin.CreateEndpoint(r.userInfoGetter)),
+		rulegroupadmin.DecodeCreateReq,
+		handler.SetStatusCreatedHeader(handler.EncodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PUT /api/v2/seeds/{seed_name}/rulegroups/{rulegroup_id} rulegroup updateAdminRuleGroup
+//
+//     Updates the specified rule group for the given Seed.
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: RuleGroup
+//       401: empty
+//       403: empty
+func (r Routing) updateAdminRuleGroup() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.PrivilegedRuleGroups(r.clusterProviderGetter, r.ruleGroupProviderGetter, r.seedsGetter),
+		)(rulegroupadmin.UpdateEndpoint(r.userInfoGetter)),
+		rulegroupadmin.DecodeUpdateReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v2/seeds/{seed_name}/rulegroups/{rulegroup_id} rulegroup deleteAdminRuleGroup
+//
+//    Deletes the given rule group that belongs to the Seed.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) deleteAdminRuleGroup() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.PrivilegedRuleGroups(r.clusterProviderGetter, r.ruleGroupProviderGetter, r.seedsGetter),
+		)(rulegroupadmin.DeleteEndpoint(r.userInfoGetter)),
+		rulegroupadmin.DecodeDeleteReq,
+		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }

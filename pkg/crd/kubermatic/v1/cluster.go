@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -376,8 +377,17 @@ type OIDCSettings struct {
 	ExtraScopes   string `json:"extraScopes,omitempty"`
 }
 
+type AuditPolicyPreset string
+
+const (
+	AuditPolicyMetadata    AuditPolicyPreset = "metadata"
+	AuditPolicyRecommended AuditPolicyPreset = "recommended"
+	AuditPolicyMinimal     AuditPolicyPreset = "minimal"
+)
+
 type AuditLoggingSettings struct {
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled      bool              `json:"enabled,omitempty"`
+	PolicyPreset AuditPolicyPreset `json:"policyPreset,omitempty"`
 }
 
 type OPAIntegrationSettings struct {
@@ -489,7 +499,7 @@ type ClusterNetworkingConfig struct {
 	NodeLocalDNSCacheEnabled *bool `json:"nodeLocalDNSCacheEnabled,omitempty"`
 
 	// KonnectivityEnabled enables konnectivity for controlplane to node network communication.
-	KonnectivityEnabled bool `json:"konnectivityEnabled,omitempty"`
+	KonnectivityEnabled *bool `json:"konnectivityEnabled,omitempty"`
 }
 
 // MachineNetworkingConfig specifies the networking parameters used for IPAM.
@@ -769,18 +779,20 @@ const (
 
 // ExtendedClusterHealth stores health information of a cluster.
 type ExtendedClusterHealth struct {
-	Apiserver                    HealthStatus `json:"apiserver"`
-	Scheduler                    HealthStatus `json:"scheduler"`
-	Controller                   HealthStatus `json:"controller"`
-	MachineController            HealthStatus `json:"machineController"`
-	Etcd                         HealthStatus `json:"etcd"`
-	OpenVPN                      HealthStatus `json:"openvpn"`
-	CloudProviderInfrastructure  HealthStatus `json:"cloudProviderInfrastructure"`
-	UserClusterControllerManager HealthStatus `json:"userClusterControllerManager"`
-	GatekeeperController         HealthStatus `json:"gatekeeperController,omitempty"`
-	GatekeeperAudit              HealthStatus `json:"gatekeeperAudit,omitempty"`
-	Monitoring                   HealthStatus `json:"monitoring,omitempty"`
-	Logging                      HealthStatus `json:"logging,omitempty"`
+	Apiserver                    HealthStatus  `json:"apiserver"`
+	Scheduler                    HealthStatus  `json:"scheduler"`
+	Controller                   HealthStatus  `json:"controller"`
+	MachineController            HealthStatus  `json:"machineController"`
+	Etcd                         HealthStatus  `json:"etcd"`
+	OpenVPN                      HealthStatus  `json:"openvpn"`
+	CloudProviderInfrastructure  HealthStatus  `json:"cloudProviderInfrastructure"`
+	UserClusterControllerManager HealthStatus  `json:"userClusterControllerManager"`
+	GatekeeperController         HealthStatus  `json:"gatekeeperController,omitempty"`
+	GatekeeperAudit              HealthStatus  `json:"gatekeeperAudit,omitempty"`
+	Monitoring                   HealthStatus  `json:"monitoring,omitempty"`
+	Logging                      HealthStatus  `json:"logging,omitempty"`
+	AlertmanagerConfig           *HealthStatus `json:"alertmanagerConfig,omitempty"`
+	MLAGateway                   HealthStatus  `json:"mlaGateway,omitempty"`
 }
 
 // AllHealthy returns if all components are healthy. Gatekeeper components not included as they are optional and not

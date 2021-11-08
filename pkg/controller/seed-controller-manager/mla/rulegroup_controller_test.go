@@ -48,7 +48,7 @@ func newTestRuleGroupReconciler(objects []ctrlruntimeclient.Object, handler http
 		Build()
 	ts := httptest.NewServer(handler)
 
-	controller := newRuleGroupController(fakeClient, kubermaticlog.Logger, ts.Client(), ts.URL, ts.URL)
+	controller := newRuleGroupController(fakeClient, kubermaticlog.Logger, ts.Client(), ts.URL, ts.URL, mlaNamespace)
 	reconciler := ruleGroupReconciler{
 		Client:              fakeClient,
 		log:                 kubermaticlog.Logger,

@@ -540,7 +540,7 @@ spec:
         - name: KUBERNETES_SERVICE_PORT
           value: "{{ $apiServerPort }}"
 {{ end }}
-        image: "quay.io/cilium/cilium:v1.10.4@sha256:7d354052ccf2a7445101d78cebd14444c7c40129ce7889f2f04b89374dbf8a1d"
+        image: '{{ Registry "quay.io" }}/cilium/cilium:v1.10.4@sha256:7d354052ccf2a7445101d78cebd14444c7c40129ce7889f2f04b89374dbf8a1d'
         imagePullPolicy: IfNotPresent
         lifecycle:
           postStart:
@@ -603,7 +603,7 @@ spec:
           # same directory where we install cilium cni plugin so that exec permissions
           # are available.
           - 'cp /usr/bin/cilium-mount /hostbin/cilium-mount && nsenter --cgroup=/hostproc/1/ns/cgroup --mount=/hostproc/1/ns/mnt "${BIN_PATH}/cilium-mount" $CGROUP_ROOT; rm /hostbin/cilium-mount'
-        image: "quay.io/cilium/cilium:v1.10.4@sha256:7d354052ccf2a7445101d78cebd14444c7c40129ce7889f2f04b89374dbf8a1d"
+        image: '{{ Registry "quay.io" }}/cilium/cilium:v1.10.4@sha256:7d354052ccf2a7445101d78cebd14444c7c40129ce7889f2f04b89374dbf8a1d'
         imagePullPolicy: IfNotPresent
         volumeMounts:
           - mountPath: /hostproc
@@ -633,7 +633,7 @@ spec:
         - name: KUBERNETES_SERVICE_PORT
           value: "{{ $apiServerPort }}"
 {{ end }}
-        image: "quay.io/cilium/cilium:v1.10.4@sha256:7d354052ccf2a7445101d78cebd14444c7c40129ce7889f2f04b89374dbf8a1d"
+        image: '{{ Registry "quay.io" }}/cilium/cilium:v1.10.4@sha256:7d354052ccf2a7445101d78cebd14444c7c40129ce7889f2f04b89374dbf8a1d'
         imagePullPolicy: IfNotPresent
         name: clean-cilium-state
         securityContext:
@@ -795,7 +795,7 @@ spec:
         - name: KUBERNETES_SERVICE_PORT
           value: "{{ $apiServerPort }}"
 {{ end }}
-        image: "quay.io/cilium/operator-generic:v1.10.4@sha256:c49a14e34634ff1a494c84b718641f27267fb3a0291ce3d74352b44f8a8d2f93"
+        image: '{{ Registry "quay.io" }}/cilium/operator-generic:v1.10.4@sha256:c49a14e34634ff1a494c84b718641f27267fb3a0291ce3d74352b44f8a8d2f93'
         imagePullPolicy: IfNotPresent
         name: cilium-operator
         livenessProbe:

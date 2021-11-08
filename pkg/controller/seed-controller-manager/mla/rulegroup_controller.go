@@ -27,6 +27,7 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 
+	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -93,7 +94,18 @@ func newRuleGroupReconciler(
 		return err
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.RuleGroup{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	ruleGroupPredicate := predicateutil.Factory(func(o ctrlruntimeclient.Object) bool {
+		// We don't want to enqueue RuleGroup objects in mla namespace since those are regarded as rulegroup template,
+		// and will be rollout to cluster namespaces in rulegroup_sync_controller.
+		if o.GetNamespace() == ruleGroupController.mlaNamespace {
+			return false
+		}
+		// If the cluster name in empty, we just ignore the ruleGroup.
+		ruleGroup := o.(*kubermaticv1.RuleGroup)
+		return ruleGroup.Spec.Cluster.Name != ""
+	})
+
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.RuleGroup{}}, &handler.EnqueueRequestForObject{}, ruleGroupPredicate); err != nil {
 		return fmt.Errorf("failed to watch RuleGroup: %w", err)
 	}
 
@@ -194,6 +206,7 @@ type ruleGroupController struct {
 	log            *zap.SugaredLogger
 	cortexRulerURL string
 	lokiRulerURL   string
+	mlaNamespace   string
 }
 
 func newRuleGroupController(
@@ -202,6 +215,7 @@ func newRuleGroupController(
 	httpClient *http.Client,
 	cortexRulerURL string,
 	lokiRulerURL string,
+	mlaNamespace string,
 ) *ruleGroupController {
 	return &ruleGroupController{
 		Client:         client,
@@ -209,6 +223,7 @@ func newRuleGroupController(
 		log:            log,
 		cortexRulerURL: cortexRulerURL,
 		lokiRulerURL:   lokiRulerURL,
+		mlaNamespace:   mlaNamespace,
 	}
 }
 

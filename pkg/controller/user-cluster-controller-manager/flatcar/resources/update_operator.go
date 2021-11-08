@@ -21,6 +21,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -38,9 +39,7 @@ var (
 	deploymentMaxUnavailable       = intstr.FromString("25%")
 )
 
-type GetImageRegistry func(reg string) string
-
-func OperatorDeploymentCreator(getRegistry GetImageRegistry, updateWindow kubermaticv1.UpdateWindow) reconciling.NamedDeploymentCreatorGetter {
+func OperatorDeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc, updateWindow kubermaticv1.UpdateWindow) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return OperatorDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Spec.Replicas = &deploymentReplicas
@@ -91,7 +90,7 @@ func OperatorDeploymentCreator(getRegistry GetImageRegistry, updateWindow kuberm
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "update-operator",
-					Image:   getRegistry(resources.RegistryQuay) + "/kinvolk/flatcar-linux-update-operator:v0.7.3",
+					Image:   registryWithOverwrite(resources.RegistryQuay) + "/kinvolk/flatcar-linux-update-operator:v0.7.3",
 					Command: []string{"/bin/update-operator"},
 					Env:     env,
 				},

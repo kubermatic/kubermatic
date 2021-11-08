@@ -44,6 +44,7 @@ import (
 	kubermaticfakeclientset "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/fake"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/handler/auth"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
@@ -216,6 +217,7 @@ type newRoutingFunc func(
 	backupCredentialsProviderGetter provider.BackupCredentialsProviderGetter,
 	privilegedMLAAdminSettingProviderGetter provider.PrivilegedMLAAdminSettingProviderGetter,
 	masterClient client.Client,
+	featureGatesProvider provider.FeatureGatesProvider,
 ) http.Handler
 
 func getRuntimeObjects(objs ...ctrlruntimeclient.Object) []runtime.Object {
@@ -523,6 +525,13 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	// Disable the metrics endpoint in tests
 	var prometheusClient prometheusapi.Client
 
+	featureGates, err := features.NewFeatures(strings.Join(kubermaticConfiguration.Spec.FeatureGates.List(), ","))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	featureGatesProvider := kubernetes.NewFeatureGatesProvider(featureGates)
+
 	mainRouter := routingFunc(
 		adminProvider,
 		settingsProvider,
@@ -573,6 +582,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		backupCredentialsProviderGetter,
 		privilegedMLAAdminSettingProviderGetter,
 		fakeClient,
+		featureGatesProvider,
 	)
 
 	return mainRouter, &ClientsSets{kubermaticClient, fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil
@@ -1836,6 +1846,26 @@ func GenRuleGroup(name, clusterName string, ruleGroupType kubermaticv1.RuleGroup
 				Namespace:  "",
 				Name:       clusterName,
 				APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+			},
+			Data: GenerateTestRuleGroupData(name),
+		},
+	}
+}
+
+func GenAdminRuleGroup(name, namespace string, ruleGroupType kubermaticv1.RuleGroupType) *kubermaticv1.RuleGroup {
+	return &kubermaticv1.RuleGroup{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       kubermaticv1.RuleGroupKindName,
+			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+		},
+		Spec: kubermaticv1.RuleGroupSpec{
+			RuleGroupType: ruleGroupType,
+			Cluster: corev1.ObjectReference{
+				Kind: kubermaticv1.ClusterKindName,
 			},
 			Data: GenerateTestRuleGroupData(name),
 		},

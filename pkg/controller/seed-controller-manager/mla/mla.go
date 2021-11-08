@@ -123,9 +123,10 @@ func Add(
 	alertmanagerController := newAlertmanagerController(mgr.GetClient(), log, httpClient, cortexAlertmanagerURL)
 	datasourceGrafanaController := newDatasourceGrafanaController(mgr.GetClient(), httpClient, grafanaURL, grafanaAuth, mlaNamespace, log, overwriteRegistry)
 	userGrafanaController := newUserGrafanaController(mgr.GetClient(), log, grafanaClient, httpClient, grafanaURL, grafanaHeader)
-	ruleGroupController := newRuleGroupController(mgr.GetClient(), log, httpClient, cortexRulerURL, lokiRulerURL)
+	ruleGroupController := newRuleGroupController(mgr.GetClient(), log, httpClient, cortexRulerURL, lokiRulerURL, mlaNamespace)
 	dashboardGrafanaController := newDashboardGrafanaController(mgr.GetClient(), log, mlaNamespace, grafanaClient)
 	ratelimitCortexController := newRatelimitCortexController(mgr.GetClient(), log, mlaNamespace)
+	ruleGroupSyncController := newRuleGroupSyncController(mgr.GetClient(), log, mlaNamespace)
 	if mlaEnabled {
 		// ratelimit cortex controller update 1 configmap, so we better to have only one worker
 		if err := newRatelimitCortexReconciler(mgr, log, 1, workerName, versions, ratelimitCortexController); err != nil {
@@ -152,6 +153,9 @@ func Add(
 		if err := newRuleGroupReconciler(mgr, log, numWorkers, workerName, versions, ruleGroupController); err != nil {
 			return fmt.Errorf("failed to create rule group controller %w", err)
 		}
+		if err := newRuleGroupSyncReconciler(mgr, log, numWorkers, workerName, versions, ruleGroupSyncController); err != nil {
+			return fmt.Errorf("failed to create rule group controller %w", err)
+		}
 	} else {
 		cleanupController := newCleanupController(
 			mgr.GetClient(),
@@ -164,6 +168,7 @@ func Add(
 			userGrafanaController,
 			ruleGroupController,
 			ratelimitCortexController,
+			ruleGroupSyncController,
 		)
 		if err := newCleanupReconciler(mgr, log, numWorkers, workerName, versions, cleanupController); err != nil {
 			return fmt.Errorf("failed to create mla cleanup controller: %w", err)

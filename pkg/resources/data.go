@@ -29,6 +29,7 @@ import (
 	"github.com/docker/distribution/reference"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+
 	httpproberapi "k8c.io/kubermatic/v2/cmd/http-prober/api"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
@@ -439,7 +440,7 @@ func (d *TemplateData) KubermaticAPIImage() string {
 func (d *TemplateData) parseImage(image string) string {
 	named, _ := reference.ParseNormalizedNamed(image)
 	domain := reference.Domain(named)
-	reminder := reference.Path(named)
+	remainder := reference.Path(named)
 
 	if d.OverwriteRegistry != "" {
 		domain = d.OverwriteRegistry
@@ -448,7 +449,7 @@ func (d *TemplateData) parseImage(image string) string {
 		domain = RegistryDocker
 	}
 
-	return domain + "/" + reminder
+	return domain + "/" + remainder
 }
 
 func (d *TemplateData) KubermaticDockerTag() string {

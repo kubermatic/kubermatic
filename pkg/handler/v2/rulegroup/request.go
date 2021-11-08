@@ -59,7 +59,7 @@ type createReq struct {
 }
 
 func (req *createReq) validate() (ruleGroupName string, err error) {
-	return getRuleGroupNameInData(req.Body.Data)
+	return GetRuleGroupNameInData(req.Body.Data)
 }
 
 // updateReq defines HTTP request for updating ruleGroup
@@ -75,7 +75,7 @@ type updateReq struct {
 }
 
 func (req *updateReq) validate() error {
-	ruleGroupNameInData, err := getRuleGroupNameInData(req.Body.Data)
+	ruleGroupNameInData, err := GetRuleGroupNameInData(req.Body.Data)
 	if err != nil {
 		return err
 	}
@@ -102,7 +102,7 @@ func DecodeGetReq(c context.Context, r *http.Request) (interface{}, error) {
 	}
 	req.GetClusterReq = cr.(cluster.GetClusterReq)
 
-	ruleGroupID, err := decodeRuleGroupID(r)
+	ruleGroupID, err := DecodeRuleGroupID(r)
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +149,7 @@ func DecodeUpdateReq(c context.Context, r *http.Request) (interface{}, error) {
 		return nil, err
 	}
 	req.GetClusterReq = cr.(cluster.GetClusterReq)
-	ruleGroupID, err := decodeRuleGroupID(r)
+	ruleGroupID, err := DecodeRuleGroupID(r)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +169,7 @@ func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
 	}
 	req.GetClusterReq = cr.(cluster.GetClusterReq)
 
-	ruleGroupID, err := decodeRuleGroupID(r)
+	ruleGroupID, err := DecodeRuleGroupID(r)
 	if err != nil {
 		return nil, err
 	}
@@ -177,7 +177,7 @@ func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-func decodeRuleGroupID(r *http.Request) (string, error) {
+func DecodeRuleGroupID(r *http.Request) (string, error) {
 	ruleGroupID := mux.Vars(r)["rulegroup_id"]
 	if ruleGroupID == "" {
 		return "", utilerrors.NewBadRequest("rulegroup_id parameter is required but was not provided")
@@ -185,7 +185,7 @@ func decodeRuleGroupID(r *http.Request) (string, error) {
 	return ruleGroupID, nil
 }
 
-func getRuleGroupNameInData(data []byte) (string, error) {
+func GetRuleGroupNameInData(data []byte) (string, error) {
 	bodyMap := map[string]interface{}{}
 	if err := yaml.Unmarshal(data, &bodyMap); err != nil {
 		return "", fmt.Errorf("cannot unmarshal rule group data in yaml: %w", err)

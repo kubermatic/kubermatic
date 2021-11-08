@@ -54,6 +54,13 @@ spec:
                 properties:
                   enabled:
                     type: boolean
+                  policyPreset:
+                    enum:
+                    - ""
+                    - metadata
+                    - recommended
+                    - minimal
+                    type: string
                 type: object
               cloud:
                 description: CloudSpec mutually stores access data to a cloud provider.

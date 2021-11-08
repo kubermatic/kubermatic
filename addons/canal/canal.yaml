@@ -410,7 +410,7 @@ spec:
         # This container installs the CNI binaries
         # and CNI network config file on each node.
         - name: install-cni
-          image: docker.io/calico/cni:v3.8.0
+          image: '{{ Registry "docker.io" }}/calico/cni:v3.8.0'
           command: ["/install-cni.sh"]
           env:
             # Name of the CNI config file to create.
@@ -441,7 +441,7 @@ spec:
         # host.
         - name: calico-node
           # FIXME: Remove FELIX_IGNORELOOSERPF from env when this is v3.12.0+
-          image: docker.io/calico/node:v3.8.0
+          image: '{{ Registry "docker.io" }}/calico/node:v3.8.0'
           env:
             # Use Kubernetes API as the backing datastore.
             - name: DATASTORE_TYPE
@@ -528,7 +528,7 @@ spec:
         # This container runs flannel using the kube-subnet-mgr backend
         # for allocating subnets.
         - name: kube-flannel
-          image: quay.io/coreos/flannel:v0.11.0
+          image: '{{ Registry "quay.io" }}/coreos/flannel:v0.11.0'
           command: [ "/opt/bin/flanneld", "--ip-masq", "--kube-subnet-mgr" ]
           securityContext:
             privileged: true

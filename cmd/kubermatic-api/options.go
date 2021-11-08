@@ -175,6 +175,7 @@ type providers struct {
 	userWatcher                             watcher.UserWatcher
 	externalClusterProvider                 provider.ExternalClusterProvider
 	privilegedExternalClusterProvider       provider.PrivilegedExternalClusterProvider
+	featureGatesProvider                    provider.FeatureGatesProvider
 	constraintTemplateProvider              provider.ConstraintTemplateProvider
 	defaultConstraintProvider               provider.DefaultConstraintProvider
 	constraintProviderGetter                provider.ConstraintProviderGetter

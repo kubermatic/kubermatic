@@ -243,6 +243,13 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 				log.Fatalf("invalid scope of default cluster template: %s", seed.Spec.DefaultClusterTemplate)
 			}
 
+			settings, err := defaultComponentSettings(ctrlCtx.runOptions, defaultingTemplate.Spec.ComponentsOverride)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			defaultingTemplate.Spec.ComponentsOverride = settings
+
 		}
 
 		clustermutation.NewAdmissionHandler(defaultingTemplate).SetupWebhookWithManager(mgr)
