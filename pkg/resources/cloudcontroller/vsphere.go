@@ -163,8 +163,6 @@ const latestVsphereCPIVersion = "1.21.0"
 
 func getVsphereCPIVersion(version semver.Semver) (string, error) {
 	switch version.Semver().Minor() {
-	case 19:
-		return "1.19.1", nil
 	case 20:
 		return "1.20.0", nil
 	case 21:

@@ -454,15 +454,8 @@ spec:
           # for the worker nodes of all matching user clusters.
           automaticNodeUpdate: false
           # From is the version from which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
-          from: 1.18.*
+          from: 1.19.*
           # From is the version to which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
-          to: 1.19.*
-        - from: 1.19.*
-          to: 1.19.*
-        - automatic: true
-          from: '>= 1.19.0, < 1.19.15'
-          to: 1.19.15
-        - from: 1.19.*
           to: 1.20.*
         - from: 1.20.*
           to: 1.20.*
@@ -482,7 +475,6 @@ spec:
           to: 1.22.*
       # Versions lists the available versions.
       versions:
-        - 1.19.15
         - 1.20.11
         - 1.21.5
         - 1.22.2
