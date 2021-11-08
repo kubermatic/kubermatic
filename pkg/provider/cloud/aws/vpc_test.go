@@ -108,7 +108,7 @@ func TestReconcileVPC(t *testing.T) {
 			VPCID: "does-not-exist",
 		})
 
-		if _, err = reconcileVPC(cs.EC2, cluster, testClusterUpdater(cluster)); err != nil {
+		if _, err = reconcileVPC(cs.EC2, cluster, testClusterUpdater(cluster)); err == nil {
 			t.Fatalf("reconcileVPC should have errored, but returned %v", err)
 		}
 	})
