@@ -302,8 +302,8 @@ func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimecl
 	credentialRef, err := ensureCredentialSecret(ctx, seedClient, cluster, map[string][]byte{
 		resources.OpenstackUsername:                    []byte(spec.Username),
 		resources.OpenstackPassword:                    []byte(spec.Password),
-		resources.OpenstackTenant:                      []byte(spec.GetProjectOrDefaultToTenant()),
-		resources.OpenstackTenantID:                    []byte(spec.GetProjectIdOrDefaultToTenantId()),
+		resources.OpenstackProject:                     []byte(spec.GetProjectOrDefaultToTenant()),
+		resources.OpenstackProjectID:                   []byte(spec.GetProjectIdOrDefaultToTenantId()),
 		resources.OpenstackDomain:                      []byte(spec.Domain),
 		resources.OpenstackApplicationCredentialID:     []byte(spec.ApplicationCredentialID),
 		resources.OpenstackApplicationCredentialSecret: []byte(spec.ApplicationCredentialSecret),
