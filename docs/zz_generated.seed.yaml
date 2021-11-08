@@ -332,8 +332,8 @@ spec:
         # Limits describes the maximum amount of compute resources allowed.
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
         limits:
-          cpu: 200m
-          memory: 64Mi
+          cpu: "1"
+          memory: 128Mi
         # Requests describes the minimum amount of compute resources required.
         # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
         # otherwise to an implementation-defined value.
