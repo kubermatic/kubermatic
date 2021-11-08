@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+{{ if not .Cluster.Network.KonnectivityEnabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -127,3 +128,4 @@ spec:
       - name: openvpn-client-config
         configMap:
           name: openvpn-client-config
+{{ end }}

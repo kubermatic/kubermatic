@@ -115,7 +115,7 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return nil, err
 	}
 
-	if err := r.ensureNetworkPolicies(ctx, cluster); err != nil {
+	if err := r.ensureNetworkPolicies(ctx, cluster, data); err != nil {
 		return nil, err
 	}
 
@@ -264,15 +264,18 @@ func (r *Reconciler) ensureNamespaceExists(ctx context.Context, cluster *kuberma
 func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedServiceCreatorGetter {
 	creators := []reconciling.NamedServiceCreatorGetter{
 		apiserver.ServiceCreator(data.Cluster().Spec.ExposeStrategy, data.Cluster().Address.ExternalName),
-		openvpn.ServiceCreator(data.Cluster().Spec.ExposeStrategy),
 		etcd.ServiceCreator(data),
-		dns.ServiceCreator(),
 		machinecontroller.ServiceCreator(),
 		metricsserver.ServiceCreator(),
 	}
 
 	if data.IsKonnectivityEnabled() {
 		creators = append(creators, konnectivity.ServiceCreator(data.Cluster().Spec.ExposeStrategy, data.Cluster().Address.ExternalName))
+	} else {
+		creators = append(creators,
+			openvpn.ServiceCreator(data.Cluster().Spec.ExposeStrategy),
+			dns.ServiceCreator(),
+		)
 	}
 
 	if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
@@ -294,8 +297,6 @@ func (r *Reconciler) ensureServices(ctx context.Context, c *kubermaticv1.Cluster
 // GetDeploymentCreators returns all DeploymentCreators that are currently in use
 func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuthentication bool) []reconciling.NamedDeploymentCreatorGetter {
 	deployments := []reconciling.NamedDeploymentCreatorGetter{
-		openvpn.DeploymentCreator(data),
-		dns.DeploymentCreator(data),
 		apiserver.DeploymentCreator(data, enableAPIserverOIDCAuthentication),
 		scheduler.DeploymentCreator(data),
 		controllermanager.DeploymentCreator(data),
@@ -304,6 +305,13 @@ func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuth
 		metricsserver.DeploymentCreator(data),
 		usercluster.DeploymentCreator(data),
 		kubernetesdashboard.DeploymentCreator(data),
+	}
+
+	if !data.IsKonnectivityEnabled() {
+		deployments = append(deployments,
+			openvpn.DeploymentCreator(data),
+			dns.DeploymentCreator(data),
+		)
 	}
 
 	if data.Cluster().Annotations[kubermaticv1.AnnotationNameClusterAutoscalerEnabled] != "" {
@@ -342,7 +350,6 @@ func GetKonnectivityDeploymentCreators(data *resources.TemplateData) []reconcili
 func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconciling.NamedSecretCreatorGetter {
 	creators := []reconciling.NamedSecretCreatorGetter{
 		certificates.RootCACreator(data),
-		openvpn.CACreator(),
 		certificates.FrontProxyCACreator(),
 		resources.ImagePullSecretCreator(r.dockerPullConfigJSON),
 		apiserver.FrontProxyClientCertificateCreator(data),
@@ -351,8 +358,6 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 		apiserver.TLSServingCertificateCreator(data),
 		apiserver.KubeletClientCertificateCreator(data),
 		apiserver.ServiceAccountKeyCreator(),
-		openvpn.TLSServingCertificateCreator(data),
-		openvpn.InternalClientCertificateCreator(data),
 		machinecontroller.TLSServingCertificateCreator(data),
 		metricsserver.TLSServingCertSecretCreator(data.GetRootCA),
 
@@ -375,7 +380,14 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 	if data.IsKonnectivityEnabled() {
 		creators = append(creators,
 			konnectivity.TLSServingCertificateCreator(data),
-			konnectivity.ProxyKubeconfig(data))
+			konnectivity.ProxyKubeconfig(data),
+		)
+	} else {
+		creators = append(creators,
+			openvpn.CACreator(),
+			openvpn.TLSServingCertificateCreator(data),
+			openvpn.InternalClientCertificateCreator(data),
+		)
 	}
 
 	if flag := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; flag {
@@ -481,15 +493,19 @@ func (r *Reconciler) ensureClusterRoleBindings(ctx context.Context, c *kubermati
 	return nil
 }
 
-func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.Cluster) error {
+func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	if c.Spec.Features[kubermaticv1.ApiserverNetworkPolicy] {
 		namedNetworkPolicyCreatorGetters := []reconciling.NamedNetworkPolicyCreatorGetter{
 			apiserver.DenyAllPolicyCreator(),
-			apiserver.DNSAllowCreator(c),
 			apiserver.EctdAllowCreator(c),
-			apiserver.OpenVPNServerAllowCreator(c),
 			apiserver.MachineControllerWebhookCreator(c),
 			apiserver.MetricsServerAllowCreator(c),
+		}
+		if !data.IsKonnectivityEnabled() {
+			namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters,
+				apiserver.DNSAllowCreator(c),
+				apiserver.OpenVPNServerAllowCreator(c),
+			)
 		}
 		if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
 			return fmt.Errorf("failed to ensure Network Policies: %v", err)
@@ -503,8 +519,6 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 func GetConfigMapCreators(data *resources.TemplateData) []reconciling.NamedConfigMapCreatorGetter {
 	creators := []reconciling.NamedConfigMapCreatorGetter{
 		cloudconfig.ConfigMapCreator(data),
-		openvpn.ServerClientConfigsConfigMapCreator(data),
-		dns.ConfigMapCreator(data),
 		apiserver.AuditConfigMapCreator(data),
 		apiserver.AdmissionControlCreator(data),
 		apiserver.CABundleCreator(data),
@@ -512,6 +526,11 @@ func GetConfigMapCreators(data *resources.TemplateData) []reconciling.NamedConfi
 
 	if data.IsKonnectivityEnabled() {
 		creators = append(creators, apiserver.EgressSelectorConfigCreator())
+	} else {
+		creators = append(creators,
+			openvpn.ServerClientConfigsConfigMapCreator(data),
+			dns.ConfigMapCreator(data),
+		)
 	}
 
 	if data.Cluster().Spec.Cloud.VSphere != nil {
@@ -552,12 +571,15 @@ func GetEtcdBackupConfigCreators(data *resources.TemplateData) []reconciling.Nam
 
 // GetPodDisruptionBudgetCreators returns all PodDisruptionBudgetCreators that are currently in use
 func GetPodDisruptionBudgetCreators(data *resources.TemplateData) []reconciling.NamedPodDisruptionBudgetCreatorGetter {
-	return []reconciling.NamedPodDisruptionBudgetCreatorGetter{
+	creators := []reconciling.NamedPodDisruptionBudgetCreatorGetter{
 		etcd.PodDisruptionBudgetCreator(data),
 		apiserver.PodDisruptionBudgetCreator(),
 		metricsserver.PodDisruptionBudgetCreator(),
-		dns.PodDisruptionBudgetCreator(),
 	}
+	if !data.IsKonnectivityEnabled() {
+		creators = append(creators, dns.PodDisruptionBudgetCreator())
+	}
+	return creators
 }
 
 func (r *Reconciler) ensurePodDisruptionBudgets(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
@@ -589,14 +611,18 @@ func (r *Reconciler) ensureCronJobs(ctx context.Context, c *kubermaticv1.Cluster
 
 func (r *Reconciler) ensureVerticalPodAutoscalers(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	controlPlaneDeploymentNames := []string{
-		resources.DNSResolverDeploymentName,
 		resources.MachineControllerDeploymentName,
 		resources.MachineControllerWebhookDeploymentName,
-		resources.OpenVPNServerDeploymentName,
 		resources.ApiserverDeploymentName,
 		resources.ControllerManagerDeploymentName,
 		resources.SchedulerDeploymentName,
 		resources.MetricsServerDeploymentName,
+	}
+	if !data.IsKonnectivityEnabled() {
+		controlPlaneDeploymentNames = append(controlPlaneDeploymentNames,
+			resources.DNSResolverDeploymentName,
+			resources.OpenVPNServerDeploymentName,
+		)
 	}
 
 	creators, err := resources.GetVerticalPodAutoscalersForAll(ctx, r.Client, controlPlaneDeploymentNames, []string{resources.EtcdStatefulSetName}, c.Status.NamespaceName, r.features.VPA)

@@ -62,19 +62,8 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 				Labels: podLabels,
 			}
 
-			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err =
-				resources.UserClusterDNSPolicyAndConfig(data)
-			if err != nil {
-				return nil, err
-			}
-
 			f := false
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = &f
-
-			openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
-			}
 
 			credentials, err := resources.GetCredentials(data)
 			if err != nil {
@@ -89,7 +78,6 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 			dep.Spec.Template.Spec.Volumes = getVolumes()
 
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
-				*openvpnSidecar,
 				{
 					Name:  ccmContainerName,
 					Image: data.ImageRegistry(resources.RegistryDocker) + "/hetznercloud/hcloud-cloud-controller-manager:v1.8.1",
@@ -122,11 +110,23 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 					VolumeMounts: getVolumeMounts(),
 				},
 			}
-
 			defResourceRequirements := map[string]*corev1.ResourceRequirements{
-				ccmContainerName:    hetznerResourceRequirements.DeepCopy(),
-				openvpnSidecar.Name: openvpnSidecar.Resources.DeepCopy(),
+				ccmContainerName: hetznerResourceRequirements.DeepCopy(),
 			}
+
+			if !data.IsKonnectivityEnabled() {
+				dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
+				if err != nil {
+					return nil, err
+				}
+				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
+				if err != nil {
+					return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
+				}
+				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers, *openvpnSidecar)
+				defResourceRequirements[openvpnSidecar.Name] = openvpnSidecar.Resources.DeepCopy()
+			}
+
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)

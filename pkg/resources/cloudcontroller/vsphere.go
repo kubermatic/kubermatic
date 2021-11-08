@@ -70,25 +70,27 @@ func vsphereDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 				Labels: podLabels,
 			}
 
-			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err =
-				resources.UserClusterDNSPolicyAndConfig(data)
-			if err != nil {
-				return nil, err
-			}
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.BoolPtr(false)
 
 			version, err := getVsphereCPIVersion(data.Cluster().Spec.Version)
 			if err != nil {
 				return nil, err
 			}
-			openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
-			}
 			container := getCPIContainer(version, data)
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				container,
-				*openvpnSidecar,
+			}
+
+			if !data.IsKonnectivityEnabled() {
+				dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
+				if err != nil {
+					return nil, err
+				}
+				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
+				if err != nil {
+					return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
+				}
+				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers, *openvpnSidecar)
 			}
 
 			dep.Spec.Template.Spec.Volumes = append(getVolumes(),

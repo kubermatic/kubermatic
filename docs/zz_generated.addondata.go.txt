@@ -65,13 +65,14 @@ type ClusterData struct {
 }
 
 type ClusterNetwork struct {
-	DNSDomain         string
-	DNSClusterIP      string
-	DNSResolverIP     string
-	PodCIDRBlocks     []string
-	ServiceCIDRBlocks []string
-	ProxyMode         string
-	StrictArp         bool
+	DNSDomain           string
+	DNSClusterIP        string
+	DNSResolverIP       string
+	PodCIDRBlocks       []string
+	ServiceCIDRBlocks   []string
+	ProxyMode           string
+	StrictArp           bool
+	KonnectivityEnabled bool
 }
 
 type CNIPlugin struct {

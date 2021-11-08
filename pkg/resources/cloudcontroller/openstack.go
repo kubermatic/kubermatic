@@ -70,18 +70,7 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 				Labels: podLabels,
 			}
 
-			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err =
-				resources.UserClusterDNSPolicyAndConfig(data)
-			if err != nil {
-				return nil, err
-			}
-
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.BoolPtr(false)
-
-			openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
-			}
 
 			version, err := getOSVersion(data.Cluster().Spec.Version)
 			if err != nil {
@@ -112,7 +101,6 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 			)
 
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
-				*openvpnSidecar,
 				{
 					Name:    ccmContainerName,
 					Image:   data.ImageRegistry(resources.RegistryDocker) + "/k8scloudprovider/openstack-cloud-controller-manager:v" + version,
@@ -140,9 +128,22 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 			}
 
 			defResourceRequirements := map[string]*corev1.ResourceRequirements{
-				ccmContainerName:    osResourceRequirements.DeepCopy(),
-				openvpnSidecar.Name: openvpnSidecar.Resources.DeepCopy(),
+				ccmContainerName: osResourceRequirements.DeepCopy(),
 			}
+
+			if !data.IsKonnectivityEnabled() {
+				dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
+				if err != nil {
+					return nil, err
+				}
+				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
+				if err != nil {
+					return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
+				}
+				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers, *openvpnSidecar)
+				defResourceRequirements[openvpnSidecar.Name] = openvpnSidecar.Resources.DeepCopy()
+			}
+
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
