@@ -73,6 +73,18 @@ spec:
                     description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
                     type: string
                 type: object
+              destination:
+                description: Destination indicates where the backup will be stored
+                properties:
+                  s3BucketName:
+                    description: S3BucketName is the S3 bucket name to use for backup
+                      and restore.
+                    type: string
+                  s3Endpoint:
+                    description: S3Endpoint is the S3 API endpoint to use for backup
+                      and restore. Defaults to s3.amazonaws.com.
+                    type: string
+                type: object
               keep:
                 description: Keep is the number of backups to keep around before deleting
                   the oldest one If not set, defaults to DefaultKeptBackupsCount.

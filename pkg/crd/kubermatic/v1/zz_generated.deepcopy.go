@@ -2190,6 +2190,11 @@ func (in *EtcdBackupConfigSpec) DeepCopyInto(out *EtcdBackupConfigSpec) {
 		*out = new(int)
 		**out = **in
 	}
+	if in.Destination != nil {
+		in, out := &in.Destination, &out.Destination
+		*out = new(BackupDestination)
+		**out = **in
+	}
 	return
 }
 
