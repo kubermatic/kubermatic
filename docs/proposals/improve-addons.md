@@ -40,6 +40,7 @@ Currently, KKP only supports one mechanism for addons: For this, all addons are 
 The current implementation of Addons has some flaws that make the usage and maintenance of Addons cumbersome for cluster administrators:
 
 - To add “Custom Addons” the cluster-admin needs to bundle manifests and templates for these Addons in a Docker image that is based on the official addon-manifest docker image by Kubermatic.
+- Some addons are directly shipped with Kubermatic Code, while others are hosted separately (see #5499)
 - It’s currently only possible to deploy multiple instances of the same Addon when using a workaround
 - Addons are strictly tied to KKP versions due to the composition logic of the manifest image tag; for any provided manifest image the tag gets overwritten with `:<KKP VERSION>\[-CUSTOM SUFFIX\]`
 - Mandatory core components of user clusters are named “Default Addons” which implies that these can be deleted by Cluster Admins
@@ -87,11 +88,10 @@ In the case of the MasterCluster and SeedCluster being the same, we propose to s
 
 In the final implementation, we propose to have at least two catalogues per KKP installation. We think this makes sense to protect core addons, which are essential for all clusters, to be protected from third-party influence:
 
-- CoreAddonCatalogue → will be maintained by Kubermatic. Should not be directly edited by the customer. We think it makes sense to add this as a layer of protection against misconfiguration. This catalogue is rarely changed. Moreover, this catalogue will not be shown in the UI. This catalogue contains addons for the supported Kubernetes versions (eg KubeProxy will have 3 versions of the addons, one per K8s version. OpenVPN will have one version of the addons compatible with the 3 K8s versions)
+- CoreAddonCatalogue → will be maintained by Kubermatic.  We think it makes sense to add this as a layer of protection against misconfiguration. This catalogue is rarely changed. Moreover, this catalogue will not be shown in the UI. This catalogue contains addons for the supported Kubernetes versions (eg KubeProxy will have 3 versions of the addons, one per K8s version. OpenVPN will have one version of the addons compatible with the 3 K8s versions)
 - CustomAddonCatalogue(s) →one or multiple catalogues that contain custom addons. This catalogue can be changed more often. Additionally, it is possible to have multiple CustomAddonCatalogues
 
-Furthermore, the AddonCatalogueDistributor ensures that there are no duplicate addons inside the AddonCatalogue. A duplicate is defined by two addons having the same `name` and `version`. In these situations, we propose the AddonCatalogueDistributor to stop its distribution and log an error.
-
+Furthermore, the AddonCatalogueDistributor ensures that there are no duplicate addons inside the AddonCatalogue. A duplicate is defined by two addons having the same `name` and `version`. We propose to protect against accidental edits using a ValidationWebhook.
 Lastly, we envisioned two possible sources for a catalogue:
 
 - watching for changes of an AddonCatalogue Custom Resource directly inside KKP master
@@ -107,7 +107,7 @@ In order to track available addons, the AddonCatalogueDistributor makes use of A
 - each addon comes in multiple versions
 - each version has
   - template
-    - a rendering method. Possible methods are (additional methods can easily be added in the future):
+    - a rendering method. All methods will automatically inject [template data](https://docs.kubermatic.com/kubermatic/v2.18/guides/addons/#manifest-templating) into the values. Possible methods are (additional methods can easily be added in the future):
       - go-template → same as what we currently offer in addons
       - helm → rendering of helm charts
     - formSpec → Similar to the current formSpec. It is important to know that this value overwrites any other value store (e.g. helm's values.yaml):
@@ -122,7 +122,6 @@ In order to track available addons, the AddonCatalogueDistributor makes use of A
   - constraints. These describe conditions that must apply for an add-on to be compatible with a user cluster. Possible constraints are:
     - kkp-version →semVer range that describes compatible KKP versions
     - k8s-version →semVer range that describes compatible k8s versions
-    - *tbd: Are there any other relevant constraints?*
   - values → These are values that can be used for overwriting defaults. We think this field will be required for CoreAddons if a customer is using a private registry. So addons can be configured
 
 Note: The current implementation of go-templating allows to declare a `RequiredResourceTypes` field, to handle dependencies. We propose to keep this as is for go-templating, but not have it for helm. The reason is that helm offers its own dependency management and we think that building an additional dependency mechanism on top will drastically increase complexity. As a result, this field will be moved into under go-template method and not on the general addon level.
@@ -182,6 +181,7 @@ The AddonController resides in the seed cluster. Each seed cluster has its own i
 
 - selecting compatible addons from the AddonCatalogue for each user cluster
 - managing AddonInstallations for each user cluster. It is important to note that it only tracks which addon should be installed in which cluster, but does not do the installation of the addon itself (this task will be done by the AddonInstallation controller).
+- providing a query-endpoint/function that takes in a clusterConstraints and returns a list of all available addons. We need this functionality to later on make it possible for users to select addons in the cluster wizard (see #6000). We think it makes sense to include this already in the proposal, so we build an architecture that will work for future requirements
 
 The AddonController works by watching the AddonCatalogue CR from the Catalogue Distributor and managing an AddonCatalogue per UserCluster. It stores a version containing only compatible addons in the SeedCluster-namespace that corresponds to a UserCluster. In order to evaluate if an addon is compatible, the AddonController reads the `constraints` field of an AddonCatalogue CR.
 
@@ -291,7 +291,8 @@ The functionality of the AddonInstallationController depends on the selected `so
 
 *go-template*
 
-- we propose no changes to our current approach. go-template is just listed in this proposal to give an overview of all available methods
+- this will be largely the same as the current addon approach
+- we propose to add a small functionality to handle dependencies. The AddonController should parse all manifests first -> check for namespace and CRD manifests -> apply namespaces and CRDs -> wait for apply to finish -> apply remaining manifests
 
 *helm*
 
@@ -300,6 +301,7 @@ The functionality of the AddonInstallationController depends on the selected `so
 - spec:
   - name → name of the helm release
   - values →override of values. Uses helms standard `values.yaml` override
+- we propose to use helm's build in dependency mechanism and not build any custom logic around it
 
 *note: the \[TemplateData\](*[*Addons - Kubermatic Documentation*](https://docs.kubermatic.com/kubermatic/v2.18/guides/addons/)*) is passed as an additional value to helm*
 
