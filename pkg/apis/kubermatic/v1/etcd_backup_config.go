@@ -70,7 +70,7 @@ type EtcdBackupConfigSpec struct {
 	// If not set, defaults to DefaultKeptBackupsCount. Only used if Schedule is set.
 	Keep *int `json:"keep,omitempty"`
 	// Destination indicates where the backup will be stored
-	Destination *SeedBackupRestoreConfiguration `json:"destination,omitempty"`
+	Destination *BackupDestination `json:"destination,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

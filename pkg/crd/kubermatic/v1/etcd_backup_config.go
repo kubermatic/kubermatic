@@ -68,6 +68,8 @@ type EtcdBackupConfigSpec struct {
 	// Keep is the number of backups to keep around before deleting the oldest one
 	// If not set, defaults to DefaultKeptBackupsCount. Only used if Schedule is set.
 	Keep *int `json:"keep,omitempty"`
+	// Destination indicates where the backup will be stored
+	Destination *BackupDestination `json:"destination,omitempty"`
 }
 
 // EtcdBackupConfigList is a list of etcd backup configs

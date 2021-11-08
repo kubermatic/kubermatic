@@ -18,7 +18,6 @@ package v1
 
 import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -97,18 +96,26 @@ type SeedSpec struct {
 	DefaultClusterTemplate string `json:"defaultClusterTemplate,omitempty"`
 	// Metering configures the metering tool on user clusters across the seed.
 	Metering *MeteringConfiguration `json:"metering,omitempty"`
-	// BackupRestore when set, enables backup and restore controllers with given configuration.
-	BackupRestore *SeedBackupRestoreConfiguration `json:"backupRestore,omitempty"`
+	// Deprecated: use EtcdBackupRestore instead which allows for multiple destinations. For now, it's still supported and
+	// will work if set.
+	BackupRestore *BackupDestination `json:"backupRestore,omitempty"`
+	// EtcdBackupRestore holds the configuration of the automatic backup restores for the Seed
+	EtcdBackupRestore *EtcdBackupRestore `json:"etcdBackupRestore,omitempty"`
 }
 
-// SeedBackupRestoreConfiguration are s3 settings used for backups and restores of user cluster etcds.
-type SeedBackupRestoreConfiguration struct {
-	// +kubebuilder:default=s3.amazonaws.com
-
-	// S3Endpoint is the S3 API endpoint to use for backup and restore.
+// BackupDestination defines the bucket name and endpoint as a backup destination.
+type BackupDestination struct {
+	// S3Endpoint is the S3 API endpoint to use for backup and restore. Defaults to s3.amazonaws.com.
 	S3Endpoint string `json:"s3Endpoint,omitempty"`
 	// S3BucketName is the S3 bucket name to use for backup and restore.
 	S3BucketName string `json:"s3BucketName,omitempty"`
+}
+
+// EtcdBackupRestore holds the configuration of the automatic backup restores
+type EtcdBackupRestore struct {
+	// Destinations stores all the possible destinations where the backups for the Seed can be stored. If not empty,
+	// it enables automatic backup and restore for the seed.
+	Destinations map[string]*BackupDestination `json:"destinations,omitempty"`
 }
 
 type NodeportProxyConfig struct {

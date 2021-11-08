@@ -172,7 +172,7 @@ type KubermaticSeedControllerConfiguration struct {
 	Replicas *int32 `json:"replicas,omitempty"`
 }
 
-// Deprecated: Use SeedBackupRestoreConfiguration.
+// Deprecated: Use Seed EtcdBackupRestore.
 // LegacyKubermaticBackupRestoreConfiguration are s3 settings used for backups and restores of user cluster etcds.
 type LegacyKubermaticBackupRestoreConfiguration struct {
 	// Enabled enables the new etcd backup and restore controllers.
