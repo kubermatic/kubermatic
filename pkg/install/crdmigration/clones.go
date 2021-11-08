@@ -324,6 +324,12 @@ func cloneClusterResourcesInCluster(ctx context.Context, logger logrus.FieldLogg
 	}
 
 	for _, oldObject := range oldObjects.Items {
+		var alertmanagerConfig *newv1.HealthStatus
+		if oldObject.Status.ExtendedHealth.AlertmanagerConfig != nil {
+			alertmanagerConfig1 := convertHealthStatus(*oldObject.Status.ExtendedHealth.AlertmanagerConfig)
+			alertmanagerConfig = &alertmanagerConfig1
+		}
+
 		newObject := newv1.Cluster{
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Address:    newv1.ClusterAddress(oldObject.Address),
@@ -348,6 +354,8 @@ func cloneClusterResourcesInCluster(ctx context.Context, logger logrus.FieldLogg
 					GatekeeperAudit:              convertHealthStatus(oldObject.Status.ExtendedHealth.GatekeeperAudit),
 					Monitoring:                   convertHealthStatus(oldObject.Status.ExtendedHealth.Monitoring),
 					Logging:                      convertHealthStatus(oldObject.Status.ExtendedHealth.Logging),
+					AlertmanagerConfig:           alertmanagerConfig,
+					MLAGateway:                   convertHealthStatus(oldObject.Status.ExtendedHealth.MLAGateway),
 				},
 			},
 		}
@@ -561,10 +569,21 @@ func cloneAlertmanagerResourcesInCluster(ctx context.Context, logger logrus.Fiel
 			Spec: newv1.AlertmanagerSpec{
 				ConfigSecret: oldObject.Spec.DeepCopy().ConfigSecret,
 			},
+			Status: newv1.AlertmanagerStatus{
+				ConfigStatus: newv1.AlertmanagerConfigurationStatus{
+					LastUpdated:  oldObject.Status.ConfigStatus.LastUpdated,
+					Status:       oldObject.Status.ConfigStatus.Status,
+					ErrorMessage: oldObject.Status.ConfigStatus.ErrorMessage,
+				},
+			},
 		}
 
 		if err := ensureObject(ctx, client, &newObject, false); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
+		}
+
+		if err := client.Status().Update(ctx, &newObject); err != nil {
+			return 0, fmt.Errorf("failed to update status on %s: %w", oldObject.Name, err)
 		}
 	}
 
