@@ -22,6 +22,7 @@ import (
 	"io/ioutil"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/addon"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/addoninstaller"
 	backupcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/backup"
@@ -152,6 +153,8 @@ func defaultComponentSettings(runOptions controllerRunOptions, defaultComponentS
 }
 
 func createCloudController(ctrlCtx *controllerContext) error {
+	cloudcontroller.MustRegisterMetrics(prometheus.DefaultRegisterer)
+
 	if err := cloudcontroller.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.log,

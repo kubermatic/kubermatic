@@ -35,6 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/azure"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/openstack"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -214,11 +215,17 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		if last == nil || (interval.Duration > 0 && time.Since(last.Time) >= interval.Duration) {
 			log.Info("Reconciling cloud provider for cluster")
 
+			// update metrics
+			providerName, _ := resources.GetCloudProviderName(cluster.Spec.Cloud)
+			totalProviderReconciliations.WithLabelValues(cluster.Name, providerName).Inc()
+
+			// reconcile
 			cluster, err = betterProvider.ReconcileCluster(cluster, r.updateCluster)
 			if err != nil {
 				return handleProviderError(err)
 			}
 
+			// remember that we reconciled
 			cluster, err = r.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
 				now := v1.Now()
 				c.Status.LastProviderReconciliation = &now
@@ -226,6 +233,9 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			if err != nil {
 				return nil, fmt.Errorf("failed to set last reconcile timestamp: %w", err)
 			}
+
+			// update metrics
+			successfulProviderReconciliations.WithLabelValues(cluster.Name, providerName).Inc()
 		}
 	} else {
 		// the provider only offers a one-time init :-(
