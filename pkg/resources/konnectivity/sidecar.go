@@ -62,14 +62,17 @@ func ProxySidecar(data *resources.TemplateData, serverCount int32) (*corev1.Cont
 			{
 				Name:          "agentport",
 				ContainerPort: 8132,
+				Protocol:      corev1.ProtocolTCP,
 			},
 			{
 				Name:          "adminport",
 				ContainerPort: 8133,
+				Protocol:      corev1.ProtocolTCP,
 			},
 			{
 				Name:          "healthport",
 				ContainerPort: 8134,
+				Protocol:      corev1.ProtocolTCP,
 			},
 		},
 		VolumeMounts: []corev1.VolumeMount{
@@ -94,12 +97,15 @@ func ProxySidecar(data *resources.TemplateData, serverCount int32) (*corev1.Cont
 				HTTPGet: &corev1.HTTPGetAction{
 					Path:   "/healthz",
 					Port:   intstr.IntOrString{IntVal: 8134},
-					Scheme: "HTTP",
+					Scheme: corev1.URISchemeHTTP,
 				},
 				TCPSocket: nil,
 			},
 			InitialDelaySeconds: 30,
 			TimeoutSeconds:      60,
+			PeriodSeconds:       10,
+			SuccessThreshold:    1,
+			FailureThreshold:    3,
 		},
 	}, nil
 }
