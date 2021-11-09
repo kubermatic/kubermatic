@@ -21,6 +21,7 @@ import (
 
 	"google.golang.org/api/container/v1"
 
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -32,6 +33,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
+
+const GKENodepoolNameLabel = "cloud.google.com/gke-nodepool"
 
 func createGKECluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticapiv1.ExternalCluster, error) {
 	if cloud.GKE.Name == "" || cloud.GKE.Zone == "" || cloud.GKE.ServiceAccount == "" {
@@ -77,4 +80,62 @@ func patchGKECluster(ctx context.Context, old, new *apiv2.ExternalCluster, secre
 	_, err = req.Context(ctx).Do()
 
 	return new, err
+}
+
+func getGKENodePools(ctx context.Context, cluster *kubermaticapiv1.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector, clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterMachineDeployment, error) {
+	sa, err := secretKeySelector(credentialsReference, resources.GCPServiceAccount)
+	if err != nil {
+		return nil, err
+	}
+	svc, project, err := gcp.ConnectToContainerService(sa)
+	if err != nil {
+		return nil, err
+	}
+
+	req := svc.Projects.Zones.Clusters.NodePools.List(project, cluster.Spec.CloudSpec.GKE.Zone, cluster.Spec.CloudSpec.GKE.Name)
+	resp, err := req.Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	machineDeployments := make([]apiv2.ExternalClusterMachineDeployment, 0, len(resp.NodePools))
+
+	nodes, err := clusterProvider.ListNodes(cluster)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	for _, md := range resp.NodePools {
+		var readyReplicas int32
+		for _, n := range nodes.Items {
+			if n.Labels != nil {
+				if n.Labels[GKENodepoolNameLabel] == md.Name {
+					readyReplicas++
+				}
+			}
+		}
+
+		machineDeployments = append(machineDeployments, apiv2.ExternalClusterMachineDeployment{
+			NodeDeployment: apiv1.NodeDeployment{
+				ObjectMeta: apiv1.ObjectMeta{
+					ID:   md.Name,
+					Name: md.Name,
+				},
+				Spec: apiv1.NodeDeploymentSpec{
+					Replicas: int32(md.InitialNodeCount),
+					Template: apiv1.NodeSpec{
+						Versions: apiv1.NodeVersionInfo{
+							Kubelet: md.Version,
+						},
+					},
+				},
+				Status: clusterv1alpha1.MachineDeploymentStatus{
+					Replicas:      int32(md.InitialNodeCount),
+					ReadyReplicas: readyReplicas,
+				},
+			},
+		})
+	}
+
+	return machineDeployments, err
 }
