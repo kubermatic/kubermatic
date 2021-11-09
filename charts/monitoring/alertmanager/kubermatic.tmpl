@@ -2,40 +2,39 @@
 {* Capable of displaying the user-cluster from which alerts originate. *}
 {* Shows a pretty flag if the seed cluster name matches regex. *}
 
-{{ define "slack.kubermatic.pretty.runbook" }}{{ with .Annotations.runbook_url }}<{{ .}}|:notebook:>{{ end }}{{ end }}
+{{ define "slack.kubermatic.pretty.runbook" }}{{ with .Annotations.runbook_url }}<{{ . }}|:notebook:>{{ end }}{{ end }}
 {{ define "slack.kubermatic.titlelink" }}{{ end }}
 {{ define "slack.kubermatic.pretty.icon" }}{{ end }}
 {{ define "slack.kubermatic.color" }}{{ if eq .Status "firing" }}danger{{ else }}good{{ end }}{{ end }}
 
 {{ define "slack.kubermatic.pretty.labels" -}}
-{{- with .Labels.seed_cluster -}}
+{{- with .CommonLabels.seed_cluster -}}
 {{- if      (match "^(eu|europe)-" .) }}:flag-eu:
 {{- else if (match "^usa?-" .) }}:flag-us:
 {{- else if (match "^asia-" .) }}:flag-cn:
 {{- else }}[{{ . }}]{{ end -}}
-{{- end -}} {{ with .Labels.cluster }} [{{ . }}]{{ end }}
+{{- end -}} {{ with .CommonLabels.cluster }} [{{ . }}]{{ end }}
 {{- end }}
 
 {{ define "slack.kubermatic.title" -}}
-{{- with (index .Alerts 0) -}}
-{{- template "slack.kubermatic.pretty.icon" . }} {{ template "slack.kubermatic.pretty.labels" . }} <{{ $.ExternalURL }}/#/alerts?receiver={{ $.Receiver }}|{{ .Labels.alertname }}>
-{{- end -}}
+    {{- template "slack.kubermatic.pretty.icon" . -}}
+    {{ template "slack.kubermatic.pretty.labels" . }} <{{ .ExternalURL }}/#/alerts?receiver={{ .Receiver }}|{{ .CommonLabels.alertname }}>
+    {{- if eq .Status "firing" }} [ {{ .Alerts.Firing | len }} ]{{ end -}}
 {{- end }}
 
 {{ define "slack.kubermatic.text" -}}
-{{- with (index .Alerts 0) -}}
+{{- range .Alerts }}
+{{- if eq .Status "resolved" }}[RESOLVED] {{ end -}}
 {{ .Annotations.message }} {{ template "slack.kubermatic.pretty.runbook" . }}
-{{- end -}}
+{{ end -}}
 {{- end }}
 
 {* slack fallback for constraint environments like Android notifications *}
 
 {{ define "slack.kubermatic.fallback.icon" }}{{ if eq .Status "firing" }}✗{{ else }}✓{{ end }}{{ end }}
-{{ define "slack.kubermatic.fallback.labels" }}[{{ .Labels.seed_cluster | toUpper }}]{{ end }} {* do not include user cluster IDs in fallbacks *}
-{{ define "slack.kubermatic.fallback.runbook" }}{{ with .Annotations.runbook_url }}<{{ .}}|:notebook:>{{ end }}{{ end }}
+{{ define "slack.kubermatic.fallback.labels" }}[{{ .CommonLabels.seed_cluster | toUpper }}]{{ end }} {* do not include user cluster IDs in fallbacks *}
+{{ define "slack.kubermatic.fallback.runbook" }}{{ with .Annotations.runbook_url }}<{{ . }}|:notebook:>{{ end }}{{ end }}
 
 {{ define "slack.kubermatic.fallback" -}}
-{{- with (index .Alerts 0) -}}
-{{- template "slack.kubermatic.fallback.icon" . }} {{ template "slack.kubermatic.fallback.labels" . }} {{ .Labels.alertname }} {{ .Annotations.message }}
-{{- end -}}
+{{- template "slack.kubermatic.fallback.icon" . }} {{ template "slack.kubermatic.fallback.labels" . }} {{ .CommonLabels.alertname }} {{ range .Alerts }} {{ .Annotations.message }} {{ end }}
 {{- end }}

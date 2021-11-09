@@ -45,6 +45,7 @@ alertmanager:
     route:
       receiver: default
       repeat_interval: 1h
+      group_by: [alertname, namespace, seed_cluster, cluster]
       routes:
       - receiver: blackhole
         match:
