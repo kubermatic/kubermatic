@@ -18,12 +18,13 @@
 
 {{ define "slack.kubermatic.title" -}}
     {{- template "slack.kubermatic.pretty.icon" . -}}
-    {{- if eq .Status "firing" }} [ {{ .Alerts.Firing | len }} ]{{ end - }}
     {{ template "slack.kubermatic.pretty.labels" . }} <{{ .ExternalURL }}/#/alerts?receiver={{ .Receiver }}|{{ .CommonLabels.alertname }}>
+    {{- if eq .Status "firing" }} [ {{ .Alerts.Firing | len }} ]{{ end -}}
 {{- end }}
 
 {{ define "slack.kubermatic.text" -}}
 {{- range .Alerts }}
+{{- if eq .Status "resolved" }}[RESOLVED] {{ end -}}
 {{ .Annotations.message }} {{ template "slack.kubermatic.pretty.runbook" . }}
 {{ end -}}
 {{- end }}
