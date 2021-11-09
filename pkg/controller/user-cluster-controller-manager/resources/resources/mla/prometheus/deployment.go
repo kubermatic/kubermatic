@@ -33,12 +33,12 @@ import (
 
 const (
 	imageName     = "prometheus/prometheus"
-	tag           = "v2.29.2"
+	tag           = "v2.31.1"
 	appName       = "mla-prometheus"
 	containerName = "prometheus"
 
 	reloaderImageName = "prometheus-operator/prometheus-config-reloader"
-	reloaderTag       = "v0.49.0"
+	reloaderTag       = "v0.52.0"
 
 	configVolumeName       = "config-volume"
 	configPath             = "/etc/config"
