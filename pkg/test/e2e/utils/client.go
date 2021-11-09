@@ -734,7 +734,8 @@ func (r *TestClient) WaitForOPAEnabledClusterHealthy(projectID, dc, clusterID st
 		return IsHealthyCluster(healthStatus) &&
 			healthStatus.GatekeeperController != nil &&
 			*healthStatus.GatekeeperController == kubermaticv1.HealthStatusUp &&
-			healthStatus.GatekeeperAudit == kubermaticv1.HealthStatusUp.Ptr()
+			healthStatus.GatekeeperAudit != nil &&
+			*healthStatus.GatekeeperAudit == kubermaticv1.HealthStatusUp
 
 	}) {
 		return errors.New("OPA enabled cluster did not become healthy")
