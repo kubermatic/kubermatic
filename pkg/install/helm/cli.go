@@ -62,6 +62,9 @@ func (c *cli) BuildChartDependencies(chartDirectory string, flags []string) erro
 	}
 
 	chart, err := LoadChart(chartDirectory)
+	if err != nil {
+		return err
+	}
 
 	for idx, dep := range chart.Dependencies {
 		repoAddFlags := []string{
