@@ -364,6 +364,23 @@ func (r *datasourceGrafanaController) cleanUp(ctx context.Context) error {
 	return nil
 }
 
+func (r *datasourceGrafanaController) cleanUpMlaGatewayHealthStatus(ctx context.Context, cluster *kubermaticv1.Cluster, resourceDeletionErr error) error {
+	oldCluster := cluster.DeepCopy()
+	// Remove the health status in Cluster CR
+	cluster.Status.ExtendedHealth.MLAGateway = nil
+	if resourceDeletionErr != nil {
+		cluster.Status.ExtendedHealth.MLAGateway = kubermaticv1.HealthStatusDown.Ptr()
+	}
+
+	// Update the health status in Cluster CR
+	if oldCluster.Status.ExtendedHealth != cluster.Status.ExtendedHealth {
+		if err := r.Client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+			return fmt.Errorf("error patching cluster health status: %w", err)
+		}
+	}
+	return nil
+}
+
 func (r *datasourceGrafanaController) handleDeletion(ctx context.Context, grafanaClient *grafanasdk.Client, cluster *kubermaticv1.Cluster) error {
 	if grafanaClient != nil {
 		// that's mostly means that Grafana organization doesn't exists anymore
@@ -376,10 +393,17 @@ func (r *datasourceGrafanaController) handleDeletion(ctx context.Context, grafan
 				err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 		}
 	}
-
 	if cluster.DeletionTimestamp.IsZero() {
 		for _, resource := range ResourcesOnDeletion(cluster.Status.NamespaceName) {
-			if err := r.Client.Delete(ctx, resource); err != nil && !apiErrors.IsNotFound(err) {
+			err := r.Client.Delete(ctx, resource)
+			// Update Health status even in case of error
+			// If any resources could not be deleted (configmap, secret,.. not only deployment)
+			// The status will be kubermaticv1.HealthStatusDown until everything is cleaned up.
+			// Then the status will be removed
+			if errH := r.cleanUpMlaGatewayHealthStatus(ctx, cluster, err); errH != nil {
+				return fmt.Errorf("failed to update mlaGateway status in cluster: %w", errH)
+			}
+			if err != nil && !apiErrors.IsNotFound(err) {
 				return fmt.Errorf("failed to delete %s: %v", resource.GetName(), err)
 			}
 		}
@@ -401,7 +425,7 @@ func (r *datasourceGrafanaController) mlaGatewayHealth(ctx context.Context, clus
 		return fmt.Errorf("failed to get dep health %s: %w", resources.UserClusterPrometheusDeploymentName, err)
 	}
 	oldCluster := cluster.DeepCopy()
-	cluster.Status.ExtendedHealth.MLAGateway = mlaGatewayHealth
+	cluster.Status.ExtendedHealth.MLAGateway = &mlaGatewayHealth
 
 	if oldCluster != cluster {
 		if err := r.Client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
