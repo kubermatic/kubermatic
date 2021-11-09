@@ -1279,8 +1279,8 @@ func TestGetClusterHealth(t *testing.T) {
 						Etcd:                         kubermaticv1.HealthStatusUp,
 						CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 						UserClusterControllerManager: kubermaticv1.HealthStatusUp,
-						GatekeeperAudit:              kubermaticv1.HealthStatusUp,
-						GatekeeperController:         kubermaticv1.HealthStatusUp,
+						GatekeeperAudit:              kubermaticv1.HealthStatusUp.Ptr(),
+						GatekeeperController:         kubermaticv1.HealthStatusUp.Ptr(),
 					}
 					cluster.Spec.OPAIntegration = &kubermaticv1.OPAIntegrationSettings{Enabled: true}
 					return cluster
@@ -1312,7 +1312,7 @@ func TestGetClusterHealth(t *testing.T) {
 						Etcd:                         kubermaticv1.HealthStatusUp,
 						CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 						UserClusterControllerManager: kubermaticv1.HealthStatusUp,
-						Monitoring:                   kubermaticv1.HealthStatusUp,
+						Monitoring:                   kubermaticv1.HealthStatusUp.Ptr(),
 					}
 					cluster.Spec.MLA = &kubermaticv1.MLASettings{MonitoringEnabled: true}
 					return cluster
@@ -1344,7 +1344,7 @@ func TestGetClusterHealth(t *testing.T) {
 						Etcd:                         kubermaticv1.HealthStatusUp,
 						CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 						UserClusterControllerManager: kubermaticv1.HealthStatusUp,
-						Logging:                      kubermaticv1.HealthStatusUp,
+						Logging:                      kubermaticv1.HealthStatusUp.Ptr(),
 					}
 					cluster.Spec.MLA = &kubermaticv1.MLASettings{LoggingEnabled: true}
 					return cluster
@@ -1367,7 +1367,6 @@ func TestGetClusterHealth(t *testing.T) {
 				// add another cluster
 				func() *kubermaticv1.Cluster {
 					cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
-					status := kubermaticv1.HealthStatusUp
 					cluster.Status.ExtendedHealth = kubermaticv1.ExtendedClusterHealth{
 
 						Apiserver:                    kubermaticv1.HealthStatusUp,
@@ -1377,8 +1376,8 @@ func TestGetClusterHealth(t *testing.T) {
 						Etcd:                         kubermaticv1.HealthStatusUp,
 						CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 						UserClusterControllerManager: kubermaticv1.HealthStatusUp,
-						Logging:                      kubermaticv1.HealthStatusUp,
-						AlertmanagerConfig:           &status,
+						Logging:                      kubermaticv1.HealthStatusUp.Ptr(),
+						AlertmanagerConfig:           kubermaticv1.HealthStatusUp.Ptr(),
 					}
 					cluster.Spec.MLA = &kubermaticv1.MLASettings{LoggingEnabled: true}
 					return cluster

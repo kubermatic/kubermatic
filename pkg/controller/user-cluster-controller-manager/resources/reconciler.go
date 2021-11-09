@@ -856,11 +856,14 @@ type reconcileData struct {
 
 func (r *reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context) error {
 	for _, resource := range gatekeeper.GetResourcesToRemoveOnDelete() {
-		if err := r.Client.Delete(ctx, resource); err != nil && !errors.IsNotFound(err) {
+		err := r.Client.Delete(ctx, resource)
+		if errC := r.cleanUpOPAHealthStatus(ctx, err); errC != nil {
+			return fmt.Errorf("failed to update OPA health status in cluster: %w", errC)
+		}
+		if err != nil && !errors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure OPA integration is removed/not present: %v", err)
 		}
 	}
-
 	return nil
 }
 
@@ -888,8 +891,8 @@ func (r *reconciler) healthCheck(ctx context.Context) error {
 			return err
 		}
 
-		cluster.Status.ExtendedHealth.GatekeeperController = ctrlGatekeeperHealth
-		cluster.Status.ExtendedHealth.GatekeeperAudit = auditGatekeeperHealth
+		cluster.Status.ExtendedHealth.GatekeeperController = &ctrlGatekeeperHealth
+		cluster.Status.ExtendedHealth.GatekeeperAudit = &auditGatekeeperHealth
 	}
 
 	if r.userClusterMLA.Monitoring {
@@ -898,7 +901,7 @@ func (r *reconciler) healthCheck(ctx context.Context) error {
 			return err
 		}
 
-		cluster.Status.ExtendedHealth.Monitoring = monitoring
+		cluster.Status.ExtendedHealth.Monitoring = &monitoring
 	}
 
 	if r.userClusterMLA.Logging {
@@ -907,7 +910,7 @@ func (r *reconciler) healthCheck(ctx context.Context) error {
 			return err
 		}
 
-		cluster.Status.ExtendedHealth.Logging = logging
+		cluster.Status.ExtendedHealth.Logging = &logging
 	}
 
 	if oldCluster.Status.ExtendedHealth != cluster.Status.ExtendedHealth {
@@ -969,7 +972,11 @@ func (r *reconciler) getMLALoggingHealth(ctx context.Context) (kubermaticv1.Heal
 
 func (r *reconciler) ensurePromtailIsRemoved(ctx context.Context) error {
 	for _, resource := range promtail.ResourcesOnDeletion() {
-		if err := r.Client.Delete(ctx, resource); err != nil && !errors.IsNotFound(err) {
+		err := r.Client.Delete(ctx, resource)
+		if errC := r.cleanUpMLAHealthStatus(ctx, true, false, err); errC != nil {
+			return fmt.Errorf("failed to update mla logging health status in cluster: %w", errC)
+		}
+		if err != nil && !errors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure promtail is removed/not present: %v", err)
 		}
 	}
@@ -978,7 +985,11 @@ func (r *reconciler) ensurePromtailIsRemoved(ctx context.Context) error {
 
 func (r *reconciler) ensureUserClusterPrometheusIsRemoved(ctx context.Context) error {
 	for _, resource := range userclusterprometheus.ResourcesOnDeletion() {
-		if err := r.Client.Delete(ctx, resource); err != nil && !errors.IsNotFound(err) {
+		err := r.Client.Delete(ctx, resource)
+		if errC := r.cleanUpMLAHealthStatus(ctx, false, true, err); errC != nil {
+			return fmt.Errorf("failed to update mla monitoring health status in cluster: %w", errC)
+		}
+		if err != nil && !errors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure user cluster prometheus is removed/not present: %v", err)
 		}
 	}
@@ -987,7 +998,11 @@ func (r *reconciler) ensureUserClusterPrometheusIsRemoved(ctx context.Context) e
 
 func (r *reconciler) ensureMLAIsRemoved(ctx context.Context) error {
 	for _, resource := range mla.ResourcesOnDeletion() {
-		if err := r.Client.Delete(ctx, resource); err != nil && !errors.IsNotFound(err) {
+		err := r.Client.Delete(ctx, resource)
+		if errC := r.cleanUpMLAHealthStatus(ctx, true, true, err); errC != nil {
+			return fmt.Errorf("failed to update mla health status in cluster: %w", errC)
+		}
+		if err != nil && !errors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure mla is removed/not present: %v", err)
 		}
 	}
@@ -1012,4 +1027,56 @@ func (r *reconciler) getUserClusterPrometheusCustomScrapeConfigs(ctx context.Con
 		}
 	}
 	return customScrapeConfigs, nil
+}
+
+func (r *reconciler) cleanUpOPAHealthStatus(ctx context.Context, errC error) error {
+	// Ensure that health status in Cluster CR is removed
+	cluster := &kubermaticv1.Cluster{}
+	if err := r.seedClient.Get(ctx,
+		types.NamespacedName{Namespace: r.namespace, Name: strings.TrimPrefix(r.namespace, "cluster-")}, cluster); err != nil {
+		return fmt.Errorf("failed getting cluster for cluster health check: %v", err)
+	}
+	oldCluster := cluster.DeepCopy()
+
+	cluster.Status.ExtendedHealth.GatekeeperAudit = nil
+	cluster.Status.ExtendedHealth.GatekeeperController = nil
+	if errC != nil {
+		cluster.Status.ExtendedHealth.GatekeeperAudit = kubermaticv1.HealthStatusDown.Ptr()
+		cluster.Status.ExtendedHealth.GatekeeperController = kubermaticv1.HealthStatusDown.Ptr()
+	}
+	if oldCluster.Status.ExtendedHealth != cluster.Status.ExtendedHealth {
+		if err := r.seedClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+			return fmt.Errorf("error patching cluster health status: %v", err)
+		}
+	}
+	return nil
+}
+
+func (r *reconciler) cleanUpMLAHealthStatus(ctx context.Context, logging, monitoring bool, errC error) error {
+	// Ensure that health status in Cluster CR is removed
+	cluster := &kubermaticv1.Cluster{}
+	if err := r.seedClient.Get(ctx,
+		types.NamespacedName{Namespace: r.namespace, Name: strings.TrimPrefix(r.namespace, "cluster-")}, cluster); err != nil {
+		return fmt.Errorf("failed getting cluster for cluster health check: %v", err)
+	}
+	oldCluster := cluster.DeepCopy()
+
+	if !r.userClusterMLA.Logging && logging {
+		cluster.Status.ExtendedHealth.Logging = nil
+		if errC != nil {
+			cluster.Status.ExtendedHealth.Logging = kubermaticv1.HealthStatusDown.Ptr()
+		}
+	}
+	if !r.userClusterMLA.Monitoring && monitoring {
+		cluster.Status.ExtendedHealth.Monitoring = nil
+		if errC != nil {
+			cluster.Status.ExtendedHealth.Monitoring = kubermaticv1.HealthStatusDown.Ptr()
+		}
+	}
+	if oldCluster.Status.ExtendedHealth != cluster.Status.ExtendedHealth {
+		if err := r.seedClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+			return fmt.Errorf("error patching cluster health status: %v", err)
+		}
+	}
+	return nil
 }
