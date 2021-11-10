@@ -1040,7 +1040,7 @@ func (r *reconciler) cleanUpOPAHealthStatus(ctx context.Context, errC error) err
 
 	cluster.Status.ExtendedHealth.GatekeeperAudit = nil
 	cluster.Status.ExtendedHealth.GatekeeperController = nil
-	if errC != nil {
+	if errC != nil && !errors.IsNotFound(errC) {
 		cluster.Status.ExtendedHealth.GatekeeperAudit = kubermaticv1.HealthStatusDown.Ptr()
 		cluster.Status.ExtendedHealth.GatekeeperController = kubermaticv1.HealthStatusDown.Ptr()
 	}
@@ -1063,13 +1063,13 @@ func (r *reconciler) cleanUpMLAHealthStatus(ctx context.Context, logging, monito
 
 	if !r.userClusterMLA.Logging && logging {
 		cluster.Status.ExtendedHealth.Logging = nil
-		if errC != nil {
+		if errC != nil && !errors.IsNotFound(errC) {
 			cluster.Status.ExtendedHealth.Logging = kubermaticv1.HealthStatusDown.Ptr()
 		}
 	}
 	if !r.userClusterMLA.Monitoring && monitoring {
 		cluster.Status.ExtendedHealth.Monitoring = nil
-		if errC != nil {
+		if errC != nil && !errors.IsNotFound(errC) {
 			cluster.Status.ExtendedHealth.Monitoring = kubermaticv1.HealthStatusDown.Ptr()
 		}
 	}
