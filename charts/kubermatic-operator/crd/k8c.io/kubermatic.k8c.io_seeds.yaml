@@ -929,6 +929,9 @@ spec:
                           description: Endpoint is the API endpoint to use for backup
                             and restore.
                           type: string
+                      required:
+                      - bucketName
+                      - endpoint
                       type: object
                     description: Destinations stores all the possible destinations
                       where the backups for the Seed can be stored. If not empty,
