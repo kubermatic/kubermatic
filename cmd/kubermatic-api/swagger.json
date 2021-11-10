@@ -7298,6 +7298,16 @@
           },
           {
             "type": "string",
+            "name": "Project",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ProjectID",
+            "in": "header"
+          },
+          {
+            "type": "string",
             "name": "DatacenterName",
             "in": "header"
           },
@@ -7375,6 +7385,16 @@
           {
             "type": "string",
             "name": "TenantID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Project",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ProjectID",
             "in": "header"
           },
           {
@@ -7460,6 +7480,16 @@
           },
           {
             "type": "string",
+            "name": "Project",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ProjectID",
+            "in": "header"
+          },
+          {
+            "type": "string",
             "name": "DatacenterName",
             "in": "header"
           },
@@ -7541,6 +7571,16 @@
           },
           {
             "type": "string",
+            "name": "Project",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ProjectID",
+            "in": "header"
+          },
+          {
+            "type": "string",
             "name": "DatacenterName",
             "in": "header"
           },
@@ -7618,6 +7658,16 @@
           {
             "type": "string",
             "name": "TenantID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Project",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ProjectID",
             "in": "header"
           },
           {
@@ -12730,13 +12780,6 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
-          },
-          {
-            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -12748,6 +12791,13 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
           }
         ],
         "responses": {
