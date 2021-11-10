@@ -1344,11 +1344,14 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/integration-tests:4-2
+      - image: quay.io/kubermatic/integration-tests:5-0
         command:
         - make
         args:
         - test-integration
+        # docker-in-docker (for localstack) needs privileged mode
+        securityContext:
+          privileged: true
         resources:
           requests:
             memory: 4Gi

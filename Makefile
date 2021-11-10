@@ -82,15 +82,8 @@ build-tests:
 	go test -tags "integration,$(KUBERMATIC_EDITION)" -run nope ./pkg/... ./cmd/... ./codegen/...
 
 .PHONY: test-integration
-test-integration: CGO_ENABLED=1
-test-integration: download-gocache
-	@# Run integration tests and only integration tests by:
-	@# * Finding all files that contain the build tag via grep
-	@# * Extracting the dirname as the `go test` command doesn't play well with individual files as args
-	@# * Prefixing them with `./` as that's needed by `go test` as well
-	@grep --files-with-matches --recursive --extended-regexp '\+build.+integration' cmd/ pkg/ \
-		|xargs dirname \
-		|xargs --max-args=1 -I ^ go test -tags "integration $(KUBERMATIC_EDITION)"  -race ./^
+test-integration:
+	./hack/run-integration-tests.sh
 
 .PHONY: test-update
 test-update:

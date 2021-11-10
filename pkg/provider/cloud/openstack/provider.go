@@ -88,6 +88,8 @@ func NewCloudProvider(
 	}, nil
 }
 
+var _ provider.CloudProvider = &Provider{}
+
 // DefaultCloudSpec adds defaults to the cloud spec
 func (os *Provider) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
 	return nil
@@ -164,7 +166,6 @@ func validateExistingSubnetOverlap(networkID string, netClient *gophercloud.Serv
 // InitializeCloudProvider initializes a cluster, in particular
 // creates security group and network configuration
 func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-
 	netClient, err := os.getClientFunc(cluster.Spec.Cloud, os.dc, os.secretKeySelector, os.caBundle)
 	if err != nil {
 		return nil, err
@@ -320,6 +321,11 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 
 	return cluster, nil
 }
+
+// TODO: Hey, you! Yes, you! Why don't you implement reconciling for Openstack? Would be really cool :)
+// func (os *Provider) ReconcileCluster(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+// 	return cluster, nil
+// }
 
 // CleanUpCloudProvider does the clean-up in particular:
 // removes security group and network configuration

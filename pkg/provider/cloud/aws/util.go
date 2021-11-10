@@ -1,5 +1,3 @@
-//go:build integration
-
 /*
 Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 
@@ -19,26 +17,26 @@ limitations under the License.
 package aws
 
 import (
-	"encoding/json"
-	"flag"
-	"testing"
-
-	testhelper "k8c.io/kubermatic/v2/pkg/test"
+	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/iam"
 )
 
-var update = flag.Bool("update", false, "update .golden files")
-
-func TestGetPolicy(t *testing.T) {
-	clusterName := "cluster-ajcnaw"
-	policy, err := getControlPlanePolicy(clusterName)
-	if err != nil {
-		t.Error(err)
+func hasEC2Tag(expected *ec2.Tag, actual []*ec2.Tag) bool {
+	for _, tag := range actual {
+		if tag.String() == expected.String() {
+			return true
+		}
 	}
 
-	v := map[string]interface{}{}
-	if err := json.Unmarshal([]byte(policy), &v); err != nil {
-		t.Errorf("the policy does not contain valid json: %v", err)
+	return false
+}
+
+func hasIAMTag(expected *iam.Tag, actual []*iam.Tag) bool {
+	for _, tag := range actual {
+		if tag.String() == expected.String() {
+			return true
+		}
 	}
 
-	testhelper.CompareOutput(t, clusterName, policy, *update, ".json")
+	return false
 }

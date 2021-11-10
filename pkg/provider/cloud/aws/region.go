@@ -1,5 +1,3 @@
-//go:build integration
-
 /*
 Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 
@@ -19,26 +17,19 @@ limitations under the License.
 package aws
 
 import (
-	"encoding/json"
-	"flag"
-	"testing"
-
-	testhelper "k8c.io/kubermatic/v2/pkg/test"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
-var update = flag.Bool("update", false, "update .golden files")
-
-func TestGetPolicy(t *testing.T) {
-	clusterName := "cluster-ajcnaw"
-	policy, err := getControlPlanePolicy(clusterName)
-	if err != nil {
-		t.Error(err)
+func reconcileRegionAnnotation(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, region string) (*kubermaticv1.Cluster, error) {
+	if cluster.Annotations[regionAnnotationKey] == region {
+		return cluster, nil
 	}
 
-	v := map[string]interface{}{}
-	if err := json.Unmarshal([]byte(policy), &v); err != nil {
-		t.Errorf("the policy does not contain valid json: %v", err)
-	}
-
-	testhelper.CompareOutput(t, clusterName, policy, *update, ".json")
+	return update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		if cluster.Annotations == nil {
+			cluster.Annotations = map[string]string{}
+		}
+		cluster.Annotations[regionAnnotationKey] = region
+	})
 }

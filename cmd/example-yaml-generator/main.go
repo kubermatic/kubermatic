@@ -134,8 +134,9 @@ func createExampleSeed() *kubermaticv1.Seed {
 						RegistryMirrors:    []string{},
 					},
 					Spec: kubermaticv1.DatacenterSpec{
-						Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{},
-						BringYourOwn: &kubermaticv1.DatacenterSpecBringYourOwn{},
+						ProviderReconciliationInterval: &metav1.Duration{Duration: defaults.DefaultCloudProviderReconciliationInterval},
+						Digitalocean:                   &kubermaticv1.DatacenterSpecDigitalocean{},
+						BringYourOwn:                   &kubermaticv1.DatacenterSpecBringYourOwn{},
 						AWS: &kubermaticv1.DatacenterSpecAWS{
 							Images: imageList,
 						},

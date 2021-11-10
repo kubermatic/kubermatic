@@ -39,6 +39,8 @@ func NewCloudProvider(secretKeyGetter provider.SecretKeySelectorValueFunc) provi
 	}
 }
 
+var _ provider.CloudProvider = &hetzner{}
+
 // DefaultCloudSpec
 func (h *hetzner) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
 	return nil
