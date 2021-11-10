@@ -55,7 +55,7 @@ func NewCLI(binary string, kubeconfig string, kubeContext string, timeout time.D
 	}, nil
 }
 
-func (c *cli) BuildChartDependencies(chartDirectory string, flags []string) error {
+func (c *cli) BuildChartDependencies(chartDirectory string, flags []string) (err error) {
 	command := []string{
 		"dependency",
 		"build",
@@ -80,8 +80,13 @@ func (c *cli) BuildChartDependencies(chartDirectory string, flags []string) erro
 			fmt.Sprintf("dep-%s-%d", chart.Name, idx),
 		}
 
-		defer c.run("default", repoRemoveFlags...)
-		c.run("default", repoAddFlags...)
+		defer func() {
+			_, removeErr := c.run("default", repoRemoveFlags...)
+			if err != nil {
+				err = removeErr
+			}
+		}()
+		_, err = c.run("default", repoAddFlags...)
 	}
 
 	command = append(command, chartDirectory)
