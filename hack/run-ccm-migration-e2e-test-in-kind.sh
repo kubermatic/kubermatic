@@ -274,10 +274,13 @@ EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
     -openstack-floating-ip-pool=${OS_FLOATING_IP_POOL}
     -openstack-network=${OS_NETWORK_NAME}"
 
+# delete userclusters when ending the test
+appendTrap cleanup_kubermatic_clusters_in_kind EXIT
+
 # run tests
 # use ginkgo binary by preference to have better output:
 # https://github.com/onsi/ginkgo/issues/633
-if type ginkgo > /dev/null; then
+if [ -x "$(command -v ginkgo)" ]; then
   ginkgo --tags=e2e -v pkg/test/e2e/ccm-migration/ $EXTRA_ARGS \
     -r \
     --randomizeAllSpecs \
