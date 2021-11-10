@@ -192,6 +192,80 @@ func GetNodeEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider pro
 	}
 }
 
+func ListMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(listMachineDeploymentsReq)
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		cluster, err := getCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, req.ClusterID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		var machineDeployments []apiv2.ExternalClusterMachineDeployment
+		machineDeployments = make([]apiv2.ExternalClusterMachineDeployment, 0)
+
+		cloud := cluster.Spec.CloudSpec
+		if cloud != nil {
+			secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+
+			if cloud.GKE != nil {
+				np, err := getGKENodePools(ctx, cluster, secretKeySelector, cloud.GKE.CredentialsReference, clusterProvider)
+				if err != nil {
+					return nil, common.KubernetesErrorToHTTPError(err)
+				}
+				machineDeployments = np
+			}
+		}
+
+		return machineDeployments, nil
+	}
+}
+
+// listMachineDeploymentsReq defines HTTP request for listExternalClusterMachineDeployments
+// swagger:parameters listExternalClusterMachineDeployments
+type listMachineDeploymentsReq struct {
+	common.ProjectReq
+	// in: path
+	// required: true
+	ClusterID string `json:"cluster_id"`
+}
+
+// Validate validates ListMachineDeploymentEndpoint request
+func (req listMachineDeploymentsReq) Validate() error {
+	if len(req.ProjectID) == 0 {
+		return fmt.Errorf("the project ID cannot be empty")
+	}
+	if len(req.ClusterID) == 0 {
+		return fmt.Errorf("the cluster ID cannot be empty")
+	}
+	return nil
+}
+
+func DecodeListMachineDeploymentReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req listMachineDeploymentsReq
+
+	pr, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = pr.(common.ProjectReq)
+
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ClusterID = clusterID
+
+	return req, nil
+}
+
 // getNodeReq defines HTTP request for getExternalClusterNode
 // swagger:parameters getExternalClusterNode
 type getNodeReq struct {
