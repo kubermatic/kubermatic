@@ -604,6 +604,33 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 	return accessKeyID, secretAccessKey, nil
 }
 
+func GetCredentialsForEKSCluster(cloud kubermaticv1.ExternalClusterCloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (accessKeyID, secretAccessKey string, err error) {
+	accessKeyID = cloud.EKS.AccessKeyID
+	secretAccessKey = cloud.EKS.SecretAccessKey
+
+	if accessKeyID == "" {
+		if cloud.EKS.CredentialsReference == nil {
+			return "", "", errors.New("no credentials provided")
+		}
+		accessKeyID, err = secretKeySelector(cloud.EKS.CredentialsReference, kubermaticresources.AWSAccessKeyID)
+		if err != nil {
+			return "", "", err
+		}
+	}
+
+	if secretAccessKey == "" {
+		if cloud.EKS.CredentialsReference == nil {
+			return "", "", errors.New("no credentials provided")
+		}
+		secretAccessKey, err = secretKeySelector(cloud.EKS.CredentialsReference, kubermaticresources.AWSSecretAccessKey)
+		if err != nil {
+			return "", "", err
+		}
+	}
+
+	return accessKeyID, secretAccessKey, nil
+}
+
 func (a *AmazonEC2) getClientSet(cloud kubermaticv1.CloudSpec) (*ClientSet, error) {
 	accessKeyID, secretAccessKey, err := GetCredentialsForCluster(cloud, a.secretKeySelector)
 	if err != nil {
