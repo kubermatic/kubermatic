@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/addon"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/addoninstaller"
 	backupcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/backup"
