@@ -122,10 +122,10 @@ type EtcdBackupRestore struct {
 
 // BackupDestination defines the bucket name and endpoint as a backup destination, and holds reference to the credentials secret.
 type BackupDestination struct {
-	// S3Endpoint is the S3 API endpoint to use for backup and restore.
-	S3Endpoint string `json:"s3Endpoint,omitempty"`
-	// S3BucketName is the S3 bucket name to use for backup and restore.
-	S3BucketName string `json:"s3BucketName,omitempty"`
+	// Endpoint is the API endpoint to use for backup and restore.
+	Endpoint string `json:"endpoint,omitempty"`
+	// BucketName is the bucket name to use for backup and restore.
+	BucketName string `json:"bucketName,omitempty"`
 	// Credentials hold the ref to the secret with backup credentials
 	Credentials corev1.ObjectReference `json:"credentials,omitempty"`
 }

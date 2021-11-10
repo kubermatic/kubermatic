@@ -882,6 +882,10 @@ spec:
                         as a backup destination, and holds reference to the credentials
                         secret.
                       properties:
+                        bucketName:
+                          description: BucketName is the bucket name to use for backup
+                            and restore.
+                          type: string
                         credentials:
                           description: Credentials hold the ref to the secret with
                             backup credentials
@@ -921,13 +925,9 @@ spec:
                               description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
                               type: string
                           type: object
-                        s3BucketName:
-                          description: S3BucketName is the S3 bucket name to use for
-                            backup and restore.
-                          type: string
-                        s3Endpoint:
-                          description: S3Endpoint is the S3 API endpoint to use for
-                            backup and restore.
+                        endpoint:
+                          description: Endpoint is the API endpoint to use for backup
+                            and restore.
                           type: string
                       type: object
                     description: Destinations stores all the possible destinations

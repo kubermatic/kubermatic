@@ -1159,9 +1159,9 @@ func cloneSeedResourcesInCluster(ctx context.Context, logger logrus.FieldLogger,
 			destinations := make(map[string]*newv1.BackupDestination)
 			for name, destination := range oldObject.Spec.EtcdBackupRestore.Destinations {
 				destinations[name] = &newv1.BackupDestination{
-					S3Endpoint:   destination.S3Endpoint,
-					S3BucketName: destination.S3BucketName,
-					Credentials:  destination.Credentials,
+					Endpoint:    destination.Endpoint,
+					BucketName:  destination.BucketName,
+					Credentials: destination.Credentials,
 				}
 			}
 			newObject.Spec.EtcdBackupRestore = &newv1.EtcdBackupRestore{
