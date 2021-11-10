@@ -80,6 +80,8 @@ func New(dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelector
 	}, nil
 }
 
+var _ provider.CloudProvider = &Azure{}
+
 // Azure API doesn't allow programmatically getting the number of available fault domains in a given region.
 // We must therefore hardcode these based on https://docs.microsoft.com/en-us/azure/virtual-machines/windows/manage-availability
 //
@@ -676,6 +678,11 @@ func (a *Azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 
 	return cluster, nil
 }
+
+// TODO: Hey, you! Yes, you! Why don't you implement reconciling for Azure? Would be really cool :)
+// func (a *Azure) ReconcileCluster(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+// 	return cluster, nil
+// }
 
 func ensureAvailabilitySet(ctx context.Context, name, location string, cloud kubermaticv1.CloudSpec, credentials Credentials) error {
 	client, err := getAvailabilitySetClient(cloud, credentials)

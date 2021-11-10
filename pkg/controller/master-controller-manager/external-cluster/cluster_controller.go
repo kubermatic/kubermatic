@@ -278,7 +278,7 @@ func (r *Reconciler) createOrUpdateEKSKubeconfig(ctx context.Context, cluster *k
 	if err != nil {
 		return err
 	}
-	config, err := aws.GetEKSCLusterConfig(ctx, accessKeyID, secretAccessKey, cloud.EKS.Name, cloud.EKS.Region)
+	config, err := aws.GetEKSClusterConfig(ctx, accessKeyID, secretAccessKey, cloud.EKS.Name, cloud.EKS.Region)
 	if err != nil {
 		return err
 	}

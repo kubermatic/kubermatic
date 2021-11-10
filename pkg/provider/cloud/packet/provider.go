@@ -39,6 +39,8 @@ func NewCloudProvider(secretKeyGetter provider.SecretKeySelectorValueFunc) provi
 	}
 }
 
+var _ provider.CloudProvider = &packet{}
+
 // DefaultCloudSpec adds defaults to the CloudSpec.
 func (p *packet) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
 	return nil
@@ -65,6 +67,11 @@ func (p *packet) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update p
 
 	return cluster, nil
 }
+
+// TODO: Hey, you! Yes, you! Why don't you implement reconciling for Packet? Would be really cool :)
+// func (p *packet) ReconcileCluster(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+// 	return cluster, nil
+// }
 
 // CleanUpCloudProvider
 func (p *packet) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, _ provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {

@@ -11,6 +11,7 @@ import (
 	types "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	v1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -1102,6 +1103,10 @@ func (in *ClusterStatus) DeepCopyInto(out *ClusterStatus) {
 	*out = *in
 	in.LastUpdated.DeepCopyInto(&out.LastUpdated)
 	in.ExtendedHealth.DeepCopyInto(&out.ExtendedHealth)
+	if in.LastProviderReconciliation != nil {
+		in, out := &in.LastProviderReconciliation, &out.LastProviderReconciliation
+		*out = (*in).DeepCopy()
+	}
 	if in.RootCA != nil {
 		in, out := &in.RootCA, &out.RootCA
 		*out = new(KeyCert)
@@ -1726,6 +1731,11 @@ func (in *DatacenterSpec) DeepCopyInto(out *DatacenterSpec) {
 		in, out := &in.RequiredEmailDomains, &out.RequiredEmailDomains
 		*out = make([]string, len(*in))
 		copy(*out, *in)
+	}
+	if in.ProviderReconciliationInterval != nil {
+		in, out := &in.ProviderReconciliationInterval, &out.ProviderReconciliationInterval
+		*out = new(metav1.Duration)
+		**out = **in
 	}
 	return
 }
