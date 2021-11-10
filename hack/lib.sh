@@ -21,6 +21,17 @@
 # receives a SIGINT
 set -o monitor
 
+# Get the operating system
+# Possible values are:
+#		* linux for linux
+#		* darwin for macOS
+#
+# usage:
+# if [ "${OS}" == "darwin" ]; then
+#   # do macos stuff
+# fi
+OS="$(echo $(uname) | tr '[:upper:]' '[:lower:]')"
+
 worker_name() {
   echo "${KUBERMATIC_WORKERNAME:-$(uname -n)}" | tr -cd '[:alnum:]' | tr '[:upper:]' '[:lower:]'
 }
