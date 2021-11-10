@@ -371,6 +371,12 @@ type ExternalClusterNode struct {
 	apiv1.Node `json:",inline"`
 }
 
+// ExternalClusterMachineDeployment represents an object holding external cluster machine deployment
+// swagger:model ExternalClusterMachineDeployment
+type ExternalClusterMachineDeployment struct {
+	apiv1.NodeDeployment `json:",inline"`
+}
+
 // GKECluster represents a object of GKE cluster.
 // swagger:model GKECluster
 type GKECluster struct {
