@@ -195,3 +195,30 @@ func GetEKSClusterConfig(ctx context.Context, accessKeyID, secretAccessKey, clus
 	}
 	return &config, nil
 }
+
+func GetCredentialsForEKSCluster(cloud kubermaticv1.ExternalClusterCloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (accessKeyID, secretAccessKey string, err error) {
+	accessKeyID = cloud.EKS.AccessKeyID
+	secretAccessKey = cloud.EKS.SecretAccessKey
+
+	if accessKeyID == "" {
+		if cloud.EKS.CredentialsReference == nil {
+			return "", "", errors.New("no credentials provided")
+		}
+		accessKeyID, err = secretKeySelector(cloud.EKS.CredentialsReference, resources.AWSAccessKeyID)
+		if err != nil {
+			return "", "", err
+		}
+	}
+
+	if secretAccessKey == "" {
+		if cloud.EKS.CredentialsReference == nil {
+			return "", "", errors.New("no credentials provided")
+		}
+		secretAccessKey, err = secretKeySelector(cloud.EKS.CredentialsReference, resources.AWSSecretAccessKey)
+		if err != nil {
+			return "", "", err
+		}
+	}
+
+	return accessKeyID, secretAccessKey, nil
+}
