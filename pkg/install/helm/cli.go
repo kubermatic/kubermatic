@@ -68,14 +68,14 @@ func (c *cli) BuildChartDependencies(chartDirectory string, flags []string) (err
 
 	for idx, dep := range chart.Dependencies {
 		repoAddFlags := []string{
-			"repository",
+			"repo",
 			"add",
 			fmt.Sprintf("dep-%s-%d", chart.Name, idx),
 			dep.Repository,
 		}
 
 		repoRemoveFlags := []string{
-			"repository",
+			"repo",
 			"remove",
 			fmt.Sprintf("dep-%s-%d", chart.Name, idx),
 		}
@@ -86,6 +86,7 @@ func (c *cli) BuildChartDependencies(chartDirectory string, flags []string) (err
 				err = removeErr
 			}
 		}()
+
 		_, err = c.run("default", repoAddFlags...)
 	}
 
