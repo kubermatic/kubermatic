@@ -764,10 +764,45 @@ func cloneEtcdBackupConfigResourcesInCluster(ctx context.Context, logger logrus.
 				Cluster:     migrateObjectReference(oldObject.Spec.Cluster, ""),
 				Destination: oldObject.Spec.Destination,
 			},
+			Status: newv1.EtcdBackupConfigStatus{
+				CleanupRunning: oldObject.Status.CleanupRunning,
+			},
+		}
+
+		for _, condition := range oldObject.Status.Conditions {
+			newObject.Status.Conditions = append(newObject.Status.Conditions, newv1.EtcdBackupConfigCondition{
+				Type:               newv1.EtcdBackupConfigConditionType(condition.Type),
+				Status:             condition.Status,
+				LastHeartbeatTime:  condition.LastHeartbeatTime,
+				LastTransitionTime: condition.LastTransitionTime,
+				Reason:             condition.Reason,
+				Message:            condition.Message,
+			})
+		}
+
+		for _, backup := range oldObject.Status.CurrentBackups {
+			newObject.Status.CurrentBackups = append(newObject.Status.CurrentBackups, newv1.BackupStatus{
+				ScheduledTime:      backup.ScheduledTime,
+				BackupName:         backup.BackupName,
+				JobName:            backup.JobName,
+				BackupStartTime:    backup.BackupStartTime,
+				BackupFinishedTime: backup.BackupFinishedTime,
+				BackupPhase:        newv1.BackupStatusPhase(backup.BackupPhase),
+				BackupMessage:      backup.BackupMessage,
+				DeleteJobName:      backup.DeleteJobName,
+				DeleteStartTime:    backup.DeleteStartTime,
+				DeleteFinishedTime: backup.DeleteFinishedTime,
+				DeletePhase:        newv1.BackupStatusPhase(backup.DeletePhase),
+				DeleteMessage:      backup.DeleteMessage,
+			})
 		}
 
 		if err := ensureObject(ctx, client, &newObject, false); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
+		}
+
+		if err := client.Status().Update(ctx, &newObject); err != nil {
+			return 0, fmt.Errorf("failed to update status on %s: %w", oldObject.Name, err)
 		}
 	}
 
