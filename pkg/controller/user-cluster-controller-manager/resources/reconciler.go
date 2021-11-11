@@ -646,6 +646,7 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 				TLSKeyFile:          fmt.Sprintf("%s/%s", resources.UserClusterPrometheusClientCertMountPath, resources.UserClusterPrometheusClientKeySecretKey),
 				TLSCACertFile:       fmt.Sprintf("%s/%s", resources.UserClusterPrometheusClientCertMountPath, resources.MLAGatewayCACertKey),
 				CustomScrapeConfigs: customScrapeConfigs,
+				HAClusterIdentifier: r.clusterName,
 			}),
 		}
 		if err := reconciling.ReconcileConfigMaps(ctx, creators, resources.UserClusterMLANamespace, r.Client); err != nil {
