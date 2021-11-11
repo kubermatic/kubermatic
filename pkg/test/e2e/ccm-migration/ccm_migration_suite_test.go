@@ -32,7 +32,6 @@ import (
 type testOptions struct {
 	skipCleanup       bool
 	debugLog          bool
-	datacenter        string
 	userClusterName   string
 	kubernetesVersion semver.Semver
 
@@ -45,7 +44,6 @@ var options = testOptions{
 }
 
 func init() {
-	flag.StringVar(&options.datacenter, "datacenter", "byo-kubernetes", "Name of the datacenter used by the user clusters created for the test.")
 	flag.StringVar(&options.userClusterName, "user-cluster-name", "", "name of the user cluster to be created")
 	flag.Var(&options.kubernetesVersion, "kubernetes-version", "Kubernetes version for the user cluster")
 	flag.BoolVar(&options.debugLog, "debug-log", false, "Activate debug logs.")
@@ -59,10 +57,12 @@ func init() {
 	flag.StringVar(&options.osCredentials.Region, "openstack-region", "", "openstack region")
 	flag.StringVar(&options.osCredentials.FloatingIPPool, "openstack-floating-ip-pool", "", "openstack floating ip pool")
 	flag.StringVar(&options.osCredentials.Network, "openstack-network", "", "openstack network")
+	flag.StringVar(&options.osCredentials.Datacenter, "openstack-datacenter", "", "openstack datacenter")
 
 	flag.StringVar(&options.vSphereCredentials.AuthURL, "vsphere-auth-url", "", "vsphere auth url")
 	flag.StringVar(&options.vSphereCredentials.Username, "vsphere-username", "", "vsphere username")
 	flag.StringVar(&options.vSphereCredentials.Password, "vsphere-password", "", "vsphere password")
+	flag.StringVar(&options.vSphereCredentials.Datacenter, "vsphere-datacenter", "", "vsphere datacenter")
 }
 
 func TestCCMMigration(t *testing.T) {

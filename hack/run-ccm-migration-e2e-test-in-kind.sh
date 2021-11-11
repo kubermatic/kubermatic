@@ -38,6 +38,8 @@ USER_CLUSTER_NAME="${USER_CLUSTER_NAME-$(head -3 /dev/urandom | tr -cd '[:alnum:
 API_SERVER_NODEPORT_MANIFEST="${API_SERVER_NODEPORT_MANIFEST-apiserver_nodeport.yaml}"
 KUBECONFIG="${KUBECONFIG:-"${HOME}/.kube/config"}"
 
+source os_env.sh
+
 REPOSUFFIX=""
 if [ "${KUBERMATIC_EDITION:-}" == "ee" ]; then
   REPOSUFFIX="-${KUBERMATIC_EDITION}"
@@ -50,7 +52,7 @@ function clean_up {
   echodate "Deleting cluster ${KIND_CLUSTER_NAME}"
   kind delete cluster --name "${KIND_CLUSTER_NAME}" || true
 }
-appendTrap clean_up EXIT
+#appendTrap clean_up EXIT
 
 # Only start docker daemon in CI envorinment.
 if [[ ! -z "${JOB_NAME:-}" ]] && [[ ! -z "${PROW_JOB_ID:-}" ]]; then
@@ -229,9 +231,25 @@ spec:
             minimumMemory: 0
             minimumVCPUs: 0
           region: dbl
-          trustDevicePath: null
-          useOctavia: null
-  exposeStrategy: Tunneling
+          trust_device_path: null
+          use_octavia: null
+    vsphere-hamburg:
+      country: DE
+      location: Hamburg
+      spec:
+        vsphere:
+          allow_insecure: false
+          cluster: cl-1
+          datacenter: dc-1
+          datastore: exsi-nas
+          endpoint: https://vcenter.loodse.io
+          root_path: /dc-1/vm/kubermatic
+          storage_policy: ""
+          templates:
+            centos: machine-controller-e2e-centos
+            coreos: machine-controller-e2e-coreos
+            ubuntu: machine-controller-e2e-ubuntu
+  expose_strategy: Tunneling
 EOF
 
 retry 3 kubectl apply -f $SEED_MANIFEST
@@ -239,7 +257,7 @@ echodate "Finished installing Seed"
 
 sleep 5
 echodate "Waiting for Kubermatic Operator to deploy Seed components..."
-retry 8 check_all_deployments_ready kubermatic
+retry 15 check_all_deployments_ready kubermatic
 echodate "Kubermatic Seed is ready."
 
 cat << EOF > "${API_SERVER_NODEPORT_MANIFEST}"
@@ -261,6 +279,8 @@ EOF
 
 time retry 10 kubectl apply -f "${API_SERVER_NODEPORT_MANIFEST}" &
 
+exit 0
+
 EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
     -openstack-project=${OS_TENANT_NAME}
     -openstack-username=${OS_USERNAME}
@@ -268,7 +288,11 @@ EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
     -openstack-auth-url=${OS_AUTH_URL}
     -openstack-region=${OS_REGION}
     -openstack-floating-ip-pool=${OS_FLOATING_IP_POOL}
-    -openstack-network=${OS_NETWORK_NAME}"
+    -openstack-network=${OS_NETWORK_NAME}
+    -vsphere-auth-url=${}
+    -vsphere-username=${}
+    -vsphere-password=${}
+    "
 
 # delete userclusters when ending the test
 appendTrap cleanup_kubermatic_clusters_in_kind EXIT
