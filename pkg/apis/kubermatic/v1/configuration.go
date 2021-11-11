@@ -156,7 +156,7 @@ type KubermaticSeedControllerConfiguration struct {
 	// BackupCleanupContainer is the container used for removing expired backups from the storage location.
 	BackupCleanupContainer string `json:"backupCleanupContainer,omitempty"`
 	// BackupRestore contains the setup of the new backup and restore controllers.
-	// Deprecated: Use Seed.Spec.BackupRestore. This is legacy field to support old configurations.
+	// Deprecated: Use Seed.Spec.EtcdBackupRestore. This is legacy field to support old configurations.
 	BackupRestore LegacyKubermaticBackupRestoreConfiguration `json:"backupRestore,omitempty"`
 	// MaximumParallelReconciles limits the number of cluster reconciliations
 	// that are active at any given time.
@@ -172,7 +172,7 @@ type KubermaticSeedControllerConfiguration struct {
 	Replicas *int32 `json:"replicas,omitempty"`
 }
 
-// Deprecated: Use SeedBackupRestoreConfiguration.
+// Deprecated: Use Seed.Spec.EtcdBackupRestore.
 // LegacyKubermaticBackupRestoreConfiguration are s3 settings used for backups and restores of user cluster etcds.
 type LegacyKubermaticBackupRestoreConfiguration struct {
 	// Enabled enables the new etcd backup and restore controllers.
