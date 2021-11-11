@@ -227,7 +227,7 @@ func startEtcdCmd(e *etcdCluster, log *zap.SugaredLogger) (*exec.Cmd, error) {
 func deleteUnwantedDeadMembers(e *etcdCluster, log *zap.SugaredLogger) (bool, error) {
 	unwantedMembers, err := e.getUnwantedMembers(log)
 	if err != nil {
-		log.Warnw("failed to get unwanted members ", zap.Error(err))
+		log.Warnw("failed to get unwanted members", zap.Error(err))
 		return false, nil
 	}
 	// we only need to reconcile if we have members that we shouldn't have

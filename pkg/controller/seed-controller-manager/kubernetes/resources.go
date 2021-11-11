@@ -518,9 +518,9 @@ func (r *Reconciler) ensureConfigMaps(ctx context.Context, c *kubermaticv1.Clust
 }
 
 // GetStatefulSetCreators returns all StatefulSetCreators that are currently in use
-func GetStatefulSetCreators(data *resources.TemplateData, enableDataCorruptionChecks bool, enableTSOnly bool) []reconciling.NamedStatefulSetCreatorGetter {
+func GetStatefulSetCreators(data *resources.TemplateData, enableDataCorruptionChecks bool, enableTLSOnly bool) []reconciling.NamedStatefulSetCreatorGetter {
 	creators := []reconciling.NamedStatefulSetCreatorGetter{
-		etcd.StatefulSetCreator(data, enableDataCorruptionChecks, enableTSOnly),
+		etcd.StatefulSetCreator(data, enableDataCorruptionChecks, enableTLSOnly),
 	}
 	if flag := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureRancherIntegration]; flag {
 		creators = append(creators, rancherserver.StatefulSetCreator(data))
