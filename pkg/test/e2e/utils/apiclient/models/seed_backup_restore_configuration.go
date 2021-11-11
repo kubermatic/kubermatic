@@ -12,7 +12,9 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// SeedBackupRestoreConfiguration SeedBackupRestoreConfiguration are s3 settings used for backups and restores of user cluster etcds.
+// SeedBackupRestoreConfiguration SeedBackupRestoreConfiguration defines the bucket name and endpoint as a backup destination.
+//
+// Deprecated: use EtcdBackupRestore
 //
 // swagger:model SeedBackupRestoreConfiguration
 type SeedBackupRestoreConfiguration struct {
@@ -20,7 +22,7 @@ type SeedBackupRestoreConfiguration struct {
 	// S3BucketName is the S3 bucket name to use for backup and restore.
 	S3BucketName string `json:"s3BucketName,omitempty"`
 
-	// S3Endpoint is the S3 API endpoint to use for backup and restore. Defaults to s3.amazonaws.com.
+	// S3Endpoint is the S3 API endpoint to use for backup and restore.
 	S3Endpoint string `json:"s3Endpoint,omitempty"`
 }
 

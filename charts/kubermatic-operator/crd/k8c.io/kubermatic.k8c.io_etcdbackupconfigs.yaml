@@ -73,6 +73,12 @@ spec:
                     description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
                     type: string
                 type: object
+              destination:
+                description: Destination indicates where the backup will be stored.
+                  The destination name should correspond to a destination in the cluster's
+                  Seed.Spec.EtcdBackupRestore. If empty, it will use the legacy destination
+                  in Seed.Spec.BackupRestore
+                type: string
               keep:
                 description: Keep is the number of backups to keep around before deleting
                   the oldest one If not set, defaults to DefaultKeptBackupsCount.
