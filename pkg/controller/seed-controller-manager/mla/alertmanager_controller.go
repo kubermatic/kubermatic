@@ -51,8 +51,8 @@ import (
 
 const (
 	alertmanagerFinalizer        = "kubermatic.io/alertmanager"
-	alertmanagerConfigEndpoint   = "/api/v1/alerts"
-	alertmanagerTenantHeaderName = "X-Scope-OrgID"
+	AlertmanagerConfigEndpoint   = "/api/v1/alerts"
+	AlertmanagerTenantHeaderName = "X-Scope-OrgID"
 )
 
 type alertmanagerReconciler struct {
@@ -280,11 +280,11 @@ func (r *alertmanagerController) handleDeletion(ctx context.Context, cluster *ku
 
 func (r *alertmanagerController) cleanUpAlertmanagerConfiguration(cluster *kubermaticv1.Cluster) error {
 	req, err := http.NewRequest(http.MethodDelete,
-		r.cortexAlertmanagerURL+alertmanagerConfigEndpoint, nil)
+		r.cortexAlertmanagerURL+AlertmanagerConfigEndpoint, nil)
 	if err != nil {
 		return err
 	}
-	req.Header.Add(alertmanagerTenantHeaderName, cluster.Name)
+	req.Header.Add(AlertmanagerTenantHeaderName, cluster.Name)
 	resp, err := r.httpClient.Do(req)
 	if err != nil {
 		return err
@@ -354,7 +354,7 @@ func (r *alertmanagerController) ensureAlertmanagerConfiguration(ctx context.Con
 		return fmt.Errorf("failed to get alertmanager config: %w", err)
 	}
 
-	alertmanagerURL := r.cortexAlertmanagerURL + alertmanagerConfigEndpoint
+	alertmanagerURL := r.cortexAlertmanagerURL + AlertmanagerConfigEndpoint
 	currentConfig, err := r.getCurrentAlertmanagerConfig(alertmanagerURL, cluster)
 	if err != nil {
 		return err
@@ -373,7 +373,7 @@ func (r *alertmanagerController) ensureAlertmanagerConfiguration(ctx context.Con
 	if err != nil {
 		return err
 	}
-	req.Header.Add(alertmanagerTenantHeaderName, cluster.Name)
+	req.Header.Add(AlertmanagerTenantHeaderName, cluster.Name)
 
 	resp, err := r.httpClient.Do(req)
 	if err != nil {
@@ -458,7 +458,7 @@ func (r *alertmanagerController) getCurrentAlertmanagerConfig(alertmanagerURL st
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add(alertmanagerTenantHeaderName, cluster.Name)
+	req.Header.Add(AlertmanagerTenantHeaderName, cluster.Name)
 	resp, err := r.httpClient.Do(req)
 	if err != nil {
 		return nil, err

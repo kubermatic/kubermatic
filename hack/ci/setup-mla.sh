@@ -58,6 +58,9 @@ retry 8 check_all_deployments_ready mla
 TEST_NAME="Expose Grafana"
 echodate "Exposing Grafana to localhost..."
 kubectl port-forward --address 0.0.0.0 -n mla svc/grafana 3000:80 > /dev/null &
+kubectl port-forward --address 0.0.0.0 -n mla svc/cortex-alertmanager 3001:8080 > /dev/null &
+kubectl port-forward --address 0.0.0.0 -n mla svc/cortex-ruler 3002:8080 > /dev/null &
+kubectl port-forward --address 0.0.0.0 -n mla svc/loki-distributed-ruler 3003:8080 > /dev/null &
 echodate "Finished exposing components"
 
 echodate "MLA is ready."

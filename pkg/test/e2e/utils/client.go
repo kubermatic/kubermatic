@@ -44,6 +44,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/digitalocean"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/gcp"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/project"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/rulegroup"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/serviceaccounts"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/tokens"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/users"
@@ -1877,4 +1878,49 @@ func (r *TestClient) ListAzureSizes(credential, location string) (models.AzureSi
 	}
 
 	return sizesResponse.Payload, nil
+}
+
+// UpdateAlertmanager updates alertmanager config for specific cluster
+func (r *TestClient) UpdateAlertmanager(clusterID, projectID, config string) (*models.Alertmanager, error) {
+	params := &project.UpdateAlertmanagerParams{
+		Body: &models.Alertmanager{
+			Spec: &models.AlertmanagerSpec{
+				Config: []byte(config),
+			},
+		},
+		ClusterID: clusterID,
+		ProjectID: projectID,
+	}
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
+	updateResponse, err := r.client.Project.UpdateAlertmanager(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+	return updateResponse.Payload, nil
+}
+
+// CreateRuleGroup creates rule group with specific type
+func (r *TestClient) CreateRuleGroup(clusterID, projectID string, ruleGroupType kubermaticv1.RuleGroupType, config []byte) (*models.RuleGroup, error) {
+	params := &rulegroup.CreateRuleGroupParams{
+		Body: &models.RuleGroup{
+			Data: config,
+			Type: models.RuleGroupType(ruleGroupType),
+		},
+		ClusterID: clusterID,
+		ProjectID: projectID,
+	}
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
+	createResponse, err := r.client.Rulegroup.CreateRuleGroup(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+	return createResponse.Payload, nil
 }

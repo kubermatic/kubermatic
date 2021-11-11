@@ -23,23 +23,44 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
+	"gopkg.in/yaml.v2"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
 	"k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/scheme"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	testAlertmanagerConfig = `
+template_files: {}
+alertmanager_config: |
+  global:
+    smtp_smarthost: 'localhost:25'
+    smtp_from: 'test@example.org'
+  route:
+    receiver: "test"
+  receivers:
+    - name: "test"
+      email_configs:
+      - to: 'test@example.org'
+  
+`
 )
 
 var (
@@ -204,6 +225,99 @@ func TestMLAIntegration(t *testing.T) {
 	if orgUser.Role != string(grafanasdk.ROLE_EDITOR) {
 		t.Fatalf("orgUser[%v] expected to be had Editor role", orgUser)
 	}
+
+	// RuleGroup
+	testRuleGroup := test.GenerateTestRuleGroupData("test-rule")
+	expectedMetricRuleGroup := map[string]interface{}{}
+	if err := yaml.Unmarshal(testRuleGroup, &expectedMetricRuleGroup); err != nil {
+		t.Fatalf("unable to unmarshal expected rule group: %v", err)
+	}
+	_, err = masterClient.CreateRuleGroup(cluster.Name, project.ID, kubermaticv1.RuleGroupTypeMetrics, testRuleGroup)
+	if err != nil {
+		t.Fatalf("unable to create metric rule group: %v", err)
+	}
+	ruleGroupURL := fmt.Sprintf("%s%s%s", "http://localhost:3002", mla.MetricsRuleGroupConfigEndpoint, "/default")
+
+	if !utils.WaitFor(1*time.Second, timeout, func() bool {
+		req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/%s", ruleGroupURL, "test-rule"), nil)
+		if err != nil {
+			t.Fatalf("unable to create rule group request: %v", err)
+		}
+		req.Header.Add(mla.RuleGroupTenantHeaderName, cluster.Name)
+
+		resp, err := httpClient.Do(req)
+		if err != nil {
+			t.Fatalf("unable to get rule group: %v", err)
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			return false
+		}
+		defer resp.Body.Close()
+		config := map[string]interface{}{}
+		decoder := yaml.NewDecoder(resp.Body)
+		if err := decoder.Decode(&config); err != nil {
+			t.Fatalf("unable to decode response body: %v", err)
+		}
+		return reflect.DeepEqual(config, expectedMetricRuleGroup)
+
+	}) {
+		t.Fatal("rule group not found")
+	}
+	t.Log("rule group added")
+
+	// AlertManager
+	_, err = masterClient.UpdateAlertmanager(cluster.Name, project.ID, testAlertmanagerConfig)
+	if err != nil {
+		t.Fatalf("unable to update alertmanager config: %v", err)
+	}
+
+	if !utils.WaitFor(1*time.Second, timeout, func() bool {
+		if err := seedClient.Get(ctx, types.NamespacedName{Name: apiCluster.ID}, cluster); err != nil {
+			t.Fatalf("failed to get cluster: %v", err)
+		}
+		return *cluster.Status.ExtendedHealth.AlertmanagerConfig == kubermaticv1.HealthStatusUp
+	}) {
+		t.Fatalf("has alertmanager status: %v", *cluster.Status.ExtendedHealth.AlertmanagerConfig)
+	}
+
+	alertmanagerURL := "http://localhost:3001" + mla.AlertmanagerConfigEndpoint
+	expectedConfig := map[string]interface{}{}
+	if err := yaml.Unmarshal([]byte(testAlertmanagerConfig), &expectedConfig); err != nil {
+		t.Fatalf("unable to unmarshal expected config: %v", err)
+	}
+	if !utils.WaitFor(1*time.Second, timeout, func() bool {
+		req, err := http.NewRequest(http.MethodGet, alertmanagerURL, nil)
+		if err != nil {
+			t.Fatalf("unable to create request to get alertmanager config: %v", err)
+		}
+		req.Header.Add(mla.AlertmanagerTenantHeaderName, cluster.Name)
+		resp, err := httpClient.Do(req)
+		if err != nil {
+			t.Fatalf("unable to get alertmanager config: %v", err)
+		}
+		defer resp.Body.Close()
+		// https://cortexmetrics.io/docs/api/#get-alertmanager-configuration
+		if resp.StatusCode == http.StatusNotFound {
+			t.Fatal("alertmanager config not found")
+		}
+		if resp.StatusCode != http.StatusOK {
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				t.Fatalf("unable to read alertmanager config: %v", err)
+			}
+			t.Fatalf("status code: %d, response body: %s", resp.StatusCode, string(body))
+		}
+		config := map[string]interface{}{}
+		decoder := yaml.NewDecoder(resp.Body)
+		if err := decoder.Decode(&config); err != nil {
+			t.Fatalf("unable to decode response body: %v", err)
+		}
+		return reflect.DeepEqual(config, expectedConfig)
+	}) {
+		t.Fatalf("config not equal")
+	}
+	t.Log("alertmanager config added")
 
 	// Disable MLA Integration
 	t.Log("disabling MLA...")
