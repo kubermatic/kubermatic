@@ -239,25 +239,21 @@ func (a *Azure) reconcileCluster(cluster *kubermaticv1.Cluster, update provider.
 		return nil, err
 	}
 
+	clientSet, err := GetClientSet(cluster.Spec.Cloud, credentials)
+	if err != nil {
+		return nil, err
+	}
+
 	if force || cluster.Spec.Cloud.Azure.ResourceGroup == "" {
-		cluster.Spec.Cloud.Azure.ResourceGroup = resourceNamePrefix + cluster.Name
-
-		logger.Infow("ensuring resource group", "resourceGroup", cluster.Spec.Cloud.Azure.ResourceGroup)
-		if err = ensureResourceGroup(a.ctx, cluster.Spec.Cloud, location, cluster.Name, credentials); err != nil {
-			return cluster, err
-		}
-
-		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
-			updatedCluster.Spec.Cloud.Azure.ResourceGroup = cluster.Spec.Cloud.Azure.ResourceGroup
-			kuberneteshelper.AddFinalizer(updatedCluster, FinalizerResourceGroup)
-		})
+		logger.Infow("reconciling resource group", "resourceGroup", cluster.Spec.Cloud.Azure.ResourceGroup)
+		cluster, err = reconcileResourceGroup(a.ctx, clientSet.Groups, location, cluster, update)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	if force || cluster.Spec.Cloud.Azure.VNetName == "" {
-		cluster.Spec.Cloud.Azure.VNetName = resourceNamePrefix + cluster.Name
+		cluster.Spec.Cloud.Azure.VNetName = vnetName(cluster)
 
 		logger.Infow("ensuring vnet", "vnet", cluster.Spec.Cloud.Azure.VNetName)
 		if err = ensureVNet(a.ctx, cluster.Spec.Cloud, location, cluster.Name, credentials); err != nil {
@@ -274,7 +270,7 @@ func (a *Azure) reconcileCluster(cluster *kubermaticv1.Cluster, update provider.
 	}
 
 	if force || cluster.Spec.Cloud.Azure.SubnetName == "" {
-		cluster.Spec.Cloud.Azure.SubnetName = resourceNamePrefix + cluster.Name
+		cluster.Spec.Cloud.Azure.SubnetName = subnetName(cluster)
 
 		logger.Infow("ensuring subnet", "subnet", cluster.Spec.Cloud.Azure.SubnetName)
 		if err = ensureSubnet(a.ctx, cluster.Spec.Cloud, credentials); err != nil {
@@ -291,7 +287,7 @@ func (a *Azure) reconcileCluster(cluster *kubermaticv1.Cluster, update provider.
 	}
 
 	if force || cluster.Spec.Cloud.Azure.RouteTableName == "" {
-		cluster.Spec.Cloud.Azure.RouteTableName = resourceNamePrefix + cluster.Name
+		cluster.Spec.Cloud.Azure.RouteTableName = routeTableName(cluster)
 
 		logger.Infow("ensuring route table", "routeTableName", cluster.Spec.Cloud.Azure.RouteTableName)
 		if err = ensureRouteTable(a.ctx, cluster.Spec.Cloud, location, credentials); err != nil {
@@ -308,7 +304,7 @@ func (a *Azure) reconcileCluster(cluster *kubermaticv1.Cluster, update provider.
 	}
 
 	if force || cluster.Spec.Cloud.Azure.SecurityGroup == "" {
-		cluster.Spec.Cloud.Azure.SecurityGroup = resourceNamePrefix + cluster.Name
+		cluster.Spec.Cloud.Azure.SecurityGroup = securityGroupName(cluster)
 
 		lowPort, highPort := kubermaticresources.NewTemplateDataBuilder().
 			WithNodePortRange(cluster.Spec.ComponentsOverride.Apiserver.NodePortRange).
@@ -333,7 +329,7 @@ func (a *Azure) reconcileCluster(cluster *kubermaticv1.Cluster, update provider.
 	if force || cluster.Spec.Cloud.Azure.AvailabilitySet == "" {
 		if cluster.Spec.Cloud.Azure.AssignAvailabilitySet == nil ||
 			*cluster.Spec.Cloud.Azure.AssignAvailabilitySet {
-			asName := resourceNamePrefix + cluster.Name
+			asName := availabilitySetName(cluster)
 			logger.Infow("ensuring AvailabilitySet", "availabilitySet", asName)
 
 			if err := ensureAvailabilitySet(a.ctx, asName, location, cluster.Spec.Cloud, credentials); err != nil {

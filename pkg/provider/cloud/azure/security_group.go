@@ -26,6 +26,10 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 )
 
+func securityGroupName(cluster *kubermaticv1.Cluster) string {
+	return resourceNamePrefix + cluster.Name
+}
+
 // ensureSecurityGroup will create or update an Azure security group. The call is idempotent.
 func (a *Azure) ensureSecurityGroup(cloud kubermaticv1.CloudSpec, location string, clusterName string, portRangeLow int, portRangeHigh int, credentials Credentials) error {
 	sgClient, err := getSecurityGroupsClient(cloud, credentials)

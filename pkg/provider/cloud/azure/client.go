@@ -30,6 +30,62 @@ import (
 	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
 )
 
+type ClientSet struct {
+	Groups           *resources.GroupsClient
+	Networks         *network.VirtualNetworksClient
+	Subnets          *network.SubnetsClient
+	RouteTables      *network.RouteTablesClient
+	SecurityGroups   *network.SecurityGroupsClient
+	AvailabilitySets *compute.AvailabilitySetsClient
+}
+
+// GetClientSet returns a set of clients to interact with various Azure resource types managed by KKP
+func GetClientSet(cloud kubermaticv1.CloudSpec, credentials Credentials) (*ClientSet, error) {
+	return getClientSet(cloud, credentials)
+}
+
+func getClientSet(cloud kubermaticv1.CloudSpec, credentials Credentials) (*ClientSet, error) {
+
+	groupsClient, err := getGroupsClient(cloud, credentials)
+	if err != nil {
+		return nil, err
+	}
+
+	networksClient, err := getNetworksClient(cloud, credentials)
+	if err != nil {
+		return nil, err
+	}
+
+	subnetsClient, err := getSubnetsClient(cloud, credentials)
+	if err != nil {
+		return nil, err
+	}
+
+	routeTablesClient, err := getRouteTablesClient(cloud, credentials)
+	if err != nil {
+		return nil, err
+	}
+
+	securityGroupsClient, err := getSecurityGroupsClient(cloud, credentials)
+	if err != nil {
+		return nil, err
+	}
+
+	availabilitySetsClient, err := getAvailabilitySetClient(cloud, credentials)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ClientSet{
+		Groups:           groupsClient,
+		Networks:         networksClient,
+		Subnets:          subnetsClient,
+		RouteTables:      routeTablesClient,
+		SecurityGroups:   securityGroupsClient,
+		AvailabilitySets: availabilitySetsClient,
+	}, nil
+}
+
 // GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error
 func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (Credentials, error) {
 	tenantID := cloud.Azure.TenantID

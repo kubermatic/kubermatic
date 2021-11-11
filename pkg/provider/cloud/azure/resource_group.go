@@ -24,15 +24,30 @@ import (
 	"github.com/Azure/go-autorest/autorest/to"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
-// ensureResourceGroup will create or update an Azure resource group. The call is idempotent.
-func ensureResourceGroup(ctx context.Context, cloud kubermaticv1.CloudSpec, location string, clusterName string, credentials Credentials) error {
-	groupsClient, err := getGroupsClient(cloud, credentials)
-	if err != nil {
-		return err
+func resourceGroupName(cluster *kubermaticv1.Cluster) string {
+	return resourceNamePrefix + cluster.Name
+}
+
+func reconcileResourceGroup(ctx context.Context, client *resources.GroupsClient, location string, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	return nil, nil
+	cluster.Spec.Cloud.Azure.ResourceGroup = resourceGroupName(cluster)
+
+	if err := ensureResourceGroup(ctx, client, cluster.Spec.Cloud, location, cluster.Name); err != nil {
+		return cluster, err
 	}
 
+	return update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+		updatedCluster.Spec.Cloud.Azure.ResourceGroup = cluster.Spec.Cloud.Azure.ResourceGroup
+		kuberneteshelper.AddFinalizer(updatedCluster, FinalizerResourceGroup)
+	})
+}
+
+// ensureResourceGroup will create or update an Azure resource group. The call is idempotent.
+func ensureResourceGroup(ctx context.Context, groupsClient *resources.GroupsClient, cloud kubermaticv1.CloudSpec, location string, clusterName string) error {
 	parameters := resources.Group{
 		Name:     to.StringPtr(cloud.Azure.ResourceGroup),
 		Location: to.StringPtr(location),
@@ -40,7 +55,7 @@ func ensureResourceGroup(ctx context.Context, cloud kubermaticv1.CloudSpec, loca
 			clusterTagKey: to.StringPtr(clusterName),
 		},
 	}
-	if _, err = groupsClient.CreateOrUpdate(ctx, cloud.Azure.ResourceGroup, parameters); err != nil {
+	if _, err := groupsClient.CreateOrUpdate(ctx, cloud.Azure.ResourceGroup, parameters); err != nil {
 		return fmt.Errorf("failed to create or update resource group %q: %v", cloud.Azure.ResourceGroup, err)
 	}
 

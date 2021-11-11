@@ -26,6 +26,10 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 )
 
+func availabilitySetName(cluster *kubermaticv1.Cluster) string {
+	return resourceNamePrefix + cluster.Name
+}
+
 func ensureAvailabilitySet(ctx context.Context, name, location string, cloud kubermaticv1.CloudSpec, credentials Credentials) error {
 	client, err := getAvailabilitySetClient(cloud, credentials)
 	if err != nil {

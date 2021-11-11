@@ -26,6 +26,10 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 )
 
+func routeTableName(cluster *kubermaticv1.Cluster) string {
+	return resourceNamePrefix + cluster.Name
+}
+
 // ensureRouteTable will create or update an Azure route table attached to the specified subnet. The call is idempotent.
 func ensureRouteTable(ctx context.Context, cloud kubermaticv1.CloudSpec, location string, credentials Credentials) error {
 	routeTablesClient, err := getRouteTablesClient(cloud, credentials)

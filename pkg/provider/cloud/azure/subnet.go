@@ -26,6 +26,10 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 )
 
+func subnetName(cluster *kubermaticv1.Cluster) string {
+	return resourceNamePrefix + cluster.Name
+}
+
 // ensureSubnet will create or update an Azure subnetwork in the specified vnet. The call is idempotent.
 func ensureSubnet(ctx context.Context, cloud kubermaticv1.CloudSpec, credentials Credentials) error {
 	subnetsClient, err := getSubnetsClient(cloud, credentials)

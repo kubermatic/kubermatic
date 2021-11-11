@@ -26,6 +26,10 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 )
 
+func vnetName(cluster *kubermaticv1.Cluster) string {
+	return resourceNamePrefix + cluster.Name
+}
+
 // ensureVNet will create or update an Azure virtual network in the specified resource group. The call is idempotent.
 func ensureVNet(ctx context.Context, cloud kubermaticv1.CloudSpec, location string, clusterName string, credentials Credentials) error {
 	networksClient, err := getNetworksClient(cloud, credentials)
