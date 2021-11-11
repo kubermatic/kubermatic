@@ -405,23 +405,6 @@ type EKSClusterList []EKSCluster
 // swagger:model Regions
 type Regions []string
 
-// NodeGroup defines the EKS NodeGroup
-// swagger:model NodeGroup
-type NodeGroup struct {
-	ClusterName   string        `json:"clusterName"`
-	DiskSize      int           `json:"diskSize"`
-	Subnets       []*string     `json:"subnets"`
-	Version       string        `json:"version"`
-	Status        string        `json:"status"`
-	ScalingConfig ScalingConfig `json:"scalingConfig"`
-}
-
-type ScalingConfig struct {
-	DesiredSize int64
-	MaxSize     int64
-	MinSize     int64
-}
-
 // FeatureGates represents an object holding feature gate settings
 // swagger:model FeatureGates
 type FeatureGates struct {
