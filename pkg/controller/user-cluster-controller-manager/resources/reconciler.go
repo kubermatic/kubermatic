@@ -730,7 +730,7 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData)
 	}
 
 	if r.userSSHKeyAgent {
-		dsCreators = append(dsCreators, usersshkeys.DaemonSetCreator(r.versions))
+		dsCreators = append(dsCreators, usersshkeys.DaemonSetCreator(r.versions, r.overwriteRegistryFunc))
 	}
 
 	if len(r.tunnelingAgentIP) > 0 {
