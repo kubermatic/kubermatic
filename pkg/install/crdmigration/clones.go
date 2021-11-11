@@ -519,8 +519,21 @@ func cloneAddonResourcesInCluster(ctx context.Context, logger logrus.FieldLogger
 			newObject.Spec.RequiredResourceTypes = append(newObject.Spec.RequiredResourceTypes, newv1.GroupVersionKind(t))
 		}
 
+		for _, condition := range oldObject.Status.Conditions {
+			newObject.Status.Conditions = append(newObject.Status.Conditions, newv1.AddonCondition{
+				Type:               newv1.AddonConditionType(condition.Type),
+				Status:             condition.Status,
+				LastHeartbeatTime:  condition.LastHeartbeatTime,
+				LastTransitionTime: condition.LastTransitionTime,
+			})
+		}
+
 		if err := ensureObject(ctx, client, &newObject, false); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
+		}
+
+		if err := client.Status().Update(ctx, &newObject); err != nil {
+			return 0, fmt.Errorf("failed to update status on %s: %w", oldObject.Name, err)
 		}
 	}
 
@@ -824,10 +837,18 @@ func cloneEtcdRestoreResourcesInCluster(ctx context.Context, logger logrus.Field
 				BackupName:                      oldObject.Spec.BackupName,
 				Cluster:                         migrateObjectReference(oldObject.Spec.Cluster, ""),
 			},
+			Status: newv1.EtcdRestoreStatus{
+				Phase:       newv1.EtcdRestorePhase(oldObject.Status.Phase),
+				RestoreTime: oldObject.Status.RestoreTime,
+			},
 		}
 
 		if err := ensureObject(ctx, client, &newObject, false); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
+		}
+
+		if err := client.Status().Update(ctx, &newObject); err != nil {
+			return 0, fmt.Errorf("failed to update status on %s: %w", oldObject.Name, err)
 		}
 	}
 
