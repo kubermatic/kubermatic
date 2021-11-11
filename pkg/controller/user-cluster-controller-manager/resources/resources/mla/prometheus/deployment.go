@@ -78,7 +78,7 @@ func DeploymentCreator(overrides *corev1.ResourceRequirements, registryWithOverw
 			deployment.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: controllerLabels,
 			}
-			deployment.Spec.Replicas = pointer.Int32Ptr(1)
+			deployment.Spec.Replicas = pointer.Int32Ptr(2)
 			deployment.Spec.Template.ObjectMeta.Labels = controllerLabels
 			deployment.Spec.Template.Spec.ServiceAccountName = resources.UserClusterPrometheusServiceAccountName
 			deployment.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
@@ -99,6 +99,7 @@ func DeploymentCreator(overrides *corev1.ResourceRequirements, registryWithOverw
 						"--web.console.libraries=/etc/prometheus/console_libraries",
 						"--web.console.templates=/etc/prometheus/consoles",
 						"--web.enable-lifecycle",
+						"--enable-feature=expand-external-labels",
 					},
 					Ports: []corev1.ContainerPort{
 						{
