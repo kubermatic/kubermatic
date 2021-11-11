@@ -221,6 +221,15 @@ func (a *Azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 }
 
 func (a *Azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	return a.reconcileCluster(cluster, update, false, true)
+}
+
+// TODO
+func (a *Azure) ReconcileCluster(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	return a.reconcileCluster(cluster, update, true, true)
+}
+
+func (a *Azure) reconcileCluster(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, force bool, setTags bool) (*kubermaticv1.Cluster, error) {
 	var err error
 	logger := a.log.With("cluster", cluster.Name)
 	location := a.dc.Location
@@ -230,7 +239,7 @@ func (a *Azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 		return nil, err
 	}
 
-	if cluster.Spec.Cloud.Azure.ResourceGroup == "" {
+	if force || cluster.Spec.Cloud.Azure.ResourceGroup == "" {
 		cluster.Spec.Cloud.Azure.ResourceGroup = resourceNamePrefix + cluster.Name
 
 		logger.Infow("ensuring resource group", "resourceGroup", cluster.Spec.Cloud.Azure.ResourceGroup)
@@ -247,7 +256,7 @@ func (a *Azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 		}
 	}
 
-	if cluster.Spec.Cloud.Azure.VNetName == "" {
+	if force || cluster.Spec.Cloud.Azure.VNetName == "" {
 		cluster.Spec.Cloud.Azure.VNetName = resourceNamePrefix + cluster.Name
 
 		logger.Infow("ensuring vnet", "vnet", cluster.Spec.Cloud.Azure.VNetName)
@@ -264,7 +273,7 @@ func (a *Azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 		}
 	}
 
-	if cluster.Spec.Cloud.Azure.SubnetName == "" {
+	if force || cluster.Spec.Cloud.Azure.SubnetName == "" {
 		cluster.Spec.Cloud.Azure.SubnetName = resourceNamePrefix + cluster.Name
 
 		logger.Infow("ensuring subnet", "subnet", cluster.Spec.Cloud.Azure.SubnetName)
@@ -281,7 +290,7 @@ func (a *Azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 		}
 	}
 
-	if cluster.Spec.Cloud.Azure.RouteTableName == "" {
+	if force || cluster.Spec.Cloud.Azure.RouteTableName == "" {
 		cluster.Spec.Cloud.Azure.RouteTableName = resourceNamePrefix + cluster.Name
 
 		logger.Infow("ensuring route table", "routeTableName", cluster.Spec.Cloud.Azure.RouteTableName)
@@ -298,7 +307,7 @@ func (a *Azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 		}
 	}
 
-	if cluster.Spec.Cloud.Azure.SecurityGroup == "" {
+	if force || cluster.Spec.Cloud.Azure.SecurityGroup == "" {
 		cluster.Spec.Cloud.Azure.SecurityGroup = resourceNamePrefix + cluster.Name
 
 		lowPort, highPort := kubermaticresources.NewTemplateDataBuilder().
@@ -321,7 +330,7 @@ func (a *Azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 		}
 	}
 
-	if cluster.Spec.Cloud.Azure.AvailabilitySet == "" {
+	if force || cluster.Spec.Cloud.Azure.AvailabilitySet == "" {
 		if cluster.Spec.Cloud.Azure.AssignAvailabilitySet == nil ||
 			*cluster.Spec.Cloud.Azure.AssignAvailabilitySet {
 			asName := resourceNamePrefix + cluster.Name
@@ -343,11 +352,6 @@ func (a *Azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 
 	return cluster, nil
 }
-
-// TODO: Hey, you! Yes, you! Why don't you implement reconciling for Azure? Would be really cool :)
-// func (a *Azure) ReconcileCluster(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-// 	return cluster, nil
-// }
 
 func (a *Azure) DefaultCloudSpec(cloud *kubermaticv1.CloudSpec) error {
 	return nil
