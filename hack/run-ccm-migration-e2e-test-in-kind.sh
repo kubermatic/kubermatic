@@ -289,6 +289,7 @@ EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
     -openstack-region=${OS_REGION}
     -openstack-floating-ip-pool=${OS_FLOATING_IP_POOL}
     -openstack-network=${OS_NETWORK_NAME}
+    -openstack-datacenter=syseleven-dbl1
     -vsphere-auth-url=${}
     -vsphere-username=${}
     -vsphere-password=${}
@@ -315,7 +316,7 @@ if [ -x "$(command -v ginkgo)" ]; then
     --kubernetes-version "${USER_CLUSTER_KUBERNETES_VERSION}" \
     --debug-log \
     --user-cluster-name="${USER_CLUSTER_NAME}" \
-    --datacenter="${OS_DATACENTER}" $EXTRA_ARGS
+    --openstackdatacenter="${OS_DATACENTER}"
 else
   CGO_ENABLED=1 go test --tags=e2e -v -race ./pkg/test/e2e/ccm-migration/... $EXTRA_ARGS \
     --ginkgo.randomizeAllSpecs \

@@ -61,26 +61,6 @@ var _ = ginkgo.Describe("CCM migration", func() {
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	})
 
-	ginkgo.Context("OpenStack provider", func() {
-		var (
-			openstackCluster *kubermaticv1.Cluster
-		)
-
-		ginkgo.BeforeEach(func() {
-			openstackCluster = &kubermaticv1.Cluster{}
-			clusterJig = providers.NewClusterJigOpenstack(seedClient, options.userClusterName, options.kubernetesVersion, options.osCredentials)
-			userClient = setupAndGetUserClient(clusterJig, openstackCluster, clusterClientProvider)
-		})
-
-		ginkgo.AfterEach(func() {
-			gomega.Expect(clusterJig.Cleanup(userClient)).NotTo(gomega.HaveOccurred())
-		})
-
-		ginkgo.It("migrating cluster to external CCM", func() {
-			testBody(clusterJig, openstackCluster, userClient)
-		})
-	})
-
 	ginkgo.Context("vSphere provider", func() {
 
 		var (
@@ -102,6 +82,25 @@ var _ = ginkgo.Describe("CCM migration", func() {
 		})
 	})
 
+	ginkgo.Context("OpenStack provider", func() {
+		var (
+			openstackCluster *kubermaticv1.Cluster
+		)
+
+		ginkgo.BeforeEach(func() {
+			openstackCluster = &kubermaticv1.Cluster{}
+			clusterJig = providers.NewClusterJigOpenstack(seedClient, options.userClusterName, options.kubernetesVersion, options.osCredentials)
+			userClient = setupAndGetUserClient(clusterJig, openstackCluster, clusterClientProvider)
+		})
+
+		ginkgo.AfterEach(func() {
+			gomega.Expect(clusterJig.Cleanup(userClient)).NotTo(gomega.HaveOccurred())
+		})
+
+		ginkgo.It("migrating cluster to external CCM", func() {
+			testBody(clusterJig, openstackCluster, userClient)
+		})
+	})
 })
 
 func setupAndGetUserClient(clusterJig providers.ClusterJigInterface, cluster *kubermaticv1.Cluster, clusterClientProvider *clusterclient.Provider) ctrlruntimeclient.Client {

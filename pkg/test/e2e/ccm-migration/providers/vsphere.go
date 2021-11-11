@@ -50,7 +50,8 @@ func (c *VsphereClusterJig) Setup() error {
 	c.log.Debugw("secret created", "name", fmt.Sprintf("%s-%s", vsphereSecretPrefixName, c.name))
 
 	if err := c.generateAndCreateCluster(kubermaticv1.CloudSpec{
-		Openstack: &kubermaticv1.OpenstackCloudSpec{
+		DatacenterName: c.DatacenterName,
+		VSphere: &kubermaticv1.VSphereCloudSpec{
 			CredentialsReference: &types2.GlobalSecretKeySelector{
 				ObjectReference: corev1.ObjectReference{
 					Name:      fmt.Sprintf("%s-%s", vsphereSecretPrefixName, c.name),
@@ -102,8 +103,10 @@ type VsphereCredentialsType struct {
 
 func (osc *VsphereCredentialsType) GenerateSecretData() map[string][]byte {
 	return map[string][]byte{
-		resources.VsphereUsername: []byte(osc.Username),
-		resources.VspherePassword: []byte(osc.Password),
+		resources.VsphereUsername:                    []byte(osc.Username),
+		resources.VspherePassword:                    []byte(osc.Password),
+		resources.VsphereInfraManagementUserUsername: []byte(""),
+		resources.VsphereInfraManagementUserPassword: []byte(""),
 	}
 }
 
