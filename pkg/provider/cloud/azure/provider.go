@@ -224,7 +224,6 @@ func (a *Azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 	return a.reconcileCluster(cluster, update, false, true)
 }
 
-// TODO
 func (a *Azure) ReconcileCluster(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	return a.reconcileCluster(cluster, update, true, true)
 }
@@ -253,74 +252,32 @@ func (a *Azure) reconcileCluster(cluster *kubermaticv1.Cluster, update provider.
 	}
 
 	if force || cluster.Spec.Cloud.Azure.VNetName == "" {
-		cluster.Spec.Cloud.Azure.VNetName = vnetName(cluster)
-
-		logger.Infow("ensuring vnet", "vnet", cluster.Spec.Cloud.Azure.VNetName)
-		if err = ensureVNet(a.ctx, cluster.Spec.Cloud, location, cluster.Name, credentials); err != nil {
-			return cluster, err
-		}
-
-		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
-			updatedCluster.Spec.Cloud.Azure.VNetName = cluster.Spec.Cloud.Azure.VNetName
-			kuberneteshelper.AddFinalizer(updatedCluster, FinalizerVNet)
-		})
+		logger.Infow("reconciling vnet", "vnet", vnetName(cluster))
+		cluster, err = reconcileVNet(a.ctx, clientSet.Networks, location, cluster, update)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	if force || cluster.Spec.Cloud.Azure.SubnetName == "" {
-		cluster.Spec.Cloud.Azure.SubnetName = subnetName(cluster)
-
-		logger.Infow("ensuring subnet", "subnet", cluster.Spec.Cloud.Azure.SubnetName)
-		if err = ensureSubnet(a.ctx, cluster.Spec.Cloud, credentials); err != nil {
-			return cluster, err
-		}
-
-		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
-			updatedCluster.Spec.Cloud.Azure.SubnetName = cluster.Spec.Cloud.Azure.SubnetName
-			kuberneteshelper.AddFinalizer(updatedCluster, FinalizerSubnet)
-		})
+		logger.Infow("reconciling subnet", "subnet", subnetName(cluster))
+		cluster, err = reconcileSubnet(a.ctx, clientSet.Subnets, location, cluster, update)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	if force || cluster.Spec.Cloud.Azure.RouteTableName == "" {
-		cluster.Spec.Cloud.Azure.RouteTableName = routeTableName(cluster)
-
-		logger.Infow("ensuring route table", "routeTableName", cluster.Spec.Cloud.Azure.RouteTableName)
-		if err = ensureRouteTable(a.ctx, cluster.Spec.Cloud, location, credentials); err != nil {
-			return cluster, err
-		}
-
-		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
-			updatedCluster.Spec.Cloud.Azure.RouteTableName = cluster.Spec.Cloud.Azure.RouteTableName
-			kuberneteshelper.AddFinalizer(updatedCluster, FinalizerRouteTable)
-		})
+		logger.Infow("ensuring route table", "routeTableName", routeTableName(cluster))
+		cluster, err = reconcileRouteTable(a.ctx, clientSet.RouteTables, location, cluster, update)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	if force || cluster.Spec.Cloud.Azure.SecurityGroup == "" {
-		cluster.Spec.Cloud.Azure.SecurityGroup = securityGroupName(cluster)
-
-		lowPort, highPort := kubermaticresources.NewTemplateDataBuilder().
-			WithNodePortRange(cluster.Spec.ComponentsOverride.Apiserver.NodePortRange).
-			WithCluster(cluster).
-			Build().
-			NodePorts()
-
-		logger.Infow("ensuring security group", "securityGroup", cluster.Spec.Cloud.Azure.SecurityGroup)
-		if err = a.ensureSecurityGroup(cluster.Spec.Cloud, location, cluster.Name, lowPort, highPort, credentials); err != nil {
-			return cluster, err
-		}
-
-		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
-			updatedCluster.Spec.Cloud.Azure.SecurityGroup = cluster.Spec.Cloud.Azure.SecurityGroup
-			kuberneteshelper.AddFinalizer(updatedCluster, FinalizerSecurityGroup)
-		})
+		logger.Infow("ensuring security group", "securityGroup", securityGroupName(cluster))
+		cluster, err = reconcileSecurityGroup(a.ctx, clientSet.SecurityGroups, location, cluster, update)
 		if err != nil {
 			return nil, err
 		}
@@ -329,17 +286,8 @@ func (a *Azure) reconcileCluster(cluster *kubermaticv1.Cluster, update provider.
 	if force || cluster.Spec.Cloud.Azure.AvailabilitySet == "" {
 		if cluster.Spec.Cloud.Azure.AssignAvailabilitySet == nil ||
 			*cluster.Spec.Cloud.Azure.AssignAvailabilitySet {
-			asName := availabilitySetName(cluster)
-			logger.Infow("ensuring AvailabilitySet", "availabilitySet", asName)
-
-			if err := ensureAvailabilitySet(a.ctx, asName, location, cluster.Spec.Cloud, credentials); err != nil {
-				return nil, fmt.Errorf("failed to ensure AvailabilitySet exists: %v", err)
-			}
-
-			cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
-				updatedCluster.Spec.Cloud.Azure.AvailabilitySet = asName
-				kuberneteshelper.AddFinalizer(updatedCluster, FinalizerAvailabilitySet)
-			})
+			logger.Infow("ensuring AvailabilitySet", "availabilitySet", availabilitySetName(cluster))
+			cluster, err = reconcileAvailabilitySet(a.ctx, clientSet.AvailabilitySets, location, cluster, update)
 			if err != nil {
 				return nil, err
 			}

@@ -24,19 +24,36 @@ import (
 	"github.com/Azure/go-autorest/autorest/to"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/provider"
+	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
 )
 
 func securityGroupName(cluster *kubermaticv1.Cluster) string {
 	return resourceNamePrefix + cluster.Name
 }
 
-// ensureSecurityGroup will create or update an Azure security group. The call is idempotent.
-func (a *Azure) ensureSecurityGroup(cloud kubermaticv1.CloudSpec, location string, clusterName string, portRangeLow int, portRangeHigh int, credentials Credentials) error {
-	sgClient, err := getSecurityGroupsClient(cloud, credentials)
-	if err != nil {
-		return err
+func reconcileSecurityGroup(ctx context.Context, client *network.SecurityGroupsClient, location string, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	cluster.Spec.Cloud.Azure.SecurityGroup = securityGroupName(cluster)
+
+	lowPort, highPort := kubermaticresources.NewTemplateDataBuilder().
+		WithNodePortRange(cluster.Spec.ComponentsOverride.Apiserver.NodePortRange).
+		WithCluster(cluster).
+		Build().
+		NodePorts()
+
+	if err := ensureSecurityGroup(ctx, client, cluster.Spec.Cloud, location, cluster.Name, lowPort, highPort); err != nil {
+		return cluster, err
 	}
 
+	return update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+		updatedCluster.Spec.Cloud.Azure.SecurityGroup = cluster.Spec.Cloud.Azure.SecurityGroup
+		kuberneteshelper.AddFinalizer(updatedCluster, FinalizerSecurityGroup)
+	})
+}
+
+// ensureSecurityGroup will create or update an Azure security group. The call is idempotent.
+func ensureSecurityGroup(ctx context.Context, sgClient *network.SecurityGroupsClient, cloud kubermaticv1.CloudSpec, location string, clusterName string, portRangeLow int, portRangeHigh int) error {
 	parameters := network.SecurityGroup{
 		Name:     to.StringPtr(cloud.Azure.SecurityGroup),
 		Location: to.StringPtr(location),
@@ -126,8 +143,13 @@ func (a *Azure) ensureSecurityGroup(cloud kubermaticv1.CloudSpec, location strin
 	updatedRules := append(*parameters.SecurityRules, tcpDenyAllRule(), udpDenyAllRule(), icmpAllowAllRule())
 	parameters.SecurityRules = &updatedRules
 
-	if _, err = sgClient.CreateOrUpdate(a.ctx, cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup, parameters); err != nil {
-		return fmt.Errorf("failed to create or update resource group %q: %v", cloud.Azure.ResourceGroup, err)
+	future, err := sgClient.CreateOrUpdate(ctx, cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup, parameters)
+	if err != nil {
+		return fmt.Errorf("failed to create or update security group %q: %v", cloud.Azure.SecurityGroup, err)
+	}
+
+	if err := future.WaitForCompletionRef(ctx, sgClient.Client); err != nil {
+		return fmt.Errorf("failed to create or update security group %q: %v", cloud.Azure.SecurityGroup, err)
 	}
 
 	return nil

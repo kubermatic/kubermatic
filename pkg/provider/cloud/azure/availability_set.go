@@ -24,25 +24,35 @@ import (
 	"github.com/Azure/go-autorest/autorest/to"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
 func availabilitySetName(cluster *kubermaticv1.Cluster) string {
 	return resourceNamePrefix + cluster.Name
 }
 
-func ensureAvailabilitySet(ctx context.Context, name, location string, cloud kubermaticv1.CloudSpec, credentials Credentials) error {
-	client, err := getAvailabilitySetClient(cloud, credentials)
-	if err != nil {
-		return err
+func reconcileAvailabilitySet(ctx context.Context, client *compute.AvailabilitySetsClient, location string, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	cluster.Spec.Cloud.Azure.AvailabilitySet = availabilitySetName(cluster)
+
+	if err := ensureAvailabilitySet(ctx, client, cluster.Spec.Cloud, location); err != nil {
+		return nil, fmt.Errorf("failed to ensure AvailabilitySet exists: %v", err)
 	}
 
+	return update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+		updatedCluster.Spec.Cloud.Azure.AvailabilitySet = cluster.Spec.Cloud.Azure.AvailabilitySet
+		kuberneteshelper.AddFinalizer(updatedCluster, FinalizerAvailabilitySet)
+	})
+}
+
+func ensureAvailabilitySet(ctx context.Context, client *compute.AvailabilitySetsClient, cloud kubermaticv1.CloudSpec, location string) error {
 	faultDomainCount, ok := faultDomainsPerRegion[location]
 	if !ok {
 		return fmt.Errorf("could not determine the number of fault domains, unknown region %q", location)
 	}
 
 	as := compute.AvailabilitySet{
-		Name:     to.StringPtr(name),
+		Name:     to.StringPtr(cloud.Azure.AvailabilitySet),
 		Location: to.StringPtr(location),
 		Sku: &compute.Sku{
 			Name: to.StringPtr("Aligned"),
@@ -53,8 +63,12 @@ func ensureAvailabilitySet(ctx context.Context, name, location string, cloud kub
 		},
 	}
 
-	_, err = client.CreateOrUpdate(ctx, cloud.Azure.ResourceGroup, name, as)
-	return err
+	_, err := client.CreateOrUpdate(ctx, cloud.Azure.ResourceGroup, cloud.Azure.AvailabilitySet, as)
+	if err != nil {
+		return fmt.Errorf("failed to create or update availability set %q: %v", cloud.Azure.AvailabilitySet, err)
+	}
+
+	return nil
 }
 
 func deleteAvailabilitySet(ctx context.Context, cloud kubermaticv1.CloudSpec, credentials Credentials) error {

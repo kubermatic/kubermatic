@@ -33,10 +33,16 @@ func resourceGroupName(cluster *kubermaticv1.Cluster) string {
 }
 
 func reconcileResourceGroup(ctx context.Context, client *resources.GroupsClient, location string, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	return nil, nil
 	cluster.Spec.Cloud.Azure.ResourceGroup = resourceGroupName(cluster)
 
-	if err := ensureResourceGroup(ctx, client, cluster.Spec.Cloud, location, cluster.Name); err != nil {
+	resourceGroupResult, err := client.Get(ctx, cluster.Spec.Cloud.Azure.ResourceGroup)
+	if err != nil && !isNotFound(resourceGroupResult.Response) {
+		return nil, err
+	}
+
+	// TODO: do more comparisons to determine if an ensure call  is really needed
+
+	if err = ensureResourceGroup(ctx, client, cluster.Spec.Cloud, location, cluster.Name); err != nil {
 		return cluster, err
 	}
 

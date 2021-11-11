@@ -24,19 +24,29 @@ import (
 	"github.com/Azure/go-autorest/autorest/to"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
 func subnetName(cluster *kubermaticv1.Cluster) string {
 	return resourceNamePrefix + cluster.Name
 }
 
-// ensureSubnet will create or update an Azure subnetwork in the specified vnet. The call is idempotent.
-func ensureSubnet(ctx context.Context, cloud kubermaticv1.CloudSpec, credentials Credentials) error {
-	subnetsClient, err := getSubnetsClient(cloud, credentials)
-	if err != nil {
-		return err
+func reconcileSubnet(ctx context.Context, client *network.SubnetsClient, location string, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	cluster.Spec.Cloud.Azure.SubnetName = subnetName(cluster)
+
+	if err := ensureSubnet(ctx, client, cluster.Spec.Cloud); err != nil {
+		return cluster, err
 	}
 
+	return update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+		updatedCluster.Spec.Cloud.Azure.SubnetName = cluster.Spec.Cloud.Azure.SubnetName
+		kuberneteshelper.AddFinalizer(updatedCluster, FinalizerSubnet)
+	})
+}
+
+// ensureSubnet will create or update an Azure subnetwork in the specified vnet. The call is idempotent.
+func ensureSubnet(ctx context.Context, subnetsClient *network.SubnetsClient, cloud kubermaticv1.CloudSpec) error {
 	parameters := network.Subnet{
 		Name: to.StringPtr(cloud.Azure.SubnetName),
 		SubnetPropertiesFormat: &network.SubnetPropertiesFormat{

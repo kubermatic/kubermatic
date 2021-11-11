@@ -24,19 +24,29 @@ import (
 	"github.com/Azure/go-autorest/autorest/to"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
 func vnetName(cluster *kubermaticv1.Cluster) string {
 	return resourceNamePrefix + cluster.Name
 }
 
-// ensureVNet will create or update an Azure virtual network in the specified resource group. The call is idempotent.
-func ensureVNet(ctx context.Context, cloud kubermaticv1.CloudSpec, location string, clusterName string, credentials Credentials) error {
-	networksClient, err := getNetworksClient(cloud, credentials)
-	if err != nil {
-		return err
+func reconcileVNet(ctx context.Context, client *network.VirtualNetworksClient, location string, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	cluster.Spec.Cloud.Azure.VNetName = vnetName(cluster)
+
+	if err := ensureVNet(ctx, client, cluster.Spec.Cloud, location, cluster.Name); err != nil {
+		return cluster, err
 	}
 
+	return update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+		updatedCluster.Spec.Cloud.Azure.VNetName = cluster.Spec.Cloud.Azure.VNetName
+		kuberneteshelper.AddFinalizer(updatedCluster, FinalizerVNet)
+	})
+}
+
+// ensureVNet will create or update an Azure virtual network in the specified resource group. The call is idempotent.
+func ensureVNet(ctx context.Context, networksClient *network.VirtualNetworksClient, cloud kubermaticv1.CloudSpec, location string, clusterName string) error {
 	parameters := network.VirtualNetwork{
 		Name:     to.StringPtr(cloud.Azure.VNetName),
 		Location: to.StringPtr(location),

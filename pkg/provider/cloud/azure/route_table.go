@@ -24,19 +24,29 @@ import (
 	"github.com/Azure/go-autorest/autorest/to"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
 func routeTableName(cluster *kubermaticv1.Cluster) string {
 	return resourceNamePrefix + cluster.Name
 }
 
-// ensureRouteTable will create or update an Azure route table attached to the specified subnet. The call is idempotent.
-func ensureRouteTable(ctx context.Context, cloud kubermaticv1.CloudSpec, location string, credentials Credentials) error {
-	routeTablesClient, err := getRouteTablesClient(cloud, credentials)
-	if err != nil {
-		return err
+func reconcileRouteTable(ctx context.Context, client *network.RouteTablesClient, location string, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	cluster.Spec.Cloud.Azure.RouteTableName = routeTableName(cluster)
+
+	if err := ensureRouteTable(ctx, client, cluster.Spec.Cloud, location); err != nil {
+		return cluster, err
 	}
 
+	return update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+		updatedCluster.Spec.Cloud.Azure.RouteTableName = cluster.Spec.Cloud.Azure.RouteTableName
+		kuberneteshelper.AddFinalizer(updatedCluster, FinalizerRouteTable)
+	})
+}
+
+// ensureRouteTable will create or update an Azure route table attached to the specified subnet. The call is idempotent.
+func ensureRouteTable(ctx context.Context, routeTablesClient *network.RouteTablesClient, cloud kubermaticv1.CloudSpec, location string) error {
 	parameters := network.RouteTable{
 		Name:     to.StringPtr(cloud.Azure.RouteTableName),
 		Location: to.StringPtr(location),
