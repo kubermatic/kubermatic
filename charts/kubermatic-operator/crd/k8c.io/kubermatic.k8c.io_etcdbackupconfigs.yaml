@@ -136,9 +136,9 @@ spec:
                   - type
                   type: object
                 type: array
-              lastBackups:
+              currentBackups:
                 description: CurrentBackups tracks the creation and deletion progress
-                  if all backups managed by the EtcdBackupConfig
+                  of all backups managed by the EtcdBackupConfig
                 items:
                   properties:
                     backupFinishedTime:

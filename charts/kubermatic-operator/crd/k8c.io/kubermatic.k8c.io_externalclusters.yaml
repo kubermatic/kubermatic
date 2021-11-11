@@ -16,7 +16,11 @@ spec:
     singular: externalcluster
   scope: Cluster
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.humanReadableName
+      name: HumanReadableName
+      type: string
+    name: v1
     schema:
       openAPIV3Schema:
         description: ExternalCluster is the object representing an external kubernetes
@@ -195,6 +199,7 @@ spec:
         type: object
     served: true
     storage: true
+    subresources: {}
 status:
   acceptedNames:
     kind: ""

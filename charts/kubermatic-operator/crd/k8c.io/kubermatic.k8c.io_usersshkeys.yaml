@@ -16,7 +16,14 @@ spec:
     singular: usersshkey
   scope: Cluster
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.name
+      name: HumanReadableName
+      type: string
+    - jsonPath: .spec.owner
+      name: Owner
+      type: string
+    name: v1
     schema:
       openAPIV3Schema:
         description: UserSSHKey specifies a users UserSSHKey
@@ -57,6 +64,7 @@ spec:
         type: object
     served: true
     storage: true
+    subresources: {}
 status:
   acceptedNames:
     kind: ""

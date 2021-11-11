@@ -16,7 +16,14 @@ spec:
     singular: project
   scope: Cluster
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.name
+      name: HumanReadableName
+      type: string
+    - jsonPath: .status.phase
+      name: Status
+      type: string
+    name: v1
     schema:
       openAPIV3Schema:
         description: Project is the type describing a project.

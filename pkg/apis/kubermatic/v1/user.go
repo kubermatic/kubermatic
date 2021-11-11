@@ -35,6 +35,8 @@ const (
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
+// +kubebuilder:printcolumn:JSONPath=".spec.email",name="Email",type="string"
+// +kubebuilder:printcolumn:JSONPath=".spec.name",name="Name",type="string"
 
 // User specifies a user
 type User struct {

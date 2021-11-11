@@ -32,6 +32,9 @@ const (
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
+// +kubebuilder:printcolumn:JSONPath=".spec.projectID",name="ProjectID",type="string"
+// +kubebuilder:printcolumn:JSONPath=".spec.group",name="Group",type="string"
+// +kubebuilder:printcolumn:JSONPath=".spec.userEmail",name="UserEmail",type="string"
 
 // UserProjectBinding specifies a binding between a user and a project
 // This resource is used by the user management to manipulate members of the given project
