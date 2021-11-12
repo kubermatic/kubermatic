@@ -269,6 +269,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listExternalClusterMachineDeployments())
 
 	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes").
+		Handler(r.listExternalClusterMachineDeploymentNodes())
+
+	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/nodes").
 		Handler(r.listExternalClusterNodes())
 
@@ -1390,6 +1394,31 @@ func (r Routing) listExternalClusterMachineDeployments() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(externalcluster.ListMachineDeploymentEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider)),
 		externalcluster.DecodeListMachineDeploymentReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes project listExternalClusterMachineDeploymentNodes
+//
+//     Gets an external cluster machine deployment nodes.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []ExternalClusterNode
+//       401: empty
+//       403: empty
+func (r Routing) listExternalClusterMachineDeploymentNodes() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.ListMachineDeploymentNodesEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider)),
+		externalcluster.DecodeListMachineDeploymentNodesReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
