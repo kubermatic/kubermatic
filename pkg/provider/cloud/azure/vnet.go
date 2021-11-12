@@ -74,22 +74,17 @@ func ensureVNet(ctx context.Context, clients *ClientSet, cloud kubermaticv1.Clou
 	return nil
 }
 
-func deleteVNet(ctx context.Context, cloud kubermaticv1.CloudSpec, credentials Credentials) error {
-	networksClient, err := getNetworksClient(cloud, credentials)
-	if err != nil {
-		return err
-	}
-
+func deleteVNet(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec) error {
 	var resourceGroup = cloud.Azure.ResourceGroup
 	if cloud.Azure.VNetResourceGroup != "" {
 		resourceGroup = cloud.Azure.VNetResourceGroup
 	}
-	deleteVNetFuture, err := networksClient.Delete(ctx, resourceGroup, cloud.Azure.VNetName)
+	deleteVNetFuture, err := clients.Networks.Delete(ctx, resourceGroup, cloud.Azure.VNetName)
 	if err != nil {
 		return err
 	}
 
-	if err = deleteVNetFuture.WaitForCompletionRef(ctx, networksClient.Client); err != nil {
+	if err = deleteVNetFuture.WaitForCompletionRef(ctx, *clients.Autorest); err != nil {
 		return err
 	}
 

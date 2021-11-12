@@ -155,18 +155,13 @@ func ensureSecurityGroup(ctx context.Context, clients *ClientSet, cloud kubermat
 	return nil
 }
 
-func deleteSecurityGroup(ctx context.Context, cloud kubermaticv1.CloudSpec, credentials Credentials) error {
-	securityGroupsClient, err := getSecurityGroupsClient(cloud, credentials)
+func deleteSecurityGroup(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec) error {
+	future, err := clients.SecurityGroups.Delete(ctx, cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup)
 	if err != nil {
 		return err
 	}
 
-	future, err := securityGroupsClient.Delete(ctx, cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup)
-	if err != nil {
-		return err
-	}
-
-	if err = future.WaitForCompletionRef(ctx, securityGroupsClient.Client); err != nil {
+	if err = future.WaitForCompletionRef(ctx, *clients.Autorest); err != nil {
 		return err
 	}
 

@@ -72,18 +72,13 @@ func ensureRouteTable(ctx context.Context, clients *ClientSet, cloud kubermaticv
 	return nil
 }
 
-func deleteRouteTable(ctx context.Context, cloud kubermaticv1.CloudSpec, credentials Credentials) error {
-	routeTablesClient, err := getRouteTablesClient(cloud, credentials)
+func deleteRouteTable(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec) error {
+	future, err := clients.RouteTables.Delete(ctx, cloud.Azure.ResourceGroup, cloud.Azure.RouteTableName)
 	if err != nil {
 		return err
 	}
 
-	future, err := routeTablesClient.Delete(ctx, cloud.Azure.ResourceGroup, cloud.Azure.RouteTableName)
-	if err != nil {
-		return err
-	}
-
-	if err = future.WaitForCompletionRef(ctx, routeTablesClient.Client); err != nil {
+	if err = future.WaitForCompletionRef(ctx, *clients.Autorest); err != nil {
 		return err
 	}
 

@@ -70,22 +70,17 @@ func ensureSubnet(ctx context.Context, clients *ClientSet, cloud kubermaticv1.Cl
 	return nil
 }
 
-func deleteSubnet(ctx context.Context, cloud kubermaticv1.CloudSpec, credentials Credentials) error {
-	subnetsClient, err := getSubnetsClient(cloud, credentials)
-	if err != nil {
-		return err
-	}
-
+func deleteSubnet(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec) error {
 	var resourceGroup = cloud.Azure.ResourceGroup
 	if cloud.Azure.VNetResourceGroup != "" {
 		resourceGroup = cloud.Azure.VNetResourceGroup
 	}
-	deleteSubnetFuture, err := subnetsClient.Delete(ctx, resourceGroup, cloud.Azure.VNetName, cloud.Azure.SubnetName)
+	deleteSubnetFuture, err := clients.Subnets.Delete(ctx, resourceGroup, cloud.Azure.VNetName, cloud.Azure.SubnetName)
 	if err != nil {
 		return err
 	}
 
-	if err = deleteSubnetFuture.WaitForCompletionRef(ctx, subnetsClient.Client); err != nil {
+	if err = deleteSubnetFuture.WaitForCompletionRef(ctx, *clients.Autorest); err != nil {
 		return err
 	}
 

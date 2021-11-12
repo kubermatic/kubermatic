@@ -123,10 +123,15 @@ func (a *Azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 		return nil, err
 	}
 
+	clientSet, err := GetClientSet(cluster.Spec.Cloud, credentials)
+	if err != nil {
+		return nil, err
+	}
+
 	logger := a.log.With("cluster", cluster.Name)
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerSecurityGroup) {
 		logger.Infow("deleting security group", "group", cluster.Spec.Cloud.Azure.SecurityGroup)
-		if err := deleteSecurityGroup(a.ctx, cluster.Spec.Cloud, credentials); err != nil {
+		if err := deleteSecurityGroup(a.ctx, clientSet, cluster.Spec.Cloud); err != nil {
 			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
 				return cluster, fmt.Errorf("failed to delete security group %q: %v", cluster.Spec.Cloud.Azure.SecurityGroup, err)
 			}
@@ -141,7 +146,7 @@ func (a *Azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerRouteTable) {
 		logger.Infow("deleting route table", "routeTableName", cluster.Spec.Cloud.Azure.RouteTableName)
-		if err := deleteRouteTable(a.ctx, cluster.Spec.Cloud, credentials); err != nil {
+		if err := deleteRouteTable(a.ctx, clientSet, cluster.Spec.Cloud); err != nil {
 			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
 				return cluster, fmt.Errorf("failed to delete route table %q: %v", cluster.Spec.Cloud.Azure.RouteTableName, err)
 			}
@@ -156,7 +161,7 @@ func (a *Azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerSubnet) {
 		logger.Infow("deleting subnet", "subnet", cluster.Spec.Cloud.Azure.SubnetName)
-		if err := deleteSubnet(a.ctx, cluster.Spec.Cloud, credentials); err != nil {
+		if err := deleteSubnet(a.ctx, clientSet, cluster.Spec.Cloud); err != nil {
 			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
 				return cluster, fmt.Errorf("failed to delete sub-network %q: %v", cluster.Spec.Cloud.Azure.SubnetName, err)
 			}
@@ -171,7 +176,7 @@ func (a *Azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerVNet) {
 		logger.Infow("deleting vnet", "vnet", cluster.Spec.Cloud.Azure.VNetName)
-		if err := deleteVNet(a.ctx, cluster.Spec.Cloud, credentials); err != nil {
+		if err := deleteVNet(a.ctx, clientSet, cluster.Spec.Cloud); err != nil {
 			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
 				return cluster, fmt.Errorf("failed to delete virtual network %q: %v", cluster.Spec.Cloud.Azure.VNetName, err)
 			}
@@ -187,7 +192,7 @@ func (a *Azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerResourceGroup) {
 		logger.Infow("deleting resource group", "resourceGroup", cluster.Spec.Cloud.Azure.ResourceGroup)
-		if err := deleteResourceGroup(a.ctx, cluster.Spec.Cloud, credentials); err != nil {
+		if err := deleteResourceGroup(a.ctx, clientSet, cluster.Spec.Cloud); err != nil {
 			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
 				return cluster, fmt.Errorf("failed to delete resource group %q: %v", cluster.Spec.Cloud.Azure.ResourceGroup, err)
 			}

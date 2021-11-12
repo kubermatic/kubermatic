@@ -72,12 +72,7 @@ func ensureAvailabilitySet(ctx context.Context, client computeapi.AvailabilitySe
 	return nil
 }
 
-func deleteAvailabilitySet(ctx context.Context, cloud kubermaticv1.CloudSpec, credentials Credentials) error {
-	asClient, err := getAvailabilitySetClient(cloud, credentials)
-	if err != nil {
-		return err
-	}
-
-	_, err = asClient.Delete(ctx, cloud.Azure.ResourceGroup, cloud.Azure.AvailabilitySet)
+func deleteAvailabilitySet(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec) error {
+	_, err := clients.AvailabilitySets.Delete(ctx, cloud.Azure.ResourceGroup, cloud.Azure.AvailabilitySet)
 	return err
 }
