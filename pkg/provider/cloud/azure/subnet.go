@@ -32,10 +32,10 @@ func subnetName(cluster *kubermaticv1.Cluster) string {
 	return resourceNamePrefix + cluster.Name
 }
 
-func reconcileSubnet(ctx context.Context, client *network.SubnetsClient, location string, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func reconcileSubnet(ctx context.Context, clients *ClientSet, location string, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	cluster.Spec.Cloud.Azure.SubnetName = subnetName(cluster)
 
-	if err := ensureSubnet(ctx, client, cluster.Spec.Cloud); err != nil {
+	if err := ensureSubnet(ctx, clients, cluster.Spec.Cloud); err != nil {
 		return cluster, err
 	}
 
@@ -46,7 +46,7 @@ func reconcileSubnet(ctx context.Context, client *network.SubnetsClient, locatio
 }
 
 // ensureSubnet will create or update an Azure subnetwork in the specified vnet. The call is idempotent.
-func ensureSubnet(ctx context.Context, subnetsClient *network.SubnetsClient, cloud kubermaticv1.CloudSpec) error {
+func ensureSubnet(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec) error {
 	parameters := network.Subnet{
 		Name: to.StringPtr(cloud.Azure.SubnetName),
 		SubnetPropertiesFormat: &network.SubnetPropertiesFormat{
@@ -58,12 +58,12 @@ func ensureSubnet(ctx context.Context, subnetsClient *network.SubnetsClient, clo
 	if cloud.Azure.VNetResourceGroup != "" {
 		resourceGroup = cloud.Azure.VNetResourceGroup
 	}
-	future, err := subnetsClient.CreateOrUpdate(ctx, resourceGroup, cloud.Azure.VNetName, cloud.Azure.SubnetName, parameters)
+	future, err := clients.Subnets.CreateOrUpdate(ctx, resourceGroup, cloud.Azure.VNetName, cloud.Azure.SubnetName, parameters)
 	if err != nil {
 		return fmt.Errorf("failed to create or update subnetwork %q: %v", cloud.Azure.SubnetName, err)
 	}
 
-	if err = future.WaitForCompletionRef(ctx, subnetsClient.Client); err != nil {
+	if err = future.WaitForCompletionRef(ctx, *clients.Autorest); err != nil {
 		return fmt.Errorf("failed to create or update subnetwork %q: %v", cloud.Azure.SubnetName, err)
 	}
 

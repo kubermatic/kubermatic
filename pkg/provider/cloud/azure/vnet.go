@@ -32,10 +32,10 @@ func vnetName(cluster *kubermaticv1.Cluster) string {
 	return resourceNamePrefix + cluster.Name
 }
 
-func reconcileVNet(ctx context.Context, client *network.VirtualNetworksClient, location string, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func reconcileVNet(ctx context.Context, clients *ClientSet, location string, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	cluster.Spec.Cloud.Azure.VNetName = vnetName(cluster)
 
-	if err := ensureVNet(ctx, client, cluster.Spec.Cloud, location, cluster.Name); err != nil {
+	if err := ensureVNet(ctx, clients, cluster.Spec.Cloud, location, cluster.Name); err != nil {
 		return cluster, err
 	}
 
@@ -46,7 +46,7 @@ func reconcileVNet(ctx context.Context, client *network.VirtualNetworksClient, l
 }
 
 // ensureVNet will create or update an Azure virtual network in the specified resource group. The call is idempotent.
-func ensureVNet(ctx context.Context, networksClient *network.VirtualNetworksClient, cloud kubermaticv1.CloudSpec, location string, clusterName string) error {
+func ensureVNet(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec, location string, clusterName string) error {
 	parameters := network.VirtualNetwork{
 		Name:     to.StringPtr(cloud.Azure.VNetName),
 		Location: to.StringPtr(location),
@@ -62,12 +62,12 @@ func ensureVNet(ctx context.Context, networksClient *network.VirtualNetworksClie
 	if cloud.Azure.VNetResourceGroup != "" {
 		resourceGroup = cloud.Azure.VNetResourceGroup
 	}
-	future, err := networksClient.CreateOrUpdate(ctx, resourceGroup, cloud.Azure.VNetName, parameters)
+	future, err := clients.Networks.CreateOrUpdate(ctx, resourceGroup, cloud.Azure.VNetName, parameters)
 	if err != nil {
 		return fmt.Errorf("failed to create or update virtual network %q: %v", cloud.Azure.VNetName, err)
 	}
 
-	if err = future.WaitForCompletionRef(ctx, networksClient.Client); err != nil {
+	if err = future.WaitForCompletionRef(ctx, *clients.Autorest); err != nil {
 		return fmt.Errorf("failed to create or update virtual network %q: %v", cloud.Azure.VNetName, err)
 	}
 

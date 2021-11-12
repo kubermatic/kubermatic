@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2021-07-01/compute"
+	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2021-07-01/compute/computeapi"
 	"github.com/Azure/go-autorest/autorest/to"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -32,10 +33,10 @@ func availabilitySetName(cluster *kubermaticv1.Cluster) string {
 	return resourceNamePrefix + cluster.Name
 }
 
-func reconcileAvailabilitySet(ctx context.Context, client *compute.AvailabilitySetsClient, location string, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func reconcileAvailabilitySet(ctx context.Context, clients *ClientSet, location string, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	cluster.Spec.Cloud.Azure.AvailabilitySet = availabilitySetName(cluster)
 
-	if err := ensureAvailabilitySet(ctx, client, cluster.Spec.Cloud, location); err != nil {
+	if err := ensureAvailabilitySet(ctx, clients.AvailabilitySets, cluster.Spec.Cloud, location); err != nil {
 		return nil, fmt.Errorf("failed to ensure AvailabilitySet exists: %v", err)
 	}
 
@@ -45,7 +46,7 @@ func reconcileAvailabilitySet(ctx context.Context, client *compute.AvailabilityS
 	})
 }
 
-func ensureAvailabilitySet(ctx context.Context, client *compute.AvailabilitySetsClient, cloud kubermaticv1.CloudSpec, location string) error {
+func ensureAvailabilitySet(ctx context.Context, client computeapi.AvailabilitySetsClientAPI, cloud kubermaticv1.CloudSpec, location string) error {
 	faultDomainCount, ok := faultDomainsPerRegion[location]
 	if !ok {
 		return fmt.Errorf("could not determine the number of fault domains, unknown region %q", location)

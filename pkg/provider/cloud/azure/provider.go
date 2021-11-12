@@ -245,7 +245,7 @@ func (a *Azure) reconcileCluster(cluster *kubermaticv1.Cluster, update provider.
 
 	if force || cluster.Spec.Cloud.Azure.ResourceGroup == "" {
 		logger.Infow("reconciling resource group", "resourceGroup", cluster.Spec.Cloud.Azure.ResourceGroup)
-		cluster, err = reconcileResourceGroup(a.ctx, clientSet.Groups, location, cluster, update)
+		cluster, err = reconcileResourceGroup(a.ctx, clientSet, location, cluster, update)
 		if err != nil {
 			return nil, err
 		}
@@ -253,7 +253,7 @@ func (a *Azure) reconcileCluster(cluster *kubermaticv1.Cluster, update provider.
 
 	if force || cluster.Spec.Cloud.Azure.VNetName == "" {
 		logger.Infow("reconciling vnet", "vnet", vnetName(cluster))
-		cluster, err = reconcileVNet(a.ctx, clientSet.Networks, location, cluster, update)
+		cluster, err = reconcileVNet(a.ctx, clientSet, location, cluster, update)
 		if err != nil {
 			return nil, err
 		}
@@ -261,7 +261,7 @@ func (a *Azure) reconcileCluster(cluster *kubermaticv1.Cluster, update provider.
 
 	if force || cluster.Spec.Cloud.Azure.SubnetName == "" {
 		logger.Infow("reconciling subnet", "subnet", subnetName(cluster))
-		cluster, err = reconcileSubnet(a.ctx, clientSet.Subnets, location, cluster, update)
+		cluster, err = reconcileSubnet(a.ctx, clientSet, location, cluster, update)
 		if err != nil {
 			return nil, err
 		}
@@ -269,7 +269,7 @@ func (a *Azure) reconcileCluster(cluster *kubermaticv1.Cluster, update provider.
 
 	if force || cluster.Spec.Cloud.Azure.RouteTableName == "" {
 		logger.Infow("ensuring route table", "routeTableName", routeTableName(cluster))
-		cluster, err = reconcileRouteTable(a.ctx, clientSet.RouteTables, location, cluster, update)
+		cluster, err = reconcileRouteTable(a.ctx, clientSet, location, cluster, update)
 		if err != nil {
 			return nil, err
 		}
@@ -277,7 +277,7 @@ func (a *Azure) reconcileCluster(cluster *kubermaticv1.Cluster, update provider.
 
 	if force || cluster.Spec.Cloud.Azure.SecurityGroup == "" {
 		logger.Infow("ensuring security group", "securityGroup", securityGroupName(cluster))
-		cluster, err = reconcileSecurityGroup(a.ctx, clientSet.SecurityGroups, location, cluster, update)
+		cluster, err = reconcileSecurityGroup(a.ctx, clientSet, location, cluster, update)
 		if err != nil {
 			return nil, err
 		}
@@ -287,7 +287,7 @@ func (a *Azure) reconcileCluster(cluster *kubermaticv1.Cluster, update provider.
 		if cluster.Spec.Cloud.Azure.AssignAvailabilitySet == nil ||
 			*cluster.Spec.Cloud.Azure.AssignAvailabilitySet {
 			logger.Infow("ensuring AvailabilitySet", "availabilitySet", availabilitySetName(cluster))
-			cluster, err = reconcileAvailabilitySet(a.ctx, clientSet.AvailabilitySets, location, cluster, update)
+			cluster, err = reconcileAvailabilitySet(a.ctx, clientSet, location, cluster, update)
 			if err != nil {
 				return nil, err
 			}

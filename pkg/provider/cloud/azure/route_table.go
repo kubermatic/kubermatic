@@ -32,10 +32,10 @@ func routeTableName(cluster *kubermaticv1.Cluster) string {
 	return resourceNamePrefix + cluster.Name
 }
 
-func reconcileRouteTable(ctx context.Context, client *network.RouteTablesClient, location string, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func reconcileRouteTable(ctx context.Context, clients *ClientSet, location string, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	cluster.Spec.Cloud.Azure.RouteTableName = routeTableName(cluster)
 
-	if err := ensureRouteTable(ctx, client, cluster.Spec.Cloud, location); err != nil {
+	if err := ensureRouteTable(ctx, clients, cluster.Spec.Cloud, location); err != nil {
 		return cluster, err
 	}
 
@@ -46,7 +46,7 @@ func reconcileRouteTable(ctx context.Context, client *network.RouteTablesClient,
 }
 
 // ensureRouteTable will create or update an Azure route table attached to the specified subnet. The call is idempotent.
-func ensureRouteTable(ctx context.Context, routeTablesClient *network.RouteTablesClient, cloud kubermaticv1.CloudSpec, location string) error {
+func ensureRouteTable(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec, location string) error {
 	parameters := network.RouteTable{
 		Name:     to.StringPtr(cloud.Azure.RouteTableName),
 		Location: to.StringPtr(location),
@@ -60,12 +60,12 @@ func ensureRouteTable(ctx context.Context, routeTablesClient *network.RouteTable
 		},
 	}
 
-	future, err := routeTablesClient.CreateOrUpdate(ctx, cloud.Azure.ResourceGroup, cloud.Azure.RouteTableName, parameters)
+	future, err := clients.RouteTables.CreateOrUpdate(ctx, cloud.Azure.ResourceGroup, cloud.Azure.RouteTableName, parameters)
 	if err != nil {
 		return fmt.Errorf("failed to create or update route table %q: %v", cloud.Azure.RouteTableName, err)
 	}
 
-	if err = future.WaitForCompletionRef(ctx, routeTablesClient.Client); err != nil {
+	if err = future.WaitForCompletionRef(ctx, *clients.Autorest); err != nil {
 		return fmt.Errorf("failed to create or update route table %q: %v", cloud.Azure.RouteTableName, err)
 	}
 

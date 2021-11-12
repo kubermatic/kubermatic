@@ -33,7 +33,7 @@ func securityGroupName(cluster *kubermaticv1.Cluster) string {
 	return resourceNamePrefix + cluster.Name
 }
 
-func reconcileSecurityGroup(ctx context.Context, client *network.SecurityGroupsClient, location string, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func reconcileSecurityGroup(ctx context.Context, clients *ClientSet, location string, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	cluster.Spec.Cloud.Azure.SecurityGroup = securityGroupName(cluster)
 
 	lowPort, highPort := kubermaticresources.NewTemplateDataBuilder().
@@ -42,7 +42,7 @@ func reconcileSecurityGroup(ctx context.Context, client *network.SecurityGroupsC
 		Build().
 		NodePorts()
 
-	if err := ensureSecurityGroup(ctx, client, cluster.Spec.Cloud, location, cluster.Name, lowPort, highPort); err != nil {
+	if err := ensureSecurityGroup(ctx, clients, cluster.Spec.Cloud, location, cluster.Name, lowPort, highPort); err != nil {
 		return cluster, err
 	}
 
@@ -53,7 +53,7 @@ func reconcileSecurityGroup(ctx context.Context, client *network.SecurityGroupsC
 }
 
 // ensureSecurityGroup will create or update an Azure security group. The call is idempotent.
-func ensureSecurityGroup(ctx context.Context, sgClient *network.SecurityGroupsClient, cloud kubermaticv1.CloudSpec, location string, clusterName string, portRangeLow int, portRangeHigh int) error {
+func ensureSecurityGroup(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec, location string, clusterName string, portRangeLow int, portRangeHigh int) error {
 	parameters := network.SecurityGroup{
 		Name:     to.StringPtr(cloud.Azure.SecurityGroup),
 		Location: to.StringPtr(location),
@@ -143,12 +143,12 @@ func ensureSecurityGroup(ctx context.Context, sgClient *network.SecurityGroupsCl
 	updatedRules := append(*parameters.SecurityRules, tcpDenyAllRule(), udpDenyAllRule(), icmpAllowAllRule())
 	parameters.SecurityRules = &updatedRules
 
-	future, err := sgClient.CreateOrUpdate(ctx, cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup, parameters)
+	future, err := clients.SecurityGroups.CreateOrUpdate(ctx, cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup, parameters)
 	if err != nil {
 		return fmt.Errorf("failed to create or update security group %q: %v", cloud.Azure.SecurityGroup, err)
 	}
 
-	if err := future.WaitForCompletionRef(ctx, sgClient.Client); err != nil {
+	if err := future.WaitForCompletionRef(ctx, *clients.Autorest); err != nil {
 		return fmt.Errorf("failed to create or update security group %q: %v", cloud.Azure.SecurityGroup, err)
 	}
 

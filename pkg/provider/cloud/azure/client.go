@@ -21,8 +21,12 @@ import (
 	"fmt"
 
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2021-07-01/compute"
+	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2021-07-01/compute/computeapi"
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2021-03-01/network"
+	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2021-03-01/network/networkapi"
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2020-10-01/resources"
+	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2020-10-01/resources/resourcesapi"
+	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -30,21 +34,32 @@ import (
 	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
 )
 
+// ClientSet provides a set of Azure service clients that are necessary to reconcile resources needed by KKP
 type ClientSet struct {
-	Groups           *resources.GroupsClient
-	Networks         *network.VirtualNetworksClient
-	Subnets          *network.SubnetsClient
-	RouteTables      *network.RouteTablesClient
-	SecurityGroups   *network.SecurityGroupsClient
-	AvailabilitySets *compute.AvailabilitySetsClient
+	// Autorest client is used to wait for completion of futures
+	Autorest *autorest.Client
+
+	Groups           resourcesapi.GroupsClientAPI
+	Networks         networkapi.VirtualNetworksClientAPI
+	Subnets          networkapi.SubnetsClientAPI
+	RouteTables      networkapi.RouteTablesClientAPI
+	SecurityGroups   networkapi.SecurityGroupsClientAPI
+	AvailabilitySets computeapi.AvailabilitySetsClientAPI
 }
 
-// GetClientSet returns a set of clients to interact with various Azure resource types managed by KKP
+// GetClientSet returns a ClientSet using the passed credentials as authorization
 func GetClientSet(cloud kubermaticv1.CloudSpec, credentials Credentials) (*ClientSet, error) {
 	return getClientSet(cloud, credentials)
 }
 
 func getClientSet(cloud kubermaticv1.CloudSpec, credentials Credentials) (*ClientSet, error) {
+	var err error
+
+	autorest := &autorest.Client{}
+	autorest.Authorizer, err = auth.NewClientCredentialsConfig(credentials.ClientID, credentials.ClientSecret, credentials.TenantID).Authorizer()
+	if err != nil {
+		return nil, err
+	}
 
 	groupsClient, err := getGroupsClient(cloud, credentials)
 	if err != nil {
@@ -77,6 +92,7 @@ func getClientSet(cloud kubermaticv1.CloudSpec, credentials Credentials) (*Clien
 	}
 
 	return &ClientSet{
+		Autorest:         autorest,
 		Groups:           groupsClient,
 		Networks:         networksClient,
 		Subnets:          subnetsClient,

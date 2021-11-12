@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2020-10-01/resources"
+	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2020-10-01/resources/resourcesapi"
 	"github.com/Azure/go-autorest/autorest/to"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -32,17 +33,17 @@ func resourceGroupName(cluster *kubermaticv1.Cluster) string {
 	return resourceNamePrefix + cluster.Name
 }
 
-func reconcileResourceGroup(ctx context.Context, client *resources.GroupsClient, location string, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func reconcileResourceGroup(ctx context.Context, clients *ClientSet, location string, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	cluster.Spec.Cloud.Azure.ResourceGroup = resourceGroupName(cluster)
 
-	resourceGroupResult, err := client.Get(ctx, cluster.Spec.Cloud.Azure.ResourceGroup)
-	if err != nil && !isNotFound(resourceGroupResult.Response) {
+	resourceGroup, err := clients.Groups.Get(ctx, cluster.Spec.Cloud.Azure.ResourceGroup)
+	if err != nil && !isNotFound(resourceGroup.Response) {
 		return nil, err
 	}
 
 	// TODO: do more comparisons to determine if an ensure call  is really needed
 
-	if err = ensureResourceGroup(ctx, client, cluster.Spec.Cloud, location, cluster.Name); err != nil {
+	if err = ensureResourceGroup(ctx, clients.Groups, cluster.Spec.Cloud, location, cluster.Name); err != nil {
 		return cluster, err
 	}
 
@@ -53,7 +54,7 @@ func reconcileResourceGroup(ctx context.Context, client *resources.GroupsClient,
 }
 
 // ensureResourceGroup will create or update an Azure resource group. The call is idempotent.
-func ensureResourceGroup(ctx context.Context, groupsClient *resources.GroupsClient, cloud kubermaticv1.CloudSpec, location string, clusterName string) error {
+func ensureResourceGroup(ctx context.Context, groupsClient resourcesapi.GroupsClientAPI, cloud kubermaticv1.CloudSpec, location string, clusterName string) error {
 	parameters := resources.Group{
 		Name:     to.StringPtr(cloud.Azure.ResourceGroup),
 		Location: to.StringPtr(location),
