@@ -222,6 +222,13 @@ func ListMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proje
 				}
 				machineDeployments = np
 			}
+			if cloud.EKS != nil {
+				np, err := getEKSNodePools(ctx, cluster, secretKeySelector, cloud, clusterProvider)
+				if err != nil {
+					return nil, common.KubernetesErrorToHTTPError(err)
+				}
+				machineDeployments = np
+			}
 		}
 
 		return machineDeployments, nil
