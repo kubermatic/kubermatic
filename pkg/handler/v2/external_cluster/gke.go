@@ -18,6 +18,7 @@ package externalcluster
 
 import (
 	"context"
+	"fmt"
 
 	"google.golang.org/api/container/v1"
 
@@ -138,4 +139,41 @@ func getGKENodePools(ctx context.Context, cluster *kubermaticapiv1.ExternalClust
 	}
 
 	return machineDeployments, err
+}
+
+func getGKENodes(ctx context.Context, cluster *kubermaticapiv1.ExternalCluster, nodePoolID string, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector, clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterNode, error) {
+	sa, err := secretKeySelector(credentialsReference, resources.GCPServiceAccount)
+	if err != nil {
+		return nil, err
+	}
+	svc, project, err := gcp.ConnectToContainerService(sa)
+	if err != nil {
+		return nil, err
+	}
+
+	req := svc.Projects.Zones.Clusters.NodePools.Get(project, cluster.Spec.CloudSpec.GKE.Zone, cluster.Spec.CloudSpec.GKE.Name, nodePoolID)
+	resp, err := req.Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	var nodesV1 []apiv2.ExternalClusterNode
+
+	nodes, err := clusterProvider.ListNodes(cluster)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	for _, n := range nodes.Items {
+		if n.Labels != nil {
+			if n.Labels[GKENodepoolNameLabel] == resp.Name {
+				outNode, err := outputNode(n)
+				if err != nil {
+					return nil, fmt.Errorf("failed to output node %s: %v", n.Name, err)
+				}
+				nodesV1 = append(nodesV1, *outNode)
+			}
+		}
+	}
+
+	return nodesV1, err
 }
