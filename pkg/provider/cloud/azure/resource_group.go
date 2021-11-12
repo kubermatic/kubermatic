@@ -34,7 +34,9 @@ func resourceGroupName(cluster *kubermaticv1.Cluster) string {
 }
 
 func reconcileResourceGroup(ctx context.Context, clients *ClientSet, location string, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	cluster.Spec.Cloud.Azure.ResourceGroup = resourceGroupName(cluster)
+	if cluster.Spec.Cloud.Azure.ResourceGroup == "" {
+		cluster.Spec.Cloud.Azure.ResourceGroup = resourceGroupName(cluster)
+	}
 
 	resourceGroup, err := clients.Groups.Get(ctx, cluster.Spec.Cloud.Azure.ResourceGroup)
 	if err != nil && !isNotFound(resourceGroup.Response) {
