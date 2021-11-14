@@ -20856,6 +20856,12 @@
           "type": "boolean",
           "x-go-name": "MonitoringEnabled"
         },
+        "monitoringReplicas": {
+          "description": "MonitoringReplicas is the number of desired pods of user cluster prometheus deployment.",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "MonitoringReplicas"
+        },
         "monitoringResources": {
           "$ref": "#/definitions/ResourceRequirements"
         }

@@ -3081,6 +3081,11 @@ func (in *MLASettings) DeepCopyInto(out *MLASettings) {
 		*out = new(corev1.ResourceRequirements)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.MonitoringReplicas != nil {
+		in, out := &in.MonitoringReplicas, &out.MonitoringReplicas
+		*out = new(int32)
+		**out = **in
+	}
 	return
 }
 

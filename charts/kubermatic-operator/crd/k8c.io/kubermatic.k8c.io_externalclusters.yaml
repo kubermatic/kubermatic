@@ -44,6 +44,8 @@ spec:
                 properties:
                   eks:
                     properties:
+                      accessKeyID:
+                        type: string
                       credentialsReference:
                         description: GlobalObjectKeySelector is needed as we can not
                           use v1.SecretKeySelector because it is not cross namespace
@@ -87,6 +89,8 @@ spec:
                       name:
                         type: string
                       region:
+                        type: string
+                      secretAccessKey:
                         type: string
                     required:
                     - name

@@ -24,6 +24,9 @@ type MLASettings struct {
 	// MonitoringEnabled is the flag for enabling monitoring in user cluster.
 	MonitoringEnabled bool `json:"monitoringEnabled,omitempty"`
 
+	// MonitoringReplicas is the number of desired pods of user cluster prometheus deployment.
+	MonitoringReplicas int32 `json:"monitoringReplicas,omitempty"`
+
 	// logging resources
 	LoggingResources *ResourceRequirements `json:"loggingResources,omitempty"`
 
