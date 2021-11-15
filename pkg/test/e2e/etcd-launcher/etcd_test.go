@@ -51,7 +51,7 @@ const (
 	scaleDownCount = 3
 )
 
-func TestScaling(t *testing.T) {
+func TestBackup(t *testing.T) {
 	ctx := context.Background()
 
 	client, _, _, err := utils.GetClients()
@@ -100,6 +100,61 @@ func TestScaling(t *testing.T) {
 		t.Fatalf("failed to create etcd backup: %v", err)
 	}
 
+	// enable etcd-launcher feature after creating a backup
+	if err := enableLauncher(ctx, t, client, cluster); err != nil {
+		t.Fatalf("failed to enable etcd-launcher: %v", err)
+	}
+	waitForQuorum(t)
+
+	// TODO: restore from backup
+
+	t.Log("tests succeeded")
+}
+
+func TestScaling(t *testing.T) {
+	ctx := context.Background()
+
+	client, _, _, err := utils.GetClients()
+	if err != nil {
+		t.Fatalf("failed to get client for seed cluster: %v", err)
+	}
+
+	// login
+	masterToken, err := utils.RetrieveMasterToken(ctx)
+	if err != nil {
+		t.Fatalf("failed to get master token: %v", err)
+	}
+	testClient := utils.NewTestClient(masterToken, t)
+
+	// create dummy project
+	t.Log("creating project...")
+	project, err := testClient.CreateProject(rand.String(10))
+	if err != nil {
+		t.Fatalf("failed to create project: %v", err)
+	}
+	defer cleanupProject(t, project.ID)
+
+	// create dummy cluster (NB: If these tests fail, the etcd ring can be
+	// _so_ dead that any cleanup attempt is futile; make sure to not create
+	// any cloud resources, as they might be orphaned)
+
+	t.Log("creating cluster...")
+	apiCluster, err := testClient.CreateDOCluster(project.ID, datacenter, rand.String(10), credential, version, location, 0)
+	if err != nil {
+		t.Fatalf("failed to create cluster: %v", err)
+	}
+
+	// wait for the cluster to become healthy
+	if err := testClient.WaitForClusterHealthy(project.ID, datacenter, apiCluster.ID); err != nil {
+		t.Fatalf("cluster did not become healthy: %v", err)
+	}
+
+	// get the cluster object (the CRD, not the API's representation)
+	cluster := &kubermaticv1.Cluster{}
+	if err := client.Get(ctx, types.NamespacedName{Name: apiCluster.ID}, cluster); err != nil {
+		t.Fatalf("failed to get cluster: %v", err)
+	}
+
 	// we run all these tests in the same cluster to speed up the e2e test
 	if err := enableLauncher(ctx, t, client, cluster); err != nil {
 		t.Fatalf("failed to enable etcd-launcher: %v", err)
@@ -133,7 +188,7 @@ func createBackup(ctx context.Context, t *testing.T, client ctrlruntimeclient.Cl
 	backup := &kubermaticv1.EtcdBackupConfig{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "etcd-e2e-backup",
-			Namespace: cluster.Namespace,
+			Namespace: cluster.Status.NamespaceName,
 		},
 		Spec: kubermaticv1.EtcdBackupConfigSpec{
 			Cluster: corev1.ObjectReference{
