@@ -43,7 +43,13 @@ func reconcileResourceGroup(ctx context.Context, clients *ClientSet, location st
 		return nil, err
 	}
 
-	// TODO: do more comparisons to determine if an ensure call  is really needed
+	// if we found a resource group, we can check for the ownership tag to determine
+	// if the referenced resource group is owned by this cluster and should be ensured
+	if !isNotFound(resourceGroup.Response) && !hasOwnershipTag(resourceGroup.Tags, cluster) {
+		return cluster, nil
+	}
+
+	// TODO: do more comparisons to determine if an ensure call is really needed
 
 	if err = ensureResourceGroup(ctx, clients.Groups, cluster.Spec.Cloud, location, cluster.Name); err != nil {
 		return cluster, err

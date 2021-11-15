@@ -20,6 +20,8 @@ import (
 	"net/http"
 
 	"github.com/Azure/go-autorest/autorest"
+
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 )
 
 func isNotFound(resp autorest.Response) bool {
@@ -27,6 +29,14 @@ func isNotFound(resp autorest.Response) bool {
 		if nested.StatusCode == http.StatusNotFound {
 			return true
 		}
+	}
+
+	return false
+}
+
+func hasOwnershipTag(tags map[string]*string, cluster *kubermaticv1.Cluster) bool {
+	if value, ok := tags[clusterTagKey]; ok {
+		return *value == cluster.Name
 	}
 
 	return false

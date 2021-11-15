@@ -87,6 +87,15 @@ func TestReconcileResourceGroup(t *testing.T) {
 		if cluster.Spec.Cloud.Azure.ResourceGroup != customExistingResourceGroup {
 			t.Fatalf("expected resource group in cloud spec to be '%s', got '%s'", customExistingResourceGroup, cluster.Spec.Cloud.Azure.ResourceGroup)
 		}
+
+		fakeClient, ok := clientSet.Groups.(*fakeGroupsClient)
+		if !ok {
+			t.Fatalf("failed to access underlying fake GroupsClient")
+		}
+
+		if fakeClient.CreateOrUpdateCalledCount != 0 {
+			t.Fatalf("expected no attempts to update resource group, got %d calls to CreateOrUpdate", fakeClient.CreateOrUpdateCalledCount)
+		}
 	})
 
 	t.Run("custom-resource-group-does-not-exist", func(t *testing.T) {
@@ -110,8 +119,8 @@ func TestReconcileResourceGroup(t *testing.T) {
 			t.Fatalf("failed to access underlying fake GroupsClient")
 		}
 
-		if fakeClient.CreateOrUpdateCalledCount == 0 {
-			t.Fatalf("expected calls to CreateOrUpdate to be %d, got %d", 0, fakeClient.CreateOrUpdateCalledCount)
+		if fakeClient.CreateOrUpdateCalledCount != 1 {
+			t.Fatalf("expected call to CreateOrUpdate, got %d calls", fakeClient.CreateOrUpdateCalledCount)
 		}
 	})
 
@@ -122,7 +131,7 @@ func TestReconcileResourceGroup(t *testing.T) {
 		cluster, err = reconcileResourceGroup(ctx, clientSet, testLocation, cluster, testClusterUpdater(cluster))
 
 		if err == nil {
-			t.Fatalf("expected error for rejected request, got none")
+			t.Fatalf("expected error for request that got a 403 error, got none")
 		}
 	})
 
@@ -162,6 +171,9 @@ func (c *fakeGroupsClient) Get(ctx context.Context, groupName string) (result re
 				ManagedBy: nil,
 				Properties: &resources.GroupProperties{
 					ProvisioningState: to.StringPtr("Succeeded"),
+				},
+				Tags: map[string]*string{
+					clusterTagKey: to.StringPtr(c.cluster.ClusterName),
 				},
 			}, nil
 		}
