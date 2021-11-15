@@ -136,7 +136,7 @@ KUBERMATIC_CONFIG="$(mktemp)"
 IMAGE_PULL_SECRET_INLINE="$(echo "$IMAGE_PULL_SECRET_DATA" | base64 --decode | jq --compact-output --monochrome-output '.')"
 KUBERMATIC_DOMAIN="${KUBERMATIC_DOMAIN:-ci.kubermatic.io}"
 
-cp hack/ci/testdata/kubermatic.yaml $KUBERMATIC_CONFIG
+cp hack/ci/testdata/kubermatic_backup.yaml $KUBERMATIC_CONFIG
 
 sed -i "s;__SERVICE_ACCOUNT_KEY__;$SERVICE_ACCOUNT_KEY;g" $KUBERMATIC_CONFIG
 sed -i "s;__IMAGE_PULL_SECRET__;$IMAGE_PULL_SECRET_INLINE;g" $KUBERMATIC_CONFIG
@@ -150,6 +150,7 @@ kubermaticOperator:
     tag: "$KUBERMATIC_VERSION"
 minio:
   storageClass: 'kubermatic-fast'
+  certificateSecret: 'minio-tls-cert'
   credentials:
     accessKey: "FXcD7s0tFOPuTv6jaZARJDouc2Hal8E0"
     secretKey: "wdEZGTnhkgBDTDetaHFuizs3pwXHvWTs"
@@ -157,6 +158,43 @@ EOF
 
 # append custom Dex configuration
 cat hack/ci/testdata/oauth_values.yaml >> $HELM_VALUES_FILE
+
+echodate "Generating custom CA and certificates for minio TLS..."
+CUSTOM_CA_KEY=$(mktemp)
+CUSTOM_CA_CERT=$(mktemp)
+MINIO_TLS_KEY=$(mktemp)
+MINIO_TLS_CSR=$(mktemp)
+MINIO_TLS_CERT=$(mktemp)
+
+# create CA certificate
+openssl genrsa -out "$CUSTOM_CA_KEY" 2048
+openssl req -x509 -new -nodes -subj "/C=DE/O=Kubermatic CI/CN=kubermatic-e2e-ca" -key "$CUSTOM_CA_KEY" -sha256 -days 30 -out "$CUSTOM_CA_CERT"
+
+echo $CUSTOM_CA_KEY $CUSTOM_CA_CERT
+
+# create private key, CSR and signed certificate for minio TLS
+openssl genrsa -out "$MINIO_TLS_KEY" 2048
+openssl req -new -sha256 \
+    -key "$MINIO_TLS_KEY" \
+    -subj "/C=DE/O=Kubermatic CI/CN=minio.minio.svc.cluster.local" \
+    -out "$MINIO_TLS_CSR" 
+
+openssl x509 -req -in "$MINIO_TLS_CSR" -CA "$CUSTOM_CA_CERT" -CAkey "$CUSTOM_CA_KEY" -CAcreateserial -out "$MINIO_TLS_CERT" -days 7 -sha256
+
+CA_BUNDLE_CM=$(mktemp)
+cat << EOF > $CA_BUNDLE_CM
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: custom-ca-bundle
+  namespace: kubermatic
+data:
+  ca-bundle.pem: |
+    $(cat charts/kubermatic-operator/static/ca-bundle.pem $CUSTOM_CA_CERT)
+EOF
+
+kubectl create namespace kubermatic
+kubectl create -f $CA_BUNDLE_CM
 
 # install dependencies and Kubermatic Operator into cluster
 ./_build/kubermatic-installer deploy --disable-telemetry \
@@ -174,7 +212,9 @@ retry 10 check_all_deployments_ready kubermatic
 echodate "Finished installing Kubermatic"
 
 echodate "installing minio..."
-helm --namespace minio upgrade --install --create-namespace --wait --values "$HELM_VALUES_FILE" minio charts/minio/
+kubectl create namespace minio
+kubectl create secret tls minio-certificates --cert "$MINIO_TLS_CERT" --key "$MINIO_TLS_KEY"
+helm --namespace minio upgrade --install --wait --values "$HELM_VALUES_FILE" minio charts/minio/
 kubectl apply -f hack/ci/testdata/backup_s3_creds.yaml
 
 echodate "Installing Seed..."
