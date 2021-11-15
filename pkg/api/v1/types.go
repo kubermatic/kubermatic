@@ -2197,7 +2197,7 @@ type SeedSpec struct {
 	// Optional: MLA allows configuring seed level MLA (Monitoring, Logging & Alerting) stack settings.
 	MLA *kubermaticv1.SeedMLASettings `json:"mla,omitempty"`
 	// Optional: BackupRestore when set, enables backup and restore controllers with given configuration.
-	// Deprecated: use
+	// Deprecated: use EtcdBackupRestore for multiple backup destination support
 	BackupRestore *kubermaticv1.SeedBackupRestoreConfiguration `json:"backupRestore,omitempty"`
 	// Optional: EtcdBackupRestore holds the configuration of the automatic etcd backup restores for the Seed.
 	// When set, enables automatic etcd backup and restore controllers with given configuration.
