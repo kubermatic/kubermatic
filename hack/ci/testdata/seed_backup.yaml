@@ -30,8 +30,8 @@ metadata:
     worker-name: "__BUILD_ID__"
 spec:
   backupRestore:
-    s3BucketName: kkpbackuptest
-    s3Endpoint: SOMETHING SOMETHING
+    s3BucketName: kkpbackupe2e
+    s3Endpoint: minio.minio.svc.cluster.local:9000
   country: Germany
   location: Hamburg
   kubeconfig:

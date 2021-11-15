@@ -148,6 +148,11 @@ kubermaticOperator:
   image:
     repository: "quay.io/kubermatic/kubermatic$REPOSUFFIX"
     tag: "$KUBERMATIC_VERSION"
+minio:
+  storageClass: 'copy-default'
+  credentials:
+    accessKey: "FXcD7s0tFOPuTv6jaZARJDouc2Hal8E0"
+    secretKey: "wdEZGTnhkgBDTDetaHFuizs3pwXHvWTs"
 EOF
 
 # append custom Dex configuration
@@ -167,6 +172,10 @@ sleep 5
 retry 10 check_all_deployments_ready kubermatic
 
 echodate "Finished installing Kubermatic"
+
+echodate "installing minio..."
+kubectl apply -f hack/ci/testdata/s3_secret.yaml
+helm --namespace minio upgrade --install --create-namespace --wait --values values.yaml minio charts/minio/
 
 echodate "Installing Seed..."
 SEED_MANIFEST="$(mktemp)"
