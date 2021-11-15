@@ -5126,7 +5126,7 @@ func (r Routing) getExternalClusterMachineDeployment() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(externalcluster.GetMachineDeploymentEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider)),
-		externalcluster.DecodeGetMachineDeployment,
+		externalcluster.DecodeGetMachineDeploymentReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

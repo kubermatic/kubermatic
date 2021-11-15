@@ -226,7 +226,7 @@ func ListMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proje
 				machineDeployments = np
 			}
 			if cloud.EKS != nil {
-				np, err := getEKSNodePools(ctx, cluster, secretKeySelector, cloud, clusterProvider)
+				np, err := getEKSNodePools(cluster, secretKeySelector, cloud, clusterProvider)
 				if err != nil {
 					return nil, common.KubernetesErrorToHTTPError(err)
 				}
@@ -269,7 +269,7 @@ func ListMachineDeploymentNodesEndpoint(userInfoGetter provider.UserInfoGetter, 
 				nodes = n
 			}
 			if cloud.EKS != nil {
-				n, err := getEKSNodes(ctx, cluster, req.MachineDeploymentID, secretKeySelector, cloud.EKS.CredentialsReference, clusterProvider)
+				n, err := getEKSNodes(cluster, req.MachineDeploymentID, secretKeySelector, cloud.EKS.CredentialsReference, clusterProvider)
 				if err != nil {
 					return nil, common.KubernetesErrorToHTTPError(err)
 				}
@@ -283,7 +283,7 @@ func ListMachineDeploymentNodesEndpoint(userInfoGetter provider.UserInfoGetter, 
 
 func DeleteMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(getMachineDeploymentReq)
+		req := request.(machineDeploymentReq)
 		if err := req.Validate(); err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
@@ -307,25 +307,20 @@ func DeleteMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, pro
 					return nil, common.KubernetesErrorToHTTPError(err)
 				}
 			}
+			if cloud.EKS != nil {
+				err := deleteEKSNodePool(cluster, req.MachineDeploymentID, secretKeySelector, cloud.EKS.CredentialsReference, clusterProvider)
+				if err != nil {
+					return nil, common.KubernetesErrorToHTTPError(err)
+				}
+			}
 		}
 
 		return nil, nil
 	}
 }
 
-// getMachineDeploymentReq defines HTTP request for deleteExternalClusterMachineDeployment
-// swagger:parameters deleteExternalClusterMachineDeployment
-type getMachineDeploymentReq struct {
-	common.ProjectReq
-	// in: path
-	// required: true
-	ClusterID string `json:"cluster_id"`
-	// in: path
-	MachineDeploymentID string `json:"machinedeployment_id"`
-}
-
 // Validate validates getMachineDeploymentReq request
-func (req getMachineDeploymentReq) Validate() error {
+func (req machineDeploymentReq) Validate() error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("the project ID cannot be empty")
 	}
@@ -339,7 +334,7 @@ func (req getMachineDeploymentReq) Validate() error {
 }
 
 func DecodeGetMachineDeploymentReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req getMachineDeploymentReq
+	var req machineDeploymentReq
 
 	pr, err := common.DecodeProjectRequest(c, r)
 	if err != nil {
@@ -365,7 +360,7 @@ func DecodeGetMachineDeploymentReq(c context.Context, r *http.Request) (interfac
 // listMachineDeploymentNodesReq defines HTTP request for listExternalClusterMachineDeploymentNodes
 // swagger:parameters listExternalClusterMachineDeploymentNodes
 type listMachineDeploymentNodesReq struct {
-	getMachineDeploymentReq
+	machineDeploymentReq
 }
 
 func DecodeListMachineDeploymentNodesReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -375,8 +370,8 @@ func DecodeListMachineDeploymentNodesReq(c context.Context, r *http.Request) (in
 	if err != nil {
 		return nil, err
 	}
-	getReq := rawReq.(getMachineDeploymentReq)
-	req.getMachineDeploymentReq = getReq
+	getReq := rawReq.(machineDeploymentReq)
+	req.machineDeploymentReq = getReq
 	return req, nil
 }
 
@@ -562,7 +557,7 @@ func GetMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, projec
 			secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
 
 			if cloud.EKS != nil {
-				np, err := getEKSNodePool(ctx, cluster, req.MachineDeploymentID, secretKeySelector, cloud, clusterProvider)
+				np, err := getEKSNodePool(cluster, req.MachineDeploymentID, secretKeySelector, cloud, clusterProvider)
 				if err != nil {
 					return nil, common.KubernetesErrorToHTTPError(err)
 				}
@@ -604,7 +599,7 @@ func PatchMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proj
 				mdToPatch := apiv2.ExternalClusterMachineDeployment{}
 				patchedMD := apiv2.ExternalClusterMachineDeployment{}
 
-				md, err := getEKSNodePool(ctx, cluster, req.MachineDeploymentID, secretKeySelector, cloud, clusterProvider)
+				md, err := getEKSNodePool(cluster, req.MachineDeploymentID, secretKeySelector, cloud, clusterProvider)
 				if err != nil {
 					return nil, err
 				}
@@ -612,7 +607,7 @@ func PatchMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proj
 				if err := patchMD(&mdToPatch, &patchedMD, req.Patch); err != nil {
 					return nil, err
 				}
-				return patchEKSMD(ctx, &mdToPatch, &patchedMD, secretKeySelector, cloud)
+				return patchEKSMD(&mdToPatch, &patchedMD, secretKeySelector, cloud)
 			}
 		}
 		return nil, fmt.Errorf("unsupported or missing cloud provider fields")
@@ -636,8 +631,8 @@ func patchMD(mdToPatch, patchedMD *apiv2.ExternalClusterMachineDeployment, patch
 	return nil
 }
 
-// machineDeploymentReq defines HTTP request for getExternalClusterMachineDeployment
-// swagger:parameters getExternalClusterMachineDeployment
+// machineDeploymentReq defines HTTP request for getExternalClusterMachineDeployment deleteExternalClusterMachineDeployment
+// swagger:parameters getExternalClusterMachineDeployment deleteExternalClusterMachineDeployment
 type machineDeploymentReq struct {
 	common.ProjectReq
 	// in: path
@@ -654,48 +649,10 @@ type patchMachineDeploymentReq struct {
 	Patch json.RawMessage
 }
 
-// Validate validates GetMachineDeploymentEndpoint request
-func (req machineDeploymentReq) Validate() error {
-	if len(req.ProjectID) == 0 {
-		return fmt.Errorf("the project ID cannot be empty")
-	}
-	if len(req.ClusterID) == 0 {
-		return fmt.Errorf("the cluster ID cannot be empty")
-	}
-	if len(req.MachineDeploymentID) == 0 {
-		return fmt.Errorf("the machine deployment ID cannot be empty")
-	}
-	return nil
-}
-
-func DecodeGetMachineDeployment(c context.Context, r *http.Request) (interface{}, error) {
-	var req machineDeploymentReq
-
-	clusterID, err := common.DecodeClusterID(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.ClusterID = clusterID
-
-	projectReq, err := common.DecodeProjectRequest(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.ProjectReq = projectReq.(common.ProjectReq)
-
-	machineDeploymentID, err := decodeMachineDeploymentID(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.MachineDeploymentID = machineDeploymentID
-
-	return req, nil
-}
-
 func DecodePatchMachineDeploymentReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req patchMachineDeploymentReq
 
-	rawMachineDeployment, err := DecodeGetMachineDeployment(c, r)
+	rawMachineDeployment, err := DecodeGetMachineDeploymentReq(c, r)
 	if err != nil {
 		return nil, err
 	}

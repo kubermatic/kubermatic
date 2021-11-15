@@ -473,7 +473,7 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 			}
 
 			if cloud.EKS != nil {
-				return patchEKSCluster(ctx, clusterToPatch, patchedCluster, secretKeySelector, cloud)
+				return patchEKSCluster(clusterToPatch, patchedCluster, secretKeySelector, cloud)
 			}
 		}
 		return convertClusterToAPI(cluster), nil
