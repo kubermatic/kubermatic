@@ -149,7 +149,7 @@ kubermaticOperator:
     repository: "quay.io/kubermatic/kubermatic$REPOSUFFIX"
     tag: "$KUBERMATIC_VERSION"
 minio:
-  storageClass: 'copy-default'
+  storageClass: 'kubermatic-fast'
   credentials:
     accessKey: "FXcD7s0tFOPuTv6jaZARJDouc2Hal8E0"
     secretKey: "wdEZGTnhkgBDTDetaHFuizs3pwXHvWTs"
