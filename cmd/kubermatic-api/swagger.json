@@ -17876,6 +17876,26 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
+    "BackupDestination": {
+      "type": "object",
+      "title": "BackupDestination defines the bucket name and endpoint as a backup destination, and holds reference to the credentials secret.",
+      "properties": {
+        "bucketName": {
+          "description": "BucketName is the bucket name to use for backup and restore.",
+          "type": "string",
+          "x-go-name": "BucketName"
+        },
+        "credentials": {
+          "$ref": "#/definitions/ObjectReference"
+        },
+        "endpoint": {
+          "description": "Endpoint is the API endpoint to use for backup and restore.",
+          "type": "string",
+          "x-go-name": "Endpoint"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
     "BackupStatus": {
       "type": "object",
       "properties": {
@@ -19487,6 +19507,11 @@
           "type": "string",
           "x-go-name": "ClusterID"
         },
+        "destination": {
+          "description": "Destination indicates where the backup will be stored. The destination name should correspond to a destination in\nthe cluster's Seed.Spec.EtcdBackupRestore. If empty, it will use the legacy destination in Seed.Spec.BackupRestore",
+          "type": "string",
+          "x-go-name": "Destination"
+        },
         "keep": {
           "description": "Keep is the number of backups to keep around before deleting the oldest one\nIf not set, defaults to DefaultKeptBackupsCount. Only used if Schedule is set.",
           "type": "integer",
@@ -19527,6 +19552,21 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EtcdBackupRestore": {
+      "description": "EtcdBackupRestore holds the configuration of the automatic backup restores",
+      "type": "object",
+      "properties": {
+        "destinations": {
+          "description": "Destinations stores all the possible destinations where the backups for the Seed can be stored. If not empty,\nit enables automatic backup and restore for the seed.",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/BackupDestination"
+          },
+          "x-go-name": "Destinations"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "EtcdRestore": {
       "description": "EtcdRestore represents an object holding the configuration for etcd backup restore",
@@ -23073,6 +23113,9 @@
           },
           "x-go-name": "SeedDatacenters"
         },
+        "etcdBackupRestore": {
+          "$ref": "#/definitions/EtcdBackupRestore"
+        },
         "expose_strategy": {
           "$ref": "#/definitions/ExposeStrategy"
         },
@@ -23172,6 +23215,9 @@
             "$ref": "#/definitions/Datacenter"
           },
           "x-go-name": "SeedDatacenters"
+        },
+        "etcdBackupRestore": {
+          "$ref": "#/definitions/EtcdBackupRestore"
         },
         "expose_strategy": {
           "$ref": "#/definitions/ExposeStrategy"
