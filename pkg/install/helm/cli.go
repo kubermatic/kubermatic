@@ -56,28 +56,24 @@ func NewCLI(binary string, kubeconfig string, kubeContext string, timeout time.D
 }
 
 func (c *cli) BuildChartDependencies(chartDirectory string, flags []string) (err error) {
-	command := []string{
-		"dependency",
-		"build",
-	}
-
 	chart, err := LoadChart(chartDirectory)
 	if err != nil {
 		return err
 	}
 
 	for idx, dep := range chart.Dependencies {
+		repoName := fmt.Sprintf("dep-%s-%d", chart.Name, idx)
 		repoAddFlags := []string{
 			"repo",
 			"add",
-			fmt.Sprintf("dep-%s-%d", chart.Name, idx),
+			repoName,
 			dep.Repository,
 		}
 
 		repoRemoveFlags := []string{
 			"repo",
 			"remove",
-			fmt.Sprintf("dep-%s-%d", chart.Name, idx),
+			repoName,
 		}
 
 		defer func() {
@@ -87,7 +83,14 @@ func (c *cli) BuildChartDependencies(chartDirectory string, flags []string) (err
 			}
 		}()
 
-		_, err = c.run("default", repoAddFlags...)
+		if _, err = c.run("default", repoAddFlags...); err != nil {
+			return err
+		}
+	}
+
+	command := []string{
+		"dependency",
+		"build",
 	}
 
 	command = append(command, chartDirectory)
@@ -96,6 +99,7 @@ func (c *cli) BuildChartDependencies(chartDirectory string, flags []string) (err
 
 	return err
 }
+
 func (c *cli) InstallChart(namespace string, releaseName string, chartDirectory string, valuesFile string, values map[string]string, flags []string) error {
 	command := []string{
 		"upgrade",
