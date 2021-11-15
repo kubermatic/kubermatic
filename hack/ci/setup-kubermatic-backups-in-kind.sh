@@ -174,7 +174,6 @@ retry 10 check_all_deployments_ready kubermatic
 echodate "Finished installing Kubermatic"
 
 echodate "installing minio..."
-kubectl apply -f hack/ci/testdata/s3_secret.yaml
 helm --namespace minio upgrade --install --create-namespace --wait --values "$HELM_VALUES_FILE" minio charts/minio/
 
 echodate "Installing Seed..."
