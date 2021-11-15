@@ -96,7 +96,8 @@ func TestBackup(t *testing.T) {
 	}
 
 	// create etcd backup that will be restored later
-	if err := createBackup(ctx, t, client, cluster); err != nil {
+	err, backup := createBackup(ctx, t, client, cluster)
+	if err != nil {
 		t.Fatalf("failed to create etcd backup: %v", err)
 	}
 
@@ -106,7 +107,10 @@ func TestBackup(t *testing.T) {
 	}
 	waitForQuorum(t)
 
-	// TODO: restore from backup
+	// restore from backup
+	if err := restoreBackup(ctx, t, client, cluster, backup); err != nil {
+		t.Fatalf("failed to restore etcd backup: %v", err)
+	}
 
 	t.Log("tests succeeded")
 }
@@ -183,7 +187,7 @@ func TestScaling(t *testing.T) {
 	t.Log("tests succeeded")
 }
 
-func createBackup(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+func createBackup(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (error, *kubermaticv1.EtcdBackupConfig) {
 	t.Log("creating backup of etcd data...")
 	backup := &kubermaticv1.EtcdBackupConfig{
 		ObjectMeta: metav1.ObjectMeta{
@@ -192,20 +196,56 @@ func createBackup(ctx context.Context, t *testing.T, client ctrlruntimeclient.Cl
 		},
 		Spec: kubermaticv1.EtcdBackupConfigSpec{
 			Cluster: corev1.ObjectReference{
-				Kind:      cluster.Kind,
-				Name:      cluster.Name,
-				Namespace: cluster.Namespace,
-				UID:       cluster.UID,
+				Kind:            cluster.Kind,
+				Name:            cluster.Name,
+				Namespace:       cluster.Namespace,
+				UID:             cluster.UID,
+				APIVersion:      cluster.APIVersion,
+				ResourceVersion: cluster.ResourceVersion,
 			},
 		},
 	}
 
 	if err := client.Create(ctx, backup); err != nil {
-		return fmt.Errorf("failed to create EtcdBackupConfig: %v", err)
+		return fmt.Errorf("failed to create EtcdBackupConfig: %v", err), nil
 	}
 
 	if err := waitForEtcdBackup(ctx, t, client, backup); err != nil {
-		return fmt.Errorf("failed to wait for etcd backup finishing: %v", err)
+		return fmt.Errorf("failed to wait for etcd backup finishing: %v", err), nil
+	}
+
+	return nil, backup
+}
+
+func restoreBackup(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, backup *kubermaticv1.EtcdBackupConfig) error {
+	restore := &kubermaticv1.EtcdRestore{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "etcd-e2e-restore",
+			Namespace: backup.Namespace,
+		},
+		Spec: kubermaticv1.EtcdRestoreSpec{
+			Cluster: corev1.ObjectReference{
+				Kind:            cluster.Kind,
+				Name:            cluster.Name,
+				Namespace:       cluster.Namespace,
+				UID:             cluster.UID,
+				APIVersion:      cluster.APIVersion,
+				ResourceVersion: cluster.ResourceVersion,
+			},
+			BackupName: backup.Status.CurrentBackups[0].BackupName,
+		},
+	}
+
+	if err := client.Create(ctx, restore); err != nil {
+		return fmt.Errorf("failed to create EtcdRestore: %v", err)
+	}
+
+	if err := waitForEtcdRestore(ctx, t, client, restore); err != nil {
+		return fmt.Errorf("failed to wait for etcd restore: %v", err)
+	}
+
+	if err := waitForClusterHealthy(ctx, t, client, cluster); err != nil {
+		return fmt.Errorf("failed to wait for cluster to become healthy again: %v", err)
 	}
 
 	return nil
@@ -388,6 +428,10 @@ func isEtcdBackupCompleted(status *kubermaticv1.EtcdBackupConfigStatus) bool {
 	return false
 }
 
+func isEtcdRestoreCompleted(status *kubermaticv1.EtcdRestoreStatus) bool {
+	return status.Phase == kubermaticv1.EtcdRestorePhaseCompleted
+}
+
 // resizeEtcd changes the etcd cluster size.
 func resizeEtcd(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, size int) error {
 	if size > kubermaticv1.MaxEtcdClusterSize || size < kubermaticv1.MinEtcdClusterSize {
@@ -404,17 +448,32 @@ func resizeEtcd(ctx context.Context, client ctrlruntimeclient.Client, cluster *k
 func waitForEtcdBackup(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, backup *kubermaticv1.EtcdBackupConfig) error {
 	before := time.Now()
 	if err := wait.PollImmediate(10*time.Second, 5*time.Minute, func() (bool, error) {
-		if err := client.Get(ctx, types.NamespacedName{Name: backup.Name}, backup); err != nil {
+		if err := client.Get(ctx, types.NamespacedName{Name: backup.Name, Namespace: backup.Namespace}, backup); err != nil {
 			return false, err
 		}
 
 		return isEtcdBackupCompleted(&backup.Status), nil
 	}); err != nil {
-		t.Logf("failed waiting for backup status to complete: %v", backup.Status)
-		return err
+		return fmt.Errorf("failed waiting for backup to complete: %v (%v)", err, backup.Status)
 	}
 
 	t.Logf("etcd backup finished after %v.", time.Since(before))
+	return nil
+}
+
+func waitForEtcdRestore(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, restore *kubermaticv1.EtcdRestore) error {
+	before := time.Now()
+	if err := wait.PollImmediate(10*time.Second, 5*time.Minute, func() (bool, error) {
+		if err := client.Get(ctx, types.NamespacedName{Name: restore.Name, Namespace: restore.Namespace}, restore); err != nil {
+			return false, err
+		}
+
+		return isEtcdRestoreCompleted(&restore.Status), nil
+	}); err != nil {
+		return fmt.Errorf("failed waiting for restore to complete: %v (%v)", err, restore.Status)
+	}
+
+	t.Logf("etcd restore finished after %v.", time.Since(before))
 	return nil
 }
 
