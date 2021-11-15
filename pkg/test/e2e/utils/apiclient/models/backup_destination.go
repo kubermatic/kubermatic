@@ -25,7 +25,7 @@ type BackupDestination struct {
 	Endpoint string `json:"endpoint,omitempty"`
 
 	// credentials
-	Credentials *ObjectReference `json:"credentials,omitempty"`
+	Credentials *SecretReference `json:"credentials,omitempty"`
 }
 
 // Validate validates this backup destination
