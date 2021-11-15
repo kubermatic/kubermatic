@@ -175,7 +175,7 @@ echodate "Finished installing Kubermatic"
 
 echodate "installing minio..."
 kubectl apply -f hack/ci/testdata/s3_secret.yaml
-helm --namespace minio upgrade --install --create-namespace --wait --values values.yaml minio charts/minio/
+helm --namespace minio upgrade --install --create-namespace --wait --values "$HELM_VALUES_FILE" minio charts/minio/
 
 echodate "Installing Seed..."
 SEED_MANIFEST="$(mktemp)"

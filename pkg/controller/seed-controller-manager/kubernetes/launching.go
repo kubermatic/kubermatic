@@ -73,13 +73,11 @@ func (r *Reconciler) etcdUseStrictTLS(ctx context.Context, c *kubermaticv1.Clust
 		return false, err
 	}
 
-	useStrictTls := true
-
 	for _, pod := range pods.Items {
 		if _, ok := pod.Annotations[resources.EtcdTLSEnabledAnnotation]; !ok {
-			useStrictTls = false
+			return false, nil
 		}
 	}
 
-	return useStrictTls, nil
+	return true, nil
 }
