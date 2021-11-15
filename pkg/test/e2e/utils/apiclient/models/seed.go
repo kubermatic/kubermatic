@@ -42,6 +42,9 @@ type Seed struct {
 	// backup restore
 	BackupRestore *SeedBackupRestoreConfiguration `json:"backupRestore,omitempty"`
 
+	// etcd backup restore
+	EtcdBackupRestore *EtcdBackupRestore `json:"etcdBackupRestore,omitempty"`
+
 	// expose strategy
 	ExposeStrategy ExposeStrategy `json:"expose_strategy,omitempty"`
 
@@ -64,6 +67,10 @@ func (m *Seed) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateBackupRestore(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateEtcdBackupRestore(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -119,6 +126,23 @@ func (m *Seed) validateBackupRestore(formats strfmt.Registry) error {
 		if err := m.BackupRestore.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("backupRestore")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *Seed) validateEtcdBackupRestore(formats strfmt.Registry) error {
+	if swag.IsZero(m.EtcdBackupRestore) { // not required
+		return nil
+	}
+
+	if m.EtcdBackupRestore != nil {
+		if err := m.EtcdBackupRestore.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("etcdBackupRestore")
 			}
 			return err
 		}
@@ -205,6 +229,10 @@ func (m *Seed) ContextValidate(ctx context.Context, formats strfmt.Registry) err
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateEtcdBackupRestore(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateExposeStrategy(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -248,6 +276,20 @@ func (m *Seed) contextValidateBackupRestore(ctx context.Context, formats strfmt.
 		if err := m.BackupRestore.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("backupRestore")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *Seed) contextValidateEtcdBackupRestore(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.EtcdBackupRestore != nil {
+		if err := m.EtcdBackupRestore.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("etcdBackupRestore")
 			}
 			return err
 		}
