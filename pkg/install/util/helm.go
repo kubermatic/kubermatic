@@ -114,6 +114,10 @@ func DeployHelmChart(ctx context.Context, log logrus.FieldLogger, helmClient hel
 		flags = append(flags, "--atomic")
 	}
 
+	if err := helmClient.BuildChartDependencies(chart.Directory, flags); err != nil {
+		return fmt.Errorf("failed to download dependencies: %v", err)
+	}
+
 	if err := helmClient.InstallChart(namespace, releaseName, chart.Directory, helmValues, nil, flags); err != nil {
 		return fmt.Errorf("failed to install: %v", err)
 	}
