@@ -32,7 +32,7 @@ pushElapsed gocache_download_duration_milliseconds $beforeGocache
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
 
 source hack/ci/setup-kind-cluster.sh
-source hack/ci/setup-kubermatic-in-kind.sh
+source hack/ci/setup-kubermatic-backups-in-kind.sh
 
 echodate "Creating UI DigitalOcean preset..."
 cat << EOF > preset-digitalocean.yaml
