@@ -1351,6 +1351,11 @@ spec:
                     description: MonitoringEnabled is the flag for enabling monitoring
                       in user cluster.
                     type: boolean
+                  monitoringReplicas:
+                    description: MonitoringReplicas is the number of desired pods
+                      of user cluster prometheus deployment.
+                    format: int32
+                    type: integer
                   monitoringResources:
                     description: MonitoringResources is the resource requirements
                       for user cluster prometheus.

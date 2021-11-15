@@ -100,7 +100,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("failed to get MLA Gateway CA cert: %v", err)
 		}
-		data.monitoringRequirements, data.loggingRequirements, err = r.mlaResourceRequirements(ctx)
+		data.monitoringRequirements, data.loggingRequirements, data.monitoringReplicas, err = r.mlaReconcileData(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to get MLA resource requirements: %w", err)
 		}
@@ -803,7 +803,7 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 
 	if r.userClusterMLA.Monitoring {
 		creators := []reconciling.NamedDeploymentCreatorGetter{
-			userclusterprometheus.DeploymentCreator(data.monitoringRequirements, r.overwriteRegistryFunc),
+			userclusterprometheus.DeploymentCreator(data.monitoringRequirements, data.monitoringReplicas, r.overwriteRegistryFunc),
 		}
 		if err := reconciling.ReconcileDeployments(ctx, creators, resources.UserClusterMLANamespace, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile Deployments in namespace %s: %v", resources.UserClusterMLANamespace, err)
@@ -853,6 +853,7 @@ type reconcileData struct {
 	ccmMigration           bool
 	monitoringRequirements *corev1.ResourceRequirements
 	loggingRequirements    *corev1.ResourceRequirements
+	monitoringReplicas     *int32
 }
 
 func (r *reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context) error {
