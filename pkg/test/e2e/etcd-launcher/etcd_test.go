@@ -211,7 +211,7 @@ func createBackup(ctx context.Context, t *testing.T, client ctrlruntimeclient.Cl
 	}
 
 	if err := waitForEtcdBackup(ctx, t, client, backup); err != nil {
-		return fmt.Errorf("failed to wait for etcd backup finishing: %v", err), nil
+		return fmt.Errorf("failed to wait for etcd backup finishing: %v (%v)", err, backup.Status), nil
 	}
 
 	return nil, backup
@@ -454,7 +454,7 @@ func waitForEtcdBackup(ctx context.Context, t *testing.T, client ctrlruntimeclie
 
 		return isEtcdBackupCompleted(&backup.Status), nil
 	}); err != nil {
-		return fmt.Errorf("failed waiting for backup to complete: %v (%v)", err, backup.Status)
+		return err
 	}
 
 	t.Logf("etcd backup finished after %v.", time.Since(before))
