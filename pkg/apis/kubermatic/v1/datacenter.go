@@ -127,7 +127,7 @@ type BackupDestination struct {
 	// BucketName is the bucket name to use for backup and restore.
 	BucketName string `json:"bucketName"`
 	// Credentials hold the ref to the secret with backup credentials
-	Credentials corev1.ObjectReference `json:"credentials,omitempty"`
+	Credentials *corev1.SecretReference `json:"credentials,omitempty"`
 }
 
 type NodeportProxyConfig struct {

@@ -17886,7 +17886,7 @@
           "x-go-name": "BucketName"
         },
         "credentials": {
-          "$ref": "#/definitions/ObjectReference"
+          "$ref": "#/definitions/SecretReference"
         },
         "endpoint": {
           "description": "Endpoint is the API endpoint to use for backup and restore.",
@@ -23092,6 +23092,23 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "SecretReference": {
+      "description": "SecretReference represents a Secret Reference. It has enough information to retrieve secret\nin any namespace\n+structType=atomic",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "Name is unique within a namespace to reference a secret resource.\n+optional",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "namespace": {
+          "description": "Namespace defines the space within which the secret name must be unique.\n+optional",
+          "type": "string",
+          "x-go-name": "Namespace"
+        }
+      },
+      "x-go-package": "k8s.io/api/core/v1"
     },
     "Seed": {
       "description": "Seed represents a seed object",
