@@ -209,11 +209,15 @@ retry 10 check_all_deployments_ready kubermatic
 
 echodate "Finished installing Kubermatic"
 
-echodate "installing minio..."
+echodate "Installing minio..."
 kubectl create namespace minio
-kubectl create secret tls minio-tls-cert --cert "$MINIO_TLS_CERT" --key "$MINIO_TLS_KEY"
+kubectl create secret tls minio-tls-cert --cert "$MINIO_TLS_CERT" --key "$MINIO_TLS_KEY" --namespace minio
 helm --namespace minio upgrade --install --wait --values "$HELM_VALUES_FILE" minio charts/minio/
 kubectl apply -f hack/ci/testdata/backup_s3_creds.yaml
+
+echodate "Setting up backup bucket in minio..."
+kubectl create -f hack/ci/testdata/minio_bucket_job.yaml
+kubectl wait --for=condition=complete --timeout=60s --namespace minio job/create-minio-backup-bucket
 
 echodate "Installing Seed..."
 SEED_MANIFEST="$(mktemp)"

@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Job
+metadata:
+  name: create-minio-backup-bucket
+  namespace: minio
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      containers:
+        - name: mc
+          image: docker.io/minio/minio:RELEASE.2021-08-20T18-32-01Z
+          args:
+            - /bin/sh
+            - -c
+            - mc --insecure config host add src https://minio.minio.svc.cluster.local:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" && mc mb kkpbackupe2e
+          env:
+            - name: MINIO_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: minio
+                  key: accessKey
+            - name: MINIO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: minio
+                  key: secretKey
+          securityContext:
+            runAsNonRoot: false
+            runAsUser: 0
+          restartPolicy: Never
