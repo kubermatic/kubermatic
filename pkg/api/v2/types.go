@@ -17,8 +17,6 @@ limitations under the License.
 package v2
 
 import (
-	"time"
-
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -397,33 +395,6 @@ type EKSCluster struct {
 	Name       string `json:"name"`
 	Region     string `json:"region"`
 	IsImported bool   `json:"imported"`
-}
-
-// Update is the description of the specified externalcluster update
-// swagger:model Update
-type Update struct {
-	// The Unix epoch timestamp in seconds for when the update was created.
-	CreatedAt *time.Time `json:"createdAt"`
-
-	// A UUID that is used to track the update.
-	Id *string `json:"id"`
-
-	// A key-value map that contains the parameters associated with the update.
-	Params []*UpdateParam `json:"params"`
-
-	// The current status of the update.
-	Status *string `json:"status"`
-
-	// The type of the update.
-	Type *string `json:"type"`
-}
-
-type UpdateParam struct {
-	// The keys associated with an update request.
-	Type *string `json:"type"`
-
-	// The value of the keys submitted as part of an update request.
-	Value *string `json:"value"`
 }
 
 // EKSClusterList represents an list of EKS clusters.

@@ -62,7 +62,7 @@ func createEKSCluster(ctx context.Context, name string, userInfoGetter provider.
 	return createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, newCluster, project)
 }
 
-func patchEKSCluster(old, new *apiv2.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticapiv1.ExternalClusterCloudSpec) (*apiv2.Update, error) {
+func patchEKSCluster(old, new *apiv2.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticapiv1.ExternalClusterCloudSpec) (*apiv2.ExternalCluster, error) {
 
 	accessKeyID, secretAccessKey, err := awsprovider.GetCredentialsForEKSCluster(*cloudSpec, secretKeySelector)
 	if err != nil {
@@ -81,27 +81,12 @@ func patchEKSCluster(old, new *apiv2.ExternalCluster, secretKeySelector provider
 		Name:    &cloudSpec.EKS.Name,
 		Version: &newVersionString,
 	}
-	updateOutput, err := client.EKS.UpdateClusterVersion(&updateInput)
+	_, err = client.EKS.UpdateClusterVersion(&updateInput)
 	if err != nil {
 		return nil, err
 	}
 
-	update := apiv2.Update{
-		CreatedAt: updateOutput.Update.CreatedAt,
-		Id:        updateOutput.Update.Id,
-		Status:    updateOutput.Update.Status,
-		Type:      updateOutput.Update.Status,
-	}
-	var params []*apiv2.UpdateParam
-	for _, param := range updateOutput.Update.Params {
-		params = append(params, &apiv2.UpdateParam{
-			Type:  param.Type,
-			Value: param.Value,
-		})
-		update.Params = params
-	}
-
-	return &update, nil
+	return new, nil
 }
 
 func getEKSNodePools(cluster *kubermaticapiv1.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticapiv1.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterMachineDeployment, error) {
@@ -224,7 +209,7 @@ func nodeGroupToMD(nodeGroup *eks.Nodegroup, readyReplicas int32) apiv2.External
 	}
 }
 
-func patchEKSMD(old, new *apiv2.ExternalClusterMachineDeployment, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticapiv1.ExternalClusterCloudSpec) (*apiv2.Update, error) {
+func patchEKSMD(old, new *apiv2.ExternalClusterMachineDeployment, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticapiv1.ExternalClusterCloudSpec) (*apiv2.ExternalClusterMachineDeployment, error) {
 
 	accessKeyID, secretAccessKey, err := awsprovider.GetCredentialsForEKSCluster(*cloudSpec, secretKeySelector)
 	if err != nil {
@@ -239,14 +224,15 @@ func patchEKSMD(old, new *apiv2.ExternalClusterMachineDeployment, secretKeySelec
 	nodeGroupName := new.NodeDeployment.Name
 
 	desiredReplicas := new.NodeDeployment.Spec.Replicas
-	updateOutput, err := resizeEKSNodeGroup(client, clusterName, nodeGroupName, int64(desiredReplicas))
+	_, err = resizeEKSNodeGroup(client, clusterName, nodeGroupName, int64(desiredReplicas))
 	if err != nil {
 		return nil, err
 	}
-	return updateOutput, err
+	new.NodeDeployment.Status.Replicas = desiredReplicas
+	return new, nil
 }
 
-func resizeEKSNodeGroup(client *awsprovider.ClientSet, clusterName, nodeGroupName string, desiredSize int64) (*apiv2.Update, error) {
+func resizeEKSNodeGroup(client *awsprovider.ClientSet, clusterName, nodeGroupName string, desiredSize int64) (*eks.UpdateNodegroupConfigOutput, error) {
 
 	nodeGroupInput := eks.DescribeNodegroupInput{
 		ClusterName:   &clusterName,
@@ -294,22 +280,7 @@ func resizeEKSNodeGroup(client *awsprovider.ClientSet, clusterName, nodeGroupNam
 		return nil, err
 	}
 
-	update := apiv2.Update{
-		CreatedAt: updateOutput.Update.CreatedAt,
-		Id:        updateOutput.Update.Id,
-		Status:    updateOutput.Update.Status,
-		Type:      updateOutput.Update.Status,
-	}
-	var params []*apiv2.UpdateParam
-	for _, param := range updateOutput.Update.Params {
-		params = append(params, &apiv2.UpdateParam{
-			Type:  param.Type,
-			Value: param.Value,
-		})
-		update.Params = params
-	}
-
-	return &update, nil
+	return updateOutput, nil
 }
 
 func getEKSNodes(cluster *kubermaticapiv1.ExternalCluster, nodeGroupName string, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector, clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterNode, error) {

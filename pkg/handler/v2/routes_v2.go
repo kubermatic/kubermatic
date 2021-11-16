@@ -5093,7 +5093,7 @@ func (r Routing) deleteAdminRuleGroup() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: Update
+//       200: ExternalClusterMachineDeployment
 //       401: empty
 //       403: empty
 func (r Routing) patchExternalClusterMachineDeployments() http.Handler {
