@@ -21,8 +21,8 @@ minio:
   # The is required to enable the BackupRestore controller so it can backup
   # and restore from the local minio deployment. The TLS certificates should be 
   # signed by the global KKP CA.
-  certificateSecret: minio-certificates # tls secret used by minio.
-  
+  certificateSecret: '' # tls secret used by minio.
+
   # These settings are required. Keys must be alphanumeric.
   credentials:
     accessKey: '' # 32 byte long
