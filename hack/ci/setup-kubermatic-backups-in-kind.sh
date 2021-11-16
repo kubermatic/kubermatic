@@ -175,9 +175,9 @@ echo $CUSTOM_CA_KEY $CUSTOM_CA_CERT
 # create private key, CSR and signed certificate for minio TLS
 openssl genrsa -out "$MINIO_TLS_KEY" 2048
 openssl req -new -sha256 \
-    -key "$MINIO_TLS_KEY" \
-    -subj "/C=DE/O=Kubermatic CI/CN=minio.minio.svc.cluster.local" \
-    -out "$MINIO_TLS_CSR" 
+  -key "$MINIO_TLS_KEY" \
+  -subj "/C=DE/O=Kubermatic CI/CN=minio.minio.svc.cluster.local" \
+  -out "$MINIO_TLS_CSR"
 
 openssl x509 -req -in "$MINIO_TLS_CSR" -CA "$CUSTOM_CA_CERT" -CAkey "$CUSTOM_CA_KEY" -CAcreateserial -out "$MINIO_TLS_CERT" -days 7 -sha256
 
@@ -190,7 +190,7 @@ metadata:
   namespace: kubermatic
 data:
   ca-bundle.pem: |
-    $(cat charts/kubermatic-operator/static/ca-bundle.pem $CUSTOM_CA_CERT)
+$(cat charts/kubermatic-operator/static/ca-bundle.pem $CUSTOM_CA_CERT | sed 's/^/    /')
 EOF
 
 kubectl create namespace kubermatic
