@@ -9,7 +9,7 @@ spec:
     spec:
       containers:
         - name: mc
-          image: docker.io/minio/minio:RELEASE.2021-08-20T18-32-01Z
+          image: quay.io/kubermatic/util:2.0.0
           args:
             - /bin/sh
             - -c
