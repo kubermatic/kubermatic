@@ -31,6 +31,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	grafanasdk "github.com/kubermatic/grafanasdk"
 	"gopkg.in/yaml.v2"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
@@ -226,20 +227,80 @@ func TestMLAIntegration(t *testing.T) {
 		t.Fatalf("orgUser[%v] expected to be had Editor role", orgUser)
 	}
 
-	// RuleGroup
-	testRuleGroup := test.GenerateTestRuleGroupData("test-rule")
-	expectedMetricRuleGroup := map[string]interface{}{}
-	if err := yaml.Unmarshal(testRuleGroup, &expectedMetricRuleGroup); err != nil {
+	// Logs RuleGroup
+	lokiRule := `
+name: test-rule
+rules:
+- alert: HighThroughputLogStreams
+  expr: sum by(container)(rate({job=~"kube-system/.*"}[1m])) >= 50
+  for: 2s
+  labels:
+    severity: critical
+  annotations:
+    summary: "log stream is a bit high"
+    description: "log stream is a bit high"
+`
+	expectedLogRuleGroup := map[string]interface{}{}
+	if err := yaml.Unmarshal([]byte(lokiRule), &expectedLogRuleGroup); err != nil {
 		t.Fatalf("unable to unmarshal expected rule group: %v", err)
 	}
+
+	config, err := masterClient.CreateRuleGroup(cluster.Name, project.ID, kubermaticv1.RuleGroupTypeLogs, []byte(lokiRule))
+	if err != nil {
+		t.Fatalf("unable to create logs rule group: %v", err)
+	}
+	t.Logf("have config: %s", string(config.Data))
+	logRuleGroupURL := fmt.Sprintf("%s%s%s", "http://localhost:3003", mla.LogRuleGroupConfigEndpoint, "/default")
+
+	if !utils.WaitFor(1*time.Second, timeout, func() bool {
+		req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/%s", logRuleGroupURL, "test-rule"), nil)
+		if err != nil {
+			t.Fatalf("unable to create rule group request: %v", err)
+		}
+		req.Header.Add(mla.RuleGroupTenantHeaderName, cluster.Name)
+
+		resp, err := httpClient.Do(req)
+		if err != nil {
+			t.Fatalf("unable to get rule group: %v", err)
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				t.Fatalf("status code: %d,error: %s", resp.StatusCode, err.Error())
+			}
+			t.Logf("status code: %d, response body: %s", resp.StatusCode, string(body))
+			return false
+		}
+		defer resp.Body.Close()
+		config := map[string]interface{}{}
+		decoder := yaml.NewDecoder(resp.Body)
+		if err := decoder.Decode(&config); err != nil {
+			t.Fatalf("unable to decode response body: %v", err)
+		}
+		t.Logf("diff config: %s", cmp.Diff(config, expectedLogRuleGroup))
+		t.Logf("have new config: %+v", config)
+		return reflect.DeepEqual(config, expectedLogRuleGroup)
+	}) {
+		t.Fatal("log rule group not found")
+	}
+	t.Log("log rule group added")
+
+	// Metric RuleGroup
+	testRuleGroup := test.GenerateTestRuleGroupData("test-metric-rule")
+	expectedRuleGroup := map[string]interface{}{}
+	if err := yaml.Unmarshal(testRuleGroup, &expectedRuleGroup); err != nil {
+		t.Fatalf("unable to unmarshal expected rule group: %v", err)
+	}
+
 	_, err = masterClient.CreateRuleGroup(cluster.Name, project.ID, kubermaticv1.RuleGroupTypeMetrics, testRuleGroup)
 	if err != nil {
 		t.Fatalf("unable to create metric rule group: %v", err)
 	}
-	ruleGroupURL := fmt.Sprintf("%s%s%s", "http://localhost:3002", mla.MetricsRuleGroupConfigEndpoint, "/default")
+	metricRuleGroupURL := fmt.Sprintf("%s%s%s", "http://localhost:3002", mla.MetricsRuleGroupConfigEndpoint, "/default")
 
 	if !utils.WaitFor(1*time.Second, timeout, func() bool {
-		req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/%s", ruleGroupURL, "test-rule"), nil)
+		req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/%s", metricRuleGroupURL, "test-metric-rule"), nil)
 		if err != nil {
 			t.Fatalf("unable to create rule group request: %v", err)
 		}
@@ -259,12 +320,12 @@ func TestMLAIntegration(t *testing.T) {
 		if err := decoder.Decode(&config); err != nil {
 			t.Fatalf("unable to decode response body: %v", err)
 		}
-		return reflect.DeepEqual(config, expectedMetricRuleGroup)
+		return reflect.DeepEqual(config, expectedRuleGroup)
 
 	}) {
-		t.Fatal("rule group not found")
+		t.Fatal("metric rule group not found")
 	}
-	t.Log("rule group added")
+	t.Log("metric rule group added")
 
 	// AlertManager
 	_, err = masterClient.UpdateAlertmanager(cluster.Name, project.ID, testAlertmanagerConfig)
@@ -304,7 +365,7 @@ func TestMLAIntegration(t *testing.T) {
 		if resp.StatusCode != http.StatusOK {
 			body, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
-				t.Fatalf("unable to read alertmanager config: %v", err)
+				t.Fatalf("unable to read alertmanager config: %s", err.Error())
 			}
 			t.Fatalf("status code: %d, response body: %s", resp.StatusCode, string(body))
 		}
