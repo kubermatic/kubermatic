@@ -170,8 +170,6 @@ MINIO_TLS_CERT=$(mktemp)
 openssl genrsa -out "$CUSTOM_CA_KEY" 2048
 openssl req -x509 -new -nodes -subj "/C=DE/O=Kubermatic CI/CN=kubermatic-e2e-ca" -key "$CUSTOM_CA_KEY" -sha256 -days 30 -out "$CUSTOM_CA_CERT"
 
-echo $CUSTOM_CA_KEY $CUSTOM_CA_CERT
-
 # create private key, CSR and signed certificate for minio TLS
 openssl genrsa -out "$MINIO_TLS_KEY" 2048
 openssl req -new -sha256 \
@@ -213,7 +211,7 @@ echodate "Finished installing Kubermatic"
 
 echodate "installing minio..."
 kubectl create namespace minio
-kubectl create secret tls minio-certificates --cert "$MINIO_TLS_CERT" --key "$MINIO_TLS_KEY"
+kubectl create secret tls minio-tls-cert --cert "$MINIO_TLS_CERT" --key "$MINIO_TLS_KEY"
 helm --namespace minio upgrade --install --wait --values "$HELM_VALUES_FILE" minio charts/minio/
 kubectl apply -f hack/ci/testdata/backup_s3_creds.yaml
 
