@@ -172,12 +172,16 @@ openssl req -x509 -new -nodes -subj "/C=DE/O=Kubermatic CI/CN=kubermatic-e2e-ca"
 
 # create private key, CSR and signed certificate for minio TLS
 openssl genrsa -out "$MINIO_TLS_KEY" 2048
-openssl req -new -sha256 \
+openssl req -new -nodes \
   -key "$MINIO_TLS_KEY" \
   -subj "/C=DE/O=Kubermatic CI/CN=minio.minio.svc.cluster.local" \
+  -config hack/ci/testdata/minio.cnf \
   -out "$MINIO_TLS_CSR"
 
-openssl x509 -req -in "$MINIO_TLS_CSR" -CA "$CUSTOM_CA_CERT" -CAkey "$CUSTOM_CA_KEY" -CAcreateserial -out "$MINIO_TLS_CERT" -days 7 -sha256
+openssl x509 -req -in "$MINIO_TLS_CSR" \
+  -CA "$CUSTOM_CA_CERT" -CAkey "$CUSTOM_CA_KEY" -CAcreateserial \
+  -out "$MINIO_TLS_CERT" -days 7 -sha256 \
+  -extfile hack/ci/testdata/minio.cnf -extensions req_ext
 
 CA_BUNDLE_CM=$(mktemp)
 cat << EOF > $CA_BUNDLE_CM
