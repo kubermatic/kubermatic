@@ -28,7 +28,6 @@ charts=$(find charts/ -name Chart.yaml | sort)
 
 [ -n "$charts" ] && while read -r chartYAML; do
   dirname="$(dirname $(echo "$chartYAML"))"
-  name="$(yq read "$chartYAML" name)"
   chartname=$(yq read "$chartYAML" name)
   echodate "Fetching dependencies for ${chartname}..."
 
