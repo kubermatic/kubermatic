@@ -218,6 +218,7 @@ func createBackup(ctx context.Context, t *testing.T, client ctrlruntimeclient.Cl
 }
 
 func restoreBackup(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, backup *kubermaticv1.EtcdBackupConfig) error {
+	t.Log("restoring etcd cluster from backup...")
 	restore := &kubermaticv1.EtcdRestore{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "etcd-e2e-restore",
@@ -496,7 +497,7 @@ func waitForClusterHealthy(ctx context.Context, t *testing.T, client ctrlruntime
 		return fmt.Errorf("failed to check etcd health status: %v", err)
 	}
 
-	t.Logf("cluster became healthy after %v.", time.Since(before))
+	t.Logf("etcd cluster became healthy after %v.", time.Since(before))
 
 	return nil
 }
@@ -519,7 +520,7 @@ func waitForStrictTLSMode(ctx context.Context, t *testing.T, client ctrlruntimec
 		return fmt.Errorf("failed to check etcd health status: %v", err)
 	}
 
-	t.Logf("cluster became healthy after %v.", time.Since(before))
+	t.Logf("etcd cluster is running in strict TLS mode after %v.", time.Since(before))
 
 	return nil
 }
