@@ -28,4 +28,4 @@ spec:
           securityContext:
             runAsNonRoot: false
             runAsUser: 0
-          restartPolicy: Never
+      restartPolicy: Never
