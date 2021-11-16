@@ -666,8 +666,8 @@ func getNetClientForCluster(cluster kubermaticv1.CloudSpec, dc *kubermaticv1.Dat
 func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (*resources.OpenstackCredentials, error) {
 	username := cloud.Openstack.Username
 	password := cloud.Openstack.Password
-	project := cloud.Openstack.GetProjectOrDefaultToTenant()
-	projectID := cloud.Openstack.GetProjectIdOrDefaultToTenantId()
+	project := cloud.Openstack.GetProject()
+	projectID := cloud.Openstack.GetProjectId()
 	domain := cloud.Openstack.Domain
 	applicationCredentialID := cloud.Openstack.ApplicationCredentialID
 	applicationCredentialSecret := cloud.Openstack.ApplicationCredentialSecret
@@ -748,13 +748,13 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 	}
 
 	if project == "" && cloud.Openstack.CredentialsReference != nil && cloud.Openstack.CredentialsReference.Name != "" {
-		if project, err = firstKeyOrFallback(secretKeySelector, cloud.Openstack.CredentialsReference, resources.OpenstackProject, resources.OpenstackTenant); err != nil {
+		if project, err = firstKey(secretKeySelector, cloud.Openstack.CredentialsReference, resources.OpenstackProject, resources.OpenstackTenant); err != nil {
 			return &resources.OpenstackCredentials{}, err
 		}
 	}
 
 	if projectID == "" && cloud.Openstack.CredentialsReference != nil && cloud.Openstack.CredentialsReference.Name != "" {
-		if projectID, err = firstKeyOrFallback(secretKeySelector, cloud.Openstack.CredentialsReference, resources.OpenstackProjectID, resources.OpenstackTenantID); err != nil {
+		if projectID, err = firstKey(secretKeySelector, cloud.Openstack.CredentialsReference, resources.OpenstackProjectID, resources.OpenstackTenantID); err != nil {
 			return &resources.OpenstackCredentials{}, err
 		}
 	}
@@ -770,9 +770,9 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 	}, nil
 }
 
-// firstKeyOrFallback read the secret and return value for the firstkey. if the firstKey does not exist, tries with
+// firstKey read the secret and return value for the firstkey. if the firstKey does not exist, tries with
 // fallbackKey. if the fallbackKey does not exist then return an error
-func firstKeyOrFallback(secretKeySelector provider.SecretKeySelectorValueFunc, configVar *providerconfig.GlobalSecretKeySelector, firstKey string, fallbackKey string) (string, error) {
+func firstKey(secretKeySelector provider.SecretKeySelectorValueFunc, configVar *providerconfig.GlobalSecretKeySelector, firstKey string, fallbackKey string) (string, error) {
 	var value string
 	var err error
 	if value, err = secretKeySelector(configVar, firstKey); err != nil {

@@ -736,9 +736,9 @@ type OpenstackCloudSpec struct {
 	UseOctavia *bool `json:"useOctavia,omitempty"`
 }
 
-// GetProjectOrDefaultToTenant returns the the project if defined otherwise fallback to tenant
+// GetProject returns the the project if defined otherwise fallback to tenant
 // Deprecated: the tenant auth var is depreciated in openstack. In pkg/apis/kubermatic/v1/cluster.go we will only use Project
-func (s OpenstackCloudSpec) GetProjectOrDefaultToTenant() string {
+func (s OpenstackCloudSpec) GetProject() string {
 	if len(s.Project) > 0 {
 		return s.Project
 	} else {
@@ -746,9 +746,9 @@ func (s OpenstackCloudSpec) GetProjectOrDefaultToTenant() string {
 	}
 }
 
-// GetProjectIdOrDefaultToTenantId returns the the projectID if defined otherwise fallback to tenantID
+// GetProjectId returns the the projectID if defined otherwise fallback to tenantID
 // Deprecated: the tenantID auth var is depreciated in openstack. In pkg/apis/kubermatic/v1/cluster.go we will only use ProjectID
-func (s OpenstackCloudSpec) GetProjectIdOrDefaultToTenantId() string {
+func (s OpenstackCloudSpec) GetProjectId() string {
 	if len(s.ProjectID) > 0 {
 		return s.ProjectID
 	} else {

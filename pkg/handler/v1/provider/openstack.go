@@ -378,10 +378,10 @@ type OpenstackReq struct {
 	// Domain OpenStack domain name
 	Domain string
 	// in: header
-	// Tenant OpenStack tenant name (dredecated use Project instead)
+	// Tenant OpenStack tenant name (depreciated in favor of Project instead)
 	Tenant string
 	// in: header
-	// TenantID OpenStack tenant ID (dredecated use ProjectID instead)
+	// TenantID OpenStack tenant ID (depreciated in favor of  ProjectID instead)
 	TenantID string
 	// in: header
 	// Project OpenStack project name
@@ -449,8 +449,8 @@ func getPresetCredentials(userInfo *provider.UserInfo, presetName string, preset
 	credentials := &resources.OpenstackCredentials{
 		Username:                    p.Spec.Openstack.Username,
 		Password:                    p.Spec.Openstack.Password,
-		Project:                     p.Spec.Openstack.GetProjectOrDefaultToTenant(),
-		ProjectID:                   p.Spec.Openstack.GetProjectIdOrDefaultToTenantId(),
+		Project:                     p.Spec.Openstack.GetProject(),
+		ProjectID:                   p.Spec.Openstack.GetProjectId(),
 		Domain:                      p.Spec.Openstack.Domain,
 		ApplicationCredentialID:     p.Spec.Openstack.ApplicationCredentialID,
 		ApplicationCredentialSecret: p.Spec.Openstack.ApplicationCredentialSecret,

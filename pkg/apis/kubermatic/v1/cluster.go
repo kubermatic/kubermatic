@@ -719,7 +719,7 @@ type OpenstackCloudSpec struct {
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
 
-	// project id, formally known as tenantID. Tenant is depreciated in Openstack
+	// project, formally known as tenant. Tenant is depreciated in Openstack
 	Project string `json:"project,omitempty"`
 	// project id, formally known as tenantID. TenantID is depreciated in Openstack
 	ProjectID string `json:"projectID,omitempty"`

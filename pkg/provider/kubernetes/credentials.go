@@ -279,10 +279,10 @@ func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimecl
 	if err != nil {
 		return err
 	}
-	if spec.GetProjectOrDefaultToTenant() == "" {
+	if spec.GetProject() == "" {
 		spec.Project = oldCred.Project
 	}
-	if spec.GetProjectIdOrDefaultToTenantId() == "" {
+	if spec.GetProjectId() == "" {
 		spec.ProjectID = oldCred.ProjectID
 	}
 	if spec.Domain == "" {
@@ -302,8 +302,8 @@ func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimecl
 	credentialRef, err := ensureCredentialSecret(ctx, seedClient, cluster, map[string][]byte{
 		resources.OpenstackUsername:                    []byte(spec.Username),
 		resources.OpenstackPassword:                    []byte(spec.Password),
-		resources.OpenstackProject:                     []byte(spec.GetProjectOrDefaultToTenant()),
-		resources.OpenstackProjectID:                   []byte(spec.GetProjectIdOrDefaultToTenantId()),
+		resources.OpenstackProject:                     []byte(spec.GetProject()),
+		resources.OpenstackProjectID:                   []byte(spec.GetProjectId()),
 		resources.OpenstackDomain:                      []byte(spec.Domain),
 		resources.OpenstackApplicationCredentialID:     []byte(spec.ApplicationCredentialID),
 		resources.OpenstackApplicationCredentialSecret: []byte(spec.ApplicationCredentialSecret),

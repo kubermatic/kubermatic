@@ -601,8 +601,8 @@ spec:
                       password:
                         type: string
                       project:
-                        description: project id, formally known as tenantID. Tenant
-                          is depreciated in Openstack
+                        description: project, formally known as tenant. Tenant is
+                          depreciated in Openstack
                         type: string
                       projectID:
                         description: project id, formally known as tenantID. TenantID

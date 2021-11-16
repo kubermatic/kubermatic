@@ -405,8 +405,8 @@ func GetOpenstackCredentials(data CredentialsData) (OpenstackCredentials, error)
 		return OpenstackCredentials{}, err
 	}
 
-	if spec.GetProjectOrDefaultToTenant() != "" {
-		openstackCredentials.Project = spec.GetProjectOrDefaultToTenant()
+	if spec.GetProject() != "" {
+		openstackCredentials.Project = spec.GetProject()
 	} else if spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
 		if openstackCredentials.Project, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackProject); err != nil {
 			// fallback to tenant
@@ -416,8 +416,8 @@ func GetOpenstackCredentials(data CredentialsData) (OpenstackCredentials, error)
 		}
 	}
 
-	if spec.GetProjectIdOrDefaultToTenantId() != "" {
-		openstackCredentials.ProjectID = spec.GetProjectIdOrDefaultToTenantId()
+	if spec.GetProjectId() != "" {
+		openstackCredentials.ProjectID = spec.GetProjectId()
 	} else if spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
 		if openstackCredentials.ProjectID, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackProjectID); err != nil {
 			// fallback to tenantID

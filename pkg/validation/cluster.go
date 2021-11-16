@@ -388,13 +388,11 @@ func validateOpenStackCloudSpec(spec *kubermaticv1.OpenstackCloudSpec, dc *kuber
 	}
 
 	var errs []error
-	if spec.GetProjectOrDefaultToTenant() == "" && spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
-		errs = append(errs, kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OpenstackProject))
-		errs = append(errs, kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OpenstackTenant))
+	if spec.GetProject() == "" && spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" && spec.CredentialsReference.Namespace == "" {
+		errs = append(errs, fmt.Errorf("%q and %q cannot be empty at the same time", resources.OpenstackProject, resources.OpenstackTenant))
 	}
-	if spec.GetProjectIdOrDefaultToTenantId() == "" && spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
-		errs = append(errs, kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OpenstackProjectID))
-		errs = append(errs, kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OpenstackTenantID))
+	if spec.GetProjectId() == "" && spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" && spec.CredentialsReference.Namespace == "" {
+		errs = append(errs, fmt.Errorf("%q and %q cannot be empty at the same time", resources.OpenstackProjectID, resources.OpenstackTenantID))
 	}
 	if utilerror.NewAggregate(errs) != nil {
 		return errors.New("no tenant name or ID specified")

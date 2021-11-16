@@ -52,8 +52,8 @@ func TestOpenstack_GetProjectIdOrDefaultToTenantId(t *testing.T) {
 				TenantID:  tt.tenantID,
 				ProjectID: tt.projectID,
 			}
-			if got := s.GetProjectIdOrDefaultToTenantId(); got != tt.want {
-				t.Errorf("GetProjectIdOrDefaultToTenantId() = %v, want %v", got, tt.want)
+			if got := s.GetProjectId(); got != tt.want {
+				t.Errorf("GetProjectId() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -91,8 +91,8 @@ func TestOpenstack_GetProjectOrDefaultToTenant(t *testing.T) {
 				Tenant:  tt.tenant,
 				Project: tt.project,
 			}
-			if got := s.GetProjectOrDefaultToTenant(); got != tt.want {
-				t.Errorf("GetProjectOrDefaultToTenant() = %v, want %v", got, tt.want)
+			if got := s.GetProject(); got != tt.want {
+				t.Errorf("GetProject() = %v, want %v", got, tt.want)
 			}
 		})
 	}
