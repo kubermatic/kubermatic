@@ -27,6 +27,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/pointer"
 )
 
 // DeploymentCreator returns function to create/update deployment for konnectivity agents in user cluster.
@@ -95,11 +96,13 @@ func DeploymentCreator(clusterHostname string, registryWithOverwrite registry.Wi
 							Sources: []corev1.VolumeProjection{
 								{
 									ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
-										Audience: resources.KonnectivityClusterRoleBindingUsername, // TODO(pratik): what?
-										Path:     resources.KonnectivityAgentToken,
+										Audience:          resources.KonnectivityClusterRoleBindingUsername,
+										Path:              resources.KonnectivityAgentToken,
+										ExpirationSeconds: pointer.Int64Ptr(3600),
 									},
 								},
 							},
+							DefaultMode: pointer.Int32Ptr(420),
 						},
 					},
 				},
