@@ -4707,7 +4707,7 @@ func (r Routing) createOrUpdateBackupCredentials() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 			middleware.BackupCredentials(r.backupCredentialsProviderGetter, r.seedsGetter),
-		)(backupcredentials.CreateOrUpdateEndpoint(r.userInfoGetter)),
+		)(backupcredentials.CreateOrUpdateEndpoint(r.userInfoGetter, r.seedsGetter, r.masterClient)),
 		backupcredentials.DecodeBackupCredentialsReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,

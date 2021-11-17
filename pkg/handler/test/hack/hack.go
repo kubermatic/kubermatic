@@ -145,6 +145,7 @@ func NewTestRouting(
 		EtcdRestoreProjectProviderGetter:        etcdRestoreProjectProviderGetter,
 		BackupCredentialsProviderGetter:         backupCredentialsProviderGetter,
 		PrivilegedMLAAdminSettingProviderGetter: privilegedMLAAdminSettingProviderGetter,
+		MasterClient:                            masterClient,
 		Versions:                                kubermaticVersions,
 		CABundle:                                certificates.NewFakeCABundle().CertPool(),
 	}

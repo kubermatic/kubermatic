@@ -493,6 +493,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		EtcdRestoreProjectProviderGetter:        prov.etcdRestoreProjectProviderGetter,
 		BackupCredentialsProviderGetter:         prov.backupCredentialsProviderGetter,
 		PrivilegedMLAAdminSettingProviderGetter: prov.privilegedMLAAdminSettingProviderGetter,
+		MasterClient:                            mgr.GetClient(),
 		Versions:                                options.versions,
 		CABundle:                                options.caBundle.CertPool(),
 	}

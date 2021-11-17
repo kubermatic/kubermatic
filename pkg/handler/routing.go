@@ -184,6 +184,7 @@ type RoutingParams struct {
 	EtcdRestoreProjectProviderGetter        provider.EtcdRestoreProjectProviderGetter
 	BackupCredentialsProviderGetter         provider.BackupCredentialsProviderGetter
 	PrivilegedMLAAdminSettingProviderGetter provider.PrivilegedMLAAdminSettingProviderGetter
+	MasterClient                            client.Client
 	Versions                                kubermatic.Versions
 	CABundle                                *x509.CertPool
 }
