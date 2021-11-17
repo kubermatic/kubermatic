@@ -101,14 +101,6 @@ func main() {
 		log.Panicw("failed to set initialState", zap.Error(err))
 	}
 
-	// "strict" mode (only TLS for peer traffic) will be used for new clusters
-	e.usePeerTLSOnly = e.initialState == initialStateNew
-
-	// in addition, if "strict" mode is enforced, set it up for existing clusters too
-	if os.Getenv(envPeerTLSMode) == peerTLSModeStrict {
-		e.usePeerTLSOnly = true
-	}
-
 	log.Info("initializing etcd..")
 	log.Infof("initial-state: %s", e.initialState)
 	log.Infof("initial-cluster: %s", strings.Join(initialMemberList(e.clusterSize, e.namespace, e.usePeerTLSOnly), ","))
@@ -721,8 +713,15 @@ func (e *etcdCluster) setInitialState(clusterClient ctrlruntimeclient.Client, lo
 	// check if the etcd cluster is initialized successfully.
 	if k8cCluster.Status.HasConditionValue(kubermaticv1.ClusterConditionEtcdClusterInitialized, corev1.ConditionTrue) {
 		e.initialState = initialStateExisting
+		// if "strict" mode is enforced, set it up for existing clusters
+		if os.Getenv(envPeerTLSMode) == peerTLSModeStrict {
+			e.usePeerTLSOnly = true
+		}
 	} else {
 		e.initialState = initialStateNew
+		// new clusters can use "strict" TLS mode for etcd (TLS-only peering connections)
+		e.usePeerTLSOnly = true
+
 		if err := e.restoreDatadirFromBackupIfNeeded(context.Background(), k8cCluster, clusterClient, log); err != nil {
 			return fmt.Errorf("failed to restore datadir from backup: %v", err)
 		}
