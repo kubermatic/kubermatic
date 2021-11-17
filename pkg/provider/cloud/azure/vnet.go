@@ -33,7 +33,20 @@ func vnetName(cluster *kubermaticv1.Cluster) string {
 }
 
 func reconcileVNet(ctx context.Context, clients *ClientSet, location string, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	cluster.Spec.Cloud.Azure.VNetName = vnetName(cluster)
+	if cluster.Spec.Cloud.Azure.VNetName == "" {
+		cluster.Spec.Cloud.Azure.VNetName = vnetName(cluster)
+	}
+
+	vnet, err := clients.Networks.Get(ctx, cluster.Spec.Cloud.Azure.ResourceGroup, cluster.Spec.Cloud.Azure.VNetName, "")
+	if err != nil && !isNotFound(vnet.Response) {
+		return cluster, err
+	}
+
+	// if we found a VNET, we can check for the ownership tag to determine
+	// if the referenced VNET is owned by this cluster and should be reconciled
+	if !isNotFound(vnet.Response) && !hasOwnershipTag(vnet.Tags, cluster) {
+		return cluster, nil
+	}
 
 	if err := ensureVNet(ctx, clients, cluster.Spec.Cloud, location, cluster.Name); err != nil {
 		return cluster, err

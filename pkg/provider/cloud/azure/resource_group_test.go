@@ -31,26 +31,6 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 )
 
-type fakeGroupsClientMode string
-
-const (
-	fakeGroupsClientModeOkay     fakeGroupsClientMode = "okay"
-	fakeGroupsClientModeAuthFail fakeGroupsClientMode = "authfail"
-
-	customExistingResourceGroup = "custom-existing-resource-groupe"
-)
-
-type fakeGroupsClient struct {
-	resources.GroupsClient
-	location    string
-	credentials Credentials
-	mode        fakeGroupsClientMode
-	cluster     *kubermaticv1.Cluster
-
-	CreateOrUpdateCalledCount int
-	CreateOrUpdateGroup       resources.Group
-}
-
 func TestReconcileResourceGroup(t *testing.T) {
 	credentials, err := getFakeCredentials()
 	if err != nil {
@@ -61,7 +41,7 @@ func TestReconcileResourceGroup(t *testing.T) {
 
 	t.Run("no-resource-group-set", func(t *testing.T) {
 		cluster := makeCluster(&kubermaticv1.AzureCloudSpec{}, credentials)
-		clientSet := getFakeClientSetWithGroupsClient(*credentials, testLocation, cluster, fakeGroupsClientModeOkay)
+		clientSet := getFakeClientSetWithGroupsClient(*credentials, testLocation, cluster, fakeClientModeOkay)
 		cluster, err = reconcileResourceGroup(ctx, clientSet, testLocation, cluster, testClusterUpdater(cluster))
 
 		if err != nil {
@@ -77,7 +57,7 @@ func TestReconcileResourceGroup(t *testing.T) {
 		cluster := makeCluster(&kubermaticv1.AzureCloudSpec{
 			ResourceGroup: customExistingResourceGroup,
 		}, credentials)
-		clientSet := getFakeClientSetWithGroupsClient(*credentials, testLocation, cluster, fakeGroupsClientModeOkay)
+		clientSet := getFakeClientSetWithGroupsClient(*credentials, testLocation, cluster, fakeClientModeOkay)
 		cluster, err = reconcileResourceGroup(ctx, clientSet, testLocation, cluster, testClusterUpdater(cluster))
 
 		if err != nil {
@@ -103,7 +83,7 @@ func TestReconcileResourceGroup(t *testing.T) {
 			ResourceGroup: "does-not-exist",
 		}, credentials)
 
-		clientSet := getFakeClientSetWithGroupsClient(*credentials, testLocation, cluster, fakeGroupsClientModeOkay)
+		clientSet := getFakeClientSetWithGroupsClient(*credentials, testLocation, cluster, fakeClientModeOkay)
 		cluster, err = reconcileResourceGroup(ctx, clientSet, testLocation, cluster, testClusterUpdater(cluster))
 
 		if err != nil {
@@ -127,17 +107,29 @@ func TestReconcileResourceGroup(t *testing.T) {
 	t.Run("invalid-credentials", func(t *testing.T) {
 		cluster := makeCluster(&kubermaticv1.AzureCloudSpec{}, credentials)
 
-		clientSet := getFakeClientSetWithGroupsClient(*credentials, testLocation, cluster, fakeGroupsClientModeAuthFail)
+		clientSet := getFakeClientSetWithGroupsClient(*credentials, testLocation, cluster, fakeClientModeAuthFail)
 		cluster, err = reconcileResourceGroup(ctx, clientSet, testLocation, cluster, testClusterUpdater(cluster))
 
 		if err == nil {
 			t.Fatalf("expected error for request that got a 403 error, got none")
 		}
 	})
-
 }
 
-func getFakeClientSetWithGroupsClient(credentials Credentials, location string, cluster *kubermaticv1.Cluster, mode fakeGroupsClientMode) *ClientSet {
+const customExistingResourceGroup = "custom-existing-resource-groupe"
+
+type fakeGroupsClient struct {
+	resources.GroupsClient
+	location    string
+	credentials Credentials
+	mode        fakeClientMode
+	cluster     *kubermaticv1.Cluster
+
+	CreateOrUpdateCalledCount int
+	CreateOrUpdateGroup       resources.Group
+}
+
+func getFakeClientSetWithGroupsClient(credentials Credentials, location string, cluster *kubermaticv1.Cluster, mode fakeClientMode) *ClientSet {
 	return &ClientSet{
 		Groups: &fakeGroupsClient{
 			location:    location,
@@ -150,7 +142,7 @@ func getFakeClientSetWithGroupsClient(credentials Credentials, location string, 
 
 func (c *fakeGroupsClient) Get(ctx context.Context, groupName string) (result resources.Group, err error) {
 	switch c.mode {
-	case fakeGroupsClientModeOkay:
+	case fakeClientModeOkay:
 		if groupName == customExistingResourceGroup {
 			return resources.Group{
 				ID:        to.StringPtr(fmt.Sprintf("/subscriptions/%s/resourceGroups/%s", c.credentials.SubscriptionID, customExistingResourceGroup)),
@@ -162,9 +154,9 @@ func (c *fakeGroupsClient) Get(ctx context.Context, groupName string) (result re
 					ProvisioningState: to.StringPtr("Succeeded"),
 				},
 			}, nil
-		} else if groupName == securityGroupName(c.cluster) {
+		} else if groupName == resourceGroupName(c.cluster) {
 			return resources.Group{
-				ID:        to.StringPtr(fmt.Sprintf("/subscriptions/%s/resourceGroups/%s", c.credentials.SubscriptionID, securityGroupName(c.cluster))),
+				ID:        to.StringPtr(fmt.Sprintf("/subscriptions/%s/resourceGroups/%s", c.credentials.SubscriptionID, resourceGroupName(c.cluster))),
 				Name:      to.StringPtr(securityGroupName(c.cluster)),
 				Location:  &c.location,
 				Type:      to.StringPtr("Microsoft.Resources/resourceGroups"),
@@ -188,7 +180,7 @@ func (c *fakeGroupsClient) Get(ctx context.Context, groupName string) (result re
 			Response: resp,
 		}, autorest.NewErrorWithError(fmt.Errorf("not found"), "resources.GroupsClient", "Get", resp.Response, "Failure responding to request")
 
-	case fakeGroupsClientModeAuthFail:
+	case fakeClientModeAuthFail:
 		resp := autorest.Response{
 			Response: &http.Response{
 				StatusCode: 403,

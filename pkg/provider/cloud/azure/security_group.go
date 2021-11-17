@@ -34,7 +34,20 @@ func securityGroupName(cluster *kubermaticv1.Cluster) string {
 }
 
 func reconcileSecurityGroup(ctx context.Context, clients *ClientSet, location string, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	cluster.Spec.Cloud.Azure.SecurityGroup = securityGroupName(cluster)
+	if cluster.Spec.Cloud.Azure.SecurityGroup == "" {
+		cluster.Spec.Cloud.Azure.SecurityGroup = securityGroupName(cluster)
+	}
+
+	securityGroup, err := clients.SecurityGroups.Get(ctx, cluster.Spec.Cloud.Azure.ResourceGroup, cluster.Spec.Cloud.Azure.SecurityGroup, "")
+	if err != nil && !isNotFound(securityGroup.Response) {
+		return cluster, err
+	}
+
+	// if we found a security group, we can check for the ownership tag to determine
+	// if the referenced security group is owned by this cluster and should be reconciled
+	if !isNotFound(securityGroup.Response) && !hasOwnershipTag(securityGroup.Tags, cluster) {
+		return cluster, nil
+	}
 
 	lowPort, highPort := kubermaticresources.NewTemplateDataBuilder().
 		WithNodePortRange(cluster.Spec.ComponentsOverride.Apiserver.NodePortRange).

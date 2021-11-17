@@ -34,7 +34,20 @@ func availabilitySetName(cluster *kubermaticv1.Cluster) string {
 }
 
 func reconcileAvailabilitySet(ctx context.Context, clients *ClientSet, location string, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	cluster.Spec.Cloud.Azure.AvailabilitySet = availabilitySetName(cluster)
+	if cluster.Spec.Cloud.Azure.AvailabilitySet == "" {
+		cluster.Spec.Cloud.Azure.AvailabilitySet = availabilitySetName(cluster)
+	}
+
+	availabilitySet, err := clients.AvailabilitySets.Get(ctx, cluster.Spec.Cloud.Azure.ResourceGroup, cluster.Spec.Cloud.Azure.AvailabilitySet)
+	if err != nil && !isNotFound(availabilitySet.Response) {
+		return cluster, err
+	}
+
+	// if we found an availability set, we can check for the ownership tag to determine
+	// if the referenced availability set is owned by this cluster and should be reconciled
+	if !isNotFound(availabilitySet.Response) && !hasOwnershipTag(availabilitySet.Tags, cluster) {
+		return cluster, nil
+	}
 
 	if err := ensureAvailabilitySet(ctx, clients.AvailabilitySets, cluster.Spec.Cloud, location); err != nil {
 		return nil, fmt.Errorf("failed to ensure AvailabilitySet exists: %v", err)

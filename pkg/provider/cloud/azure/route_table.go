@@ -33,7 +33,20 @@ func routeTableName(cluster *kubermaticv1.Cluster) string {
 }
 
 func reconcileRouteTable(ctx context.Context, clients *ClientSet, location string, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	cluster.Spec.Cloud.Azure.RouteTableName = routeTableName(cluster)
+	if cluster.Spec.Cloud.Azure.RouteTableName == "" {
+		cluster.Spec.Cloud.Azure.RouteTableName = routeTableName(cluster)
+	}
+
+	routeTable, err := clients.RouteTables.Get(ctx, cluster.Spec.Cloud.Azure.ResourceGroup, cluster.Spec.Cloud.Azure.RouteTableName, "")
+	if err != nil && !isNotFound(routeTable.Response) {
+		return cluster, err
+	}
+
+	// if we found a route table, we can check for the ownership tag to determine
+	// if the referenced route table is owned by this cluster and should be reconciled
+	if !isNotFound(routeTable.Response) && !hasOwnershipTag(routeTable.Tags, cluster) {
+		return cluster, nil
+	}
 
 	if err := ensureRouteTable(ctx, clients, cluster.Spec.Cloud, location); err != nil {
 		return cluster, err

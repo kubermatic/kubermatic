@@ -27,7 +27,14 @@ import (
 	"k8c.io/kubermatic/v2/pkg/uuid"
 )
 
-const testLocation = "westeurope"
+type fakeClientMode string
+
+const (
+	testLocation = "westeurope"
+
+	fakeClientModeOkay     fakeClientMode = "okay"
+	fakeClientModeAuthFail fakeClientMode = "authfail"
+)
 
 func getFakeCredentials() (*Credentials, error) {
 	tenantID, err := uuid.UUID()
