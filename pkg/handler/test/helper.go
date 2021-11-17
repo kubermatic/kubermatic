@@ -1330,6 +1330,25 @@ func GenClusterWithOpenstack(cluster *kubermaticv1.Cluster) *kubermaticv1.Cluste
 	return cluster
 }
 
+func GenClusterWithOpenstackProjectAuth(cluster *kubermaticv1.Cluster) *kubermaticv1.Cluster {
+	cluster.Spec.Cloud = kubermaticv1.CloudSpec{
+		DatacenterName: "OpenstackDatacenter",
+		Openstack: &kubermaticv1.OpenstackCloudSpec{
+			Username:       "username",
+			Password:       "password",
+			SubnetID:       "subnetID",
+			Domain:         "domain",
+			FloatingIPPool: "floatingIPPool",
+			Network:        "network",
+			RouterID:       "routerID",
+			SecurityGroups: "securityGroups",
+			Project:        "project",
+			ProjectID:      "projectID",
+		},
+	}
+	return cluster
+}
+
 func GenDefaultExternalClusterNodes() ([]ctrlruntimeclient.Object, error) {
 	cpuQuantity, err := resource.ParseQuantity("290")
 	if err != nil {

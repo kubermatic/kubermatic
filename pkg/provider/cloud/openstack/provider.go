@@ -36,6 +36,7 @@ import (
 	ossubnets "github.com/gophercloud/gophercloud/openstack/networking/v2/subnets"
 	"github.com/gophercloud/gophercloud/pagination"
 
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -479,8 +480,8 @@ func getAuthClient(authURL string, credentials *resources.OpenstackCredentials, 
 		Username:                    credentials.Username,
 		Password:                    credentials.Password,
 		DomainName:                  credentials.Domain,
-		TenantName:                  credentials.Tenant,
-		TenantID:                    credentials.TenantID,
+		TenantName:                  credentials.Project,
+		TenantID:                    credentials.ProjectID,
 		ApplicationCredentialID:     credentials.ApplicationCredentialID,
 		ApplicationCredentialSecret: credentials.ApplicationCredentialSecret,
 		TokenID:                     credentials.Token,
@@ -665,8 +666,8 @@ func getNetClientForCluster(cluster kubermaticv1.CloudSpec, dc *kubermaticv1.Dat
 func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (*resources.OpenstackCredentials, error) {
 	username := cloud.Openstack.Username
 	password := cloud.Openstack.Password
-	tenant := cloud.Openstack.Tenant
-	tenantID := cloud.Openstack.TenantID
+	project := cloud.Openstack.GetProject()
+	projectID := cloud.Openstack.GetProjectId()
 	domain := cloud.Openstack.Domain
 	applicationCredentialID := cloud.Openstack.ApplicationCredentialID
 	applicationCredentialSecret := cloud.Openstack.ApplicationCredentialSecret
@@ -746,16 +747,14 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 		}
 	}
 
-	if tenant == "" && cloud.Openstack.CredentialsReference != nil && cloud.Openstack.CredentialsReference.Name != "" {
-		tenant, err = secretKeySelector(cloud.Openstack.CredentialsReference, resources.OpenstackTenant)
-		if err != nil {
+	if project == "" && cloud.Openstack.CredentialsReference != nil && cloud.Openstack.CredentialsReference.Name != "" {
+		if project, err = firstKey(secretKeySelector, cloud.Openstack.CredentialsReference, resources.OpenstackProject, resources.OpenstackTenant); err != nil {
 			return &resources.OpenstackCredentials{}, err
 		}
 	}
 
-	if tenantID == "" && cloud.Openstack.CredentialsReference != nil && cloud.Openstack.CredentialsReference.Name != "" {
-		tenantID, err = secretKeySelector(cloud.Openstack.CredentialsReference, resources.OpenstackTenantID)
-		if err != nil {
+	if projectID == "" && cloud.Openstack.CredentialsReference != nil && cloud.Openstack.CredentialsReference.Name != "" {
+		if projectID, err = firstKey(secretKeySelector, cloud.Openstack.CredentialsReference, resources.OpenstackProjectID, resources.OpenstackTenantID); err != nil {
 			return &resources.OpenstackCredentials{}, err
 		}
 	}
@@ -763,12 +762,26 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 	return &resources.OpenstackCredentials{
 		Username:                    username,
 		Password:                    password,
-		Tenant:                      tenant,
-		TenantID:                    tenantID,
+		Project:                     project,
+		ProjectID:                   projectID,
 		Domain:                      domain,
 		ApplicationCredentialID:     applicationCredentialID,
 		ApplicationCredentialSecret: applicationCredentialSecret,
 	}, nil
+}
+
+// firstKey read the secret and return value for the firstkey. if the firstKey does not exist, tries with
+// fallbackKey. if the fallbackKey does not exist then return an error
+func firstKey(secretKeySelector provider.SecretKeySelectorValueFunc, configVar *providerconfig.GlobalSecretKeySelector, firstKey string, fallbackKey string) (string, error) {
+	var value string
+	var err error
+	if value, err = secretKeySelector(configVar, firstKey); err != nil {
+		// fallback
+		if value, err = secretKeySelector(configVar, fallbackKey); err != nil {
+			return "", err
+		}
+	}
+	return value, nil
 }
 
 func ignoreRouterAlreadyHasPortInSubnetError(err error, subnetID string) error {

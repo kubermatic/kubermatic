@@ -336,15 +336,38 @@ type Openstack struct {
 
 	Username string `json:"username"`
 	Password string `json:"password"`
-	Tenant   string `json:"tenant"`
-	TenantID string `json:"tenantID"`
 	Domain   string `json:"domain"`
+
+	Tenant    string `json:"tenant,omitempty"`
+	TenantID  string `json:"tenantID,omitempty"`
+	Project   string `json:"project,omitempty"`
+	ProjectID string `json:"projectID,omitempty"`
 
 	Network        string `json:"network,omitempty"`
 	SecurityGroups string `json:"securityGroups,omitempty"`
 	FloatingIPPool string `json:"floatingIpPool,omitempty"`
 	RouterID       string `json:"routerID,omitempty"`
 	SubnetID       string `json:"subnetID,omitempty"`
+}
+
+// GetProject returns the the project if defined otherwise fallback to tenant
+// Deprecated: the tenant auth var is depreciated in openstack. In pkg/apis/kubermatic/v1/preset.go we will only use Project
+func (s Openstack) GetProject() string {
+	if len(s.Project) > 0 {
+		return s.Project
+	} else {
+		return s.Tenant
+	}
+}
+
+// GetProjectId returns the the projectID if defined otherwise fallback to tenantID
+// Deprecated: the tenantID auth var is depreciated in openstack. In pkg/apis/kubermatic/v1/preset.go we will only use ProjectID
+func (s Openstack) GetProjectId() string {
+	if len(s.ProjectID) > 0 {
+		return s.ProjectID
+	} else {
+		return s.TenantID
+	}
 }
 
 func (s Openstack) IsValid() bool {
@@ -357,9 +380,10 @@ func (s Openstack) IsValid() bool {
 		return len(s.ApplicationCredentialSecret) > 0
 	}
 
+	hasProjectOrTenant := len(s.Project) > 0 || len(s.ProjectID) > 0 || len(s.Tenant) > 0 || len(s.TenantID) > 0
 	return len(s.Username) > 0 &&
 		len(s.Password) > 0 &&
-		(len(s.Tenant) > 0 || len(s.TenantID) > 0) &&
+		hasProjectOrTenant &&
 		len(s.Domain) > 0
 }
 

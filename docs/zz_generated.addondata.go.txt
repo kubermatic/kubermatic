@@ -127,8 +127,8 @@ type HetznerCredentials struct {
 type OpenstackCredentials struct {
 	Username                    string
 	Password                    string
-	Tenant                      string
-	TenantID                    string
+	Project                     string
+	ProjectID                   string
 	Domain                      string
 	ApplicationCredentialID     string
 	ApplicationCredentialSecret string
