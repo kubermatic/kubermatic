@@ -100,7 +100,7 @@ spec:
   openstack:
     username: ${OS_USERNAME}
     password: ${OS_PASSWORD}
-    tenant: ${OS_TENANT_NAME}
+    project: ${OS_TENANT_NAME}
     domain: ${OS_DOMAIN}
 EOF
 retry 2 kubectl apply -f preset-openstack.yaml

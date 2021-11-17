@@ -216,15 +216,15 @@ spec:
                     type: string
                   password:
                     type: string
+                  project:
+                    type: string
+                  projectID:
+                    type: string
                   routerID:
                     type: string
                   securityGroups:
                     type: string
                   subnetID:
-                    type: string
-                  tenant:
-                    type: string
-                  tenantID:
                     type: string
                   useToken:
                     type: boolean
@@ -233,8 +233,8 @@ spec:
                 required:
                 - domain
                 - password
-                - tenant
-                - tenantID
+                - project
+                - projectID
                 - username
                 type: object
               packet:

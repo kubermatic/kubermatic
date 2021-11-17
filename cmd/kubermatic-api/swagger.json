@@ -7298,6 +7298,16 @@
           },
           {
             "type": "string",
+            "name": "Project",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ProjectID",
+            "in": "header"
+          },
+          {
+            "type": "string",
             "name": "DatacenterName",
             "in": "header"
           },
@@ -7375,6 +7385,16 @@
           {
             "type": "string",
             "name": "TenantID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Project",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ProjectID",
             "in": "header"
           },
           {
@@ -7460,6 +7480,16 @@
           },
           {
             "type": "string",
+            "name": "Project",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ProjectID",
+            "in": "header"
+          },
+          {
+            "type": "string",
             "name": "DatacenterName",
             "in": "header"
           },
@@ -7541,6 +7571,16 @@
           },
           {
             "type": "string",
+            "name": "Project",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ProjectID",
+            "in": "header"
+          },
+          {
+            "type": "string",
             "name": "DatacenterName",
             "in": "header"
           },
@@ -7618,6 +7658,16 @@
           {
             "type": "string",
             "name": "TenantID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Project",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ProjectID",
             "in": "header"
           },
           {
@@ -22090,6 +22140,14 @@
           "type": "string",
           "x-go-name": "Password"
         },
+        "project": {
+          "type": "string",
+          "x-go-name": "Project"
+        },
+        "projectID": {
+          "type": "string",
+          "x-go-name": "ProjectID"
+        },
         "routerID": {
           "type": "string",
           "x-go-name": "RouterID"
@@ -22833,6 +22891,14 @@
         "network": {
           "type": "string",
           "x-go-name": "Network"
+        },
+        "project": {
+          "type": "string",
+          "x-go-name": "Project"
+        },
+        "projectID": {
+          "type": "string",
+          "x-go-name": "ProjectID"
         },
         "routerID": {
           "type": "string",

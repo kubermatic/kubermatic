@@ -538,6 +538,8 @@ const (
 	OpenstackPassword                    = "password"
 	OpenstackTenant                      = "tenant"
 	OpenstackTenantID                    = "tenantID"
+	OpenstackProject                     = "project"
+	OpenstackProjectID                   = "projectID"
 	OpenstackDomain                      = "domain"
 	OpenstackApplicationCredentialID     = "applicationCredentialID"
 	OpenstackApplicationCredentialSecret = "applicationCredentialSecret"

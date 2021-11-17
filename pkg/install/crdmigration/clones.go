@@ -380,7 +380,7 @@ func convertClusterSpec(old kubermaticv1.ClusterSpec) newv1.ClusterSpec {
 		Cloud: newv1.CloudSpec{
 			DatacenterName: old.Cloud.DatacenterName,
 
-			// Azure and VSphere need special treatment further down
+			// Azure, VSphere and Openstack need special treatment further down
 			AWS:          (*newv1.AWSCloudSpec)(old.Cloud.AWS),
 			Alibaba:      (*newv1.AlibabaCloudSpec)(old.Cloud.Alibaba),
 			Anexia:       (*newv1.AnexiaCloudSpec)(old.Cloud.Anexia),
@@ -390,7 +390,6 @@ func convertClusterSpec(old kubermaticv1.ClusterSpec) newv1.ClusterSpec {
 			GCP:          (*newv1.GCPCloudSpec)(old.Cloud.GCP),
 			Hetzner:      (*newv1.HetznerCloudSpec)(old.Cloud.Hetzner),
 			Kubevirt:     (*newv1.KubevirtCloudSpec)(old.Cloud.Kubevirt),
-			Openstack:    (*newv1.OpenstackCloudSpec)(old.Cloud.Openstack),
 			Packet:       (*newv1.PacketCloudSpec)(old.Cloud.Packet),
 		},
 		ClusterNetwork: newv1.ClusterNetworkingConfig{
@@ -454,6 +453,27 @@ func convertClusterSpec(old kubermaticv1.ClusterSpec) newv1.ClusterSpec {
 			StoragePolicy:        old.StoragePolicy,
 			ResourcePool:         old.ResourcePool,
 			InfraManagementUser:  newv1.VSphereCredentials(old.InfraManagementUser),
+		}
+	}
+
+	if old := old.Cloud.Openstack; old != nil {
+		result.Cloud.Openstack = &newv1.OpenstackCloudSpec{
+			CredentialsReference:        old.CredentialsReference,
+			Username:                    old.Username,
+			Password:                    old.Password,
+			Project:                     old.GetProject(),
+			ProjectID:                   old.GetProjectId(),
+			Domain:                      old.Domain,
+			ApplicationCredentialID:     old.ApplicationCredentialID,
+			ApplicationCredentialSecret: old.ApplicationCredentialSecret,
+			UseToken:                    old.UseToken,
+			Token:                       old.Token,
+			Network:                     old.Network,
+			SecurityGroups:              old.SecurityGroups,
+			FloatingIPPool:              old.FloatingIPPool,
+			RouterID:                    old.RouterID,
+			SubnetID:                    old.SubnetID,
+			UseOctavia:                  old.UseOctavia,
 		}
 	}
 
@@ -1005,8 +1025,8 @@ func clonePresetResourcesInCluster(ctx context.Context, logger logrus.FieldLogge
 				ApplicationCredentialSecret: oldSpec.Openstack.ApplicationCredentialSecret,
 				Username:                    oldSpec.Openstack.Username,
 				Password:                    oldSpec.Openstack.Password,
-				Tenant:                      oldSpec.Openstack.Tenant,
-				TenantID:                    oldSpec.Openstack.TenantID,
+				Project:                     oldSpec.Openstack.GetProject(),
+				ProjectID:                   oldSpec.Openstack.GetProjectId(),
 				Domain:                      oldSpec.Openstack.Domain,
 				Network:                     oldSpec.Openstack.Network,
 				SecurityGroups:              oldSpec.Openstack.SecurityGroups,
