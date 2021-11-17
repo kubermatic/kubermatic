@@ -84,52 +84,56 @@ func ListNodesMetricsEndpoint(userInfoGetter provider.UserInfoGetter, projectPro
 		if err := req.Validate(); err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
-		nodeMetrics := make([]apiv1.NodeMetric, 0)
-
-		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		cluster, err := getCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, req.ClusterID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		isMetricServer, err := clusterProvider.IsMetricServerAvailable(cluster)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		if isMetricServer {
-			client, err := clusterProvider.GetClient(cluster)
-			if err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
-			nodes := &corev1.NodeList{}
-			if err := client.List(ctx, nodes); err != nil {
-				return nil, err
-			}
-			availableResources := make(map[string]corev1.ResourceList)
-			for _, n := range nodes.Items {
-				availableResources[n.Name] = n.Status.Allocatable
-			}
-
-			nodeDeploymentNodesMetrics := make([]v1beta1.NodeMetrics, 0)
-			allNodeMetricsList := &v1beta1.NodeMetricsList{}
-			if err := client.List(ctx, allNodeMetricsList); err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
-
-			for _, m := range allNodeMetricsList.Items {
-				if _, ok := availableResources[m.Name]; ok {
-					nodeDeploymentNodesMetrics = append(nodeDeploymentNodesMetrics, m)
-				}
-			}
-			return handlercommon.ConvertNodeMetrics(nodeDeploymentNodesMetrics, availableResources)
-		}
-
-		return nodeMetrics, nil
+		return getClusterNodesMetrics(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, clusterProvider, privilegedClusterProvider, req.ProjectID, req.ClusterID)
 	}
+}
+
+func getClusterNodesMetrics(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, projectID, clusterID string) ([]apiv1.NodeMetric, error) {
+	nodeMetrics := make([]apiv1.NodeMetric, 0)
+
+	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	cluster, err := getCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, clusterID)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	isMetricServer, err := clusterProvider.IsMetricServerAvailable(cluster)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	if isMetricServer {
+		client, err := clusterProvider.GetClient(cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		nodes := &corev1.NodeList{}
+		if err := client.List(ctx, nodes); err != nil {
+			return nil, err
+		}
+		availableResources := make(map[string]corev1.ResourceList)
+		for _, n := range nodes.Items {
+			availableResources[n.Name] = n.Status.Allocatable
+		}
+
+		nodeDeploymentNodesMetrics := make([]v1beta1.NodeMetrics, 0)
+		allNodeMetricsList := &v1beta1.NodeMetricsList{}
+		if err := client.List(ctx, allNodeMetricsList); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		for _, m := range allNodeMetricsList.Items {
+			if _, ok := availableResources[m.Name]; ok {
+				nodeDeploymentNodesMetrics = append(nodeDeploymentNodesMetrics, m)
+			}
+		}
+		return handlercommon.ConvertNodeMetrics(nodeDeploymentNodesMetrics, availableResources)
+	}
+
+	return nodeMetrics, nil
 }
 
 // listNodesReq defines HTTP request for listExternalClusterNodes
@@ -245,40 +249,44 @@ func ListMachineDeploymentNodesEndpoint(userInfoGetter provider.UserInfoGetter, 
 			return nil, errors.NewBadRequest(err.Error())
 		}
 
-		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		cluster, err := getCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, req.ClusterID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		var nodes []apiv2.ExternalClusterNode
-		nodes = make([]apiv2.ExternalClusterNode, 0)
-
-		cloud := cluster.Spec.CloudSpec
-		if cloud != nil {
-			secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
-
-			if cloud.GKE != nil {
-				n, err := getGKENodes(ctx, cluster, req.MachineDeploymentID, secretKeySelector, cloud.GKE.CredentialsReference, clusterProvider)
-				if err != nil {
-					return nil, common.KubernetesErrorToHTTPError(err)
-				}
-				nodes = n
-			}
-			if cloud.EKS != nil {
-				n, err := getEKSNodes(cluster, req.MachineDeploymentID, secretKeySelector, cloud.EKS.CredentialsReference, clusterProvider)
-				if err != nil {
-					return nil, common.KubernetesErrorToHTTPError(err)
-				}
-				nodes = n
-			}
-		}
-
-		return nodes, nil
+		return getMachineDeploymentNodes(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, clusterProvider, privilegedClusterProvider, req.ProjectID, req.ClusterID, req.MachineDeploymentID)
 	}
+}
+
+func getMachineDeploymentNodes(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, projectID, clusterID, machineDeploymentID string) ([]apiv2.ExternalClusterNode, error) {
+	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	cluster, err := getCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, clusterID)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	var nodes []apiv2.ExternalClusterNode
+	nodes = make([]apiv2.ExternalClusterNode, 0)
+
+	cloud := cluster.Spec.CloudSpec
+	if cloud != nil {
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+
+		if cloud.GKE != nil {
+			n, err := getGKENodes(ctx, cluster, machineDeploymentID, secretKeySelector, cloud.GKE.CredentialsReference, clusterProvider)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			nodes = n
+		}
+		if cloud.EKS != nil {
+			n, err := getEKSNodes(cluster, machineDeploymentID, clusterProvider)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			nodes = n
+		}
+	}
+
+	return nodes, nil
 }
 
 func DeleteMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) endpoint.Endpoint {
@@ -316,6 +324,34 @@ func DeleteMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, pro
 		}
 
 		return nil, nil
+	}
+}
+
+func ListMachineDeploymentMetricsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(machineDeploymentReq)
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+		nodeMetrics := make([]apiv1.NodeMetric, 0)
+
+		machineDeploymentsNodes, err := getMachineDeploymentNodes(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, clusterProvider, privilegedClusterProvider, req.ProjectID, req.ClusterID, req.MachineDeploymentID)
+		if err != nil {
+			return nil, err
+		}
+		allNodeMetrics, err := getClusterNodesMetrics(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, clusterProvider, privilegedClusterProvider, req.ProjectID, req.ClusterID)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range machineDeploymentsNodes {
+			for _, nm := range allNodeMetrics {
+				if nm.Name == node.Name {
+					nodeMetrics = append(nodeMetrics, nm)
+				}
+			}
+		}
+
+		return nodeMetrics, nil
 	}
 }
 
@@ -632,7 +668,7 @@ func patchMD(mdToPatch, patchedMD *apiv2.ExternalClusterMachineDeployment, patch
 }
 
 // machineDeploymentReq defines HTTP request for getExternalClusterMachineDeployment deleteExternalClusterMachineDeployment
-// swagger:parameters getExternalClusterMachineDeployment deleteExternalClusterMachineDeployment
+// swagger:parameters getExternalClusterMachineDeployment deleteExternalClusterMachineDeployment listExternalClusterMachineDeploymentMetrics
 type machineDeploymentReq struct {
 	common.ProjectReq
 	// in: path
