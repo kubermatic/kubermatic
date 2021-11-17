@@ -62,5 +62,5 @@ EOF
 retry 2 kubectl apply -f user.yaml
 
 echodate "Running etcd-launcher tests..."
-go test -timeout 30m -tags e2e -v ./pkg/test/e2e/etcd-launcher -kubeconfig "$KUBECONFIG"
+go test -timeout 60m -tags e2e -v ./pkg/test/e2e/etcd-launcher -kubeconfig "$KUBECONFIG"
 echodate "Tests completed successfully!"
