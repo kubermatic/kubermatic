@@ -442,14 +442,14 @@ func etcdCmd(config *etcdCluster) []string {
 	if config.usePeerTLSOnly {
 		cmd = append(cmd, []string{
 			fmt.Sprintf("--listen-peer-urls=https://%s:2381", config.podIP),
-			fmt.Sprintf("--initial-advertise-peer-urls=https://%s.etd.%s.svc.cluster.local:2381", config.podName, config.namespace),
+			fmt.Sprintf("--initial-advertise-peer-urls=https://%s.etcd.%s.svc.cluster.local:2381", config.podName, config.namespace),
 			"--peer-client-cert-auth",
 		}...)
 	} else {
 		// 'mixed' mode clusters should start with both plaintext and HTTPS peer ports
 		cmd = append(cmd, []string{
 			fmt.Sprintf("--listen-peer-urls=http://%s:2380,https://%s:2381", config.podIP, config.podIP),
-			fmt.Sprintf("--initial-advertise-peer-urls=http://%s.etcd.%s.svc.cluster.local:2380,https://%s.etd.%s.svc.cluster.local:2381", config.podName, config.namespace, config.podName, config.namespace),
+			fmt.Sprintf("--initial-advertise-peer-urls=http://%s.etcd.%s.svc.cluster.local:2380,https://%s.etcd.%s.svc.cluster.local:2381", config.podName, config.namespace, config.podName, config.namespace),
 		}...)
 	}
 
