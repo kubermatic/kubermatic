@@ -140,7 +140,7 @@ func DecodeBackupCredentialsReq(c context.Context, r *http.Request) (interface{}
 func convertAPIToInternalBackupCredentials(bc *apiv2.BackupCredentials) *v1.Secret {
 	return &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      genBackupCredentialsSecretName(bc.Destination),
+			Name:      GenBackupCredentialsSecretName(bc.Destination),
 			Namespace: metav1.NamespaceSystem,
 		},
 		StringData: map[string]string{
@@ -150,8 +150,8 @@ func convertAPIToInternalBackupCredentials(bc *apiv2.BackupCredentials) *v1.Secr
 	}
 }
 
-// if backup destination is not set, then use the legacy credentials secret
-func genBackupCredentialsSecretName(destination string) string {
+// GenBackupCredentialsSecretName generates etcd backup credentials secret name. If backup destination is not set, then use the legacy credentials secret
+func GenBackupCredentialsSecretName(destination string) string {
 	if len(destination) != 0 {
 		return fmt.Sprintf("%s-etcd-backup-credentials", destination)
 	}

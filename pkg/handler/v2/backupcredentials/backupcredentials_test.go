@@ -18,6 +18,7 @@ package backupcredentials_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -29,6 +30,9 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/backupcredentials"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 
 	v1 "k8s.io/api/core/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -183,7 +187,7 @@ func TestCreateOrUpdateEndpoint(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPut, requestURL, bytes.NewBuffer(body))
 			resp := httptest.NewRecorder()
 
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, tc.ExistingKubeObjects, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
+			ep, clients, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, tc.ExistingKubeObjects, nil, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to: %v", err)
 			}
@@ -191,6 +195,19 @@ func TestCreateOrUpdateEndpoint(t *testing.T) {
 
 			if resp.Code != tc.ExpectedHTTPStatusCode {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.ExpectedHTTPStatusCode, resp.Code, resp.Body.String())
+			}
+
+			if resp.Code != http.StatusOK {
+				return
+			}
+
+			secret := &v1.Secret{}
+			err = clients.FakeClient.Get(context.Background(), types.NamespacedName{
+				Namespace: metav1.NamespaceSystem,
+				Name:      backupcredentials.GenBackupCredentialsSecretName(tc.BackupCredentials.Destination),
+			}, secret)
+			if err != nil {
+				t.Fatalf("Error getting backup credentials secret: %v", err)
 			}
 		})
 	}
