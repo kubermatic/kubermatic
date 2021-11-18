@@ -1,142 +1,98 @@
 ---
-# Source: loki/templates/serviceaccount.yaml
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+# Source: loki/charts/loki/templates/serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
-    app.kubernetes.io/name: loki
-    app.kubernetes.io/instance: 'RELEASE-NAME'
-    app.kubernetes.io/version: '0.1.4'
-    app.kubernetes.io/managed-by: helm
-  name: RELEASE-NAME
+    app: loki
+    chart: loki-2.8.1
+    heritage: Helm
+    release: RELEASE-NAME
+  annotations:
+    {}
+  name: loki
   namespace: default
+automountServiceAccountToken: true
 ---
-# Source: loki/templates/secret.yaml
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+# Source: loki/charts/loki/templates/secret.yaml
 apiVersion: v1
 kind: Secret
 metadata:
-  name: RELEASE-NAME-loki
+  name: loki
   namespace: default
   labels:
-    app.kubernetes.io/name: loki
-    app.kubernetes.io/instance: 'RELEASE-NAME'
-    app.kubernetes.io/version: '0.1.4'
-    app.kubernetes.io/managed-by: helm
+    app: loki
+    chart: loki-2.8.1
+    release: RELEASE-NAME
+    heritage: Helm
 data:
-  loki.yaml: YXV0aF9lbmFibGVkOiBmYWxzZQpjaHVua19zdG9yZV9jb25maWc6CiAgbWF4X2xvb2tfYmFja19wZXJpb2Q6IDcyMGgKY29tcGFjdG9yOgogIHNoYXJlZF9zdG9yZTogZmlsZXN5c3RlbQogIHdvcmtpbmdfZGlyZWN0b3J5OiAvZGF0YS9sb2tpL2JvbHRkYi1zaGlwcGVyLWNvbXBhY3Rvcgppbmdlc3RlcjoKICBjaHVua19ibG9ja19zaXplOiAyNjIxNDQKICBjaHVua19pZGxlX3BlcmlvZDogM20KICBjaHVua19yZXRhaW5fcGVyaW9kOiAxbQogIGxpZmVjeWNsZXI6CiAgICByaW5nOgogICAgICBrdnN0b3JlOgogICAgICAgIHN0b3JlOiBpbm1lbW9yeQogICAgICByZXBsaWNhdGlvbl9mYWN0b3I6IDEKbGltaXRzX2NvbmZpZzoKICBlbmZvcmNlX21ldHJpY19uYW1lOiBmYWxzZQogIHJlamVjdF9vbGRfc2FtcGxlczogdHJ1ZQogIHJlamVjdF9vbGRfc2FtcGxlc19tYXhfYWdlOiAxNDRoCnNjaGVtYV9jb25maWc6CiAgY29uZmlnczoKICAtIGZyb206ICIyMDE4LTA0LTE1IgogICAgaW5kZXg6CiAgICAgIHBlcmlvZDogMTQ0aAogICAgICBwcmVmaXg6IGluZGV4XwogICAgb2JqZWN0X3N0b3JlOiBmaWxlc3lzdGVtCiAgICBzY2hlbWE6IHY5CiAgICBzdG9yZTogYm9sdGRiCiAgLSBmcm9tOiAiMjAyMS0wNy0wMSIKICAgIGluZGV4OgogICAgICBwZXJpb2Q6IDI0aAogICAgICBwcmVmaXg6IGluZGV4XwogICAgb2JqZWN0X3N0b3JlOiBmaWxlc3lzdGVtCiAgICBzY2hlbWE6IHYxMQogICAgc3RvcmU6IGJvbHRkYi1zaGlwcGVyCnNlcnZlcjoKICBodHRwX2xpc3Rlbl9wb3J0OiAzMTAwCnN0b3JhZ2VfY29uZmlnOgogIGJvbHRkYjoKICAgIGRpcmVjdG9yeTogL2RhdGEvbG9raS9pbmRleAogIGJvbHRkYl9zaGlwcGVyOgogICAgYWN0aXZlX2luZGV4X2RpcmVjdG9yeTogL2RhdGEvbG9raS9ib2x0ZGItc2hpcHBlci1hY3RpdmUKICAgIGNhY2hlX2xvY2F0aW9uOiAvZGF0YS9sb2tpL2JvbHRkYi1zaGlwcGVyLWNhY2hlCiAgICBjYWNoZV90dGw6IDI0aAogICAgc2hhcmVkX3N0b3JlOiBmaWxlc3lzdGVtCiAgZmlsZXN5c3RlbToKICAgIGRpcmVjdG9yeTogL2RhdGEvbG9raS9jaHVua3MKdGFibGVfbWFuYWdlcjoKICByZXRlbnRpb25fZGVsZXRlc19lbmFibGVkOiB0cnVlCiAgcmV0ZW50aW9uX3BlcmlvZDogNzIwaA==
+  loki.yaml: YXV0aF9lbmFibGVkOiBmYWxzZQpjaHVua19zdG9yZV9jb25maWc6CiAgbWF4X2xvb2tfYmFja19wZXJpb2Q6IDcyMGgKY29tcGFjdG9yOgogIHNoYXJlZF9zdG9yZTogZmlsZXN5c3RlbQogIHdvcmtpbmdfZGlyZWN0b3J5OiAvZGF0YS9sb2tpL2JvbHRkYi1zaGlwcGVyLWNvbXBhY3Rvcgppbmdlc3RlcjoKICBjaHVua19ibG9ja19zaXplOiAyNjIxNDQKICBjaHVua19pZGxlX3BlcmlvZDogM20KICBjaHVua19yZXRhaW5fcGVyaW9kOiAxbQogIGxpZmVjeWNsZXI6CiAgICByaW5nOgogICAgICBrdnN0b3JlOgogICAgICAgIHN0b3JlOiBpbm1lbW9yeQogICAgICByZXBsaWNhdGlvbl9mYWN0b3I6IDEKICBtYXhfdHJhbnNmZXJfcmV0cmllczogMAogIHdhbDoKICAgIGRpcjogL2RhdGEvbG9raS93YWwKbGltaXRzX2NvbmZpZzoKICBlbmZvcmNlX21ldHJpY19uYW1lOiBmYWxzZQogIHJlamVjdF9vbGRfc2FtcGxlczogdHJ1ZQogIHJlamVjdF9vbGRfc2FtcGxlc19tYXhfYWdlOiAxNDRoCnNjaGVtYV9jb25maWc6CiAgY29uZmlnczoKICAtIGZyb206ICIyMDE4LTA0LTE1IgogICAgaW5kZXg6CiAgICAgIHBlcmlvZDogMTQ0aAogICAgICBwcmVmaXg6IGluZGV4XwogICAgb2JqZWN0X3N0b3JlOiBmaWxlc3lzdGVtCiAgICBzY2hlbWE6IHY5CiAgICBzdG9yZTogYm9sdGRiCiAgLSBmcm9tOiAiMjAyMS0wNy0wMSIKICAgIGluZGV4OgogICAgICBwZXJpb2Q6IDI0aAogICAgICBwcmVmaXg6IGluZGV4XwogICAgb2JqZWN0X3N0b3JlOiBmaWxlc3lzdGVtCiAgICBzY2hlbWE6IHYxMQogICAgc3RvcmU6IGJvbHRkYi1zaGlwcGVyCnNlcnZlcjoKICBodHRwX2xpc3Rlbl9wb3J0OiAzMTAwCnN0b3JhZ2VfY29uZmlnOgogIGJvbHRkYjoKICAgIGRpcmVjdG9yeTogL2RhdGEvbG9raS9pbmRleAogIGJvbHRkYl9zaGlwcGVyOgogICAgYWN0aXZlX2luZGV4X2RpcmVjdG9yeTogL2RhdGEvbG9raS9ib2x0ZGItc2hpcHBlci1hY3RpdmUKICAgIGNhY2hlX2xvY2F0aW9uOiAvZGF0YS9sb2tpL2JvbHRkYi1zaGlwcGVyLWNhY2hlCiAgICBjYWNoZV90dGw6IDI0aAogICAgc2hhcmVkX3N0b3JlOiBmaWxlc3lzdGVtCiAgZmlsZXN5c3RlbToKICAgIGRpcmVjdG9yeTogL2RhdGEvbG9raS9jaHVua3MKdGFibGVfbWFuYWdlcjoKICByZXRlbnRpb25fZGVsZXRlc19lbmFibGVkOiB0cnVlCiAgcmV0ZW50aW9uX3BlcmlvZDogNzIwaA==
 ---
-# Source: loki/templates/role.yaml
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+# Source: loki/charts/loki/templates/role.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: RELEASE-NAME-loki
+  name: loki
   namespace: default
   labels:
-    app.kubernetes.io/name: loki
-    app.kubernetes.io/instance: 'RELEASE-NAME'
-    app.kubernetes.io/version: '0.1.4'
-    app.kubernetes.io/managed-by: helm
+    app: loki
+    chart: loki-2.8.1
+    heritage: Helm
+    release: RELEASE-NAME
 ---
-# Source: loki/templates/rolebinding.yaml
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+# Source: loki/charts/loki/templates/rolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: RELEASE-NAME-loki
+  name: loki
   namespace: default
   labels:
-    app.kubernetes.io/name: loki
-    app.kubernetes.io/instance: 'RELEASE-NAME'
-    app.kubernetes.io/version: '0.1.4'
-    app.kubernetes.io/managed-by: helm
+    app: loki
+    chart: loki-2.8.1
+    heritage: Helm
+    release: RELEASE-NAME
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: RELEASE-NAME-loki
+  name: loki
 subjects:
 - kind: ServiceAccount
-  name: RELEASE-NAME
+  name: loki
 ---
-# Source: loki/templates/service.yaml
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+# Source: loki/charts/loki/templates/service-headless.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: RELEASE-NAME-loki
+  name: loki-headless
   namespace: default
   labels:
-    app.kubernetes.io/name: loki
-    app.kubernetes.io/instance: 'RELEASE-NAME'
-    app.kubernetes.io/version: '0.1.4'
-    app.kubernetes.io/managed-by: helm
+    app: loki
+    chart: loki-2.8.1
+    release: RELEASE-NAME
+    heritage: Helm
+    variant: headless
+spec:
+  clusterIP: None
+  ports:
+    - port: 3100
+      protocol: TCP
+      name: http-metrics
+      targetPort: http-metrics
+  selector:
+    app: loki
+    release: RELEASE-NAME
+---
+# Source: loki/charts/loki/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: loki
+  namespace: default
+  labels:
+    app: loki
+    chart: loki-2.8.1
+    release: RELEASE-NAME
+    heritage: Helm
   annotations:
     {}
 spec:
@@ -147,75 +103,63 @@ spec:
       name: http-metrics
       targetPort: http-metrics
   selector:
-    app.kubernetes.io/name: loki
-    app.kubernetes.io/instance: 'RELEASE-NAME'
+    app: loki
+    release: RELEASE-NAME
 ---
-# Source: loki/templates/statefulset.yaml
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+# Source: loki/charts/loki/templates/statefulset.yaml
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: RELEASE-NAME-loki
+  name: loki
   namespace: default
   labels:
-    app.kubernetes.io/name: loki
-    app.kubernetes.io/instance: 'RELEASE-NAME'
-    app.kubernetes.io/version: '0.1.4'
-    app.kubernetes.io/managed-by: helm
-  annotations: {}
+    app: loki
+    chart: loki-2.8.1
+    release: RELEASE-NAME
+    heritage: Helm
+  annotations:
+    {}
 spec:
   podManagementPolicy: OrderedReady
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: loki
-      app.kubernetes.io/instance: 'RELEASE-NAME'
-  serviceName: RELEASE-NAME-loki
+      app: loki
+      release: RELEASE-NAME
+  serviceName: loki-headless
   updateStrategy:
     type: RollingUpdate
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: loki
-        app.kubernetes.io/instance: 'RELEASE-NAME'
+        app: loki
+        name: loki
+        release: RELEASE-NAME
       annotations:
-        checksum/config: 9adbc5d6b4e059589031275b3dc40c71bdb7f64fd824ceb997d05462fe5359ca
-        prometheus.io/scrape: "true"
+        checksum/config: def325cfa25684d5131521561c17b2a487d6339304bdeeb2faa4c943c58503f3
         prometheus.io/port: "3100"
-        kubermatic.io/chart: loki
+        prometheus.io/scrape: "true"
     spec:
-      serviceAccountName: RELEASE-NAME
+      serviceAccountName: loki
       securityContext:
         fsGroup: 10001
         runAsGroup: 10001
         runAsNonRoot: true
         runAsUser: 10001
-      initContainers: []
+      initContainers:
+        []
       containers:
         - name: loki
-          image: "docker.io/grafana/loki:2.1.0"
+          image: "grafana/loki:2.4.1"
           imagePullPolicy: IfNotPresent
           args:
             - "-config.file=/etc/loki/loki.yaml"
-            - "log.level=error"
           volumeMounts:
             - name: config
               mountPath: /etc/loki
             - name: storage
               mountPath: "/data"
+              subPath: 
           ports:
             - name: http-metrics
               containerPort: 3100
@@ -250,10 +194,12 @@ spec:
       volumes:
         - name: config
           secret:
-            secretName: RELEASE-NAME-loki
+            secretName: loki
   volumeClaimTemplates:
   - metadata:
       name: storage
+      annotations:
+        {}
     spec:
       accessModes:
         - ReadWriteOnce
