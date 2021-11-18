@@ -18091,6 +18091,11 @@
       "description": "BackupCredentials contains credentials for etcd backups",
       "type": "object",
       "properties": {
+        "destination": {
+          "description": "Destination corresponds to the Seeds Seed.Spec.EtcdBackupRestore.Destinations, it defines for which destination\nthe backup credentials will be created. If set, it updates the credentials ref in the related Seed BackupDestination",
+          "type": "string",
+          "x-go-name": "Destination"
+        },
         "s3": {
           "$ref": "#/definitions/S3BackupCredentials"
         }
