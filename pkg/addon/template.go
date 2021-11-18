@@ -109,7 +109,7 @@ func NewTemplateData(
 
 	_, csiMigration := cluster.Annotations[kubermaticv1.CSIMigrationNeededAnnotation]
 
-	td := &TemplateData{
+	return &TemplateData{
 		DatacenterName: cluster.Spec.Cloud.DatacenterName,
 		Variables:      variables,
 		Credentials:    credentials,
@@ -147,11 +147,7 @@ func NewTemplateData(
 			StoragePolicy: storagePolicy,
 			CSIMigration:  csiMigration,
 		},
-	}
-	if cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil {
-		td.Cluster.Network.KonnectivityEnabled = *cluster.Spec.ClusterNetwork.KonnectivityEnabled
-	}
-	return td, nil
+	}, nil
 }
 
 // ClusterData contains data related to the user cluster
@@ -212,14 +208,13 @@ type ClusterData struct {
 }
 
 type ClusterNetwork struct {
-	DNSDomain           string
-	DNSClusterIP        string
-	DNSResolverIP       string
-	PodCIDRBlocks       []string
-	ServiceCIDRBlocks   []string
-	ProxyMode           string
-	StrictArp           bool
-	KonnectivityEnabled bool
+	DNSDomain         string
+	DNSClusterIP      string
+	DNSResolverIP     string
+	PodCIDRBlocks     []string
+	ServiceCIDRBlocks []string
+	ProxyMode         string
+	StrictArp         bool
 }
 
 type CNIPlugin struct {
