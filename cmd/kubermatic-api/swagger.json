@@ -16926,6 +16926,32 @@
     }
   },
   "definitions": {
+    "AKSCloudSpec": {
+      "type": "object",
+      "properties": {
+        "clientID": {
+          "type": "string",
+          "x-go-name": "ClientID"
+        },
+        "clientSecret": {
+          "type": "string",
+          "x-go-name": "ClientSecret"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "subscriptionID": {
+          "type": "string",
+          "x-go-name": "SubscriptionID"
+        },
+        "tenantID": {
+          "type": "string",
+          "x-go-name": "TenantID"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "AWSCloudSpec": {
       "type": "object",
       "title": "AWSCloudSpec specifies access data to Amazon Web Services.",
@@ -19988,6 +20014,9 @@
       "description": "ExternalClusterCloudSpec represents an object holding cluster cloud details",
       "type": "object",
       "properties": {
+        "aks": {
+          "$ref": "#/definitions/AKSCloudSpec"
+        },
         "eks": {
           "$ref": "#/definitions/EKSCloudSpec"
         },

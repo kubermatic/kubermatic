@@ -44,8 +44,13 @@ const (
 	defaultSecretAccessKey = "abc"
 	defaultServiceAccount  = "abc"
 	defaultRegion          = "eu-central-1"
+	defaultTenantID        = "abc"
+	defaultSubscriptionID  = "abc"
+	defaultClientID        = "abc"
+	defaultClientSecret    = "abc"
 	AWSCloudProvider       = "AWS"
 	GCPCloudProvider       = "GCP"
+	AZURECloudProvider     = "AZURE"
 )
 
 func TestCreateOrUpdateKubeconfigSecretForCluster(t *testing.T) {
@@ -194,7 +199,7 @@ func TestCreateOrUpdateCloudSecretForCluster(t *testing.T) {
 			cloudSpec: &apiv2.ExternalClusterCloudSpec{
 				GKE: &apiv2.GKECloudSpec{
 					Name:           defaultClusterName,
-					ServiceAccount: defaultAccessKeyID,
+					ServiceAccount: defaultServiceAccount,
 				},
 			},
 			externalCluster: genCloudCluster(defaultClusterName, defaultRegion, defaultProjectID, GCPCloudProvider),
@@ -210,6 +215,37 @@ func TestCreateOrUpdateCloudSecretForCluster(t *testing.T) {
 					Labels:          map[string]string{"name": genCloudCluster(defaultClusterName, defaultRegion, defaultProjectID, GCPCloudProvider).GetSecretName(), kubermaticapiv1.ProjectIDLabelKey: defaultProjectID},
 				},
 				Data: map[string][]byte{resources.ExternalGKEClusterSeriveAccount: []byte(defaultAccessKeyID)},
+				Type: corev1.SecretTypeOpaque,
+			},
+		},
+		{
+			name:            "test: create a new aks secret",
+			projectID:       defaultProjectID,
+			clusterID:       defaultClusterName,
+			cloudProvider:   AZURECloudProvider,
+			existingObjects: []ctrlruntimeclient.Object{},
+			cloudSpec: &apiv2.ExternalClusterCloudSpec{
+				AKS: &apiv2.AKSCloudSpec{
+					Name:           defaultClusterName,
+					TenantID:       defaultTenantID,
+					SubscriptionID: defaultSubscriptionID,
+					ClientID:       defaultClientID,
+					ClientSecret:   defaultClientSecret,
+				},
+			},
+			externalCluster: genCloudCluster(defaultClusterName, defaultRegion, defaultProjectID, AZURECloudProvider),
+			expectedSecret: &corev1.Secret{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Secret",
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					ResourceVersion: "1",
+					Name:            genCloudCluster(defaultClusterName, defaultRegion, defaultProjectID, AZURECloudProvider).GetSecretName(),
+					Namespace:       resources.KubermaticNamespace,
+					Labels:          map[string]string{"name": genCloudCluster(defaultClusterName, defaultRegion, defaultProjectID, AZURECloudProvider).GetSecretName(), kubermaticapiv1.ProjectIDLabelKey: defaultProjectID},
+				},
+				Data: map[string][]byte{resources.ExternalAKSClusterTenantID: []byte(defaultTenantID), resources.ExternalAKSClusterSubscriptionID: []byte(defaultSubscriptionID), resources.ExternalAKSClusterClientID: []byte(defaultClientID), resources.ExternalAKSClusterClientSecret: []byte(defaultClientSecret)},
 				Type: corev1.SecretTypeOpaque,
 			},
 		},
@@ -270,14 +306,22 @@ func genCloudCluster(name, region, projectID, cloud string) *kubermaticapiv1.Clu
 			Cloud: kubermaticapiv1.CloudSpec{},
 		},
 	}
-	if cloud == "AWS" {
+	switch {
+	case cloud == AWSCloudProvider:
 		cluster.Spec.Cloud.AWS = &kubermaticapiv1.AWSCloudSpec{
 			AccessKeyID:     defaultAccessKeyID,
 			SecretAccessKey: defaultSecretAccessKey,
 		}
-	} else if cloud == "GCP" {
+	case cloud == GCPCloudProvider:
 		cluster.Spec.Cloud.GCP = &kubermaticapiv1.GCPCloudSpec{
 			ServiceAccount: defaultServiceAccount,
+		}
+	case cloud == AZURECloudProvider:
+		cluster.Spec.Cloud.Azure = &kubermaticapiv1.AzureCloudSpec{
+			TenantID:       defaultTenantID,
+			SubscriptionID: defaultSubscriptionID,
+			ClientID:       defaultClientID,
+			ClientSecret:   defaultClientSecret,
 		}
 	}
 	return cluster
