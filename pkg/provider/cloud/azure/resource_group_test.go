@@ -108,7 +108,7 @@ func TestReconcileResourceGroup(t *testing.T) {
 		cluster := makeCluster(&kubermaticv1.AzureCloudSpec{}, credentials)
 
 		clientSet := getFakeClientSetWithGroupsClient(*credentials, testLocation, cluster, fakeClientModeAuthFail)
-		cluster, err = reconcileResourceGroup(ctx, clientSet, testLocation, cluster, testClusterUpdater(cluster))
+		_, err := reconcileResourceGroup(ctx, clientSet, testLocation, cluster, testClusterUpdater(cluster))
 
 		if err == nil {
 			t.Fatalf("expected error for request that got a 403 error, got none")
