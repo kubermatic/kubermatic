@@ -45,7 +45,7 @@ func TestReconcileResourceGroup(t *testing.T) {
 		cluster, err = reconcileResourceGroup(ctx, clientSet, testLocation, cluster, testClusterUpdater(cluster))
 
 		if err != nil {
-			t.Fatalf("expected ensureResourceGroup to succeed, but failed with error: %v", err)
+			t.Fatalf("expected reconcileResourceGroup to succeed, but failed with error: %v", err)
 		}
 
 		if cluster.Spec.Cloud.Azure.ResourceGroup != resourceGroupName(cluster) {
