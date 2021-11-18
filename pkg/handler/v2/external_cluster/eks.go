@@ -223,16 +223,44 @@ func patchEKSMD(old, new *apiv2.ExternalClusterMachineDeployment, secretKeySelec
 	clusterName := cloudSpec.EKS.Name
 	nodeGroupName := new.NodeDeployment.Name
 
+	currentReplicas := old.NodeDeployment.Spec.Replicas
 	desiredReplicas := new.NodeDeployment.Spec.Replicas
-	_, err = resizeEKSNodeGroup(client, clusterName, nodeGroupName, int64(desiredReplicas))
-	if err != nil {
-		return nil, err
+	if desiredReplicas != currentReplicas {
+		_, err = resizeEKSNodeGroup(client, clusterName, nodeGroupName, int64(currentReplicas), int64(desiredReplicas))
+		if err != nil {
+			return nil, err
+		}
+		new.NodeDeployment.Status.Replicas = desiredReplicas
 	}
-	new.NodeDeployment.Status.Replicas = desiredReplicas
+
+	currentVersion := old.NodeDeployment.Spec.Template.Versions.Kubelet
+	desiredVersion := new.NodeDeployment.Spec.Template.Versions.Kubelet
+	if desiredVersion != currentVersion {
+		_, err = upgradeEKSNodeGroup(client, &clusterName, &nodeGroupName, &currentVersion, &desiredVersion)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return new, nil
 }
 
-func resizeEKSNodeGroup(client *awsprovider.ClientSet, clusterName, nodeGroupName string, desiredSize int64) (*eks.UpdateNodegroupConfigOutput, error) {
+func upgradeEKSNodeGroup(client *awsprovider.ClientSet, clusterName, nodeGroupName, currentVersion, desiredVersion *string) (*eks.UpdateNodegroupVersionOutput, error) {
+	nodeGroupInput := eks.UpdateNodegroupVersionInput{
+		ClusterName:   clusterName,
+		NodegroupName: nodeGroupName,
+		Version:       desiredVersion,
+	}
+
+	updateOutput, err := client.EKS.UpdateNodegroupVersion(&nodeGroupInput)
+	if err != nil {
+		return nil, err
+	}
+
+	return updateOutput, nil
+}
+
+func resizeEKSNodeGroup(client *awsprovider.ClientSet, clusterName, nodeGroupName string, currentSize, desiredSize int64) (*eks.UpdateNodegroupConfigOutput, error) {
 
 	nodeGroupInput := eks.DescribeNodegroupInput{
 		ClusterName:   &clusterName,
@@ -250,7 +278,6 @@ func resizeEKSNodeGroup(client *awsprovider.ClientSet, clusterName, nodeGroupNam
 	}
 
 	scalingConfig := nodeGroup.ScalingConfig
-	currentSize := *scalingConfig.DesiredSize
 	maxSize := *scalingConfig.MaxSize
 	minSize := *scalingConfig.MinSize
 
