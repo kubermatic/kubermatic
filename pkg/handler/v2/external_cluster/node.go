@@ -599,6 +599,13 @@ func GetMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, projec
 				}
 				machineDeployment = *np
 			}
+			if cloud.GKE != nil {
+				np, err := getGKENodePool(ctx, cluster, req.MachineDeploymentID, secretKeySelector, cloud.GKE.CredentialsReference, clusterProvider)
+				if err != nil {
+					return nil, common.KubernetesErrorToHTTPError(err)
+				}
+				machineDeployment = *np
+			}
 		}
 
 		return machineDeployment, nil
@@ -630,11 +637,10 @@ func PatchMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proj
 		if cloud != nil {
 
 			secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+			mdToPatch := apiv2.ExternalClusterMachineDeployment{}
+			patchedMD := apiv2.ExternalClusterMachineDeployment{}
 
 			if cloud.EKS != nil {
-				mdToPatch := apiv2.ExternalClusterMachineDeployment{}
-				patchedMD := apiv2.ExternalClusterMachineDeployment{}
-
 				md, err := getEKSNodePool(cluster, req.MachineDeploymentID, secretKeySelector, cloud, clusterProvider)
 				if err != nil {
 					return nil, err
@@ -644,6 +650,17 @@ func PatchMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proj
 					return nil, err
 				}
 				return patchEKSMD(&mdToPatch, &patchedMD, secretKeySelector, cloud)
+			}
+			if cloud.GKE != nil {
+				md, err := getGKENodePool(ctx, cluster, req.MachineDeploymentID, secretKeySelector, cloud.GKE.CredentialsReference, clusterProvider)
+				if err != nil {
+					return nil, err
+				}
+				mdToPatch.NodeDeployment = md.NodeDeployment
+				if err := patchMD(&mdToPatch, &patchedMD, req.Patch); err != nil {
+					return nil, err
+				}
+				return patchGKEMachineDeployment(ctx, &mdToPatch, &patchedMD, cluster, secretKeySelector, cloud.GKE.CredentialsReference, clusterProvider)
 			}
 		}
 		return nil, fmt.Errorf("unsupported or missing cloud provider fields")
