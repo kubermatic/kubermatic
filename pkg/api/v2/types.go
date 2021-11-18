@@ -322,7 +322,11 @@ type OIDCSpec struct {
 // BackupCredentials contains credentials for etcd backups
 // swagger:model BackupCredentials
 type BackupCredentials struct {
+	// S3BackupCredentials holds credentials for a S3 client compatible backup destination
 	S3BackupCredentials S3BackupCredentials `json:"s3,omitempty"`
+	// Destination corresponds to the Seeds Seed.Spec.EtcdBackupRestore.Destinations, it defines for which destination
+	// the backup credentials will be created. If set, it updates the credentials ref in the related Seed BackupDestination
+	Destination string `json:"destination,omitempty"`
 }
 
 // S3BackupCredentials contains credentials for S3 etcd backups

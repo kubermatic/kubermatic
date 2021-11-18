@@ -190,6 +190,7 @@ type providers struct {
 	etcdRestoreProjectProviderGetter        provider.EtcdRestoreProjectProviderGetter
 	backupCredentialsProviderGetter         provider.BackupCredentialsProviderGetter
 	privilegedMLAAdminSettingProviderGetter provider.PrivilegedMLAAdminSettingProviderGetter
+	seedProvider                            provider.SeedProvider
 }
 
 func loadKubermaticConfiguration(filename string) (*operatorv1alpha1.KubermaticConfiguration, error) {

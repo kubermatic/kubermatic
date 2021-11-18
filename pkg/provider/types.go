@@ -1290,3 +1290,12 @@ type PrivilegedMLAAdminSettingProvider interface {
 	// is unsafe in a sense that it uses privileged account to delete the resource
 	DeleteUnsecured(cluster *kubermaticv1.Cluster) error
 }
+
+type SeedProvider interface {
+
+	// UpdateUnsecured updates a Seed
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to update the resource
+	UpdateUnsecured(seed *kubermaticv1.Seed) (*kubermaticv1.Seed, error)
+}
