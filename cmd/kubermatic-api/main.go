@@ -319,6 +319,8 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 
 	privilegedMLAAdminSettingProviderGetter := kubernetesprovider.PrivilegedMLAAdminSettingProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter)
 
+	seedProvider := kubernetesprovider.NewSeedProvider(mgr.GetClient())
+
 	settingsWatcher, err := kuberneteswatcher.NewSettingsWatcher(settingsProvider)
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to create settings watcher due to %v", err)
@@ -375,6 +377,7 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 		etcdRestoreProjectProviderGetter:        etcdRestoreProjectProviderGetter,
 		backupCredentialsProviderGetter:         backupCredentialsProviderGetter,
 		privilegedMLAAdminSettingProviderGetter: privilegedMLAAdminSettingProviderGetter,
+		seedProvider:                            seedProvider,
 	}, nil
 }
 
@@ -493,7 +496,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		EtcdRestoreProjectProviderGetter:        prov.etcdRestoreProjectProviderGetter,
 		BackupCredentialsProviderGetter:         prov.backupCredentialsProviderGetter,
 		PrivilegedMLAAdminSettingProviderGetter: prov.privilegedMLAAdminSettingProviderGetter,
-		MasterClient:                            mgr.GetClient(),
+		SeedProvider:                            prov.seedProvider,
 		Versions:                                options.versions,
 		CABundle:                                options.caBundle.CertPool(),
 	}

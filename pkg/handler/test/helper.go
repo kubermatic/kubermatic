@@ -218,6 +218,7 @@ type newRoutingFunc func(
 	privilegedMLAAdminSettingProviderGetter provider.PrivilegedMLAAdminSettingProviderGetter,
 	masterClient client.Client,
 	featureGatesProvider provider.FeatureGatesProvider,
+	seedProvider provider.SeedProvider,
 ) http.Handler
 
 func getRuntimeObjects(objs ...ctrlruntimeclient.Object) []runtime.Object {
@@ -510,6 +511,11 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		return nil, fmt.Errorf("can not find privilegedMLAAdminSettingProvider for cluster %q", seed.Name)
 	}
 
+	seedProvider := kubernetes.NewSeedProvider(fakeClient)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	eventRecorderProvider := kubernetes.NewEventRecorder()
 
 	settingsWatcher, err := kuberneteswatcher.NewSettingsWatcher(settingsProvider)
@@ -583,6 +589,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		privilegedMLAAdminSettingProviderGetter,
 		fakeClient,
 		featureGatesProvider,
+		seedProvider,
 	)
 
 	return mainRouter, &ClientsSets{kubermaticClient, fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil

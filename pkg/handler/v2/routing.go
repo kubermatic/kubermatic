@@ -33,8 +33,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/watcher"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // Routing represents an object which binds endpoints to http handlers.
@@ -91,7 +89,7 @@ type Routing struct {
 	etcdRestoreProjectProviderGetter        provider.EtcdRestoreProjectProviderGetter
 	backupCredentialsProviderGetter         provider.BackupCredentialsProviderGetter
 	privilegedMLAAdminSettingProviderGetter provider.PrivilegedMLAAdminSettingProviderGetter
-	masterClient                            client.Client
+	seedProvider                            provider.SeedProvider
 	versions                                kubermatic.Versions
 	caBundle                                *x509.CertPool
 }
@@ -151,7 +149,7 @@ func NewV2Routing(routingParams handler.RoutingParams) Routing {
 		etcdRestoreProjectProviderGetter:        routingParams.EtcdRestoreProjectProviderGetter,
 		backupCredentialsProviderGetter:         routingParams.BackupCredentialsProviderGetter,
 		privilegedMLAAdminSettingProviderGetter: routingParams.PrivilegedMLAAdminSettingProviderGetter,
-		masterClient:                            routingParams.MasterClient,
+		seedProvider:                            routingParams.SeedProvider,
 		versions:                                routingParams.Versions,
 		caBundle:                                routingParams.CABundle,
 	}

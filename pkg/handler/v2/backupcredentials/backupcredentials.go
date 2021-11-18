@@ -35,10 +35,9 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func CreateOrUpdateEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, masterClient client.Client) endpoint.Endpoint {
+func CreateOrUpdateEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, seedProvider provider.SeedProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createOrUpdateBackupCredentialsReq)
 
@@ -92,7 +91,7 @@ func CreateOrUpdateEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter 
 				Namespace: bc.Namespace,
 			}
 
-			err = masterClient.Update(ctx, seed)
+			_, err = seedProvider.UpdateUnsecured(seed)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("error setting seed backup destination credentials: %v", err))
 			}
