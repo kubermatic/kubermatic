@@ -140,7 +140,7 @@ func DecodeBackupCredentialsReq(c context.Context, r *http.Request) (interface{}
 func convertAPIToInternalBackupCredentials(bc *apiv2.BackupCredentials) *v1.Secret {
 	return &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.EtcdRestoreS3CredentialsSecret,
+			Name:      genBackupCredentialsSecretName(bc.Destination),
 			Namespace: metav1.NamespaceSystem,
 		},
 		StringData: map[string]string{
