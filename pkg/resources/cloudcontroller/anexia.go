@@ -54,11 +54,6 @@ func anexiaDeploymentCreator(data *resources.TemplateData) reconciling.NamedDepl
 			f := false
 			deployment.Spec.Template.Spec.AutomountServiceAccountToken = &f
 
-			openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
-			}
-
 			credentials, err := resources.GetCredentials(data)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get credentials: %v", err)
@@ -67,7 +62,6 @@ func anexiaDeploymentCreator(data *resources.TemplateData) reconciling.NamedDepl
 			deployment.Spec.Template.Spec.Volumes = getVolumes()
 
 			deployment.Spec.Template.Spec.Containers = []corev1.Container{
-				*openvpnSidecar,
 				{
 					Name:  ccmContainerName,
 					Image: data.ImageRegistry(resources.RegistryAnexia) + "/anexia/anx-cloud-controller-manager:0.1.0",
@@ -119,6 +113,14 @@ func anexiaDeploymentCreator(data *resources.TemplateData) reconciling.NamedDepl
 					},
 					VolumeMounts: getVolumeMounts(),
 				},
+			}
+
+			if !data.IsKonnectivityEnabled() {
+				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
+				if err != nil {
+					return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
+				}
+				deployment.Spec.Template.Spec.Containers = append(deployment.Spec.Template.Spec.Containers, *openvpnSidecar)
 			}
 
 			if err != nil {

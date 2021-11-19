@@ -597,7 +597,6 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 
 	if len(r.tunnelingAgentIP) > 0 {
 		creators = []reconciling.NamedConfigMapCreatorGetter{
-			openvpn.ClientConfigConfigMapCreator(r.tunnelingAgentIP.String(), r.openvpnServerPort),
 			cabundle.ConfigMapCreator(r.caBundle),
 			envoyagent.ConfigMapCreator(envoyagent.Config{
 				AdminPort: 9902,
@@ -617,10 +616,15 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 				},
 			}),
 		}
+		if !r.isKonnectivityEnabled {
+			creators = append(creators, openvpn.ClientConfigConfigMapCreator(r.tunnelingAgentIP.String(), r.openvpnServerPort))
+		}
 	} else {
 		creators = []reconciling.NamedConfigMapCreatorGetter{
-			openvpn.ClientConfigConfigMapCreator(r.clusterURL.Hostname(), r.openvpnServerPort),
 			cabundle.ConfigMapCreator(r.caBundle),
+		}
+		if !r.isKonnectivityEnabled {
+			creators = append(creators, openvpn.ClientConfigConfigMapCreator(r.clusterURL.Hostname(), r.openvpnServerPort))
 		}
 	}
 
@@ -658,8 +662,10 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 
 func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedSecretCreatorGetter{
-		openvpn.ClientCertificate(data.openVPNCACert),
 		cloudcontroller.CloudConfig(data.cloudConfig, resources.CloudConfigSecretName),
+	}
+	if !r.isKonnectivityEnabled {
+		creators = append(creators, openvpn.ClientCertificate(data.openVPNCACert))
 	}
 
 	if data.csiCloudConfig != nil {
