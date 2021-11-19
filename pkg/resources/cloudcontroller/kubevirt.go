@@ -70,6 +70,12 @@ func kubevirtDeploymentCreator(data *resources.TemplateData) reconciling.NamedDe
 				Labels: podLabels,
 			}
 
+			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err =
+				resources.UserClusterDNSPolicyAndConfig(data)
+			if err != nil {
+				return nil, err
+			}
+
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.BoolPtr(false)
 
 			dep.Spec.Template.Spec.Volumes = append(getVolumes(), corev1.Volume{
@@ -102,10 +108,6 @@ func kubevirtDeploymentCreator(data *resources.TemplateData) reconciling.NamedDe
 			}
 
 			if !data.IsKonnectivityEnabled() {
-				dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
-				if err != nil {
-					return nil, err
-				}
 				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
 				if err != nil {
 					return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)

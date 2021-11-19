@@ -105,6 +105,12 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 				},
 			}
 
+			// Configure user cluster DNS resolver for this pod.
+			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
+			if err != nil {
+				return nil, err
+			}
+
 			dep.Spec.Template.Spec.Volumes = volumes
 
 			if data.Cluster().Spec.Cloud.VSphere != nil {
@@ -172,10 +178,6 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			}
 
 			if !data.IsKonnectivityEnabled() {
-				dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
-				if err != nil {
-					return nil, err
-				}
 				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
 				if err != nil {
 					return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)

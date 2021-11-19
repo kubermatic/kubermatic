@@ -70,6 +70,11 @@ func vsphereDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 				Labels: podLabels,
 			}
 
+			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err =
+				resources.UserClusterDNSPolicyAndConfig(data)
+			if err != nil {
+				return nil, err
+			}
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.BoolPtr(false)
 
 			version, err := getVsphereCPIVersion(data.Cluster().Spec.Version)
@@ -82,10 +87,6 @@ func vsphereDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 			}
 
 			if !data.IsKonnectivityEnabled() {
-				dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
-				if err != nil {
-					return nil, err
-				}
 				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
 				if err != nil {
 					return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)

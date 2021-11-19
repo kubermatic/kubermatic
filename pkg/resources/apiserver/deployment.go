@@ -90,13 +90,11 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 
 			etcdEndpoints := etcd.GetClientEndpoints(data.Cluster().Status.NamespaceName)
 
-			if !data.IsKonnectivityEnabled() {
-				dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
-				if err != nil {
-					return nil, err
-				}
+			// Configure user cluster DNS resolver for this pod.
+			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
+			if err != nil {
+				return nil, err
 			}
-
 			dep.Spec.Template.Spec.Volumes = volumes
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 				etcdrunning.Container(etcdEndpoints, data),

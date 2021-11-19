@@ -70,6 +70,12 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 				Labels: podLabels,
 			}
 
+			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err =
+				resources.UserClusterDNSPolicyAndConfig(data)
+			if err != nil {
+				return nil, err
+			}
+
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.BoolPtr(false)
 
 			version, err := getOSVersion(data.Cluster().Spec.Version)
@@ -132,10 +138,6 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 			}
 
 			if !data.IsKonnectivityEnabled() {
-				dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
-				if err != nil {
-					return nil, err
-				}
 				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
 				if err != nil {
 					return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
