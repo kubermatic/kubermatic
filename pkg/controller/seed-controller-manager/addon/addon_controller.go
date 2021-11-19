@@ -68,6 +68,8 @@ const (
 	addonLabelKey        = "kubermatic-addon"
 	cleanupFinalizerName = "cleanup-manifests"
 	addonEnsureLabelKey  = "addons.kubermatic.io/ensure"
+
+	openVPNAddonName = "openvpn"
 )
 
 // KubeconfigProvider provides functionality to get a clusters admin kubeconfig
@@ -229,6 +231,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+	if addon.Name == openVPNAddonName && cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled {
+		log.Debug("Skipping openvpn addon as Konnectivity is enabled")
+		return nil, nil // skip rendering openvpn addon if Konnectivity is enabled
+	}
 	if cluster.Status.ExtendedHealth.Apiserver != kubermaticv1.HealthStatusUp {
 		log.Debug("API server is not running, trying again in 10 seconds")
 		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
