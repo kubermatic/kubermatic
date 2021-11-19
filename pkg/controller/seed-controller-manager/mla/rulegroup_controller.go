@@ -50,9 +50,9 @@ import (
 
 const (
 	ruleGroupFinalizer             = "kubermatic.io/rule-group"
-	metricsRuleGroupConfigEndpoint = "/api/v1/rules"
-	logRuleGroupConfigEndpoint     = "/loki/api/v1/rules"
-	ruleGroupTenantHeaderName      = "X-Scope-OrgID"
+	MetricsRuleGroupConfigEndpoint = "/api/v1/rules"
+	LogRuleGroupConfigEndpoint     = "/loki/api/v1/rules"
+	RuleGroupTenantHeaderName      = "X-Scope-OrgID"
 	defaultNamespace               = "/default"
 )
 
@@ -285,10 +285,10 @@ func (r *ruleGroupController) cleanUp(ctx context.Context) error {
 
 func (r *ruleGroupController) getRequestURL(ruleGroup *kubermaticv1.RuleGroup) (string, error) {
 	if ruleGroup.Spec.RuleGroupType == kubermaticv1.RuleGroupTypeMetrics {
-		return fmt.Sprintf("%s%s%s", r.cortexRulerURL, metricsRuleGroupConfigEndpoint, defaultNamespace), nil
+		return fmt.Sprintf("%s%s%s", r.cortexRulerURL, MetricsRuleGroupConfigEndpoint, defaultNamespace), nil
 	}
 	if ruleGroup.Spec.RuleGroupType == kubermaticv1.RuleGroupTypeLogs {
-		return fmt.Sprintf("%s%s%s", r.lokiRulerURL, logRuleGroupConfigEndpoint, defaultNamespace), nil
+		return fmt.Sprintf("%s%s%s", r.lokiRulerURL, LogRuleGroupConfigEndpoint, defaultNamespace), nil
 	}
 	return "", fmt.Errorf("unknown rule group type: %s", ruleGroup.Spec.RuleGroupType)
 }
@@ -299,7 +299,7 @@ func (r *ruleGroupController) handleDeletion(ctx context.Context, ruleGroup *kub
 	if err != nil {
 		return err
 	}
-	req.Header.Add(ruleGroupTenantHeaderName, ruleGroup.Spec.Cluster.Name)
+	req.Header.Add(RuleGroupTenantHeaderName, ruleGroup.Spec.Cluster.Name)
 	resp, err := r.httpClient.Do(req)
 	if err != nil {
 		return err
@@ -341,7 +341,7 @@ func (r *ruleGroupController) ensureRuleGroup(ruleGroup *kubermaticv1.RuleGroup,
 	if err != nil {
 		return err
 	}
-	req.Header.Add(ruleGroupTenantHeaderName, ruleGroup.Spec.Cluster.Name)
+	req.Header.Add(RuleGroupTenantHeaderName, ruleGroup.Spec.Cluster.Name)
 
 	resp, err := r.httpClient.Do(req)
 	if err != nil {
@@ -364,7 +364,7 @@ func (r *ruleGroupController) getCurrentRuleGroup(ruleGroup *kubermaticv1.RuleGr
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add(ruleGroupTenantHeaderName, ruleGroup.Spec.Cluster.Name)
+	req.Header.Add(RuleGroupTenantHeaderName, ruleGroup.Spec.Cluster.Name)
 	resp, err := r.httpClient.Do(req)
 	if err != nil {
 		return nil, err
