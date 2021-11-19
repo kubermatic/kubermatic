@@ -82,14 +82,14 @@ func TestRuleGroupReconcile(t *testing.T) {
 				{
 					name: "get",
 					request: httptest.NewRequest(http.MethodGet,
-						fmt.Sprintf("%s%s/%s", metricsRuleGroupConfigEndpoint, defaultNamespace, "test-rule"),
+						fmt.Sprintf("%s%s/%s", MetricsRuleGroupConfigEndpoint, defaultNamespace, "test-rule"),
 						nil),
 					response: &http.Response{StatusCode: http.StatusNotFound},
 				},
 				{
 					name: "post",
 					request: httptest.NewRequest(http.MethodPost,
-						metricsRuleGroupConfigEndpoint+defaultNamespace,
+						MetricsRuleGroupConfigEndpoint+defaultNamespace,
 						bytes.NewBuffer(test.GenerateTestRuleGroupData("test-rule"))),
 					response: &http.Response{StatusCode: http.StatusAccepted},
 				},
@@ -110,14 +110,14 @@ func TestRuleGroupReconcile(t *testing.T) {
 				{
 					name: "get",
 					request: httptest.NewRequest(http.MethodGet,
-						fmt.Sprintf("%s%s/%s", logRuleGroupConfigEndpoint, defaultNamespace, "test-rule"),
+						fmt.Sprintf("%s%s/%s", LogRuleGroupConfigEndpoint, defaultNamespace, "test-rule"),
 						nil),
 					response: &http.Response{StatusCode: http.StatusNotFound},
 				},
 				{
 					name: "post",
 					request: httptest.NewRequest(http.MethodPost,
-						logRuleGroupConfigEndpoint+defaultNamespace,
+						LogRuleGroupConfigEndpoint+defaultNamespace,
 						bytes.NewBuffer(test.GenerateTestRuleGroupData("test-rule"))),
 					response: &http.Response{StatusCode: http.StatusAccepted},
 				},
@@ -150,7 +150,7 @@ func TestRuleGroupReconcile(t *testing.T) {
 				{
 					name: "delete",
 					request: httptest.NewRequest(http.MethodDelete,
-						fmt.Sprintf("%s%s/%s", metricsRuleGroupConfigEndpoint, defaultNamespace, "test-rule"),
+						fmt.Sprintf("%s%s/%s", MetricsRuleGroupConfigEndpoint, defaultNamespace, "test-rule"),
 						nil),
 					response: &http.Response{StatusCode: http.StatusAccepted},
 				},
@@ -171,7 +171,7 @@ func TestRuleGroupReconcile(t *testing.T) {
 				{
 					name: "delete",
 					request: httptest.NewRequest(http.MethodDelete,
-						fmt.Sprintf("%s%s/%s", logRuleGroupConfigEndpoint, defaultNamespace, "test-rule"),
+						fmt.Sprintf("%s%s/%s", LogRuleGroupConfigEndpoint, defaultNamespace, "test-rule"),
 						nil),
 					response: &http.Response{StatusCode: http.StatusAccepted},
 				},
