@@ -138,6 +138,24 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 
 			return convertClusterToAPI(createdCluster), nil
 		}
+		// import AKS cluster
+		if cloud.AKS != nil {
+			if preset != nil {
+				if credentials := preset.Spec.Azure; credentials != nil {
+					cloud.AKS.TenantID = credentials.TenantID
+					cloud.AKS.SubscriptionID = credentials.SubscriptionID
+					cloud.AKS.ClientID = credentials.ClientID
+					cloud.AKS.ClientSecret = credentials.ClientSecret
+				}
+			}
+
+			createdCluster, err := createAKSCluster(ctx, req.Body.Name, userInfoGetter, project, cloud, clusterProvider, privilegedClusterProvider)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+
+			return convertClusterToAPI(createdCluster), nil
+		}
 		return nil, errors.NewBadRequest("kubeconfig or provider structure missing")
 	}
 }
