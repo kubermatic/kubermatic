@@ -210,7 +210,7 @@ func deleteGKENodePool(ctx context.Context, cluster *kubermaticapiv1.ExternalClu
 	return err
 }
 
-func patchGKEMachineDeployment(ctx context.Context, old, new *apiv2.ExternalClusterMachineDeployment, cluster *kubermaticapiv1.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector, clusterProvider provider.ExternalClusterProvider) (*apiv2.ExternalClusterMachineDeployment, error) {
+func patchGKEMachineDeployment(ctx context.Context, old, new *apiv2.ExternalClusterMachineDeployment, cluster *kubermaticapiv1.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector) (*apiv2.ExternalClusterMachineDeployment, error) {
 	sa, err := secretKeySelector(credentialsReference, resources.GCPServiceAccount)
 	if err != nil {
 		return nil, err

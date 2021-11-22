@@ -641,7 +641,7 @@ func PatchMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proj
 			patchedMD := apiv2.ExternalClusterMachineDeployment{}
 
 			if cloud.EKS != nil {
-				md, err := getEKSNodePool(cluster, req.MachineDeploymentID, secretKeySelector, cloud, clusterProvider)
+				md, err := getEKSNodeGroup(cluster, req.MachineDeploymentID, secretKeySelector, clusterProvider)
 				if err != nil {
 					return nil, err
 				}
@@ -660,7 +660,7 @@ func PatchMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proj
 				if err := patchMD(&mdToPatch, &patchedMD, req.Patch); err != nil {
 					return nil, err
 				}
-				return patchGKEMachineDeployment(ctx, &mdToPatch, &patchedMD, cluster, secretKeySelector, cloud.GKE.CredentialsReference, clusterProvider)
+				return patchGKEMachineDeployment(ctx, &mdToPatch, &patchedMD, cluster, secretKeySelector, cloud.GKE.CredentialsReference)
 			}
 		}
 		return nil, fmt.Errorf("unsupported or missing cloud provider fields")
