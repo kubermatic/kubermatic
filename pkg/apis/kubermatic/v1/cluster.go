@@ -80,6 +80,10 @@ var ProtectedClusterLabels = sets.NewString(WorkerNameLabelKey, ProjectIDLabelKe
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:JSONPath=".spec.humanReadableName",name="HumanReadableName",type="string"
+// +kubebuilder:printcolumn:JSONPath=".status.userEmail",name="Owner",type="string"
+// +kubebuilder:printcolumn:JSONPath=".spec.version",name="Version",type="string"
+// +kubebuilder:printcolumn:JSONPath=".spec.pause",name="Paused",type="boolean"
 
 // Cluster is the object representing a cluster.
 type Cluster struct {

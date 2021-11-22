@@ -16,7 +16,17 @@ spec:
     singular: clustertemplateinstance
   scope: Cluster
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.projectID
+      name: ProjectID
+      type: string
+    - jsonPath: .spec.clusterTemplateID
+      name: ClusterTemplateID
+      type: string
+    - jsonPath: .spec.replicas
+      name: Replicas
+      type: integer
+    name: v1
     schema:
       openAPIV3Schema:
         description: ClusterTemplateInstance is the object representing a cluster
@@ -56,6 +66,7 @@ spec:
         type: object
     served: true
     storage: true
+    subresources: {}
 status:
   acceptedNames:
     kind: ""

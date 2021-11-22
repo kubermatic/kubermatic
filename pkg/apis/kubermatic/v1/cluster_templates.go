@@ -45,6 +45,8 @@ const (
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
+// +kubebuilder:printcolumn:JSONPath=".spec.humanReadableName",name="HumanReadableName",type="string"
+// +kubebuilder:printcolumn:JSONPath=".spec.version",name="Version",type="string"
 
 // ClusterTemplate is the object representing a cluster template.
 type ClusterTemplate struct {

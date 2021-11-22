@@ -16,7 +16,17 @@ spec:
     singular: userprojectbinding
   scope: Cluster
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.projectID
+      name: ProjectID
+      type: string
+    - jsonPath: .spec.group
+      name: Group
+      type: string
+    - jsonPath: .spec.userEmail
+      name: UserEmail
+      type: string
+    name: v1
     schema:
       openAPIV3Schema:
         description: UserProjectBinding specifies a binding between a user and a project
@@ -52,6 +62,7 @@ spec:
         type: object
     served: true
     storage: true
+    subresources: {}
 status:
   acceptedNames:
     kind: ""

@@ -36,6 +36,7 @@ const (
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
+// +kubebuilder:printcolumn:JSONPath=".spec.humanReadableName",name="HumanReadableName",type="string"
 
 // ExternalCluster is the object representing an external kubernetes cluster.
 type ExternalCluster struct {
@@ -58,7 +59,6 @@ type ExternalClusterList struct {
 
 // ExternalClusterSpec specifies the data for a new external kubernetes cluster.
 type ExternalClusterSpec struct {
-
 	// HumanReadableName is the cluster name provided by the user
 	HumanReadableName string `json:"humanReadableName"`
 
