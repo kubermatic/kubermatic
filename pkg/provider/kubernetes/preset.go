@@ -220,13 +220,13 @@ func filterOutPresets(userInfo *provider.UserInfo, list *kubermaticv1.PresetList
 				// otherwise, it has to match the whole email
 				if len(reqEmail) == 1 {
 					// domain provided
-					if len(userDomain) >= 2 && strings.EqualFold(userDomain[len(userDomain)-1], reqEmail[0]) {
+					if len(userDomain) >= 2 && (strings.EqualFold(userDomain[len(userDomain)-1], reqEmail[0]) || userInfo.IsAdmin) {
 						presetList = append(presetList, preset)
 						break
 					}
 				} else {
 					// email provided
-					if strings.EqualFold(userInfo.Email, emailItem) {
+					if strings.EqualFold(userInfo.Email, emailItem) || userInfo.IsAdmin {
 						presetList = append(presetList, preset)
 						break
 					}
