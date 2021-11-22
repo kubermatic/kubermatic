@@ -230,7 +230,7 @@ func ListMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proje
 				machineDeployments = np
 			}
 			if cloud.EKS != nil {
-				np, err := getEKSNodePools(cluster, secretKeySelector, cloud, clusterProvider)
+				np, err := getEKSNodeGroups(cluster, secretKeySelector, clusterProvider)
 				if err != nil {
 					return nil, common.KubernetesErrorToHTTPError(err)
 				}
@@ -316,7 +316,7 @@ func DeleteMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, pro
 				}
 			}
 			if cloud.EKS != nil {
-				err := deleteEKSNodePool(cluster, req.MachineDeploymentID, secretKeySelector, cloud.EKS.CredentialsReference, clusterProvider)
+				err := deleteEKSNodeGroup(cluster, req.MachineDeploymentID, secretKeySelector, cloud.EKS.CredentialsReference, clusterProvider)
 				if err != nil {
 					return nil, common.KubernetesErrorToHTTPError(err)
 				}
@@ -593,7 +593,7 @@ func GetMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, projec
 			secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
 
 			if cloud.EKS != nil {
-				np, err := getEKSNodePool(cluster, req.MachineDeploymentID, secretKeySelector, cloud, clusterProvider)
+				np, err := getEKSNodeGroup(cluster, req.MachineDeploymentID, secretKeySelector, clusterProvider)
 				if err != nil {
 					return nil, common.KubernetesErrorToHTTPError(err)
 				}
@@ -649,7 +649,7 @@ func PatchMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proj
 				if err := patchMD(&mdToPatch, &patchedMD, req.Patch); err != nil {
 					return nil, err
 				}
-				return patchEKSMD(&mdToPatch, &patchedMD, secretKeySelector, cloud)
+				return patchEKSMachineDeployment(&mdToPatch, &patchedMD, secretKeySelector, cluster)
 			}
 			if cloud.GKE != nil {
 				md, err := getGKENodePool(ctx, cluster, req.MachineDeploymentID, secretKeySelector, cloud.GKE.CredentialsReference, clusterProvider)
