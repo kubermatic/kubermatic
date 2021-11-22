@@ -161,8 +161,8 @@ func convertObjectMeta(om metav1.ObjectMeta) metav1.ObjectMeta {
 
 	// normalize/rename finalizers
 	for i, finalizer := range om.Finalizers {
-		finalizer = strings.Replace(finalizer, "operator.kubermatic.io/", "kubermatic.k8c.io/", -1)
-		finalizer = strings.Replace(finalizer, "kubermatic.io/", "kubermatic.k8c.io/", -1)
+		finalizer = strings.ReplaceAll(finalizer, "operator.kubermatic.io/", "kubermatic.k8c.io/")
+		finalizer = strings.ReplaceAll(finalizer, "kubermatic.io/", "kubermatic.k8c.io/")
 
 		om.Finalizers[i] = finalizer
 	}
