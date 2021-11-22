@@ -955,23 +955,29 @@ func cloneMLAAdminSettingResourcesInCluster(ctx context.Context, logger logrus.F
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.MLAAdminSettingSpec{
 				ClusterName: oldObject.Spec.ClusterName,
-				MonitoringRateLimits: &newv1.MonitoringRateLimitSettings{
-					IngestionRate:      oldObject.Spec.MonitoringRateLimits.IngestionRate,
-					IngestionBurstSize: oldObject.Spec.MonitoringRateLimits.IngestionBurstSize,
-					MaxSeriesPerMetric: oldObject.Spec.MonitoringRateLimits.MaxSeriesPerMetric,
-					MaxSeriesTotal:     oldObject.Spec.MonitoringRateLimits.MaxSeriesTotal,
-					QueryRate:          oldObject.Spec.MonitoringRateLimits.QueryRate,
-					QueryBurstSize:     oldObject.Spec.MonitoringRateLimits.QueryBurstSize,
-					MaxSamplesPerQuery: oldObject.Spec.MonitoringRateLimits.MaxSamplesPerQuery,
-					MaxSeriesPerQuery:  oldObject.Spec.MonitoringRateLimits.MaxSeriesPerQuery,
-				},
-				LoggingRateLimits: &newv1.LoggingRateLimitSettings{
-					IngestionRate:      oldObject.Spec.LoggingRateLimits.IngestionRate,
-					IngestionBurstSize: oldObject.Spec.LoggingRateLimits.IngestionBurstSize,
-					QueryRate:          oldObject.Spec.LoggingRateLimits.QueryRate,
-					QueryBurstSize:     oldObject.Spec.LoggingRateLimits.QueryBurstSize,
-				},
 			},
+		}
+
+		if oldObject.Spec.MonitoringRateLimits != nil {
+			newObject.Spec.MonitoringRateLimits = &newv1.MonitoringRateLimitSettings{
+				IngestionRate:      oldObject.Spec.MonitoringRateLimits.IngestionRate,
+				IngestionBurstSize: oldObject.Spec.MonitoringRateLimits.IngestionBurstSize,
+				MaxSeriesPerMetric: oldObject.Spec.MonitoringRateLimits.MaxSeriesPerMetric,
+				MaxSeriesTotal:     oldObject.Spec.MonitoringRateLimits.MaxSeriesTotal,
+				QueryRate:          oldObject.Spec.MonitoringRateLimits.QueryRate,
+				QueryBurstSize:     oldObject.Spec.MonitoringRateLimits.QueryBurstSize,
+				MaxSamplesPerQuery: oldObject.Spec.MonitoringRateLimits.MaxSamplesPerQuery,
+				MaxSeriesPerQuery:  oldObject.Spec.MonitoringRateLimits.MaxSeriesPerQuery,
+			}
+		}
+
+		if oldObject.Spec.LoggingRateLimits != nil {
+			newObject.Spec.LoggingRateLimits = &newv1.LoggingRateLimitSettings{
+				IngestionRate:      oldObject.Spec.LoggingRateLimits.IngestionRate,
+				IngestionBurstSize: oldObject.Spec.LoggingRateLimits.IngestionBurstSize,
+				QueryRate:          oldObject.Spec.LoggingRateLimits.QueryRate,
+				QueryBurstSize:     oldObject.Spec.LoggingRateLimits.QueryBurstSize,
+			}
 		}
 
 		if err := ensureObject(ctx, client, &newObject, false); err != nil {

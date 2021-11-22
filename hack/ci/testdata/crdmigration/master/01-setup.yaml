@@ -491,3 +491,20 @@ metadata:
   name: test
 spec:
   registryPrefix: quay.io
+
+---
+apiVersion: kubermatic.k8s.io/v1
+kind: AdmissionPlugin
+metadata:
+  name: test
+spec:
+  pluginName: test
+
+---
+apiVersion: kubermatic.k8s.io/v1
+kind: AdmissionPlugin
+metadata:
+  name: test-with-version
+spec:
+  pluginName: test
+  fromVersion: 1.22.3
