@@ -22,11 +22,11 @@ This proposal has the following goals. Also check [Motivation and Background](#m
 
 ## Motivation and Background
 
-etcd is a distributed key-value store that is used by the Kubernetes API as data storage. By default, data in etcd is not encrypted at rest. KKP only encrypts etcd data in transit right now. Kubernetes provides the ability to configure a pluggable encryption mechanism that allows encrypting arbitary resources (usually, `Secrets`) when stored in etcd. It supports a couple of "static" encryption schemes where a key is provided in the encryption configuration (secretbox, aesgcm, aescbc) and integration with an external KMS system via a plugin mechanism.
+etcd is a distributed key-value store that is used by the Kubernetes API as data storage. By default, data in etcd is not encrypted at rest. KKP only encrypts etcd data in transit right now. Kubernetes provides the ability to configure a pluggable encryption mechanism that allows encrypting arbitrary resources (usually, `Secrets`) when stored in etcd. It supports a couple of "static" encryption schemes where a key is provided in the encryption configuration (secretbox, aesgcm, aescbc) and integration with an external KMS system via a plugin mechanism.
 
 Encrypting data in etcd for sensitive information like secret data is recommended by security benchmarks and best practices. It further improves the security of our etcd backup feature, as an attacker that gets hold of a backup archive cannot extract `Secrets` content from it. 
 
-KKP users might want to encrypt their data at rest in user clusters to improve their security posture and/or fullfil regulatory requirements or prepare their environments for audits.
+KKP users might want to encrypt their data at rest in user clusters to improve their security posture and/or fulfill regulatory requirements or prepare their environments for audits.
 
 ## Implementation
 
@@ -125,7 +125,7 @@ Special consideration needs to go to the etcd backup and restore functionality t
 
 Documentation for the encryption at rest feature needs to highlight the necessity to have old encryption keys around and recommend users to back up their encryption keys out of band.
 
-Therefore, the `status.lastBackups` list of `EtcdBackupConfig` objects should include a `keyHint` field. This field is not used programatically, but should include information like the ARN for the AWS KMS key that was active at the time of the backup. For static keys, the secret reference can be provided, but might not be meaningful.
+Therefore, the `status.lastBackups` list of `EtcdBackupConfig` objects should include a `keyHint` field. This field is not used programmatically, but should include information like the ARN for the AWS KMS key that was active at the time of the backup. For static keys, the secret reference can be provided, but might not be meaningful.
 
 The UI for restoring an etcd backup should offer the option (if encryption at rest is enabled) to set up the cluster with an (older) encryption key before applying the restore.
 
