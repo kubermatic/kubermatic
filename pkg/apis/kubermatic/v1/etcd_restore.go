@@ -46,6 +46,7 @@ type EtcdRestorePhase string
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:JSONPath=".status.phase",name="Phase",type="string"
 
 // EtcdRestore specifies a add-on
 type EtcdRestore struct {

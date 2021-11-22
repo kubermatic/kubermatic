@@ -16,7 +16,20 @@ spec:
     singular: cluster
   scope: Cluster
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.humanReadableName
+      name: HumanReadableName
+      type: string
+    - jsonPath: .status.userEmail
+      name: Owner
+      type: string
+    - jsonPath: .spec.version
+      name: Version
+      type: string
+    - jsonPath: .spec.pause
+      name: Paused
+      type: boolean
+    name: v1
     schema:
       openAPIV3Schema:
         description: Cluster is the object representing a cluster.

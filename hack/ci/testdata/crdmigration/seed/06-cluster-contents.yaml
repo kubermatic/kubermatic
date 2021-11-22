@@ -186,3 +186,88 @@ status:
       deleteJobName: kkpcluster-backup-default-backups-delete-dgl6ttpkdj
       jobName: kkpcluster-backup-default-backups-create-r7pd5j5g6b
       scheduledTime: "2021-10-18T18:32:25Z"
+
+---
+apiVersion: kubermatic.k8s.io/v1
+kind: EtcdRestore
+metadata:
+  name: my-restore
+  namespace: cluster-kkpcluster
+spec:
+  name: test1
+  backupName: test2
+  backupDownloadCredentialsSecret: i-do-not-exist
+  cluster:
+    apiVersion: kubermatic.k8s.io/v1
+    kind: Cluster
+    name: kkpcluster
+    uid: __CLUSTER_UID__
+status:
+  phase: Started
+
+---
+apiVersion: kubermatic.k8s.io/v1
+kind: EtcdRestore
+metadata:
+  name: my-other-restore
+  namespace: cluster-kkpcluster
+spec:
+  name: test1
+  backupName: test2
+  backupDownloadCredentialsSecret: i-do-not-exist
+  cluster:
+    apiVersion: kubermatic.k8s.io/v1
+    kind: Cluster
+    name: kkpcluster
+    uid: __CLUSTER_UID__
+status:
+  phase: Started
+  restoreTime: "2021-10-18T07:52:27Z"
+
+---
+apiVersion: kubermatic.k8s.io/v1
+kind: RuleGroup
+metadata:
+  name: my-rule-group
+  namespace: cluster-kkpcluster
+spec:
+  ruleGroupType: Logs
+  cluster:
+    apiVersion: kubermatic.k8s.io/v1
+    kind: Cluster
+    name: kkpcluster
+    uid: __CLUSTER_UID__
+  data: bmFtZTogbXktZ3JvdXAKcnVsZXM6IFtd
+
+---
+apiVersion: kubermatic.k8s.io/v1
+kind: MLAAdminSetting
+metadata:
+  name: settings-empty
+  namespace: cluster-kkpcluster
+spec:
+  clusterName: kkpcluster
+
+---
+apiVersion: kubermatic.k8s.io/v1
+kind: MLAAdminSetting
+metadata:
+  name: settings
+  namespace: cluster-kkpcluster
+spec:
+  clusterName: kkpcluster
+  monitoringRateLimits:
+    ingestionRate: 1
+    ingestionBurstSize: 2
+    maxSeriesPerMetric: 3
+    maxSeriesTotal: 4
+    queryRate: 5
+    queryBurstSize: 6
+    maxSamplesPerQuery: 7
+    maxSeriesPerQuery: 8
+
+  loggingRateLimits:
+    ingestionRate: 1
+    ingestionBurstSize: 2
+    queryRate: 3
+    queryBurstSize: 4

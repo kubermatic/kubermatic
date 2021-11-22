@@ -16,7 +16,14 @@ spec:
     singular: clustertemplate
   scope: Cluster
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.humanReadableName
+      name: HumanReadableName
+      type: string
+    - jsonPath: .spec.version
+      name: Version
+      type: string
+    name: v1
     schema:
       openAPIV3Schema:
         description: ClusterTemplate is the object representing a cluster template.
@@ -1506,6 +1513,7 @@ spec:
         type: object
     served: true
     storage: true
+    subresources: {}
 status:
   acceptedNames:
     kind: ""
