@@ -65,7 +65,7 @@ func GetUpgradesEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider
 			if err != nil {
 				return nil, err
 			}
-			return providercommon.ListGKEUpgrades(ctx, sa, cloud.GKE.Zone)
+			return providercommon.ListGKEUpgrades(ctx, sa, cloud.GKE.Zone, cloud.GKE.Name)
 		}
 
 		return nil, fmt.Errorf("can not find any upgrades for the given cloud provider")
