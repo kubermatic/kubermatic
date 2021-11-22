@@ -19,6 +19,7 @@ package crdmigration
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 
@@ -157,6 +158,14 @@ func convertObjectMeta(om metav1.ObjectMeta) metav1.ObjectMeta {
 	om.Generation = 0
 	om.ResourceVersion = ""
 	om.CreationTimestamp = metav1.Time{}
+
+	// normalize/rename finalizers
+	for i, finalizer := range om.Finalizers {
+		finalizer = strings.Replace(finalizer, "operator.kubermatic.io/", "kubermatic.k8c.io/", -1)
+		finalizer = strings.Replace(finalizer, "kubermatic.io/", "kubermatic.k8c.io/", -1)
+
+		om.Finalizers[i] = finalizer
+	}
 
 	return om
 }
@@ -596,7 +605,7 @@ func cloneAdmissionPluginResourcesInCluster(ctx context.Context, logger logrus.F
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.AdmissionPluginSpec{
 				PluginName:  oldObject.Spec.PluginName,
-				FromVersion: oldObject.Spec.DeepCopy().FromVersion,
+				FromVersion: oldObject.Spec.FromVersion,
 			},
 		}
 
