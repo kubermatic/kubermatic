@@ -40,7 +40,7 @@ spec:
     dnsDomain: ""
     pods:
       cidrBlocks: []
-    proxyMode: ""
+    proxyMode: "ipvs"
     services:
       cidrBlocks: []
   componentsOverride:

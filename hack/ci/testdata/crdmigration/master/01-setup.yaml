@@ -143,7 +143,7 @@ spec:
     clientId: ATOTALLY-FAKE-UUID-HERE-XXXXXXXXXXXX
     clientSecret: oooooooooooooooooooooooooooooooo
     enabled: true
-    loadBalancerSKU: ""
+    loadBalancerSKU: "standard"
     subscriptionId: ATOTALLY-FAKE-UUID-HERE-XXXXXXXXXXXX
     tenantId: ATOTALLY-FAKE-UUID-HERE-XXXXXXXXXXXX
   digitalocean:
