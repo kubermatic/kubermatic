@@ -233,7 +233,7 @@ func patchGKEMachineDeployment(ctx context.Context, old, new *apiv2.ExternalClus
 		if err != nil {
 			return nil, err
 		}
-		return getGKEMachineDeployment(ctx, svc, project, cluster, old.Name, clusterProvider)
+		return new, nil
 	}
 
 	updateRequest := &container.UpdateNodePoolRequest{
@@ -245,7 +245,7 @@ func patchGKEMachineDeployment(ctx context.Context, old, new *apiv2.ExternalClus
 		return nil, err
 	}
 
-	return getGKEMachineDeployment(ctx, svc, project, cluster, old.Name, clusterProvider)
+	return new, nil
 }
 
 func getGKEMachineDeployment(ctx context.Context, svc *container.Service, projectID string, cluster *kubermaticapiv1.ExternalCluster, nodeGroupName string, clusterProvider provider.ExternalClusterProvider) (*apiv2.ExternalClusterMachineDeployment, error) {
