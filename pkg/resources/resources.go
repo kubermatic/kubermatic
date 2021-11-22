@@ -596,6 +596,10 @@ const (
 	ExternalEKSClusterAccessKeyID     = "accessKeyId"
 	ExternalEKSClusterSecretAccessKey = "secretAccessKey"
 	ExternalGKEClusterSeriveAccount   = "serviceAccount"
+	ExternalAKSClusterTenantID        = "tenantID"
+	ExternalAKSClusterSubscriptionID  = "subscriptionID"
+	ExternalAKSClusterClientID        = "clientID"
+	ExternalAKSClusterClientSecret    = "clientSecret"
 )
 
 const (

@@ -357,6 +357,7 @@ type ExternalCluster struct {
 type ExternalClusterCloudSpec struct {
 	GKE *GKECloudSpec `json:"gke,omitempty"`
 	EKS *EKSCloudSpec `json:"eks,omitempty"`
+	AKS *AKSCloudSpec `json:"aks,omitempty"`
 }
 
 type GKECloudSpec struct {
@@ -370,6 +371,14 @@ type EKSCloudSpec struct {
 	AccessKeyID     string `json:"accessKeyID"`
 	SecretAccessKey string `json:"secretAccessKey"`
 	Region          string `json:"region"`
+}
+
+type AKSCloudSpec struct {
+	Name           string `json:"name"`
+	TenantID       string `json:"tenantID"`
+	SubscriptionID string `json:"subscriptionID"`
+	ClientID       string `json:"clientID"`
+	ClientSecret   string `json:"clientSecret"`
 }
 
 // ExternalClusterNode represents an object holding external cluster node
