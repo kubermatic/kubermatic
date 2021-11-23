@@ -148,7 +148,7 @@ func (s *PresetSpec) SetPresetStatus(enabled bool) {
 	s.Enabled = &enabled
 }
 
-func (s *PresetSpec) SetPresetProviderStatus(providerType ProviderType, enabled bool) {
+func (s *PresetSpec) SetProviderPresetStatus(providerType ProviderType, enabled bool) {
 	provider := s.getProviderValue(providerType)
 
 	ignoreCaseCompare := func(name string) bool {
@@ -175,15 +175,15 @@ func (s PresetSpec) GetProviderList() []ProviderType {
 	return existingProviders
 }
 
-func (s PresetSpec) GetPresetProvider(providerType ProviderType) *PresetProvider {
+func (s PresetSpec) GetProviderPreset(providerType ProviderType) *ProviderPreset {
 	hasProvider, providerField := s.HasProvider(providerType)
 	if !hasProvider {
 		return nil
 	}
 
-	presetSpecBaseFieldName := "PresetProvider"
+	presetSpecBaseFieldName := "ProviderPreset"
 	presetBaseField := reflect.Indirect(providerField).FieldByName(presetSpecBaseFieldName)
-	presetBase := presetBaseField.Interface().(PresetProvider)
+	presetBase := presetBaseField.Interface().(ProviderPreset)
 	return &presetBase
 }
 
@@ -215,7 +215,7 @@ func (s PresetSpec) IsEnabled() bool {
 }
 
 func (s PresetSpec) IsProviderEnabled(provider ProviderType) bool {
-	presetProvider := s.GetPresetProvider(provider)
+	presetProvider := s.GetProviderPreset(provider)
 	return presetProvider != nil && presetProvider.IsEnabled()
 }
 
@@ -234,12 +234,12 @@ type Validateable interface {
 	IsValid() bool
 }
 
-type PresetProvider struct {
+type ProviderPreset struct {
 	Enabled    *bool  `json:"enabled,omitempty"`
 	Datacenter string `json:"datacenter,omitempty"`
 }
 
-func (s PresetProvider) IsEnabled() bool {
+func (s ProviderPreset) IsEnabled() bool {
 	if s.Enabled == nil {
 		return true
 	}
@@ -248,7 +248,7 @@ func (s PresetProvider) IsEnabled() bool {
 }
 
 type Digitalocean struct {
-	PresetProvider `json:",inline"`
+	ProviderPreset `json:",inline"`
 
 	// Token is used to authenticate with the DigitalOcean API.
 	Token string `json:"token"`
@@ -259,7 +259,7 @@ func (s Digitalocean) IsValid() bool {
 }
 
 type Hetzner struct {
-	PresetProvider `json:",inline"`
+	ProviderPreset `json:",inline"`
 
 	// Token is used to authenticate with the Hetzner API.
 	Token string `json:"token"`
@@ -276,7 +276,7 @@ func (s Hetzner) IsValid() bool {
 }
 
 type Azure struct {
-	PresetProvider `json:",inline"`
+	ProviderPreset `json:",inline"`
 
 	TenantID       string `json:"tenantId"`
 	SubscriptionID string `json:"subscriptionId"`
@@ -301,7 +301,7 @@ func (s Azure) IsValid() bool {
 }
 
 type VSphere struct {
-	PresetProvider `json:",inline"`
+	ProviderPreset `json:",inline"`
 
 	Username string `json:"username"`
 	Password string `json:"password"`
@@ -313,12 +313,11 @@ type VSphere struct {
 }
 
 func (s VSphere) IsValid() bool {
-	return len(s.Username) > 0 &&
-		len(s.Password) > 0
+	return len(s.Username) > 0 && len(s.Password) > 0
 }
 
 type AWS struct {
-	PresetProvider `json:",inline"`
+	ProviderPreset `json:",inline"`
 
 	AccessKeyID     string `json:"accessKeyId"`
 	SecretAccessKey string `json:"secretAccessKey"`
@@ -334,12 +333,11 @@ type AWS struct {
 }
 
 func (s AWS) IsValid() bool {
-	return len(s.AccessKeyID) > 0 &&
-		len(s.SecretAccessKey) > 0
+	return len(s.AccessKeyID) > 0 && len(s.SecretAccessKey) > 0
 }
 
 type Openstack struct {
-	PresetProvider `json:",inline"`
+	ProviderPreset `json:",inline"`
 
 	UseToken bool `json:"useToken,omitempty"`
 
@@ -383,7 +381,6 @@ func (s Openstack) GetProjectId() string {
 }
 
 func (s Openstack) IsValid() bool {
-
 	if s.UseToken {
 		return true
 	}
@@ -400,7 +397,7 @@ func (s Openstack) IsValid() bool {
 }
 
 type Packet struct {
-	PresetProvider `json:",inline"`
+	ProviderPreset `json:",inline"`
 
 	APIKey    string `json:"apiKey"`
 	ProjectID string `json:"projectId"`
@@ -409,12 +406,11 @@ type Packet struct {
 }
 
 func (s Packet) IsValid() bool {
-	return len(s.APIKey) > 0 &&
-		len(s.ProjectID) > 0
+	return len(s.APIKey) > 0 && len(s.ProjectID) > 0
 }
 
 type GCP struct {
-	PresetProvider `json:",inline"`
+	ProviderPreset `json:",inline"`
 
 	ServiceAccount string `json:"serviceAccount"`
 
@@ -427,7 +423,7 @@ func (s GCP) IsValid() bool {
 }
 
 type Fake struct {
-	PresetProvider `json:",inline"`
+	ProviderPreset `json:",inline"`
 
 	Token string `json:"token"`
 }
@@ -437,7 +433,7 @@ func (s Fake) IsValid() bool {
 }
 
 type Kubevirt struct {
-	PresetProvider `json:",inline"`
+	ProviderPreset `json:",inline"`
 
 	Kubeconfig string `json:"kubeconfig"`
 }
@@ -447,7 +443,7 @@ func (s Kubevirt) IsValid() bool {
 }
 
 type Alibaba struct {
-	PresetProvider `json:",inline"`
+	ProviderPreset `json:",inline"`
 
 	AccessKeyID     string `json:"accessKeyId"`
 	AccessKeySecret string `json:"accessKeySecret"`
@@ -459,7 +455,7 @@ func (s Alibaba) IsValid() bool {
 }
 
 type Anexia struct {
-	PresetProvider `json:",inline"`
+	ProviderPreset `json:",inline"`
 
 	// Token is used to authenticate with the Anexia API.
 	Token string `json:"token"`

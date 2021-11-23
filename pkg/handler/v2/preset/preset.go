@@ -158,7 +158,7 @@ func UpdatePresetStatus(presetProvider provider.PresetProvider, userInfoGetter p
 			return nil, errors.New(http.StatusConflict, fmt.Sprintf("trying to update preset with missing provider configuration for: %s", req.Provider))
 		}
 
-		preset.Spec.SetPresetProviderStatus(crdapiv1.ProviderType(req.Provider), req.Body.Enabled)
+		preset.Spec.SetProviderPresetStatus(crdapiv1.ProviderType(req.Provider), req.Body.Enabled)
 		_, err = presetProvider.UpdatePreset(preset)
 		return nil, err
 	}
@@ -231,7 +231,7 @@ func ListProviderPresets(presetProvider provider.PresetProvider, userInfoGetter 
 
 		for _, preset := range presets {
 			providerType := crdapiv1.ProviderType(req.ProviderName)
-			presetProvider := preset.Spec.GetPresetProvider(providerType)
+			presetProvider := preset.Spec.GetProviderPreset(providerType)
 			enabled := preset.Spec.IsEnabled() && presetProvider != nil && presetProvider.IsEnabled()
 
 			// Preset does not contain requested provider configuration
@@ -516,7 +516,7 @@ func newAPIPreset(preset *crdapiv1.Preset, enabled bool) v2.Preset {
 		if hasProvider, _ := preset.Spec.HasProvider(providerType); hasProvider {
 			providers = append(providers, v2.PresetProvider{
 				Name:    providerType,
-				Enabled: preset.Spec.GetPresetProvider(providerType).IsEnabled(),
+				Enabled: preset.Spec.GetProviderPreset(providerType).IsEnabled(),
 			})
 		}
 	}
