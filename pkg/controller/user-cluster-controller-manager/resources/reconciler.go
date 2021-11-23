@@ -66,10 +66,6 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to get caCert: %v", err)
 	}
-	openVPNCACert, err := r.openVPNCA(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get openVPN CA cert: %v", err)
-	}
 	userSSHKeys, err := r.userSSHKeys(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get userSSHKeys: %v", err)
@@ -88,11 +84,17 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 
 	data := reconcileData{
 		caCert:         caCert,
-		openVPNCACert:  openVPNCACert,
 		userSSHKeys:    userSSHKeys,
 		cloudConfig:    cloudConfig,
 		csiCloudConfig: CSICloudConfig,
 		ccmMigration:   r.ccmMigration || r.ccmMigrationCompleted,
+	}
+
+	if !r.isKonnectivityEnabled {
+		data.openVPNCACert, err = r.openVPNCA(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to get openVPN CA cert: %v", err)
+		}
 	}
 
 	if r.userClusterMLA.Monitoring || r.userClusterMLA.Logging {

@@ -363,7 +363,6 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 
 		// Kubeconfigs
 		resources.GetInternalKubeconfigCreator(resources.SchedulerKubeconfigSecretName, resources.SchedulerCertUsername, nil, data),
-		resources.GetInternalKubeconfigCreator(resources.KubeletDnatControllerKubeconfigSecretName, resources.KubeletDnatControllerCertUsername, nil, data),
 		resources.GetInternalKubeconfigCreator(resources.MachineControllerKubeconfigSecretName, resources.MachineControllerCertUsername, nil, data),
 		resources.GetInternalKubeconfigCreator(resources.ControllerManagerKubeconfigSecretName, resources.ControllerManagerCertUsername, nil, data),
 		resources.GetInternalKubeconfigCreator(resources.KubeStateMetricsKubeconfigSecretName, resources.KubeStateMetricsCertUsername, nil, data),
@@ -387,6 +386,7 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 			openvpn.CACreator(),
 			openvpn.TLSServingCertificateCreator(data),
 			openvpn.InternalClientCertificateCreator(data),
+			resources.GetInternalKubeconfigCreator(resources.KubeletDnatControllerKubeconfigSecretName, resources.KubeletDnatControllerCertUsername, nil, data),
 		)
 	}
 

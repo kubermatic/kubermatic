@@ -83,7 +83,7 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 				return nil, err
 			}
 
-			dep.Spec.Template.Spec.Volumes = append(getVolumes(),
+			dep.Spec.Template.Spec.Volumes = append(getVolumes(data.IsKonnectivityEnabled()),
 				corev1.Volume{
 					Name: resources.CloudConfigConfigMapName,
 					VolumeSource: corev1.VolumeSource{

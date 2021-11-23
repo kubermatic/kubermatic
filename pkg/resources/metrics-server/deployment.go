@@ -95,7 +95,7 @@ func DeploymentCreator(data metricsServerData) reconciling.NamedDeploymentCreato
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
-			volumes := getVolumes()
+			volumes := getVolumes(data.IsKonnectivityEnabled())
 			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create pod labels: %v", err)
@@ -177,29 +177,13 @@ func DeploymentCreator(data metricsServerData) reconciling.NamedDeploymentCreato
 	}
 }
 
-func getVolumes() []corev1.Volume {
-	return []corev1.Volume{
+func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
+	vs := []corev1.Volume{
 		{
 			Name: resources.MetricsServerKubeconfigSecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: resources.MetricsServerKubeconfigSecretName,
-				},
-			},
-		},
-		{
-			Name: resources.OpenVPNClientCertificatesSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.OpenVPNClientCertificatesSecretName,
-				},
-			},
-		},
-		{
-			Name: resources.KubeletDnatControllerKubeconfigSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.KubeletDnatControllerKubeconfigSecretName,
 				},
 			},
 		},
@@ -212,4 +196,25 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 	}
+	if !isKonnectivityEnabled {
+		vs = append(vs, []corev1.Volume{
+			{
+				Name: resources.OpenVPNClientCertificatesSecretName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: resources.OpenVPNClientCertificatesSecretName,
+					},
+				},
+			},
+			{
+				Name: resources.KubeletDnatControllerKubeconfigSecretName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: resources.KubeletDnatControllerKubeconfigSecretName,
+					},
+				},
+			},
+		}...)
+	}
+	return vs
 }

@@ -94,7 +94,7 @@ func vsphereDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers, *openvpnSidecar)
 			}
 
-			dep.Spec.Template.Spec.Volumes = append(getVolumes(),
+			dep.Spec.Template.Spec.Volumes = append(getVolumes(data.IsKonnectivityEnabled()),
 				corev1.Volume{
 					Name: resources.CloudConfigConfigMapName,
 					VolumeSource: corev1.VolumeSource{
