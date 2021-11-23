@@ -23,6 +23,7 @@ import (
 	"regexp"
 	"strings"
 
+	semverlib "github.com/Masterminds/semver/v3"
 	"google.golang.org/api/compute/v1"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -377,12 +378,24 @@ func ListGKEClusters(ctx context.Context, sa string) (apiv2.GKEClusterList, erro
 	return clusters, nil
 }
 
-func ListGKEUpgrades(ctx context.Context, sa, zone string) ([]*apiv1.MasterVersion, error) {
+func ListGKEUpgrades(ctx context.Context, sa, zone, name string) ([]*apiv1.MasterVersion, error) {
 	upgrades := make([]*apiv1.MasterVersion, 0)
 	svc, project, err := gcp.ConnectToContainerService(sa)
 	if err != nil {
 		return nil, err
 	}
+
+	clusterReq := svc.Projects.Zones.Clusters.Get(project, zone, name)
+	cluster, err := clusterReq.Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	currentClusterVer, err := semverlib.NewVersion(cluster.CurrentMasterVersion)
+	if err != nil {
+		return nil, err
+	}
+
 	req := svc.Projects.Zones.GetServerconfig(project, zone)
 	resp, err := req.Context(ctx).Do()
 	if err != nil {
@@ -390,8 +403,23 @@ func ListGKEUpgrades(ctx context.Context, sa, zone string) ([]*apiv1.MasterVersi
 	}
 	upgradesMap := map[string]bool{}
 	for _, channel := range resp.Channels {
-		for _, v := range channel.ValidVersions {
-			upgradesMap[v] = v == channel.DefaultVersion
+
+		defaultChannelVersion, err := semverlib.NewVersion(channel.DefaultVersion)
+		if err != nil {
+			return nil, err
+		}
+		// select correct channel
+		if isValidVersion(currentClusterVer, defaultChannelVersion) {
+			for _, v := range channel.ValidVersions {
+				validVersion, err := semverlib.NewVersion(v)
+				if err != nil {
+					return nil, err
+				}
+				// select the correct version from the channel
+				if isValidVersion(currentClusterVer, validVersion) {
+					upgradesMap[v] = v == channel.DefaultVersion
+				}
+			}
 		}
 	}
 	for version, isDefault := range upgradesMap {
@@ -406,4 +434,11 @@ func ListGKEUpgrades(ctx context.Context, sa, zone string) ([]*apiv1.MasterVersi
 	}
 
 	return upgrades, nil
+}
+
+func isValidVersion(currentVersion, newVersion *semverlib.Version) bool {
+	if currentVersion.Major() == newVersion.Major() && (currentVersion.Minor()+1) == newVersion.Minor() {
+		return true
+	}
+	return false
 }
