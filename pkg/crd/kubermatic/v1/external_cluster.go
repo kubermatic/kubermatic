@@ -69,6 +69,7 @@ type ExternalClusterSpec struct {
 type ExternalClusterCloudSpec struct {
 	GKE *ExternalClusterGKECloudSpec `json:"gke,omitempty"`
 	EKS *ExternalClusterEKSCloudSpec `json:"eks,omitempty"`
+	AKS *ExternalClusterAKSCloudSpec `json:"aks,omitempty"`
 }
 
 type ExternalClusterGKECloudSpec struct {
@@ -79,8 +80,19 @@ type ExternalClusterGKECloudSpec struct {
 
 type ExternalClusterEKSCloudSpec struct {
 	Name                 string                                  `json:"name"`
+	AccessKeyID          string                                  `json:"accessKeyID"`
+	SecretAccessKey      string                                  `json:"secretAccessKey"`
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
 	Region               string                                  `json:"region"`
+}
+
+type ExternalClusterAKSCloudSpec struct {
+	Name                 string                                  `json:"name"`
+	TenantID             string                                  `json:"tenantID"`
+	SubscriptionID       string                                  `json:"subscriptionID"`
+	ClientID             string                                  `json:"clientID"`
+	ClientSecret         string                                  `json:"clientSecret"`
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
 }
 
 func (i *ExternalCluster) GetKubeconfigSecretName() string {

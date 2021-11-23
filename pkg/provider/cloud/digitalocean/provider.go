@@ -39,6 +39,8 @@ func NewCloudProvider(secretKeyGetter provider.SecretKeySelectorValueFunc) provi
 	}
 }
 
+var _ provider.CloudProvider = &digitalocean{}
+
 func (do *digitalocean) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
 	return nil
 }

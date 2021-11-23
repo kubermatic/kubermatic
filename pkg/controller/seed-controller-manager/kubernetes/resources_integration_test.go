@@ -25,6 +25,7 @@ import (
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
@@ -73,11 +74,6 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to start testenv: %v", err)
 	}
-	defer func() {
-		if err := env.Stop(); err != nil {
-			t.Fatalf("failed to stop testenv: %v", err)
-		}
-	}()
 
 	mgr, err := manager.New(cfg, manager.Options{})
 	if err != nil {
@@ -96,10 +92,17 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 
 	ctx := context.Background()
 
+	// the manager needs to be stopped because the testenv can be torn down;
+	// create a cancellable context to achieve this, plus a channel that signals
+	// whether the goroutine is still running (so we can wait for it to stop)
+	testCtx, cancel := context.WithCancel(ctx)
+	running := make(chan struct{}, 1)
+
 	go func() {
-		if err := mgr.Start(ctx); err != nil {
+		if err := mgr.Start(testCtx); err != nil {
 			t.Errorf("failed to start manager: %v", err)
 		}
+		close(running)
 	}()
 
 	caBundle := certificates.NewFakeCABundle()
@@ -121,7 +124,7 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 				DatacenterName: "my-dc",
 				Fake:           &kubermaticv1.FakeCloudSpec{},
 			},
-			Version: *semver.NewSemverOrDie("1.22.2"),
+			Version: *semver.NewSemverOrDie("1.22.4"),
 		},
 		Status: kubermaticv1.ClusterStatus{
 			NamespaceName: "cluster-test-cluster",
@@ -206,6 +209,9 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 				},
 			}, nil
 		},
+		configGetter: func(_ context.Context) (*operatorv1alpha1.KubermaticConfiguration, error) {
+			return &operatorv1alpha1.KubermaticConfiguration{}, nil
+		},
 		caBundle:                caBundle,
 		userClusterConnProvider: new(testUserClusterConnectionProvider),
 	}
@@ -225,5 +231,16 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 	}
 	if len(deploymentList.Items) == 0 {
 		t.Error("expected to find at least one deployment, got zero")
+	}
+
+	// stop the manager
+	cancel()
+
+	// wait for it to be stopped
+	<-running
+
+	// shutdown envtest
+	if err := env.Stop(); err != nil {
+		t.Errorf("failed to stop testenv: %v", err)
 	}
 }

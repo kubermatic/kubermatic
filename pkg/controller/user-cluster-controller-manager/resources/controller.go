@@ -334,12 +334,12 @@ func (r *reconciler) cloudConfig(ctx context.Context, cloudConfigConfigmapName s
 	return []byte(value), nil
 }
 
-func (r *reconciler) mlaResourceRequirements(ctx context.Context) (monitoring, logging *corev1.ResourceRequirements, err error) {
+func (r *reconciler) mlaReconcileData(ctx context.Context) (monitoring, logging *corev1.ResourceRequirements, monitoringReplicas *int32, err error) {
 	cluster := &kubermaticv1.Cluster{}
 	if err = r.seedClient.Get(ctx, types.NamespacedName{
 		Name: r.clusterName,
 	}, cluster); err != nil {
-		return nil, nil, fmt.Errorf("failed to get cluster: %w", err)
+		return nil, nil, nil, fmt.Errorf("failed to get cluster: %w", err)
 	}
-	return cluster.Spec.MLA.MonitoringResources, cluster.Spec.MLA.LoggingResources, nil
+	return cluster.Spec.MLA.MonitoringResources, cluster.Spec.MLA.LoggingResources, cluster.Spec.MLA.MonitoringReplicas, nil
 }

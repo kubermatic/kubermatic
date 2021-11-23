@@ -78,6 +78,8 @@ type ClientService interface {
 
 	DeleteExternalCluster(params *DeleteExternalClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteExternalClusterOK, error)
 
+	DeleteExternalClusterMachineDeployment(params *DeleteExternalClusterMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteExternalClusterMachineDeploymentOK, error)
+
 	DeleteGatekeeperConfig(params *DeleteGatekeeperConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteGatekeeperConfigOK, error)
 
 	DeleteMachineDeployment(params *DeleteMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteMachineDeploymentOK, error)
@@ -136,6 +138,8 @@ type ClientService interface {
 
 	GetExternalClusterKubeconfig(params *GetExternalClusterKubeconfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetExternalClusterKubeconfigOK, error)
 
+	GetExternalClusterMachineDeployment(params *GetExternalClusterMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetExternalClusterMachineDeploymentOK, error)
+
 	GetExternalClusterMetrics(params *GetExternalClusterMetricsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetExternalClusterMetricsOK, error)
 
 	GetExternalClusterNode(params *GetExternalClusterNodeParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetExternalClusterNodeOK, error)
@@ -179,6 +183,12 @@ type ClientService interface {
 	ListConstraints(params *ListConstraintsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListConstraintsOK, error)
 
 	ListExternalClusterEvents(params *ListExternalClusterEventsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClusterEventsOK, error)
+
+	ListExternalClusterMachineDeploymentMetrics(params *ListExternalClusterMachineDeploymentMetricsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClusterMachineDeploymentMetricsOK, error)
+
+	ListExternalClusterMachineDeploymentNodes(params *ListExternalClusterMachineDeploymentNodesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClusterMachineDeploymentNodesOK, error)
+
+	ListExternalClusterMachineDeployments(params *ListExternalClusterMachineDeploymentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClusterMachineDeploymentsOK, error)
 
 	ListExternalClusterNodes(params *ListExternalClusterNodesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClusterNodesOK, error)
 
@@ -233,6 +243,8 @@ type ClientService interface {
 	PatchConstraint(params *PatchConstraintParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchConstraintOK, error)
 
 	PatchExternalCluster(params *PatchExternalClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchExternalClusterOK, error)
+
+	PatchExternalClusterMachineDeployments(params *PatchExternalClusterMachineDeploymentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchExternalClusterMachineDeploymentsOK, error)
 
 	PatchGatekeeperConfig(params *PatchGatekeeperConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchGatekeeperConfigOK, error)
 
@@ -1224,6 +1236,44 @@ func (a *Client) DeleteExternalCluster(params *DeleteExternalClusterParams, auth
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*DeleteExternalClusterDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  DeleteExternalClusterMachineDeployment deletes an external cluster machine deployment
+*/
+func (a *Client) DeleteExternalClusterMachineDeployment(params *DeleteExternalClusterMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteExternalClusterMachineDeploymentOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewDeleteExternalClusterMachineDeploymentParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "deleteExternalClusterMachineDeployment",
+		Method:             "DELETE",
+		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteExternalClusterMachineDeploymentReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*DeleteExternalClusterMachineDeploymentOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DeleteExternalClusterMachineDeploymentDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
@@ -2332,6 +2382,44 @@ func (a *Client) GetExternalClusterKubeconfig(params *GetExternalClusterKubeconf
 }
 
 /*
+  GetExternalClusterMachineDeployment gets an external cluster machine deployments
+*/
+func (a *Client) GetExternalClusterMachineDeployment(params *GetExternalClusterMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetExternalClusterMachineDeploymentOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetExternalClusterMachineDeploymentParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "getExternalClusterMachineDeployment",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetExternalClusterMachineDeploymentReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetExternalClusterMachineDeploymentOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetExternalClusterMachineDeploymentDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   GetExternalClusterMetrics Gets cluster metrics
 */
 func (a *Client) GetExternalClusterMetrics(params *GetExternalClusterMetricsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetExternalClusterMetricsOK, error) {
@@ -3164,6 +3252,120 @@ func (a *Client) ListExternalClusterEvents(params *ListExternalClusterEventsPara
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListExternalClusterEventsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListExternalClusterMachineDeploymentMetrics lists an external cluster machine deployment metrics
+*/
+func (a *Client) ListExternalClusterMachineDeploymentMetrics(params *ListExternalClusterMachineDeploymentMetricsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClusterMachineDeploymentMetricsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListExternalClusterMachineDeploymentMetricsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listExternalClusterMachineDeploymentMetrics",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/metrics",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListExternalClusterMachineDeploymentMetricsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListExternalClusterMachineDeploymentMetricsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListExternalClusterMachineDeploymentMetricsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListExternalClusterMachineDeploymentNodes gets an external cluster machine deployment nodes
+*/
+func (a *Client) ListExternalClusterMachineDeploymentNodes(params *ListExternalClusterMachineDeploymentNodesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClusterMachineDeploymentNodesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListExternalClusterMachineDeploymentNodesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listExternalClusterMachineDeploymentNodes",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListExternalClusterMachineDeploymentNodesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListExternalClusterMachineDeploymentNodesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListExternalClusterMachineDeploymentNodesDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListExternalClusterMachineDeployments gets an external cluster machine deployments
+*/
+func (a *Client) ListExternalClusterMachineDeployments(params *ListExternalClusterMachineDeploymentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClusterMachineDeploymentsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListExternalClusterMachineDeploymentsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listExternalClusterMachineDeployments",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListExternalClusterMachineDeploymentsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListExternalClusterMachineDeploymentsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListExternalClusterMachineDeploymentsDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
@@ -4198,6 +4400,44 @@ func (a *Client) PatchExternalCluster(params *PatchExternalClusterParams, authIn
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*PatchExternalClusterDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  PatchExternalClusterMachineDeployments Patches the given cluster using JSON Merge Patch method
+*/
+func (a *Client) PatchExternalClusterMachineDeployments(params *PatchExternalClusterMachineDeploymentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchExternalClusterMachineDeploymentsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewPatchExternalClusterMachineDeploymentsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "patchExternalClusterMachineDeployments",
+		Method:             "PATCH",
+		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &PatchExternalClusterMachineDeploymentsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*PatchExternalClusterMachineDeploymentsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*PatchExternalClusterMachineDeploymentsDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

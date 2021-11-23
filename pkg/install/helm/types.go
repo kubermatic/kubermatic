@@ -48,8 +48,9 @@ type Chart struct {
 	Version    *semver.Version `yaml:"-"`
 	VersionRaw string          `yaml:"version"`
 	// AppVersion is not a semver, for example Minio has date-based versions.
-	AppVersion string `yaml:"appVersion"`
-	Directory  string
+	AppVersion   string `yaml:"appVersion"`
+	Directory    string
+	Dependencies []Dependency `yaml:"dependencies,omitempty"`
 }
 
 func (c *Chart) Clone() Chart {
@@ -80,4 +81,15 @@ func LoadChart(directory string) (*Chart, error) {
 	chart.Directory = directory
 
 	return chart, nil
+}
+
+type Dependency struct {
+	Name         string        `yaml:"name"`
+	Version      string        `yaml:"version,omitempty"`
+	Repository   string        `yaml:"repository"`
+	Condition    string        `yaml:"condition,omitempty"`
+	Tags         []string      `yaml:"tags,omitempty"`
+	Enabled      bool          `yaml:"enabled,omitempty"`
+	ImportValues []interface{} `json:"import-values,omitempty"`
+	Alias        string        `yaml:"alias,omitempty"`
 }

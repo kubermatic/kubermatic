@@ -22,7 +22,6 @@ import (
 	"fmt"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -81,6 +80,10 @@ var ProtectedClusterLabels = sets.NewString(WorkerNameLabelKey, ProjectIDLabelKe
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:JSONPath=".spec.humanReadableName",name="HumanReadableName",type="string"
+// +kubebuilder:printcolumn:JSONPath=".status.userEmail",name="Owner",type="string"
+// +kubebuilder:printcolumn:JSONPath=".spec.version",name="Version",type="string"
+// +kubebuilder:printcolumn:JSONPath=".spec.pause",name="Paused",type="boolean"
 
 // Cluster is the object representing a cluster.
 type Cluster struct {
@@ -436,6 +439,8 @@ type MLASettings struct {
 	MonitoringResources *corev1.ResourceRequirements `json:"monitoringResources,omitempty"`
 	// LoggingResources is the resource requirements for user cluster promtail.
 	LoggingResources *corev1.ResourceRequirements `json:"loggingResources,omitempty"`
+	// MonitoringReplicas is the number of desired pods of user cluster prometheus deployment.
+	MonitoringReplicas *int32 `json:"monitoringReplicas,omitempty"`
 }
 
 type ComponentSettings struct {
@@ -715,10 +720,14 @@ type AWSCloudSpec struct {
 type OpenstackCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
-	Username                    string `json:"username,omitempty"`
-	Password                    string `json:"password,omitempty"`
-	Tenant                      string `json:"tenant,omitempty"`
-	TenantID                    string `json:"tenantID,omitempty"`
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
+
+	// project, formally known as tenant. Tenant is depreciated in Openstack
+	Project string `json:"project,omitempty"`
+	// project id, formally known as tenantID. TenantID is depreciated in Openstack
+	ProjectID string `json:"projectID,omitempty"`
+
 	Domain                      string `json:"domain,omitempty"`
 	ApplicationCredentialID     string `json:"applicationCredentialID,omitempty"`
 	ApplicationCredentialSecret string `json:"applicationCredentialSecret,omitempty"`

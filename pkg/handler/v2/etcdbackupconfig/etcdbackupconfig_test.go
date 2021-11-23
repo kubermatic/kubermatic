@@ -523,6 +523,29 @@ func TestPatchEndpoint(t *testing.T) {
 				return ebc
 			}(),
 		},
+		{
+			Name:               "patch etcdbackupconfig destination",
+			EtcdBackupConfigID: etcdbackupconfig.GenEtcdBackupConfigID("test-1", test.GenDefaultCluster().Name),
+			PatchSpec: func() *apiv2.EtcdBackupConfigSpec {
+				spec := test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name).Spec
+				spec.Destination = "s3"
+				return &spec
+			}(),
+			ProjectID: test.GenDefaultProject().Name,
+			ClusterID: test.GenDefaultCluster().Name,
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
+			),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			ExpectedHTTPStatusCode: http.StatusOK,
+			ExpectedResponse: func() *apiv2.EtcdBackupConfig {
+				ebc := test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name)
+				ebc.Spec.Destination = "s3"
+				return ebc
+			}(),
+		},
 	}
 
 	for _, tc := range testCases {

@@ -69,6 +69,9 @@ type EtcdBackupConfigSpec struct {
 	// Keep is the number of backups to keep around before deleting the oldest one
 	// If not set, defaults to DefaultKeptBackupsCount. Only used if Schedule is set.
 	Keep *int `json:"keep,omitempty"`
+	// Destination indicates where the backup will be stored. The destination name should correspond to a destination in
+	// the cluster's Seed.Spec.EtcdBackupRestore. If empty, it will use the legacy destination in Seed.Spec.BackupRestore
+	Destination string `json:"destination,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
@@ -83,8 +86,8 @@ type EtcdBackupConfigList struct {
 }
 
 type EtcdBackupConfigStatus struct {
-	// CurrentBackups tracks the creation and deletion progress if all backups managed by the EtcdBackupConfig
-	CurrentBackups []BackupStatus `json:"lastBackups,omitempty"`
+	// CurrentBackups tracks the creation and deletion progress of all backups managed by the EtcdBackupConfig
+	CurrentBackups []BackupStatus `json:"currentBackups,omitempty"`
 	// Conditions contains conditions of the EtcdBackupConfig
 	Conditions []EtcdBackupConfigCondition `json:"conditions,omitempty"`
 	// If the controller was configured with a cleanupContainer, CleanupRunning keeps track of the corresponding job

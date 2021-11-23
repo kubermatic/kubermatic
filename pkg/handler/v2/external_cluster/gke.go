@@ -18,9 +18,11 @@ package externalcluster
 
 import (
 	"context"
+	"fmt"
 
 	"google.golang.org/api/container/v1"
 
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -32,6 +34,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
+
+const GKENodepoolNameLabel = "cloud.google.com/gke-nodepool"
 
 func createGKECluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticapiv1.ExternalCluster, error) {
 	if cloud.GKE.Name == "" || cloud.GKE.Zone == "" || cloud.GKE.ServiceAccount == "" {
@@ -77,4 +81,193 @@ func patchGKECluster(ctx context.Context, old, new *apiv2.ExternalCluster, secre
 	_, err = req.Context(ctx).Do()
 
 	return new, err
+}
+
+func getGKENodePools(ctx context.Context, cluster *kubermaticapiv1.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector, clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterMachineDeployment, error) {
+	sa, err := secretKeySelector(credentialsReference, resources.GCPServiceAccount)
+	if err != nil {
+		return nil, err
+	}
+	svc, project, err := gcp.ConnectToContainerService(sa)
+	if err != nil {
+		return nil, err
+	}
+
+	req := svc.Projects.Zones.Clusters.NodePools.List(project, cluster.Spec.CloudSpec.GKE.Zone, cluster.Spec.CloudSpec.GKE.Name)
+	resp, err := req.Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	machineDeployments := make([]apiv2.ExternalClusterMachineDeployment, 0, len(resp.NodePools))
+
+	nodes, err := clusterProvider.ListNodes(cluster)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	for _, md := range resp.NodePools {
+		var readyReplicas int32
+		for _, n := range nodes.Items {
+			if n.Labels != nil {
+				if n.Labels[GKENodepoolNameLabel] == md.Name {
+					readyReplicas++
+				}
+			}
+		}
+
+		machineDeployments = append(machineDeployments, createMachineDeploymentFromGKENodePoll(md, readyReplicas))
+	}
+
+	return machineDeployments, err
+}
+
+func createMachineDeploymentFromGKENodePoll(np *container.NodePool, readyReplicas int32) apiv2.ExternalClusterMachineDeployment {
+	return apiv2.ExternalClusterMachineDeployment{
+		NodeDeployment: apiv1.NodeDeployment{
+			ObjectMeta: apiv1.ObjectMeta{
+				ID:   np.Name,
+				Name: np.Name,
+			},
+			Spec: apiv1.NodeDeploymentSpec{
+				Replicas: int32(np.InitialNodeCount),
+				Template: apiv1.NodeSpec{
+					Versions: apiv1.NodeVersionInfo{
+						Kubelet: np.Version,
+					},
+				},
+			},
+			Status: clusterv1alpha1.MachineDeploymentStatus{
+				Replicas:      int32(np.InitialNodeCount),
+				ReadyReplicas: readyReplicas,
+			},
+		},
+	}
+}
+
+func getGKENodePool(ctx context.Context, cluster *kubermaticapiv1.ExternalCluster, nodeGroupName string, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector, clusterProvider provider.ExternalClusterProvider) (*apiv2.ExternalClusterMachineDeployment, error) {
+	sa, err := secretKeySelector(credentialsReference, resources.GCPServiceAccount)
+	if err != nil {
+		return nil, err
+	}
+	svc, project, err := gcp.ConnectToContainerService(sa)
+	if err != nil {
+		return nil, err
+	}
+
+	return getGKEMachineDeployment(ctx, svc, project, cluster, nodeGroupName, clusterProvider)
+}
+
+func getGKENodes(ctx context.Context, cluster *kubermaticapiv1.ExternalCluster, nodePoolID string, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector, clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterNode, error) {
+	sa, err := secretKeySelector(credentialsReference, resources.GCPServiceAccount)
+	if err != nil {
+		return nil, err
+	}
+	svc, project, err := gcp.ConnectToContainerService(sa)
+	if err != nil {
+		return nil, err
+	}
+
+	req := svc.Projects.Zones.Clusters.NodePools.Get(project, cluster.Spec.CloudSpec.GKE.Zone, cluster.Spec.CloudSpec.GKE.Name, nodePoolID)
+	resp, err := req.Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	var nodesV1 []apiv2.ExternalClusterNode
+
+	nodes, err := clusterProvider.ListNodes(cluster)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	for _, n := range nodes.Items {
+		if n.Labels != nil {
+			if n.Labels[GKENodepoolNameLabel] == resp.Name {
+				outNode, err := outputNode(n)
+				if err != nil {
+					return nil, fmt.Errorf("failed to output node %s: %v", n.Name, err)
+				}
+				nodesV1 = append(nodesV1, *outNode)
+			}
+		}
+	}
+
+	return nodesV1, err
+}
+
+func deleteGKENodePool(ctx context.Context, cluster *kubermaticapiv1.ExternalCluster, nodePoolID string, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector, clusterProvider provider.ExternalClusterProvider) error {
+	sa, err := secretKeySelector(credentialsReference, resources.GCPServiceAccount)
+	if err != nil {
+		return err
+	}
+	svc, project, err := gcp.ConnectToContainerService(sa)
+	if err != nil {
+		return err
+	}
+
+	req := svc.Projects.Zones.Clusters.NodePools.Delete(project, cluster.Spec.CloudSpec.GKE.Zone, cluster.Spec.CloudSpec.GKE.Name, nodePoolID)
+	_, err = req.Context(ctx).Do()
+	return err
+}
+
+func patchGKEMachineDeployment(ctx context.Context, old, new *apiv2.ExternalClusterMachineDeployment, cluster *kubermaticapiv1.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector) (*apiv2.ExternalClusterMachineDeployment, error) {
+	sa, err := secretKeySelector(credentialsReference, resources.GCPServiceAccount)
+	if err != nil {
+		return nil, err
+	}
+	svc, project, err := gcp.ConnectToContainerService(sa)
+	if err != nil {
+		return nil, err
+	}
+
+	// The GKE can update Node Pool size or NodePoll object. Can't change both because first update blocks the second one.
+	// It's required to update Node Poll size separately.
+
+	// only when size was updates otherwise change NodePoll object with other parameters
+	if old.Spec.Replicas != new.Spec.Replicas {
+		sizeRequest := &container.SetNodePoolSizeRequest{
+			NodeCount: int64(new.Spec.Replicas),
+		}
+		sizeReq := svc.Projects.Zones.Clusters.NodePools.SetSize(project, cluster.Spec.CloudSpec.GKE.Zone, cluster.Spec.CloudSpec.GKE.Name, old.Name, sizeRequest)
+		_, err = sizeReq.Context(ctx).Do()
+		if err != nil {
+			return nil, err
+		}
+		return new, nil
+	}
+
+	updateRequest := &container.UpdateNodePoolRequest{
+		NodeVersion: new.Spec.Template.Versions.Kubelet,
+	}
+	updateReq := svc.Projects.Zones.Clusters.NodePools.Update(project, cluster.Spec.CloudSpec.GKE.Zone, cluster.Spec.CloudSpec.GKE.Name, old.Name, updateRequest)
+	_, err = updateReq.Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	return new, nil
+}
+
+func getGKEMachineDeployment(ctx context.Context, svc *container.Service, projectID string, cluster *kubermaticapiv1.ExternalCluster, nodeGroupName string, clusterProvider provider.ExternalClusterProvider) (*apiv2.ExternalClusterMachineDeployment, error) {
+	req := svc.Projects.Zones.Clusters.NodePools.Get(projectID, cluster.Spec.CloudSpec.GKE.Zone, cluster.Spec.CloudSpec.GKE.Name, nodeGroupName)
+	np, err := req.Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	nodes, err := clusterProvider.ListNodes(cluster)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	var readyReplicas int32
+	for _, n := range nodes.Items {
+		if n.Labels != nil {
+			if n.Labels[GKENodepoolNameLabel] == np.Name {
+				readyReplicas++
+			}
+		}
+	}
+	md := createMachineDeploymentFromGKENodePoll(np, readyReplicas)
+	return &md, nil
 }

@@ -1,4 +1,4 @@
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+# Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,14 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  labels:
-    app.kubernetes.io/name: {{ template "promtail.name" . }}
-    app.kubernetes.io/instance: '{{ .Release.Name }}'
-    app.kubernetes.io/version: '{{ .Chart.Version }}'
-    app.kubernetes.io/managed-by: helm
-  name: {{ template "promtail.serviceAccountName" . }}
-  namespace: {{ .Release.Namespace }}

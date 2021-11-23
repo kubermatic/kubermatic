@@ -5,6 +5,8 @@ metadata:
   namespace: kubermatic
 spec:
   # BackupRestore when set, enables backup and restore controllers with given configuration.
+  # Deprecated: use EtcdBackupRestore instead which allows for multiple destinations. For now, it's still supported and
+  # will work if set.
   backupRestore: null
   # Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.
   # For informational purposes in the Kubermatic dashboard only.
@@ -168,6 +170,14 @@ spec:
           # The list of enabled facilities, for example "ams1", for a full list of available
           # facilities see https://support.packet.com/kb/articles/data-centers
           facilities: []
+        # ProviderReconciliationInterval is the time that must have passed since a
+        # Cluster's status.lastProviderReconciliation to make the cliuster controller
+        # perform an in-depth provider reconciliation, where for example missing security
+        # groups will be reconciled.
+        # Setting this too low can cause rate limits by the cloud provider, setting this
+        # too high means that *if* a resource at a cloud provider is removed/changed outside
+        # of KKP, it will take this long to fix it.
+        providerReconciliationInterval: 6h0m0s
         # Optional: When defined, only users with an e-mail address on the
         # given domains can make use of this datacenter. You can define multiple
         # domains, e.g. "example.com", one of which must match the email domain
@@ -265,6 +275,8 @@ spec:
       replicas: null
       resources: null
       tolerations: null
+  # EtcdBackupRestore holds the configuration of the automatic etcd backup restores for the Seed
+  etcdBackupRestore: null
   # Optional: ExposeStrategy explicitly sets the expose strategy for this seed cluster, if not set, the default provided by the master is used.
   expose_strategy: ""
   # A reference to the Kubeconfig of this cluster. The Kubeconfig must

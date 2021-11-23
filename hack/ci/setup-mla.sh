@@ -44,6 +44,7 @@ git clone "$URL" "$tempdir"
   kubectl apply -f dashboards/
   kubectl create -n mla configmap cortex-runtime-config --from-file=config/cortex/runtime-config.yaml || true
   helm dependency update charts/cortex # need that to store memcached in charts directory
+  helm --namespace mla upgrade --atomic --create-namespace --install consul charts/consul --values config/consul/values.yaml
   helm --namespace mla upgrade --atomic --create-namespace --install cortex charts/cortex --values config/cortex/values.yaml --timeout 1200s
   helm --namespace mla upgrade --atomic --create-namespace --install loki-distributed charts/loki-distributed --values config/loki/values.yaml --set ingester.replicas=1 --set distributor.replicas=1 --timeout 600s
   helm --namespace mla upgrade --atomic --create-namespace --install alertmanager-proxy charts/alertmanager-proxy

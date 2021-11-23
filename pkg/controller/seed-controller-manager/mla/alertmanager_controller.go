@@ -305,7 +305,7 @@ func (r *alertmanagerController) cleanUpAlertmanagerConfigurationStatus(ctx cont
 	oldCluster := cluster.DeepCopy()
 	// Remove the alertmanager config status in Cluster CR
 	cluster.Status.ExtendedHealth.AlertmanagerConfig = nil
-	if errC != nil {
+	if errC != nil && !errors.IsNotFound(errC) {
 		cluster.Status.ExtendedHealth.AlertmanagerConfig = kubermaticv1.HealthStatusDown.Ptr()
 	}
 

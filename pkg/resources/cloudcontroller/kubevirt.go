@@ -78,11 +78,6 @@ func kubevirtDeploymentCreator(data *resources.TemplateData) reconciling.NamedDe
 
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.BoolPtr(false)
 
-			openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
-			}
-
 			dep.Spec.Template.Spec.Volumes = append(getVolumes(), corev1.Volume{
 				Name: resources.CloudConfigConfigMapName,
 				VolumeSource: corev1.VolumeSource{
@@ -95,7 +90,6 @@ func kubevirtDeploymentCreator(data *resources.TemplateData) reconciling.NamedDe
 			})
 
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
-				*openvpnSidecar,
 				{
 					Name:    ccmContainerName,
 					Image:   data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/kubevirt-cloud-controller-manager:" + KubeVirtCCMTag,
@@ -110,9 +104,18 @@ func kubevirtDeploymentCreator(data *resources.TemplateData) reconciling.NamedDe
 			}
 
 			defResourceRequirements := map[string]*corev1.ResourceRequirements{
-				ccmContainerName:    kvResourceRequirements.DeepCopy(),
-				openvpnSidecar.Name: openvpnSidecar.Resources.DeepCopy(),
+				ccmContainerName: kvResourceRequirements.DeepCopy(),
 			}
+
+			if !data.IsKonnectivityEnabled() {
+				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
+				if err != nil {
+					return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
+				}
+				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers, *openvpnSidecar)
+				defResourceRequirements[openvpnSidecar.Name] = openvpnSidecar.Resources.DeepCopy()
+			}
+
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)

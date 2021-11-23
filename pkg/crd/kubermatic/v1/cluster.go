@@ -22,7 +22,6 @@ import (
 	"fmt"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -309,6 +308,10 @@ type ClusterStatus struct {
 	// ExtendedHealth exposes information about the current health state.
 	// Extends standard health status for new states.
 	ExtendedHealth ExtendedClusterHealth `json:"extendedHealth,omitempty"`
+	// LastProviderReconciliation is the time when the cloud provider resources
+	// were last fully reconciled (during normal cluster reconciliation, KKP does
+	// not re-check things like security groups, networks etc.).
+	LastProviderReconciliation *metav1.Time `json:"lastProviderReconciliation,omitempty"`
 	// KubermaticVersion is the current kubermatic version in a cluster.
 	KubermaticVersion string `json:"kubermatic_version"`
 	// Deprecated
@@ -419,6 +422,8 @@ type MLASettings struct {
 	MonitoringResources *corev1.ResourceRequirements `json:"monitoringResources,omitempty"`
 	// LoggingResources is the resource requirements for user cluster promtail.
 	LoggingResources *corev1.ResourceRequirements `json:"loggingResources,omitempty"`
+	// MonitoringReplicas is the number of desired pods of user cluster prometheus deployment.
+	MonitoringReplicas *int32 `json:"monitoringReplicas,omitempty"`
 }
 
 type ComponentSettings struct {
@@ -693,6 +698,8 @@ type OpenstackCloudSpec struct {
 
 	Username                    string `json:"username,omitempty"`
 	Password                    string `json:"password,omitempty"`
+	Project                     string `json:"project,omitempty"`
+	ProjectID                   string `json:"projectID,omitempty"`
 	Tenant                      string `json:"tenant,omitempty"`
 	TenantID                    string `json:"tenantID,omitempty"`
 	Domain                      string `json:"domain,omitempty"`
@@ -727,6 +734,26 @@ type OpenstackCloudSpec struct {
 	// level if both are specified.
 	// +optional
 	UseOctavia *bool `json:"useOctavia,omitempty"`
+}
+
+// GetProject returns the the project if defined otherwise fallback to tenant
+// Deprecated: the tenant auth var is depreciated in openstack. In pkg/apis/kubermatic/v1/cluster.go we will only use Project
+func (s OpenstackCloudSpec) GetProject() string {
+	if len(s.Project) > 0 {
+		return s.Project
+	} else {
+		return s.Tenant
+	}
+}
+
+// GetProjectId returns the the projectID if defined otherwise fallback to tenantID
+// Deprecated: the tenantID auth var is depreciated in openstack. In pkg/apis/kubermatic/v1/cluster.go we will only use ProjectID
+func (s OpenstackCloudSpec) GetProjectId() string {
+	if len(s.ProjectID) > 0 {
+		return s.ProjectID
+	} else {
+		return s.TenantID
+	}
 }
 
 // PacketCloudSpec specifies access data to a Packet cloud.

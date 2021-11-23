@@ -18,6 +18,10 @@ import (
 // swagger:model BackupCredentials
 type BackupCredentials struct {
 
+	// Destination corresponds to the Seeds Seed.Spec.EtcdBackupRestore.Destinations, it defines for which destination
+	// the backup credentials will be created. If set, it updates the credentials ref in the related Seed BackupDestination
+	Destination string `json:"destination,omitempty"`
+
 	// s3
 	S3 *S3BackupCredentials `json:"s3,omitempty"`
 }

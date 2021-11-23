@@ -68,6 +68,8 @@ func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 	}, nil
 }
 
+var _ provider.CloudProvider = &Provider{}
+
 type Session struct {
 	Client     *govmomi.Client
 	Finder     *find.Finder
@@ -171,6 +173,11 @@ func (v *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update
 
 	return cluster, nil
 }
+
+// TODO: Hey, you! Yes, you! Why don't you implement reconciling for vSphere? Would be really cool :)
+// func (v *Provider) ReconcileCluster(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+// 	return cluster, nil
+// }
 
 // GetNetworks returns a slice of VSphereNetworks of the datacenter from the passed cloudspec.
 func GetNetworks(dc *kubermaticv1.DatacenterSpecVSphere, username, password string, caBundle *x509.CertPool) ([]NetworkInfo, error) {

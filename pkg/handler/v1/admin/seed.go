@@ -238,11 +238,12 @@ func convertSeedSpec(seedSpec kubermaticv1.SeedSpec, seedName string) apiv1.Seed
 			ResourceVersion: seedSpec.Kubeconfig.ResourceVersion,
 			FieldPath:       seedSpec.Kubeconfig.FieldPath,
 		},
-		SeedDNSOverwrite: seedSpec.SeedDNSOverwrite,
-		ProxySettings:    seedSpec.ProxySettings,
-		ExposeStrategy:   seedSpec.ExposeStrategy,
-		MLA:              seedSpec.MLA,
-		BackupRestore:    seedSpec.BackupRestore,
+		SeedDNSOverwrite:  seedSpec.SeedDNSOverwrite,
+		ProxySettings:     seedSpec.ProxySettings,
+		ExposeStrategy:    seedSpec.ExposeStrategy,
+		MLA:               seedSpec.MLA,
+		BackupRestore:     seedSpec.BackupRestore,
+		EtcdBackupRestore: seedSpec.EtcdBackupRestore,
 	}
 	if seedSpec.Datacenters != nil {
 		resultSeedSpec.SeedDatacenters = make(map[string]apiv1.Datacenter)

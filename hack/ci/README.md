@@ -50,6 +50,11 @@ compiled.
 A dedicated postsubmit job that runs after every change to the master
 branch is keeping the cache up-to-date.
 
+## fetch-chart-dependencies.sh
+
+This script fetches dependencies for a chart, based on the lock file
+contained within the charts' directory. The script iterates over all charts.
+
 ## github-release.sh
 
 This script is run for every tagged revision and will create
@@ -103,6 +108,11 @@ Operator. The presubmit job for this script is currently not used.
 This script sets up a local KKP installation in kind, deploys a
 couple of test Presets and Users and then runs the OPA e2e tests.
 
+## run-user-ssh-key-agent-tests.sh
+
+This script tests whether we can successfully build the multiarch
+version for the user-ssh-key-agent.
+
 ## setup-kind-cluster.sh
 
 TBD
@@ -129,6 +139,14 @@ This script is used for an optional presubmit to test changes to
 the GitHub release logic before they are merged. The script will
 perform all steps for a release *except* actually communicating
 with GitHub.
+
+## test-helm-charts.sh
+
+This script runs whenever one or more Helm charts were updated.
+For every changed chart in a PR, it tries to find a `test/` directory
+inside the chart and then execute it. The purpose is to run some
+static tests for our Helm charts, as not all of them are tested
+in the conformance tests.
 
 ## update-docs.sh
 

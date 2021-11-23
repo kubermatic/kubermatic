@@ -81,6 +81,12 @@ type ListOpenstackNetworksParams struct {
 	// Password.
 	Password *string
 
+	// Project.
+	Project *string
+
+	// ProjectID.
+	ProjectID *string
+
 	// Tenant.
 	Tenant *string
 
@@ -220,6 +226,28 @@ func (o *ListOpenstackNetworksParams) SetPassword(password *string) {
 	o.Password = password
 }
 
+// WithProject adds the project to the list openstack networks params
+func (o *ListOpenstackNetworksParams) WithProject(project *string) *ListOpenstackNetworksParams {
+	o.SetProject(project)
+	return o
+}
+
+// SetProject adds the project to the list openstack networks params
+func (o *ListOpenstackNetworksParams) SetProject(project *string) {
+	o.Project = project
+}
+
+// WithProjectID adds the projectID to the list openstack networks params
+func (o *ListOpenstackNetworksParams) WithProjectID(projectID *string) *ListOpenstackNetworksParams {
+	o.SetProjectID(projectID)
+	return o
+}
+
+// SetProjectID adds the projectId to the list openstack networks params
+func (o *ListOpenstackNetworksParams) SetProjectID(projectID *string) {
+	o.ProjectID = projectID
+}
+
 // WithTenant adds the tenant to the list openstack networks params
 func (o *ListOpenstackNetworksParams) WithTenant(tenant *string) *ListOpenstackNetworksParams {
 	o.SetTenant(tenant)
@@ -313,6 +341,22 @@ func (o *ListOpenstackNetworksParams) WriteToRequest(r runtime.ClientRequest, re
 
 		// header param Password
 		if err := r.SetHeaderParam("Password", *o.Password); err != nil {
+			return err
+		}
+	}
+
+	if o.Project != nil {
+
+		// header param Project
+		if err := r.SetHeaderParam("Project", *o.Project); err != nil {
+			return err
+		}
+	}
+
+	if o.ProjectID != nil {
+
+		// header param ProjectID
+		if err := r.SetHeaderParam("ProjectID", *o.ProjectID); err != nil {
 			return err
 		}
 	}

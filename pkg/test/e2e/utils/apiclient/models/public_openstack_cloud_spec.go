@@ -26,6 +26,12 @@ type PublicOpenstackCloudSpec struct {
 	// network
 	Network string `json:"network,omitempty"`
 
+	// project
+	Project string `json:"project,omitempty"`
+
+	// project ID
+	ProjectID string `json:"projectID,omitempty"`
+
 	// router ID
 	RouterID string `json:"routerID,omitempty"`
 

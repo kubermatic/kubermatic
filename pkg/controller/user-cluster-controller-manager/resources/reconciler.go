@@ -100,7 +100,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("failed to get MLA Gateway CA cert: %v", err)
 		}
-		data.monitoringRequirements, data.loggingRequirements, err = r.mlaResourceRequirements(ctx)
+		data.monitoringRequirements, data.loggingRequirements, data.monitoringReplicas, err = r.mlaReconcileData(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to get MLA resource requirements: %w", err)
 		}
@@ -597,7 +597,6 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 
 	if len(r.tunnelingAgentIP) > 0 {
 		creators = []reconciling.NamedConfigMapCreatorGetter{
-			openvpn.ClientConfigConfigMapCreator(r.tunnelingAgentIP.String(), r.openvpnServerPort),
 			cabundle.ConfigMapCreator(r.caBundle),
 			envoyagent.ConfigMapCreator(envoyagent.Config{
 				AdminPort: 9902,
@@ -617,10 +616,15 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 				},
 			}),
 		}
+		if !r.isKonnectivityEnabled {
+			creators = append(creators, openvpn.ClientConfigConfigMapCreator(r.tunnelingAgentIP.String(), r.openvpnServerPort))
+		}
 	} else {
 		creators = []reconciling.NamedConfigMapCreatorGetter{
-			openvpn.ClientConfigConfigMapCreator(r.clusterURL.Hostname(), r.openvpnServerPort),
 			cabundle.ConfigMapCreator(r.caBundle),
+		}
+		if !r.isKonnectivityEnabled {
+			creators = append(creators, openvpn.ClientConfigConfigMapCreator(r.clusterURL.Hostname(), r.openvpnServerPort))
 		}
 	}
 
@@ -646,6 +650,7 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 				TLSKeyFile:          fmt.Sprintf("%s/%s", resources.UserClusterPrometheusClientCertMountPath, resources.UserClusterPrometheusClientKeySecretKey),
 				TLSCACertFile:       fmt.Sprintf("%s/%s", resources.UserClusterPrometheusClientCertMountPath, resources.MLAGatewayCACertKey),
 				CustomScrapeConfigs: customScrapeConfigs,
+				HAClusterIdentifier: r.clusterName,
 			}),
 		}
 		if err := reconciling.ReconcileConfigMaps(ctx, creators, resources.UserClusterMLANamespace, r.Client); err != nil {
@@ -657,8 +662,10 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 
 func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedSecretCreatorGetter{
-		openvpn.ClientCertificate(data.openVPNCACert),
 		cloudcontroller.CloudConfig(data.cloudConfig, resources.CloudConfigSecretName),
+	}
+	if !r.isKonnectivityEnabled {
+		creators = append(creators, openvpn.ClientCertificate(data.openVPNCACert))
 	}
 
 	if data.csiCloudConfig != nil {
@@ -730,7 +737,7 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData)
 	}
 
 	if r.userSSHKeyAgent {
-		dsCreators = append(dsCreators, usersshkeys.DaemonSetCreator(r.versions))
+		dsCreators = append(dsCreators, usersshkeys.DaemonSetCreator(r.versions, r.overwriteRegistryFunc))
 	}
 
 	if len(r.tunnelingAgentIP) > 0 {
@@ -802,7 +809,7 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 
 	if r.userClusterMLA.Monitoring {
 		creators := []reconciling.NamedDeploymentCreatorGetter{
-			userclusterprometheus.DeploymentCreator(data.monitoringRequirements, r.overwriteRegistryFunc),
+			userclusterprometheus.DeploymentCreator(data.monitoringRequirements, data.monitoringReplicas, r.overwriteRegistryFunc),
 		}
 		if err := reconciling.ReconcileDeployments(ctx, creators, resources.UserClusterMLANamespace, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile Deployments in namespace %s: %v", resources.UserClusterMLANamespace, err)
@@ -852,6 +859,7 @@ type reconcileData struct {
 	ccmMigration           bool
 	monitoringRequirements *corev1.ResourceRequirements
 	loggingRequirements    *corev1.ResourceRequirements
+	monitoringReplicas     *int32
 }
 
 func (r *reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context) error {
@@ -1040,7 +1048,7 @@ func (r *reconciler) cleanUpOPAHealthStatus(ctx context.Context, errC error) err
 
 	cluster.Status.ExtendedHealth.GatekeeperAudit = nil
 	cluster.Status.ExtendedHealth.GatekeeperController = nil
-	if errC != nil {
+	if errC != nil && !errors.IsNotFound(errC) {
 		cluster.Status.ExtendedHealth.GatekeeperAudit = kubermaticv1.HealthStatusDown.Ptr()
 		cluster.Status.ExtendedHealth.GatekeeperController = kubermaticv1.HealthStatusDown.Ptr()
 	}
@@ -1063,13 +1071,13 @@ func (r *reconciler) cleanUpMLAHealthStatus(ctx context.Context, logging, monito
 
 	if !r.userClusterMLA.Logging && logging {
 		cluster.Status.ExtendedHealth.Logging = nil
-		if errC != nil {
+		if errC != nil && !errors.IsNotFound(errC) {
 			cluster.Status.ExtendedHealth.Logging = kubermaticv1.HealthStatusDown.Ptr()
 		}
 	}
 	if !r.userClusterMLA.Monitoring && monitoring {
 		cluster.Status.ExtendedHealth.Monitoring = nil
-		if errC != nil {
+		if errC != nil && !errors.IsNotFound(errC) {
 			cluster.Status.ExtendedHealth.Monitoring = kubermaticv1.HealthStatusDown.Ptr()
 		}
 	}

@@ -138,30 +138,26 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 
 			return convertClusterToAPI(createdCluster), nil
 		}
+		// import AKS cluster
+		if cloud.AKS != nil {
+			if preset != nil {
+				if credentials := preset.Spec.Azure; credentials != nil {
+					cloud.AKS.TenantID = credentials.TenantID
+					cloud.AKS.SubscriptionID = credentials.SubscriptionID
+					cloud.AKS.ClientID = credentials.ClientID
+					cloud.AKS.ClientSecret = credentials.ClientSecret
+				}
+			}
+
+			createdCluster, err := createAKSCluster(ctx, req.Body.Name, userInfoGetter, project, cloud, clusterProvider, privilegedClusterProvider)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+
+			return convertClusterToAPI(createdCluster), nil
+		}
 		return nil, errors.NewBadRequest("kubeconfig or provider structure missing")
 	}
-}
-
-func createEKSCluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticapiv1.ExternalCluster, error) {
-	if cloud.EKS.Name == "" || cloud.EKS.Region == "" || cloud.EKS.AccessKeyID == "" || cloud.EKS.SecretAccessKey == "" {
-		return nil, errors.NewBadRequest("the EKS cluster name, region or credentials can not be empty")
-	}
-
-	newCluster := genExternalCluster(name, project.Name)
-	newCluster.Spec.CloudSpec = &kubermaticapiv1.ExternalClusterCloudSpec{
-		EKS: &kubermaticapiv1.ExternalClusterEKSCloudSpec{
-			Name:   cloud.EKS.Name,
-			Region: cloud.EKS.Region,
-		},
-	}
-	keyRef, err := clusterProvider.CreateOrUpdateCredentialSecretForCluster(ctx, cloud, project.Name, newCluster.Name)
-	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-	kuberneteshelper.AddFinalizer(newCluster, apiv1.CredentialsSecretsCleanupFinalizer)
-	newCluster.Spec.CloudSpec.EKS.CredentialsReference = keyRef
-
-	return createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, newCluster, project)
 }
 
 // createClusterReq defines HTTP request for createExternalCluster
@@ -492,6 +488,10 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 
 			if cloud.GKE != nil {
 				return patchGKECluster(ctx, clusterToPatch, patchedCluster, secretKeySelector, cloud.GKE.CredentialsReference)
+			}
+
+			if cloud.EKS != nil {
+				return patchEKSCluster(clusterToPatch, patchedCluster, secretKeySelector, cloud)
 			}
 		}
 		return convertClusterToAPI(cluster), nil

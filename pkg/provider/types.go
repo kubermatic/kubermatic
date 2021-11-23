@@ -105,6 +105,14 @@ type CloudProvider interface {
 	ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error
 }
 
+// ReconcilingCloudProvider is a cloud provider that can not just created resources
+// once, but is capable of continuously reconciling annd fixing any problems with them.
+type ReconcilingCloudProvider interface {
+	CloudProvider
+
+	ReconcileCluster(*kubermaticv1.Cluster, ClusterUpdater) (*kubermaticv1.Cluster, error)
+}
+
 // UpdaterOption represent an option for the updater function.
 type UpdaterOption string
 
@@ -1281,4 +1289,13 @@ type PrivilegedMLAAdminSettingProvider interface {
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to delete the resource
 	DeleteUnsecured(cluster *kubermaticv1.Cluster) error
+}
+
+type SeedProvider interface {
+
+	// UpdateUnsecured updates a Seed
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to update the resource
+	UpdateUnsecured(seed *kubermaticv1.Seed) (*kubermaticv1.Seed, error)
 }

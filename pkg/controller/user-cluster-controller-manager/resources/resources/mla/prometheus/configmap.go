@@ -32,6 +32,7 @@ type Config struct {
 	TLSKeyFile          string
 	TLSCACertFile       string
 	CustomScrapeConfigs string
+	HAClusterIdentifier string
 }
 
 func ConfigMapCreator(config Config) reconciling.NamedConfigMapCreatorGetter {
@@ -61,6 +62,11 @@ global:
   evaluation_interval: 30s
   scrape_interval: 30s
   scrape_timeout: 10s
+  external_labels:
+    cluster: {{ .HAClusterIdentifier }}
+    # by using $HOSTNAME we can make the replica label unique across pods without
+    # the need to create multiple deployments
+    __replica__: ${HOSTNAME}
 remote_write:
 - url: {{ .MLAGatewayURL }}
   tls_config:

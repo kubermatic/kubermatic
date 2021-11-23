@@ -326,11 +326,11 @@ type Openstack struct {
 	ApplicationCredentialID     string `json:"applicationCredentialID,omitempty"`
 	ApplicationCredentialSecret string `json:"applicationCredentialSecret,omitempty"`
 
-	Username string `json:"username"`
-	Password string `json:"password"`
-	Tenant   string `json:"tenant"`
-	TenantID string `json:"tenantID"`
-	Domain   string `json:"domain"`
+	Username  string `json:"username"`
+	Password  string `json:"password"`
+	Project   string `json:"project"`
+	ProjectID string `json:"projectID"`
+	Domain    string `json:"domain"`
 
 	Network        string `json:"network,omitempty"`
 	SecurityGroups string `json:"securityGroups,omitempty"`
@@ -351,7 +351,7 @@ func (s Openstack) IsValid() bool {
 
 	return len(s.Username) > 0 &&
 		len(s.Password) > 0 &&
-		(len(s.Tenant) > 0 || len(s.TenantID) > 0) &&
+		(len(s.Project) > 0 || len(s.ProjectID) > 0) &&
 		len(s.Domain) > 0
 }
 

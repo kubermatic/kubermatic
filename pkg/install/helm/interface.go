@@ -27,6 +27,7 @@ import (
 // perform a Kubermatic installation.
 type Client interface {
 	Version() (*semver.Version, error)
+	BuildChartDependencies(chartDirectory string, flags []string) error
 	InstallChart(namespace string, releaseName string, chartDirectory string, valuesFile string, values map[string]string, flags []string) error
 	GetRelease(namespace string, name string) (*Release, error)
 	ListReleases(namespace string) ([]Release, error)

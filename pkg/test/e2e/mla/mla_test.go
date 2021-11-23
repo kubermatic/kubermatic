@@ -381,26 +381,39 @@ rules:
 	t.Log("alertmanager config added")
 
 	// Rate limits
-	if _, err := masterClient.SetMonitoringMLARateLimits(cluster.Name, project.ID, kubermaticv1.MonitoringRateLimitSettings{
+	rateLimits := kubermaticv1.MonitoringRateLimitSettings{
 		IngestionRate:      1,
 		IngestionBurstSize: 2,
 		MaxSeriesPerMetric: 3,
 		MaxSeriesTotal:     4,
 		MaxSamplesPerQuery: 5,
 		MaxSeriesPerQuery:  6,
-	}); err != nil {
+	}
+	if _, err := masterClient.SetMonitoringMLARateLimits(cluster.Name, project.ID, rateLimits); err != nil {
 		t.Fatalf("unable to set monitoring rate limits: %v", err)
 	}
-	configMap := &corev1.ConfigMap{}
-	if err := seedClient.Get(ctx, types.NamespacedName{Namespace: "mla", Name: mla.RuntimeConfigMap}, configMap); err != nil {
-		t.Fatalf("unable to get configMap: %v", err)
+
+	if !utils.WaitFor(1*time.Second, timeout, func() bool {
+		configMap := &corev1.ConfigMap{}
+		if err := seedClient.Get(ctx, types.NamespacedName{Namespace: "mla", Name: mla.RuntimeConfigMap}, configMap); err != nil {
+			t.Fatalf("unable to get configMap: %v", err)
+		}
+		t.Logf("have config map: %s", configMap.Data)
+		actualOverrides := &mla.Overrides{}
+		if err := yaml.Unmarshal([]byte(configMap.Data[mla.RuntimeConfigFileName]), actualOverrides); err != nil {
+			t.Fatalf("unable to unmarshal rate limit config map")
+		}
+		t.Logf("have overrides: %+v", actualOverrides)
+		actualRateLimits := actualOverrides.Overrides[cluster.Name]
+		return (*actualRateLimits.IngestionRate == rateLimits.IngestionRate &&
+			*actualRateLimits.IngestionBurstSize == rateLimits.IngestionBurstSize &&
+			*actualRateLimits.MaxSeriesPerMetric == rateLimits.MaxSeriesPerMetric &&
+			*actualRateLimits.MaxSeriesTotal == rateLimits.MaxSeriesTotal &&
+			*actualRateLimits.MaxSamplesPerQuery == rateLimits.MaxSamplesPerQuery &&
+			*actualRateLimits.MaxSeriesPerQuery == rateLimits.MaxSeriesPerQuery)
+	}) {
+		t.Fatal("monitoring rate limits not equal")
 	}
-	t.Logf("have config map: %s", configMap.Data)
-	actualOverrides := &mla.Overrides{}
-	if err := yaml.Unmarshal([]byte(configMap.Data[mla.RuntimeConfigFileName]), actualOverrides); err != nil {
-		t.Fatalf("unable to unmarshal rate limit config map")
-	}
-	t.Logf("have overrides: %+v", actualOverrides)
 
 	// Disable MLA Integration
 	t.Log("disabling MLA...")

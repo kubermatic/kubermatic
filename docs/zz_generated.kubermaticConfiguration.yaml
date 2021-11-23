@@ -418,7 +418,7 @@ spec:
     # Kubernetes configures the Kubernetes versions and updates.
     kubernetes:
       # Default is the default version to offer users.
-      default: 1.21.5
+      default: 1.21.7
       # ProviderIncompatibilities lists all the Kubernetes version incompatibilities
       providerIncompatibilities:
         - # Condition is the cluster or datacenter condition that must be met to block a specific version
@@ -460,24 +460,27 @@ spec:
         - from: 1.20.*
           to: 1.20.*
         - automatic: true
-          from: '>= 1.20.0, < 1.20.11'
-          to: 1.20.11
+          from: '>= 1.20.0, < 1.20.13'
+          to: 1.20.13
         - from: 1.20.*
           to: 1.21.*
         - from: 1.21.*
           to: 1.21.*
         - automatic: true
-          from: '>= 1.21.0, < 1.21.5'
-          to: 1.21.5
+          from: '>= 1.21.0, < 1.21.7'
+          to: 1.21.7
         - from: 1.21.*
           to: 1.22.*
         - from: 1.22.*
           to: 1.22.*
+        - automatic: true
+          from: '>= 1.22.0, < 1.22.4'
+          to: 1.22.4
       # Versions lists the available versions.
       versions:
-        - 1.20.11
-        - 1.21.5
-        - 1.22.2
+        - 1.20.13
+        - 1.21.7
+        - 1.22.4
   # VerticalPodAutoscaler configures the Kubernetes VPA integration.
   verticalPodAutoscaler:
     admissionController:

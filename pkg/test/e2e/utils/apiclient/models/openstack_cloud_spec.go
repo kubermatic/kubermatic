@@ -45,6 +45,12 @@ type OpenstackCloudSpec struct {
 	// password
 	Password string `json:"password,omitempty"`
 
+	// project
+	Project string `json:"project,omitempty"`
+
+	// project ID
+	ProjectID string `json:"projectID,omitempty"`
+
 	// router ID
 	RouterID string `json:"routerID,omitempty"`
 

@@ -37,6 +37,8 @@ func NewCloudProvider(secretKeyGetter provider.SecretKeySelectorValueFunc) provi
 	}
 }
 
+var _ provider.CloudProvider = &kubevirt{}
+
 func (k *kubevirt) DefaultCloudSpec(spec *v1.CloudSpec) error {
 	return nil
 }

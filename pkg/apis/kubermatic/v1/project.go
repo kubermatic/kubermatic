@@ -48,6 +48,8 @@ const (
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:JSONPath=".spec.name",name="HumanReadableName",type="string"
+// +kubebuilder:printcolumn:JSONPath=".status.phase",name="Status",type="string"
 
 // Project is the type describing a project.
 type Project struct {
