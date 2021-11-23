@@ -168,15 +168,15 @@ spec:
       - name: metrics-server
         secret:
           secretName: metrics-server
+      - name: metrics-server-serving-cert
+        secret:
+          secretName: metrics-server-serving-cert
       - name: openvpn-client-certificates
         secret:
           secretName: openvpn-client-certificates
       - name: kubeletdnatcontroller-kubeconfig
         secret:
           secretName: kubeletdnatcontroller-kubeconfig
-      - name: metrics-server-serving-cert
-        secret:
-          secretName: metrics-server-serving-cert
       - emptyDir: {}
         name: http-prober-bin
 status: {}

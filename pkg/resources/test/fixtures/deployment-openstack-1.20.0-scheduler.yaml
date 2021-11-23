@@ -179,9 +179,6 @@ spec:
         - mountPath: /http-prober-bin
           name: http-prober-bin
       volumes:
-      - name: openvpn-client-certificates
-        secret:
-          secretName: openvpn-client-certificates
       - name: ca
         secret:
           items:
@@ -194,6 +191,9 @@ spec:
       - name: scheduler-kubeconfig
         secret:
           secretName: scheduler-kubeconfig
+      - name: openvpn-client-certificates
+        secret:
+          secretName: openvpn-client-certificates
       - emptyDir: {}
         name: http-prober-bin
 status: {}
