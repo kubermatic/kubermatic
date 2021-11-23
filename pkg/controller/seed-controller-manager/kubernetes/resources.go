@@ -507,6 +507,11 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 				apiserver.OpenVPNServerAllowCreator(c),
 			)
 		}
+		if c.Spec.OIDC.IssuerURL != "" {
+			namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters, apiserver.OIDCIssuerAllowCreator(c.Spec.OIDC.IssuerURL))
+		} else if r.features.KubernetesOIDCAuthentication {
+			namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters, apiserver.OIDCIssuerAllowCreator(data.OIDCIssuerURL()))
+		}
 		if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
 			return fmt.Errorf("failed to ensure Network Policies: %v", err)
 		}
