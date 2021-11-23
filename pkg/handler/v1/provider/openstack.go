@@ -33,7 +33,7 @@ import (
 	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
-func getAuthInfo(ctx context.Context, req OpenstackReq, userInfoGetter provider.UserInfoGetter, presetsProvider provider.PresetProvider) (*provider.UserInfo, *resources.OpenstackCredentials, error) {
+func getAuthInfo(ctx context.Context, req OpenstackReq, userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) (*provider.UserInfo, *resources.OpenstackCredentials, error) {
 	var cred *resources.OpenstackCredentials
 	userInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
@@ -64,21 +64,21 @@ func getAuthInfo(ctx context.Context, req OpenstackReq, userInfoGetter provider.
 		return userInfo, credentials, nil
 	}
 	// Preset is used
-	cred, err = getPresetCredentials(userInfo, presetName, presetsProvider, token)
+	cred, err = getPresetCredentials(userInfo, presetName, presetProvider, token)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error getting preset credentials for OpenStack: %v", err)
 	}
 	return userInfo, cred, nil
 }
 
-func OpenstackSizeEndpoint(seedsGetter provider.SeedsGetter, presetsProvider provider.PresetProvider,
+func OpenstackSizeEndpoint(seedsGetter provider.SeedsGetter, presetProvider provider.PresetProvider,
 	userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider, caBundle *x509.CertPool) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackReq)
 		if !ok {
 			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got = %T", request)
 		}
-		userInfo, cred, err := getAuthInfo(ctx, req, userInfoGetter, presetsProvider)
+		userInfo, cred, err := getAuthInfo(ctx, req, userInfoGetter, presetProvider)
 		if err != nil {
 			return nil, err
 		}
@@ -105,7 +105,7 @@ func OpenstackSizeWithClusterCredentialsEndpoint(projectProvider provider.Projec
 	}
 }
 
-func OpenstackTenantEndpoint(seedsGetter provider.SeedsGetter, presetsProvider provider.PresetProvider,
+func OpenstackTenantEndpoint(seedsGetter provider.SeedsGetter, presetProvider provider.PresetProvider,
 	userInfoGetter provider.UserInfoGetter, caBundle *x509.CertPool) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		reqTenant, ok := request.(OpenstackTenantReq)
@@ -125,7 +125,7 @@ func OpenstackTenantEndpoint(seedsGetter provider.SeedsGetter, presetsProvider p
 			OIDCAuthentication:          reqTenant.OIDCAuthentication,
 		}
 
-		userInfo, cred, err := getAuthInfo(ctx, req, userInfoGetter, presetsProvider)
+		userInfo, cred, err := getAuthInfo(ctx, req, userInfoGetter, presetProvider)
 		if err != nil {
 			return nil, err
 		}
@@ -144,14 +144,14 @@ func OpenstackTenantWithClusterCredentialsEndpoint(projectProvider provider.Proj
 	}
 }
 
-func OpenstackNetworkEndpoint(seedsGetter provider.SeedsGetter, presetsProvider provider.PresetProvider,
+func OpenstackNetworkEndpoint(seedsGetter provider.SeedsGetter, presetProvider provider.PresetProvider,
 	userInfoGetter provider.UserInfoGetter, caBundle *x509.CertPool) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackReq)
 		if !ok {
 			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got = %T", request)
 		}
-		userInfo, cred, err := getAuthInfo(ctx, req, userInfoGetter, presetsProvider)
+		userInfo, cred, err := getAuthInfo(ctx, req, userInfoGetter, presetProvider)
 		if err != nil {
 			return nil, err
 		}
@@ -169,14 +169,14 @@ func OpenstackNetworkWithClusterCredentialsEndpoint(projectProvider provider.Pro
 	}
 }
 
-func OpenstackSecurityGroupEndpoint(seedsGetter provider.SeedsGetter, presetsProvider provider.PresetProvider,
+func OpenstackSecurityGroupEndpoint(seedsGetter provider.SeedsGetter, presetProvider provider.PresetProvider,
 	userInfoGetter provider.UserInfoGetter, caBundle *x509.CertPool) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackReq)
 		if !ok {
 			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got = %T", request)
 		}
-		userInfo, cred, err := getAuthInfo(ctx, req, userInfoGetter, presetsProvider)
+		userInfo, cred, err := getAuthInfo(ctx, req, userInfoGetter, presetProvider)
 		if err != nil {
 			return nil, err
 		}
@@ -194,14 +194,14 @@ func OpenstackSecurityGroupWithClusterCredentialsEndpoint(projectProvider provid
 	}
 }
 
-func OpenstackSubnetsEndpoint(seedsGetter provider.SeedsGetter, presetsProvider provider.PresetProvider,
+func OpenstackSubnetsEndpoint(seedsGetter provider.SeedsGetter, presetProvider provider.PresetProvider,
 	userInfoGetter provider.UserInfoGetter, caBundle *x509.CertPool) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackSubnetReq)
 		if !ok {
 			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackSubnetReq, got = %T", request)
 		}
-		userInfo, cred, err := getAuthInfo(ctx, req.OpenstackReq, userInfoGetter, presetsProvider)
+		userInfo, cred, err := getAuthInfo(ctx, req.OpenstackReq, userInfoGetter, presetProvider)
 		if err != nil {
 			return nil, err
 		}
@@ -219,14 +219,14 @@ func OpenstackSubnetsWithClusterCredentialsEndpoint(projectProvider provider.Pro
 	}
 }
 
-func OpenstackAvailabilityZoneEndpoint(seedsGetter provider.SeedsGetter, presetsProvider provider.PresetProvider,
+func OpenstackAvailabilityZoneEndpoint(seedsGetter provider.SeedsGetter, presetProvider provider.PresetProvider,
 	userInfoGetter provider.UserInfoGetter, caBundle *x509.CertPool) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackReq)
 		if !ok {
 			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got = %T", request)
 		}
-		userInfo, cred, err := getAuthInfo(ctx, req, userInfoGetter, presetsProvider)
+		userInfo, cred, err := getAuthInfo(ctx, req, userInfoGetter, presetProvider)
 		if err != nil {
 			return nil, err
 		}

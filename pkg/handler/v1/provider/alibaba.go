@@ -97,7 +97,7 @@ func DecodeAlibabaNoCredentialReq(c context.Context, r *http.Request) (interface
 	return req, nil
 }
 
-func AlibabaInstanceTypesEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+func AlibabaInstanceTypesEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AlibabaReq)
 
@@ -109,7 +109,7 @@ func AlibabaInstanceTypesEndpoint(presetsProvider provider.PresetProvider, userI
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		if len(req.Credential) > 0 {
-			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
+			preset, err := presetProvider.GetPreset(userInfo, req.Credential)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
@@ -135,7 +135,7 @@ func AlibabaInstanceTypesWithClusterCredentialsEndpoint(projectProvider provider
 	}
 }
 
-func AlibabaZonesEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func AlibabaZonesEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AlibabaReq)
 
@@ -147,7 +147,7 @@ func AlibabaZonesEndpoint(presetsProvider provider.PresetProvider, userInfoGette
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		if len(req.Credential) > 0 {
-			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
+			preset, err := presetProvider.GetPreset(userInfo, req.Credential)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
@@ -160,7 +160,7 @@ func AlibabaZonesEndpoint(presetsProvider provider.PresetProvider, userInfoGette
 	}
 }
 
-func AlibabaVSwitchesEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func AlibabaVSwitchesEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AlibabaReq)
 
@@ -172,7 +172,7 @@ func AlibabaVSwitchesEndpoint(presetsProvider provider.PresetProvider, userInfoG
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		if len(req.Credential) > 0 {
-			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
+			preset, err := presetProvider.GetPreset(userInfo, req.Credential)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}

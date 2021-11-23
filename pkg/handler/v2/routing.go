@@ -39,7 +39,7 @@ import (
 type Routing struct {
 	log                                     *zap.SugaredLogger
 	logger                                  log.Logger
-	presetsProvider                         provider.PresetProvider
+	presetProvider                          provider.PresetProvider
 	seedsGetter                             provider.SeedsGetter
 	seedsClientGetter                       provider.SeedClientGetter
 	kubermaticConfigGetter                  provider.KubermaticConfigurationGetter
@@ -99,7 +99,7 @@ func NewV2Routing(routingParams handler.RoutingParams) Routing {
 	return Routing{
 		log:                                     routingParams.Log,
 		logger:                                  log.NewLogfmtLogger(os.Stderr),
-		presetsProvider:                         routingParams.PresetsProvider,
+		presetProvider:                          routingParams.PresetProvider,
 		seedsGetter:                             routingParams.SeedsGetter,
 		seedsClientGetter:                       routingParams.SeedsClientGetter,
 		kubermaticConfigGetter:                  routingParams.KubermaticConfigurationGetter,

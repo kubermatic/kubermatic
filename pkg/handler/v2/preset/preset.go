@@ -49,7 +49,7 @@ func DecodeListPresets(_ context.Context, r *http.Request) (interface{}, error) 
 }
 
 // ListProviderPresets returns a list of preset names for the provider
-func ListPresets(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func ListPresets(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(listPresetsReq)
 		if !ok {
@@ -62,7 +62,7 @@ func ListPresets(presetsProvider provider.PresetProvider, userInfoGetter provide
 		}
 
 		presetList := &v2.PresetList{Items: make([]v2.Preset, 0)}
-		presets, err := presetsProvider.GetPresets(userInfo)
+		presets, err := presetProvider.GetPresets(userInfo)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, err.Error())
 		}
@@ -122,7 +122,7 @@ func (r updatePresetStatusReq) Validate() error {
 }
 
 // UpdatePresetStatus updates the status of a preset. It can enable or disable it, so that it won't be listed by the list endpoints.
-func UpdatePresetStatus(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func UpdatePresetStatus(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(updatePresetStatusReq)
 		if !ok {
@@ -143,14 +143,14 @@ func UpdatePresetStatus(presetsProvider provider.PresetProvider, userInfoGetter 
 			return nil, errors.New(http.StatusForbidden, "only admins can update presets")
 		}
 
-		preset, err := presetsProvider.GetPreset(userInfo, req.PresetName)
+		preset, err := presetProvider.GetPreset(userInfo, req.PresetName)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, err.Error())
 		}
 
 		if len(req.Provider) == 0 {
 			preset.Spec.SetPresetStatus(req.Body.Enabled)
-			_, err = presetsProvider.UpdatePreset(preset)
+			_, err = presetProvider.UpdatePreset(preset)
 			return nil, err
 		}
 
@@ -159,7 +159,7 @@ func UpdatePresetStatus(presetsProvider provider.PresetProvider, userInfoGetter 
 		}
 
 		preset.Spec.SetPresetProviderStatus(crdapiv1.ProviderType(req.Provider), req.Body.Enabled)
-		_, err = presetsProvider.UpdatePreset(preset)
+		_, err = presetProvider.UpdatePreset(preset)
 		return nil, err
 	}
 }
@@ -207,7 +207,7 @@ func DecodeListProviderPresets(ctx context.Context, r *http.Request) (interface{
 }
 
 // ListProviderPresets returns a list of preset names for the provider
-func ListProviderPresets(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func ListProviderPresets(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(listProviderPresetsReq)
 		if !ok {
@@ -224,7 +224,7 @@ func ListProviderPresets(presetsProvider provider.PresetProvider, userInfoGetter
 		}
 
 		presetList := &v2.PresetList{Items: make([]v2.Preset, 0)}
-		presets, err := presetsProvider.GetPresets(userInfo)
+		presets, err := presetProvider.GetPresets(userInfo)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, err.Error())
 		}
@@ -315,7 +315,7 @@ func DecodeCreatePreset(_ context.Context, r *http.Request) (interface{}, error)
 }
 
 // CreatePreset creates a preset for the selected provider and returns the name if successful, error otherwise
-func CreatePreset(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func CreatePreset(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(createPresetReq)
 		if !ok {
@@ -336,9 +336,9 @@ func CreatePreset(presetsProvider provider.PresetProvider, userInfoGetter provid
 			return "", errors.New(http.StatusForbidden, "only admins can update presets")
 		}
 
-		preset, err := presetsProvider.GetPreset(userInfo, req.Body.Name)
+		preset, err := presetProvider.GetPreset(userInfo, req.Body.Name)
 		if k8serrors.IsNotFound(err) {
-			return presetsProvider.CreatePreset(&req.Body)
+			return presetProvider.CreatePreset(&req.Body)
 		}
 
 		if err != nil && !k8serrors.IsNotFound(err) {
@@ -350,7 +350,7 @@ func CreatePreset(presetsProvider provider.PresetProvider, userInfoGetter provid
 		}
 
 		preset = mergePresets(preset, &req.Body, crdapiv1.ProviderType(req.ProviderName))
-		preset, err = presetsProvider.UpdatePreset(preset)
+		preset, err = presetProvider.UpdatePreset(preset)
 		if err != nil {
 			return nil, err
 		}
@@ -384,7 +384,7 @@ func DecodeUpdatePreset(_ context.Context, r *http.Request) (interface{}, error)
 }
 
 // UpdatePreset updates a preset for the selected provider and returns the name if successful, error otherwise
-func UpdatePreset(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func UpdatePreset(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(updatePresetReq)
 		if !ok {
@@ -405,13 +405,13 @@ func UpdatePreset(presetsProvider provider.PresetProvider, userInfoGetter provid
 			return "", errors.New(http.StatusForbidden, "only admins can update presets")
 		}
 
-		preset, err := presetsProvider.GetPreset(userInfo, req.Body.Name)
+		preset, err := presetProvider.GetPreset(userInfo, req.Body.Name)
 		if err != nil {
 			return nil, err
 		}
 
 		preset = mergePresets(preset, &req.Body, crdapiv1.ProviderType(req.ProviderName))
-		preset, err = presetsProvider.UpdatePreset(preset)
+		preset, err = presetProvider.UpdatePreset(preset)
 		if err != nil {
 			return nil, err
 		}
@@ -459,7 +459,7 @@ func DecodeDeletePreset(_ context.Context, r *http.Request) (interface{}, error)
 }
 
 // DeletePreset deletes the given provider from the preset AND if there is only one provider left, the preset gets deleted
-func DeletePreset(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func DeletePreset(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(deletePresetReq)
 		if !ok {
@@ -480,7 +480,7 @@ func DeletePreset(presetsProvider provider.PresetProvider, userInfoGetter provid
 			return "", errors.New(http.StatusForbidden, "only admins can delete presets")
 		}
 
-		preset, err := presetsProvider.GetPreset(userInfo, req.PresetName)
+		preset, err := presetProvider.GetPreset(userInfo, req.PresetName)
 		if k8serrors.IsNotFound(err) {
 			return nil, errors.NewBadRequest("preset was not found.")
 		}
@@ -493,7 +493,7 @@ func DeletePreset(presetsProvider provider.PresetProvider, userInfoGetter provid
 		preset.Spec.RemoveProvider(crdapiv1.ProviderType(req.ProviderName))
 
 		// Delete the provider from the preset OR the whole preset
-		preset, err = presetsProvider.DeletePreset(preset)
+		preset, err = presetProvider.DeletePreset(preset)
 		if err != nil {
 			return nil, err
 		}
