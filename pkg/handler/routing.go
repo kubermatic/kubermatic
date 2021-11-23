@@ -41,7 +41,7 @@ type Routing struct {
 	log                                   *zap.SugaredLogger
 	logger                                log.Logger
 	versions                              kubermatic.Versions
-	presetsProvider                       provider.PresetProvider
+	presetProvider                        provider.PresetProvider
 	masterClient                          client.Client
 	seedsGetter                           provider.SeedsGetter
 	seedsClientGetter                     provider.SeedClientGetter
@@ -84,7 +84,7 @@ func NewRouting(routingParams RoutingParams, masterClient client.Client) Routing
 	return Routing{
 		log:                                   routingParams.Log,
 		logger:                                log.NewLogfmtLogger(os.Stderr),
-		presetsProvider:                       routingParams.PresetsProvider,
+		presetProvider:                        routingParams.PresetProvider,
 		masterClient:                          masterClient,
 		seedsGetter:                           routingParams.SeedsGetter,
 		seedsClientGetter:                     routingParams.SeedsClientGetter,
@@ -134,7 +134,7 @@ func (r Routing) defaultServerOptions() []httptransport.ServerOption {
 
 type RoutingParams struct {
 	Log                                     *zap.SugaredLogger
-	PresetsProvider                         provider.PresetProvider
+	PresetProvider                          provider.PresetProvider
 	SeedsGetter                             provider.SeedsGetter
 	SeedsClientGetter                       provider.SeedClientGetter
 	KubermaticConfigurationGetter           provider.KubermaticConfigurationGetter

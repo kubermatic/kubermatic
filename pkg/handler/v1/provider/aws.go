@@ -204,7 +204,7 @@ func AWSSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider, priv
 }
 
 // AWSSubnetEndpoint handles the request to list AWS availability subnets in a given vpc, using provided credentials
-func AWSSubnetEndpoint(presetsProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func AWSSubnetEndpoint(presetProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AWSSubnetReq)
 
@@ -220,7 +220,7 @@ func AWSSubnetEndpoint(presetsProvider provider.PresetProvider, seedsGetter prov
 		}
 
 		if len(req.Credential) > 0 {
-			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
+			preset, err := presetProvider.GetPreset(userInfo, req.Credential)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
@@ -260,7 +260,7 @@ func AWSSubnetWithClusterCredentialsEndpoint(projectProvider provider.ProjectPro
 }
 
 // AWSVPCEndpoint handles the request to list AWS VPC's, using provided credentials
-func AWSVPCEndpoint(presetsProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func AWSVPCEndpoint(presetProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AWSVPCReq)
 
@@ -269,7 +269,7 @@ func AWSVPCEndpoint(presetsProvider provider.PresetProvider, seedsGetter provide
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		credentials, err := getAWSCredentialsFromRequest(ctx, req.AWSCommonReq, userInfoGetter, presetsProvider)
+		credentials, err := getAWSCredentialsFromRequest(ctx, req.AWSCommonReq, userInfoGetter, presetProvider)
 		if err != nil {
 			return nil, err
 		}
@@ -284,7 +284,7 @@ func AWSVPCEndpoint(presetsProvider provider.PresetProvider, seedsGetter provide
 }
 
 // AWSSecurityGroupsEndpoint handles the request to list AWS Security Groups, using provided credentials
-func AWSSecurityGroupsEndpoint(presetsProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func AWSSecurityGroupsEndpoint(presetProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AWSSecurityGroupsReq)
 
@@ -293,7 +293,7 @@ func AWSSecurityGroupsEndpoint(presetsProvider provider.PresetProvider, seedsGet
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		credentials, err := getAWSCredentialsFromRequest(ctx, req.AWSCommonReq, userInfoGetter, presetsProvider)
+		credentials, err := getAWSCredentialsFromRequest(ctx, req.AWSCommonReq, userInfoGetter, presetProvider)
 		if err != nil {
 			return nil, err
 		}
@@ -330,7 +330,7 @@ type awsCredentials struct {
 	assumeRoleExternalID string
 }
 
-func getAWSCredentialsFromRequest(ctx context.Context, req AWSCommonReq, userInfoGetter provider.UserInfoGetter, presetsProvider provider.PresetProvider) (*awsCredentials, error) {
+func getAWSCredentialsFromRequest(ctx context.Context, req AWSCommonReq, userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) (*awsCredentials, error) {
 	accessKeyID := req.AccessKeyID
 	secretAccessKey := req.SecretAccessKey
 	assumeRoleARN := req.AssumeRoleARN
@@ -342,7 +342,7 @@ func getAWSCredentialsFromRequest(ctx context.Context, req AWSCommonReq, userInf
 	}
 
 	if len(req.Credential) > 0 {
-		preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
+		preset, err := presetProvider.GetPreset(userInfo, req.Credential)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 		}

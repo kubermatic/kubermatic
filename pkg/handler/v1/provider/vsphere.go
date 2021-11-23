@@ -30,7 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
-func VsphereNetworksEndpoint(seedsGetter provider.SeedsGetter, presetsProvider provider.PresetProvider,
+func VsphereNetworksEndpoint(seedsGetter provider.SeedsGetter, presetProvider provider.PresetProvider,
 	userInfoGetter provider.UserInfoGetter, caBundle *x509.CertPool) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(VSphereNetworksReq)
@@ -45,7 +45,7 @@ func VsphereNetworksEndpoint(seedsGetter provider.SeedsGetter, presetsProvider p
 		password := req.Password
 
 		if len(req.Credential) > 0 {
-			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
+			preset, err := presetProvider.GetPreset(userInfo, req.Credential)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
@@ -70,7 +70,7 @@ func VsphereNetworksWithClusterCredentialsEndpoint(projectProvider provider.Proj
 	}
 }
 
-func VsphereFoldersEndpoint(seedsGetter provider.SeedsGetter, presetsProvider provider.PresetProvider,
+func VsphereFoldersEndpoint(seedsGetter provider.SeedsGetter, presetProvider provider.PresetProvider,
 	userInfoGetter provider.UserInfoGetter, caBundle *x509.CertPool) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(VSphereFoldersReq)
@@ -85,7 +85,7 @@ func VsphereFoldersEndpoint(seedsGetter provider.SeedsGetter, presetsProvider pr
 		password := req.Password
 
 		if len(req.Credential) > 0 {
-			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
+			preset, err := presetProvider.GetPreset(userInfo, req.Credential)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
