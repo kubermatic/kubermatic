@@ -49,7 +49,7 @@ func reconcileAvailabilitySet(ctx context.Context, clients *ClientSet, location 
 		return cluster, nil
 	}
 
-	if err := ensureAvailabilitySet(ctx, clients.AvailabilitySets, cluster.Spec.Cloud, location); err != nil {
+	if err := ensureAvailabilitySet(ctx, clients.AvailabilitySets, cluster.Spec.Cloud, location, cluster.Name); err != nil {
 		return nil, fmt.Errorf("failed to ensure AvailabilitySet exists: %v", err)
 	}
 
@@ -59,7 +59,7 @@ func reconcileAvailabilitySet(ctx context.Context, clients *ClientSet, location 
 	})
 }
 
-func ensureAvailabilitySet(ctx context.Context, client computeapi.AvailabilitySetsClientAPI, cloud kubermaticv1.CloudSpec, location string) error {
+func ensureAvailabilitySet(ctx context.Context, client computeapi.AvailabilitySetsClientAPI, cloud kubermaticv1.CloudSpec, location string, clusterName string) error {
 	faultDomainCount, ok := faultDomainsPerRegion[location]
 	if !ok {
 		return fmt.Errorf("could not determine the number of fault domains, unknown region %q", location)
@@ -70,6 +70,9 @@ func ensureAvailabilitySet(ctx context.Context, client computeapi.AvailabilitySe
 		Location: to.StringPtr(location),
 		Sku: &compute.Sku{
 			Name: to.StringPtr("Aligned"),
+		},
+		Tags: map[string]*string{
+			clusterTagKey: to.StringPtr(clusterName),
 		},
 		AvailabilitySetProperties: &compute.AvailabilitySetProperties{
 			PlatformFaultDomainCount:  to.Int32Ptr(faultDomainCount),
