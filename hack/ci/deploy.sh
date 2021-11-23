@@ -90,6 +90,8 @@ chmod 600 "$KUBECONFIG"
 echodate "Deploying ${DEPLOY_STACK} stack..."
 case "${DEPLOY_STACK}" in
 monitoring)
+  echodate "fetching chart dependencies..."
+  hack/ci/fetch-chart-dependencies.sh
   deploy "node-exporter" "monitoring" charts/monitoring/node-exporter/
   deploy "kube-state-metrics" "monitoring" charts/monitoring/kube-state-metrics/
   deploy "grafana" "monitoring" charts/monitoring/grafana/
@@ -106,6 +108,8 @@ monitoring)
   ;;
 
 logging)
+  echodate "fetching chart dependencies..."
+  hack/ci/fetch-chart-dependencies.sh
   deploy "loki" "logging" charts/logging/loki/
   deploy "promtail" "logging" charts/logging/promtail/
   ;;
