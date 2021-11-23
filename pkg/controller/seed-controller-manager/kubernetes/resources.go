@@ -101,7 +101,7 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return err
 	}
 
-	if err := r.ensureNetworkPolicies(ctx, cluster); err != nil {
+	if err := r.ensureNetworkPolicies(ctx, cluster, data); err != nil {
 		return err
 	}
 
@@ -468,7 +468,7 @@ func (r *Reconciler) ensureClusterRoleBindings(ctx context.Context, c *kubermati
 	return nil
 }
 
-func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.Cluster) error {
+func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	if c.Spec.Features[kubermaticv1.ApiserverNetworkPolicy] {
 		namedNetworkPolicyCreatorGetters := []reconciling.NamedNetworkPolicyCreatorGetter{
 			apiserver.DenyAllPolicyCreator(),
@@ -477,6 +477,11 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 			apiserver.OpenVPNServerAllowCreator(c),
 			apiserver.MachineControllerWebhookCreator(c),
 			apiserver.MetricsServerAllowCreator(c),
+		}
+		if c.Spec.OIDC.IssuerURL != "" {
+			namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters, apiserver.OIDCIssuerAllowCreator(c.Spec.OIDC.IssuerURL))
+		} else if r.features.KubernetesOIDCAuthentication {
+			namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters, apiserver.OIDCIssuerAllowCreator(data.OIDCIssuerURL()))
 		}
 		if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
 			return fmt.Errorf("failed to ensure Network Policies: %v", err)
