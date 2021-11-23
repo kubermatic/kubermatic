@@ -39,11 +39,11 @@ With Applications we aim to provide an easy way for user to install components i
 
 ## Motivation and Background
 
-Currently, KKP only supports one mechanism for installing components in user-clusters: Custom Addons. For this, all addons are stored in a single docker image that is configured in KKP. Afterwards, an initContainer is being run that starts the image and copies all addons onto the seed-controller-managers local file-system. From there, addon manifests are being rendered and rolled out to user clusters.
+Currently, KKP only supports one mechanism for customers to install components in user-clusters: Custom Addons. For this, all addons are stored in a single docker image that is configured in KKP. Afterwards, an initContainer is being run that starts the image and copies all addons onto the seed-controller-managers local file-system. From there, addon manifests are being rendered and rolled out to user clusters.
 
 The current implementation of addons has some flaws for installing custom components that make the usage and maintenance cumbersome for cluster administrators:
 
-- To add “Custom Addons” the cluster-admin needs to bundle manifests and templates in a Docker image that is based on the official addon-manifest docker image by Kubermatic
+- To add Custom Addons, the cluster-admin needs to bundle manifests and templates in a Docker image that is based on the official addon-manifest docker image by Kubermatic
 - It’s currently only possible to deploy multiple instances of the same addon when using a workaround (creating two separate addons)
 - Addons are strictly tied to KKP versions due to the composition logic of the manifest image tag; for any provided manifest image the tag gets overwritten with `:<KKP VERSION>\[-CUSTOM SUFFIX\]`
 - Complex Addons can leave a trail of reconciliation errors until successfully deployed because all manifest files are applied at the same time
@@ -55,8 +55,8 @@ The current implementation of addons has some flaws for installing custom compon
 
 - Decouple installation of Applications from KKP releases
 - Be able to choose which Application should be installed during the cluster creation or in the cluster template
-- Ensure Application is installed on user cluster (reconciliation)
-- The list of possible Application to install should be administered by the KKP platform admin
+- Ensure Application is installed in user-cluster (reconciliation)
+- The list of possible Applications to install should be administered by the KKP platform admin
 - Be compatible with private registries in preparation for future air-gapped environment stories. The current Policy regarding the air-gapped environment is to assume a private trusted registry is available. Application Source (manifest of the workload to deployed) and workload images of the application should be configurable to point on a private registry
 - Allow for easy management of multiple Application versions
 - Allow use of manifests provided by the k8s community
@@ -118,8 +118,8 @@ Lastly, we envisioned two possible sources for a ApplicationDefinitions:
     - git → a git repository from which to pull the manifests. This was considered to be especially useful by Kubermatic PS who work directly with customers
     - helm → a helm repository to pull charts from. Only compatible with rendering method helm
   - constraints. These describe conditions that must apply for an add-on to be compatible with a user cluster. Possible constraints are:
-    - kkp-version →semVer range that describes compatible KKP versions
-    - k8s-version →semVer range that describes compatible k8s versions
+    - kkp-version → semVer range that describes compatible KKP versions
+    - k8s-version → semVer range that describes compatible k8s versions
   - values → These are values that can be used for overwriting defaults. We think this field will be required for Application if a customer is using a private registry. So application can be configured
 
 An example CR could look like this:
@@ -181,7 +181,7 @@ This means that the namespace where ApplicationInstallations should be stored ge
 
 a) Create ApplicationCRs directly inside the cluster object and then have the ApplicationInstallationController watch the cluster CR
 
-- we would extend the cluster object with an Applications field that contains a list of all Applications and there values
+- we would extend the cluster object with an Applications field that contains a list of all Applications and their values
 - the ApplicationInstallationController would watch the cluster CR and create corresponding ApplicationInstallation CRs
 
 This implementation is close to the status quo of packing everything into the cluster object and then react to it. However we have the concern that the sum of all ApplicationInstallations with all of its fields can become quite large and result in a too large cluster object
@@ -282,7 +282,7 @@ The functionality of the ApplicationInstallationController depends on the select
 
 ## Default Addon
 
-A *Default Addon* is installed on all user clusters based on configuration. The user can not delete *Default Addons*. These will remain unchanged after this prop
+A *Default Addon* is installed on all user clusters based on configuration. The user can not delete *Default Addons*. These will remain unchanged after this proposal
 
 - Shipped by Kubermatic,  tied to KKP version
 - Tested by Kubermatic (Kubernetes versions)
@@ -290,7 +290,7 @@ A *Default Addon* is installed on all user clusters based on configuration. The 
 
 ## Application
 
-An *Application* is an additional component installed in all user clusters on-demand, but not shipped with KKP. It is provided by the customer:
+An *Application* is an additional component installed in all user clusters on-demand, but not shipped with KKP. It is provided by the customer or a third party (e.g. helm community):
 
 - Shipped by the customer
 - Not tested nor supported by Kubermatic
@@ -299,7 +299,7 @@ An *Application* is an additional component installed in all user clusters on-de
 
 ## Application by Kubermatic
 
-An *OptionalApplication* is installed on all user clusters on demand during runtime. The user can also uninstall and reinstall them. They are visible in the KKP UI.
+An *OptionalApplication* is installed in a user clusters on demand during runtime or at cluster creation. The user can also uninstall and reinstall them. They are visible in the KKP UI.
 
 - Shipped by Kubermatic, tied to KKP version (KKP version will be enforced using the aforementioned constraint feature)
 - Tested by Kubermatic (Kubernetes versions and customizations)
