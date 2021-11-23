@@ -269,6 +269,10 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		admissionPlugins.Insert(resources.PodNodeSelectorAdmissionPlugin)
 	}
 
+	if useEventRateLimitAdmissionPlugin(data) {
+		admissionPlugins.Insert(resources.EventRateLimitAdmissionPlugin)
+	}
+
 	admissionPlugins.Insert(cluster.Spec.AdmissionPlugins...)
 
 	serviceAccountKeyFile := filepath.Join("/etc/kubernetes/service-account-key", resources.ServiceAccountKeySecretKey)

@@ -25,10 +25,12 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const podNodeSelectorFileName = "podnodeselector.yaml"
+const eventRateLimitFileName = "eventconfig.yaml"
 
 // AdmissionConfiguration provides versioned configuration for admission controllers.
 type AdmissionConfiguration struct {
@@ -49,6 +51,18 @@ type AdmissionPluginConfiguration struct {
 	// Path is the path to a configuration file that contains the plugin's
 	// configuration
 	Path string `yaml:"path"`
+}
+
+type EventConfiguration struct {
+	metav1.TypeMeta `json:",inline"`
+	Limits          []EventLimit `json:"limits"`
+}
+
+type EventLimit struct {
+	Type      string `json:"type"`
+	QPS       int32  `json:"qps"`
+	Burst     int32  `json:"burst"`
+	CacheSize int32  `json:"cacheSize,omitempty"`
 }
 
 func AdmissionControlCreator(data *resources.TemplateData) reconciling.NamedConfigMapCreatorGetter {
@@ -78,6 +92,20 @@ func AdmissionControlCreator(data *resources.TemplateData) reconciling.NamedConf
 				cm.Data[podNodeSelectorFileName] = podNodeConfig
 			}
 
+			if useEventRateLimitAdmissionPlugin(data) {
+				eventRateLimit := AdmissionPluginConfiguration{
+					Name: resources.EventRateLimitAdmissionPlugin,
+					Path: fmt.Sprintf("/etc/kubernetes/adm-control/%s", eventRateLimitFileName),
+				}
+				admissionConfiguration.Plugins = append(admissionConfiguration.Plugins, eventRateLimit)
+
+				eventRateLimitConfig, err := getEventRateLimitConfiguration(data)
+				if err != nil {
+					return nil, err
+				}
+				cm.Data[eventRateLimitFileName] = eventRateLimitConfig
+			}
+
 			rawAdmissionConfiguration, err := yaml.Marshal(admissionConfiguration)
 			if err != nil {
 				return nil, err
@@ -93,6 +121,11 @@ func AdmissionControlCreator(data *resources.TemplateData) reconciling.NamedConf
 func usePodNodeSelectorAdmissionPlugin(data *resources.TemplateData) bool {
 	admissionPlugins := sets.NewString(data.Cluster().Spec.AdmissionPlugins...)
 	return data.Cluster().Spec.UsePodNodeSelectorAdmissionPlugin || admissionPlugins.Has(resources.PodNodeSelectorAdmissionPlugin)
+}
+
+func useEventRateLimitAdmissionPlugin(data *resources.TemplateData) bool {
+	admissionPlugins := sets.NewString(data.Cluster().Spec.AdmissionPlugins...)
+	return data.Cluster().Spec.UseEventRateLimitAdmissionPlugin || admissionPlugins.Has(resources.EventRateLimitAdmissionPlugin)
 }
 
 func getPodNodeSelectorAdmissionPluginConfig(data *resources.TemplateData) (string, error) {
@@ -112,4 +145,41 @@ func getPodNodeSelectorAdmissionPluginConfig(data *resources.TemplateData) (stri
 	}
 
 	return string(rawPodNodeConfig), nil
+}
+
+func getEventRateLimitConfiguration(data *resources.TemplateData) (string, error) {
+	config := EventConfiguration{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "eventratelimit.admission.k8s.io",
+			APIVersion: "v1alpha1",
+		},
+		Limits: []EventLimit{},
+	}
+
+	if data.Cluster().Spec.EventRateLimitConfig != nil && data.Cluster().Spec.EventRateLimitConfig.Server != nil {
+		limit := data.Cluster().Spec.EventRateLimitConfig.Server
+		config.Limits = append(config.Limits, EventLimit{Type: "Server", QPS: limit.QPS, Burst: limit.Burst, CacheSize: limit.CacheSize})
+	}
+
+	if data.Cluster().Spec.EventRateLimitConfig != nil && data.Cluster().Spec.EventRateLimitConfig.Namespace != nil {
+		limit := data.Cluster().Spec.EventRateLimitConfig.Namespace
+		config.Limits = append(config.Limits, EventLimit{Type: "Namespace", QPS: limit.QPS, Burst: limit.Burst, CacheSize: limit.CacheSize})
+	}
+
+	if data.Cluster().Spec.EventRateLimitConfig != nil && data.Cluster().Spec.EventRateLimitConfig.User != nil {
+		limit := data.Cluster().Spec.EventRateLimitConfig.User
+		config.Limits = append(config.Limits, EventLimit{Type: "User", QPS: limit.QPS, Burst: limit.Burst, CacheSize: limit.CacheSize})
+	}
+
+	if data.Cluster().Spec.EventRateLimitConfig != nil && data.Cluster().Spec.EventRateLimitConfig.SourceAndObject != nil {
+		limit := data.Cluster().Spec.EventRateLimitConfig.SourceAndObject
+		config.Limits = append(config.Limits, EventLimit{Type: "SourceAndObject", QPS: limit.QPS, Burst: limit.Burst, CacheSize: limit.CacheSize})
+	}
+
+	rawConfig, err := yaml.Marshal(config)
+	if err != nil {
+		return "", err
+	}
+
+	return string(rawConfig), nil
 }
