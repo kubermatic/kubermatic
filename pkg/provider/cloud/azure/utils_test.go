@@ -20,7 +20,7 @@ package azure
 
 import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/rand"
+	//"k8s.io/apimachinery/pkg/util/rand"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -67,7 +67,7 @@ func getFakeCredentials() (*Credentials, error) {
 }
 
 // makeCluster returns a KKP Cluster object with the Azure cloud spec inserted.
-func makeCluster(cloudSpec *kubermaticv1.AzureCloudSpec, credentials *Credentials) *kubermaticv1.Cluster {
+func makeCluster(name string, cloudSpec *kubermaticv1.AzureCloudSpec, credentials *Credentials) *kubermaticv1.Cluster {
 	spec := cloudSpec.DeepCopy()
 	spec.TenantID = credentials.TenantID
 	spec.SubscriptionID = credentials.SubscriptionID
@@ -76,7 +76,7 @@ func makeCluster(cloudSpec *kubermaticv1.AzureCloudSpec, credentials *Credential
 
 	return &kubermaticv1.Cluster{
 		ObjectMeta: v1.ObjectMeta{
-			Name: rand.String(10),
+			Name: name,
 		},
 		Spec: kubermaticv1.ClusterSpec{
 			Cloud: kubermaticv1.CloudSpec{

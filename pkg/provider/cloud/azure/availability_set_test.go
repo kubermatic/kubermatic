@@ -37,132 +37,146 @@ func TestReconcileAvailabilitySet(t *testing.T) {
 		t.Fatalf("failed to generate credentials: %v", err)
 	}
 
-	ctx := context.Background()
+	testcases := []struct {
+		name                        string
+		clusterName                 string
+		azureCloudSpec              *kubermaticv1.AzureCloudSpec
+		existingAvailabilitySet     *compute.AvailabilitySet
+		clientMode                  fakeClientMode
+		overrideTags                bool
+		expectedError               bool
+		expectedAvailabilitySetName string
+		expectedFirstCallCount      int
+		expectedSecondCallCount     int
+	}{
+		{
+			name:                        "no-availability-set-name",
+			clusterName:                 "94fs85s8mz",
+			azureCloudSpec:              &kubermaticv1.AzureCloudSpec{},
+			existingAvailabilitySet:     nil,
+			clientMode:                  fakeClientModeOkay,
+			overrideTags:                false,
+			expectedError:               false,
+			expectedAvailabilitySetName: "kubernetes-94fs85s8mz",
+			expectedFirstCallCount:      1,
+			expectedSecondCallCount:     1,
+		},
+		{
+			name:                        "ownership-tag-removal",
+			clusterName:                 "xxmhccmbx3",
+			azureCloudSpec:              &kubermaticv1.AzureCloudSpec{},
+			existingAvailabilitySet:     nil,
+			clientMode:                  fakeClientModeOkay,
+			overrideTags:                true,
+			expectedError:               false,
+			expectedAvailabilitySetName: "kubernetes-xxmhccmbx3",
+			expectedFirstCallCount:      1,
+			expectedSecondCallCount:     1,
+		},
+		{
+			name:        "custom-nonexistent-availability-set",
+			clusterName: "x2ca7jkvgr",
+			azureCloudSpec: &kubermaticv1.AzureCloudSpec{
+				ResourceGroup:   customExistingResourceGroup,
+				AvailabilitySet: customExistingAvailabilitySet,
+			},
+			existingAvailabilitySet:     nil,
+			clientMode:                  fakeClientModeOkay,
+			overrideTags:                false,
+			expectedError:               false,
+			expectedAvailabilitySetName: customExistingAvailabilitySet,
+			expectedFirstCallCount:      1,
+			expectedSecondCallCount:     1,
+		},
+		{
+			name:        "existing-availability-set",
+			clusterName: "n146b2u5h3",
+			azureCloudSpec: &kubermaticv1.AzureCloudSpec{
+				ResourceGroup:   customExistingResourceGroup,
+				AvailabilitySet: customExistingAvailabilitySet,
+			},
+			existingAvailabilitySet: &compute.AvailabilitySet{
+				ID:       to.StringPtr(fmt.Sprintf("/subscriptions/%s/resourceGroups/%s/%s", credentials.SubscriptionID, customExistingResourceGroup, customExistingAvailabilitySet)),
+				Name:     to.StringPtr(customExistingAvailabilitySet),
+				Location: to.StringPtr(testLocation),
+				Type:     to.StringPtr("Microsoft.Compute/availabilitySets"),
+			},
+			clientMode:                  fakeClientModeOkay,
+			overrideTags:                false,
+			expectedError:               false,
+			expectedAvailabilitySetName: customExistingAvailabilitySet,
+			expectedFirstCallCount:      0,
+			expectedSecondCallCount:     0,
+		},
+		{
+			name:                        "invalid-credentials",
+			clusterName:                 "m7t4oo7eai",
+			azureCloudSpec:              &kubermaticv1.AzureCloudSpec{},
+			existingAvailabilitySet:     nil,
+			clientMode:                  fakeClientModeAuthFail,
+			overrideTags:                false,
+			expectedError:               true,
+			expectedAvailabilitySetName: "",
+			expectedFirstCallCount:      0,
+			expectedSecondCallCount:     0,
+		},
+	}
 
-	t.Run("no-availability-set-set", func(t *testing.T) {
-		cluster := makeCluster(&kubermaticv1.AzureCloudSpec{}, credentials)
-		clientSet := getFakeClientSetWithAvailabilitySetsClient(*credentials, testLocation, cluster, nil, fakeClientModeOkay)
-		cluster, err = reconcileAvailabilitySet(ctx, clientSet, testLocation, cluster, testClusterUpdater(cluster))
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
 
-		if err != nil {
-			t.Fatalf("expected reconcileAvailabilitySet to succeed, but failed with error: %v", err)
-		}
+			// prepare cluster resource and client set
+			cluster := makeCluster(tc.clusterName, tc.azureCloudSpec, credentials)
+			clientSet := getFakeClientSetWithAvailabilitySetsClient(*credentials, testLocation, cluster, tc.existingAvailabilitySet, tc.clientMode)
 
-		if cluster.Spec.Cloud.Azure.AvailabilitySet != availabilitySetName(cluster) {
-			t.Fatalf("expected availability set in cloud spec to be '%s', got '%s'", availabilitySetName(cluster), cluster.Spec.Cloud.Azure.AvailabilitySet)
-		}
-	})
+			fakeClient, ok := clientSet.AvailabilitySets.(*fakeAvailabilitySetsClient)
+			if !ok {
+				t.Fatalf("failed to access underlying fake AvailabilitySetsClient")
+			}
 
-	t.Run("ownership-tag-removal", func(t *testing.T) {
-		cluster := makeCluster(&kubermaticv1.AzureCloudSpec{}, credentials)
-		clientSet := getFakeClientSetWithAvailabilitySetsClient(*credentials, testLocation, cluster, nil, fakeClientModeOkay)
-		cluster, err = reconcileAvailabilitySet(ctx, clientSet, testLocation, cluster, testClusterUpdater(cluster))
+			// reconcile AvailabilitySet the first time
+			cluster, err = reconcileAvailabilitySet(ctx, clientSet, testLocation, cluster, testClusterUpdater(cluster))
 
-		if err != nil {
-			t.Fatalf("expected reconcileAvailabilitySet to succeed, but failed with error: %v", err)
-		}
+			if tc.expectedError && err == nil {
+				t.Fatal("expected first reconcileAvailabilitySet to fail, but succeeded without error")
+			}
 
-		if cluster.Spec.Cloud.Azure.AvailabilitySet != availabilitySetName(cluster) {
-			t.Fatalf("expected availability set in cloud spec to be '%s', got '%s'", availabilitySetName(cluster), cluster.Spec.Cloud.Azure.AvailabilitySet)
-		}
+			if !tc.expectedError {
+				if err != nil {
+					t.Fatalf("expected first reconcileAvailabilitySet to succeed, but failed with error: %v", err)
+				}
 
-		fakeClient, ok := clientSet.AvailabilitySets.(*fakeAvailabilitySetsClient)
-		if !ok {
-			t.Fatalf("failed to access underlying fake AvailabilitySetsClient")
-		}
+				if cluster.Spec.Cloud.Azure.AvailabilitySet != tc.expectedAvailabilitySetName {
+					t.Fatalf("expected availability set in cloud spec to be '%s', got '%s'", tc.expectedAvailabilitySetName, cluster.Spec.Cloud.Azure.AvailabilitySet)
+				}
 
-		if fakeClient.CreateOrUpdateCalledCount != 1 {
-			t.Fatalf("expected update to availability set, got %d calls to CreateOrUpdate", fakeClient.CreateOrUpdateCalledCount)
-		}
+				if fakeClient.CreateOrUpdateCalledCount != tc.expectedFirstCallCount {
+					t.Fatalf("expected %d, got %d calls to CreateOrUpdate after first reconcile", tc.expectedFirstCallCount, fakeClient.CreateOrUpdateCalledCount)
+				}
 
-		// override all tags on the availability set
-		fakeClient.AvailabilitySet.Tags = map[string]*string{}
+				if tc.overrideTags {
+					// override all tags on the availability set
+					fakeClient.AvailabilitySet.Tags = map[string]*string{}
+				}
 
-		cluster, err = reconcileAvailabilitySet(ctx, clientSet, testLocation, cluster, testClusterUpdater(cluster))
-		if err != nil {
-			t.Fatalf("expected reconcileAvailabilitySet to succeed, but failed with error: %v", err)
-		}
+				// reconcile AvailabilitySet the second time
+				cluster, err = reconcileAvailabilitySet(ctx, clientSet, testLocation, cluster, testClusterUpdater(cluster))
 
-		if cluster.Spec.Cloud.Azure.AvailabilitySet != availabilitySetName(cluster) {
-			t.Fatalf("expected availability set in cloud spec to be '%s', got '%s'", availabilitySetName(cluster), cluster.Spec.Cloud.Azure.AvailabilitySet)
-		}
+				if !tc.expectedError && err != nil {
+					t.Fatalf("expected second reconcileAvailabilitySet to succeed, but failed with error: %v", err)
+				}
 
-		if fakeClient.CreateOrUpdateCalledCount != 1 {
-			t.Fatalf("expected no further update to availability set, got %d calls to CreateOrUpdate", fakeClient.CreateOrUpdateCalledCount)
-		}
-	})
+				if cluster.Spec.Cloud.Azure.AvailabilitySet != tc.expectedAvailabilitySetName {
+					t.Fatalf("expected availability set in cloud spec to be '%s', got '%s'", tc.expectedAvailabilitySetName, cluster.Spec.Cloud.Azure.AvailabilitySet)
+				}
 
-	t.Run("custom-availability-set-exists", func(t *testing.T) {
-		cluster := makeCluster(&kubermaticv1.AzureCloudSpec{
-			ResourceGroup:   customExistingResourceGroup,
-			AvailabilitySet: customExistingAvailabilitySet,
-		}, credentials)
-
-		existingAvailabilitySet := &compute.AvailabilitySet{
-			ID:       to.StringPtr(fmt.Sprintf("/subscriptions/%s/resourceGroups/%s", credentials.SubscriptionID, customExistingResourceGroup)),
-			Name:     to.StringPtr(customExistingAvailabilitySet),
-			Location: to.StringPtr(testLocation),
-			Type:     to.StringPtr("Microsoft.Resources/resourceGroups"),
-		}
-
-		clientSet := getFakeClientSetWithAvailabilitySetsClient(*credentials, testLocation, cluster, existingAvailabilitySet, fakeClientModeOkay)
-		cluster, err = reconcileAvailabilitySet(ctx, clientSet, testLocation, cluster, testClusterUpdater(cluster))
-
-		if err != nil {
-			t.Fatalf("expected reconcileAvailabilitySet to succeed, but failed with error: %v", err)
-		}
-
-		if cluster.Spec.Cloud.Azure.AvailabilitySet != customExistingAvailabilitySet {
-			t.Fatalf("expected availability set in cloud spec to be '%s', got '%s'", customExistingAvailabilitySet, cluster.Spec.Cloud.Azure.AvailabilitySet)
-		}
-
-		fakeClient, ok := clientSet.AvailabilitySets.(*fakeAvailabilitySetsClient)
-		if !ok {
-			t.Fatalf("failed to access underlying fake AvailabilitySetsClient")
-		}
-
-		if fakeClient.CreateOrUpdateCalledCount != 0 {
-			t.Fatalf("expected no attempts to update availability set, got %d calls to CreateOrUpdate", fakeClient.CreateOrUpdateCalledCount)
-		}
-	})
-
-	t.Run("custom-availability-set-does-not-exist", func(t *testing.T) {
-		cluster := makeCluster(&kubermaticv1.AzureCloudSpec{
-			ResourceGroup:   customExistingResourceGroup,
-			AvailabilitySet: "does-not-exist",
-		}, credentials)
-
-		clientSet := getFakeClientSetWithAvailabilitySetsClient(*credentials, testLocation, cluster, nil, fakeClientModeOkay)
-		cluster, err = reconcileAvailabilitySet(ctx, clientSet, testLocation, cluster, testClusterUpdater(cluster))
-
-		if err != nil {
-			t.Fatalf("expected reconcileAvailabilitySet to succeed, but failed with error: %v", err)
-		}
-
-		if cluster.Spec.Cloud.Azure.AvailabilitySet != "does-not-exist" {
-			t.Fatalf("expected availability set in cloud spec to be '%s', got '%s'", "does-not-exist", cluster.Spec.Cloud.Azure.AvailabilitySet)
-		}
-
-		fakeClient, ok := clientSet.AvailabilitySets.(*fakeAvailabilitySetsClient)
-		if !ok {
-			t.Fatalf("failed to access underlying fake AvailabilitySetsClient")
-		}
-
-		if fakeClient.CreateOrUpdateCalledCount != 1 {
-			t.Fatalf("expected call to CreateOrUpdate, got %d calls", fakeClient.CreateOrUpdateCalledCount)
-		}
-	})
-
-	t.Run("invalid-credentials", func(t *testing.T) {
-		cluster := makeCluster(&kubermaticv1.AzureCloudSpec{}, credentials)
-
-		clientSet := getFakeClientSetWithAvailabilitySetsClient(*credentials, testLocation, cluster, nil, fakeClientModeAuthFail)
-		_, err := reconcileAvailabilitySet(ctx, clientSet, testLocation, cluster, testClusterUpdater(cluster))
-
-		if err == nil {
-			t.Fatalf("expected error for request that got a 403 error, got none")
-		}
-	})
+				if fakeClient.CreateOrUpdateCalledCount != tc.expectedSecondCallCount {
+					t.Fatalf("expected %d, got %d calls to CreateOrUpdate after second reconcile", tc.expectedSecondCallCount, fakeClient.CreateOrUpdateCalledCount)
+				}
+			}
+		})
+	}
 }
 
 const customExistingAvailabilitySet = "custom-existing-availability-set"

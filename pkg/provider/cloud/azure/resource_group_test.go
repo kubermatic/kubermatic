@@ -37,135 +37,148 @@ func TestReconcileResourceGroup(t *testing.T) {
 		t.Fatalf("failed to generate credentials: %v", err)
 	}
 
-	ctx := context.Background()
-
-	t.Run("no-resource-group-set", func(t *testing.T) {
-		cluster := makeCluster(&kubermaticv1.AzureCloudSpec{}, credentials)
-		clientSet := getFakeClientSetWithGroupsClient(*credentials, testLocation, cluster, nil, fakeClientModeOkay)
-		cluster, err = reconcileResourceGroup(ctx, clientSet, testLocation, cluster, testClusterUpdater(cluster))
-
-		if err != nil {
-			t.Fatalf("expected reconcileResourceGroup to succeed, but failed with error: %v", err)
-		}
-
-		if cluster.Spec.Cloud.Azure.ResourceGroup != resourceGroupName(cluster) {
-			t.Fatalf("expected resource group in cloud spec to be '%s', got '%s'", resourceGroupName(cluster), cluster.Spec.Cloud.Azure.ResourceGroup)
-		}
-	})
-
-	t.Run("ownership-tag-removal", func(t *testing.T) {
-		cluster := makeCluster(&kubermaticv1.AzureCloudSpec{}, credentials)
-		clientSet := getFakeClientSetWithGroupsClient(*credentials, testLocation, cluster, nil, fakeClientModeOkay)
-		cluster, err = reconcileResourceGroup(ctx, clientSet, testLocation, cluster, testClusterUpdater(cluster))
-
-		if err != nil {
-			t.Fatalf("expected ensureResourceGroup to succeed, but failed with error: %v", err)
-		}
-
-		if cluster.Spec.Cloud.Azure.ResourceGroup != resourceGroupName(cluster) {
-			t.Fatalf("expected resource group in cloud spec to be '%s', got '%s'", resourceGroupName(cluster), cluster.Spec.Cloud.Azure.ResourceGroup)
-		}
-
-		fakeClient, ok := clientSet.Groups.(*fakeGroupsClient)
-		if !ok {
-			t.Fatalf("failed to access underlying fake GroupsClient")
-		}
-
-		if fakeClient.CreateOrUpdateCalledCount != 1 {
-			t.Fatalf("expected update to resource group, got %d calls to CreateOrUpdate", fakeClient.CreateOrUpdateCalledCount)
-		}
-
-		// override all tags on the group
-		fakeClient.Group.Tags = map[string]*string{}
-
-		cluster, err = reconcileResourceGroup(ctx, clientSet, testLocation, cluster, testClusterUpdater(cluster))
-		if err != nil {
-			t.Fatalf("expected ensureResourceGroup to succeed, but failed with error: %v", err)
-		}
-
-		if cluster.Spec.Cloud.Azure.ResourceGroup != resourceGroupName(cluster) {
-			t.Fatalf("expected resource group in cloud spec to be '%s', got '%s'", resourceGroupName(cluster), cluster.Spec.Cloud.Azure.ResourceGroup)
-		}
-
-		if fakeClient.CreateOrUpdateCalledCount != 1 {
-			t.Fatalf("expected no further update to resource group, got %d calls to CreateOrUpdate", fakeClient.CreateOrUpdateCalledCount)
-		}
-
-	})
-
-	t.Run("custom-resource-group-exists", func(t *testing.T) {
-		cluster := makeCluster(&kubermaticv1.AzureCloudSpec{
-			ResourceGroup: customExistingResourceGroup,
-		}, credentials)
-
-		existingGroup := &resources.Group{
-			ID:        to.StringPtr(fmt.Sprintf("/subscriptions/%s/resourceGroups/%s", credentials.SubscriptionID, customExistingResourceGroup)),
-			Name:      to.StringPtr(customExistingResourceGroup),
-			Location:  to.StringPtr(testLocation),
-			Type:      to.StringPtr("Microsoft.Resources/resourceGroups"),
-			ManagedBy: nil,
-			Properties: &resources.GroupProperties{
-				ProvisioningState: to.StringPtr("Succeeded"),
+	testcases := []struct {
+		name                      string
+		clusterName               string
+		azureCloudSpec            *kubermaticv1.AzureCloudSpec
+		existingResourceGroup     *resources.Group
+		clientMode                fakeClientMode
+		overrideTags              bool
+		expectedError             bool
+		expectedResourceGroupName string
+		expectedFirstCallCount    int
+		expectedSecondCallCount   int
+	}{
+		{
+			name:                      "no-resource-group-name",
+			clusterName:               "0stw4oaurg",
+			azureCloudSpec:            &kubermaticv1.AzureCloudSpec{},
+			existingResourceGroup:     nil,
+			clientMode:                fakeClientModeOkay,
+			overrideTags:              false,
+			expectedError:             false,
+			expectedResourceGroupName: "kubernetes-0stw4oaurg",
+			expectedFirstCallCount:    1,
+			expectedSecondCallCount:   1,
+		},
+		{
+			name:                      "ownership-tag-removal",
+			clusterName:               "aeed12dy19",
+			azureCloudSpec:            &kubermaticv1.AzureCloudSpec{},
+			existingResourceGroup:     nil,
+			clientMode:                fakeClientModeOkay,
+			overrideTags:              true,
+			expectedError:             false,
+			expectedResourceGroupName: "kubernetes-aeed12dy19",
+			expectedFirstCallCount:    1,
+			expectedSecondCallCount:   1,
+		},
+		{
+			name:        "custom-nonexistent-resource-group",
+			clusterName: "rt81kw1vhp",
+			azureCloudSpec: &kubermaticv1.AzureCloudSpec{
+				ResourceGroup: customExistingResourceGroup,
 			},
-		}
+			existingResourceGroup:     nil,
+			clientMode:                fakeClientModeOkay,
+			overrideTags:              false,
+			expectedError:             false,
+			expectedResourceGroupName: customExistingResourceGroup,
+			expectedFirstCallCount:    1,
+			expectedSecondCallCount:   1,
+		},
+		{
+			name:        "existing-resource-group",
+			clusterName: "knkfqapvsg",
+			azureCloudSpec: &kubermaticv1.AzureCloudSpec{
+				ResourceGroup: customExistingResourceGroup,
+			},
+			existingResourceGroup: &resources.Group{
+				ID:        to.StringPtr(fmt.Sprintf("/subscriptions/%s/resourceGroups/%s", credentials.SubscriptionID, customExistingResourceGroup)),
+				Name:      to.StringPtr(customExistingResourceGroup),
+				Location:  to.StringPtr(testLocation),
+				Type:      to.StringPtr("Microsoft.Resources/resourceGroups"),
+				ManagedBy: nil,
+				Properties: &resources.GroupProperties{
+					ProvisioningState: to.StringPtr("Succeeded"),
+				},
+			},
+			clientMode:                fakeClientModeOkay,
+			overrideTags:              false,
+			expectedError:             false,
+			expectedResourceGroupName: customExistingResourceGroup,
+			expectedFirstCallCount:    0,
+			expectedSecondCallCount:   0,
+		},
+		{
+			name:                      "invalid-credentials",
+			clusterName:               "1pft80obi4",
+			azureCloudSpec:            &kubermaticv1.AzureCloudSpec{},
+			existingResourceGroup:     nil,
+			clientMode:                fakeClientModeAuthFail,
+			overrideTags:              false,
+			expectedError:             true,
+			expectedResourceGroupName: "",
+			expectedFirstCallCount:    0,
+			expectedSecondCallCount:   0,
+		},
+	}
 
-		clientSet := getFakeClientSetWithGroupsClient(*credentials, testLocation, cluster, existingGroup, fakeClientModeOkay)
-		cluster, err = reconcileResourceGroup(ctx, clientSet, testLocation, cluster, testClusterUpdater(cluster))
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
 
-		if err != nil {
-			t.Fatalf("expected reconcileResourceGroup to succeed, but failed with error: %v", err)
-		}
+			// prepare cluster resource and client set
+			cluster := makeCluster(tc.clusterName, tc.azureCloudSpec, credentials)
+			clientSet := getFakeClientSetWithGroupsClient(*credentials, testLocation, cluster, tc.existingResourceGroup, tc.clientMode)
 
-		if cluster.Spec.Cloud.Azure.ResourceGroup != customExistingResourceGroup {
-			t.Fatalf("expected resource group in cloud spec to be '%s', got '%s'", customExistingResourceGroup, cluster.Spec.Cloud.Azure.ResourceGroup)
-		}
+			fakeClient, ok := clientSet.Groups.(*fakeGroupsClient)
+			if !ok {
+				t.Fatalf("failed to access underlying fake GroupsClient")
+			}
 
-		fakeClient, ok := clientSet.Groups.(*fakeGroupsClient)
-		if !ok {
-			t.Fatalf("failed to access underlying fake GroupsClient")
-		}
+			// reconcile resource group the first time
+			cluster, err = reconcileResourceGroup(ctx, clientSet, testLocation, cluster, testClusterUpdater(cluster))
 
-		if fakeClient.CreateOrUpdateCalledCount != 0 {
-			t.Fatalf("expected no attempts to update resource group, got %d calls to CreateOrUpdate", fakeClient.CreateOrUpdateCalledCount)
-		}
-	})
+			if tc.expectedError && err == nil {
+				t.Fatal("expected first reconcileResourceGroup to fail, but succeeded without error")
+			}
 
-	t.Run("custom-resource-group-does-not-exist", func(t *testing.T) {
-		cluster := makeCluster(&kubermaticv1.AzureCloudSpec{
-			ResourceGroup: "does-not-exist",
-		}, credentials)
+			if !tc.expectedError {
+				if err != nil {
+					t.Fatalf("expected first reconcileResourceGroup to succeed, but failed with error: %v", err)
+				}
 
-		clientSet := getFakeClientSetWithGroupsClient(*credentials, testLocation, cluster, nil, fakeClientModeOkay)
-		cluster, err = reconcileResourceGroup(ctx, clientSet, testLocation, cluster, testClusterUpdater(cluster))
+				if cluster.Spec.Cloud.Azure.ResourceGroup != tc.expectedResourceGroupName {
+					t.Fatalf("expected  resource groupin cloud spec to be '%s', got '%s'", tc.expectedResourceGroupName, cluster.Spec.Cloud.Azure.ResourceGroup)
+				}
 
-		if err != nil {
-			t.Fatalf("expected reconcileResourceGroup to succeed, but failed with error: %v", err)
-		}
+				if fakeClient.CreateOrUpdateCalledCount != tc.expectedFirstCallCount {
+					t.Fatalf("expected %d, got %d calls to CreateOrUpdate after first reconcile", tc.expectedFirstCallCount, fakeClient.CreateOrUpdateCalledCount)
+				}
 
-		if cluster.Spec.Cloud.Azure.ResourceGroup != "does-not-exist" {
-			t.Fatalf("expected resource group in cloud spec to be '%s', got '%s'", "does-not-exist", cluster.Spec.Cloud.Azure.ResourceGroup)
-		}
+				if tc.overrideTags {
+					// override all tags on the availability set
+					fakeClient.Group.Tags = map[string]*string{}
+				}
 
-		fakeClient, ok := clientSet.Groups.(*fakeGroupsClient)
-		if !ok {
-			t.Fatalf("failed to access underlying fake GroupsClient")
-		}
+				// reconcile ResourceGroup the second time
+				cluster, err = reconcileResourceGroup(ctx, clientSet, testLocation, cluster, testClusterUpdater(cluster))
 
-		if fakeClient.CreateOrUpdateCalledCount != 1 {
-			t.Fatalf("expected call to CreateOrUpdate, got %d calls", fakeClient.CreateOrUpdateCalledCount)
-		}
-	})
+				if !tc.expectedError && err != nil {
+					t.Fatalf("expected second reconcileResourceGroup to succeed, but failed with error: %v", err)
+				}
 
-	t.Run("invalid-credentials", func(t *testing.T) {
-		cluster := makeCluster(&kubermaticv1.AzureCloudSpec{}, credentials)
+				if cluster.Spec.Cloud.Azure.ResourceGroup != tc.expectedResourceGroupName {
+					t.Fatalf("expected resource groupin cloud spec to be '%s', got '%s'", tc.expectedResourceGroupName, cluster.Spec.Cloud.Azure.ResourceGroup)
+				}
 
-		clientSet := getFakeClientSetWithGroupsClient(*credentials, testLocation, cluster, nil, fakeClientModeAuthFail)
-		_, err := reconcileResourceGroup(ctx, clientSet, testLocation, cluster, testClusterUpdater(cluster))
-
-		if err == nil {
-			t.Fatalf("expected error for request that got a 403 error, got none")
-		}
-	})
+				if fakeClient.CreateOrUpdateCalledCount != tc.expectedSecondCallCount {
+					t.Fatalf("expected %d, got %d calls to CreateOrUpdate after second reconcile", tc.expectedSecondCallCount, fakeClient.CreateOrUpdateCalledCount)
+				}
+			}
+		})
+	}
 }
 
 const customExistingResourceGroup = "custom-existing-resource-group"
