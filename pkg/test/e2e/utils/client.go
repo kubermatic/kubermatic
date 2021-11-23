@@ -43,6 +43,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/datacenter"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/digitalocean"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/gcp"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/mlaadminsetting"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/project"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/rulegroup"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/serviceaccounts"
@@ -1923,4 +1924,34 @@ func (r *TestClient) CreateRuleGroup(clusterID, projectID string, ruleGroupType 
 		return nil, err
 	}
 	return createResponse.Payload, nil
+}
+
+// SetMonitoringMLARateLimits updates monitoring MLA rate limits.
+func (r *TestClient) SetMonitoringMLARateLimits(clusterID, projectID string, rateLimits kubermaticv1.MonitoringRateLimitSettings) (*models.MLAAdminSetting, error) {
+	params := &mlaadminsetting.UpdateMLAAdminSettingParams{
+		Body: &models.MLAAdminSetting{
+			MonitoringRateLimits: &models.MonitoringRateLimitSettings{
+				IngestionBurstSize: rateLimits.IngestionBurstSize,
+				IngestionRate:      rateLimits.IngestionRate,
+				MaxSamplesPerQuery: rateLimits.MaxSamplesPerQuery,
+				MaxSeriesPerMetric: rateLimits.MaxSeriesPerMetric,
+				MaxSeriesPerQuery:  rateLimits.MaxSeriesPerQuery,
+				MaxSeriesTotal:     rateLimits.MaxSeriesTotal,
+				QueryBurstSize:     rateLimits.QueryBurstSize,
+				QueryRate:          rateLimits.QueryRate,
+			},
+		},
+		ClusterID: clusterID,
+		ProjectID: projectID,
+	}
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
+	updateResponse, err := r.client.Mlaadminsetting.UpdateMLAAdminSetting(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+	return updateResponse.Payload, nil
 }
