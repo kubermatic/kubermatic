@@ -48,7 +48,20 @@ func reconcileVNet(ctx context.Context, clients *ClientSet, location string, clu
 		return cluster, nil
 	}
 
-	if err := ensureVNet(ctx, clients, cluster.Spec.Cloud, location, cluster.Name); err != nil {
+	target := targetVnet(cluster.Spec.Cloud, location, cluster.Name)
+
+	// check for attributes of the existing VNET and return early if all values are already
+	// as expected. Since there are a lot of pointers in the network.VirtualNetwork struct, we need to
+	// do a lot of "!= nil" checks so this does not panic.
+	//
+	// Attributes we check:
+	// - Address space CIDR
+	if vnet.VirtualNetworkPropertiesFormat != nil && vnet.VirtualNetworkPropertiesFormat.AddressSpace != nil && vnet.VirtualNetworkPropertiesFormat.AddressSpace.AddressPrefixes != nil &&
+		len(*vnet.VirtualNetworkPropertiesFormat.AddressSpace.AddressPrefixes) == 1 && (*vnet.VirtualNetworkPropertiesFormat.AddressSpace.AddressPrefixes)[0] == (*target.VirtualNetworkPropertiesFormat.AddressSpace.AddressPrefixes)[0] {
+		return cluster, nil
+	}
+
+	if err := ensureVNet(ctx, clients, cluster.Spec.Cloud, target); err != nil {
 		return cluster, err
 	}
 
@@ -58,9 +71,8 @@ func reconcileVNet(ctx context.Context, clients *ClientSet, location string, clu
 	})
 }
 
-// ensureVNet will create or update an Azure virtual network in the specified resource group. The call is idempotent.
-func ensureVNet(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec, location string, clusterName string) error {
-	parameters := network.VirtualNetwork{
+func targetVnet(cloud kubermaticv1.CloudSpec, location string, clusterName string) *network.VirtualNetwork {
+	return &network.VirtualNetwork{
 		Name:     to.StringPtr(cloud.Azure.VNetName),
 		Location: to.StringPtr(location),
 		Tags: map[string]*string{
@@ -70,12 +82,19 @@ func ensureVNet(ctx context.Context, clients *ClientSet, cloud kubermaticv1.Clou
 			AddressSpace: &network.AddressSpace{AddressPrefixes: &[]string{"10.0.0.0/16"}},
 		},
 	}
+}
+
+// ensureVNet will create or update an Azure virtual network in the specified resource group. The call is idempotent.
+func ensureVNet(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec, vnet *network.VirtualNetwork) error {
+	if vnet == nil {
+		return fmt.Errorf("invalid vnet reference passed")
+	}
 
 	var resourceGroup = cloud.Azure.ResourceGroup
 	if cloud.Azure.VNetResourceGroup != "" {
 		resourceGroup = cloud.Azure.VNetResourceGroup
 	}
-	future, err := clients.Networks.CreateOrUpdate(ctx, resourceGroup, cloud.Azure.VNetName, parameters)
+	future, err := clients.Networks.CreateOrUpdate(ctx, resourceGroup, cloud.Azure.VNetName, *vnet)
 	if err != nil {
 		return fmt.Errorf("failed to create or update virtual network %q: %v", cloud.Azure.VNetName, err)
 	}

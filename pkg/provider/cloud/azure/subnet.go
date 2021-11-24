@@ -60,7 +60,19 @@ func reconcileSubnet(ctx context.Context, clients *ClientSet, location string, c
 		return cluster, nil
 	}
 
-	if err := ensureSubnet(ctx, clients, cluster.Spec.Cloud); err != nil {
+	target := targetSubnet(cluster.Spec.Cloud)
+
+	// check for attributes of the existing subnet and return early if all values are already
+	// as expected. Since there are a lot of pointers in the network.Subnet struct, we need to
+	// do a lot of "!= nil" checks so this does not panic.
+	//
+	// Attributes we check:
+	// - Subnet CIDR
+	if subnet.SubnetPropertiesFormat != nil && subnet.SubnetPropertiesFormat.AddressPrefix != nil && *subnet.SubnetPropertiesFormat.AddressPrefix == *target.SubnetPropertiesFormat.AddressPrefix {
+		return cluster, nil
+	}
+
+	if err := ensureSubnet(ctx, clients, cluster.Spec.Cloud, target); err != nil {
 		return cluster, err
 	}
 
@@ -70,20 +82,26 @@ func reconcileSubnet(ctx context.Context, clients *ClientSet, location string, c
 	})
 }
 
-// ensureSubnet will create or update an Azure subnetwork in the specified vnet. The call is idempotent.
-func ensureSubnet(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec) error {
-	parameters := network.Subnet{
+func targetSubnet(cloud kubermaticv1.CloudSpec) *network.Subnet {
+	return &network.Subnet{
 		Name: to.StringPtr(cloud.Azure.SubnetName),
 		SubnetPropertiesFormat: &network.SubnetPropertiesFormat{
 			AddressPrefix: to.StringPtr("10.0.0.0/16"),
 		},
+	}
+}
+
+// ensureSubnet will create or update an Azure subnetwork in the specified vnet. The call is idempotent.
+func ensureSubnet(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec, sn *network.Subnet) error {
+	if sn == nil {
+		return fmt.Errorf("invalid subnet reference")
 	}
 
 	var resourceGroup = cloud.Azure.ResourceGroup
 	if cloud.Azure.VNetResourceGroup != "" {
 		resourceGroup = cloud.Azure.VNetResourceGroup
 	}
-	future, err := clients.Subnets.CreateOrUpdate(ctx, resourceGroup, cloud.Azure.VNetName, cloud.Azure.SubnetName, parameters)
+	future, err := clients.Subnets.CreateOrUpdate(ctx, resourceGroup, cloud.Azure.VNetName, cloud.Azure.SubnetName, *sn)
 	if err != nil {
 		return fmt.Errorf("failed to create or update subnetwork %q: %v", cloud.Azure.SubnetName, err)
 	}
