@@ -30,15 +30,14 @@ func getProviderValue(s *kubermaticv1.PresetSpec, providerType kubermaticv1.Prov
 		return reflect.Value{}
 	}
 
-	// BYO cloud provider is generally not supported in Presets, but it wouldn't hurt
-	// to call this function with BringYourOwnCloudProvider, as we simply return a
-	// zero value and all other functions will then just ignore it.
-
 	ignoreCaseCompare := func(name string) bool {
 		return strings.EqualFold(name, string(providerType))
 	}
 
 	provider := reflect.Indirect(spec).FieldByNameFunc(ignoreCaseCompare)
+	if !provider.IsValid() {
+		return reflect.Value{}
+	}
 	return provider
 }
 
@@ -55,7 +54,7 @@ func SetProviderEnabled(p *kubermaticv1.Preset, providerType kubermaticv1.Provid
 
 func HasProvider(p *kubermaticv1.Preset, providerType kubermaticv1.ProviderType) (bool, reflect.Value) {
 	provider := getProviderValue(&p.Spec, providerType)
-	return !provider.IsZero(), provider
+	return provider.IsValid() && !provider.IsZero(), provider
 }
 
 func GetProviderList(p *kubermaticv1.Preset) []kubermaticv1.ProviderType {
