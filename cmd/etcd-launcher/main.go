@@ -124,7 +124,7 @@ func main() {
 		log.Panicw("start etcd cmd", zap.Error(err))
 	}
 
-	if err = wait.Poll(1*time.Second, 30*time.Second, func() (bool, error) {
+	if err = wait.Poll(1*time.Second, 60*time.Second, func() (bool, error) {
 		return e.isClusterHealthy(log)
 	}); err != nil {
 		log.Panicw("manager thread failed to connect to cluster", zap.Error(err))
