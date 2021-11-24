@@ -31,7 +31,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
 	"k8c.io/kubermatic/v2/pkg/version"
@@ -63,7 +62,7 @@ func GetUpgradesEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGe
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	providerName, err := resources.GetCloudProviderName(cluster.Spec.Cloud)
+	providerName, err := provider.ClusterCloudProviderName(cluster.Spec.Cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the cloud provider name: %v", err)
 	}
