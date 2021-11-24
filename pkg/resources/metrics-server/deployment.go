@@ -66,6 +66,7 @@ type metricsServerData interface {
 	DNATControllerImage() string
 	DNATControllerTag() string
 	NodeAccessNetwork() string
+	IsKonnectivityEnabled() bool
 }
 
 // TLSServingCertSecretCreator returns a function to manage the TLS serving cert for the metrics
@@ -106,16 +107,6 @@ func DeploymentCreator(data metricsServerData) reconciling.NamedDeploymentCreato
 
 			dep.Spec.Template.Spec.Volumes = volumes
 
-			openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
-			if err != nil {
-				return nil, fmt.Errorf("failed to get openvpn-client sidecar: %v", err)
-			}
-
-			dnatControllerSidecar, err := vpnsidecar.DnatControllerContainer(data, "dnat-controller", "")
-			if err != nil {
-				return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
-			}
-
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
@@ -148,13 +139,25 @@ func DeploymentCreator(data metricsServerData) reconciling.NamedDeploymentCreato
 						},
 					},
 				},
-				*openvpnSidecar,
-				*dnatControllerSidecar,
 			}
 			defResourceRequirements := map[string]*corev1.ResourceRequirements{
-				name:                       defaultResourceRequirements.DeepCopy(),
-				openvpnSidecar.Name:        openvpnSidecar.Resources.DeepCopy(),
-				dnatControllerSidecar.Name: dnatControllerSidecar.Resources.DeepCopy(),
+				name: defaultResourceRequirements.DeepCopy(),
+			}
+			if !data.IsKonnectivityEnabled() {
+				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
+				if err != nil {
+					return nil, fmt.Errorf("failed to get openvpn-client sidecar: %v", err)
+				}
+				dnatControllerSidecar, err := vpnsidecar.DnatControllerContainer(data, "dnat-controller", "")
+				if err != nil {
+					return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
+				}
+				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers,
+					*openvpnSidecar,
+					*dnatControllerSidecar,
+				)
+				defResourceRequirements[openvpnSidecar.Name] = openvpnSidecar.Resources.DeepCopy()
+				defResourceRequirements[dnatControllerSidecar.Name] = dnatControllerSidecar.Resources.DeepCopy()
 			}
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)
 			if err != nil {

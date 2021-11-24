@@ -227,6 +227,7 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 		newEBC := originalEBC.DeepCopy()
 		newEBC.Spec.Keep = req.Body.Keep
 		newEBC.Spec.Schedule = req.Body.Schedule
+		newEBC.Spec.Destination = req.Body.Destination
 
 		// apply patch
 		ebc, err := patchEtcdBackupConfig(ctx, userInfoGetter, req.ProjectID, originalEBC, newEBC)
@@ -359,9 +360,10 @@ func convertInternalToAPIEtcdBackupConfig(ebc *kubermaticv1.EtcdBackupConfig) *a
 			}(),
 		},
 		Spec: apiv2.EtcdBackupConfigSpec{
-			ClusterID: ebc.Spec.Cluster.Name,
-			Schedule:  ebc.Spec.Schedule,
-			Keep:      ebc.Spec.Keep,
+			ClusterID:   ebc.Spec.Cluster.Name,
+			Schedule:    ebc.Spec.Schedule,
+			Keep:        ebc.Spec.Keep,
+			Destination: ebc.Spec.Destination,
 		},
 		Status: apiv2.EtcdBackupConfigStatus{
 			CurrentBackups: []apiv2.BackupStatus{},
@@ -443,10 +445,11 @@ func convertAPIToInternalEtcdBackupConfig(name string, ebcSpec *apiv2.EtcdBackup
 			},
 		},
 		Spec: kubermaticv1.EtcdBackupConfigSpec{
-			Name:     name,
-			Cluster:  *clusterObjectRef,
-			Schedule: ebcSpec.Schedule,
-			Keep:     ebcSpec.Keep,
+			Name:        name,
+			Cluster:     *clusterObjectRef,
+			Schedule:    ebcSpec.Schedule,
+			Keep:        ebcSpec.Keep,
+			Destination: ebcSpec.Destination,
 		},
 	}, nil
 }

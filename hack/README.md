@@ -40,6 +40,11 @@ That generates README.md with all scripts from this directory described.
 Releases a new quay.io/kubermatic/s3-exporter Docker image; must be
 run manually whenever the s3-exporter is updated.
 
+## release-alertmanager-authorization-server-image.sh
+
+Releases a new quay.io/kubermatic/alertmanager-authorization-server Docker image; must be
+run manually whenever the alertmanager-authorization-server is updated.
+
 ## release-docker-images.sh
 
 Builds and pushes all KKP Docker images:
@@ -72,6 +77,12 @@ to prewarm a local Docker registry, for example in offline setups.
 
 TBD
 
+## run-ccm-migration-e2e-test-in-kind.sh
+
+This script sets up a local KKP installation in kind, deploys a
+couple of test Presets and Users and then runs the e2e tests for the
+external ccm-migration.
+
 ## run-conformance-tests.sh
 
 Compiles the conformance tests and then runs them in a local Docker
@@ -98,9 +109,23 @@ In this mode, you need to have the kube-test binaries and all other
 dependencies installed locally on your machine, but it makes testing
 against a local KKP setup much easier.
 
+## run-crd-migration-in-kind.sh
+
+This script sets up two kind clusters, places a whole lot of KKP
+resources in various states into it and then runs the crd migration
+function of the KKP installer.
+Note that this script does install KKP itself, as KKP needs to be
+completely shutdown during the migration anyway.
+
 ## run-dashboard-and-api.sh
 
 TBD
+
+## run-expose-strategy-e2e-test-in-kind.sh
+
+This script sets up a local KKP installation in kind, deploys a
+couple of test Presets and Users and then runs the e2e tests for the
+nodeport-proxy.
 
 ## run-machine-controller.sh
 
@@ -128,6 +153,13 @@ TBD
 
 TBD
 
+## test-chart-rendering.sh
+
+Used for "golden master" testing.
+Symlink this script to a directory called "test" in the root directory of a chart.
+Prepared test fixtures should end with .yaml, results will end with .yaml.out.
+Script exits with 1 if the output of rendering is different than what is stored the .yaml.out file
+
 ## update-cert-manager-crds.sh
 
 TBD
@@ -150,20 +182,11 @@ TBD
 
 ## update-kubermatic-ca-bundle.sh
 
-Takes the newest CA bundle from Mozilla and updates it in the Kubermatic Operator chart.
+TBD
 
 ## update-kubermatic-chart.sh
 
 TBD
-
-## update-openshift-version-codegen.sh
-
-This script can be used to update the generated image names for Openshift.
-The desired versions msut be configured first in
-codegen/openshift_versions/main.go and a const for each version must be
-added to pkg/controller/openshift/resources/const.go
-
-Also, executing this script requires access to the ocp quay repo.
 
 ## update-prometheus-rules.sh
 

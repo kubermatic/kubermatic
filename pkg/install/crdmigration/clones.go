@@ -19,12 +19,14 @@ package crdmigration
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 
 	newv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -156,6 +158,14 @@ func convertObjectMeta(om metav1.ObjectMeta) metav1.ObjectMeta {
 	om.Generation = 0
 	om.ResourceVersion = ""
 	om.CreationTimestamp = metav1.Time{}
+
+	// normalize/rename finalizers
+	for i, finalizer := range om.Finalizers {
+		finalizer = strings.ReplaceAll(finalizer, "operator.kubermatic.io/", "kubermatic.k8c.io/")
+		finalizer = strings.ReplaceAll(finalizer, "kubermatic.io/", "kubermatic.k8c.io/")
+
+		om.Finalizers[i] = finalizer
+	}
 
 	return om
 }
@@ -337,34 +347,35 @@ func cloneClusterResourcesInCluster(ctx context.Context, logger logrus.FieldLogg
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Address:    newv1.ClusterAddress(oldObject.Address),
 			Spec:       convertClusterSpec(oldObject.Spec),
-			Status: newv1.ClusterStatus{
-				KubermaticVersion:      oldObject.Status.KubermaticVersion,
-				NamespaceName:          oldObject.Status.NamespaceName,
-				CloudMigrationRevision: oldObject.Status.CloudMigrationRevision,
-				LastUpdated:            oldObject.Status.LastUpdated,
-				UserName:               oldObject.Status.UserName,
-				UserEmail:              oldObject.Status.UserEmail,
-				ExtendedHealth: newv1.ExtendedClusterHealth{
-					Apiserver:                    convertHealthStatus(oldObject.Status.ExtendedHealth.Apiserver),
-					Scheduler:                    convertHealthStatus(oldObject.Status.ExtendedHealth.Scheduler),
-					Controller:                   convertHealthStatus(oldObject.Status.ExtendedHealth.Controller),
-					MachineController:            convertHealthStatus(oldObject.Status.ExtendedHealth.MachineController),
-					Etcd:                         convertHealthStatus(oldObject.Status.ExtendedHealth.Etcd),
-					OpenVPN:                      convertHealthStatus(oldObject.Status.ExtendedHealth.OpenVPN),
-					CloudProviderInfrastructure:  convertHealthStatus(oldObject.Status.ExtendedHealth.CloudProviderInfrastructure),
-					UserClusterControllerManager: convertHealthStatus(oldObject.Status.ExtendedHealth.UserClusterControllerManager),
-					GatekeeperController:         convertHealthStatusPtr(oldObject.Status.ExtendedHealth.GatekeeperController),
-					GatekeeperAudit:              convertHealthStatusPtr(oldObject.Status.ExtendedHealth.GatekeeperAudit),
-					Monitoring:                   convertHealthStatusPtr(oldObject.Status.ExtendedHealth.Monitoring),
-					Logging:                      convertHealthStatusPtr(oldObject.Status.ExtendedHealth.Logging),
-					AlertmanagerConfig:           convertHealthStatusPtr(oldObject.Status.ExtendedHealth.AlertmanagerConfig),
-					MLAGateway:                   convertHealthStatusPtr(oldObject.Status.ExtendedHealth.MLAGateway),
-				},
-			},
 		}
 
 		if err := ensureObject(ctx, client, &newObject, true); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
+		}
+
+		newObject.Status = newv1.ClusterStatus{
+			KubermaticVersion:      oldObject.Status.KubermaticVersion,
+			NamespaceName:          oldObject.Status.NamespaceName,
+			CloudMigrationRevision: oldObject.Status.CloudMigrationRevision,
+			LastUpdated:            oldObject.Status.LastUpdated,
+			UserName:               oldObject.Status.UserName,
+			UserEmail:              oldObject.Status.UserEmail,
+			ExtendedHealth: newv1.ExtendedClusterHealth{
+				Apiserver:                    convertHealthStatus(oldObject.Status.ExtendedHealth.Apiserver),
+				Scheduler:                    convertHealthStatus(oldObject.Status.ExtendedHealth.Scheduler),
+				Controller:                   convertHealthStatus(oldObject.Status.ExtendedHealth.Controller),
+				MachineController:            convertHealthStatus(oldObject.Status.ExtendedHealth.MachineController),
+				Etcd:                         convertHealthStatus(oldObject.Status.ExtendedHealth.Etcd),
+				OpenVPN:                      convertHealthStatus(oldObject.Status.ExtendedHealth.OpenVPN),
+				CloudProviderInfrastructure:  convertHealthStatus(oldObject.Status.ExtendedHealth.CloudProviderInfrastructure),
+				UserClusterControllerManager: convertHealthStatus(oldObject.Status.ExtendedHealth.UserClusterControllerManager),
+				GatekeeperController:         convertHealthStatusPtr(oldObject.Status.ExtendedHealth.GatekeeperController),
+				GatekeeperAudit:              convertHealthStatusPtr(oldObject.Status.ExtendedHealth.GatekeeperAudit),
+				Monitoring:                   convertHealthStatusPtr(oldObject.Status.ExtendedHealth.Monitoring),
+				Logging:                      convertHealthStatusPtr(oldObject.Status.ExtendedHealth.Logging),
+				AlertmanagerConfig:           convertHealthStatusPtr(oldObject.Status.ExtendedHealth.AlertmanagerConfig),
+				MLAGateway:                   convertHealthStatusPtr(oldObject.Status.ExtendedHealth.MLAGateway),
+			},
 		}
 
 		if err := client.Status().Update(ctx, &newObject); err != nil {
@@ -375,12 +386,25 @@ func cloneClusterResourcesInCluster(ctx context.Context, logger logrus.FieldLogg
 	return len(oldObjects.Items), nil
 }
 
+func convertAzureLoadBalancerSKU(old kubermaticv1.LBSKU) newv1.LBSKU {
+	if old == "" {
+		return newv1.AzureBasicLBSKU
+	}
+
+	return newv1.LBSKU(old)
+}
+
 func convertClusterSpec(old kubermaticv1.ClusterSpec) newv1.ClusterSpec {
+	proxyMode := old.ClusterNetwork.ProxyMode
+	if proxyMode == "" {
+		proxyMode = resources.IPVSProxyMode
+	}
+
 	result := newv1.ClusterSpec{
 		Cloud: newv1.CloudSpec{
 			DatacenterName: old.Cloud.DatacenterName,
 
-			// Azure and VSphere need special treatment further down
+			// Azure, VSphere and Openstack need special treatment further down
 			AWS:          (*newv1.AWSCloudSpec)(old.Cloud.AWS),
 			Alibaba:      (*newv1.AlibabaCloudSpec)(old.Cloud.Alibaba),
 			Anexia:       (*newv1.AnexiaCloudSpec)(old.Cloud.Anexia),
@@ -390,14 +414,13 @@ func convertClusterSpec(old kubermaticv1.ClusterSpec) newv1.ClusterSpec {
 			GCP:          (*newv1.GCPCloudSpec)(old.Cloud.GCP),
 			Hetzner:      (*newv1.HetznerCloudSpec)(old.Cloud.Hetzner),
 			Kubevirt:     (*newv1.KubevirtCloudSpec)(old.Cloud.Kubevirt),
-			Openstack:    (*newv1.OpenstackCloudSpec)(old.Cloud.Openstack),
 			Packet:       (*newv1.PacketCloudSpec)(old.Cloud.Packet),
 		},
 		ClusterNetwork: newv1.ClusterNetworkingConfig{
 			Pods:                     newv1.NetworkRanges(old.ClusterNetwork.Pods),
 			Services:                 newv1.NetworkRanges(old.ClusterNetwork.Services),
 			DNSDomain:                old.ClusterNetwork.DNSDomain,
-			ProxyMode:                old.ClusterNetwork.ProxyMode,
+			ProxyMode:                proxyMode,
 			IPVS:                     (*newv1.IPVSConfiguration)(old.ClusterNetwork.IPVS),
 			NodeLocalDNSCacheEnabled: old.ClusterNetwork.NodeLocalDNSCacheEnabled,
 			KonnectivityEnabled:      old.ClusterNetwork.KonnectivityEnabled,
@@ -438,7 +461,7 @@ func convertClusterSpec(old kubermaticv1.ClusterSpec) newv1.ClusterSpec {
 			SecurityGroup:         old.SecurityGroup,
 			AssignAvailabilitySet: old.AssignAvailabilitySet,
 			AvailabilitySet:       old.AvailabilitySet,
-			LoadBalancerSKU:       newv1.LBSKU(old.LoadBalancerSKU),
+			LoadBalancerSKU:       convertAzureLoadBalancerSKU(old.LoadBalancerSKU),
 		}
 	}
 
@@ -454,6 +477,27 @@ func convertClusterSpec(old kubermaticv1.ClusterSpec) newv1.ClusterSpec {
 			StoragePolicy:        old.StoragePolicy,
 			ResourcePool:         old.ResourcePool,
 			InfraManagementUser:  newv1.VSphereCredentials(old.InfraManagementUser),
+		}
+	}
+
+	if old := old.Cloud.Openstack; old != nil {
+		result.Cloud.Openstack = &newv1.OpenstackCloudSpec{
+			CredentialsReference:        old.CredentialsReference,
+			Username:                    old.Username,
+			Password:                    old.Password,
+			Project:                     old.GetProject(),
+			ProjectID:                   old.GetProjectId(),
+			Domain:                      old.Domain,
+			ApplicationCredentialID:     old.ApplicationCredentialID,
+			ApplicationCredentialSecret: old.ApplicationCredentialSecret,
+			UseToken:                    old.UseToken,
+			Token:                       old.Token,
+			Network:                     old.Network,
+			SecurityGroups:              old.SecurityGroups,
+			FloatingIPPool:              old.FloatingIPPool,
+			RouterID:                    old.RouterID,
+			SubnetID:                    old.SubnetID,
+			UseOctavia:                  old.UseOctavia,
 		}
 	}
 
@@ -502,6 +546,19 @@ func cloneAddonResourcesInCluster(ctx context.Context, logger logrus.FieldLogger
 		if err := ensureObject(ctx, client, &newObject, false); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
+
+		for _, condition := range oldObject.Status.Conditions {
+			newObject.Status.Conditions = append(newObject.Status.Conditions, newv1.AddonCondition{
+				Type:               newv1.AddonConditionType(condition.Type),
+				Status:             condition.Status,
+				LastHeartbeatTime:  condition.LastHeartbeatTime,
+				LastTransitionTime: condition.LastTransitionTime,
+			})
+		}
+
+		if err := client.Status().Update(ctx, &newObject); err != nil {
+			return 0, fmt.Errorf("failed to update status on %s: %w", oldObject.Name, err)
+		}
 	}
 
 	return len(oldObjects.Items), nil
@@ -548,7 +605,7 @@ func cloneAdmissionPluginResourcesInCluster(ctx context.Context, logger logrus.F
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.AdmissionPluginSpec{
 				PluginName:  oldObject.Spec.PluginName,
-				FromVersion: oldObject.Spec.DeepCopy().FromVersion,
+				FromVersion: oldObject.Spec.FromVersion,
 			},
 		}
 
@@ -572,17 +629,18 @@ func cloneAlertmanagerResourcesInCluster(ctx context.Context, logger logrus.Fiel
 			Spec: newv1.AlertmanagerSpec{
 				ConfigSecret: oldObject.Spec.DeepCopy().ConfigSecret,
 			},
-			Status: newv1.AlertmanagerStatus{
-				ConfigStatus: newv1.AlertmanagerConfigurationStatus{
-					LastUpdated:  oldObject.Status.ConfigStatus.LastUpdated,
-					Status:       oldObject.Status.ConfigStatus.Status,
-					ErrorMessage: oldObject.Status.ConfigStatus.ErrorMessage,
-				},
-			},
 		}
 
 		if err := ensureObject(ctx, client, &newObject, false); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
+		}
+
+		newObject.Status = newv1.AlertmanagerStatus{
+			ConfigStatus: newv1.AlertmanagerConfigurationStatus{
+				LastUpdated:  oldObject.Status.ConfigStatus.LastUpdated,
+				Status:       oldObject.Status.ConfigStatus.Status,
+				ErrorMessage: oldObject.Status.ConfigStatus.ErrorMessage,
+			},
 		}
 
 		if err := client.Status().Update(ctx, &newObject); err != nil {
@@ -738,15 +796,52 @@ func cloneEtcdBackupConfigResourcesInCluster(ctx context.Context, logger logrus.
 		newObject := newv1.EtcdBackupConfig{
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.EtcdBackupConfigSpec{
-				Name:     oldObject.Spec.Name,
-				Schedule: oldObject.Spec.Schedule,
-				Keep:     oldObject.Spec.Keep,
-				Cluster:  migrateObjectReference(oldObject.Spec.Cluster, ""),
+				Name:        oldObject.Spec.Name,
+				Schedule:    oldObject.Spec.Schedule,
+				Keep:        oldObject.Spec.Keep,
+				Cluster:     migrateObjectReference(oldObject.Spec.Cluster, ""),
+				Destination: oldObject.Spec.Destination,
 			},
 		}
 
 		if err := ensureObject(ctx, client, &newObject, false); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
+		}
+
+		newObject.Status = newv1.EtcdBackupConfigStatus{
+			CleanupRunning: oldObject.Status.CleanupRunning,
+		}
+
+		for _, condition := range oldObject.Status.Conditions {
+			newObject.Status.Conditions = append(newObject.Status.Conditions, newv1.EtcdBackupConfigCondition{
+				Type:               newv1.EtcdBackupConfigConditionType(condition.Type),
+				Status:             condition.Status,
+				LastHeartbeatTime:  condition.LastHeartbeatTime,
+				LastTransitionTime: condition.LastTransitionTime,
+				Reason:             condition.Reason,
+				Message:            condition.Message,
+			})
+		}
+
+		for _, backup := range oldObject.Status.CurrentBackups {
+			newObject.Status.CurrentBackups = append(newObject.Status.CurrentBackups, newv1.BackupStatus{
+				ScheduledTime:      backup.ScheduledTime,
+				BackupName:         backup.BackupName,
+				JobName:            backup.JobName,
+				BackupStartTime:    backup.BackupStartTime,
+				BackupFinishedTime: backup.BackupFinishedTime,
+				BackupPhase:        newv1.BackupStatusPhase(backup.BackupPhase),
+				BackupMessage:      backup.BackupMessage,
+				DeleteJobName:      backup.DeleteJobName,
+				DeleteStartTime:    backup.DeleteStartTime,
+				DeleteFinishedTime: backup.DeleteFinishedTime,
+				DeletePhase:        newv1.BackupStatusPhase(backup.DeletePhase),
+				DeleteMessage:      backup.DeleteMessage,
+			})
+		}
+
+		if err := client.Status().Update(ctx, &newObject); err != nil {
+			return 0, fmt.Errorf("failed to update status on %s: %w", oldObject.Name, err)
 		}
 	}
 
@@ -773,6 +868,15 @@ func cloneEtcdRestoreResourcesInCluster(ctx context.Context, logger logrus.Field
 		if err := ensureObject(ctx, client, &newObject, false); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
+
+		newObject.Status = newv1.EtcdRestoreStatus{
+			Phase:       newv1.EtcdRestorePhase(oldObject.Status.Phase),
+			RestoreTime: oldObject.Status.RestoreTime,
+		}
+
+		if err := client.Status().Update(ctx, &newObject); err != nil {
+			return 0, fmt.Errorf("failed to update status on %s: %w", oldObject.Name, err)
+		}
 	}
 
 	return len(oldObjects.Items), nil
@@ -790,11 +894,14 @@ func cloneExternalClusterResourcesInCluster(ctx context.Context, logger logrus.F
 			Spec: newv1.ExternalClusterSpec{
 				HumanReadableName:   oldObject.Spec.HumanReadableName,
 				KubeconfigReference: oldObject.Spec.KubeconfigReference,
-				CloudSpec: &newv1.ExternalClusterCloudSpec{
-					GKE: (*newv1.ExternalClusterGKECloudSpec)(oldObject.Spec.CloudSpec.GKE),
-					EKS: (*newv1.ExternalClusterEKSCloudSpec)(oldObject.Spec.CloudSpec.EKS),
-				},
 			},
+		}
+
+		if oldObject.Spec.CloudSpec != nil {
+			newObject.Spec.CloudSpec = &newv1.ExternalClusterCloudSpec{
+				GKE: (*newv1.ExternalClusterGKECloudSpec)(oldObject.Spec.CloudSpec.GKE),
+				EKS: (*newv1.ExternalClusterEKSCloudSpec)(oldObject.Spec.CloudSpec.EKS),
+			}
 		}
 
 		if err := ensureObject(ctx, client, &newObject, false); err != nil {
@@ -857,23 +964,29 @@ func cloneMLAAdminSettingResourcesInCluster(ctx context.Context, logger logrus.F
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.MLAAdminSettingSpec{
 				ClusterName: oldObject.Spec.ClusterName,
-				MonitoringRateLimits: &newv1.MonitoringRateLimitSettings{
-					IngestionRate:      oldObject.Spec.MonitoringRateLimits.IngestionRate,
-					IngestionBurstSize: oldObject.Spec.MonitoringRateLimits.IngestionBurstSize,
-					MaxSeriesPerMetric: oldObject.Spec.MonitoringRateLimits.MaxSeriesPerMetric,
-					MaxSeriesTotal:     oldObject.Spec.MonitoringRateLimits.MaxSeriesTotal,
-					QueryRate:          oldObject.Spec.MonitoringRateLimits.QueryRate,
-					QueryBurstSize:     oldObject.Spec.MonitoringRateLimits.QueryBurstSize,
-					MaxSamplesPerQuery: oldObject.Spec.MonitoringRateLimits.MaxSamplesPerQuery,
-					MaxSeriesPerQuery:  oldObject.Spec.MonitoringRateLimits.MaxSeriesPerQuery,
-				},
-				LoggingRateLimits: &newv1.LoggingRateLimitSettings{
-					IngestionRate:      oldObject.Spec.LoggingRateLimits.IngestionRate,
-					IngestionBurstSize: oldObject.Spec.LoggingRateLimits.IngestionBurstSize,
-					QueryRate:          oldObject.Spec.LoggingRateLimits.QueryRate,
-					QueryBurstSize:     oldObject.Spec.LoggingRateLimits.QueryBurstSize,
-				},
 			},
+		}
+
+		if oldObject.Spec.MonitoringRateLimits != nil {
+			newObject.Spec.MonitoringRateLimits = &newv1.MonitoringRateLimitSettings{
+				IngestionRate:      oldObject.Spec.MonitoringRateLimits.IngestionRate,
+				IngestionBurstSize: oldObject.Spec.MonitoringRateLimits.IngestionBurstSize,
+				MaxSeriesPerMetric: oldObject.Spec.MonitoringRateLimits.MaxSeriesPerMetric,
+				MaxSeriesTotal:     oldObject.Spec.MonitoringRateLimits.MaxSeriesTotal,
+				QueryRate:          oldObject.Spec.MonitoringRateLimits.QueryRate,
+				QueryBurstSize:     oldObject.Spec.MonitoringRateLimits.QueryBurstSize,
+				MaxSamplesPerQuery: oldObject.Spec.MonitoringRateLimits.MaxSamplesPerQuery,
+				MaxSeriesPerQuery:  oldObject.Spec.MonitoringRateLimits.MaxSeriesPerQuery,
+			}
+		}
+
+		if oldObject.Spec.LoggingRateLimits != nil {
+			newObject.Spec.LoggingRateLimits = &newv1.LoggingRateLimitSettings{
+				IngestionRate:      oldObject.Spec.LoggingRateLimits.IngestionRate,
+				IngestionBurstSize: oldObject.Spec.LoggingRateLimits.IngestionBurstSize,
+				QueryRate:          oldObject.Spec.LoggingRateLimits.QueryRate,
+				QueryBurstSize:     oldObject.Spec.LoggingRateLimits.QueryBurstSize,
+			}
 		}
 
 		if err := ensureObject(ctx, client, &newObject, false); err != nil {
@@ -954,7 +1067,7 @@ func clonePresetResourcesInCluster(ctx context.Context, logger logrus.FieldLogge
 				SubnetName:        oldSpec.Azure.SubnetName,
 				RouteTableName:    oldSpec.Azure.RouteTableName,
 				SecurityGroup:     oldSpec.Azure.SecurityGroup,
-				LoadBalancerSKU:   newv1.LBSKU(oldSpec.Azure.LoadBalancerSKU),
+				LoadBalancerSKU:   convertAzureLoadBalancerSKU(oldSpec.Azure.LoadBalancerSKU),
 			}
 		}
 
@@ -1004,8 +1117,8 @@ func clonePresetResourcesInCluster(ctx context.Context, logger logrus.FieldLogge
 				ApplicationCredentialSecret: oldSpec.Openstack.ApplicationCredentialSecret,
 				Username:                    oldSpec.Openstack.Username,
 				Password:                    oldSpec.Openstack.Password,
-				Tenant:                      oldSpec.Openstack.Tenant,
-				TenantID:                    oldSpec.Openstack.TenantID,
+				Project:                     oldSpec.Openstack.GetProject(),
+				ProjectID:                   oldSpec.Openstack.GetProjectId(),
 				Domain:                      oldSpec.Openstack.Domain,
 				Network:                     oldSpec.Openstack.Network,
 				SecurityGroups:              oldSpec.Openstack.SecurityGroups,
@@ -1056,13 +1169,14 @@ func cloneProjectResourcesInCluster(ctx context.Context, logger logrus.FieldLogg
 			Spec: newv1.ProjectSpec{
 				Name: oldObject.Spec.Name,
 			},
-			Status: newv1.ProjectStatus{
-				Phase: newv1.ProjectPhase(oldObject.Status.Phase),
-			},
 		}
 
 		if err := ensureObject(ctx, client, &newObject, true); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
+		}
+
+		newObject.Status = newv1.ProjectStatus{
+			Phase: newv1.ProjectPhase(oldObject.Status.Phase),
 		}
 
 		if err := client.Status().Update(ctx, &newObject); err != nil {
@@ -1154,6 +1268,20 @@ func cloneSeedResourcesInCluster(ctx context.Context, logger logrus.FieldLogger,
 			newObject.Spec.BackupRestore = &newv1.SeedBackupRestoreConfiguration{
 				S3Endpoint:   oldObject.Spec.BackupRestore.S3Endpoint,
 				S3BucketName: oldObject.Spec.BackupRestore.S3BucketName,
+			}
+		}
+
+		if oldObject.Spec.EtcdBackupRestore != nil {
+			destinations := make(map[string]*newv1.BackupDestination)
+			for name, destination := range oldObject.Spec.EtcdBackupRestore.Destinations {
+				destinations[name] = &newv1.BackupDestination{
+					Endpoint:    destination.Endpoint,
+					BucketName:  destination.BucketName,
+					Credentials: destination.Credentials,
+				}
+			}
+			newObject.Spec.EtcdBackupRestore = &newv1.EtcdBackupRestore{
+				Destinations: destinations,
 			}
 		}
 

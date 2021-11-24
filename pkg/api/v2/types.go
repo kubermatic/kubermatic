@@ -280,6 +280,9 @@ type EtcdBackupConfigSpec struct {
 	// Keep is the number of backups to keep around before deleting the oldest one
 	// If not set, defaults to DefaultKeptBackupsCount. Only used if Schedule is set.
 	Keep *int `json:"keep,omitempty"`
+	// Destination indicates where the backup will be stored. The destination name should correspond to a destination in
+	// the cluster's Seed.Spec.EtcdBackupRestore. If empty, it will use the legacy destination in Seed.Spec.BackupRestore
+	Destination string `json:"destination,omitempty"`
 }
 
 // EtcdRestore represents an object holding the configuration for etcd backup restore
@@ -319,7 +322,11 @@ type OIDCSpec struct {
 // BackupCredentials contains credentials for etcd backups
 // swagger:model BackupCredentials
 type BackupCredentials struct {
+	// S3BackupCredentials holds credentials for a S3 client compatible backup destination
 	S3BackupCredentials S3BackupCredentials `json:"s3,omitempty"`
+	// Destination corresponds to the Seeds Seed.Spec.EtcdBackupRestore.Destinations, it defines for which destination
+	// the backup credentials will be created. If set, it updates the credentials ref in the related Seed BackupDestination
+	Destination string `json:"destination,omitempty"`
 }
 
 // S3BackupCredentials contains credentials for S3 etcd backups
@@ -350,6 +357,7 @@ type ExternalCluster struct {
 type ExternalClusterCloudSpec struct {
 	GKE *GKECloudSpec `json:"gke,omitempty"`
 	EKS *EKSCloudSpec `json:"eks,omitempty"`
+	AKS *AKSCloudSpec `json:"aks,omitempty"`
 }
 
 type GKECloudSpec struct {
@@ -365,10 +373,24 @@ type EKSCloudSpec struct {
 	Region          string `json:"region"`
 }
 
+type AKSCloudSpec struct {
+	Name           string `json:"name"`
+	TenantID       string `json:"tenantID"`
+	SubscriptionID string `json:"subscriptionID"`
+	ClientID       string `json:"clientID"`
+	ClientSecret   string `json:"clientSecret"`
+}
+
 // ExternalClusterNode represents an object holding external cluster node
 // swagger:model ExternalClusterNode
 type ExternalClusterNode struct {
 	apiv1.Node `json:",inline"`
+}
+
+// ExternalClusterMachineDeployment represents an object holding external cluster machine deployment
+// swagger:model ExternalClusterMachineDeployment
+type ExternalClusterMachineDeployment struct {
+	apiv1.NodeDeployment `json:",inline"`
 }
 
 // GKECluster represents a object of GKE cluster.

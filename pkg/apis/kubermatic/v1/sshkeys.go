@@ -31,6 +31,8 @@ const (
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
+// +kubebuilder:printcolumn:JSONPath=".spec.name",name="HumanReadableName",type="string"
+// +kubebuilder:printcolumn:JSONPath=".spec.owner",name="Owner",type="string"
 
 // UserSSHKey specifies a users UserSSHKey
 type UserSSHKey struct {

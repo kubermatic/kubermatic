@@ -52,8 +52,8 @@ func getAuthInfo(ctx context.Context, req OpenstackReq, userInfoGetter provider.
 		credentials := &resources.OpenstackCredentials{
 			Username:                    req.Username,
 			Password:                    req.Password,
-			Tenant:                      req.Tenant,
-			TenantID:                    req.TenantID,
+			Project:                     req.GetProjectOrDefaultToTenant(),
+			ProjectID:                   req.GetProjectIdOrDefaultToTenantId(),
 			Domain:                      req.Domain,
 			ApplicationCredentialID:     req.ApplicationCredentialID,
 			ApplicationCredentialSecret: req.ApplicationCredentialSecret,
@@ -256,6 +256,8 @@ func DecodeOpenstackReq(_ context.Context, r *http.Request) (interface{}, error)
 	req.Password = r.Header.Get("Password")
 	req.Tenant = r.Header.Get("Tenant")
 	req.TenantID = r.Header.Get("TenantID")
+	req.Tenant = r.Header.Get("Project")
+	req.TenantID = r.Header.Get("ProjectID")
 	req.Domain = r.Header.Get("Domain")
 	req.DatacenterName = r.Header.Get("DatacenterName")
 	req.ApplicationCredentialID = r.Header.Get("ApplicationCredentialID")
@@ -296,6 +298,9 @@ func DecodeOpenstackSubnetReq(_ context.Context, r *http.Request) (interface{}, 
 	req.Password = r.Header.Get("Password")
 	req.Domain = r.Header.Get("Domain")
 	req.Tenant = r.Header.Get("Tenant")
+	req.TenantID = r.Header.Get("TenantID")
+	req.Tenant = r.Header.Get("Project")
+	req.TenantID = r.Header.Get("ProjectID")
 	req.DatacenterName = r.Header.Get("DatacenterName")
 	req.ApplicationCredentialID = r.Header.Get("ApplicationCredentialID")
 	req.ApplicationCredentialSecret = r.Header.Get("ApplicationCredentialSecret")
@@ -373,11 +378,17 @@ type OpenstackReq struct {
 	// Domain OpenStack domain name
 	Domain string
 	// in: header
-	// Tenant OpenStack tenant name
+	// Tenant OpenStack tenant name (depreciated in favor of Project instead)
 	Tenant string
 	// in: header
-	// TenantID OpenStack tenant ID
+	// TenantID OpenStack tenant ID (depreciated in favor of  ProjectID instead)
 	TenantID string
+	// in: header
+	// Project OpenStack project name
+	Project string
+	// in: header
+	// ProjectID OpenStack project ID
+	ProjectID string
 	// in: header
 	// DatacenterName Openstack datacenter name
 	DatacenterName string
@@ -394,6 +405,24 @@ type OpenstackReq struct {
 	// in: header
 	// Credential predefined Kubermatic credential name from the presets
 	Credential string
+}
+
+// GetProjectOrDefaultToTenant returns the the project if defined otherwise fallback to tenant
+func (r OpenstackReq) GetProjectOrDefaultToTenant() string {
+	if len(r.Project) > 0 {
+		return r.Project
+	} else {
+		return r.Tenant
+	}
+}
+
+// GetProjectIdOrDefaultToTenantId returns the the projectID if defined otherwise fallback to tenantID
+func (r OpenstackReq) GetProjectIdOrDefaultToTenantId() string {
+	if len(r.ProjectID) > 0 {
+		return r.ProjectID
+	} else {
+		return r.TenantID
+	}
 }
 
 func DecodeOpenstackTenantReq(_ context.Context, r *http.Request) (interface{}, error) {
@@ -420,8 +449,8 @@ func getPresetCredentials(userInfo *provider.UserInfo, presetName string, preset
 	credentials := &resources.OpenstackCredentials{
 		Username:                    p.Spec.Openstack.Username,
 		Password:                    p.Spec.Openstack.Password,
-		Tenant:                      p.Spec.Openstack.Tenant,
-		TenantID:                    p.Spec.Openstack.TenantID,
+		Project:                     p.Spec.Openstack.GetProject(),
+		ProjectID:                   p.Spec.Openstack.GetProjectId(),
 		Domain:                      p.Spec.Openstack.Domain,
 		ApplicationCredentialID:     p.Spec.Openstack.ApplicationCredentialID,
 		ApplicationCredentialSecret: p.Spec.Openstack.ApplicationCredentialSecret,

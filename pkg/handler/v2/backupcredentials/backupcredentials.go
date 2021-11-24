@@ -37,7 +37,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func CreateOrUpdateEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func CreateOrUpdateEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, seedProvider provider.SeedProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createOrUpdateBackupCredentialsReq)
 
@@ -67,6 +67,33 @@ func CreateOrUpdateEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.End
 			_, err = backupCredentialsProvider.UpdateUnsecured(bc)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+		}
+
+		// if destination is set, means we are using the new multiple backup destinations
+		if len(req.Body.BackupCredentials.Destination) != 0 {
+			seeds, err := seedsGetter()
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("error getting seeds: %v", err))
+			}
+			seed, ok := seeds[req.SeedName]
+			if !ok {
+				return nil, errors.NewBadRequest("seed %q not found", req.SeedName)
+			}
+
+			backupDest, ok := seed.Spec.EtcdBackupRestore.Destinations[req.Body.BackupCredentials.Destination]
+			if !ok {
+				return nil, errors.NewBadRequest("backup destination %q in seed %q not found", req.Body.BackupCredentials.Destination, req.SeedName)
+			}
+
+			backupDest.Credentials = &v1.SecretReference{
+				Name:      bc.Name,
+				Namespace: bc.Namespace,
+			}
+
+			_, err = seedProvider.UpdateUnsecured(seed)
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("error setting seed backup destination credentials: %v", err))
 			}
 		}
 
@@ -112,7 +139,7 @@ func DecodeBackupCredentialsReq(c context.Context, r *http.Request) (interface{}
 func convertAPIToInternalBackupCredentials(bc *apiv2.BackupCredentials) *v1.Secret {
 	return &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.EtcdRestoreS3CredentialsSecret,
+			Name:      GenBackupCredentialsSecretName(bc.Destination),
 			Namespace: metav1.NamespaceSystem,
 		},
 		StringData: map[string]string{
@@ -120,4 +147,12 @@ func convertAPIToInternalBackupCredentials(bc *apiv2.BackupCredentials) *v1.Secr
 			resources.EtcdBackupAndRestoreS3SecretKeyAccessKeyKey: bc.S3BackupCredentials.SecretAccessKey,
 		},
 	}
+}
+
+// GenBackupCredentialsSecretName generates etcd backup credentials secret name. If backup destination is not set, then use the legacy credentials secret
+func GenBackupCredentialsSecretName(destination string) string {
+	if len(destination) != 0 {
+		return fmt.Sprintf("%s-etcd-backup-credentials", destination)
+	}
+	return resources.EtcdRestoreS3CredentialsSecret
 }

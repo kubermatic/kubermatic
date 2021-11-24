@@ -65,8 +65,11 @@ docker pull "$NODE_IMAGE"
 mkdir -p _build
 docker save -o _build/"$KINDEST_FILENAME" "$NODE_IMAGE"
 
-echodate "Setting iptables rule to clamp mss to path mtu"
-sudo iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+if [ "${OS}" != "darwin" ]; then
+  # no iptables on mac so ...
+  echodate "Setting iptables rule to clamp mss to path mtu"
+  sudo iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+fi
 
 docker load --input _build/kindest.tar
 
@@ -102,8 +105,22 @@ echodate "Building binaries for $KUBERMATIC_VERSION"
 TEST_NAME="Build Kubermatic binaries"
 
 beforeGoBuild=$(nowms)
+
+if [ "${OS}" == "darwin" ]; then
+  # container images will run in kind which run on linux vm
+  export GOOS=linux
+fi
+
 time retry 1 make build
 pushElapsed kubermatic_go_build_duration_milliseconds $beforeGoBuild
+
+if [ "${OS}" == "darwin" ]; then
+  echodate "rebuild kubermatic-installer for darwin"
+  rm _build/kubermatic-installer
+  export GOOS=darwin
+  time retry 1 make kubermatic-installer
+  export GOOS=linux
+fi
 
 beforeDockerBuild=$(nowms)
 
@@ -180,6 +197,9 @@ EOF
 
 # append custom Dex configuration
 cat hack/ci/testdata/oauth_values.yaml >> $HELM_VALUES_FILE
+
+echodate "Debug HELM_VALUES_FILE=$HELM_VALUES_FILE"
+echodate "Debug KUBERMATIC_CONFIG=$KUBERMATIC_CONFIG"
 
 # install dependencies and Kubermatic Operator into cluster
 ./_build/kubermatic-installer deploy --disable-telemetry \

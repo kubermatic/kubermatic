@@ -19,6 +19,7 @@ package defaults
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/docker/distribution/reference"
@@ -53,6 +54,10 @@ const (
 	DefaultUserClusterScrapeAnnotationPrefix      = "monitoring.kubermatic.io"
 	DefaultMaximumParallelReconciles              = 10
 	DefaultS3Endpoint                             = "s3.amazonaws.com"
+
+	// DefaultCloudProviderReconciliationInterval is the time in between deep cloud provider reconciliations
+	// in case the user did not configure a special interval for the given datacenter.
+	DefaultCloudProviderReconciliationInterval = 6 * time.Hour
 
 	// DefaultNoProxy is a set of domains/networks that should never be
 	// routed through a proxy. All user-supplied values are appended to
@@ -187,14 +192,14 @@ var (
 	}
 
 	DefaultKubernetesVersioning = operatorv1alpha1.KubermaticVersioningConfiguration{
-		Default: semver.MustParse("v1.21.5"),
+		Default: semver.MustParse("v1.21.7"),
 		Versions: []*semver.Version{
 			// Kubernetes 1.20
-			semver.MustParse("v1.20.11"),
+			semver.MustParse("v1.20.13"),
 			// Kubernetes 1.21
-			semver.MustParse("v1.21.5"),
+			semver.MustParse("v1.21.7"),
 			// Kubernetes 1.22
-			semver.MustParse("v1.22.2"),
+			semver.MustParse("v1.22.4"),
 		},
 		Updates: []operatorv1alpha1.Update{
 			// ======= 1.19 =======
@@ -212,9 +217,13 @@ var (
 				To:   "1.20.*",
 			},
 			{
-				// Auto-upgrade because of CVE-2021-25741
-				From:      ">= 1.20.0, < 1.20.11",
-				To:        "1.20.11",
+				// Auto-upgrade because of CVEs:
+				// - CVE-2021-25741 (fixed >= 1.20.11)
+				// - CVE-2021-3711 (fixed >= 1.20.13)
+				// - CVE-2021-3712 (fixed >= 1.20.13)
+				// - CVE-2021-33910 (fixed >= 1.20.13)
+				From:      ">= 1.20.0, < 1.20.13",
+				To:        "1.20.13",
 				Automatic: pointer.BoolPtr(true),
 			},
 			{
@@ -230,9 +239,13 @@ var (
 				To:   "1.21.*",
 			},
 			{
-				// Auto-upgrade because of CVE-2021-25741
-				From:      ">= 1.21.0, < 1.21.5",
-				To:        "1.21.5",
+				// Auto-upgrade because of CVEs:
+				// - CVE-2021-25741 (fixed >= 1.21.5)
+				// - CVE-2021-3711 (fixed >= 1.21.7)
+				// - CVE-2021-3712 (fixed >= 1.21.7)
+				// - CVE-2021-33910 (fixed >= 1.21.7)
+				From:      ">= 1.21.0, < 1.21.7",
+				To:        "1.21.7",
 				Automatic: pointer.BoolPtr(true),
 			},
 			{
@@ -246,6 +259,15 @@ var (
 				// Allow to change to any patch version
 				From: "1.22.*",
 				To:   "1.22.*",
+			},
+			{
+				// Auto-upgrade because of CVEs:
+				// - CVE-2021-3711 (fixed >= 1.22.4)
+				// - CVE-2021-3712 (fixed >= 1.22.4)
+				// - CVE-2021-33910 (fixed >= 1.22.4)
+				From:      ">= 1.22.0, < 1.22.4",
+				To:        "1.22.4",
+				Automatic: pointer.BoolPtr(true),
 			},
 		},
 		ProviderIncompatibilities: []operatorv1alpha1.Incompatibility{

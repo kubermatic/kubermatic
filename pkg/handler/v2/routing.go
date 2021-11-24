@@ -89,6 +89,7 @@ type Routing struct {
 	etcdRestoreProjectProviderGetter        provider.EtcdRestoreProjectProviderGetter
 	backupCredentialsProviderGetter         provider.BackupCredentialsProviderGetter
 	privilegedMLAAdminSettingProviderGetter provider.PrivilegedMLAAdminSettingProviderGetter
+	seedProvider                            provider.SeedProvider
 	versions                                kubermatic.Versions
 	caBundle                                *x509.CertPool
 }
@@ -148,6 +149,7 @@ func NewV2Routing(routingParams handler.RoutingParams) Routing {
 		etcdRestoreProjectProviderGetter:        routingParams.EtcdRestoreProjectProviderGetter,
 		backupCredentialsProviderGetter:         routingParams.BackupCredentialsProviderGetter,
 		privilegedMLAAdminSettingProviderGetter: routingParams.PrivilegedMLAAdminSettingProviderGetter,
+		seedProvider:                            routingParams.SeedProvider,
 		versions:                                routingParams.Versions,
 		caBundle:                                routingParams.CABundle,
 	}

@@ -40,7 +40,7 @@ spec:
     dnsDomain: ""
     pods:
       cidrBlocks: []
-    proxyMode: ""
+    proxyMode: "ipvs"
     services:
       cidrBlocks: []
   componentsOverride:
@@ -66,3 +66,14 @@ spec:
 clusterLabels:
   project-id: kkpproject
 credential: ""
+
+---
+apiVersion: kubermatic.k8s.io/v1
+kind: ClusterTemplateInstance
+metadata:
+  name: my-cluster-template-instance
+spec:
+  projectID: kkpproject
+  clusterTemplateID: 2m26r56qdx
+  clusterTemplateName: test-cluster-template
+  replicas: 7

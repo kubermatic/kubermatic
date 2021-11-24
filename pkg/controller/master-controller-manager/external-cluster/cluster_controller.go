@@ -126,7 +126,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Extern
 		return reconcile.Result{RequeueAfter: time.Minute * 30}, nil
 	}
 	if cloud.EKS != nil {
-		r.log.Debugf("reconcile EKS cluster")
+		r.log.Debugf("reconcile EKS cluster %v", cluster.Name)
 		err := r.createOrUpdateEKSKubeconfig(ctx, cluster)
 		if err != nil {
 			r.log.Errorf("failed to create or update kubeconfig secret %v", err)
@@ -278,7 +278,7 @@ func (r *Reconciler) createOrUpdateEKSKubeconfig(ctx context.Context, cluster *k
 	if err != nil {
 		return err
 	}
-	config, err := aws.GetEKSCLusterConfig(ctx, accessKeyID, secretAccessKey, cloud.EKS.Name, cloud.EKS.Region)
+	config, err := aws.GetEKSClusterConfig(ctx, accessKeyID, secretAccessKey, cloud.EKS.Name, cloud.EKS.Region)
 	if err != nil {
 		return err
 	}

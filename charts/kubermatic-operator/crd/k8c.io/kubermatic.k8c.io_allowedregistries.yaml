@@ -16,7 +16,14 @@ spec:
     singular: allowedregistry
   scope: Cluster
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - description: RegistryPrefix contains the prefix of the registry which will be
+        allowed. User clusters will be able to deploy only images which are prefixed
+        with one of the allowed image registry prefixes.
+      jsonPath: .spec.registryPrefix
+      name: RegistryPrefix
+      type: string
+    name: v1
     schema:
       openAPIV3Schema:
         description: AllowedRegistry is the object representing an allowed registry.
@@ -48,6 +55,7 @@ spec:
         type: object
     served: true
     storage: true
+    subresources: {}
 status:
   acceptedNames:
     kind: ""

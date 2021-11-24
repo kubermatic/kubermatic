@@ -142,7 +142,7 @@ const (
 	// RequiredEmailDomain required domain for predefined credentials
 	RequiredEmailDomain = "acme.com"
 	// DefaultKubernetesVersion kubernetes version
-	DefaultKubernetesVersion = "1.22.2"
+	DefaultKubernetesVersion = "1.22.4"
 	// Kubermatic namespace
 	KubermaticNamespace = "kubermatic"
 )
@@ -218,6 +218,7 @@ type newRoutingFunc func(
 	privilegedMLAAdminSettingProviderGetter provider.PrivilegedMLAAdminSettingProviderGetter,
 	masterClient client.Client,
 	featureGatesProvider provider.FeatureGatesProvider,
+	seedProvider provider.SeedProvider,
 ) http.Handler
 
 func getRuntimeObjects(objs ...ctrlruntimeclient.Object) []runtime.Object {
@@ -510,6 +511,11 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		return nil, fmt.Errorf("can not find privilegedMLAAdminSettingProvider for cluster %q", seed.Name)
 	}
 
+	seedProvider := kubernetes.NewSeedProvider(fakeClient)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	eventRecorderProvider := kubernetes.NewEventRecorder()
 
 	settingsWatcher, err := kuberneteswatcher.NewSettingsWatcher(settingsProvider)
@@ -583,6 +589,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		privilegedMLAAdminSettingProviderGetter,
 		fakeClient,
 		featureGatesProvider,
+		seedProvider,
 	)
 
 	return mainRouter, &ClientsSets{kubermaticClient, fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil
@@ -1255,9 +1262,9 @@ func GenDefaultSettings() *kubermaticv1.KubermaticSetting {
 
 func GenDefaultVersions() []*ver.Version {
 	return []*ver.Version{
-		ver.MustParse("1.20.11"),
-		ver.MustParse("1.21.5"),
-		ver.MustParse("1.22.2"),
+		ver.MustParse("1.20.13"),
+		ver.MustParse("1.21.7"),
+		ver.MustParse("1.22.4"),
 	}
 }
 
@@ -1325,6 +1332,25 @@ func GenClusterWithOpenstack(cluster *kubermaticv1.Cluster) *kubermaticv1.Cluste
 			RouterID:       "routerID",
 			SecurityGroups: "securityGroups",
 			Tenant:         "tenant",
+		},
+	}
+	return cluster
+}
+
+func GenClusterWithOpenstackProjectAuth(cluster *kubermaticv1.Cluster) *kubermaticv1.Cluster {
+	cluster.Spec.Cloud = kubermaticv1.CloudSpec{
+		DatacenterName: "OpenstackDatacenter",
+		Openstack: &kubermaticv1.OpenstackCloudSpec{
+			Username:       "username",
+			Password:       "password",
+			SubnetID:       "subnetID",
+			Domain:         "domain",
+			FloatingIPPool: "floatingIPPool",
+			Network:        "network",
+			RouterID:       "routerID",
+			SecurityGroups: "securityGroups",
+			Project:        "project",
+			ProjectID:      "projectID",
 		},
 	}
 	return cluster

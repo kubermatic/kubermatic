@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -28,6 +29,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 type ClientSet struct {
@@ -37,12 +40,27 @@ type ClientSet struct {
 }
 
 func GetClientSet(accessKeyID, secretAccessKey, region string) (*ClientSet, error) {
-	config := aws.NewConfig()
-	config = config.WithRegion(region)
-	config = config.WithCredentials(credentials.NewStaticCredentials(accessKeyID, secretAccessKey, ""))
-	config = config.WithMaxRetries(3)
+	return getClientSet(accessKeyID, secretAccessKey, region, "")
+}
 
-	sess, err := session.NewSession(config)
+func getAWSSession(accessKeyID, secretAccessKey, region, endpoint string) (*session.Session, error) {
+	config := aws.
+		NewConfig().
+		WithRegion(region).
+		WithCredentials(credentials.NewStaticCredentials(accessKeyID, secretAccessKey, "")).
+		WithMaxRetries(3)
+
+	// Overriding the API endpoint is mostly useful for integration tests,
+	// when running against a localstack container, for example.
+	if endpoint != "" {
+		config = config.WithEndpoint(endpoint)
+	}
+
+	return session.NewSession(config)
+}
+
+func getClientSet(accessKeyID, secretAccessKey, region, endpoint string) (*ClientSet, error) {
+	sess, err := getAWSSession(accessKeyID, secretAccessKey, region, endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create API session: %v", err)
 	}
@@ -52,4 +70,15 @@ func GetClientSet(accessKeyID, secretAccessKey, region string) (*ClientSet, erro
 		EKS: eks.New(sess),
 		IAM: iam.New(sess),
 	}, nil
+}
+
+var notFoundErrors = sets.NewString("NoSuchEntity", "InvalidVpcID.NotFound", "InvalidRouteTableID.NotFound", "InvalidGroup.NotFound")
+
+func isNotFound(err error) bool {
+	if awsErr, ok := err.(awserr.Error); ok {
+		if notFoundErrors.Has(awsErr.Code()) {
+			return true
+		}
+	}
+	return false
 }

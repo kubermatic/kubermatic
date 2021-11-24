@@ -16,7 +16,20 @@ spec:
     singular: cluster
   scope: Cluster
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.humanReadableName
+      name: HumanReadableName
+      type: string
+    - jsonPath: .status.userEmail
+      name: Owner
+      type: string
+    - jsonPath: .spec.version
+      name: Version
+      type: string
+    - jsonPath: .spec.pause
+      name: Paused
+      type: boolean
+    name: v1
     schema:
       openAPIV3Schema:
         description: Cluster is the object representing a cluster.
@@ -623,15 +636,19 @@ spec:
                         type: string
                       password:
                         type: string
+                      project:
+                        description: project, formally known as tenant. Tenant is
+                          depreciated in Openstack
+                        type: string
+                      projectID:
+                        description: project id, formally known as tenantID. TenantID
+                          is depreciated in Openstack
+                        type: string
                       routerID:
                         type: string
                       securityGroups:
                         type: string
                       subnetID:
-                        type: string
-                      tenant:
-                        type: string
-                      tenantID:
                         type: string
                       token:
                         description: Used internally during cluster creation
@@ -1374,6 +1391,11 @@ spec:
                     description: MonitoringEnabled is the flag for enabling monitoring
                       in user cluster.
                     type: boolean
+                  monitoringReplicas:
+                    description: MonitoringReplicas is the number of desired pods
+                      of user cluster prometheus deployment.
+                    format: int32
+                    type: integer
                   monitoringResources:
                     description: MonitoringResources is the resource requirements
                       for user cluster prometheus.

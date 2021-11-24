@@ -70,7 +70,7 @@ var (
 	}
 )
 
-func DeploymentCreator(overrides *corev1.ResourceRequirements, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.UserClusterPrometheusDeploymentName, func(deployment *appsv1.Deployment) (*appsv1.Deployment, error) {
 			deployment.Labels = resources.BaseAppLabels(appName, nil)
@@ -78,7 +78,10 @@ func DeploymentCreator(overrides *corev1.ResourceRequirements, registryWithOverw
 			deployment.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: controllerLabels,
 			}
-			deployment.Spec.Replicas = pointer.Int32Ptr(1)
+			deployment.Spec.Replicas = pointer.Int32Ptr(2)
+			if replicas != nil {
+				deployment.Spec.Replicas = replicas
+			}
 			deployment.Spec.Template.ObjectMeta.Labels = controllerLabels
 			deployment.Spec.Template.Spec.ServiceAccountName = resources.UserClusterPrometheusServiceAccountName
 			deployment.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
@@ -99,6 +102,7 @@ func DeploymentCreator(overrides *corev1.ResourceRequirements, registryWithOverw
 						"--web.console.libraries=/etc/prometheus/console_libraries",
 						"--web.console.templates=/etc/prometheus/consoles",
 						"--web.enable-lifecycle",
+						"--enable-feature=expand-external-labels",
 					},
 					Ports: []corev1.ContainerPort{
 						{

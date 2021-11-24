@@ -368,7 +368,7 @@ func (r *datasourceGrafanaController) cleanUpMlaGatewayHealthStatus(ctx context.
 	oldCluster := cluster.DeepCopy()
 	// Remove the health status in Cluster CR
 	cluster.Status.ExtendedHealth.MLAGateway = nil
-	if resourceDeletionErr != nil {
+	if resourceDeletionErr != nil && !apiErrors.IsNotFound(resourceDeletionErr) {
 		cluster.Status.ExtendedHealth.MLAGateway = kubermaticv1.HealthStatusDown.Ptr()
 	}
 

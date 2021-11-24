@@ -538,6 +538,8 @@ const (
 	OpenstackPassword                    = "password"
 	OpenstackTenant                      = "tenant"
 	OpenstackTenantID                    = "tenantID"
+	OpenstackProject                     = "project"
+	OpenstackProjectID                   = "projectID"
 	OpenstackDomain                      = "domain"
 	OpenstackApplicationCredentialID     = "applicationCredentialID"
 	OpenstackApplicationCredentialSecret = "applicationCredentialSecret"
@@ -594,6 +596,10 @@ const (
 	ExternalEKSClusterAccessKeyID     = "accessKeyId"
 	ExternalEKSClusterSecretAccessKey = "secretAccessKey"
 	ExternalGKEClusterSeriveAccount   = "serviceAccount"
+	ExternalAKSClusterTenantID        = "tenantID"
+	ExternalAKSClusterSubscriptionID  = "subscriptionID"
+	ExternalAKSClusterClientID        = "clientID"
+	ExternalAKSClusterClientSecret    = "clientSecret"
 )
 
 const (

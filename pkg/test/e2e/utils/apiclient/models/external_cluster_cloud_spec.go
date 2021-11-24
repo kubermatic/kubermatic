@@ -18,6 +18,9 @@ import (
 // swagger:model ExternalClusterCloudSpec
 type ExternalClusterCloudSpec struct {
 
+	// aks
+	Aks *AKSCloudSpec `json:"aks,omitempty"`
+
 	// eks
 	Eks *EKSCloudSpec `json:"eks,omitempty"`
 
@@ -28,6 +31,10 @@ type ExternalClusterCloudSpec struct {
 // Validate validates this external cluster cloud spec
 func (m *ExternalClusterCloudSpec) Validate(formats strfmt.Registry) error {
 	var res []error
+
+	if err := m.validateAks(formats); err != nil {
+		res = append(res, err)
+	}
 
 	if err := m.validateEks(formats); err != nil {
 		res = append(res, err)
@@ -40,6 +47,23 @@ func (m *ExternalClusterCloudSpec) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ExternalClusterCloudSpec) validateAks(formats strfmt.Registry) error {
+	if swag.IsZero(m.Aks) { // not required
+		return nil
+	}
+
+	if m.Aks != nil {
+		if err := m.Aks.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("aks")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -81,6 +105,10 @@ func (m *ExternalClusterCloudSpec) validateGke(formats strfmt.Registry) error {
 func (m *ExternalClusterCloudSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateAks(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateEks(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -92,6 +120,20 @@ func (m *ExternalClusterCloudSpec) ContextValidate(ctx context.Context, formats 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ExternalClusterCloudSpec) contextValidateAks(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Aks != nil {
+		if err := m.Aks.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("aks")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 

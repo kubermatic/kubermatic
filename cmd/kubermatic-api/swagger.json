@@ -7298,6 +7298,16 @@
           },
           {
             "type": "string",
+            "name": "Project",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ProjectID",
+            "in": "header"
+          },
+          {
+            "type": "string",
             "name": "DatacenterName",
             "in": "header"
           },
@@ -7375,6 +7385,16 @@
           {
             "type": "string",
             "name": "TenantID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Project",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ProjectID",
             "in": "header"
           },
           {
@@ -7460,6 +7480,16 @@
           },
           {
             "type": "string",
+            "name": "Project",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ProjectID",
+            "in": "header"
+          },
+          {
+            "type": "string",
             "name": "DatacenterName",
             "in": "header"
           },
@@ -7541,6 +7571,16 @@
           },
           {
             "type": "string",
+            "name": "Project",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ProjectID",
+            "in": "header"
+          },
+          {
+            "type": "string",
             "name": "DatacenterName",
             "in": "header"
           },
@@ -7618,6 +7658,16 @@
           {
             "type": "string",
             "name": "TenantID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Project",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ProjectID",
             "in": "header"
           },
           {
@@ -15179,6 +15229,338 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Gets an external cluster machine deployments.",
+        "operationId": "listExternalClusterMachineDeployments",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ExternalClusterMachineDeployment",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ExternalClusterMachineDeployment"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Gets an external cluster machine deployments.",
+        "operationId": "getExternalClusterMachineDeployment",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "MachineDeploymentID",
+            "name": "machinedeployment_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ExternalClusterMachineDeployment",
+            "schema": {
+              "$ref": "#/definitions/ExternalClusterMachineDeployment"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "delete": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Delete an external cluster machine deployment.",
+        "operationId": "deleteExternalClusterMachineDeployment",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "MachineDeploymentID",
+            "name": "machinedeployment_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "patch": {
+        "description": "Patches the given cluster using JSON Merge Patch method",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "patchExternalClusterMachineDeployments",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "MachineDeploymentID",
+            "name": "machinedeployment_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Patch",
+            "in": "body",
+            "schema": {
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ExternalClusterMachineDeployment",
+            "schema": {
+              "$ref": "#/definitions/ExternalClusterMachineDeployment"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Gets an external cluster machine deployment nodes.",
+        "operationId": "listExternalClusterMachineDeploymentNodes",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "MachineDeploymentID",
+            "name": "machinedeployment_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ExternalClusterNode",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ExternalClusterNode"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/metrics": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "List an external cluster machine deployment metrics.",
+        "operationId": "listExternalClusterMachineDeploymentMetrics",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "MachineDeploymentID",
+            "name": "machinedeployment_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NodeMetric",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/NodeMetric"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/metrics": {
       "get": {
         "description": "Gets cluster metrics",
@@ -16544,6 +16926,32 @@
     }
   },
   "definitions": {
+    "AKSCloudSpec": {
+      "type": "object",
+      "properties": {
+        "clientID": {
+          "type": "string",
+          "x-go-name": "ClientID"
+        },
+        "clientSecret": {
+          "type": "string",
+          "x-go-name": "ClientSecret"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "subscriptionID": {
+          "type": "string",
+          "x-go-name": "SubscriptionID"
+        },
+        "tenantID": {
+          "type": "string",
+          "x-go-name": "TenantID"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "AWSCloudSpec": {
       "type": "object",
       "title": "AWSCloudSpec specifies access data to Amazon Web Services.",
@@ -17709,11 +18117,36 @@
       "description": "BackupCredentials contains credentials for etcd backups",
       "type": "object",
       "properties": {
+        "destination": {
+          "description": "Destination corresponds to the Seeds Seed.Spec.EtcdBackupRestore.Destinations, it defines for which destination\nthe backup credentials will be created. If set, it updates the credentials ref in the related Seed BackupDestination",
+          "type": "string",
+          "x-go-name": "Destination"
+        },
         "s3": {
           "$ref": "#/definitions/S3BackupCredentials"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "BackupDestination": {
+      "type": "object",
+      "title": "BackupDestination defines the bucket name and endpoint as a backup destination, and holds reference to the credentials secret.",
+      "properties": {
+        "bucketName": {
+          "description": "BucketName is the bucket name to use for backup and restore.",
+          "type": "string",
+          "x-go-name": "BucketName"
+        },
+        "credentials": {
+          "$ref": "#/definitions/SecretReference"
+        },
+        "endpoint": {
+          "description": "Endpoint is the API endpoint to use for backup and restore.",
+          "type": "string",
+          "x-go-name": "Endpoint"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "BackupStatus": {
       "type": "object",
@@ -19326,6 +19759,11 @@
           "type": "string",
           "x-go-name": "ClusterID"
         },
+        "destination": {
+          "description": "Destination indicates where the backup will be stored. The destination name should correspond to a destination in\nthe cluster's Seed.Spec.EtcdBackupRestore. If empty, it will use the legacy destination in Seed.Spec.BackupRestore",
+          "type": "string",
+          "x-go-name": "Destination"
+        },
         "keep": {
           "description": "Keep is the number of backups to keep around before deleting the oldest one\nIf not set, defaults to DefaultKeptBackupsCount. Only used if Schedule is set.",
           "type": "integer",
@@ -19366,6 +19804,21 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EtcdBackupRestore": {
+      "description": "EtcdBackupRestore holds the configuration of the automatic backup restores",
+      "type": "object",
+      "properties": {
+        "destinations": {
+          "description": "Destinations stores all the possible destinations where the backups for the Seed can be stored. If not empty,\nit enables automatic backup and restore for the seed.",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/BackupDestination"
+          },
+          "x-go-name": "Destinations"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "EtcdRestore": {
       "description": "EtcdRestore represents an object holding the configuration for etcd backup restore",
@@ -19566,11 +20019,57 @@
       "description": "ExternalClusterCloudSpec represents an object holding cluster cloud details",
       "type": "object",
       "properties": {
+        "aks": {
+          "$ref": "#/definitions/AKSCloudSpec"
+        },
         "eks": {
           "$ref": "#/definitions/EKSCloudSpec"
         },
         "gke": {
           "$ref": "#/definitions/GKECloudSpec"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "ExternalClusterMachineDeployment": {
+      "description": "ExternalClusterMachineDeployment represents an object holding external cluster machine deployment",
+      "type": "object",
+      "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
+        "creationTimestamp": {
+          "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreationTimestamp"
+        },
+        "deletionTimestamp": {
+          "description": "DeletionTimestamp is a timestamp representing the server time when this object was deleted.",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "DeletionTimestamp"
+        },
+        "id": {
+          "description": "ID unique value that identifies the resource generated by the server. Read-Only.",
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "name": {
+          "description": "Name represents human readable name for the resource",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "spec": {
+          "$ref": "#/definitions/NodeDeploymentSpec"
+        },
+        "status": {
+          "$ref": "#/definitions/MachineDeploymentStatus"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -20704,6 +21203,12 @@
           "type": "boolean",
           "x-go-name": "MonitoringEnabled"
         },
+        "monitoringReplicas": {
+          "description": "MonitoringReplicas is the number of desired pods of user cluster prometheus deployment.",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "MonitoringReplicas"
+        },
         "monitoringResources": {
           "$ref": "#/definitions/ResourceRequirements"
         }
@@ -21727,6 +22232,14 @@
           "type": "string",
           "x-go-name": "Password"
         },
+        "project": {
+          "type": "string",
+          "x-go-name": "Project"
+        },
+        "projectID": {
+          "type": "string",
+          "x-go-name": "ProjectID"
+        },
         "routerID": {
           "type": "string",
           "x-go-name": "RouterID"
@@ -22471,6 +22984,14 @@
           "type": "string",
           "x-go-name": "Network"
         },
+        "project": {
+          "type": "string",
+          "x-go-name": "Project"
+        },
+        "projectID": {
+          "type": "string",
+          "x-go-name": "ProjectID"
+        },
         "routerID": {
           "type": "string",
           "x-go-name": "RouterID"
@@ -22843,6 +23364,23 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
+    "SecretReference": {
+      "description": "SecretReference represents a Secret Reference. It has enough information to retrieve secret\nin any namespace\n+structType=atomic",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "Name is unique within a namespace to reference a secret resource.\n+optional",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "namespace": {
+          "description": "Namespace defines the space within which the secret name must be unique.\n+optional",
+          "type": "string",
+          "x-go-name": "Namespace"
+        }
+      },
+      "x-go-package": "k8s.io/api/core/v1"
+    },
     "Seed": {
       "description": "Seed represents a seed object",
       "type": "object",
@@ -22862,6 +23400,9 @@
             "$ref": "#/definitions/Datacenter"
           },
           "x-go-name": "SeedDatacenters"
+        },
+        "etcdBackupRestore": {
+          "$ref": "#/definitions/EtcdBackupRestore"
         },
         "expose_strategy": {
           "$ref": "#/definitions/ExposeStrategy"
@@ -22894,8 +23435,9 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "SeedBackupRestoreConfiguration": {
+      "description": "Deprecated: use EtcdBackupRestore",
       "type": "object",
-      "title": "SeedBackupRestoreConfiguration are s3 settings used for backups and restores of user cluster etcds.",
+      "title": "SeedBackupRestoreConfiguration defines the bucket name and endpoint as a backup destination.",
       "properties": {
         "s3BucketName": {
           "description": "S3BucketName is the S3 bucket name to use for backup and restore.",
@@ -22903,7 +23445,7 @@
           "x-go-name": "S3BucketName"
         },
         "s3Endpoint": {
-          "description": "S3Endpoint is the S3 API endpoint to use for backup and restore. Defaults to s3.amazonaws.com.",
+          "description": "S3Endpoint is the S3 API endpoint to use for backup and restore.",
           "type": "string",
           "x-go-name": "S3Endpoint"
         }
@@ -22961,6 +23503,9 @@
             "$ref": "#/definitions/Datacenter"
           },
           "x-go-name": "SeedDatacenters"
+        },
+        "etcdBackupRestore": {
+          "$ref": "#/definitions/EtcdBackupRestore"
         },
         "expose_strategy": {
           "$ref": "#/definitions/ExposeStrategy"
