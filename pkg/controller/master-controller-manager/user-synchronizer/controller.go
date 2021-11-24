@@ -19,7 +19,6 @@ package usersynchronizer
 import (
 	"context"
 	"fmt"
-	"reflect"
 
 	"go.uber.org/zap"
 
@@ -98,15 +97,7 @@ func withEventFilter() predicate.Predicate {
 			return true
 		},
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			oldUser, ok := e.ObjectOld.(*kubermaticv1.User)
-			if !ok {
-				return false
-			}
-			newUser, ok := e.ObjectNew.(*kubermaticv1.User)
-			if !ok {
-				return false
-			}
-			return !reflect.DeepEqual(oldUser.Spec, newUser.Spec)
+			return e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration()
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
 			return true
