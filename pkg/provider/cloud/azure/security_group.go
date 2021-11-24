@@ -62,11 +62,9 @@ func reconcileSecurityGroup(ctx context.Context, clients *ClientSet, location st
 	// do a lot of "!= nil" checks so this does not panic.
 	//
 	// Attributes we check:
-	// - Associated subnet's ID (subnet names are part of the ID and as such, don't need a separate check)
 	// - defined security rules
-	if securityGroup.SecurityGroupPropertiesFormat != nil && securityGroup.SecurityGroupPropertiesFormat.Subnets != nil && len(*securityGroup.SecurityGroupPropertiesFormat.Subnets) == 1 &&
-		*(*securityGroup.SecurityGroupPropertiesFormat.Subnets)[0].ID == *(*target.SecurityGroupPropertiesFormat.Subnets)[0].ID &&
-		securityGroup.SecurityGroupPropertiesFormat.SecurityRules != nil && compareSecurityRules(*securityGroup.SecurityGroupPropertiesFormat.SecurityRules, *target.SecurityGroupPropertiesFormat.SecurityRules) {
+	if securityGroup.SecurityGroupPropertiesFormat != nil && securityGroup.SecurityGroupPropertiesFormat.SecurityRules != nil &&
+		compareSecurityRules(*securityGroup.SecurityGroupPropertiesFormat.SecurityRules, *target.SecurityGroupPropertiesFormat.SecurityRules) {
 		return cluster, nil
 	}
 
@@ -266,10 +264,23 @@ func compareSecurityRules(a []network.SecurityRule, b []network.SecurityRule) bo
 		ruleB := b[i]
 		if *rule.Name != *ruleB.Name || rule.SecurityRulePropertiesFormat.Direction != ruleB.SecurityRulePropertiesFormat.Direction ||
 			rule.SecurityRulePropertiesFormat.Protocol != ruleB.SecurityRulePropertiesFormat.Protocol ||
-			rule.Access != ruleB.Access {
+			rule.SecurityRulePropertiesFormat.Access != ruleB.SecurityRulePropertiesFormat.Access ||
+			!isEqualStringPtr(rule.SecurityRulePropertiesFormat.SourceAddressPrefix, ruleB.SecurityRulePropertiesFormat.SourceAddressPrefix) ||
+			!isEqualStringPtr(rule.SecurityRulePropertiesFormat.SourcePortRange, ruleB.SecurityRulePropertiesFormat.SourcePortRange) ||
+			!isEqualStringPtr(rule.SecurityRulePropertiesFormat.DestinationPortRange, ruleB.SecurityRulePropertiesFormat.DestinationPortRange) ||
+			!isEqualStringPtr(rule.SecurityRulePropertiesFormat.DestinationAddressPrefix, ruleB.SecurityRulePropertiesFormat.DestinationAddressPrefix) ||
+			!isEqualInt32Ptr(rule.SecurityRulePropertiesFormat.Priority, ruleB.SecurityRulePropertiesFormat.Priority) {
 			return false
 		}
 	}
 
 	return true
+}
+
+func isEqualStringPtr(s1 *string, s2 *string) bool {
+	return s1 == nil && s2 == nil || (s1 != nil && s2 != nil && *s1 == *s2)
+}
+
+func isEqualInt32Ptr(s1 *int32, s2 *int32) bool {
+	return s1 == nil && s2 == nil || (s1 != nil && s2 != nil && *s1 == *s2)
 }

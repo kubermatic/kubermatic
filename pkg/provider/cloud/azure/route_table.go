@@ -42,25 +42,14 @@ func reconcileRouteTable(ctx context.Context, clients *ClientSet, location strin
 		return cluster, err
 	}
 
-	// if we found a route table, we can check for the ownership tag to determine
-	// if the referenced route table is owned by this cluster and should be reconciled
-	if !isNotFound(routeTable.Response) && !hasOwnershipTag(routeTable.Tags, cluster) {
+	// usually, we check for ownership tags here and then compare attributes of interest to a target representation
+	// of the resource. Since there is nothing in the route table we could compare to eventually reconcile (the subnet setting
+	// you see later on is ineffective), we skip all of that and return early if we found a route table during our API call earlier.
+	if !isNotFound(routeTable.Response) {
 		return cluster, nil
 	}
 
 	target := targetRouteTable(cluster.Spec.Cloud, location)
-
-	// check for attributes of the existing route table and return early if all values are already
-	// as expected. Since there are a lot of pointers in the network.RouteTable struct, we need to
-	// do a lot of "!= nil" checks so this does not panic.
-	//
-	// Attributes we check:
-	// - Associated subnet's ID (subnet names are part of the ID and as such, don't need a separate check)
-	if routeTable.RouteTablePropertiesFormat != nil && routeTable.RouteTablePropertiesFormat.Subnets != nil && len(*routeTable.RouteTablePropertiesFormat.Subnets) == 1 &&
-		*(*routeTable.RouteTablePropertiesFormat.Subnets)[0].ID == *(*target.RouteTablePropertiesFormat.Subnets)[0].ID {
-		return cluster, nil
-	}
-
 	if err := ensureRouteTable(ctx, clients, cluster.Spec.Cloud, target); err != nil {
 		return cluster, err
 	}
