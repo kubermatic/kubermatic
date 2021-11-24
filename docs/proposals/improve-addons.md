@@ -168,34 +168,26 @@ Note on CRDs in general: The ApplicationDefinition strongly benefits from [OpenA
 - adding an endpoint to list compatible Applications given a set of constraints (eg k8s version). This will be required to make it possible for users to select applications in the cluster wizard (see #6000)
 - adding an endpoint to install an application in a user cluster. It is important to note that it only creates the CRs which Application should be installed in which cluster, but does not do the installation of the Application itself (this task will be done by the ApplicationInstallationController).
 
-Fulfilling the aforementioned actions during cluster creation, is a bit more tricky. Currently our process looks like this:
+In order to do, this the following changes need to be made to the cluster and clustertemplate objects
 
-1. FrontEnd sends all params to the CreateEndpoint
-2. Create Endpoint uses the params to create the cluster object
-3. Seed controller gets informed about a new cluster object
-4. Seed controller creates the `cluster-xxx` namespace in the seed cluster and so on...
+**cluster**
 
-This means that the namespace where ApplicationInstallations should be stored gets created much later than the CreateEndpoint call. Additionally the namespace also gets created asynchronously and there is no guarantee at which point in time it is ready.
+We propose a similar approach to what we currently do with the `nodeDeployment` field. Specifically, we would extend the cluster object with a new field `applications` which contains a list of all Applications as [ApplicationRefs](###ApplicationInstallation-CR), value overrides etc. We think it is necessary to (initially) store this in cluster object, so a user can set Applications directly at cluster creation. To alleviate the size issue we propose a clean-up mechanism like the `nodeDeployment` has. Specifically the `cluster` controller would go through the list of Applications and create an ApplicationInstallation for each of the items. Afterwards the controller is going to delete the entry from the list. This will reduce bloat on the cluster object.
 
-*tbd: As a result of this complexity we thought of two options:*
+This might lead to the question: Why use ApplicationInstallation CRs at all? For this, we think having the CR is going to make routine operations (e.g. fetching, updating Applications) much easier and less resource-intensive.
 
-a) Create ApplicationCRs directly inside the cluster object and then have the ApplicationInstallationController watch the cluster CR
+Alternatives considered: We considered the idea of creating CRs directly on the POST call in the api. This theoretically would have the advantage that you would not need to store . We did not consider to go with this for the following reasons:
 
-- we would extend the cluster object with an Applications field that contains a list of all Applications and their values
-- the ApplicationInstallationController would watch the cluster CR and create corresponding ApplicationInstallation CRs
+1. We would have to do a larger refactoring of the current `CreateEndpoint` logic. Concretely we would have to create the seed-namespace right after the cluster object has been created. This user-flow change would be needed due to current design of cluster creation in which the cluster-namespace with the ApplicationInstallations get created asynchronously after `CreateEndpoint` is called. Specifically:
+     1. FrontEnd sends all params to the CreateEndpoint
+     2. Create Endpoint uses the params to create the cluster object
+     3. Seed controller gets informed about a new cluster object
+     4. Seed controller creates the `cluster-xxx` namespace in the seed cluster and so on...
+2. The option would not allow to use Applications in clustertemplates as their information only gets passed from the FE directly to the endpoint
 
-This implementation is close to the status quo of packing everything into the cluster object and then react to it. However we have the concern that the sum of all ApplicationInstallations with all of its fields can become quite large and result in a too large cluster object
+**clustertemplate**
 
-b) Create CRs directly during cluster creation
-
-we would extend the `CreateEndpoint` func to:
-
-- create the seed-namespace right after the cluster object has been created. We need to make sure this early creation does not interfere with the seed-controller
-- create the application CRs after the namespace has been created
-
-This option would keep the cluster-object in its current size. However we are currently not sure if there are any implications from creating the namespace early. We think this will have no implication for cluster templates, as they are based on the selected UI values, which would contain the Application information.
-
-Implementation Hint: In any case (a or b) we also have to update the validation cluster method to ensure applications are valid.
+In order to make it possible for users to deploy a cluster with a set of Applications, we need to persist them in the clustertemplate. For this we unfortunately do not see any other way than to store a list of [ApplicationRefs](###ApplicationInstallation-CR) and value overrides. As a result, we might have to place a limit on the number of Applications you can have in a template. This is because clustertemplates get stored in a CR, which has the standard k8s size limit of 1MB.
 
 ### ApplicationInstallation CR
 
