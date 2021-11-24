@@ -161,12 +161,12 @@ spec:
         constraints: # omitted for clarity
 ```
 
-Note on CRDs in general: The ApplicationDefinition strongly benefits from [OpenAPIv3's `oneOf` functionality](https://swagger.io/docs/specification/data-models/oneof-anyof-allof-not/), which is supported by Kubernetes. For example in the yaml above, you could say a source must be `oneOf` `docker` or `git`. The cool thing about `oneOf` is that `docker` and `git` can have totally have different fields from each other, but still would be statically validated. However, syntax like this is [not yet supported in kubebuilder](https://github.com/kubernetes-sigs/controller-tools/issues/461), which we use to generate the CRDs. Nonetheless, we would still propose to use kubebuilder for now as the advantages of an automated generation outweigh the downside of not being able to do oneOf (yet).
+Note on CRDs in general: The ApplicationDefinition strongly benefits from [OpenAPIv3's `oneOf` functionality](https://swagger.io/docs/specification/data-models/oneof-anyof-allof-not/), which is supported by Kubernetes. For example in the yaml above, you could say a source must be `oneOf` `helm` or `git`. The cool thing about `oneOf` is that `helm` and `git` can have totally have different fields from each other, but still would be statically validated. However, syntax like this is [not yet supported in kubebuilder](https://github.com/kubernetes-sigs/controller-tools/issues/461), which we use to generate the CRDs. Nonetheless, we would still propose to use kubebuilder for now as the advantages of an automated generation outweigh the downside of not being able to do oneOf (yet).
 
 ### Updates to KKP API
 
 - adding an endpoint to list compatible Applications given a set of constraints (eg k8s version). This will be required to make it possible for users to select applications in the cluster wizard (see #6000)
-- creating ApplicationsInstallations for each user cluster. It is important to note that it only creates the CRs which Application should be installed in which cluster, but does not do the installation of the Application itself (this task will be done by the ApplicationInstallationController).
+- adding an endpoint to install an application in a user cluster. It is important to note that it only creates the CRs which Application should be installed in which cluster, but does not do the installation of the Application itself (this task will be done by the ApplicationInstallationController).
 
 Fulfilling the aforementioned actions during cluster creation, is a bit more tricky. Currently our process looks like this:
 
@@ -214,7 +214,7 @@ spec:
   targetNamespace: monitoring
   createNamespace: true # flag to create the targetNamespace
   applicationRef:
-    name: prometheus
+    name: prometheus-node-exporter
     version: v1
   values: # Both structure and values depend on what is configured in the application
     abc: xyz
@@ -224,7 +224,7 @@ spec:
 
 The ApplicationInstallationController resides in the seed cluster. Its main purpose is to watch ApplicationInstallation CRs and ensure that the requested Applications are installed/modified/deleted in the corresponding user clusters. By extension of this, the ApplicationInstallationController needs to be able to fetch the manifests for Applications.
 
-The functionality of the ApplicationInstallationController depends on the selected `source` and `method` in the ApplicationInstallation CR. To start we propose the following sources and methods:
+The functionality of the ApplicationInstallationController depends on the selected `source` and `method` in the ApplicationDefinition CR. To start we propose the following sources and methods:
 
 **Sources**
 
