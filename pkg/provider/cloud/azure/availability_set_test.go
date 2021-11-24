@@ -44,6 +44,7 @@ func TestReconcileAvailabilitySet(t *testing.T) {
 		existingAvailabilitySet     *compute.AvailabilitySet
 		clientMode                  fakeClientMode
 		overrideTags                bool
+		overrideUpdateDomainCount   bool
 		expectedError               bool
 		expectedAvailabilitySetName string
 		expectedFirstCallCount      int
@@ -56,6 +57,7 @@ func TestReconcileAvailabilitySet(t *testing.T) {
 			existingAvailabilitySet:     nil,
 			clientMode:                  fakeClientModeOkay,
 			overrideTags:                false,
+			overrideUpdateDomainCount:   false,
 			expectedError:               false,
 			expectedAvailabilitySetName: "kubernetes-94fs85s8mz",
 			expectedFirstCallCount:      1,
@@ -68,8 +70,35 @@ func TestReconcileAvailabilitySet(t *testing.T) {
 			existingAvailabilitySet:     nil,
 			clientMode:                  fakeClientModeOkay,
 			overrideTags:                true,
+			overrideUpdateDomainCount:   false,
 			expectedError:               false,
 			expectedAvailabilitySetName: "kubernetes-xxmhccmbx3",
+			expectedFirstCallCount:      1,
+			expectedSecondCallCount:     1,
+		},
+		{
+			name:                        "change-update-domain-count",
+			clusterName:                 "ku0of7owfh",
+			azureCloudSpec:              &kubermaticv1.AzureCloudSpec{},
+			existingAvailabilitySet:     nil,
+			clientMode:                  fakeClientModeOkay,
+			overrideTags:                false,
+			overrideUpdateDomainCount:   true,
+			expectedError:               false,
+			expectedAvailabilitySetName: "kubernetes-ku0of7owfh",
+			expectedFirstCallCount:      1,
+			expectedSecondCallCount:     2,
+		},
+		{
+			name:                        "take-over-resource-and-modify",
+			clusterName:                 "kdh4pozvkw",
+			azureCloudSpec:              &kubermaticv1.AzureCloudSpec{},
+			existingAvailabilitySet:     nil,
+			clientMode:                  fakeClientModeOkay,
+			overrideTags:                true,
+			overrideUpdateDomainCount:   true,
+			expectedError:               false,
+			expectedAvailabilitySetName: "kubernetes-kdh4pozvkw",
 			expectedFirstCallCount:      1,
 			expectedSecondCallCount:     1,
 		},
@@ -83,6 +112,7 @@ func TestReconcileAvailabilitySet(t *testing.T) {
 			existingAvailabilitySet:     nil,
 			clientMode:                  fakeClientModeOkay,
 			overrideTags:                false,
+			overrideUpdateDomainCount:   false,
 			expectedError:               false,
 			expectedAvailabilitySetName: customExistingAvailabilitySet,
 			expectedFirstCallCount:      1,
@@ -103,6 +133,7 @@ func TestReconcileAvailabilitySet(t *testing.T) {
 			},
 			clientMode:                  fakeClientModeOkay,
 			overrideTags:                false,
+			overrideUpdateDomainCount:   false,
 			expectedError:               false,
 			expectedAvailabilitySetName: customExistingAvailabilitySet,
 			expectedFirstCallCount:      0,
@@ -115,6 +146,7 @@ func TestReconcileAvailabilitySet(t *testing.T) {
 			existingAvailabilitySet:     nil,
 			clientMode:                  fakeClientModeAuthFail,
 			overrideTags:                false,
+			overrideUpdateDomainCount:   false,
 			expectedError:               true,
 			expectedAvailabilitySetName: "",
 			expectedFirstCallCount:      0,
@@ -160,6 +192,11 @@ func TestReconcileAvailabilitySet(t *testing.T) {
 					fakeClient.AvailabilitySet.Tags = map[string]*string{}
 				}
 
+				// mess with the platform update domain count to force a reconcile
+				if tc.overrideUpdateDomainCount {
+					fakeClient.AvailabilitySet.AvailabilitySetProperties.PlatformUpdateDomainCount = to.Int32Ptr(15)
+				}
+
 				// reconcile AvailabilitySet the second time
 				cluster, err = reconcileAvailabilitySet(ctx, clientSet, testLocation, cluster, testClusterUpdater(cluster))
 
@@ -173,6 +210,13 @@ func TestReconcileAvailabilitySet(t *testing.T) {
 
 				if fakeClient.CreateOrUpdateCalledCount != tc.expectedSecondCallCount {
 					t.Fatalf("expected %d, got %d calls to CreateOrUpdate after second reconcile", tc.expectedSecondCallCount, fakeClient.CreateOrUpdateCalledCount)
+				}
+
+				// make sure the reconcile fixed the update domain count if we didn't override ownership tags
+				if tc.overrideUpdateDomainCount && !tc.overrideTags {
+					if *fakeClient.AvailabilitySet.AvailabilitySetProperties.PlatformUpdateDomainCount != 20 {
+						t.Fatalf("expected platform update domain count to be 20, got %d", *fakeClient.AvailabilitySet.AvailabilitySetProperties.PlatformUpdateDomainCount)
+					}
 				}
 			}
 		})

@@ -49,7 +49,26 @@ func reconcileAvailabilitySet(ctx context.Context, clients *ClientSet, location 
 		return cluster, nil
 	}
 
-	if err := ensureAvailabilitySet(ctx, clients.AvailabilitySets, cluster.Spec.Cloud, location, cluster.Name); err != nil {
+	target, err := targetAvailabilitySet(cluster.Spec.Cloud, location, cluster.Name)
+	if err != nil {
+		return cluster, err
+	}
+
+	// check for attributes of the existing availability set and return early if all values are already
+	// as expected. Since there are a lot of pointers in the compute.AvailabilitySet struct, we need to
+	// do a lot of "!= nil" checks so this does not panic.
+	//
+	// Attributes we check:
+	// - SKU name
+	// - fault domain count
+	// - update domain count
+	if (availabilitySet.Sku != nil && availabilitySet.Sku.Name != nil && *availabilitySet.Sku.Name == *target.Sku.Name) && availabilitySet.AvailabilitySetProperties != nil &&
+		(availabilitySet.AvailabilitySetProperties.PlatformFaultDomainCount != nil && *availabilitySet.AvailabilitySetProperties.PlatformFaultDomainCount == *target.AvailabilitySetProperties.PlatformFaultDomainCount) &&
+		(availabilitySet.AvailabilitySetProperties.PlatformUpdateDomainCount != nil && *availabilitySet.AvailabilitySetProperties.PlatformUpdateDomainCount == *target.AvailabilitySetProperties.PlatformUpdateDomainCount) {
+		return cluster, nil
+	}
+
+	if err := ensureAvailabilitySet(ctx, clients.AvailabilitySets, cluster.Spec.Cloud, target); err != nil {
 		return nil, fmt.Errorf("failed to ensure AvailabilitySet exists: %v", err)
 	}
 
@@ -59,13 +78,13 @@ func reconcileAvailabilitySet(ctx context.Context, clients *ClientSet, location 
 	})
 }
 
-func ensureAvailabilitySet(ctx context.Context, client computeapi.AvailabilitySetsClientAPI, cloud kubermaticv1.CloudSpec, location string, clusterName string) error {
+func targetAvailabilitySet(cloud kubermaticv1.CloudSpec, location string, clusterName string) (*compute.AvailabilitySet, error) {
 	faultDomainCount, ok := faultDomainsPerRegion[location]
 	if !ok {
-		return fmt.Errorf("could not determine the number of fault domains, unknown region %q", location)
+		return nil, fmt.Errorf("could not determine the number of fault domains, unknown region %q", location)
 	}
 
-	as := compute.AvailabilitySet{
+	return &compute.AvailabilitySet{
 		Name:     to.StringPtr(cloud.Azure.AvailabilitySet),
 		Location: to.StringPtr(location),
 		Sku: &compute.Sku{
@@ -78,9 +97,15 @@ func ensureAvailabilitySet(ctx context.Context, client computeapi.AvailabilitySe
 			PlatformFaultDomainCount:  to.Int32Ptr(faultDomainCount),
 			PlatformUpdateDomainCount: to.Int32Ptr(20),
 		},
+	}, nil
+}
+
+func ensureAvailabilitySet(ctx context.Context, client computeapi.AvailabilitySetsClientAPI, cloud kubermaticv1.CloudSpec, as *compute.AvailabilitySet) error {
+	if as == nil {
+		return fmt.Errorf("invalid AvailabilitySet reference passed, cannot be nil")
 	}
 
-	_, err := client.CreateOrUpdate(ctx, cloud.Azure.ResourceGroup, cloud.Azure.AvailabilitySet, as)
+	_, err := client.CreateOrUpdate(ctx, cloud.Azure.ResourceGroup, cloud.Azure.AvailabilitySet, *as)
 	if err != nil {
 		return fmt.Errorf("failed to create or update availability set %q: %v", cloud.Azure.AvailabilitySet, err)
 	}
