@@ -75,7 +75,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return fmt.Errorf("failed to get cloudConfig: %v", err)
 	}
 	var CSICloudConfig []byte
-	if r.cloudProvider == kubermaticv1.ProviderVSphere {
+	if r.cloudProvider == kubermaticv1.VSphereCloudProvider {
 		CSICloudConfig, err = r.cloudConfig(ctx, resources.CSICloudConfigConfigMapName)
 		if err != nil {
 			return fmt.Errorf("failed to get cloudConfig: %v", err)
