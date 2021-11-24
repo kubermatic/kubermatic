@@ -115,7 +115,7 @@ type ClusterGetOptions struct {
 // implementation, use SecretKeySelectorValueFuncFactory.
 type SecretKeySelectorValueFunc func(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
 
-func SecretKeySelectorValueFuncFactory(ctx context.Context, client ctrlruntimeclient.Client) SecretKeySelectorValueFunc {
+func SecretKeySelectorValueFuncFactory(ctx context.Context, client ctrlruntimeclient.Reader) SecretKeySelectorValueFunc {
 	return func(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
 		if configVar == nil {
 			return "", errors.New("configVar is nil")

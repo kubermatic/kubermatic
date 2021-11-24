@@ -18,7 +18,6 @@ package validation
 
 import (
 	"context"
-	"crypto/x509"
 	"errors"
 	"fmt"
 	"net"
@@ -27,14 +26,13 @@ import (
 	"github.com/coreos/locksmith/pkg/timeutil"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/features"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud"
-	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	"k8s.io/apimachinery/pkg/api/equality"
-	utilerror "k8s.io/apimachinery/pkg/util/errors"
+	apimachineryvalidation "k8s.io/apimachinery/pkg/api/validation"
 	kubenetutil "k8s.io/apimachinery/pkg/util/net"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -44,43 +42,181 @@ var (
 	// ErrCloudChangeNotAllowed describes that it is not allowed to change the cloud provider
 	ErrCloudChangeNotAllowed  = errors.New("not allowed to change the cloud provider")
 	azureLoadBalancerSKUTypes = sets.NewString("", string(kubermaticv1.AzureStandardLBSKU), string(kubermaticv1.AzureBasicLBSKU))
-)
 
-// ValidateCreateClusterSpec validates the given cluster spec
-func ValidateCreateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider) error {
-
-	if spec.HumanReadableName == "" {
-		return errors.New("no name specified")
+	supportedCNIPlugins        = sets.NewString(kubermaticv1.CNIPluginTypeCanal.String(), kubermaticv1.CNIPluginTypeCilium.String(), kubermaticv1.CNIPluginTypeNone.String())
+	supportedCNIPluginVersions = map[kubermaticv1.CNIPluginType]sets.String{
+		kubermaticv1.CNIPluginTypeCanal:  sets.NewString("v3.8", "v3.19", "v3.20"),
+		kubermaticv1.CNIPluginTypeCilium: sets.NewString("v1.10"),
+		kubermaticv1.CNIPluginTypeNone:   sets.NewString(""),
 	}
 
-	if err := ValidateCloudSpec(spec.Cloud, dc); err != nil {
-		return fmt.Errorf("invalid cloud spec: %v", err)
+	// unsafeCNIUpgradeLabel allows unsafe CNI version upgrade (difference in versions more than one minor version).
+	unsafeCNIUpgradeLabel = "unsafe-cni-upgrade"
+	// unsafeCNIMigrationLabel allows unsafe CNI type migration.
+	unsafeCNIMigrationLabel = "unsafe-cni-migration"
+)
+
+// ValidateClusterSpec validates the given cluster spec
+// If this is not called from within another validation
+// routine, parentFieldPath can be nil.
+func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider, enabledFeatures features.FeatureGate, parentFieldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	if spec.HumanReadableName == "" {
+		allErrs = append(allErrs, field.Required(parentFieldPath.Child("humanReadableName"), "no name specified"))
 	}
 
 	if spec.Version.Semver() == nil || spec.Version.String() == "" {
-		return errors.New(`invalid cloud spec "Version" is required but was not specified`)
+		allErrs = append(allErrs, field.Invalid(parentFieldPath.Child("version"), spec.Version, `version is required but was not specified`))
 	}
 
-	if err := cloudProvider.ValidateCloudSpec(spec.Cloud); err != nil {
-		return fmt.Errorf("invalid cloud spec: %v", err)
+	if !kubermaticv1.AllExposeStrategies.Has(spec.ExposeStrategy) {
+		allErrs = append(allErrs, field.NotSupported(parentFieldPath.Child("exposeStrategy"), spec.ExposeStrategy, kubermaticv1.AllExposeStrategies.Items()))
 	}
 
-	if err := validateMachineNetworksFromClusterSpec(spec); err != nil {
-		return fmt.Errorf("machine network validation failed, see: %v", err)
+	if spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling && !enabledFeatures.Enabled(features.TunnelingExposeStrategy) {
+		allErrs = append(allErrs, field.Forbidden(parentFieldPath.Child("exposeStrategy"), "cannot create cluster with Tunneling expose strategy because the TunnelingExposeStrategy feature gate is not enabled"))
 	}
 
-	specFieldPath := field.NewPath("spec")
-
-	if errs := ValidateClusterNetworkConfig(&spec.ClusterNetwork, spec.CNIPlugin, specFieldPath.Child("networkConfig"), true); len(errs) > 0 {
-		return fmt.Errorf("cluster network config validation failed: %v", errs)
+	if spec.CNIPlugin != nil {
+		if !supportedCNIPlugins.Has(spec.CNIPlugin.Type.String()) {
+			allErrs = append(allErrs, field.NotSupported(parentFieldPath.Child("cniPlugin", "type"), spec.CNIPlugin.Type.String(), supportedCNIPlugins.List()))
+		} else if !supportedCNIPluginVersions[spec.CNIPlugin.Type].Has(spec.CNIPlugin.Version) {
+			allErrs = append(allErrs, field.NotSupported(parentFieldPath.Child("cniPlugin", "version"), spec.CNIPlugin.Version, supportedCNIPluginVersions[spec.CNIPlugin.Type].List()))
+		}
 	}
 
-	portRangeFld := specFieldPath.Child("componentsOverride", "apiserver", "nodePortRange")
+	allErrs = append(allErrs, ValidateLeaderElectionSettings(&spec.ComponentsOverride.ControllerManager.LeaderElectionSettings, parentFieldPath.Child("componentsOverride", "controllerManager", "leaderElection"))...)
+	allErrs = append(allErrs, ValidateLeaderElectionSettings(&spec.ComponentsOverride.Scheduler.LeaderElectionSettings, parentFieldPath.Child("componentsOverride", "scheduler", "leaderElection"))...)
+	allErrs = append(allErrs, ValidateClusterNetworkConfig(&spec.ClusterNetwork, spec.CNIPlugin, parentFieldPath.Child("clusterNetwork"), false)...)
+
+	// general cloud spec logic
+	if errs := ValidateCloudSpec(spec.Cloud, dc, parentFieldPath.Child("cloud")); len(errs) > 0 {
+		allErrs = append(allErrs, errs...)
+	}
+
+	// cloud provider-specific validation logic
+	if cloudProvider != nil {
+		if err := cloudProvider.ValidateCloudSpec(spec.Cloud); err != nil {
+			allErrs = append(allErrs, field.Invalid(parentFieldPath.Child("cloud"), spec.Cloud, err.Error()))
+		}
+	}
+
+	if errs := validateMachineNetworksFromClusterSpec(spec, parentFieldPath); len(errs) > 0 {
+		allErrs = append(allErrs, errs...)
+	}
+
+	if errs := ValidateClusterNetworkConfig(&spec.ClusterNetwork, spec.CNIPlugin, parentFieldPath.Child("networkConfig"), true); len(errs) > 0 {
+		allErrs = append(allErrs, errs...)
+	}
+
+	portRangeFld := field.NewPath("componentsOverride", "apiserver", "nodePortRange")
 	if errs := ValidateNodePortRange(spec.ComponentsOverride.Apiserver.NodePortRange, portRangeFld, false); len(errs) > 0 {
-		return fmt.Errorf("apiserver NodePortRange validation failed: %v", errs)
+		allErrs = append(allErrs, errs...)
 	}
 
-	return nil
+	return allErrs
+}
+
+// ValidateCreateClusterSpec validates the given cluster spec during a CREATE operation.
+func ValidateCreateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider, features features.FeatureGate) field.ErrorList {
+	// currently, there are no special rules that only apply during CREATE
+	return ValidateClusterSpec(spec, dc, cloudProvider, features, field.NewPath("spec"))
+}
+
+// ValidateUpdateCluster validates if the cluster update is allowed
+func ValidateUpdateCluster(ctx context.Context, newCluster, oldCluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider, features features.FeatureGate) field.ErrorList {
+	specPath := field.NewPath("spec")
+	allErrs := field.ErrorList{}
+
+	// perform general basic checks on the new cluster spec
+	if errs := ValidateClusterSpec(&newCluster.Spec, dc, cloudProvider, features, specPath); len(errs) > 0 {
+		allErrs = append(allErrs, errs...)
+	}
+
+	if cloudProvider != nil {
+		if err := cloudProvider.ValidateCloudSpecUpdate(oldCluster.Spec.Cloud, newCluster.Spec.Cloud); err != nil {
+			allErrs = append(allErrs, field.Forbidden(specPath.Child("cloud"), err.Error()))
+		}
+	}
+
+	// ensure neither cloud nor datacenter were changed
+	if err := ValidateCloudChange(newCluster.Spec.Cloud, oldCluster.Spec.Cloud); err != nil {
+		allErrs = append(allErrs, field.Forbidden(specPath.Child("cloud"), err.Error()))
+	}
+
+	if newCluster.Address.ExternalName != oldCluster.Address.ExternalName {
+		allErrs = append(allErrs, field.Forbidden(field.NewPath("address", "externalName"), "external name cannot be changed"))
+	}
+
+	if newCluster.Address.IP != oldCluster.Address.IP {
+		allErrs = append(allErrs, field.Forbidden(field.NewPath("address", "ip"), "IP cannot be changed"))
+	}
+
+	if newCluster.Address.URL != oldCluster.Address.URL {
+		allErrs = append(allErrs, field.Forbidden(field.NewPath("address", "url"), "URL cannot be changed"))
+	}
+
+	if err := kuberneteshelper.ValidateKubernetesToken(newCluster.Address.AdminToken); err != nil {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("address", "adminToken"), newCluster.Address.AdminToken, err.Error()))
+	}
+
+	if !equality.Semantic.DeepEqual(newCluster.Status, oldCluster.Status) {
+		allErrs = append(allErrs, field.Forbidden(field.NewPath("status"), "status cannot be changed"))
+	}
+
+	// Validate ExternalCloudProvider feature flag immutability.
+	// Once the feature flag is enabled, it must not be disabled.
+	if vOld, v := oldCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider],
+		newCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; vOld && !v {
+		allErrs = append(allErrs, field.Invalid(specPath.Child("features").Key(kubermaticv1.ClusterFeatureExternalCloudProvider), v, fmt.Sprintf("feature gate %q cannot be disabled once it's enabled", kubermaticv1.ClusterFeatureExternalCloudProvider)))
+	}
+
+	// Validate EtcdLauncher feature flag immutability.
+	// Once the feature flag is enabled, it must not be disabled.
+	if vOld, v := oldCluster.Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher],
+		newCluster.Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher]; vOld && !v {
+		allErrs = append(allErrs, field.Invalid(specPath.Child("features").Key(kubermaticv1.ClusterFeatureEtcdLauncher), v, fmt.Sprintf("feature gate %q cannot be disabled once it's enabled", kubermaticv1.ClusterFeatureEtcdLauncher)))
+	}
+
+	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+		newCluster.Spec.ExposeStrategy,
+		oldCluster.Spec.ExposeStrategy,
+		specPath.Child("exposeStrategy"),
+	)...)
+
+	if oldCluster.Spec.EnableUserSSHKeyAgent != nil {
+		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+			newCluster.Spec.EnableUserSSHKeyAgent,
+			oldCluster.Spec.EnableUserSSHKeyAgent,
+			specPath.Child("enableUserSSHKeyAgent"),
+		)...)
+	} else if newCluster.Spec.EnableUserSSHKeyAgent != nil && !*newCluster.Spec.EnableUserSSHKeyAgent {
+		path := field.NewPath("cluster", "spec", "enableUserSSHKeyAgent")
+		allErrs = append(allErrs, field.Invalid(path, *newCluster.Spec.EnableUserSSHKeyAgent, "UserSSHKey agent is enabled by default for user clusters created prior KKP 2.16 version"))
+	}
+
+	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+		newCluster.Spec.ComponentsOverride.Apiserver.NodePortRange,
+		oldCluster.Spec.ComponentsOverride.Apiserver.NodePortRange,
+		specPath.Child("componentsOverride", "apiserver", "nodePortRange"),
+	)...)
+
+	allErrs = append(allErrs, validateClusterNetworkingConfigUpdateImmutability(&newCluster.Spec.ClusterNetwork, &oldCluster.Spec.ClusterNetwork, specPath.Child("clusterNetwork"))...)
+	allErrs = append(allErrs, validateCNIUpdate(newCluster.Spec.CNIPlugin, oldCluster.Spec.CNIPlugin, newCluster.Labels)...)
+
+	// Editing labels is allowed even though it is part of metadata.
+	oldCluster.Labels = newCluster.Labels
+
+	if !equality.Semantic.DeepEqual(newCluster.ObjectMeta, oldCluster.ObjectMeta) {
+		allErrs = append(allErrs, field.Forbidden(field.NewPath("objectMeta"), "object meta cannot be changed"))
+	}
+
+	if !equality.Semantic.DeepEqual(newCluster.TypeMeta, oldCluster.TypeMeta) {
+		allErrs = append(allErrs, field.Forbidden(field.NewPath("typeMeta"), "type meta cannot be changed"))
+	}
+
+	return allErrs
 }
 
 func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, cni *kubermaticv1.CNIPluginSettings, fldPath *field.Path, allowEmpty bool) field.ErrorList {
@@ -130,244 +266,167 @@ func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, cni *
 	return allErrs
 }
 
-func validateMachineNetworksFromClusterSpec(spec *kubermaticv1.ClusterSpec) error {
+func validateMachineNetworksFromClusterSpec(spec *kubermaticv1.ClusterSpec, parentFieldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
 	networks := spec.MachineNetworks
+	basePath := parentFieldPath.Child("machineNetworks")
 
 	if len(networks) == 0 {
-		return nil
-	}
-
-	if len(networks) > 0 && spec.Version.Semver().Minor() < 9 {
-		return errors.New("can't specify machinenetworks on kubernetes <= 1.9.0")
+		return allErrs
 	}
 
 	if len(networks) > 0 && spec.Cloud.VSphere == nil {
-		return errors.New("machineNetworks are only supported with the vSphere provider")
+		allErrs = append(allErrs, field.Invalid(basePath, networks, "machine networks are only supported with the vSphere provider"))
 	}
 
-	for _, network := range networks {
+	for i, network := range networks {
 		_, _, err := net.ParseCIDR(network.CIDR)
 		if err != nil {
-			return fmt.Errorf("couldn't parse cidr `%s`, see: %v", network.CIDR, err)
+			allErrs = append(allErrs, field.Invalid(basePath.Index(i), network.CIDR, fmt.Sprintf("could not parse CIDR: %v", err)))
 		}
 
 		if net.ParseIP(network.Gateway) == nil {
-			return fmt.Errorf("couldn't parse gateway `%s`", network.Gateway)
+			allErrs = append(allErrs, field.Invalid(basePath.Index(i), network.Gateway, fmt.Sprintf("could not parse gateway: %v", err)))
 		}
 
 		if len(network.DNSServers) > 0 {
-			for _, dnsServer := range network.DNSServers {
+			for j, dnsServer := range network.DNSServers {
 				if net.ParseIP(dnsServer) == nil {
-					return fmt.Errorf("couldn't parse dns server `%s`", dnsServer)
+					allErrs = append(allErrs, field.Invalid(basePath.Index(i).Child("dnsServers").Index(j), dnsServer, fmt.Sprintf("could not parse DNS server: %v", err)))
 				}
 			}
 		}
 	}
 
-	return nil
+	return allErrs
 }
 
 // ValidateCloudChange validates if the cloud provider has been changed
 func ValidateCloudChange(newSpec, oldSpec kubermaticv1.CloudSpec) error {
-	if newSpec.Openstack == nil && oldSpec.Openstack != nil {
-		return ErrCloudChangeNotAllowed
-	}
-	if newSpec.AWS == nil && oldSpec.AWS != nil {
-		return ErrCloudChangeNotAllowed
-	}
-	if newSpec.Digitalocean == nil && oldSpec.Digitalocean != nil {
-		return ErrCloudChangeNotAllowed
-	}
-	if newSpec.BringYourOwn == nil && oldSpec.BringYourOwn != nil {
-		return ErrCloudChangeNotAllowed
-	}
-	if newSpec.Fake == nil && oldSpec.Fake != nil {
-		return ErrCloudChangeNotAllowed
-	}
-	if newSpec.Hetzner == nil && oldSpec.Hetzner != nil {
-		return ErrCloudChangeNotAllowed
-	}
-	if newSpec.VSphere == nil && oldSpec.VSphere != nil {
-		return ErrCloudChangeNotAllowed
-	}
-	if newSpec.Packet == nil && oldSpec.Packet != nil {
-		return ErrCloudChangeNotAllowed
-	}
-	if newSpec.GCP == nil && oldSpec.GCP != nil {
-		return ErrCloudChangeNotAllowed
-	}
-	if newSpec.Azure == nil && oldSpec.Azure != nil {
-		return ErrCloudChangeNotAllowed
-	}
-	if newSpec.Kubevirt == nil && oldSpec.Kubevirt != nil {
-		return ErrCloudChangeNotAllowed
-	}
-	if newSpec.Alibaba == nil && oldSpec.Alibaba != nil {
-		return ErrCloudChangeNotAllowed
-	}
-	if newSpec.Anexia == nil && oldSpec.Anexia != nil {
-		return ErrCloudChangeNotAllowed
-	}
 	if newSpec.DatacenterName != oldSpec.DatacenterName {
 		return errors.New("changing the datacenter is not allowed")
 	}
 
-	return nil
-}
-
-// ValidateUpdateCluster validates if the cluster update is allowed
-func ValidateUpdateCluster(ctx context.Context, newCluster, oldCluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter,
-	clusterProvider *kubernetesprovider.ClusterProvider, caBundle *x509.CertPool) error {
-	if err := ValidateCloudChange(newCluster.Spec.Cloud, oldCluster.Spec.Cloud); err != nil {
-		return err
-	}
-
-	if newCluster.Address.ExternalName != oldCluster.Address.ExternalName {
-		return errors.New("changing the external name is not allowed")
-	}
-
-	if newCluster.Address.IP != oldCluster.Address.IP {
-		return errors.New("changing the ip is not allowed")
-	}
-
-	if newCluster.Address.URL != oldCluster.Address.URL {
-		return errors.New("changing the url is not allowed")
-	}
-
-	if err := kuberneteshelper.ValidateKubernetesToken(newCluster.Address.AdminToken); err != nil {
-		return fmt.Errorf("invalid admin token: %v", err)
-	}
-
-	if !equality.Semantic.DeepEqual(newCluster.Status, oldCluster.Status) {
-		return errors.New("changing the status is not allowed")
-	}
-
-	// Editing labels is allowed even though it is part of metadata.
-	oldCluster.Labels = newCluster.Labels
-
-	if !equality.Semantic.DeepEqual(newCluster.ObjectMeta, oldCluster.ObjectMeta) {
-		return errors.New("changing the metadata is not allowed")
-	}
-
-	if !equality.Semantic.DeepEqual(newCluster.TypeMeta, oldCluster.TypeMeta) {
-		return errors.New("changing the type metadata is not allowed")
-	}
-
-	if err := ValidateCloudSpec(newCluster.Spec.Cloud, dc); err != nil {
-		return fmt.Errorf("invalid cloud spec: %v", err)
-	}
-
-	// We ignore the error, since we're here to check the new config, not the old one.
-	oldProviderName, _ := provider.ClusterCloudProviderName(oldCluster.Spec.Cloud)
-
-	providerName, err := provider.ClusterCloudProviderName(newCluster.Spec.Cloud)
+	oldCloudProvider, err := provider.ClusterCloudProviderName(oldSpec)
 	if err != nil {
-		return fmt.Errorf("invalid cloud spec: %v", err)
+		return fmt.Errorf("could not determine old cloud provider: %v", err)
 	}
 
-	if oldProviderName != providerName {
-		return fmt.Errorf("changing to a different provider is not allowed")
-	}
-
-	secretKeySelectorFunc := provider.SecretKeySelectorValueFuncFactory(ctx, clusterProvider.GetSeedClusterAdminRuntimeClient())
-	cloudProvider, err := cloud.Provider(dc, secretKeySelectorFunc, caBundle)
+	newCloudProvider, err := provider.ClusterCloudProviderName(newSpec)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not determine new cloud provider: %v", err)
 	}
 
-	if err := cloudProvider.ValidateCloudSpec(newCluster.Spec.Cloud); err != nil {
-		return fmt.Errorf("invalid cloud spec: %v", err)
-	}
-
-	if err := cloudProvider.ValidateCloudSpecUpdate(oldCluster.Spec.Cloud, newCluster.Spec.Cloud); err != nil {
-		return fmt.Errorf("invalid cloud spec modification: %v", err)
+	if oldCloudProvider != newCloudProvider {
+		return ErrCloudChangeNotAllowed
 	}
 
 	return nil
 }
 
 // ValidateCloudSpec validates if the cloud spec is valid
-func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) error {
+// If this is not called from within another validation
+// routine, parentFieldPath can be nil.
+func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter, parentFieldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
 	if spec.DatacenterName == "" {
-		return errors.New("no node datacenter specified")
+		allErrs = append(allErrs, field.Required(parentFieldPath.Child("dc"), "no node datacenter specified"))
 	}
 
-	switch {
-	case spec.Fake != nil:
-		if dc.Spec.Fake == nil {
-			return fmt.Errorf("datacenter %q is not a fake datacenter", spec.DatacenterName)
-		}
-		return validateFakeCloudSpec(spec.Fake)
-	case spec.AWS != nil:
-		if dc.Spec.AWS == nil {
-			return fmt.Errorf("datacenter %q is not a AWS datacenter", spec.DatacenterName)
-		}
-		return validateAWSCloudSpec(spec.AWS)
-	case spec.Digitalocean != nil:
-		if dc.Spec.Digitalocean == nil {
-			return fmt.Errorf("datacenter %q is not a Digitalocean datacenter", spec.DatacenterName)
-		}
-		return validateDigitaloceanCloudSpec(spec.Digitalocean)
-	case spec.Openstack != nil:
-		if dc.Spec.Openstack == nil {
-			return fmt.Errorf("datacenter %q is not an Openstack datacenter", spec.DatacenterName)
-		}
-		return validateOpenStackCloudSpec(spec.Openstack, dc)
-	case spec.Azure != nil:
-		if dc.Spec.Azure == nil {
-			return fmt.Errorf("datacenter %q is not an Azure datacenter", spec.DatacenterName)
-		}
-		return validateAzureCloudSpec(spec.Azure)
-	case spec.VSphere != nil:
-		if dc.Spec.VSphere == nil {
-			return fmt.Errorf("datacenter %q is not a vSphere datacenter", spec.DatacenterName)
-		}
-		return validateVSphereCloudSpec(spec.VSphere)
-	case spec.GCP != nil:
-		if dc.Spec.GCP == nil {
-			return fmt.Errorf("datacenter %q is not a GCP datacenter", spec.DatacenterName)
-		}
-		return validateGCPCloudSpec(spec.GCP)
-	case spec.Packet != nil:
-		if dc.Spec.Packet == nil {
-			return fmt.Errorf("datacenter %q is not a Packet datacenter", spec.DatacenterName)
-		}
-		return validatePacketCloudSpec(spec.Packet)
-	case spec.Hetzner != nil:
-		if dc.Spec.Hetzner == nil {
-			return fmt.Errorf("datacenter %q is not a Hetzner datacenter", spec.DatacenterName)
-		}
-		return validateHetznerCloudSpec(spec.Hetzner)
-	case spec.BringYourOwn != nil:
-		if dc.Spec.BringYourOwn == nil {
-			return fmt.Errorf("datacenter %q is not a bringyourown datacenter", spec.DatacenterName)
-		}
-		return nil
-	case spec.Kubevirt != nil:
-		if dc.Spec.Kubevirt == nil {
-			return fmt.Errorf("datacenter %q is not a kubevirt datacenter", spec.DatacenterName)
-		}
-		return validateKubevirtCloudSpec(spec.Kubevirt)
-	case spec.Alibaba != nil:
-		if dc.Spec.Alibaba == nil {
-			return fmt.Errorf("datacenter %q is not a alibaba datacenter", spec.DatacenterName)
-		}
-		return validateAlibabaCloudSpec(spec.Alibaba)
-	case spec.Anexia != nil:
-		if dc.Spec.Anexia == nil {
-			return fmt.Errorf("datacenter %q is not a anexia datacenter", spec.DatacenterName)
-		}
-		return validateAnexiaCloudSpec(spec.Anexia)
-	default:
-		return errors.New("no cloud provider specified")
+	providerName, err := provider.ClusterCloudProviderName(spec)
+	if err != nil {
+		allErrs = append(allErrs, field.Invalid(parentFieldPath, spec, err.Error()))
 	}
+
+	// if this field is set, it must match the given provider;
+	// if the field is not set, the mutation webhook will fill it in
+	if spec.ProviderName != "" {
+		if spec.ProviderName != providerName {
+			msg := fmt.Sprintf("expected providerName to be %q", providerName)
+			allErrs = append(allErrs, field.Invalid(parentFieldPath.Child("providerName"), spec.ProviderName, msg))
+		}
+	}
+
+	if dc != nil {
+		clusterCloudProvider, err := provider.ClusterCloudProviderName(spec)
+		if err != nil {
+			allErrs = append(allErrs, field.Invalid(parentFieldPath, nil, fmt.Sprintf("could not determine cluster cloud provider: %v", err)))
+		}
+
+		dcCloudProvider, err := provider.DatacenterCloudProviderName(&dc.Spec)
+		if err != nil {
+			allErrs = append(allErrs, field.Invalid(parentFieldPath, nil, fmt.Sprintf("could not determine datacenter cloud provider: %v", err)))
+		}
+
+		// this should never happen, unless the caller did the wrong thing
+		// (i.e. user input should never lead to this place)
+		if clusterCloudProvider != dcCloudProvider {
+			allErrs = append(allErrs, field.Invalid(parentFieldPath, nil, fmt.Sprintf("expected datacenter provider to be %q, but got %q", clusterCloudProvider, dcCloudProvider)))
+		}
+	}
+
+	var (
+		providerErr  error
+		providerSpec interface{}
+	)
+
+	switch {
+	case spec.AWS != nil:
+		providerErr = validateAWSCloudSpec(spec.AWS)
+		providerSpec = spec.AWS
+	case spec.Alibaba != nil:
+		providerErr = validateAlibabaCloudSpec(spec.Alibaba)
+		providerSpec = spec.Alibaba
+	case spec.Anexia != nil:
+		providerErr = validateAnexiaCloudSpec(spec.Anexia)
+		providerSpec = spec.Anexia
+	case spec.Azure != nil:
+		providerErr = validateAzureCloudSpec(spec.Azure)
+		providerSpec = spec.Azure
+	case spec.BringYourOwn != nil:
+		providerErr = nil
+	case spec.Digitalocean != nil:
+		providerErr = validateDigitaloceanCloudSpec(spec.Digitalocean)
+		providerSpec = spec.Digitalocean
+	case spec.Fake != nil:
+		providerErr = validateFakeCloudSpec(spec.Fake)
+		providerSpec = spec.Fake
+	case spec.GCP != nil:
+		providerErr = validateGCPCloudSpec(spec.GCP)
+		providerSpec = spec.GCP
+	case spec.Hetzner != nil:
+		providerErr = validateHetznerCloudSpec(spec.Hetzner)
+		providerSpec = spec.Hetzner
+	case spec.Kubevirt != nil:
+		providerErr = validateKubevirtCloudSpec(spec.Kubevirt)
+		providerSpec = spec.Kubevirt
+	case spec.Openstack != nil:
+		providerErr = validateOpenStackCloudSpec(spec.Openstack, dc)
+		providerSpec = spec.Openstack
+	case spec.Packet != nil:
+		providerErr = validatePacketCloudSpec(spec.Packet)
+		providerSpec = spec.Packet
+	case spec.VSphere != nil:
+		providerErr = validateVSphereCloudSpec(spec.VSphere)
+		providerSpec = spec.VSphere
+	default:
+		providerErr = errors.New("no cloud provider specified")
+	}
+
+	if providerErr != nil {
+		allErrs = append(allErrs, field.Invalid(parentFieldPath, providerSpec, err.Error()))
+	}
+
+	return allErrs
 }
 
 func validateOpenStackCloudSpec(spec *kubermaticv1.OpenstackCloudSpec, dc *kubermaticv1.Datacenter) error {
 	// validate applicationCredentials
 	if spec.ApplicationCredentialID != "" && spec.ApplicationCredentialSecret == "" {
 		return errors.New("no applicationCredentialSecret specified")
-	} else if spec.ApplicationCredentialID != "" && spec.ApplicationCredentialSecret != "" {
+	}
+	if spec.ApplicationCredentialID != "" && spec.ApplicationCredentialSecret != "" {
 		return nil
 	}
 
@@ -399,13 +458,14 @@ func validateOpenStackCloudSpec(spec *kubermaticv1.OpenstackCloudSpec, dc *kuber
 	if spec.GetProjectId() == "" && spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" && spec.CredentialsReference.Namespace == "" {
 		errs = append(errs, fmt.Errorf("%q and %q cannot be empty at the same time", resources.OpenstackProjectID, resources.OpenstackTenantID))
 	}
-	if utilerror.NewAggregate(errs) != nil {
+	if len(errs) > 0 {
 		return errors.New("no tenant name or ID specified")
 	}
 
-	if spec.FloatingIPPool == "" && dc.Spec.Openstack != nil && dc.Spec.Openstack.EnforceFloatingIP {
+	if dc != nil && spec.FloatingIPPool == "" && dc.Spec.Openstack != nil && dc.Spec.Openstack.EnforceFloatingIP {
 		return errors.New("no floating ip pool specified")
 	}
+
 	return nil
 }
 
@@ -620,6 +680,7 @@ func ValidateLeaderElectionSettings(l *kubermaticv1.LeaderElectionSettings, fldP
 	if lds, rds := l.LeaseDurationSeconds, l.RenewDeadlineSeconds; lds != nil && rds != nil && *lds < *rds {
 		allErrs = append(allErrs, field.Forbidden(fldPath, "control plane leader election renew deadline cannot be smaller than lease duration"))
 	}
+
 	return allErrs
 }
 
@@ -637,4 +698,80 @@ func ValidateNodePortRange(nodePortRange string, fldPath *field.Path, required b
 	}
 
 	return allErrs
+}
+
+func validateClusterNetworkingConfigUpdateImmutability(c, oldC *kubermaticv1.ClusterNetworkingConfig, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+		c.Pods.CIDRBlocks,
+		oldC.Pods.CIDRBlocks,
+		fldPath.Child("pods", "cidrBlocks"),
+	)...)
+	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+		c.Services.CIDRBlocks,
+		oldC.Services.CIDRBlocks,
+		fldPath.Child("services", "cidrBlocks"),
+	)...)
+	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+		c.ProxyMode,
+		oldC.ProxyMode,
+		fldPath.Child("proxyMode"),
+	)...)
+	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+		c.DNSDomain,
+		oldC.DNSDomain,
+		fldPath.Child("dnsDomain"),
+	)...)
+	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+		c.NodeLocalDNSCacheEnabled,
+		oldC.NodeLocalDNSCacheEnabled,
+		fldPath.Child("nodeLocalDNSCacheEnabled"),
+	)...)
+
+	return allErrs
+}
+
+func validateCNIUpdate(cni *kubermaticv1.CNIPluginSettings, oldCni *kubermaticv1.CNIPluginSettings, labels map[string]string) field.ErrorList {
+	specFldPath := field.NewPath("spec")
+
+	if cni == nil && oldCni == nil {
+		return field.ErrorList{} // allowed for backward compatibility with older KKP with existing clusters with no CNI settings
+	}
+	if oldCni != nil && cni == nil {
+		return field.ErrorList{field.Required(specFldPath.Child("cniPlugin"), "CNI plugin settings cannot be removed")}
+	}
+	if oldCni == nil && cni != nil {
+		if _, ok := labels[unsafeCNIUpgradeLabel]; ok {
+			return field.ErrorList{} // allowed for migration path from older KKP with existing clusters with no CNI settings
+		}
+		return field.ErrorList{field.Forbidden(specFldPath.Child("cniPlugin"),
+			fmt.Sprintf("cannot add CNI plugin settings, unless %s label is present", unsafeCNIUpgradeLabel))}
+	}
+	if cni.Type != oldCni.Type {
+		if _, ok := labels[unsafeCNIMigrationLabel]; ok {
+			return field.ErrorList{} // allowed for CNI type migration path
+		}
+		return field.ErrorList{field.Forbidden(specFldPath.Child("cniPlugin", "type"),
+			fmt.Sprintf("cannot change CNI plugin type, unless %s label is present", unsafeCNIMigrationLabel))}
+	}
+	if cni.Version != oldCni.Version {
+		newV, err := semver.NewVersion(cni.Version)
+		if err != nil {
+			return field.ErrorList{field.Invalid(specFldPath.Child("cniPlugin", "version"), cni.Version,
+				fmt.Sprintf("couldn't parse CNI version `%s`: %v", cni.Version, err))}
+		}
+		oldV, err := semver.NewVersion(oldCni.Version)
+		if err != nil {
+			return field.ErrorList{field.Invalid(specFldPath.Child("cniPlugin", "version"), oldCni.Version,
+				fmt.Sprintf("couldn't parse CNI version `%s`: %v", oldCni.Version, err))}
+		}
+		if newV.Major() != oldV.Major() || (newV.Minor() != oldV.Minor()+1 && oldV.Minor() != newV.Minor()+1) {
+			if _, ok := labels[unsafeCNIUpgradeLabel]; !ok {
+				return field.ErrorList{field.Forbidden(specFldPath.Child("cniPlugin", "version"),
+					fmt.Sprintf("cannot upgrade CNI from %s to %s, only one minor version difference is allowed unless %s label is present", oldCni.Version, cni.Version, unsafeCNIUpgradeLabel))}
+			}
+		}
+	}
+	return field.ErrorList{}
 }

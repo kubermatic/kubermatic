@@ -27,6 +27,7 @@ import (
 	"github.com/imdario/mergo"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	admissionv1 "k8s.io/api/admission/v1"
@@ -108,11 +109,20 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 }
 
 func (h *AdmissionHandler) applyDefaults(c *kubermaticv1.Cluster) error {
-
 	// merge provided defaults into newly created cluster
 	err := mergo.Merge(&c.Spec, h.defaultTemplate.Spec)
 	if err != nil {
 		return err
+	}
+
+	// set provider name
+	if c.Spec.Cloud.ProviderName != "" {
+		providerName, err := provider.ClusterCloudProviderName(c.Spec.Cloud)
+		if err != nil {
+			return fmt.Errorf("failed to determine cloud provider: %w", err)
+		}
+
+		c.Spec.Cloud.ProviderName = providerName
 	}
 
 	// Add default CNI plugin settings if not present.
@@ -188,7 +198,6 @@ func (h *AdmissionHandler) applyDefaults(c *kubermaticv1.Cluster) error {
 	}
 
 	return nil
-
 }
 
 func (h *AdmissionHandler) mutateUpdate(oldCluster, newCluster *kubermaticv1.Cluster) error {

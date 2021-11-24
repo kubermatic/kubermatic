@@ -31,6 +31,9 @@ import (
 var (
 	dc = &kubermaticv1.Datacenter{
 		Spec: kubermaticv1.DatacenterSpec{
+			Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
+				Region: "eu",
+			},
 			Openstack: &kubermaticv1.DatacenterSpecOpenstack{
 				// Used for a test case
 				EnforceFloatingIP: true,
@@ -104,11 +107,39 @@ func TestValidateCloudSpec(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "specifies multiple cloud providers",
+			err:  errors.New("expected exactly one cloud provider spec, but got specs for [digitalocean openstack]"),
+			spec: kubermaticv1.CloudSpec{
+				DatacenterName: "some-datacenter",
+				Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{
+					Token: "a-token",
+				},
+				Openstack: &kubermaticv1.OpenstackCloudSpec{
+					Tenant:         "some-tenant",
+					Username:       "some-user",
+					Password:       "some-password",
+					Domain:         "some-domain",
+					FloatingIPPool: "",
+				},
+			},
+		},
+		{
+			name: "invalid provider name",
+			err:  errors.New(`expected providerName to be "digitalocean", but got "incorrect"`),
+			spec: kubermaticv1.CloudSpec{
+				DatacenterName: "some-datacenter",
+				ProviderName:   "incorrect",
+				Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{
+					Token: "a-token",
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := ValidateCloudSpec(test.spec, dc)
+			err := ValidateCloudSpec(test.spec, dc, nil)
 			if fmt.Sprint(err) != fmt.Sprint(test.err) {
 				t.Errorf("Extected err to be %v, got %v", test.err, err)
 			}
