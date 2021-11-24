@@ -476,7 +476,7 @@ func (d *TemplateData) GetGlobalSecretKeySelectorValue(configVar *providerconfig
 }
 
 func (d *TemplateData) GetCloudProviderName() (string, error) {
-	return GetCloudProviderName(d.Cluster().Spec.Cloud)
+	return provider.ClusterCloudProviderName(d.Cluster().Spec.Cloud)
 }
 
 func (d *TemplateData) GetCSIMigrationFeatureGates() []string {
@@ -581,49 +581,6 @@ func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster, externalCloud
 	default:
 		return ""
 	}
-}
-
-func GetCloudProviderName(cloud kubermaticv1.CloudSpec) (string, error) {
-	if cloud.VSphere != nil {
-		return string(kubermaticv1.VSphereCloudProvider), nil
-	}
-	if cloud.AWS != nil {
-		return string(kubermaticv1.AWSCloudProvider), nil
-	}
-	if cloud.Openstack != nil {
-		return string(kubermaticv1.OpenstackCloudProvider), nil
-	}
-	if cloud.GCP != nil {
-		return string(kubermaticv1.GCPCloudProvider), nil
-	}
-	if cloud.Alibaba != nil {
-		return string(kubermaticv1.AlibabaCloudProvider), nil
-	}
-	if cloud.Anexia != nil {
-		return string(kubermaticv1.AnexiaCloudProvider), nil
-	}
-	if cloud.Azure != nil {
-		return string(kubermaticv1.AzureCloudProvider), nil
-	}
-	if cloud.Digitalocean != nil {
-		return string(kubermaticv1.DigitaloceanCloudProvider), nil
-	}
-	if cloud.Hetzner != nil {
-		return string(kubermaticv1.HetznerCloudProvider), nil
-	}
-	if cloud.Kubevirt != nil {
-		return string(kubermaticv1.KubevirtCloudProvider), nil
-	}
-	if cloud.Packet != nil {
-		return string(kubermaticv1.PacketCloudProvider), nil
-	}
-	if cloud.BringYourOwn != nil {
-		return string(kubermaticv1.BringYourOwnCloudProvider), nil
-	}
-	if cloud.Fake != nil {
-		return string(kubermaticv1.FakeCloudProvider), nil
-	}
-	return "", fmt.Errorf("provider unknown")
 }
 
 func ExternalCloudProviderEnabled(cluster *kubermaticv1.Cluster) bool {
