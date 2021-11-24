@@ -322,6 +322,10 @@ type ClusterStatus struct {
 	// ExtendedHealth exposes information about the current health state.
 	// Extends standard health status for new states.
 	ExtendedHealth ExtendedClusterHealth `json:"extendedHealth,omitempty"`
+	// LastProviderReconciliation is the time when the cloud provider resources
+	// were last fully reconciled (during normal cluster reconciliation, KKP does
+	// not re-check things like security groups, networks etc.).
+	LastProviderReconciliation *metav1.Time `json:"lastProviderReconciliation,omitempty"`
 	// KubermaticVersion is the current kubermatic version in a cluster.
 	KubermaticVersion string `json:"kubermaticVersion"`
 	// Deprecated

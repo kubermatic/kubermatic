@@ -388,6 +388,16 @@ spec:
                           required:
                           - facilities
                           type: object
+                        providerReconciliationInterval:
+                          description: ProviderReconciliationInterval is the time
+                            that must have passed since a Cluster's status.lastProviderReconciliation
+                            to make the cliuster controller perform an in-depth provider
+                            reconciliation, where for example missing security groups
+                            will be reconciled. Setting this too low can cause rate
+                            limits by the cloud provider, setting this too high means
+                            that *if* a resource at a cloud provider is removed/changed
+                            outside of KKP, it will take this long to fix it.
+                          type: string
                         requiredEmails:
                           description: 'Optional: When defined, only users with an
                             e-mail address on the given domains can make use of this
