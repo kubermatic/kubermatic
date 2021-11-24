@@ -26,6 +26,7 @@ import (
 	"github.com/go-test/deep"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -139,8 +140,11 @@ func genBackupJob(backupName string, jobName string) *batchv1.Job {
 		storeContainer: genStoreContainer(),
 		recorder:       record.NewFakeRecorder(10),
 		clock:          clock.RealClock{},
+		seedGetter: func() (*kubermaticv1.Seed, error) {
+			return test.GenTestSeed(), nil
+		},
 	}
-	job := reconciler.backupJob(backupConfig, cluster, backup)
+	job := reconciler.backupJob(backupConfig, cluster, backup, nil)
 	job.ResourceVersion = "1"
 	// remove all env variables from the job so they're comparable against the
 	// ones we get from fake clusters during tests, where we strip the variables too
@@ -163,8 +167,11 @@ func genBackupDeleteJob(backupName string, jobName string) *batchv1.Job {
 		deleteContainer: genDeleteContainer(),
 		recorder:        record.NewFakeRecorder(10),
 		clock:           clock.RealClock{},
+		seedGetter: func() (*kubermaticv1.Seed, error) {
+			return test.GenTestSeed(), nil
+		},
 	}
-	job := reconciler.backupDeleteJob(backupConfig, cluster, backup)
+	job := reconciler.backupDeleteJob(backupConfig, cluster, backup, nil)
 	job.ResourceVersion = "1"
 	// remove all env variables from the job so they're comparable against the
 	// ones we get from fake clusters during tests, where we strip the variables too
@@ -183,8 +190,11 @@ func genCleanupJob(jobName string) *batchv1.Job {
 		cleanupContainer: genCleanupContainer(),
 		recorder:         record.NewFakeRecorder(10),
 		clock:            clock.RealClock{},
+		seedGetter: func() (*kubermaticv1.Seed, error) {
+			return test.GenTestSeed(), nil
+		},
 	}
-	job := reconciler.cleanupJob(backupConfig, cluster, jobName)
+	job := reconciler.cleanupJob(backupConfig, cluster, jobName, nil)
 	job.ResourceVersion = "1"
 	// remove all env variables from the job so they're comparable against the
 	// ones we get from fake clusters during tests, where we strip the variables too
@@ -429,6 +439,9 @@ func TestEnsurePendingBackupIsScheduled(t *testing.T) {
 				recorder:            record.NewFakeRecorder(10),
 				clock:               clock,
 				randStringGenerator: constRandStringGenerator("xxxx"),
+				seedGetter: func() (*kubermaticv1.Seed, error) {
+					return test.GenTestSeed(), nil
+				},
 			}
 
 			reconcileAfter, err := reconciler.ensurePendingBackupIsScheduled(context.Background(), backupConfig, cluster)
@@ -624,9 +637,12 @@ func TestStartPendingBackupJobs(t *testing.T) {
 				storeContainer: genStoreContainer(),
 				recorder:       record.NewFakeRecorder(10),
 				clock:          clock,
+				seedGetter: func() (*kubermaticv1.Seed, error) {
+					return test.GenTestSeed(), nil
+				},
 			}
 
-			reconcileAfter, err := reconciler.startPendingBackupJobs(context.Background(), backupConfig, cluster)
+			reconcileAfter, err := reconciler.startPendingBackupJobs(context.Background(), backupConfig, cluster, nil)
 			if err != nil {
 				t.Fatalf("ensurePendingBackupIsScheduled returned an error: %v", err)
 			}
@@ -934,9 +950,12 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 				deleteContainer: genDeleteContainer(),
 				recorder:        record.NewFakeRecorder(10),
 				clock:           clock,
+				seedGetter: func() (*kubermaticv1.Seed, error) {
+					return test.GenTestSeed(), nil
+				},
 			}
 
-			reconcileAfter, err := reconciler.startPendingBackupDeleteJobs(context.Background(), backupConfig, cluster)
+			reconcileAfter, err := reconciler.startPendingBackupDeleteJobs(context.Background(), backupConfig, cluster, nil)
 			if err != nil {
 				t.Fatalf("ensurePendingBackupIsScheduled returned an error: %v", err)
 			}
@@ -1197,9 +1216,12 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 				deleteContainer: genDeleteContainer(),
 				recorder:        record.NewFakeRecorder(10),
 				clock:           clock,
+				seedGetter: func() (*kubermaticv1.Seed, error) {
+					return test.GenTestSeed(), nil
+				},
 			}
 
-			reconcileAfter, err := reconciler.updateRunningBackupDeleteJobs(context.Background(), backupConfig, cluster)
+			reconcileAfter, err := reconciler.updateRunningBackupDeleteJobs(context.Background(), backupConfig, cluster, nil)
 			if err != nil {
 				t.Fatalf("ensurePendingBackupIsScheduled returned an error: %v", err)
 			}
@@ -1490,6 +1512,9 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 				deleteContainer: genDeleteContainer(),
 				recorder:        record.NewFakeRecorder(10),
 				clock:           clock,
+				seedGetter: func() (*kubermaticv1.Seed, error) {
+					return test.GenTestSeed(), nil
+				},
 			}
 
 			reconcileAfter, err := reconciler.deleteFinishedBackupJobs(context.Background(), backupConfig, cluster)
@@ -1803,6 +1828,9 @@ func TestFinalization(t *testing.T) {
 				recorder:        record.NewFakeRecorder(10),
 				clock:           clock,
 				caBundle:        certificates.NewFakeCABundle(),
+				seedGetter: func() (*kubermaticv1.Seed, error) {
+					return test.GenTestSeed(), nil
+				},
 			}
 			if tc.cleanupContainerDefined {
 				reconciler.cleanupContainer = genCleanupContainer()
