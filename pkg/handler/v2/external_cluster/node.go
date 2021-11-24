@@ -685,7 +685,7 @@ func patchMD(mdToPatch, patchedMD *apiv2.ExternalClusterMachineDeployment, patch
 }
 
 // machineDeploymentReq defines HTTP request for getExternalClusterMachineDeployment deleteExternalClusterMachineDeployment
-// swagger:parameters getExternalClusterMachineDeployment deleteExternalClusterMachineDeployment listExternalClusterMachineDeploymentMetrics
+// swagger:parameters getExternalClusterMachineDeployment deleteExternalClusterMachineDeployment listExternalClusterMachineDeploymentMetrics getExternalClusterMachineDeploymentUpgrades
 type machineDeploymentReq struct {
 	common.ProjectReq
 	// in: path

@@ -140,6 +140,8 @@ type ClientService interface {
 
 	GetExternalClusterMachineDeployment(params *GetExternalClusterMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetExternalClusterMachineDeploymentOK, error)
 
+	GetExternalClusterMachineDeploymentUpgrades(params *GetExternalClusterMachineDeploymentUpgradesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetExternalClusterMachineDeploymentUpgradesOK, error)
+
 	GetExternalClusterMetrics(params *GetExternalClusterMetricsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetExternalClusterMetricsOK, error)
 
 	GetExternalClusterNode(params *GetExternalClusterNodeParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetExternalClusterNodeOK, error)
@@ -2416,6 +2418,44 @@ func (a *Client) GetExternalClusterMachineDeployment(params *GetExternalClusterM
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*GetExternalClusterMachineDeploymentDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  GetExternalClusterMachineDeploymentUpgrades gets an external cluster machine deployments upgrade versions
+*/
+func (a *Client) GetExternalClusterMachineDeploymentUpgrades(params *GetExternalClusterMachineDeploymentUpgradesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetExternalClusterMachineDeploymentUpgradesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetExternalClusterMachineDeploymentUpgradesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "getExternalClusterMachineDeploymentUpgrades",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/upgrades",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetExternalClusterMachineDeploymentUpgradesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetExternalClusterMachineDeploymentUpgradesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetExternalClusterMachineDeploymentUpgradesDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

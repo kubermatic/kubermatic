@@ -436,6 +436,43 @@ func ListGKEUpgrades(ctx context.Context, sa, zone, name string) ([]*apiv1.Maste
 	return upgrades, nil
 }
 
+func ListGKEMachineDeploymentUpgrades(ctx context.Context, sa, zone, clusterName, machineDeployment string) ([]*apiv1.MasterVersion, error) {
+	upgrades := make([]*apiv1.MasterVersion, 0)
+	svc, project, err := gcp.ConnectToContainerService(sa)
+	if err != nil {
+		return nil, err
+	}
+
+	clusterReq := svc.Projects.Zones.Clusters.Get(project, zone, clusterName)
+	cluster, err := clusterReq.Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	currentClusterVer, err := semverlib.NewVersion(cluster.CurrentMasterVersion)
+	if err != nil {
+		return nil, err
+	}
+
+	req := svc.Projects.Zones.Clusters.NodePools.Get(project, zone, clusterName, machineDeployment)
+	np, err := req.Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	currentMachineDeploymentVer, err := semverlib.NewVersion(np.Version)
+	if err != nil {
+		return nil, err
+	}
+
+	// return control plane version
+	if currentClusterVer.GreaterThan(currentMachineDeploymentVer) {
+		upgrades = append(upgrades, &apiv1.MasterVersion{Version: currentClusterVer})
+	}
+
+	return upgrades, nil
+}
+
 func isValidVersion(currentVersion, newVersion *semverlib.Version) bool {
 	if currentVersion.Major() == newVersion.Major() && (currentVersion.Minor()+1) == newVersion.Minor() {
 		return true
