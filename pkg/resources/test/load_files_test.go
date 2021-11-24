@@ -721,7 +721,7 @@ func TestLoadFiles(t *testing.T) {
 					}
 
 					var statefulSetCreators []reconciling.NamedStatefulSetCreatorGetter
-					statefulSetCreators = append(statefulSetCreators, kubernetescontroller.GetStatefulSetCreators(data, false)...)
+					statefulSetCreators = append(statefulSetCreators, kubernetescontroller.GetStatefulSetCreators(data, false, false)...)
 					statefulSetCreators = append(statefulSetCreators, monitoringcontroller.GetStatefulSetCreators(data)...)
 					for _, creatorGetter := range statefulSetCreators {
 						_, create := creatorGetter()

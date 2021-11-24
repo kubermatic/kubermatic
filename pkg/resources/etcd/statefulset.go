@@ -69,7 +69,7 @@ type etcdStatefulSetCreatorData interface {
 }
 
 // StatefulSetCreator returns the function to reconcile the etcd StatefulSet
-func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChecks bool) reconciling.NamedStatefulSetCreatorGetter {
+func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChecks bool, enableTLSOnly bool) reconciling.NamedStatefulSetCreatorGetter {
 	return func() (string, reconciling.StatefulSetCreator) {
 		return resources.EtcdStatefulSetName, func(set *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
 
@@ -81,7 +81,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 			set.Spec.ServiceName = resources.EtcdServiceName
 			set.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
-			baseLabels := getBasePodLabels(data.Cluster())
+			baseLabels := GetBasePodLabels(data.Cluster())
 			set.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: baseLabels,
 			}
@@ -97,6 +97,73 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 				Labels: podLabels,
 			}
 			set.Spec.Template.Spec.ServiceAccountName = rbac.EtcdLauncherServiceAccountName
+
+			etcdEnv := []corev1.EnvVar{
+				{
+					Name: "POD_NAME",
+					ValueFrom: &corev1.EnvVarSource{
+						FieldRef: &corev1.ObjectFieldSelector{
+							APIVersion: "v1",
+							FieldPath:  "metadata.name",
+						},
+					},
+				},
+				{
+					Name: "POD_IP",
+					ValueFrom: &corev1.EnvVarSource{
+						FieldRef: &corev1.ObjectFieldSelector{
+							APIVersion: "v1",
+							FieldPath:  "status.podIP",
+						},
+					},
+				},
+				{
+					Name: "NAMESPACE",
+					ValueFrom: &corev1.EnvVarSource{
+						FieldRef: &corev1.ObjectFieldSelector{
+							APIVersion: "v1",
+							FieldPath:  "metadata.namespace",
+						},
+					},
+				},
+				{
+					Name:  "TOKEN",
+					Value: data.Cluster().Name,
+				},
+				{
+					Name:  "ENABLE_CORRUPTION_CHECK",
+					Value: strconv.FormatBool(enableDataCorruptionChecks),
+				},
+				{
+					Name:  "ETCDCTL_API",
+					Value: "3",
+				},
+				{
+					Name:  "ETCDCTL_CACERT",
+					Value: resources.EtcdTrustedCAFile,
+				},
+				{
+					Name:  "ETCDCTL_CERT",
+					Value: resources.EtcdClientCertFile,
+				},
+				{
+					Name:  "ETCDCTL_KEY",
+					Value: resources.EtcdClientKeyFile,
+				},
+			}
+
+			etcdPorts := []corev1.ContainerPort{
+				{
+					ContainerPort: 2379,
+					Protocol:      corev1.ProtocolTCP,
+					Name:          "client",
+				},
+				{
+					ContainerPort: 2380,
+					Protocol:      corev1.ProtocolTCP,
+					Name:          "peer",
+				},
+			}
 
 			launcherEnabled := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher]
 			if launcherEnabled {
@@ -114,7 +181,22 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 						},
 					},
 				}
+
+				etcdPorts = append(etcdPorts, corev1.ContainerPort{
+					ContainerPort: 2381,
+					Protocol:      corev1.ProtocolTCP,
+					Name:          "peer-tls",
+				})
+
+				set.Spec.Template.ObjectMeta.Annotations = map[string]string{
+					resources.EtcdTLSEnabledAnnotation: "",
+				}
+
+				if enableTLSOnly {
+					etcdEnv = append(etcdEnv, corev1.EnvVar{Name: "PEER_TLS_MODE", Value: "strict"})
+				}
 			}
+
 			etcdStartCmd, err := getEtcdCommand(data.Cluster().Name, data.Cluster().Status.NamespaceName, enableDataCorruptionChecks, launcherEnabled)
 			if err != nil {
 				return nil, err
@@ -126,71 +208,8 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 					Image:           data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + ImageTag(data.Cluster()),
 					ImagePullPolicy: corev1.PullIfNotPresent,
 					Command:         etcdStartCmd,
-					Env: []corev1.EnvVar{
-						{
-							Name: "POD_NAME",
-							ValueFrom: &corev1.EnvVarSource{
-								FieldRef: &corev1.ObjectFieldSelector{
-									APIVersion: "v1",
-									FieldPath:  "metadata.name",
-								},
-							},
-						},
-						{
-							Name: "POD_IP",
-							ValueFrom: &corev1.EnvVarSource{
-								FieldRef: &corev1.ObjectFieldSelector{
-									APIVersion: "v1",
-									FieldPath:  "status.podIP",
-								},
-							},
-						},
-						{
-							Name: "NAMESPACE",
-							ValueFrom: &corev1.EnvVarSource{
-								FieldRef: &corev1.ObjectFieldSelector{
-									APIVersion: "v1",
-									FieldPath:  "metadata.namespace",
-								},
-							},
-						},
-						{
-							Name:  "TOKEN",
-							Value: data.Cluster().Name,
-						},
-						{
-							Name:  "ENABLE_CORRUPTION_CHECK",
-							Value: strconv.FormatBool(enableDataCorruptionChecks),
-						},
-						{
-							Name:  "ETCDCTL_API",
-							Value: "3",
-						},
-						{
-							Name:  "ETCDCTL_CACERT",
-							Value: resources.EtcdTrustedCAFile,
-						},
-						{
-							Name:  "ETCDCTL_CERT",
-							Value: resources.EtcdClientCertFile,
-						},
-						{
-							Name:  "ETCDCTL_KEY",
-							Value: resources.EtcdClientKeyFile,
-						},
-					},
-					Ports: []corev1.ContainerPort{
-						{
-							ContainerPort: 2379,
-							Protocol:      corev1.ProtocolTCP,
-							Name:          "client",
-						},
-						{
-							ContainerPort: 2380,
-							Protocol:      corev1.ProtocolTCP,
-							Name:          "peer",
-						},
-					},
+					Env:             etcdEnv,
+					Ports:           etcdPorts,
 					ReadinessProbe: &corev1.Probe{
 						TimeoutSeconds:      10,
 						PeriodSeconds:       15,
@@ -337,7 +356,7 @@ func getVolumes() []corev1.Volume {
 	}
 }
 
-func getBasePodLabels(cluster *kubermaticv1.Cluster) map[string]string {
+func GetBasePodLabels(cluster *kubermaticv1.Cluster) map[string]string {
 	additionalLabels := map[string]string{
 		"cluster": cluster.Name,
 	}

@@ -21,6 +21,10 @@ spec:
     port: 2380
     protocol: TCP
     targetPort: 2380
+  - name: peer-tls
+    port: 2381
+    protocol: TCP
+    targetPort: 2381
   publishNotReadyAddresses: true
   selector:
     app: etcd
