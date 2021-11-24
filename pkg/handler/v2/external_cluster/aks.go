@@ -29,14 +29,15 @@ import (
 )
 
 func createAKSCluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticapiv1.ExternalCluster, error) {
-	if cloud.AKS.Name == "" || cloud.AKS.TenantID == "" || cloud.AKS.SubscriptionID == "" {
-		return nil, errors.NewBadRequest("the AKS cluster name, tenant id or subscription id or client id or client secret can not be empty")
+	if cloud.AKS.Name == "" || cloud.AKS.TenantID == "" || cloud.AKS.SubscriptionID == "" || cloud.AKS.ClientID == "" || cloud.AKS.ClientSecret == "" || cloud.AKS.ResourceGroup == "" {
+		return nil, errors.NewBadRequest("the AKS cluster name, tenant id or subscription id or client id or client secret or resource group can not be empty")
 	}
 
 	newCluster := genExternalCluster(name, project.Name)
 	newCluster.Spec.CloudSpec = &kubermaticapiv1.ExternalClusterCloudSpec{
 		AKS: &kubermaticapiv1.ExternalClusterAKSCloudSpec{
-			Name: cloud.AKS.Name,
+			Name:          cloud.AKS.Name,
+			ResourceGroup: cloud.AKS.ResourceGroup,
 		},
 	}
 	keyRef, err := clusterProvider.CreateOrUpdateCredentialSecretForCluster(ctx, cloud, project.Name, newCluster.Name)

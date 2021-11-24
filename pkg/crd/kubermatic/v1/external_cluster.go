@@ -92,6 +92,7 @@ type ExternalClusterAKSCloudSpec struct {
 	SubscriptionID       string                                  `json:"subscriptionID"`
 	ClientID             string                                  `json:"clientID"`
 	ClientSecret         string                                  `json:"clientSecret"`
+	ResourceGroup        string                                  `json:"resourceGroup"`
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
 }
 
@@ -119,6 +120,9 @@ func (i *ExternalCluster) GetCredentialsSecretName() string {
 	}
 	if cloud.EKS != nil {
 		cluster.Spec.Cloud.AWS = &AWSCloudSpec{}
+	}
+	if cloud.AKS != nil {
+		cluster.Spec.Cloud.Azure = &AzureCloudSpec{}
 	}
 	return cluster.GetSecretName()
 }

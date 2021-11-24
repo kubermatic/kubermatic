@@ -23,6 +23,7 @@ import (
 	"net/http"
 
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2021-07-01/compute"
+	"github.com/Azure/azure-sdk-for-go/services/containerservice/mgmt/2018-03-31/containerservice"
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2021-03-01/network"
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2020-10-01/resources"
 	"github.com/Azure/go-autorest/autorest"
@@ -35,6 +36,9 @@ import (
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
+
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/clientcmd/api"
 )
 
 const (
@@ -1031,4 +1035,26 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 		ClientID:       clientID,
 		ClientSecret:   clientSecret,
 	}, nil
+}
+
+func GetAKSCLusterConfig(ctx context.Context, tenantID, subscriptionID, clientID, clientSecret, clusterName, resourceGroupName string) (*api.Config, error) {
+
+	var err error
+	aksClient := containerservice.NewManagedClustersClient(subscriptionID)
+	aksClient.Authorizer, err = auth.NewClientCredentialsConfig(clientID, clientSecret, tenantID).Authorizer()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create authorizer: %s", err.Error())
+	}
+
+	credResult, err := aksClient.ListClusterAdminCredentials(ctx, resourceGroupName, clusterName)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get azure cluster config %w", err)
+	}
+
+	data := (*credResult.Kubeconfigs)[0].Value
+	config, err := clientcmd.Load(*data)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get azure cluster config %w", err)
+	}
+	return config, nil
 }
