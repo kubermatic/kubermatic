@@ -396,7 +396,7 @@ rules:
 		MaxSeriesPerQuery:  6,
 	}
 	if _, err := masterAdminClient.SetMonitoringMLARateLimits(cluster.Name, project.ID, rateLimits); err != nil {
-		t.Fatalf("unable to set monitoring rate limits: %v", err)
+		t.Fatalf("unable to set monitoring rate limits: %s", err.Error())
 	}
 
 	if !utils.WaitFor(1*time.Second, timeout, func() bool {
