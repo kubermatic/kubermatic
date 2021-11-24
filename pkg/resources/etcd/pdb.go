@@ -37,7 +37,7 @@ func PodDisruptionBudgetCreator(data pdbData) reconciling.NamedPodDisruptionBudg
 			minAvailable := intstr.FromInt((resources.EtcdClusterSize / 2) + 1)
 			pdb.Spec = policyv1beta1.PodDisruptionBudgetSpec{
 				Selector: &metav1.LabelSelector{
-					MatchLabels: getBasePodLabels(data.Cluster()),
+					MatchLabels: GetBasePodLabels(data.Cluster()),
 				},
 				MinAvailable: &minAvailable,
 			}

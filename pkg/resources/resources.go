@@ -105,6 +105,8 @@ const (
 	EtcdStatefulSetName = "etcd"
 	// EtcdDefaultBackupConfigName is the name for the default (preinstalled) EtcdBackupConfig of a cluster
 	EtcdDefaultBackupConfigName = "default-backups"
+	// EtcdTLSEnabledAnnotation is the annotation assigned to etcd Pods that run with a TLS peer endpoint
+	EtcdTLSEnabledAnnotation = "etcd.kubermatic.k8c.io/tls-peer-enabled"
 
 	// ApiserverServiceName is the name for the apiserver service
 	ApiserverServiceName = "apiserver-external"

@@ -267,7 +267,7 @@ func getImagesFromCreators(log *zap.SugaredLogger, templateData *resources.Templ
 		return nil, fmt.Errorf("failed to default Seed: %v", err)
 	}
 
-	statefulsetCreators := kubernetescontroller.GetStatefulSetCreators(templateData, false)
+	statefulsetCreators := kubernetescontroller.GetStatefulSetCreators(templateData, false, false)
 	statefulsetCreators = append(statefulsetCreators, monitoring.GetStatefulSetCreators(templateData)...)
 
 	deploymentCreators := kubernetescontroller.GetDeploymentCreators(templateData, false)

@@ -58,6 +58,12 @@ func ServiceCreator(data serviceCreatorData) reconciling.NamedServiceCreatorGett
 					TargetPort: intstr.FromInt(2380),
 					Protocol:   corev1.ProtocolTCP,
 				},
+				{
+					Name:       "peer-tls",
+					Port:       2381,
+					TargetPort: intstr.FromInt(2381),
+					Protocol:   corev1.ProtocolTCP,
+				},
 			}
 
 			return se, nil

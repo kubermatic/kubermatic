@@ -55,6 +55,13 @@ const (
 	etcdCommandPath          = "/usr/local/bin/etcd"
 	initialStateExisting     = "existing"
 	initialStateNew          = "new"
+	envPeerTLSMode           = "PEER_TLS_MODE"
+	peerTLSModeStrict        = "strict"
+
+	timeoutListMembers    = time.Second * 5
+	timeoutAddMember      = time.Second * 15
+	timeoutRemoveMember   = time.Second * 30
+	timeoutUpdatePeerURLs = time.Second * 10
 )
 
 type etcdCluster struct {
@@ -67,6 +74,7 @@ type etcdCluster struct {
 	token                 string
 	enableCorruptionCheck bool
 	initialState          string
+	usePeerTLSOnly        bool
 }
 
 func main() {
@@ -95,7 +103,20 @@ func main() {
 
 	log.Info("initializing etcd..")
 	log.Infof("initial-state: %s", e.initialState)
-	log.Infof("initial-cluster: %s", strings.Join(initialMemberList(e.clusterSize, e.namespace), ","))
+	log.Infof("initial-cluster: %s", strings.Join(initialMemberList(e.clusterSize, e.namespace, e.usePeerTLSOnly), ","))
+	if e.usePeerTLSOnly {
+		log.Info("peer-tls-mode: strict")
+	}
+
+	// if the cluster already exists, try to connect and update peer URLs that might be out of sync.
+	// etcd might fail to start if peer URLs in the etcd member state and the flags passed to it are different
+	if e.initialState == initialStateExisting {
+		// make sure that peer URLs in the cluster member data is
+		// updated / in sync with the etcd node's configuration
+		if err := e.updatePeerURLs(log); err != nil {
+			log.Warnw("failed to update peerURL, etcd node might fail to start ...", zap.Error(err))
+		}
+	}
 
 	// setup and start etcd command
 	etcdCmd, err := startEtcdCmd(e, log)
@@ -103,7 +124,7 @@ func main() {
 		log.Panicw("start etcd cmd", zap.Error(err))
 	}
 
-	if err = wait.Poll(1*time.Second, 30*time.Second, func() (bool, error) {
+	if err = wait.Poll(1*time.Second, 60*time.Second, func() (bool, error) {
 		return e.isClusterHealthy(log)
 	}); err != nil {
 		log.Panicw("manager thread failed to connect to cluster", zap.Error(err))
@@ -136,15 +157,13 @@ func main() {
 		log.Panicw("join cluster as fresh member", zap.Error(err))
 	}
 
-	// handle changes to peerURLs (https -> http)
-	if err := e.updatePeerURLToHTTP(log); err != nil {
-		log.Panicw("failed to update peerURL", zap.Error(err))
-	}
-
 	// reconcile dead members continuously. Initially we did this once as a step at the end of start up. We did that because scale up/down operations required a full restart of the ring with each node add/remove. However, this is no longer the case, so we need to separate the reconcile from the start up process and do it continuously.
 	go func() {
 		wait.Forever(func() {
-			if _, err := deleteUnwantedDeadMembers(e, log); err != nil {
+			// refresh the cluster size so the etcd-launcher is aware of scaling operations
+			if err := e.setClusterSize(clusterClient); err != nil {
+				log.Warnw("failed to refresh cluster size", zap.Error(err))
+			} else if _, err := deleteUnwantedDeadMembers(e, log); err != nil {
 				log.Warnw("failed to remove dead members", zap.Error(err))
 			}
 		}, 30*time.Second)
@@ -198,24 +217,31 @@ func startEtcdCmd(e *etcdCluster, log *zap.SugaredLogger) (*exec.Cmd, error) {
 }
 
 func deleteUnwantedDeadMembers(e *etcdCluster, log *zap.SugaredLogger) (bool, error) {
-	containsUnwantedMembers, err := e.containsUnwantedMembers(log)
+	unwantedMembers, err := e.getUnwantedMembers(log)
 	if err != nil {
-		log.Warnw("failed to list members ", zap.Error(err))
+		log.Warnw("failed to get unwanted members", zap.Error(err))
 		return false, nil
 	}
 	// we only need to reconcile if we have members that we shouldn't have
-	if !containsUnwantedMembers {
-		log.Info("cluster members reconciled..")
+	if len(unwantedMembers) == 0 {
+		log.Debug("no unwanted members present")
 		return true, nil
 	}
+
 	// to avoide race conditions, we will run only on the cluster leader
 	leader, err := e.isLeader(log)
-	if err != nil || !leader {
-		log.Warnw("failed to remove member, error occurred or didn't get the current leader", zap.Error(err))
+	if err != nil {
+		log.Warnw("failed to determine if member is cluster leader", zap.Error(err))
 		return false, nil
 	}
-	if err := e.removeDeadMembers(log); err != nil {
-		log.Warnw("failed to remove member", zap.Error(err))
+
+	if !leader {
+		log.Info("current member is not leader, skipping dead member removal")
+		return false, nil
+	}
+
+	if err := e.removeDeadMembers(log, unwantedMembers); err != nil {
+		return false, err
 	}
 
 	return false, nil
@@ -234,7 +260,20 @@ func joinCluster(e *etcdCluster, log *zap.SugaredLogger) error {
 		return errors.Wrap(err, "can't find cluster client")
 	}
 
-	if _, err := client.MemberAdd(context.Background(), []string{fmt.Sprintf("http://%s.etcd.%s.svc.cluster.local:2380", e.podName, e.namespace)}); err != nil {
+	// construct peer URLs for this new node
+
+	peerURLs := []string{}
+
+	if !e.usePeerTLSOnly {
+		peerURLs = append(peerURLs, fmt.Sprintf("http://%s.etcd.%s.svc.cluster.local:2380", e.podName, e.namespace))
+	}
+
+	peerURLs = append(peerURLs, fmt.Sprintf("https://%s.etcd.%s.svc.cluster.local:2381", e.podName, e.namespace))
+
+	ctx, cancelFunc := context.WithTimeout(context.Background(), timeoutAddMember)
+	defer cancelFunc()
+
+	if _, err := client.MemberAdd(ctx, peerURLs); err != nil {
 		close(client, log)
 		return errors.Wrap(err, "add itself as a member")
 	}
@@ -245,7 +284,7 @@ func joinCluster(e *etcdCluster, log *zap.SugaredLogger) error {
 	return nil
 }
 
-func (e *etcdCluster) updatePeerURLToHTTP(log *zap.SugaredLogger) error {
+func (e *etcdCluster) updatePeerURLs(log *zap.SugaredLogger) error {
 	members, err := e.listMembers(log)
 	if err != nil {
 		return err
@@ -254,35 +293,84 @@ func (e *etcdCluster) updatePeerURLToHTTP(log *zap.SugaredLogger) error {
 	if err != nil {
 		return err
 	}
+
 	defer close(client, log)
+
 	for _, member := range members {
 		peerURL, err := url.Parse(member.PeerURLs[0])
 		if err != nil {
 			return err
 		}
-		if member.Name == e.podName && peerURL.Scheme == "https" {
-			peerURL.Scheme = "http"
-			_, err = client.MemberUpdate(context.Background(), member.ID, []string{peerURL.String()})
-			return err
+
+		if member.Name == e.podName {
+			ctx, cancelFunc := context.WithTimeout(context.Background(), timeoutUpdatePeerURLs)
+			defer cancelFunc()
+			// if both plaintext and TLS peer URLs are supposed to be present
+			// update the member to include both plaintext and TLS peer URLs
+			if !e.usePeerTLSOnly && (len(member.PeerURLs) == 1 || peerURL.Scheme != "http") {
+				plainPeerURL, err := url.Parse(fmt.Sprintf("http://%s:2380", peerURL.Hostname()))
+				if err != nil {
+					return err
+				}
+
+				tlsPeerURL, err := url.Parse(fmt.Sprintf("https://%s:2381", peerURL.Hostname()))
+				if err != nil {
+					return err
+				}
+
+				log.Infof("updating member %d to include plaintext and tls peer ports", member.ID)
+
+				_, err = client.MemberUpdate(
+					ctx,
+					member.ID,
+					[]string{plainPeerURL.String(), tlsPeerURL.String()},
+				)
+				return err
+			}
+
+			// if we're supposed to run with TLS peer endpoints only, two peer URLs are
+			// not a valid configuration and should be replaced with TLS only
+			if len(member.PeerURLs) == 2 && e.usePeerTLSOnly {
+				tlsPeerURL, err := url.Parse(fmt.Sprintf("https://%s:2381", peerURL.Hostname()))
+				if err != nil {
+					return err
+				}
+
+				log.Infof("updating member %d to set tls peer port only", member.ID)
+
+				_, err = client.MemberUpdate(
+					ctx,
+					member.ID,
+					[]string{tlsPeerURL.String()},
+				)
+				return err
+			}
 		}
 	}
+
 	return nil
 }
 
-func initialMemberList(n int, namespace string) []string {
+func initialMemberList(n int, namespace string, useTLSPeer bool) []string {
+	format := "etcd-%d=http://etcd-%d.etcd.%s.svc.cluster.local:2380"
+
+	if useTLSPeer {
+		format = "etcd-%d=https://etcd-%d.etcd.%s.svc.cluster.local:2381"
+	}
+
 	members := []string{}
 	for i := 0; i < n; i++ {
-		members = append(members, fmt.Sprintf("etcd-%d=http://etcd-%d.etcd.%s.svc.cluster.local:2380", i, i, namespace))
+		members = append(members, fmt.Sprintf(format, i, i, namespace))
 	}
 	return members
 }
 
-func peerURLsList(n int, namespace string) []string {
-	urls := []string{}
+func peerHostsList(n int, namespace string) []string {
+	hosts := []string{}
 	for i := 0; i < n; i++ {
-		urls = append(urls, fmt.Sprintf("etcd-%d.etcd.%s.svc.cluster.local:2380", i, namespace))
+		hosts = append(hosts, fmt.Sprintf("etcd-%d.etcd.%s.svc.cluster.local", i, namespace))
 	}
-	return urls
+	return hosts
 }
 
 func clientEndpoints(n int, namespace string) []string {
@@ -334,19 +422,35 @@ func etcdCmd(config *etcdCluster) []string {
 	cmd := []string{
 		fmt.Sprintf("--name=%s", config.podName),
 		fmt.Sprintf("--data-dir=%s", config.dataDir),
-		fmt.Sprintf("--initial-cluster=%s", strings.Join(initialMemberList(config.clusterSize, config.namespace), ",")),
+		fmt.Sprintf("--initial-cluster=%s", strings.Join(initialMemberList(config.clusterSize, config.namespace, config.usePeerTLSOnly), ",")),
 		fmt.Sprintf("--initial-cluster-token=%s", config.token),
 		fmt.Sprintf("--initial-cluster-state=%s", config.initialState),
 		fmt.Sprintf("--advertise-client-urls=https://%s.etcd.%s.svc.cluster.local:2379,https://%s:2379", config.podName, config.namespace, config.podIP),
 		fmt.Sprintf("--listen-client-urls=https://%s:2379,https://127.0.0.1:2379", config.podIP),
 		fmt.Sprintf("--listen-metrics-urls=http://%s:2378,http://127.0.0.1:2378", config.podIP),
-		fmt.Sprintf("--listen-peer-urls=http://%s:2380", config.podIP),
-		fmt.Sprintf("--initial-advertise-peer-urls=http://%s.etcd.%s.svc.cluster.local:2380", config.podName, config.namespace),
 		"--client-cert-auth",
 		fmt.Sprintf("--trusted-ca-file=%s", resources.EtcdTrustedCAFile),
 		fmt.Sprintf("--cert-file=%s", resources.EtcdCertFile),
 		fmt.Sprintf("--key-file=%s", resources.EtcdKetFile),
+		fmt.Sprintf("--peer-cert-file=%s", resources.EtcdCertFile),
+		fmt.Sprintf("--peer-key-file=%s", resources.EtcdKetFile),
+		fmt.Sprintf("--peer-trusted-ca-file=%s", resources.EtcdTrustedCAFile),
 		"--auto-compaction-retention=8",
+	}
+
+	// set TLS only peer URLs
+	if config.usePeerTLSOnly {
+		cmd = append(cmd, []string{
+			fmt.Sprintf("--listen-peer-urls=https://%s:2381", config.podIP),
+			fmt.Sprintf("--initial-advertise-peer-urls=https://%s.etcd.%s.svc.cluster.local:2381", config.podName, config.namespace),
+			"--peer-client-cert-auth",
+		}...)
+	} else {
+		// 'mixed' mode clusters should start with both plaintext and HTTPS peer ports
+		cmd = append(cmd, []string{
+			fmt.Sprintf("--listen-peer-urls=http://%s:2380,https://%s:2381", config.podIP, config.podIP),
+			fmt.Sprintf("--initial-advertise-peer-urls=http://%s.etcd.%s.svc.cluster.local:2380,https://%s.etcd.%s.svc.cluster.local:2381", config.podName, config.namespace, config.podName, config.namespace),
+		}...)
 	}
 
 	if config.enableCorruptionCheck {
@@ -401,7 +505,10 @@ func (e *etcdCluster) listMembers(log *zap.SugaredLogger) ([]*etcdserverpb.Membe
 	}
 	defer close(client, log)
 
-	resp, err := client.MemberList(context.Background())
+	ctx, cancelFunc := context.WithTimeout(context.Background(), timeoutListMembers)
+	defer cancelFunc()
+
+	resp, err := client.MemberList(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -418,33 +525,42 @@ func (e *etcdCluster) getMemberByName(name string, log *zap.SugaredLogger) (*etc
 		if err != nil {
 			return nil, err
 		}
-		// if the member is not started yet, its name would be empty, in that case, we match for peerURL host.
-		if member.Name == name || url.Host == fmt.Sprintf("%s.etcd.%s.svc.cluster.local:2380", e.podName, e.namespace) {
+		// if the member is not started yet, its name would be empty, in that case, we match for peerURL hostname
+		if member.Name == name || url.Hostname() == fmt.Sprintf("%s.etcd.%s.svc.cluster.local", e.podName, e.namespace) {
 			return member, nil
 		}
 	}
 	return nil, nil
 }
 
-func (e *etcdCluster) containsUnwantedMembers(log *zap.SugaredLogger) (bool, error) {
+func (e *etcdCluster) getUnwantedMembers(log *zap.SugaredLogger) ([]*etcdserverpb.Member, error) {
+	unwantedMembers := []*etcdserverpb.Member{}
+
 	members, err := e.listMembers(log)
 	if err != nil {
-		return false, err
+		return []*etcdserverpb.Member{}, err
 	}
-	expectedMembers := peerURLsList(e.clusterSize, e.namespace)
+
+	expectedMembers := peerHostsList(e.clusterSize, e.namespace)
 	for _, member := range members {
-		if len(member.GetPeerURLs()) != 1 {
-			return true, nil
+		if len(member.GetPeerURLs()) != 1 && len(member.GetPeerURLs()) != 2 {
+			unwantedMembers = append(unwantedMembers, member)
+			continue
 		}
-		peerURL, err := url.Parse(member.PeerURLs[0])
-		if err != nil {
-			return false, err
-		}
-		if !contains(expectedMembers, peerURL.Host) {
-			return true, nil
+
+		// check all found peer URLs for being valid
+		for i := 0; i < len(member.PeerURLs); i++ {
+			peerURL, err := url.Parse(member.PeerURLs[i])
+			if err != nil {
+				return []*etcdserverpb.Member{}, err
+			}
+			if !contains(expectedMembers, peerURL.Hostname()) {
+				unwantedMembers = append(unwantedMembers, member)
+			}
 		}
 	}
-	return false, nil
+
+	return unwantedMembers, nil
 }
 
 func contains(list []string, v string) bool {
@@ -497,29 +613,32 @@ func (e *etcdCluster) isLeader(log *zap.SugaredLogger) (bool, error) {
 	return false, nil
 }
 
-func (e *etcdCluster) removeDeadMembers(log *zap.SugaredLogger) error {
-	members, err := e.listMembers(log)
-	if err != nil {
-		return err
-	}
-
+func (e *etcdCluster) removeDeadMembers(log *zap.SugaredLogger, unwantedMembers []*etcdserverpb.Member) error {
 	client, err := e.getClusterClient()
 	if err != nil {
 		return fmt.Errorf("can't find cluster client: %v", err)
 	}
 	defer close(client, log)
 
-	for _, member := range members {
+	for _, member := range unwantedMembers {
+		log.Infow("checking cluster member for removal", "member-name", member.Name)
+
 		if member.Name == e.podName {
 			continue
 		}
 		if err = wait.Poll(1*time.Second, 15*time.Second, func() (bool, error) {
+			if len(member.ClientURLs) == 0 {
+				return false, nil
+			}
+
 			// we use the cluster FQDN endpoint url here. Using the IP endpoint will
 			// fail because the certificates don't include Pod IP addresses.
 			return e.isHealthyWithEndpoints(member.ClientURLs[len(member.ClientURLs)-1:], log)
 		}); err != nil {
 			log.Infow("member is not responding, removing from cluster", "member-name", member.Name)
-			_, err = client.MemberRemove(context.Background(), member.ID)
+			ctx, cancelFunc := context.WithTimeout(context.Background(), timeoutRemoveMember)
+			defer cancelFunc()
+			_, err = client.MemberRemove(ctx, member.ID)
 			return err
 		}
 	}
@@ -571,8 +690,8 @@ func (e *etcdCluster) restoreDatadirFromBackupIfNeeded(ctx context.Context, k8cC
 		Name:                e.podName,
 		OutputDataDir:       e.dataDir,
 		OutputWALDir:        filepath.Join(e.dataDir, "member", "wal"),
-		PeerURLs:            []string{fmt.Sprintf("http://%s.etcd.%s.svc.cluster.local:2380", e.podName, e.namespace)},
-		InitialCluster:      strings.Join(initialMemberList(e.clusterSize, e.namespace), ","),
+		PeerURLs:            []string{fmt.Sprintf("https://%s.etcd.%s.svc.cluster.local:2381", e.podName, e.namespace)},
+		InitialCluster:      strings.Join(initialMemberList(e.clusterSize, e.namespace, e.usePeerTLSOnly), ","),
 		InitialClusterToken: e.token,
 		SkipHashCheck:       false,
 	})
@@ -594,8 +713,15 @@ func (e *etcdCluster) setInitialState(clusterClient ctrlruntimeclient.Client, lo
 	// check if the etcd cluster is initialized successfully.
 	if k8cCluster.Status.HasConditionValue(kubermaticv1.ClusterConditionEtcdClusterInitialized, corev1.ConditionTrue) {
 		e.initialState = initialStateExisting
+		// if "strict" mode is enforced, set it up for existing clusters
+		if os.Getenv(envPeerTLSMode) == peerTLSModeStrict {
+			e.usePeerTLSOnly = true
+		}
 	} else {
 		e.initialState = initialStateNew
+		// new clusters can use "strict" TLS mode for etcd (TLS-only peering connections)
+		e.usePeerTLSOnly = true
+
 		if err := e.restoreDatadirFromBackupIfNeeded(context.Background(), k8cCluster, clusterClient, log); err != nil {
 			return fmt.Errorf("failed to restore datadir from backup: %v", err)
 		}
