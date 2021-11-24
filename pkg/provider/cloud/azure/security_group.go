@@ -55,7 +55,22 @@ func reconcileSecurityGroup(ctx context.Context, clients *ClientSet, location st
 		Build().
 		NodePorts()
 
-	if err := ensureSecurityGroup(ctx, clients, cluster.Spec.Cloud, location, cluster.Name, lowPort, highPort); err != nil {
+	target := targetSecurityGroup(cluster.Spec.Cloud, location, cluster.Name, lowPort, highPort)
+
+	// check for attributes of the existing security group and return early if all values are already
+	// as expected. Since there are a lot of pointers in the network.SecurityGroup struct, we need to
+	// do a lot of "!= nil" checks so this does not panic.
+	//
+	// Attributes we check:
+	// - Associated subnet's ID (subnet names are part of the ID and as such, don't need a separate check)
+	// - defined security rules
+	if securityGroup.SecurityGroupPropertiesFormat != nil && securityGroup.SecurityGroupPropertiesFormat.Subnets != nil && len(*securityGroup.SecurityGroupPropertiesFormat.Subnets) == 1 &&
+		*(*securityGroup.SecurityGroupPropertiesFormat.Subnets)[0].ID == *(*target.SecurityGroupPropertiesFormat.Subnets)[0].ID &&
+		securityGroup.SecurityGroupPropertiesFormat.SecurityRules != nil && compareSecurityRules(*securityGroup.SecurityGroupPropertiesFormat.SecurityRules, *target.SecurityGroupPropertiesFormat.SecurityRules) {
+		return cluster, nil
+	}
+
+	if err := ensureSecurityGroup(ctx, clients, cluster.Spec.Cloud, target); err != nil {
 		return cluster, err
 	}
 
@@ -65,9 +80,8 @@ func reconcileSecurityGroup(ctx context.Context, clients *ClientSet, location st
 	})
 }
 
-// ensureSecurityGroup will create or update an Azure security group. The call is idempotent.
-func ensureSecurityGroup(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec, location string, clusterName string, portRangeLow int, portRangeHigh int) error {
-	parameters := network.SecurityGroup{
+func targetSecurityGroup(cloud kubermaticv1.CloudSpec, location string, clusterName string, portRangeLow int, portRangeHigh int) *network.SecurityGroup {
+	securityGroup := &network.SecurityGroup{
 		Name:     to.StringPtr(cloud.Azure.SecurityGroup),
 		Location: to.StringPtr(location),
 		Tags: map[string]*string{
@@ -153,10 +167,19 @@ func ensureSecurityGroup(ctx context.Context, clients *ClientSet, cloud kubermat
 		},
 	}
 
-	updatedRules := append(*parameters.SecurityRules, tcpDenyAllRule(), udpDenyAllRule(), icmpAllowAllRule())
-	parameters.SecurityRules = &updatedRules
+	updatedRules := append(*securityGroup.SecurityRules, tcpDenyAllRule(), udpDenyAllRule(), icmpAllowAllRule())
+	securityGroup.SecurityRules = &updatedRules
 
-	future, err := clients.SecurityGroups.CreateOrUpdate(ctx, cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup, parameters)
+	return securityGroup
+}
+
+// ensureSecurityGroup will create or update an Azure security group. The call is idempotent.
+func ensureSecurityGroup(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec, sg *network.SecurityGroup) error {
+	if sg == nil {
+		return fmt.Errorf("invalid security group reference passed")
+	}
+
+	future, err := clients.SecurityGroups.CreateOrUpdate(ctx, cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup, *sg)
 	if err != nil {
 		return fmt.Errorf("failed to create or update security group %q: %v", cloud.Azure.SecurityGroup, err)
 	}
@@ -232,4 +255,21 @@ func icmpAllowAllRule() network.SecurityRule {
 			Priority:                 to.Int32Ptr(900),
 		},
 	}
+}
+
+func compareSecurityRules(a []network.SecurityRule, b []network.SecurityRule) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i, rule := range a {
+		ruleB := b[i]
+		if *rule.Name != *ruleB.Name || rule.SecurityRulePropertiesFormat.Direction != ruleB.SecurityRulePropertiesFormat.Direction ||
+			rule.SecurityRulePropertiesFormat.Protocol != ruleB.SecurityRulePropertiesFormat.Protocol ||
+			rule.Access != ruleB.Access {
+			return false
+		}
+	}
+
+	return true
 }

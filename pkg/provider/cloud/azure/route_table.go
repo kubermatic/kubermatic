@@ -48,7 +48,20 @@ func reconcileRouteTable(ctx context.Context, clients *ClientSet, location strin
 		return cluster, nil
 	}
 
-	if err := ensureRouteTable(ctx, clients, cluster.Spec.Cloud, location); err != nil {
+	target := targetRouteTable(cluster.Spec.Cloud, location)
+
+	// check for attributes of the existing route table and return early if all values are already
+	// as expected. Since there are a lot of pointers in the network.RouteTable struct, we need to
+	// do a lot of "!= nil" checks so this does not panic.
+	//
+	// Attributes we check:
+	// - Associated subnet's ID (subnet names are part of the ID and as such, don't need a separate check)
+	if routeTable.RouteTablePropertiesFormat != nil && routeTable.RouteTablePropertiesFormat.Subnets != nil && len(*routeTable.RouteTablePropertiesFormat.Subnets) == 1 &&
+		*(*routeTable.RouteTablePropertiesFormat.Subnets)[0].ID == *(*target.RouteTablePropertiesFormat.Subnets)[0].ID {
+		return cluster, nil
+	}
+
+	if err := ensureRouteTable(ctx, clients, cluster.Spec.Cloud, target); err != nil {
 		return cluster, err
 	}
 
@@ -58,9 +71,8 @@ func reconcileRouteTable(ctx context.Context, clients *ClientSet, location strin
 	})
 }
 
-// ensureRouteTable will create or update an Azure route table attached to the specified subnet. The call is idempotent.
-func ensureRouteTable(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec, location string) error {
-	parameters := network.RouteTable{
+func targetRouteTable(cloud kubermaticv1.CloudSpec, location string) *network.RouteTable {
+	return &network.RouteTable{
 		Name:     to.StringPtr(cloud.Azure.RouteTableName),
 		Location: to.StringPtr(location),
 		RouteTablePropertiesFormat: &network.RouteTablePropertiesFormat{
@@ -72,8 +84,15 @@ func ensureRouteTable(ctx context.Context, clients *ClientSet, cloud kubermaticv
 			},
 		},
 	}
+}
 
-	future, err := clients.RouteTables.CreateOrUpdate(ctx, cloud.Azure.ResourceGroup, cloud.Azure.RouteTableName, parameters)
+// ensureRouteTable will create or update an Azure route table attached to the specified subnet. The call is idempotent.
+func ensureRouteTable(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec, rt *network.RouteTable) error {
+	if rt == nil {
+		return fmt.Errorf("invalid network.RouteTable passed")
+	}
+
+	future, err := clients.RouteTables.CreateOrUpdate(ctx, cloud.Azure.ResourceGroup, cloud.Azure.RouteTableName, *rt)
 	if err != nil {
 		return fmt.Errorf("failed to create or update route table %q: %v", cloud.Azure.RouteTableName, err)
 	}
