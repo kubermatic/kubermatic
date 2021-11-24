@@ -99,7 +99,7 @@ func IsBringYourOwnProvider(spec kubermaticv1.CloudSpec) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return providerName == provider.BringYourOwnCloudProvider, nil
+	return providerName == string(kubermaticv1.BringYourOwnCloudProvider), nil
 }
 
 type CredentialsData struct {

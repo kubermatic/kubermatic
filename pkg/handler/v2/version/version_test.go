@@ -54,7 +54,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 				test.GenTestSeed(),
 			),
 			apiUser:  *test.GenDefaultAPIUser(),
-			provider: kubermaticv1.ProviderAWS,
+			provider: kubermaticv1.AWSCloudProvider,
 			wantVersions: []*apiv1.MasterVersion{
 				{
 					Version: semver.MustParse("1.21.0"),
@@ -91,7 +91,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 			},
 			incompatibilities: []operatorv1alpha1.Incompatibility{
 				{
-					Provider:  kubermaticv1.ProviderVSphere,
+					Provider:  kubermaticv1.VSphereCloudProvider,
 					Version:   "1.22.*",
 					Condition: operatorv1alpha1.AlwaysCondition,
 					Operation: operatorv1alpha1.CreateOperation,
@@ -104,7 +104,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 				test.GenTestSeed(),
 			),
 			apiUser:  *test.GenDefaultAPIUser(),
-			provider: kubermaticv1.ProviderVSphere,
+			provider: kubermaticv1.VSphereCloudProvider,
 			wantVersions: []*apiv1.MasterVersion{
 				{
 					Version: semver.MustParse("1.21.0"),
@@ -135,7 +135,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 			},
 			incompatibilities: []operatorv1alpha1.Incompatibility{
 				{
-					Provider:  kubermaticv1.ProviderVSphere,
+					Provider:  kubermaticv1.VSphereCloudProvider,
 					Version:   "1.22.*",
 					Condition: operatorv1alpha1.AlwaysCondition,
 					Operation: operatorv1alpha1.CreateOperation,

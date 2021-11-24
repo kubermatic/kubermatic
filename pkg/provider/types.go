@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -47,54 +46,11 @@ var (
 )
 
 const (
-	// Constants defining known cloud providers.
-	FakeCloudProvider         = "fake"
-	DigitaloceanCloudProvider = "digitalocean"
-	BringYourOwnCloudProvider = "bringyourown"
-	AWSCloudProvider          = "aws"
-	AzureCloudProvider        = "azure"
-	OpenstackCloudProvider    = "openstack"
-	PacketCloudProvider       = "packet"
-	HetznerCloudProvider      = "hetzner"
-	VSphereCloudProvider      = "vsphere"
-	GCPCloudProvider          = "gcp"
-	KubevirtCloudProvider     = "kubevirt"
-	AlibabaCloudProvider      = "alibaba"
-	AnexiaCloudProvider       = "anexia"
-
 	DefaultSSHPort     = 22
 	DefaultKubeletPort = 10250
 
 	DefaultKubeconfigFieldPath = "kubeconfig"
 )
-
-func supportedProviders() []string {
-	return []string{
-		FakeCloudProvider,
-		DigitaloceanCloudProvider,
-		BringYourOwnCloudProvider,
-		AWSCloudProvider,
-		AzureCloudProvider,
-		OpenstackCloudProvider,
-		PacketCloudProvider,
-		HetznerCloudProvider,
-		VSphereCloudProvider,
-		GCPCloudProvider,
-		KubevirtCloudProvider,
-		AlibabaCloudProvider,
-		AnexiaCloudProvider,
-	}
-}
-
-func IsProviderSupported(name string) bool {
-	for _, provider := range supportedProviders() {
-		if strings.EqualFold(name, provider) {
-			return true
-		}
-	}
-
-	return false
-}
 
 // CloudProvider declares a set of methods for interacting with a cloud provider
 type CloudProvider interface {
@@ -464,45 +420,45 @@ type ProjectMemberMapper interface {
 
 // ClusterCloudProviderName returns the provider name for the given CloudSpec.
 func ClusterCloudProviderName(spec kubermaticv1.CloudSpec) (string, error) {
-	var clouds []string
+	var clouds []kubermaticv1.ProviderType
 	if spec.AWS != nil {
-		clouds = append(clouds, AWSCloudProvider)
+		clouds = append(clouds, kubermaticv1.AWSCloudProvider)
 	}
 	if spec.Azure != nil {
-		clouds = append(clouds, AzureCloudProvider)
+		clouds = append(clouds, kubermaticv1.AzureCloudProvider)
 	}
 	if spec.BringYourOwn != nil {
-		clouds = append(clouds, BringYourOwnCloudProvider)
+		clouds = append(clouds, kubermaticv1.BringYourOwnCloudProvider)
 	}
 	if spec.Digitalocean != nil {
-		clouds = append(clouds, DigitaloceanCloudProvider)
+		clouds = append(clouds, kubermaticv1.DigitaloceanCloudProvider)
 	}
 	if spec.Fake != nil {
-		clouds = append(clouds, FakeCloudProvider)
+		clouds = append(clouds, kubermaticv1.FakeCloudProvider)
 	}
 	if spec.Openstack != nil {
-		clouds = append(clouds, OpenstackCloudProvider)
+		clouds = append(clouds, kubermaticv1.OpenstackCloudProvider)
 	}
 	if spec.Packet != nil {
-		clouds = append(clouds, PacketCloudProvider)
+		clouds = append(clouds, kubermaticv1.PacketCloudProvider)
 	}
 	if spec.Hetzner != nil {
-		clouds = append(clouds, HetznerCloudProvider)
+		clouds = append(clouds, kubermaticv1.HetznerCloudProvider)
 	}
 	if spec.VSphere != nil {
-		clouds = append(clouds, VSphereCloudProvider)
+		clouds = append(clouds, kubermaticv1.VSphereCloudProvider)
 	}
 	if spec.GCP != nil {
-		clouds = append(clouds, GCPCloudProvider)
+		clouds = append(clouds, kubermaticv1.GCPCloudProvider)
 	}
 	if spec.Kubevirt != nil {
-		clouds = append(clouds, KubevirtCloudProvider)
+		clouds = append(clouds, kubermaticv1.KubevirtCloudProvider)
 	}
 	if spec.Alibaba != nil {
-		clouds = append(clouds, AlibabaCloudProvider)
+		clouds = append(clouds, kubermaticv1.AlibabaCloudProvider)
 	}
 	if spec.Anexia != nil {
-		clouds = append(clouds, AnexiaCloudProvider)
+		clouds = append(clouds, kubermaticv1.AnexiaCloudProvider)
 	}
 	if len(clouds) == 0 {
 		return "", nil
@@ -510,7 +466,7 @@ func ClusterCloudProviderName(spec kubermaticv1.CloudSpec) (string, error) {
 	if len(clouds) != 1 {
 		return "", fmt.Errorf("only one cloud provider can be set in CloudSpec: %+v", spec)
 	}
-	return clouds[0], nil
+	return string(clouds[0]), nil
 }
 
 // ClusterCloudProvider returns the provider for the given cluster where
@@ -537,45 +493,45 @@ func DatacenterCloudProviderName(spec *kubermaticv1.DatacenterSpec) (string, err
 	if spec == nil {
 		return "", nil
 	}
-	var clouds []string
+	var clouds []kubermaticv1.ProviderType
 	if spec.BringYourOwn != nil {
-		clouds = append(clouds, BringYourOwnCloudProvider)
+		clouds = append(clouds, kubermaticv1.BringYourOwnCloudProvider)
 	}
 	if spec.Digitalocean != nil {
-		clouds = append(clouds, DigitaloceanCloudProvider)
+		clouds = append(clouds, kubermaticv1.DigitaloceanCloudProvider)
 	}
 	if spec.AWS != nil {
-		clouds = append(clouds, AWSCloudProvider)
+		clouds = append(clouds, kubermaticv1.AWSCloudProvider)
 	}
 	if spec.Openstack != nil {
-		clouds = append(clouds, OpenstackCloudProvider)
+		clouds = append(clouds, kubermaticv1.OpenstackCloudProvider)
 	}
 	if spec.Packet != nil {
-		clouds = append(clouds, PacketCloudProvider)
+		clouds = append(clouds, kubermaticv1.PacketCloudProvider)
 	}
 	if spec.Hetzner != nil {
-		clouds = append(clouds, HetznerCloudProvider)
+		clouds = append(clouds, kubermaticv1.HetznerCloudProvider)
 	}
 	if spec.VSphere != nil {
-		clouds = append(clouds, VSphereCloudProvider)
+		clouds = append(clouds, kubermaticv1.VSphereCloudProvider)
 	}
 	if spec.Azure != nil {
-		clouds = append(clouds, AzureCloudProvider)
+		clouds = append(clouds, kubermaticv1.AzureCloudProvider)
 	}
 	if spec.GCP != nil {
-		clouds = append(clouds, GCPCloudProvider)
+		clouds = append(clouds, kubermaticv1.GCPCloudProvider)
 	}
 	if spec.Fake != nil {
-		clouds = append(clouds, FakeCloudProvider)
+		clouds = append(clouds, kubermaticv1.FakeCloudProvider)
 	}
 	if spec.Kubevirt != nil {
-		clouds = append(clouds, KubevirtCloudProvider)
+		clouds = append(clouds, kubermaticv1.KubevirtCloudProvider)
 	}
 	if spec.Alibaba != nil {
-		clouds = append(clouds, AlibabaCloudProvider)
+		clouds = append(clouds, kubermaticv1.AlibabaCloudProvider)
 	}
 	if spec.Anexia != nil {
-		clouds = append(clouds, AnexiaCloudProvider)
+		clouds = append(clouds, kubermaticv1.AnexiaCloudProvider)
 	}
 	if len(clouds) == 0 {
 		return "", nil
@@ -583,7 +539,7 @@ func DatacenterCloudProviderName(spec *kubermaticv1.DatacenterSpec) (string, err
 	if len(clouds) != 1 {
 		return "", fmt.Errorf("only one cloud provider can be set in DatacenterSpec: %+v", spec)
 	}
-	return clouds[0], nil
+	return string(clouds[0]), nil
 }
 
 // ServiceAccountProvider declares the set of methods for interacting with kubermatic service account

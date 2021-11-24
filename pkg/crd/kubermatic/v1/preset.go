@@ -17,62 +17,8 @@ limitations under the License.
 package v1
 
 import (
-	"fmt"
-	"reflect"
-	"strings"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-type ProviderType string
-
-const (
-	ProviderDigitalocean ProviderType = "digitalocean"
-	ProviderHetzner      ProviderType = "hetzner"
-	ProviderAzure        ProviderType = "azure"
-	ProviderVSphere      ProviderType = "vsphere"
-	ProviderAWS          ProviderType = "aws"
-	ProviderOpenstack    ProviderType = "openstack"
-	ProviderPacket       ProviderType = "packet"
-	ProviderGCP          ProviderType = "gcp"
-	ProviderKubevirt     ProviderType = "kubevirt"
-	ProviderAlibaba      ProviderType = "alibaba"
-	ProviderAnexia       ProviderType = "anexia"
-	ProviderFake         ProviderType = "fake"
-	ProviderGKE          ProviderType = "gke"
-	ProviderEKS          ProviderType = "eks"
-	ProviderAKS          ProviderType = "aks"
-)
-
-func SupportedProviders() []ProviderType {
-	return []ProviderType{
-		ProviderDigitalocean,
-		ProviderHetzner,
-		ProviderAzure,
-		ProviderVSphere,
-		ProviderAWS,
-		ProviderOpenstack,
-		ProviderPacket,
-		ProviderGCP,
-		ProviderKubevirt,
-		ProviderAlibaba,
-		ProviderAnexia,
-		ProviderFake,
-		ProviderGKE,
-		ProviderEKS,
-		ProviderAKS,
-	}
-}
-
-func IsProviderSupported(name string) bool {
-	for _, provider := range SupportedProviders() {
-		if strings.EqualFold(name, string(provider)) {
-			return true
-		}
-	}
-
-	return false
-}
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
@@ -130,82 +76,6 @@ type PresetSpec struct {
 	Enabled        *bool    `json:"enabled,omitempty"`
 }
 
-func (s *PresetSpec) getProviderValue(providerType ProviderType) reflect.Value {
-	spec := reflect.ValueOf(s).Elem()
-	if spec.Kind() != reflect.Struct {
-		return reflect.Value{}
-	}
-
-	ignoreCaseCompare := func(name string) bool {
-		return strings.EqualFold(name, string(providerType))
-	}
-
-	provider := reflect.Indirect(spec).FieldByNameFunc(ignoreCaseCompare)
-	return provider
-}
-
-func (s *PresetSpec) SetPresetStatus(enabled bool) {
-	s.Enabled = &enabled
-}
-
-func (s *PresetSpec) SetProviderPresetStatus(providerType ProviderType, enabled bool) {
-	provider := s.getProviderValue(providerType)
-
-	ignoreCaseCompare := func(name string) bool {
-		return strings.EqualFold(name, "Enabled")
-	}
-
-	enabledField := reflect.Indirect(provider).FieldByNameFunc(ignoreCaseCompare)
-	enabledField.Set(reflect.ValueOf(&enabled))
-}
-
-func (s PresetSpec) HasProvider(providerType ProviderType) (bool, reflect.Value) {
-	provider := s.getProviderValue(providerType)
-	return !provider.IsZero(), provider
-}
-
-func (s PresetSpec) GetProviderList() []ProviderType {
-	existingProviders := []ProviderType{}
-	for _, provType := range SupportedProviders() {
-		hasProvider, _ := s.HasProvider(provType)
-		if hasProvider {
-			existingProviders = append(existingProviders, provType)
-		}
-	}
-	return existingProviders
-}
-
-func (s PresetSpec) GetProviderPreset(providerType ProviderType) *ProviderPreset {
-	hasProvider, providerField := s.HasProvider(providerType)
-	if !hasProvider {
-		return nil
-	}
-
-	presetSpecBaseFieldName := "ProviderPreset"
-	presetBaseField := reflect.Indirect(providerField).FieldByName(presetSpecBaseFieldName)
-	presetBase := presetBaseField.Interface().(ProviderPreset)
-	return &presetBase
-}
-
-func (s PresetSpec) Validate(providerType ProviderType) error {
-	hasProvider, providerField := s.HasProvider(providerType)
-	if !hasProvider {
-		return fmt.Errorf("missing provider configuration for: %s", providerType)
-	}
-
-	validateableType := reflect.TypeOf(new(Validateable)).Elem()
-	if !providerField.Type().Implements(validateableType) {
-		return fmt.Errorf("provider %s does not implement Validateable interface", providerField.Type().Name())
-	}
-
-	validateable := providerField.Interface().(Validateable)
-	if !validateable.IsValid() {
-		return fmt.Errorf("required fields missing for provider spec: %s", providerType)
-	}
-
-	return nil
-}
-
 func (s PresetSpec) IsEnabled() bool {
 	if s.Enabled == nil {
 		return true
@@ -214,24 +84,8 @@ func (s PresetSpec) IsEnabled() bool {
 	return *s.Enabled
 }
 
-func (s PresetSpec) IsProviderEnabled(provider ProviderType) bool {
-	presetProvider := s.GetProviderPreset(provider)
-	return presetProvider != nil && presetProvider.IsEnabled()
-}
-
-func (s *PresetSpec) OverrideProvider(providerType ProviderType, spec *PresetSpec) {
-	dest := s.getProviderValue(providerType)
-	src := spec.getProviderValue(providerType)
-	dest.Set(src)
-}
-
-func (s *PresetSpec) RemoveProvider(providerType ProviderType) {
-	provider := s.getProviderValue(providerType)
-	provider.Set(reflect.Zero(provider.Type()))
-}
-
-type Validateable interface {
-	IsValid() bool
+func (s *PresetSpec) SetEnabled(enabled bool) {
+	s.Enabled = &enabled
 }
 
 type ProviderPreset struct {

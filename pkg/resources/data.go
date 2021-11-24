@@ -585,43 +585,43 @@ func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster, externalCloud
 
 func GetCloudProviderName(cloud kubermaticv1.CloudSpec) (string, error) {
 	if cloud.VSphere != nil {
-		return provider.VSphereCloudProvider, nil
+		return string(kubermaticv1.VSphereCloudProvider), nil
 	}
 	if cloud.AWS != nil {
-		return provider.AWSCloudProvider, nil
+		return string(kubermaticv1.AWSCloudProvider), nil
 	}
 	if cloud.Openstack != nil {
-		return provider.OpenstackCloudProvider, nil
+		return string(kubermaticv1.OpenstackCloudProvider), nil
 	}
 	if cloud.GCP != nil {
-		return provider.GCPCloudProvider, nil
+		return string(kubermaticv1.GCPCloudProvider), nil
 	}
 	if cloud.Alibaba != nil {
-		return provider.AlibabaCloudProvider, nil
+		return string(kubermaticv1.AlibabaCloudProvider), nil
 	}
 	if cloud.Anexia != nil {
-		return provider.AnexiaCloudProvider, nil
+		return string(kubermaticv1.AnexiaCloudProvider), nil
 	}
 	if cloud.Azure != nil {
-		return provider.AzureCloudProvider, nil
+		return string(kubermaticv1.AzureCloudProvider), nil
 	}
 	if cloud.Digitalocean != nil {
-		return provider.DigitaloceanCloudProvider, nil
+		return string(kubermaticv1.DigitaloceanCloudProvider), nil
 	}
 	if cloud.Hetzner != nil {
-		return provider.HetznerCloudProvider, nil
+		return string(kubermaticv1.HetznerCloudProvider), nil
 	}
 	if cloud.Kubevirt != nil {
-		return provider.KubevirtCloudProvider, nil
+		return string(kubermaticv1.KubevirtCloudProvider), nil
 	}
 	if cloud.Packet != nil {
-		return provider.PacketCloudProvider, nil
+		return string(kubermaticv1.PacketCloudProvider), nil
 	}
 	if cloud.BringYourOwn != nil {
-		return provider.BringYourOwnCloudProvider, nil
+		return string(kubermaticv1.BringYourOwnCloudProvider), nil
 	}
 	if cloud.Fake != nil {
-		return provider.FakeCloudProvider, nil
+		return string(kubermaticv1.FakeCloudProvider), nil
 	}
 	return "", fmt.Errorf("provider unknown")
 }

@@ -127,7 +127,7 @@ func TestProviderIncompatibilitiesVersions(t *testing.T) {
 	}{
 		{
 			name:        "No incompatibility for given provider",
-			provider:    kubermaticv1.ProviderAWS,
+			provider:    kubermaticv1.AWSCloudProvider,
 			clusterType: apiv1.KubernetesClusterType,
 			manager: New([]*Version{
 				{
@@ -143,7 +143,7 @@ func TestProviderIncompatibilitiesVersions(t *testing.T) {
 			}, nil,
 				[]*ProviderIncompatibility{
 					{
-						Provider:  kubermaticv1.ProviderVSphere,
+						Provider:  kubermaticv1.VSphereCloudProvider,
 						Version:   "1.22.*",
 						Operation: operatorv1alpha1.CreateOperation,
 						Type:      apiv1.KubernetesClusterType,
@@ -160,7 +160,7 @@ func TestProviderIncompatibilitiesVersions(t *testing.T) {
 		},
 		{
 			name:        "Always Incompatibility for given provider",
-			provider:    kubermaticv1.ProviderVSphere,
+			provider:    kubermaticv1.VSphereCloudProvider,
 			clusterType: apiv1.KubernetesClusterType,
 			manager: New([]*Version{
 				{
@@ -176,7 +176,7 @@ func TestProviderIncompatibilitiesVersions(t *testing.T) {
 			}, nil,
 				[]*ProviderIncompatibility{
 					{
-						Provider:  kubermaticv1.ProviderVSphere,
+						Provider:  kubermaticv1.VSphereCloudProvider,
 						Version:   "1.22.*",
 						Operation: operatorv1alpha1.CreateOperation,
 						Condition: operatorv1alpha1.AlwaysCondition,
@@ -191,7 +191,7 @@ func TestProviderIncompatibilitiesVersions(t *testing.T) {
 		},
 		{
 			name:        "Matching Incompatibility for given provider",
-			provider:    kubermaticv1.ProviderVSphere,
+			provider:    kubermaticv1.VSphereCloudProvider,
 			clusterType: apiv1.KubernetesClusterType,
 			conditions:  []operatorv1alpha1.ConditionType{operatorv1alpha1.ExternalCloudProviderCondition},
 			manager: New([]*Version{
@@ -208,7 +208,7 @@ func TestProviderIncompatibilitiesVersions(t *testing.T) {
 			}, nil,
 				[]*ProviderIncompatibility{
 					{
-						Provider:  kubermaticv1.ProviderVSphere,
+						Provider:  kubermaticv1.VSphereCloudProvider,
 						Version:   "1.22.*",
 						Operation: operatorv1alpha1.CreateOperation,
 						Condition: operatorv1alpha1.ExternalCloudProviderCondition,
@@ -223,7 +223,7 @@ func TestProviderIncompatibilitiesVersions(t *testing.T) {
 		},
 		{
 			name:        "Multiple Incompatibilities for different providers",
-			provider:    kubermaticv1.ProviderVSphere,
+			provider:    kubermaticv1.VSphereCloudProvider,
 			clusterType: apiv1.KubernetesClusterType,
 			manager: New([]*Version{
 				{
@@ -239,14 +239,14 @@ func TestProviderIncompatibilitiesVersions(t *testing.T) {
 			}, nil,
 				[]*ProviderIncompatibility{
 					{
-						Provider:  kubermaticv1.ProviderVSphere,
+						Provider:  kubermaticv1.VSphereCloudProvider,
 						Version:   "1.21.*",
 						Operation: operatorv1alpha1.CreateOperation,
 						Condition: operatorv1alpha1.AlwaysCondition,
 						Type:      apiv1.KubernetesClusterType,
 					},
 					{
-						Provider:  kubermaticv1.ProviderAWS,
+						Provider:  kubermaticv1.AWSCloudProvider,
 						Version:   "1.22.*",
 						Operation: operatorv1alpha1.CreateOperation,
 						Condition: operatorv1alpha1.AlwaysCondition,
@@ -310,7 +310,7 @@ func TestProviderIncompatibilitiesUpdate(t *testing.T) {
 	}{
 		{
 			name:        "Check with no incompatibility for given provider",
-			provider:    kubermaticv1.ProviderAWS,
+			provider:    kubermaticv1.AWSCloudProvider,
 			clusterType: apiv1.KubernetesClusterType,
 			fromVersion: "1.21.0",
 			manager: New([]*Version{
@@ -333,7 +333,7 @@ func TestProviderIncompatibilitiesUpdate(t *testing.T) {
 				},
 			}, []*ProviderIncompatibility{
 				{
-					Provider:  kubermaticv1.ProviderVSphere,
+					Provider:  kubermaticv1.VSphereCloudProvider,
 					Version:   "1.22.*",
 					Type:      apiv1.KubernetesClusterType,
 					Condition: operatorv1alpha1.AlwaysCondition,
@@ -348,7 +348,7 @@ func TestProviderIncompatibilitiesUpdate(t *testing.T) {
 		},
 		{
 			name:        "Check with conditioned Incompatibility for given provider",
-			provider:    kubermaticv1.ProviderVSphere,
+			provider:    kubermaticv1.VSphereCloudProvider,
 			clusterType: apiv1.KubernetesClusterType,
 			fromVersion: "1.21.0",
 			conditions:  []operatorv1alpha1.ConditionType{operatorv1alpha1.ExternalCloudProviderCondition},
@@ -372,7 +372,7 @@ func TestProviderIncompatibilitiesUpdate(t *testing.T) {
 				},
 			}, []*ProviderIncompatibility{
 				{
-					Provider:  kubermaticv1.ProviderVSphere,
+					Provider:  kubermaticv1.VSphereCloudProvider,
 					Version:   "1.22.*",
 					Type:      apiv1.KubernetesClusterType,
 					Operation: operatorv1alpha1.UpdateOperation,
@@ -383,7 +383,7 @@ func TestProviderIncompatibilitiesUpdate(t *testing.T) {
 		},
 		{
 			name:        "Check with unconditioned Incompatibility for given provider",
-			provider:    kubermaticv1.ProviderVSphere,
+			provider:    kubermaticv1.VSphereCloudProvider,
 			clusterType: apiv1.KubernetesClusterType,
 			fromVersion: "1.21.0",
 			manager: New([]*Version{
@@ -406,7 +406,7 @@ func TestProviderIncompatibilitiesUpdate(t *testing.T) {
 				},
 			}, []*ProviderIncompatibility{
 				{
-					Provider:  kubermaticv1.ProviderVSphere,
+					Provider:  kubermaticv1.VSphereCloudProvider,
 					Version:   "1.22.*",
 					Type:      apiv1.KubernetesClusterType,
 					Condition: operatorv1alpha1.ExternalCloudProviderCondition,
