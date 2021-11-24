@@ -30,12 +30,14 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/label"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
 	"k8c.io/kubermatic/v2/pkg/resources/cluster"
@@ -81,6 +83,7 @@ func CreateEndpoint(
 	userInfoGetter provider.UserInfoGetter,
 	caBundle *x509.CertPool,
 	configGetter provider.KubermaticConfigurationGetter,
+	features features.FeatureGate,
 ) (interface{}, error) {
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 	privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
@@ -95,7 +98,7 @@ func CreateEndpoint(
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	partialCluster, err := GenerateCluster(ctx, projectID, body, seedsGetter, credentialManager, exposeStrategy, userInfoGetter, caBundle, configGetter)
+	partialCluster, err := GenerateCluster(ctx, projectID, body, seedsGetter, credentialManager, exposeStrategy, userInfoGetter, caBundle, configGetter, features)
 	if err != nil {
 		return nil, err
 	}
@@ -159,6 +162,7 @@ func GenerateCluster(
 	userInfoGetter provider.UserInfoGetter,
 	caBundle *x509.CertPool,
 	configGetter provider.KubermaticConfigurationGetter,
+	features features.FeatureGate,
 ) (*kubermaticv1.Cluster, error) {
 	privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
 	adminUserInfo, err := userInfoGetter(ctx, "")
@@ -181,7 +185,7 @@ func GenerateCluster(
 
 	// Create the cluster.
 	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetSeedClusterAdminRuntimeClient())
-	spec, err := cluster.Spec(body.Cluster, dc, secretKeyGetter, caBundle)
+	spec, err := cluster.Spec(body.Cluster, dc, secretKeyGetter, caBundle, features)
 	if err != nil {
 		return nil, errors.NewBadRequest("invalid cluster: %v", err)
 	}
@@ -400,6 +404,7 @@ func PatchEndpoint(
 	privilegedProjectProvider provider.PrivilegedProjectProvider,
 	caBundle *x509.CertPool,
 	configGetter provider.KubermaticConfigurationGetter,
+	features features.FeatureGate,
 ) (interface{}, error) {
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 	privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
@@ -505,7 +510,14 @@ func PatchEndpoint(
 	if !ok {
 		return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 	}
-	if err := validation.ValidateUpdateCluster(ctx, newInternalCluster, oldInternalCluster, dc, assertedClusterProvider, caBundle); err != nil {
+
+	secretKeySelectorFunc := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
+	cloudProvider, err := cloud.Provider(dc, secretKeySelectorFunc, caBundle)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create cloud provider: %v", err)
+	}
+
+	if err := validation.ValidateUpdateCluster(ctx, newInternalCluster, oldInternalCluster, dc, cloudProvider, features); err != nil {
 		return nil, errors.NewBadRequest("invalid cluster: %v", err)
 	}
 	if err = validation.ValidateUpdateWindow(newInternalCluster.Spec.UpdateWindow); err != nil {

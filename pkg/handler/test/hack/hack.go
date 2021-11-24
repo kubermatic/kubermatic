@@ -24,6 +24,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/handler"
 	"k8c.io/kubermatic/v2/pkg/handler/auth"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
@@ -93,7 +94,8 @@ func NewTestRouting(
 	privilegedMLAAdminSettingProviderGetter provider.PrivilegedMLAAdminSettingProviderGetter,
 	masterClient client.Client,
 	featureGatesProvider provider.FeatureGatesProvider,
-	seedProvider provider.SeedProvider) http.Handler {
+	seedProvider provider.SeedProvider,
+	features features.FeatureGate) http.Handler {
 	routingParams := handler.RoutingParams{
 		Log:                                     kubermaticlog.Logger,
 		PresetProvider:                          presetProvider,
@@ -149,6 +151,7 @@ func NewTestRouting(
 		SeedProvider:                            seedProvider,
 		Versions:                                kubermaticVersions,
 		CABundle:                                certificates.NewFakeCABundle().CertPool(),
+		Features:                                features,
 	}
 
 	r := handler.NewRouting(routingParams, masterClient)

@@ -26,6 +26,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/handler"
 	"k8c.io/kubermatic/v2/pkg/handler/auth"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
@@ -92,6 +93,7 @@ type Routing struct {
 	seedProvider                            provider.SeedProvider
 	versions                                kubermatic.Versions
 	caBundle                                *x509.CertPool
+	features                                features.FeatureGate
 }
 
 // NewV2Routing creates a new Routing.
@@ -152,6 +154,7 @@ func NewV2Routing(routingParams handler.RoutingParams) Routing {
 		seedProvider:                            routingParams.SeedProvider,
 		versions:                                routingParams.Versions,
 		caBundle:                                routingParams.CABundle,
+		features:                                routingParams.Features,
 	}
 }
 
