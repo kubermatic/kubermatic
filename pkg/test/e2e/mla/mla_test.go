@@ -90,6 +90,12 @@ func TestMLAIntegration(t *testing.T) {
 	}
 	masterClient := utils.NewTestClient(masterToken, t)
 
+	masterAdminToken, err := utils.RetrieveAdminMasterToken(ctx)
+	if err != nil {
+		t.Fatalf("failed to get master admin token: %v", err)
+	}
+	masterAdminClient := utils.NewTestClient(masterAdminToken, t)
+
 	// create dummy project
 	t.Log("creating project...")
 	project, err := masterClient.CreateProject(rand.String(10))
@@ -389,7 +395,7 @@ rules:
 		MaxSamplesPerQuery: 5,
 		MaxSeriesPerQuery:  6,
 	}
-	if _, err := masterClient.SetMonitoringMLARateLimits(cluster.Name, project.ID, rateLimits); err != nil {
+	if _, err := masterAdminClient.SetMonitoringMLARateLimits(cluster.Name, project.ID, rateLimits); err != nil {
 		t.Fatalf("unable to set monitoring rate limits: %v", err)
 	}
 
