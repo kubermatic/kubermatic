@@ -16941,6 +16941,10 @@
           "type": "string",
           "x-go-name": "Name"
         },
+        "resourceGroup": {
+          "type": "string",
+          "x-go-name": "ResourceGroup"
+        },
         "subscriptionID": {
           "type": "string",
           "x-go-name": "SubscriptionID"

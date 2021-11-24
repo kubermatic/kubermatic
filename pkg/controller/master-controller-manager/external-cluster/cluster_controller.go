@@ -29,6 +29,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/azure"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
@@ -135,6 +136,15 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Extern
 		// the kubeconfig token is valid 14min, it will update token every 10min
 		return reconcile.Result{RequeueAfter: time.Minute * 10}, nil
 	}
+	if cloud.AKS != nil {
+		r.log.Debugf("reconcile AKS cluster %v", cluster.Name)
+		err := r.createOrUpdateAKSKubeconfig(ctx, cluster)
+		if err != nil {
+			r.log.Errorf("failed to create or update kubeconfig secret %v", err)
+			return reconcile.Result{}, err
+		}
+		return reconcile.Result{}, nil
+	}
 	return reconcile.Result{}, nil
 }
 
@@ -184,56 +194,6 @@ func (r *Reconciler) deleteSecret(ctx context.Context, secretName string) error 
 	return nil
 }
 
-func (r *Reconciler) getGKECredentials(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (string, error) {
-	cloud := cluster.Spec.CloudSpec
-	if cloud == nil {
-		return "", fmt.Errorf("cloud struct is empty")
-	}
-	if cloud.GKE == nil {
-		return "", fmt.Errorf("gke cloud struct is empty")
-	}
-	if cloud.GKE.CredentialsReference == nil {
-		return "", fmt.Errorf("no credentials provided")
-	}
-	secret := &corev1.Secret{}
-	namespacedName := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: cluster.GetCredentialsSecretName()}
-	if err := r.Get(ctx, namespacedName, secret); err != nil {
-		return "", fmt.Errorf("failed to get secret %q: %v", namespacedName.String(), err)
-	}
-
-	if _, ok := secret.Data[resources.GCPServiceAccount]; !ok {
-		return "", fmt.Errorf("secret %q has no key %q", namespacedName.String(), resources.GCPServiceAccount)
-	}
-	return string(secret.Data[resources.GCPServiceAccount]), nil
-}
-
-func (r *Reconciler) getEKSCredentials(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (string, string, error) {
-	cloud := cluster.Spec.CloudSpec
-	if cloud == nil {
-		return "", "", fmt.Errorf("cloud struct is empty")
-	}
-	if cloud.EKS == nil {
-		return "", "", fmt.Errorf("eks cloud struct is empty")
-	}
-	if cloud.EKS.CredentialsReference == nil {
-		return "", "", fmt.Errorf("no credentials provided")
-	}
-	secret := &corev1.Secret{}
-	namespacedName := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: cluster.GetCredentialsSecretName()}
-	if err := r.Get(ctx, namespacedName, secret); err != nil {
-		return "", "", fmt.Errorf("failed to get secret %q: %v", namespacedName.String(), err)
-	}
-	accessKeyID, ok := secret.Data[resources.AWSAccessKeyID]
-	if !ok {
-		return "", "", fmt.Errorf("secret %q has no AWS access key ID %q", namespacedName.String(), resources.AWSAccessKeyID)
-	}
-	secretAccessKey, ok := secret.Data[resources.AWSSecretAccessKey]
-	if !ok {
-		return "", "", fmt.Errorf("secret %q has no AWS secret access key %q", namespacedName.String(), resources.AWSSecretAccessKey)
-	}
-	return string(accessKeyID), string(secretAccessKey), nil
-}
-
 func createKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client, name, projectID string, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -257,11 +217,11 @@ func createKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client
 
 func (r *Reconciler) createOrUpdateGKEKubeconfig(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
 	cloud := cluster.Spec.CloudSpec
-	sa, err := r.getGKECredentials(ctx, cluster)
+	cred, err := resources.GetGCPGKECredentials(ctx, r.Client, cluster)
 	if err != nil {
 		return err
 	}
-	config, err := gcp.GetGKECLusterConfig(ctx, sa, cloud.GKE.Name, cloud.GKE.Zone)
+	config, err := gcp.GetGKECLusterConfig(ctx, cred.ServiceAccount, cloud.GKE.Name, cloud.GKE.Zone)
 	if err != nil {
 		return err
 	}
@@ -274,11 +234,28 @@ func (r *Reconciler) createOrUpdateGKEKubeconfig(ctx context.Context, cluster *k
 
 func (r *Reconciler) createOrUpdateEKSKubeconfig(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
 	cloud := cluster.Spec.CloudSpec
-	accessKeyID, secretAccessKey, err := r.getEKSCredentials(ctx, cluster)
+	cred, err := resources.GetAWSEKSCredentials(ctx, r.Client, cluster)
 	if err != nil {
 		return err
 	}
-	config, err := aws.GetEKSClusterConfig(ctx, accessKeyID, secretAccessKey, cloud.EKS.Name, cloud.EKS.Region)
+	config, err := aws.GetEKSClusterConfig(ctx, cred.AccessKeyID, cred.SecretAccessKey, cloud.EKS.Name, cloud.EKS.Region)
+	if err != nil {
+		return err
+	}
+	err = r.updateKubeconfigSecret(ctx, config, cluster)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *Reconciler) createOrUpdateAKSKubeconfig(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
+	cloud := cluster.Spec.CloudSpec
+	cred, err := resources.GetAzureAKSCredentials(ctx, r.Client, cluster)
+	if err != nil {
+		return err
+	}
+	config, err := azure.GetAKSCLusterConfig(ctx, cred.TenantID, cred.SubscriptionID, cred.ClientID, cred.ClientSecret, cloud.AKS.Name, cloud.AKS.ResourceGroup)
 	if err != nil {
 		return err
 	}

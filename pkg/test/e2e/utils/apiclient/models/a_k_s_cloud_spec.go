@@ -26,6 +26,9 @@ type AKSCloudSpec struct {
 	// name
 	Name string `json:"name,omitempty"`
 
+	// resource group
+	ResourceGroup string `json:"resourceGroup,omitempty"`
+
 	// subscription ID
 	SubscriptionID string `json:"subscriptionID,omitempty"`
 

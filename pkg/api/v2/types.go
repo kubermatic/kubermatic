@@ -379,6 +379,7 @@ type AKSCloudSpec struct {
 	SubscriptionID string `json:"subscriptionID"`
 	ClientID       string `json:"clientID"`
 	ClientSecret   string `json:"clientSecret"`
+	ResourceGroup  string `json:"resourceGroup"`
 }
 
 // ExternalClusterNode represents an object holding external cluster node
