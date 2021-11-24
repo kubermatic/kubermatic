@@ -295,6 +295,21 @@ func GetAWSCredentials(data CredentialsData) (AWSCredentials, error) {
 	return awsCredentials, nil
 }
 
+func GetGCPGKECredentials(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.ExternalCluster) (GCPCredentials, error) {
+	spec := cluster.Spec.CloudSpec.GKE
+	gcpCredentials := GCPCredentials{}
+	GetGlobalSecretKeySelectorValue := provider.SecretKeySelectorValueFuncFactory(ctx, client)
+	var err error
+
+	if spec.ServiceAccount != "" {
+		gcpCredentials.ServiceAccount = spec.ServiceAccount
+	} else if gcpCredentials.ServiceAccount, err = GetGlobalSecretKeySelectorValue(spec.CredentialsReference, GCPServiceAccount); err != nil {
+		return GCPCredentials{}, err
+	}
+
+	return gcpCredentials, nil
+}
+
 func GetAWSEKSCredentials(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.ExternalCluster) (AWSCredentials, error) {
 	spec := cluster.Spec.CloudSpec.EKS
 	awsCredentials := AWSCredentials{}

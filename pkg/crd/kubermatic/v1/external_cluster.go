@@ -74,6 +74,7 @@ type ExternalClusterCloudSpec struct {
 
 type ExternalClusterGKECloudSpec struct {
 	Name                 string                                  `json:"name"`
+	ServiceAccount       string                                  `json:"serviceAccount"`
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 	Zone                 string                                  `json:"zone"`
 }

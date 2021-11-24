@@ -194,29 +194,6 @@ func (r *Reconciler) deleteSecret(ctx context.Context, secretName string) error 
 	return nil
 }
 
-func (r *Reconciler) getGKECredentials(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (string, error) {
-	cloud := cluster.Spec.CloudSpec
-	if cloud == nil {
-		return "", fmt.Errorf("cloud struct is empty")
-	}
-	if cloud.GKE == nil {
-		return "", fmt.Errorf("gke cloud struct is empty")
-	}
-	if cloud.GKE.CredentialsReference == nil {
-		return "", fmt.Errorf("no credentials provided")
-	}
-	secret := &corev1.Secret{}
-	namespacedName := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: cluster.GetCredentialsSecretName()}
-	if err := r.Get(ctx, namespacedName, secret); err != nil {
-		return "", fmt.Errorf("failed to get secret %q: %v", namespacedName.String(), err)
-	}
-
-	if _, ok := secret.Data[resources.GCPServiceAccount]; !ok {
-		return "", fmt.Errorf("secret %q has no key %q", namespacedName.String(), resources.GCPServiceAccount)
-	}
-	return string(secret.Data[resources.GCPServiceAccount]), nil
-}
-
 func createKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client, name, projectID string, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -240,11 +217,11 @@ func createKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client
 
 func (r *Reconciler) createOrUpdateGKEKubeconfig(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
 	cloud := cluster.Spec.CloudSpec
-	sa, err := r.getGKECredentials(ctx, cluster)
+	cred, err := resources.GetGCPGKECredentials(ctx, r.Client, cluster)
 	if err != nil {
 		return err
 	}
-	config, err := gcp.GetGKECLusterConfig(ctx, sa, cloud.GKE.Name, cloud.GKE.Zone)
+	config, err := gcp.GetGKECLusterConfig(ctx, cred.ServiceAccount, cloud.GKE.Name, cloud.GKE.Zone)
 	if err != nil {
 		return err
 	}
