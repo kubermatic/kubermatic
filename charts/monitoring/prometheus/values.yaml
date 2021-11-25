@@ -88,7 +88,7 @@ prometheus:
   ruleFiles:
   - /etc/prometheus/rules/general-*.yaml
   - /etc/prometheus/rules/kubermatic-seed-*.yaml
-  # I you are running a non-master cluster, you should comment the
+  # If you are running a non-master cluster, you should comment the
   # following line to disable master components alerts.
   - /etc/prometheus/rules/kubermatic-master-*.yaml
   # If you run in an environment where access to Kubernetes
@@ -96,6 +96,10 @@ prometheus:
   # disable the expression below to not create false alerts
   # for missing/unhealthy components.
   - /etc/prometheus/rules/managed-*.yaml
+
+  # If user cluster MLA is enabled, uncomment the following line
+  # to enable alerting for cortex and loki.
+  # - /etc/prometheus/rules/usercluster-mla-*.yaml
 
   # Optionally add some more recording/alerting rules; the structure
   # beneath `rules` is identical to regular rules files as documented
