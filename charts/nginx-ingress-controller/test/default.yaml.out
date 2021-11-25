@@ -1,4 +1,25 @@
 ---
+# Source: nginx-ingress-controller/charts/nginx/templates/controller-poddisruptionbudget.yaml
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    helm.sh/chart: nginx-4.0.9
+    app.kubernetes.io/name: nginx
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/version: "1.0.5"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: controller
+  name: nginx-ingress-controller
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nginx
+      app.kubernetes.io/instance: RELEASE-NAME
+      app.kubernetes.io/component: controller
+  minAvailable: 1
+---
 # Source: nginx-ingress-controller/charts/nginx/templates/controller-serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
@@ -279,7 +300,7 @@ spec:
       app.kubernetes.io/name: nginx
       app.kubernetes.io/instance: RELEASE-NAME
       app.kubernetes.io/component: controller
-  replicas: 1
+  replicas: 3
   revisionHistoryLimit: 10
   minReadySeconds: 0
   template:
