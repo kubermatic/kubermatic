@@ -60,11 +60,6 @@ func deploymentCreator(seed *kubermaticv1.Seed) reconciling.NamedDeploymentCreat
 			d.Spec.Template.Labels = map[string]string{
 				"role": meteringToolName,
 			}
-			d.Spec.Template.Annotations = map[string]string{
-				"prometheus.io/scrape": "true",
-				"prometheus.io/port":   "8080",
-				"fluentbit.io/parser":  "glog",
-			}
 
 			d.Spec.Template.Spec.ServiceAccountName = "kubermatic-metering"
 			d.Spec.Template.Spec.InitContainers = []corev1.Container{
@@ -145,15 +140,8 @@ mc mirror --newer-than "32d0h0m" s3/$S3_BUCKET /metering-data || true`,
 						"--seed",
 						seed.Name,
 					},
-					Image:           "quay.io/kubermatic/metering:v0.5",
+					Image:           "quay.io/kubermatic/metering:v0.6",
 					ImagePullPolicy: corev1.PullAlways,
-					Ports: []corev1.ContainerPort{
-						{
-							Name:          "metrics",
-							ContainerPort: 2112,
-							Protocol:      corev1.ProtocolTCP,
-						},
-					},
 					LivenessProbe: &corev1.Probe{
 						InitialDelaySeconds: 15,
 						Handler: corev1.Handler{
