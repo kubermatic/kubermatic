@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"github.com/go-test/deep"
-
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -1892,4 +1891,142 @@ func constRandStringGenerator(str string) func() string {
 	return func() string {
 		return str
 	}
+}
+
+func TestMultipleBackupDestination(t *testing.T) {
+	testCases := []struct {
+		name               string
+		backupConfig       *kubermaticv1.EtcdBackupConfig
+		expectedReconcile  *reconcile.Result
+		expectedJobEnvVars []corev1.EnvVar
+		expectedErr        string
+	}{
+		{
+			name: "test reconcile with specified backup destination",
+			backupConfig: func() *kubermaticv1.EtcdBackupConfig {
+				c := genBackupConfig(genTestCluster(), "testbackup")
+				c.Spec.Destination = "s3"
+				return c
+			}(),
+			expectedJobEnvVars: []corev1.EnvVar{
+				genSecretEnvVar(accessKeyIdEnvVarKey, accessKeyIdEnvVarKey, genDefaultBackupDestination()),
+				genSecretEnvVar(secretAccessKeyEnvVarKey, secretAccessKeyEnvVarKey, genDefaultBackupDestination()),
+				{
+					Name:  bucketNameEnvVarKey,
+					Value: genDefaultBackupDestination().BucketName,
+				},
+				{
+					Name:  backupEndpointEnvVarKey,
+					Value: genDefaultBackupDestination().Endpoint,
+				},
+			},
+		},
+		{
+			name: "backup should fail if destination has no credentials set",
+			backupConfig: func() *kubermaticv1.EtcdBackupConfig {
+				c := genBackupConfig(genTestCluster(), "testbackup")
+				c.Spec.Destination = "no-credentials"
+				return c
+			}(),
+			expectedJobEnvVars: []corev1.EnvVar{},
+			expectedErr:        fmt.Sprintf("credentials not set for backup destination %q in Seed %q", "no-credentials", test.GenTestSeed().Name),
+		},
+		{
+			name: "backup should fail destination is missing",
+			backupConfig: func() *kubermaticv1.EtcdBackupConfig {
+				c := genBackupConfig(genTestCluster(), "testbackup")
+				c.Spec.Destination = "missing"
+				return c
+			}(),
+			expectedJobEnvVars: []corev1.EnvVar{},
+			expectedErr:        fmt.Sprintf("can't find backup destination %q in Seed %q", "missing", test.GenTestSeed().Name),
+		},
+	}
+	for _, tc := range testCases {
+
+		t.Run(tc.name, func(t *testing.T) {
+			initObjs := []client.Object{
+				genTestCluster(),
+				tc.backupConfig,
+				genClusterRootCaSecret(),
+			}
+
+			reconciler := Reconciler{
+				log:             kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
+				Client:          ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(initObjs...).Build(),
+				scheme:          scheme.Scheme,
+				storeContainer:  genStoreContainer(),
+				deleteContainer: genDeleteContainer(),
+				recorder:        record.NewFakeRecorder(10),
+				clock:           clock.NewFakeClock(time.Unix(60, 0).UTC()),
+				caBundle:        certificates.NewFakeCABundle(),
+				seedGetter: func() (*kubermaticv1.Seed, error) {
+					return test.GenTestSeed(addSeedDestinations), nil
+				},
+				randStringGenerator: constRandStringGenerator("bob"),
+			}
+
+			ctx := context.Background()
+			_, err := reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{Namespace: tc.backupConfig.Namespace, Name: tc.backupConfig.Name}})
+			if err != nil {
+				if tc.expectedErr != "" {
+					if diff := deep.Equal(err.Error(), tc.expectedErr); diff != nil {
+						t.Errorf("error differs from expected ones: %v", diff)
+					}
+					return
+				}
+				t.Fatal(err)
+			}
+
+			jobList := batchv1.JobList{}
+			if err := reconciler.List(context.Background(), &jobList); err != nil {
+				t.Fatalf("Error reading created joblist: %v", err)
+			}
+
+			if len(jobList.Items) != 1 {
+				t.Fatalf("expected 1 job, got %d", len(jobList.Items))
+			}
+
+			job := jobList.Items[0]
+			envVars := job.Spec.Template.Spec.Containers[0].Env
+
+			for _, expectedEnvVar := range tc.expectedJobEnvVars {
+				if !containsEnvVar(envVars, expectedEnvVar) {
+					t.Fatalf("expected job env vars %v to contain %v", envVars, expectedEnvVar)
+				}
+			}
+		})
+	}
+}
+
+func addSeedDestinations(seed *kubermaticv1.Seed) {
+	seed.Spec.EtcdBackupRestore = &kubermaticv1.EtcdBackupRestore{
+		Destinations: map[string]*kubermaticv1.BackupDestination{
+			"s3": genDefaultBackupDestination(),
+			"no-credentials": {
+				BucketName: "no-cred",
+				Endpoint:   "no-cred.com",
+			},
+		},
+	}
+}
+
+func genDefaultBackupDestination() *kubermaticv1.BackupDestination {
+	return &kubermaticv1.BackupDestination{
+		Endpoint:   "aws.s3.com",
+		BucketName: "s3",
+		Credentials: &corev1.SecretReference{
+			Name:      "credentials-s3",
+			Namespace: metav1.NamespaceSystem,
+		},
+	}
+}
+
+func containsEnvVar(envVars []corev1.EnvVar, envVar corev1.EnvVar) bool {
+	for _, e := range envVars {
+		if len(deep.Equal(e, envVar)) == 0 {
+			return true
+		}
+	}
+	return false
 }

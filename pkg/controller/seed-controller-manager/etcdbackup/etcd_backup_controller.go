@@ -260,6 +260,9 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, back
 		if !ok {
 			return nil, errors.Errorf("can't find backup destination %q in Seed %q", backupConfig.Spec.Destination, seed.Name)
 		}
+		if destination.Credentials == nil {
+			return nil, errors.Errorf("credentials not set for backup destination %q in Seed %q", backupConfig.Spec.Destination, seed.Name)
+		}
 	}
 
 	if err := r.ensureSecrets(ctx, cluster); err != nil {
