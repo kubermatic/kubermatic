@@ -78,7 +78,7 @@ func assertRolePolicies(t *testing.T, client iamiface.IAMAPI, roleName string, e
 		RoleName: aws.String(roleName),
 	})
 	if err != nil {
-		t.Errorf("Failed to list policies for role %q: %w", roleName, err)
+		t.Errorf("Failed to list policies for role %q: %v", roleName, err)
 		return
 	}
 
