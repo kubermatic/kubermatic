@@ -354,12 +354,13 @@ func cloneClusterResourcesInCluster(ctx context.Context, logger logrus.FieldLogg
 		}
 
 		newObject.Status = newv1.ClusterStatus{
-			KubermaticVersion:      oldObject.Status.KubermaticVersion,
-			NamespaceName:          oldObject.Status.NamespaceName,
-			CloudMigrationRevision: oldObject.Status.CloudMigrationRevision,
-			LastUpdated:            oldObject.Status.LastUpdated,
-			UserName:               oldObject.Status.UserName,
-			UserEmail:              oldObject.Status.UserEmail,
+			KubermaticVersion:          oldObject.Status.KubermaticVersion,
+			NamespaceName:              oldObject.Status.NamespaceName,
+			CloudMigrationRevision:     oldObject.Status.CloudMigrationRevision,
+			LastUpdated:                oldObject.Status.LastUpdated,
+			UserName:                   oldObject.Status.UserName,
+			UserEmail:                  oldObject.Status.UserEmail,
+			LastProviderReconciliation: oldObject.Status.LastProviderReconciliation,
 			ExtendedHealth: newv1.ExtendedClusterHealth{
 				Apiserver:                    convertHealthStatus(oldObject.Status.ExtendedHealth.Apiserver),
 				Scheduler:                    convertHealthStatus(oldObject.Status.ExtendedHealth.Scheduler),
@@ -901,6 +902,7 @@ func cloneExternalClusterResourcesInCluster(ctx context.Context, logger logrus.F
 			newObject.Spec.CloudSpec = &newv1.ExternalClusterCloudSpec{
 				GKE: (*newv1.ExternalClusterGKECloudSpec)(oldObject.Spec.CloudSpec.GKE),
 				EKS: (*newv1.ExternalClusterEKSCloudSpec)(oldObject.Spec.CloudSpec.EKS),
+				AKS: (*newv1.ExternalClusterAKSCloudSpec)(oldObject.Spec.CloudSpec.AKS),
 			}
 		}
 
@@ -1348,9 +1350,10 @@ func convertDatacenter(oldDC kubermaticv1.Datacenter) newv1.Datacenter {
 		Country:  oldDC.Country,
 		Location: oldDC.Location,
 		Spec: newv1.DatacenterSpec{
-			EnforceAuditLogging:      oldDC.Spec.EnforceAuditLogging,
-			EnforcePodSecurityPolicy: oldDC.Spec.EnforcePodSecurityPolicy,
-			RequiredEmails:           oldDC.Spec.RequiredEmailDomains,
+			EnforceAuditLogging:            oldDC.Spec.EnforceAuditLogging,
+			EnforcePodSecurityPolicy:       oldDC.Spec.EnforcePodSecurityPolicy,
+			RequiredEmails:                 oldDC.Spec.RequiredEmailDomains,
+			ProviderReconciliationInterval: oldDC.Spec.ProviderReconciliationInterval,
 		},
 	}
 
