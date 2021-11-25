@@ -1928,7 +1928,7 @@ func (r *TestClient) CreateRuleGroup(clusterID, projectID string, ruleGroupType 
 
 // SetMonitoringMLARateLimits updates monitoring MLA rate limits.
 func (r *TestClient) SetMonitoringMLARateLimits(clusterID, projectID string, rateLimits kubermaticv1.MonitoringRateLimitSettings) (*models.MLAAdminSetting, error) {
-	params := &mlaadminsetting.UpdateMLAAdminSettingParams{
+	params := &mlaadminsetting.CreateMLAAdminSettingParams{
 		Body: &models.MLAAdminSetting{
 			MonitoringRateLimits: &models.MonitoringRateLimitSettings{
 				IngestionBurstSize: rateLimits.IngestionBurstSize,
@@ -1949,7 +1949,7 @@ func (r *TestClient) SetMonitoringMLARateLimits(clusterID, projectID string, rat
 		Steps:    4,
 		Factor:   1.5,
 	})
-	updateResponse, err := r.client.Mlaadminsetting.UpdateMLAAdminSetting(params, r.bearerToken)
+	updateResponse, err := r.client.Mlaadminsetting.CreateMLAAdminSetting(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}

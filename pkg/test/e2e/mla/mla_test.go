@@ -31,7 +31,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	grafanasdk "github.com/kubermatic/grafanasdk"
 	"gopkg.in/yaml.v2"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
@@ -39,6 +38,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
 	corev1 "k8s.io/api/core/v1"
@@ -251,11 +251,10 @@ rules:
 		t.Fatalf("unable to unmarshal expected rule group: %v", err)
 	}
 
-	config, err := masterClient.CreateRuleGroup(cluster.Name, project.ID, kubermaticv1.RuleGroupTypeLogs, []byte(lokiRule))
+	_, err = masterClient.CreateRuleGroup(cluster.Name, project.ID, kubermaticv1.RuleGroupTypeLogs, []byte(lokiRule))
 	if err != nil {
 		t.Fatalf("unable to create logs rule group: %v", err)
 	}
-	t.Logf("have config: %s", string(config.Data))
 	logRuleGroupURL := fmt.Sprintf("%s%s%s", "http://localhost:3003", mla.LogRuleGroupConfigEndpoint, "/default")
 
 	if !utils.WaitFor(1*time.Second, timeout, func() bool {
@@ -271,11 +270,6 @@ rules:
 		}
 
 		if resp.StatusCode != http.StatusOK {
-			body, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				t.Fatalf("status code: %d,error: %s", resp.StatusCode, err.Error())
-			}
-			t.Logf("status code: %d, response body: %s", resp.StatusCode, string(body))
 			return false
 		}
 		defer resp.Body.Close()
@@ -284,8 +278,6 @@ rules:
 		if err := decoder.Decode(&config); err != nil {
 			t.Fatalf("unable to decode response body: %v", err)
 		}
-		t.Logf("diff config: %s", cmp.Diff(config, expectedLogRuleGroup))
-		t.Logf("have new config: %+v", config)
 		return reflect.DeepEqual(config, expectedLogRuleGroup)
 	}) {
 		t.Fatal("log rule group not found")
@@ -395,11 +387,19 @@ rules:
 		MaxSamplesPerQuery: 5,
 		MaxSeriesPerQuery:  6,
 	}
-	if _, err := masterAdminClient.SetMonitoringMLARateLimits(cluster.Name, project.ID, rateLimits); err != nil {
+	configMap, err := masterAdminClient.SetMonitoringMLARateLimits(cluster.Name, project.ID, rateLimits)
+	if err != nil {
 		t.Fatalf("unable to set monitoring rate limits: %s", err.Error())
 	}
+	t.Logf("set overrides to: %+v", configMap.MonitoringRateLimits)
 
 	if !utils.WaitFor(1*time.Second, timeout, func() bool {
+		mlaAdminSetting := &kubermaticv1.MLAAdminSetting{}
+		if err := seedClient.Get(ctx, types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.MLAAdminSettingsName}, mlaAdminSetting); ctrlruntimeclient.IgnoreNotFound(err) != nil {
+			t.Fatalf("can't get cluster mlaadminsetting: %v", err)
+		}
+		t.Logf("have mlaadminsettings: %v", mlaAdminSetting)
+
 		configMap := &corev1.ConfigMap{}
 		if err := seedClient.Get(ctx, types.NamespacedName{Namespace: "mla", Name: mla.RuntimeConfigMap}, configMap); err != nil {
 			t.Fatalf("unable to get configMap: %v", err)
@@ -410,7 +410,10 @@ rules:
 			t.Fatalf("unable to unmarshal rate limit config map")
 		}
 		t.Logf("have overrides: %+v", actualOverrides)
-		actualRateLimits := actualOverrides.Overrides[cluster.Name]
+		actualRateLimits, ok := actualOverrides.Overrides[cluster.Name]
+		if !ok {
+			return false
+		}
 		return (*actualRateLimits.IngestionRate == rateLimits.IngestionRate &&
 			*actualRateLimits.IngestionBurstSize == rateLimits.IngestionBurstSize &&
 			*actualRateLimits.MaxSeriesPerMetric == rateLimits.MaxSeriesPerMetric &&
