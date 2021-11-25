@@ -4,9 +4,9 @@ versions:
 - type: kubernetes
   version: 1.19.15
 - type: kubernetes
-  version: 1.20.11
+  version: 1.20.13
 - default: true
   type: kubernetes
-  version: 1.21.5
+  version: 1.21.7
 - type: kubernetes
-  version: 1.22.2
+  version: 1.22.4
