@@ -72,3 +72,7 @@ nginx:
         "helm.sh/resource-policy": keep
       # in case of azure, can specific a specific IP address for the nginx service
       # loadBalancerIP: ""
+    
+    # Temporarily disable the admission webhooks
+    admissionWebhooks:
+      enabled: false
