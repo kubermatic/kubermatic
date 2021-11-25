@@ -64,6 +64,20 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/featuregates").
 		Handler(r.getFeatureGates())
 
+	// Defines a set of HTTP endpoints for interacting with EKS clusters
+	mux.Methods(http.MethodGet).
+		Path("/providers/eks/clusters").
+		Handler(r.listEKSClusters())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/ec2/regions").
+		Handler(r.listEC2Regions())
+
+	// Defines a set of HTTP endpoints for interacting with AKS clusters
+	mux.Methods(http.MethodGet).
+		Path("/providers/aks/clusters").
+		Handler(r.listAKSClusters())
+
 	// Defines a set of HTTP endpoints for cluster that belong to a project.
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/clusters").
@@ -723,15 +737,6 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/users").
 		Handler(r.listUser())
-
-	// Defines a set of HTTP endpoints for interacting with EKS clusters
-	mux.Methods(http.MethodGet).
-		Path("/providers/eks/clusters").
-		Handler(r.listEKSClusters())
-
-	mux.Methods(http.MethodGet).
-		Path("/providers/ec2/regions").
-		Handler(r.listEC2Regions())
 
 	// Defines a set of HTTP endpoints for managing rule groups for admins
 	mux.Methods(http.MethodGet).
@@ -4902,6 +4907,28 @@ func (r Routing) listEKSClusters() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.ListEKSClustersEndpoint(r.userInfoGetter, r.presetsProvider)),
 		provider.DecodeEKSTypesReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/aks/clusters aks listAKSClusters
+//
+// Lists AKS clusters
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AKSClusterList
+func (r Routing) listAKSClusters() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.ListAKSClustersEndpoint(r.userInfoGetter, r.presetsProvider)),
+		provider.DecodeAKSTypesReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

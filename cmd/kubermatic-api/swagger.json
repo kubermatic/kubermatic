@@ -15817,6 +15817,59 @@
         }
       }
     },
+    "/api/v2/providers/aks/clusters": {
+      "get": {
+        "description": "Lists AKS clusters",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "aks"
+        ],
+        "operationId": "listAKSClusters",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "TenantID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "SubscriptionID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ClientID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ClientSecret",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AKSClusterList",
+            "schema": {
+              "$ref": "#/definitions/AKSClusterList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/providers/azure/resourcegroups": {
       "get": {
         "description": "Lists available VM resource groups",
@@ -16953,6 +17006,29 @@
           "type": "string",
           "x-go-name": "TenantID"
         }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "AKSCluster": {
+      "type": "object",
+      "title": "AKSCluster represents a object of AKS cluster.",
+      "properties": {
+        "imported": {
+          "type": "boolean",
+          "x-go-name": "IsImported"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "AKSClusterList": {
+      "type": "array",
+      "title": "AKSClusterList represents an list of AKS clusters.",
+      "items": {
+        "$ref": "#/definitions/AKSCluster"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },

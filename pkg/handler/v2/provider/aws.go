@@ -135,18 +135,18 @@ func DecodeEKSTypesReq(c context.Context, r *http.Request) (interface{}, error) 
 	return req, nil
 }
 
-func getPresetCredentials(userInfo *provider.UserInfo, presetName string, presetProvider provider.PresetProvider) (providercommon.Credential, error) {
+func getAWSPresetCredentials(userInfo *provider.UserInfo, presetName string, presetProvider provider.PresetProvider) (providercommon.AWSCredential, error) {
 
 	preset, err := presetProvider.GetPreset(userInfo, presetName)
 	if err != nil {
-		return providercommon.Credential{}, fmt.Errorf("can not get preset %s for the user %s", presetName, userInfo.Email)
+		return providercommon.AWSCredential{}, fmt.Errorf("can not get preset %s for the user %s", presetName, userInfo.Email)
 	}
 
 	aws := preset.Spec.AWS
 	if aws == nil {
-		return providercommon.Credential{}, fmt.Errorf("credentials for AWS not present in preset %s for the user %s", presetName, userInfo.Email)
+		return providercommon.AWSCredential{}, fmt.Errorf("credentials for AWS not present in preset %s for the user %s", presetName, userInfo.Email)
 	}
-	return providercommon.Credential{
+	return providercommon.AWSCredential{
 		AccessKeyID:     aws.AccessKeyID,
 		SecretAccessKey: aws.SecretAccessKey,
 	}, nil
@@ -168,7 +168,7 @@ func ListEKSClustersEndpoint(userInfoGetter provider.UserInfoGetter, presetsProv
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
-		credential := providercommon.Credential{
+		credential := providercommon.AWSCredential{
 			AccessKeyID:     req.AccessKeyID,
 			SecretAccessKey: req.SecretAccessKey,
 		}
@@ -182,7 +182,7 @@ func ListEKSClustersEndpoint(userInfoGetter provider.UserInfoGetter, presetsProv
 
 		// Preset is used
 		if len(presetName) > 0 {
-			credential, err = getPresetCredentials(userInfo, presetName, presetsProvider)
+			credential, err = getAWSPresetCredentials(userInfo, presetName, presetsProvider)
 			if err != nil {
 				return nil, fmt.Errorf("error getting preset credentials for AWS: %v", err)
 			}
@@ -231,7 +231,7 @@ func ListEC2RegionsEndpoint(userInfoGetter provider.UserInfoGetter, presetsProvi
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
-		credential := providercommon.Credential{
+		credential := providercommon.AWSCredential{
 			AccessKeyID:     req.AccessKeyID,
 			SecretAccessKey: req.SecretAccessKey,
 		}
@@ -244,7 +244,7 @@ func ListEC2RegionsEndpoint(userInfoGetter provider.UserInfoGetter, presetsProvi
 
 		// Preset is used
 		if len(presetName) > 0 {
-			credential, err = getPresetCredentials(userInfo, presetName, presetsProvider)
+			credential, err = getAWSPresetCredentials(userInfo, presetName, presetsProvider)
 			if err != nil {
 				return nil, fmt.Errorf("error getting preset credentials for AWS: %v", err)
 			}

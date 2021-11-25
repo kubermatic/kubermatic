@@ -12,6 +12,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/addon"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/admin"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/aks"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/alibaba"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/allowedregistries"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/allowedregistry"
@@ -97,6 +98,7 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Kubermatic
 	cli.Transport = transport
 	cli.Addon = addon.New(transport, formats)
 	cli.Admin = admin.New(transport, formats)
+	cli.Aks = aks.New(transport, formats)
 	cli.Alibaba = alibaba.New(transport, formats)
 	cli.Allowedregistries = allowedregistries.New(transport, formats)
 	cli.Allowedregistry = allowedregistry.New(transport, formats)
@@ -184,6 +186,8 @@ type KubermaticKubernetesPlatformAPI struct {
 
 	Admin admin.ClientService
 
+	Aks aks.ClientService
+
 	Alibaba alibaba.ClientService
 
 	Allowedregistries allowedregistries.ClientService
@@ -270,6 +274,7 @@ func (c *KubermaticKubernetesPlatformAPI) SetTransport(transport runtime.ClientT
 	c.Transport = transport
 	c.Addon.SetTransport(transport)
 	c.Admin.SetTransport(transport)
+	c.Aks.SetTransport(transport)
 	c.Alibaba.SetTransport(transport)
 	c.Allowedregistries.SetTransport(transport)
 	c.Allowedregistry.SetTransport(transport)
