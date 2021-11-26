@@ -26,25 +26,48 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/validation"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/utils/pointer"
+	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 var (
-	testScheme = runtime.NewScheme()
+	testScheme     = runtime.NewScheme()
+	datacenterName = "foo"
 )
 
 func init() {
 	_ = kubermaticv1.AddToScheme(testScheme)
 }
 
+// TestHandle tests the admission handler, but with the cloud provider validation
+// disabled (i.e. we do not check if the digitalocean token is valid, which would
+// be done by issuing a HTTP call).
 func TestHandle(t *testing.T) {
+	seed := kubermaticv1.Seed{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kubermatic",
+			Namespace: "kubermatic",
+		},
+		Spec: kubermaticv1.SeedSpec{
+			Datacenters: map[string]kubermaticv1.Datacenter{
+				datacenterName: {
+					Spec: kubermaticv1.DatacenterSpec{
+						Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{},
+					},
+				},
+			},
+		},
+	}
+
 	tests := []struct {
 		name        string
 		req         webhook.AdmissionRequest
@@ -1304,7 +1327,7 @@ func TestHandle(t *testing.T) {
 						Raw: rawClusterGen{
 							Name:           "foo",
 							Namespace:      "kubermatic",
-							Labels:         map[string]string{unsafeCNIUpgradeLabel: "true"},
+							Labels:         map[string]string{validation.UnsafeCNIUpgradeLabel: "true"},
 							ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
 							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -1427,7 +1450,7 @@ func TestHandle(t *testing.T) {
 						Raw: rawClusterGen{
 							Name:           "foo",
 							Namespace:      "kubermatic",
-							Labels:         map[string]string{unsafeCNIMigrationLabel: "true"},
+							Labels:         map[string]string{validation.UnsafeCNIMigrationLabel: "true"},
 							ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
 							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -1603,7 +1626,7 @@ func TestHandle(t *testing.T) {
 						Raw: rawClusterGen{
 							Name:           "foo",
 							Namespace:      "kubermatic",
-							Labels:         map[string]string{unsafeCNIUpgradeLabel: "true"},
+							Labels:         map[string]string{validation.UnsafeCNIUpgradeLabel: "true"},
 							ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
 							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -1647,17 +1670,35 @@ func TestHandle(t *testing.T) {
 			wantAllowed: true,
 		},
 	}
+
+	seedClient := ctrlruntimefakeclient.
+		NewClientBuilder().
+		WithScheme(testScheme).
+		WithObjects(&seed).
+		Build()
+
+	seedsGetter := func() (map[string]*kubermaticv1.Seed, error) {
+		return map[string]*kubermaticv1.Seed{
+			seed.Name: &seed,
+		}, nil
+	}
+
 	for _, tt := range tests {
-		d, err := admission.NewDecoder(testScheme)
-		if err != nil {
-			t.Fatalf("error occurred while creating decoder: %v", err)
-		}
-		handler := AdmissionHandler{
-			log:      logr.Discard(),
-			decoder:  d,
-			features: tt.features,
-		}
 		t.Run(tt.name, func(t *testing.T) {
+			d, err := admission.NewDecoder(testScheme)
+			if err != nil {
+				t.Fatalf("error occurred while creating decoder: %v", err)
+			}
+
+			handler := AdmissionHandler{
+				log:                       logr.Discard(),
+				decoder:                   d,
+				features:                  tt.features,
+				client:                    seedClient,
+				seedsGetter:               seedsGetter,
+				disableProviderValidation: true,
+			}
+
 			if res := handler.Handle(context.TODO(), tt.req); res.Allowed != tt.wantAllowed {
 				t.Errorf("Allowed %t, but wanted %t", res.Allowed, tt.wantAllowed)
 				t.Logf("Response: %v", res)
@@ -1690,10 +1731,12 @@ func (r rawClusterGen) Do() []byte {
 			Labels:    r.Labels,
 		},
 		Spec: kubermaticv1.ClusterSpec{
+			HumanReadableName: "a test cluster",
+			Version:           *semver.NewSemverOrDie("1.22.0"),
 			Cloud: kubermaticv1.CloudSpec{
-				DatacenterName: "foo",
+				DatacenterName: datacenterName,
 				Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{
-					Token: "a-token",
+					Token: "thisis.reallyreallyfake",
 				},
 			},
 			Features: map[string]bool{
