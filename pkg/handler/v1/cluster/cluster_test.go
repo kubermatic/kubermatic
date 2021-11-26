@@ -47,7 +47,7 @@ import (
 const fakeDC = "fake-dc"
 
 func TestDeleteClusterEndpoint(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	testcases := []struct {
 		Name                          string
 		Body                          string
@@ -190,7 +190,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 }
 
 func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	testcases := []struct {
 		Name                            string
 		Body                            string
@@ -391,7 +391,7 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 }
 
 func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	const longForm = "Jan 2, 2006 at 3:04pm (MST)"
 	creationTime, err := time.Parse(longForm, "Feb 3, 2013 at 7:54pm (PST)")
 	if err != nil {
@@ -510,7 +510,7 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 }
 
 func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	testcases := []struct {
 		Name                   string
 		SSHKeyID               string
@@ -675,7 +675,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 }
 
 func TestCreateClusterEndpoint(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	testcases := []struct {
 		Name                   string
 		Body                   string
@@ -700,7 +700,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		// scenario 2
 		{
 			Name:             "scenario 2: cluster is created when valid spec and ssh key are passed",
-			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.22.4","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
+			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.22.4","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"},"exposeStrategy":"NodePort"}}}`,
 			ExpectedResponse: `{"id":"%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.22.4","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd","clusterNetwork":{"services":{"cidrBlocks":null},"pods":{"cidrBlocks":null},"dnsDomain":"","proxyMode":""}},"status":{"version":"1.22.4","url":"","externalCCMMigration":"Unsupported"}}`,
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated, ProjectToSync: test.GenDefaultProject().Name,
@@ -931,7 +931,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 }
 
 func TestGetClusterHealth(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	testcases := []struct {
 		Name                   string
 		Body                   string
@@ -1194,7 +1194,7 @@ func TestGetClusterHealth(t *testing.T) {
 }
 
 func TestPatchCluster(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 
 	cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 	cluster.Spec.Cloud.DatacenterName = "us-central1"
@@ -1214,7 +1214,7 @@ func TestPatchCluster(t *testing.T) {
 		{
 			Name:             "scenario 1: update the cluster version",
 			Body:             `{"spec":{"version":"1.2.3"}}`,
-			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.2.3","oidc":{},"enableUserSSHKeyAgent":false,"clusterNetwork":{"services":{"cidrBlocks":null},"pods":{"cidrBlocks":null},"dnsDomain":"","proxyMode":""}},"status":{"version":"1.2.3","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
+			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.2.3","oidc":{},"enableUserSSHKeyAgent":false,"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"dnsDomain":"cluster.local","proxyMode":"ipvs"}},"status":{"version":"1.2.3","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
 			cluster:          "keen-snyder",
 			HTTPStatus:       http.StatusOK,
 			project:          test.GenDefaultProject().Name,
@@ -1245,7 +1245,7 @@ func TestPatchCluster(t *testing.T) {
 		{
 			Name:             "scenario 3: tried to update cluster with older but compatible nodes",
 			Body:             `{"spec":{"version":"9.11.3"}}`, // kubelet is 9.9.9, maximum compatible master is 9.11.x
-			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"9.11.3","oidc":{},"enableUserSSHKeyAgent":false,"clusterNetwork":{"services":{"cidrBlocks":null},"pods":{"cidrBlocks":null},"dnsDomain":"","proxyMode":""}},"status":{"version":"9.11.3","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
+			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"9.11.3","oidc":{},"enableUserSSHKeyAgent":false,"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"dnsDomain":"cluster.local","proxyMode":"ipvs"}},"status":{"version":"9.11.3","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
 			cluster:          "keen-snyder",
 			HTTPStatus:       http.StatusOK,
 			project:          test.GenDefaultProject().Name,
@@ -1315,7 +1315,7 @@ func TestPatchCluster(t *testing.T) {
 		{
 			Name:             "scenario 6: the admin John can update Bob's cluster version",
 			Body:             `{"spec":{"version":"1.2.3"}}`,
-			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.2.3","oidc":{},"enableUserSSHKeyAgent":false,"clusterNetwork":{"services":{"cidrBlocks":null},"pods":{"cidrBlocks":null},"dnsDomain":"","proxyMode":""}},"status":{"version":"1.2.3","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
+			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.2.3","oidc":{},"enableUserSSHKeyAgent":false,"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"dnsDomain":"cluster.local","proxyMode":"ipvs"}},"status":{"version":"1.2.3","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
 			cluster:          "keen-snyder",
 			HTTPStatus:       http.StatusOK,
 			project:          test.GenDefaultProject().Name,
@@ -1377,7 +1377,7 @@ func TestPatchCluster(t *testing.T) {
 }
 
 func TestGetCluster(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	testcases := []struct {
 		Name                   string
 		Body                   string
@@ -1488,7 +1488,7 @@ func TestGetCluster(t *testing.T) {
 }
 
 func TestListClusters(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	testcases := []struct {
 		Name                   string
 		ExpectedClusters       []apiv1.Cluster
@@ -1748,7 +1748,7 @@ func TestListClusters(t *testing.T) {
 }
 
 func TestListClustersForProject(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	testcases := []struct {
 		Name                   string
 		ExpectedClusters       []apiv1.Cluster
@@ -1948,7 +1948,7 @@ func TestListClustersForProject(t *testing.T) {
 }
 
 func TestRevokeClusterAdminTokenEndpoint(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 
 	testcases := []struct {
 		name                   string
@@ -2034,7 +2034,7 @@ func TestRevokeClusterAdminTokenEndpoint(t *testing.T) {
 }
 
 func TestGetClusterEventsEndpoint(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	testcases := []struct {
 		Name                   string
 		HTTPStatus             int
@@ -2169,7 +2169,7 @@ func TestGetClusterEventsEndpoint(t *testing.T) {
 }
 
 func TestGetClusterMetrics(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	cpuQuantity, err := resource.ParseQuantity("290")
 	if err != nil {
 		t.Fatal(err)
@@ -2359,7 +2359,7 @@ func TestGetClusterMetrics(t *testing.T) {
 }
 
 func TestListNamespace(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 
 	testcases := []struct {
 		name                   string

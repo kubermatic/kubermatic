@@ -42,7 +42,7 @@ import (
 )
 
 func TestGetClusterUpgrades(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 
 	tests := []struct {
 		name                       string
@@ -144,6 +144,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 			name: "upgrade available but incompatible with the given provider",
 			cluster: func() *kubermaticv1.Cluster {
 				c := test.GenCluster("foo", "foo", "project", time.Now(), func(cluster *kubermaticv1.Cluster) {
+					cluster.Spec.Cloud.Fake = nil
 					cluster.Spec.Cloud.VSphere = &kubermaticv1.VSphereCloudSpec{}
 				})
 				c.Labels = map[string]string{"user": test.UserName}
@@ -299,7 +300,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 }
 
 func TestUpgradeClusterNodeDeployments(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 
 	testcases := []struct {
 		Name                       string
@@ -418,7 +419,7 @@ func TestUpgradeClusterNodeDeployments(t *testing.T) {
 }
 
 func TestGetNodeUpgrades(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	tests := []struct {
 		name                   string
 		controlPlaneVersion    string
@@ -524,7 +525,7 @@ func TestGetNodeUpgrades(t *testing.T) {
 }
 
 func TestGetMasterVersionsEndpoint(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	tests := []struct {
 		name                   string
 		clusterType            string
