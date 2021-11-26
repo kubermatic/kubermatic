@@ -21,12 +21,14 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/Azure/azure-sdk-for-go/profiles/latest/containerservice/mgmt/containerservice"
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2021-07-01/compute"
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2021-03-01/network"
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2020-10-01/resources"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
@@ -515,4 +517,30 @@ func AzureSubnetEndpoint(ctx context.Context, subscriptionID, clientID, clientSe
 	}
 
 	return subnets, nil
+}
+
+type AzureCredential struct {
+	TenantID       string
+	SubscriptionID string
+	ClientID       string
+	ClientSecret   string
+}
+
+func ListAKSClusters(ctx context.Context, cred AzureCredential) (apiv2.AKSClusterList, error) {
+	clusters := apiv2.AKSClusterList{}
+	var err error
+	aksClient := containerservice.NewManagedClustersClient(cred.SubscriptionID)
+	aksClient.Authorizer, err = auth.NewClientCredentialsConfig(cred.ClientID, cred.ClientSecret, cred.TenantID).Authorizer()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create authorizer: %s", err.Error())
+	}
+	clusterList, err := aksClient.List(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list AKS clusters: %v, tenannt %v subs %v, clientid %v secret %v", err, cred.TenantID, cred.SubscriptionID, cred.ClientID, cred.ClientSecret)
+	}
+
+	for _, f := range clusterList.Values() {
+		clusters = append(clusters, apiv2.AKSCluster{Name: *f.Name})
+	}
+	return clusters, nil
 }

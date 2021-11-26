@@ -15875,6 +15875,94 @@
         }
       }
     },
+    "/api/v2/providers/aks/clusters": {
+      "get": {
+        "description": "Lists AKS clusters",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "aks"
+        ],
+        "operationId": "listAKSClusters",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "TenantID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "SubscriptionID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ClientID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ClientSecret",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AKSClusterList",
+            "schema": {
+              "$ref": "#/definitions/AKSClusterList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/providers/aws/regions": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "regions"
+        ],
+        "summary": "List AWS regions.",
+        "operationId": "listAWSRegions",
+        "responses": {
+          "200": {
+            "description": "Regions",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Regions"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/providers/azure/resourcegroups": {
       "get": {
         "description": "Lists available VM resource groups",
@@ -16175,41 +16263,6 @@
             "schema": {
               "$ref": "#/definitions/AzureVirtualNetworksList"
             }
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/providers/ec2/regions": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "regions"
-        ],
-        "summary": "List EC2 regions.",
-        "operationId": "listEC2Regions",
-        "responses": {
-          "200": {
-            "description": "Regions",
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/Regions"
-              }
-            }
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
           },
           "default": {
             "description": "errorResponse",
@@ -17011,6 +17064,29 @@
           "type": "string",
           "x-go-name": "TenantID"
         }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "AKSCluster": {
+      "type": "object",
+      "title": "AKSCluster represents a object of AKS cluster.",
+      "properties": {
+        "imported": {
+          "type": "boolean",
+          "x-go-name": "IsImported"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "AKSClusterList": {
+      "type": "array",
+      "title": "AKSClusterList represents an list of AKS clusters.",
+      "items": {
+        "$ref": "#/definitions/AKSCluster"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
@@ -23173,7 +23249,7 @@
     },
     "Regions": {
       "type": "array",
-      "title": "Regions represents an list of EC2 regions.",
+      "title": "Regions represents an list of AWS regions.",
       "items": {
         "type": "string"
       },

@@ -323,12 +323,12 @@ func filterAWSByQuota(instances apiv1.AWSSizeList, quota kubermaticv1.MachineDep
 	return filteredRecords
 }
 
-type Credential struct {
+type AWSCredential struct {
 	AccessKeyID     string
 	SecretAccessKey string
 }
 
-func ListEC2Regions(ctx context.Context, credential Credential) (apiv2.Regions, error) {
+func ListAWSRegions(ctx context.Context, credential AWSCredential) (apiv2.Regions, error) {
 	regionInput := &ec2service.DescribeRegionsInput{}
 
 	// Must provide either a region or endpoint configured to use the SDK, even for operations that may enumerate other regions
@@ -351,9 +351,9 @@ func ListEC2Regions(ctx context.Context, credential Credential) (apiv2.Regions, 
 	return regionList, nil
 }
 
-type listClusters func(Credential, string) (apiv2.EKSClusterList, error)
+type listClusters func(AWSCredential, string) (apiv2.EKSClusterList, error)
 
-func listEKSClusters(credential Credential, region string) (apiv2.EKSClusterList, error) {
+func listEKSClusters(credential AWSCredential, region string) (apiv2.EKSClusterList, error) {
 	clusters := apiv2.EKSClusterList{}
 	client, err := awsprovider.GetClientSet(credential.AccessKeyID, credential.SecretAccessKey, region)
 	if err != nil {
@@ -375,7 +375,7 @@ func listEKSClusters(credential Credential, region string) (apiv2.EKSClusterList
 	return clusters, nil
 }
 
-func mapClusters(credential Credential, fn listClusters, list []string) (apiv2.EKSClusterList, error) {
+func mapClusters(credential AWSCredential, fn listClusters, list []string) (apiv2.EKSClusterList, error) {
 	var clusterList apiv2.EKSClusterList
 
 	for _, region := range list {
@@ -388,7 +388,7 @@ func mapClusters(credential Credential, fn listClusters, list []string) (apiv2.E
 	return clusterList, nil
 }
 
-func ListEKSClusters(ctx context.Context, cred Credential, region string) (apiv2.EKSClusterList, error) {
+func ListEKSClusters(ctx context.Context, cred AWSCredential, region string) (apiv2.EKSClusterList, error) {
 
 	var err error
 	var clusterList apiv2.EKSClusterList
@@ -401,7 +401,7 @@ func ListEKSClusters(ctx context.Context, cred Credential, region string) (apiv2
 		}
 	} else {
 		// list EKS clusters for all regions
-		regions, err := ListEC2Regions(ctx, cred)
+		regions, err := ListAWSRegions(ctx, cred)
 		if err != nil {
 			return nil, fmt.Errorf("cannot list regions: %w", err)
 		}
