@@ -863,6 +863,11 @@ func cloneEtcdRestoreResourcesInCluster(ctx context.Context, logger logrus.Field
 				BackupDownloadCredentialsSecret: oldObject.Spec.BackupDownloadCredentialsSecret,
 				BackupName:                      oldObject.Spec.BackupName,
 				Cluster:                         migrateObjectReference(oldObject.Spec.Cluster, ""),
+				Destination:                     oldObject.Spec.Destination,
+			},
+			Status: newv1.EtcdRestoreStatus{
+				Phase:       etcdRestoreStatusPhases[oldObject.Status.Phase],
+				RestoreTime: oldObject.Status.RestoreTime,
 			},
 		}
 
@@ -881,6 +886,12 @@ func cloneEtcdRestoreResourcesInCluster(ctx context.Context, logger logrus.Field
 	}
 
 	return len(oldObjects.Items), nil
+}
+
+var etcdRestoreStatusPhases = map[kubermaticv1.EtcdRestorePhase]newv1.EtcdRestorePhase{
+	kubermaticv1.EtcdRestorePhaseStarted:       newv1.EtcdRestorePhaseStarted,
+	kubermaticv1.EtcdRestorePhaseStsRebuilding: newv1.EtcdRestorePhaseStsRebuilding,
+	kubermaticv1.EtcdRestorePhaseCompleted:     newv1.EtcdRestorePhaseCompleted,
 }
 
 func cloneExternalClusterResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) (int, error) {
