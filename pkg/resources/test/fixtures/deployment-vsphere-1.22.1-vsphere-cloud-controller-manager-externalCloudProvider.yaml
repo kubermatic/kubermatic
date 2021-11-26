@@ -112,12 +112,12 @@ spec:
         - mountPath: /http-prober-bin
           name: http-prober-bin
       volumes:
-      - name: openvpn-client-certificates
-        secret:
-          secretName: openvpn-client-certificates
       - name: cloud-controller-manager-kubeconfig
         secret:
           secretName: cloud-controller-manager-kubeconfig
+      - name: openvpn-client-certificates
+        secret:
+          secretName: openvpn-client-certificates
       - configMap:
           name: cloud-config
         name: cloud-config

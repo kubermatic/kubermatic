@@ -215,12 +215,12 @@ spec:
       - configMap:
           name: cloud-config
         name: cloud-config
-      - name: openvpn-client-certificates
-        secret:
-          secretName: openvpn-client-certificates
       - name: controllermanager-kubeconfig
         secret:
           secretName: controllermanager-kubeconfig
+      - name: openvpn-client-certificates
+        secret:
+          secretName: openvpn-client-certificates
       - emptyDir: {}
         name: http-prober-bin
 status: {}

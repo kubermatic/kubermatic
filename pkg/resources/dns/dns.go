@@ -85,6 +85,7 @@ type deploymentCreatorData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
 	ImageRegistry(string) string
+	IsKonnectivityEnabled() bool
 }
 
 // DeploymentCreator returns the function to create and update the DNS resolver deployment
@@ -100,7 +101,7 @@ func DeploymentCreator(data deploymentCreatorData) reconciling.NamedDeploymentCr
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
-			volumes := getVolumes()
+			volumes := getVolumes(data.IsKonnectivityEnabled())
 			podLabels, err := data.GetPodTemplateLabels(resources.DNSResolverDeploymentName, volumes, nil)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get pod labels: %v", err)
@@ -116,13 +117,7 @@ func DeploymentCreator(data deploymentCreatorData) reconciling.NamedDeploymentCr
 			dep.Spec.Template.ObjectMeta.Annotations["prometheus.io/path"] = "/metrics"
 			dep.Spec.Template.ObjectMeta.Annotations["prometheus.io/port"] = "9253"
 
-			openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
-			if err != nil {
-				return nil, fmt.Errorf("failed to get openvpn sidecar for dns resolver: %v", err)
-			}
-
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
-				*openvpnSidecar,
 				{
 					Name:  resources.DNSResolverDeploymentName,
 					Image: data.ImageRegistry(resources.RegistryK8SGCR) + "/" + GetCoreDNSImage(data.Cluster().Spec.Version.Semver()),
@@ -152,7 +147,16 @@ func DeploymentCreator(data deploymentCreatorData) reconciling.NamedDeploymentCr
 			}
 			defResourceRequirements := map[string]*corev1.ResourceRequirements{
 				resources.DNSResolverDeploymentName: defaultResourceRequirements.DeepCopy(),
-				openvpnSidecar.Name:                 openvpnSidecar.Resources.DeepCopy(),
+			}
+			if !data.IsKonnectivityEnabled() {
+				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
+				if err != nil {
+					return nil, fmt.Errorf("failed to get openvpn sidecar for dns resolver: %v", err)
+				}
+				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers,
+					*openvpnSidecar,
+				)
+				defResourceRequirements[openvpnSidecar.Name] = openvpnSidecar.Resources.DeepCopy()
 			}
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)
 			if err != nil {
@@ -168,8 +172,8 @@ func DeploymentCreator(data deploymentCreatorData) reconciling.NamedDeploymentCr
 	}
 }
 
-func getVolumes() []corev1.Volume {
-	return []corev1.Volume{
+func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
+	vs := []corev1.Volume{
 		{
 			Name: resources.DNSResolverConfigMapName,
 			VolumeSource: corev1.VolumeSource{
@@ -177,14 +181,6 @@ func getVolumes() []corev1.Volume {
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: resources.DNSResolverConfigMapName,
 					},
-				},
-			},
-		},
-		{
-			Name: resources.OpenVPNClientCertificatesSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.OpenVPNClientCertificatesSecretName,
 				},
 			},
 		},
@@ -203,6 +199,17 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 	}
+	if !isKonnectivityEnabled {
+		vs = append(vs, corev1.Volume{
+			Name: resources.OpenVPNClientCertificatesSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: resources.OpenVPNClientCertificatesSecretName,
+				},
+			},
+		})
+	}
+	return vs
 }
 
 type configMapCreatorData interface {
