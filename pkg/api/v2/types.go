@@ -392,6 +392,7 @@ type ExternalClusterNode struct {
 // swagger:model ExternalClusterMachineDeployment
 type ExternalClusterMachineDeployment struct {
 	apiv1.NodeDeployment `json:",inline"`
+	Cloud                *ExternalClusterMachineDeploymentCloudSpec `json:"cloud,omitempty"`
 }
 
 // GKECluster represents a object of GKE cluster.
@@ -437,4 +438,106 @@ type AKSClusterList []AKSCluster
 // swagger:model FeatureGates
 type FeatureGates struct {
 	KonnectivityService *bool `json:"konnectivityService,omitempty"`
+}
+
+// ExternalClusterMachineDeploymentCloudSpec represents an object holding machine deployment cloud details.
+// swagger:model ExternalClusterMachineDeploymentCloudSpec
+type ExternalClusterMachineDeploymentCloudSpec struct {
+	GKE *GKEMachineDeploymentCloudSpec `json:"gke,omitempty"`
+}
+
+// GKEMachineDeploymentCloudSpec represents an object holding GKE machine deployment cloud details.
+type GKEMachineDeploymentCloudSpec struct {
+	// Autoscaling: Autoscaler configuration for this NodePool. Autoscaler
+	// is enabled only if a valid configuration is present.
+	Autoscaling *GKENodePoolAutoscaling `json:"autoscaling,omitempty"`
+
+	// Config: The node configuration of the pool.
+	Config *GKENodeConfig `json:"config,omitempty"`
+
+	// Management: NodeManagement configuration for this NodePool.
+	Management *GKENodeManagement `json:"management,omitempty"`
+
+	// Locations: The list of Google Compute Engine zones
+	// (https://cloud.google.com/compute/docs/zones#available) in which the
+	// NodePool's nodes should be located. If this value is unspecified
+	// during node pool creation, the Cluster.Locations
+	// (https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1/projects.locations.clusters#Cluster.FIELDS.locations)
+	// value will be used, instead. Warning: changing node pool locations
+	// will result in nodes being added and/or removed.
+	Locations []string `json:"locations,omitempty"`
+}
+
+// GKENodeManagement defines the set of node management
+// services turned on for the node pool.
+type GKENodeManagement struct {
+	// AutoRepair: A flag that specifies whether the node auto-repair is
+	// enabled for the node pool. If enabled, the nodes in this node pool
+	// will be monitored and, if they fail health checks too many times, an
+	// automatic repair action will be triggered.
+	AutoRepair bool `json:"autoRepair,omitempty"`
+
+	// AutoUpgrade: A flag that specifies whether node auto-upgrade is
+	// enabled for the node pool. If enabled, node auto-upgrade helps keep
+	// the nodes in your node pool up to date with the latest release
+	// version of Kubernetes.
+	AutoUpgrade bool `json:"autoUpgrade,omitempty"`
+}
+
+// GKENodeConfig Parameters that describe the nodes in a cluster.
+type GKENodeConfig struct {
+	// DiskSizeGb: Size of the disk attached to each node, specified in GB.
+	// The smallest allowed disk size is 10GB. If unspecified, the default
+	// disk size is 100GB.
+	DiskSizeGb int64 `json:"diskSizeGb,omitempty"`
+
+	// DiskType: Type of the disk attached to each node (e.g. 'pd-standard',
+	// 'pd-ssd' or 'pd-balanced') If unspecified, the default disk type is
+	// 'pd-standard'
+	DiskType string `json:"diskType,omitempty"`
+
+	// ImageType: The image type to use for this node. Note that for a given
+	// image type, the latest version of it will be used.
+	ImageType string `json:"imageType,omitempty"`
+
+	// LocalSsdCount: The number of local SSD disks to be attached to the
+	// node. The limit for this value is dependent upon the maximum number
+	// of disks available on a machine per zone. See:
+	// https://cloud.google.com/compute/docs/disks/local-ssd for more
+	// information.
+	LocalSsdCount int64 `json:"localSsdCount,omitempty"`
+
+	// MachineType: The name of a Google Compute Engine machine type
+	// (https://cloud.google.com/compute/docs/machine-types) If unspecified,
+	// the default machine type is `e2-medium`.
+	MachineType string `json:"machineType,omitempty"`
+
+	// Labels: The map of Kubernetes labels (key/value pairs) to be applied
+	// to each node. These will added in addition to any default label(s)
+	// that Kubernetes may apply to the node. In case of conflict in label
+	// keys, the applied set may differ depending on the Kubernetes version
+	// -- it's best to assume the behavior is undefined and conflicts should
+	// be avoided. For more information, including usage and the valid
+	// values, see:
+	// https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+	Labels map[string]string `json:"labels,omitempty"`
+}
+
+// GKENodePoolAutoscaling contains information
+// required by cluster autoscaler to adjust the size of the node pool to
+// the current cluster usage.
+type GKENodePoolAutoscaling struct {
+	// Autoprovisioned: Can this node pool be deleted automatically.
+	Autoprovisioned bool `json:"autoprovisioned,omitempty"`
+
+	// Enabled: Is autoscaling enabled for this node pool.
+	Enabled bool `json:"enabled,omitempty"`
+
+	// MaxNodeCount: Maximum number of nodes in the NodePool. Must be >=
+	// min_node_count. There has to enough quota to scale up the cluster.
+	MaxNodeCount int64 `json:"maxNodeCount,omitempty"`
+
+	// MinNodeCount: Minimum number of nodes in the NodePool. Must be >= 1
+	// and <= max_node_count.
+	MinNodeCount int64 `json:"minNodeCount,omitempty"`
 }

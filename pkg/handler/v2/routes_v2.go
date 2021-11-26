@@ -282,6 +282,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments").
 		Handler(r.listExternalClusterMachineDeployments())
 
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments").
+		Handler(r.createExternalClusterMachineDeployment())
+
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}").
 		Handler(r.deleteExternalClusterMachineDeployment())
@@ -1419,6 +1423,31 @@ func (r Routing) listExternalClusterMachineDeployments() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(externalcluster.ListMachineDeploymentEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider)),
 		externalcluster.DecodeListMachineDeploymentReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments project createExternalClusterMachineDeployment
+//
+//     Create an external cluster machine deployments.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ExternalClusterMachineDeployment
+//       401: empty
+//       403: empty
+func (r Routing) createExternalClusterMachineDeployment() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.CreateMachineDeploymentEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider)),
+		externalcluster.DecodeCreateMachineDeploymentReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

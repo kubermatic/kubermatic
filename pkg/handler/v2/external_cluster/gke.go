@@ -123,7 +123,7 @@ func getGKENodePools(ctx context.Context, cluster *kubermaticapiv1.ExternalClust
 }
 
 func createMachineDeploymentFromGKENodePoll(np *container.NodePool, readyReplicas int32) apiv2.ExternalClusterMachineDeployment {
-	return apiv2.ExternalClusterMachineDeployment{
+	md := apiv2.ExternalClusterMachineDeployment{
 		NodeDeployment: apiv1.NodeDeployment{
 			ObjectMeta: apiv1.ObjectMeta{
 				ID:   np.Name,
@@ -142,7 +142,34 @@ func createMachineDeploymentFromGKENodePoll(np *container.NodePool, readyReplica
 				ReadyReplicas: readyReplicas,
 			},
 		},
+		Cloud: &apiv2.ExternalClusterMachineDeploymentCloudSpec{
+			GKE: &apiv2.GKEMachineDeploymentCloudSpec{},
+		},
 	}
+	if np.Autoscaling != nil {
+		md.Cloud.GKE.Autoscaling = &apiv2.GKENodePoolAutoscaling{
+			Autoprovisioned: np.Autoscaling.Autoprovisioned,
+			Enabled:         np.Autoscaling.Enabled,
+			MaxNodeCount:    np.Autoscaling.MaxNodeCount,
+			MinNodeCount:    np.Autoscaling.MinNodeCount,
+		}
+	}
+	if np.Config != nil {
+		md.Cloud.GKE.Config = &apiv2.GKENodeConfig{
+			DiskSizeGb:    np.Config.DiskSizeGb,
+			DiskType:      np.Config.DiskType,
+			ImageType:     np.Config.ImageType,
+			LocalSsdCount: np.Config.LocalSsdCount,
+			MachineType:   np.Config.MachineType,
+		}
+	}
+	if np.Management != nil {
+		md.Cloud.GKE.Management = &apiv2.GKENodeManagement{
+			AutoRepair:  np.Management.AutoRepair,
+			AutoUpgrade: np.Management.AutoUpgrade,
+		}
+	}
+	return md
 }
 
 func getGKENodePool(ctx context.Context, cluster *kubermaticapiv1.ExternalCluster, nodeGroupName string, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector, clusterProvider provider.ExternalClusterProvider) (*apiv2.ExternalClusterMachineDeployment, error) {
@@ -270,4 +297,67 @@ func getGKEMachineDeployment(ctx context.Context, svc *container.Service, projec
 	}
 	md := createMachineDeploymentFromGKENodePoll(np, readyReplicas)
 	return &md, nil
+}
+
+func createGKENodePool(ctx context.Context, cluster *kubermaticapiv1.ExternalCluster, machineDeployment apiv2.ExternalClusterMachineDeployment, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector) (*apiv2.ExternalClusterMachineDeployment, error) {
+	sa, err := secretKeySelector(credentialsReference, resources.GCPServiceAccount)
+	if err != nil {
+		return nil, err
+	}
+	svc, project, err := gcp.ConnectToContainerService(sa)
+	if err != nil {
+		return nil, err
+	}
+
+	if machineDeployment.Cloud.GKE == nil {
+		return nil, fmt.Errorf("GKE cloud spec cannot be empty")
+	}
+
+	gke := machineDeployment.Cloud.GKE
+
+	nodePool := &container.NodePool{
+		Config:            nil,
+		InitialNodeCount:  int64(machineDeployment.Spec.Replicas),
+		InstanceGroupUrls: nil,
+		Locations:         nil,
+		Management:        nil,
+		MaxPodsConstraint: nil,
+		Name:              machineDeployment.Name,
+		Version:           machineDeployment.Spec.Template.Versions.Kubelet,
+	}
+
+	if gke.Config != nil {
+		nodePool.Config = &container.NodeConfig{
+			DiskSizeGb:    gke.Config.DiskSizeGb,
+			DiskType:      gke.Config.DiskType,
+			ImageType:     gke.Config.ImageType,
+			Labels:        gke.Config.Labels,
+			LocalSsdCount: gke.Config.LocalSsdCount,
+			MachineType:   gke.Config.MachineType,
+		}
+	}
+	if gke.Autoscaling != nil {
+		nodePool.Autoscaling = &container.NodePoolAutoscaling{
+			Autoprovisioned: gke.Autoscaling.Autoprovisioned,
+			Enabled:         gke.Autoscaling.Enabled,
+			MaxNodeCount:    gke.Autoscaling.MaxNodeCount,
+			MinNodeCount:    gke.Autoscaling.MinNodeCount,
+		}
+	}
+	if gke.Management != nil {
+		nodePool.Management = &container.NodeManagement{
+			AutoRepair:  gke.Management.AutoRepair,
+			AutoUpgrade: gke.Management.AutoUpgrade,
+		}
+	}
+
+	createRequest := &container.CreateNodePoolRequest{
+		NodePool: nodePool,
+	}
+	req := svc.Projects.Zones.Clusters.NodePools.Create(project, cluster.Spec.CloudSpec.GKE.Zone, cluster.Spec.CloudSpec.GKE.Name, createRequest)
+	_, err = req.Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+	return &machineDeployment, nil
 }

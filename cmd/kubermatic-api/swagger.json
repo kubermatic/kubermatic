@@ -15278,6 +15278,59 @@
             }
           }
         }
+      },
+      "post": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Create an external cluster machine deployments.",
+        "operationId": "createExternalClusterMachineDeployment",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/ExternalClusterMachineDeployment"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ExternalClusterMachineDeployment",
+            "schema": {
+              "$ref": "#/definitions/ExternalClusterMachineDeployment"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
       }
     },
     "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}": {
@@ -20181,6 +20234,9 @@
           },
           "x-go-name": "Annotations"
         },
+        "cloud": {
+          "$ref": "#/definitions/ExternalClusterMachineDeploymentCloudSpec"
+        },
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
           "type": "string",
@@ -20208,6 +20264,16 @@
         },
         "status": {
           "$ref": "#/definitions/MachineDeploymentStatus"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "ExternalClusterMachineDeploymentCloudSpec": {
+      "type": "object",
+      "title": "ExternalClusterMachineDeploymentCloudSpec represents an object holding machine deployment cloud details.",
+      "properties": {
+        "gke": {
+          "$ref": "#/definitions/GKEMachineDeploymentCloudSpec"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -20588,6 +20654,118 @@
       "title": "GKEClusterList represents an array of GKE clusters.",
       "items": {
         "$ref": "#/definitions/GKECluster"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "GKEMachineDeploymentCloudSpec": {
+      "type": "object",
+      "title": "GKEMachineDeploymentCloudSpec represents an object holding GKE machine deployment cloud details.",
+      "properties": {
+        "autoscaling": {
+          "$ref": "#/definitions/GKENodePoolAutoscaling"
+        },
+        "config": {
+          "$ref": "#/definitions/GKENodeConfig"
+        },
+        "locations": {
+          "description": "Locations: The list of Google Compute Engine zones\n(https://cloud.google.com/compute/docs/zones#available) in which the\nNodePool's nodes should be located. If this value is unspecified\nduring node pool creation, the Cluster.Locations\n(https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1/projects.locations.clusters#Cluster.FIELDS.locations)\nvalue will be used, instead. Warning: changing node pool locations\nwill result in nodes being added and/or removed.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Locations"
+        },
+        "management": {
+          "$ref": "#/definitions/GKENodeManagement"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "GKENodeConfig": {
+      "type": "object",
+      "title": "GKENodeConfig Parameters that describe the nodes in a cluster.",
+      "properties": {
+        "diskSizeGb": {
+          "description": "DiskSizeGb: Size of the disk attached to each node, specified in GB.\nThe smallest allowed disk size is 10GB. If unspecified, the default\ndisk size is 100GB.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "DiskSizeGb"
+        },
+        "diskType": {
+          "description": "DiskType: Type of the disk attached to each node (e.g. 'pd-standard',\n'pd-ssd' or 'pd-balanced') If unspecified, the default disk type is\n'pd-standard'",
+          "type": "string",
+          "x-go-name": "DiskType"
+        },
+        "imageType": {
+          "description": "ImageType: The image type to use for this node. Note that for a given\nimage type, the latest version of it will be used.",
+          "type": "string",
+          "x-go-name": "ImageType"
+        },
+        "labels": {
+          "description": "Labels: The map of Kubernetes labels (key/value pairs) to be applied\nto each node. These will added in addition to any default label(s)\nthat Kubernetes may apply to the node. In case of conflict in label\nkeys, the applied set may differ depending on the Kubernetes version\nit's best to assume the behavior is undefined and conflicts should\nbe avoided. For more information, including usage and the valid\nvalues, see:\nhttps://kubernetes.io/docs/concepts/overview/working-with-objects/labels/",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Labels"
+        },
+        "localSsdCount": {
+          "description": "LocalSsdCount: The number of local SSD disks to be attached to the\nnode. The limit for this value is dependent upon the maximum number\nof disks available on a machine per zone. See:\nhttps://cloud.google.com/compute/docs/disks/local-ssd for more\ninformation.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "LocalSsdCount"
+        },
+        "machineType": {
+          "description": "MachineType: The name of a Google Compute Engine machine type\n(https://cloud.google.com/compute/docs/machine-types) If unspecified,\nthe default machine type is `e2-medium`.",
+          "type": "string",
+          "x-go-name": "MachineType"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "GKENodeManagement": {
+      "description": "GKENodeManagement defines the set of node management\nservices turned on for the node pool.",
+      "type": "object",
+      "properties": {
+        "autoRepair": {
+          "description": "AutoRepair: A flag that specifies whether the node auto-repair is\nenabled for the node pool. If enabled, the nodes in this node pool\nwill be monitored and, if they fail health checks too many times, an\nautomatic repair action will be triggered.",
+          "type": "boolean",
+          "x-go-name": "AutoRepair"
+        },
+        "autoUpgrade": {
+          "description": "AutoUpgrade: A flag that specifies whether node auto-upgrade is\nenabled for the node pool. If enabled, node auto-upgrade helps keep\nthe nodes in your node pool up to date with the latest release\nversion of Kubernetes.",
+          "type": "boolean",
+          "x-go-name": "AutoUpgrade"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "GKENodePoolAutoscaling": {
+      "description": "GKENodePoolAutoscaling contains information\nrequired by cluster autoscaler to adjust the size of the node pool to\nthe current cluster usage.",
+      "type": "object",
+      "properties": {
+        "autoprovisioned": {
+          "description": "Autoprovisioned: Can this node pool be deleted automatically.",
+          "type": "boolean",
+          "x-go-name": "Autoprovisioned"
+        },
+        "enabled": {
+          "description": "Enabled: Is autoscaling enabled for this node pool.",
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        },
+        "maxNodeCount": {
+          "description": "MaxNodeCount: Maximum number of nodes in the NodePool. Must be \u003e=\nmin_node_count. There has to enough quota to scale up the cluster.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MaxNodeCount"
+        },
+        "minNodeCount": {
+          "description": "MinNodeCount: Minimum number of nodes in the NodePool. Must be \u003e= 1\nand \u003c= max_node_count.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MinNodeCount"
+        }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
