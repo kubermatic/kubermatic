@@ -232,7 +232,7 @@ func OIDCIssuerAllowCreator(issuerURL string) reconciling.NamedNetworkPolicyCrea
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse OIDC issuer URL %s: %v", issuerURL, err)
 			}
-			ipList, err := lookupIPWithTimeout(u.Hostname(), 1*time.Second)
+			ipList, err := lookupIPWithTimeout(u.Hostname(), 5*time.Second)
 			if err != nil {
 				return nil, fmt.Errorf("failed to resolve OIDC issuer hostname %s: %v", u.Hostname(), err)
 			}
