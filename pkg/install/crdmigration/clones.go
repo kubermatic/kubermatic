@@ -863,6 +863,7 @@ func cloneEtcdRestoreResourcesInCluster(ctx context.Context, logger logrus.Field
 				BackupDownloadCredentialsSecret: oldObject.Spec.BackupDownloadCredentialsSecret,
 				BackupName:                      oldObject.Spec.BackupName,
 				Cluster:                         migrateObjectReference(oldObject.Spec.Cluster, ""),
+				Destination:                     oldObject.Spec.Destination,
 			},
 		}
 

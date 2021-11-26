@@ -28,13 +28,13 @@ const (
 	// EtcdRestoreKindName represents "Kind" defined in Kubernetes
 	EtcdRestoreKindName = "EtcdRestore"
 
-	// EtcdRestorePhase value indicating that the restore has started
+	// EtcdRestorePhaseStarted value indicating that the restore has started
 	EtcdRestorePhaseStarted = "Started"
 
-	// EtcdRestorePhase value indicating that the old Etcd statefulset has been deleted and is now rebuilding
+	// EtcdRestorePhaseStsRebuilding value indicating that the old Etcd statefulset has been deleted and is now rebuilding
 	EtcdRestorePhaseStsRebuilding = "StsRebuilding"
 
-	// EtcdRestorePhase value indicating that the old Etcd statefulset has completed successfully
+	// EtcdRestorePhaseCompleted value indicating that the old Etcd statefulset has completed successfully
 	EtcdRestorePhaseCompleted = "Completed"
 )
 
@@ -66,6 +66,9 @@ type EtcdRestoreSpec struct {
 	// BackupDownloadCredentialsSecret is the name of a secret in the cluster-xxx namespace containing
 	// credentials needed to download the backup
 	BackupDownloadCredentialsSecret string `json:"backupDownloadCredentialsSecret,omitempty"`
+	// Destination indicates where the backup was stored. The destination name should correspond to a destination in
+	// the cluster's Seed.Spec.EtcdBackupRestore. If empty, it will use the legacy destination configured in Seed.Spec.BackupRestore
+	Destination string `json:"destination,omitempty"`
 }
 
 // EtcdRestoreList is a list of etcd restores
