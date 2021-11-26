@@ -60,8 +60,6 @@ const (
 const (
 	// ApiServer secure port
 	APIServerSecurePort = 6443
-	// DefaultNodePortRange A port range to reserve for services with NodePort visibility
-	DefaultNodePortRange = "30000-32767"
 
 	NodeLocalDNSCacheAddress = "169.254.20.10"
 )

@@ -184,7 +184,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		WithSeed(seed.DeepCopy()).
 		WithKubermaticConfiguration(config.DeepCopy()).
 		WithOverwriteRegistry(r.overwriteRegistry).
-		WithNodePortRange(r.nodePortRange).
+		WithNodePortRange(config.Spec.UserCluster.NodePortRange).
 		WithNodeAccessNetwork(r.nodeAccessNetwork).
 		WithEtcdDiskSize(r.etcdDiskSize).
 		WithUserClusterMLAEnabled(r.userClusterMLAEnabled).

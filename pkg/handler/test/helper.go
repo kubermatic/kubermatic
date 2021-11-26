@@ -252,6 +252,14 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 				API: operatorv1alpha1.KubermaticAPIConfiguration{
 					AccessibleAddons: []string{"addon1", "addon2"},
 				},
+				Versions: operatorv1alpha1.KubermaticVersionsConfiguration{
+					Kubernetes: operatorv1alpha1.KubermaticVersioningConfiguration{
+						Versions: []*ver.Version{
+							ver.MustParse("8.8.8"),
+							ver.MustParse("9.9.9"),
+						},
+					},
+				},
 			},
 		}
 	}
@@ -1011,9 +1019,20 @@ func GenCluster(id string, name string, projectID string, creationTime time.Time
 				DatacenterName: "private-do1",
 				Fake:           &kubermaticv1.FakeCloudSpec{Token: "SecretToken"},
 			},
-			Version:               *semver.NewSemverOrDie("9.9.9"),
+			Version:               *semver.NewSemverOrDie("9.9.9"), // initTestEndpoint() configures KKP to know 8.8.8 and 9.9.9
 			HumanReadableName:     name,
 			EnableUserSSHKeyAgent: pointer.BoolPtr(false),
+			ExposeStrategy:        kubermaticv1.ExposeStrategyNodePort,
+			ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+				DNSDomain: "cluster.local",
+				ProxyMode: "ipvs",
+				Pods: kubermaticv1.NetworkRanges{
+					CIDRBlocks: []string{"1.2.3.4/8"},
+				},
+				Services: kubermaticv1.NetworkRanges{
+					CIDRBlocks: []string{"5.6.7.8/8"},
+				},
+			},
 		},
 		Address: kubermaticv1.ClusterAddress{
 			AdminToken:   "drphc2.g4kq82pnlfqjqt65",
@@ -1064,7 +1083,7 @@ func GenTestMachine(name, rawProviderSpec string, labels map[string]string, owne
 				},
 			},
 			Versions: clusterv1alpha1.MachineVersionInfo{
-				Kubelet: "v9.9.9",
+				Kubelet: "v9.9.9", // initTestEndpoint() configures KKP to know 8.8.8 and 9.9.9
 			},
 		},
 	}
@@ -1104,7 +1123,7 @@ func GenTestMachineDeployment(name, rawProviderSpec string, selector map[string]
 						},
 					},
 					Versions: clusterv1alpha1.MachineVersionInfo{
-						Kubelet: "v9.9.9",
+						Kubelet: "v9.9.9", // initTestEndpoint() configures KKP to know 8.8.8 and 9.9.9
 					},
 					ConfigSource: configSource,
 				},

@@ -427,6 +427,12 @@ func ClusterCloudProviderName(spec kubermaticv1.CloudSpec) (string, error) {
 	if spec.AWS != nil {
 		clouds = append(clouds, kubermaticv1.AWSCloudProvider)
 	}
+	if spec.Alibaba != nil {
+		clouds = append(clouds, kubermaticv1.AlibabaCloudProvider)
+	}
+	if spec.Anexia != nil {
+		clouds = append(clouds, kubermaticv1.AnexiaCloudProvider)
+	}
 	if spec.Azure != nil {
 		clouds = append(clouds, kubermaticv1.AzureCloudProvider)
 	}
@@ -439,29 +445,23 @@ func ClusterCloudProviderName(spec kubermaticv1.CloudSpec) (string, error) {
 	if spec.Fake != nil {
 		clouds = append(clouds, kubermaticv1.FakeCloudProvider)
 	}
+	if spec.GCP != nil {
+		clouds = append(clouds, kubermaticv1.GCPCloudProvider)
+	}
+	if spec.Hetzner != nil {
+		clouds = append(clouds, kubermaticv1.HetznerCloudProvider)
+	}
+	if spec.Kubevirt != nil {
+		clouds = append(clouds, kubermaticv1.KubevirtCloudProvider)
+	}
 	if spec.Openstack != nil {
 		clouds = append(clouds, kubermaticv1.OpenstackCloudProvider)
 	}
 	if spec.Packet != nil {
 		clouds = append(clouds, kubermaticv1.PacketCloudProvider)
 	}
-	if spec.Hetzner != nil {
-		clouds = append(clouds, kubermaticv1.HetznerCloudProvider)
-	}
 	if spec.VSphere != nil {
 		clouds = append(clouds, kubermaticv1.VSphereCloudProvider)
-	}
-	if spec.GCP != nil {
-		clouds = append(clouds, kubermaticv1.GCPCloudProvider)
-	}
-	if spec.Kubevirt != nil {
-		clouds = append(clouds, kubermaticv1.KubevirtCloudProvider)
-	}
-	if spec.Alibaba != nil {
-		clouds = append(clouds, kubermaticv1.AlibabaCloudProvider)
-	}
-	if spec.Anexia != nil {
-		clouds = append(clouds, kubermaticv1.AnexiaCloudProvider)
 	}
 	if len(clouds) == 0 {
 		return "", nil
