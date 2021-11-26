@@ -25,7 +25,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -54,15 +53,16 @@ type AdmissionPluginConfiguration struct {
 }
 
 type EventConfiguration struct {
-	metav1.TypeMeta `json:",inline"`
-	Limits          []EventLimit `json:"limits"`
+	Kind       string       `yaml:"kind"`
+	APIVersion string       `yaml:"apiVersion"`
+	Limits     []EventLimit `yaml:"limits"`
 }
 
 type EventLimit struct {
-	Type      string `json:"type"`
-	QPS       int32  `json:"qps"`
-	Burst     int32  `json:"burst"`
-	CacheSize int32  `json:"cacheSize,omitempty"`
+	Type      string `yaml:"type"`
+	QPS       int32  `yaml:"qps"`
+	Burst     int32  `yaml:"burst"`
+	CacheSize int32  `yaml:"cacheSize,omitempty"`
 }
 
 func AdmissionControlCreator(data *resources.TemplateData) reconciling.NamedConfigMapCreatorGetter {
@@ -149,11 +149,9 @@ func getPodNodeSelectorAdmissionPluginConfig(data *resources.TemplateData) (stri
 
 func getEventRateLimitConfiguration(data *resources.TemplateData) (string, error) {
 	config := EventConfiguration{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "eventratelimit.admission.k8s.io",
-			APIVersion: "v1alpha1",
-		},
-		Limits: []EventLimit{},
+		Kind:       "Configuration",
+		APIVersion: "eventratelimit.admission.k8s.io/v1alpha1",
+		Limits:     []EventLimit{},
 	}
 
 	if data.Cluster().Spec.EventRateLimitConfig != nil && data.Cluster().Spec.EventRateLimitConfig.Server != nil {
