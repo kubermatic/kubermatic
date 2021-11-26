@@ -76,7 +76,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
-			volumes := getVolumes()
+			volumes := getVolumes(data.IsKonnectivityEnabled())
 			volumeMounts := getVolumeMounts()
 
 			if data.Cluster().Spec.Cloud.GCP != nil {
@@ -309,8 +309,8 @@ func getVolumeMounts() []corev1.VolumeMount {
 	}
 }
 
-func getVolumes() []corev1.Volume {
-	return []corev1.Volume{
+func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
+	vs := []corev1.Volume{
 		{
 			Name: resources.CASecretName,
 			VolumeSource: corev1.VolumeSource{
@@ -348,14 +348,6 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 		{
-			Name: resources.OpenVPNClientCertificatesSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.OpenVPNClientCertificatesSecretName,
-				},
-			},
-		},
-		{
 			Name: resources.ControllerManagerKubeconfigSecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
@@ -364,6 +356,17 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 	}
+	if !isKonnectivityEnabled {
+		vs = append(vs, corev1.Volume{
+			Name: resources.OpenVPNClientCertificatesSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: resources.OpenVPNClientCertificatesSecretName,
+				},
+			},
+		})
+	}
+	return vs
 }
 
 type kubeControllerManagerEnvData interface {

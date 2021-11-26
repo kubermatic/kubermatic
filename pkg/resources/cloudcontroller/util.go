@@ -119,16 +119,8 @@ func isOTC(dc *kubermaticv1.DatacenterSpecOpenstack) bool {
 	return u.Host == "iam.eu-de.otc.t-systems.com"
 }
 
-func getVolumes() []corev1.Volume {
-	return []corev1.Volume{
-		{
-			Name: resources.OpenVPNClientCertificatesSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.OpenVPNClientCertificatesSecretName,
-				},
-			},
-		},
+func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
+	vs := []corev1.Volume{
 		{
 			Name: resources.CloudControllerManagerKubeconfigSecretName,
 			VolumeSource: corev1.VolumeSource{
@@ -138,6 +130,17 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 	}
+	if !isKonnectivityEnabled {
+		vs = append(vs, corev1.Volume{
+			Name: resources.OpenVPNClientCertificatesSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: resources.OpenVPNClientCertificatesSecretName,
+				},
+			},
+		})
+	}
+	return vs
 }
 
 func getVolumeMounts() []corev1.VolumeMount {

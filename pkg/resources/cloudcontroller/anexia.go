@@ -59,7 +59,7 @@ func anexiaDeploymentCreator(data *resources.TemplateData) reconciling.NamedDepl
 				return nil, fmt.Errorf("failed to get credentials: %v", err)
 			}
 
-			deployment.Spec.Template.Spec.Volumes = getVolumes()
+			deployment.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled())
 
 			deployment.Spec.Template.Spec.Containers = []corev1.Container{
 				{

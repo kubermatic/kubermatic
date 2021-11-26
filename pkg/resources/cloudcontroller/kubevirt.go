@@ -78,7 +78,7 @@ func kubevirtDeploymentCreator(data *resources.TemplateData) reconciling.NamedDe
 
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.BoolPtr(false)
 
-			dep.Spec.Template.Spec.Volumes = append(getVolumes(), corev1.Volume{
+			dep.Spec.Template.Spec.Volumes = append(getVolumes(data.IsKonnectivityEnabled()), corev1.Volume{
 				Name: resources.CloudConfigConfigMapName,
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{

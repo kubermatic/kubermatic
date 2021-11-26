@@ -43,6 +43,32 @@ spec:
             weight: 10
       containers:
       - args:
+        - -conf
+        - /etc/coredns/Corefile
+        image: k8s.gcr.io/coredns/coredns:v1.8.0
+        name: dns-resolver
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 2
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 15
+        resources:
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 5m
+            memory: 20Mi
+        volumeMounts:
+        - mountPath: /etc/coredns
+          name: dns-resolver
+          readOnly: true
+      - args:
         - --client
         - --proto
         - tcp
@@ -96,45 +122,19 @@ spec:
         - mountPath: /etc/openvpn/pki/client
           name: openvpn-client-certificates
           readOnly: true
-      - args:
-        - -conf
-        - /etc/coredns/Corefile
-        image: k8s.gcr.io/coredns/coredns:v1.8.0
-        name: dns-resolver
-        readinessProbe:
-          failureThreshold: 3
-          httpGet:
-            path: /health
-            port: 8080
-            scheme: HTTP
-          initialDelaySeconds: 2
-          periodSeconds: 10
-          successThreshold: 1
-          timeoutSeconds: 15
-        resources:
-          limits:
-            cpu: 100m
-            memory: 128Mi
-          requests:
-            cpu: 5m
-            memory: 20Mi
-        volumeMounts:
-        - mountPath: /etc/coredns
-          name: dns-resolver
-          readOnly: true
       imagePullSecrets:
       - name: dockercfg
       volumes:
       - configMap:
           name: dns-resolver
         name: dns-resolver
-      - name: openvpn-client-certificates
-        secret:
-          secretName: openvpn-client-certificates
       - name: ca
         secret:
           items:
           - key: ca.crt
             path: ca.crt
           secretName: ca
+      - name: openvpn-client-certificates
+        secret:
+          secretName: openvpn-client-certificates
 status: {}
