@@ -45,7 +45,6 @@ import (
 	clustervalidation "k8c.io/kubermatic/v2/pkg/webhook/cluster/validation"
 
 	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/types"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"
@@ -225,20 +224,13 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 			}, nil
 		}
 
+		caPool := options.caBundle.CertPool()
+
 		// Setup the validation admission handler for kubermatic Cluster CRDs
-		clustervalidation.NewAdmissionHandler(mgr.GetClient(), seedsGetter, options.featureGates, options.caBundle.CertPool()).SetupWebhookWithManager(mgr)
+		clustervalidation.NewAdmissionHandler(mgr.GetClient(), seedsGetter, options.featureGates, caPool).SetupWebhookWithManager(mgr)
 
 		// Setup the mutation admission handler for kubermatic Cluster CRDs
-		// TODO: Refactor mutation webhook to also use the seedsGetter, so it can
-		// react to changes to Seeds at runtime.
-		seed, err := seedGetter()
-		if err != nil {
-			log.Fatalf("could not get seed resource: %v", err)
-		}
-
-		if err := setupMutationWebhook(rootCtx, mgr, seed, ctrlCtx); err != nil {
-			log.Fatalw("Failed to setup mutation webhook", zap.Error(err))
-		}
+		clustermutation.NewAdmissionHandler(options.namespace, mgr.GetClient(), ctrlCtx.configGetter, seedsGetter, caPool).SetupWebhookWithManager(mgr)
 	}
 
 	if err := createAllControllers(ctrlCtx); err != nil {
@@ -269,41 +261,4 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 func isInternalConfig(cfg *rest.Config) bool {
 	host, port := os.Getenv("KUBERNETES_SERVICE_HOST"), os.Getenv("KUBERNETES_SERVICE_PORT")
 	return cfg.Host == "https://"+net.JoinHostPort(host, port)
-}
-
-func setupMutationWebhook(ctx context.Context, mgr manager.Manager, seed *kubermaticv1.Seed, ctrlCtx *controllerContext) error {
-	var defaultingTemplate kubermaticv1.ClusterTemplate
-
-	if seed.Spec.DefaultClusterTemplate == "" {
-		settings, err := defaultComponentSettings(ctrlCtx.runOptions, seed.Spec.DefaultComponentSettings)
-		if err != nil {
-			return err
-		}
-
-		defaultingTemplate.Spec.ComponentsOverride = settings
-	} else {
-		err := mgr.GetAPIReader().Get(context.Background(), types.NamespacedName{
-			Namespace: ctrlCtx.runOptions.namespace,
-			Name:      seed.Spec.DefaultClusterTemplate,
-		}, &defaultingTemplate)
-		if err != nil {
-			return err
-		}
-
-		scope, ok := defaultingTemplate.Labels["scope"]
-		if !ok || scope != kubermaticv1.SeedTemplateScope {
-			return fmt.Errorf("invalid scope of default cluster template: %s", seed.Spec.DefaultClusterTemplate)
-		}
-
-		settings, err := defaultComponentSettings(ctrlCtx.runOptions, defaultingTemplate.Spec.ComponentsOverride)
-		if err != nil {
-			return err
-		}
-
-		defaultingTemplate.Spec.ComponentsOverride = settings
-	}
-
-	clustermutation.NewAdmissionHandler(defaultingTemplate).SetupWebhookWithManager(mgr)
-
-	return nil
 }

@@ -60,8 +60,10 @@ const (
 const (
 	// ApiServer secure port
 	APIServerSecurePort = 6443
-	// DefaultNodePortRange A port range to reserve for services with NodePort visibility
-	DefaultNodePortRange = "30000-32767"
+
+	DefaultControllerManagerReplicas = 1
+	DefaultSchedulerReplicas         = 1
+	DefaultConcurrentClusterUpdates  = 10
 )
 
 const (

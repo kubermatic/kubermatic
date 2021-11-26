@@ -56,6 +56,10 @@ type AdmissionHandler struct {
 	client      ctrlruntimeclient.Client
 	seedsGetter provider.SeedsGetter
 	caBundle    *x509.CertPool
+
+	// disableProviderValidation is only for unit tests, to ensure no
+	// provide would phone home to validate dummy test credentials
+	disableProviderValidation bool
 }
 
 // NewAdmissionHandler returns a new cluster validation AdmissionHandler.
@@ -155,7 +159,7 @@ func (h *AdmissionHandler) buildValidationDependencies(ctx context.Context, c *k
 
 		if datacenter == nil {
 			allErrs = append(allErrs, field.Invalid(field.NewPath("spec", "cloud", "dc"), datacenterName, "invalid datacenter name"))
-		} else {
+		} else if !h.disableProviderValidation {
 			secretKeySelectorFunc := provider.SecretKeySelectorValueFuncFactory(ctx, h.client)
 			cloudProvider, err = cloud.Provider(datacenter, secretKeySelectorFunc, h.caBundle)
 			if err != nil {

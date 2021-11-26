@@ -41,12 +41,10 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/rancher"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/seedresourcesuptodatecondition"
 	updatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/update"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	utilpointer "k8s.io/utils/pointer"
 )
 
 // AllControllers stores the list of all controllers that we want to run,
@@ -94,65 +92,6 @@ func createSeedConditionUpToDateController(ctrlCtx *controllerContext) error {
 	)
 }
 
-func defaultComponentSettings(runOptions controllerRunOptions, defaultComponentSettings kubermaticv1.ComponentSettings) (kubermaticv1.ComponentSettings, error) {
-	// Copy default settings.
-	settings := defaultComponentSettings
-
-	if replicas := runOptions.apiServerDefaultReplicas; replicas != 0 {
-		if settings.Apiserver.Replicas != nil && replicas != int(*settings.Apiserver.Replicas) {
-			return settings, fmt.Errorf(
-				"conflicting settings, cli option api-server-default-replicas (%v) and field Seed.spec.defaultComponentSettings.apiserver.replicas (%v) do not match",
-				replicas,
-				*settings.Apiserver.Replicas,
-			)
-		}
-
-		settings.Apiserver.Replicas = utilpointer.Int32Ptr(int32(replicas))
-	}
-
-	if reconcilingDisabled := runOptions.apiServerEndpointReconcilingDisabled; reconcilingDisabled {
-		settings.Apiserver.EndpointReconcilingDisabled = &reconcilingDisabled
-	}
-
-	if nodePortRange := runOptions.nodePortRange; nodePortRange != "" {
-		if settings.Apiserver.NodePortRange != "" && settings.Apiserver.NodePortRange != nodePortRange {
-			return settings, fmt.Errorf(
-				"conflicting settings, cli option nodeport-range (%v) and field Seed.spec.defaultComponentSettings.apiserver.nodePortRange (%v) do not match",
-				nodePortRange,
-				settings.Apiserver.NodePortRange,
-			)
-		}
-
-		settings.Apiserver.NodePortRange = nodePortRange
-	}
-
-	if replicas := runOptions.controllerManagerDefaultReplicas; replicas != 0 {
-		if settings.ControllerManager.Replicas != nil && replicas != int(*settings.ControllerManager.Replicas) {
-			return settings, fmt.Errorf(
-				"conflicting settings, cli option controller-manager-default-replicas (%v) and field Seed.spec.defaultComponentSettings.controllerManager.replicas (%v) do not match",
-				replicas,
-				*settings.ControllerManager.Replicas,
-			)
-		}
-
-		settings.ControllerManager.Replicas = utilpointer.Int32Ptr(int32(replicas))
-	}
-
-	if replicas := runOptions.schedulerDefaultReplicas; replicas != 0 {
-		if settings.Scheduler.Replicas != nil && replicas != int(*settings.Scheduler.Replicas) {
-			return settings, fmt.Errorf(
-				"conflicting settings, cli option schedular-default-replicas (%v) and field Seed.spec.defaultComponentSettings.schedular.replicas (%v) do not match",
-				replicas,
-				*settings.Scheduler.Replicas,
-			)
-		}
-
-		settings.Scheduler.Replicas = utilpointer.Int32Ptr(int32(replicas))
-	}
-
-	return settings, nil
-}
-
 func createCloudController(ctrlCtx *controllerContext) error {
 	cloudcontroller.MustRegisterMetrics(prometheus.DefaultRegisterer)
 
@@ -186,7 +125,6 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 		ctrlCtx.configGetter,
 		ctrlCtx.clientProvider,
 		ctrlCtx.runOptions.overwriteRegistry,
-		ctrlCtx.runOptions.nodePortRange,
 		ctrlCtx.runOptions.nodeAccessNetwork,
 		ctrlCtx.runOptions.etcdDiskSize,
 		userClusterMLAEnabled(ctrlCtx),
@@ -310,7 +248,6 @@ func createMonitoringController(ctrlCtx *controllerContext) error {
 		ctrlCtx.seedGetter,
 		ctrlCtx.configGetter,
 		ctrlCtx.runOptions.overwriteRegistry,
-		ctrlCtx.runOptions.nodePortRange,
 		ctrlCtx.runOptions.nodeAccessNetwork,
 		ctrlCtx.dockerPullConfigJSON,
 		ctrlCtx.runOptions.concurrentClusterUpdate,

@@ -55,7 +55,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, client ctrlrunt
 		WithSeed(seed.DeepCopy()).
 		WithKubermaticConfiguration(config.DeepCopy()).
 		WithOverwriteRegistry(r.overwriteRegistry).
-		WithNodePortRange(r.nodePortRange).
+		WithNodePortRange(config.Spec.UserCluster.NodePortRange).
 		WithNodeAccessNetwork(r.nodeAccessNetwork).
 		WithEtcdDiskSize(resource.Quantity{}).
 		WithBackupPeriod(20 * time.Minute).

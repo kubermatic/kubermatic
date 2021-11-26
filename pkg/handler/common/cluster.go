@@ -174,6 +174,11 @@ func GenerateCluster(
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
+	config, err := configGetter(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	credentialName := body.Cluster.Credential
 	if len(credentialName) > 0 {
 		cloudSpec, err := credentialManager.SetCloudCredentials(adminUserInfo, credentialName, body.Cluster.Spec.Cloud, dc)
@@ -185,15 +190,9 @@ func GenerateCluster(
 
 	// Create the cluster.
 	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetSeedClusterAdminRuntimeClient())
-	spec, err := cluster.Spec(body.Cluster, dc, secretKeyGetter, caBundle, features)
+	spec, err := cluster.Spec(body.Cluster, seed, dc, config, secretKeyGetter, caBundle, features)
 	if err != nil {
 		return nil, errors.NewBadRequest("invalid cluster: %v", err)
-	}
-
-	// master level ExposeStrategy is the default
-	spec.ExposeStrategy = exposeStrategy
-	if seed.Spec.ExposeStrategy != "" {
-		spec.ExposeStrategy = seed.Spec.ExposeStrategy
 	}
 
 	if err = validation.ValidateUpdateWindow(spec.UpdateWindow); err != nil {
@@ -260,11 +259,6 @@ func GenerateCluster(
 		partialCluster.Spec.EnableUserSSHKeyAgent = pointer.BoolPtr(true)
 	} else {
 		partialCluster.Spec.EnableUserSSHKeyAgent = body.Cluster.Spec.EnableUserSSHKeyAgent
-	}
-
-	config, err := configGetter(ctx)
-	if err != nil {
-		return nil, err
 	}
 
 	// Generate the name here so that it can be used in the secretName below.
@@ -517,8 +511,8 @@ func PatchEndpoint(
 		return nil, fmt.Errorf("failed to create cloud provider: %v", err)
 	}
 
-	if err := validation.ValidateUpdateCluster(ctx, newInternalCluster, oldInternalCluster, dc, cloudProvider, features); err != nil {
-		return nil, errors.NewBadRequest("invalid cluster: %v", err)
+	if errs := validation.ValidateUpdateCluster(ctx, newInternalCluster, oldInternalCluster, dc, cloudProvider, features).ToAggregate(); errs != nil {
+		return nil, errors.NewBadRequest("invalid cluster: %v", errs)
 	}
 	if err = validation.ValidateUpdateWindow(newInternalCluster.Spec.UpdateWindow); err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)

@@ -50,10 +50,10 @@ var (
 		kubermaticv1.CNIPluginTypeNone:   sets.NewString(""),
 	}
 
-	// unsafeCNIUpgradeLabel allows unsafe CNI version upgrade (difference in versions more than one minor version).
-	unsafeCNIUpgradeLabel = "unsafe-cni-upgrade"
-	// unsafeCNIMigrationLabel allows unsafe CNI type migration.
-	unsafeCNIMigrationLabel = "unsafe-cni-migration"
+	// UnsafeCNIUpgradeLabel allows unsafe CNI version upgrade (difference in versions more than one minor version).
+	UnsafeCNIUpgradeLabel = "unsafe-cni-upgrade"
+	// UnsafeCNIMigrationLabel allows unsafe CNI type migration.
+	UnsafeCNIMigrationLabel = "unsafe-cni-migration"
 )
 
 // ValidateClusterSpec validates the given cluster spec
@@ -121,7 +121,15 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 // ValidateCreateClusterSpec validates the given cluster spec during a CREATE operation.
 func ValidateCreateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider, features features.FeatureGate) field.ErrorList {
 	// currently, there are no special rules that only apply during CREATE
-	return ValidateClusterSpec(spec, dc, cloudProvider, features, field.NewPath("spec"))
+	allErrs := ValidateClusterSpec(spec, dc, cloudProvider, features, field.NewPath("spec"))
+
+	// nodeport range is required during create options
+	portRangeFld := field.NewPath("componentsOverride", "apiserver", "nodePortRange")
+	if errs := ValidateNodePortRange(spec.ComponentsOverride.Apiserver.NodePortRange, portRangeFld, true); len(errs) > 0 {
+		allErrs = append(allErrs, errs...)
+	}
+
+	return allErrs
 }
 
 // ValidateUpdateCluster validates if the cluster update is allowed
@@ -131,6 +139,12 @@ func ValidateUpdateCluster(ctx context.Context, newCluster, oldCluster *kubermat
 
 	// perform general basic checks on the new cluster spec
 	if errs := ValidateClusterSpec(&newCluster.Spec, dc, cloudProvider, features, specPath); len(errs) > 0 {
+		allErrs = append(allErrs, errs...)
+	}
+
+	// nodeport range is optional during update options
+	portRangeFld := field.NewPath("componentsOverride", "apiserver", "nodePortRange")
+	if errs := ValidateNodePortRange(newCluster.Spec.ComponentsOverride.Apiserver.NodePortRange, portRangeFld, false); len(errs) > 0 {
 		allErrs = append(allErrs, errs...)
 	}
 
@@ -157,8 +171,10 @@ func ValidateUpdateCluster(ctx context.Context, newCluster, oldCluster *kubermat
 		allErrs = append(allErrs, field.Forbidden(field.NewPath("address", "url"), "URL cannot be changed"))
 	}
 
-	if err := kuberneteshelper.ValidateKubernetesToken(newCluster.Address.AdminToken); err != nil {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("address", "adminToken"), newCluster.Address.AdminToken, err.Error()))
+	if newCluster.Address.AdminToken != "" {
+		if err := kuberneteshelper.ValidateKubernetesToken(newCluster.Address.AdminToken); err != nil {
+			allErrs = append(allErrs, field.Invalid(field.NewPath("address", "adminToken"), newCluster.Address.AdminToken, err.Error()))
+		}
 	}
 
 	if !equality.Semantic.DeepEqual(newCluster.Status, oldCluster.Status) {
@@ -721,18 +737,18 @@ func validateCNIUpdate(cni *kubermaticv1.CNIPluginSettings, oldCni *kubermaticv1
 		return field.ErrorList{field.Required(specFldPath.Child("cniPlugin"), "CNI plugin settings cannot be removed")}
 	}
 	if oldCni == nil && cni != nil {
-		if _, ok := labels[unsafeCNIUpgradeLabel]; ok {
+		if _, ok := labels[UnsafeCNIUpgradeLabel]; ok {
 			return field.ErrorList{} // allowed for migration path from older KKP with existing clusters with no CNI settings
 		}
 		return field.ErrorList{field.Forbidden(specFldPath.Child("cniPlugin"),
-			fmt.Sprintf("cannot add CNI plugin settings, unless %s label is present", unsafeCNIUpgradeLabel))}
+			fmt.Sprintf("cannot add CNI plugin settings, unless %s label is present", UnsafeCNIUpgradeLabel))}
 	}
 	if cni.Type != oldCni.Type {
-		if _, ok := labels[unsafeCNIMigrationLabel]; ok {
+		if _, ok := labels[UnsafeCNIMigrationLabel]; ok {
 			return field.ErrorList{} // allowed for CNI type migration path
 		}
 		return field.ErrorList{field.Forbidden(specFldPath.Child("cniPlugin", "type"),
-			fmt.Sprintf("cannot change CNI plugin type, unless %s label is present", unsafeCNIMigrationLabel))}
+			fmt.Sprintf("cannot change CNI plugin type, unless %s label is present", UnsafeCNIMigrationLabel))}
 	}
 	if cni.Version != oldCni.Version {
 		newV, err := semver.NewVersion(cni.Version)
@@ -746,9 +762,9 @@ func validateCNIUpdate(cni *kubermaticv1.CNIPluginSettings, oldCni *kubermaticv1
 				fmt.Sprintf("couldn't parse CNI version `%s`: %v", oldCni.Version, err))}
 		}
 		if newV.Major() != oldV.Major() || (newV.Minor() != oldV.Minor()+1 && oldV.Minor() != newV.Minor()+1) {
-			if _, ok := labels[unsafeCNIUpgradeLabel]; !ok {
+			if _, ok := labels[UnsafeCNIUpgradeLabel]; !ok {
 				return field.ErrorList{field.Forbidden(specFldPath.Child("cniPlugin", "version"),
-					fmt.Sprintf("cannot upgrade CNI from %s to %s, only one minor version difference is allowed unless %s label is present", oldCni.Version, cni.Version, unsafeCNIUpgradeLabel))}
+					fmt.Sprintf("cannot upgrade CNI from %s to %s, only one minor version difference is allowed unless %s label is present", oldCni.Version, cni.Version, UnsafeCNIUpgradeLabel))}
 			}
 		}
 	}
