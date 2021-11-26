@@ -211,12 +211,6 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		}
 	}
 
-	if r.isKonnectivityEnabled {
-		if err := r.reconcileKonnectivityDeployments(ctx); err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -280,6 +274,7 @@ func (r *reconciler) reconcileServiceAccounts(ctx context.Context) error {
 	if r.isKonnectivityEnabled {
 		creators = []reconciling.NamedServiceAccountCreatorGetter{
 			konnectivity.ServiceAccountCreator(),
+			metricsserver.ServiceAccountCreator(), // required only if metrics-server is running in user cluster
 		}
 		if err := reconciling.ReconcileServiceAccounts(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %v", metav1.NamespaceSystem, err)
@@ -374,7 +369,7 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context) error {
 	// kube-system
 	creators := []reconciling.NamedRoleBindingCreatorGetter{
 		machinecontroller.KubeSystemRoleBindingCreator(),
-		metricsserver.RolebindingAuthReaderCreator(),
+		metricsserver.RolebindingAuthReaderCreator(r.isKonnectivityEnabled),
 		scheduler.RoleBindingAuthDelegator(),
 		controllermanager.RoleBindingAuthDelegator(),
 		clusterautoscaler.KubeSystemRoleBindingCreator(),
@@ -471,8 +466,8 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context) error {
 		machinecontroller.NodeBootstrapperClusterRoleBindingCreator(),
 		machinecontroller.NodeSignerClusterRoleBindingCreator(),
 		dnatcontroller.ClusterRoleBindingCreator(),
-		metricsserver.ClusterRoleBindingResourceReaderCreator(),
-		metricsserver.ClusterRoleBindingAuthDelegatorCreator(),
+		metricsserver.ClusterRoleBindingResourceReaderCreator(r.isKonnectivityEnabled),
+		metricsserver.ClusterRoleBindingAuthDelegatorCreator(r.isKonnectivityEnabled),
 		scheduler.ClusterRoleBindingAuthDelegatorCreator(),
 		controllermanager.ClusterRoleBindingAuthDelegator(),
 		clusterautoscaler.ClusterRoleBindingCreator(),
@@ -559,8 +554,14 @@ func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Contex
 
 func (r *reconciler) reconcileServices(ctx context.Context) error {
 	creatorsKubeSystem := []reconciling.NamedServiceCreatorGetter{
-		metricsserver.ExternalNameServiceCreator(r.namespace),
 		coredns.ServiceCreator(r.dnsClusterIP),
+	}
+	if r.isKonnectivityEnabled {
+		// metrics-server running in user cluster - ClusterIP service
+		creatorsKubeSystem = append(creatorsKubeSystem, metricsserver.ServiceCreator())
+	} else {
+		// metrics-server running in seed cluster - ExternalName service
+		creatorsKubeSystem = append(creatorsKubeSystem, metricsserver.ExternalNameServiceCreator(r.namespace))
 	}
 
 	if err := reconciling.ReconcileServices(ctx, creatorsKubeSystem, metav1.NamespaceSystem, r.Client); err != nil {
@@ -668,6 +669,13 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 	}
 	if !r.isKonnectivityEnabled {
 		creators = append(creators, openvpn.ClientCertificate(data.openVPNCACert))
+	} else {
+		// required only if metrics-server is running in user cluster
+		creators = append(creators, metricsserver.TLSServingCertSecretCreator(
+			func() (*triple.KeyPair, error) {
+				return data.caCert, nil
+			}),
+		)
 	}
 
 	if data.csiCloudConfig != nil {
@@ -818,16 +826,16 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 		}
 	}
 
-	return nil
-}
+	if r.isKonnectivityEnabled {
+		creators := []reconciling.NamedDeploymentCreatorGetter{
+			konnectivity.DeploymentCreator(r.clusterURL.Hostname(), r.overwriteRegistryFunc),
+			metricsserver.DeploymentCreator(r.overwriteRegistryFunc), // deploy metrics-server in user cluster
+		}
+		if err := reconciling.ReconcileDeployments(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
+			return fmt.Errorf("failed to reconcile Deployments in namespace %s: %v", metav1.NamespaceSystem, err)
+		}
+	}
 
-func (r *reconciler) reconcileKonnectivityDeployments(ctx context.Context) error {
-	creators := []reconciling.NamedDeploymentCreatorGetter{
-		konnectivity.DeploymentCreator(r.clusterURL.Hostname(), r.overwriteRegistryFunc),
-	}
-	if err := reconciling.ReconcileDeployments(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile Deployments in namespace %s: %v", metav1.NamespaceSystem, err)
-	}
 	return nil
 }
 
@@ -843,6 +851,9 @@ func (r *reconciler) reconcilePodDisruptionBudgets(ctx context.Context) error {
 		if err := reconciling.ReconcilePodDisruptionBudgets(ctx, creators, resources.GatekeeperNamespace, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile PodDisruptionBudgets in namespace %s: %v", resources.GatekeeperNamespace, err)
 		}
+	}
+	if r.isKonnectivityEnabled {
+		creators = append(creators, metricsserver.PodDisruptionBudgetCreator())
 	}
 	if err := reconciling.ReconcilePodDisruptionBudgets(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile PodDisruptionBudgets: %v", err)
