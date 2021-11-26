@@ -64,14 +64,14 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/featuregates").
 		Handler(r.getFeatureGates())
 
+	mux.Methods(http.MethodGet).
+		Path("/providers/aws/regions").
+		Handler(r.listAWSRegions())
+
 	// Defines a set of HTTP endpoints for interacting with EKS clusters
 	mux.Methods(http.MethodGet).
 		Path("/providers/eks/clusters").
 		Handler(r.listEKSClusters())
-
-	mux.Methods(http.MethodGet).
-		Path("/providers/ec2/regions").
-		Handler(r.listEC2Regions())
 
 	// Defines a set of HTTP endpoints for interacting with AKS clusters
 	mux.Methods(http.MethodGet).
@@ -4934,9 +4934,9 @@ func (r Routing) listAKSClusters() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v2/providers/ec2/regions regions listEC2Regions
+// swagger:route GET /api/v2/providers/aws/regions regions listAWSRegions
 //
-//     List EC2 regions.
+//     List AWS regions.
 //
 //
 //     Produces:
@@ -4947,13 +4947,13 @@ func (r Routing) listAKSClusters() http.Handler {
 //       200: []Regions
 //       401: empty
 //       403: empty
-func (r Routing) listEC2Regions() http.Handler {
+func (r Routing) listAWSRegions() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.ListEC2RegionsEndpoint(r.userInfoGetter, r.presetsProvider)),
-		provider.DecodeEC2CommonReq,
+		)(provider.ListAWSRegionsEndpoint(r.userInfoGetter, r.presetsProvider)),
+		provider.DecodeAWSCommonReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

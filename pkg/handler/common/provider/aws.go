@@ -328,7 +328,7 @@ type AWSCredential struct {
 	SecretAccessKey string
 }
 
-func ListEC2Regions(ctx context.Context, credential AWSCredential) (apiv2.Regions, error) {
+func ListAWSRegions(ctx context.Context, credential AWSCredential) (apiv2.Regions, error) {
 	regionInput := &ec2service.DescribeRegionsInput{}
 
 	// Must provide either a region or endpoint configured to use the SDK, even for operations that may enumerate other regions
@@ -401,7 +401,7 @@ func ListEKSClusters(ctx context.Context, cred AWSCredential, region string) (ap
 		}
 	} else {
 		// list EKS clusters for all regions
-		regions, err := ListEC2Regions(ctx, cred)
+		regions, err := ListAWSRegions(ctx, cred)
 		if err != nil {
 			return nil, fmt.Errorf("cannot list regions: %w", err)
 		}

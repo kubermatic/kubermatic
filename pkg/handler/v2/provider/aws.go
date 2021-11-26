@@ -191,8 +191,8 @@ func ListEKSClustersEndpoint(userInfoGetter provider.UserInfoGetter, presetsProv
 	}
 }
 
-// EC2CommonReq represent a request with common parameters for .
-type EC2CommonReq struct {
+// AWSCommonReq represent a request with common parameters for .
+type AWSCommonReq struct {
 	// in: header
 	// name: AccessKeyID
 	AccessKeyID string
@@ -204,8 +204,8 @@ type EC2CommonReq struct {
 	Credential string
 }
 
-func DecodeEC2CommonReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req EC2CommonReq
+func DecodeAWSCommonReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req AWSCommonReq
 
 	req.AccessKeyID = r.Header.Get("AccessKeyID")
 	req.SecretAccessKey = r.Header.Get("SecretAccessKey")
@@ -215,18 +215,18 @@ func DecodeEC2CommonReq(c context.Context, r *http.Request) (interface{}, error)
 }
 
 // Validate validates EC2RegionReq request
-func (req EC2CommonReq) Validate() error {
+func (req AWSCommonReq) Validate() error {
 	if len(req.Credential) == 0 && len(req.AccessKeyID) == 0 && len(req.SecretAccessKey) == 0 {
 		return fmt.Errorf("AWS credentials cannot be empty")
 	}
 	return nil
 }
 
-func ListEC2RegionsEndpoint(userInfoGetter provider.UserInfoGetter, presetsProvider provider.PresetProvider) endpoint.Endpoint {
+func ListAWSRegionsEndpoint(userInfoGetter provider.UserInfoGetter, presetsProvider provider.PresetProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 
 		var err error
-		req := request.(EC2CommonReq)
+		req := request.(AWSCommonReq)
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
@@ -249,6 +249,6 @@ func ListEC2RegionsEndpoint(userInfoGetter provider.UserInfoGetter, presetsProvi
 				return nil, fmt.Errorf("error getting preset credentials for AWS: %v", err)
 			}
 		}
-		return providercommon.ListEC2Regions(ctx, credential)
+		return providercommon.ListAWSRegions(ctx, credential)
 	}
 }
