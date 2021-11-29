@@ -412,6 +412,21 @@ func (d *TemplateData) GetOpenVPNServerPort() (int32, error) {
 	return service.Spec.Ports[0].NodePort, nil
 }
 
+// GetKonnectivityServerPort returns the nodeport of the external Konnectivity Server service
+func (d *TemplateData) GetKonnectivityServerPort() (int32, error) {
+	// When using tunneling expose strategy the port is fixed and equal to apiserver port
+	if d.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
+		return d.Cluster().Address.Port, nil
+	}
+	service := &corev1.Service{}
+	key := types.NamespacedName{Namespace: d.cluster.Status.NamespaceName, Name: KonnectivityProxyServiceName}
+	if err := d.client.Get(d.ctx, key, service); err != nil {
+		return 0, fmt.Errorf("failed to get NodePort for Konnectivity Server service: %v", err)
+	}
+
+	return service.Spec.Ports[0].NodePort, nil
+}
+
 // GetMLAGatewayPort returns the NodePort of the external MLA Gateway service
 func (d *TemplateData) GetMLAGatewayPort() (int32, error) {
 	// When using tunneling expose strategy the port is fixed and equal to apiserver port

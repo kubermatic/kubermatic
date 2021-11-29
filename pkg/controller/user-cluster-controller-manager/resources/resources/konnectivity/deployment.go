@@ -31,7 +31,7 @@ import (
 )
 
 // DeploymentCreator returns function to create/update deployment for konnectivity agents in user cluster.
-func DeploymentCreator(clusterHostname string, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(kServerHost string, kServerPort int, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		const (
 			name    = "k8s-artifacts-prod/kas-network-proxy/proxy-agent"
@@ -56,8 +56,8 @@ func DeploymentCreator(clusterHostname string, registryWithOverwrite registry.Wi
 						"-v=100",
 						"--agent-identifiers=default-route=true",
 						"--ca-cert=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
-						fmt.Sprintf("--proxy-server-host=konnectivity-server.%s", clusterHostname),
-						"--proxy-server-port=6443",
+						fmt.Sprintf("--proxy-server-host=%s", kServerHost),
+						fmt.Sprintf("--proxy-server-port=%d", kServerPort),
 						"--admin-server-port=8133",
 						"--health-server-port=8134",
 						fmt.Sprintf("--service-account-token-path=/var/run/secrets/tokens/%s", resources.KonnectivityAgentToken),
