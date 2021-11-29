@@ -667,7 +667,7 @@ func (e *etcdCluster) restoreDatadirFromBackupIfNeeded(ctx context.Context, k8cC
 
 	log.Infow("restoring datadir from backup", "backup-name", activeRestore.Spec.BackupName)
 
-	s3Client, bucketName, err := resources.GetEtcdRestoreS3Client(ctx, activeRestore, false, client, k8cCluster)
+	s3Client, bucketName, err := resources.GetEtcdRestoreS3Client(ctx, activeRestore, false, client, k8cCluster, nil)
 	if err != nil {
 		return fmt.Errorf("failed to get s3 client: %w", err)
 	}
