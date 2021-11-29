@@ -175,6 +175,10 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return err
 	}
 
+	if err := r.reconcileNetworkPolicies(ctx, data); err != nil {
+		return err
+	}
+
 	// Try to delete OPA integration deployment if its present
 	if !r.opaIntegration {
 		if err := r.ensureOPAIntegrationIsRemoved(ctx); err != nil {
@@ -852,6 +856,24 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 		if err := reconciling.ReconcileDeployments(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile Deployments in namespace %s: %v", metav1.NamespaceSystem, err)
 		}
+	}
+
+	return nil
+}
+
+func (r *reconciler) reconcileNetworkPolicies(ctx context.Context, data reconcileData) error {
+
+	namedNetworkPolicyCreatorGetters := []reconciling.NamedNetworkPolicyCreatorGetter{
+		// coredns.AllowAllDnsNetworkPolicyCreator(),
+		coredns.KubeDNSNetworkPolicyCreator(),
+	}
+
+	// if r.userSSHKeyAgent {
+	// 	namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters, usersshkeys.NetworkPolicyCreator())
+	// }
+
+	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyCreatorGetters, metav1.NamespaceSystem, r.Client); err != nil {
+		return fmt.Errorf("failed to ensure Network Policies: %v", err)
 	}
 
 	return nil
