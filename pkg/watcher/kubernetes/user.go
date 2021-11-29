@@ -34,6 +34,7 @@ type UserWatcher struct {
 	provider  provider.UserProvider
 	watcher   watch.Interface
 	publisher *pubsub.PubSub
+	userCache map[uint64]*v1.User
 }
 
 // UserWatcher returns a new resource watcher.
@@ -47,10 +48,36 @@ func NewUserWatcher(provider provider.UserProvider) (*UserWatcher, error) {
 		provider:  provider,
 		watcher:   watcher,
 		publisher: pubsub.New(),
+		userCache: make(map[uint64]*v1.User),
 	}
 
 	go w.run()
 	return w, nil
+}
+
+func (watcher *UserWatcher) updateCache(event watch.EventType, hash uint64, user *v1.User) {
+	switch event {
+	case watch.Added:
+	case watch.Modified:
+		watcher.userCache[hash] = user
+	case watch.Deleted:
+		delete(watcher.userCache, hash)
+	}
+}
+
+func (watcher *UserWatcher) onUserModified(hash uint64, user *v1.User) {
+	cachedUser, exists := watcher.userCache[hash]
+	if !exists {
+		watcher.publisher.Publish(user, pubsub.LinearTreeTraverser([]uint64{hash}))
+		return
+	}
+
+	// Modify lastSeen field before comparison as we want to ignore this one
+	cachedUser.Spec.LastSeen = user.Spec.LastSeen
+
+	if !reflect.DeepEqual(cachedUser.Spec, user.Spec) {
+		watcher.publisher.Publish(user, pubsub.LinearTreeTraverser([]uint64{hash}))
+	}
 }
 
 // run and publish information about user updates. Watch will restart itself if any error occurs.
@@ -83,11 +110,16 @@ func (watcher *UserWatcher) run() {
 				continue
 			}
 
-			if event.Type == watch.Added || event.Type == watch.Modified {
+			switch event.Type {
+			case watch.Added:
 				watcher.publisher.Publish(user, pubsub.LinearTreeTraverser([]uint64{idHash}))
-			} else if event.Type == watch.Deleted {
+			case watch.Modified:
+				watcher.onUserModified(idHash, user)
+			case watch.Deleted:
 				watcher.publisher.Publish(nil, pubsub.LinearTreeTraverser([]uint64{idHash}))
 			}
+
+			watcher.updateCache(event.Type, idHash, user)
 		}
 	}
 }
@@ -101,7 +133,7 @@ func (watcher *UserWatcher) CalculateHash(id string) (uint64, error) {
 	return h.Sum64(), err
 }
 
-// Subscribe allows to register subscription handler which will be invoked on each user change.
+// Subscribe allows registering subscription handler which will be invoked on each user change.
 func (watcher *UserWatcher) Subscribe(subscription pubsub.Subscription, opts ...pubsub.SubscribeOption) pubsub.Unsubscriber {
 	return watcher.publisher.Subscribe(subscription, opts...)
 }
