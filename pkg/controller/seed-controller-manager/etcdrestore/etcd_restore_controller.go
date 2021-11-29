@@ -23,11 +23,13 @@ import (
 	"time"
 
 	"github.com/minio/minio-go"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -65,8 +67,9 @@ type Reconciler struct {
 	log        *zap.SugaredLogger
 	workerName string
 	ctrlruntimeclient.Client
-	recorder record.EventRecorder
-	versions kubermatic.Versions
+	recorder   record.EventRecorder
+	versions   kubermatic.Versions
+	seedGetter provider.SeedGetter
 }
 
 // Add creates a new etcd restore controller that is responsible for
@@ -77,6 +80,7 @@ func Add(
 	numWorkers int,
 	workerName string,
 	versions kubermatic.Versions,
+	seedGetter provider.SeedGetter,
 ) error {
 	log = log.Named(ControllerName)
 	client := mgr.GetClient()
@@ -87,6 +91,7 @@ func Add(
 		workerName: workerName,
 		recorder:   mgr.GetEventRecorderFor(ControllerName),
 		versions:   versions,
+		seedGetter: seedGetter,
 	}
 
 	ctrlOptions := controller.Options{
@@ -135,7 +140,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, nil
 	}
 
-	result, err := r.reconcile(ctx, log, restore, cluster)
+	seed, err := r.seedGetter()
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	result, err := r.reconcile(ctx, log, restore, cluster, seed)
 	if err != nil {
 		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Event(restore, corev1.EventTypeWarning, "ReconcilingError", err.Error())
@@ -149,7 +159,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return *result, err
 }
 
-func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, restore *kubermaticv1.EtcdRestore, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, restore *kubermaticv1.EtcdRestore, cluster *kubermaticv1.Cluster,
+	seed *kubermaticv1.Seed) (*reconcile.Result, error) {
 	if restore.Status.Phase == kubermaticv1.EtcdRestorePhaseCompleted {
 		return nil, nil
 	}
@@ -164,8 +175,23 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, rest
 		}
 	}
 
+	var destination *kubermaticv1.BackupDestination
+	if restore.Spec.Destination != "" {
+		if seed.Spec.EtcdBackupRestore == nil {
+			return nil, errors.Errorf("can't find backup restore destination %q in Seed %q", restore.Spec.Destination, seed.Name)
+		}
+		var ok bool
+		destination, ok = seed.Spec.EtcdBackupRestore.Destinations[restore.Spec.Destination]
+		if !ok {
+			return nil, errors.Errorf("can't find backup restore destination %q in Seed %q", restore.Spec.Destination, seed.Name)
+		}
+		if destination.Credentials == nil {
+			return nil, errors.Errorf("credentials not set for backup destination %q in Seed %q", restore.Spec.Destination, seed.Name)
+		}
+	}
+
 	// check that the backup to restore from exists and is accessible
-	s3Client, bucketName, err := resources.GetEtcdRestoreS3Client(ctx, restore, true, r.Client, cluster)
+	s3Client, bucketName, err := resources.GetEtcdRestoreS3Client(ctx, restore, true, r.Client, cluster, destination)
 	if err != nil {
 		return nil, fmt.Errorf("failed to obtain S3 client: %w", err)
 	}

@@ -1262,8 +1262,9 @@ func BackupCABundleConfigMapName(cluster *kubermaticv1.Cluster) string {
 
 // GetEtcdRestoreS3Client returns an S3 client for downloading the backup for a given EtcdRestore.
 // If the EtcdRestore doesn't reference a secret containing the credentials and endpoint and bucket name data,
-// one can optionally be created from a well-known secret and configmap in kube-system.
-func GetEtcdRestoreS3Client(ctx context.Context, restore *kubermaticv1.EtcdRestore, createSecretIfMissing bool, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (*minio.Client, string, error) {
+// one can optionally be created from a well-known secret and configmap in kube-system, or from a specified backup destination
+func GetEtcdRestoreS3Client(ctx context.Context, restore *kubermaticv1.EtcdRestore, createSecretIfMissing bool, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster,
+	destination *kubermaticv1.BackupDestination) (*minio.Client, string, error) {
 	secretData := make(map[string]string)
 
 	if restore.Spec.BackupDownloadCredentialsSecret != "" {
@@ -1280,22 +1281,33 @@ func GetEtcdRestoreS3Client(ctx context.Context, restore *kubermaticv1.EtcdResto
 			return nil, "", fmt.Errorf("BackupDownloadCredentialsSecret not set")
 		}
 
-		// create BackupDownloadCredentialsSecret containing values from kube-system/backup-s3 / kube-system/s3-settings
-
-		credsSecret := &corev1.Secret{}
-		if err := client.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: EtcdRestoreS3CredentialsSecret}, credsSecret); err != nil {
-			return nil, "", fmt.Errorf("failed to get s3 credentials secret %v/%v: %w", metav1.NamespaceSystem, EtcdRestoreS3CredentialsSecret, err)
-		}
-		settingsConfigMap := &corev1.ConfigMap{}
-		if err := client.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: EtcdRestoreS3SettingsConfigMap}, settingsConfigMap); err != nil {
-			return nil, "", fmt.Errorf("failed to get s3 settings configmap %v/%v: %w", metav1.NamespaceSystem, EtcdRestoreS3SettingsConfigMap, err)
-		}
-
-		for k, v := range credsSecret.Data {
-			secretData[k] = string(v)
-		}
-		for k, v := range settingsConfigMap.Data {
-			secretData[k] = v
+		// if destination is set, we need to use the backup credentials and bucket info from it to create the BackupDownloadCredentialsSecret
+		if destination != nil {
+			credsSecret := &corev1.Secret{}
+			if err := client.Get(ctx, types.NamespacedName{Namespace: destination.Credentials.Namespace, Name: destination.Credentials.Name}, credsSecret); err != nil {
+				return nil, "", fmt.Errorf("failed to get s3 credentials secret %v/%v: %w", destination.Credentials.Namespace, destination.Credentials.Name, err)
+			}
+			for k, v := range credsSecret.Data {
+				secretData[k] = string(v)
+			}
+			secretData[EtcdRestoreS3BucketNameKey] = destination.BucketName
+			secretData[EtcdRestoreS3EndpointKey] = destination.Endpoint
+		} else {
+			// else create BackupDownloadCredentialsSecret containing values from kube-system/backup-s3 / kube-system/s3-settings
+			credsSecret := &corev1.Secret{}
+			if err := client.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: EtcdRestoreS3CredentialsSecret}, credsSecret); err != nil {
+				return nil, "", fmt.Errorf("failed to get s3 credentials secret %v/%v: %w", metav1.NamespaceSystem, EtcdRestoreS3CredentialsSecret, err)
+			}
+			settingsConfigMap := &corev1.ConfigMap{}
+			if err := client.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: EtcdRestoreS3SettingsConfigMap}, settingsConfigMap); err != nil {
+				return nil, "", fmt.Errorf("failed to get s3 settings configmap %v/%v: %w", metav1.NamespaceSystem, EtcdRestoreS3SettingsConfigMap, err)
+			}
+			for k, v := range credsSecret.Data {
+				secretData[k] = string(v)
+			}
+			for k, v := range settingsConfigMap.Data {
+				secretData[k] = v
+			}
 		}
 
 		creator := func(se *corev1.Secret) (*corev1.Secret, error) {

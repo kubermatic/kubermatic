@@ -295,6 +295,7 @@ func createEtcdRestoreController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.versions,
+		ctrlCtx.seedGetter,
 	)
 }
 
