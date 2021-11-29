@@ -95,23 +95,7 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return nil, err
 	}
 
-	if err := r.ensureServiceAccounts(ctx, cluster); err != nil {
-		return nil, err
-	}
-
-	if err := r.ensureRoles(ctx, cluster); err != nil {
-		return nil, err
-	}
-
-	if err := r.ensureRoleBindings(ctx, cluster); err != nil {
-		return nil, err
-	}
-
-	if err := r.ensureClusterRoles(ctx); err != nil {
-		return nil, err
-	}
-
-	if err := r.ensureClusterRoleBindings(ctx, cluster); err != nil {
+	if err := r.ensureRBAC(ctx, cluster); err != nil {
 		return nil, err
 	}
 
@@ -120,7 +104,9 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 	}
 
 	// check that all StatefulSets are created
-	if err := r.ensureStatefulSets(ctx, cluster, data); err != nil {
+	if ok, err := r.statefulSetHealthCheck(ctx, cluster); !ok || err != nil {
+		r.log.Info("Skipping reconcile for StatefulSets, not healthy yet")
+	} else if err := r.ensureStatefulSets(ctx, cluster, data); err != nil {
 		return nil, err
 	}
 
@@ -363,7 +349,6 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 
 		// Kubeconfigs
 		resources.GetInternalKubeconfigCreator(resources.SchedulerKubeconfigSecretName, resources.SchedulerCertUsername, nil, data),
-		resources.GetInternalKubeconfigCreator(resources.KubeletDnatControllerKubeconfigSecretName, resources.KubeletDnatControllerCertUsername, nil, data),
 		resources.GetInternalKubeconfigCreator(resources.MachineControllerKubeconfigSecretName, resources.MachineControllerCertUsername, nil, data),
 		resources.GetInternalKubeconfigCreator(resources.ControllerManagerKubeconfigSecretName, resources.ControllerManagerCertUsername, nil, data),
 		resources.GetInternalKubeconfigCreator(resources.KubeStateMetricsKubeconfigSecretName, resources.KubeStateMetricsCertUsername, nil, data),
@@ -387,6 +372,7 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 			openvpn.CACreator(),
 			openvpn.TLSServingCertificateCreator(data),
 			openvpn.InternalClientCertificateCreator(data),
+			resources.GetInternalKubeconfigCreator(resources.KubeletDnatControllerKubeconfigSecretName, resources.KubeletDnatControllerCertUsername, nil, data),
 		)
 	}
 
@@ -507,6 +493,11 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 				apiserver.OpenVPNServerAllowCreator(c),
 			)
 		}
+		if c.Spec.OIDC.IssuerURL != "" {
+			namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters, apiserver.OIDCIssuerAllowCreator(c.Spec.OIDC.IssuerURL))
+		} else if r.features.KubernetesOIDCAuthentication {
+			namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters, apiserver.OIDCIssuerAllowCreator(data.OIDCIssuerURL()))
+		}
 		if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
 			return fmt.Errorf("failed to ensure Network Policies: %v", err)
 		}
@@ -551,9 +542,9 @@ func (r *Reconciler) ensureConfigMaps(ctx context.Context, c *kubermaticv1.Clust
 }
 
 // GetStatefulSetCreators returns all StatefulSetCreators that are currently in use
-func GetStatefulSetCreators(data *resources.TemplateData, enableDataCorruptionChecks bool) []reconciling.NamedStatefulSetCreatorGetter {
+func GetStatefulSetCreators(data *resources.TemplateData, enableDataCorruptionChecks bool, enableTLSOnly bool) []reconciling.NamedStatefulSetCreatorGetter {
 	creators := []reconciling.NamedStatefulSetCreatorGetter{
-		etcd.StatefulSetCreator(data, enableDataCorruptionChecks),
+		etcd.StatefulSetCreator(data, enableDataCorruptionChecks, enableTLSOnly),
 	}
 	if flag := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureRancherIntegration]; flag {
 		creators = append(creators, rancherserver.StatefulSetCreator(data))
@@ -631,7 +622,12 @@ func (r *Reconciler) ensureVerticalPodAutoscalers(ctx context.Context, c *kuberm
 }
 
 func (r *Reconciler) ensureStatefulSets(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	creators := GetStatefulSetCreators(data, r.features.EtcdDataCorruptionChecks)
+	useTLSOnly, err := r.etcdUseStrictTLS(ctx, c)
+	if err != nil {
+		return err
+	}
+
+	creators := GetStatefulSetCreators(data, r.features.EtcdDataCorruptionChecks, useTLSOnly)
 
 	return reconciling.ReconcileStatefulSets(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c)))
 }
@@ -647,6 +643,30 @@ func (r *Reconciler) ensureOldOPAIntegrationIsRemoved(ctx context.Context, data 
 		if err := r.Client.Delete(ctx, resource); err != nil && !errors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure old OPA integration version resources are removed/not present: %v", err)
 		}
+	}
+
+	return nil
+}
+
+func (r *Reconciler) ensureRBAC(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	if err := r.ensureServiceAccounts(ctx, cluster); err != nil {
+		return err
+	}
+
+	if err := r.ensureRoles(ctx, cluster); err != nil {
+		return err
+	}
+
+	if err := r.ensureRoleBindings(ctx, cluster); err != nil {
+		return err
+	}
+
+	if err := r.ensureClusterRoles(ctx); err != nil {
+		return err
+	}
+
+	if err := r.ensureClusterRoleBindings(ctx, cluster); err != nil {
+		return err
 	}
 
 	return nil

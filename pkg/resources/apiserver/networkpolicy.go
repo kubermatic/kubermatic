@@ -17,6 +17,14 @@ limitations under the License.
 package apiserver
 
 import (
+	"bytes"
+	"context"
+	"fmt"
+	"net"
+	"net/url"
+	"sort"
+	"time"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -214,4 +222,60 @@ func MetricsServerAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedNetwork
 			return np, nil
 		}
 	}
+}
+
+// OIDCIssuerAllowCreator returns a func to create/update the apiserver oidc-issuer-allow policy.
+func OIDCIssuerAllowCreator(issuerURL string) reconciling.NamedNetworkPolicyCreatorGetter {
+	return func() (string, reconciling.NetworkPolicyCreator) {
+		return "oidc-issuer-allow", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
+			u, err := url.Parse(issuerURL)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse OIDC issuer URL %s: %v", issuerURL, err)
+			}
+			ipList, err := lookupIPWithTimeout(u.Hostname(), 5*time.Second)
+			if err != nil {
+				return nil, fmt.Errorf("failed to resolve OIDC issuer hostname %s: %v", u.Hostname(), err)
+			}
+			if len(ipList) == 0 {
+				return nil, fmt.Errorf("failed to resolve OIDC issuer hostname: no resolved IP address for %s", u.Hostname())
+			}
+			sort.Slice(ipList, func(i, j int) bool {
+				return bytes.Compare(ipList[i], ipList[j]) < 0
+			})
+			np.Spec = networkingv1.NetworkPolicySpec{
+				PolicyTypes: []networkingv1.PolicyType{
+					networkingv1.PolicyTypeEgress,
+				},
+				PodSelector: metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						resources.AppLabelKey: name,
+					},
+				},
+				Egress: []networkingv1.NetworkPolicyEgressRule{
+					{
+						To: []networkingv1.NetworkPolicyPeer{},
+					},
+				},
+			}
+			for _, ip := range ipList {
+				cidr := fmt.Sprintf("%s/%d", ip.String(), net.IPv4len*8)
+				if ip.To4() == nil {
+					cidr = fmt.Sprintf("%s/%d", ip.String(), net.IPv6len*8)
+				}
+				np.Spec.Egress[0].To = append(np.Spec.Egress[0].To, networkingv1.NetworkPolicyPeer{
+					IPBlock: &networkingv1.IPBlock{
+						CIDR: cidr,
+					},
+				})
+			}
+			return np, nil
+		}
+	}
+}
+
+func lookupIPWithTimeout(host string, timeout time.Duration) ([]net.IP, error) {
+	var r net.Resolver
+	ctx, cancel := context.WithTimeout(context.TODO(), timeout)
+	defer cancel() // to avoid possible resource leak
+	return r.LookupIP(ctx, "ip", host)
 }

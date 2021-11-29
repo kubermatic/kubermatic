@@ -379,6 +379,7 @@ type AKSCloudSpec struct {
 	SubscriptionID string `json:"subscriptionID"`
 	ClientID       string `json:"clientID"`
 	ClientSecret   string `json:"clientSecret"`
+	ResourceGroup  string `json:"resourceGroup"`
 }
 
 // ExternalClusterNode represents an object holding external cluster node
@@ -417,9 +418,20 @@ type EKSCluster struct {
 // swagger:model EKSClusterList
 type EKSClusterList []EKSCluster
 
-// Regions represents an list of EC2 regions.
+// Regions represents an list of AWS regions.
 // swagger:model Regions
 type Regions []string
+
+// AKSCluster represents a object of AKS cluster.
+// swagger:model AKSCluster
+type AKSCluster struct {
+	Name       string `json:"name"`
+	IsImported bool   `json:"imported"`
+}
+
+// AKSClusterList represents an list of AKS clusters.
+// swagger:model AKSClusterList
+type AKSClusterList []AKSCluster
 
 // FeatureGates represents an object holding feature gate settings
 // swagger:model FeatureGates

@@ -28,28 +28,28 @@ type ClientOption func(*runtime.ClientOperation)
 
 // ClientService is the interface for Client methods
 type ClientService interface {
-	ListEC2Regions(params *ListEC2RegionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEC2RegionsOK, error)
+	ListAWSRegions(params *ListAWSRegionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAWSRegionsOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
 
 /*
-  ListEC2Regions lists e c2 regions
+  ListAWSRegions lists a w s regions
 */
-func (a *Client) ListEC2Regions(params *ListEC2RegionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEC2RegionsOK, error) {
+func (a *Client) ListAWSRegions(params *ListAWSRegionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAWSRegionsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewListEC2RegionsParams()
+		params = NewListAWSRegionsParams()
 	}
 	op := &runtime.ClientOperation{
-		ID:                 "listEC2Regions",
+		ID:                 "listAWSRegions",
 		Method:             "GET",
-		PathPattern:        "/api/v2/providers/ec2/regions",
+		PathPattern:        "/api/v2/providers/aws/regions",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
 		Params:             params,
-		Reader:             &ListEC2RegionsReader{formats: a.formats},
+		Reader:             &ListAWSRegionsReader{formats: a.formats},
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
@@ -62,12 +62,12 @@ func (a *Client) ListEC2Regions(params *ListEC2RegionsParams, authInfo runtime.C
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*ListEC2RegionsOK)
+	success, ok := result.(*ListAWSRegionsOK)
 	if ok {
 		return success, nil
 	}
 	// unexpected success response
-	unexpectedSuccess := result.(*ListEC2RegionsDefault)
+	unexpectedSuccess := result.(*ListAWSRegionsDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

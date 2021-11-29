@@ -85,6 +85,12 @@ spec:
                     description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
                     type: string
                 type: object
+              destination:
+                description: Destination indicates where the backup was stored. The
+                  destination name should correspond to a destination in the cluster's
+                  Seed.Spec.EtcdBackupRestore. If empty, it will use the legacy destination
+                  configured in Seed.Spec.BackupRestore
+                type: string
               name:
                 description: Name defines the name of the restore The name of the
                   restore file in S3 will be <cluster>-<restore name> If a schedule

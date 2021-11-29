@@ -64,6 +64,20 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/featuregates").
 		Handler(r.getFeatureGates())
 
+	mux.Methods(http.MethodGet).
+		Path("/providers/aws/regions").
+		Handler(r.listAWSRegions())
+
+	// Defines a set of HTTP endpoints for interacting with EKS clusters
+	mux.Methods(http.MethodGet).
+		Path("/providers/eks/clusters").
+		Handler(r.listEKSClusters())
+
+	// Defines a set of HTTP endpoints for interacting with AKS clusters
+	mux.Methods(http.MethodGet).
+		Path("/providers/aks/clusters").
+		Handler(r.listAKSClusters())
+
 	// Defines a set of HTTP endpoints for cluster that belong to a project.
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/clusters").
@@ -287,6 +301,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodPatch).
 		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}").
 		Handler(r.patchExternalClusterMachineDeployments())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/upgrades").
+		Handler(r.getExternalClusterMachineDeploymentUpgrades())
 
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/metrics").
@@ -723,15 +741,6 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/users").
 		Handler(r.listUser())
-
-	// Defines a set of HTTP endpoints for interacting with EKS clusters
-	mux.Methods(http.MethodGet).
-		Path("/providers/eks/clusters").
-		Handler(r.listEKSClusters())
-
-	mux.Methods(http.MethodGet).
-		Path("/providers/ec2/regions").
-		Handler(r.listEC2Regions())
 
 	// Defines a set of HTTP endpoints for managing rule groups for admins
 	mux.Methods(http.MethodGet).
@@ -4907,9 +4916,31 @@ func (r Routing) listEKSClusters() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v2/providers/ec2/regions regions listEC2Regions
+// swagger:route GET /api/v2/providers/aks/clusters aks listAKSClusters
 //
-//     List EC2 regions.
+// Lists AKS clusters
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AKSClusterList
+func (r Routing) listAKSClusters() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.ListAKSClustersEndpoint(r.userInfoGetter, r.presetsProvider)),
+		provider.DecodeAKSTypesReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/aws/regions regions listAWSRegions
+//
+//     List AWS regions.
 //
 //
 //     Produces:
@@ -4920,13 +4951,13 @@ func (r Routing) listEKSClusters() http.Handler {
 //       200: []Regions
 //       401: empty
 //       403: empty
-func (r Routing) listEC2Regions() http.Handler {
+func (r Routing) listAWSRegions() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.ListEC2RegionsEndpoint(r.userInfoGetter, r.presetsProvider)),
-		provider.DecodeEC2CommonReq,
+		)(provider.ListAWSRegionsEndpoint(r.userInfoGetter, r.presetsProvider)),
+		provider.DecodeAWSCommonReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -5130,6 +5161,30 @@ func (r Routing) getExternalClusterMachineDeployment() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(externalcluster.GetMachineDeploymentEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider)),
+		externalcluster.DecodeGetMachineDeploymentReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/upgrades project getExternalClusterMachineDeploymentUpgrades
+//
+//    Gets an external cluster machine deployments upgrade versions.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []MasterVersion
+//       401: empty
+//       403: empty
+func (r Routing) getExternalClusterMachineDeploymentUpgrades() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.GetMachineDeploymentUpgradesEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider)),
 		externalcluster.DecodeGetMachineDeploymentReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,

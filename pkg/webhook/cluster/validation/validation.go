@@ -171,6 +171,14 @@ func validateUpdateImmutability(c, oldC *kubermaticv1.Cluster) field.ErrorList {
 		c.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; vOld && !v {
 		allErrs = append(allErrs, field.Invalid(specFldPath.Child("features").Key(kubermaticv1.ClusterFeatureExternalCloudProvider), v, fmt.Sprintf("feature gate %q cannot be disabled once it's enabled", kubermaticv1.ClusterFeatureExternalCloudProvider)))
 	}
+
+	// Validate EtcdLauncher feature flag immutability.
+	// Once the feature flag is enabled, it must not be disabled.
+	if vOld, v := oldC.Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher],
+		c.Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher]; vOld && !v {
+		allErrs = append(allErrs, field.Invalid(specFldPath.Child("features").Key(kubermaticv1.ClusterFeatureEtcdLauncher), v, fmt.Sprintf("feature gate %q cannot be disabled once it's enabled", kubermaticv1.ClusterFeatureEtcdLauncher)))
+	}
+
 	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
 		c.Spec.ExposeStrategy,
 		oldC.Spec.ExposeStrategy,

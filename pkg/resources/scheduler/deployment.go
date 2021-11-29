@@ -89,7 +89,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 				MatchLabels: resources.BaseAppLabels(name, nil),
 			}
 
-			volumes := getVolumes()
+			volumes := getVolumes(data.IsKonnectivityEnabled())
 			volumeMounts := getVolumeMounts()
 
 			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
@@ -208,16 +208,8 @@ func getVolumeMounts() []corev1.VolumeMount {
 	}
 }
 
-func getVolumes() []corev1.Volume {
-	return []corev1.Volume{
-		{
-			Name: resources.OpenVPNClientCertificatesSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.OpenVPNClientCertificatesSecretName,
-				},
-			},
-		},
+func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
+	vs := []corev1.Volume{
 		{
 			Name: resources.CASecretName,
 			VolumeSource: corev1.VolumeSource{
@@ -251,4 +243,15 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 	}
+	if !isKonnectivityEnabled {
+		vs = append(vs, corev1.Volume{
+			Name: resources.OpenVPNClientCertificatesSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: resources.OpenVPNClientCertificatesSecretName,
+				},
+			},
+		})
+	}
+	return vs
 }

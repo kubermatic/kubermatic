@@ -81,7 +81,7 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 				network = data.DC().Spec.Hetzner.Network
 			}
 
-			dep.Spec.Template.Spec.Volumes = getVolumes()
+			dep.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled())
 
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{

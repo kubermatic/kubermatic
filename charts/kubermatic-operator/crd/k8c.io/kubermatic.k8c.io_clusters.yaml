@@ -1749,6 +1749,13 @@ spec:
                 description: KubermaticVersion is the current kubermatic version in
                   a cluster.
                 type: string
+              lastProviderReconciliation:
+                description: LastProviderReconciliation is the time when the cloud
+                  provider resources were last fully reconciled (during normal cluster
+                  reconciliation, KKP does not re-check things like security groups,
+                  networks etc.).
+                format: date-time
+                type: string
               lastUpdated:
                 format: date-time
                 type: string

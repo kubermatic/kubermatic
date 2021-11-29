@@ -65,7 +65,45 @@ func GetUpgradesEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider
 			if err != nil {
 				return nil, err
 			}
-			return providercommon.ListGKEUpgrades(ctx, sa, cloud.GKE.Zone)
+			return providercommon.ListGKEUpgrades(ctx, sa, cloud.GKE.Zone, cloud.GKE.Name)
+		}
+
+		return nil, fmt.Errorf("can not find any upgrades for the given cloud provider")
+	}
+}
+
+func GetMachineDeploymentUpgradesEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(machineDeploymentReq)
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		cluster, err := getCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, req.ClusterID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		upgrades := make([]*apiv1.MasterVersion, 0)
+		cloud := cluster.Spec.CloudSpec
+		if cloud == nil {
+			return upgrades, nil
+		}
+
+		if cloud != nil {
+			secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+
+			if cloud.GKE != nil {
+				sa, err := secretKeySelector(cloud.GKE.CredentialsReference, resources.GCPServiceAccount)
+				if err != nil {
+					return nil, err
+				}
+				return providercommon.ListGKEMachineDeploymentUpgrades(ctx, sa, cloud.GKE.Zone, cloud.GKE.Name, req.MachineDeploymentID)
+			}
 		}
 
 		return nil, fmt.Errorf("can not find any upgrades for the given cloud provider")

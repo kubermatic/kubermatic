@@ -1,4 +1,4 @@
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+# Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,21 +11,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+apiVersion: v1
+kind: Secret
 metadata:
-  name: nginx-ingress-controller
-  labels:
-    app.kubernetes.io/name: ingress-nginx
-    app.kubernetes.io/instance: '{{ .Release.Name }}'
-    app.kubernetes.io/part-of: ingress-nginx
-    app.kubernetes.io/managed-by: helm
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: nginx-ingress-controller
-subjects:
-- kind: ServiceAccount
-  name: nginx-ingress-controller
-  namespace: {{ .Release.Namespace }}
+  name: backup-s3
+  namespace: kube-system
+data:
+  ACCESS_KEY_ID: RlhjRDdzMHRGT1B1VHY2amFaQVJKRG91YzJIYWw4RTA=
+  SECRET_ACCESS_KEY: d2RFWkdUbmhrZ0JEVERldGFIRnVpenMzcHdYSHZXVHM=
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: s3-settings
+  namespace: kube-system
+data:
+  BUCKET_NAME: kkpbackupe2e
+  ENDPOINT: minio.minio.svc.cluster.local:9000

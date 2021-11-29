@@ -164,6 +164,28 @@ func validateExistingSubnetOverlap(networkID string, netClient *gophercloud.Serv
 	})
 }
 
+// We start by adding the finalizers, note that this is safe because the
+// clean-up is idempotent, if the cluster is deleted when resources associated
+// to the finalizer are not created yet, it does not fail.
+// The reason behind is that we have several controllers adding finalizers
+// to the Cluster resource at the moment, and to avoid race conditions we
+// need to use optimistic locking and return immediately in case of
+// conflicts to retry later.
+func ensureFinalizers(cluster *kubermaticv1.Cluster, finalizers []string, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	var err error
+
+	if len(finalizers) > 0 {
+		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			kubernetes.AddFinalizer(cluster, finalizers...)
+		}, provider.UpdaterOptionOptimisticLock)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return cluster, nil
+}
+
 // InitializeCloudProvider initializes a cluster, in particular
 // creates security group and network configuration
 func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
@@ -198,20 +220,9 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		}
 	}
 
-	// We start by adding the finalizers, note that this is safe because the
-	// clean-up is idempotent, if the cluster is deleted when resources associated
-	// to the finalizer are not created yet, it does not fail.
-	// The reason behind is that we have several controllers adding finalizers
-	// to the Cluster resource at the moment, and to avoid race conditions we
-	// need to use optimistic locking and return immediately in case of
-	// conflicts to retry later.
-	if len(finalizers) > 0 {
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			kubernetes.AddFinalizer(cluster, finalizers...)
-		}, provider.UpdaterOptionOptimisticLock)
-		if err != nil {
-			return nil, fmt.Errorf("failed to add finalizers: %w", err)
-		}
+	cluster, err = ensureFinalizers(cluster, finalizers, update)
+	if err != nil {
+		return nil, fmt.Errorf("failed to ensure finalizers: %v", err)
 	}
 
 	if cluster.Spec.Cloud.Openstack.FloatingIPPool == "" {
@@ -314,7 +325,8 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 	// reconciliations so far. This is to avoid hitting OpenStack API at each
 	// iteration.
 	// TODO: this is terrible, find a better way.
-	if cluster.Status.ExtendedHealth.CloudProviderInfrastructure != kubermaticv1.HealthStatusUp {
+	if cluster.Status.ExtendedHealth.CloudProviderInfrastructure != kubermaticv1.HealthStatusUp &&
+		kubernetes.HasFinalizer(cluster, RouterSubnetLinkCleanupFinalizer) {
 		if _, err = attachSubnetToRouter(netClient, cluster.Spec.Cloud.Openstack.SubnetID, cluster.Spec.Cloud.Openstack.RouterID); err != nil {
 			return nil, fmt.Errorf("failed to attach subnet to router: %v", err)
 		}

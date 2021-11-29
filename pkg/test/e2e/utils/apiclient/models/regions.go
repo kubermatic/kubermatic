@@ -11,7 +11,7 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// Regions Regions represents an list of EC2 regions.
+// Regions Regions represents an list of AWS regions.
 //
 // swagger:model Regions
 type Regions []string

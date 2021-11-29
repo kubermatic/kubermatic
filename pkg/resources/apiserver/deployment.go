@@ -558,14 +558,6 @@ func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
 			},
 		},
 		{
-			Name: resources.OpenVPNClientCertificatesSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.OpenVPNClientCertificatesSecretName,
-				},
-			},
-		},
-		{
 			Name: resources.KubeletClientCertificatesSecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
@@ -640,14 +632,6 @@ func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
 			},
 		},
 		{
-			Name: resources.KubeletDnatControllerKubeconfigSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.KubeletDnatControllerKubeconfigSecretName,
-				},
-			},
-		},
-		{
 			Name: resources.AuditConfigMapName,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
@@ -710,6 +694,25 @@ func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
 							Name: resources.KonnectivityKubeApiserverEgress,
 						},
 						DefaultMode: intPtr(420),
+					},
+				},
+			},
+		}...)
+	} else {
+		vs = append(vs, []corev1.Volume{
+			{
+				Name: resources.OpenVPNClientCertificatesSecretName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: resources.OpenVPNClientCertificatesSecretName,
+					},
+				},
+			},
+			{
+				Name: resources.KubeletDnatControllerKubeconfigSecretName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: resources.KubeletDnatControllerKubeconfigSecretName,
 					},
 				},
 			},
