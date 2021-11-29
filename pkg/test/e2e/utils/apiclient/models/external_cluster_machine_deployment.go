@@ -36,6 +36,9 @@ type ExternalClusterMachineDeployment struct {
 	// Name represents human readable name for the resource
 	Name string `json:"name,omitempty"`
 
+	// cloud
+	Cloud *ExternalClusterMachineDeploymentCloudSpec `json:"cloud,omitempty"`
+
 	// spec
 	Spec *NodeDeploymentSpec `json:"spec,omitempty"`
 
@@ -52,6 +55,10 @@ func (m *ExternalClusterMachineDeployment) Validate(formats strfmt.Registry) err
 	}
 
 	if err := m.validateDeletionTimestamp(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateCloud(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -88,6 +95,23 @@ func (m *ExternalClusterMachineDeployment) validateDeletionTimestamp(formats str
 
 	if err := validate.FormatOf("deletionTimestamp", "body", "date-time", m.DeletionTimestamp.String(), formats); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (m *ExternalClusterMachineDeployment) validateCloud(formats strfmt.Registry) error {
+	if swag.IsZero(m.Cloud) { // not required
+		return nil
+	}
+
+	if m.Cloud != nil {
+		if err := m.Cloud.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("cloud")
+			}
+			return err
+		}
 	}
 
 	return nil
@@ -131,6 +155,10 @@ func (m *ExternalClusterMachineDeployment) validateStatus(formats strfmt.Registr
 func (m *ExternalClusterMachineDeployment) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateCloud(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateSpec(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -142,6 +170,20 @@ func (m *ExternalClusterMachineDeployment) ContextValidate(ctx context.Context, 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ExternalClusterMachineDeployment) contextValidateCloud(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Cloud != nil {
+		if err := m.Cloud.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("cloud")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 

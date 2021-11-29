@@ -54,6 +54,8 @@ type ClientService interface {
 
 	CreateExternalCluster(params *CreateExternalClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateExternalClusterCreated, error)
 
+	CreateExternalClusterMachineDeployment(params *CreateExternalClusterMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateExternalClusterMachineDeploymentOK, error)
+
 	CreateGatekeeperConfig(params *CreateGatekeeperConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateGatekeeperConfigCreated, error)
 
 	CreateMachineDeployment(params *CreateMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateMachineDeploymentCreated, error)
@@ -780,6 +782,44 @@ func (a *Client) CreateExternalCluster(params *CreateExternalClusterParams, auth
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*CreateExternalClusterDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  CreateExternalClusterMachineDeployment creates an external cluster machine deployments
+*/
+func (a *Client) CreateExternalClusterMachineDeployment(params *CreateExternalClusterMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateExternalClusterMachineDeploymentOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewCreateExternalClusterMachineDeploymentParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "createExternalClusterMachineDeployment",
+		Method:             "POST",
+		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateExternalClusterMachineDeploymentReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*CreateExternalClusterMachineDeploymentOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*CreateExternalClusterMachineDeploymentDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
