@@ -84,6 +84,26 @@ for ARCH in ${ARCHITECTURES}; do
   buildah manifest add "${DOCKER_REPO}/user-ssh-keys-agent:${PRIMARY_TAG}" "${DOCKER_REPO}/user-ssh-keys-agent-${ARCH}:${PRIMARY_TAG}"
 done
 
+buildah manifest create "${DOCKER_REPO}/kubeletdnat-controller:${PRIMARY_TAG}"
+for ARCH in ${ARCHITECTURES}; do
+  echodate "Building kubeletdnat-controller image for $ARCH..."
+
+  # Building via buildah does not use the gocache, but that's okay, because we
+  # wouldn't want to cache arm64 stuff anyway, as it would just blow up the
+  # cache size and force every e2e test to download gigabytes worth of unneeded
+  # arm64 stuff. We might need to change this once we run e2e tests on arm64.
+  buildah bud \
+    --tag "${DOCKER_REPO}/kubeletdnat-controller-${ARCH}:${PRIMARY_TAG}" \
+    --build-arg "GOPROXY=${GOPROXY:-}" \
+    --build-arg "KUBERMATIC_EDITION=${KUBERMATIC_EDITION}" \
+    --arch "$ARCH" \
+    --override-arch "$ARCH" \
+    --format=docker \
+    --file cmd/kubeletdnat-controller/Dockerfile.multiarch \
+    .
+  buildah manifest add "${DOCKER_REPO}/kubeletdnat-controller:${PRIMARY_TAG}" "${DOCKER_REPO}/kubeletdnat-controller-${ARCH}:${PRIMARY_TAG}"
+done
+
 # for each given tag, tag and push the image
 for TAG in "$@"; do
   if [ -z "$TAG" ]; then
@@ -93,16 +113,16 @@ for TAG in "$@"; do
   echodate "Tagging as ${TAG}"
   docker tag "${DOCKER_REPO}/kubermatic${REPOSUFFIX}:${PRIMARY_TAG}" "${DOCKER_REPO}/kubermatic${REPOSUFFIX}:${TAG}"
   docker tag "${DOCKER_REPO}/nodeport-proxy:${PRIMARY_TAG}" "${DOCKER_REPO}/nodeport-proxy:${TAG}"
-  docker tag "${DOCKER_REPO}/kubeletdnat-controller:${PRIMARY_TAG}" "${DOCKER_REPO}/kubeletdnat-controller:${TAG}"
   docker tag "${DOCKER_REPO}/addons:${PRIMARY_TAG}" "${DOCKER_REPO}/addons:${TAG}"
   docker tag "${DOCKER_REPO}/etcd-launcher:${PRIMARY_TAG}" "${DOCKER_REPO}/etcd-launcher:${TAG}"
   buildah tag "${DOCKER_REPO}/user-ssh-keys-agent:${PRIMARY_TAG}" "${DOCKER_REPO}/user-ssh-keys-agent:${TAG}"
+  buildah tag "${DOCKER_REPO}/kubeletdnat-controller:${PRIMARY_TAG}" "${DOCKER_REPO}/kubeletdnat-controller:${TAG}"
 
   echodate "Pushing images"
   docker push "${DOCKER_REPO}/kubermatic${REPOSUFFIX}:${TAG}"
   docker push "${DOCKER_REPO}/nodeport-proxy:${TAG}"
-  docker push "${DOCKER_REPO}/kubeletdnat-controller:${TAG}"
   docker push "${DOCKER_REPO}/addons:${TAG}"
   docker push "${DOCKER_REPO}/etcd-launcher:${TAG}"
   buildah manifest push --all "${DOCKER_REPO}/user-ssh-keys-agent:${TAG}" "docker://${DOCKER_REPO}/user-ssh-keys-agent:${TAG}"
+  buildah manifest push --all "${DOCKER_REPO}/kubeletdnat-controller:${TAG}" "docker://${DOCKER_REPO}/kubeletdnat-controller:${TAG}"
 done
