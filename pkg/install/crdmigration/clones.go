@@ -438,6 +438,7 @@ func convertClusterSpec(old kubermaticv1.ClusterSpec) newv1.ClusterSpec {
 		UpdateWindow:                         (*newv1.UpdateWindow)(old.UpdateWindow),
 		UsePodSecurityPolicyAdmissionPlugin:  old.UsePodSecurityPolicyAdmissionPlugin,
 		UsePodNodeSelectorAdmissionPlugin:    old.UsePodNodeSelectorAdmissionPlugin,
+		UseEventRateLimitAdmissionPlugin:     old.UseEventRateLimitAdmissionPlugin,
 		EnableUserSSHKeyAgent:                old.EnableUserSSHKeyAgent,
 		PodNodeSelectorAdmissionPluginConfig: old.PodNodeSelectorAdmissionPluginConfig,
 		AdmissionPlugins:                     old.AdmissionPlugins,
@@ -513,6 +514,41 @@ func convertClusterSpec(old kubermaticv1.ClusterSpec) newv1.ClusterSpec {
 		result.AuditLogging = &newv1.AuditLoggingSettings{
 			Enabled:      old.Enabled,
 			PolicyPreset: newv1.AuditPolicyPreset(old.PolicyPreset),
+		}
+	}
+
+	if old := old.EventRateLimitConfig; old != nil {
+		result.EventRateLimitConfig = &newv1.EventRateLimitConfig{}
+		if item := old.Server; item != nil {
+			result.EventRateLimitConfig.Server = &newv1.EventRateLimitConfigItem{
+				QPS:       item.QPS,
+				Burst:     item.Burst,
+				CacheSize: item.CacheSize,
+			}
+		}
+
+		if item := old.Namespace; item != nil {
+			result.EventRateLimitConfig.Namespace = &newv1.EventRateLimitConfigItem{
+				QPS:       item.QPS,
+				Burst:     item.Burst,
+				CacheSize: item.CacheSize,
+			}
+		}
+
+		if item := old.User; item != nil {
+			result.EventRateLimitConfig.User = &newv1.EventRateLimitConfigItem{
+				QPS:       item.QPS,
+				Burst:     item.Burst,
+				CacheSize: item.CacheSize,
+			}
+		}
+
+		if item := old.SourceAndObject; item != nil {
+			result.EventRateLimitConfig.SourceAndObject = &newv1.EventRateLimitConfigItem{
+				QPS:       item.QPS,
+				Burst:     item.Burst,
+				CacheSize: item.CacheSize,
+			}
 		}
 	}
 
