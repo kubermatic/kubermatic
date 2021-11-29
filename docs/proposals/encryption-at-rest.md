@@ -129,6 +129,42 @@ Therefore, the `status.lastBackups` list of `EtcdBackupConfig` objects should in
 
 The UI for restoring an etcd backup should offer the option (if encryption at rest is enabled) to set up the cluster with an (older) encryption key before applying the restore.
 
+## Threat Model
+
+This section discusses various threats to KKP systems, which can be prevented or mitigated by encryption at rest, some of them requiring well-managed controls over a KKP system.
+
+### Prevented or mitigated risks
+
+#### Stolen etcd backups
+
+Creating backups of etcd via the available KKP feature might be necessary to restore etcd rings for user clusters that were damaged. However, since an external system (S3 or any S3-compatible object store) is used to store backups, there is a risk of attackers gaining access to the backup location and downloading stored etcd backups. Since the backups include all resources exposed by the Kubernetes API, that would include `Secrets` and their contents, which are usually credentials or other confidential data that must not be available in plain-text. Attackers in possession of an etcd backup might be able to use credentials extracted from `Secrets` to attack other systems.
+
+Encryption at rest mitigates this threat by encrypting the contents of `Secrets` (and potentially, other sensitive resource types) while stored in etcd. Backups of etcd only include the encrypted data, which attackers cannot decrypt if they only had access to the backup file. Only systems or people in possession of both the etcd backup and the encryption key are able to decrypt the sensitive data in it. It is therefore vital that access to the backup location and the encryption key is strictly separated by appropriate controls.
+
+S3 security has been problematic in the past and several high-profile breaches[^1][^2][^3] have occurred in the last few years. The probability of this threat depends on the administrator's experience with cloud services like S3 when setting up the KKP etcd backup functionality and the S3 bucket for it.
+
+[^1] https://businessinsights.bitdefender.com/worst-amazon-breaches
+[^2] https://www.computerweekly.com/news/252491842/Leaky-AWS-S3-bucket-once-again-at-centre-of-data-breach
+[^3] https://securityboulevard.com/2021/03/another-s3-bucket-leads-to-breach-of-50k-patient-records/
+
+#### Stolen or lost disk storage
+
+Especially in private datacenters, the risk of unauthorized or unintended removal of data disks from the datacenter exists. Disks can be either physically removed by attackers or bought online if they are sold to the highest bidder. If those disks happen to include an etcd data directory (likely nested into a virtual disk present on the physical disk), attackers can extract sensitive information from `Secret` resources that were part of the etcd data and potentially attack other systems with extracted credentials. This is a similar threat as [stolen etcd backups](#stolen-etcd-backups) and encryption at rest mitigates against it in the same way: Secret data in the etcd data directory will be encrypted, and access to a disk that stores this data directory will not allow an attacker to decrypt sensitive data and use it for further attacks.
+
+It is also possible that disk data is included in backup mechanisms that are set up by the datacenter provider or by another IT function. Similar to gaining access to a physical disk, a disk backup can be abused by an attacker in the same way if etcd data is not encrypted at rest. It is possible that disk images themselves are encrypted, but this is not necessarily the case.
+
+### Partially mitigated or unmitigated risks
+
+#### User cluster compromise
+
+Since the etcd data storage is separated from the user cluster, a compromise of the user cluster does not allow an attacker to gain access to the etcd data storage. However, if the attacker gained sufficient privileges with the Kubernetes API, they can request `Secrets` resources in a decrypted state. Encryption at rest only secures the data stored on disk, a high access level to the Kubernetes API will look like the attacker has the permission to access data in its unencrypted state.
+
+#### Seed cluster compromise
+
+Seed clusters host the two critical components of encryption at rest, the Kubernetes API server and the etcd ring. The etcd ring only holds the encrypted data and is not aware of the key to decrypt it. The encryption and decryption is happening in the Kubernetes API itself. Since the encryption configuration in this proposal will be mounted as a `Secret` reference into the `kube-apiserver` Pod, either shell access to the `kube-apiserver` Pod or read access to the `Secret` is necessary for an attacker to recover the encryption key.
+
+Even access to the encryption configuration `Secret` can be partially mitigated by using a KMS provider as the encryption configuration will only include the KMS key reference, not the actual private key. With that being said, there is a high probability that an attacker can extract cloud provider credentials if they have enough permissions to get the KMS key reference.
+
 ## Alternatives considered
 
 Since Kubernetes does not offer another mechanism for data encryption at rest, alternatives are sparse. Considerations are mainly within the scope of "implementing the encryption configuration":
