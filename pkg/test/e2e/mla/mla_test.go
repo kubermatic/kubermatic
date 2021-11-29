@@ -387,29 +387,25 @@ rules:
 		MaxSamplesPerQuery: 5,
 		MaxSeriesPerQuery:  6,
 	}
-	configMap, err := masterAdminClient.SetMonitoringMLARateLimits(cluster.Name, project.ID, rateLimits)
+	_, err = masterAdminClient.SetMonitoringMLARateLimits(cluster.Name, project.ID, rateLimits)
 	if err != nil {
 		t.Fatalf("unable to set monitoring rate limits: %s", err.Error())
 	}
-	t.Logf("set overrides to: %+v", configMap.MonitoringRateLimits)
 
 	if !utils.WaitFor(1*time.Second, timeout, func() bool {
 		mlaAdminSetting := &kubermaticv1.MLAAdminSetting{}
 		if err := seedClient.Get(ctx, types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.MLAAdminSettingsName}, mlaAdminSetting); ctrlruntimeclient.IgnoreNotFound(err) != nil {
 			t.Fatalf("can't get cluster mlaadminsetting: %v", err)
 		}
-		t.Logf("have mlaadminsettings: %v", mlaAdminSetting)
 
 		configMap := &corev1.ConfigMap{}
 		if err := seedClient.Get(ctx, types.NamespacedName{Namespace: "mla", Name: mla.RuntimeConfigMap}, configMap); err != nil {
 			t.Fatalf("unable to get configMap: %v", err)
 		}
-		t.Logf("have config map: %s", configMap.Data)
 		actualOverrides := &mla.Overrides{}
 		if err := yaml.Unmarshal([]byte(configMap.Data[mla.RuntimeConfigFileName]), actualOverrides); err != nil {
 			t.Fatalf("unable to unmarshal rate limit config map")
 		}
-		t.Logf("have overrides: %+v", actualOverrides)
 		actualRateLimits, ok := actualOverrides.Overrides[cluster.Name]
 		if !ok {
 			return false
@@ -419,7 +415,12 @@ rules:
 			*actualRateLimits.MaxSeriesPerMetric == rateLimits.MaxSeriesPerMetric &&
 			*actualRateLimits.MaxSeriesTotal == rateLimits.MaxSeriesTotal &&
 			*actualRateLimits.MaxSamplesPerQuery == rateLimits.MaxSamplesPerQuery &&
-			*actualRateLimits.MaxSeriesPerQuery == rateLimits.MaxSeriesPerQuery)
+			*actualRateLimits.MaxSeriesPerQuery == rateLimits.MaxSeriesPerQuery) && (mlaAdminSetting.Spec.MonitoringRateLimits.IngestionRate == rateLimits.IngestionRate &&
+			mlaAdminSetting.Spec.MonitoringRateLimits.IngestionBurstSize == rateLimits.IngestionBurstSize &&
+			mlaAdminSetting.Spec.MonitoringRateLimits.MaxSeriesPerMetric == rateLimits.MaxSeriesPerMetric &&
+			mlaAdminSetting.Spec.MonitoringRateLimits.MaxSeriesTotal == rateLimits.MaxSeriesTotal &&
+			mlaAdminSetting.Spec.MonitoringRateLimits.MaxSamplesPerQuery == rateLimits.MaxSamplesPerQuery &&
+			mlaAdminSetting.Spec.MonitoringRateLimits.MaxSeriesPerQuery == rateLimits.MaxSeriesPerQuery)
 	}) {
 		t.Fatal("monitoring rate limits not equal")
 	}
