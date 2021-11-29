@@ -41,7 +41,7 @@ func KubeDNSNetworkPolicyCreator() reconciling.NamedNetworkPolicyCreatorGetter {
 					networkingv1.PolicyTypeEgress,
 					networkingv1.PolicyTypeIngress,
 				},
-				Ingress: []networkingv1.NetworkPolicyIngressRule{{}},
+				Ingress: []networkingv1.NetworkPolicyIngressRule{},
 				Egress: []networkingv1.NetworkPolicyEgressRule{
 					{
 						To: []networkingv1.NetworkPolicyPeer{
