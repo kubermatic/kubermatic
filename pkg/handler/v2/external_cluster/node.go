@@ -667,6 +667,35 @@ func PatchMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proj
 	}
 }
 
+func CreateMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(createMachineDeploymentsReq)
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		cluster, err := getCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, req.ClusterID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		cloud := cluster.Spec.CloudSpec
+		if cloud != nil {
+			secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+
+			if cloud.GKE != nil {
+				return createGKENodePool(ctx, cluster, req.Body, secretKeySelector, cloud.GKE.CredentialsReference)
+			}
+		}
+
+		return nil, fmt.Errorf("unsupported or missing cloud provider fields")
+	}
+}
+
 func patchMD(mdToPatch, patchedMD *apiv2.ExternalClusterMachineDeployment, patchJson json.RawMessage) error {
 
 	existingMDJSON, err := json.Marshal(mdToPatch)
@@ -715,6 +744,53 @@ func DecodePatchMachineDeploymentReq(c context.Context, r *http.Request) (interf
 	req.MachineDeploymentID = md.MachineDeploymentID
 
 	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// createMachineDeploymentsReq defines HTTP request for createExternalClusterMachineDeployment
+// swagger:parameters createExternalClusterMachineDeployment
+type createMachineDeploymentsReq struct {
+	common.ProjectReq
+	// in: path
+	// required: true
+	ClusterID string `json:"cluster_id"`
+	// in: body
+	Body apiv2.ExternalClusterMachineDeployment
+}
+
+// Validate validates CreateMachineDeploymentEndpoint request
+func (req createMachineDeploymentsReq) Validate() error {
+	if len(req.ProjectID) == 0 {
+		return fmt.Errorf("the project ID cannot be empty")
+	}
+	if len(req.ClusterID) == 0 {
+		return fmt.Errorf("the cluster ID cannot be empty")
+	}
+	if req.Body.Cloud == nil {
+		return fmt.Errorf("the machine deployment cloud spec cannot be empty")
+	}
+	return nil
+}
+
+func DecodeCreateMachineDeploymentReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req createMachineDeploymentsReq
+
+	pr, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = pr.(common.ProjectReq)
+
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ClusterID = clusterID
+
+	if err = json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
 	}
 
