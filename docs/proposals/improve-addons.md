@@ -176,7 +176,7 @@ We propose a similar approach to what we currently do with the `nodeDeployment` 
 
 This might lead to the question: Why use ApplicationInstallation CRs at all? For this, we think having the CR is going to make routine operations (e.g. fetching, updating Applications) much easier and less resource-intensive.
 
-Alternatives considered: We considered the idea of creating CRs directly on the POST call in the api. This theoretically would have the advantage that you would not need to store . We did not consider to go with this for the following reasons:
+Alternatives considered: We considered the idea of creating CRs directly on the POST call in the api. This theoretically would have the advantage that you would not need to store all AddonRefs and their values in the cluster object. We decided to not go with this for the following reasons:
 
 1. We would have to do a larger refactoring of the current `CreateEndpoint` logic. Concretely we would have to create the seed-namespace right after the cluster object has been created. This user-flow change would be needed due to current design of cluster creation in which the cluster-namespace with the ApplicationInstallations get created asynchronously after `CreateEndpoint` is called. Specifically:
      1. FrontEnd sends all params to the CreateEndpoint
