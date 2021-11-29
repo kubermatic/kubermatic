@@ -194,6 +194,9 @@ func (r *ratelimitCortexController) ensureLimits(ctx context.Context, mlaAdminSe
 			tenantOr.MaxSeriesTotal = &mlaAdminSetting.Spec.MonitoringRateLimits.MaxSeriesTotal
 		}
 	}
+	if or.Overrides == nil {
+		or.Overrides = make(map[string]tenantOverride)
+	}
 	or.Overrides[mlaAdminSetting.Spec.ClusterName] = tenantOr
 	data, err := yaml.Marshal(or)
 	if err != nil {
