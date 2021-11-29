@@ -192,7 +192,7 @@ func UserSaver(userProvider provider.UserProvider) endpoint.Middleware {
 			now := &[]metav1.Time{metav1.NewTime(Now().UTC())}[0]
 
 			// Throttle the last seen update to once a minute not to pressure the K8S API too much.
-			if now.Sub(user.Spec.LastSeen.Time).Minutes() < 1.0 {
+			if user.Spec.LastSeen != nil && now.Sub(user.Spec.LastSeen.Time).Minutes() < 1.0 {
 				return next(context.WithValue(ctx, kubermaticcontext.UserCRContextKey, user), request)
 			}
 
