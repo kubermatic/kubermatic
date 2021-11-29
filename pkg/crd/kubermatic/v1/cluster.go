@@ -137,6 +137,7 @@ type ClusterSpec struct {
 
 	UsePodSecurityPolicyAdmissionPlugin bool `json:"usePodSecurityPolicyAdmissionPlugin,omitempty"`
 	UsePodNodeSelectorAdmissionPlugin   bool `json:"usePodNodeSelectorAdmissionPlugin,omitempty"`
+	UseEventRateLimitAdmissionPlugin    bool `json:"useEventRateLimitAdmissionPlugin,omitempty"`
 
 	// EnableUserSSHKeyAgent control whether the UserSSHKeyAgent will be deployed in the user cluster or not.
 	// If it was enabled, the agent will be deployed and used to sync the user ssh keys, that the user attach
@@ -154,7 +155,14 @@ type ClusterSpec struct {
 	//  namespace1: <node-selectors-labels>
 	//  namespace2: <node-selectors-labels>
 	PodNodeSelectorAdmissionPluginConfig map[string]string `json:"podNodeSelectorAdmissionPluginConfig,omitempty"`
-	AdmissionPlugins                     []string          `json:"admissionPlugins,omitempty"`
+
+	// EventRateLimitConfig allows configuring the EventRateLimit admission plugin (if enabled via useEventRateLimitAdmissionPlugin)
+	// to create limits on Kubernetes event generation. The EventRateLimit plugin is capable of comparing incoming Events
+	// to several configured buckets based on the type of event rate limit.
+	EventRateLimitConfig *EventRateLimitConfig `json:"eventRateLimitConfig,omitempty"`
+
+	// AdmissionPlugins provides the ability to pass arbitrary names of admission plugins to kube-apiserver
+	AdmissionPlugins []string `json:"admissionPlugins,omitempty"`
 
 	AuditLogging *AuditLoggingSettings `json:"auditLogging,omitempty"`
 
@@ -391,6 +399,19 @@ const (
 type AuditLoggingSettings struct {
 	Enabled      bool              `json:"enabled,omitempty"`
 	PolicyPreset AuditPolicyPreset `json:"policyPreset,omitempty"`
+}
+
+type EventRateLimitConfig struct {
+	Server          *EventRateLimitConfigItem `json:"server,omitempty"`
+	Namespace       *EventRateLimitConfigItem `json:"namespace,omitempty"`
+	User            *EventRateLimitConfigItem `json:"user,omitempty"`
+	SourceAndObject *EventRateLimitConfigItem `json:"sourceAndObject,omitempty"`
+}
+
+type EventRateLimitConfigItem struct {
+	QPS       int32 `json:"qps"`
+	Burst     int32 `json:"burst"`
+	CacheSize int32 `json:"cacheSize,omitempty"`
 }
 
 type OPAIntegrationSettings struct {

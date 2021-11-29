@@ -430,6 +430,9 @@ const (
 
 	// PodNodeSelectorAdmissionPlugin defines PodNodeSelector admission plugin
 	PodNodeSelectorAdmissionPlugin = "PodNodeSelector"
+
+	// EventRateLimitAdmisionPlugin defines the EventRateLimit admission plugin
+	EventRateLimitAdmissionPlugin = "EventRateLimit"
 )
 
 const (

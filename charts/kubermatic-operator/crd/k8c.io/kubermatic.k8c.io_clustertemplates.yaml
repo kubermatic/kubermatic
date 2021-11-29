@@ -54,6 +54,8 @@ spec:
             description: ClusterSpec specifies the data for a new cluster.
             properties:
               admissionPlugins:
+                description: AdmissionPlugins provides the ability to pass arbitrary
+                  names of admission plugins to kube-apiserver
                 items:
                   type: string
                 type: array
@@ -1282,6 +1284,74 @@ spec:
                   Once the agent is enabled/disabled it cannot be changed after the
                   cluster is being created.
                 type: boolean
+              eventRateLimitConfig:
+                description: EventRateLimitConfig allows configuring the EventRateLimit
+                  admission plugin (if enabled via useEventRateLimitAdmissionPlugin)
+                  to create limits on Kubernetes event generation. The EventRateLimit
+                  plugin is capable of comparing incoming Events to several configured
+                  buckets based on the type of event rate limit.
+                properties:
+                  namespace:
+                    properties:
+                      burst:
+                        format: int32
+                        type: integer
+                      cacheSize:
+                        format: int32
+                        type: integer
+                      qps:
+                        format: int32
+                        type: integer
+                    required:
+                    - burst
+                    - qps
+                    type: object
+                  server:
+                    properties:
+                      burst:
+                        format: int32
+                        type: integer
+                      cacheSize:
+                        format: int32
+                        type: integer
+                      qps:
+                        format: int32
+                        type: integer
+                    required:
+                    - burst
+                    - qps
+                    type: object
+                  sourceAndObject:
+                    properties:
+                      burst:
+                        format: int32
+                        type: integer
+                      cacheSize:
+                        format: int32
+                        type: integer
+                      qps:
+                        format: int32
+                        type: integer
+                    required:
+                    - burst
+                    - qps
+                    type: object
+                  user:
+                    properties:
+                      burst:
+                        format: int32
+                        type: integer
+                      cacheSize:
+                        format: int32
+                        type: integer
+                      qps:
+                        format: int32
+                        type: integer
+                    required:
+                    - burst
+                    - qps
+                    type: object
+                type: object
               exposeStrategy:
                 description: ExposeStrategy is the approach we use to expose this
                   cluster, either via NodePort or via a dedicated LoadBalancer
@@ -1478,6 +1548,8 @@ spec:
                   start:
                     type: string
                 type: object
+              useEventRateLimitAdmissionPlugin:
+                type: boolean
               usePodNodeSelectorAdmissionPlugin:
                 type: boolean
               usePodSecurityPolicyAdmissionPlugin:
