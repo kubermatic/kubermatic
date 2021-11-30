@@ -5029,7 +5029,7 @@ func (r Routing) listAKSClusters() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.ListAKSClustersEndpoint(r.userInfoGetter, r.presetsProvider)),
+		)(provider.ListAKSClustersEndpoint(r.userInfoGetter, r.presetProvider)),
 		provider.DecodeAKSTypesReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
