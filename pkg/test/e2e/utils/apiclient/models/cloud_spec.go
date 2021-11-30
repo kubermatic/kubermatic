@@ -21,6 +21,11 @@ type CloudSpec struct {
 	// DatacenterName where the users 'cloud' lives in.
 	DatacenterName string `json:"dc,omitempty"`
 
+	// ProviderName is the name of the cloud provider used for this cluster.
+	// This must match the given provider spec (e.g. if the providerName is
+	// "aws", then the AWSCloudSpec must be set)
+	ProviderName string `json:"providerName,omitempty"`
+
 	// alibaba
 	Alibaba *AlibabaCloudSpec `json:"alibaba,omitempty"`
 
