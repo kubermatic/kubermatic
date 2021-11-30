@@ -102,6 +102,12 @@ type EKSCommonReq struct {
 	// name: Credential
 	Credential string
 	// in: header
+	// name: AssumeRoleARN
+	AssumeRoleARN string
+	// in: header
+	// name: AssumeRoleExternalID
+	AssumeRoleExternalID string
+	// in: header
 	// name: Region
 	Region string
 }
@@ -118,6 +124,8 @@ func DecodeEKSCommonReq(c context.Context, r *http.Request) (interface{}, error)
 	req.AccessKeyID = r.Header.Get("AccessKeyID")
 	req.SecretAccessKey = r.Header.Get("SecretAccessKey")
 	req.Credential = r.Header.Get("Credential")
+	req.AssumeRoleARN = r.Header.Get("AssumeRoleARN")
+	req.AssumeRoleExternalID = r.Header.Get("AssumeRoleExternalID")
 	req.Region = r.Header.Get("Region")
 
 	return req, nil
@@ -147,8 +155,10 @@ func getAWSPresetCredentials(userInfo *provider.UserInfo, presetName string, pre
 		return providercommon.AWSCredential{}, fmt.Errorf("credentials for AWS not present in preset %s for the user %s", presetName, userInfo.Email)
 	}
 	return providercommon.AWSCredential{
-		AccessKeyID:     aws.AccessKeyID,
-		SecretAccessKey: aws.SecretAccessKey,
+		AccessKeyID:          aws.AccessKeyID,
+		SecretAccessKey:      aws.SecretAccessKey,
+		AssumeRoleARN:        aws.AssumeRoleARN,
+		AssumeRoleExternalID: aws.AssumeRoleExternalID,
 	}, nil
 }
 
@@ -169,8 +179,10 @@ func ListEKSClustersEndpoint(userInfoGetter provider.UserInfoGetter, presetsProv
 		}
 
 		credential := providercommon.AWSCredential{
-			AccessKeyID:     req.AccessKeyID,
-			SecretAccessKey: req.SecretAccessKey,
+			AccessKeyID:          req.AccessKeyID,
+			SecretAccessKey:      req.SecretAccessKey,
+			AssumeRoleARN:        req.AssumeRoleARN,
+			AssumeRoleExternalID: req.AssumeRoleExternalID,
 		}
 		presetName := req.Credential
 		region := req.Region
@@ -202,6 +214,12 @@ type AWSCommonReq struct {
 	// in: header
 	// name: Credential
 	Credential string
+	// in: header
+	// name: AssumeRoleARN
+	AssumeRoleARN string
+	// in: header
+	// name: AssumeRoleExternalID
+	AssumeRoleExternalID string
 }
 
 func DecodeAWSCommonReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -210,6 +228,8 @@ func DecodeAWSCommonReq(c context.Context, r *http.Request) (interface{}, error)
 	req.AccessKeyID = r.Header.Get("AccessKeyID")
 	req.SecretAccessKey = r.Header.Get("SecretAccessKey")
 	req.Credential = r.Header.Get("Credential")
+	req.AssumeRoleARN = r.Header.Get("AssumeRoleARN")
+	req.AssumeRoleExternalID = r.Header.Get("AssumeRoleExternalID")
 
 	return req, nil
 }
@@ -232,8 +252,10 @@ func ListAWSRegionsEndpoint(userInfoGetter provider.UserInfoGetter, presetsProvi
 		}
 
 		credential := providercommon.AWSCredential{
-			AccessKeyID:     req.AccessKeyID,
-			SecretAccessKey: req.SecretAccessKey,
+			AccessKeyID:          req.AccessKeyID,
+			SecretAccessKey:      req.SecretAccessKey,
+			AssumeRoleARN:        req.AssumeRoleARN,
+			AssumeRoleExternalID: req.AssumeRoleExternalID,
 		}
 		presetName := req.Credential
 

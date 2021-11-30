@@ -40,8 +40,8 @@ import (
 // The functions in this file are used throughout KKP, mostly in our REST API.
 
 // GetSubnets returns the list of subnets for a selected AWS VPC.
-func GetSubnets(accessKeyID, secretAccessKey, region, vpcID string) ([]*ec2.Subnet, error) {
-	client, err := GetClientSet(accessKeyID, secretAccessKey, region)
+func GetSubnets(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, vpcID string) ([]*ec2.Subnet, error) {
+	client, err := GetClientSet(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region)
 	if err != nil {
 		return nil, err
 	}
@@ -59,8 +59,8 @@ func GetSubnets(accessKeyID, secretAccessKey, region, vpcID string) ([]*ec2.Subn
 }
 
 // GetVPCS returns the list of AWS VPCs.
-func GetVPCS(accessKeyID, secretAccessKey, region string) ([]*ec2.Vpc, error) {
-	client, err := GetClientSet(accessKeyID, secretAccessKey, region)
+func GetVPCS(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region string) ([]*ec2.Vpc, error) {
+	client, err := GetClientSet(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region)
 	if err != nil {
 		return nil, err
 	}
@@ -79,8 +79,8 @@ func GetVPCS(accessKeyID, secretAccessKey, region string) ([]*ec2.Vpc, error) {
 }
 
 // GetSecurityGroups returns the list of AWS Security Group.
-func GetSecurityGroups(accessKeyID, secretAccessKey, region string) ([]*ec2.SecurityGroup, error) {
-	client, err := GetClientSet(accessKeyID, secretAccessKey, region)
+func GetSecurityGroups(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region string) ([]*ec2.SecurityGroup, error) {
+	client, err := GetClientSet(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region)
 	if err != nil {
 		return nil, err
 	}
@@ -103,35 +103,37 @@ func getSecurityGroupsWithClient(client ec2iface.EC2API) ([]*ec2.SecurityGroup, 
 }
 
 // GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error
-func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (accessKeyID, secretAccessKey string, err error) {
+func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID string, err error) {
 	accessKeyID = cloud.AWS.AccessKeyID
 	secretAccessKey = cloud.AWS.SecretAccessKey
+	assumeRoleARN = cloud.AWS.AssumeRoleARN
+	assumeRoleExternalID = cloud.AWS.AssumeRoleExternalID
 
 	if accessKeyID == "" {
 		if cloud.AWS.CredentialsReference == nil {
-			return "", "", errors.New("no credentials provided")
+			return "", "", "", "", errors.New("no credentials provided")
 		}
 		accessKeyID, err = secretKeySelector(cloud.AWS.CredentialsReference, resources.AWSAccessKeyID)
 		if err != nil {
-			return "", "", err
+			return "", "", "", "", err
 		}
 	}
 
 	if secretAccessKey == "" {
 		if cloud.AWS.CredentialsReference == nil {
-			return "", "", errors.New("no credentials provided")
+			return "", "", "", "", errors.New("no credentials provided")
 		}
 		secretAccessKey, err = secretKeySelector(cloud.AWS.CredentialsReference, resources.AWSSecretAccessKey)
 		if err != nil {
-			return "", "", err
+			return "", "", "", "", err
 		}
 	}
 
-	return accessKeyID, secretAccessKey, nil
+	return accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, nil
 }
 
 func GetEKSClusterConfig(ctx context.Context, accessKeyID, secretAccessKey, clusterName, region string) (*api.Config, error) {
-	sess, err := getAWSSession(accessKeyID, secretAccessKey, region, "")
+	sess, err := getAWSSession(accessKeyID, secretAccessKey, "", "", region, "")
 	if err != nil {
 		return nil, err
 	}

@@ -139,6 +139,8 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 			SpotInstanceMaxPrice:             spotInstanceMaxPrice,
 			SpotInstancePersistentRequest:    spotInstancePersistentRequest,
 			SpotInstanceInterruptionBehavior: spotInstanceInterruptionBehavior,
+			AssumeRoleARN:                    config.AssumeRoleARN.Value,
+			AssumeRoleExternalID:             config.AssumeRoleExternalID.Value,
 		}
 	case providerconfig.CloudProviderAzure:
 		config := &azure.RawConfig{}

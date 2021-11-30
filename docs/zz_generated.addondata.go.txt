@@ -101,8 +101,10 @@ type Credentials struct {
 }
 
 type AWSCredentials struct {
-	AccessKeyID     string
-	SecretAccessKey string
+	AccessKeyID          string
+	SecretAccessKey      string
+	AssumeRoleARN        string
+	AssumeRoleExternalID string
 }
 
 type AzureCredentials struct {

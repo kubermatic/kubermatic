@@ -349,6 +349,9 @@ func (m *PresetsProvider) setAWSCredentials(userInfo *provider.UserInfo, presetN
 	cloud.AWS.AccessKeyID = credentials.AccessKeyID
 	cloud.AWS.SecretAccessKey = credentials.SecretAccessKey
 
+	cloud.AWS.AssumeRoleARN = credentials.AssumeRoleARN
+	cloud.AWS.AssumeRoleExternalID = credentials.AssumeRoleExternalID
+
 	cloud.AWS.InstanceProfileName = credentials.InstanceProfileName
 	cloud.AWS.RouteTableID = credentials.RouteTableID
 	cloud.AWS.SecurityGroupID = credentials.SecurityGroupID

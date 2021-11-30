@@ -217,6 +217,8 @@ func getEnvVars(data machinecontrollerData) ([]corev1.EnvVar, error) {
 	if data.Cluster().Spec.Cloud.AWS != nil {
 		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: credentials.AWS.AccessKeyID})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: credentials.AWS.SecretAccessKey})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_ASSUME_ROLE_ARN", Value: credentials.AWS.AssumeRoleARN})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_ASSUME_ROLE_EXTERNAL_ID", Value: credentials.AWS.AssumeRoleExternalID})
 	}
 	if data.Cluster().Spec.Cloud.Azure != nil {
 		vars = append(vars, corev1.EnvVar{Name: "AZURE_CLIENT_ID", Value: credentials.Azure.ClientID})

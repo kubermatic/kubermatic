@@ -66,6 +66,10 @@ spec:
                 properties:
                   accessKeyID:
                     type: string
+                  assumeRoleArn:
+                    type: string
+                  assumeRoleExternalID:
+                    type: string
                   datacenter:
                     type: string
                   enabled:

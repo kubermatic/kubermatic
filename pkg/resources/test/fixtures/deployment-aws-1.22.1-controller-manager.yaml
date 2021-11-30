@@ -68,6 +68,10 @@ spec:
           value: aws-secret-access-key
         - name: AWS_VPC_ID
           value: aws-vpn-id
+        - name: AWS_ASSUME_ROLE_ARN
+          value: aws-assume-role-arn
+        - name: AWS_ASSUME_ROLE_EXTERNAL_ID
+          value: aws-assume-role-external-id
         - name: HTTP_PROXY
           value: http://my-corp
         - name: HTTPS_PROXY
