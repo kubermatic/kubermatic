@@ -3847,6 +3847,9 @@ spec:
           effect: NoSchedule
       serviceAccountName: calico-kube-controllers
       priorityClassName: system-cluster-critical
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: calico-kube-controllers
           image: '{{ Registry "docker.io" }}/calico/kube-controllers:v3.19.1'
