@@ -13,9 +13,10 @@
 # limitations under the License.
 
 # Source: https://docs.projectcalico.org/v3.19/manifests/canal.yaml
-# 1 modification:
+# 3 modifications:
 #   - Remove the flexvolume installation as its broken for Flatcar Linux & only required for application policies (Which we don't use).
 #   - Add envoyagent interface to the exclusion list for Calico IP autodetection. 
+#   - Add securityContext to include seccomp profile
 {{ if eq .Cluster.CNIPlugin.Type "canal" }}
 {{ if eq .Cluster.CNIPlugin.Version "v3.19" }}
 ---
@@ -3584,6 +3585,9 @@ spec:
       # deletion": https://kubernetes.io/docs/concepts/workloads/pods/pod/#termination-of-pods.
       terminationGracePeriodSeconds: 0
       priorityClassName: system-node-critical
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       initContainers:
         # This container installs the CNI binaries
         # and CNI network config file on each node.
