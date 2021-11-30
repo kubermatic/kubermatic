@@ -19242,6 +19242,11 @@
         "mla": {
           "$ref": "#/definitions/MLASettings"
         },
+        "nodePortRange": {
+          "description": "NodePortRange contains the nodePort to be set in the ApiServer deployment",
+          "type": "string",
+          "x-go-name": "NodePortRange"
+        },
         "oidc": {
           "$ref": "#/definitions/OIDCSettings"
         },

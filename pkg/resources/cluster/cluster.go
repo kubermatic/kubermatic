@@ -63,6 +63,10 @@ func Spec(apiCluster apiv1.Cluster, dc *kubermaticv1.Datacenter, secretKeyGetter
 		spec.ClusterNetwork = *apiCluster.Spec.ClusterNetwork
 	}
 
+	if apiCluster.Spec.NodePortRange != "" {
+		spec.ComponentsOverride.Apiserver.NodePortRange = apiCluster.Spec.NodePortRange
+	}
+
 	providerName, err := provider.ClusterCloudProviderName(spec.Cloud)
 	if err != nil {
 		return nil, fmt.Errorf("invalid cloud spec: %v", err)
