@@ -118,7 +118,7 @@ func (h *AdmissionHandler) validateCreate(ctx context.Context, c *kubermaticv1.C
 		return field.ErrorList{err}
 	}
 
-	return validation.ValidateClusterSpec(&c.Spec, datacenter, cloudProvider, h.features, nil)
+	return validation.ValidateNewClusterSpec(&c.Spec, datacenter, cloudProvider, h.features, nil)
 }
 
 func (h *AdmissionHandler) validateUpdate(ctx context.Context, c, oldC *kubermaticv1.Cluster) field.ErrorList {

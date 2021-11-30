@@ -58,7 +58,7 @@ var (
 
 // ValidateClusterSpec validates the given cluster spec. If this is not called from within another validation
 // routine, parentFieldPath can be nil.
-func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider, enabledFeatures features.FeatureGate, parentFieldPath *field.Path) field.ErrorList {
+func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, enabledFeatures features.FeatureGate, parentFieldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	if spec.HumanReadableName == "" {
@@ -94,13 +94,6 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 		allErrs = append(allErrs, errs...)
 	}
 
-	// cloud provider-specific validation logic
-	if cloudProvider != nil {
-		if err := cloudProvider.ValidateCloudSpec(spec.Cloud); err != nil {
-			allErrs = append(allErrs, field.Invalid(parentFieldPath.Child("cloud"), spec.Cloud, err.Error()))
-		}
-	}
-
 	if errs := validateMachineNetworksFromClusterSpec(spec, parentFieldPath); len(errs) > 0 {
 		allErrs = append(allErrs, errs...)
 	}
@@ -117,13 +110,25 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 	return allErrs
 }
 
+func ValidateNewClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider, enabledFeatures features.FeatureGate, parentFieldPath *field.Path) field.ErrorList {
+	allErrs := ValidateClusterSpec(spec, dc, enabledFeatures, parentFieldPath)
+
+	if cloudProvider != nil {
+		if err := cloudProvider.ValidateCloudSpec(spec.Cloud); err != nil {
+			allErrs = append(allErrs, field.Invalid(parentFieldPath.Child("cloud"), spec.Cloud, err.Error()))
+		}
+	}
+
+	return allErrs
+}
+
 // ValidateClusterUpdate validates the new cluster and if no forbidden changes were attempted
 func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider, features features.FeatureGate) field.ErrorList {
 	specPath := field.NewPath("spec")
 	allErrs := field.ErrorList{}
 
 	// perform general basic checks on the new cluster spec
-	if errs := ValidateClusterSpec(&newCluster.Spec, dc, cloudProvider, features, specPath); len(errs) > 0 {
+	if errs := ValidateClusterSpec(&newCluster.Spec, dc, features, specPath); len(errs) > 0 {
 		allErrs = append(allErrs, errs...)
 	}
 

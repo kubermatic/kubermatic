@@ -75,7 +75,7 @@ func Spec(apiCluster apiv1.Cluster, template *kubermaticv1.ClusterTemplate, seed
 		return nil, err
 	}
 
-	if errs := validation.ValidateClusterSpec(spec, dc, cloudProvider, features, nil).ToAggregate(); errs != nil {
+	if errs := validation.ValidateNewClusterSpec(spec, dc, cloudProvider, features, nil).ToAggregate(); errs != nil {
 		return spec, errs
 	}
 
