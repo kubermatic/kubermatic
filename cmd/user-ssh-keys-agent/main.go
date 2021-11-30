@@ -55,7 +55,10 @@ func main() {
 	ctx := signals.SetupSignalHandler()
 	ctrlruntimelog.Log = ctrlruntimelog.NewDelegatingLogger(zapr.NewLogger(rawLog).WithName("controller_runtime"))
 
-	mgr, err := manager.New(cfg, manager.Options{Namespace: metav1.NamespaceSystem})
+	mgr, err := manager.New(cfg, manager.Options{
+		Namespace: metav1.NamespaceSystem,
+		NewCache:  usersshkeys.NewCacheFunc(),
+	})
 	if err != nil {
 		log.Fatalw("Failed creating user ssh key controller", zap.Error(err))
 	}

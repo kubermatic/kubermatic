@@ -35,7 +35,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kubeapierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -243,4 +245,17 @@ func updateOwnAndPermissions(path string) error {
 	}
 
 	return nil
+}
+
+// NewCacheFunc returns a user-ssh-keys-agent specific cache.NewCacheFunc that limits the cache
+// to the Secret object that is needed by the controller. This is done so we can limit the RBAC
+// assignment for this controller to the bare minimum (the resource name).
+func NewCacheFunc() cache.NewCacheFunc {
+	return cache.BuilderWithOptions(cache.Options{
+		SelectorsByObject: cache.SelectorsByObject{
+			&corev1.Secret{}: {
+				Field: fields.SelectorFromSet(fields.Set{"metadata.name": resources.UserSSHKeys}),
+			},
+		},
+	})
 }
