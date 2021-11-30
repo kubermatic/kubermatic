@@ -177,10 +177,6 @@ func ValidateUpdateCluster(ctx context.Context, newCluster, oldCluster *kubermat
 		}
 	}
 
-	if !equality.Semantic.DeepEqual(newCluster.Status, oldCluster.Status) {
-		allErrs = append(allErrs, field.Forbidden(field.NewPath("status"), "status cannot be changed"))
-	}
-
 	// Validate ExternalCloudProvider feature flag immutability.
 	// Once the feature flag is enabled, it must not be disabled.
 	if vOld, v := oldCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider],
@@ -220,13 +216,6 @@ func ValidateUpdateCluster(ctx context.Context, newCluster, oldCluster *kubermat
 
 	allErrs = append(allErrs, validateClusterNetworkingConfigUpdateImmutability(&newCluster.Spec.ClusterNetwork, &oldCluster.Spec.ClusterNetwork, specPath.Child("clusterNetwork"))...)
 	allErrs = append(allErrs, validateCNIUpdate(newCluster.Spec.CNIPlugin, oldCluster.Spec.CNIPlugin, newCluster.Labels)...)
-
-	// Editing labels is allowed even though it is part of metadata.
-	oldCluster.Labels = newCluster.Labels
-
-	if !equality.Semantic.DeepEqual(newCluster.ObjectMeta, oldCluster.ObjectMeta) {
-		allErrs = append(allErrs, field.Forbidden(field.NewPath("objectMeta"), "object meta cannot be changed"))
-	}
 
 	if !equality.Semantic.DeepEqual(newCluster.TypeMeta, oldCluster.TypeMeta) {
 		allErrs = append(allErrs, field.Forbidden(field.NewPath("typeMeta"), "type meta cannot be changed"))
