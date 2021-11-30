@@ -56,8 +56,7 @@ var (
 	UnsafeCNIMigrationLabel = "unsafe-cni-migration"
 )
 
-// ValidateClusterSpec validates the given cluster spec
-// If this is not called from within another validation
+// ValidateClusterSpec validates the given cluster spec. If this is not called from within another validation
 // routine, parentFieldPath can be nil.
 func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider, enabledFeatures features.FeatureGate, parentFieldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
@@ -111,29 +110,15 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 	}
 
 	portRangeFld := field.NewPath("componentsOverride", "apiserver", "nodePortRange")
-	if errs := ValidateNodePortRange(spec.ComponentsOverride.Apiserver.NodePortRange, portRangeFld, false); len(errs) > 0 {
-		allErrs = append(allErrs, errs...)
+	if err := ValidateNodePortRange(spec.ComponentsOverride.Apiserver.NodePortRange, portRangeFld); err != nil {
+		allErrs = append(allErrs, err)
 	}
 
 	return allErrs
 }
 
-// ValidateCreateClusterSpec validates the given cluster spec during a CREATE operation.
-func ValidateCreateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider, features features.FeatureGate) field.ErrorList {
-	// currently, there are no special rules that only apply during CREATE
-	allErrs := ValidateClusterSpec(spec, dc, cloudProvider, features, field.NewPath("spec"))
-
-	// nodeport range is required during create options
-	portRangeFld := field.NewPath("componentsOverride", "apiserver", "nodePortRange")
-	if errs := ValidateNodePortRange(spec.ComponentsOverride.Apiserver.NodePortRange, portRangeFld, true); len(errs) > 0 {
-		allErrs = append(allErrs, errs...)
-	}
-
-	return allErrs
-}
-
-// ValidateUpdateCluster validates if the cluster update is allowed
-func ValidateUpdateCluster(ctx context.Context, newCluster, oldCluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider, features features.FeatureGate) field.ErrorList {
+// ValidateClusterUpdate validates the new cluster and if no forbidden changes were attempted
+func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider, features features.FeatureGate) field.ErrorList {
 	specPath := field.NewPath("spec")
 	allErrs := field.ErrorList{}
 
@@ -142,10 +127,9 @@ func ValidateUpdateCluster(ctx context.Context, newCluster, oldCluster *kubermat
 		allErrs = append(allErrs, errs...)
 	}
 
-	// nodeport range is optional during update options
 	portRangeFld := field.NewPath("componentsOverride", "apiserver", "nodePortRange")
-	if errs := ValidateNodePortRange(newCluster.Spec.ComponentsOverride.Apiserver.NodePortRange, portRangeFld, false); len(errs) > 0 {
-		allErrs = append(allErrs, errs...)
+	if err := ValidateNodePortRange(newCluster.Spec.ComponentsOverride.Apiserver.NodePortRange, portRangeFld); err != nil {
+		allErrs = append(allErrs, err)
 	}
 
 	if cloudProvider != nil {
@@ -157,18 +141,6 @@ func ValidateUpdateCluster(ctx context.Context, newCluster, oldCluster *kubermat
 	// ensure neither cloud nor datacenter were changed
 	if err := ValidateCloudChange(newCluster.Spec.Cloud, oldCluster.Spec.Cloud); err != nil {
 		allErrs = append(allErrs, field.Forbidden(specPath.Child("cloud"), err.Error()))
-	}
-
-	if newCluster.Address.ExternalName != oldCluster.Address.ExternalName {
-		allErrs = append(allErrs, field.Forbidden(field.NewPath("address", "externalName"), "external name cannot be changed"))
-	}
-
-	if newCluster.Address.IP != oldCluster.Address.IP {
-		allErrs = append(allErrs, field.Forbidden(field.NewPath("address", "ip"), "IP cannot be changed"))
-	}
-
-	if newCluster.Address.URL != oldCluster.Address.URL {
-		allErrs = append(allErrs, field.Forbidden(field.NewPath("address", "url"), "URL cannot be changed"))
 	}
 
 	if newCluster.Address.AdminToken != "" {
@@ -191,11 +163,21 @@ func ValidateUpdateCluster(ctx context.Context, newCluster, oldCluster *kubermat
 		allErrs = append(allErrs, field.Invalid(specPath.Child("features").Key(kubermaticv1.ClusterFeatureEtcdLauncher), v, fmt.Sprintf("feature gate %q cannot be disabled once it's enabled", kubermaticv1.ClusterFeatureEtcdLauncher)))
 	}
 
-	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
-		newCluster.Spec.ExposeStrategy,
-		oldCluster.Spec.ExposeStrategy,
-		specPath.Child("exposeStrategy"),
-	)...)
+	if oldCluster.Spec.ExposeStrategy != "" {
+		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+			newCluster.Spec.ExposeStrategy,
+			oldCluster.Spec.ExposeStrategy,
+			specPath.Child("exposeStrategy"),
+		)...)
+	}
+
+	if oldCluster.Spec.ComponentsOverride.Apiserver.NodePortRange != "" {
+		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+			newCluster.Spec.ComponentsOverride.Apiserver.NodePortRange,
+			oldCluster.Spec.ComponentsOverride.Apiserver.NodePortRange,
+			specPath.Child("componentsOverride", "apiserver", "nodePortRange"),
+		)...)
+	}
 
 	if oldCluster.Spec.EnableUserSSHKeyAgent != nil {
 		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
@@ -208,14 +190,14 @@ func ValidateUpdateCluster(ctx context.Context, newCluster, oldCluster *kubermat
 		allErrs = append(allErrs, field.Invalid(path, *newCluster.Spec.EnableUserSSHKeyAgent, "UserSSHKey agent is enabled by default for user clusters created prior KKP 2.16 version"))
 	}
 
-	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
-		newCluster.Spec.ComponentsOverride.Apiserver.NodePortRange,
-		oldCluster.Spec.ComponentsOverride.Apiserver.NodePortRange,
-		specPath.Child("componentsOverride", "apiserver", "nodePortRange"),
-	)...)
-
 	allErrs = append(allErrs, validateClusterNetworkingConfigUpdateImmutability(&newCluster.Spec.ClusterNetwork, &oldCluster.Spec.ClusterNetwork, specPath.Child("clusterNetwork"))...)
-	allErrs = append(allErrs, validateCNIUpdate(newCluster.Spec.CNIPlugin, oldCluster.Spec.CNIPlugin, newCluster.Labels)...)
+
+	// even though ErrorList later in ToAggregate() will filter out nil errors, it does so by
+	// stringifying them. A field.Error that is nil will panic when doing so, so one cannot simply
+	// append a nil *field.Error to allErrs.
+	if err := validateCNIUpdate(newCluster.Spec.CNIPlugin, oldCluster.Spec.CNIPlugin, newCluster.Labels); err != nil {
+		allErrs = append(allErrs, err)
+	}
 
 	if !equality.Semantic.DeepEqual(newCluster.TypeMeta, oldCluster.TypeMeta) {
 		allErrs = append(allErrs, field.Forbidden(field.NewPath("typeMeta"), "type meta cannot be changed"))
@@ -689,94 +671,108 @@ func ValidateLeaderElectionSettings(l *kubermaticv1.LeaderElectionSettings, fldP
 	return allErrs
 }
 
-func ValidateNodePortRange(nodePortRange string, fldPath *field.Path, required bool) field.ErrorList {
-	allErrs := field.ErrorList{}
-
-	if !required && nodePortRange == "" {
-		return allErrs
+func ValidateNodePortRange(nodePortRange string, fldPath *field.Path) *field.Error {
+	if nodePortRange == "" {
+		return field.Required(fldPath, "node port range is required")
 	}
 
-	if pr, err := kubenetutil.ParsePortRange(nodePortRange); err != nil {
-		allErrs = append(allErrs, field.Invalid(fldPath, nodePortRange, err.Error()))
-	} else if pr.Base == 0 || pr.Size == 0 {
-		allErrs = append(allErrs, field.Invalid(fldPath, nodePortRange, "invalid nodeport range"))
+	portRange, err := kubenetutil.ParsePortRange(nodePortRange)
+	if err != nil {
+		return field.Invalid(fldPath, nodePortRange, err.Error())
 	}
 
-	return allErrs
+	if portRange.Base == 0 || portRange.Size == 0 {
+		return field.Invalid(fldPath, nodePortRange, "invalid nodeport range")
+	}
+
+	return nil
 }
 
 func validateClusterNetworkingConfigUpdateImmutability(c, oldC *kubermaticv1.ClusterNetworkingConfig, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
-		c.Pods.CIDRBlocks,
-		oldC.Pods.CIDRBlocks,
-		fldPath.Child("pods", "cidrBlocks"),
-	)...)
-	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
-		c.Services.CIDRBlocks,
-		oldC.Services.CIDRBlocks,
-		fldPath.Child("services", "cidrBlocks"),
-	)...)
-	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
-		c.ProxyMode,
-		oldC.ProxyMode,
-		fldPath.Child("proxyMode"),
-	)...)
-	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
-		c.DNSDomain,
-		oldC.DNSDomain,
-		fldPath.Child("dnsDomain"),
-	)...)
-	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
-		c.NodeLocalDNSCacheEnabled,
-		oldC.NodeLocalDNSCacheEnabled,
-		fldPath.Child("nodeLocalDNSCacheEnabled"),
-	)...)
+	if len(oldC.Pods.CIDRBlocks) != 0 {
+		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+			c.Pods.CIDRBlocks,
+			oldC.Pods.CIDRBlocks,
+			fldPath.Child("pods", "cidrBlocks"),
+		)...)
+	}
+
+	if len(oldC.Services.CIDRBlocks) != 0 {
+		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+			c.Services.CIDRBlocks,
+			oldC.Services.CIDRBlocks,
+			fldPath.Child("services", "cidrBlocks"),
+		)...)
+	}
+
+	if oldC.ProxyMode != "" {
+		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+			c.ProxyMode,
+			oldC.ProxyMode,
+			fldPath.Child("proxyMode"),
+		)...)
+	}
+
+	if oldC.DNSDomain != "" {
+		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+			c.DNSDomain,
+			oldC.DNSDomain,
+			fldPath.Child("dnsDomain"),
+		)...)
+	}
+
+	if oldC.NodeLocalDNSCacheEnabled != nil {
+		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+			c.NodeLocalDNSCacheEnabled,
+			oldC.NodeLocalDNSCacheEnabled,
+			fldPath.Child("nodeLocalDNSCacheEnabled"),
+		)...)
+	}
 
 	return allErrs
 }
 
-func validateCNIUpdate(cni *kubermaticv1.CNIPluginSettings, oldCni *kubermaticv1.CNIPluginSettings, labels map[string]string) field.ErrorList {
-	specFldPath := field.NewPath("spec")
+func validateCNIUpdate(cni *kubermaticv1.CNIPluginSettings, oldCni *kubermaticv1.CNIPluginSettings, labels map[string]string) *field.Error {
+	basePath := field.NewPath("spec", "cniPlugin")
 
-	if cni == nil && oldCni == nil {
-		return field.ErrorList{} // allowed for backward compatibility with older KKP with existing clusters with no CNI settings
+	// if there was no CNI setting, we allow the initial mutation to happen,
+	// which will default the CNI settings.
+	if oldCni == nil {
+		return nil
 	}
-	if oldCni != nil && cni == nil {
-		return field.ErrorList{field.Required(specFldPath.Child("cniPlugin"), "CNI plugin settings cannot be removed")}
+
+	// due to defaulting, this should never happen, KKP always sets the CNIPlugin field
+	if cni == nil {
+		return field.Required(basePath, "CNI plugin settings cannot be removed")
 	}
-	if oldCni == nil && cni != nil {
-		if _, ok := labels[UnsafeCNIUpgradeLabel]; ok {
-			return field.ErrorList{} // allowed for migration path from older KKP with existing clusters with no CNI settings
-		}
-		return field.ErrorList{field.Forbidden(specFldPath.Child("cniPlugin"),
-			fmt.Sprintf("cannot add CNI plugin settings, unless %s label is present", UnsafeCNIUpgradeLabel))}
-	}
+
 	if cni.Type != oldCni.Type {
 		if _, ok := labels[UnsafeCNIMigrationLabel]; ok {
-			return field.ErrorList{} // allowed for CNI type migration path
+			return nil // allowed for CNI type migration path
 		}
-		return field.ErrorList{field.Forbidden(specFldPath.Child("cniPlugin", "type"),
-			fmt.Sprintf("cannot change CNI plugin type, unless %s label is present", UnsafeCNIMigrationLabel))}
+
+		return field.Forbidden(basePath.Child("type"), fmt.Sprintf("cannot change CNI plugin type, unless %s label is present", UnsafeCNIMigrationLabel))
 	}
+
 	if cni.Version != oldCni.Version {
 		newV, err := semver.NewVersion(cni.Version)
 		if err != nil {
-			return field.ErrorList{field.Invalid(specFldPath.Child("cniPlugin", "version"), cni.Version,
-				fmt.Sprintf("couldn't parse CNI version `%s`: %v", cni.Version, err))}
+			return field.Invalid(basePath.Child("version"), cni.Version, fmt.Sprintf("couldn't parse CNI version `%s`: %v", cni.Version, err))
 		}
+
 		oldV, err := semver.NewVersion(oldCni.Version)
 		if err != nil {
-			return field.ErrorList{field.Invalid(specFldPath.Child("cniPlugin", "version"), oldCni.Version,
-				fmt.Sprintf("couldn't parse CNI version `%s`: %v", oldCni.Version, err))}
+			return field.Invalid(basePath.Child("version"), oldCni.Version, fmt.Sprintf("couldn't parse CNI version `%s`: %v", oldCni.Version, err))
 		}
+
 		if newV.Major() != oldV.Major() || (newV.Minor() != oldV.Minor()+1 && oldV.Minor() != newV.Minor()+1) {
 			if _, ok := labels[UnsafeCNIUpgradeLabel]; !ok {
-				return field.ErrorList{field.Forbidden(specFldPath.Child("cniPlugin", "version"),
-					fmt.Sprintf("cannot upgrade CNI from %s to %s, only one minor version difference is allowed unless %s label is present", oldCni.Version, cni.Version, UnsafeCNIUpgradeLabel))}
+				return field.Forbidden(basePath.Child("version"), fmt.Sprintf("cannot upgrade CNI from %s to %s, only one minor version difference is allowed unless %s label is present", oldCni.Version, cni.Version, UnsafeCNIUpgradeLabel))
 			}
 		}
 	}
-	return field.ErrorList{}
+
+	return nil
 }

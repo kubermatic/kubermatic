@@ -52,6 +52,15 @@ func init() {
 // TestHandle tests the admission handler, but with the cloud provider validation
 // disabled (i.e. we do not check if the digitalocean token is valid, which would
 // be done by issuing a HTTP call).
+//
+// ***************** IMPORTANT ***************
+//
+// This tests the admission webhook standalone. In real-life scenarios, the defaulting
+// webhook will ensure default values (duh) on the Cluster and is called by the
+// kube-apiserver *before* the admission webhook is called. So for example this function
+// ensures that an empty nodeport range fails, but in reality, this never happens
+// because of the mutating webhook.
+//
 func TestHandle(t *testing.T) {
 	seed := kubermaticv1.Seed{
 		ObjectMeta: metav1.ObjectMeta{
@@ -900,62 +909,6 @@ func TestHandle(t *testing.T) {
 			wantAllowed: false,
 		},
 		{
-			name: "Accept empty nodeport range on update",
-			req: webhook.AdmissionRequest{
-				AdmissionRequest: admissionv1.AdmissionRequest{
-					Operation: admissionv1.Update,
-					RequestKind: &metav1.GroupVersionKind{
-						Group:   kubermaticv1.GroupName,
-						Version: kubermaticv1.GroupVersion,
-						Kind:    "Cluster",
-					},
-					Name: "foo",
-					Object: runtime.RawExtension{
-						Raw: rawClusterGen{
-							Name:           "foo",
-							Namespace:      "kubermatic",
-							ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
-							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
-								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
-								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
-								DNSDomain:                "cluster.local",
-								ProxyMode:                resources.IPVSProxyMode,
-								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
-							},
-							ComponentSettings: kubermaticv1.ComponentSettings{
-								Apiserver: kubermaticv1.APIServerSettings{
-									NodePortRange: "",
-								},
-							},
-						}.Do(),
-					},
-					OldObject: runtime.RawExtension{
-						Raw: rawClusterGen{
-							Name:           "foo",
-							Namespace:      "kubermatic",
-							ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
-							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
-								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
-								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
-								DNSDomain:                "cluster.local",
-								ProxyMode:                resources.IPVSProxyMode,
-								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
-							},
-							ComponentSettings: kubermaticv1.ComponentSettings{
-								Apiserver: kubermaticv1.APIServerSettings{
-									NodePortRange: "",
-									DeploymentSettings: kubermaticv1.DeploymentSettings{
-										Replicas: pointer.Int32Ptr(3),
-									},
-								},
-							},
-						}.Do(),
-					},
-				},
-			},
-			wantAllowed: true,
-		},
-		{
 			name: "Reject empty nodeport range update",
 			req: webhook.AdmissionRequest{
 				AdmissionRequest: admissionv1.AdmissionRequest{
@@ -980,7 +933,7 @@ func TestHandle(t *testing.T) {
 							},
 							ComponentSettings: kubermaticv1.ComponentSettings{
 								Apiserver: kubermaticv1.APIServerSettings{
-									NodePortRange: "",
+									NodePortRange: "", // this will be defaulted to the
 								},
 							},
 						}.Do(),
@@ -1543,63 +1496,6 @@ func TestHandle(t *testing.T) {
 							CNIPlugin: &kubermaticv1.CNIPluginSettings{
 								Type:    kubermaticv1.CNIPluginTypeCanal,
 								Version: "v3.19",
-							},
-							ComponentSettings: kubermaticv1.ComponentSettings{
-								Apiserver: kubermaticv1.APIServerSettings{
-									NodePortRange: "30000-32000",
-								},
-							},
-						}.Do(),
-					},
-				},
-			},
-			wantAllowed: false,
-		},
-		{
-			name: "Reject add CNIPlugin settings",
-			req: webhook.AdmissionRequest{
-				AdmissionRequest: admissionv1.AdmissionRequest{
-					Operation: admissionv1.Update,
-					RequestKind: &metav1.GroupVersionKind{
-						Group:   kubermaticv1.GroupName,
-						Version: kubermaticv1.GroupVersion,
-						Kind:    "Cluster",
-					},
-					Name: "foo",
-					Object: runtime.RawExtension{
-						Raw: rawClusterGen{
-							Name:           "foo",
-							Namespace:      "kubermatic",
-							ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
-							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
-								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
-								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
-								DNSDomain:                "cluster.local",
-								ProxyMode:                resources.IPVSProxyMode,
-								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
-							},
-							CNIPlugin: &kubermaticv1.CNIPluginSettings{
-								Type:    kubermaticv1.CNIPluginTypeCanal,
-								Version: "v3.19",
-							},
-							ComponentSettings: kubermaticv1.ComponentSettings{
-								Apiserver: kubermaticv1.APIServerSettings{
-									NodePortRange: "30000-32000",
-								},
-							},
-						}.Do(),
-					},
-					OldObject: runtime.RawExtension{
-						Raw: rawClusterGen{
-							Name:           "foo",
-							Namespace:      "kubermatic",
-							ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
-							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
-								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
-								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
-								DNSDomain:                "cluster.local",
-								ProxyMode:                resources.IPVSProxyMode,
-								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 							},
 							ComponentSettings: kubermaticv1.ComponentSettings{
 								Apiserver: kubermaticv1.APIServerSettings{

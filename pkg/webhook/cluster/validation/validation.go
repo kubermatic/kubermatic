@@ -25,6 +25,7 @@ import (
 	"github.com/go-logr/logr"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud"
@@ -112,50 +113,43 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 }
 
 func (h *AdmissionHandler) validateCreate(ctx context.Context, c *kubermaticv1.Cluster) field.ErrorList {
-	datacenter, cloudProvider, allErrs := h.buildValidationDependencies(ctx, c)
+	datacenter, cloudProvider, err := h.buildValidationDependencies(ctx, c)
+	if err != nil {
+		return field.ErrorList{err}
+	}
 
-	return append(allErrs, validation.ValidateCreateClusterSpec(&c.Spec, datacenter, cloudProvider, h.features)...)
+	return validation.ValidateClusterSpec(&c.Spec, datacenter, cloudProvider, h.features, nil)
 }
 
 func (h *AdmissionHandler) validateUpdate(ctx context.Context, c, oldC *kubermaticv1.Cluster) field.ErrorList {
-	datacenter, cloudProvider, allErrs := h.buildValidationDependencies(ctx, c)
-
-	return append(allErrs, validation.ValidateUpdateCluster(ctx, c, oldC, datacenter, cloudProvider, h.features)...)
-}
-
-func (h *AdmissionHandler) buildValidationDependencies(ctx context.Context, c *kubermaticv1.Cluster) (*kubermaticv1.Datacenter, provider.CloudProvider, field.ErrorList) {
-	allErrs := field.ErrorList{}
-
-	// retrieve datacenter so we can prepare the dependencies for ValidateCreateClusterSpec()
-	var (
-		datacenter    *kubermaticv1.Datacenter
-		cloudProvider provider.CloudProvider
-	)
-
-	datacenterName := c.Spec.Cloud.DatacenterName
-	if datacenterName != "" {
-		seed, err := h.seedGetter()
-		if err != nil {
-			return nil, nil, field.ErrorList{field.InternalError(nil, err)}
-		}
-
-		for dcName, dc := range seed.Spec.Datacenters {
-			if dcName == datacenterName {
-				datacenter = &dc
-				break
-			}
-		}
-
-		if datacenter == nil {
-			allErrs = append(allErrs, field.Invalid(field.NewPath("spec", "cloud", "dc"), datacenterName, "invalid datacenter name"))
-		} else if !h.disableProviderValidation {
-			secretKeySelectorFunc := provider.SecretKeySelectorValueFuncFactory(ctx, h.client)
-			cloudProvider, err = cloud.Provider(datacenter, secretKeySelectorFunc, h.caBundle)
-			if err != nil {
-				allErrs = append(allErrs, field.Invalid(field.NewPath("spec", "cloud", "dc"), datacenterName, fmt.Sprintf("failed to create cloud provider: %v", err)))
-			}
-		}
+	datacenter, cloudProvider, err := h.buildValidationDependencies(ctx, c)
+	if err != nil {
+		return field.ErrorList{err}
 	}
 
-	return datacenter, cloudProvider, allErrs
+	return validation.ValidateClusterUpdate(ctx, c, oldC, datacenter, cloudProvider, h.features)
+}
+
+func (h *AdmissionHandler) buildValidationDependencies(ctx context.Context, c *kubermaticv1.Cluster) (*kubermaticv1.Datacenter, provider.CloudProvider, *field.Error) {
+	seed, err := h.seedGetter()
+	if err != nil {
+		return nil, nil, field.InternalError(nil, err)
+	}
+
+	datacenter, fieldErr := defaulting.DatacenterForClusterSpec(&c.Spec, seed)
+	if fieldErr != nil {
+		return nil, nil, fieldErr
+	}
+
+	if h.disableProviderValidation {
+		return datacenter, nil, nil
+	}
+
+	secretKeySelectorFunc := provider.SecretKeySelectorValueFuncFactory(ctx, h.client)
+	cloudProvider, err := cloud.Provider(datacenter, secretKeySelectorFunc, h.caBundle)
+	if err != nil {
+		return nil, nil, field.InternalError(nil, err)
+	}
+
+	return datacenter, cloudProvider, nil
 }
