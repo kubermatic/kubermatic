@@ -142,6 +142,7 @@ func (h *AdmissionHandler) buildValidationDependencies(ctx context.Context, c *k
 		for dcName, dc := range seed.Spec.Datacenters {
 			if dcName == datacenterName {
 				datacenter = &dc
+				break
 			}
 		}
 
