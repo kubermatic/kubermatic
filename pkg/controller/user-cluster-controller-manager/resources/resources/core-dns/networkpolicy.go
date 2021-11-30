@@ -45,7 +45,9 @@ func KubeDNSNetworkPolicyCreator() reconciling.NamedNetworkPolicyCreatorGetter {
 					{
 						From: []networkingv1.NetworkPolicyPeer{
 							{
-								NamespaceSelector: &metav1.LabelSelector{},
+								IPBlock: &networkingv1.IPBlock{
+									CIDR: "0.0.0.0/0",
+								},
 							},
 						},
 					},
