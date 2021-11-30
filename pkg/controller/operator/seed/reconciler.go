@@ -150,14 +150,8 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 		return r.cleanupDeletedSeed(ctx, defaulted, seedCopy, seedClient, log)
 	}
 
-	// apply the default values from the config to the current Seed
-	defaultedSeed, err := defaults.DefaultSeed(seedCopy, defaulted, log)
-	if err != nil {
-		return fmt.Errorf("failed to apply defaults to Seed: %v", err)
-	}
-
 	// make sure to use the seedCopy so the owner ref has the correct UID
-	if err := r.reconcileResources(ctx, defaulted, defaultedSeed, seedClient, log); err != nil {
+	if err := r.reconcileResources(ctx, defaulted, seedCopy, seedClient, log); err != nil {
 		r.masterRecorder.Event(config, corev1.EventTypeWarning, "SeedReconcilingError", fmt.Sprintf("%s: %v", seedName, err))
 		r.masterRecorder.Event(seed, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		seedRecorder.Event(seedCopy, corev1.EventTypeWarning, "ReconcilingError", err.Error())
@@ -209,6 +203,12 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *operatorv1alph
 	kubernetes.AddFinalizer(seed, common.CleanupFinalizer)
 	if err := client.Patch(ctx, seed, ctrlruntimeclient.MergeFrom(oldSeed)); err != nil {
 		return fmt.Errorf("failed to add finalizer to Seed: %v", err)
+	}
+
+	// apply the default values from the config to the current Seed
+	seed, err := defaults.DefaultSeed(seed, cfg, log)
+	if err != nil {
+		return fmt.Errorf("failed to apply defaults to Seed: %v", err)
 	}
 
 	caBundle, err := certificates.GlobalCABundle(ctx, r.masterClient, cfg)
