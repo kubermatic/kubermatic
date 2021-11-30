@@ -201,7 +201,7 @@ apiVersion: kubermatic.k8c.io/v1
 kind: ApplicationInstallation
 metadata:
   name: prometheus
-    namespace: cluster-47s2ddlfgj
+  namespace: cluster-47s2ddlfgj
 spec:
   targetNamespace: monitoring
   createNamespace: true # flag to create the targetNamespace
