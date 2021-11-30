@@ -38,7 +38,6 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
 	"k8c.io/kubermatic/v2/pkg/resources/cluster"
@@ -251,18 +250,6 @@ func GenerateCluster(
 	partialCluster.Labels[kubermaticv1.ProjectIDLabelKey] = projectID
 	partialCluster.Spec = *spec
 
-	// Enforce audit logging
-	if dc.Spec.EnforceAuditLogging {
-		partialCluster.Spec.AuditLogging = &kubermaticv1.AuditLoggingSettings{
-			Enabled: true,
-		}
-	}
-
-	// Enforce PodSecurityPolicy
-	if dc.Spec.EnforcePodSecurityPolicy {
-		partialCluster.Spec.UsePodSecurityPolicyAdmissionPlugin = true
-	}
-
 	if body.Cluster.Spec.EnableUserSSHKeyAgent == nil {
 		partialCluster.Spec.EnableUserSSHKeyAgent = pointer.BoolPtr(true)
 	} else {
@@ -425,7 +412,7 @@ func PatchEndpoint(
 	if err != nil {
 		return nil, errors.New(http.StatusInternalServerError, err.Error())
 	}
-	_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, oldInternalCluster.Spec.Cloud.DatacenterName)
+	seed, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, oldInternalCluster.Spec.Cloud.DatacenterName)
 	if err != nil {
 		return nil, fmt.Errorf("error getting dc: %v", err)
 	}
@@ -492,40 +479,39 @@ func PatchEndpoint(
 		return nil, errors.NewBadRequest("Cluster contains nodes running the following incompatible kubelet versions: %v. Upgrade your nodes before you upgrade the cluster.", incompatibleKubelets)
 	}
 
-	if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(ctx, privilegedClusterProvider.GetSeedClusterAdminRuntimeClient(), newInternalCluster); err != nil {
+	// find the defaulting template
+	seedClient := privilegedClusterProvider.GetSeedClusterAdminRuntimeClient()
+
+	defaultingTemplate, err := defaulting.GetDefaultingClusterTemplate(ctx, seedClient, seed)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	// determine cloud provider for defaulting
+	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(ctx, seedClient)
+	cloudProvider, err := cluster.CloudProviderForCluster(&newInternalCluster.Spec, dc, secretKeyGetter, caBundle)
+	if err != nil {
 		return nil, err
 	}
 
-	// Enforce audit logging
-	if dc.Spec.EnforceAuditLogging {
-		newInternalCluster.Spec.AuditLogging = &kubermaticv1.AuditLoggingSettings{
-			Enabled: true,
-		}
+	// apply default values to the new cluster
+	if err := defaulting.DefaultClusterSpec(&newInternalCluster.Spec, defaultingTemplate, seed, config, cloudProvider); err != nil {
+		return nil, err
 	}
 
-	// Enforce PodSecurityPolicy
-	if dc.Spec.EnforcePodSecurityPolicy {
-		newInternalCluster.Spec.UsePodSecurityPolicyAdmissionPlugin = true
+	if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(ctx, seedClient, newInternalCluster); err != nil {
+		return nil, err
 	}
 
-	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
-	if !ok {
-		return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
-	}
-
-	secretKeySelectorFunc := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
-	cloudProvider, err := cloud.Provider(dc, secretKeySelectorFunc, caBundle)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create cloud provider: %v", err)
-	}
-
-	if errs := validation.ValidateUpdateCluster(ctx, newInternalCluster, oldInternalCluster, dc, cloudProvider, features).ToAggregate(); errs != nil {
+	// validate the new cluster
+	if errs := validation.ValidateClusterUpdate(ctx, newInternalCluster, oldInternalCluster, dc, cloudProvider, features).ToAggregate(); errs != nil {
 		return nil, errors.NewBadRequest("invalid cluster: %v", errs)
 	}
 	if err = validation.ValidateUpdateWindow(newInternalCluster.Spec.UpdateWindow); err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
+	// update the Cluster resource
 	updatedCluster, err := updateCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, newInternalCluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)

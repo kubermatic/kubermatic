@@ -66,14 +66,7 @@ func Spec(apiCluster apiv1.Cluster, template *kubermaticv1.ClusterTemplate, seed
 		spec.ClusterNetwork = *apiCluster.Spec.ClusterNetwork
 	}
 
-	providerName, err := provider.ClusterCloudProviderName(spec.Cloud)
-	if err != nil {
-		return nil, fmt.Errorf("invalid cloud spec: %v", err)
-	}
-	if providerName == "" {
-		return nil, errors.New("cluster has no cloud provider")
-	}
-	cloudProvider, err := cloud.Provider(dc, secretKeyGetter, caBundle)
+	cloudProvider, err := CloudProviderForCluster(spec, dc, secretKeyGetter, caBundle)
 	if err != nil {
 		return nil, err
 	}
@@ -82,9 +75,21 @@ func Spec(apiCluster apiv1.Cluster, template *kubermaticv1.ClusterTemplate, seed
 		return nil, err
 	}
 
-	if errs := validation.ValidateCreateClusterSpec(spec, dc, cloudProvider, features).ToAggregate(); errs != nil {
+	if errs := validation.ValidateClusterSpec(spec, dc, cloudProvider, features, nil).ToAggregate(); errs != nil {
 		return spec, errs
 	}
 
 	return spec, nil
+}
+
+func CloudProviderForCluster(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool) (provider.CloudProvider, error) {
+	providerName, err := provider.ClusterCloudProviderName(spec.Cloud)
+	if err != nil {
+		return nil, fmt.Errorf("invalid cloud spec: %w", err)
+	}
+	if providerName == "" {
+		return nil, errors.New("cluster has no cloud provider")
+	}
+
+	return cloud.Provider(dc, secretKeyGetter, caBundle)
 }

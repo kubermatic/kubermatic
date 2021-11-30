@@ -20,7 +20,6 @@ import (
 	"context"
 	"crypto/x509"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -32,6 +31,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud"
 
 	admissionv1 "k8s.io/api/admission/v1"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/pointer"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -130,9 +130,9 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 }
 
 func (h *AdmissionHandler) applyDefaults(ctx context.Context, c *kubermaticv1.Cluster) error {
-	seed, provider, err := h.buildDefaultingDependencies(ctx, c)
-	if err != nil {
-		return err
+	seed, provider, fieldErr := h.buildDefaultingDependencies(ctx, c)
+	if fieldErr != nil {
+		return fieldErr
 	}
 
 	config, err := h.configGetter(ctx)
@@ -178,42 +178,25 @@ func addCCMCSIMigrationAnnotations(cluster *kubermaticv1.Cluster) {
 	cluster.ObjectMeta.Annotations[kubermaticv1.CSIMigrationNeededAnnotation] = ""
 }
 
-func (h *AdmissionHandler) buildDefaultingDependencies(ctx context.Context, c *kubermaticv1.Cluster) (*kubermaticv1.Seed, provider.CloudProvider, error) {
+func (h *AdmissionHandler) buildDefaultingDependencies(ctx context.Context, c *kubermaticv1.Cluster) (*kubermaticv1.Seed, provider.CloudProvider, *field.Error) {
 	seed, err := h.seedGetter()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, field.InternalError(nil, err)
 	}
 
 	if h.disableProviderMutation {
 		return seed, nil, nil
 	}
 
-	var (
-		datacenter    *kubermaticv1.Datacenter
-		cloudProvider provider.CloudProvider
-	)
-
-	datacenterName := c.Spec.Cloud.DatacenterName
-	if datacenterName == "" {
-		// silently ignore it here, the validation later in the validation webhook will properly report the broken spec
-		return nil, nil, errors.New("no datacenter name set in spec.cloud.dc")
-	}
-
-	for dcName, dc := range seed.Spec.Datacenters {
-		if dcName == datacenterName {
-			datacenter = &dc
-			break
-		}
-	}
-
-	if datacenter == nil {
-		return nil, nil, fmt.Errorf("invalid datacenter %q", datacenterName)
+	datacenter, fieldErr := defaulting.DatacenterForClusterSpec(&c.Spec, seed)
+	if fieldErr != nil {
+		return nil, nil, fieldErr
 	}
 
 	secretKeySelectorFunc := provider.SecretKeySelectorValueFuncFactory(ctx, h.client)
-	cloudProvider, err = cloud.Provider(datacenter, secretKeySelectorFunc, h.caBundle)
+	cloudProvider, err := cloud.Provider(datacenter, secretKeySelectorFunc, h.caBundle)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create cloud provider: %w", err)
+		return nil, nil, field.InternalError(nil, err)
 	}
 
 	return seed, cloudProvider, nil

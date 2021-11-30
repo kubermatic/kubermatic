@@ -1053,6 +1053,7 @@ func GenCluster(id string, name string, projectID string, creationTime time.Time
 	for _, modifier := range modifiers {
 		modifier(cluster)
 	}
+
 	return cluster
 }
 

@@ -66,6 +66,11 @@ var (
 						Hetzner: &kubermaticv1.DatacenterSpecHetzner{},
 					},
 				},
+				"kubevirt-dc": {
+					Spec: kubermaticv1.DatacenterSpec{
+						Kubevirt: &kubermaticv1.DatacenterSpecKubevirt{},
+					},
+				},
 			},
 		},
 	}
@@ -483,8 +488,11 @@ func TestHandle(t *testing.T) {
 					Name: "foo",
 					Object: runtime.RawExtension{
 						Raw: rawClusterGen{
-							Name:      "foo",
-							CloudSpec: kubermaticv1.CloudSpec{Kubevirt: &kubermaticv1.KubevirtCloudSpec{}},
+							Name: "foo",
+							CloudSpec: kubermaticv1.CloudSpec{
+								DatacenterName: "kubevirt-dc",
+								Kubevirt:       &kubermaticv1.KubevirtCloudSpec{},
+							},
 							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
 								Type:    kubermaticv1.CNIPluginTypeCanal,
 								Version: "v3.19",

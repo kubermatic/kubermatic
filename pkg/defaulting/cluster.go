@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -87,6 +88,27 @@ func DefaultClusterSpec(spec *kubermaticv1.ClusterSpec, template *kubermaticv1.C
 	// set expose strategy
 	if spec.ExposeStrategy == "" {
 		spec.ExposeStrategy = seed.Spec.ExposeStrategy
+	}
+
+	// Though the caller probably had already determined the datacenter
+	// to construct the cloud provider instance, we do not take the DC
+	// as a parameter, to keep this function's signature at least somewhat
+	// short. But to enforce certain settings, we still need to have the DC.
+	datacenter, fieldErr := DatacenterForClusterSpec(spec, seed)
+	if fieldErr != nil {
+		return fieldErr
+	}
+
+	// Enforce audit logging
+	if datacenter.Spec.EnforceAuditLogging {
+		spec.AuditLogging = &kubermaticv1.AuditLoggingSettings{
+			Enabled: true,
+		}
+	}
+
+	// Enforce PodSecurityPolicy
+	if datacenter.Spec.EnforcePodSecurityPolicy {
+		spec.UsePodSecurityPolicyAdmissionPlugin = true
 	}
 
 	// set provider name
@@ -186,4 +208,19 @@ func GetDefaultingClusterTemplate(ctx context.Context, client ctrlruntimeclient.
 	}
 
 	return &tpl, nil
+}
+
+func DatacenterForClusterSpec(spec *kubermaticv1.ClusterSpec, seed *kubermaticv1.Seed) (*kubermaticv1.Datacenter, *field.Error) {
+	datacenterName := spec.Cloud.DatacenterName
+	if datacenterName == "" {
+		return nil, field.Required(field.NewPath("spec", "cloud", "dc"), "no datacenter name specified")
+	}
+
+	for dcName, dc := range seed.Spec.Datacenters {
+		if dcName == datacenterName {
+			return &dc, nil
+		}
+	}
+
+	return nil, field.Invalid(field.NewPath("spec", "cloud", "dc"), datacenterName, "invalid datacenter name")
 }
