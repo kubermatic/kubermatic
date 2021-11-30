@@ -54,6 +54,19 @@ func KubeDNSNetworkPolicyCreator(k8sApiIP string, k8sApiPort int) reconciling.Na
 									CIDR: "0.0.0.0/0",
 								},
 							},
+							//{
+							//	NamespaceSelector: &metav1.LabelSelector{},
+							//},
+						},
+						Ports: []networkingv1.NetworkPolicyPort{
+							{
+								Protocol: &protoTcp,
+								Port:     &dnsPort,
+							},
+							{
+								Protocol: &protoUdp,
+								Port:     &dnsPort,
+							},
 						},
 					},
 				},
