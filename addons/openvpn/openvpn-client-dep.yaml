@@ -30,6 +30,9 @@ spec:
         role: openvpn-client
     spec:
       serviceAccountName: vpn-client
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: openvpn-client
         image: '{{ Registry "quay.io" }}/kubermatic/openvpn:v2.5.2-r0'

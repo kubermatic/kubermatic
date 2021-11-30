@@ -19,6 +19,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"go.uber.org/zap"
 
@@ -90,6 +91,8 @@ func (r *testRunner) testUserclusterControllerRBAC(ctx context.Context, log *zap
 func (r *testRunner) testUserClusterSeccompProfiles(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client) error {
 	pods := &corev1.PodList{}
 
+	errors := []string{}
+
 	// get all Pods running on the cluster
 	if err := userClusterClient.List(ctx, pods, &ctrlruntimeclient.ListOptions{Namespace: ""}); err != nil {
 		return fmt.Errorf("failed to list Pods in user cluster: %v", err)
@@ -102,24 +105,37 @@ func (r *testRunner) testUserClusterSeccompProfiles(ctx context.Context, log *za
 		}
 		// no security context means no seccomp profile
 		if pod.Spec.SecurityContext == nil {
-			return fmt.Errorf("expected security context on Pod %s/%s, got none", pod.Namespace, pod.Name)
+			errors = append(
+				errors,
+				fmt.Sprintf("expected security context on Pod %s/%s, got none", pod.Namespace, pod.Name),
+			)
 		}
 
 		// no seccomp profile means no profile is applied to the containers
 		if pod.Spec.SecurityContext.SeccompProfile == nil {
-			return fmt.Errorf("expected seccomp profile on Pod %s/%s, got none", pod.Namespace, pod.Name)
+			errors = append(
+				errors,
+				fmt.Sprintf("expected seccomp profile on Pod %s/%s, got none", pod.Namespace, pod.Name),
+			)
 		}
 
 		// the 'unconfined' profile disables any seccomp filtering
 		if pod.Spec.SecurityContext.SeccompProfile.Type == corev1.SeccompProfileTypeUnconfined {
-			return fmt.Errorf(
-				"seccomp profile of Pod %s/%s is '%s', should be '%s' or '%s'", pod.Namespace, pod.Name,
-				corev1.SeccompProfileTypeUnconfined, corev1.SeccompProfileTypeRuntimeDefault, corev1.SeccompProfileTypeLocalhost,
+			errors = append(
+				errors,
+				fmt.Sprintf(
+					"seccomp profile of Pod %s/%s is '%s', should be '%s' or '%s'", pod.Namespace, pod.Name,
+					corev1.SeccompProfileTypeUnconfined, corev1.SeccompProfileTypeRuntimeDefault, corev1.SeccompProfileTypeLocalhost,
+				),
 			)
 		}
 	}
 
-	return nil
+	if len(errors) == 0 {
+		return nil
+	}
+
+	return fmt.Errorf(strings.Join(errors, "\n"))
 }
 
 func rbacResourceNames() []string {
