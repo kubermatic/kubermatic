@@ -35,6 +35,9 @@ type ClusterSpec struct {
 	// MachineNetworks optionally specifies the parameters for IPAM.
 	MachineNetworks []*MachineNetworkingConfig `json:"machineNetworks"`
 
+	// NodePortRange contains the nodePort to be set in the ApiServer deployment
+	NodePortRange string `json:"nodePortRange,omitempty"`
+
 	// PodNodeSelectorAdmissionPluginConfig provides the configuration for the PodNodeSelector.
 	// It's used by the backend to create a configuration file for this plugin.
 	// The key:value from the map is converted to the namespace:<node-selectors-labels> in the file.
