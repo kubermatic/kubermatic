@@ -94,19 +94,21 @@ func getAWSProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *ku
 
 	config := aws.RawConfig{
 		// If the node spec doesn't provide a subnet ID, AWS will just pick the AZ's default subnet.
-		SubnetID:           providerconfig.ConfigVarString{Value: nodeSpec.Cloud.AWS.SubnetID},
-		VpcID:              providerconfig.ConfigVarString{Value: c.Spec.Cloud.AWS.VPCID},
-		SecurityGroupIDs:   []providerconfig.ConfigVarString{{Value: c.Spec.Cloud.AWS.SecurityGroupID}},
-		Region:             providerconfig.ConfigVarString{Value: dc.Spec.AWS.Region},
-		AvailabilityZone:   providerconfig.ConfigVarString{Value: nodeSpec.Cloud.AWS.AvailabilityZone},
-		InstanceProfile:    providerconfig.ConfigVarString{Value: c.Spec.Cloud.AWS.InstanceProfileName},
-		InstanceType:       providerconfig.ConfigVarString{Value: nodeSpec.Cloud.AWS.InstanceType},
-		DiskType:           providerconfig.ConfigVarString{Value: nodeSpec.Cloud.AWS.VolumeType},
-		DiskSize:           nodeSpec.Cloud.AWS.VolumeSize,
-		AMI:                providerconfig.ConfigVarString{Value: ami},
-		AssignPublicIP:     nodeSpec.Cloud.AWS.AssignPublicIP,
-		IsSpotInstance:     nodeSpec.Cloud.AWS.IsSpotInstance,
-		SpotInstanceConfig: spotConfig,
+		SubnetID:             providerconfig.ConfigVarString{Value: nodeSpec.Cloud.AWS.SubnetID},
+		VpcID:                providerconfig.ConfigVarString{Value: c.Spec.Cloud.AWS.VPCID},
+		SecurityGroupIDs:     []providerconfig.ConfigVarString{{Value: c.Spec.Cloud.AWS.SecurityGroupID}},
+		Region:               providerconfig.ConfigVarString{Value: dc.Spec.AWS.Region},
+		AvailabilityZone:     providerconfig.ConfigVarString{Value: nodeSpec.Cloud.AWS.AvailabilityZone},
+		InstanceProfile:      providerconfig.ConfigVarString{Value: c.Spec.Cloud.AWS.InstanceProfileName},
+		InstanceType:         providerconfig.ConfigVarString{Value: nodeSpec.Cloud.AWS.InstanceType},
+		DiskType:             providerconfig.ConfigVarString{Value: nodeSpec.Cloud.AWS.VolumeType},
+		DiskSize:             nodeSpec.Cloud.AWS.VolumeSize,
+		AMI:                  providerconfig.ConfigVarString{Value: ami},
+		AssignPublicIP:       nodeSpec.Cloud.AWS.AssignPublicIP,
+		IsSpotInstance:       nodeSpec.Cloud.AWS.IsSpotInstance,
+		SpotInstanceConfig:   spotConfig,
+		AssumeRoleARN:        providerconfig.ConfigVarString{Value: nodeSpec.Cloud.AWS.AssumeRoleARN},
+		AssumeRoleExternalID: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.AWS.AssumeRoleExternalID},
 	}
 	if config.DiskType.Value == "" {
 		config.DiskType.Value = ec2.VolumeTypeGp2

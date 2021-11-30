@@ -41,8 +41,10 @@ type Credentials struct {
 }
 
 type AWSCredentials struct {
-	AccessKeyID     string
-	SecretAccessKey string
+	AccessKeyID          string
+	SecretAccessKey      string
+	AssumeRoleARN        string
+	AssumeRoleExternalID string
 }
 
 type AzureCredentials struct {
@@ -196,6 +198,8 @@ func CopyCredentials(data CredentialsData, cluster *kubermaticv1.Cluster) error 
 		}
 		cluster.Spec.Cloud.AWS.AccessKeyID = credentials.AWS.AccessKeyID
 		cluster.Spec.Cloud.AWS.SecretAccessKey = credentials.AWS.SecretAccessKey
+		cluster.Spec.Cloud.AWS.AssumeRoleARN = credentials.AWS.AssumeRoleARN
+		cluster.Spec.Cloud.AWS.AssumeRoleExternalID = credentials.AWS.AssumeRoleExternalID
 	}
 	if data.Cluster().Spec.Cloud.Azure != nil {
 		if credentials.Azure, err = GetAzureCredentials(data); err != nil {
@@ -291,6 +295,10 @@ func GetAWSCredentials(data CredentialsData) (AWSCredentials, error) {
 	} else if awsCredentials.SecretAccessKey, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, AWSSecretAccessKey); err != nil {
 		return AWSCredentials{}, err
 	}
+
+	// AssumeRole credentials are optional. They are allowed to be empty
+	awsCredentials.AssumeRoleARN = spec.AssumeRoleARN
+	awsCredentials.AssumeRoleExternalID = spec.AssumeRoleExternalID
 
 	return awsCredentials, nil
 }

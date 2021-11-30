@@ -1551,6 +1551,14 @@ type AWSNodeSpec struct {
 	// available at the price you specified, if there is no capacity, or if a constraint cannot be met. Charges for EBS
 	// volume storage apply when an instance is stopped.
 	SpotInstanceInterruptionBehavior *string `json:"spotInstanceInterruptionBehavior"`
+	// AssumeRoleARN defines the ARN for an IAM role that should be assumed when handling resources on AWS. It will be used
+	// to acquire temporary security credentials using an STS AssumeRole API operation whenever creating an AWS session.
+	// required: false
+	AssumeRoleARN string `json:"assumeRoleARN"`
+	// AssumeRoleExternalID is an arbitrary string that may be needed when calling the STS AssumeRole API operation.
+	// Using an external ID can help to prevent the "confused deputy problem".
+	// required: false
+	AssumeRoleExternalID string `json:"assumeRoleExternalID"`
 }
 
 func (spec *AWSNodeSpec) MarshalJSON() ([]byte, error) {

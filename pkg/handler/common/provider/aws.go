@@ -79,12 +79,12 @@ func AWSSubnetNoCredentialsEndpoint(ctx context.Context, userInfoGetter provider
 	}
 
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
-	accessKeyID, secretAccessKey, err := awsprovider.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
+	accessKeyID, secretAccessKey, assumeRoleID, assumeRoleExternalID, err := awsprovider.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
 	if err != nil {
 		return nil, err
 	}
 
-	subnetList, err := ListAWSSubnets(accessKeyID, secretAccessKey, cluster.Spec.Cloud.AWS.VPCID, dc)
+	subnetList, err := ListAWSSubnets(accessKeyID, secretAccessKey, assumeRoleID, assumeRoleExternalID, cluster.Spec.Cloud.AWS.VPCID, dc)
 	if err != nil {
 		return nil, err
 	}
@@ -132,13 +132,13 @@ func AWSSizeNoCredentialsEndpoint(ctx context.Context, userInfoGetter provider.U
 	return AWSSizes(dc.Spec.AWS.Region, architecture, settings.Spec.MachineDeploymentVMResourceQuota)
 }
 
-func ListAWSSubnets(accessKeyID, secretAccessKey, vpcID string, datacenter *kubermaticv1.Datacenter) (apiv1.AWSSubnetList, error) {
+func ListAWSSubnets(accessKeyID, secretAccessKey, assumeRoleID string, assumeRoleExternalID string, vpcID string, datacenter *kubermaticv1.Datacenter) (apiv1.AWSSubnetList, error) {
 
 	if datacenter.Spec.AWS == nil {
 		return nil, errors.NewBadRequest("datacenter is not an AWS datacenter")
 	}
 
-	subnetResults, err := awsprovider.GetSubnets(accessKeyID, secretAccessKey, datacenter.Spec.AWS.Region, vpcID)
+	subnetResults, err := awsprovider.GetSubnets(accessKeyID, secretAccessKey, assumeRoleID, assumeRoleExternalID, datacenter.Spec.AWS.Region, vpcID)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get subnets: %v", err)
 	}
@@ -324,8 +324,10 @@ func filterAWSByQuota(instances apiv1.AWSSizeList, quota kubermaticv1.MachineDep
 }
 
 type AWSCredential struct {
-	AccessKeyID     string
-	SecretAccessKey string
+	AccessKeyID          string
+	SecretAccessKey      string
+	AssumeRoleARN        string
+	AssumeRoleExternalID string
 }
 
 func ListAWSRegions(ctx context.Context, credential AWSCredential) (apiv2.Regions, error) {
@@ -333,7 +335,7 @@ func ListAWSRegions(ctx context.Context, credential AWSCredential) (apiv2.Region
 
 	// Must provide either a region or endpoint configured to use the SDK, even for operations that may enumerate other regions
 	// See https://github.com/aws/aws-sdk-go/issues/224 for more details
-	client, err := awsprovider.GetClientSet(credential.AccessKeyID, credential.SecretAccessKey, RegionEndpoint)
+	client, err := awsprovider.GetClientSet(credential.AccessKeyID, credential.SecretAccessKey, credential.AssumeRoleARN, credential.AssumeRoleExternalID, RegionEndpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -355,7 +357,7 @@ type listClusters func(AWSCredential, string) (apiv2.EKSClusterList, error)
 
 func listEKSClusters(credential AWSCredential, region string) (apiv2.EKSClusterList, error) {
 	clusters := apiv2.EKSClusterList{}
-	client, err := awsprovider.GetClientSet(credential.AccessKeyID, credential.SecretAccessKey, region)
+	client, err := awsprovider.GetClientSet(credential.AccessKeyID, credential.SecretAccessKey, credential.AssumeRoleARN, credential.AssumeRoleExternalID, region)
 	if err != nil {
 		return clusters, err
 	}

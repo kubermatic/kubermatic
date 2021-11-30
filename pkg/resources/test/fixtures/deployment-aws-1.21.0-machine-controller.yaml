@@ -46,6 +46,10 @@ spec:
           value: aws-access-key-id
         - name: AWS_SECRET_ACCESS_KEY
           value: aws-secret-access-key
+        - name: AWS_ASSUME_ROLE_ARN
+          value: aws-assume-role-arn
+        - name: AWS_ASSUME_ROLE_EXTERNAL_ID
+          value: aws-assume-role-external-id
         - name: HTTP_PROXY
           value: http://my-corp
         - name: HTTPS_PROXY

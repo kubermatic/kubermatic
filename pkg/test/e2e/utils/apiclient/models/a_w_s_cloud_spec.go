@@ -21,6 +21,12 @@ type AWSCloudSpec struct {
 	// access key ID
 	AccessKeyID string `json:"accessKeyId,omitempty"`
 
+	// assume role a r n
+	AssumeRoleARN string `json:"assumeRoleARN,omitempty"`
+
+	// assume role external ID
+	AssumeRoleExternalID string `json:"assumeRoleExternalID,omitempty"`
+
 	// The IAM role, the control plane will use. The control plane will perform an assume-role
 	ControlPlaneRoleARN string `json:"roleARN,omitempty"`
 

@@ -1067,14 +1067,16 @@ func clonePresetResourcesInCluster(ctx context.Context, logger logrus.FieldLogge
 
 		if oldSpec.AWS != nil {
 			newObject.Spec.AWS = &newv1.AWS{
-				PresetProvider:      newv1.PresetProvider(oldSpec.AWS.PresetProvider),
-				AccessKeyID:         oldSpec.AWS.AccessKeyID,
-				SecretAccessKey:     oldSpec.AWS.SecretAccessKey,
-				VPCID:               oldSpec.AWS.VPCID,
-				RouteTableID:        oldSpec.AWS.RouteTableID,
-				InstanceProfileName: oldSpec.AWS.InstanceProfileName,
-				SecurityGroupID:     oldSpec.AWS.SecurityGroupID,
-				ControlPlaneRoleARN: oldSpec.AWS.ControlPlaneRoleARN,
+				PresetProvider:       newv1.PresetProvider(oldSpec.AWS.PresetProvider),
+				AccessKeyID:          oldSpec.AWS.AccessKeyID,
+				SecretAccessKey:      oldSpec.AWS.SecretAccessKey,
+				AssumeRoleARN:        oldSpec.AWS.AssumeRoleARN,
+				AssumeRoleExternalID: oldSpec.AWS.AssumeRoleExternalID,
+				VPCID:                oldSpec.AWS.VPCID,
+				RouteTableID:         oldSpec.AWS.RouteTableID,
+				InstanceProfileName:  oldSpec.AWS.InstanceProfileName,
+				SecurityGroupID:      oldSpec.AWS.SecurityGroupID,
+				ControlPlaneRoleARN:  oldSpec.AWS.ControlPlaneRoleARN,
 			}
 		}
 
