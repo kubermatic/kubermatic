@@ -152,7 +152,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 	}
 
 	// apply the default values from the config to the current Seed
-	defaultedSeed, err := defaults.DefaultSeed(seedCopy, config, log)
+	defaultedSeed, err := defaults.DefaultSeed(seedCopy, defaulted, log)
 	if err != nil {
 		return fmt.Errorf("failed to apply defaults to Seed: %v", err)
 	}
