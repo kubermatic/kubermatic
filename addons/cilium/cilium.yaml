@@ -24,7 +24,7 @@
 {{ if eq .Cluster.CNIPlugin.Type "cilium" }}
 {{ if eq .Cluster.CNIPlugin.Version "v1.11" }}
 
-{ { $apiServerURL := urlParse .Cluster.Address.URL } }
+{{ $apiServerURL := urlParse .Cluster.Address.URL }}
 {{ $hostParts := split ":" $apiServerURL.host }}
 {{ $apiServerHost := $hostParts._0 }}
 {{ $apiServerPort := $hostParts._1 }}
