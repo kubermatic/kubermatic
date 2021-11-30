@@ -17,20 +17,25 @@ limitations under the License.
 package coredns
 
 import (
+	"fmt"
+
+	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 )
 
 // KubeDNSNetworkPolicyCreator NetworkPolicy allows ingress traffic to coredns on port 53 TCP/UDP and egress to anywhere on port 53 TCP/UDP.
-func KubeDNSNetworkPolicyCreator() reconciling.NamedNetworkPolicyCreatorGetter {
+func KubeDNSNetworkPolicyCreator(k8sApiIP string, k8sApiPort int) reconciling.NamedNetworkPolicyCreatorGetter {
 	return func() (string, reconciling.NetworkPolicyCreator) {
 		return "kube-dns", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
-			// dnsPort := intstr.FromInt(53)
-			// protoUdp := v1.ProtocolUDP
-			// protoTcp := v1.ProtocolTCP
+			dnsPort := intstr.FromInt(53)
+			apiPort := intstr.FromInt(k8sApiPort)
+			protoUdp := v1.ProtocolUDP
+			protoTcp := v1.ProtocolTCP
 
 			np.Spec = networkingv1.NetworkPolicySpec{
 				PodSelector: metav1.LabelSelector{
@@ -52,13 +57,40 @@ func KubeDNSNetworkPolicyCreator() reconciling.NamedNetworkPolicyCreatorGetter {
 						},
 					},
 				},
+				// api access
 				Egress: []networkingv1.NetworkPolicyEgressRule{
+					{
+						To: []networkingv1.NetworkPolicyPeer{
+							{
+								IPBlock: &networkingv1.IPBlock{
+									CIDR: fmt.Sprintf("%s/32", k8sApiIP),
+								},
+							},
+						},
+						Ports: []networkingv1.NetworkPolicyPort{
+							{
+								Protocol: &protoTcp,
+								Port:     &apiPort,
+							},
+						},
+					},
+					// world dns access
 					{
 						To: []networkingv1.NetworkPolicyPeer{
 							{
 								IPBlock: &networkingv1.IPBlock{
 									CIDR: "0.0.0.0/0",
 								},
+							},
+						},
+						Ports: []networkingv1.NetworkPolicyPort{
+							{
+								Protocol: &protoTcp,
+								Port:     &dnsPort,
+							},
+							{
+								Protocol: &protoUdp,
+								Port:     &dnsPort,
 							},
 						},
 					},
