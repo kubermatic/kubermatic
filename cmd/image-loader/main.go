@@ -262,7 +262,7 @@ func getImagesForVersion(log *zap.SugaredLogger, clusterVersion *kubermaticversi
 }
 
 func getImagesFromCreators(log *zap.SugaredLogger, templateData *resources.TemplateData, config *operatorv1alpha1.KubermaticConfiguration, kubermaticVersions kubermatic.Versions) (images []string, err error) {
-	seed, err := defaults.DefaultSeed(&kubermaticv1.Seed{}, log)
+	seed, err := defaults.DefaultSeed(&kubermaticv1.Seed{}, config, log)
 	if err != nil {
 		return nil, fmt.Errorf("failed to default Seed: %v", err)
 	}

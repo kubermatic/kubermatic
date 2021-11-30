@@ -32,7 +32,6 @@ import (
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/collectors"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/metrics"
@@ -211,26 +210,13 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 			log.Fatalf("make seed getter with api reader: %v", err)
 		}
 
-		// the webhook code is currently re-used in the master-ctrlmgr on shared master/seed
-		// systems, so it's based on a seedsGetter (plural)
-		seedsGetter := func() (map[string]*kubermaticv1.Seed, error) {
-			seed, err := seedGetter()
-			if err != nil {
-				return nil, err
-			}
-
-			return map[string]*kubermaticv1.Seed{
-				seed.Name: seed,
-			}, nil
-		}
-
 		caPool := options.caBundle.CertPool()
 
 		// Setup the validation admission handler for kubermatic Cluster CRDs
-		clustervalidation.NewAdmissionHandler(mgr.GetClient(), seedsGetter, options.featureGates, caPool).SetupWebhookWithManager(mgr)
+		clustervalidation.NewAdmissionHandler(mgr.GetClient(), seedGetter, options.featureGates, caPool).SetupWebhookWithManager(mgr)
 
 		// Setup the mutation admission handler for kubermatic Cluster CRDs
-		clustermutation.NewAdmissionHandler(options.namespace, mgr.GetClient(), ctrlCtx.configGetter, seedsGetter, caPool).SetupWebhookWithManager(mgr)
+		clustermutation.NewAdmissionHandler(mgr.GetClient(), ctrlCtx.configGetter, seedGetter, caPool).SetupWebhookWithManager(mgr)
 	}
 
 	if err := createAllControllers(ctrlCtx); err != nil {

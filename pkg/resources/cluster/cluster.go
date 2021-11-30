@@ -33,8 +33,9 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-// Spec builds ClusterSpec kubermatic Custom Resource from API Cluster
-func Spec(apiCluster apiv1.Cluster, seed *kubermaticv1.Seed, dc *kubermaticv1.Datacenter, config *operatorv1alpha1.KubermaticConfiguration, secretKeyGetter provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool, features features.FeatureGate) (*kubermaticv1.ClusterSpec, error) {
+// Spec builds ClusterSpec kubermatic Custom Resource from API Cluster.
+// The ClusterTemplate can be nil.
+func Spec(apiCluster apiv1.Cluster, template *kubermaticv1.ClusterTemplate, seed *kubermaticv1.Seed, dc *kubermaticv1.Datacenter, config *operatorv1alpha1.KubermaticConfiguration, secretKeyGetter provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool, features features.FeatureGate) (*kubermaticv1.ClusterSpec, error) {
 	var userSSHKeysAgentEnabled = pointer.BoolPtr(true)
 
 	if apiCluster.Spec.EnableUserSSHKeyAgent != nil {
@@ -77,7 +78,7 @@ func Spec(apiCluster apiv1.Cluster, seed *kubermaticv1.Seed, dc *kubermaticv1.Da
 		return nil, err
 	}
 
-	if err := defaulting.DefaultCreateClusterSpec(spec, seed, config, cloudProvider); err != nil {
+	if err := defaulting.DefaultClusterSpec(spec, template, seed, config, cloudProvider); err != nil {
 		return nil, err
 	}
 

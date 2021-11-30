@@ -17,14 +17,20 @@ limitations under the License.
 package defaulting
 
 import (
+	"context"
 	"fmt"
 
+	"github.com/imdario/mergo"
+	"go.uber.org/zap"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -34,27 +40,53 @@ var (
 	}
 )
 
-// DefaultCreateClusterSpec defaults the cluster spec when creating a new cluster
-func DefaultCreateClusterSpec(spec *kubermaticv1.ClusterSpec, seed *kubermaticv1.Seed, config *operatorv1alpha1.KubermaticConfiguration, cloudProvider provider.CloudProvider) error {
+// DefaultClusterSpec defaults the cluster spec when creating a new cluster.
+// Defaults are taken from, in order:
+//  1. ClusterTemplate (if given)
+//  2. Seed's spec.componentsOverrides
+//  3. KubermaticConfiguration's spec.userCluster
+//  4. Constants in pkg/controller/operator/defaults
+// This function assumes that the KubermaticConfiguration has already been defaulted
+// (as the KubermaticConfigurationGetter does that automatically), but the Seed
+// does not yet need to be defaulted (to the values of the KubermaticConfiguration).
+func DefaultClusterSpec(spec *kubermaticv1.ClusterSpec, template *kubermaticv1.ClusterTemplate, seed *kubermaticv1.Seed, config *operatorv1alpha1.KubermaticConfiguration, cloudProvider provider.CloudProvider) error {
+	var err error
+
+	// Apply default values to the Seed, just in case.
+	if config != nil {
+		seed, err = defaults.DefaultSeed(seed, config, zap.NewNop().Sugar())
+		if err != nil {
+			return fmt.Errorf("failed to apply default values to Seed: %w", err)
+		}
+	}
+
+	// If a ClusterTemplate was configured for the Seed, the caller
+	// retrieved it for us already and we can use it as the primary
+	// source for defaults.
+	if template != nil {
+		if err := mergo.Merge(spec, template.Spec); err != nil {
+			return fmt.Errorf("failed to apply defaulting template to Cluster spec: %w", err)
+		}
+	}
+
+	// Checking and applying each field of the ComponentSettings is tedious,
+	// so we re-use mergo as well. Even though DefaultComponentSettings is
+	// deprecated, we cannot remove its handling here, as the template can
+	// be unconfigured (i.e. nil).
+	if err := mergo.Merge(&spec.ComponentsOverride, seed.Spec.DefaultComponentSettings); err != nil {
+		return fmt.Errorf("failed to apply defaulting template to Cluster spec: %w", err)
+	}
+
+	// Give cloud providers a chance to default their spec.
 	if cloudProvider != nil {
 		if err := cloudProvider.DefaultCloudSpec(&spec.Cloud); err != nil {
-			return fmt.Errorf("failed to default cloud spec: %v", err)
+			return fmt.Errorf("failed to default cloud spec: %w", err)
 		}
 	}
 
+	// set expose strategy
 	if spec.ExposeStrategy == "" {
-		// master level ExposeStrategy is the default
-		exposeStrategy := config.Spec.ExposeStrategy
-		if seed.Spec.ExposeStrategy != "" {
-			exposeStrategy = seed.Spec.ExposeStrategy
-		}
-
-		spec.ExposeStrategy = exposeStrategy
-	}
-
-	if spec.ComponentsOverride.Etcd.ClusterSize == nil {
-		n := int32(kubermaticv1.DefaultEtcdClusterSize)
-		spec.ComponentsOverride.Etcd.ClusterSize = &n
+		spec.ExposeStrategy = seed.Spec.ExposeStrategy
 	}
 
 	// set provider name
@@ -133,4 +165,25 @@ func DefaultCreateClusterSpec(spec *kubermaticv1.ClusterSpec, seed *kubermaticv1
 	}
 
 	return nil
+}
+
+// GetDefaultingClusterTemplate returns the ClusterTemplate that is referenced by the Seed.
+// Note that this can return nil if no template is configured yet (this is not considered
+// an error).
+func GetDefaultingClusterTemplate(ctx context.Context, client ctrlruntimeclient.Reader, seed *kubermaticv1.Seed) (*kubermaticv1.ClusterTemplate, error) {
+	if seed.Spec.DefaultClusterTemplate == "" {
+		return nil, nil
+	}
+
+	tpl := kubermaticv1.ClusterTemplate{}
+	key := types.NamespacedName{Namespace: seed.Namespace, Name: seed.Spec.DefaultClusterTemplate}
+	if err := client.Get(ctx, key, &tpl); err != nil {
+		return nil, fmt.Errorf("failed to get ClusterTemplate: %w", err)
+	}
+
+	if scope := tpl.Labels["scope"]; scope != kubermaticv1.SeedTemplateScope {
+		return nil, fmt.Errorf("invalid scope of default cluster template, is %q but must be %q", scope, kubermaticv1.SeedTemplateScope)
+	}
+
+	return &tpl, nil
 }

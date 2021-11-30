@@ -27,6 +27,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/test"
 	"k8c.io/kubermatic/v2/pkg/validation"
 
 	admissionv1 "k8s.io/api/admission/v1"
@@ -1677,11 +1678,7 @@ func TestHandle(t *testing.T) {
 		WithObjects(&seed).
 		Build()
 
-	seedsGetter := func() (map[string]*kubermaticv1.Seed, error) {
-		return map[string]*kubermaticv1.Seed{
-			seed.Name: &seed,
-		}, nil
-	}
+	seedGetter := test.NewSeedGetter(&seed)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1695,7 +1692,7 @@ func TestHandle(t *testing.T) {
 				decoder:                   d,
 				features:                  tt.features,
 				client:                    seedClient,
-				seedsGetter:               seedsGetter,
+				seedGetter:                seedGetter,
 				disableProviderValidation: true,
 			}
 

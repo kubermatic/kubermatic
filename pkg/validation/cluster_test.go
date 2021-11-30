@@ -18,7 +18,6 @@ package validation
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 	"testing"
 
@@ -31,9 +30,6 @@ import (
 var (
 	dc = &kubermaticv1.Datacenter{
 		Spec: kubermaticv1.DatacenterSpec{
-			Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
-				Region: "eu",
-			},
 			Openstack: &kubermaticv1.DatacenterSpecOpenstack{
 				// Used for a test case
 				EnforceFloatingIP: true,
@@ -44,13 +40,13 @@ var (
 
 func TestValidateCloudSpec(t *testing.T) {
 	tests := []struct {
-		name string
-		spec kubermaticv1.CloudSpec
-		err  error
+		name  string
+		spec  kubermaticv1.CloudSpec
+		valid bool
 	}{
 		{
-			name: "valid openstack spec",
-			err:  nil,
+			name:  "valid openstack spec",
+			valid: true,
 			spec: kubermaticv1.CloudSpec{
 				DatacenterName: "some-datacenter",
 				Openstack: &kubermaticv1.OpenstackCloudSpec{
@@ -64,8 +60,8 @@ func TestValidateCloudSpec(t *testing.T) {
 			},
 		},
 		{
-			name: "valid openstack spec - only tenantID specified",
-			err:  nil,
+			name:  "valid openstack spec - only tenantID specified",
+			valid: true,
 			spec: kubermaticv1.CloudSpec{
 				DatacenterName: "some-datacenter",
 				Openstack: &kubermaticv1.OpenstackCloudSpec{
@@ -79,8 +75,8 @@ func TestValidateCloudSpec(t *testing.T) {
 			},
 		},
 		{
-			name: "invalid openstack spec - no datacenter specified",
-			err:  errors.New("no node datacenter specified"),
+			name:  "invalid openstack spec - no datacenter specified",
+			valid: false,
 			spec: kubermaticv1.CloudSpec{
 				DatacenterName: "",
 				Openstack: &kubermaticv1.OpenstackCloudSpec{
@@ -94,8 +90,8 @@ func TestValidateCloudSpec(t *testing.T) {
 			},
 		},
 		{
-			name: "invalid openstack spec - no floating ip pool defined but required by dc",
-			err:  errors.New("no floating ip pool specified"),
+			name:  "invalid openstack spec - no floating ip pool defined but required by dc",
+			valid: false,
 			spec: kubermaticv1.CloudSpec{
 				DatacenterName: "some-datacenter",
 				Openstack: &kubermaticv1.OpenstackCloudSpec{
@@ -108,8 +104,8 @@ func TestValidateCloudSpec(t *testing.T) {
 			},
 		},
 		{
-			name: "specifies multiple cloud providers",
-			err:  errors.New("expected exactly one cloud provider spec, but got specs for [digitalocean openstack]"),
+			name:  "specifies multiple cloud providers",
+			valid: false,
 			spec: kubermaticv1.CloudSpec{
 				DatacenterName: "some-datacenter",
 				Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{
@@ -125,8 +121,8 @@ func TestValidateCloudSpec(t *testing.T) {
 			},
 		},
 		{
-			name: "invalid provider name",
-			err:  errors.New(`expected providerName to be "digitalocean", but got "incorrect"`),
+			name:  "invalid provider name",
+			valid: false,
 			spec: kubermaticv1.CloudSpec{
 				DatacenterName: "some-datacenter",
 				ProviderName:   "incorrect",
@@ -139,9 +135,10 @@ func TestValidateCloudSpec(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := ValidateCloudSpec(test.spec, dc, nil)
-			if fmt.Sprint(err) != fmt.Sprint(test.err) {
-				t.Errorf("Extected err to be %v, got %v", test.err, err)
+			err := ValidateCloudSpec(test.spec, dc, nil).ToAggregate()
+
+			if (err == nil) != test.valid {
+				t.Errorf("Extected err to be %v, got %v", test.valid, err)
 			}
 		})
 	}
@@ -255,7 +252,6 @@ func TestValidateLeaderElectionSettings(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			t.Logf("Validating: %+v", test.leaderElectionSettings)
 			errs := ValidateLeaderElectionSettings(&test.leaderElectionSettings, field.NewPath("spec"))
 
 			if test.wantErr == (len(errs) == 0) {
@@ -369,7 +365,6 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			t.Logf("[%s] Validating: %+v", test.name, test.networkConfig)
 			errs := ValidateClusterNetworkConfig(&test.networkConfig, nil, field.NewPath("spec", "networkConfig"), test.allowEmpty)
 
 			if test.wantErr == (len(errs) == 0) {
