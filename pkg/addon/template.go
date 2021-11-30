@@ -114,22 +114,20 @@ func NewTemplateData(
 		Variables:      variables,
 		Credentials:    credentials,
 		Cluster: ClusterData{
-			Type:                 ClusterTypeKubernetes,
-			Name:                 cluster.Name,
-			HumanReadableName:    cluster.Spec.HumanReadableName,
-			Namespace:            cluster.Status.NamespaceName,
-			Labels:               cluster.Labels,
-			Annotations:          cluster.Annotations,
-			Kubeconfig:           kubeconfig,
-			OwnerName:            cluster.Status.UserName,
-			OwnerEmail:           cluster.Status.UserEmail,
-			ApiserverExternalURL: cluster.Address.URL,
-			ApiserverInternalURL: fmt.Sprintf("https://%s:%d", cluster.Address.InternalName, cluster.Address.Port),
-			AdminToken:           cluster.Address.AdminToken,
-			CloudProviderName:    providerName,
-			Version:              semver.MustParse(cluster.Spec.Version.String()),
-			MajorMinorVersion:    cluster.Spec.Version.MajorMinor(),
-			Features:             sets.StringKeySet(cluster.Spec.Features),
+			Type:              ClusterTypeKubernetes,
+			Name:              cluster.Name,
+			HumanReadableName: cluster.Spec.HumanReadableName,
+			Namespace:         cluster.Status.NamespaceName,
+			Labels:            cluster.Labels,
+			Annotations:       cluster.Annotations,
+			Kubeconfig:        kubeconfig,
+			OwnerName:         cluster.Status.UserName,
+			OwnerEmail:        cluster.Status.UserEmail,
+			Address:           cluster.Address,
+			CloudProviderName: providerName,
+			Version:           semver.MustParse(cluster.Spec.Version.String()),
+			MajorMinorVersion: cluster.Spec.Version.MajorMinor(),
+			Features:          sets.StringKeySet(cluster.Spec.Features),
 			Network: ClusterNetwork{
 				DNSDomain:         cluster.Spec.ClusterNetwork.DNSDomain,
 				DNSClusterIP:      dnsClusterIP,
@@ -175,15 +173,10 @@ type ClusterData struct {
 	// inside the user-cluster. The kubeconfig uses the external URL to reach
 	// the apiserver.
 	Kubeconfig string
-	// ApiserverExternalURL is the full URL to the apiserver service from the
-	// outside, including protocol and port number. It does not contain any
-	// trailing slashes.
-	ApiserverExternalURL string
-	// ApiserverExternalURL is the full URL to the apiserver from within the
-	// seed cluster itself. It does not contain any trailing slashes.
-	ApiserverInternalURL string
-	// AdminToken is the cluster's admin token.
-	AdminToken string
+
+	// ClusterAddress stores access and address information of a cluster.
+	Address kubermaticv1.ClusterAddress
+
 	// CloudProviderName is the name of the cloud provider used, one of
 	// "alibaba", "aws", "azure", "bringyourown", "digitalocean", "gcp",
 	// "hetzner", "kubevirt", "openstack", "packet", "vsphere" depending on
