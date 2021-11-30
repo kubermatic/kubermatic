@@ -61,9 +61,7 @@ const (
 	// ApiServer secure port
 	APIServerSecurePort = 6443
 
-	DefaultControllerManagerReplicas = 1
-	DefaultSchedulerReplicas         = 1
-	DefaultConcurrentClusterUpdates  = 10
+	DefaultConcurrentClusterUpdates = 10
 )
 
 const (

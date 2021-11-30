@@ -96,7 +96,7 @@ func (d *Deployer) SetUp() error {
 		}
 	}
 
-	seed, err := defaults.DefaultSeed(&kubermaticv1.Seed{}, d.Log)
+	seed, err := defaults.DefaultSeed(&kubermaticv1.Seed{}, cfg, d.Log)
 	if err != nil {
 		return errors.Wrap(err, "failed to default seed")
 	}

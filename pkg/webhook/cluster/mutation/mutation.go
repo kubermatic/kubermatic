@@ -25,17 +25,13 @@ import (
 	"net/http"
 
 	"github.com/go-logr/logr"
-	"github.com/imdario/mergo"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud"
-	"k8c.io/kubermatic/v2/pkg/resources"
 
 	admissionv1 "k8s.io/api/admission/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -48,9 +44,8 @@ type AdmissionHandler struct {
 	log     logr.Logger
 	decoder *admission.Decoder
 
-	namespace    string
 	client       ctrlruntimeclient.Client
-	seedsGetter  provider.SeedsGetter
+	seedGetter   provider.SeedGetter
 	configGetter provider.KubermaticConfigurationGetter
 	caBundle     *x509.CertPool
 
@@ -60,12 +55,11 @@ type AdmissionHandler struct {
 }
 
 // NewAdmissionHandler returns a new cluster mutation AdmissionHandler.
-func NewAdmissionHandler(namespace string, client ctrlruntimeclient.Client, configGetter provider.KubermaticConfigurationGetter, seedsGetter provider.SeedsGetter, caBundle *x509.CertPool) *AdmissionHandler {
+func NewAdmissionHandler(client ctrlruntimeclient.Client, configGetter provider.KubermaticConfigurationGetter, seedGetter provider.SeedGetter, caBundle *x509.CertPool) *AdmissionHandler {
 	return &AdmissionHandler{
-		namespace:    namespace,
 		client:       client,
 		configGetter: configGetter,
-		seedsGetter:  seedsGetter,
+		seedGetter:   seedGetter,
 		caBundle:     caBundle,
 	}
 }
@@ -94,7 +88,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 			return admission.Errored(http.StatusBadRequest, err)
 		}
 
-		err := h.mutateCreate(ctx, cluster)
+		err := h.applyDefaults(ctx, cluster)
 		if err != nil {
 			h.log.Info("cluster mutation failed", "error", err)
 			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %v", req.UID, err))
@@ -106,6 +100,13 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 		}
 		if err := h.decoder.DecodeRaw(req.OldObject, oldCluster); err != nil {
 			return admission.Errored(http.StatusBadRequest, err)
+		}
+
+		// apply defaults to the new version
+		err := h.applyDefaults(ctx, cluster)
+		if err != nil {
+			h.log.Info("cluster mutation failed", "error", err)
+			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %v", req.UID, err))
 		}
 
 		if err := h.mutateUpdate(oldCluster, cluster); err != nil {
@@ -128,7 +129,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 	return admission.PatchResponseFromRaw(req.Object.Raw, mutatedCluster)
 }
 
-func (h *AdmissionHandler) mutateCreate(ctx context.Context, c *kubermaticv1.Cluster) error {
+func (h *AdmissionHandler) applyDefaults(ctx context.Context, c *kubermaticv1.Cluster) error {
 	seed, provider, err := h.buildDefaultingDependencies(ctx, c)
 	if err != nil {
 		return err
@@ -139,63 +140,12 @@ func (h *AdmissionHandler) mutateCreate(ctx context.Context, c *kubermaticv1.Clu
 		return err
 	}
 
-	// merge provided defaults into newly created cluster
-	defaultTemplate, err := h.getDefaultingTemplate(ctx, seed, config)
-	if err := mergo.Merge(&c.Spec, defaultTemplate.Spec); err != nil {
+	defaultTemplate, err := defaulting.GetDefaultingClusterTemplate(ctx, h.client, seed)
+	if err != nil {
 		return err
 	}
 
-	return defaulting.DefaultCreateClusterSpec(&c.Spec, seed, config, provider)
-}
-
-func (h *AdmissionHandler) getDefaultingTemplate(ctx context.Context, seed *kubermaticv1.Seed, config *operatorv1alpha1.KubermaticConfiguration) (*kubermaticv1.ClusterTemplate, error) {
-	var defaultingTemplate kubermaticv1.ClusterTemplate
-
-	if seed.Spec.DefaultClusterTemplate != "" {
-		key := types.NamespacedName{Namespace: h.namespace, Name: seed.Spec.DefaultClusterTemplate}
-		err := h.client.Get(ctx, key, &defaultingTemplate)
-		if err != nil {
-			return nil, fmt.Errorf("the configured default cluster template could not be fetched: %w", err)
-		}
-
-		if scope := defaultingTemplate.Labels["scope"]; scope != kubermaticv1.SeedTemplateScope {
-			return nil, fmt.Errorf("invalid scope of default cluster template, is %q but must be %q", scope, kubermaticv1.SeedTemplateScope)
-		}
-	}
-
-	defaultingTemplate.Spec.ComponentsOverride = defaultComponentSettings(seed.Spec.DefaultComponentSettings, config)
-
-	return &defaultingTemplate, nil
-}
-
-func defaultComponentSettings(defaultComponentSettings kubermaticv1.ComponentSettings, config *operatorv1alpha1.KubermaticConfiguration) kubermaticv1.ComponentSettings {
-	settings := defaultComponentSettings.DeepCopy()
-
-	// This function uses the values from the KubermaticConfiguration, which at this point have already been defaulted
-	// in case the user didn't set them explicitly, so we do not have to check and reach for the Default* constants
-	// here again.
-
-	if settings.Apiserver.Replicas == nil {
-		settings.Apiserver.Replicas = config.Spec.UserCluster.APIServerReplicas
-	}
-
-	if settings.Apiserver.NodePortRange == "" {
-		settings.Apiserver.NodePortRange = config.Spec.UserCluster.NodePortRange
-	}
-
-	if settings.Apiserver.EndpointReconcilingDisabled == nil && config.Spec.UserCluster.DisableAPIServerEndpointReconciling {
-		settings.Apiserver.EndpointReconcilingDisabled = &config.Spec.UserCluster.DisableAPIServerEndpointReconciling
-	}
-
-	if settings.ControllerManager.Replicas == nil {
-		settings.ControllerManager.Replicas = pointer.Int32Ptr(resources.DefaultControllerManagerReplicas)
-	}
-
-	if settings.Scheduler.Replicas == nil {
-		settings.Scheduler.Replicas = pointer.Int32Ptr(resources.DefaultSchedulerReplicas)
-	}
-
-	return *settings
+	return defaulting.DefaultClusterSpec(&c.Spec, defaultTemplate, seed, config, provider)
 }
 
 func (h *AdmissionHandler) mutateUpdate(oldCluster, newCluster *kubermaticv1.Cluster) error {
@@ -229,12 +179,16 @@ func addCCMCSIMigrationAnnotations(cluster *kubermaticv1.Cluster) {
 }
 
 func (h *AdmissionHandler) buildDefaultingDependencies(ctx context.Context, c *kubermaticv1.Cluster) (*kubermaticv1.Seed, provider.CloudProvider, error) {
+	seed, err := h.seedGetter()
+	if err != nil {
+		return nil, nil, err
+	}
+
 	if h.disableProviderMutation {
-		return nil, nil, nil
+		return seed, nil, nil
 	}
 
 	var (
-		seed          *kubermaticv1.Seed
 		datacenter    *kubermaticv1.Datacenter
 		cloudProvider provider.CloudProvider
 	)
@@ -245,22 +199,14 @@ func (h *AdmissionHandler) buildDefaultingDependencies(ctx context.Context, c *k
 		return nil, nil, errors.New("no datacenter name set in spec.cloud.dc")
 	}
 
-	seeds, err := h.seedsGetter()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	for i, seed := range seeds {
-		for dcName, dc := range seed.Spec.Datacenters {
-			if dcName == datacenterName {
-				seed = seeds[i]
-				datacenter = &dc
-				break
-			}
+	for dcName, dc := range seed.Spec.Datacenters {
+		if dcName == datacenterName {
+			datacenter = &dc
+			break
 		}
 	}
 
-	if seed == nil {
+	if datacenter == nil {
 		return nil, nil, fmt.Errorf("invalid datacenter %q", datacenterName)
 	}
 

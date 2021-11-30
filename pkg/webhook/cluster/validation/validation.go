@@ -40,12 +40,12 @@ import (
 
 // AdmissionHandler for validating Kubermatic Cluster CRD.
 type AdmissionHandler struct {
-	log         logr.Logger
-	decoder     *admission.Decoder
-	features    features.FeatureGate
-	client      ctrlruntimeclient.Client
-	seedsGetter provider.SeedsGetter
-	caBundle    *x509.CertPool
+	log        logr.Logger
+	decoder    *admission.Decoder
+	features   features.FeatureGate
+	client     ctrlruntimeclient.Client
+	seedGetter provider.SeedGetter
+	caBundle   *x509.CertPool
 
 	// disableProviderValidation is only for unit tests, to ensure no
 	// provide would phone home to validate dummy test credentials
@@ -53,12 +53,12 @@ type AdmissionHandler struct {
 }
 
 // NewAdmissionHandler returns a new cluster validation AdmissionHandler.
-func NewAdmissionHandler(client ctrlruntimeclient.Client, seedsGetter provider.SeedsGetter, features features.FeatureGate, caBundle *x509.CertPool) *AdmissionHandler {
+func NewAdmissionHandler(client ctrlruntimeclient.Client, seedGetter provider.SeedGetter, features features.FeatureGate, caBundle *x509.CertPool) *AdmissionHandler {
 	return &AdmissionHandler{
-		client:      client,
-		features:    features,
-		seedsGetter: seedsGetter,
-		caBundle:    caBundle,
+		client:     client,
+		features:   features,
+		seedGetter: seedGetter,
+		caBundle:   caBundle,
 	}
 }
 
@@ -134,16 +134,14 @@ func (h *AdmissionHandler) buildValidationDependencies(ctx context.Context, c *k
 
 	datacenterName := c.Spec.Cloud.DatacenterName
 	if datacenterName != "" {
-		seeds, err := h.seedsGetter()
+		seed, err := h.seedGetter()
 		if err != nil {
 			return nil, nil, field.ErrorList{field.InternalError(nil, err)}
 		}
 
-		for _, seed := range seeds {
-			for dcName, dc := range seed.Spec.Datacenters {
-				if dcName == datacenterName {
-					datacenter = &dc
-				}
+		for dcName, dc := range seed.Spec.Datacenters {
+			if dcName == datacenterName {
+				datacenter = &dc
 			}
 		}
 

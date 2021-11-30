@@ -431,7 +431,7 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter,
 	}
 
 	if providerErr != nil {
-		allErrs = append(allErrs, field.Invalid(parentFieldPath, providerSpec, err.Error()))
+		allErrs = append(allErrs, field.Invalid(parentFieldPath, providerSpec, providerErr.Error()))
 	}
 
 	return allErrs

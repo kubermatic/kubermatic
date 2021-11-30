@@ -27,7 +27,9 @@ import (
 	"time"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	"go.uber.org/zap"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
@@ -252,7 +254,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		},
 	}
 
-	dummyKubermaticConfiguration := operatorv1alpha1.KubermaticConfiguration{
+	dummyKubermaticConfiguration := &operatorv1alpha1.KubermaticConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kubermatic",
 			Namespace: test.KubermaticNamespace,
@@ -266,6 +268,11 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		},
 	}
 
+	dummyKubermaticConfiguration, err := defaults.DefaultConfiguration(dummyKubermaticConfiguration, zap.NewNop().Sugar())
+	if err != nil {
+		t.Fatalf("Failed to apply default values to KubermaticConfiguration: %v", err)
+	}
+
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v2/projects/%s/clusters", tc.ProjectToSync), strings.NewReader(tc.Body))
@@ -276,7 +283,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 			}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, &dummyKubermaticConfiguration, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, dummyKubermaticConfiguration, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}

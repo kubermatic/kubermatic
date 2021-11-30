@@ -30,6 +30,7 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -188,9 +189,16 @@ func GenerateCluster(
 		body.Cluster.Spec.Cloud = *cloudSpec
 	}
 
-	// Create the cluster.
-	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetSeedClusterAdminRuntimeClient())
-	spec, err := cluster.Spec(body.Cluster, seed, dc, config, secretKeyGetter, caBundle, features)
+	// Fetch the defaulting ClusterTemplate.
+	seedClient := privilegedClusterProvider.GetSeedClusterAdminRuntimeClient()
+	defaultingTemplate, err := defaulting.GetDefaultingClusterTemplate(ctx, seedClient, seed)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	// Create the Cluster object.
+	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(ctx, seedClient)
+	spec, err := cluster.Spec(body.Cluster, defaultingTemplate, seed, dc, config, secretKeyGetter, caBundle, features)
 	if err != nil {
 		return nil, errors.NewBadRequest("invalid cluster: %v", err)
 	}

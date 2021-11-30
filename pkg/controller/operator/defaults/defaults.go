@@ -46,6 +46,8 @@ const (
 	DefaultSeedControllerMgrReplicas              = 1
 	DefaultMasterControllerMgrReplicas            = 1
 	DefaultAPIServerReplicas                      = 2
+	DefaultControllerManagerReplicas              = 1
+	DefaultSchedulerReplicas                      = 1
 	DefaultExposeStrategy                         = kubermaticv1.ExposeStrategyNodePort
 	DefaultVPARecommenderDockerRepository         = "gcr.io/google_containers/vpa-recommender"
 	DefaultVPAUpdaterDockerRepository             = "gcr.io/google_containers/vpa-updater"
@@ -526,11 +528,19 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 	return copy, nil
 }
 
-func DefaultSeed(seed *kubermaticv1.Seed, logger *zap.SugaredLogger) (*kubermaticv1.Seed, error) {
+// DefaultSeed fills in missing values in the Seed's spec by copying them from the global
+// defaults in the KubermaticConfiguration (in which some fields might already be deprecated,
+// as we move configuration down into the Seeds). This function assumes that the config has
+// already been defaulted.
+func DefaultSeed(seed *kubermaticv1.Seed, config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) (*kubermaticv1.Seed, error) {
 	logger = logger.With("seed", seed.Name)
 	logger.Debug("Applying defaults to Seed")
 
 	copy := seed.DeepCopy()
+
+	if copy.Spec.ExposeStrategy == "" {
+		copy.Spec.ExposeStrategy = config.Spec.ExposeStrategy
+	}
 
 	if err := defaultDockerRepo(&copy.Spec.NodeportProxy.Envoy.DockerRepository, DefaultEnvoyDockerRepository, "nodeportProxy.envoy.dockerRepository", logger); err != nil {
 		return copy, err
@@ -559,6 +569,43 @@ func DefaultSeed(seed *kubermaticv1.Seed, logger *zap.SugaredLogger) (*kubermati
 	if len(copy.Spec.NodeportProxy.Annotations) == 0 {
 		copy.Spec.NodeportProxy.Annotations = DefaultNodeportProxyServiceAnnotations
 		logger.Debugw("Defaulting field", "field", "nodeportProxy.annotations", "value", copy.Spec.NodeportProxy.Annotations)
+	}
+
+	// apply settings from the KubermaticConfiguration to the Seed, in case they are not set there;
+	// over time, we move pretty much all of this into the Seed, but this code copies the still existing,
+	// deprecated fields over.
+	settings := &copy.Spec.DefaultComponentSettings
+
+	if settings.Apiserver.Replicas == nil {
+		settings.Apiserver.Replicas = config.Spec.UserCluster.APIServerReplicas
+	}
+
+	if settings.Apiserver.NodePortRange == "" {
+		settings.Apiserver.NodePortRange = config.Spec.UserCluster.NodePortRange
+	}
+
+	if settings.Apiserver.EndpointReconcilingDisabled == nil && config.Spec.UserCluster.DisableAPIServerEndpointReconciling {
+		settings.Apiserver.EndpointReconcilingDisabled = &config.Spec.UserCluster.DisableAPIServerEndpointReconciling
+	}
+
+	if settings.ControllerManager.Replicas == nil {
+		settings.ControllerManager.Replicas = pointer.Int32Ptr(DefaultControllerManagerReplicas)
+	}
+
+	if settings.Scheduler.Replicas == nil {
+		settings.Scheduler.Replicas = pointer.Int32Ptr(DefaultSchedulerReplicas)
+	}
+
+	if settings.Etcd.DiskSize == nil {
+		etcdDiskSize, err := resource.ParseQuantity(config.Spec.UserCluster.EtcdVolumeSize)
+		if err != nil {
+			return copy, fmt.Errorf("failed to parse spec.userCluster.etcdVolumeSize %q in KubermaticConfiguration: %v", config.Spec.UserCluster.EtcdVolumeSize, err)
+		}
+		settings.Etcd.DiskSize = &etcdDiskSize
+	}
+
+	if settings.Etcd.ClusterSize == nil {
+		settings.Etcd.ClusterSize = pointer.Int32(kubermaticv1.DefaultEtcdClusterSize)
 	}
 
 	return copy, nil
