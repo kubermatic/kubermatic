@@ -81,6 +81,10 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 			return fmt.Errorf("failed to get cloudConfig: %v", err)
 		}
 	}
+	clusterAddress, err := r.clusterAddress(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get cluster address: %v", err)
+	}
 
 	data := reconcileData{
 		caCert:         caCert,
@@ -88,6 +92,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		cloudConfig:    cloudConfig,
 		csiCloudConfig: CSICloudConfig,
 		ccmMigration:   r.ccmMigration || r.ccmMigrationCompleted,
+		clusterAddress: clusterAddress,
 	}
 
 	if !r.isKonnectivityEnabled {
@@ -839,7 +844,7 @@ func (r *reconciler) reconcileNetworkPolicies(ctx context.Context, data reconcil
 
 	namedNetworkPolicyCreatorGetters := []reconciling.NamedNetworkPolicyCreatorGetter{
 		// coredns.AllowAllDnsNetworkPolicyCreator(),
-		coredns.KubeDNSNetworkPolicyCreator(),
+		coredns.KubeDNSNetworkPolicyCreator(data.clusterAddress.IP, int(data.clusterAddress.Port)),
 	}
 
 	if r.userSSHKeyAgent {
@@ -884,6 +889,7 @@ type reconcileData struct {
 	monitoringRequirements *corev1.ResourceRequirements
 	loggingRequirements    *corev1.ResourceRequirements
 	monitoringReplicas     *int32
+	clusterAddress         *kubermaticv1.ClusterAddress
 }
 
 func (r *reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context) error {

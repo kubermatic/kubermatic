@@ -343,3 +343,13 @@ func (r *reconciler) mlaReconcileData(ctx context.Context) (monitoring, logging 
 	}
 	return cluster.Spec.MLA.MonitoringResources, cluster.Spec.MLA.LoggingResources, cluster.Spec.MLA.MonitoringReplicas, nil
 }
+
+func (r *reconciler) clusterAddress(ctx context.Context) (address *kubermaticv1.ClusterAddress, err error) {
+	cluster := &kubermaticv1.Cluster{}
+	if err = r.seedClient.Get(ctx, types.NamespacedName{
+		Name: r.clusterName,
+	}, cluster); err != nil {
+		return nil, fmt.Errorf("failed to get cluster: %w", err)
+	}
+	return &cluster.Address, nil
+}
