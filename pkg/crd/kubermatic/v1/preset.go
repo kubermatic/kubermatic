@@ -39,6 +39,9 @@ const (
 	ProviderAlibaba      ProviderType = "alibaba"
 	ProviderAnexia       ProviderType = "anexia"
 	ProviderFake         ProviderType = "fake"
+	ProviderGKE          ProviderType = "gke"
+	ProviderEKS          ProviderType = "eks"
+	ProviderAKS          ProviderType = "aks"
 )
 
 func SupportedProviders() []ProviderType {
@@ -55,6 +58,9 @@ func SupportedProviders() []ProviderType {
 		ProviderAlibaba,
 		ProviderAnexia,
 		ProviderFake,
+		ProviderGKE,
+		ProviderEKS,
+		ProviderAKS,
 	}
 }
 
@@ -106,6 +112,9 @@ type PresetSpec struct {
 	Kubevirt     *Kubevirt     `json:"kubevirt,omitempty"`
 	Alibaba      *Alibaba      `json:"alibaba,omitempty"`
 	Anexia       *Anexia       `json:"anexia,omitempty"`
+	GKE          *GKE          `json:"gke,omitempty"`
+	EKS          *EKS          `json:"eks,omitempty"`
+	AKS          *AKS          `json:"aks,omitempty"`
 
 	Fake *Fake `json:"fake,omitempty"`
 	// see RequiredEmails
@@ -455,4 +464,42 @@ type Anexia struct {
 
 func (s Anexia) IsValid() bool {
 	return len(s.Token) > 0
+}
+
+type GKE struct {
+	Enabled *bool `json:"enabled,omitempty"`
+
+	ServiceAccount string `json:"serviceAccount"`
+}
+
+func (s GKE) IsValid() bool {
+	return len(s.ServiceAccount) > 0
+}
+
+type EKS struct {
+	Enabled *bool `json:"enabled,omitempty"`
+
+	AccessKeyID     string `json:"accessKeyId"`
+	SecretAccessKey string `json:"secretAccessKey"`
+}
+
+func (s EKS) IsValid() bool {
+	return len(s.AccessKeyID) > 0 &&
+		len(s.SecretAccessKey) > 0
+}
+
+type AKS struct {
+	Enabled *bool `json:"enabled,omitempty"`
+
+	TenantID       string `json:"tenantId"`
+	SubscriptionID string `json:"subscriptionId"`
+	ClientID       string `json:"clientId"`
+	ClientSecret   string `json:"clientSecret"`
+}
+
+func (s AKS) IsValid() bool {
+	return len(s.TenantID) > 0 &&
+		len(s.SubscriptionID) > 0 &&
+		len(s.ClientID) > 0 &&
+		len(s.ClientSecret) > 0
 }
