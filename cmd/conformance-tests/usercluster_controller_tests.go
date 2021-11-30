@@ -96,6 +96,10 @@ func (r *testRunner) testUserClusterSeccompProfiles(ctx context.Context, log *za
 	}
 
 	for _, pod := range pods.Items {
+		// we don't care about the "default" namespace and it's used for pods launched by the e2e testing
+		if pod.Namespace == "default" {
+			continue
+		}
 		// no security context means no seccomp profile
 		if pod.Spec.SecurityContext == nil {
 			return fmt.Errorf("expected security context on Pod %s/%s, got none", pod.Namespace, pod.Name)
