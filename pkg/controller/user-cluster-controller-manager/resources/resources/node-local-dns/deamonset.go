@@ -61,6 +61,11 @@ func DaemonSetCreator(registryWithOverwrite registry.WithOverwriteFunc) reconcil
 
 			ds.Spec.Template.Spec.ServiceAccountName = resources.NodeLocalDNSServiceAccountName
 			ds.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
+			ds.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+			}
 			ds.Spec.Template.Spec.HostNetwork = true
 			ds.Spec.Template.Spec.DNSPolicy = corev1.DNSDefault
 			ds.Spec.Template.Spec.TerminationGracePeriodSeconds = pointer.Int64Ptr(0)

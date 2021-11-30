@@ -87,6 +87,9 @@ func DaemonSetCreator(overrides *corev1.ResourceRequirements, registryWithOverwr
 			ds.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
 				RunAsUser:  pointer.Int64Ptr(0),
 				RunAsGroup: pointer.Int64Ptr(0),
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
 			}
 			ds.Spec.Template.Spec.InitContainers = []corev1.Container{
 				{
