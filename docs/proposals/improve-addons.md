@@ -125,7 +125,7 @@ Lastly, we envisioned two possible sources for a ApplicationDefinitions:
 An example CR could look like this:
 
 ```yaml
-apiVersion: kubermatic.k8c.io/v1
+apiVersion: apps.kubermatic.k8c.io/v1
 kind: ApplicationDefinition
 metadata:
  name: prometheus-node-exporter
@@ -197,7 +197,7 @@ In order to make it possible for users to deploy a cluster with a set of Applica
 - contains the merged values that are being passed for the installation. This is needed as customers can set custom values for each installation.
 
 ```yaml
-apiVersion: kubermatic.k8c.io/v1
+apiVersion: apps.kubermatic.k8c.io/v1
 kind: ApplicationInstallation
 metadata:
   name: prometheus
