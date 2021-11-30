@@ -27,6 +27,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/types"
@@ -80,6 +81,37 @@ func (r *testRunner) testUserclusterControllerRBAC(ctx context.Context, log *zap
 		}
 		if !equality.Semantic.DeepEqual(clusterRoleBinding.Subjects, defaultClusterRoleBinding.Subjects) {
 			return fmt.Errorf("incorrect Cluster Role Binding Subjects were returned, got: %v, want: %v", clusterRoleBinding.Subjects, defaultClusterRoleBinding.Subjects)
+		}
+	}
+
+	return nil
+}
+
+func (r *testRunner) testUserClusterSeccompProfiles(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client) error {
+	pods := &corev1.PodList{}
+
+	// get all Pods running on the cluster
+	if err := userClusterClient.List(ctx, pods, &ctrlruntimeclient.ListOptions{Namespace: ""}); err != nil {
+		return fmt.Errorf("failed to list Pods in user cluster: %v", err)
+	}
+
+	for _, pod := range pods.Items {
+		// no security context means no seccomp profile
+		if pod.Spec.SecurityContext == nil {
+			return fmt.Errorf("expected security context on Pod %s/%s, got none", pod.Namespace, pod.Name)
+		}
+
+		// no seccomp profile means no profile is applied to the containers
+		if pod.Spec.SecurityContext.SeccompProfile == nil {
+			return fmt.Errorf("expected seccomp profile on Pod %s/%s, got none", pod.Namespace, pod.Name)
+		}
+
+		// the 'unconfined' profile disables any seccomp filtering
+		if pod.Spec.SecurityContext.SeccompProfile.Type == corev1.SeccompProfileTypeUnconfined {
+			return fmt.Errorf(
+				"seccomp profile of Pod %s/%s is '%s', should be '%s' or '%s'", pod.Namespace, pod.Name,
+				corev1.SeccompProfileTypeUnconfined, corev1.SeccompProfileTypeRuntimeDefault, corev1.SeccompProfileTypeLocalhost,
+			)
 		}
 	}
 
