@@ -247,6 +247,7 @@ func createEtcdBackupController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.backupContainerImage,
 		ctrlCtx.versions,
 		ctrlCtx.runOptions.caBundle,
+		ctrlCtx.seedGetter,
 	)
 }
 

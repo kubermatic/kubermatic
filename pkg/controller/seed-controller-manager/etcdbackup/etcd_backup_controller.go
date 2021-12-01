@@ -31,6 +31,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
@@ -85,6 +86,14 @@ const (
 	backupKeepCountEnvVarKey = "BACKUP_KEEP_COUNT"
 	// backupConfigEnvVarKey defines the environment variable key for the name of the backup configuration resource
 	backupConfigEnvVarKey = "BACKUP_CONFIG"
+	// accessKeyIdEnvVarKey defines the environment variable key for the backup credentials access key id
+	accessKeyIdEnvVarKey = "ACCESS_KEY_ID"
+	// secretAccessKeyEnvVarKey defines the environment variable key for the backup credentials secret access key
+	secretAccessKeyEnvVarKey = "SECRET_ACCESS_KEY"
+	// bucketNameEnvVarKey defines the environment variable key for the backup bucket name
+	bucketNameEnvVarKey = "BUCKET_NAME"
+	// backupEndpointEnvVarKey defines the environment variable key for the backup endpoint
+	backupEndpointEnvVarKey = "ENDPOINT"
 
 	// requeueAfter time after starting a job
 	// should be the time after which a started job will usually have completed
@@ -118,6 +127,7 @@ type Reconciler struct {
 	caBundle             resources.CABundle
 	recorder             record.EventRecorder
 	versions             kubermatic.Versions
+	seedGetter           provider.SeedGetter
 }
 
 // Add creates a new Backup controller that is responsible for
@@ -133,6 +143,7 @@ func Add(
 	backupContainerImage string,
 	versions kubermatic.Versions,
 	caBundle resources.CABundle,
+	seedGetter provider.SeedGetter,
 ) error {
 	log = log.Named(ControllerName)
 	client := mgr.GetClient()
@@ -157,6 +168,7 @@ func Add(
 		randStringGenerator: func() string {
 			return rand.String(10)
 		},
+		seedGetter: seedGetter,
 	}
 
 	ctrlOptions := controller.Options{
@@ -189,6 +201,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, err
 	}
 
+	seed, err := r.seedGetter()
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
 	log = r.log.With("cluster", cluster.Name, "backupConfig", backupConfig.Name)
 
 	var suppressedError error
@@ -202,7 +219,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		r.versions,
 		kubermaticv1.ClusterConditionNone,
 		func() (*reconcile.Result, error) {
-			result, err := r.reconcile(ctx, log, backupConfig, cluster)
+			result, err := r.reconcile(ctx, log, backupConfig, cluster, seed)
 			if kerrors.IsConflict(err) {
 				// benign update conflict -- remember this so we can
 				// suppress log.Error and event generation below
@@ -232,7 +249,22 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return *result, err
 }
 
-func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster, seed *kubermaticv1.Seed) (*reconcile.Result, error) {
+	var destination *kubermaticv1.BackupDestination
+	if backupConfig.Spec.Destination != "" {
+		if seed.Spec.EtcdBackupRestore == nil {
+			return nil, errors.Errorf("can't find backup destination %q in Seed %q", backupConfig.Spec.Destination, seed.Name)
+		}
+		var ok bool
+		destination, ok = seed.Spec.EtcdBackupRestore.Destinations[backupConfig.Spec.Destination]
+		if !ok {
+			return nil, errors.Errorf("can't find backup destination %q in Seed %q", backupConfig.Spec.Destination, seed.Name)
+		}
+		if destination.Credentials == nil {
+			return nil, errors.Errorf("credentials not set for backup destination %q in Seed %q", backupConfig.Spec.Destination, seed.Name)
+		}
+	}
+
 	if err := r.ensureSecrets(ctx, cluster); err != nil {
 		return nil, errors.Wrap(err, "failed to create backup secrets")
 	}
@@ -251,19 +283,19 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, back
 
 	totalReconcile = minReconcile(totalReconcile, nextReconcile)
 
-	if nextReconcile, err = r.startPendingBackupJobs(ctx, backupConfig, cluster); err != nil {
+	if nextReconcile, err = r.startPendingBackupJobs(ctx, backupConfig, cluster, destination); err != nil {
 		return errorReconcile, errors.Wrap(err, "failed to start pending and update running backups")
 	}
 
 	totalReconcile = minReconcile(totalReconcile, nextReconcile)
 
-	if nextReconcile, err = r.startPendingBackupDeleteJobs(ctx, backupConfig, cluster); err != nil {
+	if nextReconcile, err = r.startPendingBackupDeleteJobs(ctx, backupConfig, cluster, destination); err != nil {
 		return errorReconcile, errors.Wrap(err, "failed to start pending backup delete jobs")
 	}
 
 	totalReconcile = minReconcile(totalReconcile, nextReconcile)
 
-	if nextReconcile, err = r.updateRunningBackupDeleteJobs(ctx, backupConfig, cluster); err != nil {
+	if nextReconcile, err = r.updateRunningBackupDeleteJobs(ctx, backupConfig, cluster, destination); err != nil {
 		return errorReconcile, errors.Wrap(err, "failed to update running backup delete jobs")
 	}
 
@@ -275,7 +307,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, back
 
 	totalReconcile = minReconcile(totalReconcile, nextReconcile)
 
-	if nextReconcile, err = r.handleFinalization(ctx, backupConfig, cluster); err != nil {
+	if nextReconcile, err = r.handleFinalization(ctx, backupConfig, cluster, destination); err != nil {
 		return errorReconcile, errors.Wrap(err, "failed to delete finished backup jobs")
 	}
 
@@ -432,7 +464,8 @@ func (r *Reconciler) setBackupConfigCondition(backupConfig *kubermaticv1.EtcdBac
 
 // create any backup jobs that can be created, i.e. that don't exist yet while their scheduled time has arrived
 // also update status of backups whose jobs have completed
-func (r *Reconciler) startPendingBackupJobs(ctx context.Context, backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+func (r *Reconciler) startPendingBackupJobs(ctx context.Context, backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster,
+	destination *kubermaticv1.BackupDestination) (*reconcile.Result, error) {
 	var returnReconcile *reconcile.Result
 
 	for i := range backupConfig.Status.CurrentBackups {
@@ -465,7 +498,7 @@ func (r *Reconciler) startPendingBackupJobs(ctx context.Context, backupConfig *k
 				}
 
 			} else if backup.BackupPhase == "" && r.clock.Now().Sub(backup.ScheduledTime.Time) >= 0 && backupConfig.DeletionTimestamp == nil {
-				job := r.backupJob(backupConfig, cluster, backup)
+				job := r.backupJob(backupConfig, cluster, backup, destination)
 				if err := r.Create(ctx, job); err != nil && !kerrors.IsAlreadyExists(err) {
 					return nil, errors.Wrapf(err, "error creating job for backup %s", backup.BackupName)
 				}
@@ -484,7 +517,8 @@ func (r *Reconciler) startPendingBackupJobs(ctx context.Context, backupConfig *k
 }
 
 // create any backup delete jobs that can be created, i.e. for all completed backups older than the last backupConfig.GetKeptBackupsCount() ones.
-func (r *Reconciler) startPendingBackupDeleteJobs(ctx context.Context, backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+func (r *Reconciler) startPendingBackupDeleteJobs(ctx context.Context, backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster,
+	destination *kubermaticv1.BackupDestination) (*reconcile.Result, error) {
 	// one-shot backups are not deleted until their backupConfig is deleted
 	if backupConfig.Spec.Schedule == "" && backupConfig.DeletionTimestamp == nil {
 		return nil, nil
@@ -515,7 +549,7 @@ func (r *Reconciler) startPendingBackupDeleteJobs(ctx context.Context, backupCon
 	modified := false
 	for _, backup := range backupsToDelete {
 		if runningDeleteJobsCount < maxSimultaneousDeleteJobsPerConfig {
-			if err := r.createBackupDeleteJob(ctx, backupConfig, cluster, backup); err != nil {
+			if err := r.createBackupDeleteJob(ctx, backupConfig, cluster, backup, destination); err != nil {
 				return nil, err
 			}
 			runningDeleteJobsCount++
@@ -533,9 +567,10 @@ func (r *Reconciler) startPendingBackupDeleteJobs(ctx context.Context, backupCon
 	return nil, nil
 }
 
-func (r *Reconciler) createBackupDeleteJob(ctx context.Context, backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster, backup *kubermaticv1.BackupStatus) error {
+func (r *Reconciler) createBackupDeleteJob(ctx context.Context, backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster, backup *kubermaticv1.BackupStatus,
+	destination *kubermaticv1.BackupDestination) error {
 	if r.deleteContainer != nil {
-		job := r.backupDeleteJob(backupConfig, cluster, backup)
+		job := r.backupDeleteJob(backupConfig, cluster, backup, destination)
 		if err := r.Create(ctx, job); err != nil && !kerrors.IsAlreadyExists(err) {
 			return errors.Wrapf(err, "error creating delete job for backup %s", backup.BackupName)
 		}
@@ -549,7 +584,8 @@ func (r *Reconciler) createBackupDeleteJob(ctx context.Context, backupConfig *ku
 }
 
 // update status of all delete jobs that have completed and are still marked as running
-func (r *Reconciler) updateRunningBackupDeleteJobs(ctx context.Context, backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+func (r *Reconciler) updateRunningBackupDeleteJobs(ctx context.Context, backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster,
+	destination *kubermaticv1.BackupDestination) (*reconcile.Result, error) {
 	var returnReconcile *reconcile.Result
 
 	// structs with the backup status and the DeleteMessage to set in case we restart the delete job
@@ -597,7 +633,7 @@ func (r *Reconciler) updateRunningBackupDeleteJobs(ctx context.Context, backupCo
 
 	for _, deleteJobToRestart := range deleteJobsToRestart {
 		if runningDeleteJobsCount < maxSimultaneousDeleteJobsPerConfig {
-			if err := r.createBackupDeleteJob(ctx, backupConfig, cluster, deleteJobToRestart.backup); err != nil {
+			if err := r.createBackupDeleteJob(ctx, backupConfig, cluster, deleteJobToRestart.backup, destination); err != nil {
 				return nil, err
 			}
 			deleteJobToRestart.backup.DeleteMessage = deleteJobToRestart.deleteMessage
@@ -723,7 +759,8 @@ func (r *Reconciler) deleteFinishedBackupJobs(ctx context.Context, backupConfig 
 	return returnReconcile, nil
 }
 
-func (r *Reconciler) handleFinalization(ctx context.Context, backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+func (r *Reconciler) handleFinalization(ctx context.Context, backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster,
+	destination *kubermaticv1.BackupDestination) (*reconcile.Result, error) {
 	if backupConfig.DeletionTimestamp == nil || len(backupConfig.Status.CurrentBackups) > 0 {
 		return nil, nil
 	}
@@ -737,7 +774,7 @@ func (r *Reconciler) handleFinalization(ctx context.Context, backupConfig *kuber
 
 		if !backupConfig.Status.CleanupRunning {
 			// job not started before. start it
-			cleanupJob := r.cleanupJob(backupConfig, cluster, cleanupJobName)
+			cleanupJob := r.cleanupJob(backupConfig, cluster, cleanupJobName, destination)
 			if err := r.Create(ctx, cleanupJob); err != nil && !kerrors.IsAlreadyExists(err) {
 				return nil, errors.Wrapf(err, "error creating cleanup job (%v)", cleanupJobName)
 			}
@@ -759,7 +796,7 @@ func (r *Reconciler) handleFinalization(ctx context.Context, backupConfig *kuber
 					if jobFailed {
 						// job failed, restart it.
 						canRemoveFinalizer = false
-						cleanupJob := r.cleanupJob(backupConfig, cluster, cleanupJobName)
+						cleanupJob := r.cleanupJob(backupConfig, cluster, cleanupJobName, destination)
 						if err := r.Create(ctx, cleanupJob); err != nil && !kerrors.IsAlreadyExists(err) {
 							return nil, errors.Wrapf(err, "error recreating cleanup job (%v)", cleanupJobName)
 						}
@@ -790,8 +827,24 @@ func (r *Reconciler) handleFinalization(ctx context.Context, backupConfig *kuber
 	return returnReconcile, nil
 }
 
-func (r *Reconciler) backupJob(backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster, backupStatus *kubermaticv1.BackupStatus) *batchv1.Job {
+func (r *Reconciler) backupJob(backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster, backupStatus *kubermaticv1.BackupStatus,
+	destination *kubermaticv1.BackupDestination) *batchv1.Job {
 	storeContainer := r.storeContainer.DeepCopy()
+
+	// If destination is set, we need to set the credentials and backup bucket details to match the destination
+	if destination != nil {
+		storeContainer.Env = setEnvVar(storeContainer.Env, genSecretEnvVar(accessKeyIdEnvVarKey, accessKeyIdEnvVarKey, destination))
+		storeContainer.Env = setEnvVar(storeContainer.Env, genSecretEnvVar(secretAccessKeyEnvVarKey, secretAccessKeyEnvVarKey, destination))
+		storeContainer.Env = setEnvVar(storeContainer.Env, corev1.EnvVar{
+			Name:  bucketNameEnvVarKey,
+			Value: destination.BucketName,
+		})
+		storeContainer.Env = setEnvVar(storeContainer.Env, corev1.EnvVar{
+			Name:  backupEndpointEnvVarKey,
+			Value: destination.Endpoint,
+		})
+	}
+
 	storeContainer.Env = append(
 		storeContainer.Env,
 		corev1.EnvVar{
@@ -905,8 +958,47 @@ func (r *Reconciler) backupJob(backupConfig *kubermaticv1.EtcdBackupConfig, clus
 	return job
 }
 
-func (r *Reconciler) backupDeleteJob(backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster, backupStatus *kubermaticv1.BackupStatus) *batchv1.Job {
+func setEnvVar(envVars []corev1.EnvVar, newEnvVar corev1.EnvVar) []corev1.EnvVar {
+	for i, envVar := range envVars {
+		if strings.EqualFold(envVar.Name, newEnvVar.Name) {
+			envVars[i] = newEnvVar
+			return envVars
+		}
+	}
+	envVars = append(envVars, newEnvVar)
+	return envVars
+}
+
+func genSecretEnvVar(name, key string, destination *kubermaticv1.BackupDestination) corev1.EnvVar {
+	return corev1.EnvVar{
+		Name: name,
+		ValueFrom: &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{Name: destination.Credentials.Name},
+				Key:                  key,
+			},
+		},
+	}
+}
+
+func (r *Reconciler) backupDeleteJob(backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster, backupStatus *kubermaticv1.BackupStatus,
+	destination *kubermaticv1.BackupDestination) *batchv1.Job {
 	deleteContainer := r.deleteContainer.DeepCopy()
+
+	// If destination is set, we need to set the credentials and backup bucket details to match the destination
+	if destination != nil {
+		deleteContainer.Env = setEnvVar(deleteContainer.Env, genSecretEnvVar(accessKeyIdEnvVarKey, accessKeyIdEnvVarKey, destination))
+		deleteContainer.Env = setEnvVar(deleteContainer.Env, genSecretEnvVar(secretAccessKeyEnvVarKey, secretAccessKeyEnvVarKey, destination))
+		deleteContainer.Env = setEnvVar(deleteContainer.Env, corev1.EnvVar{
+			Name:  bucketNameEnvVarKey,
+			Value: destination.BucketName,
+		})
+		deleteContainer.Env = setEnvVar(deleteContainer.Env, corev1.EnvVar{
+			Name:  backupEndpointEnvVarKey,
+			Value: destination.Endpoint,
+		})
+	}
+
 	deleteContainer.Env = append(
 		deleteContainer.Env,
 		corev1.EnvVar{
@@ -954,8 +1046,24 @@ func (r *Reconciler) backupDeleteJob(backupConfig *kubermaticv1.EtcdBackupConfig
 	return job
 }
 
-func (r *Reconciler) cleanupJob(backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster, jobName string) *batchv1.Job {
+func (r *Reconciler) cleanupJob(backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster, jobName string,
+	destination *kubermaticv1.BackupDestination) *batchv1.Job {
 	cleanupContainer := r.cleanupContainer.DeepCopy()
+
+	// If destination is set, we need to set the credentials and backup bucket details to match the destination
+	if destination != nil {
+		cleanupContainer.Env = setEnvVar(cleanupContainer.Env, genSecretEnvVar(accessKeyIdEnvVarKey, accessKeyIdEnvVarKey, destination))
+		cleanupContainer.Env = setEnvVar(cleanupContainer.Env, genSecretEnvVar(secretAccessKeyEnvVarKey, secretAccessKeyEnvVarKey, destination))
+		cleanupContainer.Env = setEnvVar(cleanupContainer.Env, corev1.EnvVar{
+			Name:  bucketNameEnvVarKey,
+			Value: destination.BucketName,
+		})
+		cleanupContainer.Env = setEnvVar(cleanupContainer.Env, corev1.EnvVar{
+			Name:  backupEndpointEnvVarKey,
+			Value: destination.Endpoint,
+		})
+	}
+
 	cleanupContainer.Env = append(
 		cleanupContainer.Env,
 		corev1.EnvVar{
