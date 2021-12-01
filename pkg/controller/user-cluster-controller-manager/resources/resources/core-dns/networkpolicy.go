@@ -95,9 +95,7 @@ func KubeDNSNetworkPolicyCreator(k8sApiIP string, k8sApiPort int) reconciling.Na
 					{
 						From: []networkingv1.NetworkPolicyPeer{
 							{
-								IPBlock: &networkingv1.IPBlock{
-									CIDR: "0.0.0.0/0",
-								},
+								NamespaceSelector: &metav1.LabelSelector{},
 							},
 						},
 						Ports: []networkingv1.NetworkPolicyPort{
