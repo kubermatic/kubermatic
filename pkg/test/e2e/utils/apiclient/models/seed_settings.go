@@ -18,6 +18,9 @@ import (
 // swagger:model SeedSettings
 type SeedSettings struct {
 
+	// the Seed level seed dns overwrite
+	SeedDNSOverwrite string `json:"seedDNSOverwrite,omitempty"`
+
 	// metering
 	Metering *MeteringConfigurations `json:"metering,omitempty"`
 
