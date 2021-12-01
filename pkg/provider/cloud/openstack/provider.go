@@ -712,7 +712,6 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 				Domain: domain,
 			}, nil
 		}
-
 	}
 
 	if applicationCredentialID != "" && applicationCredentialSecret != "" {

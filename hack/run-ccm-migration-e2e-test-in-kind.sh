@@ -281,7 +281,7 @@ appendTrap cleanup_kubermatic_clusters_in_kind EXIT
 # use ginkgo binary by preference to have better output:
 # https://github.com/onsi/ginkgo/issues/633
 if [ -x "$(command -v ginkgo)" ]; then
-  ginkgo --tags=e2e -v pkg/test/e2e/ccm-migration/ $EXTRA_ARGS \
+  ginkgo --tags=e2e -v pkg/test/e2e/ccm-migration/ \
     -r \
     --randomizeAllSpecs \
     --randomizeSuites \
@@ -294,7 +294,7 @@ if [ -x "$(command -v ginkgo)" ]; then
     --kubernetes-version "${USER_CLUSTER_KUBERNETES_VERSION}" \
     --debug-log \
     --user-cluster-name="${USER_CLUSTER_NAME}" \
-    --datacenter="${OS_DATACENTER}"
+    --datacenter="${OS_DATACENTER}" $EXTRA_ARGS
 else
   CGO_ENABLED=1 go test --tags=e2e -v -race ./pkg/test/e2e/ccm-migration/... $EXTRA_ARGS \
     --ginkgo.randomizeAllSpecs \
