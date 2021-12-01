@@ -27,6 +27,7 @@ import (
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/azure"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
@@ -66,6 +67,13 @@ func GetUpgradesEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider
 				return nil, err
 			}
 			return providercommon.ListGKEUpgrades(ctx, sa, cloud.GKE.Zone, cloud.GKE.Name)
+		}
+		if cloud.AKS != nil {
+			cred, err := azure.GetCredentialsForAKSCluster(*cloud, secretKeySelector)
+			if err != nil {
+				return nil, err
+			}
+			return providercommon.ListAKSUpgrades(ctx, cred, cloud.AKS.ResourceGroup, cloud.AKS.Name)
 		}
 
 		return nil, fmt.Errorf("can not find any upgrades for the given cloud provider")
