@@ -828,9 +828,6 @@ type ClusterSpec struct {
 
 	// CNIPlugin contains the spec of the CNI plugin to be installed in the cluster.
 	CNIPlugin *kubermaticv1.CNIPluginSettings `json:"cniPlugin,omitempty"`
-
-	// AllowedIPRange contains the IPs allowed to reach the open nodeports
-	AllowedIPRange string `json:"allowedIPRange,omitempty"`
 }
 
 // MarshalJSON marshals ClusterSpec object into JSON. It is overwritten to control data
@@ -855,7 +852,6 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		MLA                                  *kubermaticv1.MLASettings              `json:"mla,omitempty"`
 		ContainerRuntime                     string                                 `json:"containerRuntime,omitempty"`
 		ClusterNetwork                       *kubermaticv1.ClusterNetworkingConfig  `json:"clusterNetwork,omitempty"`
-		AllowedIPRange                       string                                 `json:"allowedIPRange,omitempty"`
 	}{
 		Cloud: PublicCloudSpec{
 			DatacenterName: cs.Cloud.DatacenterName,
@@ -890,7 +886,6 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		MLA:                                  cs.MLA,
 		ContainerRuntime:                     cs.ContainerRuntime,
 		ClusterNetwork:                       cs.ClusterNetwork,
-		AllowedIPRange:                       cs.AllowedIPRange,
 	})
 
 	return ret, err

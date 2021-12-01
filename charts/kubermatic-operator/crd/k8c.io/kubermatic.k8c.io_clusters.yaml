@@ -206,6 +206,7 @@ spec:
                       assumeRoleARN:
                         type: string
                       assumeRoleExternalID:
+                      allowedIPRange:
                         type: string
                       credentialsReference:
                         description: GlobalObjectKeySelector is needed as we can not
@@ -423,6 +424,8 @@ spec:
                   gcp:
                     description: GCPCloudSpec specifies access data to GCP.
                     properties:
+                      allowedIPRange:
+                        type: string
                       credentialsReference:
                         description: GlobalObjectKeySelector is needed as we can not
                           use v1.SecretKeySelector because it is not cross namespace
