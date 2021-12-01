@@ -139,7 +139,7 @@ func (d *Deployer) SetUp() error {
 	}
 	if err := reconciling.ReconcileDeployments(context.TODO(),
 		[]reconciling.NamedDeploymentCreatorGetter{
-			nodeportproxy.EnvoyDeploymentCreator(cfg, seed, d.Versions),
+			nodeportproxy.EnvoyDeploymentCreator(cfg, seed, false, d.Versions),
 			nodeportproxy.UpdaterDeploymentCreator(cfg, seed, d.Versions),
 		}, d.Namespace, d.Client, recorderFunc); err != nil {
 		return errors.Wrap(err, "failed to reconcile Kubermatic Deployments")
