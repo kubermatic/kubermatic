@@ -57,8 +57,11 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	// Defines a set of HTTP endpoint for interacting with
 	// various cloud providers
 	mux.Methods(http.MethodGet).
-		Path("/providers/gke/clusters").
-		Handler(r.listGKEClusters())
+		Path("/providers/gke/images").
+		Handler(r.listGKEImages())
+	mux.Methods(http.MethodGet).
+		Path("/providers/gke/validatecredetials").
+		Handler(r.validateGKECredentials())
 
 	mux.Methods(http.MethodGet).
 		Path("/featuregates").
@@ -79,6 +82,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listAKSClusters())
 
 	// Defines a set of HTTP endpoints for cluster that belong to a project.
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/gke/clusters").
+		Handler(r.listGKEClusters())
+
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/clusters").
 		Handler(r.createCluster())
@@ -766,6 +773,24 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodDelete).
 		Path("/seeds/{seed_name}/rulegroups/{rulegroup_id}").
 		Handler(r.deleteAdminRuleGroup())
+
+	// Defines a set of HTTP endpoints for various cloud providers
+	// Note that these endpoints don't require credentials as opposed to the ones defined under /providers/*
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/images").
+		Handler(r.listGKEClusterImages())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/zones").
+		Handler(r.listGKEClusterZones())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/sizes").
+		Handler(r.listGKEClusterSizes())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/disktypes").
+		Handler(r.listGKEClusterDiskTypes())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -4901,9 +4926,9 @@ func (r Routing) getFeatureGates() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v2/providers/gke/clusters gke listGKEClusters
+// swagger:route GET /api/v2/projects/{project_id}/providers/gke/clusters project listGKEClusters
 //
-// Lists GKE clusters
+// Lists GKE clusters.
 //
 //     Produces:
 //     - application/json
@@ -4916,7 +4941,51 @@ func (r Routing) listGKEClusters() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.GKEClustersEndpoint(r.presetsProvider, r.userInfoGetter)),
+		)(provider.GKEClustersEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.presetsProvider)),
+		provider.DecodeGKEClusterListReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/gke/images gke listGKEImages
+//
+// Lists GKE image types
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: GKEImageList
+func (r Routing) listGKEImages() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.GKEImagesEndpoint(r.presetsProvider, r.userInfoGetter)),
+		provider.DecodeGKEImagesReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/gke/validatecredentials gke validateGKECredentials
+//
+// Validates GKE credentials
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+func (r Routing) validateGKECredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.GKEValidateCredentialsEndpoint(r.presetsProvider, r.userInfoGetter)),
 		provider.DecodeGKETypesReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -5265,6 +5334,106 @@ func (r Routing) listExternalClusterMachineDeploymentMetrics() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(externalcluster.ListMachineDeploymentMetricsEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider)),
 		externalcluster.DecodeGetMachineDeploymentReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/images gke listGKEClusterImages
+//
+//     Gets GKE cluster images.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: GKEImageList
+//       401: empty
+//       403: empty
+func (r Routing) listGKEClusterImages() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.GKEImagesWithClusterCredentialsEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
+		externalcluster.DecodeGetReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/zones gke listGKEClusterZones
+//
+//     Gets GKE cluster zones.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: GKEZoneList
+//       401: empty
+//       403: empty
+func (r Routing) listGKEClusterZones() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.GKEZonesWithClusterCredentialsEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
+		externalcluster.DecodeGetReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/sizes gke listGKEClusterSizes
+//
+//     Gets GKE cluster machine sizes.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: GCPMachineSizeList
+//       401: empty
+//       403: empty
+func (r Routing) listGKEClusterSizes() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.GKESizesWithClusterCredentialsEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
+		externalcluster.DecodeGetReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/disktypes gke listGKEClusterDiskTypes
+//
+//     Gets GKE cluster machine disk types.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: GCPDiskTypeList
+//       401: empty
+//       403: empty
+func (r Routing) listGKEClusterDiskTypes() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.GKEDiskTypesWithClusterCredentialsEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
+		externalcluster.DecodeGetReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

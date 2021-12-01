@@ -360,20 +360,38 @@ func filterGCPByQuota(instances apiv1.GCPMachineSizeList, quota kubermaticv1.Mac
 	return filteredRecords
 }
 
-func ListGKEClusters(ctx context.Context, sa string) (apiv2.GKEClusterList, error) {
+func ListGKEClusters(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ExternalClusterProvider, projectID, sa string) (apiv2.GKEClusterList, error) {
 	clusters := apiv2.GKEClusterList{}
-	svc, project, err := gcp.ConnectToContainerService(sa)
+
+	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID, nil)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	clusterList, err := clusterProvider.List(project)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	gkeExternalClusterNames := sets.NewString()
+	for _, externalCluster := range clusterList.Items {
+		cloud := externalCluster.Spec.CloudSpec
+		if cloud != nil && cloud.GKE != nil {
+			gkeExternalClusterNames.Insert(cloud.GKE.Name)
+		}
+	}
+
+	svc, gkeProject, err := gcp.ConnectToContainerService(sa)
 	if err != nil {
 		return clusters, err
 	}
 
-	req := svc.Projects.Zones.Clusters.List(project, allZones)
+	req := svc.Projects.Zones.Clusters.List(gkeProject, allZones)
 	resp, err := req.Context(ctx).Do()
 	if err != nil {
-		return clusters, fmt.Errorf("clusters list project=%s: %w", project, err)
+		return clusters, fmt.Errorf("clusters list project=%v: %w", project, err)
 	}
 	for _, f := range resp.Clusters {
-		clusters = append(clusters, apiv2.GKECluster{Name: f.Name, Zone: f.Zone})
+		clusters = append(clusters, apiv2.GKECluster{Name: f.Name, Zone: f.Zone, IsImported: gkeExternalClusterNames.Has(f.Name)})
 	}
 	return clusters, nil
 }
@@ -478,4 +496,36 @@ func isValidVersion(currentVersion, newVersion *semverlib.Version) bool {
 		return true
 	}
 	return false
+}
+
+func ListGKEImages(ctx context.Context, sa, zone string) (apiv2.GKEImageList, error) {
+	images := apiv2.GKEImageList{}
+	svc, project, err := gcp.ConnectToContainerService(sa)
+	if err != nil {
+		return nil, err
+	}
+
+	config, err := svc.Projects.Zones.GetServerconfig(project, zone).Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, imageType := range config.ValidImageTypes {
+		images = append(images, apiv2.GKEImage{
+			Name:      imageType,
+			IsDefault: imageType == config.DefaultImageType,
+		})
+	}
+
+	return images, nil
+}
+
+func ValidateGKECredentials(ctx context.Context, sa string) error {
+	svc, project, err := gcp.ConnectToContainerService(sa)
+	if err != nil {
+		return err
+	}
+	_, err = svc.Projects.Zones.Clusters.List(project, allZones).Context(ctx).Do()
+
+	return err
 }

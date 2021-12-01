@@ -351,7 +351,7 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 }
 
 // getClusterReq defines HTTP request for getExternalCluster
-// swagger:parameters getExternalCluster getExternalClusterMetrics getExternalClusterUpgrades getExternalClusterKubeconfig
+// swagger:parameters getExternalCluster getExternalClusterMetrics getExternalClusterUpgrades getExternalClusterKubeconfig listGKEClusterDiskTypes listGKEClusterSizes listGKEClusterZones listGKEClusterImages
 type getClusterReq struct {
 	common.ProjectReq
 	// in: path

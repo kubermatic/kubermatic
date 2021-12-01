@@ -19,7 +19,11 @@ package externalcluster
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"strings"
 
+	"github.com/go-kit/kit/endpoint"
+	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/container/v1"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
@@ -27,15 +31,215 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const GKENodepoolNameLabel = "cloud.google.com/gke-nodepool"
+
+func GKEImagesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		if !AreExternalClustersEnabled(settingsProvider) {
+			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
+		}
+
+		req := request.(getClusterReq)
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := getCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, req.ClusterID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+		sa, err := secretKeySelector(cluster.Spec.CloudSpec.GKE.CredentialsReference, resources.GCPServiceAccount)
+		if err != nil {
+			return nil, err
+		}
+
+		images := apiv2.GKEImageList{}
+		svc, gcpProject, err := gcp.ConnectToContainerService(sa)
+		if err != nil {
+			return nil, err
+		}
+
+		config, err := svc.Projects.Zones.GetServerconfig(gcpProject, cluster.Spec.CloudSpec.GKE.Zone).Context(ctx).Do()
+		if err != nil {
+			return nil, err
+		}
+
+		for _, imageType := range config.ValidImageTypes {
+			images = append(images, apiv2.GKEImage{
+				Name:      imageType,
+				IsDefault: imageType == config.DefaultImageType,
+			})
+		}
+
+		return images, nil
+	}
+}
+
+func GKEZonesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		if !AreExternalClustersEnabled(settingsProvider) {
+			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
+		}
+
+		req := request.(getClusterReq)
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := getCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, req.ClusterID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+		sa, err := secretKeySelector(cluster.Spec.CloudSpec.GKE.CredentialsReference, resources.GCPServiceAccount)
+		if err != nil {
+			return nil, err
+		}
+		computeService, gcpProject, err := gcp.ConnectToComputeService(sa)
+		if err != nil {
+			return nil, err
+		}
+		clusterZone := cluster.Spec.CloudSpec.GKE.Zone
+		// Zone always contains continent-region-suffix.
+		// To find other zones we construct new continent-region string.
+		locationList := strings.Split(clusterZone, "-")
+		if len(locationList) != 3 {
+			return nil, fmt.Errorf("incorrect zone format, %s", clusterZone)
+		}
+		continentRegion := fmt.Sprintf("%s-%s", locationList[0], locationList[1])
+
+		zones := apiv2.GKEZoneList{}
+		zoneReq := computeService.Zones.List(gcpProject)
+		err = zoneReq.Pages(ctx, func(page *compute.ZoneList) error {
+			for _, zone := range page.Items {
+				if strings.HasPrefix(zone.Name, continentRegion) {
+					apiZone := apiv2.GKEZone{
+						Name:      zone.Name,
+						IsDefault: zone.Name == clusterZone,
+					}
+					zones = append(zones, apiZone)
+				}
+			}
+			return nil
+		})
+
+		return zones, err
+	}
+}
+
+func GKESizesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		if !AreExternalClustersEnabled(settingsProvider) {
+			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
+		}
+
+		req := request.(getClusterReq)
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := getCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, req.ClusterID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+		sa, err := secretKeySelector(cluster.Spec.CloudSpec.GKE.CredentialsReference, resources.GCPServiceAccount)
+		if err != nil {
+			return nil, err
+		}
+
+		settings, err := settingsProvider.GetGlobalSettings()
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return providercommon.ListGCPSizes(ctx, settings.Spec.MachineDeploymentVMResourceQuota, sa, cluster.Spec.CloudSpec.GKE.Zone)
+	}
+}
+
+func GKEDiskTypesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		if !AreExternalClustersEnabled(settingsProvider) {
+			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
+		}
+
+		req := request.(getClusterReq)
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := getCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, req.ClusterID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+		sa, err := secretKeySelector(cluster.Spec.CloudSpec.GKE.CredentialsReference, resources.GCPServiceAccount)
+		if err != nil {
+			return nil, err
+		}
+
+		return listGKEDiskTypes(ctx, sa, cluster.Spec.CloudSpec.GKE.Zone)
+	}
+}
+
+func listGKEDiskTypes(ctx context.Context, sa string, zone string) (apiv1.GCPDiskTypeList, error) {
+	diskTypes := apiv1.GCPDiskTypeList{}
+	// TODO: There are some issues at the moment with local-ssd and pd-extreme, that's why it is disabled at the moment.
+	excludedDiskTypes := sets.NewString("local-ssd", "pd-extreme")
+	computeService, project, err := gcp.ConnectToComputeService(sa)
+	if err != nil {
+		return diskTypes, err
+	}
+
+	req := computeService.DiskTypes.List(project, zone)
+	err = req.Pages(ctx, func(page *compute.DiskTypeList) error {
+		for _, diskType := range page.Items {
+			if !excludedDiskTypes.Has(diskType.Name) {
+				dt := apiv1.GCPDiskType{
+					Name:        diskType.Name,
+					Description: diskType.Description,
+				}
+				diskTypes = append(diskTypes, dt)
+			}
+		}
+		return nil
+	})
+
+	return diskTypes, err
+}
 
 func createGKECluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticapiv1.ExternalCluster, error) {
 	if cloud.GKE.Name == "" || cloud.GKE.Zone == "" || cloud.GKE.ServiceAccount == "" {

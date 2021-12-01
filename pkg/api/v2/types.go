@@ -407,6 +407,28 @@ type GKECluster struct {
 // swagger:model GKEClusterList
 type GKEClusterList []GKECluster
 
+// GKEImage represents an object of GKE image.
+// swagger:model GKEImage
+type GKEImage struct {
+	Name      string `json:"name"`
+	IsDefault bool   `json:"default"`
+}
+
+// GKEImageList represents an array of GKE images.
+// swagger:model GKEImageList
+type GKEImageList []GKEImage
+
+// GKEZone represents a object of GKE zone.
+// swagger:model GKEZone
+type GKEZone struct {
+	Name      string `json:"name"`
+	IsDefault bool   `json:"default"`
+}
+
+// GKEZoneList represents an array of GKE zones.
+// swagger:model GKEZoneList
+type GKEZoneList []GKEZone
+
 // EKSCluster represents a object of EKS cluster.
 // swagger:model EKSCluster
 type EKSCluster struct {

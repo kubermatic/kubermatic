@@ -15907,6 +15907,198 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/disktypes": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "gke"
+        ],
+        "summary": "Gets GKE cluster machine disk types.",
+        "operationId": "listGKEClusterDiskTypes",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "GCPDiskTypeList",
+            "schema": {
+              "$ref": "#/definitions/GCPDiskTypeList"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/images": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "gke"
+        ],
+        "summary": "Gets GKE cluster images.",
+        "operationId": "listGKEClusterImages",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "GKEImageList",
+            "schema": {
+              "$ref": "#/definitions/GKEImageList"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/sizes": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "gke"
+        ],
+        "summary": "Gets GKE cluster machine sizes.",
+        "operationId": "listGKEClusterSizes",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "GCPMachineSizeList",
+            "schema": {
+              "$ref": "#/definitions/GCPMachineSizeList"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/zones": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "gke"
+        ],
+        "summary": "Gets GKE cluster zones.",
+        "operationId": "listGKEClusterZones",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "GKEZoneList",
+            "schema": {
+              "$ref": "#/definitions/GKEZoneList"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/upgrades": {
       "get": {
         "produces": [
@@ -15948,6 +16140,53 @@
           },
           "403": {
             "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/providers/gke/clusters": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Lists GKE clusters.",
+        "operationId": "listGKEClusters",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "The plain GCP service account",
+            "name": "ServiceAccount",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "description": "The credential name used in the preset for the GCP provider",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "GKEClusterList",
+            "schema": {
+              "$ref": "#/definitions/GKEClusterList"
+            }
           },
           "default": {
             "description": "errorResponse",
@@ -16414,16 +16653,62 @@
         }
       }
     },
-    "/api/v2/providers/gke/clusters": {
+    "/api/v2/providers/gke/images": {
       "get": {
-        "description": "Lists GKE clusters",
+        "description": "Lists GKE image types",
         "produces": [
           "application/json"
         ],
         "tags": [
           "gke"
         ],
-        "operationId": "listGKEClusters",
+        "operationId": "listGKEImages",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "The plain GCP service account",
+            "name": "ServiceAccount",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "description": "The credential name used in the preset for the GCP provider",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "description": "The zone name",
+            "name": "Zone",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "GKEImageList",
+            "schema": {
+              "$ref": "#/definitions/GKEImageList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/providers/gke/validatecredentials": {
+      "get": {
+        "description": "Validates GKE credentials",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "gke"
+        ],
+        "operationId": "validateGKECredentials",
         "parameters": [
           {
             "type": "string",
@@ -16440,10 +16725,7 @@
         ],
         "responses": {
           "200": {
-            "description": "GKEClusterList",
-            "schema": {
-              "$ref": "#/definitions/GKEClusterList"
-            }
+            "$ref": "#/responses/empty"
           },
           "default": {
             "description": "errorResponse",
@@ -20762,6 +21044,29 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
+    "GKEImage": {
+      "type": "object",
+      "title": "GKEImage represents an object of GKE image.",
+      "properties": {
+        "default": {
+          "type": "boolean",
+          "x-go-name": "IsDefault"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "GKEImageList": {
+      "type": "array",
+      "title": "GKEImageList represents an array of GKE images.",
+      "items": {
+        "$ref": "#/definitions/GKEImage"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "GKEMachineDeploymentCloudSpec": {
       "type": "object",
       "title": "GKEMachineDeploymentCloudSpec represents an object holding GKE machine deployment cloud details.",
@@ -20871,6 +21176,29 @@
           "format": "int64",
           "x-go-name": "MinNodeCount"
         }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "GKEZone": {
+      "type": "object",
+      "title": "GKEZone represents a object of GKE zone.",
+      "properties": {
+        "default": {
+          "type": "boolean",
+          "x-go-name": "IsDefault"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "GKEZoneList": {
+      "type": "array",
+      "title": "GKEZoneList represents an array of GKE zones.",
+      "items": {
+        "$ref": "#/definitions/GKEZone"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
