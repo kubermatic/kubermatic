@@ -203,7 +203,7 @@ spec:
                     properties:
                       accessKeyID:
                         type: string
-                      assumeRoleArn:
+                      assumeRoleARN:
                         type: string
                       assumeRoleExternalID:
                         type: string
