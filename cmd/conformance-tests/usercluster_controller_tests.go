@@ -99,8 +99,8 @@ func (r *testRunner) testUserClusterSeccompProfiles(ctx context.Context, log *za
 	}
 
 	for _, pod := range pods.Items {
-		// we don't care about the "default" namespace and it's used for pods launched by the e2e testing
-		if pod.Namespace == "default" {
+		// we only check for a couple of namespaces
+		if pod.Namespace != "kube-system" && pod.Namespace != "mla-system" && pod.Namespace != "gatekeeper-system" && pod.Namespace != "kubernetes-dashboard" {
 			continue
 		}
 		// no security context means no seccomp profile
