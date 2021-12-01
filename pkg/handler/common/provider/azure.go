@@ -37,6 +37,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/azure"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
@@ -526,7 +527,7 @@ type AzureCredential struct {
 	ClientSecret   string
 }
 
-func ListAKSClusters(ctx context.Context, cred AzureCredential) (apiv2.AKSClusterList, error) {
+func ListAKSClusters(ctx context.Context, cred azure.Credentials) (apiv2.AKSClusterList, error) {
 	clusters := apiv2.AKSClusterList{}
 	var err error
 	aksClient := containerservice.NewManagedClustersClient(cred.SubscriptionID)
@@ -543,4 +544,30 @@ func ListAKSClusters(ctx context.Context, cred AzureCredential) (apiv2.AKSCluste
 		clusters = append(clusters, apiv2.AKSCluster{Name: *f.Name})
 	}
 	return clusters, nil
+}
+
+func ListAKSUpgrades(ctx context.Context, cred azure.Credentials, resourceGroupName, resourceName string) ([]*apiv1.MasterVersion, error) {
+	var err error
+	upgrades := make([]*apiv1.MasterVersion, 0)
+
+	aksClient := containerservice.NewManagedClustersClient(cred.SubscriptionID)
+	aksClient.Authorizer, err = auth.NewClientCredentialsConfig(cred.ClientID, cred.ClientSecret, cred.TenantID).Authorizer()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create authorizer: %v", err.Error())
+	}
+	clusterUpgradeProfile, err := aksClient.GetUpgradeProfile(ctx, resourceGroupName, resourceName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to upgrade cluster: %v", err.Error())
+	}
+	upgradesItems := *clusterUpgradeProfile.ManagedClusterUpgradeProfileProperties.ControlPlaneProfile.Upgrades
+	for _, upgradesItem := range upgradesItems {
+		v, err := ksemver.NewSemver(*upgradesItem.KubernetesVersion)
+		if err != nil {
+			return nil, err
+		}
+		upgrades = append(upgrades, &apiv1.MasterVersion{
+			Version: v.Semver(),
+		})
+	}
+	return upgrades, nil
 }

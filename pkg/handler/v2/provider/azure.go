@@ -28,6 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/azure"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
@@ -402,8 +403,7 @@ func ListAKSClustersEndpoint(userInfoGetter provider.UserInfoGetter, presetsProv
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
-
-		credential := providercommon.AzureCredential{
+		credential := azure.Credentials{
 			TenantID:       req.TenantID,
 			SubscriptionID: req.SubscriptionID,
 			ClientID:       req.ClientID,
@@ -427,21 +427,21 @@ func ListAKSClustersEndpoint(userInfoGetter provider.UserInfoGetter, presetsProv
 	}
 }
 
-func getAzurePresetCredentials(userInfo *provider.UserInfo, presetName string, presetProvider provider.PresetProvider) (providercommon.AzureCredential, error) {
+func getAzurePresetCredentials(userInfo *provider.UserInfo, presetName string, presetProvider provider.PresetProvider) (azure.Credentials, error) {
 
 	preset, err := presetProvider.GetPreset(userInfo, presetName)
 	if err != nil {
-		return providercommon.AzureCredential{}, fmt.Errorf("can not get preset %s for the user %s", presetName, userInfo.Email)
+		return azure.Credentials{}, fmt.Errorf("can not get preset %s for the user %s", presetName, userInfo.Email)
 	}
 
-	azure := preset.Spec.Azure
-	if azure == nil {
-		return providercommon.AzureCredential{}, fmt.Errorf("credentials for Azure not present in preset %s for the user %s", presetName, userInfo.Email)
+	az := preset.Spec.Azure
+	if az == nil {
+		return azure.Credentials{}, fmt.Errorf("credentials for Azure not present in preset %s for the user %s", presetName, userInfo.Email)
 	}
-	return providercommon.AzureCredential{
-		TenantID:       azure.TenantID,
-		SubscriptionID: azure.SubscriptionID,
-		ClientID:       azure.ClientID,
-		ClientSecret:   azure.ClientSecret,
+	return azure.Credentials{
+		TenantID:       az.TenantID,
+		SubscriptionID: az.SubscriptionID,
+		ClientID:       az.ClientID,
+		ClientSecret:   az.ClientSecret,
 	}, nil
 }
