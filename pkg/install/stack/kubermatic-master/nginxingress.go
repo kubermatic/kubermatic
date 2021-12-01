@@ -64,7 +64,7 @@ func deployNginxIngressController(ctx context.Context, logger *logrus.Entry, kub
 
 	if release != nil && release.Version.LessThan(v13) && !chart.Version.LessThan(v13) {
 		if !opt.EnableNginxIngressMigration {
-			sublogger.Warn("To upgrade nginx-ingress-controller to a new version, installer")
+			sublogger.Warn("To upgrade nginx-ingress-controller to a new version, the installer")
 			sublogger.Warn("will remove the old deployment object before proceeding with the upgrade.")
 			sublogger.Warn("Rerun the installer with --migrate-nginx-ingress to enable the migration process.")
 			sublogger.Warn("Please refer to the KKP 2.19 upgrade notes for more information.")
@@ -189,7 +189,7 @@ func waitForNginxIngressWebhook(
 	}
 
 	var lastCreateErr error
-	err := wait.PollImmediate(1*time.Second, 1*time.Minute, func() (bool, error) {
+	err := wait.PollImmediate(3*time.Second, 2*time.Minute, func() (bool, error) {
 		lastCreateErr = kubeClient.Create(ctx, dummyIngress)
 		return lastCreateErr == nil, nil
 	})
