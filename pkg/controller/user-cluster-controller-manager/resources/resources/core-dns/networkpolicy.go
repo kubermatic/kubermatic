@@ -61,6 +61,20 @@ func AllowAllDnsNetworkPolicyCreator() reconciling.NamedNetworkPolicyCreatorGett
 									MatchLabels: map[string]string{common.NameLabel: "kube-dns"},
 								},
 							},
+						},
+					},
+					{
+						Ports: []networkingv1.NetworkPolicyPort{
+							{
+								Protocol: &protoTcp,
+								Port:     &dnsPort,
+							},
+							{
+								Protocol: &protoUdp,
+								Port:     &dnsPort,
+							},
+						},
+						To: []networkingv1.NetworkPolicyPeer{
 							{
 								IPBlock: &networkingv1.IPBlock{
 									CIDR: "169.254.20.10/32",
