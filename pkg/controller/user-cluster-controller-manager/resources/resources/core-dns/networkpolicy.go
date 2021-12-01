@@ -28,6 +28,51 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 )
 
+// AllowAllDnsNetworkPolicyCreator allows egress traffic from all pods to kube-dns
+func AllowAllDnsNetworkPolicyCreator() reconciling.NamedNetworkPolicyCreatorGetter {
+	return func() (string, reconciling.NetworkPolicyCreator) {
+		return "allow-dns", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
+			dnsPort := intstr.FromInt(53)
+			protoUdp := v1.ProtocolUDP
+			protoTcp := v1.ProtocolTCP
+
+			np.Spec = networkingv1.NetworkPolicySpec{
+				PolicyTypes: []networkingv1.PolicyType{
+					networkingv1.PolicyTypeEgress,
+				},
+				Egress: []networkingv1.NetworkPolicyEgressRule{
+					{
+						Ports: []networkingv1.NetworkPolicyPort{
+							{
+								Protocol: &protoTcp,
+								Port:     &dnsPort,
+							},
+							{
+								Protocol: &protoUdp,
+								Port:     &dnsPort,
+							},
+						},
+						To: []networkingv1.NetworkPolicyPeer{
+							{
+								PodSelector: &metav1.LabelSelector{
+									MatchLabels: map[string]string{common.NameLabel: "kube-dns"},
+								},
+							},
+							{
+								IPBlock: &networkingv1.IPBlock{
+									CIDR: "169.254.20.10/32",
+								},
+							},
+						},
+					},
+				},
+			}
+
+			return np, nil
+		}
+	}
+}
+
 // KubeDNSNetworkPolicyCreator NetworkPolicy allows ingress traffic to coredns on port 53 TCP/UDP and egress to anywhere on port 53 TCP/UDP.
 func KubeDNSNetworkPolicyCreator(k8sApiIP string, k8sApiPort int) reconciling.NamedNetworkPolicyCreatorGetter {
 	return func() (string, reconciling.NetworkPolicyCreator) {
