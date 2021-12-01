@@ -827,6 +827,24 @@ spec:
       - configMap:
           name: cilium-config
         name: cilium-config-path
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cilium
+  namespace: kube-system
+spec:
+  podSelector:
+    matchLabels:
+      name: cilium-operator
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress: []
+  egress:
+    - {}
+
 {{ end }}
 {{ end }}
 
