@@ -158,6 +158,8 @@ type SeedSettings struct {
 	MLA MLA `json:"mla"`
 	// the Seed level metering settings
 	Metering crdapiv1.MeteringConfigurations `json:"metering"`
+	// the Seed level seed dns overwrite
+	SeedDNSOverwrite string `json:"seedDNSOverwrite,omitempty"`
 }
 
 type MLA struct {

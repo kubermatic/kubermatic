@@ -58,10 +58,6 @@ func NewGetMeteringReportParamsWithHTTPClient(client *http.Client) *GetMeteringR
    Typically these are written to a http.Request.
 */
 type GetMeteringReportParams struct {
-
-	// ReportName.
-	ReportName string
-
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -115,17 +111,6 @@ func (o *GetMeteringReportParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
-// WithReportName adds the reportName to the get metering report params
-func (o *GetMeteringReportParams) WithReportName(reportName string) *GetMeteringReportParams {
-	o.SetReportName(reportName)
-	return o
-}
-
-// SetReportName adds the reportName to the get metering report params
-func (o *GetMeteringReportParams) SetReportName(reportName string) {
-	o.ReportName = reportName
-}
-
 // WriteToRequest writes these params to a swagger request
 func (o *GetMeteringReportParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -133,11 +118,6 @@ func (o *GetMeteringReportParams) WriteToRequest(r runtime.ClientRequest, reg st
 		return err
 	}
 	var res []error
-
-	// path param report_name
-	if err := r.SetPathParam("report_name", o.ReportName); err != nil {
-		return err
-	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
