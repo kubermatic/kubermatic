@@ -191,17 +191,17 @@ In order to make it possible for users to deploy a cluster with a set of Applica
 
 ### ApplicationInstallation CR
 
-- contains a mapping of a specific Application and cluster where to install
-  - the Application is specified by an ApplicationRef. Currently, this consists of a name and version
-  - the cluster where to install is specified by the namespace the ApplicationInstallation was created in (`metadata.namespace`) => the clusterID must be passed to k8c-api
-- contains the merged values that are being passed for the installation. This is needed as customers can set custom values for each installation.
+ApplicationInstallation CRs are created in the user-cluster in the `kube-system` namespace and:
+
+- contain information about the application to install which is specified by an ApplicationRef. Currently, this consists of a name and version
+- contain the merged values that are being passed for the installation. This is needed as customers can set custom values for each installation.
 
 ```yaml
 apiVersion: apps.kubermatic.k8c.io/v1
 kind: ApplicationInstallation
 metadata:
   name: prometheus
-  namespace: cluster-47s2ddlfgj
+  namespace: kube-system
 spec:
   targetNamespace: monitoring
   createNamespace: true # flag to create the targetNamespace
@@ -214,7 +214,10 @@ spec:
 
 ### ApplicationInstallationController
 
-The ApplicationInstallationController resides in the seed cluster. Its main purpose is to watch ApplicationInstallation CRs and ensure that the requested Applications are installed/modified/deleted in the corresponding user clusters. By extension of this, the ApplicationInstallationController needs to be able to fetch the manifests for Applications.
+The ApplicationInstallationController resides in the seed cluster inside the namespace corresponding to user-cluster. This means each user-clusters has its own ApplicationInstallationController. Its main purpose is to watch ApplicationInstallation CRs and ensure that the requested Applications are installed/modified/deleted in the corresponding user cluster. By extension of this, the ApplicationInstallationController needs to be able to fetch the manifests for Applications. We decided to have the ApplicationInstallationController inside the namespace corresponding to user-cluster as opposed to having it in the user-cluster for the following reasons:
+
+1. Secret Management -> the ApplicationInstallationController handles secrets to external sources (e.g. git credentials). As a result we did not want to a) replicate these secrets into every user cluster or b) build a mechanism for user-cluster-controllers to read secrets from the seed cluster and store them internally
+2. Better support for air-gapped systems -> while there is no finalized concept for doing air-gapped systems yet, we believe that having only ApplicationInstallationControllers from the seed access external resources, is in any case making it easier for future usage with air-gapped systems
 
 The functionality of the ApplicationInstallationController depends on the selected `source` and `method` in the ApplicationDefinition CR. To start we propose the following sources and methods:
 
