@@ -65,7 +65,8 @@ func NewClusterProvider(
 	client ctrlruntimeclient.Client,
 	k8sClient kubernetes.Interface,
 	oidcKubeConfEndpoint bool,
-	versions kubermatic.Versions) *ClusterProvider {
+	versions kubermatic.Versions,
+	seedName string) *ClusterProvider {
 	return &ClusterProvider{
 		createSeedImpersonatedClient: createSeedImpersonatedClient,
 		userClusterConnProvider:      userClusterConnProvider,
@@ -76,6 +77,7 @@ func NewClusterProvider(
 		oidcKubeConfEndpoint:         oidcKubeConfEndpoint,
 		seedKubeconfig:               cfg,
 		versions:                     versions,
+		seedName:                     seedName,
 	}
 }
 
@@ -96,6 +98,7 @@ type ClusterProvider struct {
 	k8sClient            kubernetes.Interface
 	seedKubeconfig       *restclient.Config
 	versions             kubermatic.Versions
+	seedName             string
 }
 
 // New creates a brand new cluster that is bound to the given project

@@ -24,35 +24,23 @@ import (
 	"github.com/go-kit/kit/endpoint"
 
 	v2 "k8c.io/kubermatic/v2/pkg/api/v2"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
+	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/resources"
-	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	errors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
 	seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(getBackupDestinationNamesReq)
-		c, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
+
+		seed, err := getSeed(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID, req.ClusterID)
 		if err != nil {
 			return nil, err
-		}
-		seeds, err := seedsGetter()
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		seedName, ok := c.Labels[resources.SeedLabelKey]
-		if !ok {
-			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("Seed label not present for Cluster %q", c.Name))
-		}
-
-		seed, ok := seeds[seedName]
-		if !ok {
-			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("Seed %q not found", seedName))
 		}
 
 		var destinations v2.BackupDestinationNames
@@ -82,4 +70,32 @@ func DecodeGetBackupDestinationNamesReq(c context.Context, r *http.Request) (int
 
 	req.GetClusterReq = cr.(cluster.GetClusterReq)
 	return req, nil
+}
+
+func getSeed(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID, clusterID string) (*kubermaticv1.Seed, error) {
+
+	clusterProvider, ok := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+	if !ok {
+		return nil, errors.New(http.StatusInternalServerError, "no cluster in request")
+	}
+	privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
+
+	// check if user can access the cluster
+	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID, nil)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	_, err = handlercommon.GetInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, projectID, clusterID, nil)
+
+	seeds, err := seedsGetter()
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	seed, ok := seeds[clusterProvider.GetSeedName()]
+	if !ok {
+		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("Seed %q not found", clusterProvider.GetSeedName()))
+	}
+	return seed, nil
 }
