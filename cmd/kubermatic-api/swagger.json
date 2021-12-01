@@ -9965,6 +9965,54 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/backupdestinations": {
+      "get": {
+        "description": "Gets possible backup destination names for a cluster",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "getBackupDestinationNames",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "BackupDestinationNames",
+            "schema": {
+              "$ref": "#/definitions/BackupDestinationNames"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/clusters/{cluster_id}/bindings": {
       "get": {
         "description": "List role binding",
@@ -18678,6 +18726,14 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
+    "BackupDestinationNames": {
+      "type": "array",
+      "title": "BackupDestinationNames represents an list of backup destination names.",
+      "items": {
+        "type": "string"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "BackupStatus": {
       "type": "object",
