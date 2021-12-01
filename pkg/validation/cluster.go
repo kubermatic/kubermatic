@@ -115,7 +115,7 @@ func ValidateNewClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Dat
 
 	if cloudProvider != nil {
 		if err := cloudProvider.ValidateCloudSpec(spec.Cloud); err != nil {
-			// Just using spec.Cloud for the error leads to a Go-represenation of the struct being printed in
+			// Just using spec.Cloud for the error leads to a Go-representation of the struct being printed in
 			// the error message, which looks awful an is not helpful. However any other encoding (e.g. JSON)
 			// could lead to us leaking credentials that were given in the CloudSpec, so to be safe, we never
 			// reveal the CloudSpec in an error.
