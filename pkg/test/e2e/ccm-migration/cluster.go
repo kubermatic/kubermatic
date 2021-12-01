@@ -79,7 +79,7 @@ func (c *ClusterJig) SetUp(cloudSpec kubermaticv1.CloudSpec, osCredentials crede
 	c.Log.Debugw("secret created", "name", cloudSpec.Openstack.CredentialsReference.Name)
 
 	if err := c.createCluster(cloudSpec); err != nil {
-		return nil
+		return err
 	}
 	c.Log.Debugw("Cluster created", "name", c.Name)
 

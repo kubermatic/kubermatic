@@ -531,7 +531,7 @@ func getNetClient(authURL, region string, credentials *resources.OpenstackCreden
 
 	serviceClient, err := goopenstack.NewNetworkV2(authClient, gophercloud.EndpointOpts{Region: region})
 	if err != nil {
-		// this is special case for  services that span only one region.
+		// this is special case for services that span only one region.
 		//nolint:gosimple
 		//lint:ignore S1020 false positive, we must do the errcheck regardless of if its an ErrEndpointNotFound
 		if _, ok := err.(*gophercloud.ErrEndpointNotFound); ok {

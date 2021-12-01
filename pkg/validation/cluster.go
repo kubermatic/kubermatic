@@ -66,7 +66,7 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 	}
 
 	if spec.Version.Semver() == nil || spec.Version.String() == "" {
-		allErrs = append(allErrs, field.Invalid(parentFieldPath.Child("version"), spec.Version, `version is required but was not specified`))
+		allErrs = append(allErrs, field.Required(parentFieldPath.Child("version"), "version is required but was not specified"))
 	}
 
 	if !kubermaticv1.AllExposeStrategies.Has(spec.ExposeStrategy) {
@@ -115,7 +115,11 @@ func ValidateNewClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Dat
 
 	if cloudProvider != nil {
 		if err := cloudProvider.ValidateCloudSpec(spec.Cloud); err != nil {
-			allErrs = append(allErrs, field.Invalid(parentFieldPath.Child("cloud"), spec.Cloud, err.Error()))
+			// Just using spec.Cloud for the error leads to a Go-represenation of the struct being printed in
+			// the error message, which looks awful an is not helpful. However any other encoding (e.g. JSON)
+			// could lead to us leaking credentials that were given in the CloudSpec, so to be safe, we never
+			// reveal the CloudSpec in an error.
+			allErrs = append(allErrs, field.Invalid(parentFieldPath.Child("cloud"), "<redacted>", err.Error()))
 		}
 	}
 
@@ -231,19 +235,18 @@ func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, cni *
 	if podsCIDR := n.Pods.CIDRBlocks; len(podsCIDR) == 1 {
 		if _, _, err := net.ParseCIDR(podsCIDR[0]); err != nil {
 			allErrs = append(allErrs, field.Invalid(fldPath.Child("pods", "cidrBlocks").Index(0), podsCIDR,
-				fmt.Sprintf("couldn't parse pod CIDR `%s`: %v", podsCIDR, err)))
+				fmt.Sprintf("couldn't parse pod CIDR %q: %v", podsCIDR, err)))
 		}
 	}
 	if servicesCIDR := n.Services.CIDRBlocks; len(servicesCIDR) == 1 {
 		if _, _, err := net.ParseCIDR(servicesCIDR[0]); err != nil {
 			allErrs = append(allErrs, field.Invalid(fldPath.Child("services", "cidrBlocks").Index(0), servicesCIDR,
-				fmt.Sprintf("couldn't parse service CIDR: %v", err)))
+				fmt.Sprintf("couldn't parse service CIDR %q: %v", servicesCIDR, err)))
 		}
 	}
 	// TODO Remove all hardcodes before allowing arbitrary domain names.
 	if (!allowEmpty || n.DNSDomain != "") && n.DNSDomain != "cluster.local" {
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("dnsDomain"), n.DNSDomain,
-			"dnsDomain must be 'cluster.local'"))
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("dnsDomain"), n.DNSDomain, "dnsDomain must be 'cluster.local'"))
 	}
 	if (!allowEmpty || n.ProxyMode != "") && (n.ProxyMode != resources.IPVSProxyMode && n.ProxyMode != resources.IPTablesProxyMode && n.ProxyMode != resources.EBPFProxyMode) {
 		allErrs = append(allErrs, field.NotSupported(fldPath.Child("proxyMode"), n.ProxyMode,
@@ -328,7 +331,7 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter,
 
 	providerName, err := provider.ClusterCloudProviderName(spec)
 	if err != nil {
-		allErrs = append(allErrs, field.Invalid(parentFieldPath, spec, err.Error()))
+		allErrs = append(allErrs, field.Invalid(parentFieldPath, "<redacted>", err.Error()))
 	}
 
 	// if this field is set, it must match the given provider;
@@ -358,56 +361,41 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter,
 		}
 	}
 
-	var (
-		providerErr  error
-		providerSpec interface{}
-	)
+	var providerErr error
 
 	switch {
 	case spec.AWS != nil:
 		providerErr = validateAWSCloudSpec(spec.AWS)
-		providerSpec = spec.AWS
 	case spec.Alibaba != nil:
 		providerErr = validateAlibabaCloudSpec(spec.Alibaba)
-		providerSpec = spec.Alibaba
 	case spec.Anexia != nil:
 		providerErr = validateAnexiaCloudSpec(spec.Anexia)
-		providerSpec = spec.Anexia
 	case spec.Azure != nil:
 		providerErr = validateAzureCloudSpec(spec.Azure)
-		providerSpec = spec.Azure
 	case spec.BringYourOwn != nil:
 		providerErr = nil
 	case spec.Digitalocean != nil:
 		providerErr = validateDigitaloceanCloudSpec(spec.Digitalocean)
-		providerSpec = spec.Digitalocean
 	case spec.Fake != nil:
 		providerErr = validateFakeCloudSpec(spec.Fake)
-		providerSpec = spec.Fake
 	case spec.GCP != nil:
 		providerErr = validateGCPCloudSpec(spec.GCP)
-		providerSpec = spec.GCP
 	case spec.Hetzner != nil:
 		providerErr = validateHetznerCloudSpec(spec.Hetzner)
-		providerSpec = spec.Hetzner
 	case spec.Kubevirt != nil:
 		providerErr = validateKubevirtCloudSpec(spec.Kubevirt)
-		providerSpec = spec.Kubevirt
 	case spec.Openstack != nil:
 		providerErr = validateOpenStackCloudSpec(spec.Openstack, dc)
-		providerSpec = spec.Openstack
 	case spec.Packet != nil:
 		providerErr = validatePacketCloudSpec(spec.Packet)
-		providerSpec = spec.Packet
 	case spec.VSphere != nil:
 		providerErr = validateVSphereCloudSpec(spec.VSphere)
-		providerSpec = spec.VSphere
 	default:
 		providerErr = errors.New("no cloud provider specified")
 	}
 
 	if providerErr != nil {
-		allErrs = append(allErrs, field.Invalid(parentFieldPath, providerSpec, providerErr.Error()))
+		allErrs = append(allErrs, field.Invalid(parentFieldPath, "<redacted>", providerErr.Error()))
 	}
 
 	return allErrs
