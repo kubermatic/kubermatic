@@ -68,7 +68,7 @@ fi
 
 if $(echo ${CLUSTER_RAW} | jq -r '.spec.clusterNetwork.konnectivityEnabled'); then
   KONNECTIVITY_SERVER_SERVICE_RAW="$(kubectl --namespace "$NAMESPACE" get service konnectivity-server -o json)"
-  if $(echo ${KONNECTIVITY_SERVER_SERVICE_RAW} | jq --exit-status '.spec.ports[0].nodePort' >/dev/null); then
+  if $(echo ${KONNECTIVITY_SERVER_SERVICE_RAW} | jq --exit-status '.spec.ports[0].nodePort' > /dev/null); then
     KONNECTIVITY_SERVER_PORT="$(echo ${KONNECTIVITY_SERVER_SERVICE_RAW} | jq -r '.spec.ports[0].nodePort')"
     KONNECTIVITY_SERVER_HOST="$(echo ${CLUSTER_RAW} | jq -r '.address.externalName')"
   else
@@ -81,7 +81,7 @@ if $(echo ${CLUSTER_RAW} | jq -r '.spec.clusterNetwork.konnectivityEnabled'); th
   ARGS="$ARGS -konnectivity-server-port=${KONNECTIVITY_SERVER_PORT}"
 else
   OPENVPN_SERVER_SERVICE_RAW="$(kubectl --namespace "$NAMESPACE" get service openvpn-server -o json)"
-  if $(echo ${OPENVPN_SERVER_SERVICE_RAW} | jq --exit-status '.spec.ports[0].nodePort' >/dev/null); then
+  if $(echo ${OPENVPN_SERVER_SERVICE_RAW} | jq --exit-status '.spec.ports[0].nodePort' > /dev/null); then
     OPENVPN_SERVER_PORT="$(echo ${OPENVPN_SERVER_SERVICE_RAW} | jq -r '.spec.ports[0].nodePort')"
   else
     OPENVPN_SERVER_PORT="$(echo ${OPENVPN_SERVER_SERVICE_RAW} | jq -r '.spec.ports[0].port')"
