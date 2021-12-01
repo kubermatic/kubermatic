@@ -483,3 +483,8 @@ func (p *ClusterProvider) ListAll() (*kubermaticv1.ClusterList, error) {
 
 	return projectClusters, nil
 }
+
+// GetSeedName gets the seed name of the cluster
+func (p *ClusterProvider) GetSeedName() string {
+	return p.seedName
+}
