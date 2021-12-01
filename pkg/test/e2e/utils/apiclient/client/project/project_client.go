@@ -200,6 +200,8 @@ type ClientService interface {
 
 	ListExternalClusters(params *ListExternalClustersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClustersOK, error)
 
+	ListGKEClusters(params *ListGKEClustersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEClustersOK, error)
+
 	ListMachineDeploymentNodes(params *ListMachineDeploymentNodesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListMachineDeploymentNodesOK, error)
 
 	ListMachineDeploymentNodesEvents(params *ListMachineDeploymentNodesEventsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListMachineDeploymentNodesEventsOK, error)
@@ -3560,6 +3562,44 @@ func (a *Client) ListExternalClusters(params *ListExternalClustersParams, authIn
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListExternalClustersDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListGKEClusters lists g k e clusters
+*/
+func (a *Client) ListGKEClusters(params *ListGKEClustersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEClustersOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListGKEClustersParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listGKEClusters",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/providers/gke/clusters",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListGKEClustersReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListGKEClustersOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListGKEClustersDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
