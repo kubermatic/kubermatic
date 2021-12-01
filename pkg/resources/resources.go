@@ -249,6 +249,8 @@ const (
 	KubeStateMetricsCertUsername = "kube-state-metrics"
 	// MetricsServerCertUsername is the name of the user coming from kubeconfig cert
 	MetricsServerCertUsername = "metrics-server"
+	// MetricsServerServiceAccountName is the name of the metrics server service account
+	MetricsServerServiceAccountName = "metrics-server"
 	// ControllerManagerCertUsername is the name of the user coming from kubeconfig cert
 	ControllerManagerCertUsername = "system:kube-controller-manager"
 	// CloudControllerManagerCertUsername is the name of the user coming from kubeconfig cert
