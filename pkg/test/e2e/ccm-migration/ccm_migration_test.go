@@ -68,6 +68,7 @@ var _ = ginkgo.Describe("CCM migration", func() {
 
 			gomega.Expect(clusterJig.SetUp(kubermaticv1.CloudSpec{
 				Openstack: &kubermaticv1.OpenstackCloudSpec{
+					FloatingIPPool: options.osCredentials.floatingIPPool,
 					CredentialsReference: &types2.GlobalSecretKeySelector{
 						ObjectReference: corev1.ObjectReference{
 							Name:      fmt.Sprintf("credential-openstack-%s", clusterJig.Name),
