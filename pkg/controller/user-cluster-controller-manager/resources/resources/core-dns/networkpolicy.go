@@ -36,10 +36,13 @@ func AllowAllDnsNetworkPolicyCreator() reconciling.NamedNetworkPolicyCreatorGett
 			protoUdp := v1.ProtocolUDP
 			protoTcp := v1.ProtocolTCP
 
+			// dns access to node local dns cache
 			np.Spec = networkingv1.NetworkPolicySpec{
 				PolicyTypes: []networkingv1.PolicyType{
+					networkingv1.PolicyTypeIngress,
 					networkingv1.PolicyTypeEgress,
 				},
+				Ingress: []networkingv1.NetworkPolicyIngressRule{},
 				Egress: []networkingv1.NetworkPolicyEgressRule{
 					{
 						Ports: []networkingv1.NetworkPolicyPort{
