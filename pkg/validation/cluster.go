@@ -386,6 +386,11 @@ func validateOpenStackCloudSpec(spec *kubermaticv1.OpenstackCloudSpec, dc *kuber
 			return err
 		}
 	}
+	if spec.AllowedIPRange != "" {
+		if _, _, err := net.ParseCIDR(spec.AllowedIPRange); err != nil {
+			return err
+		}
+	}
 
 	var errs []error
 	if spec.GetProject() == "" && spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" && spec.CredentialsReference.Namespace == "" {
@@ -415,12 +420,23 @@ func validateAWSCloudSpec(spec *kubermaticv1.AWSCloudSpec) error {
 			return err
 		}
 	}
+	if spec.AllowedIPRange != "" {
+		if _, _, err := net.ParseCIDR(spec.AllowedIPRange); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
 func validateGCPCloudSpec(spec *kubermaticv1.GCPCloudSpec) error {
 	if spec.ServiceAccount == "" {
 		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.GCPServiceAccount); err != nil {
+			return err
+		}
+	}
+	if spec.AllowedIPRange != "" {
+		if _, _, err := net.ParseCIDR(spec.AllowedIPRange); err != nil {
 			return err
 		}
 	}
@@ -489,6 +505,11 @@ func validateAzureCloudSpec(spec *kubermaticv1.AzureCloudSpec) error {
 	}
 	if !azureLoadBalancerSKUTypes.Has(string(spec.LoadBalancerSKU)) {
 		return fmt.Errorf("azure LB SKU cannot be %q, allowed values are %v", spec.LoadBalancerSKU, azureLoadBalancerSKUTypes.List())
+	}
+	if spec.AllowedIPRange != "" {
+		if _, _, err := net.ParseCIDR(spec.AllowedIPRange); err != nil {
+			return err
+		}
 	}
 
 	return nil

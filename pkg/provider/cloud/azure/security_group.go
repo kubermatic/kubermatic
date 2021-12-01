@@ -55,7 +55,12 @@ func reconcileSecurityGroup(ctx context.Context, clients *ClientSet, location st
 		Build().
 		NodePorts()
 
-	target := targetSecurityGroup(cluster.Spec.Cloud, location, cluster.Name, lowPort, highPort)
+	nodePortsAllowedIPRange := cluster.Spec.Cloud.Azure.AllowedIPRange
+	if nodePortsAllowedIPRange == "" {
+		nodePortsAllowedIPRange = "0.0.0.0/0"
+	}
+
+	target := targetSecurityGroup(cluster.Spec.Cloud, location, cluster.Name, lowPort, highPort, nodePortsAllowedIPRange)
 
 	// check for attributes of the existing security group and return early if all values are already
 	// as expected. Since there are a lot of pointers in the network.SecurityGroup struct, we need to
@@ -78,7 +83,7 @@ func reconcileSecurityGroup(ctx context.Context, clients *ClientSet, location st
 	})
 }
 
-func targetSecurityGroup(cloud kubermaticv1.CloudSpec, location string, clusterName string, portRangeLow int, portRangeHigh int) *network.SecurityGroup {
+func targetSecurityGroup(cloud kubermaticv1.CloudSpec, location string, clusterName string, portRangeLow int, portRangeHigh int, nodePortsAllowedRange string) *network.SecurityGroup {
 	securityGroup := &network.SecurityGroup{
 		Name:     to.StringPtr(cloud.Azure.SecurityGroup),
 		Location: to.StringPtr(location),
@@ -139,7 +144,7 @@ func targetSecurityGroup(cloud kubermaticv1.CloudSpec, location string, clusterN
 					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
 						Direction:                network.SecurityRuleDirectionInbound,
 						Protocol:                 network.SecurityRuleProtocolAsterisk,
-						SourceAddressPrefix:      to.StringPtr("*"),
+						SourceAddressPrefix:      to.StringPtr(nodePortsAllowedRange),
 						SourcePortRange:          to.StringPtr("*"),
 						DestinationAddressPrefix: to.StringPtr("*"),
 						DestinationPortRange:     to.StringPtr(fmt.Sprintf("%d-%d", portRangeLow, portRangeHigh)),

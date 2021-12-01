@@ -736,6 +736,7 @@ type AWSCloudSpec struct {
 	RouteTableID        string `json:"routeTableID"`
 	InstanceProfileName string `json:"instanceProfileName"`
 	SecurityGroupID     string `json:"securityGroupID"`
+	AllowedIPRange      string `json:"allowedIPRange,omitempty"`
 
 	// DEPRECATED. Don't care for the role name. We only require the ControlPlaneRoleARN to be set so the control plane
 	// can perform the assume-role.
@@ -805,6 +806,7 @@ type GCPCloudSpec struct {
 	ServiceAccount string `json:"serviceAccount,omitempty"`
 	Network        string `json:"network"`
 	Subnetwork     string `json:"subnetwork"`
+	AllowedIPRange string `json:"allowedIPRange,omitempty"`
 }
 
 // KubevirtCloudSpec specifies the access data to Kubevirt.

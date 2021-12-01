@@ -637,6 +637,7 @@ type AzureCloudSpec struct {
 	SubnetName            string `json:"subnet"`
 	RouteTableName        string `json:"routeTable"`
 	SecurityGroup         string `json:"securityGroup"`
+	AllowedIPRange        string `json:"allowedIPRange,omitempty"`
 	AssignAvailabilitySet *bool  `json:"assignAvailabilitySet"`
 	AvailabilitySet       string `json:"availabilitySet"`
 	// LoadBalancerSKU sets the LB type that will be used for the Azure cluster, possible values are "basic" and "standard", if empty, "basic" will be used
@@ -708,6 +709,7 @@ type AWSCloudSpec struct {
 	RouteTableID        string `json:"routeTableId"`
 	InstanceProfileName string `json:"instanceProfileName"`
 	SecurityGroupID     string `json:"securityGroupID"`
+	AllowedIPRange      string `json:"allowedIPRange,omitempty"`
 
 	// DEPRECATED. Don't care for the role name. We only require the ControlPlaneRoleARN to be set so the control plane
 	// can perform the assume-role.
@@ -738,6 +740,7 @@ type OpenstackCloudSpec struct {
 	// Note that the network is internal if the "External" field is set to false
 	Network        string `json:"network"`
 	SecurityGroups string `json:"securityGroups"`
+	AllowedIPRange string `json:"allowedIPRange,omitempty"`
 	// FloatingIPPool holds the name of the public network
 	// The public network is reachable from the outside world
 	// and should provide the pool of IP addresses to choose from.
@@ -795,6 +798,7 @@ type GCPCloudSpec struct {
 	ServiceAccount string `json:"serviceAccount,omitempty"`
 	Network        string `json:"network"`
 	Subnetwork     string `json:"subnetwork"`
+	AllowedIPRange string `json:"allowedIPRange,omitempty"`
 }
 
 // KubevirtCloudSpec specifies the access data to Kubevirt.

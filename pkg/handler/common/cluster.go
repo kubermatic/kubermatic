@@ -47,7 +47,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
-	kubenetutil "k8s.io/apimachinery/pkg/util/net"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -203,10 +202,6 @@ func GenerateCluster(
 		spec.ContainerRuntime = "containerd"
 	}
 	if err = validation.ValidateContainerRuntime(spec); err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-
-	if _, err := kubenetutil.ParsePortRange(spec.ComponentsOverride.Apiserver.NodePortRange); err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
@@ -1008,7 +1003,7 @@ func ConvertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, dat
 			ContainerRuntime:                     internalCluster.Spec.ContainerRuntime,
 			ClusterNetwork:                       &internalCluster.Spec.ClusterNetwork,
 			CNIPlugin:                            internalCluster.Spec.CNIPlugin,
-			NodePortRange:                        internalCluster.Spec.ComponentsOverride.Apiserver.NodePortRange,
+			AllowedIPRange:                       "192.168.0.0/16", /*internalCluster.Spec.AllowedIPRange*/
 		},
 		Status: apiv1.ClusterStatus{
 			Version:              internalCluster.Spec.Version,
