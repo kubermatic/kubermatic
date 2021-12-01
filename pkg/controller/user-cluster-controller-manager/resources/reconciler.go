@@ -843,7 +843,7 @@ func (r *reconciler) reconcileKonnectivityDeployments(ctx context.Context) error
 func (r *reconciler) reconcileNetworkPolicies(ctx context.Context, data reconcileData) error {
 
 	namedNetworkPolicyCreatorGetters := []reconciling.NamedNetworkPolicyCreatorGetter{
-		// coredns.AllowAllDnsNetworkPolicyCreator(),
+		coredns.AllowAllDnsNetworkPolicyCreator(),
 		coredns.KubeDNSNetworkPolicyCreator(data.clusterAddress.IP, int(data.clusterAddress.Port)),
 	}
 
