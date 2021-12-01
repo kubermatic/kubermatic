@@ -489,9 +489,11 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 			if cloud.GKE != nil {
 				return patchGKECluster(ctx, clusterToPatch, patchedCluster, secretKeySelector, cloud.GKE.CredentialsReference)
 			}
-
 			if cloud.EKS != nil {
 				return patchEKSCluster(clusterToPatch, patchedCluster, secretKeySelector, cloud)
+			}
+			if cloud.AKS != nil {
+				return patchAKSCluster(ctx, clusterToPatch, patchedCluster, secretKeySelector, cloud)
 			}
 		}
 		return convertClusterToAPI(cluster), nil

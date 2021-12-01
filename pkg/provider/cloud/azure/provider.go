@@ -1058,3 +1058,58 @@ func GetAKSCLusterConfig(ctx context.Context, tenantID, subscriptionID, clientID
 	}
 	return config, nil
 }
+
+func GetCredentialsForAKSCluster(cloud kubermaticv1.ExternalClusterCloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (Credentials, error) {
+	tenantID := cloud.AKS.TenantID
+	subscriptionID := cloud.AKS.SubscriptionID
+	clientID := cloud.AKS.ClientID
+	clientSecret := cloud.AKS.ClientSecret
+	var err error
+
+	if tenantID == "" {
+		if cloud.AKS.CredentialsReference == nil {
+			return Credentials{}, errors.New("no credentials provided")
+		}
+		tenantID, err = secretKeySelector(cloud.AKS.CredentialsReference, kubermaticresources.AzureTenantID)
+		if err != nil {
+			return Credentials{}, err
+		}
+	}
+
+	if subscriptionID == "" {
+		if cloud.AKS.CredentialsReference == nil {
+			return Credentials{}, errors.New("no credentials provided")
+		}
+		subscriptionID, err = secretKeySelector(cloud.AKS.CredentialsReference, kubermaticresources.AzureSubscriptionID)
+		if err != nil {
+			return Credentials{}, err
+		}
+	}
+
+	if clientID == "" {
+		if cloud.AKS.CredentialsReference == nil {
+			return Credentials{}, errors.New("no credentials provided")
+		}
+		clientID, err = secretKeySelector(cloud.AKS.CredentialsReference, kubermaticresources.AzureClientID)
+		if err != nil {
+			return Credentials{}, err
+		}
+	}
+
+	if clientSecret == "" {
+		if cloud.AKS.CredentialsReference == nil {
+			return Credentials{}, errors.New("no credentials provided")
+		}
+		clientSecret, err = secretKeySelector(cloud.AKS.CredentialsReference, kubermaticresources.AzureClientSecret)
+		if err != nil {
+			return Credentials{}, err
+		}
+	}
+
+	return Credentials{
+		TenantID:       tenantID,
+		SubscriptionID: subscriptionID,
+		ClientID:       clientID,
+		ClientSecret:   clientSecret,
+	}, nil
+}
