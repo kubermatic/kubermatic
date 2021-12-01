@@ -373,6 +373,22 @@ spec:
     - port: 9189
       name: metrics
       targetPort: metrics
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: hcloud-csi
+  namespace: kube-system
+spec:
+  podSelector:
+    matchLabels:
+      app: hcloud-csi
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
 {{ end }}
 {{ end }}
 {{ end }}
