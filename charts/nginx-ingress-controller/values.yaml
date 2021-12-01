@@ -75,4 +75,4 @@ nginx:
     
     # Temporarily disable the admission webhooks
     admissionWebhooks:
-      enabled: false
+      enabled: true
