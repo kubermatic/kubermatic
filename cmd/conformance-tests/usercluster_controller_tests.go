@@ -109,6 +109,7 @@ func (r *testRunner) testUserClusterSeccompProfiles(ctx context.Context, log *za
 				errors,
 				fmt.Sprintf("expected security context on Pod %s/%s, got none", pod.Namespace, pod.Name),
 			)
+			continue
 		}
 
 		// no seccomp profile means no profile is applied to the containers
@@ -117,6 +118,7 @@ func (r *testRunner) testUserClusterSeccompProfiles(ctx context.Context, log *za
 				errors,
 				fmt.Sprintf("expected seccomp profile on Pod %s/%s, got none", pod.Namespace, pod.Name),
 			)
+			continue
 		}
 
 		// the 'unconfined' profile disables any seccomp filtering
@@ -128,6 +130,7 @@ func (r *testRunner) testUserClusterSeccompProfiles(ctx context.Context, log *za
 					corev1.SeccompProfileTypeUnconfined, corev1.SeccompProfileTypeRuntimeDefault, corev1.SeccompProfileTypeLocalhost,
 				),
 			)
+			continue
 		}
 	}
 
