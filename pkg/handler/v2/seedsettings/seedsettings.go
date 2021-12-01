@@ -81,5 +81,9 @@ func convertSeedToSeedSettings(seed *kubermaticv1.Seed) *apiv2.SeedSettings {
 		seedSettings.Metering.StorageSize = seed.Spec.Metering.StorageSize
 	}
 
+	if seed.Spec.SeedDNSOverwrite != nil {
+		seedSettings.SeedDNSOverwrite = seed.Spec.SeedDNSOverwrite
+	}
+
 	return seedSettings
 }
