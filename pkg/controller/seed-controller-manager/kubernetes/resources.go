@@ -48,7 +48,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -132,19 +131,6 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 	// check that all Deployments are available
 	if err := r.ensureDeployments(ctx, cluster, data); err != nil {
 		return nil, err
-	}
-
-	// This needs to happen after other secrets are created
-	// because it uses some secrets created in previous steps.
-	if data.IsKonnectivityEnabled() {
-		if err := r.ensureKonnectivitySecrets(ctx, cluster, data); err != nil {
-			return nil, err
-		}
-
-		// check that all Deployments are available
-		if err := r.ensureKonnectivityDeployments(ctx, cluster, data); err != nil {
-			return nil, err
-		}
 	}
 
 	// check that all CronJobs are created
@@ -253,7 +239,6 @@ func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedService
 		etcd.ServiceCreator(data),
 		dns.ServiceCreator(),
 		machinecontroller.ServiceCreator(),
-		metricsserver.ServiceCreator(),
 	}
 
 	if data.IsKonnectivityEnabled() {
@@ -261,6 +246,7 @@ func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedService
 	} else {
 		creators = append(creators,
 			openvpn.ServiceCreator(data.Cluster().Spec.ExposeStrategy),
+			metricsserver.ServiceCreator(),
 		)
 	}
 
@@ -289,7 +275,6 @@ func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuth
 		controllermanager.DeploymentCreator(data),
 		machinecontroller.DeploymentCreator(data),
 		machinecontroller.WebhookDeploymentCreator(data),
-		metricsserver.DeploymentCreator(data),
 		usercluster.DeploymentCreator(data),
 		kubernetesdashboard.DeploymentCreator(data),
 	}
@@ -297,6 +282,7 @@ func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuth
 	if !data.IsKonnectivityEnabled() {
 		deployments = append(deployments,
 			openvpn.DeploymentCreator(data),
+			metricsserver.DeploymentCreator(data),
 		)
 	}
 
@@ -320,18 +306,6 @@ func (r *Reconciler) ensureDeployments(ctx context.Context, cluster *kubermaticv
 	return reconciling.ReconcileDeployments(ctx, creators, cluster.Status.NamespaceName, r, reconciling.OwnerRefWrapper(resources.GetClusterRef(cluster)))
 }
 
-func (r *Reconciler) ensureKonnectivityDeployments(ctx context.Context, cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	creators := GetKonnectivityDeploymentCreators(data)
-	return reconciling.ReconcileDeployments(ctx, creators, cluster.Status.NamespaceName, r, reconciling.OwnerRefWrapper(resources.GetClusterRef(cluster)))
-}
-
-// GetKonnectivityDeploymentCreators returns all DeploymentCreators that are currently in use
-func GetKonnectivityDeploymentCreators(data *resources.TemplateData) []reconciling.NamedDeploymentCreatorGetter {
-	return []reconciling.NamedDeploymentCreatorGetter{
-		konnectivity.DeploymentCreator(data),
-	}
-}
-
 // GetSecretCreators returns all SecretCreators that are currently in use
 func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconciling.NamedSecretCreatorGetter {
 	creators := []reconciling.NamedSecretCreatorGetter{
@@ -345,14 +319,12 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 		apiserver.KubeletClientCertificateCreator(data),
 		apiserver.ServiceAccountKeyCreator(),
 		machinecontroller.TLSServingCertificateCreator(data),
-		metricsserver.TLSServingCertSecretCreator(data.GetRootCA),
 
 		// Kubeconfigs
 		resources.GetInternalKubeconfigCreator(resources.SchedulerKubeconfigSecretName, resources.SchedulerCertUsername, nil, data),
 		resources.GetInternalKubeconfigCreator(resources.MachineControllerKubeconfigSecretName, resources.MachineControllerCertUsername, nil, data),
 		resources.GetInternalKubeconfigCreator(resources.ControllerManagerKubeconfigSecretName, resources.ControllerManagerCertUsername, nil, data),
 		resources.GetInternalKubeconfigCreator(resources.KubeStateMetricsKubeconfigSecretName, resources.KubeStateMetricsCertUsername, nil, data),
-		resources.GetInternalKubeconfigCreator(resources.MetricsServerKubeconfigSecretName, resources.MetricsServerCertUsername, nil, data),
 		resources.GetInternalKubeconfigCreator(resources.InternalUserClusterAdminKubeconfigSecretName, resources.InternalUserClusterAdminKubeconfigCertUsername, []string{"system:masters"}, data),
 		resources.GetInternalKubeconfigCreator(resources.KubernetesDashboardKubeconfigSecretName, resources.KubernetesDashboardCertUsername, nil, data),
 		resources.GetInternalKubeconfigCreator(resources.ClusterAutoscalerKubeconfigSecretName, resources.ClusterAutoscalerCertUsername, nil, data),
@@ -372,6 +344,8 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 			openvpn.CACreator(),
 			openvpn.TLSServingCertificateCreator(data),
 			openvpn.InternalClientCertificateCreator(data),
+			metricsserver.TLSServingCertSecretCreator(data.GetRootCA),
+			resources.GetInternalKubeconfigCreator(resources.MetricsServerKubeconfigSecretName, resources.MetricsServerCertUsername, nil, data),
 			resources.GetInternalKubeconfigCreator(resources.KubeletDnatControllerKubeconfigSecretName, resources.KubeletDnatControllerCertUsername, nil, data),
 		)
 	}
@@ -387,31 +361,6 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 	}
 
 	return creators
-}
-
-// GetKonnectivitySecretCreators returns all SecretCreators for konnectivity
-func (r *Reconciler) GetKonnectivitySecretCreators(data *resources.TemplateData, userClusterClient ctrlruntimeclient.Client) []reconciling.NamedSecretCreatorGetter {
-	return []reconciling.NamedSecretCreatorGetter{
-		konnectivity.AgentTokenCreator(userClusterClient),
-	}
-}
-
-func (r *Reconciler) ensureKonnectivitySecrets(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	var userClusterClient ctrlruntimeclient.Client
-	var err error
-
-	userClusterClient, err = r.userClusterConnProvider.GetClient(ctx, c)
-	if err != nil {
-		return fmt.Errorf("failed to get user-cluster client: %v", err)
-	}
-
-	namedSecretCreatorGetters := r.GetKonnectivitySecretCreators(data, userClusterClient)
-
-	if err := reconciling.ReconcileSecrets(ctx, namedSecretCreatorGetters, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
-		return fmt.Errorf("failed to ensure that the Secret exists: %v", err)
-	}
-
-	return nil
 }
 
 func (r *Reconciler) ensureSecrets(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
@@ -486,11 +435,11 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 			apiserver.DNSAllowCreator(c),
 			apiserver.EctdAllowCreator(c),
 			apiserver.MachineControllerWebhookCreator(c),
-			apiserver.MetricsServerAllowCreator(c),
 		}
 		if !data.IsKonnectivityEnabled() {
 			namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters,
 				apiserver.OpenVPNServerAllowCreator(c),
+				apiserver.MetricsServerAllowCreator(c),
 			)
 		}
 		if c.Spec.OIDC.IssuerURL != "" {
@@ -562,12 +511,15 @@ func GetEtcdBackupConfigCreators(data *resources.TemplateData) []reconciling.Nam
 
 // GetPodDisruptionBudgetCreators returns all PodDisruptionBudgetCreators that are currently in use
 func GetPodDisruptionBudgetCreators(data *resources.TemplateData) []reconciling.NamedPodDisruptionBudgetCreatorGetter {
-	return []reconciling.NamedPodDisruptionBudgetCreatorGetter{
+	creators := []reconciling.NamedPodDisruptionBudgetCreatorGetter{
 		etcd.PodDisruptionBudgetCreator(data),
 		apiserver.PodDisruptionBudgetCreator(),
-		metricsserver.PodDisruptionBudgetCreator(),
 		dns.PodDisruptionBudgetCreator(),
 	}
+	if !data.IsKonnectivityEnabled() {
+		creators = append(creators, metricsserver.PodDisruptionBudgetCreator())
+	}
+	return creators
 }
 
 func (r *Reconciler) ensurePodDisruptionBudgets(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
@@ -605,11 +557,11 @@ func (r *Reconciler) ensureVerticalPodAutoscalers(ctx context.Context, c *kuberm
 		resources.ApiserverDeploymentName,
 		resources.ControllerManagerDeploymentName,
 		resources.SchedulerDeploymentName,
-		resources.MetricsServerDeploymentName,
 	}
 	if !data.IsKonnectivityEnabled() {
 		controlPlaneDeploymentNames = append(controlPlaneDeploymentNames,
 			resources.OpenVPNServerDeploymentName,
+			resources.MetricsServerDeploymentName,
 		)
 	}
 
