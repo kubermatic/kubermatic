@@ -21995,6 +21995,11 @@
         },
         "mla": {
           "$ref": "#/definitions/MLA"
+        },
+        "seedDNSOverwrite": {
+          "description": "the Seed level seed dns overwrite",
+          "type": "string",
+          "x-go-name": "SeedDNSOverwrite"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
