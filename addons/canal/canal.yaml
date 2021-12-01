@@ -597,6 +597,23 @@ metadata:
   namespace: kube-system
 
 ---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: calico-kube-controllers
+  namespace: kube-system
+spec:
+  podSelector:
+    matchLabels:
+      k8s-app: calico
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress: []
+  egress:
+    - {}
+
+---
 # Source: calico/templates/calico-etcd-secrets.yaml
 
 ---
