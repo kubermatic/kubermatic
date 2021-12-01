@@ -112,6 +112,22 @@ spec:
         - name: ca-bundle
           configMap:
             name: ca-bundle
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: vsphere-csi-migration-webhook
+  namespace: kube-system
+spec:
+  podSelector:
+    matchLabels:
+      role: csi-migration-webhook
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
 {{ end }}
 {{ end }}
 {{ end }}
