@@ -47,7 +47,7 @@ func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProv
 		if seed.Spec.EtcdBackupRestore == nil {
 			return destinations, nil
 		}
-		for name, _ := range seed.Spec.EtcdBackupRestore.Destinations {
+		for name := range seed.Spec.EtcdBackupRestore.Destinations {
 			destinations = append(destinations, name)
 		}
 		return destinations, nil
@@ -87,6 +87,9 @@ func getSeed(ctx context.Context, userInfoGetter provider.UserInfoGetter, projec
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 	_, err = handlercommon.GetInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, projectID, clusterID, nil)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
 
 	seeds, err := seedsGetter()
 	if err != nil {
