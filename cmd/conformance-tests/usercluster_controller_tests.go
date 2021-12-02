@@ -103,6 +103,19 @@ func (r *testRunner) testUserClusterSeccompProfiles(ctx context.Context, log *za
 		if pod.Namespace != "kube-system" && pod.Namespace != "mla-system" && pod.Namespace != "gatekeeper-system" && pod.Namespace != "kubernetes-dashboard" {
 			continue
 		}
+
+		var privilegedContainers int
+		for _, container := range pod.Spec.Containers {
+			if container.SecurityContext != nil && container.SecurityContext.Privileged != nil && *container.SecurityContext.Privileged {
+				privilegedContainers++
+			}
+		}
+
+		// all containers in the Pod are running as privileged, we can skip the Pod; privileged mode disables any seccomp profile
+		if len(pod.Spec.Containers) == privilegedContainers {
+			continue
+		}
+
 		// no security context means no seccomp profile
 		if pod.Spec.SecurityContext == nil {
 			errors = append(

@@ -18,7 +18,6 @@
 # Modifications:
 #   - templated cluster-pool-ipv4-cidr
 #   - templated kube-proxy-replacement parts
-#   - added seccompProfile "RuntimeDefault"
 
 {{ if eq .Cluster.CNIPlugin.Type "cilium" }}
 {{ if eq .Cluster.CNIPlugin.Version "v1.10" }}
@@ -657,9 +656,6 @@ spec:
             memory: 100Mi
       restartPolicy: Always
       priorityClassName: system-node-critical
-      securityContext:
-        seccompProfile:
-          type: RuntimeDefault
       serviceAccount: "cilium"
       serviceAccountName: "cilium"
       terminationGracePeriodSeconds: 1
