@@ -57,7 +57,7 @@ type providerReq struct {
 }
 
 // CredentialEndpoint returns custom credential list name for the provider
-func CredentialEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func CredentialEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(providerReq)
 		if !ok {
@@ -77,7 +77,7 @@ func CredentialEndpoint(presetsProvider provider.PresetProvider, userInfoGetter 
 		names := make([]string, 0)
 
 		providerN := parseProvider(req.ProviderName)
-		presets, err := presetsProvider.GetPresets(userInfo)
+		presets, err := presetProvider.GetPresets(userInfo)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, err.Error())
 		}

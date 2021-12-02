@@ -907,43 +907,43 @@ func DecodePatchDCReq(c context.Context, r *http.Request) (interface{}, error) {
 }
 
 func validateProvider(dcSpec *apiv1.DatacenterSpec) error {
-	var providerNames []string
+	var providerNames []kubermaticv1.ProviderType
 
 	if dcSpec.Alibaba != nil {
-		providerNames = append(providerNames, provider.AlibabaCloudProvider)
+		providerNames = append(providerNames, kubermaticv1.AlibabaCloudProvider)
 	}
 	if dcSpec.BringYourOwn != nil {
-		providerNames = append(providerNames, provider.BringYourOwnCloudProvider)
+		providerNames = append(providerNames, kubermaticv1.BringYourOwnCloudProvider)
 	}
 	if dcSpec.Digitalocean != nil {
-		providerNames = append(providerNames, provider.DigitaloceanCloudProvider)
+		providerNames = append(providerNames, kubermaticv1.DigitaloceanCloudProvider)
 	}
 	if dcSpec.AWS != nil {
-		providerNames = append(providerNames, provider.AWSCloudProvider)
+		providerNames = append(providerNames, kubermaticv1.AWSCloudProvider)
 	}
 	if dcSpec.Openstack != nil {
-		providerNames = append(providerNames, provider.OpenstackCloudProvider)
+		providerNames = append(providerNames, kubermaticv1.OpenstackCloudProvider)
 	}
 	if dcSpec.Packet != nil {
-		providerNames = append(providerNames, provider.PacketCloudProvider)
+		providerNames = append(providerNames, kubermaticv1.PacketCloudProvider)
 	}
 	if dcSpec.Hetzner != nil {
-		providerNames = append(providerNames, provider.HetznerCloudProvider)
+		providerNames = append(providerNames, kubermaticv1.HetznerCloudProvider)
 	}
 	if dcSpec.VSphere != nil {
-		providerNames = append(providerNames, provider.VSphereCloudProvider)
+		providerNames = append(providerNames, kubermaticv1.VSphereCloudProvider)
 	}
 	if dcSpec.Azure != nil {
-		providerNames = append(providerNames, provider.AzureCloudProvider)
+		providerNames = append(providerNames, kubermaticv1.AzureCloudProvider)
 	}
 	if dcSpec.GCP != nil {
-		providerNames = append(providerNames, provider.GCPCloudProvider)
+		providerNames = append(providerNames, kubermaticv1.GCPCloudProvider)
 	}
 	if dcSpec.Kubevirt != nil {
-		providerNames = append(providerNames, provider.KubevirtCloudProvider)
+		providerNames = append(providerNames, kubermaticv1.KubevirtCloudProvider)
 	}
 	if dcSpec.Anexia != nil {
-		providerNames = append(providerNames, provider.AnexiaCloudProvider)
+		providerNames = append(providerNames, kubermaticv1.AnexiaCloudProvider)
 	}
 
 	if len(providerNames) != 1 {

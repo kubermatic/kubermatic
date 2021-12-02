@@ -214,7 +214,7 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 	seedClientGetter := provider.SeedClientGetterFactory(seedKubeconfigGetter)
 	clusterProviderGetter := clusterProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter, seedClientGetter, options)
 
-	presetsProvider, err := kubernetesprovider.NewPresetsProvider(ctx, client, options.presetsFile, options.dynamicPresets)
+	presetProvider, err := kubernetesprovider.NewPresetProvider(ctx, client, options.presetsFile, options.dynamicPresets)
 	if err != nil {
 		return providers{}, err
 	}
@@ -356,7 +356,7 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 		userInfoGetter:                          userInfoGetter,
 		settingsProvider:                        settingsProvider,
 		adminProvider:                           adminProvider,
-		presetProvider:                          presetsProvider,
+		presetProvider:                          presetProvider,
 		admissionPluginProvider:                 admissionPluginProvider,
 		settingsWatcher:                         settingsWatcher,
 		featureGatesProvider:                    featureGatesProvider,
@@ -446,7 +446,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 
 	routingParams := handler.RoutingParams{
 		Log:                                     kubermaticlog.New(options.log.Debug, options.log.Format).Sugar(),
-		PresetsProvider:                         prov.presetProvider,
+		PresetProvider:                          prov.presetProvider,
 		SeedsGetter:                             prov.seedsGetter,
 		SeedsClientGetter:                       prov.seedClientGetter,
 		KubermaticConfigurationGetter:           prov.configGetter,

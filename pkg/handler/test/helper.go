@@ -196,7 +196,7 @@ type newRoutingFunc func(
 	saTokenAuthenticator serviceaccount.TokenAuthenticator,
 	saTokenGenerator serviceaccount.TokenGenerator,
 	eventRecorderProvider provider.EventRecorderProvider,
-	presetsProvider provider.PresetProvider,
+	presetProvider provider.PresetProvider,
 	admissionPluginProvider provider.AdmissionPluginsProvider,
 	settingsWatcher watcher.SettingsWatcher,
 	userWatcher watcher.UserWatcher,
@@ -349,7 +349,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		return nil, fmt.Errorf("can not find clusterprovider for cluster %q", seed.Name)
 	}
 
-	credentialsManager, err := kubernetes.NewPresetsProvider(ctx, fakeClient, "", true)
+	credentialsManager, err := kubernetes.NewPresetProvider(ctx, fakeClient, "", true)
 	if err != nil {
 		return nil, nil, err
 	}

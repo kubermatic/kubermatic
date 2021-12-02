@@ -52,7 +52,7 @@ func VsphereFoldersWithClusterCredentialsEndpoint(projectProvider provider.Proje
 	}
 }
 
-func VsphereDatastoreEndpoint(seedsGetter provider.SeedsGetter, presetsProvider provider.PresetProvider,
+func VsphereDatastoreEndpoint(seedsGetter provider.SeedsGetter, presetProvider provider.PresetProvider,
 	userInfoGetter provider.UserInfoGetter, caBundle *x509.CertPool) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(vSphereDatastoresReq)
@@ -67,7 +67,7 @@ func VsphereDatastoreEndpoint(seedsGetter provider.SeedsGetter, presetsProvider 
 		password := req.Password
 
 		if len(req.Credential) > 0 {
-			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
+			preset, err := presetProvider.GetPreset(userInfo, req.Credential)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}

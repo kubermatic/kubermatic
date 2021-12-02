@@ -49,7 +49,7 @@ func (l listProviderVersionsReq) Validate() error {
 	if len(l.Type) == 0 {
 		return fmt.Errorf("the type field cannot be empty")
 	}
-	if !provider.IsProviderSupported(l.ProviderName) {
+	if !kubermaticv1.IsProviderSupported(l.ProviderName) {
 		return fmt.Errorf("invalid provider name %s", l.ProviderName)
 	}
 

@@ -29,7 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
-func AnexiaVlanEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func AnexiaVlanEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AnexiaReq)
 
@@ -40,7 +40,7 @@ func AnexiaVlanEndpoint(presetsProvider provider.PresetProvider, userInfoGetter 
 		}
 
 		if len(req.Credential) > 0 {
-			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
+			preset, err := presetProvider.GetPreset(userInfo, req.Credential)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
@@ -53,7 +53,7 @@ func AnexiaVlanEndpoint(presetsProvider provider.PresetProvider, userInfoGetter 
 	}
 }
 
-func AnexiaTemplateEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func AnexiaTemplateEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AnexiaTemplateReq)
 
@@ -64,7 +64,7 @@ func AnexiaTemplateEndpoint(presetsProvider provider.PresetProvider, userInfoGet
 		}
 
 		if len(req.Credential) > 0 {
-			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
+			preset, err := presetProvider.GetPreset(userInfo, req.Credential)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}

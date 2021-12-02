@@ -188,7 +188,7 @@ func TestGetPreset(t *testing.T) {
 				WithObjects(tc.presets...).
 				Build()
 
-			provider, err := kubernetes.NewPresetsProvider(context.Background(), fakeClient, "", true)
+			provider, err := kubernetes.NewPresetProvider(context.Background(), fakeClient, "", true)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -587,7 +587,7 @@ func TestGetPresets(t *testing.T) {
 				WithObjects(tc.presets...).
 				Build()
 
-			provider, err := kubernetes.NewPresetsProvider(context.Background(), fakeClient, "", true)
+			provider, err := kubernetes.NewPresetProvider(context.Background(), fakeClient, "", true)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -935,7 +935,7 @@ func TestCredentialEndpoint(t *testing.T) {
 				WithObjects(tc.presets...).
 				Build()
 
-			provider, err := kubernetes.NewPresetsProvider(context.Background(), fakeClient, "", true)
+			provider, err := kubernetes.NewPresetProvider(context.Background(), fakeClient, "", true)
 			if err != nil {
 				t.Fatal(err)
 			}

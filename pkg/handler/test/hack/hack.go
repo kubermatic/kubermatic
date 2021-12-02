@@ -70,7 +70,7 @@ func NewTestRouting(
 	saTokenAuthenticator serviceaccount.TokenAuthenticator,
 	saTokenGenerator serviceaccount.TokenGenerator,
 	eventRecorderProvider provider.EventRecorderProvider,
-	presetsProvider provider.PresetProvider,
+	presetProvider provider.PresetProvider,
 	admissionPluginProvider provider.AdmissionPluginsProvider,
 	settingsWatcher watcher.SettingsWatcher,
 	userWatcher watcher.UserWatcher,
@@ -96,7 +96,7 @@ func NewTestRouting(
 	seedProvider provider.SeedProvider) http.Handler {
 	routingParams := handler.RoutingParams{
 		Log:                                     kubermaticlog.Logger,
-		PresetsProvider:                         presetsProvider,
+		PresetProvider:                          presetProvider,
 		SeedsGetter:                             seedsGetter,
 		SeedsClientGetter:                       seedClientGetter,
 		KubermaticConfigurationGetter:           configGetter,

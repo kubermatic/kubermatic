@@ -145,6 +145,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 			cluster: func() *kubermaticv1.Cluster {
 				c := test.GenCluster("foo", "foo", "project", time.Now(), func(cluster *kubermaticv1.Cluster) {
 					cluster.Spec.Cloud.VSphere = &kubermaticv1.VSphereCloudSpec{}
+					cluster.Spec.Cloud.Fake = nil
 				})
 				c.Labels = map[string]string{"user": test.UserName}
 				c.Spec.Version = *k8csemver.NewSemverOrDie("1.21.0")
@@ -184,7 +185,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 			},
 			incompatibilities: []operatorv1alpha1.Incompatibility{
 				{
-					Provider:  kubermaticv1.ProviderVSphere,
+					Provider:  kubermaticv1.VSphereCloudProvider,
 					Version:   "1.22.*",
 					Condition: operatorv1alpha1.AlwaysCondition,
 					Operation: operatorv1alpha1.UpdateOperation,
