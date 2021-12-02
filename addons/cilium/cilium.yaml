@@ -828,6 +828,7 @@ spec:
           name: cilium-config
         name: cilium-config-path
 
+{{ if .Cluster.Features.Has "kubeSystemNetworkPolicies" }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -845,6 +846,7 @@ spec:
   egress:
     - {}
 
+{{ end }}
 {{ end }}
 {{ end }}
 

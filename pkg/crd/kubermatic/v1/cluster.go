@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -231,6 +232,10 @@ const (
 	// ApiserverNetworkPolicy enables the deployment of network policies that
 	// restrict the egress traffic from Apiserver pods.
 	ApiserverNetworkPolicy = "apiserverNetworkPolicy"
+
+	// KubeSystemNetworkPolicies enables the deployment of network policies to kube-system namespace that
+	// restrict traffic from all pods in the namespace
+	KubeSystemNetworkPolicies = "kubeSystemNetworkPolicies"
 )
 
 // ClusterConditionType is used to indicate the type of a cluster condition. For all condition

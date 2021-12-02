@@ -181,8 +181,10 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return err
 	}
 
-	if err := r.reconcileNetworkPolicies(ctx, data); err != nil {
-		return err
+	if r.networkPolices {
+		if err := r.reconcileNetworkPolicies(ctx, data); err != nil {
+			return err
+		}
 	}
 
 	// Try to delete OPA integration deployment if its present

@@ -229,6 +229,7 @@ spec:
   selector:
     app: vsphere-csi-controller
 
+{{ if .Cluster.Features.Has "kubeSystemNetworkPolicies" }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -245,5 +246,6 @@ spec:
     - to:
         - ipBlock:
             cidr: 0.0.0.0/0
+{{ end }}
 {{ end }}
 {{ end }}

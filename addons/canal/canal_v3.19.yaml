@@ -13,10 +13,12 @@
 # limitations under the License.
 
 # Source: https://docs.projectcalico.org/v3.19/manifests/canal.yaml
-# 2 modifications:
+# 3 modification:
 #   - Remove the flexvolume installation as its broken for Flatcar Linux & only required for application policies (Which we don't use).
-#   - Add envoyagent interface to the exclusion list for Calico IP autodetection. 
-{{ if eq .Cluster.CNIPlugin.Type "canal" }}
+#   - Add envoyagent interface to the exclusion list for Calico IP autodetection.
+#   - Add custom network policy
+
+  {{ if eq .Cluster.CNIPlugin.Type "canal" }}
 {{ if eq .Cluster.CNIPlugin.Version "v3.19" }}
 ---
 # Source: calico/templates/calico-config.yaml
@@ -3878,6 +3880,7 @@ metadata:
   name: calico-kube-controllers
   namespace: kube-system
 
+{{ if .Cluster.Features.Has "kubeSystemNetworkPolicies" }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -3894,7 +3897,7 @@ spec:
   ingress: []
   egress:
     - {}
-
+{{ end }}
 
 ---
 
