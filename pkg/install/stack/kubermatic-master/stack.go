@@ -194,35 +194,6 @@ func deployStorageClass(ctx context.Context, logger *logrus.Entry, kubeClient ct
 	return nil
 }
 
-func deployNginxIngressController(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
-	logger.Info("📦 Deploying nginx-ingress-controller…")
-	sublogger := log.Prefix(logger, "   ")
-
-	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, "nginx-ingress-controller"))
-	if err != nil {
-		return fmt.Errorf("failed to load Helm chart: %v", err)
-	}
-
-	if err := util.EnsureNamespace(ctx, sublogger, kubeClient, NginxIngressControllerNamespace); err != nil {
-		return fmt.Errorf("failed to create namespace: %v", err)
-	}
-
-	release, err := util.CheckHelmRelease(ctx, sublogger, helmClient, NginxIngressControllerNamespace, NginxIngressControllerReleaseName)
-	if err != nil {
-		return fmt.Errorf("failed to check to Helm release: %v", err)
-	}
-
-	// do not perform an atomic installation, as this will make Helm wait for the LoadBalancer to
-	// get an IP and this can require manual intervention based on the target environment
-	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, NginxIngressControllerNamespace, NginxIngressControllerReleaseName, opt.HelmValues, false, opt.ForceHelmReleaseUpgrade, release); err != nil {
-		return fmt.Errorf("failed to deploy Helm release: %v", err)
-	}
-
-	logger.Info("✅ Success.")
-
-	return nil
-}
-
 func deployDex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
 	logger.Info("📦 Deploying Dex…")
 	sublogger := log.Prefix(logger, "   ")

@@ -19,7 +19,7 @@ nginx:
   # reference: https://github.com/kubernetes/ingress-nginx/blob/main/charts/ingress-nginx/values.yaml
   controller:
     hostNetwork: false
-    replicas: 3
+    replicaCount: 3
     config: {}
   #   load-balance: "least_conn"
     extraArgs: {}
@@ -75,4 +75,4 @@ nginx:
     
     # Temporarily disable the admission webhooks
     admissionWebhooks:
-      enabled: false
+      enabled: true

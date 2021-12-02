@@ -40,6 +40,7 @@ type DeployOptions struct {
 	ChartsDirectory                   string
 	Logger                            *logrus.Entry
 	EnableCertManagerV2Migration      bool
+	EnableNginxIngressMigration       bool
 	EnableOpenstackCSIDriverMigration bool
 	EnableLogrotateMigration          bool
 	DisableTelemetry                  bool
