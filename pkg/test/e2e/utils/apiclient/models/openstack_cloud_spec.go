@@ -18,6 +18,9 @@ import (
 // swagger:model OpenstackCloudSpec
 type OpenstackCloudSpec struct {
 
+	// allowed IP range
+	AllowedIPRange string `json:"allowedIPRange,omitempty"`
+
 	// application credential ID
 	ApplicationCredentialID string `json:"applicationCredentialID,omitempty"`
 

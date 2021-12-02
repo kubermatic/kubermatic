@@ -665,6 +665,7 @@ type AzureCloudSpec struct {
 	SubnetName            string `json:"subnet"`
 	RouteTableName        string `json:"routeTable"`
 	SecurityGroup         string `json:"securityGroup"`
+	AllowedIPRange        string `json:"allowedIPRange,omitempty"`
 	AssignAvailabilitySet *bool  `json:"assignAvailabilitySet"`
 	AvailabilitySet       string `json:"availabilitySet"`
 	// LoadBalancerSKU sets the LB type that will be used for the Azure cluster, possible values are "basic" and "standard", if empty, "basic" will be used
@@ -769,6 +770,7 @@ type OpenstackCloudSpec struct {
 	// Note that the network is internal if the "External" field is set to false
 	Network        string `json:"network"`
 	SecurityGroups string `json:"securityGroups"`
+	AllowedIPRange string `json:"allowedIPRange,omitempty"`
 	// FloatingIPPool holds the name of the public network
 	// The public network is reachable from the outside world
 	// and should provide the pool of IP addresses to choose from.

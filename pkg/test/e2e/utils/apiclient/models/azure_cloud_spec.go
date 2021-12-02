@@ -18,6 +18,9 @@ import (
 // swagger:model AzureCloudSpec
 type AzureCloudSpec struct {
 
+	// allowed IP range
+	AllowedIPRange string `json:"allowedIPRange,omitempty"`
+
 	// assign availability set
 	AssignAvailabilitySet bool `json:"assignAvailabilitySet,omitempty"`
 

@@ -18,6 +18,9 @@ import (
 // swagger:model GCPCloudSpec
 type GCPCloudSpec struct {
 
+	// allowed IP range
+	AllowedIPRange string `json:"allowedIPRange,omitempty"`
+
 	// network
 	Network string `json:"network,omitempty"`
 

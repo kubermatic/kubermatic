@@ -21,6 +21,9 @@ type AWSCloudSpec struct {
 	// access key ID
 	AccessKeyID string `json:"accessKeyId,omitempty"`
 
+	// allowed IP range
+	AllowedIPRange string `json:"allowedIPRange,omitempty"`
+
 	// assume role a r n
 	AssumeRoleARN string `json:"assumeRoleARN,omitempty"`
 
