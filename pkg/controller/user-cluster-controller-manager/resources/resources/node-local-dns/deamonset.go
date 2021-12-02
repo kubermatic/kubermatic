@@ -30,6 +30,8 @@ import (
 	"k8s.io/utils/pointer"
 )
 
+const CacheAddress = "169.254.20.10"
+
 func DaemonSetCreator(registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDaemonSetCreatorGetter {
 	return func() (string, reconciling.DaemonSetCreator) {
 		return resources.NodeLocalDNSDaemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
@@ -80,7 +82,7 @@ func DaemonSetCreator(registryWithOverwrite registry.WithOverwriteFunc) reconcil
 					ImagePullPolicy: corev1.PullAlways,
 					Args: []string{
 						"-localip",
-						"169.254.20.10",
+						CacheAddress,
 						"-conf",
 						"/etc/coredns/Corefile",
 					},
@@ -120,7 +122,7 @@ func DaemonSetCreator(registryWithOverwrite registry.WithOverwriteFunc) reconcil
 					LivenessProbe: &corev1.Probe{
 						Handler: corev1.Handler{
 							HTTPGet: &corev1.HTTPGetAction{
-								Host:   "169.254.20.10",
+								Host:   CacheAddress,
 								Scheme: corev1.URISchemeHTTP,
 								Path:   "/health",
 								Port:   intstr.FromInt(8080),

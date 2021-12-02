@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	nodelocaldns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/node-local-dns"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 )
 
@@ -77,7 +78,7 @@ func AllowAllDnsNetworkPolicyCreator() reconciling.NamedNetworkPolicyCreatorGett
 						To: []networkingv1.NetworkPolicyPeer{
 							{
 								IPBlock: &networkingv1.IPBlock{
-									CIDR: "169.254.20.10/32",
+									CIDR: fmt.Sprintf("%s/32", nodelocaldns.CacheAddress),
 								},
 							},
 						},
