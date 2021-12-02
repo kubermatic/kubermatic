@@ -43,7 +43,8 @@ func DefaultNetworkPolicyCreator() reconciling.NamedNetworkPolicyCreatorGetter {
 					networkingv1.PolicyTypeIngress,
 					networkingv1.PolicyTypeEgress,
 				},
-				Ingress: []networkingv1.NetworkPolicyIngressRule{},
+				PodSelector: metav1.LabelSelector{},
+				Ingress:     []networkingv1.NetworkPolicyIngressRule{},
 				Egress: []networkingv1.NetworkPolicyEgressRule{
 					{
 						Ports: []networkingv1.NetworkPolicyPort{
