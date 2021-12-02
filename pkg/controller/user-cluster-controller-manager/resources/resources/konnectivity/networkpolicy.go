@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package usersshkeys
+package konnectivity
 
 import (
 	networkingv1 "k8s.io/api/networking/v1"
@@ -24,31 +24,21 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 )
 
-// NetworkPolicyCreator NetworkPolicy allows egress traffic of user ssh keys agent to the world
+// NetworkPolicyCreator NetworkPolicy allows all egress traffic
 func NetworkPolicyCreator() reconciling.NamedNetworkPolicyCreatorGetter {
 	return func() (string, reconciling.NetworkPolicyCreator) {
 		return "user-ssh-key-agent", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 
 			np.Spec = networkingv1.NetworkPolicySpec{
 				PodSelector: metav1.LabelSelector{
-					MatchLabels: map[string]string{resources.AppLabelKey: "user-ssh-keys-agent"},
+					MatchLabels: map[string]string{resources.AppLabelKey: "konnectivity-agent"},
 				},
 				PolicyTypes: []networkingv1.PolicyType{
 					networkingv1.PolicyTypeEgress,
 					networkingv1.PolicyTypeIngress,
 				},
 				Ingress: []networkingv1.NetworkPolicyIngressRule{},
-				Egress: []networkingv1.NetworkPolicyEgressRule{
-					{
-						To: []networkingv1.NetworkPolicyPeer{
-							{
-								IPBlock: &networkingv1.IPBlock{
-									CIDR: "0.0.0.0/0",
-								},
-							},
-						},
-					},
-				},
+				Egress:  []networkingv1.NetworkPolicyEgressRule{{}},
 			}
 			return np, nil
 		}
