@@ -887,6 +887,11 @@ func (r *reconciler) reconcileNetworkPolicies(ctx context.Context, data reconcil
 		namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters, usersshkeys.NetworkPolicyCreator())
 	}
 
+	if r.isKonnectivityEnabled {
+		namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters, usersshkeys.NetworkPolicyCreator())
+
+	}
+
 	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyCreatorGetters, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure Network Policies: %v", err)
 	}
