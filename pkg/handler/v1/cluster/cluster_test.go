@@ -47,7 +47,7 @@ import (
 const fakeDC = "fake-dc"
 
 func TestDeleteClusterEndpoint(t *testing.T) {
-	// t.Parallel()
+	t.Parallel()
 	testcases := []struct {
 		Name                          string
 		Body                          string
@@ -190,7 +190,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 }
 
 func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
-	// t.Parallel()
+	t.Parallel()
 	testcases := []struct {
 		Name                            string
 		Body                            string
@@ -391,7 +391,7 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 }
 
 func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
-	// t.Parallel()
+	t.Parallel()
 	const longForm = "Jan 2, 2006 at 3:04pm (MST)"
 	creationTime, err := time.Parse(longForm, "Feb 3, 2013 at 7:54pm (PST)")
 	if err != nil {
@@ -510,7 +510,7 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 }
 
 func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
-	// t.Parallel()
+	t.Parallel()
 	testcases := []struct {
 		Name                   string
 		SSHKeyID               string
@@ -675,7 +675,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 }
 
 func TestCreateClusterEndpoint(t *testing.T) {
-	// t.Parallel()
+	t.Parallel()
 	testcases := []struct {
 		Name                   string
 		Body                   string
@@ -931,7 +931,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 }
 
 func TestGetClusterHealth(t *testing.T) {
-	// t.Parallel()
+	t.Parallel()
 	testcases := []struct {
 		Name                   string
 		Body                   string
@@ -1194,7 +1194,7 @@ func TestGetClusterHealth(t *testing.T) {
 }
 
 func TestPatchCluster(t *testing.T) {
-	// t.Parallel()
+	t.Parallel()
 
 	cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 	cluster.Spec.Cloud.DatacenterName = "us-central1"
@@ -1377,7 +1377,7 @@ func TestPatchCluster(t *testing.T) {
 }
 
 func TestGetCluster(t *testing.T) {
-	// t.Parallel()
+	t.Parallel()
 	testcases := []struct {
 		Name                   string
 		Body                   string
@@ -1488,7 +1488,7 @@ func TestGetCluster(t *testing.T) {
 }
 
 func TestListClusters(t *testing.T) {
-	// t.Parallel()
+	t.Parallel()
 	testcases := []struct {
 		Name                   string
 		ExpectedClusters       []apiv1.Cluster
@@ -1748,7 +1748,7 @@ func TestListClusters(t *testing.T) {
 }
 
 func TestListClustersForProject(t *testing.T) {
-	// t.Parallel()
+	t.Parallel()
 	testcases := []struct {
 		Name                   string
 		ExpectedClusters       []apiv1.Cluster
@@ -1948,7 +1948,7 @@ func TestListClustersForProject(t *testing.T) {
 }
 
 func TestRevokeClusterAdminTokenEndpoint(t *testing.T) {
-	// t.Parallel()
+	t.Parallel()
 
 	testcases := []struct {
 		name                   string
@@ -2034,7 +2034,7 @@ func TestRevokeClusterAdminTokenEndpoint(t *testing.T) {
 }
 
 func TestGetClusterEventsEndpoint(t *testing.T) {
-	// t.Parallel()
+	t.Parallel()
 	testcases := []struct {
 		Name                   string
 		HTTPStatus             int
@@ -2169,7 +2169,7 @@ func TestGetClusterEventsEndpoint(t *testing.T) {
 }
 
 func TestGetClusterMetrics(t *testing.T) {
-	// t.Parallel()
+	t.Parallel()
 	cpuQuantity, err := resource.ParseQuantity("290")
 	if err != nil {
 		t.Fatal(err)
@@ -2359,7 +2359,7 @@ func TestGetClusterMetrics(t *testing.T) {
 }
 
 func TestListNamespace(t *testing.T) {
-	// t.Parallel()
+	t.Parallel()
 
 	testcases := []struct {
 		name                   string

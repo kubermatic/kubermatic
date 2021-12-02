@@ -107,11 +107,9 @@ func TestAzureSizesWithCredentials(t *testing.T) {
 			}
 
 			testClient := utils.NewTestClient(masterToken, t)
-			sizeList, err := testClient.ListAzureSizes(tc.credentialName, tc.location)
-			if err != nil {
+			if _, err := testClient.ListAzureSizes(tc.credentialName, tc.location); err != nil {
 				t.Fatalf("failed to get Azure size list: %v", err)
 			}
-			t.Log(sizeList)
 		})
 	}
 }
@@ -135,11 +133,9 @@ func TestDOSizesWithCredentials(t *testing.T) {
 			}
 
 			testClient := utils.NewTestClient(masterToken, t)
-			sizeList, err := testClient.ListDOSizes(tc.credentialName)
-			if err != nil {
+			if _, err := testClient.ListDOSizes(tc.credentialName); err != nil {
 				t.Fatalf("failed to get DO size list: %v", err)
 			}
-			t.Log(sizeList)
 		})
 	}
 }
