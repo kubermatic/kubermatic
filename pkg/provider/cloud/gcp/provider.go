@@ -338,7 +338,7 @@ func (g *gcp) ensureFirewallRules(cluster *kubermaticv1.Cluster, update provider
 
 	allowedIPRange := cluster.Spec.Cloud.GCP.AllowedIPRange
 	if allowedIPRange == "" {
-		allowedIPRange = "0:0:0:0/0"
+		allowedIPRange = "0.0.0.0/0"
 	}
 
 	firewallService := compute.NewFirewallsService(svc)

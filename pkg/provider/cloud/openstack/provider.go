@@ -248,7 +248,7 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 
 		allowedIPRange := cluster.Spec.Cloud.Openstack.AllowedIPRange
 		if allowedIPRange == "" {
-			allowedIPRange = "0:0:0:0/0"
+			allowedIPRange = "0.0.0.0/0"
 		}
 
 		req := createKubermaticSecurityGroupRequest{
