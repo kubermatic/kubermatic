@@ -17527,7 +17527,10 @@
         },
         "assumeRoleExternalID": {
           "type": "string",
-          "x-go-name": "AssumeRoleExternalID"
+          "x-go-name": "AssumeRoleExternalID",
+        "allowedIPRange": {
+          "type": "string",
+          "x-go-name": "AllowedIPRange"
         },
         "credentialsReference": {
           "$ref": "#/definitions/GlobalSecretKeySelector"
@@ -18458,6 +18461,10 @@
       "type": "object",
       "title": "AzureCloudSpec specifies access credentials to Azure cloud.",
       "properties": {
+        "allowedIPRange": {
+          "type": "string",
+          "x-go-name": "AllowedIPRange"
+        },
         "assignAvailabilitySet": {
           "type": "boolean",
           "x-go-name": "AssignAvailabilitySet"
@@ -19241,11 +19248,6 @@
         },
         "mla": {
           "$ref": "#/definitions/MLASettings"
-        },
-        "nodePortRange": {
-          "description": "NodePortRange contains the nodePort to be set in the ApiServer deployment",
-          "type": "string",
-          "x-go-name": "NodePortRange"
         },
         "oidc": {
           "$ref": "#/definitions/OIDCSettings"
@@ -20822,6 +20824,10 @@
       "type": "object",
       "title": "GCPCloudSpec specifies access data to GCP.",
       "properties": {
+        "allowedIPRange": {
+          "type": "string",
+          "x-go-name": "AllowedIPRange"
+        },
         "credentialsReference": {
           "$ref": "#/definitions/GlobalSecretKeySelector"
         },
@@ -23013,6 +23019,10 @@
       "type": "object",
       "title": "OpenstackCloudSpec specifies access data to an OpenStack cloud.",
       "properties": {
+        "allowedIPRange": {
+          "type": "string",
+          "x-go-name": "AllowedIPRange"
+        },
         "applicationCredentialID": {
           "type": "string",
           "x-go-name": "ApplicationCredentialID"
