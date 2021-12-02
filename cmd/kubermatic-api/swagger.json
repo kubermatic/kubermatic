@@ -17521,16 +17521,17 @@
           "type": "string",
           "x-go-name": "AccessKeyID"
         },
+        "allowedIPRange": {
+          "type": "string",
+          "x-go-name": "AllowedIPRange"
+        },
         "assumeRoleARN": {
           "type": "string",
           "x-go-name": "AssumeRoleARN"
         },
         "assumeRoleExternalID": {
           "type": "string",
-          "x-go-name": "AssumeRoleExternalID",
-        "allowedIPRange": {
-          "type": "string",
-          "x-go-name": "AllowedIPRange"
+          "x-go-name": "AssumeRoleExternalID"
         },
         "credentialsReference": {
           "$ref": "#/definitions/GlobalSecretKeySelector"
