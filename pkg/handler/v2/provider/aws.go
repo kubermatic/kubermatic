@@ -170,7 +170,7 @@ func (req EKSCommonReq) Validate() error {
 	return nil
 }
 
-func ListEKSClustersEndpoint(userInfoGetter provider.UserInfoGetter, presetsProvider provider.PresetProvider) endpoint.Endpoint {
+func ListEKSClustersEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 
 		req := request.(EKSTypesReq)
@@ -194,7 +194,7 @@ func ListEKSClustersEndpoint(userInfoGetter provider.UserInfoGetter, presetsProv
 
 		// Preset is used
 		if len(presetName) > 0 {
-			credential, err = getAWSPresetCredentials(userInfo, presetName, presetsProvider)
+			credential, err = getAWSPresetCredentials(userInfo, presetName, presetProvider)
 			if err != nil {
 				return nil, fmt.Errorf("error getting preset credentials for AWS: %v", err)
 			}
@@ -242,7 +242,7 @@ func (req AWSCommonReq) Validate() error {
 	return nil
 }
 
-func ListAWSRegionsEndpoint(userInfoGetter provider.UserInfoGetter, presetsProvider provider.PresetProvider) endpoint.Endpoint {
+func ListAWSRegionsEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 
 		var err error
@@ -266,7 +266,7 @@ func ListAWSRegionsEndpoint(userInfoGetter provider.UserInfoGetter, presetsProvi
 
 		// Preset is used
 		if len(presetName) > 0 {
-			credential, err = getAWSPresetCredentials(userInfo, presetName, presetsProvider)
+			credential, err = getAWSPresetCredentials(userInfo, presetName, presetProvider)
 			if err != nil {
 				return nil, fmt.Errorf("error getting preset credentials for AWS: %v", err)
 			}

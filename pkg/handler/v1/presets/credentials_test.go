@@ -108,7 +108,7 @@ func TestCredentialEndpoint(t *testing.T) {
 					Spec: kubermaticv1.PresetSpec{
 						RequiredEmailDomain: test.RequiredEmailDomain,
 						AWS: &kubermaticv1.AWS{
-							PresetProvider: kubermaticv1.PresetProvider{Datacenter: "b"},
+							ProviderPreset: kubermaticv1.ProviderPreset{Datacenter: "b"},
 							AccessKeyID:    "a",
 						},
 					},
@@ -120,7 +120,7 @@ func TestCredentialEndpoint(t *testing.T) {
 					Spec: kubermaticv1.PresetSpec{
 						RequiredEmailDomain: test.RequiredEmailDomain,
 						AWS: &kubermaticv1.AWS{
-							PresetProvider: kubermaticv1.PresetProvider{Datacenter: "a"},
+							ProviderPreset: kubermaticv1.ProviderPreset{Datacenter: "a"},
 							AccessKeyID:    "a",
 						},
 					},
@@ -142,7 +142,7 @@ func TestCredentialEndpoint(t *testing.T) {
 					Spec: kubermaticv1.PresetSpec{
 						RequiredEmailDomain: test.RequiredEmailDomain,
 						AWS: &kubermaticv1.AWS{
-							PresetProvider: kubermaticv1.PresetProvider{Datacenter: "b"},
+							ProviderPreset: kubermaticv1.ProviderPreset{Datacenter: "b"},
 							AccessKeyID:    "a",
 						},
 					},
@@ -154,7 +154,7 @@ func TestCredentialEndpoint(t *testing.T) {
 					Spec: kubermaticv1.PresetSpec{
 						RequiredEmailDomain: test.RequiredEmailDomain,
 						AWS: &kubermaticv1.AWS{
-							PresetProvider: kubermaticv1.PresetProvider{Datacenter: "a"},
+							ProviderPreset: kubermaticv1.ProviderPreset{Datacenter: "a"},
 							AccessKeyID:    "a",
 						},
 					},

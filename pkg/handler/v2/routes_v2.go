@@ -822,7 +822,7 @@ func (r Routing) createCluster() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.CreateEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter,
-			r.presetsProvider, r.exposeStrategy, r.userInfoGetter, r.settingsProvider, r.caBundle, r.kubermaticConfigGetter)),
+			r.presetProvider, r.exposeStrategy, r.userInfoGetter, r.settingsProvider, r.caBundle, r.kubermaticConfigGetter)),
 		cluster.DecodeCreateReq,
 		handler.SetStatusCreatedHeader(handler.EncodeJSON),
 		r.defaultServerOptions()...,
@@ -1278,7 +1278,7 @@ func (r Routing) createExternalCluster() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(externalcluster.CreateEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider, r.presetsProvider)),
+		)(externalcluster.CreateEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider, r.presetProvider)),
 		externalcluster.DecodeCreateReq,
 		handler.SetStatusCreatedHeader(handler.EncodeJSON),
 		r.defaultServerOptions()...,
@@ -3582,7 +3582,7 @@ func (r Routing) listAzureSecurityGroups() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.AzureSecurityGroupsEndpoint(r.presetsProvider, r.userInfoGetter)),
+		)(provider.AzureSecurityGroupsEndpoint(r.presetProvider, r.userInfoGetter)),
 		provider.DecodeAzureSecurityGroupsReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -3604,7 +3604,7 @@ func (r Routing) listAzureResourceGroups() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.AzureResourceGroupsEndpoint(r.presetsProvider, r.userInfoGetter)),
+		)(provider.AzureResourceGroupsEndpoint(r.presetProvider, r.userInfoGetter)),
 		provider.DecodeAzureResourceGroupsReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -3626,7 +3626,7 @@ func (r Routing) listAzureRouteTables() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.AzureRouteTablesEndpoint(r.presetsProvider, r.userInfoGetter)),
+		)(provider.AzureRouteTablesEndpoint(r.presetProvider, r.userInfoGetter)),
 		provider.DecodeAzureRouteTablesReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -3648,7 +3648,7 @@ func (r Routing) listAzureVnets() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.AzureVirtualNetworksEndpoint(r.presetsProvider, r.userInfoGetter)),
+		)(provider.AzureVirtualNetworksEndpoint(r.presetProvider, r.userInfoGetter)),
 		provider.DecodeAzureVirtualNetworksReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -3670,7 +3670,7 @@ func (r Routing) listVSphereDatastores() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.VsphereDatastoreEndpoint(r.seedsGetter, r.presetsProvider, r.userInfoGetter, r.caBundle)),
+		)(provider.VsphereDatastoreEndpoint(r.seedsGetter, r.presetProvider, r.userInfoGetter, r.caBundle)),
 		provider.DecodeVSphereDatastoresReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -3692,7 +3692,7 @@ func (r Routing) listAzureSubnets() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.AzureSubnetsEndpoint(r.presetsProvider, r.userInfoGetter)),
+		)(provider.AzureSubnetsEndpoint(r.presetProvider, r.userInfoGetter)),
 		provider.DecodeAzureSubnetsReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -3717,7 +3717,7 @@ func (r Routing) listPresets() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(preset.ListPresets(r.presetsProvider, r.userInfoGetter)),
+		)(preset.ListPresets(r.presetProvider, r.userInfoGetter)),
 		preset.DecodeListPresets,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -3745,7 +3745,7 @@ func (r Routing) updatePresetStatus() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(preset.UpdatePresetStatus(r.presetsProvider, r.userInfoGetter)),
+		)(preset.UpdatePresetStatus(r.presetProvider, r.userInfoGetter)),
 		preset.DecodeUpdatePresetStatus,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -3770,7 +3770,7 @@ func (r Routing) listProviderPresets() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(preset.ListProviderPresets(r.presetsProvider, r.userInfoGetter)),
+		)(preset.ListProviderPresets(r.presetProvider, r.userInfoGetter)),
 		preset.DecodeListProviderPresets,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -3797,7 +3797,7 @@ func (r Routing) createPreset() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(preset.CreatePreset(r.presetsProvider, r.userInfoGetter)),
+		)(preset.CreatePreset(r.presetProvider, r.userInfoGetter)),
 		preset.DecodeCreatePreset,
 		handler.SetStatusCreatedHeader(handler.EncodeJSON),
 		r.defaultServerOptions()...,
@@ -3824,7 +3824,7 @@ func (r Routing) updatePreset() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(preset.UpdatePreset(r.presetsProvider, r.userInfoGetter)),
+		)(preset.UpdatePreset(r.presetProvider, r.userInfoGetter)),
 		preset.DecodeUpdatePreset,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -3851,7 +3851,7 @@ func (r Routing) deletePreset() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(preset.DeletePreset(r.presetsProvider, r.userInfoGetter)),
+		)(preset.DeletePreset(r.presetProvider, r.userInfoGetter)),
 		preset.DecodeDeletePreset,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -4019,7 +4019,7 @@ func (r Routing) createClusterTemplate() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(clustertemplate.CreateEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.clusterTemplateProvider, r.settingsProvider, r.seedsGetter, r.presetsProvider, r.caBundle, r.exposeStrategy, r.sshKeyProvider, r.kubermaticConfigGetter)),
+		)(clustertemplate.CreateEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.clusterTemplateProvider, r.settingsProvider, r.seedsGetter, r.presetProvider, r.caBundle, r.exposeStrategy, r.sshKeyProvider, r.kubermaticConfigGetter)),
 		clustertemplate.DecodeCreateReq,
 		handler.SetStatusCreatedHeader(handler.EncodeJSON),
 		r.defaultServerOptions()...,
@@ -4947,7 +4947,7 @@ func (r Routing) listGKEClusters() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.GKEClustersEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.presetsProvider)),
+		)(provider.GKEClustersEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.presetProvider)),
 		provider.DecodeGKEClusterListReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -4969,7 +4969,7 @@ func (r Routing) listGKEImages() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.GKEImagesEndpoint(r.presetsProvider, r.userInfoGetter)),
+		)(provider.GKEImagesEndpoint(r.presetProvider, r.userInfoGetter)),
 		provider.DecodeGKEImagesReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -4991,7 +4991,7 @@ func (r Routing) validateGKECredentials() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.GKEValidateCredentialsEndpoint(r.presetsProvider, r.userInfoGetter)),
+		)(provider.GKEValidateCredentialsEndpoint(r.presetProvider, r.userInfoGetter)),
 		provider.DecodeGKETypesReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -5013,7 +5013,7 @@ func (r Routing) listEKSClusters() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.ListEKSClustersEndpoint(r.userInfoGetter, r.presetsProvider)),
+		)(provider.ListEKSClustersEndpoint(r.userInfoGetter, r.presetProvider)),
 		provider.DecodeEKSTypesReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -5035,7 +5035,7 @@ func (r Routing) listAKSClusters() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.ListAKSClustersEndpoint(r.userInfoGetter, r.presetsProvider)),
+		)(provider.ListAKSClustersEndpoint(r.userInfoGetter, r.presetProvider)),
 		provider.DecodeAKSTypesReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -5060,7 +5060,7 @@ func (r Routing) listAWSRegions() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.ListAWSRegionsEndpoint(r.userInfoGetter, r.presetsProvider)),
+		)(provider.ListAWSRegionsEndpoint(r.userInfoGetter, r.presetProvider)),
 		provider.DecodeAWSCommonReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,

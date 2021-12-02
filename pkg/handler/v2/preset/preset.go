@@ -28,6 +28,7 @@ import (
 
 	v2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	crdapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
@@ -49,7 +50,7 @@ func DecodeListPresets(_ context.Context, r *http.Request) (interface{}, error) 
 }
 
 // ListProviderPresets returns a list of preset names for the provider
-func ListPresets(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func ListPresets(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(listPresetsReq)
 		if !ok {
@@ -62,7 +63,7 @@ func ListPresets(presetsProvider provider.PresetProvider, userInfoGetter provide
 		}
 
 		presetList := &v2.PresetList{Items: make([]v2.Preset, 0)}
-		presets, err := presetsProvider.GetPresets(userInfo)
+		presets, err := presetProvider.GetPresets(userInfo)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, err.Error())
 		}
@@ -122,7 +123,7 @@ func (r updatePresetStatusReq) Validate() error {
 }
 
 // UpdatePresetStatus updates the status of a preset. It can enable or disable it, so that it won't be listed by the list endpoints.
-func UpdatePresetStatus(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func UpdatePresetStatus(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(updatePresetStatusReq)
 		if !ok {
@@ -143,23 +144,23 @@ func UpdatePresetStatus(presetsProvider provider.PresetProvider, userInfoGetter 
 			return nil, errors.New(http.StatusForbidden, "only admins can update presets")
 		}
 
-		preset, err := presetsProvider.GetPreset(userInfo, req.PresetName)
+		preset, err := presetProvider.GetPreset(userInfo, req.PresetName)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, err.Error())
 		}
 
 		if len(req.Provider) == 0 {
-			preset.Spec.SetPresetStatus(req.Body.Enabled)
-			_, err = presetsProvider.UpdatePreset(preset)
+			preset.Spec.SetEnabled(req.Body.Enabled)
+			_, err = presetProvider.UpdatePreset(preset)
 			return nil, err
 		}
 
-		if hasProvider, _ := preset.Spec.HasProvider(crdapiv1.ProviderType(req.Provider)); !hasProvider {
+		if hasProvider, _ := helper.HasProvider(preset, crdapiv1.ProviderType(req.Provider)); !hasProvider {
 			return nil, errors.New(http.StatusConflict, fmt.Sprintf("trying to update preset with missing provider configuration for: %s", req.Provider))
 		}
 
-		preset.Spec.SetPresetProviderStatus(crdapiv1.ProviderType(req.Provider), req.Body.Enabled)
-		_, err = presetsProvider.UpdatePreset(preset)
+		helper.SetProviderEnabled(preset, crdapiv1.ProviderType(req.Provider), req.Body.Enabled)
+		_, err = presetProvider.UpdatePreset(preset)
 		return nil, err
 	}
 }
@@ -207,7 +208,7 @@ func DecodeListProviderPresets(ctx context.Context, r *http.Request) (interface{
 }
 
 // ListProviderPresets returns a list of preset names for the provider
-func ListProviderPresets(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func ListProviderPresets(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(listProviderPresetsReq)
 		if !ok {
@@ -224,28 +225,28 @@ func ListProviderPresets(presetsProvider provider.PresetProvider, userInfoGetter
 		}
 
 		presetList := &v2.PresetList{Items: make([]v2.Preset, 0)}
-		presets, err := presetsProvider.GetPresets(userInfo)
+		presets, err := presetProvider.GetPresets(userInfo)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, err.Error())
 		}
 
 		for _, preset := range presets {
 			providerType := crdapiv1.ProviderType(req.ProviderName)
-			presetProvider := preset.Spec.GetPresetProvider(providerType)
-			enabled := preset.Spec.IsEnabled() && presetProvider != nil && presetProvider.IsEnabled()
+			providerPreset := helper.GetProviderPreset(&preset, providerType)
 
 			// Preset does not contain requested provider configuration
-			if presetProvider == nil {
+			if providerPreset == nil {
 				continue
 			}
 
 			// Preset does not contain requested datacenter
-			if !req.matchesDatacenter(presetProvider.Datacenter) {
+			if !req.matchesDatacenter(providerPreset.Datacenter) {
 				continue
 			}
 
 			// Skip disabled presets when not requested
-			if !req.Disabled && (!preset.Spec.IsEnabled() || !presetProvider.IsEnabled()) {
+			enabled := preset.Spec.IsEnabled() && providerPreset.IsEnabled()
+			if !req.Disabled && !enabled {
 				continue
 			}
 
@@ -281,21 +282,21 @@ func (r createPresetReq) Validate() error {
 		return fmt.Errorf("preset name cannot be empty")
 	}
 
-	if hasProvider, _ := r.Body.Spec.HasProvider(crdapiv1.ProviderType(r.ProviderName)); !hasProvider {
+	if hasProvider, _ := helper.HasProvider(&r.Body, crdapiv1.ProviderType(r.ProviderName)); !hasProvider {
 		return fmt.Errorf("missing provider configuration for: %s", r.ProviderName)
 	}
 
-	err := r.Body.Spec.Validate(crdapiv1.ProviderType(r.ProviderName))
+	err := helper.Validate(&r.Body, crdapiv1.ProviderType(r.ProviderName))
 	if err != nil {
 		return err
 	}
 
-	for _, providerType := range crdapiv1.SupportedProviders() {
+	for _, providerType := range crdapiv1.SupportedProviders {
 		if string(providerType) == r.ProviderName {
 			continue
 		}
 
-		if hasProvider, _ := r.Body.Spec.HasProvider(providerType); hasProvider {
+		if hasProvider, _ := helper.HasProvider(&r.Body, providerType); hasProvider {
 			return fmt.Errorf("found unexpected provider configuration for: %s", providerType)
 		}
 	}
@@ -315,7 +316,7 @@ func DecodeCreatePreset(_ context.Context, r *http.Request) (interface{}, error)
 }
 
 // CreatePreset creates a preset for the selected provider and returns the name if successful, error otherwise
-func CreatePreset(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func CreatePreset(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(createPresetReq)
 		if !ok {
@@ -336,27 +337,27 @@ func CreatePreset(presetsProvider provider.PresetProvider, userInfoGetter provid
 			return "", errors.New(http.StatusForbidden, "only admins can update presets")
 		}
 
-		preset, err := presetsProvider.GetPreset(userInfo, req.Body.Name)
+		preset, err := presetProvider.GetPreset(userInfo, req.Body.Name)
 		if k8serrors.IsNotFound(err) {
-			return presetsProvider.CreatePreset(&req.Body)
+			return presetProvider.CreatePreset(&req.Body)
 		}
 
 		if err != nil && !k8serrors.IsNotFound(err) {
 			return nil, err
 		}
 
-		if hasProvider, _ := preset.Spec.HasProvider(crdapiv1.ProviderType(req.ProviderName)); hasProvider {
+		if hasProvider, _ := helper.HasProvider(preset, crdapiv1.ProviderType(req.ProviderName)); hasProvider {
 			return nil, errors.New(http.StatusConflict, fmt.Sprintf("%s provider configuration already exists for preset %s", req.ProviderName, preset.Name))
 		}
 
 		preset = mergePresets(preset, &req.Body, crdapiv1.ProviderType(req.ProviderName))
-		preset, err = presetsProvider.UpdatePreset(preset)
+		preset, err = presetProvider.UpdatePreset(preset)
 		if err != nil {
 			return nil, err
 		}
 
 		providerType := crdapiv1.ProviderType(req.ProviderName)
-		enabled := preset.Spec.IsEnabled() && preset.Spec.IsProviderEnabled(providerType)
+		enabled := preset.Spec.IsEnabled() && helper.IsProviderEnabled(preset, providerType)
 		return newAPIPreset(preset, enabled), nil
 	}
 }
@@ -384,7 +385,7 @@ func DecodeUpdatePreset(_ context.Context, r *http.Request) (interface{}, error)
 }
 
 // UpdatePreset updates a preset for the selected provider and returns the name if successful, error otherwise
-func UpdatePreset(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func UpdatePreset(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(updatePresetReq)
 		if !ok {
@@ -405,19 +406,19 @@ func UpdatePreset(presetsProvider provider.PresetProvider, userInfoGetter provid
 			return "", errors.New(http.StatusForbidden, "only admins can update presets")
 		}
 
-		preset, err := presetsProvider.GetPreset(userInfo, req.Body.Name)
+		preset, err := presetProvider.GetPreset(userInfo, req.Body.Name)
 		if err != nil {
 			return nil, err
 		}
 
 		preset = mergePresets(preset, &req.Body, crdapiv1.ProviderType(req.ProviderName))
-		preset, err = presetsProvider.UpdatePreset(preset)
+		preset, err = presetProvider.UpdatePreset(preset)
 		if err != nil {
 			return nil, err
 		}
 
 		providerType := crdapiv1.ProviderType(req.ProviderName)
-		enabled := preset.Spec.IsEnabled() && preset.Spec.IsProviderEnabled(providerType)
+		enabled := preset.Spec.IsEnabled() && helper.IsProviderEnabled(preset, providerType)
 		return newAPIPreset(preset, enabled), nil
 	}
 }
@@ -459,7 +460,7 @@ func DecodeDeletePreset(_ context.Context, r *http.Request) (interface{}, error)
 }
 
 // DeletePreset deletes the given provider from the preset AND if there is only one provider left, the preset gets deleted
-func DeletePreset(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func DeletePreset(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(deletePresetReq)
 		if !ok {
@@ -480,7 +481,7 @@ func DeletePreset(presetsProvider provider.PresetProvider, userInfoGetter provid
 			return "", errors.New(http.StatusForbidden, "only admins can delete presets")
 		}
 
-		preset, err := presetsProvider.GetPreset(userInfo, req.PresetName)
+		preset, err := presetProvider.GetPreset(userInfo, req.PresetName)
 		if k8serrors.IsNotFound(err) {
 			return nil, errors.NewBadRequest("preset was not found.")
 		}
@@ -490,10 +491,10 @@ func DeletePreset(presetsProvider provider.PresetProvider, userInfoGetter provid
 		}
 
 		// remove provider from preset
-		preset.Spec.RemoveProvider(crdapiv1.ProviderType(req.ProviderName))
+		preset = helper.RemoveProvider(preset, crdapiv1.ProviderType(req.ProviderName))
 
 		// Delete the provider from the preset OR the whole preset
-		preset, err = presetsProvider.DeletePreset(preset)
+		preset, err = presetProvider.DeletePreset(preset)
 		if err != nil {
 			return nil, err
 		}
@@ -504,7 +505,7 @@ func DeletePreset(presetsProvider provider.PresetProvider, userInfoGetter provid
 }
 
 func mergePresets(oldPreset *crdapiv1.Preset, newPreset *crdapiv1.Preset, providerType crdapiv1.ProviderType) *crdapiv1.Preset {
-	oldPreset.Spec.OverrideProvider(providerType, &newPreset.Spec)
+	oldPreset = helper.OverrideProvider(oldPreset, providerType, newPreset)
 	oldPreset.Spec.RequiredEmails = newPreset.Spec.RequiredEmails
 	oldPreset.Spec.RequiredEmailDomain = newPreset.Spec.RequiredEmailDomain
 	return oldPreset
@@ -512,11 +513,11 @@ func mergePresets(oldPreset *crdapiv1.Preset, newPreset *crdapiv1.Preset, provid
 
 func newAPIPreset(preset *crdapiv1.Preset, enabled bool) v2.Preset {
 	providers := make([]v2.PresetProvider, 0)
-	for _, providerType := range crdapiv1.SupportedProviders() {
-		if hasProvider, _ := preset.Spec.HasProvider(providerType); hasProvider {
+	for _, providerType := range crdapiv1.SupportedProviders {
+		if hasProvider, _ := helper.HasProvider(preset, providerType); hasProvider {
 			providers = append(providers, v2.PresetProvider{
 				Name:    providerType,
-				Enabled: preset.Spec.GetPresetProvider(providerType).IsEnabled(),
+				Enabled: helper.IsProviderEnabled(preset, providerType),
 			})
 		}
 	}

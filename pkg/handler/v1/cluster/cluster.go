@@ -35,7 +35,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/version"
@@ -264,7 +263,7 @@ func (r CreateReq) Validate(clusterType kubermaticv1.ClusterType, updateManager 
 		return fmt.Errorf("invalid cluster: invalid cloud spec \"Version\" is required but was not specified")
 	}
 
-	providerName, err := resources.GetCloudProviderName(r.Body.Cluster.Spec.Cloud)
+	providerName, err := provider.ClusterCloudProviderName(r.Body.Cluster.Spec.Cloud)
 	if err != nil {
 		return fmt.Errorf("failed to get the cloud provider name: %v", err)
 	}

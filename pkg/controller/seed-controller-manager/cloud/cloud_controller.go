@@ -35,7 +35,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/azure"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/openstack"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -216,7 +215,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			log.Info("Reconciling cloud provider for cluster")
 
 			// update metrics
-			providerName, _ := resources.GetCloudProviderName(cluster.Spec.Cloud)
+			providerName, _ := provider.ClusterCloudProviderName(cluster.Spec.Cloud)
 			totalProviderReconciliations.WithLabelValues(cluster.Name, providerName).Inc()
 
 			// reconcile
