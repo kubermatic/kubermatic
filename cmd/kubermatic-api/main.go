@@ -618,6 +618,7 @@ func clusterProviderFactory(mapper meta.RESTMapper, seedKubeconfigGetter provide
 			kubeClient,
 			options.featureGates.Enabled(features.OIDCKubeCfgEndpoint),
 			options.versions,
+			seed.Name,
 		), nil
 	}
 }

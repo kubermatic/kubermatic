@@ -37,6 +37,7 @@ import (
 	prometheusapi "github.com/prometheus/client_golang/api"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
@@ -338,6 +339,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		kubernetesClient,
 		false,
 		kubermaticVersions,
+		GenTestSeed().Name,
 	)
 	clusterProviders := map[string]provider.ClusterProvider{"us-central1": clusterProvider}
 	clusterProviderGetter := func(seed *kubermaticv1.Seed) (provider.ClusterProvider, error) {

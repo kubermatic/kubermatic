@@ -505,6 +505,7 @@ func TestListProjectMethod(t *testing.T) {
 				kubernetesClient,
 				false,
 				versions,
+				test.GenTestSeed().Name,
 			)
 			clusterProviders := map[string]provider.ClusterProvider{testSeed.Name: clusterProvider}
 			clusterProviderGetter := func(seed *kubermaticapiv1.Seed) (provider.ClusterProvider, error) {

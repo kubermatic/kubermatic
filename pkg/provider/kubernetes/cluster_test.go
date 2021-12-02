@@ -102,7 +102,17 @@ func TestCreateCluster(t *testing.T) {
 			}
 
 			// act
-			target := kubernetes.NewClusterProvider(&restclient.Config{}, fakeImpersonationClient, nil, tc.workerName, nil, nil, nil, tc.shareKubeconfig, versions)
+			target := kubernetes.NewClusterProvider(
+				&restclient.Config{},
+				fakeImpersonationClient,
+				nil,
+				tc.workerName,
+				nil,
+				nil,
+				nil,
+				tc.shareKubeconfig,
+				versions,
+				"")
 			partialCluster := &kubermaticv1.Cluster{}
 			partialCluster.Spec = *tc.spec
 			if tc.expectedCluster != nil {

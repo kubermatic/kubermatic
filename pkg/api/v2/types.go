@@ -565,3 +565,7 @@ type GKENodePoolAutoscaling struct {
 	// and <= max_node_count.
 	MinNodeCount int64 `json:"minNodeCount,omitempty"`
 }
+
+// BackupDestinationNames represents an list of backup destination names.
+// swagger:model BackupDestinationNames
+type BackupDestinationNames []string
