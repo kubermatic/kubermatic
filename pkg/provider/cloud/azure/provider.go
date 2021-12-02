@@ -32,6 +32,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
 
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
