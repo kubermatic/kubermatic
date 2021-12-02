@@ -19,77 +19,14 @@ package coredns
 import (
 	"fmt"
 
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-
-	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	nodelocaldns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/node-local-dns"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 )
-
-// AllowAllDnsNetworkPolicyCreator allows egress traffic from all pods to kube-dns
-func AllowAllDnsNetworkPolicyCreator() reconciling.NamedNetworkPolicyCreatorGetter {
-	return func() (string, reconciling.NetworkPolicyCreator) {
-		return "allow-dns", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
-			dnsPort := intstr.FromInt(53)
-			protoUdp := v1.ProtocolUDP
-			protoTcp := v1.ProtocolTCP
-
-			// dns access to node local dns cache
-			np.Spec = networkingv1.NetworkPolicySpec{
-				PolicyTypes: []networkingv1.PolicyType{
-					networkingv1.PolicyTypeIngress,
-					networkingv1.PolicyTypeEgress,
-				},
-				Ingress: []networkingv1.NetworkPolicyIngressRule{},
-				Egress: []networkingv1.NetworkPolicyEgressRule{
-					{
-						Ports: []networkingv1.NetworkPolicyPort{
-							{
-								Protocol: &protoTcp,
-								Port:     &dnsPort,
-							},
-							{
-								Protocol: &protoUdp,
-								Port:     &dnsPort,
-							},
-						},
-						To: []networkingv1.NetworkPolicyPeer{
-							{
-								PodSelector: &metav1.LabelSelector{
-									MatchLabels: map[string]string{common.NameLabel: "kube-dns"},
-								},
-							},
-						},
-					},
-					{
-						Ports: []networkingv1.NetworkPolicyPort{
-							{
-								Protocol: &protoTcp,
-								Port:     &dnsPort,
-							},
-							{
-								Protocol: &protoUdp,
-								Port:     &dnsPort,
-							},
-						},
-						To: []networkingv1.NetworkPolicyPeer{
-							{
-								IPBlock: &networkingv1.IPBlock{
-									CIDR: fmt.Sprintf("%s/32", nodelocaldns.CacheAddress),
-								},
-							},
-						},
-					},
-				},
-			}
-
-			return np, nil
-		}
-	}
-}
 
 // KubeDNSNetworkPolicyCreator NetworkPolicy allows ingress traffic to coredns on port 53 TCP/UDP and egress to anywhere on port 53 TCP/UDP.
 func KubeDNSNetworkPolicyCreator(k8sApiIP string, k8sApiPort int) reconciling.NamedNetworkPolicyCreatorGetter {
