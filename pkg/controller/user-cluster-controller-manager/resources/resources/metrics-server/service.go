@@ -30,8 +30,9 @@ func ServiceCreator() reconciling.NamedServiceCreatorGetter {
 			se.Name = resources.MetricsServerServiceName
 			labels := resources.BaseAppLabels(resources.MetricsServerDeploymentName, nil)
 			se.Labels = labels
-
 			se.Spec.Selector = labels
+
+			se.Spec.Type = corev1.ServiceTypeClusterIP
 			se.Spec.Ports = []corev1.ServicePort{
 				{
 					Port:       443,
