@@ -152,10 +152,10 @@ func deleteSecurityGroup(netClient *gophercloud.ServiceClient, sgName string) er
 }
 
 type createKubermaticSecurityGroupRequest struct {
-	clusterName    string
-	lowPort        int
-	highPort       int
-	allowedIPRange string
+	clusterName             string
+	lowPort                 int
+	highPort                int
+	nodePortsAllowedIPRange string
 }
 
 func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, req createKubermaticSecurityGroupRequest) (string, error) {
@@ -204,13 +204,12 @@ func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, req cre
 		},
 		{
 			// Allows ssh from external
-			Direction:      ossecuritygrouprules.DirIngress,
-			EtherType:      ossecuritygrouprules.EtherType4,
-			SecGroupID:     securityGroupID,
-			PortRangeMin:   provider.DefaultSSHPort,
-			PortRangeMax:   provider.DefaultSSHPort,
-			Protocol:       ossecuritygrouprules.ProtocolTCP,
-			RemoteIPPrefix: req.allowedIPRange,
+			Direction:    ossecuritygrouprules.DirIngress,
+			EtherType:    ossecuritygrouprules.EtherType4,
+			SecGroupID:   securityGroupID,
+			PortRangeMin: provider.DefaultSSHPort,
+			PortRangeMax: provider.DefaultSSHPort,
+			Protocol:     ossecuritygrouprules.ProtocolTCP,
 		},
 		{
 			// Allows TCP traffic to nodePorts from external
@@ -220,7 +219,7 @@ func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, req cre
 			PortRangeMin:   req.lowPort,
 			PortRangeMax:   req.highPort,
 			Protocol:       ossecuritygrouprules.ProtocolTCP,
-			RemoteIPPrefix: req.allowedIPRange,
+			RemoteIPPrefix: req.nodePortsAllowedIPRange,
 		},
 		{
 			// Allows UDP traffic to nodePorts from external
@@ -230,7 +229,7 @@ func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, req cre
 			PortRangeMin:   req.lowPort,
 			PortRangeMax:   req.highPort,
 			Protocol:       ossecuritygrouprules.ProtocolUDP,
-			RemoteIPPrefix: req.allowedIPRange,
+			RemoteIPPrefix: req.nodePortsAllowedIPRange,
 		},
 		{
 			// Allows ICMP traffic

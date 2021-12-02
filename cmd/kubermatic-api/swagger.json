@@ -17521,10 +17521,6 @@
           "type": "string",
           "x-go-name": "AccessKeyID"
         },
-        "allowedIPRange": {
-          "type": "string",
-          "x-go-name": "AllowedIPRange"
-        },
         "assumeRoleARN": {
           "type": "string",
           "x-go-name": "AssumeRoleARN"
@@ -17539,6 +17535,11 @@
         "instanceProfileName": {
           "type": "string",
           "x-go-name": "InstanceProfileName"
+        },
+        "nodePortsAllowedIPRange": {
+          "description": "NodePortsAllowedIPRange is the range of addresses allowed to access the cluster nodeports.\nIf not specified, the default value is 0.0.0.0/0, i.e., no restriction.",
+          "type": "string",
+          "x-go-name": "NodePortsAllowedIPRange"
         },
         "roleARN": {
           "description": "The IAM role, the control plane will use. The control plane will perform an assume-role",
@@ -18462,10 +18463,6 @@
       "type": "object",
       "title": "AzureCloudSpec specifies access credentials to Azure cloud.",
       "properties": {
-        "allowedIPRange": {
-          "type": "string",
-          "x-go-name": "AllowedIPRange"
-        },
         "assignAvailabilitySet": {
           "type": "boolean",
           "x-go-name": "AssignAvailabilitySet"
@@ -18487,6 +18484,11 @@
         },
         "loadBalancerSKU": {
           "$ref": "#/definitions/LBSKU"
+        },
+        "nodePortsAllowedIPRange": {
+          "description": "NodePortsAllowedIPRange is the range of addresses allowed to access the cluster nodeports.\nIf not specified, the default value is 0.0.0.0/0, i.e., no restriction.",
+          "type": "string",
+          "x-go-name": "NodePortsAllowedIPRange"
         },
         "resourceGroup": {
           "type": "string",
@@ -20825,16 +20827,17 @@
       "type": "object",
       "title": "GCPCloudSpec specifies access data to GCP.",
       "properties": {
-        "allowedIPRange": {
-          "type": "string",
-          "x-go-name": "AllowedIPRange"
-        },
         "credentialsReference": {
           "$ref": "#/definitions/GlobalSecretKeySelector"
         },
         "network": {
           "type": "string",
           "x-go-name": "Network"
+        },
+        "nodePortsAllowedIPRange": {
+          "description": "NodePortsAllowedIPRange is the range of addresses allowed to access the cluster nodeports.\nIf not specified, the default value is 0.0.0.0/0, i.e., no restriction.",
+          "type": "string",
+          "x-go-name": "NodePortsAllowedIPRange"
         },
         "serviceAccount": {
           "type": "string",
@@ -23020,10 +23023,6 @@
       "type": "object",
       "title": "OpenstackCloudSpec specifies access data to an OpenStack cloud.",
       "properties": {
-        "allowedIPRange": {
-          "type": "string",
-          "x-go-name": "AllowedIPRange"
-        },
         "applicationCredentialID": {
           "type": "string",
           "x-go-name": "ApplicationCredentialID"
@@ -23048,6 +23047,11 @@
           "description": "Network holds the name of the internal network\nWhen specified, all worker nodes will be attached to this network. If not specified, a network, subnet \u0026 router will be created\n\nNote that the network is internal if the \"External\" field is set to false",
           "type": "string",
           "x-go-name": "Network"
+        },
+        "nodePortsAllowedIPRange": {
+          "description": "NodePortsAllowedIPRange is the range of addresses allowed to access the cluster nodeports.\nIf not specified, the default value is 0.0.0.0/0, i.e., no restriction.",
+          "type": "string",
+          "x-go-name": "NodePortsAllowedIPRange"
         },
         "password": {
           "type": "string",

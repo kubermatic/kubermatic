@@ -336,9 +336,9 @@ func (g *gcp) ensureFirewallRules(cluster *kubermaticv1.Cluster, update provider
 		Build().
 		NodePorts()
 
-	allowedIPRange := cluster.Spec.Cloud.GCP.AllowedIPRange
-	if allowedIPRange == "" {
-		allowedIPRange = "0.0.0.0/0"
+	nodePortsAllowedIPRange := cluster.Spec.Cloud.GCP.NodePortsAllowedIPRange
+	if nodePortsAllowedIPRange == "" {
+		nodePortsAllowedIPRange = "0.0.0.0/0"
 	}
 
 	firewallService := compute.NewFirewallsService(svc)
@@ -433,7 +433,7 @@ func (g *gcp) ensureFirewallRules(cluster *kubermaticv1.Cluster, update provider
 				},
 			},
 			TargetTags:   []string{tag},
-			SourceRanges: []string{allowedIPRange},
+			SourceRanges: []string{nodePortsAllowedIPRange},
 		}).Do()
 		// we ignore a Google API "already exists" error
 		if err != nil && !isHTTPError(err, http.StatusConflict) {

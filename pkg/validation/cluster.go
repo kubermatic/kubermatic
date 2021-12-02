@@ -386,8 +386,8 @@ func validateOpenStackCloudSpec(spec *kubermaticv1.OpenstackCloudSpec, dc *kuber
 			return err
 		}
 	}
-	if spec.AllowedIPRange != "" {
-		if _, _, err := net.ParseCIDR(spec.AllowedIPRange); err != nil {
+	if spec.NodePortsAllowedIPRange != "" {
+		if _, _, err := net.ParseCIDR(spec.NodePortsAllowedIPRange); err != nil {
 			return err
 		}
 	}
@@ -420,8 +420,8 @@ func validateAWSCloudSpec(spec *kubermaticv1.AWSCloudSpec) error {
 			return err
 		}
 	}
-	if spec.AllowedIPRange != "" {
-		if _, _, err := net.ParseCIDR(spec.AllowedIPRange); err != nil {
+	if spec.NodePortsAllowedIPRange != "" {
+		if _, _, err := net.ParseCIDR(spec.NodePortsAllowedIPRange); err != nil {
 			return err
 		}
 	}
@@ -435,8 +435,8 @@ func validateGCPCloudSpec(spec *kubermaticv1.GCPCloudSpec) error {
 			return err
 		}
 	}
-	if spec.AllowedIPRange != "" {
-		if _, _, err := net.ParseCIDR(spec.AllowedIPRange); err != nil {
+	if spec.NodePortsAllowedIPRange != "" {
+		if _, _, err := net.ParseCIDR(spec.NodePortsAllowedIPRange); err != nil {
 			return err
 		}
 	}
@@ -506,8 +506,8 @@ func validateAzureCloudSpec(spec *kubermaticv1.AzureCloudSpec) error {
 	if !azureLoadBalancerSKUTypes.Has(string(spec.LoadBalancerSKU)) {
 		return fmt.Errorf("azure LB SKU cannot be %q, allowed values are %v", spec.LoadBalancerSKU, azureLoadBalancerSKUTypes.List())
 	}
-	if spec.AllowedIPRange != "" {
-		if _, _, err := net.ParseCIDR(spec.AllowedIPRange); err != nil {
+	if spec.NodePortsAllowedIPRange != "" {
+		if _, _, err := net.ParseCIDR(spec.NodePortsAllowedIPRange); err != nil {
 			return err
 		}
 	}

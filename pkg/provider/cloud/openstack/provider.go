@@ -246,16 +246,16 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 			Build().
 			NodePorts()
 
-		allowedIPRange := cluster.Spec.Cloud.Openstack.AllowedIPRange
-		if allowedIPRange == "" {
-			allowedIPRange = "0.0.0.0/0"
+		nodePortsAllowedIPRange := cluster.Spec.Cloud.Openstack.NodePortsAllowedIPRange
+		if nodePortsAllowedIPRange == "" {
+			nodePortsAllowedIPRange = "0.0.0.0/0"
 		}
 
 		req := createKubermaticSecurityGroupRequest{
-			clusterName:    cluster.Name,
-			lowPort:        lowPort,
-			highPort:       highPort,
-			allowedIPRange: allowedIPRange,
+			clusterName:             cluster.Name,
+			lowPort:                 lowPort,
+			highPort:                highPort,
+			nodePortsAllowedIPRange: nodePortsAllowedIPRange,
 		}
 
 		secGroupName, err := createKubermaticSecurityGroup(netClient, req)

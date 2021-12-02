@@ -203,8 +203,6 @@ spec:
                     properties:
                       accessKeyID:
                         type: string
-                      allowedIPRange:
-                        type: string
                       assumeRoleARN:
                         type: string
                       assumeRoleExternalID:
@@ -250,6 +248,8 @@ spec:
                             type: string
                         type: object
                       instanceProfileName:
+                        type: string
+                      nodePortsAllowedIPRange:
                         type: string
                       roleARN:
                         description: The IAM role, the control plane will use. The
@@ -335,6 +335,8 @@ spec:
                         enum:
                         - standard
                         - basic
+                        type: string
+                      nodePortsAllowedIPRange:
                         type: string
                       resourceGroup:
                         type: string
@@ -425,8 +427,6 @@ spec:
                   gcp:
                     description: GCPCloudSpec specifies access data to GCP.
                     properties:
-                      allowedIPRange:
-                        type: string
                       credentialsReference:
                         description: GlobalObjectKeySelector is needed as we can not
                           use v1.SecretKeySelector because it is not cross namespace
@@ -468,6 +468,8 @@ spec:
                             type: string
                         type: object
                       network:
+                        type: string
+                      nodePortsAllowedIPRange:
                         type: string
                       serviceAccount:
                         type: string
@@ -643,6 +645,8 @@ spec:
                           network. If not specified, a network, subnet & router will
                           be created \n Note that the network is internal if the \"External\"
                           field is set to false"
+                        type: string
+                      nodePortsAllowedIPRange:
                         type: string
                       password:
                         type: string

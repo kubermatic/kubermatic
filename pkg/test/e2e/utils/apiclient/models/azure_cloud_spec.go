@@ -18,9 +18,6 @@ import (
 // swagger:model AzureCloudSpec
 type AzureCloudSpec struct {
 
-	// allowed IP range
-	AllowedIPRange string `json:"allowedIPRange,omitempty"`
-
 	// assign availability set
 	AssignAvailabilitySet bool `json:"assignAvailabilitySet,omitempty"`
 
@@ -32,6 +29,10 @@ type AzureCloudSpec struct {
 
 	// client secret
 	ClientSecret string `json:"clientSecret,omitempty"`
+
+	// NodePortsAllowedIPRange is the range of addresses allowed to access the cluster nodeports.
+	// If not specified, the default value is 0.0.0.0/0, i.e., no restriction.
+	NodePortsAllowedIPRange string `json:"nodePortsAllowedIPRange,omitempty"`
 
 	// resource group
 	ResourceGroup string `json:"resourceGroup,omitempty"`

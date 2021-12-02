@@ -18,11 +18,12 @@ import (
 // swagger:model GCPCloudSpec
 type GCPCloudSpec struct {
 
-	// allowed IP range
-	AllowedIPRange string `json:"allowedIPRange,omitempty"`
-
 	// network
 	Network string `json:"network,omitempty"`
+
+	// NodePortsAllowedIPRange is the range of addresses allowed to access the cluster nodeports.
+	// If not specified, the default value is 0.0.0.0/0, i.e., no restriction.
+	NodePortsAllowedIPRange string `json:"nodePortsAllowedIPRange,omitempty"`
 
 	// service account
 	ServiceAccount string `json:"serviceAccount,omitempty"`
