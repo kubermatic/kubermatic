@@ -104,6 +104,8 @@ type ClientService interface {
 
 	GetAlertmanager(params *GetAlertmanagerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAlertmanagerOK, error)
 
+	GetBackupDestinationNames(params *GetBackupDestinationNamesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetBackupDestinationNamesOK, error)
+
 	GetCluster(params *GetClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterOK, error)
 
 	GetClusterEvents(params *GetClusterEventsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterEventsOK, error)
@@ -1738,6 +1740,44 @@ func (a *Client) GetAlertmanager(params *GetAlertmanagerParams, authInfo runtime
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*GetAlertmanagerDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  GetBackupDestinationNames Gets possible backup destination names for a cluster
+*/
+func (a *Client) GetBackupDestinationNames(params *GetBackupDestinationNamesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetBackupDestinationNamesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetBackupDestinationNamesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "getBackupDestinationNames",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/backupdestinations",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetBackupDestinationNamesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetBackupDestinationNamesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetBackupDestinationNamesDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

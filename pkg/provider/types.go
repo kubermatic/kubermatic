@@ -258,6 +258,9 @@ type ClusterProvider interface {
 
 	// IsCluster checks if cluster exist with the given name
 	IsCluster(clusterName string) bool
+
+	// GetSeedName gets the seed name of the cluster
+	GetSeedName() string
 }
 
 // PrivilegedClusterProvider declares the set of methods for interacting with the seed clusters
