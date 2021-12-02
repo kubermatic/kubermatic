@@ -78,7 +78,7 @@ The current implementation of addons has some flaws for installing custom compon
 
 See below for a high level architecture view. Each component will be explained in detail in the subsequent chapters of this proposal.
 
-![Architecture](./images/improveaddons-architecture.png)
+![Architecture](./images/introduceapps-architecture.png)
 
 ([source](https://app.diagrams.net/#G1drryGHt2MbCDY6wRz99u7lMSBYXgI2lH))
 
@@ -260,7 +260,7 @@ The functionality of the ApplicationInstallationController depends on the select
 
 ## Common User Flows
 
-![User Flows](images/improveaddons-user-flows.png)
+![User Flows](images/introduceapps-user-flows.png)
 \
 ([source](https://app.diagrams.net/#G1drryGHt2MbCDY6wRz99u7lMSBYXgI2lH))
 
