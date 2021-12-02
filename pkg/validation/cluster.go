@@ -329,20 +329,6 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter,
 		allErrs = append(allErrs, field.Required(parentFieldPath.Child("dc"), "no node datacenter specified"))
 	}
 
-	providerName, err := provider.ClusterCloudProviderName(spec)
-	if err != nil {
-		allErrs = append(allErrs, field.Invalid(parentFieldPath, "<redacted>", err.Error()))
-	}
-
-	// if this field is set, it must match the given provider;
-	// if the field is not set, the mutation webhook will fill it in
-	if spec.ProviderName != "" {
-		if spec.ProviderName != providerName {
-			msg := fmt.Sprintf("expected providerName to be %q", providerName)
-			allErrs = append(allErrs, field.Invalid(parentFieldPath.Child("providerName"), spec.ProviderName, msg))
-		}
-	}
-
 	if dc != nil {
 		clusterCloudProvider, err := provider.ClusterCloudProviderName(spec)
 		if err != nil {

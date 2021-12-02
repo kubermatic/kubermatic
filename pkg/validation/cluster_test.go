@@ -120,17 +120,6 @@ func TestValidateCloudSpec(t *testing.T) {
 				},
 			},
 		},
-		{
-			name:  "invalid provider name",
-			valid: false,
-			spec: kubermaticv1.CloudSpec{
-				DatacenterName: "some-datacenter",
-				ProviderName:   "incorrect",
-				Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{
-					Token: "a-token",
-				},
-			},
-		},
 	}
 
 	for _, test := range tests {
