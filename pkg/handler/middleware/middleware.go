@@ -200,7 +200,9 @@ func UserSaver(userProvider provider.UserProvider) endpoint.Middleware {
 			updatedUser.Status.LastSeen = &[]metav1.Time{metav1.NewTime(Now().UTC())}[0]
 			updatedUser, err = userProvider.UpdateUser(updatedUser)
 
-			if err != nil {
+			// Ignore conflict error during update of the lastSeen field as it is not super important.
+			// It can be updated next time.
+			if err != nil && !kerrors.IsConflict(err) {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 
