@@ -55,7 +55,7 @@ func reconcileSecurityGroup(ctx context.Context, clients *ClientSet, location st
 		Build().
 		NodePorts()
 
-	nodePortsAllowedIPRange := cluster.Spec.Cloud.Azure.AllowedIPRange
+	nodePortsAllowedIPRange := cluster.Spec.Cloud.Azure.NodePortsAllowedIPRange
 	if nodePortsAllowedIPRange == "" {
 		nodePortsAllowedIPRange = "0.0.0.0/0"
 	}

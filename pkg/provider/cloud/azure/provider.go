@@ -281,35 +281,9 @@ func (a *Azure) reconcileCluster(cluster *kubermaticv1.Cluster, update provider.
 		}
 	}
 
-<<<<<<< HEAD
 	if force || cluster.Spec.Cloud.Azure.SecurityGroup == "" {
 		logger.Infow("reconciling security group", "securityGroup", securityGroupName(cluster))
 		cluster, err = reconcileSecurityGroup(a.ctx, clientSet, location, cluster, update)
-=======
-	if cluster.Spec.Cloud.Azure.SecurityGroup == "" {
-		cluster.Spec.Cloud.Azure.SecurityGroup = resourceNamePrefix + cluster.Name
-
-		lowPort, highPort := kubermaticresources.NewTemplateDataBuilder().
-			WithNodePortRange(cluster.Spec.ComponentsOverride.Apiserver.NodePortRange).
-			WithCluster(cluster).
-			Build().
-			NodePorts()
-
-		nodePortsAllowedIPRange := cluster.Spec.Cloud.Azure.NodePortsAllowedIPRange
-		if nodePortsAllowedIPRange == "" {
-			nodePortsAllowedIPRange = "0.0.0.0/0"
-		}
-
-		logger.Infow("ensuring security group", "securityGroup", cluster.Spec.Cloud.Azure.SecurityGroup)
-		if err = a.ensureSecurityGroup(cluster.Spec.Cloud, location, cluster.Name, lowPort, highPort, nodePortsAllowedIPRange, credentials); err != nil {
-			return cluster, err
-		}
-
-		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
-			updatedCluster.Spec.Cloud.Azure.SecurityGroup = cluster.Spec.Cloud.Azure.SecurityGroup
-			kuberneteshelper.AddFinalizer(updatedCluster, FinalizerSecurityGroup)
-		})
->>>>>>> AllowedIPRange field renamed
 		if err != nil {
 			return nil, err
 		}
