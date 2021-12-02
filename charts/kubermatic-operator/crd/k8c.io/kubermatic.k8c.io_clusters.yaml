@@ -203,10 +203,11 @@ spec:
                     properties:
                       accessKeyID:
                         type: string
+                      allowedIPRange:
+                        type: string
                       assumeRoleARN:
                         type: string
                       assumeRoleExternalID:
-                      allowedIPRange:
                         type: string
                       credentialsReference:
                         description: GlobalObjectKeySelector is needed as we can not
