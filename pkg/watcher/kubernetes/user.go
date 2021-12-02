@@ -73,7 +73,7 @@ func (watcher *UserWatcher) onUserModified(hash uint64, user *v1.User) {
 	}
 
 	// Modify lastSeen field before comparison as we want to ignore this one
-	cachedUser.Spec.LastSeen = user.Spec.LastSeen
+	cachedUser.Status.LastSeen = user.Status.LastSeen
 
 	if !reflect.DeepEqual(cachedUser.Spec, user.Spec) {
 		watcher.publisher.Publish(user, pubsub.LinearTreeTraverser([]uint64{hash}))

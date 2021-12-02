@@ -24,6 +24,7 @@ type UsersGetter interface {
 type UserInterface interface {
 	Create(ctx context.Context, user *v1.User, opts metav1.CreateOptions) (*v1.User, error)
 	Update(ctx context.Context, user *v1.User, opts metav1.UpdateOptions) (*v1.User, error)
+	UpdateStatus(ctx context.Context, user *v1.User, opts metav1.UpdateOptions) (*v1.User, error)
 	Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts metav1.DeleteOptions, listOpts metav1.ListOptions) error
 	Get(ctx context.Context, name string, opts metav1.GetOptions) (*v1.User, error)
@@ -105,6 +106,21 @@ func (c *users) Update(ctx context.Context, user *v1.User, opts metav1.UpdateOpt
 	err = c.client.Put().
 		Resource("users").
 		Name(user.Name).
+		VersionedParams(&opts, scheme.ParameterCodec).
+		Body(user).
+		Do(ctx).
+		Into(result)
+	return
+}
+
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+func (c *users) UpdateStatus(ctx context.Context, user *v1.User, opts metav1.UpdateOptions) (result *v1.User, err error) {
+	result = &v1.User{}
+	err = c.client.Put().
+		Resource("users").
+		Name(user.Name).
+		SubResource("status").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(user).
 		Do(ctx).

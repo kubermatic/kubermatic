@@ -822,9 +822,11 @@ func GenUser(id, name, email string) *kubermaticv1.User {
 			UID:  types.UID(fmt.Sprintf("fake-uid-%s", id)),
 		},
 		Spec: kubermaticv1.UserSpec{
-			ID:       specID,
-			Name:     name,
-			Email:    email,
+			ID:    specID,
+			Name:  name,
+			Email: email,
+		},
+		Status: kubermaticv1.UserStatus{
 			LastSeen: &[]metav1.Time{metav1.NewTime(UserLastSeen)}[0],
 		},
 	}

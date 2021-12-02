@@ -41,7 +41,13 @@ type User struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec UserSpec `json:"spec"`
+	Spec   UserSpec   `json:"spec"`
+	Status UserStatus `json:"status,omitempty"`
+}
+
+// UserStatus stores status information about a user.
+type UserStatus struct {
+	LastSeen *metav1.Time `json:"lastSeen,omitempty"`
 }
 
 // UserSpec specifies a user
@@ -52,7 +58,6 @@ type UserSpec struct {
 	IsAdmin                 bool                                    `json:"admin"`
 	Settings                *UserSettings                           `json:"settings,omitempty"`
 	TokenBlackListReference *providerconfig.GlobalSecretKeySelector `json:"tokenBlackListReference,omitempty"`
-	LastSeen                *metav1.Time                            `json:"lastSeen,omitempty"`
 }
 
 // UserSettings represent an user settings
