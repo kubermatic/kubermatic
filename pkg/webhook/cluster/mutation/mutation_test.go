@@ -203,6 +203,7 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/resources", map[string]interface{}{"requests": map[string]interface{}{"memory": "500M"}}),
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/prometheus/resources", map[string]interface{}{"requests": map[string]interface{}{"memory": "500M"}}),
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
+				jsonpatch.NewOperation("add", "/spec/features/kubeSystemNetworkPolicies", true),
 			},
 		},
 		{
@@ -252,6 +253,7 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", resources.EBPFProxyMode),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", true),
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
+				jsonpatch.NewOperation("add", "/spec/features/kubeSystemNetworkPolicies", true),
 			},
 		},
 		{
@@ -283,7 +285,8 @@ func TestHandle(t *testing.T) {
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 							},
 							Features: map[string]bool{
-								kubermaticv1.ApiserverNetworkPolicy: true,
+								kubermaticv1.ApiserverNetworkPolicy:    true,
+								kubermaticv1.KubeSystemNetworkPolicies: true,
 							},
 						}.Do(),
 					},
@@ -326,6 +329,7 @@ func TestHandle(t *testing.T) {
 			wantAllowed: true,
 			wantPatches: []jsonpatch.JsonPatchOperation{
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
+				jsonpatch.NewOperation("add", "/spec/features/kubeSystemNetworkPolicies", true),
 			},
 		},
 		{
@@ -353,7 +357,8 @@ func TestHandle(t *testing.T) {
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 							},
 							Features: map[string]bool{
-								kubermaticv1.ApiserverNetworkPolicy: true,
+								kubermaticv1.ApiserverNetworkPolicy:    true,
+								kubermaticv1.KubeSystemNetworkPolicies: true,
 							},
 						}.Do(),
 					},
@@ -387,7 +392,8 @@ func TestHandle(t *testing.T) {
 								Version: "v3.19",
 							},
 							Features: map[string]bool{
-								kubermaticv1.ApiserverNetworkPolicy: true,
+								kubermaticv1.ApiserverNetworkPolicy:    true,
+								kubermaticv1.KubeSystemNetworkPolicies: true,
 							},
 						}.Do(),
 					},
@@ -422,7 +428,8 @@ func TestHandle(t *testing.T) {
 								Version: "v3.19",
 							},
 							Features: map[string]bool{
-								kubermaticv1.ApiserverNetworkPolicy: true,
+								kubermaticv1.ApiserverNetworkPolicy:    true,
+								kubermaticv1.KubeSystemNetworkPolicies: true,
 							},
 						}.Do(),
 					},
@@ -461,7 +468,8 @@ func TestHandle(t *testing.T) {
 								IPVS: &kubermaticv1.IPVSConfiguration{},
 							},
 							Features: map[string]bool{
-								kubermaticv1.ApiserverNetworkPolicy: true,
+								kubermaticv1.ApiserverNetworkPolicy:    true,
+								kubermaticv1.KubeSystemNetworkPolicies: true,
 							},
 						}.Do(),
 					},
