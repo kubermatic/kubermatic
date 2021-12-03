@@ -19,6 +19,7 @@ package prometheus
 import (
 	"fmt"
 
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -46,16 +47,14 @@ const (
 	storagePath            = "/data"
 	certificatesVolumeName = "certificates"
 
-	prometheusNameKey     = "app.kubernetes.io/name"
-	prometheusInstanceKey = "app.kubernetes.io/instance"
-
 	containerPort = 9090
 )
 
 var (
 	controllerLabels = map[string]string{
-		prometheusNameKey:     resources.UserClusterPrometheusDeploymentName,
-		prometheusInstanceKey: resources.UserClusterPrometheusDeploymentName,
+		common.NameLabel:      resources.UserClusterPrometheusDeploymentName,
+		common.InstanceLabel:  resources.UserClusterPrometheusDeploymentName,
+		common.ComponentLabel: resources.MLAComponentName,
 	}
 
 	defaultResourceRequirements = corev1.ResourceRequirements{
@@ -73,7 +72,7 @@ var (
 func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.UserClusterPrometheusDeploymentName, func(deployment *appsv1.Deployment) (*appsv1.Deployment, error) {
-			deployment.Labels = resources.BaseAppLabels(appName, nil)
+			deployment.Labels = resources.BaseAppLabels(appName, map[string]string{})
 
 			deployment.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: controllerLabels,

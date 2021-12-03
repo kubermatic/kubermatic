@@ -644,7 +644,9 @@ const (
 )
 
 const (
-	UserClusterMLANamespace        = "mla-system"
+	UserClusterMLANamespace = "mla-system"
+	MLAComponentName        = "mla"
+
 	PromtailServiceAccountName     = "promtail"
 	PromtailClusterRoleName        = "system:mla:promtail"
 	PromtailClusterRoleBindingName = "system:mla:promtail"
