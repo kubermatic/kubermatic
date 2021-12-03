@@ -61,7 +61,7 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/providers/gke/images").
 		Handler(r.listGKEImages())
 	mux.Methods(http.MethodGet).
-		Path("/providers/gke/validatecredetials").
+		Path("/providers/gke/validatecredentials").
 		Handler(r.validateGKECredentials())
 
 	mux.Methods(http.MethodGet).
