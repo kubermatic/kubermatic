@@ -26,11 +26,8 @@ import (
 	"testing"
 	"time"
 
-	"go.uber.org/zap"
-
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
@@ -267,11 +264,6 @@ func TestCreateClusterEndpoint(t *testing.T) {
 				},
 			},
 		},
-	}
-
-	dummyKubermaticConfiguration, err := defaults.DefaultConfiguration(dummyKubermaticConfiguration, zap.NewNop().Sugar())
-	if err != nil {
-		t.Fatalf("Failed to apply default values to KubermaticConfiguration: %v", err)
 	}
 
 	for _, tc := range testcases {
