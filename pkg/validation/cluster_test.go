@@ -255,13 +255,11 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 		name          string
 		networkConfig kubermaticv1.ClusterNetworkingConfig
 		wantErr       bool
-		allowEmpty    bool
 	}{
 		{
 			name:          "empty network config",
 			networkConfig: kubermaticv1.ClusterNetworkingConfig{},
-			wantErr:       false,
-			allowEmpty:    true,
+			wantErr:       true,
 		},
 		{
 			name: "valid network config",
@@ -272,8 +270,7 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 				ProxyMode:                "ipvs",
 				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 			},
-			wantErr:    false,
-			allowEmpty: false,
+			wantErr: false,
 		},
 		{
 			name: "missing pods CIDR",
@@ -283,8 +280,7 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 				ProxyMode:                "ipvs",
 				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 			},
-			wantErr:    true,
-			allowEmpty: false,
+			wantErr: true,
 		},
 		{
 			name: "missing services CIDR",
@@ -294,8 +290,7 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 				ProxyMode:                "ipvs",
 				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 			},
-			wantErr:    true,
-			allowEmpty: false,
+			wantErr: true,
 		},
 		{
 			name: "missing DNS domain",
@@ -305,8 +300,7 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 				ProxyMode:                "ipvs",
 				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 			},
-			wantErr:    true,
-			allowEmpty: false,
+			wantErr: true,
 		},
 		{
 			name: "missing proxy mode",
@@ -316,45 +310,40 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 				DNSDomain:                "cluster.local",
 				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 			},
-			wantErr:    true,
-			allowEmpty: false,
+			wantErr: true,
 		},
 		{
 			name: "invalid pod cidr",
 			networkConfig: kubermaticv1.ClusterNetworkingConfig{
 				Pods: kubermaticv1.NetworkRanges{CIDRBlocks: []string{"192.127.0.0:20"}},
 			},
-			wantErr:    true,
-			allowEmpty: true,
+			wantErr: true,
 		},
 		{
 			name: "invalid service cidr",
 			networkConfig: kubermaticv1.ClusterNetworkingConfig{
 				Services: kubermaticv1.NetworkRanges{CIDRBlocks: []string{"192.127/20"}},
 			},
-			wantErr:    true,
-			allowEmpty: true,
+			wantErr: true,
 		},
 		{
 			name: "invalid service cidr",
 			networkConfig: kubermaticv1.ClusterNetworkingConfig{
 				DNSDomain: "cluster.bla",
 			},
-			wantErr:    true,
-			allowEmpty: true,
+			wantErr: true,
 		},
 		{
 			name: "invalid proxy mode",
 			networkConfig: kubermaticv1.ClusterNetworkingConfig{
 				ProxyMode: "none",
 			},
-			wantErr:    true,
-			allowEmpty: true,
+			wantErr: true,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			errs := ValidateClusterNetworkConfig(&test.networkConfig, nil, field.NewPath("spec", "networkConfig"), test.allowEmpty)
+			errs := ValidateClusterNetworkConfig(&test.networkConfig, nil, field.NewPath("spec", "networkConfig"))
 
 			if test.wantErr == (len(errs) == 0) {
 				t.Errorf("Want error: %t, but got: \"%v\"", test.wantErr, errs)

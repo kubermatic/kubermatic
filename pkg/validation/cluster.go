@@ -87,7 +87,6 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 
 	allErrs = append(allErrs, ValidateLeaderElectionSettings(&spec.ComponentsOverride.ControllerManager.LeaderElectionSettings, parentFieldPath.Child("componentsOverride", "controllerManager", "leaderElection"))...)
 	allErrs = append(allErrs, ValidateLeaderElectionSettings(&spec.ComponentsOverride.Scheduler.LeaderElectionSettings, parentFieldPath.Child("componentsOverride", "scheduler", "leaderElection"))...)
-	allErrs = append(allErrs, ValidateClusterNetworkConfig(&spec.ClusterNetwork, spec.CNIPlugin, parentFieldPath.Child("clusterNetwork"), false)...)
 
 	// general cloud spec logic
 	if errs := ValidateCloudSpec(spec.Cloud, dc, parentFieldPath.Child("cloud")); len(errs) > 0 {
@@ -98,7 +97,7 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 		allErrs = append(allErrs, errs...)
 	}
 
-	if errs := ValidateClusterNetworkConfig(&spec.ClusterNetwork, spec.CNIPlugin, parentFieldPath.Child("networkConfig"), true); len(errs) > 0 {
+	if errs := ValidateClusterNetworkConfig(&spec.ClusterNetwork, spec.CNIPlugin, parentFieldPath.Child("networkConfig")); len(errs) > 0 {
 		allErrs = append(allErrs, errs...)
 	}
 
@@ -215,7 +214,7 @@ func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermat
 	return allErrs
 }
 
-func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, cni *kubermaticv1.CNIPluginSettings, fldPath *field.Path, allowEmpty bool) field.ErrorList {
+func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, cni *kubermaticv1.CNIPluginSettings, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 	// We only consider first element (not sure why we use lists).
 	if len(n.Pods.CIDRBlocks) > 1 {
@@ -224,10 +223,10 @@ func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, cni *
 	if len(n.Services.CIDRBlocks) > 1 {
 		allErrs = append(allErrs, field.TooMany(fldPath.Child("services", "cidrBlocks"), len(n.Services.CIDRBlocks), 1))
 	}
-	if len(n.Pods.CIDRBlocks) == 0 && !allowEmpty {
+	if len(n.Pods.CIDRBlocks) == 0 {
 		allErrs = append(allErrs, field.Required(fldPath.Child("pods", "cidrBlocks"), "pod CIDR must be provided"))
 	}
-	if len(n.Services.CIDRBlocks) == 0 && !allowEmpty {
+	if len(n.Services.CIDRBlocks) == 0 {
 		allErrs = append(allErrs, field.Required(fldPath.Child("services", "cidrBlocks"), "service CIDR must be provided"))
 	}
 
@@ -245,10 +244,10 @@ func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, cni *
 		}
 	}
 	// TODO Remove all hardcodes before allowing arbitrary domain names.
-	if (!allowEmpty || n.DNSDomain != "") && n.DNSDomain != "cluster.local" {
+	if n.DNSDomain != "cluster.local" {
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("dnsDomain"), n.DNSDomain, "dnsDomain must be 'cluster.local'"))
 	}
-	if (!allowEmpty || n.ProxyMode != "") && (n.ProxyMode != resources.IPVSProxyMode && n.ProxyMode != resources.IPTablesProxyMode && n.ProxyMode != resources.EBPFProxyMode) {
+	if n.ProxyMode != resources.IPVSProxyMode && n.ProxyMode != resources.IPTablesProxyMode && n.ProxyMode != resources.EBPFProxyMode {
 		allErrs = append(allErrs, field.NotSupported(fldPath.Child("proxyMode"), n.ProxyMode,
 			[]string{resources.IPVSProxyMode, resources.IPTablesProxyMode, resources.EBPFProxyMode}))
 	}
