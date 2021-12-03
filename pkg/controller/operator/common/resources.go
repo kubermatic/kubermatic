@@ -46,6 +46,12 @@ const (
 	// VersionLabel is the label containing the application's version.
 	VersionLabel = "app.kubernetes.io/version"
 
+	// InstanceLabel is A unique name identifying the instance of an application
+	InstanceLabel = "app.kubernetes.io/instance"
+
+	// ComponentLabel is the label of the component within the architecture.
+	ComponentLabel = "app.kubernetes.io/component"
+
 	DockercfgSecretName = "dockercfg"
 
 	SeedWebhookServiceName    = "seed-webhook"
