@@ -190,13 +190,22 @@ func patchAKSMachineDeployment(ctx context.Context, old, new *apiv2.ExternalClus
 	nodePoolName := new.NodeDeployment.Name
 	currentReplicas := old.NodeDeployment.Spec.Replicas
 	desiredReplicas := new.NodeDeployment.Spec.Replicas
-
+	currentVersion := old.NodeDeployment.Spec.Template.Versions.Kubelet
+	desiredVersion := new.NodeDeployment.Spec.Template.Versions.Kubelet
 	if desiredReplicas != currentReplicas {
 		_, err = resizeAKSNodePool(ctx, agentPoolClient, cluster, nodePoolName, desiredReplicas)
 		if err != nil {
 			return nil, err
 		}
 		new.NodeDeployment.Status.Replicas = desiredReplicas
+		return new, nil
+	}
+	if desiredVersion != currentVersion {
+		_, err = upgradeAKSNodePool(ctx, agentPoolClient, cluster, nodePoolName, desiredVersion)
+		if err != nil {
+			return nil, err
+		}
+		new.NodeDeployment.Spec.Replicas = currentReplicas
 		return new, nil
 	}
 
@@ -214,6 +223,24 @@ func resizeAKSNodePool(ctx context.Context, agentPoolClient containerservice.Age
 		Name: &nodePoolName,
 		ManagedClusterAgentPoolProfileProperties: &containerservice.ManagedClusterAgentPoolProfileProperties{
 			Count: &desiredSize,
+		},
+	}
+	update, err := agentPoolClient.CreateOrUpdate(ctx, resourceGroup, clusterName, nodePoolName, agentPool)
+	if err != nil {
+		return nil, err
+	}
+
+	return &update, nil
+}
+
+func upgradeAKSNodePool(ctx context.Context, agentPoolClient containerservice.AgentPoolsClient, cluster *kubermaticapiv1.ExternalCluster, nodePoolName string, desiredVersion string) (*containerservice.AgentPoolsCreateOrUpdateFuture, error) {
+	resourceGroup := cluster.Spec.CloudSpec.AKS.ResourceGroup
+	clusterName := cluster.Spec.CloudSpec.AKS.Name
+
+	agentPool := containerservice.AgentPool{
+		Name: &nodePoolName,
+		ManagedClusterAgentPoolProfileProperties: &containerservice.ManagedClusterAgentPoolProfileProperties{
+			OrchestratorVersion: &desiredVersion,
 		},
 	}
 	update, err := agentPoolClient.CreateOrUpdate(ctx, resourceGroup, clusterName, nodePoolName, agentPool)
