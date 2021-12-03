@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	v1 "k8s.io/api/core/v1"
@@ -34,6 +35,7 @@ func KubeDNSNetworkPolicyCreator(k8sApiIP string, k8sApiPort int) reconciling.Na
 		return "kube-dns", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			dnsPort := intstr.FromInt(53)
 			apiPort := intstr.FromInt(k8sApiPort)
+			metricsPort := intstr.FromInt(9153)
 			protoUdp := v1.ProtocolUDP
 			protoTcp := v1.ProtocolTCP
 
@@ -80,6 +82,24 @@ func KubeDNSNetworkPolicyCreator(k8sApiIP string, k8sApiPort int) reconciling.Na
 							{
 								Protocol: &protoUdp,
 								Port:     &dnsPort,
+							},
+						},
+					},
+					{
+						From: []networkingv1.NetworkPolicyPeer{
+							{
+								NamespaceSelector: &metav1.LabelSelector{
+									MatchLabels: map[string]string{common.ComponentLabel: resources.MLAComponentName},
+								},
+								PodSelector: &metav1.LabelSelector{
+									MatchLabels: map[string]string{common.ComponentLabel: resources.MLAComponentName},
+								},
+							},
+						},
+						Ports: []networkingv1.NetworkPolicyPort{
+							{
+								Protocol: &protoTcp,
+								Port:     &metricsPort,
 							},
 						},
 					},
