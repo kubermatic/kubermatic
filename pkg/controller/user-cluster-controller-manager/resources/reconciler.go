@@ -853,7 +853,10 @@ func (r *reconciler) reconcilePodDisruptionBudgets(ctx context.Context) error {
 		}
 	}
 	if r.isKonnectivityEnabled {
-		creators = append(creators, metricsserver.PodDisruptionBudgetCreator())
+		creators = append(creators,
+			konnectivity.PodDisruptionBudgetCreator(),
+			metricsserver.PodDisruptionBudgetCreator(),
+		)
 	}
 	if err := reconciling.ReconcilePodDisruptionBudgets(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile PodDisruptionBudgets: %v", err)
