@@ -450,20 +450,21 @@ func convertClusterSpec(old kubermaticv1.ClusterSpec) newv1.ClusterSpec {
 
 	if old := old.Cloud.Azure; old != nil {
 		result.Cloud.Azure = &newv1.AzureCloudSpec{
-			CredentialsReference:  old.CredentialsReference,
-			TenantID:              old.TenantID,
-			SubscriptionID:        old.SubscriptionID,
-			ClientID:              old.ClientID,
-			ClientSecret:          old.ClientSecret,
-			ResourceGroup:         old.ResourceGroup,
-			VNetResourceGroup:     old.VNetResourceGroup,
-			VNetName:              old.VNetName,
-			SubnetName:            old.SubnetName,
-			RouteTableName:        old.RouteTableName,
-			SecurityGroup:         old.SecurityGroup,
-			AssignAvailabilitySet: old.AssignAvailabilitySet,
-			AvailabilitySet:       old.AvailabilitySet,
-			LoadBalancerSKU:       convertAzureLoadBalancerSKU(old.LoadBalancerSKU),
+			CredentialsReference:    old.CredentialsReference,
+			TenantID:                old.TenantID,
+			SubscriptionID:          old.SubscriptionID,
+			ClientID:                old.ClientID,
+			ClientSecret:            old.ClientSecret,
+			ResourceGroup:           old.ResourceGroup,
+			VNetResourceGroup:       old.VNetResourceGroup,
+			VNetName:                old.VNetName,
+			SubnetName:              old.SubnetName,
+			RouteTableName:          old.RouteTableName,
+			SecurityGroup:           old.SecurityGroup,
+			NodePortsAllowedIPRange: old.NodePortsAllowedIPRange,
+			AssignAvailabilitySet:   old.AssignAvailabilitySet,
+			AvailabilitySet:         old.AvailabilitySet,
+			LoadBalancerSKU:         convertAzureLoadBalancerSKU(old.LoadBalancerSKU),
 		}
 	}
 
@@ -496,6 +497,7 @@ func convertClusterSpec(old kubermaticv1.ClusterSpec) newv1.ClusterSpec {
 			Token:                       old.Token,
 			Network:                     old.Network,
 			SecurityGroups:              old.SecurityGroups,
+			NodePortsAllowedIPRange:     old.NodePortsAllowedIPRange,
 			FloatingIPPool:              old.FloatingIPPool,
 			RouterID:                    old.RouterID,
 			SubnetID:                    old.SubnetID,
