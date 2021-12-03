@@ -89,6 +89,9 @@ func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, 
 				RunAsGroup:   pointer.Int64Ptr(65534),
 				FSGroup:      pointer.Int64Ptr(65534),
 				RunAsNonRoot: pointer.BoolPtr(true),
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
 			}
 			deployment.Spec.Template.Spec.Containers = []corev1.Container{
 				{

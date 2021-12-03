@@ -20,6 +20,7 @@
 #   - removed the flexvolume installation as it does not work on Flatcar Linux & is only required for application policies
 #     (https://docs.projectcalico.org/reference/faq#are-the-calico-manifests-compatible-with-coreos)
 #   - added envoyagent interface to the exclusion list for Calico IP autodetection
+#   - added seccomp profile to calico-controllers
 
 {{ if eq .Cluster.CNIPlugin.Type "canal" }}
 {{ if eq .Cluster.CNIPlugin.Version "v3.20" }}
@@ -4057,6 +4058,9 @@ spec:
           effect: NoSchedule
       serviceAccountName: calico-kube-controllers
       priorityClassName: system-cluster-critical
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: calico-kube-controllers
           image: '{{ Registry "docker.io" }}/calico/kube-controllers:v3.20.2'

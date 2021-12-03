@@ -18,6 +18,7 @@
 # Modifications:
 #   - templated cluster-pool-ipv4-cidr
 #   - templated kube-proxy-replacement parts
+#   - added seccomp profile to cilium-operator
 
 {{ if eq .Cluster.CNIPlugin.Type "cilium" }}
 {{ if eq .Cluster.CNIPlugin.Version "v1.10" }}
@@ -818,6 +819,9 @@ spec:
       serviceAccountName: "cilium-operator"
       tolerations:
       - operator: Exists
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       volumes:
         # To read the configuration from the config map
       - configMap:

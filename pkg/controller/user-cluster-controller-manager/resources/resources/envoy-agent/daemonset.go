@@ -80,8 +80,12 @@ func DaemonSetCreator(agentIP net.IP, versions kubermatic.Versions, registryWith
 				Volumes:                       getVolumes(),
 				RestartPolicy:                 corev1.RestartPolicyAlways,
 				TerminationGracePeriodSeconds: utilpointer.Int64Ptr(30),
-				SecurityContext:               &corev1.PodSecurityContext{},
-				SchedulerName:                 corev1.DefaultSchedulerName,
+				SecurityContext: &corev1.PodSecurityContext{
+					SeccompProfile: &corev1.SeccompProfile{
+						Type: corev1.SeccompProfileTypeRuntimeDefault,
+					},
+				},
+				SchedulerName: corev1.DefaultSchedulerName,
 			}
 			if err := resources.SetResourceRequirements(ds.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, ds.Annotations); err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)

@@ -109,6 +109,12 @@ func DaemonSetCreator(versions kubermatic.Versions, registryWithOverwrite regist
 				},
 			}
 
+			ds.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+			}
+
 			return ds, nil
 		}
 	}
