@@ -133,6 +133,13 @@ func DeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) reconci
 					},
 				},
 			}
+
+			dep.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+			}
+
 			return dep, nil
 		}
 	}

@@ -106,3 +106,5 @@ spec:
         runAsNonRoot: true
         runAsUser: 65532
         runAsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault

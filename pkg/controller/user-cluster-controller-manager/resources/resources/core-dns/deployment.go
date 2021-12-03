@@ -87,6 +87,11 @@ func DeploymentCreator(kubernetesVersion *semver.Version, registryWithOverwrite 
 
 			dep.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
 			dep.Spec.Template.Spec.DNSPolicy = corev1.DNSDefault
+			dep.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+			}
 
 			volumes := getVolumes()
 			dep.Spec.Template.Spec.Volumes = volumes

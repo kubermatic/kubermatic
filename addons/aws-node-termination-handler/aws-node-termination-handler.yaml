@@ -202,6 +202,9 @@ spec:
                     operator: NotIn
                     values:
                       - fargate
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       serviceAccountName: aws-node-termination-handler
       hostNetwork: true
       dnsPolicy: "ClusterFirstWithHostNet"

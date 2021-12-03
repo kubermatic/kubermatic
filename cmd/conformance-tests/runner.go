@@ -753,6 +753,16 @@ func (r *testRunner) testCluster(
 		log.Errorf("Failed to verify that pod and node metrics are available: %v", err)
 	}
 
+	// Check seccomp profiles for Pods running on user cluster - with retries
+	if err := junitReporterWrapper(
+		"[Kubermatic] Test pod seccomp profiles on user cluster", report, func() error {
+			return retryNAttempts(maxTestAttempts, func(attempt int) error {
+				return r.testUserClusterSeccompProfiles(ctx, log, cluster, userClusterClient)
+			})
+		}); err != nil {
+		log.Errorf("failed to verify that pods have a seccomp profile: %v", err)
+	}
+
 	return nil
 }
 
