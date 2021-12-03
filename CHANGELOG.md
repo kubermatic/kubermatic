@@ -1,5 +1,25 @@
 # Kubermatic 2.18
 
+## [v2.18.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.3)
+
+### Bugfixes
+
+- Fix Delegated OIDC Authentication feature by allowing apiserver-to-oidc-issuer communication in apiserver network policies ([#8264](https://github.com/kubermatic/kubermatic/issues/8264))
+- Fix IDP icons in Dex theme ([#8319](https://github.com/kubermatic/kubermatic/issues/8319))
+- Fix setting of nodeport-proxy resource requests/limits, relax default nodeport-proxy envoy limits ([#8169](https://github.com/kubermatic/kubermatic/issues/8169))
+
+### Misc
+
+- Add support for Kubernetes version v1.20.13 and automatically upgrading clusters with version < v1.20.13 (fixes CVE-2021-3711, CVE-2021-3712, CVE-2021-33910) ([#8268](https://github.com/kubermatic/kubermatic/issues/8268))
+- Add support for Kubernetes version v1.21.7 and automatically upgrading clusters with version < v1.21.7 (fixes CVE-2021-3711, CVE-2021-3712, CVE-2021-33910) ([#8268](https://github.com/kubermatic/kubermatic/issues/8268))
+- Add support for Kubernetes version v1.22.4 and automatically upgrading clusters with version < v1.22.4 (fixes CVE-2021-3711, CVE-2021-3712, CVE-2021-33910) ([#8268](https://github.com/kubermatic/kubermatic/issues/8268))
+- Add support to update the `requiredEmails` of a Preset via REST-API and admins will see all Presets within KKP independent of their email ([#8168](https://github.com/kubermatic/kubermatic/issues/8168))
+- Update Kubernetes Dashboard to v2.4.0 ([#8172](https://github.com/kubermatic/kubermatic/issues/8172))
+- Update kubeadm-config addon based on Kubernetes version ([#8149](https://github.com/kubermatic/kubermatic/issues/8149))
+
+
+
+
 ## [v2.18.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.2)
 
 ### Bugfixes
