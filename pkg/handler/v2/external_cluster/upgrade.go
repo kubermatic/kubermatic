@@ -112,6 +112,13 @@ func GetMachineDeploymentUpgradesEndpoint(userInfoGetter provider.UserInfoGetter
 				}
 				return providercommon.ListGKEMachineDeploymentUpgrades(ctx, sa, cloud.GKE.Zone, cloud.GKE.Name, req.MachineDeploymentID)
 			}
+			if cloud.AKS != nil {
+				cred, err := azure.GetCredentialsForAKSCluster(*cloud, secretKeySelector)
+				if err != nil {
+					return nil, err
+				}
+				return providercommon.ListAKSMachineDeploymentUpgrades(ctx, cred, cloud.AKS.Name, cloud.AKS.ResourceGroup, req.MachineDeploymentID)
+			}
 		}
 
 		return nil, fmt.Errorf("can not find any upgrades for the given cloud provider")
