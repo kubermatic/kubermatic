@@ -26,6 +26,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2021-03-01/network"
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2020-10-01/resources"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
+	semverlib "github.com/Masterminds/semver/v3"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -569,5 +570,34 @@ func ListAKSUpgrades(ctx context.Context, cred azure.Credentials, resourceGroupN
 			Version: v.Semver(),
 		})
 	}
+	return upgrades, nil
+}
+
+func ListAKSMachineDeploymentUpgrades(ctx context.Context, cred azure.Credentials, clusterName, resourceGroupName, machineDeployment string) ([]*apiv1.MasterVersion, error) {
+	var err error
+	upgrades := make([]*apiv1.MasterVersion, 0)
+	agentPoolClient := containerservice.NewAgentPoolsClient(cred.SubscriptionID)
+	agentPoolClient.Authorizer, err = auth.NewClientCredentialsConfig(cred.ClientID, cred.ClientSecret, cred.TenantID).Authorizer()
+	if err != nil {
+		return nil, err
+	}
+	profile, err := agentPoolClient.GetUpgradeProfile(ctx, resourceGroupName, clusterName, machineDeployment)
+	if err != nil {
+		return nil, err
+	}
+	if profile.AgentPoolUpgradeProfileProperties.Upgrades == nil {
+		return nil, nil
+	}
+	poolUpgrades := *profile.AgentPoolUpgradeProfileProperties.Upgrades
+	for _, poolUpgrade := range poolUpgrades {
+		if poolUpgrade.KubernetesVersion != nil {
+			upgradeMachineDeploymentVer, err := semverlib.NewVersion(*poolUpgrade.KubernetesVersion)
+			if err != nil {
+				return nil, err
+			}
+			upgrades = append(upgrades, &apiv1.MasterVersion{Version: upgradeMachineDeploymentVer})
+		}
+	}
+
 	return upgrades, nil
 }
