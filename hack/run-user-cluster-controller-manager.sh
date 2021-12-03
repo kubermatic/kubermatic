@@ -49,8 +49,6 @@ kubectl --namespace "$NAMESPACE" get secret internal-admin-kubeconfig -o json |
     > $KUBECONFIG_USERCLUSTER_CONTROLLER_FILE
 echo "Using kubeconfig $KUBECONFIG_USERCLUSTER_CONTROLLER_FILE"
 
-OPENVPN_SERVER_SERVICE_RAW="$(kubectl --namespace "$NAMESPACE" get service openvpn-server -o json)"
-
 SEED_SERVICEACCOUNT_TOKEN="$(kubectl --namespace "$NAMESPACE" get secret -o json |
   jq -r '.items[]|select(.metadata.annotations["kubernetes.io/service-account.name"] == "kubermatic-usercluster-controller-manager")|.data.token' |
   base64 -d)"
@@ -60,17 +58,36 @@ kubectl config view --flatten --minify -ojson |
 
 CLUSTER_VERSION="$(echo $CLUSTER_RAW | jq -r '.spec.version')"
 CLUSTER_URL="$(echo $CLUSTER_RAW | jq -r .address.url)"
-if $(echo ${OPENVPN_SERVER_SERVICE_RAW} | jq -r .spec.ports[0].nodePort); then
-  OPENVPN_SERVER_NODEPORT="$(echo ${OPENVPN_SERVER_SERVICE_RAW} | jq -r .spec.ports[0].nodePort)"
-else
-  OPENVPN_SERVER_NODEPORT="$(echo ${OPENVPN_SERVER_SERVICE_RAW} | jq -r .spec.ports[0].port)"
-fi
 
 ARGS=""
 if echo $CLUSTER_RAW | grep -i aws -q; then
   ARGS="$ARGS -cloud-provider-name=aws"
 elif echo $CLUSTER_RAW | grep -i vsphere -q; then
   ARGS="$ARGS -cloud-provider-name=vsphere"
+fi
+
+if $(echo ${CLUSTER_RAW} | jq -r '.spec.clusterNetwork.konnectivityEnabled'); then
+  KONNECTIVITY_SERVER_SERVICE_RAW="$(kubectl --namespace "$NAMESPACE" get service konnectivity-server -o json)"
+  if $(echo ${KONNECTIVITY_SERVER_SERVICE_RAW} | jq --exit-status '.spec.ports[0].nodePort' > /dev/null); then
+    KONNECTIVITY_SERVER_PORT="$(echo ${KONNECTIVITY_SERVER_SERVICE_RAW} | jq -r '.spec.ports[0].nodePort')"
+    KONNECTIVITY_SERVER_HOST="$(echo ${CLUSTER_RAW} | jq -r '.address.externalName')"
+  else
+    KONNECTIVITY_SERVER_PORT="$(echo ${CLUSTER_RAW} | jq -r '.address.port')"
+    KONNECTIVITY_SERVER_HOST="konnectivity-server.$(echo ${CLUSTER_RAW} | jq -r '.address.externalName')"
+    ARGS="$ARGS -tunneling-agent-ip=192.168.30.10"
+  fi
+  ARGS="$ARGS -konnectivity-enabled=true"
+  ARGS="$ARGS -konnectivity-server-host=${KONNECTIVITY_SERVER_HOST}"
+  ARGS="$ARGS -konnectivity-server-port=${KONNECTIVITY_SERVER_PORT}"
+else
+  OPENVPN_SERVER_SERVICE_RAW="$(kubectl --namespace "$NAMESPACE" get service openvpn-server -o json)"
+  if $(echo ${OPENVPN_SERVER_SERVICE_RAW} | jq --exit-status '.spec.ports[0].nodePort' > /dev/null); then
+    OPENVPN_SERVER_PORT="$(echo ${OPENVPN_SERVER_SERVICE_RAW} | jq -r '.spec.ports[0].nodePort')"
+  else
+    OPENVPN_SERVER_PORT="$(echo ${OPENVPN_SERVER_SERVICE_RAW} | jq -r '.spec.ports[0].port')"
+    ARGS="$ARGS -tunneling-agent-ip=192.168.30.10"
+  fi
+  ARGS="$ARGS -openvpn-server-port=${OPENVPN_SERVER_PORT}"
 fi
 
 echodate "Starting user-cluster-controller-manager..."
@@ -82,17 +99,14 @@ set -x
   -health-listen-address=127.0.0.1:8088 \
   -pprof-listen-address=":${PPROF_PORT}" \
   -namespace=${NAMESPACE} \
-  -openvpn-server-port=${OPENVPN_SERVER_NODEPORT} \
   -cluster-name=${CLUSTER_NAME} \
   -cluster-url=${CLUSTER_URL} \
   -version=${CLUSTER_VERSION} \
   -log-debug=$KUBERMATIC_DEBUG \
   -log-format=Console \
   -logtostderr \
-  -tunneling-agent-ip=192.168.30.10 \
   -v=4 \
   -seed-kubeconfig=${SEED_KUBECONFIG} \
   -owner-email=${OWNER_EMAIL} \
   -dns-cluster-ip=10.240.16.10 \
-  -konnectivity-enabled=true \
   ${ARGS}

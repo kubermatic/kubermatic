@@ -63,6 +63,7 @@ type userclusterControllerData interface {
 	Cluster() *kubermaticv1.Cluster
 	NodeLocalDNSCacheEnabled() bool
 	GetOpenVPNServerPort() (int32, error)
+	GetKonnectivityServerPort() (int32, error)
 	GetMLAGatewayPort() (int32, error)
 	KubermaticAPIImage() string
 	KubermaticDockerTag() string
@@ -96,11 +97,6 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				},
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
-
-			openvpnServerPort, err := data.GetOpenVPNServerPort()
-			if err != nil {
-				return nil, err
-			}
 
 			volumes := getVolumes()
 			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
@@ -137,7 +133,6 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				"-cluster-url", data.Cluster().Address.URL,
 				"-cluster-name", data.Cluster().Name,
 				"-dns-cluster-ip", dnsClusterIP,
-				"-openvpn-server-port", fmt.Sprint(openvpnServerPort),
 				"-overwrite-registry", data.ImageRegistry(""),
 				"-version", data.Cluster().Spec.Version.String(),
 				"-owner-email", data.Cluster().Status.UserEmail,
@@ -149,6 +144,23 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 
 			if data.IsKonnectivityEnabled() {
 				args = append(args, "-konnectivity-enabled=true")
+
+				kHost := data.Cluster().Address.ExternalName
+				if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
+					kHost = fmt.Sprintf("%s.%s", resources.KonnectivityProxyServiceName, kHost)
+				}
+				kPort, err := data.GetKonnectivityServerPort()
+				if err != nil {
+					return nil, err
+				}
+				args = append(args, "-konnectivity-server-host", kHost)
+				args = append(args, "-konnectivity-server-port", fmt.Sprint(kPort))
+			} else {
+				openvpnServerPort, err := data.GetOpenVPNServerPort()
+				if err != nil {
+					return nil, err
+				}
+				args = append(args, "-openvpn-server-port", fmt.Sprint(openvpnServerPort))
 			}
 
 			if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
