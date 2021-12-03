@@ -189,19 +189,20 @@ func UserSaver(userProvider provider.UserProvider) endpoint.Middleware {
 				}
 			}
 
+			now := &[]metav1.Time{metav1.NewTime(Now().UTC())}[0]
+
+			// Throttle the last seen update to once a minute not to pressure the K8S API too much.
+			if user.Status.LastSeen != nil && now.Sub(user.Status.LastSeen.Time).Minutes() < 1.0 {
+				return next(context.WithValue(ctx, kubermaticcontext.UserCRContextKey, user), request)
+			}
+
 			updatedUser := user.DeepCopy()
-			updatedUser.Spec.LastSeen = &[]metav1.Time{metav1.NewTime(Now().UTC())}[0]
+			updatedUser.Status.LastSeen = &[]metav1.Time{metav1.NewTime(Now().UTC())}[0]
 			updatedUser, err = userProvider.UpdateUser(updatedUser)
 
-			// Since this update might be called very often, we should be
-			// able to safely assume that the conflict error means the user
-			// was already updated in another call and not throw an error
-			// in such case.
-			if err != nil {
-				if kerrors.IsConflict(err) {
-					return next(context.WithValue(ctx, kubermaticcontext.UserCRContextKey, user), request)
-				}
-
+			// Ignore conflict error during update of the lastSeen field as it is not super important.
+			// It can be updated next time.
+			if err != nil && !kerrors.IsConflict(err) {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 

@@ -80,6 +80,17 @@ func (c *FakeUsers) Update(ctx context.Context, user *kubermaticv1.User, opts v1
 	return obj.(*kubermaticv1.User), err
 }
 
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+func (c *FakeUsers) UpdateStatus(ctx context.Context, user *kubermaticv1.User, opts v1.UpdateOptions) (*kubermaticv1.User, error) {
+	obj, err := c.Fake.
+		Invokes(testing.NewRootUpdateSubresourceAction(usersResource, "status", user), &kubermaticv1.User{})
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*kubermaticv1.User), err
+}
+
 // Delete takes name of the user and deletes it. Returns an error if one occurs.
 func (c *FakeUsers) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.

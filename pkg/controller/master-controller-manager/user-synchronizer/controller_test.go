@@ -136,6 +136,6 @@ func generateUser(name string, deleted bool) *kubermaticv1.User {
 // Skip problematic fields from the comparison such as `LastSeen` Time field
 // as even DeepCopy does not result in equal internal location field value.
 func sanitize(user *kubermaticv1.User) *kubermaticv1.User {
-	user.Spec.LastSeen = nil
+	user.Status.LastSeen = nil
 	return user
 }
