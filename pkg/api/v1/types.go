@@ -468,8 +468,8 @@ func ConvertInternalUserToExternal(internalUser *kubermaticv1.User, includeSetti
 		IsAdmin: internalUser.Spec.IsAdmin,
 	}
 
-	if internalUser.Spec.LastSeen != nil {
-		apiUser.LastSeen = &[]Time{NewTime(internalUser.Spec.LastSeen.Time)}[0]
+	if internalUser.Status.LastSeen != nil {
+		apiUser.LastSeen = &[]Time{NewTime(internalUser.Status.LastSeen.Time)}[0]
 	}
 
 	if includeSettings {
