@@ -275,6 +275,17 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
 
 # Kubermatic 2.17
 
+## [v2.17.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.17.5)
+
+### Bugfixes
+
+- Fix a bug where `$$` in the environment-variables for machine-controller was interpreted in the Kubernetes Manifest and caused machine-controller to be unable to deploy resources, when for e.g. the password contains two consecutive `$` signs ([#7984](https://github.com/kubermatic/kubermatic/issues/7984))
+- Fix for Seed API PATCH endpoint which sometimes removed Seed fields unrelated to the PATCH. Fixes the issue where Seed API was using seed clients to update the Seeds on master cluster instead of using the master client. This was causing Seed API not to work on Seeds which were not also the master clusters ([#7925](https://github.com/kubermatic/kubermatic/issues/7925))
+- Fix setting of nodeport-proxy resource requests/limits, relax default nodeport-proxy envoy limits ([#8169](https://github.com/kubermatic/kubermatic/issues/8169))
+
+
+
+
 ## [v2.17.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.17.4)
 
 ### Security
