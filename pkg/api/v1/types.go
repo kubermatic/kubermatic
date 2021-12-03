@@ -852,6 +852,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		MLA                                  *kubermaticv1.MLASettings              `json:"mla,omitempty"`
 		ContainerRuntime                     string                                 `json:"containerRuntime,omitempty"`
 		ClusterNetwork                       *kubermaticv1.ClusterNetworkingConfig  `json:"clusterNetwork,omitempty"`
+		CNIPlugin                            *kubermaticv1.CNIPluginSettings        `json:"cniPlugin,omitempty"`
 	}{
 		Cloud: PublicCloudSpec{
 			DatacenterName: cs.Cloud.DatacenterName,
@@ -886,6 +887,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		MLA:                                  cs.MLA,
 		ContainerRuntime:                     cs.ContainerRuntime,
 		ClusterNetwork:                       cs.ClusterNetwork,
+		CNIPlugin:                            cs.CNIPlugin,
 	})
 
 	return ret, err
