@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	AKSNodepoolNameLabel = "kubernetes.azure.com/agentpool=agentpool"
+	AKSNodepoolNameLabel = "kubernetes.azure.com/agentpool"
 	AgentPool            = "agentpool"
 )
 
@@ -249,4 +249,27 @@ func upgradeAKSNodePool(ctx context.Context, agentPoolClient containerservice.Ag
 	}
 
 	return &update, nil
+}
+
+func getAKSNodes(cluster *kubermaticapiv1.ExternalCluster, nodePoolName string, clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterNode, error) {
+
+	var nodesV1 []apiv2.ExternalClusterNode
+
+	nodes, err := clusterProvider.ListNodes(cluster)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	for _, n := range nodes.Items {
+		if n.Labels != nil {
+			if n.Labels[AKSNodepoolNameLabel] == nodePoolName {
+				outNode, err := outputNode(n)
+				if err != nil {
+					return nil, fmt.Errorf("failed to output node %s: %v", n.Name, err)
+				}
+				nodesV1 = append(nodesV1, *outNode)
+			}
+		}
+	}
+
+	return nodesV1, err
 }

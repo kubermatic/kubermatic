@@ -284,6 +284,13 @@ func getMachineDeploymentNodes(ctx context.Context, userInfoGetter provider.User
 			}
 			nodes = n
 		}
+		if cloud.AKS != nil {
+			n, err := getAKSNodes(cluster, machineDeploymentID, clusterProvider)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			nodes = n
+		}
 	}
 
 	return nodes, nil
