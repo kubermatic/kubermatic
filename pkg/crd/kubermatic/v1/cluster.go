@@ -22,7 +22,6 @@ import (
 	"fmt"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -974,6 +973,6 @@ func (cluster *Cluster) GetUserClusterOPAResourceRequirements() map[string]*core
 	}
 	return map[string]*corev1.ResourceRequirements{
 		"controller": cluster.Spec.OPAIntegration.ControllerResources,
-		"audit":    cluster.Spec.OPAIntegration.AuditResources,
+		"audit":      cluster.Spec.OPAIntegration.AuditResources,
 	}
 }
