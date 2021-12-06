@@ -28,7 +28,6 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
-	"k8s.io/utils/pointer"
 
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -47,6 +46,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -230,6 +230,27 @@ func Add(
 		}
 	}
 
+	// Watch cluster if user cluster OPA is enabled so that controller can get resource requirements for user cluster OPA components.
+	if r.opaIntegration {
+		seedWatch := &source.Kind{Type: &kubermaticv1.Cluster{}}
+		if err := seedWatch.InjectCache(seedMgr.GetCache()); err != nil {
+			return fmt.Errorf("failed to inject cache in seed cluster watch for cluster: %w", err)
+		}
+		clusterPredicate := predicate.Funcs{
+			// For Update event, only trigger reconciliation when Resource Requirements change.
+			UpdateFunc: func(event event.UpdateEvent) bool {
+				oldCluster := event.ObjectOld.(*kubermaticv1.Cluster)
+				newCluster := event.ObjectNew.(*kubermaticv1.Cluster)
+				oldResourceRequirements := oldCluster.GetUserClusterOPAResourceRequirements()
+				newResourceRequirements := newCluster.GetUserClusterOPAResourceRequirements()
+				return !reflect.DeepEqual(oldResourceRequirements, newResourceRequirements)
+			},
+		}
+		if err := c.Watch(seedWatch, mapFn, clusterPredicate); err != nil {
+			return fmt.Errorf("failed to watch cluster in seed: %w", err)
+		}
+	}
+
 	// A very simple but limited way to express the first successful reconciling to the seed cluster
 	return registerReconciledCheck(fmt.Sprintf("%s-%s", controllerName, "reconciled_successfully_once"), func(_ *http.Request) error {
 		r.rLock.Lock()
@@ -378,4 +399,15 @@ func (r *reconciler) reconcileDefaultServiceAccount(ctx context.Context, namespa
 	}
 
 	return nil
+
+}
+
+func (r *reconciler) opaReconcileData(ctx context.Context) (controller, audit *corev1.ResourceRequirements, err error) {
+	cluster := &kubermaticv1.Cluster{}
+	if err = r.seedClient.Get(ctx, types.NamespacedName{
+		Name: r.clusterName,
+	}, cluster); err != nil {
+		return nil, nil, fmt.Errorf("failed to get cluster: %w", err)
+	}
+	return cluster.Spec.OPAIntegration.ControllerResources, cluster.Spec.OPAIntegration.AuditResources, nil
 }
