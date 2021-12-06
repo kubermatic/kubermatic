@@ -17,58 +17,8 @@ limitations under the License.
 package v1
 
 import (
-	"fmt"
-	"reflect"
-	"strings"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-// +kubebuilder:validation:Enum=digitalocean;hetzner;azure;vsphere;aws;openstack;packet;gcp;kubevirt;alibaba;anexia;fake
-
-type ProviderType string
-
-const (
-	ProviderDigitalocean ProviderType = "digitalocean"
-	ProviderHetzner      ProviderType = "hetzner"
-	ProviderAzure        ProviderType = "azure"
-	ProviderVSphere      ProviderType = "vsphere"
-	ProviderAWS          ProviderType = "aws"
-	ProviderOpenstack    ProviderType = "openstack"
-	ProviderPacket       ProviderType = "packet"
-	ProviderGCP          ProviderType = "gcp"
-	ProviderKubevirt     ProviderType = "kubevirt"
-	ProviderAlibaba      ProviderType = "alibaba"
-	ProviderAnexia       ProviderType = "anexia"
-	ProviderFake         ProviderType = "fake"
-)
-
-func SupportedProviders() []ProviderType {
-	return []ProviderType{
-		ProviderDigitalocean,
-		ProviderHetzner,
-		ProviderAzure,
-		ProviderVSphere,
-		ProviderAWS,
-		ProviderOpenstack,
-		ProviderPacket,
-		ProviderGCP,
-		ProviderKubevirt,
-		ProviderAlibaba,
-		ProviderAnexia,
-		ProviderFake,
-	}
-}
-
-func IsProviderSupported(name string) bool {
-	for _, provider := range SupportedProviders() {
-		if strings.EqualFold(name, string(provider)) {
-			return true
-		}
-	}
-
-	return false
-}
 
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
@@ -91,7 +41,7 @@ type Preset struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec PresetSpec `json:"spec,omitempty"`
+	Spec PresetSpec `json:"spec"`
 }
 
 // Presets specifies default presets for supported providers
@@ -107,90 +57,13 @@ type PresetSpec struct {
 	Kubevirt     *Kubevirt     `json:"kubevirt,omitempty"`
 	Alibaba      *Alibaba      `json:"alibaba,omitempty"`
 	Anexia       *Anexia       `json:"anexia,omitempty"`
+	GKE          *GKE          `json:"gke,omitempty"`
+	EKS          *EKS          `json:"eks,omitempty"`
+	AKS          *AKS          `json:"aks,omitempty"`
 
 	Fake           *Fake    `json:"fake,omitempty"`
 	RequiredEmails []string `json:"requiredEmails,omitempty"`
 	Enabled        *bool    `json:"enabled,omitempty"`
-}
-
-func (s *PresetSpec) getProviderValue(providerType ProviderType) reflect.Value {
-	spec := reflect.ValueOf(s).Elem()
-	if spec.Kind() != reflect.Struct {
-		return reflect.Value{}
-	}
-
-	ignoreCaseCompare := func(name string) bool {
-		return strings.EqualFold(name, string(providerType))
-	}
-
-	provider := reflect.Indirect(spec).FieldByNameFunc(ignoreCaseCompare)
-	return provider
-}
-
-func (s *PresetSpec) SetPresetStatus(enabled bool) {
-	s.Enabled = &enabled
-}
-
-func (s *PresetSpec) SetPresetProviderStatus(providerType ProviderType, enabled bool) {
-	provider := s.getProviderValue(providerType)
-
-	ignoreCaseCompare := func(name string) bool {
-		return strings.EqualFold(name, "Enabled")
-	}
-
-	enabledField := reflect.Indirect(provider).FieldByNameFunc(ignoreCaseCompare)
-	enabledField.Set(reflect.ValueOf(&enabled))
-}
-
-func (s PresetSpec) HasProvider(providerType ProviderType) (bool, reflect.Value) {
-	provider := s.getProviderValue(providerType)
-	return !provider.IsZero(), provider
-}
-
-func (s PresetSpec) GetProviderList() []ProviderType {
-	existingProviders := []ProviderType{}
-	for _, provType := range SupportedProviders() {
-		hasProvider, _ := s.HasProvider(provType)
-		if hasProvider {
-			existingProviders = append(existingProviders, provType)
-		}
-	}
-	return existingProviders
-}
-
-func (s PresetSpec) GetPresetProvider(providerType ProviderType) *PresetProvider {
-	hasProvider, providerField := s.HasProvider(providerType)
-	if !hasProvider {
-		return nil
-	}
-
-	presetSpecBaseFieldName := "PresetProvider"
-	presetBaseField := reflect.Indirect(providerField).FieldByName(presetSpecBaseFieldName)
-	presetBase := presetBaseField.Interface().(PresetProvider)
-	return &presetBase
-}
-
-func (s PresetSpec) Validate(providerType ProviderType) error {
-	hasProvider, providerField := s.HasProvider(providerType)
-	if !hasProvider {
-		return fmt.Errorf("missing provider configuration for: %s", providerType)
-	}
-
-	type Validateable interface {
-		IsValid() bool
-	}
-
-	validateableType := reflect.TypeOf(new(Validateable)).Elem()
-	if !providerField.Type().Implements(validateableType) {
-		return fmt.Errorf("provider %s does not implement Validateable interface", providerField.Type().Name())
-	}
-
-	validateable := providerField.Interface().(Validateable)
-	if !validateable.IsValid() {
-		return fmt.Errorf("required fields missing for provider spec: %s", providerType)
-	}
-
-	return nil
 }
 
 func (s PresetSpec) IsEnabled() bool {
@@ -201,28 +74,16 @@ func (s PresetSpec) IsEnabled() bool {
 	return *s.Enabled
 }
 
-func (s PresetSpec) IsProviderEnabled(provider ProviderType) bool {
-	presetProvider := s.GetPresetProvider(provider)
-	return presetProvider != nil && presetProvider.IsEnabled()
+func (s *PresetSpec) SetEnabled(enabled bool) {
+	s.Enabled = &enabled
 }
 
-func (s *PresetSpec) OverrideProvider(providerType ProviderType, spec *PresetSpec) {
-	dest := s.getProviderValue(providerType)
-	src := spec.getProviderValue(providerType)
-	dest.Set(src)
-}
-
-func (s *PresetSpec) RemoveProvider(providerType ProviderType) {
-	provider := s.getProviderValue(providerType)
-	provider.Set(reflect.Zero(provider.Type()))
-}
-
-type PresetProvider struct {
+type ProviderPreset struct {
 	Enabled    *bool  `json:"enabled,omitempty"`
 	Datacenter string `json:"datacenter,omitempty"`
 }
 
-func (s PresetProvider) IsEnabled() bool {
+func (s ProviderPreset) IsEnabled() bool {
 	if s.Enabled == nil {
 		return true
 	}
@@ -231,7 +92,7 @@ func (s PresetProvider) IsEnabled() bool {
 }
 
 type Digitalocean struct {
-	PresetProvider `json:",inline"`
+	ProviderPreset `json:",inline"`
 
 	// Token is used to authenticate with the DigitalOcean API.
 	Token string `json:"token"`
@@ -242,7 +103,7 @@ func (s Digitalocean) IsValid() bool {
 }
 
 type Hetzner struct {
-	PresetProvider `json:",inline"`
+	ProviderPreset `json:",inline"`
 
 	// Token is used to authenticate with the Hetzner API.
 	Token string `json:"token"`
@@ -259,7 +120,7 @@ func (s Hetzner) IsValid() bool {
 }
 
 type Azure struct {
-	PresetProvider `json:",inline"`
+	ProviderPreset `json:",inline"`
 
 	TenantID       string `json:"tenantID"`
 	SubscriptionID string `json:"subscriptionID"`
@@ -284,7 +145,7 @@ func (s Azure) IsValid() bool {
 }
 
 type VSphere struct {
-	PresetProvider `json:",inline"`
+	ProviderPreset `json:",inline"`
 
 	Username string `json:"username"`
 	Password string `json:"password"`
@@ -296,12 +157,11 @@ type VSphere struct {
 }
 
 func (s VSphere) IsValid() bool {
-	return len(s.Username) > 0 &&
-		len(s.Password) > 0
+	return len(s.Username) > 0 && len(s.Password) > 0
 }
 
 type AWS struct {
-	PresetProvider `json:",inline"`
+	ProviderPreset `json:",inline"`
 
 	AccessKeyID     string `json:"accessKeyID"`
 	SecretAccessKey string `json:"secretAccessKey"`
@@ -317,12 +177,11 @@ type AWS struct {
 }
 
 func (s AWS) IsValid() bool {
-	return len(s.AccessKeyID) > 0 &&
-		len(s.SecretAccessKey) > 0
+	return len(s.AccessKeyID) > 0 && len(s.SecretAccessKey) > 0
 }
 
 type Openstack struct {
-	PresetProvider `json:",inline"`
+	ProviderPreset `json:",inline"`
 
 	UseToken bool `json:"useToken,omitempty"`
 
@@ -343,7 +202,6 @@ type Openstack struct {
 }
 
 func (s Openstack) IsValid() bool {
-
 	if s.UseToken {
 		return true
 	}
@@ -359,7 +217,7 @@ func (s Openstack) IsValid() bool {
 }
 
 type Packet struct {
-	PresetProvider `json:",inline"`
+	ProviderPreset `json:",inline"`
 
 	APIKey    string `json:"apiKey"`
 	ProjectID string `json:"projectID"`
@@ -368,12 +226,11 @@ type Packet struct {
 }
 
 func (s Packet) IsValid() bool {
-	return len(s.APIKey) > 0 &&
-		len(s.ProjectID) > 0
+	return len(s.APIKey) > 0 && len(s.ProjectID) > 0
 }
 
 type GCP struct {
-	PresetProvider `json:",inline"`
+	ProviderPreset `json:",inline"`
 
 	ServiceAccount string `json:"serviceAccount"`
 
@@ -386,7 +243,7 @@ func (s GCP) IsValid() bool {
 }
 
 type Fake struct {
-	PresetProvider `json:",inline"`
+	ProviderPreset `json:",inline"`
 
 	Token string `json:"token"`
 }
@@ -396,7 +253,7 @@ func (s Fake) IsValid() bool {
 }
 
 type Kubevirt struct {
-	PresetProvider `json:",inline"`
+	ProviderPreset `json:",inline"`
 
 	Kubeconfig string `json:"kubeconfig"`
 }
@@ -406,7 +263,7 @@ func (s Kubevirt) IsValid() bool {
 }
 
 type Alibaba struct {
-	PresetProvider `json:",inline"`
+	ProviderPreset `json:",inline"`
 
 	AccessKeyID     string `json:"accessKeyID"`
 	AccessKeySecret string `json:"accessKeySecret"`
@@ -418,7 +275,7 @@ func (s Alibaba) IsValid() bool {
 }
 
 type Anexia struct {
-	PresetProvider `json:",inline"`
+	ProviderPreset `json:",inline"`
 
 	// Token is used to authenticate with the Anexia API.
 	Token string `json:"token"`
@@ -426,4 +283,42 @@ type Anexia struct {
 
 func (s Anexia) IsValid() bool {
 	return len(s.Token) > 0
+}
+
+type GKE struct {
+	ProviderPreset `json:",inline"`
+
+	ServiceAccount string `json:"serviceAccount"`
+}
+
+func (s GKE) IsValid() bool {
+	return len(s.ServiceAccount) > 0
+}
+
+type EKS struct {
+	ProviderPreset `json:",inline"`
+
+	AccessKeyID     string `json:"accessKeyID"`
+	SecretAccessKey string `json:"secretAccessKey"`
+}
+
+func (s EKS) IsValid() bool {
+	return len(s.AccessKeyID) > 0 &&
+		len(s.SecretAccessKey) > 0
+}
+
+type AKS struct {
+	ProviderPreset `json:",inline"`
+
+	TenantID       string `json:"tenantID"`
+	SubscriptionID string `json:"subscriptionID"`
+	ClientID       string `json:"clientID"`
+	ClientSecret   string `json:"clientSecret"`
+}
+
+func (s AKS) IsValid() bool {
+	return len(s.TenantID) > 0 &&
+		len(s.SubscriptionID) > 0 &&
+		len(s.ClientID) > 0 &&
+		len(s.ClientSecret) > 0
 }

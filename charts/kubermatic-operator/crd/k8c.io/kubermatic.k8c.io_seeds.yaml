@@ -19,7 +19,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: Seed is the type representing a Seed
+        description: Seed is the type representing a SeedDatacenter
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -1157,6 +1157,8 @@ spec:
             required:
             - kubeconfig
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
