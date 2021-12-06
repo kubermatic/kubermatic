@@ -31,15 +31,24 @@ helm upgrade \
   --namespace cert-manager \
   --create-namespace \
   --atomic \
-  --values charts/cert-manager/test/test-values.yaml \
+  --set certManager.clusterIssuers.letsencrypt-prod.email=dev@kubermatic.com \
+  --set certManager.clusterIssuers.letsencrypt-staging.email=dev@kubermatic.com \
   cert-manager charts/cert-manager/
 
-# make sure the webhook works, but before that, give the cainjector some
-# time to do its magic and make the webhook ready
-sleep 5
+echodate "Downloading cmctl..."
+OS=$(go env GOOS); ARCH=$(go env GOARCH); curl -sLo cmctl.tar.gz https://github.com/jetstack/cert-manager/releases/latest/download/cmctl-$OS-$ARCH.tar.gz
+tar xzf cmctl.tar.gz
 
-echodate "Creating test certificate..."
-retry 5 kubectl apply -f charts/cert-manager/test/certificate.yaml
+function cmctl_cleanup {
+  echodate "Cleaning up..."
+  rm cmctl cmctl.tar.gz
+  exit $exitcode
+}
+trap cmctl_cleanup EXIT
+
+echodate "Testing cert-manager..."
+./cmctl check api --wait=2m
+exitcode=$?
 
 echodate "Deleting kind cluster..."
 kind delete cluster --name "$KIND_CLUSTER_NAME"
