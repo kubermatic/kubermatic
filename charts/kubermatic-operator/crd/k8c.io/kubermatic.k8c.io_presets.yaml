@@ -36,6 +36,26 @@ spec:
           spec:
             description: Presets specifies default presets for supported providers
             properties:
+              aks:
+                properties:
+                  clientID:
+                    type: string
+                  clientSecret:
+                    type: string
+                  datacenter:
+                    type: string
+                  enabled:
+                    type: boolean
+                  subscriptionID:
+                    type: string
+                  tenantID:
+                    type: string
+                required:
+                - clientID
+                - clientSecret
+                - subscriptionID
+                - tenantID
+                type: object
               alibaba:
                 properties:
                   accessKeyID:
@@ -144,6 +164,20 @@ spec:
                 required:
                 - token
                 type: object
+              eks:
+                properties:
+                  accessKeyID:
+                    type: string
+                  datacenter:
+                    type: string
+                  enabled:
+                    type: boolean
+                  secretAccessKey:
+                    type: string
+                required:
+                - accessKeyID
+                - secretAccessKey
+                type: object
               enabled:
                 type: boolean
               fake:
@@ -168,6 +202,17 @@ spec:
                   serviceAccount:
                     type: string
                   subnetwork:
+                    type: string
+                required:
+                - serviceAccount
+                type: object
+              gke:
+                properties:
+                  datacenter:
+                    type: string
+                  enabled:
+                    type: boolean
+                  serviceAccount:
                     type: string
                 required:
                 - serviceAccount
@@ -284,6 +329,8 @@ spec:
                 - username
                 type: object
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true

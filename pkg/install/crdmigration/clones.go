@@ -1069,7 +1069,7 @@ func clonePresetResourcesInCluster(ctx context.Context, logger logrus.FieldLogge
 
 		if oldSpec.AWS != nil {
 			newObject.Spec.AWS = &newv1.AWS{
-				PresetProvider:       newv1.PresetProvider(oldSpec.AWS.ProviderPreset),
+				ProviderPreset:       newv1.ProviderPreset(oldSpec.AWS.ProviderPreset),
 				AccessKeyID:          oldSpec.AWS.AccessKeyID,
 				SecretAccessKey:      oldSpec.AWS.SecretAccessKey,
 				AssumeRoleARN:        oldSpec.AWS.AssumeRoleARN,
@@ -1084,7 +1084,7 @@ func clonePresetResourcesInCluster(ctx context.Context, logger logrus.FieldLogge
 
 		if oldSpec.Alibaba != nil {
 			newObject.Spec.Alibaba = &newv1.Alibaba{
-				PresetProvider:  newv1.PresetProvider(oldSpec.Alibaba.ProviderPreset),
+				ProviderPreset:  newv1.ProviderPreset(oldSpec.Alibaba.ProviderPreset),
 				AccessKeyID:     oldSpec.Alibaba.AccessKeyID,
 				AccessKeySecret: oldSpec.Alibaba.AccessKeySecret,
 			}
@@ -1092,14 +1092,14 @@ func clonePresetResourcesInCluster(ctx context.Context, logger logrus.FieldLogge
 
 		if oldSpec.Anexia != nil {
 			newObject.Spec.Anexia = &newv1.Anexia{
-				PresetProvider: newv1.PresetProvider(oldSpec.Anexia.ProviderPreset),
+				ProviderPreset: newv1.ProviderPreset(oldSpec.Anexia.ProviderPreset),
 				Token:          oldSpec.Anexia.Token,
 			}
 		}
 
 		if oldSpec.Azure != nil {
 			newObject.Spec.Azure = &newv1.Azure{
-				PresetProvider:    newv1.PresetProvider(oldSpec.Azure.ProviderPreset),
+				ProviderPreset:    newv1.ProviderPreset(oldSpec.Azure.ProviderPreset),
 				TenantID:          oldSpec.Azure.TenantID,
 				SubscriptionID:    oldSpec.Azure.SubscriptionID,
 				ClientID:          oldSpec.Azure.ClientID,
@@ -1116,21 +1116,21 @@ func clonePresetResourcesInCluster(ctx context.Context, logger logrus.FieldLogge
 
 		if oldSpec.Digitalocean != nil {
 			newObject.Spec.Digitalocean = &newv1.Digitalocean{
-				PresetProvider: newv1.PresetProvider(oldSpec.Digitalocean.ProviderPreset),
+				ProviderPreset: newv1.ProviderPreset(oldSpec.Digitalocean.ProviderPreset),
 				Token:          oldSpec.Digitalocean.Token,
 			}
 		}
 
 		if oldSpec.Fake != nil {
 			newObject.Spec.Fake = &newv1.Fake{
-				PresetProvider: newv1.PresetProvider(oldSpec.Fake.ProviderPreset),
+				ProviderPreset: newv1.ProviderPreset(oldSpec.Fake.ProviderPreset),
 				Token:          oldSpec.Fake.Token,
 			}
 		}
 
 		if oldSpec.GCP != nil {
 			newObject.Spec.GCP = &newv1.GCP{
-				PresetProvider: newv1.PresetProvider(oldSpec.GCP.ProviderPreset),
+				ProviderPreset: newv1.ProviderPreset(oldSpec.GCP.ProviderPreset),
 				Network:        oldSpec.GCP.Network,
 				Subnetwork:     oldSpec.GCP.Subnetwork,
 				ServiceAccount: oldSpec.GCP.ServiceAccount,
@@ -1139,7 +1139,7 @@ func clonePresetResourcesInCluster(ctx context.Context, logger logrus.FieldLogge
 
 		if oldSpec.Hetzner != nil {
 			newObject.Spec.Hetzner = &newv1.Hetzner{
-				PresetProvider: newv1.PresetProvider(oldSpec.Hetzner.ProviderPreset),
+				ProviderPreset: newv1.ProviderPreset(oldSpec.Hetzner.ProviderPreset),
 				Token:          oldSpec.Hetzner.Token,
 				Network:        oldSpec.Hetzner.Network,
 			}
@@ -1147,14 +1147,14 @@ func clonePresetResourcesInCluster(ctx context.Context, logger logrus.FieldLogge
 
 		if oldSpec.Kubevirt != nil {
 			newObject.Spec.Kubevirt = &newv1.Kubevirt{
-				PresetProvider: newv1.PresetProvider(oldSpec.Kubevirt.ProviderPreset),
+				ProviderPreset: newv1.ProviderPreset(oldSpec.Kubevirt.ProviderPreset),
 				Kubeconfig:     oldSpec.Kubevirt.Kubeconfig,
 			}
 		}
 
 		if oldSpec.Openstack != nil {
 			newObject.Spec.Openstack = &newv1.Openstack{
-				PresetProvider:              newv1.PresetProvider(oldSpec.Openstack.ProviderPreset),
+				ProviderPreset:              newv1.ProviderPreset(oldSpec.Openstack.ProviderPreset),
 				UseToken:                    oldSpec.Openstack.UseToken,
 				ApplicationCredentialID:     oldSpec.Openstack.ApplicationCredentialID,
 				ApplicationCredentialSecret: oldSpec.Openstack.ApplicationCredentialSecret,
@@ -1173,7 +1173,7 @@ func clonePresetResourcesInCluster(ctx context.Context, logger logrus.FieldLogge
 
 		if oldSpec.Packet != nil {
 			newObject.Spec.Packet = &newv1.Packet{
-				PresetProvider: newv1.PresetProvider(oldSpec.Packet.ProviderPreset),
+				ProviderPreset: newv1.ProviderPreset(oldSpec.Packet.ProviderPreset),
 				APIKey:         oldSpec.Packet.APIKey,
 				ProjectID:      oldSpec.Packet.ProjectID,
 				BillingCycle:   oldSpec.Packet.BillingCycle,
@@ -1182,13 +1182,38 @@ func clonePresetResourcesInCluster(ctx context.Context, logger logrus.FieldLogge
 
 		if oldSpec.VSphere != nil {
 			newObject.Spec.VSphere = &newv1.VSphere{
-				PresetProvider:   newv1.PresetProvider(oldSpec.VSphere.ProviderPreset),
+				ProviderPreset:   newv1.ProviderPreset(oldSpec.VSphere.ProviderPreset),
 				Username:         oldSpec.VSphere.Username,
 				Password:         oldSpec.VSphere.Password,
 				VMNetName:        oldSpec.VSphere.VMNetName,
 				Datastore:        oldSpec.VSphere.Datastore,
 				DatastoreCluster: oldSpec.VSphere.DatastoreCluster,
 				ResourcePool:     oldSpec.VSphere.ResourcePool,
+			}
+		}
+
+		if oldSpec.GKE != nil {
+			newObject.Spec.GKE = &newv1.GKE{
+				ProviderPreset: newv1.ProviderPreset(oldSpec.GKE.ProviderPreset),
+				ServiceAccount: oldSpec.GKE.ServiceAccount,
+			}
+		}
+
+		if oldSpec.EKS != nil {
+			newObject.Spec.EKS = &newv1.EKS{
+				ProviderPreset:  newv1.ProviderPreset(oldSpec.EKS.ProviderPreset),
+				AccessKeyID:     oldSpec.EKS.AccessKeyID,
+				SecretAccessKey: oldSpec.EKS.SecretAccessKey,
+			}
+		}
+
+		if oldSpec.AKS != nil {
+			newObject.Spec.AKS = &newv1.AKS{
+				ProviderPreset: newv1.ProviderPreset(oldSpec.AKS.ProviderPreset),
+				TenantID:       oldSpec.AKS.TenantID,
+				SubscriptionID: oldSpec.AKS.SubscriptionID,
+				ClientID:       oldSpec.AKS.ClientID,
+				ClientSecret:   oldSpec.AKS.ClientSecret,
 			}
 		}
 
@@ -1563,6 +1588,14 @@ func cloneUserResourcesInCluster(ctx context.Context, logger logrus.FieldLogger,
 
 		if err := ensureObject(ctx, client, &newObject, true); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
+		}
+
+		newObject.Status = newv1.UserStatus{
+			LastSeen: oldObject.Status.LastSeen,
+		}
+
+		if err := client.Status().Update(ctx, &newObject); err != nil {
+			return 0, fmt.Errorf("failed to update status on %s: %w", oldObject.Name, err)
 		}
 	}
 

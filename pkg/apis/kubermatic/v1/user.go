@@ -35,6 +35,7 @@ const (
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:JSONPath=".spec.email",name="Email",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.name",name="Name",type="string"
 
@@ -43,7 +44,13 @@ type User struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec UserSpec `json:"spec,omitempty"`
+	Spec   UserSpec   `json:"spec,omitempty"`
+	Status UserStatus `json:"status,omitempty"`
+}
+
+// UserStatus stores status information about a user.
+type UserStatus struct {
+	LastSeen *metav1.Time `json:"lastSeen,omitempty"`
 }
 
 // UserSpec specifies a user

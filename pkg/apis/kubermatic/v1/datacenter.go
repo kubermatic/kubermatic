@@ -17,16 +17,78 @@ limitations under the License.
 package v1
 
 import (
+	"strings"
+
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// +kubebuilder:validation:Enum=digitalocean;hetzner;azure;vsphere;aws;openstack;packet;gcp;kubevirt;alibaba;anexia;fake
+
+type ProviderType string
+
+const (
+	// Constants defining known cloud providers.
+	FakeCloudProvider         ProviderType = "fake"
+	AKSCloudProvider          ProviderType = "aks"
+	AWSCloudProvider          ProviderType = "aws"
+	AlibabaCloudProvider      ProviderType = "alibaba"
+	AnexiaCloudProvider       ProviderType = "anexia"
+	AzureCloudProvider        ProviderType = "azure"
+	BringYourOwnCloudProvider ProviderType = "bringyourown"
+	DigitaloceanCloudProvider ProviderType = "digitalocean"
+	EKSCloudProvider          ProviderType = "eks"
+	GCPCloudProvider          ProviderType = "gcp"
+	GKECloudProvider          ProviderType = "gke"
+	HetznerCloudProvider      ProviderType = "hetzner"
+	KubevirtCloudProvider     ProviderType = "kubevirt"
+	OpenstackCloudProvider    ProviderType = "openstack"
+	PacketCloudProvider       ProviderType = "packet"
+	VSphereCloudProvider      ProviderType = "vsphere"
+
+	DefaultSSHPort     = 22
+	DefaultKubeletPort = 10250
+
+	DefaultKubeconfigFieldPath = "kubeconfig"
+)
+
+var (
+	SupportedProviders = []ProviderType{
+		AKSCloudProvider,
+		AWSCloudProvider,
+		AlibabaCloudProvider,
+		AnexiaCloudProvider,
+		AzureCloudProvider,
+		BringYourOwnCloudProvider,
+		DigitaloceanCloudProvider,
+		EKSCloudProvider,
+		FakeCloudProvider,
+		GCPCloudProvider,
+		GKECloudProvider,
+		HetznerCloudProvider,
+		KubevirtCloudProvider,
+		OpenstackCloudProvider,
+		PacketCloudProvider,
+		VSphereCloudProvider,
+	}
+)
+
+func IsProviderSupported(name string) bool {
+	for _, provider := range SupportedProviders {
+		if strings.EqualFold(name, string(provider)) {
+			return true
+		}
+	}
+
+	return false
+}
+
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 
-// SeedList is the type representing a SeedList
+// SeedDatacenterList is the type representing a SeedDatacenterList
 type SeedList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
@@ -38,12 +100,12 @@ type SeedList struct {
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 
-// Seed is the type representing a Seed
+// Seed is the type representing a SeedDatacenter
 type Seed struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec SeedSpec `json:"spec,omitempty"`
+	Spec SeedSpec `json:"spec"`
 }
 
 func (s *Seed) SetDefaults() {
