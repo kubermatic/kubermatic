@@ -33,6 +33,10 @@ type AWSCloudSpec struct {
 	// instance profile name
 	InstanceProfileName string `json:"instanceProfileName,omitempty"`
 
+	// NodePortsAllowedIPRange is the range of addresses allowed to access the cluster nodeports.
+	// If not specified, the default value is 0.0.0.0/0, i.e., no restriction.
+	NodePortsAllowedIPRange string `json:"nodePortsAllowedIPRange,omitempty"`
+
 	// DEPRECATED. Don't care for the role name. We only require the ControlPlaneRoleARN to be set so the control plane
 	// can perform the assume-role.
 	// We keep it for backwards compatibility (We use this name for cleanup purpose).

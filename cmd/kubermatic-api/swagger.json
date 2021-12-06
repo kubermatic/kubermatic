@@ -17536,6 +17536,11 @@
           "type": "string",
           "x-go-name": "InstanceProfileName"
         },
+        "nodePortsAllowedIPRange": {
+          "description": "NodePortsAllowedIPRange is the range of addresses allowed to access the cluster nodeports.\nIf not specified, the default value is 0.0.0.0/0, i.e., no restriction.",
+          "type": "string",
+          "x-go-name": "NodePortsAllowedIPRange"
+        },
         "roleARN": {
           "description": "The IAM role, the control plane will use. The control plane will perform an assume-role",
           "type": "string",
@@ -18479,6 +18484,11 @@
         },
         "loadBalancerSKU": {
           "$ref": "#/definitions/LBSKU"
+        },
+        "nodePortsAllowedIPRange": {
+          "description": "NodePortsAllowedIPRange is the range of addresses allowed to access the cluster nodeports.\nIf not specified, the default value is 0.0.0.0/0, i.e., no restriction.",
+          "type": "string",
+          "x-go-name": "NodePortsAllowedIPRange"
         },
         "resourceGroup": {
           "type": "string",
@@ -20824,6 +20834,11 @@
           "type": "string",
           "x-go-name": "Network"
         },
+        "nodePortsAllowedIPRange": {
+          "description": "NodePortsAllowedIPRange is the range of addresses allowed to access the cluster nodeports.\nIf not specified, the default value is 0.0.0.0/0, i.e., no restriction.",
+          "type": "string",
+          "x-go-name": "NodePortsAllowedIPRange"
+        },
         "serviceAccount": {
           "type": "string",
           "x-go-name": "ServiceAccount"
@@ -23032,6 +23047,11 @@
           "description": "Network holds the name of the internal network\nWhen specified, all worker nodes will be attached to this network. If not specified, a network, subnet \u0026 router will be created\n\nNote that the network is internal if the \"External\" field is set to false",
           "type": "string",
           "x-go-name": "Network"
+        },
+        "nodePortsAllowedIPRange": {
+          "description": "NodePortsAllowedIPRange is the range of addresses allowed to access the cluster nodeports.\nIf not specified, the default value is 0.0.0.0/0, i.e., no restriction.",
+          "type": "string",
+          "x-go-name": "NodePortsAllowedIPRange"
         },
         "password": {
           "type": "string",
