@@ -75,25 +75,26 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to get cloudConfig: %v", err)
 	}
-	var CSICloudConfig []byte
+
+	data := reconcileData{
+		caCert:       caCert,
+		userSSHKeys:  userSSHKeys,
+		cloudConfig:  cloudConfig,
+		ccmMigration: r.ccmMigration || r.ccmMigrationCompleted,
+	}
+
 	if r.cloudProvider == kubermaticv1.VSphereCloudProvider {
-		CSICloudConfig, err = r.cloudConfig(ctx, resources.CSICloudConfigConfigMapName)
+		data.csiCloudConfig, err = r.cloudConfig(ctx, resources.CSICloudConfigConfigMapName)
 		if err != nil {
 			return fmt.Errorf("failed to get cloudConfig: %v", err)
 		}
 	}
-	clusterAddress, err := r.clusterAddress(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get cluster address: %v", err)
-	}
 
-	data := reconcileData{
-		caCert:         caCert,
-		userSSHKeys:    userSSHKeys,
-		cloudConfig:    cloudConfig,
-		csiCloudConfig: CSICloudConfig,
-		ccmMigration:   r.ccmMigration || r.ccmMigrationCompleted,
-		clusterAddress: clusterAddress,
+	if r.networkPolices {
+		data.clusterAddress, data.k8sServiceApiIP, err = r.networkingData(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to get cluster address: %v", err)
+		}
 	}
 
 	if !r.isKonnectivityEnabled {
@@ -873,7 +874,7 @@ func (r *reconciler) reconcileNetworkPolicies(ctx context.Context, data reconcil
 
 	namedNetworkPolicyCreatorGetters := []reconciling.NamedNetworkPolicyCreatorGetter{
 		kubesystem.DefaultNetworkPolicyCreator(),
-		coredns.KubeDNSNetworkPolicyCreator(data.clusterAddress.IP, int(data.clusterAddress.Port)),
+		coredns.KubeDNSNetworkPolicyCreator(data.clusterAddress.IP, int(data.clusterAddress.Port), data.k8sServiceApiIP.String()),
 	}
 
 	if r.userSSHKeyAgent {
@@ -881,7 +882,6 @@ func (r *reconciler) reconcileNetworkPolicies(ctx context.Context, data reconcil
 	}
 
 	if r.isKonnectivityEnabled {
-		namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters, usersshkeys.NetworkPolicyCreator())
 		namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters, metricsserver.NetworkPolicyCreator())
 	}
 
@@ -927,6 +927,7 @@ type reconcileData struct {
 	loggingRequirements    *corev1.ResourceRequirements
 	monitoringReplicas     *int32
 	clusterAddress         *kubermaticv1.ClusterAddress
+	k8sServiceApiIP        *net.IP
 }
 
 func (r *reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context) error {
