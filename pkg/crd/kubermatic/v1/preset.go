@@ -320,7 +320,7 @@ func (s Anexia) IsValid() bool {
 }
 
 type GKE struct {
-	Enabled *bool `json:"enabled,omitempty"`
+	ProviderPreset `json:",inline"`
 
 	ServiceAccount string `json:"serviceAccount"`
 }
@@ -330,7 +330,7 @@ func (s GKE) IsValid() bool {
 }
 
 type EKS struct {
-	Enabled *bool `json:"enabled,omitempty"`
+	ProviderPreset `json:",inline"`
 
 	AccessKeyID     string `json:"accessKeyId"`
 	SecretAccessKey string `json:"secretAccessKey"`
@@ -342,7 +342,7 @@ func (s EKS) IsValid() bool {
 }
 
 type AKS struct {
-	Enabled *bool `json:"enabled,omitempty"`
+	ProviderPreset `json:",inline"`
 
 	TenantID       string `json:"tenantId"`
 	SubscriptionID string `json:"subscriptionId"`
