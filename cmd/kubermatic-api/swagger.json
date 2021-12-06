@@ -23120,6 +23120,12 @@
     "OPAIntegrationSettings": {
       "type": "object",
       "properties": {
+        "auditResources": {
+          "$ref": "#/definitions/ResourceRequirements"
+        },
+        "controllerResources": {
+          "$ref": "#/definitions/ResourceRequirements"
+        },
         "enabled": {
           "description": "Enabled is the flag for enabling OPA integration",
           "type": "boolean",
