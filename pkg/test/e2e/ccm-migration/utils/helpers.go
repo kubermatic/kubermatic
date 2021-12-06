@@ -82,6 +82,7 @@ func DefaultCluster(clusterName string, version semver.Semver, cloudSpec kuberma
 				},
 				ProxyMode: "ipvs",
 			},
+			ContainerRuntime: "docker",
 			ComponentsOverride: kubermaticv1.ComponentSettings{
 				Apiserver: kubermaticv1.APIServerSettings{
 					EndpointReconcilingDisabled: pointer.BoolPtr(true),

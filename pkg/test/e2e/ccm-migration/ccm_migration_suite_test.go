@@ -59,6 +59,7 @@ func init() {
 	flag.StringVar(&options.osCredentials.Network, "openstack-network", "", "openstack network")
 	flag.StringVar(&options.osCredentials.Datacenter, "openstack-datacenter", "", "openstack datacenter")
 
+	flag.StringVar(&options.vSphereCredentials.AuthURL, "vsphere-auth-url", "", "vsphere auth-url")
 	flag.StringVar(&options.vSphereCredentials.Username, "vsphere-username", "", "vsphere username")
 	flag.StringVar(&options.vSphereCredentials.Password, "vsphere-password", "", "vsphere password")
 	flag.StringVar(&options.vSphereCredentials.Datacenter, "vsphere-datacenter", "", "vsphere datacenter")
