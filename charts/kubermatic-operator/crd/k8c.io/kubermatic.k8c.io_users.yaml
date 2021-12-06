@@ -117,10 +117,18 @@ spec:
             - id
             - name
             type: object
+          status:
+            description: UserStatus stores status information about a user.
+            properties:
+              lastSeen:
+                format: date-time
+                type: string
+            type: object
         type: object
     served: true
     storage: true
-    subresources: {}
+    subresources:
+      status: {}
 status:
   acceptedNames:
     kind: ""
