@@ -878,7 +878,8 @@ func (r *reconciler) reconcileNetworkPolicies(ctx context.Context, data reconcil
 	}
 
 	if r.userSSHKeyAgent {
-		namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters, usersshkeys.NetworkPolicyCreator())
+		namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters,
+			usersshkeys.NetworkPolicyCreator(data.clusterAddress.IP, int(data.clusterAddress.Port), data.k8sServiceApiIP.String()))
 	}
 
 	if r.isKonnectivityEnabled {

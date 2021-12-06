@@ -17,17 +17,22 @@ limitations under the License.
 package usersshkeys
 
 import (
+	"fmt"
+
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 )
 
 // NetworkPolicyCreator NetworkPolicy allows egress traffic of user ssh keys agent to the world
-func NetworkPolicyCreator() reconciling.NamedNetworkPolicyCreatorGetter {
+func NetworkPolicyCreator(k8sApiIP string, k8sApiPort int, k8sServiceApi string) reconciling.NamedNetworkPolicyCreatorGetter {
 	return func() (string, reconciling.NetworkPolicyCreator) {
 		return "user-ssh-key-agent", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
+			apiServicePort := intstr.FromInt(443)
+			apiPort := intstr.FromInt(k8sApiPort)
 
 			np.Spec = networkingv1.NetworkPolicySpec{
 				PodSelector: metav1.LabelSelector{
@@ -43,8 +48,27 @@ func NetworkPolicyCreator() reconciling.NamedNetworkPolicyCreatorGetter {
 						To: []networkingv1.NetworkPolicyPeer{
 							{
 								IPBlock: &networkingv1.IPBlock{
-									CIDR: "0.0.0.0/0",
+									CIDR: fmt.Sprintf("%s/32", k8sApiIP),
 								},
+							},
+						},
+						Ports: []networkingv1.NetworkPolicyPort{
+							{
+								Port: &apiPort,
+							},
+						},
+					},
+					{
+						To: []networkingv1.NetworkPolicyPeer{
+							{
+								IPBlock: &networkingv1.IPBlock{
+									CIDR: fmt.Sprintf("%s/32", k8sServiceApi),
+								},
+							},
+						},
+						Ports: []networkingv1.NetworkPolicyPort{
+							{
+								Port: &apiServicePort,
 							},
 						},
 					},
