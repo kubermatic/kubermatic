@@ -244,10 +244,9 @@ func patchAKSMachineDeployment(ctx context.Context, old, new *apiv2.ExternalClus
 		return nil, err
 	}
 
-	agentPoolClient := containerservice.NewAgentPoolsClient(cred.SubscriptionID)
-	agentPoolClient.Authorizer, err = auth.NewClientCredentialsConfig(cred.ClientID, cred.ClientSecret, cred.TenantID).Authorizer()
+	agentPoolClient, err := getAKSNodePoolClient(cred)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %v", err.Error())
+		return nil, err
 	}
 
 	nodePoolName := new.NodeDeployment.Name
@@ -256,7 +255,7 @@ func patchAKSMachineDeployment(ctx context.Context, old, new *apiv2.ExternalClus
 	currentVersion := old.NodeDeployment.Spec.Template.Versions.Kubelet
 	desiredVersion := new.NodeDeployment.Spec.Template.Versions.Kubelet
 	if desiredReplicas != currentReplicas {
-		_, err = resizeAKSNodePool(ctx, agentPoolClient, cloud, nodePoolName, desiredReplicas)
+		_, err = resizeAKSNodePool(ctx, *agentPoolClient, cloud, nodePoolName, desiredReplicas)
 		if err != nil {
 			return nil, err
 		}
@@ -264,7 +263,7 @@ func patchAKSMachineDeployment(ctx context.Context, old, new *apiv2.ExternalClus
 		return new, nil
 	}
 	if desiredVersion != currentVersion {
-		_, err = upgradeNodePool(ctx, agentPoolClient, cloud, nodePoolName, desiredVersion)
+		_, err = upgradeNodePool(ctx, *agentPoolClient, cloud, nodePoolName, desiredVersion)
 		if err != nil {
 			return nil, err
 		}
@@ -327,8 +326,18 @@ func getAKSClusterClient(cred azure.Credentials) (*containerservice.ManagedClust
 	if err != nil {
 		return nil, fmt.Errorf("failed to create authorizer: %v", err.Error())
 	}
-
 	return &aksClient, nil
+}
+
+func getAKSNodePoolClient(cred azure.Credentials) (*containerservice.AgentPoolsClient, error) {
+	var err error
+
+	agentPoolClient := containerservice.NewAgentPoolsClient(cred.SubscriptionID)
+	agentPoolClient.Authorizer, err = auth.NewClientCredentialsConfig(cred.ClientID, cred.ClientSecret, cred.TenantID).Authorizer()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create authorizer: %v", err.Error())
+	}
+	return &agentPoolClient, nil
 }
 
 func getAKSCluster(ctx context.Context, aksClient *containerservice.ManagedClustersClient, cloud *kubermaticapiv1.ExternalClusterCloudSpec) (*containerservice.ManagedCluster, error) {
@@ -350,4 +359,22 @@ func updateAKSNodePool(ctx context.Context, agentPoolClient containerservice.Age
 	}
 
 	return &result, nil
+}
+
+func deleteAKSNodeGroup(ctx context.Context, cloud *kubermaticapiv1.ExternalClusterCloudSpec, nodePoolName string, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector, clusterProvider provider.ExternalClusterProvider) error {
+	cred, err := azure.GetCredentialsForAKSCluster(*cloud, secretKeySelector)
+	if err != nil {
+		return err
+	}
+
+	agentPoolClient, err := getAKSNodePoolClient(cred)
+	if err != nil {
+		return err
+	}
+
+	_, err = agentPoolClient.Delete(ctx, cloud.AKS.ResourceGroup, cloud.AKS.Name, nodePoolName)
+	if err != nil {
+		return err
+	}
+	return nil
 }

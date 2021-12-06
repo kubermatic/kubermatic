@@ -335,6 +335,12 @@ func DeleteMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, pro
 					return nil, common.KubernetesErrorToHTTPError(err)
 				}
 			}
+			if cloud.AKS != nil {
+				err := deleteAKSNodeGroup(ctx, cluster.Spec.CloudSpec, req.MachineDeploymentID, secretKeySelector, cloud.AKS.CredentialsReference, clusterProvider)
+				if err != nil {
+					return nil, common.KubernetesErrorToHTTPError(err)
+				}
+			}
 		}
 
 		return nil, nil
