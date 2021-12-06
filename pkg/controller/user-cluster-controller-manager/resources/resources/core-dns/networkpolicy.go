@@ -30,10 +30,11 @@ import (
 )
 
 // KubeDNSNetworkPolicyCreator NetworkPolicy allows ingress traffic to coredns on port 53 TCP/UDP and egress to anywhere on port 53 TCP/UDP.
-func KubeDNSNetworkPolicyCreator(k8sApiIP string, k8sApiPort int) reconciling.NamedNetworkPolicyCreatorGetter {
+func KubeDNSNetworkPolicyCreator(k8sApiIP string, k8sApiPort int, k8sServiceApi string) reconciling.NamedNetworkPolicyCreatorGetter {
 	return func() (string, reconciling.NetworkPolicyCreator) {
 		return "kube-dns", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			dnsPort := intstr.FromInt(53)
+			apiServicePort := intstr.FromInt(443)
 			apiPort := intstr.FromInt(k8sApiPort)
 			metricsPort := intstr.FromInt(9153)
 			protoUdp := v1.ProtocolUDP
@@ -118,6 +119,21 @@ func KubeDNSNetworkPolicyCreator(k8sApiIP string, k8sApiPort int) reconciling.Na
 							{
 								Protocol: &protoTcp,
 								Port:     &apiPort,
+							},
+						},
+					},
+					{
+						To: []networkingv1.NetworkPolicyPeer{
+							{
+								IPBlock: &networkingv1.IPBlock{
+									CIDR: fmt.Sprintf("%s/32", k8sServiceApi),
+								},
+							},
+						},
+						Ports: []networkingv1.NetworkPolicyPort{
+							{
+								Protocol: &protoTcp,
+								Port:     &apiServicePort,
 							},
 						},
 					},
