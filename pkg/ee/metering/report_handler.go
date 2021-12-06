@@ -177,12 +177,18 @@ func getS3DataFromSeed(ctx context.Context, seedClient ctrlruntimeclient.Client)
 	s3accessKeyID := string(s3.Data[AccessKey])
 	s3secretAccessKey := string(s3.Data[SecretKey])
 
-	s3endpoint = strings.Replace(s3endpoint, "https://", "", 1)
-	s3endpoint = strings.Replace(s3endpoint, "http://", "", 1)
+	secure := true
+
+	if strings.Contains(s3endpoint, "https://") {
+		s3endpoint = strings.Replace(s3endpoint, "https://", "", 1)
+	} else if strings.Contains(s3endpoint, "http://") {
+		s3endpoint = strings.Replace(s3endpoint, "http://", "", 1)
+		secure = false
+	}
 
 	mc, err := minio.New(s3endpoint, &minio.Options{
 		Creds:  minioCredentials.NewStaticV4(s3accessKeyID, s3secretAccessKey, ""),
-		Secure: true,
+		Secure: secure,
 	})
 
 	if err != nil {
