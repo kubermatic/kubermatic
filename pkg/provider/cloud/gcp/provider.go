@@ -336,6 +336,11 @@ func (g *gcp) ensureFirewallRules(cluster *kubermaticv1.Cluster, update provider
 		Build().
 		NodePorts()
 
+	nodePortsAllowedIPRange := cluster.Spec.Cloud.GCP.NodePortsAllowedIPRange
+	if nodePortsAllowedIPRange == "" {
+		nodePortsAllowedIPRange = "0.0.0.0/0"
+	}
+
 	firewallService := compute.NewFirewallsService(svc)
 	tag := fmt.Sprintf("kubernetes-cluster-%s", cluster.Name)
 	selfRuleName := fmt.Sprintf("firewall-%s-self", cluster.Name)
@@ -427,7 +432,8 @@ func (g *gcp) ensureFirewallRules(cluster *kubermaticv1.Cluster, update provider
 					Ports:      []string{fmt.Sprintf("%d-%d", nodePortRangeLow, nodePortRangeHigh)},
 				},
 			},
-			TargetTags: []string{tag},
+			TargetTags:   []string{tag},
+			SourceRanges: []string{nodePortsAllowedIPRange},
 		}).Do()
 		// we ignore a Google API "already exists" error
 		if err != nil && !isHTTPError(err, http.StatusConflict) {

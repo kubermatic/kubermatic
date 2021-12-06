@@ -249,6 +249,8 @@ spec:
                         type: object
                       instanceProfileName:
                         type: string
+                      nodePortsAllowedIPRange:
+                        type: string
                       roleARN:
                         description: The IAM role, the control plane will use. The
                           control plane will perform an assume-role
@@ -333,6 +335,8 @@ spec:
                         enum:
                         - standard
                         - basic
+                        type: string
+                      nodePortsAllowedIPRange:
                         type: string
                       resourceGroup:
                         type: string
@@ -464,6 +468,8 @@ spec:
                             type: string
                         type: object
                       network:
+                        type: string
+                      nodePortsAllowedIPRange:
                         type: string
                       serviceAccount:
                         type: string
@@ -639,6 +645,8 @@ spec:
                           network. If not specified, a network, subnet & router will
                           be created \n Note that the network is internal if the \"External\"
                           field is set to false"
+                        type: string
+                      nodePortsAllowedIPRange:
                         type: string
                       password:
                         type: string

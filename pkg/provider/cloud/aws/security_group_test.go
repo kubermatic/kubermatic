@@ -78,7 +78,7 @@ func assertSecurityGroup(t *testing.T, cluster *kubermaticv1.Cluster, group *ec2
 	}
 
 	lowPort, highPort := getNodePortRange(cluster)
-	permissions := getSecurityGroupPermissions(*group.GroupId, lowPort, highPort)
+	permissions := getSecurityGroupPermissions(*group.GroupId, lowPort, highPort, "0.0.0.0/0")
 
 	stringPermissions := sets.NewString()
 	for _, perm := range permissions {

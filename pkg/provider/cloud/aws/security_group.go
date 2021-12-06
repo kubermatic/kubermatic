@@ -120,10 +120,15 @@ func reconcileSecurityGroup(client ec2iface.EC2API, cluster *kubermaticv1.Cluste
 		groupID = *out.GroupId
 	}
 
+	nodePortsAllowedIPRange := cluster.Spec.Cloud.AWS.NodePortsAllowedIPRange
+	if nodePortsAllowedIPRange == "" {
+		nodePortsAllowedIPRange = "0.0.0.0/0"
+	}
+
 	// Iterate over the permissions and add them one by one, because if an error occurs
 	// (e.g., one permission already exists) none of them would be created
 	lowPort, highPort := getNodePortRange(cluster)
-	permissions := getSecurityGroupPermissions(groupID, lowPort, highPort)
+	permissions := getSecurityGroupPermissions(groupID, lowPort, highPort, nodePortsAllowedIPRange)
 
 	for _, perm := range permissions {
 		// try to add permission
@@ -153,7 +158,7 @@ func getNodePortRange(cluster *kubermaticv1.Cluster) (int, int) {
 		NodePorts()
 }
 
-func getSecurityGroupPermissions(securityGroupID string, lowPort, highPort int) []*ec2.IpPermission {
+func getSecurityGroupPermissions(securityGroupID string, lowPort, highPort int, nodePortsAllowedIPRange string) []*ec2.IpPermission {
 	return []*ec2.IpPermission{
 		// all protocols from within the sg
 		{
@@ -199,7 +204,7 @@ func getSecurityGroupPermissions(securityGroupID string, lowPort, highPort int) 
 			FromPort:   aws.Int64(int64(lowPort)),
 			ToPort:     aws.Int64(int64(highPort)),
 			IpRanges: []*ec2.IpRange{{
-				CidrIp: aws.String("0.0.0.0/0"),
+				CidrIp: aws.String(nodePortsAllowedIPRange),
 			}},
 		},
 
@@ -209,7 +214,7 @@ func getSecurityGroupPermissions(securityGroupID string, lowPort, highPort int) 
 			FromPort:   aws.Int64(int64(lowPort)),
 			ToPort:     aws.Int64(int64(highPort)),
 			IpRanges: []*ec2.IpRange{{
-				CidrIp: aws.String("0.0.0.0/0"),
+				CidrIp: aws.String(nodePortsAllowedIPRange),
 			}},
 		},
 	}

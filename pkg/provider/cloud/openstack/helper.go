@@ -152,9 +152,10 @@ func deleteSecurityGroup(netClient *gophercloud.ServiceClient, sgName string) er
 }
 
 type createKubermaticSecurityGroupRequest struct {
-	clusterName string
-	lowPort     int
-	highPort    int
+	clusterName             string
+	lowPort                 int
+	highPort                int
+	nodePortsAllowedIPRange string
 }
 
 func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, req createKubermaticSecurityGroupRequest) (string, error) {
@@ -211,22 +212,24 @@ func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, req cre
 			Protocol:     ossecuritygrouprules.ProtocolTCP,
 		},
 		{
-			// Allows nodePorts from external
-			Direction:    ossecuritygrouprules.DirIngress,
-			EtherType:    ossecuritygrouprules.EtherType4,
-			SecGroupID:   securityGroupID,
-			PortRangeMin: req.lowPort,
-			PortRangeMax: req.highPort,
-			Protocol:     ossecuritygrouprules.ProtocolTCP,
+			// Allows TCP traffic to nodePorts from external
+			Direction:      ossecuritygrouprules.DirIngress,
+			EtherType:      ossecuritygrouprules.EtherType4,
+			SecGroupID:     securityGroupID,
+			PortRangeMin:   req.lowPort,
+			PortRangeMax:   req.highPort,
+			Protocol:       ossecuritygrouprules.ProtocolTCP,
+			RemoteIPPrefix: req.nodePortsAllowedIPRange,
 		},
 		{
-			// Allows nodePorts from external
-			Direction:    ossecuritygrouprules.DirIngress,
-			EtherType:    ossecuritygrouprules.EtherType4,
-			SecGroupID:   securityGroupID,
-			PortRangeMin: req.lowPort,
-			PortRangeMax: req.highPort,
-			Protocol:     ossecuritygrouprules.ProtocolUDP,
+			// Allows UDP traffic to nodePorts from external
+			Direction:      ossecuritygrouprules.DirIngress,
+			EtherType:      ossecuritygrouprules.EtherType4,
+			SecGroupID:     securityGroupID,
+			PortRangeMin:   req.lowPort,
+			PortRangeMax:   req.highPort,
+			Protocol:       ossecuritygrouprules.ProtocolUDP,
+			RemoteIPPrefix: req.nodePortsAllowedIPRange,
 		},
 		{
 			// Allows ICMP traffic
