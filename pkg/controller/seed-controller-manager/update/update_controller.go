@@ -29,6 +29,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -161,7 +162,7 @@ func (r *Reconciler) nodeUpdate(ctx context.Context, cluster *kubermaticv1.Clust
 
 	machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
 	// Kubermatic only creates MachineDeployments in the kube-system namespace, everything else is essentially unsupported
-	if err := c.List(ctx, machineDeployments, ctrlruntimeclient.InNamespace("kube-system")); err != nil {
+	if err := c.List(ctx, machineDeployments, ctrlruntimeclient.InNamespace(resources.KubeSystemNamespaceName)); err != nil {
 		return fmt.Errorf("failed to list MachineDeployments: %v", err)
 	}
 

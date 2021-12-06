@@ -28,6 +28,7 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
+	"k8s.io/utils/pointer"
 
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -349,4 +350,32 @@ func (r *reconciler) mlaReconcileData(ctx context.Context) (monitoring, logging 
 		return nil, nil, nil, fmt.Errorf("failed to get cluster: %w", err)
 	}
 	return cluster.Spec.MLA.MonitoringResources, cluster.Spec.MLA.LoggingResources, cluster.Spec.MLA.MonitoringReplicas, nil
+}
+
+// reconcileDefaultServiceAccount ensures that the Kubernetes default service account has AutomountServiceAccountToken set to false
+func (r *reconciler) reconcileDefaultServiceAccount(ctx context.Context, namespace string) error {
+
+	var serviceAccount corev1.ServiceAccount
+	err := r.Get(ctx, types.NamespacedName{
+		Namespace: namespace,
+		Name:      resources.DefaultServiceAccountName,
+	}, &serviceAccount)
+
+	if err != nil {
+		return err
+	}
+
+	// all good service account has AutomountServiceAccountToken set to false
+	if serviceAccount.AutomountServiceAccountToken != nil && !*serviceAccount.AutomountServiceAccountToken {
+		return nil
+	}
+
+	serviceAccount.AutomountServiceAccountToken = pointer.Bool(false)
+
+	err = r.Update(ctx, &serviceAccount)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
