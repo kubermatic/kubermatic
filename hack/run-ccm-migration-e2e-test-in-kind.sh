@@ -38,8 +38,6 @@ USER_CLUSTER_NAME="${USER_CLUSTER_NAME-$(head -3 /dev/urandom | tr -cd '[:alnum:
 API_SERVER_NODEPORT_MANIFEST="${API_SERVER_NODEPORT_MANIFEST-apiserver_nodeport.yaml}"
 KUBECONFIG="${KUBECONFIG:-"${HOME}/.kube/config"}"
 
-source os_env.sh
-
 REPOSUFFIX=""
 if [ "${KUBERMATIC_EDITION:-}" == "ee" ]; then
   REPOSUFFIX="-${KUBERMATIC_EDITION}"
@@ -52,7 +50,7 @@ function clean_up {
   echodate "Deleting cluster ${KIND_CLUSTER_NAME}"
   kind delete cluster --name "${KIND_CLUSTER_NAME}" || true
 }
-#appendTrap clean_up EXIT
+appendTrap clean_up EXIT
 
 # Only start docker daemon in CI envorinment.
 if [[ ! -z "${JOB_NAME:-}" ]] && [[ ! -z "${PROW_JOB_ID:-}" ]]; then
@@ -290,9 +288,10 @@ EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
     -openstack-floating-ip-pool=${OS_FLOATING_IP_POOL}
     -openstack-network=${OS_NETWORK_NAME}
     -openstack-datacenter=syseleven-dbl1
-    -vsphere-auth-url=${}
-    -vsphere-username=${}
-    -vsphere-password=${}
+    -vsphere-auth-url=${VSPHERE_E2E_ADDRESS}
+    -vsphere-username=${VSPHERE_E2E_USERNAME}
+    -vsphere-password=${VSPHERE_E2E_PASSWORD}
+    -vsphere-datacenter=vsphere-hamburg
     "
 
 # delete userclusters when ending the test

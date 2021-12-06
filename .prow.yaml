@@ -1323,7 +1323,7 @@ presubmits:
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-openstack: "true"
-      preset-docker-mirror: "true"
+      preset-vsphere: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-kind-volume-mounts: "true"
