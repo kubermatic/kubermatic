@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -443,6 +444,10 @@ type OPAIntegrationSettings struct {
 	WebhookTimeoutSeconds *int32 `json:"webhookTimeoutSeconds,omitempty"`
 	// Enable mutation
 	ExperimentalEnableMutation bool `json:"experimentalEnableMutation,omitempty"`
+	// ControllerResources is the resource requirements for user cluster gatekeeper controller.
+	ControllerResources *corev1.ResourceRequirements `json:"controllerResources,omitempty"`
+	// AuditResources is the resource requirements for user cluster gatekeeper audit.
+	AuditResources *corev1.ResourceRequirements `json:"auditResources,omitempty"`
 }
 
 type ServiceAccountSettings struct {
@@ -959,5 +964,15 @@ func (cluster *Cluster) GetUserClusterMLAResourceRequirements() map[string]*core
 	return map[string]*corev1.ResourceRequirements{
 		"monitoring": cluster.Spec.MLA.MonitoringResources,
 		"logging":    cluster.Spec.MLA.LoggingResources,
+	}
+}
+
+func (cluster *Cluster) GetUserClusterOPAResourceRequirements() map[string]*corev1.ResourceRequirements {
+	if cluster.Spec.OPAIntegration == nil {
+		return nil
+	}
+	return map[string]*corev1.ResourceRequirements{
+		"controller": cluster.Spec.OPAIntegration.ControllerResources,
+		"audit":      cluster.Spec.OPAIntegration.AuditResources,
 	}
 }
