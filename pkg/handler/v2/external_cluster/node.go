@@ -236,6 +236,13 @@ func ListMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proje
 				}
 				machineDeployments = np
 			}
+			if cloud.AKS != nil {
+				np, err := getAKSNodePools(ctx, cluster, secretKeySelector, clusterProvider)
+				if err != nil {
+					return nil, common.KubernetesErrorToHTTPError(err)
+				}
+				machineDeployments = np
+			}
 		}
 
 		return machineDeployments, nil
@@ -685,7 +692,7 @@ func PatchMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proj
 				if err := patchMD(&mdToPatch, &patchedMD, req.Patch); err != nil {
 					return nil, err
 				}
-				return patchAKSMachineDeployment(ctx, &mdToPatch, &patchedMD, secretKeySelector, cluster)
+				return patchAKSMachineDeployment(ctx, &mdToPatch, &patchedMD, secretKeySelector, cluster.Spec.CloudSpec)
 			}
 		}
 		return nil, fmt.Errorf("unsupported or missing cloud provider fields")
