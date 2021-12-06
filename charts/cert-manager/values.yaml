@@ -18,11 +18,12 @@ certManager:
   # https_proxy: ""
   # no_proxy: ""
 
+  fullnameOverride: cert-manager
+  nameOverride: cert-manager
+
   controller:
     replicas: 1
     image:
-      repository: quay.io/jetstack/cert-manager-controller
-      tag: v1.5.2
       pullPolicy: IfNotPresent
     pullSecrets: []
 
@@ -51,8 +52,6 @@ certManager:
   webhook:
     replicas: 1
     image:
-      repository: quay.io/jetstack/cert-manager-webhook
-      tag: v1.5.2
       pullPolicy: IfNotPresent
 
     resources:
@@ -80,8 +79,6 @@ certManager:
   cainjector:
     replicas: 1
     image:
-      repository: quay.io/jetstack/cert-manager-cainjector
-      tag: v1.5.2
       pullPolicy: IfNotPresent
 
     resources:
