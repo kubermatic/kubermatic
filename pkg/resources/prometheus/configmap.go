@@ -139,6 +139,12 @@ func ConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapCr
 				delete(cm.Data, "rules.yaml")
 			} else {
 				cm.Data["rules.yaml"] = prometheusRules
+
+				// deploy DNSResolverDownAlert rule only if Konnectivity is disabled
+				// (custom DNS resolver in not deployed in Konnectivity setup)
+				if !data.IsKonnectivityEnabled() {
+					cm.Data["rules.yaml"] += prometheusRuleDNSResolverDownAlert
+				}
 			}
 
 			if customRules == "" {

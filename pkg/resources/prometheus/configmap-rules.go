@@ -20,6 +20,8 @@ package prometheus
 // Prometheus. Be careful when changing alert names, as some of them
 // are used for alert inhibitions and configured inside the
 // seed-cluster's Alertmanager.
+// Also make sure that groups list ends with the kubernetes-absent alerting group,
+// so that prometheusRuleDNSResolverDownAlert works as expected.
 const prometheusRules = `
 groups:
 - name: kubermatic.goprocess
@@ -309,6 +311,16 @@ groups:
     labels:
       severity: critical
 
+- name: kubernetes-nodes
+  rules:
+  - alert: KubernetesNodeNotReady
+    annotations:
+      message: '{{ $labels.node }} has been unready for more than an hour.'
+    expr: kube_node_status_condition{condition="Ready",status="true"} == 0
+    for: 30m
+    labels:
+      severity: warning
+
 - name: kubernetes-absent
   rules:
   - alert: KubernetesApiserverDown
@@ -371,22 +383,15 @@ groups:
     for: 15m
     labels:
       severity: warning
+`
 
+// prometheusRuleDNSResolverDownAlert contains the DNSResolverDown alerting rule for Prometheus.
+const prometheusRuleDNSResolverDownAlert = `
   - alert: DNSResolverDown
     annotations:
       message: DNS resolver has disappeared from Prometheus target discovery.
     expr: absent(up{job="dns-resolver"} == 1)
     for: 15m
-    labels:
-      severity: warning
-
-- name: kubernetes-nodes
-  rules:
-  - alert: KubernetesNodeNotReady
-    annotations:
-      message: '{{ $labels.node }} has been unready for more than an hour.'
-    expr: kube_node_status_condition{condition="Ready",status="true"} == 0
-    for: 30m
     labels:
       severity: warning
 `
