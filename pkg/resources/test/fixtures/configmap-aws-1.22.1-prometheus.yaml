@@ -521,6 +521,16 @@ data:
         labels:
           severity: critical
 
+    - name: kubernetes-nodes
+      rules:
+      - alert: KubernetesNodeNotReady
+        annotations:
+          message: '{{ $labels.node }} has been unready for more than an hour.'
+        expr: kube_node_status_condition{condition="Ready",status="true"} == 0
+        for: 30m
+        labels:
+          severity: warning
+
     - name: kubernetes-absent
       rules:
       - alert: KubernetesApiserverDown
@@ -589,16 +599,6 @@ data:
           message: DNS resolver has disappeared from Prometheus target discovery.
         expr: absent(up{job="dns-resolver"} == 1)
         for: 15m
-        labels:
-          severity: warning
-
-    - name: kubernetes-nodes
-      rules:
-      - alert: KubernetesNodeNotReady
-        annotations:
-          message: '{{ $labels.node }} has been unready for more than an hour.'
-        expr: kube_node_status_condition{condition="Ready",status="true"} == 0
-        for: 30m
         labels:
           severity: warning
 metadata:
