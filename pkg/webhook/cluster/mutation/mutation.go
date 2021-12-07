@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/go-logr/logr"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -32,6 +33,10 @@ import (
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+)
+
+var (
+	defaultCanalCNIVersion = "v3.19"
 )
 
 // AdmissionHandler for mutating Kubermatic Cluster CRD.
@@ -100,7 +105,7 @@ func (h *AdmissionHandler) applyDefaults(c *kubermaticv1.Cluster) {
 	if c.Spec.CNIPlugin == nil {
 		c.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
 			Type:    kubermaticv1.CNIPluginTypeCanal,
-			Version: "v3.19",
+			Version: defaultCanalCNIVersion,
 		}
 	}
 
@@ -245,6 +250,21 @@ func (h *AdmissionHandler) mutateUpdate(ctx context.Context, oldCluster, newClus
 			newCluster.Spec.Cloud.Openstack.UseOctavia = pointer.BoolPtr(true)
 		case newCluster.Spec.Cloud.VSphere != nil:
 			addCCMCSIMigrationAnnotations(newCluster)
+		}
+	}
+
+	// This part handles CNI upgrade from unspecified (= very old) CNI version to the default Canal version.
+	// This upgrade is necessary for k8s versions >= 1.22, where v1beta1 CRDs are not supported anymore.
+	if newCluster.Spec.CNIPlugin == nil {
+		upgradeConstraint, err := semver.NewConstraint(">= 1.22")
+		if err != nil {
+			return fmt.Errorf("parsing CNI upgrade constraint failed: %v", err)
+		}
+		if newCluster.Spec.Version.String() != "" && upgradeConstraint.Check(newCluster.Spec.Version.Semver()) {
+			newCluster.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
+				Type:    kubermaticv1.CNIPluginTypeCanal,
+				Version: defaultCanalCNIVersion,
+			}
 		}
 	}
 

@@ -169,7 +169,9 @@ func validateUpdateImmutability(c, oldC *kubermaticv1.Cluster) field.ErrorList {
 			*oldC.Spec.CNIPlugin,
 			specFldPath.Child("cniPlugin"),
 		)...)
-	} else {
+	} else if oldC.Spec.CNIPlugin != nil {
+		// If there was no CNI setting, we allow the initial mutation to happen.
+		// Otherwise, the mutation is denied.
 		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
 			c.Spec.CNIPlugin,
 			oldC.Spec.CNIPlugin,
