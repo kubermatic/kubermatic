@@ -39,6 +39,7 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -175,6 +176,7 @@ func Add(
 		&apiextensionsv1.CustomResourceDefinition{},
 		&appsv1.Deployment{},
 		&v1beta1.PodDisruptionBudget{},
+		&networkingv1.NetworkPolicy{},
 	}
 
 	// Avoid getting triggered by the leader lease AKA: If the annotation exists AND changed on
