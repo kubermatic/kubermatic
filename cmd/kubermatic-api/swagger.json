@@ -17513,6 +17513,26 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
+    "AKSMachineDeploymentCloudSpec": {
+      "type": "object",
+      "properties": {
+        "basics": {
+          "$ref": "#/definitions/AgentPoolBasics"
+        },
+        "optionalSettings": {
+          "$ref": "#/definitions/AgentPoolOptionalSettings"
+        },
+        "tags": {
+          "description": "Tags - The tags to be persisted on the agent pool virtual machine scale set.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Tags"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "AWSCloudSpec": {
       "type": "object",
       "title": "AWSCloudSpec specifies access data to Amazon Web Services.",
@@ -18154,6 +18174,110 @@
         "type": "string"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "AgentPoolBasics": {
+      "type": "object",
+      "properties": {
+        "availabilityZones": {
+          "description": "AvailabilityZones - The list of Availability zones to use for nodes. This can only be specified if the AgentPoolType property is 'VirtualMachineScaleSets'.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "AvailabilityZones"
+        },
+        "count": {
+          "description": "Count - Number of agents (VMs) to host docker containers. Allowed values must be in the range of 0 to 1000 (inclusive) for user pools and in the range of 1 to 1000 (inclusive) for system pools. The default value is 1.",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "Count"
+        },
+        "enableAutoScaling": {
+          "description": "EnableAutoScaling - Whether to enable auto-scaler",
+          "type": "boolean",
+          "x-go-name": "EnableAutoScaling"
+        },
+        "maxCount": {
+          "description": "MaxCount - The maximum number of nodes for auto-scaling",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "MaxCount"
+        },
+        "minCount": {
+          "description": "MinCount - The minimum number of nodes for auto-scaling",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "MinCount"
+        },
+        "mode": {
+          "description": "Mode - Possible values include: 'System', 'User'",
+          "type": "string",
+          "x-go-name": "Mode"
+        },
+        "orchestratorVersion": {
+          "description": "OrchestratorVersion - As a best practice, you should upgrade all node pools in an AKS cluster to the same Kubernetes version. The node pool version must have the same major version as the control plane. The node pool minor version must be within two minor versions of the control plane version. The node pool version cannot be greater than the control plane version. For more information see [upgrading a node pool](https://docs.microsoft.com/azure/aks/use-multiple-node-pools#upgrade-a-node-pool).",
+          "type": "string",
+          "x-go-name": "OrchestratorVersion"
+        },
+        "osType": {
+          "description": "OsType - Possible values include: 'Linux', 'Windows'",
+          "type": "string",
+          "x-go-name": "OsType"
+        },
+        "vmSize": {
+          "description": "VMSize - VM size availability varies by region. If a node contains insufficient compute resources (memory, cpu, etc) pods might fail to run correctly. For more details on restricted VM sizes, see: https://docs.microsoft.com/azure/aks/quotas-skus-regions",
+          "type": "string",
+          "x-go-name": "VMSize"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "AgentPoolOptionalSettings": {
+      "type": "object",
+      "properties": {
+        "enableNodePublicIP": {
+          "description": "EnableNodePublicIP - Some scenarios may require nodes in a node pool to receive their own dedicated public IP addresses. A common scenario is for gaming workloads, where a console needs to make a direct connection to a cloud virtual machine to minimize hops. For more information see [assigning a public IP per node](https://docs.microsoft.com/azure/aks/use-multiple-node-pools#assign-a-public-ip-per-node-for-your-node-pools). The default is false.",
+          "type": "boolean",
+          "x-go-name": "EnableNodePublicIP"
+        },
+        "maxPods": {
+          "description": "MaxPods - The maximum number of pods that can run on a node.",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "MaxPods"
+        },
+        "nodeLabels": {
+          "description": "NodeLabels - The node labels to be persisted across all nodes in agent pool.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "NodeLabels"
+        },
+        "nodeTaints": {
+          "description": "NodeTaints - The taints added to new nodes during node pool create and scale. For example, key=value:NoSchedule.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "NodeTaints"
+        },
+        "upgradeSettings": {
+          "$ref": "#/definitions/AgentPoolUpgradeSettings"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "AgentPoolUpgradeSettings": {
+      "type": "object",
+      "properties": {
+        "maxSurge": {
+          "description": "MaxSurge - This can either be set to an integer (e.g. '5') or a percentage (e.g. '50%'). If a percentage is specified, it is the percentage of the total agent pool size at the time of the upgrade. For percentages, fractional nodes are rounded up. If not specified, the default is 1. For more information, including best practices, see: https://docs.microsoft.com/azure/aks/upgrade-cluster#customize-node-surge-upgrade",
+          "type": "string",
+          "x-go-name": "MaxSurge"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "Alertmanager": {
       "description": "Alertmanager represents an Alertmanager Configuration",
@@ -20725,6 +20849,9 @@
       "type": "object",
       "title": "ExternalClusterMachineDeploymentCloudSpec represents an object holding machine deployment cloud details.",
       "properties": {
+        "aks": {
+          "$ref": "#/definitions/AKSMachineDeploymentCloudSpec"
+        },
         "gke": {
           "$ref": "#/definitions/GKEMachineDeploymentCloudSpec"
         }
