@@ -782,9 +782,27 @@ func (r *reconciler) reconcileNamespaces(ctx context.Context) error {
 	if r.userClusterMLA.Logging || r.userClusterMLA.Monitoring {
 		creators = append(creators, mla.NamespaceCreator)
 	}
+
 	if err := reconciling.ReconcileNamespaces(ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile namespaces: %v", err)
 	}
+
+	// update default serviceAccount for each created namespace
+	for _, creator := range creators {
+		namespace, _ := creator()
+		err := r.reconcileDefaultServiceAccount(ctx, namespace)
+
+		if err != nil {
+			return fmt.Errorf("failed to update default service account: %v", err)
+		}
+	}
+
+	// finally, ensure kube-system default service account is updated as well
+	err := r.reconcileDefaultServiceAccount(ctx, resources.KubeSystemNamespaceName)
+	if err != nil {
+		return fmt.Errorf("failed to update default service account: %v", err)
+	}
+
 	return nil
 }
 

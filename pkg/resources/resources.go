@@ -243,6 +243,11 @@ const (
 	// CloudControllerManagerRoleBindingName is the name for the cloud controller manager rolebinding.
 	CloudControllerManagerRoleBindingName = "cloud-controller-manager"
 
+	// DefaultServiceAccountName is the name of Kubernetes default service accounts
+	DefaultServiceAccountName = "default"
+	// KubeSystemNamespaceName is the name of Kubernetes kube-system namespace
+	KubeSystemNamespaceName = "kube-system"
+
 	// MachineControllerCertUsername is the name of the user coming from kubeconfig cert
 	MachineControllerCertUsername = "machine-controller"
 	// KubeStateMetricsCertUsername is the name of the user coming from kubeconfig cert
