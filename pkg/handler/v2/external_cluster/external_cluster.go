@@ -112,7 +112,7 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 		// import GKE cluster
 		if cloud.GKE != nil {
 			if preset != nil {
-				if credentials := preset.Spec.GCP; credentials != nil {
+				if credentials := preset.Spec.GKE; credentials != nil {
 					req.Body.Cloud.GKE.ServiceAccount = credentials.ServiceAccount
 				}
 			}
@@ -125,7 +125,7 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 		// import EKS cluster
 		if cloud.EKS != nil {
 			if preset != nil {
-				if credentials := preset.Spec.AWS; credentials != nil {
+				if credentials := preset.Spec.EKS; credentials != nil {
 					cloud.EKS.AccessKeyID = credentials.AccessKeyID
 					cloud.EKS.SecretAccessKey = credentials.SecretAccessKey
 				}
@@ -141,7 +141,7 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 		// import AKS cluster
 		if cloud.AKS != nil {
 			if preset != nil {
-				if credentials := preset.Spec.Azure; credentials != nil {
+				if credentials := preset.Spec.AKS; credentials != nil {
 					cloud.AKS.TenantID = credentials.TenantID
 					cloud.AKS.SubscriptionID = credentials.SubscriptionID
 					cloud.AKS.ClientID = credentials.ClientID
