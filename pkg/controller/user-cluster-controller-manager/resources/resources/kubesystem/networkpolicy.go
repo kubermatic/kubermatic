@@ -32,10 +32,11 @@ import (
 // DefaultNetworkPolicyCreator Default policy creator denys all expect egress to kube-dns for all pods without any network policy applied.
 func DefaultNetworkPolicyCreator() reconciling.NamedNetworkPolicyCreatorGetter {
 	return func() (string, reconciling.NetworkPolicyCreator) {
+		dnsPort := intstr.FromInt(53)
+		protoUdp := v1.ProtocolUDP
+		protoTcp := v1.ProtocolTCP
+
 		return "allow-dns", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
-			dnsPort := intstr.FromInt(53)
-			protoUdp := v1.ProtocolUDP
-			protoTcp := v1.ProtocolTCP
 
 			// dns access to node local dns cache
 			np.Spec = networkingv1.NetworkPolicySpec{
