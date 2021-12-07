@@ -19,6 +19,7 @@ package usersshkeys
 import (
 	"fmt"
 
+	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -30,9 +31,11 @@ import (
 // NetworkPolicyCreator NetworkPolicy allows egress traffic of user ssh keys agent to the world
 func NetworkPolicyCreator(k8sApiIP string, k8sApiPort int, k8sServiceApi string) reconciling.NamedNetworkPolicyCreatorGetter {
 	return func() (string, reconciling.NetworkPolicyCreator) {
+		apiServicePort := intstr.FromInt(443)
+		apiPort := intstr.FromInt(k8sApiPort)
+		protoTcp := v1.ProtocolTCP
+
 		return "user-ssh-key-agent", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
-			apiServicePort := intstr.FromInt(443)
-			apiPort := intstr.FromInt(k8sApiPort)
 
 			np.Spec = networkingv1.NetworkPolicySpec{
 				PodSelector: metav1.LabelSelector{
@@ -54,7 +57,8 @@ func NetworkPolicyCreator(k8sApiIP string, k8sApiPort int, k8sServiceApi string)
 						},
 						Ports: []networkingv1.NetworkPolicyPort{
 							{
-								Port: &apiPort,
+								Port:     &apiPort,
+								Protocol: &protoTcp,
 							},
 						},
 					},
@@ -68,7 +72,8 @@ func NetworkPolicyCreator(k8sApiIP string, k8sApiPort int, k8sServiceApi string)
 						},
 						Ports: []networkingv1.NetworkPolicyPort{
 							{
-								Port: &apiServicePort,
+								Port:     &apiServicePort,
+								Protocol: &protoTcp,
 							},
 						},
 					},
