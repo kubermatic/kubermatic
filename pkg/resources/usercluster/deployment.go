@@ -73,6 +73,7 @@ type userclusterControllerData interface {
 }
 
 // DeploymentCreator returns the function to create and update the user cluster controller deployment
+// nolint:gocyclo
 func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.UserClusterControllerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
