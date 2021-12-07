@@ -12,20 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: {{ template "loki.fullname" . }}
-  namespace: {{ .Release.Namespace }}
-  labels:
-    app.kubernetes.io/name: {{ template "loki.name" . }}
-    app.kubernetes.io/instance: '{{ .Release.Name }}'
-    app.kubernetes.io/version: '{{ .Chart.Version }}'
-    app.kubernetes.io/managed-by: helm
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: {{ template "loki.fullname" . }}
-subjects:
-- kind: ServiceAccount
-  name: {{ template "loki.serviceAccountName" . }}
+# This file is used for the testing, do not remove!
