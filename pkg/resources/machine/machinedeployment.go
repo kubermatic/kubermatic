@@ -96,7 +96,7 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *kubermati
 
 		md.Spec.Template.Spec.ConfigSource = &corev1.NodeConfigSource{
 			ConfigMap: &corev1.ConfigMapNodeConfigSource{
-				Namespace:        "kube-system",
+				Namespace:        resources.KubeSystemNamespaceName,
 				Name:             fmt.Sprintf("kubelet-config-%d.%d", kubeletVersion.Major(), kubeletVersion.Minor()),
 				KubeletConfigKey: "kubelet",
 			},
