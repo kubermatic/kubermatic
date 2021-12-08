@@ -445,3 +445,31 @@ func getAzurePresetCredentials(userInfo *provider.UserInfo, presetName string, p
 		ClientSecret:   az.ClientSecret,
 	}, nil
 }
+
+func AKSValidateCredentialsEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(AKSTypesReq)
+
+		credential := azure.Credentials{
+			TenantID:       req.TenantID,
+			SubscriptionID: req.SubscriptionID,
+			ClientID:       req.ClientID,
+			ClientSecret:   req.ClientSecret,
+		}
+		presetName := req.Credential
+
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		// Preset is used
+		if len(presetName) > 0 {
+			credential, err = getAzurePresetCredentials(userInfo, presetName, presetProvider)
+			if err != nil {
+				return nil, fmt.Errorf("error getting preset credentials for Azure: %v", err)
+			}
+		}
+		return nil, providercommon.ValidateAKSCredentials(ctx, credential)
+	}
+}

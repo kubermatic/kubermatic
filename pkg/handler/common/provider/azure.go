@@ -601,3 +601,16 @@ func ListAKSMachineDeploymentUpgrades(ctx context.Context, cred azure.Credential
 
 	return upgrades, nil
 }
+
+func ValidateAKSCredentials(ctx context.Context, credential azure.Credentials) error {
+	var err error
+
+	aksClient := containerservice.NewManagedClustersClient(credential.SubscriptionID)
+	aksClient.Authorizer, err = auth.NewClientCredentialsConfig(credential.ClientID, credential.ClientSecret, credential.TenantID).Authorizer()
+	if err != nil {
+		return fmt.Errorf("failed to create authorizer: %s", err.Error())
+	}
+	_, err = aksClient.List(ctx)
+
+	return err
+}

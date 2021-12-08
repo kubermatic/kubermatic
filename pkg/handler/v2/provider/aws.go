@@ -274,3 +274,31 @@ func ListAWSRegionsEndpoint(userInfoGetter provider.UserInfoGetter, presetProvid
 		return providercommon.ListAWSRegions(ctx, credential)
 	}
 }
+
+func EKSValidateCredentialsEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(EKSTypesReq)
+
+		credential := providercommon.AWSCredential{
+			AccessKeyID:          req.AccessKeyID,
+			SecretAccessKey:      req.SecretAccessKey,
+			AssumeRoleARN:        req.AssumeRoleARN,
+			AssumeRoleExternalID: req.AssumeRoleExternalID,
+		}
+		presetName := req.Credential
+
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		// Preset is used
+		if len(presetName) > 0 {
+			credential, err = getAWSPresetCredentials(userInfo, presetName, presetProvider)
+			if err != nil {
+				return nil, fmt.Errorf("error getting preset credentials for AWS: %v", err)
+			}
+		}
+		return nil, providercommon.ValidateEKSCredentials(ctx, credential, req.Region)
+	}
+}
