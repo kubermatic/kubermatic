@@ -30,6 +30,8 @@ type ClientOption func(*runtime.ClientOperation)
 type ClientService interface {
 	ListAKSClusters(params *ListAKSClustersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSClustersOK, error)
 
+	ValidateAKSCredentials(params *ValidateAKSCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ValidateAKSCredentialsOK, error)
+
 	SetTransport(transport runtime.ClientTransport)
 }
 
@@ -68,6 +70,44 @@ func (a *Client) ListAKSClusters(params *ListAKSClustersParams, authInfo runtime
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListAKSClustersDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ValidateAKSCredentials Validates AKS credentials
+*/
+func (a *Client) ValidateAKSCredentials(params *ValidateAKSCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ValidateAKSCredentialsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewValidateAKSCredentialsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "validateAKSCredentials",
+		Method:             "GET",
+		PathPattern:        "/api/v2/providers/aks/validatecredentials",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ValidateAKSCredentialsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ValidateAKSCredentialsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ValidateAKSCredentialsDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
