@@ -372,6 +372,8 @@ const (
 
 	// RegistryK8SGCR defines the kubernetes specific docker registry at google
 	RegistryK8SGCR = "k8s.gcr.io"
+	// RegistryEUGCR defines the docker registry at google EU
+	RegistryEUGCR = "eu.gcr.io"
 	// RegistryUSGCR defines the docker registry at google US
 	RegistryUSGCR = "us.gcr.io"
 	// RegistryGCR defines the kubernetes docker registry at google
@@ -707,16 +709,15 @@ alertmanager_config: |
 	KonnectivityClusterRoleBindingUsername = "system:konnectivity-server"
 	KonnectivityServiceAccountName         = "system-konnectivity-agent"
 	KonnectivityAgentContainer             = "konnectivity-agent"
+	KonnectivityServerContainer            = "konnectivity-server"
 	KonnectivityAgentToken                 = "system-konnectivity-agent-token"
 	KonnectivityProxyServiceName           = "konnectivity-server"
 	KonnectivityProxyTLSSecretName         = "konnectivityproxy-tls"
 	KonnectivityKubeconfigSecretName       = "konnectivity-kubeconfig"
 	KonnectivityServerConf                 = "konnectivity-server.conf"
-	KonnectivityStolenAgentTokenSecretName = "stolen-agent-ca"
-	KonnectivityStolenAgentTokenNameCert   = "agentca.crt"
-	KonnectivityStolenAgentTokenNameToken  = "agenttoken.txt"
 	KonnectivityKubeApiserverEgress        = "kube-apiserver-egress"
 	KonnectivityUDS                        = "konnectivity-uds"
+	KonnectivityPodDisruptionBudgetName    = "konnectivity-agent"
 )
 
 // List of allowed TLS cipher suites
