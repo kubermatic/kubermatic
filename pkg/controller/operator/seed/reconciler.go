@@ -34,6 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -467,10 +468,15 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, cfg *operatorv1al
 		kubermaticseed.SeedControllerManagerDeploymentCreator(r.workerName, r.versions, cfg, seed),
 	}
 
+	supportsFailureDomainZoneAntiAffinity, err := resources.SupportsFailureDomainZoneAntiAffinity(ctx, client)
+	if err != nil {
+		return err
+	}
+
 	if !seed.Spec.NodeportProxy.Disable {
 		creators = append(
 			creators,
-			nodeportproxy.EnvoyDeploymentCreator(cfg, seed, r.versions),
+			nodeportproxy.EnvoyDeploymentCreator(cfg, seed, supportsFailureDomainZoneAntiAffinity, r.versions),
 			nodeportproxy.UpdaterDeploymentCreator(cfg, seed, r.versions),
 		)
 	}
