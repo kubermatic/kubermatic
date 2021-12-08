@@ -1,5 +1,5 @@
 ---
-# Source: cert-manager/charts/certManager/templates/cainjector-serviceaccount.yaml
+# Source: cert-manager/charts/cert-manager/templates/cainjector-serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: true
@@ -13,9 +13,9 @@ metadata:
     app.kubernetes.io/component: "cainjector"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 ---
-# Source: cert-manager/charts/certManager/templates/serviceaccount.yaml
+# Source: cert-manager/charts/cert-manager/templates/serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: true
@@ -29,9 +29,9 @@ metadata:
     app.kubernetes.io/component: "controller"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 ---
-# Source: cert-manager/charts/certManager/templates/webhook-serviceaccount.yaml
+# Source: cert-manager/charts/cert-manager/templates/webhook-serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: true
@@ -45,9 +45,9 @@ metadata:
     app.kubernetes.io/component: "webhook"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 ---
-# Source: cert-manager/charts/certManager/templates/cainjector-rbac.yaml
+# Source: cert-manager/charts/cert-manager/templates/cainjector-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -59,7 +59,7 @@ metadata:
     app.kubernetes.io/component: "cainjector"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 rules:
   - apiGroups: ["cert-manager.io"]
     resources: ["certificates"]
@@ -83,7 +83,7 @@ rules:
     resources: ["auditsinks"]
     verbs: ["get", "list", "watch", "update"]
 ---
-# Source: cert-manager/charts/certManager/templates/rbac.yaml
+# Source: cert-manager/charts/cert-manager/templates/rbac.yaml
 # Issuer controller role
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -96,7 +96,7 @@ metadata:
     app.kubernetes.io/component: "controller"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 rules:
   - apiGroups: ["cert-manager.io"]
     resources: ["issuers", "issuers/status"]
@@ -111,7 +111,7 @@ rules:
     resources: ["events"]
     verbs: ["create", "patch"]
 ---
-# Source: cert-manager/charts/certManager/templates/rbac.yaml
+# Source: cert-manager/charts/cert-manager/templates/rbac.yaml
 # ClusterIssuer controller role
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -124,7 +124,7 @@ metadata:
     app.kubernetes.io/component: "controller"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 rules:
   - apiGroups: ["cert-manager.io"]
     resources: ["clusterissuers", "clusterissuers/status"]
@@ -139,7 +139,7 @@ rules:
     resources: ["events"]
     verbs: ["create", "patch"]
 ---
-# Source: cert-manager/charts/certManager/templates/rbac.yaml
+# Source: cert-manager/charts/cert-manager/templates/rbac.yaml
 # Certificates controller role
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -152,7 +152,7 @@ metadata:
     app.kubernetes.io/component: "controller"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 rules:
   - apiGroups: ["cert-manager.io"]
     resources: ["certificates", "certificates/status", "certificaterequests", "certificaterequests/status"]
@@ -176,7 +176,7 @@ rules:
     resources: ["events"]
     verbs: ["create", "patch"]
 ---
-# Source: cert-manager/charts/certManager/templates/rbac.yaml
+# Source: cert-manager/charts/cert-manager/templates/rbac.yaml
 # Orders controller role
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -189,7 +189,7 @@ metadata:
     app.kubernetes.io/component: "controller"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 rules:
   - apiGroups: ["acme.cert-manager.io"]
     resources: ["orders", "orders/status"]
@@ -216,7 +216,7 @@ rules:
     resources: ["events"]
     verbs: ["create", "patch"]
 ---
-# Source: cert-manager/charts/certManager/templates/rbac.yaml
+# Source: cert-manager/charts/cert-manager/templates/rbac.yaml
 # Challenges controller role
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -229,7 +229,7 @@ metadata:
     app.kubernetes.io/component: "controller"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 rules:
   # Use to update challenge resource status
   - apiGroups: ["acme.cert-manager.io"]
@@ -278,7 +278,7 @@ rules:
     resources: ["secrets"]
     verbs: ["get", "list", "watch"]
 ---
-# Source: cert-manager/charts/certManager/templates/rbac.yaml
+# Source: cert-manager/charts/cert-manager/templates/rbac.yaml
 # ingress-shim controller role
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -291,7 +291,7 @@ metadata:
     app.kubernetes.io/component: "controller"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 rules:
   - apiGroups: ["cert-manager.io"]
     resources: ["certificates", "certificaterequests"]
@@ -318,7 +318,7 @@ rules:
     resources: ["events"]
     verbs: ["create", "patch"]
 ---
-# Source: cert-manager/charts/certManager/templates/rbac.yaml
+# Source: cert-manager/charts/cert-manager/templates/rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -330,7 +330,7 @@ metadata:
     app.kubernetes.io/component: "controller"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
     rbac.authorization.k8s.io/aggregate-to-view: "true"
     rbac.authorization.k8s.io/aggregate-to-edit: "true"
     rbac.authorization.k8s.io/aggregate-to-admin: "true"
@@ -342,7 +342,7 @@ rules:
     resources: ["challenges", "orders"]
     verbs: ["get", "list", "watch"]
 ---
-# Source: cert-manager/charts/certManager/templates/rbac.yaml
+# Source: cert-manager/charts/cert-manager/templates/rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -354,7 +354,7 @@ metadata:
     app.kubernetes.io/component: "controller"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
     rbac.authorization.k8s.io/aggregate-to-edit: "true"
     rbac.authorization.k8s.io/aggregate-to-admin: "true"
 rules:
@@ -365,7 +365,7 @@ rules:
     resources: ["challenges", "orders"]
     verbs: ["create", "delete", "deletecollection", "patch", "update"]
 ---
-# Source: cert-manager/charts/certManager/templates/rbac.yaml
+# Source: cert-manager/charts/cert-manager/templates/rbac.yaml
 # Permission to approve CertificateRequests referencing cert-manager.io Issuers and ClusterIssuers
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -378,14 +378,14 @@ metadata:
     app.kubernetes.io/component: "cert-manager"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 rules:
   - apiGroups: ["cert-manager.io"]
     resources: ["signers"]
     verbs: ["approve"]
     resourceNames: ["issuers.cert-manager.io/*", "clusterissuers.cert-manager.io/*"]
 ---
-# Source: cert-manager/charts/certManager/templates/rbac.yaml
+# Source: cert-manager/charts/cert-manager/templates/rbac.yaml
 # Permission to:
 # - Update and sign CertificatSigningeRequests referencing cert-manager.io Issuers and ClusterIssuers
 # - Perform SubjectAccessReviews to test whether users are able to reference Namespaced Issuers
@@ -400,7 +400,7 @@ metadata:
     app.kubernetes.io/component: "cert-manager"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 rules:
   - apiGroups: ["certificates.k8s.io"]
     resources: ["certificatesigningrequests"]
@@ -416,7 +416,7 @@ rules:
     resources: ["subjectaccessreviews"]
     verbs: ["create"]
 ---
-# Source: cert-manager/charts/certManager/templates/webhook-rbac.yaml
+# Source: cert-manager/charts/cert-manager/templates/webhook-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -428,13 +428,13 @@ metadata:
     app.kubernetes.io/component: "webhook"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 rules:
 - apiGroups: ["authorization.k8s.io"]
   resources: ["subjectaccessreviews"]
   verbs: ["create"]
 ---
-# Source: cert-manager/charts/certManager/templates/cainjector-rbac.yaml
+# Source: cert-manager/charts/cert-manager/templates/cainjector-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -446,7 +446,7 @@ metadata:
     app.kubernetes.io/component: "cainjector"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -456,7 +456,7 @@ subjects:
     namespace: "default"
     kind: ServiceAccount
 ---
-# Source: cert-manager/charts/certManager/templates/rbac.yaml
+# Source: cert-manager/charts/cert-manager/templates/rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -468,7 +468,7 @@ metadata:
     app.kubernetes.io/component: "controller"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -478,7 +478,7 @@ subjects:
     namespace: "default"
     kind: ServiceAccount
 ---
-# Source: cert-manager/charts/certManager/templates/rbac.yaml
+# Source: cert-manager/charts/cert-manager/templates/rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -490,7 +490,7 @@ metadata:
     app.kubernetes.io/component: "controller"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -500,7 +500,7 @@ subjects:
     namespace: "default"
     kind: ServiceAccount
 ---
-# Source: cert-manager/charts/certManager/templates/rbac.yaml
+# Source: cert-manager/charts/cert-manager/templates/rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -512,7 +512,7 @@ metadata:
     app.kubernetes.io/component: "controller"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -522,7 +522,7 @@ subjects:
     namespace: "default"
     kind: ServiceAccount
 ---
-# Source: cert-manager/charts/certManager/templates/rbac.yaml
+# Source: cert-manager/charts/cert-manager/templates/rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -534,7 +534,7 @@ metadata:
     app.kubernetes.io/component: "controller"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -544,7 +544,7 @@ subjects:
     namespace: "default"
     kind: ServiceAccount
 ---
-# Source: cert-manager/charts/certManager/templates/rbac.yaml
+# Source: cert-manager/charts/cert-manager/templates/rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -556,7 +556,7 @@ metadata:
     app.kubernetes.io/component: "controller"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -566,7 +566,7 @@ subjects:
     namespace: "default"
     kind: ServiceAccount
 ---
-# Source: cert-manager/charts/certManager/templates/rbac.yaml
+# Source: cert-manager/charts/cert-manager/templates/rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -578,7 +578,7 @@ metadata:
     app.kubernetes.io/component: "controller"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -588,7 +588,7 @@ subjects:
     namespace: "default"
     kind: ServiceAccount
 ---
-# Source: cert-manager/charts/certManager/templates/rbac.yaml
+# Source: cert-manager/charts/cert-manager/templates/rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -600,7 +600,7 @@ metadata:
     app.kubernetes.io/component: "cert-manager"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -610,7 +610,7 @@ subjects:
     namespace: "default"
     kind: ServiceAccount
 ---
-# Source: cert-manager/charts/certManager/templates/rbac.yaml
+# Source: cert-manager/charts/cert-manager/templates/rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -622,7 +622,7 @@ metadata:
     app.kubernetes.io/component: "cert-manager"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -632,7 +632,7 @@ subjects:
     namespace: "default"
     kind: ServiceAccount
 ---
-# Source: cert-manager/charts/certManager/templates/webhook-rbac.yaml
+# Source: cert-manager/charts/cert-manager/templates/webhook-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -644,7 +644,7 @@ metadata:
     app.kubernetes.io/component: "webhook"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -655,7 +655,7 @@ subjects:
   name: cert-manager-webhook
   namespace: default
 ---
-# Source: cert-manager/charts/certManager/templates/cainjector-rbac.yaml
+# Source: cert-manager/charts/cert-manager/templates/cainjector-rbac.yaml
 # leader election rules
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -669,7 +669,7 @@ metadata:
     app.kubernetes.io/component: "cainjector"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 rules:
   # Used for leader election by the controller
   # cert-manager-cainjector-leader-election is used by the CertificateBased injector controller
@@ -692,7 +692,7 @@ rules:
     resources: ["leases"]
     verbs: ["create"]
 ---
-# Source: cert-manager/charts/certManager/templates/rbac.yaml
+# Source: cert-manager/charts/cert-manager/templates/rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -705,7 +705,7 @@ metadata:
     app.kubernetes.io/component: "controller"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 rules:
   # Used for leader election by the controller
   # See also: https://github.com/kubernetes-sigs/controller-runtime/pull/1144#discussion_r480173688
@@ -724,7 +724,7 @@ rules:
     resources: ["leases"]
     verbs: ["create"]
 ---
-# Source: cert-manager/charts/certManager/templates/webhook-rbac.yaml
+# Source: cert-manager/charts/cert-manager/templates/webhook-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -737,7 +737,7 @@ metadata:
     app.kubernetes.io/component: "webhook"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 rules:
 - apiGroups: [""]
   resources: ["secrets"]
@@ -749,7 +749,7 @@ rules:
   resources: ["secrets"]
   verbs: ["create"]
 ---
-# Source: cert-manager/charts/certManager/templates/cainjector-rbac.yaml
+# Source: cert-manager/charts/cert-manager/templates/cainjector-rbac.yaml
 # grant cert-manager permission to manage the leaderelection configmap in the
 # leader election namespace
 apiVersion: rbac.authorization.k8s.io/v1
@@ -764,7 +764,7 @@ metadata:
     app.kubernetes.io/component: "cainjector"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -774,7 +774,7 @@ subjects:
     name: cert-manager-cainjector
     namespace: default
 ---
-# Source: cert-manager/charts/certManager/templates/rbac.yaml
+# Source: cert-manager/charts/cert-manager/templates/rbac.yaml
 # grant cert-manager permission to manage the leaderelection configmap in the
 # leader election namespace
 apiVersion: rbac.authorization.k8s.io/v1
@@ -789,7 +789,7 @@ metadata:
     app.kubernetes.io/component: "controller"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -800,7 +800,7 @@ subjects:
     name: cert-manager
     namespace: default
 ---
-# Source: cert-manager/charts/certManager/templates/webhook-rbac.yaml
+# Source: cert-manager/charts/cert-manager/templates/webhook-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
@@ -813,7 +813,7 @@ metadata:
     app.kubernetes.io/component: "webhook"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -824,7 +824,7 @@ subjects:
   name: cert-manager-webhook
   namespace: default
 ---
-# Source: cert-manager/charts/certManager/templates/service.yaml
+# Source: cert-manager/charts/cert-manager/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -837,7 +837,7 @@ metadata:
     app.kubernetes.io/component: "controller"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 spec:
   type: ClusterIP
   ports:
@@ -850,7 +850,7 @@ spec:
     app.kubernetes.io/instance: RELEASE-NAME
     app.kubernetes.io/component: "controller"
 ---
-# Source: cert-manager/charts/certManager/templates/webhook-service.yaml
+# Source: cert-manager/charts/cert-manager/templates/webhook-service.yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -863,7 +863,7 @@ metadata:
     app.kubernetes.io/component: "webhook"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 spec:
   type: ClusterIP
   ports:
@@ -876,7 +876,7 @@ spec:
     app.kubernetes.io/instance: RELEASE-NAME
     app.kubernetes.io/component: "webhook"
 ---
-# Source: cert-manager/charts/certManager/templates/cainjector-deployment.yaml
+# Source: cert-manager/charts/cert-manager/templates/cainjector-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -889,7 +889,7 @@ metadata:
     app.kubernetes.io/component: "cainjector"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 spec:
   replicas: 1
   selector:
@@ -906,13 +906,13 @@ spec:
         app.kubernetes.io/component: "cainjector"
         app.kubernetes.io/version: "v1.6.1"
         app.kubernetes.io/managed-by: Helm
-        helm.sh/chart: certManager-v1.6.1
+        helm.sh/chart: cert-manager-v1.6.1
     spec:
       serviceAccountName: cert-manager-cainjector
       securityContext:
         runAsNonRoot: true
       containers:
-        - name: certManager
+        - name: cert-manager
           image: "quay.io/jetstack/cert-manager-cainjector:v1.6.1"
           imagePullPolicy: IfNotPresent
           args:
@@ -931,7 +931,7 @@ spec:
               cpu: 10m
               memory: 32Mi
 ---
-# Source: cert-manager/charts/certManager/templates/deployment.yaml
+# Source: cert-manager/charts/cert-manager/templates/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -944,7 +944,7 @@ metadata:
     app.kubernetes.io/component: "controller"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 spec:
   replicas: 1
   selector:
@@ -961,7 +961,7 @@ spec:
         app.kubernetes.io/component: "controller"
         app.kubernetes.io/version: "v1.6.1"
         app.kubernetes.io/managed-by: Helm
-        helm.sh/chart: certManager-v1.6.1
+        helm.sh/chart: cert-manager-v1.6.1
       annotations:
         prometheus.io/path: "/metrics"
         prometheus.io/scrape: 'true'
@@ -969,7 +969,7 @@ spec:
     spec:
       serviceAccountName: cert-manager
       containers:
-        - name: certManager
+        - name: cert-manager
           image: "quay.io/jetstack/cert-manager-controller:v1.6.1"
           imagePullPolicy: IfNotPresent
           args:
@@ -987,7 +987,7 @@ spec:
           resources:
             {}
 ---
-# Source: cert-manager/charts/certManager/templates/webhook-deployment.yaml
+# Source: cert-manager/charts/cert-manager/templates/webhook-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -1000,7 +1000,7 @@ metadata:
     app.kubernetes.io/component: "webhook"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 spec:
   replicas: 1
   selector:
@@ -1017,13 +1017,13 @@ spec:
         app.kubernetes.io/component: "webhook"
         app.kubernetes.io/version: "v1.6.1"
         app.kubernetes.io/managed-by: Helm
-        helm.sh/chart: certManager-v1.6.1
+        helm.sh/chart: cert-manager-v1.6.1
     spec:
       serviceAccountName: cert-manager-webhook
       securityContext:
         runAsNonRoot: true
       containers:
-        - name: certManager
+        - name: cert-manager
           image: "quay.io/jetstack/cert-manager-webhook:v1.6.1"
           imagePullPolicy: IfNotPresent
           args:
@@ -1119,7 +1119,7 @@ spec:
         ingress:
           class: nginx
 ---
-# Source: cert-manager/charts/certManager/templates/webhook-mutating-webhook.yaml
+# Source: cert-manager/charts/cert-manager/templates/webhook-mutating-webhook.yaml
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
@@ -1131,7 +1131,7 @@ metadata:
     app.kubernetes.io/component: "webhook"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
   annotations:
     cert-manager.io/inject-ca-from-secret: "default/cert-manager-webhook-ca"
 webhooks:
@@ -1170,7 +1170,7 @@ webhooks:
         namespace: "default"
         path: /mutate
 ---
-# Source: cert-manager/charts/certManager/templates/webhook-validating-webhook.yaml
+# Source: cert-manager/charts/cert-manager/templates/webhook-validating-webhook.yaml
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
@@ -1182,7 +1182,7 @@ metadata:
     app.kubernetes.io/component: "webhook"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
   annotations:
     cert-manager.io/inject-ca-from-secret: "default/cert-manager-webhook-ca"
 webhooks:
@@ -1230,7 +1230,7 @@ webhooks:
         namespace: "default"
         path: /validate
 ---
-# Source: cert-manager/charts/certManager/templates/startupapicheck-serviceaccount.yaml
+# Source: cert-manager/charts/cert-manager/templates/startupapicheck-serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: true
@@ -1248,9 +1248,9 @@ metadata:
     app.kubernetes.io/component: "startupapicheck"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
 ---
-# Source: cert-manager/charts/certManager/templates/startupapicheck-rbac.yaml
+# Source: cert-manager/charts/cert-manager/templates/startupapicheck-rbac.yaml
 # create certificate role
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -1264,7 +1264,7 @@ metadata:
     app.kubernetes.io/component: "startupapicheck"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
   annotations:
     helm.sh/hook: post-install
     helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
@@ -1274,7 +1274,7 @@ rules:
     resources: ["certificates"]
     verbs: ["create"]
 ---
-# Source: cert-manager/charts/certManager/templates/startupapicheck-rbac.yaml
+# Source: cert-manager/charts/cert-manager/templates/startupapicheck-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
@@ -1287,7 +1287,7 @@ metadata:
     app.kubernetes.io/component: "startupapicheck"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
   annotations:
     helm.sh/hook: post-install
     helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
@@ -1301,7 +1301,7 @@ subjects:
     name: cert-manager-startupapicheck
     namespace: default
 ---
-# Source: cert-manager/charts/certManager/templates/startupapicheck-job.yaml
+# Source: cert-manager/charts/cert-manager/templates/startupapicheck-job.yaml
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -1314,7 +1314,7 @@ metadata:
     app.kubernetes.io/component: "startupapicheck"
     app.kubernetes.io/version: "v1.6.1"
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: certManager-v1.6.1
+    helm.sh/chart: cert-manager-v1.6.1
   annotations:
     helm.sh/hook: post-install
     helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
@@ -1330,14 +1330,14 @@ spec:
         app.kubernetes.io/component: "startupapicheck"
         app.kubernetes.io/version: "v1.6.1"
         app.kubernetes.io/managed-by: Helm
-        helm.sh/chart: certManager-v1.6.1
+        helm.sh/chart: cert-manager-v1.6.1
     spec:
       restartPolicy: OnFailure
       serviceAccountName: cert-manager-startupapicheck
       securityContext:
         runAsNonRoot: true
       containers:
-        - name: certManager
+        - name: cert-manager
           image: "quay.io/jetstack/cert-manager-ctl:v1.6.1"
           imagePullPolicy: IfNotPresent
           args:

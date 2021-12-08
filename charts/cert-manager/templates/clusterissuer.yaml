@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-{{ range $name, $issuer := .Values.certManager.clusterIssuers }}
+{{ range $name, $issuer := index .Values "cert-manager" "clusterIssuers" }}
 ---
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
@@ -21,7 +21,7 @@ metadata:
 spec:
   acme:
     server: {{ $issuer.server }}
-    email: {{ required "An email must be set for all certManager.clusterIssuers" $issuer.email }}
+    email: {{ required "An email must be set for all cert-manager.clusterIssuers" $issuer.email }}
     privateKeySecretRef:
       name: {{ $name }}-acme-account-key
     solvers:
