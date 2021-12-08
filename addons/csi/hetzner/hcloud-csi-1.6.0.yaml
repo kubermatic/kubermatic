@@ -17,6 +17,7 @@
 # and is applicable for k8s 1.20+ clusters.
 # modifications:
 # - seccomp profile in DaemonSet hcloud-csi-node
+# - seccomp profile in StatefulSet hcloud-csi-controller
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "hetzner" }}
@@ -132,6 +133,9 @@ spec:
         app: hcloud-csi-controller
     spec:
       serviceAccount: hcloud-csi
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: csi-attacher
           image: '{{ Registry "k8s.gcr.io" }}/sig-storage/csi-attacher:v3.2.1'
