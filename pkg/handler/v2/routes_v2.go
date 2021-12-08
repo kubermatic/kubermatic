@@ -60,9 +60,18 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/providers/gke/images").
 		Handler(r.listGKEImages())
+
 	mux.Methods(http.MethodGet).
 		Path("/providers/gke/validatecredentials").
 		Handler(r.validateGKECredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/eks/validatecredentials").
+		Handler(r.validateEKSCredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/aks/validatecredentials").
+		Handler(r.validateAKSCredentials())
 
 	mux.Methods(http.MethodGet).
 		Path("/featuregates").
@@ -4993,6 +5002,50 @@ func (r Routing) validateGKECredentials() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.GKEValidateCredentialsEndpoint(r.presetProvider, r.userInfoGetter)),
 		provider.DecodeGKETypesReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/eks/validatecredentials eks validateEKSCredentials
+//
+// Validates EKS credentials
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+func (r Routing) validateEKSCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.EKSValidateCredentialsEndpoint(r.presetProvider, r.userInfoGetter)),
+		provider.DecodeEKSTypesReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/aks/validatecredentials aks validateAKSCredentials
+//
+// Validates AKS credentials
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+func (r Routing) validateAKSCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.AKSValidateCredentialsEndpoint(r.presetProvider, r.userInfoGetter)),
+		provider.DecodeAKSTypesReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

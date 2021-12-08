@@ -414,3 +414,14 @@ func ListEKSClusters(ctx context.Context, cred AWSCredential, region string) (ap
 	}
 	return clusterList, nil
 }
+
+func ValidateEKSCredentials(ctx context.Context, credential AWSCredential, region string) error {
+	client, err := awsprovider.GetClientSet(credential.AccessKeyID, credential.SecretAccessKey, credential.AssumeRoleARN, credential.AssumeRoleExternalID, region)
+	if err != nil {
+		return err
+	}
+
+	_, err = client.EKS.ListClusters(&eks.ListClustersInput{})
+
+	return err
+}
