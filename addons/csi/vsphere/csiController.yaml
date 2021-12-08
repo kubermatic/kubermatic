@@ -41,6 +41,9 @@ spec:
         role: vsphere-csi
     spec:
       serviceAccountName: vsphere-csi-controller
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       dnsPolicy: "Default"
       containers:
         - name: csi-attacher
