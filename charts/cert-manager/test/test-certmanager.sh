@@ -31,8 +31,8 @@ helm upgrade \
   --namespace cert-manager \
   --create-namespace \
   --atomic \
-  --set certManager.clusterIssuers.letsencrypt-prod.email=dev@kubermatic.com \
-  --set certManager.clusterIssuers.letsencrypt-staging.email=dev@kubermatic.com \
+  --set cert-manager.clusterIssuers.letsencrypt-prod.email=dev@kubermatic.com \
+  --set cert-manager.clusterIssuers.letsencrypt-staging.email=dev@kubermatic.com \
   cert-manager charts/cert-manager/
 
 echodate "Downloading cmctl..."
