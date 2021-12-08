@@ -15,6 +15,9 @@
 # This is based on
 # https://raw.githubusercontent.com/hetznercloud/csi-driver/v1.6.0/deploy/kubernetes/hcloud-csi.yml
 # and is applicable for k8s 1.20+ clusters.
+# modifications:
+# - seccomp profile in DaemonSet hcloud-csi-node
+# - seccomp profile in StatefulSet hcloud-csi-controller
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "hetzner" }}
@@ -130,6 +133,9 @@ spec:
         app: hcloud-csi-controller
     spec:
       serviceAccount: hcloud-csi
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: csi-attacher
           image: '{{ Registry "k8s.gcr.io" }}/sig-storage/csi-attacher:v3.2.1'
@@ -249,6 +255,9 @@ spec:
                     values:
                       - "true"
       serviceAccount: hcloud-csi
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: csi-node-driver-registrar
           image: '{{ Registry "k8s.gcr.io" }}/sig-storage/csi-node-driver-registrar:v2.2.0'

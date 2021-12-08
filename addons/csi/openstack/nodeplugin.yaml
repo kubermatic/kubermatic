@@ -44,6 +44,9 @@ spec:
       tolerations:
         - operator: Exists
       serviceAccount: csi-cinder-node-sa
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       hostNetwork: true
       containers:
         - name: node-driver-registrar
