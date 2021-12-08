@@ -41,6 +41,15 @@ nginx:
               operator: In
               values:
               - stable
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "10254"
+
+    metrics:
+      port: 10254
+      # if this port is changed, change healthz-port: in extraArgs: accordingly
+      enabled: true
+
     tolerations:
     - key: only_critical
       operator: Equal
