@@ -52,6 +52,12 @@ type GKENodeConfig struct {
 	// (https://cloud.google.com/compute/docs/machine-types) If unspecified,
 	// the default machine type is `e2-medium`.
 	MachineType string `json:"machineType,omitempty"`
+
+	// Preemptible: Whether the nodes are created as preemptible VM
+	// instances. See:
+	// https://cloud.google.com/compute/docs/instances/preemptible for more
+	// information about preemptible VM instances.
+	Preemptible bool `json:"preemptible,omitempty"`
 }
 
 // Validate validates this g k e node config

@@ -363,9 +363,10 @@ type ExternalClusterCloudSpec struct {
 }
 
 type GKECloudSpec struct {
-	Name           string `json:"name"`
-	ServiceAccount string `json:"serviceAccount,omitempty"`
-	Zone           string `json:"zone"`
+	Name           string          `json:"name"`
+	ServiceAccount string          `json:"serviceAccount,omitempty"`
+	Zone           string          `json:"zone"`
+	ClusterSpec    *GKEClusterSpec `json:"clusterSpec,omitempty"`
 }
 
 type EKSCloudSpec struct {
@@ -545,6 +546,12 @@ type GKENodeConfig struct {
 	// values, see:
 	// https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
 	Labels map[string]string `json:"labels,omitempty"`
+
+	// Preemptible: Whether the nodes are created as preemptible VM
+	// instances. See:
+	// https://cloud.google.com/compute/docs/instances/preemptible for more
+	// information about preemptible VM instances.
+	Preemptible bool `json:"preemptible,omitempty"`
 }
 
 // GKENodePoolAutoscaling contains information
@@ -569,3 +576,235 @@ type GKENodePoolAutoscaling struct {
 // BackupDestinationNames represents an list of backup destination names.
 // swagger:model BackupDestinationNames
 type BackupDestinationNames []string
+
+// GKEClusterSpec A Google Kubernetes Engine cluster.
+type GKEClusterSpec struct {
+	// Autopilot: Autopilot configuration for the cluster.
+	Autopilot bool `json:"autopilot,omitempty"`
+
+	// GKEClusterAutoscaling: Cluster-level autoscaling configuration.
+	Autoscaling *GKEClusterAutoscaling `json:"autoscaling,omitempty"`
+
+	// ClusterIpv4Cidr: The IP address range of the container pods in this
+	// cluster, in CIDR
+	// (http://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing)
+	// notation (e.g. `10.96.0.0/14`). Leave blank to have one automatically
+	// chosen or specify a `/14` block in `10.0.0.0/8`.
+	ClusterIpv4Cidr string `json:"clusterIpv4Cidr,omitempty"`
+
+	// DefaultMaxPodsConstraint: The default constraint on the maximum
+	// number of pods that can be run simultaneously on a node in the node
+	// pool of this cluster. Only honored if cluster created with IP Alias
+	// support.
+	DefaultMaxPodsConstraint *int64 `json:"defaultMaxPodsConstraint,omitempty"`
+
+	// EnableKubernetesAlpha: Kubernetes alpha features are enabled on this
+	// cluster. This includes alpha API groups (e.g. v1alpha1) and features
+	// that may not be production ready in the kubernetes version of the
+	// master and nodes. The cluster has no SLA for uptime and master/node
+	// upgrades are disabled. Alpha enabled clusters are automatically
+	// deleted thirty days after creation.
+	EnableKubernetesAlpha bool `json:"enableKubernetesAlpha,omitempty"`
+
+	// EnableTpu: Enable the ability to use Cloud TPUs in this cluster.
+	EnableTpu bool `json:"enableTpu,omitempty"`
+
+	// InitialClusterVersion: The initial Kubernetes version for this
+	// cluster. Valid versions are those found in validMasterVersions
+	// returned by getServerConfig. The version can be upgraded over time;
+	// such upgrades are reflected in currentMasterVersion and
+	// currentNodeVersion. Users may specify either explicit versions
+	// offered by Kubernetes Engine or version aliases, which have the
+	// following behavior: - "latest": picks the highest valid Kubernetes
+	// version - "1.X": picks the highest valid patch+gke.N patch in the 1.X
+	// version - "1.X.Y": picks the highest valid gke.N patch in the 1.X.Y
+	// version - "1.X.Y-gke.N": picks an explicit Kubernetes version -
+	// "","-": picks the default Kubernetes version
+	InitialClusterVersion string `json:"initialClusterVersion,omitempty"`
+
+	// InitialNodeCount: The number of nodes to create in this cluster. You
+	// must ensure that your Compute Engine resource quota
+	// (https://cloud.google.com/compute/quotas) is sufficient for this
+	// number of instances. You must also have available firewall and routes
+	// quota. For requests, this field should only be used in lieu of a
+	// "node_pool" object, since this configuration (along with the
+	// "node_config") will be used to create a "NodePool" object with an
+	// auto-generated name. Do not use this and a node_pool at the same
+	// time. This field is deprecated, use node_pool.initial_node_count
+	// instead.
+	InitialNodeCount int64 `json:"initialNodeCount,omitempty"`
+
+	// Locations: The list of Google Compute Engine zones
+	// (https://cloud.google.com/compute/docs/zones#available) in which the
+	// cluster's nodes should be located. This field provides a default
+	// value if NodePool.Locations
+	// (https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1/projects.locations.clusters.nodePools#NodePool.FIELDS.locations)
+	// are not specified during node pool creation. Warning: changing
+	// cluster locations will update the NodePool.Locations
+	// (https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1/projects.locations.clusters.nodePools#NodePool.FIELDS.locations)
+	// of all node pools and will result in nodes being added and/or
+	// removed.
+	Locations []string `json:"locations,omitempty"`
+
+	// Network: The name of the Google Compute Engine network
+	// (https://cloud.google.com/compute/docs/networks-and-firewalls#networks)
+	// to which the cluster is connected. If left unspecified, the `default`
+	// network will be used.
+	Network string `json:"network,omitempty"`
+
+	// NodeConfig: Parameters used in creating the cluster's nodes. For
+	// requests, this field should only be used in lieu of a "node_pool"
+	// object, since this configuration (along with the
+	// "initial_node_count") will be used to create a "NodePool" object with
+	// an auto-generated name. Do not use this and a node_pool at the same
+	// time. For responses, this field will be populated with the node
+	// configuration of the first node pool. (For configuration of each node
+	// pool, see `node_pool.config`) If unspecified, the defaults are used.
+	// This field is deprecated, use node_pool.config instead.
+	NodeConfig *GKENodeConfig `json:"nodeConfig,omitempty"`
+
+	// Subnetwork: The name of the Google Compute Engine subnetwork
+	// (https://cloud.google.com/compute/docs/subnetworks) to which the
+	// cluster is connected.
+	Subnetwork string `json:"subnetwork,omitempty"`
+
+	// TpuIpv4CidrBlock: [Output only] The IP address range of the Cloud
+	// TPUs in this cluster, in CIDR
+	// (http://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing)
+	// notation (e.g. `1.2.3.4/29`).
+	TpuIpv4CidrBlock string `json:"tpuIpv4CidrBlock,omitempty"`
+
+	// VerticalPodAutoscaling: Cluster-level Vertical Pod Autoscaling
+	// configuration.
+	VerticalPodAutoscaling bool `json:"verticalPodAutoscaling,omitempty"`
+}
+
+// GKEClusterAutoscaling contains global, per-cluster
+// information required by Cluster Autoscaler to automatically adjust
+// the size of the cluster and create/delete node pools based on the
+// current needs.
+type GKEClusterAutoscaling struct {
+	// AutoprovisioningLocations: The list of Google Compute Engine zones
+	// (https://cloud.google.com/compute/docs/zones#available) in which the
+	// NodePool's nodes can be created by NAP.
+	AutoprovisioningLocations []string `json:"autoprovisioningLocations,omitempty"`
+
+	// AutoprovisioningNodePoolDefaults: AutoprovisioningNodePoolDefaults
+	// contains defaults for a node pool created by NAP.
+	AutoprovisioningNodePoolDefaults *GKEAutoprovisioningNodePoolDefaults `json:"autoprovisioningNodePoolDefaults,omitempty"`
+
+	// EnableNodeAutoprovisioning: Enables automatic node pool creation and
+	// deletion.
+	EnableNodeAutoprovisioning bool `json:"enableNodeAutoprovisioning,omitempty"`
+
+	// ResourceLimits: Contains global constraints regarding minimum and
+	// maximum amount of resources in the cluster.
+	ResourceLimits []*GKEResourceLimit `json:"resourceLimits,omitempty"`
+}
+
+// GKEResourceLimit Contains information about amount of some resource in
+// the cluster. For memory, value should be in GB.
+type GKEResourceLimit struct {
+	// Maximum: Maximum amount of the resource in the cluster.
+	Maximum int64 `json:"maximum,omitempty,string"`
+
+	// Minimum: Minimum amount of the resource in the cluster.
+	Minimum int64 `json:"minimum,omitempty,string"`
+
+	// ResourceType: Resource name "cpu", "memory" or gpu-specific string.
+	ResourceType string `json:"resourceType,omitempty"`
+}
+
+// GKEAutoprovisioningNodePoolDefaults
+// contains defaults for a node pool created by NAP.
+type GKEAutoprovisioningNodePoolDefaults struct {
+	// BootDiskKmsKey: The Customer Managed Encryption Key used to encrypt
+	// the boot disk attached to each node in the node pool. This should be
+	// of the form
+	// projects/[KEY_PROJECT_ID]/locations/[LOCATION]/keyRings/[RING_NAME]/cr
+	// yptoKeys/[KEY_NAME]. For more information about protecting resources
+	// with Cloud KMS Keys please see:
+	// https://cloud.google.com/compute/docs/disks/customer-managed-encryption
+	BootDiskKmsKey string `json:"bootDiskKmsKey,omitempty"`
+
+	// DiskSizeGb: Size of the disk attached to each node, specified in GB.
+	// The smallest allowed disk size is 10GB. If unspecified, the default
+	// disk size is 100GB.
+	DiskSizeGb int64 `json:"diskSizeGb,omitempty"`
+
+	// DiskType: Type of the disk attached to each node (e.g. 'pd-standard',
+	// 'pd-ssd' or 'pd-balanced') If unspecified, the default disk type is
+	// 'pd-standard'
+	DiskType string `json:"diskType,omitempty"`
+
+	// Management: Specifies the node management options for NAP created
+	// node-pools.
+	Management *GKENodeManagement `json:"management,omitempty"`
+
+	// MinCpuPlatform: Minimum CPU platform to be used for NAP created node
+	// pools. The instance may be scheduled on the specified or newer CPU
+	// platform. Applicable values are the friendly names of CPU platforms,
+	// such as minCpuPlatform: Intel Haswell or minCpuPlatform: Intel Sandy
+	// Bridge. For more information, read how to specify min CPU platform
+	// (https://cloud.google.com/compute/docs/instances/specify-min-cpu-platform)
+	// To unset the min cpu platform field pass "automatic" as field value.
+	MinCpuPlatform string `json:"minCpuPlatform,omitempty"`
+
+	// OauthScopes: Scopes that are used by NAP when creating node pools.
+	OauthScopes []string `json:"oauthScopes,omitempty"`
+
+	// ServiceAccount: The Google Cloud Platform Service Account to be used
+	// by the node VMs.
+	ServiceAccount string `json:"serviceAccount,omitempty"`
+
+	// ShieldedInstanceConfig: Shielded Instance options.
+	ShieldedInstanceConfig *GKEShieldedInstanceConfig `json:"shieldedInstanceConfig,omitempty"`
+
+	// UpgradeSettings: Specifies the upgrade settings for NAP created node
+	// pools
+	UpgradeSettings *GKEUpgradeSettings `json:"upgradeSettings,omitempty"`
+}
+
+// GKEShieldedInstanceConfig a set of Shielded Instance options.
+type GKEShieldedInstanceConfig struct {
+	// EnableIntegrityMonitoring: Defines whether the instance has integrity
+	// monitoring enabled. Enables monitoring and attestation of the boot
+	// integrity of the instance. The attestation is performed against the
+	// integrity policy baseline. This baseline is initially derived from
+	// the implicitly trusted boot image when the instance is created.
+	EnableIntegrityMonitoring bool `json:"enableIntegrityMonitoring,omitempty"`
+
+	// EnableSecureBoot: Defines whether the instance has Secure Boot
+	// enabled. Secure Boot helps ensure that the system only runs authentic
+	// software by verifying the digital signature of all boot components,
+	// and halting the boot process if signature verification fails.
+	EnableSecureBoot bool `json:"enableSecureBoot,omitempty"`
+}
+
+// GKEUpgradeSettings These upgrade settings control the level of
+// parallelism and the level of disruption caused by an upgrade.
+// maxUnavailable controls the number of nodes that can be
+// simultaneously unavailable. maxSurge controls the number of
+// additional nodes that can be added to the node pool temporarily for
+// the time of the upgrade to increase the number of available nodes.
+// (maxUnavailable + maxSurge) determines the level of parallelism (how
+// many nodes are being upgraded at the same time). Note: upgrades
+// inevitably introduce some disruption since workloads need to be moved
+// from old nodes to new, upgraded ones. Even if maxUnavailable=0, this
+// holds true. (Disruption stays within the limits of
+// PodDisruptionBudget, if it is configured.) Consider a hypothetical
+// node pool with 5 nodes having maxSurge=2, maxUnavailable=1. This
+// means the upgrade process upgrades 3 nodes simultaneously. It creates
+// 2 additional (upgraded) nodes, then it brings down 3 old (not yet
+// upgraded) nodes at the same time. This ensures that there are always
+// at least 4 nodes available.
+type GKEUpgradeSettings struct {
+	// MaxSurge: The maximum number of nodes that can be created beyond the
+	// current size of the node pool during the upgrade process.
+	MaxSurge int64 `json:"maxSurge,omitempty"`
+
+	// MaxUnavailable: The maximum number of nodes that can be
+	// simultaneously unavailable during the upgrade process. A node is
+	// considered available if its status is Ready.
+	MaxUnavailable int64 `json:"maxUnavailable,omitempty"`
+}

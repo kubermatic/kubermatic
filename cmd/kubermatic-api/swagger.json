@@ -21070,9 +21070,62 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
+    "GKEAutoprovisioningNodePoolDefaults": {
+      "description": "GKEAutoprovisioningNodePoolDefaults\ncontains defaults for a node pool created by NAP.",
+      "type": "object",
+      "properties": {
+        "bootDiskKmsKey": {
+          "description": "BootDiskKmsKey: The Customer Managed Encryption Key used to encrypt\nthe boot disk attached to each node in the node pool. This should be\nof the form\nprojects/[KEY_PROJECT_ID]/locations/[LOCATION]/keyRings/[RING_NAME]/cr\nyptoKeys/[KEY_NAME]. For more information about protecting resources\nwith Cloud KMS Keys please see:\nhttps://cloud.google.com/compute/docs/disks/customer-managed-encryption",
+          "type": "string",
+          "x-go-name": "BootDiskKmsKey"
+        },
+        "diskSizeGb": {
+          "description": "DiskSizeGb: Size of the disk attached to each node, specified in GB.\nThe smallest allowed disk size is 10GB. If unspecified, the default\ndisk size is 100GB.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "DiskSizeGb"
+        },
+        "diskType": {
+          "description": "DiskType: Type of the disk attached to each node (e.g. 'pd-standard',\n'pd-ssd' or 'pd-balanced') If unspecified, the default disk type is\n'pd-standard'",
+          "type": "string",
+          "x-go-name": "DiskType"
+        },
+        "management": {
+          "$ref": "#/definitions/GKENodeManagement"
+        },
+        "minCpuPlatform": {
+          "description": "MinCpuPlatform: Minimum CPU platform to be used for NAP created node\npools. The instance may be scheduled on the specified or newer CPU\nplatform. Applicable values are the friendly names of CPU platforms,\nsuch as minCpuPlatform: Intel Haswell or minCpuPlatform: Intel Sandy\nBridge. For more information, read how to specify min CPU platform\n(https://cloud.google.com/compute/docs/instances/specify-min-cpu-platform)\nTo unset the min cpu platform field pass \"automatic\" as field value.",
+          "type": "string",
+          "x-go-name": "MinCpuPlatform"
+        },
+        "oauthScopes": {
+          "description": "OauthScopes: Scopes that are used by NAP when creating node pools.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "OauthScopes"
+        },
+        "serviceAccount": {
+          "description": "ServiceAccount: The Google Cloud Platform Service Account to be used\nby the node VMs.",
+          "type": "string",
+          "x-go-name": "ServiceAccount"
+        },
+        "shieldedInstanceConfig": {
+          "$ref": "#/definitions/GKEShieldedInstanceConfig"
+        },
+        "upgradeSettings": {
+          "$ref": "#/definitions/GKEUpgradeSettings"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "GKECloudSpec": {
       "type": "object",
       "properties": {
+        "clusterSpec": {
+          "$ref": "#/definitions/GKEClusterSpec"
+        },
         "name": {
           "type": "string",
           "x-go-name": "Name"
@@ -21107,11 +21160,120 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
+    "GKEClusterAutoscaling": {
+      "description": "GKEClusterAutoscaling contains global, per-cluster\ninformation required by Cluster Autoscaler to automatically adjust\nthe size of the cluster and create/delete node pools based on the\ncurrent needs.",
+      "type": "object",
+      "properties": {
+        "autoprovisioningLocations": {
+          "description": "AutoprovisioningLocations: The list of Google Compute Engine zones\n(https://cloud.google.com/compute/docs/zones#available) in which the\nNodePool's nodes can be created by NAP.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "AutoprovisioningLocations"
+        },
+        "autoprovisioningNodePoolDefaults": {
+          "$ref": "#/definitions/GKEAutoprovisioningNodePoolDefaults"
+        },
+        "enableNodeAutoprovisioning": {
+          "description": "EnableNodeAutoprovisioning: Enables automatic node pool creation and\ndeletion.",
+          "type": "boolean",
+          "x-go-name": "EnableNodeAutoprovisioning"
+        },
+        "resourceLimits": {
+          "description": "ResourceLimits: Contains global constraints regarding minimum and\nmaximum amount of resources in the cluster.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GKEResourceLimit"
+          },
+          "x-go-name": "ResourceLimits"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "GKEClusterList": {
       "type": "array",
       "title": "GKEClusterList represents an array of GKE clusters.",
       "items": {
         "$ref": "#/definitions/GKECluster"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "GKEClusterSpec": {
+      "type": "object",
+      "title": "GKEClusterSpec A Google Kubernetes Engine cluster.",
+      "properties": {
+        "autopilot": {
+          "description": "Autopilot: Autopilot configuration for the cluster.",
+          "type": "boolean",
+          "x-go-name": "Autopilot"
+        },
+        "autoscaling": {
+          "$ref": "#/definitions/GKEClusterAutoscaling"
+        },
+        "clusterIpv4Cidr": {
+          "description": "ClusterIpv4Cidr: The IP address range of the container pods in this\ncluster, in CIDR\n(http://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing)\nnotation (e.g. `10.96.0.0/14`). Leave blank to have one automatically\nchosen or specify a `/14` block in `10.0.0.0/8`.",
+          "type": "string",
+          "x-go-name": "ClusterIpv4Cidr"
+        },
+        "defaultMaxPodsConstraint": {
+          "description": "DefaultMaxPodsConstraint: The default constraint on the maximum\nnumber of pods that can be run simultaneously on a node in the node\npool of this cluster. Only honored if cluster created with IP Alias\nsupport.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "DefaultMaxPodsConstraint"
+        },
+        "enableKubernetesAlpha": {
+          "description": "EnableKubernetesAlpha: Kubernetes alpha features are enabled on this\ncluster. This includes alpha API groups (e.g. v1alpha1) and features\nthat may not be production ready in the kubernetes version of the\nmaster and nodes. The cluster has no SLA for uptime and master/node\nupgrades are disabled. Alpha enabled clusters are automatically\ndeleted thirty days after creation.",
+          "type": "boolean",
+          "x-go-name": "EnableKubernetesAlpha"
+        },
+        "enableTpu": {
+          "description": "EnableTpu: Enable the ability to use Cloud TPUs in this cluster.",
+          "type": "boolean",
+          "x-go-name": "EnableTpu"
+        },
+        "initialClusterVersion": {
+          "description": "InitialClusterVersion: The initial Kubernetes version for this\ncluster. Valid versions are those found in validMasterVersions\nreturned by getServerConfig. The version can be upgraded over time;\nsuch upgrades are reflected in currentMasterVersion and\ncurrentNodeVersion. Users may specify either explicit versions\noffered by Kubernetes Engine or version aliases, which have the\nfollowing behavior: - \"latest\": picks the highest valid Kubernetes\nversion - \"1.X\": picks the highest valid patch+gke.N patch in the 1.X\nversion - \"1.X.Y\": picks the highest valid gke.N patch in the 1.X.Y\nversion - \"1.X.Y-gke.N\": picks an explicit Kubernetes version -\n\"\",\"-\": picks the default Kubernetes version",
+          "type": "string",
+          "x-go-name": "InitialClusterVersion"
+        },
+        "initialNodeCount": {
+          "description": "InitialNodeCount: The number of nodes to create in this cluster. You\nmust ensure that your Compute Engine resource quota\n(https://cloud.google.com/compute/quotas) is sufficient for this\nnumber of instances. You must also have available firewall and routes\nquota. For requests, this field should only be used in lieu of a\n\"node_pool\" object, since this configuration (along with the\n\"node_config\") will be used to create a \"NodePool\" object with an\nauto-generated name. Do not use this and a node_pool at the same\ntime. This field is deprecated, use node_pool.initial_node_count\ninstead.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "InitialNodeCount"
+        },
+        "locations": {
+          "description": "Locations: The list of Google Compute Engine zones\n(https://cloud.google.com/compute/docs/zones#available) in which the\ncluster's nodes should be located. This field provides a default\nvalue if NodePool.Locations\n(https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1/projects.locations.clusters.nodePools#NodePool.FIELDS.locations)\nare not specified during node pool creation. Warning: changing\ncluster locations will update the NodePool.Locations\n(https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1/projects.locations.clusters.nodePools#NodePool.FIELDS.locations)\nof all node pools and will result in nodes being added and/or\nremoved.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Locations"
+        },
+        "network": {
+          "description": "Network: The name of the Google Compute Engine network\n(https://cloud.google.com/compute/docs/networks-and-firewalls#networks)\nto which the cluster is connected. If left unspecified, the `default`\nnetwork will be used.",
+          "type": "string",
+          "x-go-name": "Network"
+        },
+        "nodeConfig": {
+          "$ref": "#/definitions/GKENodeConfig"
+        },
+        "subnetwork": {
+          "description": "Subnetwork: The name of the Google Compute Engine subnetwork\n(https://cloud.google.com/compute/docs/subnetworks) to which the\ncluster is connected.",
+          "type": "string",
+          "x-go-name": "Subnetwork"
+        },
+        "tpuIpv4CidrBlock": {
+          "description": "TpuIpv4CidrBlock: [Output only] The IP address range of the Cloud\nTPUs in this cluster, in CIDR\n(http://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing)\nnotation (e.g. `1.2.3.4/29`).",
+          "type": "string",
+          "x-go-name": "TpuIpv4CidrBlock"
+        },
+        "verticalPodAutoscaling": {
+          "description": "VerticalPodAutoscaling: Cluster-level Vertical Pod Autoscaling\nconfiguration.",
+          "type": "boolean",
+          "x-go-name": "VerticalPodAutoscaling"
+        }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
@@ -21200,6 +21362,11 @@
           "description": "MachineType: The name of a Google Compute Engine machine type\n(https://cloud.google.com/compute/docs/machine-types) If unspecified,\nthe default machine type is `e2-medium`.",
           "type": "string",
           "x-go-name": "MachineType"
+        },
+        "preemptible": {
+          "description": "Preemptible: Whether the nodes are created as preemptible VM\ninstances. See:\nhttps://cloud.google.com/compute/docs/instances/preemptible for more\ninformation about preemptible VM instances.",
+          "type": "boolean",
+          "x-go-name": "Preemptible"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -21246,6 +21413,66 @@
           "type": "integer",
           "format": "int64",
           "x-go-name": "MinNodeCount"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "GKEResourceLimit": {
+      "description": "GKEResourceLimit Contains information about amount of some resource in\nthe cluster. For memory, value should be in GB.",
+      "type": "object",
+      "properties": {
+        "maximum": {
+          "description": "Maximum: Maximum amount of the resource in the cluster.",
+          "type": "string",
+          "format": "int64",
+          "x-go-name": "Maximum"
+        },
+        "minimum": {
+          "description": "Minimum: Minimum amount of the resource in the cluster.",
+          "type": "string",
+          "format": "int64",
+          "x-go-name": "Minimum"
+        },
+        "resourceType": {
+          "description": "ResourceType: Resource name \"cpu\", \"memory\" or gpu-specific string.",
+          "type": "string",
+          "x-go-name": "ResourceType"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "GKEShieldedInstanceConfig": {
+      "type": "object",
+      "title": "GKEShieldedInstanceConfig a set of Shielded Instance options.",
+      "properties": {
+        "enableIntegrityMonitoring": {
+          "description": "EnableIntegrityMonitoring: Defines whether the instance has integrity\nmonitoring enabled. Enables monitoring and attestation of the boot\nintegrity of the instance. The attestation is performed against the\nintegrity policy baseline. This baseline is initially derived from\nthe implicitly trusted boot image when the instance is created.",
+          "type": "boolean",
+          "x-go-name": "EnableIntegrityMonitoring"
+        },
+        "enableSecureBoot": {
+          "description": "EnableSecureBoot: Defines whether the instance has Secure Boot\nenabled. Secure Boot helps ensure that the system only runs authentic\nsoftware by verifying the digital signature of all boot components,\nand halting the boot process if signature verification fails.",
+          "type": "boolean",
+          "x-go-name": "EnableSecureBoot"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "GKEUpgradeSettings": {
+      "description": "GKEUpgradeSettings These upgrade settings control the level of\nparallelism and the level of disruption caused by an upgrade.\nmaxUnavailable controls the number of nodes that can be\nsimultaneously unavailable. maxSurge controls the number of\nadditional nodes that can be added to the node pool temporarily for\nthe time of the upgrade to increase the number of available nodes.\n(maxUnavailable + maxSurge) determines the level of parallelism (how\nmany nodes are being upgraded at the same time). Note: upgrades\ninevitably introduce some disruption since workloads need to be moved\nfrom old nodes to new, upgraded ones. Even if maxUnavailable=0, this\nholds true. (Disruption stays within the limits of\nPodDisruptionBudget, if it is configured.) Consider a hypothetical\nnode pool with 5 nodes having maxSurge=2, maxUnavailable=1. This\nmeans the upgrade process upgrades 3 nodes simultaneously. It creates\n2 additional (upgraded) nodes, then it brings down 3 old (not yet\nupgraded) nodes at the same time. This ensures that there are always\nat least 4 nodes available.",
+      "type": "object",
+      "properties": {
+        "maxSurge": {
+          "description": "MaxSurge: The maximum number of nodes that can be created beyond the\ncurrent size of the node pool during the upgrade process.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MaxSurge"
+        },
+        "maxUnavailable": {
+          "description": "MaxUnavailable: The maximum number of nodes that can be\nsimultaneously unavailable during the upgrade process. A node is\nconsidered available if its status is Ready.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MaxUnavailable"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
