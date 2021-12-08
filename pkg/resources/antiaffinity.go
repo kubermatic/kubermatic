@@ -66,7 +66,7 @@ func hostnameAntiAffinity(app, clusterName string) []corev1.WeightedPodAffinityT
 }
 
 // FailureDomainZoneAntiAffinity ensures that same-kind pods are spread across different availability zones.
-func FailureDomainZoneAntiAffinity(app, clusterName string) corev1.WeightedPodAffinityTerm {
+func FailureDomainZoneAntiAffinity(app string) corev1.WeightedPodAffinityTerm {
 	return corev1.WeightedPodAffinityTerm{
 		Weight: 100,
 		PodAffinityTerm: corev1.PodAffinityTerm{

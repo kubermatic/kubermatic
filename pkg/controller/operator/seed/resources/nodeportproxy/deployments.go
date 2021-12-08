@@ -24,6 +24,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/features"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -44,7 +45,7 @@ const (
 	EnvoyTunnelingPort    = 8088
 )
 
-func EnvoyDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
+func EnvoyDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, supportsFailureDomainZoneAntiAffinity bool, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return EnvoyDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = pointer.Int32Ptr(3)
@@ -174,6 +175,12 @@ func EnvoyDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, seed 
 					Resources: seed.Spec.NodeportProxy.Envoy.Resources,
 				},
 			}
+			d.Spec.Template.Spec.Affinity = HostnameAntiAffinity(EnvoyDeploymentName)
+			if supportsFailureDomainZoneAntiAffinity {
+				antiAffinities := d.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution
+				antiAffinities = append(antiAffinities, resources.FailureDomainZoneAntiAffinity(EnvoyDeploymentName))
+				d.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution = antiAffinities
+			}
 
 			d.Spec.Template.Spec.Volumes = []corev1.Volume{
 				{
@@ -186,6 +193,31 @@ func EnvoyDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, seed 
 
 			return d, nil
 		}
+	}
+}
+
+func HostnameAntiAffinity(app string) *corev1.Affinity {
+	return &corev1.Affinity{
+		PodAntiAffinity: &corev1.PodAntiAffinity{
+			PreferredDuringSchedulingIgnoredDuringExecution: hostnameAntiAffinity(app),
+		},
+	}
+}
+
+func hostnameAntiAffinity(app string) []corev1.WeightedPodAffinityTerm {
+	return []corev1.WeightedPodAffinityTerm{
+		// Avoid that we schedule multiple same-kind pods of a cluster on a single node
+		{
+			Weight: 10,
+			PodAffinityTerm: corev1.PodAffinityTerm{
+				LabelSelector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						resources.AppLabelKey: app,
+					},
+				},
+				TopologyKey: resources.TopologyKeyHostname,
+			},
+		},
 	}
 }
 
