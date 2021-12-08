@@ -44,6 +44,9 @@ spec:
         role: vsphere-csi
     spec:
       serviceAccountName: vsphere-csi-node
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       dnsPolicy: "Default"
       containers:
         - name: node-driver-registrar
