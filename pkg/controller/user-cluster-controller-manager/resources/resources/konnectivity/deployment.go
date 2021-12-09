@@ -88,6 +88,16 @@ func DeploymentCreator(clusterHostname string, registryWithOverwrite registry.Wi
 					},
 				},
 			}
+			ds.Spec.Template.Spec.Tolerations = []corev1.Toleration{
+				{
+					Effect:   corev1.TaintEffectNoSchedule,
+					Operator: corev1.TolerationOpExists,
+				},
+				{
+					Effect:   corev1.TaintEffectNoExecute,
+					Operator: corev1.TolerationOpExists,
+				},
+			}
 			ds.Spec.Template.Spec.Volumes = []corev1.Volume{
 				{
 					Name: resources.KonnectivityAgentToken,

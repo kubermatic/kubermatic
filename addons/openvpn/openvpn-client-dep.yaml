@@ -119,6 +119,11 @@ spec:
             memory: 50Mi
       restartPolicy: Always
       terminationGracePeriodSeconds: 5
+      tolerations:
+       - effect: NoSchedule
+         operator: Exists
+       - effect: NoExecute
+         operator: Exists
       volumes:
       - name: openvpn-client-certificates
         secret:
