@@ -186,6 +186,14 @@ func DaemonSetCreator(overrides *corev1.ResourceRequirements, registryWithOverwr
 					Key:      "node-role.kubernetes.io/master",
 					Operator: corev1.TolerationOpExists,
 				},
+				{
+					Effect:   corev1.TaintEffectNoSchedule,
+					Operator: corev1.TolerationOpExists,
+				},
+				{
+					Effect:   corev1.TaintEffectNoExecute,
+					Operator: corev1.TolerationOpExists,
+				},
 			}
 			hostPathUnset := corev1.HostPathUnset
 			ds.Spec.Template.Spec.Volumes = []corev1.Volume{
