@@ -90,8 +90,8 @@ var (
 		Name:  "migrate-cert-manager",
 		Usage: "enable the migration for cert-manager CRDs from v1alpha2 to v1",
 	}
-	enableNginxIngressMigrationFlag = cli.BoolFlag{
-		Name:  "migrate-nginx-ingress",
+	enableChartsMigrationFlag = cli.BoolFlag{
+		Name:  "migrate-charts",
 		Usage: "enable the migration procedure for nginx-ingress-controller (upgrade from v1.3.0+)",
 	}
 	migrateOpenstackCSIdriversFlag = cli.BoolFlag{
@@ -124,7 +124,7 @@ func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) c
 			deployHelmBinaryFlag,
 			deployStorageClassFlag,
 			enableCertManagerV2MigrationFlag,
-			enableNginxIngressMigrationFlag,
+			enableChartsMigrationFlag,
 			migrateOpenstackCSIdriversFlag,
 			migrateLogrotateFlag,
 			disableTelemetryFlag,
@@ -206,7 +206,7 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 			ForceHelmReleaseUpgrade:           ctx.Bool(deployForceFlag.Name),
 			ChartsDirectory:                   ctx.GlobalString(chartsDirectoryFlag.Name),
 			EnableCertManagerV2Migration:      ctx.Bool(enableCertManagerV2MigrationFlag.Name),
-			EnableNginxIngressMigration:       ctx.Bool(enableNginxIngressMigrationFlag.Name),
+			EnableChartMigration:              ctx.Bool(enableChartsMigrationFlag.Name),
 			EnableOpenstackCSIDriverMigration: ctx.Bool(migrateOpenstackCSIdriversFlag.Name),
 			EnableLogrotateMigration:          ctx.Bool(migrateLogrotateFlag.Name),
 			DisableTelemetry:                  ctx.Bool(disableTelemetryFlag.Name),
