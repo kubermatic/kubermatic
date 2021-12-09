@@ -340,7 +340,7 @@ func DecodeAzureSubnetsReq(c context.Context, r *http.Request) (interface{}, err
 }
 
 // AKSTypesReq represent a request for AKS types.
-// swagger:parameters listAKSClusters
+// swagger:parameters validateAKSCredentials
 type AKSTypesReq struct {
 	AKSCommonReq
 }
@@ -396,10 +396,34 @@ func DecodeAKSTypesReq(c context.Context, r *http.Request) (interface{}, error) 
 	return req, nil
 }
 
-func ListAKSClustersEndpoint(userInfoGetter provider.UserInfoGetter, presetsProvider provider.PresetProvider) endpoint.Endpoint {
+func DecodeAKSClusterListReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req AKSClusterListReq
+
+	commonReq, err := DecodeAKSCommonReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.AKSCommonReq = commonReq.(AKSCommonReq)
+	pr, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = pr.(common.ProjectReq)
+
+	return req, nil
+}
+
+// AKSClusterListReq represent a request for AKS cluster list.
+// swagger:parameters listAKSClusters
+type AKSClusterListReq struct {
+	common.ProjectReq
+	AKSCommonReq
+}
+
+func ListAKSClustersEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, presetProvider provider.PresetProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 
-		req := request.(AKSTypesReq)
+		req := request.(AKSClusterListReq)
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
@@ -418,12 +442,12 @@ func ListAKSClustersEndpoint(userInfoGetter provider.UserInfoGetter, presetsProv
 
 		// Preset is used
 		if len(presetName) > 0 {
-			credential, err = getAzurePresetCredentials(userInfo, presetName, presetsProvider)
+			credential, err = getAzurePresetCredentials(userInfo, presetName, presetProvider)
 			if err != nil {
-				return nil, fmt.Errorf("error getting preset credentials for Azure: %v", err)
+				return nil, errors.New(http.StatusInternalServerError, err.Error())
 			}
 		}
-		return providercommon.ListAKSClusters(ctx, credential)
+		return providercommon.ListAKSClusters(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, clusterProvider, credential, req.ProjectID)
 	}
 }
 

@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/util/errors"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
@@ -90,30 +91,8 @@ func AWSSubnetNoCredentialsEndpoint(projectProvider provider.ProjectProvider, pr
 	}
 }
 
-// EKSCommonReq represent a request with common parameters for EKS.
-type EKSCommonReq struct {
-	// in: header
-	// name: AccessKeyID
-	AccessKeyID string
-	// in: header
-	// name: SecretAccessKey
-	SecretAccessKey string
-	// in: header
-	// name: Credential
-	Credential string
-	// in: header
-	// name: AssumeRoleARN
-	AssumeRoleARN string
-	// in: header
-	// name: AssumeRoleExternalID
-	AssumeRoleExternalID string
-	// in: header
-	// name: Region
-	Region string
-}
-
 // EKSTypesReq represent a request for EKS types.
-// swagger:parameters listEKSClusters
+// swagger:parameters validateEKSCredentials
 type EKSTypesReq struct {
 	EKSCommonReq
 }
@@ -143,6 +122,30 @@ func DecodeEKSTypesReq(c context.Context, r *http.Request) (interface{}, error) 
 	return req, nil
 }
 
+// EKSClusterListReq represent a request for EKS cluster list.
+// swagger:parameters listEKSClusters
+type EKSClusterListReq struct {
+	common.ProjectReq
+	EKSCommonReq
+}
+
+func DecodeEKSClusterListReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req EKSClusterListReq
+
+	commonReq, err := DecodeEKSCommonReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.EKSCommonReq = commonReq.(EKSCommonReq)
+	pr, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = pr.(common.ProjectReq)
+
+	return req, nil
+}
+
 func getAWSPresetCredentials(userInfo *provider.UserInfo, presetName string, presetProvider provider.PresetProvider) (providercommon.AWSCredential, error) {
 
 	preset, err := presetProvider.GetPreset(userInfo, presetName)
@@ -162,18 +165,10 @@ func getAWSPresetCredentials(userInfo *provider.UserInfo, presetName string, pre
 	}, nil
 }
 
-// Validate validates EKSCommonReq request
-func (req EKSCommonReq) Validate() error {
-	if len(req.Credential) == 0 && len(req.AccessKeyID) == 0 && len(req.SecretAccessKey) == 0 {
-		return fmt.Errorf("AWS credentials cannot be empty")
-	}
-	return nil
-}
-
-func ListEKSClustersEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) endpoint.Endpoint {
+func ListEKSClustersEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, presetProvider provider.PresetProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 
-		req := request.(EKSTypesReq)
+		req := request.(EKSClusterListReq)
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
@@ -196,11 +191,19 @@ func ListEKSClustersEndpoint(userInfoGetter provider.UserInfoGetter, presetProvi
 		if len(presetName) > 0 {
 			credential, err = getAWSPresetCredentials(userInfo, presetName, presetProvider)
 			if err != nil {
-				return nil, fmt.Errorf("error getting preset credentials for AWS: %v", err)
+				return nil, errors.New(http.StatusInternalServerError, err.Error())
 			}
 		}
-		return providercommon.ListEKSClusters(ctx, credential, region)
+		return providercommon.ListEKSClusters(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, clusterProvider, credential, req.ProjectID, region)
 	}
+}
+
+// EKSCommonReq represent a request with common parameters for EKS.
+type EKSCommonReq struct {
+	AWSCommonReq
+	// in: header
+	// name: Region
+	Region string
 }
 
 // AWSCommonReq represent a request with common parameters for .
