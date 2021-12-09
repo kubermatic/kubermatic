@@ -58,6 +58,22 @@ func NewValidateAKSCredentialsParamsWithHTTPClient(client *http.Client) *Validat
    Typically these are written to a http.Request.
 */
 type ValidateAKSCredentialsParams struct {
+
+	// ClientID.
+	ClientID *string
+
+	// ClientSecret.
+	ClientSecret *string
+
+	// Credential.
+	Credential *string
+
+	// SubscriptionID.
+	SubscriptionID *string
+
+	// TenantID.
+	TenantID *string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -111,6 +127,61 @@ func (o *ValidateAKSCredentialsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithClientID adds the clientID to the validate a k s credentials params
+func (o *ValidateAKSCredentialsParams) WithClientID(clientID *string) *ValidateAKSCredentialsParams {
+	o.SetClientID(clientID)
+	return o
+}
+
+// SetClientID adds the clientId to the validate a k s credentials params
+func (o *ValidateAKSCredentialsParams) SetClientID(clientID *string) {
+	o.ClientID = clientID
+}
+
+// WithClientSecret adds the clientSecret to the validate a k s credentials params
+func (o *ValidateAKSCredentialsParams) WithClientSecret(clientSecret *string) *ValidateAKSCredentialsParams {
+	o.SetClientSecret(clientSecret)
+	return o
+}
+
+// SetClientSecret adds the clientSecret to the validate a k s credentials params
+func (o *ValidateAKSCredentialsParams) SetClientSecret(clientSecret *string) {
+	o.ClientSecret = clientSecret
+}
+
+// WithCredential adds the credential to the validate a k s credentials params
+func (o *ValidateAKSCredentialsParams) WithCredential(credential *string) *ValidateAKSCredentialsParams {
+	o.SetCredential(credential)
+	return o
+}
+
+// SetCredential adds the credential to the validate a k s credentials params
+func (o *ValidateAKSCredentialsParams) SetCredential(credential *string) {
+	o.Credential = credential
+}
+
+// WithSubscriptionID adds the subscriptionID to the validate a k s credentials params
+func (o *ValidateAKSCredentialsParams) WithSubscriptionID(subscriptionID *string) *ValidateAKSCredentialsParams {
+	o.SetSubscriptionID(subscriptionID)
+	return o
+}
+
+// SetSubscriptionID adds the subscriptionId to the validate a k s credentials params
+func (o *ValidateAKSCredentialsParams) SetSubscriptionID(subscriptionID *string) {
+	o.SubscriptionID = subscriptionID
+}
+
+// WithTenantID adds the tenantID to the validate a k s credentials params
+func (o *ValidateAKSCredentialsParams) WithTenantID(tenantID *string) *ValidateAKSCredentialsParams {
+	o.SetTenantID(tenantID)
+	return o
+}
+
+// SetTenantID adds the tenantId to the validate a k s credentials params
+func (o *ValidateAKSCredentialsParams) SetTenantID(tenantID *string) {
+	o.TenantID = tenantID
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ValidateAKSCredentialsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -118,6 +189,46 @@ func (o *ValidateAKSCredentialsParams) WriteToRequest(r runtime.ClientRequest, r
 		return err
 	}
 	var res []error
+
+	if o.ClientID != nil {
+
+		// header param ClientID
+		if err := r.SetHeaderParam("ClientID", *o.ClientID); err != nil {
+			return err
+		}
+	}
+
+	if o.ClientSecret != nil {
+
+		// header param ClientSecret
+		if err := r.SetHeaderParam("ClientSecret", *o.ClientSecret); err != nil {
+			return err
+		}
+	}
+
+	if o.Credential != nil {
+
+		// header param Credential
+		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
+			return err
+		}
+	}
+
+	if o.SubscriptionID != nil {
+
+		// header param SubscriptionID
+		if err := r.SetHeaderParam("SubscriptionID", *o.SubscriptionID); err != nil {
+			return err
+		}
+	}
+
+	if o.TenantID != nil {
+
+		// header param TenantID
+		if err := r.SetHeaderParam("TenantID", *o.TenantID); err != nil {
+			return err
+		}
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

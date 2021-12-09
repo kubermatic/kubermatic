@@ -180,7 +180,7 @@ func DecodeGKEClusterListReq(c context.Context, r *http.Request) (interface{}, e
 }
 
 // GKETypesReq represent a request for GKE types.
-// swagger:parameters listGKEClusters validateGKECredentials
+// swagger:parameters validateGKECredentials
 type GKETypesReq struct {
 	GKECommonReq
 }
