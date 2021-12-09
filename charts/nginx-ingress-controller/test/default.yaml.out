@@ -245,6 +245,31 @@ subjects:
     name: nginx-ingress
     namespace: "default"
 ---
+# Source: nginx-ingress-controller/charts/nginx/templates/controller-service-metrics.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    helm.sh/chart: nginx-4.0.9
+    app.kubernetes.io/name: nginx
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/version: "1.0.5"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: controller
+  name: nginx-ingress-controller-metrics
+  namespace: default
+spec:
+  type: ClusterIP
+  ports:
+    - name: metrics
+      port: 10254
+      protocol: TCP
+      targetPort: metrics
+  selector:
+    app.kubernetes.io/name: nginx
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/component: controller
+---
 # Source: nginx-ingress-controller/charts/nginx/templates/controller-service-webhook.yaml
 apiVersion: v1
 kind: Service
@@ -330,6 +355,9 @@ spec:
   minReadySeconds: 0
   template:
     metadata:
+      annotations:
+        prometheus.io/port: "10254"
+        prometheus.io/scrape: "true"
       labels:
         app.kubernetes.io/name: nginx
         app.kubernetes.io/instance: RELEASE-NAME
@@ -399,6 +427,9 @@ spec:
               protocol: TCP
             - name: https
               containerPort: 443
+              protocol: TCP
+            - name: metrics
+              containerPort: 10254
               protocol: TCP
             - name: webhook
               containerPort: 8443
