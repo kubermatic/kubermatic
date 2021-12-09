@@ -63,6 +63,16 @@ func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 			ds.Spec.Template.Spec.HostNetwork = true
 			ds.Spec.Template.Spec.DNSPolicy = corev1.DNSDefault
 			ds.Spec.Template.Spec.TerminationGracePeriodSeconds = pointer.Int64Ptr(0)
+			ds.Spec.Template.Spec.Tolerations = []corev1.Toleration{
+				{
+					Effect:   corev1.TaintEffectNoSchedule,
+					Operator: corev1.TolerationOpExists,
+				},
+				{
+					Effect:   corev1.TaintEffectNoExecute,
+					Operator: corev1.TolerationOpExists,
+				},
+			}
 
 			patchTolerations(&ds.Spec.Template.Spec)
 
