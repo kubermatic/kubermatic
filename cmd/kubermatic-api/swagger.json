@@ -16198,6 +16198,131 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/providers/aks/clusters": {
+      "get": {
+        "description": "Lists AKS clusters",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "listAKSClusters",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "TenantID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "SubscriptionID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ClientID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ClientSecret",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AKSClusterList",
+            "schema": {
+              "$ref": "#/definitions/AKSClusterList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/providers/eks/clusters": {
+      "get": {
+        "description": "Lists EKS clusters",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "listEKSClusters",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "AccessKeyID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "SecretAccessKey",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "AssumeRoleARN",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "AssumeRoleExternalID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Region",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "EKSClusterList",
+            "schema": {
+              "$ref": "#/definitions/EKSClusterList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/providers/gke/clusters": {
       "get": {
         "produces": [
@@ -16245,16 +16370,16 @@
         }
       }
     },
-    "/api/v2/providers/aks/clusters": {
+    "/api/v2/providers/aks/validatecredentials": {
       "get": {
-        "description": "Lists AKS clusters",
+        "description": "Validates AKS credentials",
         "produces": [
           "application/json"
         ],
         "tags": [
           "aks"
         ],
-        "operationId": "listAKSClusters",
+        "operationId": "validateAKSCredentials",
         "parameters": [
           {
             "type": "string",
@@ -16282,32 +16407,6 @@
             "in": "header"
           }
         ],
-        "responses": {
-          "200": {
-            "description": "AKSClusterList",
-            "schema": {
-              "$ref": "#/definitions/AKSClusterList"
-            }
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/providers/aks/validatecredentials": {
-      "get": {
-        "description": "Validates AKS credentials",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "aks"
-        ],
-        "operationId": "validateAKSCredentials",
         "responses": {
           "200": {
             "$ref": "#/responses/empty"
@@ -16666,16 +16765,16 @@
         }
       }
     },
-    "/api/v2/providers/eks/clusters": {
+    "/api/v2/providers/eks/validatecredentials": {
       "get": {
-        "description": "Lists EKS clusters",
+        "description": "Validates EKS credentials",
         "produces": [
           "application/json"
         ],
         "tags": [
           "eks"
         ],
-        "operationId": "listEKSClusters",
+        "operationId": "validateEKSCredentials",
         "parameters": [
           {
             "type": "string",
@@ -16708,32 +16807,6 @@
             "in": "header"
           }
         ],
-        "responses": {
-          "200": {
-            "description": "EKSClusterList",
-            "schema": {
-              "$ref": "#/definitions/EKSClusterList"
-            }
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/providers/eks/validatecredentials": {
-      "get": {
-        "description": "Validates EKS credentials",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "eks"
-        ],
-        "operationId": "validateEKSCredentials",
         "responses": {
           "200": {
             "$ref": "#/responses/empty"

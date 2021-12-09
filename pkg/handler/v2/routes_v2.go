@@ -81,20 +81,18 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/providers/aws/regions").
 		Handler(r.listAWSRegions())
 
-	// Defines a set of HTTP endpoints for interacting with EKS clusters
-	mux.Methods(http.MethodGet).
-		Path("/providers/eks/clusters").
-		Handler(r.listEKSClusters())
-
-	// Defines a set of HTTP endpoints for interacting with AKS clusters
-	mux.Methods(http.MethodGet).
-		Path("/providers/aks/clusters").
-		Handler(r.listAKSClusters())
-
 	// Defines a set of HTTP endpoints for cluster that belong to a project.
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/providers/gke/clusters").
 		Handler(r.listGKEClusters())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/eks/clusters").
+		Handler(r.listEKSClusters())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/aks/clusters").
+		Handler(r.listAKSClusters())
 
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/clusters").
@@ -5051,7 +5049,7 @@ func (r Routing) validateAKSCredentials() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v2/providers/eks/clusters eks listEKSClusters
+// swagger:route GET /api/v2/projects/{project_id}/providers/eks/clusters project listEKSClusters
 //
 // Lists EKS clusters
 //
@@ -5066,14 +5064,14 @@ func (r Routing) listEKSClusters() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.ListEKSClustersEndpoint(r.userInfoGetter, r.presetProvider)),
-		provider.DecodeEKSTypesReq,
+		)(provider.ListEKSClustersEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.presetProvider)),
+		provider.DecodeEKSClusterListReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
 
-// swagger:route GET /api/v2/providers/aks/clusters aks listAKSClusters
+// swagger:route GET /api/v2/projects/{project_id}/providers/aks/clusters project listAKSClusters
 //
 // Lists AKS clusters
 //
@@ -5088,8 +5086,8 @@ func (r Routing) listAKSClusters() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.ListAKSClustersEndpoint(r.userInfoGetter, r.presetProvider)),
-		provider.DecodeAKSTypesReq,
+		)(provider.ListAKSClustersEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.presetProvider)),
+		provider.DecodeAKSClusterListReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

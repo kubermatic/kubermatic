@@ -27,6 +27,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2020-10-01/resources"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	semverlib "github.com/Masterminds/semver/v3"
+	"k8s.io/apimachinery/pkg/util/sets"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -528,21 +529,39 @@ type AzureCredential struct {
 	ClientSecret   string
 }
 
-func ListAKSClusters(ctx context.Context, cred azure.Credentials) (apiv2.AKSClusterList, error) {
-	clusters := apiv2.AKSClusterList{}
+func ListAKSClusters(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ExternalClusterProvider, cred azure.Credentials, projectID string) (apiv2.AKSClusterList, error) {
 	var err error
+	clusters := apiv2.AKSClusterList{}
+
+	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID, nil)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	clusterList, err := clusterProvider.List(project)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	aksExternalClusterNames := sets.NewString()
+	for _, externalCluster := range clusterList.Items {
+		cloud := externalCluster.Spec.CloudSpec
+		if cloud != nil && cloud.AKS != nil {
+			aksExternalClusterNames.Insert(cloud.AKS.Name)
+		}
+	}
 	aksClient := containerservice.NewManagedClustersClient(cred.SubscriptionID)
 	aksClient.Authorizer, err = auth.NewClientCredentialsConfig(cred.ClientID, cred.ClientSecret, cred.TenantID).Authorizer()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create authorizer: %s", err.Error())
 	}
-	clusterList, err := aksClient.List(ctx)
+	clusterListResult, err := aksClient.List(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list AKS clusters: %v, tenannt %v subs %v, clientid %v secret %v", err, cred.TenantID, cred.SubscriptionID, cred.ClientID, cred.ClientSecret)
 	}
 
-	for _, f := range clusterList.Values() {
-		clusters = append(clusters, apiv2.AKSCluster{Name: *f.Name})
+	for _, f := range clusterListResult.Values() {
+		clusters = append(clusters, apiv2.AKSCluster{Name: *f.Name, IsImported: aksExternalClusterNames.Has(*f.Name)})
 	}
 	return clusters, nil
 }
