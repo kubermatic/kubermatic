@@ -91,16 +91,6 @@ func DeploymentCreator(kubernetesVersion *semver.Version) reconciling.NamedDeplo
 			dep.Spec.Template.Spec.Volumes = volumes
 
 			dep.Spec.Template.Spec.Containers = getContainers(kubernetesVersion)
-			dep.Spec.Template.Spec.Tolerations = []corev1.Toleration{
-				{
-					Effect:   corev1.TaintEffectNoSchedule,
-					Operator: corev1.TolerationOpExists,
-				},
-				{
-					Effect:   corev1.TaintEffectNoExecute,
-					Operator: corev1.TolerationOpExists,
-				},
-			}
 			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
