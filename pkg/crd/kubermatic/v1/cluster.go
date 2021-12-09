@@ -591,6 +591,7 @@ type CloudSpec struct {
 	Kubevirt     *KubevirtCloudSpec     `json:"kubevirt,omitempty"`
 	Alibaba      *AlibabaCloudSpec      `json:"alibaba,omitempty"`
 	Anexia       *AnexiaCloudSpec       `json:"anexia,omitempty"`
+	Nutanix      *NutanixCloudSpec      `json:"nutanix,omitempty"`
 }
 
 // KeyCert is a pair of key and cert.
@@ -839,6 +840,13 @@ type AnexiaCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
 	Token string `json:"token,omitempty"`
+}
+
+type NutanixCloudSpec struct {
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
 }
 
 type HealthStatus int

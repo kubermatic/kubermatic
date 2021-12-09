@@ -42,6 +42,7 @@ const (
 	GKECloudProvider          ProviderType = "gke"
 	HetznerCloudProvider      ProviderType = "hetzner"
 	KubevirtCloudProvider     ProviderType = "kubevirt"
+	NutanixCloudProvider      ProviderType = "nutanix"
 	OpenstackCloudProvider    ProviderType = "openstack"
 	PacketCloudProvider       ProviderType = "packet"
 	VSphereCloudProvider      ProviderType = "vsphere"
@@ -67,6 +68,7 @@ var (
 		GKECloudProvider,
 		HetznerCloudProvider,
 		KubevirtCloudProvider,
+		NutanixCloudProvider,
 		OpenstackCloudProvider,
 		PacketCloudProvider,
 		VSphereCloudProvider,
@@ -247,6 +249,7 @@ type DatacenterSpec struct {
 	VSphere      *DatacenterSpecVSphere      `json:"vsphere,omitempty"`
 	GCP          *DatacenterSpecGCP          `json:"gcp,omitempty"`
 	Kubevirt     *DatacenterSpecKubevirt     `json:"kubevirt,omitempty"`
+	Nutanix      *DatacenterSpecNutanix      `json:"nutanix,omitempty"`
 	Alibaba      *DatacenterSpecAlibaba      `json:"alibaba,omitempty"`
 	Anexia       *DatacenterSpecAnexia       `json:"anexia,omitempty"`
 
@@ -437,6 +440,20 @@ type DatacenterSpecKubevirt struct {
 	// DNSConfig represents the DNS parameters of a pod. Parameters specified here will be merged to the generated DNS
 	// configuration based on DNSPolicy.
 	DNSConfig *corev1.PodDNSConfig `json:"dns_config,omitempty"`
+}
+
+// DatacenterSpecNutanix describes a Nutanix datacenter.
+type DatacenterSpecNutanix struct {
+	// Endpoint URL to use, including protocol, for example "https://nutanix.example.com".
+	Endpoint string `json:"endpoint"`
+	// AllowInsecure allows to disable the TLS certificate check against the endpoint.
+	AllowInsecure bool `json:"allow_insecure"`
+	// ClusterID is the Nutanix cluster UUID to use for this datacenter.
+	ClusterID string `json:"cluster_id"`
+	// A list of VM templates to use for a given operating system. You must
+	// define at least one template.
+	// See: https://github.com/kubermatic/machine-controller/blob/master/docs/vsphere.md#template-vms-preparation
+	//Templates ImageList `json:"templates"`
 }
 
 // DatacenterSpecAlibaba describes a alibaba datacenter.
