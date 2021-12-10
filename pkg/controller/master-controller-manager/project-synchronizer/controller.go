@@ -19,6 +19,7 @@ package projectsynchronizer
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"go.uber.org/zap"
 
@@ -44,11 +45,10 @@ const (
 )
 
 type reconciler struct {
-	log             *zap.SugaredLogger
-	recorder        record.EventRecorder
-	masterClient    ctrlruntimeclient.Client
-	masterAPIReader ctrlruntimeclient.Reader
-	seedClients     map[string]ctrlruntimeclient.Client
+	log          *zap.SugaredLogger
+	recorder     record.EventRecorder
+	masterClient ctrlruntimeclient.Client
+	seedClients  map[string]ctrlruntimeclient.Client
 }
 
 func Add(
@@ -59,15 +59,17 @@ func Add(
 ) error {
 
 	r := &reconciler{
-		log:             log.Named(ControllerName),
-		recorder:        masterManager.GetEventRecorderFor(ControllerName),
-		masterClient:    masterManager.GetClient(),
-		masterAPIReader: masterManager.GetAPIReader(),
-		seedClients:     map[string]ctrlruntimeclient.Client{},
+		log:          log.Named(ControllerName),
+		recorder:     masterManager.GetEventRecorderFor(ControllerName),
+		masterClient: masterManager.GetClient(),
+		seedClients:  map[string]ctrlruntimeclient.Client{},
 	}
 
 	for seedName, seedManager := range seedManagers {
-		r.seedClients[seedName] = seedManager.GetClient()
+		// skip case when master/seed is on the same cluster as we could have races
+		if !strings.EqualFold(seedManager.GetConfig().Host, masterManager.GetConfig().Host) {
+			r.seedClients[seedName] = seedManager.GetClient()
+		}
 	}
 
 	c, err := controller.New(ControllerName, masterManager, controller.Options{Reconciler: r, MaxConcurrentReconciles: numWorkers})
@@ -97,11 +99,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	log := r.log.With("request", request)
 
 	project := &kubermaticv1.Project{}
-	// Need to bypass the cache or we have potential races when master/seed cluster are on the same cluster.
-	// This happens because the project reconciliation updates the projects on other seeds without resourceVersion set,
-	// which is ok when we want to sync to other clusters, but in master/seed cluster case, we can overwrite the Project
-	// with what is in the cache.
-	if err := r.masterAPIReader.Get(ctx, request.NamespacedName, project); err != nil {
+	if err := r.masterClient.Get(ctx, request.NamespacedName, project); err != nil {
 		return reconcile.Result{}, ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
