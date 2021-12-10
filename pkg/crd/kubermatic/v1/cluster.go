@@ -842,11 +842,16 @@ type AnexiaCloudSpec struct {
 	Token string `json:"token,omitempty"`
 }
 
+// NutanixCloudSpec specifies the access data to Nutanix.
 type NutanixCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
+	ProjectID string `json:"projectId,omitempty"`
+
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
+
+	Subnet string `json:"subnet"`
 }
 
 type HealthStatus int
