@@ -24,6 +24,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/resources"
 )
 
 type ClientSet struct {
@@ -38,15 +39,25 @@ func getCredentials(dc *kubermaticv1.DatacenterSpecNutanix, cloud *kubermaticv1.
 	username := cloud.Username
 	password := cloud.Password
 
+	var err error
+
 	if username == "" {
 		if cloud.CredentialsReference == nil {
 			return nutanixclient.Credentials{}, errors.New("no credentials provided")
+		}
+		username, err = secretKeyGetter(cloud.CredentialsReference, resources.NutanixUsername)
+		if err != nil {
+			return nutanixclient.Credentials{}, err
 		}
 	}
 
 	if password == "" {
 		if cloud.CredentialsReference == nil {
 			return nutanixclient.Credentials{}, errors.New("no credentials provided")
+		}
+		password, err = secretKeyGetter(cloud.CredentialsReference, resources.NutanixPassword)
+		if err != nil {
+			return nutanixclient.Credentials{}, err
 		}
 	}
 

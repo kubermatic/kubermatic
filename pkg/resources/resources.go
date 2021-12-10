@@ -580,6 +580,9 @@ const (
 
 	AnexiaToken = "token"
 
+	NutanixUsername = "username"
+	NutanixPassword = "password"
+
 	UserSSHKeys = "usersshkeys"
 )
 
