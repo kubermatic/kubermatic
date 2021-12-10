@@ -150,6 +150,7 @@ type nodePortProxyData interface {
 	ImageRegistry(string) string
 	NodePortProxyTag() string
 	Cluster() *kubermaticv1.Cluster
+	SupportsFailureDomainZoneAntiAffinity() bool
 }
 
 func EnsureResources(ctx context.Context, client ctrlruntimeclient.Client, data nodePortProxyData) error {
@@ -348,6 +349,14 @@ func deploymentEnvoy(image string, data nodePortProxyData) reconciling.NamedDepl
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}
+
+			d.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(envoyAppLabelValue, data.Cluster().Name)
+			if data.SupportsFailureDomainZoneAntiAffinity() {
+				antiAffinities := d.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution
+				antiAffinities = append(antiAffinities, resources.FailureDomainZoneAntiAffinity(envoyAppLabelValue))
+				d.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution = antiAffinities
+			}
+
 			d.Spec.Template.Spec.Volumes = []corev1.Volume{{
 				Name: volumeMountNameEnvoyConfig,
 				VolumeSource: corev1.VolumeSource{
