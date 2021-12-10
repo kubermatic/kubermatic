@@ -19,6 +19,7 @@ package projectsynchronizer
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"go.uber.org/zap"
 
@@ -65,7 +66,10 @@ func Add(
 	}
 
 	for seedName, seedManager := range seedManagers {
-		r.seedClients[seedName] = seedManager.GetClient()
+		// skip case when master/seed is on the same cluster as we could have races
+		if seedManager.GetConfig() != nil && masterManager.GetConfig() != nil && !strings.EqualFold(seedManager.GetConfig().Host, masterManager.GetConfig().Host) {
+			r.seedClients[seedName] = seedManager.GetClient()
+		}
 	}
 
 	c, err := controller.New(ControllerName, masterManager, controller.Options{Reconciler: r, MaxConcurrentReconciles: numWorkers})
