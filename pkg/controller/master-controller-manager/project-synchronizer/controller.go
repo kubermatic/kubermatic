@@ -67,7 +67,7 @@ func Add(
 
 	for seedName, seedManager := range seedManagers {
 		// skip case when master/seed is on the same cluster as we could have races
-		if !strings.EqualFold(seedManager.GetConfig().Host, masterManager.GetConfig().Host) {
+		if seedManager.GetConfig() != nil && masterManager.GetConfig() != nil && !strings.EqualFold(seedManager.GetConfig().Host, masterManager.GetConfig().Host) {
 			r.seedClients[seedName] = seedManager.GetClient()
 		}
 	}
