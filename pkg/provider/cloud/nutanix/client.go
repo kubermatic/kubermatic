@@ -19,8 +19,8 @@ package nutanix
 import (
 	"errors"
 
-	nutanixclient "github.com/nutanix/terraform-provider-nutanix/client"
-	nutanixv3 "github.com/nutanix/terraform-provider-nutanix/client/v3"
+	nutanixclient "github.com/terraform-providers/terraform-provider-nutanix/client"
+	nutanixv3 "github.com/terraform-providers/terraform-provider-nutanix/client/v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"

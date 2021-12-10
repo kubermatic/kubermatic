@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	nutanixv3 "github.com/nutanix/terraform-provider-nutanix/client/v3"
+	nutanixv3 "github.com/terraform-providers/terraform-provider-nutanix/client/v3"
 	"go.uber.org/zap"
 	"k8s.io/utils/pointer"
 
