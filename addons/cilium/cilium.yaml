@@ -21,17 +21,16 @@
   #   - added seccomp profile to cilium-operator
   #   - add ca certificate generation
 
-  { { if eq .Cluster.CNIPlugin.Type "cilium" } }
-  { { if eq .Cluster.CNIPlugin.Version "v1.10" } }
+{{ if eq .Cluster.CNIPlugin.Type "cilium" }}
+{{ if eq .Cluster.CNIPlugin.Version "v1.10" }}
 
-  { { $apiServerURL := urlParse .Cluster.ApiserverExternalURL } }
-  { { $hostParts := split ":" $apiServerURL.host } }
-  { { $apiServerHost := $hostParts._0 } }
-  { { $apiServerPort := $hostParts._1 } }
+{{ $apiServerURL := urlParse .Cluster.ApiserverExternalURL }}
+{{ $hostParts := split ":" $apiServerURL.host }}
+{{ $apiServerHost := $hostParts._0 }}
+{{ $apiServerPort := $hostParts._1 }}
 
-  { { - $ca := genCA "hubble-ca.cilium.io" 1095 - } }
-  { { - $serverCert := genSignedCert "*.default.hubble-grpc.cilium.io" nil (list "*.default.hubble-grpc.cilium.io") 1095 $ca - } }
-  { { - $cert := genSignedCert "*.hubble-relay.cilium.io" nil (list "*.hubble-relay.cilium.io") 1095 $ca - } }
+{{ - $ca := genCA "hubble-ca.cilium.io" 1095 - }}
+{{ - $serverCert := genSignedCert "*.default.hubble-grpc.cilium.io" nil (list "*.default.hubble-grpc.cilium.io") 1095 $ca - }}
 
 ---
 # Source: cilium/templates/cilium-agent/serviceaccount.yaml
