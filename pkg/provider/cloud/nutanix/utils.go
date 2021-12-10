@@ -23,8 +23,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-func waitForCompletion(client *ClientSet, taskID string) error {
-	if err := wait.Poll(10*time.Second, 5*time.Minute, func() (bool, error) {
+func waitForCompletion(client *ClientSet, taskID string, interval time.Duration, timeout time.Duration) error {
+	if err := wait.Poll(interval, timeout, func() (bool, error) {
 		task, err := client.Prism.V3.GetTask(taskID)
 		if err != nil {
 			return false, err

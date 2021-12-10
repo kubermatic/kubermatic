@@ -20,12 +20,14 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	nutanixv3 "github.com/nutanix/terraform-provider-nutanix/client/v3"
 	"go.uber.org/zap"
 	"k8s.io/utils/pointer"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
@@ -40,6 +42,8 @@ const (
 	projectKind = "project"
 
 	entityNotFoundError = "ENTITY_NOT_FOUND"
+
+	FinalizerSubnet = "kubermatic.io/cleanup-nutanix-subnet"
 )
 
 type Nutanix struct {
@@ -125,7 +129,7 @@ func (n *Nutanix) reconcileCluster(cluster *kubermaticv1.Cluster, update provide
 
 	if force || cluster.Spec.Cloud.Nutanix.SubnetID == "" {
 		logger.Infow("reconciling subnet", "subnet", cluster.Spec.Cloud.Nutanix.SubnetID)
-		n.reconcileSubnet(client, cluster)
+		n.reconcileSubnet(client, cluster, update)
 	}
 
 	return nil, nil
@@ -149,7 +153,7 @@ func reconcileCategoryAndValue(client *ClientSet, cluster *kubermaticv1.Cluster)
 	return nil
 }
 
-func (n *Nutanix) reconcileSubnet(client *ClientSet, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+func (n *Nutanix) reconcileSubnet(client *ClientSet, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	if cluster.Spec.Cloud.Nutanix.SubnetID != "" {
 		_, err := client.Prism.V3.GetSubnet(cluster.Spec.Cloud.Nutanix.SubnetID)
 
@@ -209,9 +213,14 @@ func (n *Nutanix) reconcileSubnet(client *ClientSet, cluster *kubermaticv1.Clust
 		return nil, err
 	}
 
+	cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+		updatedCluster.Spec.Cloud.Nutanix.SubnetID = *resp.Metadata.UUID
+		kuberneteshelper.AddFinalizer(updatedCluster, FinalizerSubnet)
+	})
+
 	taskID := resp.Status.ExecutionContext.TaskUUID.(string)
-	if err = waitForCompletion(client, taskID); err != nil {
-		return nil, err
+	if err = waitForCompletion(client, taskID, 10*time.Second, 10*time.Minute); err != nil {
+		return cluster, err
 	}
 
 	return cluster, nil
