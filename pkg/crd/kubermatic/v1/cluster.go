@@ -846,12 +846,13 @@ type AnexiaCloudSpec struct {
 type NutanixCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
-	ProjectID string `json:"projectId,omitempty"`
+	ProjectID string `json:"projectId"`
 
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
 
-	Subnet string `json:"subnet"`
+	CategoryValue string `json:"categoryValue"`
+	SubnetID      string `json:"subnetId"`
 }
 
 type HealthStatus int

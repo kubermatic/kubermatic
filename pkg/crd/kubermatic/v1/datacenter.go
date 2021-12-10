@@ -450,10 +450,10 @@ type DatacenterSpecNutanix struct {
 	AllowInsecure bool `json:"allow_insecure"`
 	// ClusterID is the Nutanix cluster UUID to use for this datacenter.
 	ClusterID string `json:"cluster_id"`
-	// A list of VM templates to use for a given operating system. You must
-	// define at least one template.
-	// See: https://github.com/kubermatic/machine-controller/blob/master/docs/vsphere.md#template-vms-preparation
-	//Templates ImageList `json:"templates"`
+	// Images to use for each supported operating system.
+	Images ImageList `json:"images"`
+	// Used for automatic network creation
+	DNSServers []string `json:"dns_servers"`
 }
 
 // DatacenterSpecAlibaba describes a alibaba datacenter.

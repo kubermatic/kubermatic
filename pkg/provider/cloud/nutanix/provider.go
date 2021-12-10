@@ -18,12 +18,28 @@ package nutanix
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 
+	nutanixv3 "github.com/nutanix/terraform-provider-nutanix/client/v3"
 	"go.uber.org/zap"
+	"k8s.io/utils/pointer"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
+)
+
+const (
+	categoryName        = "kkp-cluster"
+	categoryDescription = "automatically created by KKP"
+	categoryValuePrefix = "kubernetes-"
+
+	subnetKind  = "subnet"
+	clusterKind = "cluster"
+	projectKind = "project"
+
+	entityNotFoundError = "ENTITY_NOT_FOUND"
 )
 
 type Nutanix struct {
@@ -101,11 +117,102 @@ func (n *Nutanix) reconcileCluster(cluster *kubermaticv1.Cluster, update provide
 
 	// TODO: make sure the "kkp-cluster" category exists
 	// TODO: make sure the category value "kubernetes-NAME" exists
+	logger.Infow("reconciling category and cluster value")
+	err = reconcileCategoryAndValue(client, cluster)
+	if err != nil {
+		return nil, fmt.Errorf("failed to reconcile category and cluster value: %v", err)
+	}
 
-	if force || cluster.Spec.Cloud.Nutanix.Subnet == "" {
-		logger.Infow("reconciling subnet", "subnet", cluster.Spec.Cloud.Nutanix.Subnet)
-		reconcileSubnet(client)
+	if force || cluster.Spec.Cloud.Nutanix.SubnetID == "" {
+		logger.Infow("reconciling subnet", "subnet", cluster.Spec.Cloud.Nutanix.SubnetID)
+		n.reconcileSubnet(client, cluster)
 	}
 
 	return nil, nil
+}
+
+func reconcileCategoryAndValue(client *ClientSet, cluster *kubermaticv1.Cluster) error {
+	// check if category is present
+	_, err := client.Prism.V3.GetCategoryKey(categoryName)
+	if err != nil {
+		_, err = client.Prism.V3.CreateOrUpdateCategoryKey(&nutanixv3.CategoryKey{
+			Name:        pointer.String(categoryName),
+			Description: pointer.String(categoryDescription),
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	// TODO: check if category value is present
+
+	return nil
+}
+
+func (n *Nutanix) reconcileSubnet(client *ClientSet, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	if cluster.Spec.Cloud.Nutanix.SubnetID != "" {
+		_, err := client.Prism.V3.GetSubnet(cluster.Spec.Cloud.Nutanix.SubnetID)
+
+		// subnet exists, we can return early
+		// TODO: check status
+		if err == nil {
+			return cluster, nil
+		}
+
+		// if there's an error different from "not found", we should return that error
+		if err != nil && !strings.Contains(err.Error(), entityNotFoundError) {
+			return nil, err
+		}
+	}
+
+	subnetInput := &nutanixv3.SubnetIntentInput{
+		Metadata: &nutanixv3.Metadata{
+			Kind: pointer.String(subnetKind),
+			ProjectReference: &nutanixv3.Reference{
+				Kind: pointer.String(projectKind),
+				UUID: pointer.String(cluster.Spec.Cloud.Nutanix.ProjectID),
+			},
+			Categories: map[string]string{
+				categoryName: cluster.Spec.Cloud.Nutanix.CategoryValue,
+			},
+		},
+		Spec: &nutanixv3.Subnet{
+			ClusterReference: &nutanixv3.Reference{
+				Kind: pointer.String(clusterKind),
+				UUID: pointer.String(n.dc.ClusterID),
+			},
+			Resources: &nutanixv3.SubnetResources{
+				IPConfig: &nutanixv3.IPConfig{
+					SubnetIP:     pointer.String("192.168.1.0"),
+					PrefixLength: pointer.Int64(24),
+				},
+				SubnetType: pointer.String("VLAN"),
+			},
+		},
+	}
+
+	if len(n.dc.DNSServers) > 0 {
+		dnsServers := []*string{}
+		for _, server := range n.dc.DNSServers {
+			dnsServers = append(dnsServers, pointer.String(server))
+		}
+
+		if subnetInput.Spec.Resources.IPConfig.DHCPOptions == nil {
+			subnetInput.Spec.Resources.IPConfig.DHCPOptions = &nutanixv3.DHCPOptions{}
+		}
+
+		subnetInput.Spec.Resources.IPConfig.DHCPOptions.DomainNameServerList = dnsServers
+	}
+
+	resp, err := client.Prism.V3.CreateSubnet(subnetInput)
+	if err != nil {
+		return nil, err
+	}
+
+	taskID := resp.Status.ExecutionContext.TaskUUID.(string)
+	if err = waitForCompletion(client, taskID); err != nil {
+		return nil, err
+	}
+
+	return cluster, nil
 }
