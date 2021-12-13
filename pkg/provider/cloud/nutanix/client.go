@@ -120,3 +120,20 @@ func getProjectByName(client *ClientSet, name string) (*nutanixv3.Project, error
 
 	return nil, errors.New(entityNotFoundError)
 }
+
+func getClusterByName(client *ClientSet, name string) (*nutanixv3.ClusterIntentResponse, error) {
+	filter := fmt.Sprintf("name==%s", name)
+	clusters, err := client.Prism.V3.ListAllCluster(filter)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, cluster := range clusters.Entities {
+		if *cluster.Metadata.Name == name {
+			return cluster, nil
+		}
+	}
+
+	return nil, errors.New(entityNotFoundError)
+}

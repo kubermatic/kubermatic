@@ -182,12 +182,22 @@ func (n *Nutanix) reconcileSubnet(client *ClientSet, cluster *kubermaticv1.Clust
 		}
 	}
 
+	dcCluster, err := getClusterByName(client, n.dc.ClusterName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cluster: %v", err)
+	}
+
+	project, err := getProjectByName(client, cluster.Spec.Cloud.Nutanix.ProjectName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get project: %v", err)
+	}
+
 	subnetInput := &nutanixv3.SubnetIntentInput{
 		Metadata: &nutanixv3.Metadata{
 			Kind: pointer.String(subnetKind),
 			ProjectReference: &nutanixv3.Reference{
 				Kind: pointer.String(projectKind),
-				Name: pointer.String(cluster.Spec.Cloud.Nutanix.ProjectName),
+				UUID: project.Metadata.UUID,
 			},
 			Categories: map[string]string{
 				categoryName: categoryValue(cluster.Name),
@@ -197,7 +207,7 @@ func (n *Nutanix) reconcileSubnet(client *ClientSet, cluster *kubermaticv1.Clust
 		Spec: &nutanixv3.Subnet{
 			ClusterReference: &nutanixv3.Reference{
 				Kind: pointer.String(clusterKind),
-				Name: pointer.String(n.dc.ClusterName),
+				UUID: dcCluster.Metadata.UUID,
 			},
 			Resources: &nutanixv3.SubnetResources{
 				IPConfig: &nutanixv3.IPConfig{
