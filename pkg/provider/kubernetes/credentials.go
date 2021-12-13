@@ -25,6 +25,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/openstack"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
@@ -360,15 +361,25 @@ func createOrUpdatePacketSecret(ctx context.Context, seedClient ctrlruntimeclien
 
 func createOrUpdateKubevirtSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
 	spec := cluster.Spec.Cloud.Kubevirt
-
 	// already migrated
 	if spec.Kubeconfig == "" {
 		return nil
 	}
 
+	// ensure that CSI driver on user cluster will have an access to KubeVirt cluster
+	r, err := kubevirt.NewReconciler(spec.Kubeconfig, cluster.Name)
+	if err != nil {
+		return err
+	}
+	csiKubeconfig, err := r.ReconcileCSIAccess(ctx)
+	if err != nil {
+		return err
+	}
+
 	// move credentials into dedicated Secret
 	credentialRef, err := ensureCredentialSecret(ctx, seedClient, cluster, map[string][]byte{
-		resources.KubevirtKubeConfig: []byte(spec.Kubeconfig),
+		resources.KubevirtKubeConfig:    []byte(spec.Kubeconfig),
+		resources.KubevirtCSIKubeConfig: csiKubeconfig,
 	})
 	if err != nil {
 		return err
