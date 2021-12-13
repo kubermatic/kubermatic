@@ -467,11 +467,13 @@ func PatchEndpoint(
 	newInternalCluster.Spec.OIDC = patchedCluster.Spec.OIDC
 	newInternalCluster.Spec.UsePodSecurityPolicyAdmissionPlugin = patchedCluster.Spec.UsePodSecurityPolicyAdmissionPlugin
 	newInternalCluster.Spec.UsePodNodeSelectorAdmissionPlugin = patchedCluster.Spec.UsePodNodeSelectorAdmissionPlugin
+	newInternalCluster.Spec.UseEventRateLimitAdmissionPlugin = patchedCluster.Spec.UseEventRateLimitAdmissionPlugin
 	newInternalCluster.Spec.AdmissionPlugins = patchedCluster.Spec.AdmissionPlugins
 	newInternalCluster.Spec.AuditLogging = patchedCluster.Spec.AuditLogging
 	newInternalCluster.Spec.UpdateWindow = patchedCluster.Spec.UpdateWindow
 	newInternalCluster.Spec.OPAIntegration = patchedCluster.Spec.OPAIntegration
 	newInternalCluster.Spec.PodNodeSelectorAdmissionPluginConfig = patchedCluster.Spec.PodNodeSelectorAdmissionPluginConfig
+	newInternalCluster.Spec.EventRateLimitConfig = patchedCluster.Spec.EventRateLimitConfig
 	newInternalCluster.Spec.ServiceAccount = patchedCluster.Spec.ServiceAccount
 	newInternalCluster.Spec.MLA = patchedCluster.Spec.MLA
 	newInternalCluster.Spec.ContainerRuntime = patchedCluster.Spec.ContainerRuntime

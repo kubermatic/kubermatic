@@ -42,6 +42,7 @@ func GetAdmissionPluginEndpoint(admissionPluginProvider provider.AdmissionPlugin
 		plugins := sets.NewString(
 			"PodSecurityPolicy",
 			"PodNodeSelector",
+			"EventRateLimit",
 		)
 		plugins.Insert(pluginResponse...)
 
