@@ -81,7 +81,7 @@ var (
 )
 
 // ControllerDeploymentCreator returns the function to create and update the Gatekeeper controller deployment
-func ControllerDeploymentCreator(enableMutation bool, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
+func ControllerDeploymentCreator(enableMutation bool, registryWithOverwrite registry.WithOverwriteFunc, resourceOverride *corev1.ResourceRequirements) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return controllerName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = controllerName
@@ -111,7 +111,15 @@ func ControllerDeploymentCreator(enableMutation bool, registryWithOverwrite regi
 				},
 			}
 			dep.Spec.Template.Spec.Containers = getControllerContainers(enableMutation, registryWithOverwrite)
-			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
+			var err error
+			if resourceOverride != nil {
+				overridesRequirements := map[string]*corev1.ResourceRequirements{
+					controllerName: resourceOverride.DeepCopy(),
+				}
+				err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, overridesRequirements, dep.Annotations)
+			} else {
+				err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
+			}
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}
@@ -133,7 +141,7 @@ func ControllerDeploymentCreator(enableMutation bool, registryWithOverwrite regi
 }
 
 // AuditDeploymentCreator returns the function to create and update the Gatekeeper audit deployment
-func AuditDeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
+func AuditDeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc, resourceOverride *corev1.ResourceRequirements) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return auditName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = auditName
@@ -160,7 +168,15 @@ func AuditDeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) re
 			dep.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
 
 			dep.Spec.Template.Spec.Containers = getAuditContainers(registryWithOverwrite)
-			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
+			var err error
+			if resourceOverride != nil {
+				overridesRequirements := map[string]*corev1.ResourceRequirements{
+					auditName: resourceOverride.DeepCopy(),
+				}
+				err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, overridesRequirements, dep.Annotations)
+			} else {
+				err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
+			}
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}

@@ -3472,6 +3472,16 @@ func (in *OPAIntegrationSettings) DeepCopyInto(out *OPAIntegrationSettings) {
 		*out = new(int32)
 		**out = **in
 	}
+	if in.ControllerResources != nil {
+		in, out := &in.ControllerResources, &out.ControllerResources
+		*out = new(corev1.ResourceRequirements)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.AuditResources != nil {
+		in, out := &in.AuditResources, &out.AuditResources
+		*out = new(corev1.ResourceRequirements)
+		(*in).DeepCopyInto(*out)
+	}
 	return
 }
 

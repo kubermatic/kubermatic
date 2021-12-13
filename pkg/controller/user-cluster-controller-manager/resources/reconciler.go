@@ -108,6 +108,13 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		}
 	}
 
+	if r.opaIntegration {
+		data.gatekeeperCtrlRequirements, data.gatekeeperAuditRequirements, err = r.opaReconcileData(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to get OPA resource requirements: %w", err)
+		}
+	}
+
 	// Must be first because of openshift
 	if err := r.ensureAPIServices(ctx, data); err != nil {
 		return err
@@ -826,8 +833,8 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 	// OPA related resources
 	if r.opaIntegration {
 		creators := []reconciling.NamedDeploymentCreatorGetter{
-			gatekeeper.ControllerDeploymentCreator(r.opaEnableMutation, r.overwriteRegistryFunc),
-			gatekeeper.AuditDeploymentCreator(r.overwriteRegistryFunc),
+			gatekeeper.ControllerDeploymentCreator(r.opaEnableMutation, r.overwriteRegistryFunc, data.gatekeeperCtrlRequirements),
+			gatekeeper.AuditDeploymentCreator(r.overwriteRegistryFunc, data.gatekeeperAuditRequirements),
 		}
 
 		if err := reconciling.ReconcileDeployments(ctx, creators, resources.GatekeeperNamespace, r.Client); err != nil {
@@ -889,11 +896,13 @@ type reconcileData struct {
 	userSSHKeys      map[string][]byte
 	cloudConfig      []byte
 	// csiCloudConfig is currently used only by vSphere, whose needs it to properly configure the external CSI driver
-	csiCloudConfig         []byte
-	ccmMigration           bool
-	monitoringRequirements *corev1.ResourceRequirements
-	loggingRequirements    *corev1.ResourceRequirements
-	monitoringReplicas     *int32
+	csiCloudConfig              []byte
+	ccmMigration                bool
+	monitoringRequirements      *corev1.ResourceRequirements
+	loggingRequirements         *corev1.ResourceRequirements
+	gatekeeperCtrlRequirements  *corev1.ResourceRequirements
+	gatekeeperAuditRequirements *corev1.ResourceRequirements
+	monitoringReplicas          *int32
 }
 
 func (r *reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context) error {
