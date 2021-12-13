@@ -283,6 +283,7 @@ func convertInternalToAPIEtcdRestore(er *kubermaticv1.EtcdRestore) *apiv2.EtcdRe
 			ClusterID:                       er.Spec.Cluster.Name,
 			BackupName:                      er.Spec.BackupName,
 			BackupDownloadCredentialsSecret: er.Spec.BackupDownloadCredentialsSecret,
+			Destination:                     er.Spec.Destination,
 		},
 		Status: apiv2.EtcdRestoreStatus{
 			Phase: er.Status.Phase,
@@ -315,6 +316,7 @@ func convertAPIToInternalEtcdRestore(name string, erSpec *apiv2.EtcdRestoreSpec,
 			Cluster:                         *clusterObjectRef,
 			BackupName:                      erSpec.BackupName,
 			BackupDownloadCredentialsSecret: erSpec.BackupDownloadCredentialsSecret,
+			Destination:                     erSpec.Destination,
 		},
 	}, nil
 }

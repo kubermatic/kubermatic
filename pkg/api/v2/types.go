@@ -18,10 +18,10 @@ package v2
 
 import (
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
-	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	crdapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -312,6 +312,9 @@ type EtcdRestoreSpec struct {
 	// BackupDownloadCredentialsSecret is the name of a secret in the cluster-xxx namespace containing
 	// credentials needed to download the backup
 	BackupDownloadCredentialsSecret string `json:"backupDownloadCredentialsSecret,omitempty"`
+	// Destination indicates where the backup was stored. The destination name should correspond to a destination in
+	// the cluster's Seed.Spec.EtcdBackupRestore. If empty, it will use the legacy destination configured in Seed.Spec.BackupRestore
+	Destination string `json:"destination,omitempty"`
 }
 
 // OIDCSpec contains OIDC params that can be used to access user cluster.

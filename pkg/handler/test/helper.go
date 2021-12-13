@@ -1990,6 +1990,7 @@ func GenAPIEtcdRestore(name, clusterID string) *apiv2.EtcdRestore {
 			ClusterID:                       clusterID,
 			BackupName:                      "backup-1",
 			BackupDownloadCredentialsSecret: "secret",
+			Destination:                     "s3",
 		},
 	}
 }
@@ -2013,6 +2014,7 @@ func GenEtcdRestore(name string, cluster *kubermaticv1.Cluster, projectID string
 			Cluster:                         *clusterObjectRef,
 			BackupName:                      "backup-1",
 			BackupDownloadCredentialsSecret: "secret",
+			Destination:                     "s3",
 		},
 	}
 }
