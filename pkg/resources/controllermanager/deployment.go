@@ -105,7 +105,6 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 				},
 			}
 
-			// Configure user cluster DNS resolver for this pod.
 			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
 			if err != nil {
 				return nil, err

@@ -75,6 +75,7 @@ func vsphereDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 			if err != nil {
 				return nil, err
 			}
+
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.BoolPtr(false)
 
 			version, err := getVsphereCPIVersion(data.Cluster().Spec.Version)

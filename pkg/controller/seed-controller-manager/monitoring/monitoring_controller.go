@@ -59,7 +59,8 @@ type userClusterConnectionProvider interface {
 
 // Features describes the enabled features for the monitoring controller
 type Features struct {
-	VPA bool
+	VPA          bool
+	Konnectivity bool
 }
 
 // Reconciler stores all components required for monitoring
