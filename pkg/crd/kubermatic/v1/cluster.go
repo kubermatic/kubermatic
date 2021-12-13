@@ -851,8 +851,7 @@ type NutanixCloudSpec struct {
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
 
-	CategoryValue string `json:"categoryValue"`
-	SubnetID      string `json:"subnetId"`
+	SubnetName string `json:"subnetName"`
 }
 
 type HealthStatus int

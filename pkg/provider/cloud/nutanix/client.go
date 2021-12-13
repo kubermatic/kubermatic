@@ -18,6 +18,7 @@ package nutanix
 
 import (
 	"errors"
+	"fmt"
 
 	nutanixclient "github.com/terraform-providers/terraform-provider-nutanix/client"
 	nutanixv3 "github.com/terraform-providers/terraform-provider-nutanix/client/v3"
@@ -84,4 +85,21 @@ func getClientSet(dc *kubermaticv1.DatacenterSpecNutanix, cloud *kubermaticv1.Nu
 	return &ClientSet{
 		Prism: clientV3,
 	}, nil
+}
+
+func getSubnetByName(client *ClientSet, name string) (*nutanixv3.SubnetIntentResponse, error) {
+	filter := fmt.Sprintf("name==%s", name)
+	subnets, err := client.Prism.V3.ListAllSubnet(filter)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, subnet := range subnets.Entities {
+		if *subnet.Metadata.Name == name {
+			return subnet, nil
+		}
+	}
+
+	return nil, errors.New(entityNotFoundError)
 }

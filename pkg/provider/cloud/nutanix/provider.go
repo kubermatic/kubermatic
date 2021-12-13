@@ -36,6 +36,7 @@ const (
 	categoryName        = "kkp-cluster"
 	categoryDescription = "automatically created by KKP"
 	categoryValuePrefix = "kubernetes-"
+	subnetNamePrefix    = "kubernetes-"
 
 	subnetKind  = "subnet"
 	clusterKind = "cluster"
@@ -127,8 +128,8 @@ func (n *Nutanix) reconcileCluster(cluster *kubermaticv1.Cluster, update provide
 		return nil, fmt.Errorf("failed to reconcile category and cluster value: %v", err)
 	}
 
-	if force || cluster.Spec.Cloud.Nutanix.SubnetID == "" {
-		logger.Infow("reconciling subnet", "subnet", cluster.Spec.Cloud.Nutanix.SubnetID)
+	if force || cluster.Spec.Cloud.Nutanix.SubnetName == "" {
+		logger.Infow("reconciling subnet", "subnet", cluster.Spec.Cloud.Nutanix.SubnetName)
 		n.reconcileSubnet(client, cluster, update)
 	}
 
@@ -172,8 +173,8 @@ func reconcileCategoryAndValue(client *ClientSet, cluster *kubermaticv1.Cluster)
 }
 
 func (n *Nutanix) reconcileSubnet(client *ClientSet, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	if cluster.Spec.Cloud.Nutanix.SubnetID != "" {
-		_, err := client.Prism.V3.GetSubnet(cluster.Spec.Cloud.Nutanix.SubnetID)
+	if cluster.Spec.Cloud.Nutanix.SubnetName != "" {
+		_, err := getSubnetByName(client, subnetName(cluster.Name))
 
 		// subnet exists, we can return early
 		// TODO: check status
@@ -195,8 +196,9 @@ func (n *Nutanix) reconcileSubnet(client *ClientSet, cluster *kubermaticv1.Clust
 				UUID: pointer.String(cluster.Spec.Cloud.Nutanix.ProjectID),
 			},
 			Categories: map[string]string{
-				categoryName: cluster.Spec.Cloud.Nutanix.CategoryValue,
+				categoryName: categoryValue(cluster.Name),
 			},
+			Name: pointer.String(subnetName(cluster.Name)),
 		},
 		Spec: &nutanixv3.Subnet{
 			ClusterReference: &nutanixv3.Reference{
@@ -232,7 +234,7 @@ func (n *Nutanix) reconcileSubnet(client *ClientSet, cluster *kubermaticv1.Clust
 	}
 
 	cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
-		updatedCluster.Spec.Cloud.Nutanix.SubnetID = *resp.Metadata.UUID
+		updatedCluster.Spec.Cloud.Nutanix.SubnetName = *resp.Metadata.Name
 		kuberneteshelper.AddFinalizer(updatedCluster, FinalizerSubnet)
 	})
 
@@ -246,4 +248,8 @@ func (n *Nutanix) reconcileSubnet(client *ClientSet, cluster *kubermaticv1.Clust
 
 func categoryValue(clusterName string) string {
 	return categoryValuePrefix + clusterName
+}
+
+func subnetName(clusterName string) string {
+	return subnetNamePrefix + clusterName
 }
