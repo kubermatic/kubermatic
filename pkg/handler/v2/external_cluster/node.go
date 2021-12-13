@@ -728,6 +728,9 @@ func CreateMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, pro
 			if cloud.GKE != nil {
 				return createGKENodePool(ctx, cluster, req.Body, secretKeySelector, cloud.GKE.CredentialsReference)
 			}
+			if cloud.AKS != nil {
+				return createAKSNodePool(ctx, cluster.Spec.CloudSpec, req.Body, secretKeySelector, cloud.AKS.CredentialsReference)
+			}
 		}
 
 		return nil, fmt.Errorf("unsupported or missing cloud provider fields")

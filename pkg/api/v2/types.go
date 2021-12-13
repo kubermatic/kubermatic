@@ -468,6 +468,55 @@ type FeatureGates struct {
 // swagger:model ExternalClusterMachineDeploymentCloudSpec
 type ExternalClusterMachineDeploymentCloudSpec struct {
 	GKE *GKEMachineDeploymentCloudSpec `json:"gke,omitempty"`
+	AKS *AKSMachineDeploymentCloudSpec `json:"aks,omitempty"`
+}
+
+type AKSMachineDeploymentCloudSpec struct {
+	// Basics - Settings for creating the agentpool
+	Basics *AgentPoolBasics `json:"basics,omitempty"`
+	// OptionalSettings - Optional Settings for creating the agentpool
+	OptionalSettings *AgentPoolOptionalSettings `json:"optionalSettings,omitempty"`
+	// Tags - The tags to be persisted on the agent pool virtual machine scale set.
+	Tags map[string]*string `json:"tags"`
+}
+
+type AgentPoolBasics struct {
+	// Mode - Possible values include: 'System', 'User'
+	Mode string `json:"mode,omitempty"`
+	// OsType - Possible values include: 'Linux', 'Windows'
+	OsType string `json:"osType,omitempty"`
+	// OrchestratorVersion - As a best practice, you should upgrade all node pools in an AKS cluster to the same Kubernetes version. The node pool version must have the same major version as the control plane. The node pool minor version must be within two minor versions of the control plane version. The node pool version cannot be greater than the control plane version. For more information see [upgrading a node pool](https://docs.microsoft.com/azure/aks/use-multiple-node-pools#upgrade-a-node-pool).
+	OrchestratorVersion *string `json:"orchestratorVersion,omitempty"`
+	// AvailabilityZones - The list of Availability zones to use for nodes. This can only be specified if the AgentPoolType property is 'VirtualMachineScaleSets'.
+	AvailabilityZones *[]string `json:"availabilityZones,omitempty"`
+	// VMSize - VM size availability varies by region. If a node contains insufficient compute resources (memory, cpu, etc) pods might fail to run correctly. For more details on restricted VM sizes, see: https://docs.microsoft.com/azure/aks/quotas-skus-regions
+	VMSize *string `json:"vmSize,omitempty"`
+	// EnableAutoScaling - Whether to enable auto-scaler
+	EnableAutoScaling *bool `json:"enableAutoScaling,omitempty"`
+	// MaxCount - The maximum number of nodes for auto-scaling
+	MaxCount *int32 `json:"maxCount,omitempty"`
+	// MinCount - The minimum number of nodes for auto-scaling
+	MinCount *int32 `json:"minCount,omitempty"`
+	// Count - Number of agents (VMs) to host docker containers. Allowed values must be in the range of 0 to 1000 (inclusive) for user pools and in the range of 1 to 1000 (inclusive) for system pools. The default value is 1.
+	Count *int32 `json:"count,omitempty"`
+}
+
+type AgentPoolOptionalSettings struct {
+	// MaxPods - The maximum number of pods that can run on a node.
+	MaxPods *int32 `json:"maxPods,omitempty"`
+	// EnableNodePublicIP - Some scenarios may require nodes in a node pool to receive their own dedicated public IP addresses. A common scenario is for gaming workloads, where a console needs to make a direct connection to a cloud virtual machine to minimize hops. For more information see [assigning a public IP per node](https://docs.microsoft.com/azure/aks/use-multiple-node-pools#assign-a-public-ip-per-node-for-your-node-pools). The default is false.
+	EnableNodePublicIP *bool `json:"enableNodePublicIP,omitempty"`
+	// UpgradeSettings - Settings for upgrading the agentpool
+	UpgradeSettings *AgentPoolUpgradeSettings `json:"upgradeSettings,omitempty"`
+	// NodeLabels - The node labels to be persisted across all nodes in agent pool.
+	NodeLabels map[string]*string `json:"nodeLabels"`
+	// NodeTaints - The taints added to new nodes during node pool create and scale. For example, key=value:NoSchedule.
+	NodeTaints *[]string `json:"nodeTaints,omitempty"`
+}
+
+type AgentPoolUpgradeSettings struct {
+	// MaxSurge - This can either be set to an integer (e.g. '5') or a percentage (e.g. '50%'). If a percentage is specified, it is the percentage of the total agent pool size at the time of the upgrade. For percentages, fractional nodes are rounded up. If not specified, the default is 1. For more information, including best practices, see: https://docs.microsoft.com/azure/aks/upgrade-cluster#customize-node-surge-upgrade
+	MaxSurge *string `json:"maxSurge,omitempty"`
 }
 
 // GKEMachineDeploymentCloudSpec represents an object holding GKE machine deployment cloud details.
