@@ -83,7 +83,10 @@ type PacketCredentials struct {
 }
 
 type KubevirtCredentials struct {
+	// Admin kubeconfig for KubeVirt cluster
 	KubeConfig string
+	// CSI driver kubeconfig for user cluster to provision storage on KubeVirt cluster
+	CSIKubeConfig string
 }
 
 type VSphereCredentials struct {
@@ -535,6 +538,10 @@ func GetKubevirtCredentials(data CredentialsData) (KubevirtCredentials, error) {
 	if spec.Kubeconfig != "" {
 		kubevirtCredentials.KubeConfig = spec.Kubeconfig
 	} else if kubevirtCredentials.KubeConfig, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, KubevirtKubeConfig); err != nil {
+		return KubevirtCredentials{}, err
+	}
+
+	if kubevirtCredentials.CSIKubeConfig, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, KubevirtCSIKubeConfig); err != nil {
 		return KubevirtCredentials{}, err
 	}
 

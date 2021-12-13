@@ -143,7 +143,10 @@ type PacketCredentials struct {
 }
 
 type KubevirtCredentials struct {
+	// Admin kubeconfig for KubeVirt cluster
 	KubeConfig string
+	// CSI driver kubeconfig for user cluster to provision storage on KubeVirt cluster
+	CSIKubeConfig string
 }
 
 type VSphereCredentials struct {
