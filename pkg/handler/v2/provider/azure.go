@@ -28,7 +28,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud/azure"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
@@ -364,10 +363,10 @@ type AKSCommonReq struct {
 	Credential string
 }
 
-// Validate validates AKSCommonReq request
+// Validate validates aksCommonReq request
 func (req AKSCommonReq) Validate() error {
 	if len(req.Credential) == 0 && len(req.TenantID) == 0 && len(req.SubscriptionID) == 0 && len(req.ClientID) == 0 && len(req.ClientSecret) == 0 {
-		return fmt.Errorf("Azure credentials cannot be empty")
+		return fmt.Errorf("AKS credentials cannot be empty")
 	}
 	return nil
 }
@@ -427,73 +426,64 @@ func ListAKSClustersEndpoint(userInfoGetter provider.UserInfoGetter, projectProv
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
-		credential := azure.Credentials{
-			TenantID:       req.TenantID,
-			SubscriptionID: req.SubscriptionID,
-			ClientID:       req.ClientID,
-			ClientSecret:   req.ClientSecret,
-		}
-		presetName := req.Credential
 
-		userInfo, err := userInfoGetter(ctx, "")
+		cred, err := getAKSCredentialsFromReq(ctx, req.AKSCommonReq, userInfoGetter, presetProvider)
 		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
+			return nil, err
 		}
 
-		// Preset is used
-		if len(presetName) > 0 {
-			credential, err = getAzurePresetCredentials(userInfo, presetName, presetProvider)
-			if err != nil {
-				return nil, errors.New(http.StatusInternalServerError, err.Error())
-			}
-		}
-		return providercommon.ListAKSClusters(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, clusterProvider, credential, req.ProjectID)
+		return providercommon.ListAKSClusters(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, clusterProvider, cred.subscriptionID, cred.clientID, cred.clientSecret, cred.tenantID, req.ProjectID)
 	}
-}
-
-func getAzurePresetCredentials(userInfo *provider.UserInfo, presetName string, presetProvider provider.PresetProvider) (azure.Credentials, error) {
-
-	preset, err := presetProvider.GetPreset(userInfo, presetName)
-	if err != nil {
-		return azure.Credentials{}, fmt.Errorf("can not get preset %s for the user %s", presetName, userInfo.Email)
-	}
-
-	az := preset.Spec.Azure
-	if az == nil {
-		return azure.Credentials{}, fmt.Errorf("credentials for Azure not present in preset %s for the user %s", presetName, userInfo.Email)
-	}
-	return azure.Credentials{
-		TenantID:       az.TenantID,
-		SubscriptionID: az.SubscriptionID,
-		ClientID:       az.ClientID,
-		ClientSecret:   az.ClientSecret,
-	}, nil
 }
 
 func AKSValidateCredentialsEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AKSTypesReq)
 
-		credential := azure.Credentials{
-			TenantID:       req.TenantID,
-			SubscriptionID: req.SubscriptionID,
-			ClientID:       req.ClientID,
-			ClientSecret:   req.ClientSecret,
-		}
-		presetName := req.Credential
-
-		userInfo, err := userInfoGetter(ctx, "")
+		cred, err := getAKSCredentialsFromReq(ctx, req.AKSCommonReq, userInfoGetter, presetProvider)
 		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
+			return nil, err
 		}
 
-		// Preset is used
-		if len(presetName) > 0 {
-			credential, err = getAzurePresetCredentials(userInfo, presetName, presetProvider)
-			if err != nil {
-				return nil, fmt.Errorf("error getting preset credentials for Azure: %v", err)
-			}
-		}
-		return nil, providercommon.ValidateAKSCredentials(ctx, credential)
+		return nil, providercommon.ValidateAKSCredentials(ctx, cred.subscriptionID, cred.clientID, cred.clientSecret, cred.tenantID)
 	}
+}
+
+type aksCredentials struct {
+	subscriptionID string
+	tenantID       string
+	clientID       string
+	clientSecret   string
+}
+
+func getAKSCredentialsFromReq(ctx context.Context, req AKSCommonReq, userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) (*aksCredentials, error) {
+	subscriptionID := req.SubscriptionID
+	clientID := req.ClientID
+	clientSecret := req.ClientSecret
+	tenantID := req.TenantID
+
+	userInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	if len(req.Credential) > 0 {
+		preset, err := presetProvider.GetPreset(userInfo, req.Credential)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+		}
+		if credentials := preset.Spec.Azure; credentials != nil {
+			subscriptionID = credentials.SubscriptionID
+			clientID = credentials.ClientID
+			clientSecret = credentials.ClientSecret
+			tenantID = credentials.TenantID
+		}
+	}
+
+	return &aksCredentials{
+		subscriptionID: subscriptionID,
+		tenantID:       tenantID,
+		clientID:       clientID,
+		clientSecret:   clientSecret,
+	}, nil
 }

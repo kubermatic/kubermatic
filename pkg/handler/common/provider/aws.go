@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	ec2service "github.com/aws/aws-sdk-go/service/ec2"
+
 	"github.com/aws/aws-sdk-go/service/eks"
 	ec2 "github.com/cristim/ec2-instances-info"
 
@@ -331,12 +332,18 @@ type AWSCredential struct {
 	AssumeRoleExternalID string
 }
 
-func ListAWSRegions(ctx context.Context, credential AWSCredential) (apiv2.Regions, error) {
+type EKSCredential struct {
+	AccessKeyID     string
+	SecretAccessKey string
+	Region          string
+}
+
+func ListAWSRegions(credential EKSCredential) (apiv2.Regions, error) {
 	regionInput := &ec2service.DescribeRegionsInput{}
 
 	// Must provide either a region or endpoint configured to use the SDK, even for operations that may enumerate other regions
 	// See https://github.com/aws/aws-sdk-go/issues/224 for more details
-	client, err := awsprovider.GetClientSet(credential.AccessKeyID, credential.SecretAccessKey, credential.AssumeRoleARN, credential.AssumeRoleExternalID, RegionEndpoint)
+	client, err := awsprovider.GetClientSet(credential.AccessKeyID, credential.SecretAccessKey, "", "", RegionEndpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -354,25 +361,27 @@ func ListAWSRegions(ctx context.Context, credential AWSCredential) (apiv2.Region
 	return regionList, nil
 }
 
-type listClusters func(AWSCredential, string) ([]*string, error)
+type listClusters func(EKSCredential, string) ([]*string, error)
 
-func listEKSClusters(credential AWSCredential, region string) ([]*string, error) {
-	client, err := awsprovider.GetClientSet(credential.AccessKeyID, credential.SecretAccessKey, credential.AssumeRoleARN, credential.AssumeRoleExternalID, region)
+func listEKSClusters(cred EKSCredential, region string) ([]*string, error) {
+
+	client, err := awsprovider.GetClientSet(cred.AccessKeyID, cred.SecretAccessKey, "", "", region)
 	if err != nil {
 		return nil, err
 	}
 
-	clusterList, err := client.EKS.ListClusters(&eks.ListClustersInput{})
+	req, res := client.EKS.ListClustersRequest(&eks.ListClustersInput{})
+	err = req.Send()
 	if err != nil {
 		return nil, fmt.Errorf("cannot list clusters in region=%s: %w", region, err)
 	}
 
-	return clusterList.Clusters, nil
+	return res.Clusters, nil
 }
 
-func mapClusters(credential AWSCredential, fn listClusters, list []string) (map[string][]*string, error) {
+func mapClusters(credential EKSCredential, fn listClusters, regionList []string) (map[string][]*string, error) {
 	clusterList := make(map[string][]*string)
-	for _, region := range list {
+	for _, region := range regionList {
 		clusters, err := fn(credential, region)
 		if err != nil {
 			return nil, fmt.Errorf("cannot list regions: %w", err)
@@ -382,7 +391,7 @@ func mapClusters(credential AWSCredential, fn listClusters, list []string) (map[
 	return clusterList, nil
 }
 
-func ListEKSClusters(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ExternalClusterProvider, cred AWSCredential, projectID, region string) (apiv2.EKSClusterList, error) {
+func ListEKSClusters(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ExternalClusterProvider, cred EKSCredential, projectID string) (apiv2.EKSClusterList, error) {
 
 	var err error
 	var clusters apiv2.EKSClusterList
@@ -404,6 +413,8 @@ func ListEKSClusters(ctx context.Context, projectProvider provider.ProjectProvid
 			eksExternalClusterNames.Insert(cloud.EKS.Name)
 		}
 	}
+
+	region := cred.Region
 	// list EKS clusters for user specified region
 	if region != "" {
 		eksClusters, err := listEKSClusters(cred, region)
@@ -415,7 +426,7 @@ func ListEKSClusters(ctx context.Context, projectProvider provider.ProjectProvid
 		}
 	} else {
 		// list EKS clusters for all regions
-		regions, err := ListAWSRegions(ctx, cred)
+		regions, err := ListAWSRegions(cred)
 		if err != nil {
 			return nil, fmt.Errorf("cannot list regions: %w", err)
 		}
@@ -435,8 +446,8 @@ func ListEKSClusters(ctx context.Context, projectProvider provider.ProjectProvid
 	return clusters, nil
 }
 
-func ValidateEKSCredentials(ctx context.Context, credential AWSCredential, region string) error {
-	client, err := awsprovider.GetClientSet(credential.AccessKeyID, credential.SecretAccessKey, credential.AssumeRoleARN, credential.AssumeRoleExternalID, region)
+func ValidateEKSCredentials(ctx context.Context, credential EKSCredential) error {
+	client, err := awsprovider.GetClientSet(credential.AccessKeyID, credential.SecretAccessKey, "", "", credential.Region)
 	if err != nil {
 		return err
 	}

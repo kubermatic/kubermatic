@@ -16293,16 +16293,6 @@
           },
           {
             "type": "string",
-            "name": "AssumeRoleARN",
-            "in": "header"
-          },
-          {
-            "type": "string",
-            "name": "AssumeRoleExternalID",
-            "in": "header"
-          },
-          {
-            "type": "string",
             "name": "Region",
             "in": "header"
           }
@@ -16789,16 +16779,6 @@
           {
             "type": "string",
             "name": "Credential",
-            "in": "header"
-          },
-          {
-            "type": "string",
-            "name": "AssumeRoleARN",
-            "in": "header"
-          },
-          {
-            "type": "string",
-            "name": "AssumeRoleExternalID",
             "in": "header"
           },
           {
@@ -17620,6 +17600,10 @@
         "name": {
           "type": "string",
           "x-go-name": "Name"
+        },
+        "resourceGroup": {
+          "type": "string",
+          "x-go-name": "ResourceGroup"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
