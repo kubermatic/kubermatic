@@ -846,7 +846,7 @@ type AnexiaCloudSpec struct {
 type NutanixCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
-	ProjectID string `json:"projectId"`
+	ProjectName string `json:"projectName"`
 
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`

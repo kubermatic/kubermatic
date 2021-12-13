@@ -93,14 +93,8 @@ func (n *Nutanix) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 		return err
 	}
 
-	// check for cluster existence
-	_, err = client.Prism.V3.GetCluster(n.dc.ClusterID)
-	if err != nil {
-		return err
-	}
-
 	// check for project existence
-	_, err = client.Prism.V3.GetProject(spec.Nutanix.ProjectID)
+	_, err = getProjectByName(client, spec.Nutanix.ProjectName)
 	if err != nil {
 		return err
 	}
@@ -193,7 +187,7 @@ func (n *Nutanix) reconcileSubnet(client *ClientSet, cluster *kubermaticv1.Clust
 			Kind: pointer.String(subnetKind),
 			ProjectReference: &nutanixv3.Reference{
 				Kind: pointer.String(projectKind),
-				UUID: pointer.String(cluster.Spec.Cloud.Nutanix.ProjectID),
+				Name: pointer.String(cluster.Spec.Cloud.Nutanix.ProjectName),
 			},
 			Categories: map[string]string{
 				categoryName: categoryValue(cluster.Name),
@@ -203,7 +197,7 @@ func (n *Nutanix) reconcileSubnet(client *ClientSet, cluster *kubermaticv1.Clust
 		Spec: &nutanixv3.Subnet{
 			ClusterReference: &nutanixv3.Reference{
 				Kind: pointer.String(clusterKind),
-				UUID: pointer.String(n.dc.ClusterID),
+				Name: pointer.String(n.dc.ClusterName),
 			},
 			Resources: &nutanixv3.SubnetResources{
 				IPConfig: &nutanixv3.IPConfig{

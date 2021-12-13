@@ -103,3 +103,20 @@ func getSubnetByName(client *ClientSet, name string) (*nutanixv3.SubnetIntentRes
 
 	return nil, errors.New(entityNotFoundError)
 }
+
+func getProjectByName(client *ClientSet, name string) (*nutanixv3.Project, error) {
+	filter := fmt.Sprintf("name==%s", name)
+	projects, err := client.Prism.V3.ListAllProject(filter)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, project := range projects.Entities {
+		if *project.Metadata.Name == name {
+			return project, nil
+		}
+	}
+
+	return nil, errors.New(entityNotFoundError)
+}
