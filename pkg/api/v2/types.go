@@ -18,6 +18,7 @@ package v2
 
 import (
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	crdapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -350,8 +351,40 @@ type MLAAdminSetting struct {
 // ExternalCluster represents an object holding cluster details
 // swagger:model ExternalCluster
 type ExternalCluster struct {
-	apiv1.Cluster `json:",inline"`
-	Cloud         *ExternalClusterCloudSpec `json:"cloud,omitempty"`
+	apiv1.ObjectMeta `json:",inline"`
+	Labels           map[string]string         `json:"labels,omitempty"`
+	Spec             ExternalClusterSpec       `json:"spec"`
+	Cloud            *ExternalClusterCloudSpec `json:"cloud,omitempty"`
+	Status           ExternalClusterStatus     `json:"status"`
+}
+
+type ExternalClusterState string
+
+const (
+	// PROVISIONING state indicates the cluster is being created.
+	PROVISIONING ExternalClusterState = "PROVISIONING"
+
+	// RUNNING state indicates the cluster has been created and is fully usable.
+	RUNNING ExternalClusterState = "RUNNING"
+
+	// RECONCILING state indicates that some work is actively being done on the cluster, such as upgrading the master or
+	// node software. Details can be found in the `StatusMessage` field.
+	RECONCILING ExternalClusterState = "RECONCILING"
+
+	// DELETING state indicates the cluster is being deleted.
+	DELETING ExternalClusterState = "DELETING"
+)
+
+// ExternalClusterStatus defines the external cluster status
+type ExternalClusterStatus struct {
+	State         ExternalClusterState `json:"state"`
+	StatusMessage string               `json:"statusMessage"`
+}
+
+// ExternalClusterSpec defines the external cluster specification
+type ExternalClusterSpec struct {
+	// Version desired version of the kubernetes master components
+	Version ksemver.Semver `json:"version"`
 }
 
 // ExternalClusterCloudSpec represents an object holding cluster cloud details
