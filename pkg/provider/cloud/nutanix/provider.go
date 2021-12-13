@@ -136,19 +136,37 @@ func (n *Nutanix) reconcileCluster(cluster *kubermaticv1.Cluster, update provide
 }
 
 func reconcileCategoryAndValue(client *ClientSet, cluster *kubermaticv1.Cluster) error {
-	// check if category is present
+	// check if category (key) is present, create it if not
 	_, err := client.Prism.V3.GetCategoryKey(categoryName)
 	if err != nil {
-		_, err = client.Prism.V3.CreateOrUpdateCategoryKey(&nutanixv3.CategoryKey{
-			Name:        pointer.String(categoryName),
-			Description: pointer.String(categoryDescription),
-		})
-		if err != nil {
+		if strings.Contains(err.Error(), entityNotFoundError) {
+			_, err := client.Prism.V3.CreateOrUpdateCategoryKey(&nutanixv3.CategoryKey{
+				Name:        pointer.String(categoryName),
+				Description: pointer.String(categoryDescription),
+			})
+
+			if err != nil {
+				return err
+			}
+		} else {
 			return err
 		}
 	}
-
-	// TODO: check if category value is present
+	// check if category value is present, create it if not
+	_, err = client.Prism.V3.GetCategoryValue(categoryName, categoryValue(cluster.Name))
+	if err != nil {
+		if strings.Contains(err.Error(), entityNotFoundError) {
+			_, err := client.Prism.V3.CreateOrUpdateCategoryValue(categoryName, &nutanixv3.CategoryValue{
+				Value:       pointer.String(categoryValue(cluster.Name)),
+				Description: pointer.String(fmt.Sprintf("value for Kubernetes cluster %s", cluster.Name)),
+			})
+			if err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
 
 	return nil
 }
@@ -224,4 +242,8 @@ func (n *Nutanix) reconcileSubnet(client *ClientSet, cluster *kubermaticv1.Clust
 	}
 
 	return cluster, nil
+}
+
+func categoryValue(clusterName string) string {
+	return categoryValuePrefix + clusterName
 }
