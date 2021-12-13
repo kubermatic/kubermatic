@@ -20708,6 +20708,11 @@
           "description": "ClusterID is the id of the cluster which will be restored from the backup",
           "type": "string",
           "x-go-name": "ClusterID"
+        },
+        "destination": {
+          "description": "Destination indicates where the backup was stored. The destination name should correspond to a destination in\nthe cluster's Seed.Spec.EtcdBackupRestore. If empty, it will use the legacy destination configured in Seed.Spec.BackupRestore",
+          "type": "string",
+          "x-go-name": "Destination"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
