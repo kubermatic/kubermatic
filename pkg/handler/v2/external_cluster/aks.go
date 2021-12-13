@@ -28,6 +28,7 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -193,7 +194,7 @@ func getAKSMachineDeployment(poolProfile containerservice.ManagedClusterAgentPoo
 }
 
 func createMachineDeploymentFromAKSNodePoll(nodePool containerservice.ManagedClusterAgentPoolProfile, readyReplicas int32) apiv2.ExternalClusterMachineDeployment {
-	return apiv2.ExternalClusterMachineDeployment{
+	md := apiv2.ExternalClusterMachineDeployment{
 		NodeDeployment: apiv1.NodeDeployment{
 			ObjectMeta: apiv1.ObjectMeta{
 				ID:   *nodePool.Name,
@@ -212,7 +213,32 @@ func createMachineDeploymentFromAKSNodePoll(nodePool containerservice.ManagedClu
 				ReadyReplicas: readyReplicas,
 			},
 		},
+		Cloud: &apiv2.ExternalClusterMachineDeploymentCloudSpec{
+			AKS: &apiv2.AKSMachineDeploymentCloudSpec{},
+		},
 	}
+
+	md.Cloud.AKS.Basics = &apiv2.AgentPoolBasics{
+		Mode:                string(nodePool.Mode),
+		OsType:              string(nodePool.OsType),
+		AvailabilityZones:   nodePool.AvailabilityZones,
+		OrchestratorVersion: nodePool.OrchestratorVersion,
+		VMSize:              nodePool.VMSize,
+		EnableAutoScaling:   nodePool.EnableAutoScaling,
+		MaxCount:            nodePool.MaxCount,
+		MinCount:            nodePool.MinCount,
+		Count:               nodePool.Count,
+	}
+	md.Cloud.AKS.OptionalSettings = &apiv2.AgentPoolOptionalSettings{
+		MaxPods:            nodePool.MaxPods,
+		EnableNodePublicIP: nodePool.EnableNodePublicIP,
+		UpgradeSettings:    (*apiv2.AgentPoolUpgradeSettings)(nodePool.UpgradeSettings),
+		NodeLabels:         nodePool.NodeLabels,
+		NodeTaints:         nodePool.NodeTaints,
+	}
+	md.Cloud.AKS.Tags = nodePool.Tags
+
+	return md
 }
 
 func getAKSNodes(cluster *kubermaticapiv1.ExternalCluster, nodePoolName string, clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterNode, error) {
@@ -377,4 +403,90 @@ func deleteAKSNodeGroup(ctx context.Context, cloud *kubermaticapiv1.ExternalClus
 		return err
 	}
 	return nil
+}
+
+func createAKSNodePool(ctx context.Context, cloud *v1.ExternalClusterCloudSpec, machineDeployment apiv2.ExternalClusterMachineDeployment, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector) (*apiv2.ExternalClusterMachineDeployment, error) {
+	cred, err := azure.GetCredentialsForAKSCluster(*cloud, secretKeySelector)
+	if err != nil {
+		return nil, err
+	}
+
+	agentPoolClient, err := getAKSNodePoolClient(cred)
+	if err != nil {
+		return nil, err
+	}
+
+	if machineDeployment.Cloud.AKS == nil {
+		return nil, fmt.Errorf("AKS cloud spec cannot be empty")
+	}
+
+	aks := machineDeployment.Cloud.AKS
+
+	nodePool := &containerservice.AgentPool{
+		Name: &machineDeployment.Name,
+	}
+	property := containerservice.ManagedClusterAgentPoolProfileProperties{
+		Count:               &machineDeployment.Spec.Replicas,
+		OrchestratorVersion: &machineDeployment.Spec.Template.Versions.Kubelet,
+	}
+
+	basics := aks.Basics
+	if basics != nil {
+		property.Mode = (containerservice.AgentPoolMode)(basics.Mode)
+		property.OsType = (containerservice.OSType)(basics.OsType)
+		if basics.AvailabilityZones != nil {
+			property.AvailabilityZones = basics.AvailabilityZones
+		}
+		if basics.OrchestratorVersion != nil {
+			property.OrchestratorVersion = basics.OrchestratorVersion
+		}
+		if basics.VMSize != nil {
+			property.VMSize = basics.VMSize
+		}
+		if basics.EnableAutoScaling != nil {
+			property.EnableAutoScaling = basics.EnableAutoScaling
+			if *property.EnableAutoScaling {
+				if basics.MaxCount != nil {
+					property.MaxCount = basics.MaxCount
+				}
+				if basics.MaxCount != nil {
+					property.MinCount = basics.MinCount
+				}
+			}
+		}
+		if basics.Count != nil {
+			property.Count = basics.Count
+		}
+	}
+
+	optional := aks.OptionalSettings
+
+	if optional != nil {
+		if optional.MaxPods != nil {
+			property.MaxPods = optional.MaxPods
+		}
+		if optional.EnableNodePublicIP != nil {
+			property.EnableNodePublicIP = optional.EnableNodePublicIP
+		}
+		if optional.UpgradeSettings != nil {
+			property.UpgradeSettings = &containerservice.AgentPoolUpgradeSettings{
+				MaxSurge: optional.UpgradeSettings.MaxSurge,
+			}
+		}
+		if optional.NodeLabels != nil {
+			property.NodeLabels = optional.NodeLabels
+		}
+		if optional.NodeTaints != nil {
+			property.NodeTaints = optional.NodeTaints
+		}
+	}
+	property.Tags = aks.Tags
+	nodePool.ManagedClusterAgentPoolProfileProperties = &property
+
+	_, err = agentPoolClient.CreateOrUpdate(ctx, cloud.AKS.ResourceGroup, cloud.AKS.Name, *nodePool.Name, *nodePool)
+	if err != nil {
+		return nil, err
+	}
+
+	return &machineDeployment, nil
 }
