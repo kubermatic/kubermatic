@@ -62,16 +62,10 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 				Labels: podLabels,
 			}
 
-			if !data.IsKonnectivityEnabled() {
-				dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err =
-					resources.UserClusterDNSPolicyAndConfig(data)
-				if err != nil {
-					return nil, err
-				}
-			} else {
-				// custom DNS resolver in not needed in Konnectivity setup
-				dep.Spec.Template.Spec.DNSPolicy = corev1.DNSClusterFirst
-				dep.Spec.Template.Spec.DNSConfig = nil
+			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err =
+				resources.UserClusterDNSPolicyAndConfig(data)
+			if err != nil {
+				return nil, err
 			}
 
 			f := false

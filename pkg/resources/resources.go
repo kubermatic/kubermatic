@@ -831,13 +831,18 @@ func InClusterApiserverIP(cluster *kubermaticv1.Cluster) (*net.IP, error) {
 type userClusterDNSPolicyAndConfigData interface {
 	Cluster() *kubermaticv1.Cluster
 	ClusterIPByServiceName(name string) (string, error)
+	IsKonnectivityEnabled() bool
 }
 
 // UserClusterDNSPolicyAndConfig returns a DNSPolicy and DNSConfig to configure Pods to use user cluster DNS
 func UserClusterDNSPolicyAndConfig(d userClusterDNSPolicyAndConfigData) (corev1.DNSPolicy, *corev1.PodDNSConfig, error) {
-	// DNSNone indicates that the pod should use empty DNS settings. DNS
-	// parameters such as nameservers and search paths should be defined via
-	// DNSConfig.
+	if d.IsKonnectivityEnabled() {
+		// custom DNS resolver in not needed in Konnectivity setup
+		return corev1.DNSClusterFirst, nil, nil
+	}
+	// If Konnectivity is NOT enabled, we deploy a custom DNS resolver
+	// for the user cluster in Seed. To use it, we set the DNS policy to DNSNone
+	// and set the custom DNS resolver's CLusterIP in the DNSConfig.
 	dnsConfigOptionNdots := "5"
 	dnsConfigResolverIP, err := d.ClusterIPByServiceName(DNSResolverServiceName)
 	if err != nil {
