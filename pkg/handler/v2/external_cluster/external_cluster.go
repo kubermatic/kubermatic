@@ -342,7 +342,7 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 		}
 
 		apiCluster := convertClusterToAPI(cluster)
-		apiCluster.Spec = apiv1.ClusterSpec{
+		apiCluster.Spec = apiv2.ExternalClusterSpec{
 			Version: *version,
 		}
 
@@ -463,7 +463,7 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 		}
 
 		clusterToPatch := convertClusterToAPI(cluster)
-		clusterToPatch.Spec = apiv1.ClusterSpec{
+		clusterToPatch.Spec = apiv2.ExternalClusterSpec{
 			Version: *version,
 		}
 
@@ -798,22 +798,19 @@ func createNewCluster(ctx context.Context, userInfoGetter provider.UserInfoGette
 
 func convertClusterToAPI(internalCluster *kubermaticapiv1.ExternalCluster) *apiv2.ExternalCluster {
 	cluster := &apiv2.ExternalCluster{
-		Cluster: apiv1.Cluster{
-			ObjectMeta: apiv1.ObjectMeta{
-				ID:                internalCluster.Name,
-				Name:              internalCluster.Spec.HumanReadableName,
-				CreationTimestamp: apiv1.NewTime(internalCluster.CreationTimestamp.Time),
-				DeletionTimestamp: func() *apiv1.Time {
-					if internalCluster.DeletionTimestamp != nil {
-						deletionTimestamp := apiv1.NewTime(internalCluster.DeletionTimestamp.Time)
-						return &deletionTimestamp
-					}
-					return nil
-				}(),
-			},
-			Labels: internalCluster.Labels,
-			Type:   apiv1.KubernetesClusterType,
+		ObjectMeta: apiv1.ObjectMeta{
+			ID:                internalCluster.Name,
+			Name:              internalCluster.Spec.HumanReadableName,
+			CreationTimestamp: apiv1.NewTime(internalCluster.CreationTimestamp.Time),
+			DeletionTimestamp: func() *apiv1.Time {
+				if internalCluster.DeletionTimestamp != nil {
+					deletionTimestamp := apiv1.NewTime(internalCluster.DeletionTimestamp.Time)
+					return &deletionTimestamp
+				}
+				return nil
+			}(),
 		},
+		Labels: internalCluster.Labels,
 	}
 
 	cloud := internalCluster.Spec.CloudSpec
