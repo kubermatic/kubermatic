@@ -26,9 +26,11 @@ import (
 	"time"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
+	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -224,20 +226,27 @@ func MetricsServerAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedNetwork
 	}
 }
 
-// OIDCIssuerAllowCreator returns a func to create/update the apiserver oidc-issuer-allow policy.
+// OIDCIssuerAllowCreator returns a func to create/update the apiserver oidc-issuer-allow egress policy.
 func OIDCIssuerAllowCreator(issuerURL string) reconciling.NamedNetworkPolicyCreatorGetter {
 	return func() (string, reconciling.NetworkPolicyCreator) {
 		return "oidc-issuer-allow", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
+			var ipList []net.IP
 			u, err := url.Parse(issuerURL)
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse OIDC issuer URL %s: %v", issuerURL, err)
 			}
-			ipList, err := lookupIPWithTimeout(u.Hostname(), 5*time.Second)
-			if err != nil {
-				return nil, fmt.Errorf("failed to resolve OIDC issuer hostname %s: %v", u.Hostname(), err)
-			}
-			if len(ipList) == 0 {
-				return nil, fmt.Errorf("failed to resolve OIDC issuer hostname: no resolved IP address for %s", u.Hostname())
+			if ip := net.ParseIP(u.Hostname()); ip != nil {
+				// hostname is an IP address
+				ipList = append(ipList, ip)
+			} else {
+				// hostname is a domain name
+				ipList, err = lookupIPWithTimeout(u.Hostname(), 5*time.Second)
+				if err != nil {
+					return nil, fmt.Errorf("failed to resolve OIDC issuer hostname %s: %v", u.Hostname(), err)
+				}
+				if len(ipList) == 0 {
+					return nil, fmt.Errorf("failed to resolve OIDC issuer hostname: no resolved IP address for %s", u.Hostname())
+				}
 			}
 			sort.Slice(ipList, func(i, j int) bool {
 				return bytes.Compare(ipList[i], ipList[j]) < 0
@@ -253,10 +262,21 @@ func OIDCIssuerAllowCreator(issuerURL string) reconciling.NamedNetworkPolicyCrea
 				},
 				Egress: []networkingv1.NetworkPolicyEgressRule{
 					{
-						To: []networkingv1.NetworkPolicyPeer{},
+						To: []networkingv1.NetworkPolicyPeer{
+							{
+								// allow egress traffic to the nginx-ingress-controller as for some CNI + kube-proxy
+								// mode combinations a local path to it may be used to reach OIDC issuer installed in KKP
+								NamespaceSelector: &metav1.LabelSelector{
+									MatchLabels: map[string]string{
+										corev1.LabelMetadataName: kubermaticmaster.NginxIngressControllerNamespace,
+									},
+								},
+							},
+						},
 					},
 				},
 			}
+			// allow egress traffic to OIDC issuer's external IPs
 			for _, ip := range ipList {
 				cidr := fmt.Sprintf("%s/%d", ip.String(), net.IPv4len*8)
 				if ip.To4() == nil {
