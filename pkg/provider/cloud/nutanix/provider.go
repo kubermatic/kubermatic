@@ -114,8 +114,6 @@ func (n *Nutanix) reconcileCluster(cluster *kubermaticv1.Cluster, update provide
 		return nil, err
 	}
 
-	// TODO: make sure the "kkp-cluster" category exists
-	// TODO: make sure the category value "kubernetes-NAME" exists
 	logger.Infow("reconciling category and cluster value")
 	err = reconcileCategoryAndValue(client, cluster)
 	if err != nil {
@@ -124,10 +122,13 @@ func (n *Nutanix) reconcileCluster(cluster *kubermaticv1.Cluster, update provide
 
 	if force || cluster.Spec.Cloud.Nutanix.SubnetName == "" {
 		logger.Infow("reconciling subnet", "subnet", cluster.Spec.Cloud.Nutanix.SubnetName)
-		n.reconcileSubnet(client, cluster, update)
+		cluster, err = n.reconcileSubnet(client, cluster, update)
+		if err != nil {
+			return nil, fmt.Errorf("failed to reconcile subnet: %v", err)
+		}
 	}
 
-	return nil, nil
+	return cluster, nil
 }
 
 func reconcileCategoryAndValue(client *ClientSet, cluster *kubermaticv1.Cluster) error {
@@ -147,6 +148,7 @@ func reconcileCategoryAndValue(client *ClientSet, cluster *kubermaticv1.Cluster)
 			return err
 		}
 	}
+
 	// check if category value is present, create it if not
 	_, err = client.Prism.V3.GetCategoryValue(categoryName, categoryValue(cluster.Name))
 	if err != nil {
