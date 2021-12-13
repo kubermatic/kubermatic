@@ -33,6 +33,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // DenyAllPolicyCreator returns a func to create/update the apiserver
@@ -57,8 +58,7 @@ func DenyAllPolicyCreator() reconciling.NamedNetworkPolicyCreatorGetter {
 	}
 }
 
-// EtcdAllowCreator returns a func to create/update the apiserver
-// deny all egress policy.
+// EctdAllowCreator returns a func to create/update the apiserver ETCD allow egress policy.
 func EctdAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyCreatorGetter {
 	return func() (string, reconciling.NetworkPolicyCreator) {
 		return "etcd-allow", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
@@ -92,11 +92,14 @@ func EctdAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyCre
 	}
 }
 
-// DNSAllowCreator returns a func to create/update the apiserver
-// deny all egress policy.
-func DNSAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyCreatorGetter {
+// DNSAllowCreator returns a func to create/update the apiserver DNS allow egress policy.
+func DNSAllowCreator(c *kubermaticv1.Cluster, data *resources.TemplateData) reconciling.NamedNetworkPolicyCreatorGetter {
 	return func() (string, reconciling.NetworkPolicyCreator) {
 		return "dns-allow", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
+			dnsPort := intstr.FromInt(53)
+			protoUdp := corev1.ProtocolUDP
+			protoTcp := corev1.ProtocolTCP
+
 			np.Spec = networkingv1.NetworkPolicySpec{
 				PolicyTypes: []networkingv1.PolicyType{
 					networkingv1.PolicyTypeEgress,
@@ -106,7 +109,27 @@ func DNSAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyCrea
 						resources.AppLabelKey: name,
 					},
 				},
-				Egress: []networkingv1.NetworkPolicyEgressRule{
+			}
+
+			if data.IsKonnectivityEnabled() {
+				// allow all egress DNS traffic
+				np.Spec.Egress = []networkingv1.NetworkPolicyEgressRule{
+					{
+						Ports: []networkingv1.NetworkPolicyPort{
+							{
+								Protocol: &protoUdp,
+								Port:     &dnsPort,
+							},
+							{
+								Protocol: &protoTcp,
+								Port:     &dnsPort,
+							},
+						},
+					},
+				}
+			} else {
+				// allow egress traffic to the custom DNS resolver
+				np.Spec.Egress = []networkingv1.NetworkPolicyEgressRule{
 					{
 						To: []networkingv1.NetworkPolicyPeer{
 							{
@@ -119,7 +142,7 @@ func DNSAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyCrea
 							},
 						},
 					},
-				},
+				}
 			}
 
 			return np, nil
@@ -127,8 +150,7 @@ func DNSAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyCrea
 	}
 }
 
-// OpenVPNServerAllowCreator returns a func to create/update the apiserver
-// deny all egress policy.
+// OpenVPNServerAllowCreator returns a func to create/update the apiserver OpenVPN allow egress policy.
 func OpenVPNServerAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyCreatorGetter {
 	return func() (string, reconciling.NetworkPolicyCreator) {
 		return "openvpn-server-allow", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
