@@ -449,7 +449,7 @@ type DatacenterSpecNutanix struct {
 	// AllowInsecure allows to disable the TLS certificate check against the endpoint.
 	AllowInsecure bool `json:"allow_insecure"`
 	// ClusterName is the Nutanix cluster to use for this datacenter.
-	ClusterName string `json:"cluster_id"`
+	ClusterName string `json:"cluster_name"`
 	// Images to use for each supported operating system.
 	Images ImageList `json:"images"`
 	// Used for automatic network creation
