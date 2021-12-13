@@ -159,6 +159,21 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return nil, err
 	}
 
+	// TODO:
+	if r.features.Konnectivity {
+		if cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled {
+			if err := r.ensureOpenVPNIsRemoved(ctx, data); err != nil {
+				return nil, err
+			}
+			// TODO: metrics-server
+			// TODO: dns-resolver
+		} else {
+			if err := r.ensureKonnectivityIsRemoved(ctx, data); err != nil {
+				return nil, err
+			}
+		}
+	}
+
 	return &reconcile.Result{}, nil
 }
 
@@ -599,6 +614,24 @@ func (r *Reconciler) ensureOldOPAIntegrationIsRemoved(ctx context.Context, data 
 		}
 	}
 
+	return nil
+}
+
+func (r *Reconciler) ensureOpenVPNIsRemoved(ctx context.Context, data *resources.TemplateData) error {
+	for _, resource := range openvpn.ResourcesOnDeletion(data.Cluster().Status.NamespaceName) {
+		if err := r.Client.Delete(ctx, resource); err != nil && !errors.IsNotFound(err) {
+			return fmt.Errorf("failed to ensure OpenVPN resources are removed/not present: %v", err)
+		}
+	}
+	return nil
+}
+
+func (r *Reconciler) ensureKonnectivityIsRemoved(ctx context.Context, data *resources.TemplateData) error {
+	for _, resource := range konnectivity.ResourcesOnDeletion(data.Cluster().Status.NamespaceName) {
+		if err := r.Client.Delete(ctx, resource); err != nil && !errors.IsNotFound(err) {
+			return fmt.Errorf("failed to ensure old OPA integration version resources are removed/not present: %v", err)
+		}
+	}
 	return nil
 }
 

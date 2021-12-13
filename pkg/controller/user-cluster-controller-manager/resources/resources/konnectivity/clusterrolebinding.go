@@ -27,10 +27,7 @@ import (
 func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return resources.KonnectivityClusterRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
-			crb.ObjectMeta.Labels = map[string]string{
-				"kubernetes.io/cluster-service":   "true",
-				"addonmanager.kubernetes.io/mode": "Reconcile",
-			}
+			crb.ObjectMeta.Labels = resources.BaseAppLabels(resources.KonnectivityDeploymentName, nil)
 
 			crb.RoleRef = rbacv1.RoleRef{
 				APIGroup: rbacv1.GroupName,

@@ -218,6 +218,18 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		}
 	}
 
+	// TODO
+	if r.isKonnectivityEnabled {
+		if err := r.ensureOpenVPNIsRemoved(ctx); err != nil {
+			return err
+		}
+	} else {
+		if err := r.ensureKonnectivityIsRemoved(ctx); err != nil {
+			return err
+		}
+		// TODO: metrics-server
+	}
+
 	return nil
 }
 
@@ -1055,6 +1067,26 @@ func (r *reconciler) ensureMLAIsRemoved(ctx context.Context) error {
 		}
 		if err != nil && !errors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure mla is removed/not present: %v", err)
+		}
+	}
+	return nil
+}
+
+func (r *reconciler) ensureOpenVPNIsRemoved(ctx context.Context) error {
+	for _, resource := range openvpn.ResourcesOnDeletion() {
+		err := r.Client.Delete(ctx, resource)
+		if err != nil && !errors.IsNotFound(err) {
+			return fmt.Errorf("failed to ensure OpenVPN resources are removed/not present: %v", err)
+		}
+	}
+	return nil
+}
+
+func (r *reconciler) ensureKonnectivityIsRemoved(ctx context.Context) error {
+	for _, resource := range konnectivity.ResourcesOnDeletion() {
+		err := r.Client.Delete(ctx, resource)
+		if err != nil && !errors.IsNotFound(err) {
+			return fmt.Errorf("failed to ensure Konnectivity resources are removed/not present: %v", err)
 		}
 	}
 	return nil
