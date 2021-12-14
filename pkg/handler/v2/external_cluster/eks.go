@@ -371,3 +371,44 @@ func deleteEKSNodeGroup(cluster *kubermaticapiv1.ExternalCluster, nodeGroupName 
 	}
 	return nil
 }
+
+func getEKSClusterStatus(secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticapiv1.ExternalClusterCloudSpec) (*apiv2.ExternalClusterStatus, error) {
+
+	accessKeyID, secretAccessKey, err := awsprovider.GetCredentialsForEKSCluster(*cloudSpec, secretKeySelector)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, "", "", cloudSpec.EKS.Region)
+	if err != nil {
+		return nil, err
+	}
+
+	eksCluster, err := client.EKS.DescribeCluster(&eks.DescribeClusterInput{Name: &cloudSpec.EKS.Name})
+	if err != nil {
+		return nil, err
+	}
+
+	return &apiv2.ExternalClusterStatus{
+		State: convertEKSStatus(*eksCluster.Cluster.Status),
+	}, nil
+}
+
+func convertEKSStatus(status string) apiv2.ExternalClusterState {
+	switch status {
+	case "CREATING":
+		return apiv2.PROVISIONING
+	case "ACTIVE":
+		return apiv2.RUNNING
+	case "RECONCILING":
+		return apiv2.RECONCILING
+	case "DELETING":
+		return apiv2.DELETING
+	case "CREATE_FAILED":
+		return apiv2.ERROR
+	case "DELETE_FAILED":
+		return apiv2.ERROR
+	default:
+		return apiv2.UNSPECIFIED
+	}
+}

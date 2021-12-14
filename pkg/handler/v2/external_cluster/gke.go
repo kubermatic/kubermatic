@@ -544,7 +544,6 @@ func createGKENodePool(ctx context.Context, cluster *kubermaticapiv1.ExternalClu
 			Labels:        gke.Config.Labels,
 			LocalSsdCount: gke.Config.LocalSsdCount,
 			MachineType:   gke.Config.MachineType,
-			Preemptible:   gke.Config.Preemptible,
 		}
 	}
 	if gke.Autoscaling != nil {
@@ -669,4 +668,43 @@ func genGKECluster(gkeCloudSpec *apiv2.GKECloudSpec) *container.Cluster {
 	}
 
 	return newCluster
+}
+
+func getGKEClusterStatus(ctx context.Context, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticapiv1.ExternalClusterCloudSpec) (*apiv2.ExternalClusterStatus, error) {
+	sa, err := secretKeySelector(cloudSpec.GKE.CredentialsReference, resources.GCPServiceAccount)
+	if err != nil {
+		return nil, err
+	}
+	svc, project, err := gcp.ConnectToContainerService(sa)
+	if err != nil {
+		return nil, err
+	}
+
+	req := svc.Projects.Zones.Clusters.Get(project, cloudSpec.GKE.Zone, cloudSpec.GKE.Name)
+	gkeCluster, err := req.Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+	return &apiv2.ExternalClusterStatus{
+		State:         convertGKEStatus(gkeCluster.Status),
+		StatusMessage: gkeCluster.StatusMessage,
+	}, nil
+
+}
+
+func convertGKEStatus(status string) apiv2.ExternalClusterState {
+	switch status {
+	case "PROVISIONING":
+		return apiv2.PROVISIONING
+	case "RUNNING":
+		return apiv2.RUNNING
+	case "RECONCILING":
+		return apiv2.RECONCILING
+	case "STOPPING":
+		return apiv2.DELETING
+	case "ERROR":
+		return apiv2.ERROR
+	default:
+		return apiv2.UNSPECIFIED
+	}
 }

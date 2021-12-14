@@ -107,7 +107,9 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			return convertClusterToAPI(createdCluster), nil
+			apiCluster := convertClusterToAPI(createdCluster)
+			apiCluster.Status = apiv2.ExternalClusterStatus{State: apiv2.PROVISIONING}
+			return apiCluster, nil
 		}
 		// import GKE cluster
 		if cloud.GKE != nil {
@@ -120,7 +122,9 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			return convertClusterToAPI(createdCluster), nil
+			apiCluster := convertClusterToAPI(createdCluster)
+			apiCluster.Status = apiv2.ExternalClusterStatus{State: apiv2.PROVISIONING}
+			return apiCluster, nil
 		}
 		// import EKS cluster
 		if cloud.EKS != nil {
@@ -136,7 +140,9 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 
-			return convertClusterToAPI(createdCluster), nil
+			apiCluster := convertClusterToAPI(createdCluster)
+			apiCluster.Status = apiv2.ExternalClusterStatus{State: apiv2.PROVISIONING}
+			return apiCluster, nil
 		}
 		// import AKS cluster
 		if cloud.AKS != nil {
@@ -154,7 +160,9 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 
-			return convertClusterToAPI(createdCluster), nil
+			apiCluster := convertClusterToAPI(createdCluster)
+			apiCluster.Status = apiv2.ExternalClusterStatus{State: apiv2.PROVISIONING}
+			return apiCluster, nil
 		}
 		return nil, errors.NewBadRequest("kubeconfig or provider structure missing")
 	}
@@ -259,7 +267,7 @@ func (req deleteClusterReq) Validate() error {
 	return nil
 }
 
-func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		if !AreExternalClustersEnabled(settingsProvider) {
 			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
@@ -282,7 +290,7 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 		apiClusters := make([]*apiv2.ExternalCluster, 0)
 
 		for _, cluster := range clusterList.Items {
-			apiClusters = append(apiClusters, convertClusterToAPI(&cluster))
+			apiClusters = append(apiClusters, convertClusterToAPIWithStatus(ctx, privilegedClusterProvider, &cluster))
 		}
 
 		return apiClusters, nil
@@ -335,13 +343,17 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
+		apiCluster := convertClusterToAPIWithStatus(ctx, privilegedClusterProvider, cluster)
 
+		if apiCluster.Status.State != apiv2.RUNNING {
+			return apiCluster, nil
+		}
+
+		// get version for running cluster
 		version, err := clusterProvider.GetVersion(cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-
-		apiCluster := convertClusterToAPI(cluster)
 		apiCluster.Spec = apiv2.ExternalClusterSpec{
 			Version: *version,
 		}
@@ -831,6 +843,62 @@ func convertClusterToAPI(internalCluster *kubermaticapiv1.ExternalCluster) *apiv
 	}
 
 	return cluster
+}
+
+func convertClusterToAPIWithStatus(ctx context.Context, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, internalCluster *kubermaticapiv1.ExternalCluster) *apiv2.ExternalCluster {
+	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+	status := apiv2.ExternalClusterStatus{
+		State: apiv2.UNSPECIFIED,
+	}
+	apiCluster := convertClusterToAPI(internalCluster)
+	apiCluster.Status = status
+
+	if internalCluster.Spec.KubeconfigReference == nil {
+		status.State = apiv2.PROVISIONING
+		apiCluster.Status = status
+		return apiCluster
+	}
+	cloud := internalCluster.Spec.CloudSpec
+
+	if cloud == nil {
+		apiCluster.Status.State = apiv2.RUNNING
+		return apiCluster
+	}
+	if cloud.EKS != nil {
+		eksStatus, err := getEKSClusterStatus(secretKeySelector, cloud)
+		if err != nil {
+			apiCluster.Status = apiv2.ExternalClusterStatus{
+				State:         apiv2.ERROR,
+				StatusMessage: err.Error(),
+			}
+			return apiCluster
+		}
+		apiCluster.Status = *eksStatus
+	}
+	if cloud.AKS != nil {
+		aksStatus, err := getAKSClusterStatus(ctx, secretKeySelector, cloud)
+		if err != nil {
+			apiCluster.Status = apiv2.ExternalClusterStatus{
+				State:         apiv2.ERROR,
+				StatusMessage: err.Error(),
+			}
+			return apiCluster
+		}
+		apiCluster.Status = *aksStatus
+	}
+	if cloud.GKE != nil {
+		gkeStatus, err := getGKEClusterStatus(ctx, secretKeySelector, cloud)
+		if err != nil {
+			apiCluster.Status = apiv2.ExternalClusterStatus{
+				State:         apiv2.ERROR,
+				StatusMessage: err.Error(),
+			}
+			return apiCluster
+		}
+		apiCluster.Status = *gkeStatus
+	}
+
+	return apiCluster
 }
 
 func getCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, projectID, clusterName string) (*kubermaticapiv1.ExternalCluster, error) {
