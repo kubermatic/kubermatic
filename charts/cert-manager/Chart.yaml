@@ -31,4 +31,4 @@ maintainers:
 dependencies:
 - repository: https://charts.jetstack.io
   name: cert-manager
-  version: 1.6.1
+  version: 1.5.2
