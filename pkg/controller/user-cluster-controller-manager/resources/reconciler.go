@@ -890,7 +890,7 @@ func (r *reconciler) reconcileNetworkPolicies(ctx context.Context, data reconcil
 	}
 
 	if r.isKonnectivityEnabled {
-		namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters, metricsserver.NetworkPolicyCreator())
+		namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters, metricsserver.NetworkPolicyCreator(), konnectivity.NetworkPolicyCreator())
 	}
 
 	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyCreatorGetters, metav1.NamespaceSystem, r.Client); err != nil {

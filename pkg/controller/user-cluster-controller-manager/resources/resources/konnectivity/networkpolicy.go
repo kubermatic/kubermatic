@@ -27,7 +27,7 @@ import (
 // NetworkPolicyCreator NetworkPolicy allows all egress traffic
 func NetworkPolicyCreator() reconciling.NamedNetworkPolicyCreatorGetter {
 	return func() (string, reconciling.NetworkPolicyCreator) {
-		return "user-ssh-key-agent", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
+		return "konnectivity", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 
 			np.Spec = networkingv1.NetworkPolicySpec{
 				PodSelector: metav1.LabelSelector{
