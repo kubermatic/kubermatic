@@ -29,8 +29,8 @@
 {{ $apiServerHost := $hostParts._0 }}
 {{ $apiServerPort := $hostParts._1 }}
 
-{{ - $ca := genCA "hubble-ca.cilium.io" 1095 - }}
-{{ - $serverCert := genSignedCert "*.default.hubble-grpc.cilium.io" nil (list "*.default.hubble-grpc.cilium.io") 1095 $ca - }}
+{{ $ca := genCA "hubble-ca.cilium.io" 1095 }}
+{{ $serverCert := genSignedCert "*.default.hubble-grpc.cilium.io" nil (list "*.default.hubble-grpc.cilium.io") 1095 $ca }}
 
 ---
 # Source: cilium/templates/cilium-agent/serviceaccount.yaml
@@ -54,8 +54,8 @@ metadata:
   name: hubble-ca-secret
   namespace: kube-system
 data:
-  ca.crt: { { $ca.Cert | b64enc } }
-  ca.key: { { $ca.Key | b64enc } }
+  ca.crt: {{ $ca.Cert | b64enc }}
+  ca.key: {{ $ca.Key | b64enc }}
 
 ---
 # Source: cilium/templates/hubble/tls-helm/server-secret.yaml
@@ -66,9 +66,9 @@ metadata:
   namespace: kube-system
 type: kubernetes.io/tls
 data:
-  ca.crt: { { $ca.Cert | b64enc } }
-  tls.crt: { { $serverCert.Cert | b64enc } }
-  tls.key: { { $serverCert.Key | b64enc } }
+  ca.crt: {{ $ca.Cert | b64enc }}
+  tls.crt: {{ $serverCert.Cert | b64enc }}
+  tls.key: {{ $serverCert.Key | b64enc }}
 ---
 # Source: cilium/templates/cilium-configmap.yaml
 apiVersion: v1
@@ -570,12 +570,12 @@ spec:
                   name: cilium-config
                   key: custom-cni-conf
                   optional: true
-  { { if eq .Cluster.Network.ProxyMode "ebpf" } }
+  {{ if eq .Cluster.Network.ProxyMode "ebpf" }}
 - name: KUBERNETES_SERVICE_HOST
   value: "{{ $apiServerHost }}"
 - name: KUBERNETES_SERVICE_PORT
   value: "{{ $apiServerPort }}"
-  { { end } }
+  {{ end }}
 lifecycle:
   postStart:
     exec:
@@ -663,12 +663,12 @@ initContainers:
             name: cilium-config
             key: clean-cilium-bpf-state
             optional: true
-  { { if eq .Cluster.Network.ProxyMode "ebpf" }
+  {{ if eq .Cluster.Network.ProxyMode "ebpf" }}
     - name: KUBERNETES_SERVICE_HOST
         value: "{{ $apiServerHost }}"
         - name: KUBERNETES_SERVICE_PORT
           value: "{{ $apiServerPort }}"
-    { { end } }
+    {{ end }}
     securityContext:
       privileged: true
       volumeMounts:
@@ -825,12 +825,12 @@ spec:
                   key: debug
                   name: cilium-config
                   optional: true
-  { { if eq .Cluster.Network.ProxyMode "ebpf" } }
+  {{ if eq .Cluster.Network.ProxyMode "ebpf" }}
 - name: KUBERNETES_SERVICE_HOST
   value: "{{ $apiServerHost }}"
 - name: KUBERNETES_SERVICE_PORT
   value: "{{ $apiServerPort }}"
-  { { end } }
+  {{ end }}
 livenessProbe:
   httpGet:
     host: "127.0.0.1"
@@ -860,6 +860,5 @@ volumes:
     configMap:
       name: cilium-config
 
-  { { end } }
-  { { end } }
-
+{{ end }}
+{{ end }}
