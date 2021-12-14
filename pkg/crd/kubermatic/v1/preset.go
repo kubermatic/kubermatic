@@ -334,11 +334,13 @@ type EKS struct {
 
 	AccessKeyID     string `json:"accessKeyId"`
 	SecretAccessKey string `json:"secretAccessKey"`
+	Region          string `json:"region"`
 }
 
 func (s EKS) IsValid() bool {
 	return len(s.AccessKeyID) > 0 &&
-		len(s.SecretAccessKey) > 0
+		len(s.SecretAccessKey) > 0 &&
+		len(s.Region) > 0
 }
 
 type AKS struct {

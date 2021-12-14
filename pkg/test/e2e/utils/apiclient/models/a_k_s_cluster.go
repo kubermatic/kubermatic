@@ -22,6 +22,9 @@ type AKSCluster struct {
 
 	// name
 	Name string `json:"name,omitempty"`
+
+	// resource group
+	ResourceGroup string `json:"resourceGroup,omitempty"`
 }
 
 // Validate validates this a k s cluster
