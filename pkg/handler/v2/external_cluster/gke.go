@@ -241,9 +241,15 @@ func listGKEDiskTypes(ctx context.Context, sa string, zone string) (apiv1.GCPDis
 	return diskTypes, err
 }
 
-func createGKECluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticapiv1.ExternalCluster, error) {
+func createOrImportGKECluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticapiv1.ExternalCluster, error) {
 	if cloud.GKE.Name == "" || cloud.GKE.Zone == "" || cloud.GKE.ServiceAccount == "" {
 		return nil, errors.NewBadRequest("the GKE cluster name, zone or service account can not be empty")
+	}
+
+	if cloud.GKE.ClusterSpec != nil {
+		if err := createNewGKECluster(ctx, cloud.GKE); err != nil {
+			return nil, err
+		}
 	}
 
 	newCluster := genExternalCluster(name, project.Name)
@@ -538,6 +544,7 @@ func createGKENodePool(ctx context.Context, cluster *kubermaticapiv1.ExternalClu
 			Labels:        gke.Config.Labels,
 			LocalSsdCount: gke.Config.LocalSsdCount,
 			MachineType:   gke.Config.MachineType,
+			Preemptible:   gke.Config.Preemptible,
 		}
 	}
 	if gke.Autoscaling != nil {
@@ -564,4 +571,102 @@ func createGKENodePool(ctx context.Context, cluster *kubermaticapiv1.ExternalClu
 		return nil, err
 	}
 	return &machineDeployment, nil
+}
+
+func createNewGKECluster(ctx context.Context, gkeCloudSpec *apiv2.GKECloudSpec) error {
+
+	svc, project, err := gcp.ConnectToContainerService(gkeCloudSpec.ServiceAccount)
+	if err != nil {
+		return err
+	}
+
+	createRequest := &container.CreateClusterRequest{
+		Cluster: genGKECluster(gkeCloudSpec),
+	}
+
+	req := svc.Projects.Zones.Clusters.Create(project, gkeCloudSpec.Zone, createRequest)
+	_, err = req.Context(ctx).Do()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func genGKECluster(gkeCloudSpec *apiv2.GKECloudSpec) *container.Cluster {
+	newCluster := &container.Cluster{
+		ClusterIpv4Cidr:       gkeCloudSpec.ClusterSpec.ClusterIpv4Cidr,
+		InitialClusterVersion: gkeCloudSpec.ClusterSpec.InitialClusterVersion,
+		InitialNodeCount:      gkeCloudSpec.ClusterSpec.InitialNodeCount,
+		Locations:             gkeCloudSpec.ClusterSpec.Locations,
+		Name:                  gkeCloudSpec.Name,
+		Network:               gkeCloudSpec.ClusterSpec.Network,
+		Subnetwork:            gkeCloudSpec.ClusterSpec.Subnetwork,
+		TpuIpv4CidrBlock:      gkeCloudSpec.ClusterSpec.TpuIpv4CidrBlock,
+		EnableKubernetesAlpha: gkeCloudSpec.ClusterSpec.EnableKubernetesAlpha,
+		EnableTpu:             gkeCloudSpec.ClusterSpec.EnableTpu,
+		Autopilot: &container.Autopilot{
+			Enabled: gkeCloudSpec.ClusterSpec.Autopilot,
+		},
+		VerticalPodAutoscaling: &container.VerticalPodAutoscaling{
+			Enabled: gkeCloudSpec.ClusterSpec.VerticalPodAutoscaling,
+		},
+	}
+	if gkeCloudSpec.ClusterSpec.NodeConfig != nil {
+		newCluster.NodeConfig = &container.NodeConfig{
+			DiskSizeGb:    gkeCloudSpec.ClusterSpec.NodeConfig.DiskSizeGb,
+			DiskType:      gkeCloudSpec.ClusterSpec.NodeConfig.DiskType,
+			ImageType:     gkeCloudSpec.ClusterSpec.NodeConfig.ImageType,
+			Labels:        gkeCloudSpec.ClusterSpec.NodeConfig.Labels,
+			LocalSsdCount: gkeCloudSpec.ClusterSpec.NodeConfig.LocalSsdCount,
+			MachineType:   gkeCloudSpec.ClusterSpec.NodeConfig.MachineType,
+			Preemptible:   gkeCloudSpec.ClusterSpec.NodeConfig.Preemptible,
+		}
+	}
+	if gkeCloudSpec.ClusterSpec.Autoscaling != nil {
+		newCluster.Autoscaling = &container.ClusterAutoscaling{
+			AutoprovisioningLocations:  gkeCloudSpec.ClusterSpec.Autoscaling.AutoprovisioningLocations,
+			EnableNodeAutoprovisioning: gkeCloudSpec.ClusterSpec.Autoscaling.EnableNodeAutoprovisioning,
+		}
+		if gkeCloudSpec.ClusterSpec.Autoscaling.AutoprovisioningNodePoolDefaults != nil {
+			newCluster.Autoscaling.AutoprovisioningNodePoolDefaults = &container.AutoprovisioningNodePoolDefaults{
+				BootDiskKmsKey: gkeCloudSpec.ClusterSpec.Autoscaling.AutoprovisioningNodePoolDefaults.BootDiskKmsKey,
+				DiskSizeGb:     gkeCloudSpec.ClusterSpec.Autoscaling.AutoprovisioningNodePoolDefaults.DiskSizeGb,
+				DiskType:       gkeCloudSpec.ClusterSpec.Autoscaling.AutoprovisioningNodePoolDefaults.DiskType,
+				MinCpuPlatform: gkeCloudSpec.ClusterSpec.Autoscaling.AutoprovisioningNodePoolDefaults.MinCpuPlatform,
+				OauthScopes:    gkeCloudSpec.ClusterSpec.Autoscaling.AutoprovisioningNodePoolDefaults.OauthScopes,
+				ServiceAccount: gkeCloudSpec.ClusterSpec.Autoscaling.AutoprovisioningNodePoolDefaults.ServiceAccount,
+			}
+			if gkeCloudSpec.ClusterSpec.Autoscaling.AutoprovisioningNodePoolDefaults.Management != nil {
+				newCluster.Autoscaling.AutoprovisioningNodePoolDefaults.Management = &container.NodeManagement{
+					AutoRepair:  gkeCloudSpec.ClusterSpec.Autoscaling.AutoprovisioningNodePoolDefaults.Management.AutoRepair,
+					AutoUpgrade: gkeCloudSpec.ClusterSpec.Autoscaling.AutoprovisioningNodePoolDefaults.Management.AutoUpgrade,
+				}
+			}
+			if gkeCloudSpec.ClusterSpec.Autoscaling.AutoprovisioningNodePoolDefaults.UpgradeSettings != nil {
+				newCluster.Autoscaling.AutoprovisioningNodePoolDefaults.UpgradeSettings = &container.UpgradeSettings{
+					MaxSurge:       gkeCloudSpec.ClusterSpec.Autoscaling.AutoprovisioningNodePoolDefaults.UpgradeSettings.MaxSurge,
+					MaxUnavailable: gkeCloudSpec.ClusterSpec.Autoscaling.AutoprovisioningNodePoolDefaults.UpgradeSettings.MaxUnavailable,
+				}
+			}
+			if gkeCloudSpec.ClusterSpec.Autoscaling.AutoprovisioningNodePoolDefaults.ShieldedInstanceConfig != nil {
+				newCluster.Autoscaling.AutoprovisioningNodePoolDefaults.ShieldedInstanceConfig = &container.ShieldedInstanceConfig{
+					EnableIntegrityMonitoring: gkeCloudSpec.ClusterSpec.Autoscaling.AutoprovisioningNodePoolDefaults.ShieldedInstanceConfig.EnableIntegrityMonitoring,
+					EnableSecureBoot:          gkeCloudSpec.ClusterSpec.Autoscaling.AutoprovisioningNodePoolDefaults.ShieldedInstanceConfig.EnableSecureBoot,
+				}
+			}
+		}
+		if len(gkeCloudSpec.ClusterSpec.Autoscaling.ResourceLimits) != 0 {
+			newCluster.Autoscaling.ResourceLimits = make([]*container.ResourceLimit, len(gkeCloudSpec.ClusterSpec.Autoscaling.ResourceLimits))
+			for _, rl := range gkeCloudSpec.ClusterSpec.Autoscaling.ResourceLimits {
+				newCluster.Autoscaling.ResourceLimits = append(newCluster.Autoscaling.ResourceLimits, &container.ResourceLimit{
+					Maximum:      rl.Maximum,
+					Minimum:      rl.Minimum,
+					ResourceType: rl.ResourceType,
+				})
+			}
+		}
+	}
+
+	return newCluster
 }
