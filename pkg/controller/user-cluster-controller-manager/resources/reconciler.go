@@ -932,15 +932,15 @@ type reconcileData struct {
 	userSSHKeys      map[string][]byte
 	cloudConfig      []byte
 	// csiCloudConfig is currently used only by vSphere, whose needs it to properly configure the external CSI driver
-	csiCloudConfig         []byte
-	ccmMigration           bool
-	monitoringRequirements *corev1.ResourceRequirements
-	loggingRequirements    *corev1.ResourceRequirements
+	csiCloudConfig              []byte
+	ccmMigration                bool
+	monitoringRequirements      *corev1.ResourceRequirements
+	loggingRequirements         *corev1.ResourceRequirements
 	gatekeeperCtrlRequirements  *corev1.ResourceRequirements
 	gatekeeperAuditRequirements *corev1.ResourceRequirements
-	monitoringReplicas     *int32
-	clusterAddress         *kubermaticv1.ClusterAddress
-	k8sServiceApiIP        *net.IP
+	monitoringReplicas          *int32
+	clusterAddress              *kubermaticv1.ClusterAddress
+	k8sServiceApiIP             *net.IP
 }
 
 func (r *reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context) error {
