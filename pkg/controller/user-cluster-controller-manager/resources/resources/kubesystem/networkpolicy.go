@@ -20,7 +20,7 @@ import (
 	"fmt"
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	nodelocaldns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/node-local-dns"
+	"k8c.io/kubermatic/v2/pkg/resources/machinecontroller"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	v1 "k8s.io/api/core/v1"
@@ -36,7 +36,7 @@ func DefaultNetworkPolicyCreator() reconciling.NamedNetworkPolicyCreatorGetter {
 		protoUdp := v1.ProtocolUDP
 		protoTcp := v1.ProtocolTCP
 
-		return "allow-dns", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
+		return "default-deny", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 
 			// dns access to node local dns cache
 			np.Spec = networkingv1.NetworkPolicySpec{
@@ -80,7 +80,7 @@ func DefaultNetworkPolicyCreator() reconciling.NamedNetworkPolicyCreatorGetter {
 						To: []networkingv1.NetworkPolicyPeer{
 							{
 								IPBlock: &networkingv1.IPBlock{
-									CIDR: fmt.Sprintf("%s/32", nodelocaldns.CacheAddress),
+									CIDR: fmt.Sprintf("%s/32", machinecontroller.NodeLocalDNSCacheAddress),
 								},
 							},
 						},
