@@ -21,6 +21,9 @@ cert-manager:
   fullnameOverride: cert-manager
   nameOverride: cert-manager
 
+  startupapicheck: 
+    enabled: false
+
   controller:
     replicas: 1
     image:
