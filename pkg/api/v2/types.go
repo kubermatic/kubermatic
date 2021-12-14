@@ -486,8 +486,9 @@ type Regions []string
 // AKSCluster represents a object of AKS cluster.
 // swagger:model AKSCluster
 type AKSCluster struct {
-	Name       string `json:"name"`
-	IsImported bool   `json:"imported"`
+	Name          string `json:"name"`
+	ResourceGroup string `json:"resourceGroup"`
+	IsImported    bool   `json:"imported"`
 }
 
 // AKSClusterList represents an list of AKS clusters.

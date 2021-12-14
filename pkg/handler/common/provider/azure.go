@@ -529,7 +529,7 @@ type AzureCredential struct {
 	ClientSecret   string
 }
 
-func ListAKSClusters(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ExternalClusterProvider, cred azure.Credentials, projectID string) (apiv2.AKSClusterList, error) {
+func ListAKSClusters(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ExternalClusterProvider, subscriptionID, clientID, clientSecret, tenantID, projectID string) (apiv2.AKSClusterList, error) {
 	var err error
 	clusters := apiv2.AKSClusterList{}
 
@@ -550,18 +550,18 @@ func ListAKSClusters(ctx context.Context, projectProvider provider.ProjectProvid
 			aksExternalClusterNames.Insert(cloud.AKS.Name)
 		}
 	}
-	aksClient := containerservice.NewManagedClustersClient(cred.SubscriptionID)
-	aksClient.Authorizer, err = auth.NewClientCredentialsConfig(cred.ClientID, cred.ClientSecret, cred.TenantID).Authorizer()
+	aksClient := containerservice.NewManagedClustersClient(subscriptionID)
+	aksClient.Authorizer, err = auth.NewClientCredentialsConfig(clientID, clientSecret, tenantID).Authorizer()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create authorizer: %s", err.Error())
 	}
 	clusterListResult, err := aksClient.List(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list AKS clusters: %v, tenannt %v subs %v, clientid %v secret %v", err, cred.TenantID, cred.SubscriptionID, cred.ClientID, cred.ClientSecret)
+		return nil, fmt.Errorf("failed to list AKS clusters: %v, tenannt %v subs %v, clientid %v secret %v", err, tenantID, subscriptionID, clientID, clientSecret)
 	}
 
 	for _, f := range clusterListResult.Values() {
-		clusters = append(clusters, apiv2.AKSCluster{Name: *f.Name, IsImported: aksExternalClusterNames.Has(*f.Name)})
+		clusters = append(clusters, apiv2.AKSCluster{Name: *f.Name, ResourceGroup: *f.ManagedClusterProperties.NodeResourceGroup, IsImported: aksExternalClusterNames.Has(*f.Name)})
 	}
 	return clusters, nil
 }
@@ -621,11 +621,11 @@ func ListAKSMachineDeploymentUpgrades(ctx context.Context, cred azure.Credential
 	return upgrades, nil
 }
 
-func ValidateAKSCredentials(ctx context.Context, credential azure.Credentials) error {
+func ValidateAKSCredentials(ctx context.Context, subscriptionID, clientID, clientSecret, tenantID string) error {
 	var err error
 
-	aksClient := containerservice.NewManagedClustersClient(credential.SubscriptionID)
-	aksClient.Authorizer, err = auth.NewClientCredentialsConfig(credential.ClientID, credential.ClientSecret, credential.TenantID).Authorizer()
+	aksClient := containerservice.NewManagedClustersClient(subscriptionID)
+	aksClient.Authorizer, err = auth.NewClientCredentialsConfig(clientID, clientSecret, tenantID).Authorizer()
 	if err != nil {
 		return fmt.Errorf("failed to create authorizer: %s", err.Error())
 	}
