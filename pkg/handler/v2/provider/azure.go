@@ -472,7 +472,7 @@ func getAKSCredentialsFromReq(ctx context.Context, req AKSCommonReq, userInfoGet
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 		}
-		if credentials := preset.Spec.Azure; credentials != nil {
+		if credentials := preset.Spec.AKS; credentials != nil {
 			subscriptionID = credentials.SubscriptionID
 			clientID = credentials.ClientID
 			clientSecret = credentials.ClientSecret
