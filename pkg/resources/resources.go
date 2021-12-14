@@ -721,6 +721,16 @@ alertmanager_config: |
 	KonnectivityPodDisruptionBudgetName    = "konnectivity-agent"
 )
 
+const (
+	NetworkPolicyDefaultDenyAllEgress          = "default-deny-all-egress"
+	NetworkPolicyEtcdAllow                     = "etcd-allow"
+	NetworkPolicyDNSAllow                      = "dns-allow"
+	NetworkPolicyOpenVPNServerAllow            = "openvpn-server-allow"
+	NetworkPolicyMachineControllerWebhookAllow = "machine-controller-webhook-allow"
+	NetworkPolicyMetricsServerAllow            = "metrics-server-allow"
+	NetworkPolicyOIDCIssuerAllow               = "oidc-issuer-allow"
+)
+
 // List of allowed TLS cipher suites
 var allowedTLSCipherSuites = []string{
 	// TLS 1.3 cipher suites

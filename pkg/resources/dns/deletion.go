@@ -14,54 +14,49 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package openvpn
+package dns
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
+	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func ResourcesForDeletion() []ctrlruntimeclient.Object {
+func ResourcesForDeletion(namespace string) []ctrlruntimeclient.Object {
 	return []ctrlruntimeclient.Object{
 		&appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "openvpn-client",
-				Namespace: metav1.NamespaceSystem,
+				Name:      resources.DNSResolverDeploymentName,
+				Namespace: namespace,
+			},
+		},
+		&corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      resources.DNSResolverServiceName,
+				Namespace: namespace,
 			},
 		},
 		&corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      resources.OpenVPNClientConfigConfigMapName,
-				Namespace: metav1.NamespaceSystem,
+				Name:      resources.DNSResolverConfigMapName,
+				Namespace: namespace,
 			},
 		},
-		&corev1.Secret{
+		&policyv1beta1.PodDisruptionBudget{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      resources.OpenVPNClientCertificatesSecretName,
-				Namespace: metav1.NamespaceSystem,
+				Name:      resources.DNSResolverPodDisruptionBudetName,
+				Namespace: namespace,
 			},
 		},
-		&corev1.ServiceAccount{
+		&autoscalingv1beta2.VerticalPodAutoscaler{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "vpn-client",
-				Namespace: metav1.NamespaceSystem,
-			},
-		},
-		&rbacv1.Role{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "vpn-client",
-				Namespace: metav1.NamespaceSystem,
-			},
-		},
-		&rbacv1.RoleBinding{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "vpn-client",
-				Namespace: metav1.NamespaceSystem,
+				Name:      resources.DNSResolverDeploymentName,
+				Namespace: namespace,
 			},
 		},
 	}

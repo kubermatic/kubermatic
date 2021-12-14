@@ -14,53 +14,45 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package openvpn
+package metricsserver
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
+	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func ResourcesForDeletion() []ctrlruntimeclient.Object {
+// UserClusterResourcesForDeletion contains a set of resources deployed in user
+// cluster if metrics-server is running fully in the user cluster (not in seed).
+// It does not cover common metrics-server resources that are being deployed
+// regardless of the deployment strategy (in seed / in user cluster).
+func UserClusterResourcesForDeletion() []ctrlruntimeclient.Object {
 	return []ctrlruntimeclient.Object{
 		&appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "openvpn-client",
-				Namespace: metav1.NamespaceSystem,
-			},
-		},
-		&corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      resources.OpenVPNClientConfigConfigMapName,
+				Name:      resources.MetricsServerDeploymentName,
 				Namespace: metav1.NamespaceSystem,
 			},
 		},
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      resources.OpenVPNClientCertificatesSecretName,
+				Name:      servingCertSecretName,
 				Namespace: metav1.NamespaceSystem,
 			},
 		},
 		&corev1.ServiceAccount{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "vpn-client",
+				Name:      resources.MetricsServerServiceAccountName,
 				Namespace: metav1.NamespaceSystem,
 			},
 		},
-		&rbacv1.Role{
+		&policyv1beta1.PodDisruptionBudget{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "vpn-client",
-				Namespace: metav1.NamespaceSystem,
-			},
-		},
-		&rbacv1.RoleBinding{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "vpn-client",
+				Name:      resources.MetricsServerPodDisruptionBudgetName,
 				Namespace: metav1.NamespaceSystem,
 			},
 		},

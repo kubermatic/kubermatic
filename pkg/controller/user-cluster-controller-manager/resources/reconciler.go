@@ -218,16 +218,16 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		}
 	}
 
-	// TODO
+	// This code supports switching between OpenVPN and Konnectivity setup (in both directions).
+	// It can be removed one release after deprecating OpenVPN.
 	if r.isKonnectivityEnabled {
-		if err := r.ensureOpenVPNIsRemoved(ctx); err != nil {
+		if err := r.ensureOpenVPNSetupIsRemoved(ctx); err != nil {
 			return err
 		}
 	} else {
-		if err := r.ensureKonnectivityIsRemoved(ctx); err != nil {
+		if err := r.ensureKonnectivitySetupIsRemoved(ctx); err != nil {
 			return err
 		}
-		// TODO: metrics-server
 	}
 
 	return nil
@@ -1072,8 +1072,8 @@ func (r *reconciler) ensureMLAIsRemoved(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) ensureOpenVPNIsRemoved(ctx context.Context) error {
-	for _, resource := range openvpn.ResourcesOnDeletion() {
+func (r *reconciler) ensureOpenVPNSetupIsRemoved(ctx context.Context) error {
+	for _, resource := range openvpn.ResourcesForDeletion() {
 		err := r.Client.Delete(ctx, resource)
 		if err != nil && !errors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure OpenVPN resources are removed/not present: %v", err)
@@ -1082,11 +1082,17 @@ func (r *reconciler) ensureOpenVPNIsRemoved(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) ensureKonnectivityIsRemoved(ctx context.Context) error {
-	for _, resource := range konnectivity.ResourcesOnDeletion() {
+func (r *reconciler) ensureKonnectivitySetupIsRemoved(ctx context.Context) error {
+	for _, resource := range konnectivity.ResourcesForDeletion() {
 		err := r.Client.Delete(ctx, resource)
 		if err != nil && !errors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure Konnectivity resources are removed/not present: %v", err)
+		}
+	}
+	for _, resource := range metricsserver.UserClusterResourcesForDeletion() {
+		err := r.Client.Delete(ctx, resource)
+		if err != nil && !errors.IsNotFound(err) {
+			return fmt.Errorf("failed to ensure metrics-server resources are removed/not present: %v", err)
 		}
 	}
 	return nil

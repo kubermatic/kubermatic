@@ -18,16 +18,16 @@ package konnectivity
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func ResourcesOnDeletion() []ctrlruntimeclient.Object {
+func ResourcesForDeletion() []ctrlruntimeclient.Object {
 	return []ctrlruntimeclient.Object{
 		&appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{

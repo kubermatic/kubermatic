@@ -18,12 +18,13 @@ package konnectivity
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func ResourcesOnDeletion(namespace string) []ctrlruntimeclient.Object {
+func ResourcesForDeletion(namespace string) []ctrlruntimeclient.Object {
 	return []ctrlruntimeclient.Object{
 		&corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
