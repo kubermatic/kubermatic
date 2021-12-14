@@ -21,6 +21,9 @@ type RuleGroup struct {
 	// contains the RuleGroup data. Ref: https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/#rule_group
 	Data []uint8 `json:"data"`
 
+	// IsDefault indicates whether the ruleGroup is default
+	IsDefault bool `json:"isDefault,omitempty"`
+
 	// type
 	Type RuleGroupType `json:"type,omitempty"`
 }

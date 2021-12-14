@@ -23588,6 +23588,11 @@
           },
           "x-go-name": "Data"
         },
+        "isDefault": {
+          "description": "IsDefault indicates whether the ruleGroup is default",
+          "type": "boolean",
+          "x-go-name": "IsDefault"
+        },
         "type": {
           "$ref": "#/definitions/RuleGroupType"
         }
