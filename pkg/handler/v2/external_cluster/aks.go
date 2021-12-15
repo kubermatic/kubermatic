@@ -490,3 +490,45 @@ func createAKSNodePool(ctx context.Context, cloud *v1.ExternalClusterCloudSpec, 
 
 	return &machineDeployment, nil
 }
+
+func getAKSClusterStatus(ctx context.Context, secretKeySelector provider.SecretKeySelectorValueFunc, cloud *kubermaticapiv1.ExternalClusterCloudSpec) (*apiv2.ExternalClusterStatus, error) {
+	cred, err := azure.GetCredentialsForAKSCluster(*cloud, secretKeySelector)
+	if err != nil {
+		return nil, err
+	}
+
+	aksClient, err := getAKSClusterClient(cred)
+	if err != nil {
+		return nil, err
+	}
+	aksCluster, err := getAKSCluster(ctx, aksClient, cloud)
+	if err != nil {
+		return nil, err
+	}
+	state := apiv2.UNKNOWN
+	if aksCluster.ManagedClusterProperties != nil {
+		state = convertAKSStatus(*aksCluster.ManagedClusterProperties.ProvisioningState)
+	}
+
+	return &apiv2.ExternalClusterStatus{
+		State: state,
+	}, nil
+
+}
+
+func convertAKSStatus(status string) apiv2.ExternalClusterState {
+	switch status {
+	case "Creating":
+		return apiv2.PROVISIONING
+	case "Succeeded":
+		return apiv2.RUNNING
+	case "Upgrading":
+		return apiv2.RECONCILING
+	case "Stopping":
+		return apiv2.RECONCILING
+	case "Deleting":
+		return apiv2.DELETING
+	default:
+		return apiv2.UNKNOWN
+	}
+}
