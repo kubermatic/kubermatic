@@ -244,7 +244,7 @@ func TestHandle(t *testing.T) {
 			wantPatches: []jsonpatch.JsonPatchOperation{
 				jsonpatch.NewOperation("add", "/spec/cniPlugin", map[string]interface{}{
 					"type":    "cilium",
-					"version": "v1.10",
+					"version": "v1.11",
 				}),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/services/cidrBlocks", []interface{}{"10.240.32.0/20"}),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/pods/cidrBlocks", []interface{}{"10.241.0.0/16"}),
