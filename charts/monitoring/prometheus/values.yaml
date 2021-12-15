@@ -69,6 +69,13 @@ prometheus:
     blackBoxExporter:
       enabled: false
       #url: blackbox-exporter:9115
+    # Enable if minio is running with tls in the same cluster
+    minio:
+      tls:
+        enabled: false
+      # Change values if minio running in different namespace and having different label. default is is set to minio.
+      #namespace: minio
+      #appLabel: minio
 
   # Similarly to the scraping config, you can configure the
   # target alertmanagers here.
