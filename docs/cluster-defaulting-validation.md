@@ -40,10 +40,14 @@ However, in our codebase we invert this flow: Whenever someone uses a `Kubermati
 that thing will already apply the Go constants to the `KubermaticConfiguration`. So the config returned
 by the getter is already defaulted.
 
-Important to know: Default values in `Cluster` objects are persisted, so that changed defaults **do not**
+### Important to know:
+When the `Cluster.spec` is extended with new values that have defaults assigned, all existing Clusters are updated to set the default value.
+If no initial defaults are set, keep in mind that a change later will again trigger an update to all existing Clusters.
+
+Default values in `Cluster` objects are persisted, so that changed defaults **do not**
 affect existing clusters. This is different to the `KubermaticConfiguration`/`Seed`, where defaulting
 happens only at runtime, because we do want new defaults (like new `spec.versions` in the `KubermaticConfiguration`)
-to also apply to existing KKP installations.
+to also apply to existing KKP installations. 
 
 ## Validation
 
