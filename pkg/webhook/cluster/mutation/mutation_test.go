@@ -617,10 +617,6 @@ func TestHandle(t *testing.T) {
 				append(defaultPatches, defaultNetworkingPatches...),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", resources.IPVSProxyMode),
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
-				jsonpatch.NewOperation("add", "/spec/cniPlugin", map[string]interface{}{
-					"type":    "canal",
-					"version": defaulting.DefaultCNIPluginVersions[kubermaticv1.CNIPluginTypeCanal],
-				}),
 				jsonpatch.NewOperation("add", "/metadata/annotations", map[string]interface{}{"ccm-migration.k8c.io/migration-needed": "", "csi-migration.k8c.io/migration-needed": ""}),
 				jsonpatch.NewOperation("add", "/spec/cloud/openstack/useOctavia", true),
 			),
@@ -663,10 +659,6 @@ func TestHandle(t *testing.T) {
 				append(defaultPatches, defaultNetworkingPatches...),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", resources.IPVSProxyMode),
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
-				jsonpatch.NewOperation("add", "/spec/cniPlugin", map[string]interface{}{
-					"type":    "canal",
-					"version": defaulting.DefaultCNIPluginVersions[kubermaticv1.CNIPluginTypeCanal],
-				}),
 			),
 		},
 		{
@@ -707,10 +699,6 @@ func TestHandle(t *testing.T) {
 				append(defaultPatches, defaultNetworkingPatches...),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", resources.IPTablesProxyMode),
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
-				jsonpatch.NewOperation("add", "/spec/cniPlugin", map[string]interface{}{
-					"type":    "canal",
-					"version": defaulting.DefaultCNIPluginVersions[kubermaticv1.CNIPluginTypeCanal],
-				}),
 			),
 		},
 	}

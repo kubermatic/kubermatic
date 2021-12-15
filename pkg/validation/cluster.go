@@ -135,11 +135,6 @@ func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermat
 		allErrs = append(allErrs, errs...)
 	}
 
-	portRangeFld := field.NewPath("componentsOverride", "apiserver", "nodePortRange")
-	if err := ValidateNodePortRange(newCluster.Spec.ComponentsOverride.Apiserver.NodePortRange, portRangeFld); err != nil {
-		allErrs = append(allErrs, err)
-	}
-
 	if cloudProvider != nil {
 		if err := cloudProvider.ValidateCloudSpecUpdate(oldCluster.Spec.Cloud, newCluster.Spec.Cloud); err != nil {
 			allErrs = append(allErrs, field.Forbidden(specPath.Child("cloud"), err.Error()))
@@ -715,15 +710,21 @@ func validateClusterNetworkingConfigUpdateImmutability(c, oldC *kubermaticv1.Clu
 func validateCNIUpdate(cni *kubermaticv1.CNIPluginSettings, oldCni *kubermaticv1.CNIPluginSettings, labels map[string]string) *field.Error {
 	basePath := field.NewPath("spec", "cniPlugin")
 
-	// if there was no CNI setting, we allow the initial mutation to happen,
-	// which will default the CNI settings.
-	if oldCni == nil {
+	// if there was no CNI setting, we allow the mutation to happen
+	// allowed for backward compatibility with older KKP with existing clusters with no CNI settings
+	if cni == nil && oldCni == nil {
 		return nil
 	}
 
-	// due to defaulting, this should never happen, KKP always sets the CNIPlugin field
-	if cni == nil {
+	if oldCni != nil && cni == nil {
 		return field.Required(basePath, "CNI plugin settings cannot be removed")
+	}
+
+	if oldCni == nil && cni != nil {
+		if _, ok := labels[UnsafeCNIUpgradeLabel]; ok {
+			return nil // allowed for migration path from older KKP with existing clusters with no CNI settings
+		}
+		return field.Forbidden(basePath, fmt.Sprintf("cannot add CNI plugin settings, unless %s label is present", UnsafeCNIUpgradeLabel))
 	}
 
 	if cni.Type != oldCni.Type {

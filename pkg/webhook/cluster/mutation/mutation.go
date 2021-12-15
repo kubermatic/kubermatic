@@ -103,11 +103,19 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 			return admission.Errored(http.StatusBadRequest, err)
 		}
 
+		// Prevent unconditional CNI upgrades for old clusters.
+		// Do not default cni if it was not explicitly set.
+		preventCNIDefaulting := cluster.Spec.CNIPlugin == nil
+
 		// apply defaults to the new version
 		err := h.applyDefaults(ctx, cluster)
 		if err != nil {
 			h.log.Info("cluster mutation failed", "error", err)
 			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %v", req.UID, err))
+		}
+
+		if preventCNIDefaulting {
+			cluster.Spec.CNIPlugin = nil
 		}
 
 		if err := h.mutateUpdate(oldCluster, cluster); err != nil {
@@ -177,7 +185,7 @@ func (h *AdmissionHandler) mutateUpdate(oldCluster, newCluster *kubermaticv1.Clu
 		if newCluster.Spec.Version.String() != "" && upgradeConstraint.Check(newCluster.Spec.Version.Semver()) {
 			newCluster.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
 				Type:    kubermaticv1.CNIPluginTypeCanal,
-				Version: defaultCNIPluginVersion[kubermaticv1.CNIPluginTypeCanal],
+				Version: defaulting.DefaultCNIPluginVersions[kubermaticv1.CNIPluginTypeCanal],
 			}
 		}
 	}
