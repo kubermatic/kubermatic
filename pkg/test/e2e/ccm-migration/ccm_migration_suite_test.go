@@ -1,3 +1,5 @@
+//go:build e2e
+
 /*
 Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 
