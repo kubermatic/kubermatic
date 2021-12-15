@@ -192,14 +192,15 @@ var (
 	}
 
 	DefaultKubernetesVersioning = operatorv1alpha1.KubermaticVersioningConfiguration{
-		Default: semver.MustParse("v1.21.7"),
+		Default: semver.MustParse("v1.21.8"),
 		Versions: []*semver.Version{
 			// Kubernetes 1.20
 			semver.MustParse("v1.20.13"),
+			semver.MustParse("v1.20.14"),
 			// Kubernetes 1.21
-			semver.MustParse("v1.21.7"),
+			semver.MustParse("v1.21.8"),
 			// Kubernetes 1.22
-			semver.MustParse("v1.22.4"),
+			semver.MustParse("v1.22.5"),
 		},
 		Updates: []operatorv1alpha1.Update{
 			// ======= 1.19 =======
@@ -244,8 +245,10 @@ var (
 				// - CVE-2021-3711 (fixed >= 1.21.7)
 				// - CVE-2021-3712 (fixed >= 1.21.7)
 				// - CVE-2021-33910 (fixed >= 1.21.7)
-				From:      ">= 1.21.0, < 1.21.7",
-				To:        "1.21.7",
+				// - CVE-2021-44716 (fixed >= 1.21.8)
+				// - CVE-2021-44717 (fixed >= 1.21.8)
+				From:      ">= 1.21.0, < 1.21.8",
+				To:        "1.21.8",
 				Automatic: pointer.BoolPtr(true),
 			},
 			{
@@ -265,8 +268,10 @@ var (
 				// - CVE-2021-3711 (fixed >= 1.22.4)
 				// - CVE-2021-3712 (fixed >= 1.22.4)
 				// - CVE-2021-33910 (fixed >= 1.22.4)
-				From:      ">= 1.22.0, < 1.22.4",
-				To:        "1.22.4",
+				// - CVE-2021-44716 (fixed >= 1.22.5)
+				// - CVE-2021-44717 (fixed >= 1.22.5)
+				From:      ">= 1.22.0, < 1.22.5",
+				To:        "1.22.5",
 				Automatic: pointer.BoolPtr(true),
 			},
 		},
