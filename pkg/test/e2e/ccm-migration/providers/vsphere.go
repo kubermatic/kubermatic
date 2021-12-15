@@ -101,18 +101,17 @@ type VsphereCredentialsType struct {
 	Datacenter string
 }
 
-func (osc *VsphereCredentialsType) GenerateSecretData() map[string][]byte {
+func (vc *VsphereCredentialsType) GenerateSecretData() map[string][]byte {
 	return map[string][]byte{
-		resources.VsphereUsername:                    []byte(osc.Username),
-		resources.VspherePassword:                    []byte(osc.Password),
+		resources.VsphereUsername:                    []byte(vc.Username),
+		resources.VspherePassword:                    []byte(vc.Password),
 		resources.VsphereInfraManagementUserUsername: []byte(""),
 		resources.VsphereInfraManagementUserPassword: []byte(""),
 	}
 }
 
-func (osc *VsphereCredentialsType) GenerateProviderSpec() []byte {
-	return []byte(fmt.Sprintf(`{"cloudProvider": "vsphere","cloudProviderSpec": {"identityEndpoint": "%s","Username": "%s","Password": "%s", "image": "machine-controller-e2e-ubuntu", "flavor": "m1.small"},"operatingSystem": "ubuntu","operatingSystemSpec":{"distUpgradeOnBoot": false,"disableAutoUpdate": true}}`,
-		osc.AuthURL,
-		osc.Username,
-		osc.Password))
+func (vc *VsphereCredentialsType) GenerateProviderSpec() []byte {
+	cloudProviderSpec := fmt.Sprintf(`{"allowInsecure":false,"cluster":"%s","cpus":2,"datacenter":"dc-1","datastore":"exsi-nas","datastoreCluster":"","diskSizeGB":10,"memoryMB":4096,"folder":"/dc-1/vm/kubermatic/6cdxcas3ff","templateVMName":"machine-controller-e2e-ubuntu"}`, "cl-1")
+	return []byte(fmt.Sprintf(`{"cloudProvider":"vsphere","cloudProviderSpec":%s,"operatingSystem":"ubuntu","operatingSystemSpec":{"distUpgradeOnBoot":false},"sshPublicKeys":["ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDfWMWB244VDl+EL8f5OG5zYbu+eW1PeOAKrfd6c8GP+xQfO/cgvyF1u495eS2Ef+aLIsD09h/dwfCefW9WtQ12kgNpOneqEBhkhwW/1DIcB6Or63SxEapt9mqullSc6WtcwEoRaT+Ro0o3TuZ6xW7RBLFMcU3Zp2PM2WvN/B67X8agMxqYVFw/T94tpYGKSIOV03a/PTWN9Er2zCEcsVu4XEShtUHO1wOrGVOOsfk1hd27o1odRPpBNL+6DbXQBhQRrS45NTeIIsIECccSpNBX3WdAh+sasFgfWhap1ZNU/Je1lygM81ChwUvldydgE8ccL4oeLX+S8om2VAQeUkllaKuO22SJMaGzIFm5ZQY8yjzOGkAABuDHmB31knDGTCAQ0l+XTjN+ucbhKdQi645Ar/leLV93TXyKxKCDBxLp22gDWP2YIsS0mw6eqiiuEQu4a0QjFegfRTMPM3K1g7i7evYUAlpVR5Bq4gK52t6z+Ev1Z2frYSA0flTBCHX7v4k= mlavacca@Thinkpad-mattia"]}`,
+		cloudProviderSpec))
 }

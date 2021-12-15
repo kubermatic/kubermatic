@@ -277,8 +277,6 @@ EOF
 
 time retry 10 kubectl apply -f "${API_SERVER_NODEPORT_MANIFEST}" &
 
-exit 0
-
 EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
     -openstack-project=${OS_TENANT_NAME}
     -openstack-username=${OS_USERNAME}
@@ -315,7 +313,6 @@ if [ -x "$(command -v ginkgo)" ]; then
     --kubernetes-version "${USER_CLUSTER_KUBERNETES_VERSION}" \
     --debug-log \
     --user-cluster-name="${USER_CLUSTER_NAME}" \
-    --openstackdatacenter="${OS_DATACENTER}"
 else
   CGO_ENABLED=1 go test --tags=e2e -v -race ./pkg/test/e2e/ccm-migration/... $EXTRA_ARGS \
     --ginkgo.randomizeAllSpecs \
@@ -327,5 +324,4 @@ else
     --kubernetes-version "${USER_CLUSTER_KUBERNETES_VERSION}" \
     --debug-log \
     --user-cluster-name="${USER_CLUSTER_NAME}" \
-    --datacenter="${OS_DATACENTER}"
 fi
