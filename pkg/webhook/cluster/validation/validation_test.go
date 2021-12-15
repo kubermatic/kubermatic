@@ -424,7 +424,7 @@ func TestHandle(t *testing.T) {
 							},
 							CNIPlugin: &kubermaticv1.CNIPluginSettings{
 								Type:    "cilium",
-								Version: "v1.10",
+								Version: "v1.11",
 							},
 						}.Do(),
 					},
@@ -1364,7 +1364,7 @@ func TestHandle(t *testing.T) {
 							},
 							CNIPlugin: &kubermaticv1.CNIPluginSettings{
 								Type:    kubermaticv1.CNIPluginTypeCilium,
-								Version: "v1.10",
+								Version: "v1.11",
 							},
 							ComponentSettings: kubermaticv1.ComponentSettings{
 								Apiserver: kubermaticv1.APIServerSettings{
@@ -1426,7 +1426,7 @@ func TestHandle(t *testing.T) {
 							},
 							CNIPlugin: &kubermaticv1.CNIPluginSettings{
 								Type:    kubermaticv1.CNIPluginTypeCilium,
-								Version: "v1.10",
+								Version: "v1.11",
 							},
 							ComponentSettings: kubermaticv1.ComponentSettings{
 								Apiserver: kubermaticv1.APIServerSettings{
