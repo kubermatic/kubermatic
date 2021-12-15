@@ -361,8 +361,6 @@ func ListAWSRegions(credential EKSCredential) (apiv2.Regions, error) {
 	return regionList, nil
 }
 
-type listClusters func(EKSCredential, string) ([]*string, error)
-
 func listEKSClusters(cred EKSCredential, region string) ([]*string, error) {
 
 	client, err := awsprovider.GetClientSet(cred.AccessKeyID, cred.SecretAccessKey, "", "", region)
@@ -377,18 +375,6 @@ func listEKSClusters(cred EKSCredential, region string) ([]*string, error) {
 	}
 
 	return res.Clusters, nil
-}
-
-func mapClusters(credential EKSCredential, fn listClusters, regionList []string) (map[string][]*string, error) {
-	clusterList := make(map[string][]*string)
-	for _, region := range regionList {
-		clusters, err := fn(credential, region)
-		if err != nil {
-			return nil, fmt.Errorf("cannot list regions: %w", err)
-		}
-		clusterList[region] = clusters
-	}
-	return clusterList, nil
 }
 
 func ListEKSClusters(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ExternalClusterProvider, cred EKSCredential, projectID string) (apiv2.EKSClusterList, error) {
@@ -406,11 +392,15 @@ func ListEKSClusters(ctx context.Context, projectProvider provider.ProjectProvid
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	eksExternalClusterNames := sets.NewString()
+	eksExternalCluster := make(map[string]sets.String)
 	for _, externalCluster := range clusterList.Items {
 		cloud := externalCluster.Spec.CloudSpec
 		if cloud != nil && cloud.EKS != nil {
-			eksExternalClusterNames.Insert(cloud.EKS.Name)
+			region := cloud.EKS.Region
+			if _, ok := eksExternalCluster[region]; !ok {
+				eksExternalCluster[region] = make(sets.String)
+			}
+			eksExternalCluster[region] = eksExternalCluster[region].Insert(cloud.EKS.Name)
 		}
 	}
 
@@ -421,25 +411,15 @@ func ListEKSClusters(ctx context.Context, projectProvider provider.ProjectProvid
 		if err != nil {
 			return nil, fmt.Errorf("cannot list clusters: %w", err)
 		}
+
 		for _, f := range eksClusters {
-			clusters = append(clusters, apiv2.EKSCluster{Name: *f, Region: region, IsImported: eksExternalClusterNames.Has(*f)})
-		}
-	} else {
-		// list EKS clusters for all regions
-		regions, err := ListAWSRegions(cred)
-		if err != nil {
-			return nil, fmt.Errorf("cannot list regions: %w", err)
-		}
-		eksClusters, err := mapClusters(cred, listEKSClusters, regions)
-		if err != nil {
-			return nil, fmt.Errorf("cannot list clusters: %w", err)
-		}
-		for region, cluster := range eksClusters {
-			for _, c := range cluster {
-				if c != nil {
-					clusters = append(clusters, apiv2.EKSCluster{Name: *c, Region: region, IsImported: eksExternalClusterNames.Has(*c)})
+			var imported bool
+			if clusterSet, ok := eksExternalCluster[region]; ok {
+				if clusterSet.Has(*f) {
+					imported = true
 				}
 			}
+			clusters = append(clusters, apiv2.EKSCluster{Name: *f, Region: region, IsImported: imported})
 		}
 	}
 
