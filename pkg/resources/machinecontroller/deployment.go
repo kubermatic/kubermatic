@@ -250,6 +250,11 @@ func getEnvVars(data machinecontrollerData) ([]corev1.EnvVar, error) {
 	if data.Cluster().Spec.Cloud.Anexia != nil {
 		vars = append(vars, corev1.EnvVar{Name: "ANEXIA_TOKEN", Value: credentials.Anexia.Token})
 	}
+	if data.Cluster().Spec.Cloud.Nutanix != nil {
+		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_ENDPOINT", Value: ""})
+		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_USERNAME", Value: ""})
+		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_PASSWORD", Value: ""})
+	}
 	vars = append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().Address.InternalName)...)
 
 	return resources.SanitizeEnvVars(vars), nil
