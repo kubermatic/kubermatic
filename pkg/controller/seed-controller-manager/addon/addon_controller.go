@@ -38,7 +38,6 @@ import (
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/machinecontroller"
 	"k8c.io/kubermatic/v2/pkg/util/kubectl"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -298,7 +297,7 @@ func (r *Reconciler) getAddonManifests(ctx context.Context, log *zap.SugaredLogg
 	dnsResolverIP := clusterIP
 	if cluster.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled == nil || *cluster.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled {
 		// NOTE: even if NodeLocalDNSCacheEnabled is nil, we assume it is enabled (backward compatibility for already existing clusters)
-		dnsResolverIP = machinecontroller.NodeLocalDNSCacheAddress
+		dnsResolverIP = resources.NodeLocalDNSCacheAddress
 	}
 
 	kubeconfig, err := r.KubeconfigProvider.GetAdminKubeconfig(ctx, cluster)
