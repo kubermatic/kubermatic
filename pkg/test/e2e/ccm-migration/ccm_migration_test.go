@@ -127,7 +127,7 @@ func setupAndGetUserClient(clusterJig providers.ClusterJigInterface, cluster *ku
 
 func testBody(clusterJig providers.ClusterJigInterface, cluster *kubermaticv1.Cluster, userClient ctrlruntimeclient.Client) {
 
-	time.Sleep(10 * time.Minute)
+	time.Sleep(100 * time.Minute)
 
 	ginkgo.By("enabling externalCloudProvider feature")
 	gomega.Expect(clusterJig.Seed().Get(context.TODO(), types.NamespacedName{Name: clusterJig.Name()}, cluster)).NotTo(gomega.HaveOccurred())

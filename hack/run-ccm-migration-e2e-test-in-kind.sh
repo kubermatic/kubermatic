@@ -325,3 +325,5 @@ else
     --debug-log \
     --user-cluster-name="${USER_CLUSTER_NAME}" \
 fi
+
+sleep(10000)
