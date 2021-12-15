@@ -505,7 +505,7 @@ func getAKSClusterStatus(ctx context.Context, secretKeySelector provider.SecretK
 	if err != nil {
 		return nil, err
 	}
-	state := apiv2.UNSPECIFIED
+	state := apiv2.UNKNOWN
 	if aksCluster.ManagedClusterProperties != nil {
 		state = convertAKSStatus(*aksCluster.ManagedClusterProperties.ProvisioningState)
 	}
@@ -529,6 +529,6 @@ func convertAKSStatus(status string) apiv2.ExternalClusterState {
 	case "Deleting":
 		return apiv2.DELETING
 	default:
-		return apiv2.UNSPECIFIED
+		return apiv2.UNKNOWN
 	}
 }

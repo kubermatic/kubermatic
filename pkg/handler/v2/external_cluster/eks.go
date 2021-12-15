@@ -409,6 +409,6 @@ func convertEKSStatus(status string) apiv2.ExternalClusterState {
 	case "DELETE_FAILED":
 		return apiv2.ERROR
 	default:
-		return apiv2.UNSPECIFIED
+		return apiv2.UNKNOWN
 	}
 }

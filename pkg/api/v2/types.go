@@ -377,8 +377,8 @@ const (
 	// DELETING state indicates the cluster is being deleted.
 	DELETING ExternalClusterState = "DELETING"
 
-	// UNSPECIFIED Not set.
-	UNSPECIFIED ExternalClusterState = "UNSPECIFIED"
+	// UNKNOWN Not set.
+	UNKNOWN ExternalClusterState = "UNKNOWN"
 
 	// ERROR state indicates the cluster is unusable. It will be automatically deleted. Details can be found in the
 	// `statusMessage` field.

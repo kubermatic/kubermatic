@@ -848,7 +848,7 @@ func convertClusterToAPI(internalCluster *kubermaticapiv1.ExternalCluster) *apiv
 func convertClusterToAPIWithStatus(ctx context.Context, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, internalCluster *kubermaticapiv1.ExternalCluster) *apiv2.ExternalCluster {
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
 	status := apiv2.ExternalClusterStatus{
-		State: apiv2.UNSPECIFIED,
+		State: apiv2.UNKNOWN,
 	}
 	apiCluster := convertClusterToAPI(internalCluster)
 	apiCluster.Status = status

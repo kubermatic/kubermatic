@@ -705,6 +705,6 @@ func convertGKEStatus(status string) apiv2.ExternalClusterState {
 	case "ERROR":
 		return apiv2.ERROR
 	default:
-		return apiv2.UNSPECIFIED
+		return apiv2.UNKNOWN
 	}
 }
