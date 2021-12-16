@@ -51,22 +51,20 @@ func NewListKubevirtStorageClassesNoCredentialsOK() *ListKubevirtStorageClassesN
 StorageClassList
 */
 type ListKubevirtStorageClassesNoCredentialsOK struct {
-	Payload *models.StorageClassList
+	Payload models.StorageClassList
 }
 
 func (o *ListKubevirtStorageClassesNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/kubevirt/storageclasses][%d] listKubevirtStorageClassesNoCredentialsOK  %+v", 200, o.Payload)
 }
-func (o *ListKubevirtStorageClassesNoCredentialsOK) GetPayload() *models.StorageClassList {
+func (o *ListKubevirtStorageClassesNoCredentialsOK) GetPayload() models.StorageClassList {
 	return o.Payload
 }
 
 func (o *ListKubevirtStorageClassesNoCredentialsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.StorageClassList)
-
 	// response payload
-	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && err != io.EOF {
 		return err
 	}
 

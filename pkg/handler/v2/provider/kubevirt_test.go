@@ -506,7 +506,7 @@ func TestGetPresetNoCredentialsEndpoint(t *testing.T) {
 }
 
 var (
-	storageClass1Content = `{"metadata":{"name":"storageclass-1","creationTimestamp":null},"provisioner":"","reclaimPolicy":"Delete"}`
+	storageClass1Content = `{"name":"storageclass-1","creationTimestamp":"0001-01-01T00:00:00Z","provisioner":"","reclaimPolicy":"Delete"}`
 
 	reclaimPolicy = v1.PersistentVolumeReclaimDelete
 	storageClass1 = storagev1.StorageClass{
@@ -521,7 +521,7 @@ var (
 		},
 	}
 
-	storageClassListResponse = `{"metadata":{},"items":[{"metadata":{"name":"storageclass-1","creationTimestamp":null},"provisioner":"","reclaimPolicy":"Delete"},{"metadata":{"name":"storageclass-2","creationTimestamp":null},"provisioner":""}]}`
+	storageClassListResponse = ` [{"name":"storageclass-1","creationTimestamp":"0001-01-01T00:00:00Z","provisioner":"","reclaimPolicy":"Delete"},{"name":"storageclass-2","creationTimestamp":"0001-01-01T00:00:00Z","provisioner":""}]`
 )
 
 func TestListStorageClassEndpoint(t *testing.T) {

@@ -33,6 +33,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	corev1 "k8s.io/api/core/v1"
+	storagev1 "k8s.io/api/storage/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -41,6 +42,10 @@ import (
 
 var NewKubevirtClientSet = func(kubeconfig string) (kubevirtcli.Interface, kubernetes.Interface, error) {
 	config, err := base64.StdEncoding.DecodeString(kubeconfig)
+	if err != nil {
+		// should not happen, always sent base64 encoded
+		return nil, nil, err
+	}
 	clientConfig, err := clientcmd.RESTConfigFromKubeConfig(config)
 	if err != nil {
 		return nil, nil, err
@@ -86,7 +91,6 @@ func getKvKubeConfigFromCredentials(ctx context.Context, projectProvider provide
 }
 
 // LIST VmiPreset
-
 func KubevirtVmiPresets(kubeconfig string) (apiv2.VirtualMachineInstancePresetList, error) {
 
 	kvclient, _, err := NewKubevirtClientSet(kubeconfig)
@@ -115,7 +119,6 @@ func KubevirtVmiPresetsWithClusterCredentialsEndpoint(ctx context.Context, userI
 	return KubevirtVmiPresets(kvKubeconfig)
 }
 
-// GET VmiPreset
 func newAPIVirtualMachineInstancePreset(vmiPreset *kubevirtv1.VirtualMachineInstancePreset) *apiv2.VirtualMachineInstancePreset {
 	return &apiv2.VirtualMachineInstancePreset{
 		ObjectMeta: apiv1.ObjectMeta{
@@ -146,6 +149,7 @@ func newAPIVirtualMachineInstancePreset(vmiPreset *kubevirtv1.VirtualMachineInst
 	}
 }
 
+// GET VmiPreset
 func KubevirtVmiPreset(kubeconfig, presetName string) (*apiv2.VirtualMachineInstancePreset, error) {
 	kvclient, _, err := NewKubevirtClientSet(kubeconfig)
 	if err != nil {
@@ -169,9 +173,27 @@ func KubevirtVmiPresetWithClusterCredentialsEndpoint(ctx context.Context, userIn
 	return KubevirtVmiPreset(kvKubeconfig, presetName)
 }
 
-// LIST StorageClass
+func newAPIStorageClass(sc *storagev1.StorageClass) *apiv2.StorageClass {
+	return &apiv2.StorageClass{
+		ObjectMeta: apiv1.ObjectMeta{
+			ID:                string(sc.ObjectMeta.UID),
+			Name:              sc.ObjectMeta.Name,
+			Annotations:       sc.Annotations,
+			CreationTimestamp: apiv1.Time(sc.CreationTimestamp),
+			DeletionTimestamp: (*apiv1.Time)(sc.DeletionTimestamp),
+		},
+		Provisioner:          sc.Provisioner,
+		Parameters:           sc.Parameters,
+		ReclaimPolicy:        sc.ReclaimPolicy,
+		MountOptions:         sc.MountOptions,
+		AllowVolumeExpansion: sc.AllowVolumeExpansion,
+		VolumeBindingMode:    sc.VolumeBindingMode,
+		AllowedTopologies:    sc.AllowedTopologies,
+	}
+}
 
-func KubevirtStorageClasses(kubeconfig string) (*apiv2.StorageClassList, error) {
+// LIST StorageClass
+func KubevirtStorageClasses(kubeconfig string) (apiv2.StorageClassList, error) {
 
 	_, cli, err := NewKubevirtClientSet(kubeconfig)
 	if err != nil {
@@ -182,7 +204,12 @@ func KubevirtStorageClasses(kubeconfig string) (*apiv2.StorageClassList, error) 
 		return nil, err
 	}
 
-	return &apiv2.StorageClassList{StorageClassList: storageClassList}, nil
+	res := apiv2.StorageClassList{}
+	for _, sc := range storageClassList.Items {
+		res = append(res, *newAPIStorageClass(&sc))
+	}
+
+	return res, nil
 }
 
 func KubevirtStorageClassesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
@@ -197,7 +224,6 @@ func KubevirtStorageClassesWithClusterCredentialsEndpoint(ctx context.Context, u
 }
 
 // GET StorageClass
-
 func KubevirtStorageClass(kubeconfig, storageClass string) (*apiv2.StorageClass, error) {
 
 	_, cli, err := NewKubevirtClientSet(kubeconfig)
@@ -210,7 +236,7 @@ func KubevirtStorageClass(kubeconfig, storageClass string) (*apiv2.StorageClass,
 		return nil, err
 	}
 
-	return &apiv2.StorageClass{StorageClass: storageclass}, nil
+	return newAPIStorageClass(storageclass), nil
 }
 
 func KubevirtStorageClassWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,

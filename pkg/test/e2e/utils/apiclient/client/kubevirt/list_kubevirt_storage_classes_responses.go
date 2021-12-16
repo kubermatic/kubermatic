@@ -51,22 +51,20 @@ func NewListKubevirtStorageClassesOK() *ListKubevirtStorageClassesOK {
 StorageClassList
 */
 type ListKubevirtStorageClassesOK struct {
-	Payload *models.StorageClassList
+	Payload models.StorageClassList
 }
 
 func (o *ListKubevirtStorageClassesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/kubevirt/storageclasses][%d] listKubevirtStorageClassesOK  %+v", 200, o.Payload)
 }
-func (o *ListKubevirtStorageClassesOK) GetPayload() *models.StorageClassList {
+func (o *ListKubevirtStorageClassesOK) GetPayload() models.StorageClassList {
 	return o.Payload
 }
 
 func (o *ListKubevirtStorageClassesOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.StorageClassList)
-
 	// response payload
-	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && err != io.EOF {
 		return err
 	}
 
