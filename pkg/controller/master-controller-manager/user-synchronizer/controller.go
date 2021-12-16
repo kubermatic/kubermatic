@@ -19,6 +19,7 @@ package usersynchronizer
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"go.uber.org/zap"
 
@@ -134,6 +135,14 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		}
 	}
 
+	if !kuberneteshelper.HasFinalizer(user, kubermaticapiv1.MasterUserProjectBindingCleanupFinalizer) {
+		oldUser := user.DeepCopy()
+		kuberneteshelper.AddFinalizer(user, kubermaticapiv1.MasterUserProjectBindingCleanupFinalizer)
+		if err := r.masterClient.Patch(ctx, user, ctrlruntimeclient.MergeFrom(oldUser)); err != nil {
+			return reconcile.Result{}, fmt.Errorf("failed to add finalizer %v to user %s: %v", kubermaticapiv1.MasterUserProjectBindingCleanupFinalizer, user.Name, err)
+		}
+	}
+
 	userCreatorGetters := []reconciling.NamedKubermaticV1UserCreatorGetter{
 		userCreatorGetter(user),
 	}
@@ -157,6 +166,26 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 	if err != nil {
 		return err
 	}
+
+	// delete all userprojectbindings related to user
+	userProjectBindings, err := r.bindingsForUser(ctx, user)
+	if err != nil {
+		return err
+	}
+	for _, userBinding := range userProjectBindings {
+		if err := r.masterClient.Delete(ctx, &userBinding); err != nil {
+			if err = ctrlruntimeclient.IgnoreNotFound(err); err != nil {
+				return err
+			}
+		}
+	}
+
+	if kuberneteshelper.HasFinalizer(user, kubermaticapiv1.MasterUserProjectBindingCleanupFinalizer) {
+		kuberneteshelper.RemoveFinalizer(user, kubermaticapiv1.MasterUserProjectBindingCleanupFinalizer)
+		if err := r.masterClient.Update(ctx, user); err != nil {
+			return fmt.Errorf("failed to remove master user project binding finalizer from user %s: %w", user.Name, err)
+		}
+	}
 	if kuberneteshelper.HasFinalizer(user, kubermaticapiv1.SeedUserCleanupFinalizer) {
 		kuberneteshelper.RemoveFinalizer(user, kubermaticapiv1.SeedUserCleanupFinalizer)
 		if err := r.masterClient.Update(ctx, user); err != nil {
@@ -164,6 +193,22 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 		}
 	}
 	return nil
+}
+
+func (r *reconciler) bindingsForUser(ctx context.Context, user *kubermaticv1.User) ([]kubermaticv1.UserProjectBinding, error) {
+	projectBindings := &kubermaticv1.UserProjectBindingList{}
+	if err := r.masterClient.List(ctx, projectBindings); err != nil {
+		return nil, err
+	}
+
+	var userProjectBindings []kubermaticv1.UserProjectBinding
+	for _, projectBinding := range projectBindings.Items {
+		if strings.EqualFold(user.Spec.Email, projectBinding.Spec.UserEmail) {
+			userProjectBindings = append(userProjectBindings, projectBinding)
+		}
+	}
+
+	return userProjectBindings, nil
 }
 
 func (r *reconciler) syncAllSeeds(
