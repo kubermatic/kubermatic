@@ -372,11 +372,24 @@ func ListGKEClusters(ctx context.Context, projectProvider provider.ProjectProvid
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
+
 	gkeExternalClusterNames := sets.NewString()
 	for _, externalCluster := range clusterList.Items {
 		cloud := externalCluster.Spec.CloudSpec
 		if cloud != nil && cloud.GKE != nil {
 			gkeExternalClusterNames.Insert(cloud.GKE.Name)
+		}
+	}
+
+	gkeExternalCluster := make(map[string]sets.String)
+	for _, externalCluster := range clusterList.Items {
+		cloud := externalCluster.Spec.CloudSpec
+		if cloud != nil && cloud.GKE != nil {
+			zone := cloud.GKE.Zone
+			if _, ok := gkeExternalCluster[zone]; !ok {
+				gkeExternalCluster[zone] = make(sets.String)
+			}
+			gkeExternalCluster[zone] = gkeExternalCluster[zone].Insert(cloud.GKE.Name)
 		}
 	}
 
@@ -391,7 +404,13 @@ func ListGKEClusters(ctx context.Context, projectProvider provider.ProjectProvid
 		return clusters, fmt.Errorf("clusters list project=%v: %w", project, err)
 	}
 	for _, f := range resp.Clusters {
-		clusters = append(clusters, apiv2.GKECluster{Name: f.Name, Zone: f.Zone, IsImported: gkeExternalClusterNames.Has(f.Name)})
+		var imported bool
+		if clusterSet, ok := gkeExternalCluster[f.Zone]; ok {
+			if clusterSet.Has(f.Name) {
+				imported = true
+			}
+		}
+		clusters = append(clusters, apiv2.GKECluster{Name: f.Name, Zone: f.Zone, IsImported: imported})
 	}
 	return clusters, nil
 }
