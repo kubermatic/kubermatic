@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/containerservice/mgmt/containerservice"
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2021-07-01/compute"
@@ -543,11 +544,15 @@ func ListAKSClusters(ctx context.Context, projectProvider provider.ProjectProvid
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	aksExternalClusterNames := sets.NewString()
+	aksExternalCluster := make(map[string]sets.String)
 	for _, externalCluster := range clusterList.Items {
 		cloud := externalCluster.Spec.CloudSpec
 		if cloud != nil && cloud.AKS != nil {
-			aksExternalClusterNames.Insert(cloud.AKS.Name)
+			resourceGroup := cloud.AKS.ResourceGroup
+			if _, ok := aksExternalCluster[resourceGroup]; !ok {
+				aksExternalCluster[resourceGroup] = make(sets.String)
+			}
+			aksExternalCluster[resourceGroup] = aksExternalCluster[resourceGroup].Insert(cloud.AKS.Name)
 		}
 	}
 	aksClient := containerservice.NewManagedClustersClient(subscriptionID)
@@ -561,7 +566,14 @@ func ListAKSClusters(ctx context.Context, projectProvider provider.ProjectProvid
 	}
 
 	for _, f := range clusterListResult.Values() {
-		clusters = append(clusters, apiv2.AKSCluster{Name: *f.Name, ResourceGroup: *f.ManagedClusterProperties.NodeResourceGroup, IsImported: aksExternalClusterNames.Has(*f.Name)})
+		var imported bool
+		resourceGroup := strings.Split(strings.SplitAfter(*f.ID, "resourcegroups/")[1], "/")[0]
+		if clusterSet, ok := aksExternalCluster[resourceGroup]; ok {
+			if clusterSet.Has(*f.Name) {
+				imported = true
+			}
+		}
+		clusters = append(clusters, apiv2.AKSCluster{Name: *f.Name, ResourceGroup: resourceGroup, IsImported: imported})
 	}
 	return clusters, nil
 }
