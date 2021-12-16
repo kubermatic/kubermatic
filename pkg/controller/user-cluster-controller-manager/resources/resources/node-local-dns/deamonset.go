@@ -19,6 +19,7 @@ package nodelocaldns
 import (
 	"fmt"
 
+	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubesystem"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -90,7 +91,7 @@ func DaemonSetCreator(registryWithOverwrite registry.WithOverwriteFunc) reconcil
 					ImagePullPolicy: corev1.PullAlways,
 					Args: []string{
 						"-localip",
-						"169.254.20.10",
+						kubesystem.NodeLocalDNSCacheAddress,
 						"-conf",
 						"/etc/coredns/Corefile",
 					},
@@ -130,7 +131,7 @@ func DaemonSetCreator(registryWithOverwrite registry.WithOverwriteFunc) reconcil
 					LivenessProbe: &corev1.Probe{
 						Handler: corev1.Handler{
 							HTTPGet: &corev1.HTTPGetAction{
-								Host:   "169.254.20.10",
+								Host:   kubesystem.NodeLocalDNSCacheAddress,
 								Scheme: corev1.URISchemeHTTP,
 								Path:   "/health",
 								Port:   intstr.FromInt(8080),

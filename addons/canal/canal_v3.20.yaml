@@ -21,6 +21,8 @@
 #     (https://docs.projectcalico.org/reference/faq#are-the-calico-manifests-compatible-with-coreos)
 #   - added envoyagent interface to the exclusion list for Calico IP autodetection
 #   - added seccomp profile to calico-controllers
+#   - Add custom network policy
+
 
 {{ if eq .Cluster.CNIPlugin.Type "canal" }}
 {{ if eq .Cluster.CNIPlugin.Version "v3.20" }}
@@ -4094,8 +4096,25 @@ metadata:
   name: calico-kube-controllers
   namespace: kube-system
 
+{{ if .Cluster.Features.Has "kubeSystemNetworkPolicies" }}
 ---
-
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: calico
+  namespace: kube-system
+spec:
+  podSelector:
+    matchLabels:
+      k8s-app: calico-kube-controllers
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress: []
+  egress:
+    - {}
+{{ end }}
+---
 # This manifest creates a Pod Disruption Budget for Controller to allow K8s Cluster Autoscaler to evict
 
 apiVersion: policy/v1beta1

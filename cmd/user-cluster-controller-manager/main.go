@@ -27,6 +27,7 @@ import (
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	ccmcsimigrator "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/ccm-csi-migrator"
 	clusterrolelabeler "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/cluster-role-labeler"
@@ -85,6 +86,7 @@ type controllerRunOptions struct {
 	opaEnableMutation            bool
 	opaWebhookTimeout            int
 	useSSHKeyAgent               bool
+	networkPolicies              bool
 	caBundleFile                 string
 	mlaGatewayURL                string
 	userClusterLogging           bool
@@ -128,6 +130,7 @@ func main() {
 	flag.BoolVar(&runOp.opaEnableMutation, "enable-mutation", false, "Enable OPA experimental mutation in user cluster")
 	flag.IntVar(&runOp.opaWebhookTimeout, "opa-webhook-timeout", 1, "Timeout for OPA Integration validating webhook, in seconds")
 	flag.BoolVar(&runOp.useSSHKeyAgent, "enable-ssh-key-agent", false, "Enable UserSSHKeyAgent integration in user cluster")
+	flag.BoolVar(&runOp.networkPolicies, "enable-network-policies", false, "Enable deployment of network policies to kube-system namespace in user cluster")
 	flag.StringVar(&runOp.caBundleFile, "ca-bundle", "", "The path to the cluster's CA bundle (PEM-encoded).")
 	flag.StringVar(&runOp.mlaGatewayURL, "mla-gateway-url", "", "The URL of MLA (Monitoring, Logging, and Alerting) gateway endpoint.")
 	flag.BoolVar(&runOp.userClusterLogging, "user-cluster-logging", false, "Enable logging in user cluster.")
@@ -272,6 +275,7 @@ func main() {
 		runOp.opaEnableMutation,
 		versions,
 		runOp.useSSHKeyAgent,
+		runOp.networkPolicies,
 		runOp.opaWebhookTimeout,
 		caBundle,
 		usercluster.UserClusterMLA{

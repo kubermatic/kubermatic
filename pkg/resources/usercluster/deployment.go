@@ -73,6 +73,7 @@ type userclusterControllerData interface {
 }
 
 // DeploymentCreator returns the function to create and update the user cluster controller deployment
+// nolint:gocyclo
 func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.UserClusterControllerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -161,6 +162,10 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 					return nil, err
 				}
 				args = append(args, "-openvpn-server-port", fmt.Sprint(openvpnServerPort))
+			}
+
+			if data.Cluster().Spec.Features[kubermaticv1.ApiserverNetworkPolicy] {
+				args = append(args, "-enable-network-policies")
 			}
 
 			if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {

@@ -39,6 +39,7 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -90,6 +91,7 @@ func Add(
 	opaEnableMutation bool,
 	versions kubermatic.Versions,
 	userSSHKeyAgent bool,
+	networkPolices bool,
 	opaWebhookTimeout int,
 	caBundle resources.CABundle,
 	userClusterMLA UserClusterMLA,
@@ -117,6 +119,7 @@ func Add(
 		opaEnableMutation:      opaEnableMutation,
 		opaWebhookTimeout:      opaWebhookTimeout,
 		userSSHKeyAgent:        userSSHKeyAgent,
+		networkPolices:         networkPolices,
 		versions:               versions,
 		caBundle:               caBundle,
 		userClusterMLA:         userClusterMLA,
@@ -173,6 +176,7 @@ func Add(
 		&apiextensionsv1.CustomResourceDefinition{},
 		&appsv1.Deployment{},
 		&v1beta1.PodDisruptionBudget{},
+		&networkingv1.NetworkPolicy{},
 	}
 
 	// Avoid getting triggered by the leader lease AKA: If the annotation exists AND changed on
@@ -283,6 +287,7 @@ type reconciler struct {
 	opaEnableMutation      bool
 	opaWebhookTimeout      int
 	userSSHKeyAgent        bool
+	networkPolices         bool
 	versions               kubermatic.Versions
 	caBundle               resources.CABundle
 	userClusterMLA         UserClusterMLA
@@ -291,9 +296,8 @@ type reconciler struct {
 	isKonnectivityEnabled  bool
 	konnectivityServerHost string
 	konnectivityServerPort int
-
-	ccmMigration          bool
-	ccmMigrationCompleted bool
+	ccmMigration           bool
+	ccmMigrationCompleted  bool
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool
@@ -371,6 +375,21 @@ func (r *reconciler) mlaReconcileData(ctx context.Context) (monitoring, logging 
 		return nil, nil, nil, fmt.Errorf("failed to get cluster: %w", err)
 	}
 	return cluster.Spec.MLA.MonitoringResources, cluster.Spec.MLA.LoggingResources, cluster.Spec.MLA.MonitoringReplicas, nil
+}
+
+func (r *reconciler) networkingData(ctx context.Context) (address *kubermaticv1.ClusterAddress, k8sServiceApi *net.IP, err error) {
+	cluster := &kubermaticv1.Cluster{}
+	if err = r.seedClient.Get(ctx, types.NamespacedName{
+		Name: r.clusterName,
+	}, cluster); err != nil {
+		return nil, nil, fmt.Errorf("failed to get cluster: %w", err)
+	}
+
+	ip, err := resources.InClusterApiserverIP(cluster)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get Cluster Apiserver IP: %w", err)
+	}
+	return &cluster.Address, ip, nil
 }
 
 // reconcileDefaultServiceAccount ensures that the Kubernetes default service account has AutomountServiceAccountToken set to false

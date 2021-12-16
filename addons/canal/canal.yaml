@@ -1,8 +1,9 @@
 # Source: https://docs.projectcalico.org/v3.8/manifests/canal.yaml
-# 3 modification:
+# 4 modification:
 #   - The ClusterRoleBinding canal-calico was renamed to canal-calico-node as upstream changed it in a way that we cannot roll out via kubectl apply
 #   - All images now use the canonical name
 #   - Remove the flexvolume installation as its broken for CoreOS & only required for application policies (Which we don't use.)
+#   - Add custom network policy
 {{ if hasKey (dict "" "" "canal" "" ) .Cluster.CNIPlugin.Type }}
 {{ if hasKey (dict "" "" "v3.8" "" ) .Cluster.CNIPlugin.Version }}
 ---
@@ -596,6 +597,24 @@ metadata:
   name: canal
   namespace: kube-system
 
+{{ if .Cluster.Features.Has "kubeSystemNetworkPolicies" }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: calico-kube-controllers
+  namespace: kube-system
+spec:
+  podSelector:
+    matchLabels:
+      k8s-app: calico
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress: []
+  egress:
+    - {}
+{{ end }}
 ---
 # Source: calico/templates/calico-etcd-secrets.yaml
 
