@@ -963,33 +963,33 @@ type StorageClassList []StorageClass
 type StorageClass struct {
 	apiv1.ObjectMeta `json:",inline"`
 	// Provisioner indicates the type of the provisioner.
-	Provisioner string `json:"provisioner" protobuf:"bytes,2,opt,name=provisioner"`
+	Provisioner string `json:"provisioner"`
 
 	// Parameters holds the parameters for the provisioner that should
 	// create volumes of this storage class.
 	// +optional
-	Parameters map[string]string `json:"parameters,omitempty" protobuf:"bytes,3,rep,name=parameters"`
+	Parameters map[string]string `json:"parameters,omitempty"`
 
 	// Dynamically provisioned PersistentVolumes of this storage class are
 	// created with this reclaimPolicy. Defaults to Delete.
 	// +optional
-	ReclaimPolicy *v1.PersistentVolumeReclaimPolicy `json:"reclaimPolicy,omitempty" protobuf:"bytes,4,opt,name=reclaimPolicy,casttype=k8s.io/api/core/v1.PersistentVolumeReclaimPolicy"`
+	ReclaimPolicy *v1.PersistentVolumeReclaimPolicy `json:"reclaimPolicy,omitempty"`
 
 	// Dynamically provisioned PersistentVolumes of this storage class are
 	// created with these mountOptions, e.g. ["ro", "soft"]. Not validated -
 	// mount of the PVs will simply fail if one is invalid.
 	// +optional
-	MountOptions []string `json:"mountOptions,omitempty" protobuf:"bytes,5,opt,name=mountOptions"`
+	MountOptions []string `json:"mountOptions,omitempty"`
 
 	// AllowVolumeExpansion shows whether the storage class allow volume expand
 	// +optional
-	AllowVolumeExpansion *bool `json:"allowVolumeExpansion,omitempty" protobuf:"varint,6,opt,name=allowVolumeExpansion"`
+	AllowVolumeExpansion *bool `json:"allowVolumeExpansion,omitempty"`
 
 	// VolumeBindingMode indicates how PersistentVolumeClaims should be
 	// provisioned and bound.  When unset, VolumeBindingImmediate is used.
 	// This field is only honored by servers that enable the VolumeScheduling feature.
 	// +optional
-	VolumeBindingMode *storagev1.VolumeBindingMode `json:"volumeBindingMode,omitempty" protobuf:"bytes,7,opt,name=volumeBindingMode"`
+	VolumeBindingMode *storagev1.VolumeBindingMode `json:"volumeBindingMode,omitempty"`
 
 	// Restrict the node topologies where volumes can be dynamically provisioned.
 	// Each volume plugin defines its own supported topology specifications.
@@ -997,5 +997,5 @@ type StorageClass struct {
 	// This field is only honored by servers that enable the VolumeScheduling feature.
 	// +optional
 	// +listType=atomic
-	AllowedTopologies []v1.TopologySelectorTerm `json:"allowedTopologies,omitempty" protobuf:"bytes,8,rep,name=allowedTopologies"`
+	AllowedTopologies []v1.TopologySelectorTerm `json:"allowedTopologies,omitempty"`
 }

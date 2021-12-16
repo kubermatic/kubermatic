@@ -3681,7 +3681,7 @@ func (r Routing) getKubevirtStorageClassNoCredentials() http.Handler {
 // swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/dashboard/proxy
 //
 //    Proxies the Kubernetes Dashboard. Requires a valid bearer token. The token can be obtained
-//    using the /api/v/projects/{project_id}/clusters/{cluster_id}/dashboard/login
+//    using the /api/v1/projects/{project_id}/clusters/{cluster_id}/dashboard/login
 //    endpoint.
 //
 //     Responses:
