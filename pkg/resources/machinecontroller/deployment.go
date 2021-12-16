@@ -52,8 +52,6 @@ var (
 const (
 	Name = "machine-controller"
 	Tag  = "v1.36.2"
-
-	NodeLocalDNSCacheAddress = "169.254.20.10"
 )
 
 type machinecontrollerData interface {
@@ -121,7 +119,7 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 				},
 			}
 
-			clusterDNSIP := NodeLocalDNSCacheAddress
+			clusterDNSIP := resources.NodeLocalDNSCacheAddress
 			if !data.NodeLocalDNSCacheEnabled() {
 				clusterDNSIP, err = resources.UserClusterDNSResolverIP(data.Cluster())
 				if err != nil {

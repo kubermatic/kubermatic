@@ -62,6 +62,8 @@ const (
 	APIServerSecurePort = 6443
 	// DefaultNodePortRange A port range to reserve for services with NodePort visibility
 	DefaultNodePortRange = "30000-32767"
+
+	NodeLocalDNSCacheAddress = "169.254.20.10"
 )
 
 const (
@@ -71,6 +73,8 @@ const (
 	ControllerManagerDeploymentName = "controller-manager"
 	// SchedulerDeploymentName is the name for the scheduler deployment
 	SchedulerDeploymentName = "scheduler"
+	// OperatingSystemManagerDeploymentName is the name for the operating-system-manager deployment
+	OperatingSystemManagerDeploymentName = "operating-system-manager"
 	// MachineControllerDeploymentName is the name for the machine-controller deployment
 	MachineControllerDeploymentName = "machine-controller"
 	// MachineControllerWebhookDeploymentName is the name for the machine-controller webhook deployment
@@ -142,6 +146,8 @@ const (
 	MetricsServerKubeconfigSecretName = "metrics-server"
 	// ControllerManagerKubeconfigSecretName is the name of the secret containing the kubeconfig used by controller manager
 	ControllerManagerKubeconfigSecretName = "controllermanager-kubeconfig"
+	// OperatingSystemManagerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the osm
+	OperatingSystemManagerKubeconfigSecretName = "operatingsystemmanager-kubeconfig"
 	// MachineControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the machinecontroller
 	MachineControllerKubeconfigSecretName = "machinecontroller-kubeconfig"
 	// CloudControllerManagerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the external cloud provider
@@ -248,6 +254,8 @@ const (
 	// KubeSystemNamespaceName is the name of Kubernetes kube-system namespace
 	KubeSystemNamespaceName = "kube-system"
 
+	// OperatingSystemManagerCertUsername is the name of the user coming from kubeconfig cert
+	OperatingSystemManagerCertUsername = "operating-system-manager"
 	// MachineControllerCertUsername is the name of the user coming from kubeconfig cert
 	MachineControllerCertUsername = "machine-controller"
 	// KubeStateMetricsCertUsername is the name of the user coming from kubeconfig cert
