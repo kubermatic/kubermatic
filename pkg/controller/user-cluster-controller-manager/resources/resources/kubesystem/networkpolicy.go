@@ -20,7 +20,6 @@ import (
 	"fmt"
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	"k8c.io/kubermatic/v2/pkg/resources/machinecontroller"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	v1 "k8s.io/api/core/v1"
@@ -28,6 +27,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
+
+const NodeLocalDNSCacheAddress = "169.254.20.10"
 
 // DefaultNetworkPolicyCreator Default policy creator denys all expect egress to kube-dns for all pods without any network policy applied.
 func DefaultNetworkPolicyCreator() reconciling.NamedNetworkPolicyCreatorGetter {
@@ -80,7 +81,7 @@ func DefaultNetworkPolicyCreator() reconciling.NamedNetworkPolicyCreatorGetter {
 						To: []networkingv1.NetworkPolicyPeer{
 							{
 								IPBlock: &networkingv1.IPBlock{
-									CIDR: fmt.Sprintf("%s/32", machinecontroller.NodeLocalDNSCacheAddress),
+									CIDR: fmt.Sprintf("%s/32", NodeLocalDNSCacheAddress),
 								},
 							},
 						},
