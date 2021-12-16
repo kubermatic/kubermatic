@@ -19,7 +19,9 @@ aliases:
     - zyanichaimaa
 
   sig-cluster-management:
+    - ahmedwaleedmalik
     - embik
+    - imharshita
     - kron4eg
     - mfranczy
     - mlavacca
@@ -27,7 +29,6 @@ aliases:
     - moelsayed
     - xmudrii
     - xrstf
-    - imharshita
 
   sig-networking:
     - moadqassem
