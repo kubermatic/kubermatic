@@ -32,15 +32,10 @@ type ClusterData struct {
 	// inside the user-cluster. The kubeconfig uses the external URL to reach
 	// the apiserver.
 	Kubeconfig string
-	// ApiserverExternalURL is the full URL to the apiserver service from the
-	// outside, including protocol and port number. It does not contain any
-	// trailing slashes.
-	ApiserverExternalURL string
-	// ApiserverExternalURL is the full URL to the apiserver from within the
-	// seed cluster itself. It does not contain any trailing slashes.
-	ApiserverInternalURL string
-	// AdminToken is the cluster's admin token.
-	AdminToken string
+
+	// ClusterAddress stores access and address information of a cluster.
+	Address kubermaticv1.ClusterAddress
+
 	// CloudProviderName is the name of the cloud provider used, one of
 	// "alibaba", "aws", "azure", "bringyourown", "digitalocean", "gcp",
 	// "hetzner", "kubevirt", "openstack", "packet", "vsphere" depending on
@@ -62,6 +57,22 @@ type ClusterData struct {
 	StoragePolicy string
 	// CSIMigration indicates if the cluster needed the CSIMigration
 	CSIMigration bool
+}
+
+// ClusterAddress stores access and address information of a cluster.
+type ClusterAddress struct {
+	// URL under which the Apiserver is available
+	URL string `json:"url"`
+	// Port is the port the API server listens on
+	Port int32 `json:"port"`
+	// ExternalName is the DNS name for this cluster
+	ExternalName string `json:"externalName"`
+	// InternalName is the seed cluster internal absolute DNS name to the API server
+	InternalName string `json:"internalURL"`
+	// AdminToken is the token for the kubeconfig, the user can download
+	AdminToken string `json:"adminToken"`
+	// IP is the external IP under which the apiserver is available
+	IP string `json:"ip"`
 }
 
 type ClusterNetwork struct {

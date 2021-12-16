@@ -66,7 +66,7 @@ data:
     clusters:
     - cluster:
         certificate-authority: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-        server: {{ .Cluster.ApiserverExternalURL }}
+        server: {{ .Cluster.Address.URL }}
       name: default
     contexts:
     - context:

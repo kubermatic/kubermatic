@@ -24,7 +24,7 @@
 {{ if eq .Cluster.CNIPlugin.Type "cilium" }}
 {{ if eq .Cluster.CNIPlugin.Version "v1.11" }}
 
-{{ $apiServerURL := urlParse .Cluster.ApiserverExternalURL }}
+{{ $apiServerURL := urlParse .Cluster.Address.URL }}
 {{ $hostParts := split ":" $apiServerURL.host }}
 {{ $apiServerHost := $hostParts._0 }}
 {{ $apiServerPort := $hostParts._1 }}
@@ -860,5 +860,23 @@ spec:
         configMap:
           name: cilium-config
 
+{{ if .Cluster.Features.Has "kubeSystemNetworkPolicies" }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cilium
+  namespace: kube-system
+spec:
+  podSelector:
+    matchLabels:
+      name: cilium-operator
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress: []
+  egress:
+    - {}
+{{ end }}
 {{ end }}
 {{ end }}

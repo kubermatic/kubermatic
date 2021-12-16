@@ -19,6 +19,7 @@ package promtail
 import (
 	"fmt"
 
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -50,16 +51,14 @@ const (
 	podVolumeMountPath       = "/var/log/pods"
 	metricsPortName          = "http-metrics"
 
-	promtailNameKey     = "app.kubernetes.io/name"
-	promtailInstanceKey = "app.kubernetes.io/instance"
-
 	inotifyMaxUserInstances = 256
 )
 
 var (
 	controllerLabels = map[string]string{
-		promtailNameKey:     resources.PromtailDaemonSetName,
-		promtailInstanceKey: resources.PromtailDaemonSetName,
+		common.NameLabel:      resources.PromtailDaemonSetName,
+		common.InstanceLabel:  resources.PromtailDaemonSetName,
+		common.ComponentLabel: resources.MLAComponentName,
 	}
 	defaultResourceRequirements = corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{

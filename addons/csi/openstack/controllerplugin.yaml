@@ -176,5 +176,24 @@ spec:
         - name: ca-bundle
           configMap:
             name: ca-bundle
+
+{{ if .Cluster.Features.Has "kubeSystemNetworkPolicies" }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: csi-cinder-controllerplugin
+  namespace: kube-system
+spec:
+  podSelector:
+    matchLabels:
+      app: csi-cinder-controllerplugin
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+{{ end }}
 {{ end }}
 {{ end }}

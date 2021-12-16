@@ -91,7 +91,7 @@ const (
 	DNSResolverServiceName = "dns-resolver"
 	// DNSResolverPodDisruptionBudetName is the name of the dns resolvers pdb
 	DNSResolverPodDisruptionBudetName = "dns-resolver"
-	// DNSResolverVPAName is the name of the dns resolvers VerticalPodAutoscaler
+	// KubeStateMetricsDeploymentName is the name of the kube-state-metrics deployment
 	KubeStateMetricsDeploymentName = "kube-state-metrics"
 	// UserClusterControllerDeploymentName is the name of the usercluster-controller deployment
 	UserClusterControllerDeploymentName = "usercluster-controller"
@@ -655,7 +655,9 @@ const (
 )
 
 const (
-	UserClusterMLANamespace        = "mla-system"
+	UserClusterMLANamespace = "mla-system"
+	MLAComponentName        = "mla"
+
 	PromtailServiceAccountName     = "promtail"
 	PromtailClusterRoleName        = "system:mla:promtail"
 	PromtailClusterRoleBindingName = "system:mla:promtail"

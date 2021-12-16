@@ -35,6 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/konnectivity"
 	kubestatemetrics "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kube-state-metrics"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard"
+	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubesystem"
 	machinecontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
 	metricsserver "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/metrics-server"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/mla"
@@ -74,20 +75,26 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to get cloudConfig: %v", err)
 	}
-	var CSICloudConfig []byte
+
+	data := reconcileData{
+		caCert:       caCert,
+		userSSHKeys:  userSSHKeys,
+		cloudConfig:  cloudConfig,
+		ccmMigration: r.ccmMigration || r.ccmMigrationCompleted,
+	}
+
 	if r.cloudProvider == kubermaticv1.VSphereCloudProvider {
-		CSICloudConfig, err = r.cloudConfig(ctx, resources.CSICloudConfigConfigMapName)
+		data.csiCloudConfig, err = r.cloudConfig(ctx, resources.CSICloudConfigConfigMapName)
 		if err != nil {
 			return fmt.Errorf("failed to get cloudConfig: %v", err)
 		}
 	}
 
-	data := reconcileData{
-		caCert:         caCert,
-		userSSHKeys:    userSSHKeys,
-		cloudConfig:    cloudConfig,
-		csiCloudConfig: CSICloudConfig,
-		ccmMigration:   r.ccmMigration || r.ccmMigrationCompleted,
+	if r.networkPolices {
+		data.clusterAddress, data.k8sServiceApiIP, err = r.networkingData(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to get cluster address: %v", err)
+		}
 	}
 
 	if !r.isKonnectivityEnabled {
@@ -180,6 +187,12 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 
 	if err := r.reconcileMutatingWebhookConfigurations(ctx, data); err != nil {
 		return err
+	}
+
+	if r.networkPolices {
+		if err := r.reconcileNetworkPolicies(ctx, data); err != nil {
+			return err
+		}
 	}
 
 	// Try to delete OPA integration deployment if its present
@@ -864,6 +877,29 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 	return nil
 }
 
+func (r *reconciler) reconcileNetworkPolicies(ctx context.Context, data reconcileData) error {
+
+	namedNetworkPolicyCreatorGetters := []reconciling.NamedNetworkPolicyCreatorGetter{
+		kubesystem.DefaultNetworkPolicyCreator(),
+		coredns.KubeDNSNetworkPolicyCreator(data.clusterAddress.IP, int(data.clusterAddress.Port), data.k8sServiceApiIP.String()),
+	}
+
+	if r.userSSHKeyAgent {
+		namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters,
+			usersshkeys.NetworkPolicyCreator(data.clusterAddress.IP, int(data.clusterAddress.Port), data.k8sServiceApiIP.String()))
+	}
+
+	if r.isKonnectivityEnabled {
+		namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters, metricsserver.NetworkPolicyCreator(), konnectivity.NetworkPolicyCreator())
+	}
+
+	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyCreatorGetters, metav1.NamespaceSystem, r.Client); err != nil {
+		return fmt.Errorf("failed to ensure Network Policies: %v", err)
+	}
+
+	return nil
+}
+
 func (r *reconciler) reconcilePodDisruptionBudgets(ctx context.Context) error {
 	creators := []reconciling.NamedPodDisruptionBudgetCreatorGetter{
 		coredns.PodDisruptionBudgetCreator(),
@@ -903,6 +939,8 @@ type reconcileData struct {
 	gatekeeperCtrlRequirements  *corev1.ResourceRequirements
 	gatekeeperAuditRequirements *corev1.ResourceRequirements
 	monitoringReplicas          *int32
+	clusterAddress              *kubermaticv1.ClusterAddress
+	k8sServiceApiIP             *net.IP
 }
 
 func (r *reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context) error {

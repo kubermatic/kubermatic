@@ -163,14 +163,6 @@ func (h *AdmissionHandler) applyDefaults(c *kubermaticv1.Cluster) error {
 		}
 	}
 
-	// Network policies for Apiserver are deployed by default
-	if _, ok := c.Spec.Features[kubermaticv1.ApiserverNetworkPolicy]; !ok {
-		if c.Spec.Features == nil {
-			c.Spec.Features = map[string]bool{}
-		}
-		c.Spec.Features[kubermaticv1.ApiserverNetworkPolicy] = true
-	}
-
 	if c.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled == nil {
 		c.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled = pointer.BoolPtr(true)
 	}
@@ -178,6 +170,21 @@ func (h *AdmissionHandler) applyDefaults(c *kubermaticv1.Cluster) error {
 	// Always enable external CCM
 	if c.Spec.Cloud.Anexia != nil || c.Spec.Cloud.Kubevirt != nil {
 		c.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] = true
+	}
+
+	// Ensure default enabled features
+	if c.Spec.Features == nil {
+		c.Spec.Features = map[string]bool{}
+	}
+
+	// Network policies for Apiserver are deployed by default
+	if _, ok := c.Spec.Features[kubermaticv1.ApiserverNetworkPolicy]; !ok {
+		c.Spec.Features[kubermaticv1.ApiserverNetworkPolicy] = true
+	}
+
+	// Network policies for kube-system are deployed by default
+	if _, ok := c.Spec.Features[kubermaticv1.KubeSystemNetworkPolicies]; !ok {
+		c.Spec.Features[kubermaticv1.KubeSystemNetworkPolicies] = true
 	}
 
 	return nil
