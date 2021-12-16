@@ -30,6 +30,7 @@ import (
 	kubevirtcli "k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt/kubevirtcli/client/versioned"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,19 +39,8 @@ import (
 	kubevirtv1 "kubevirt.io/api/core/v1"
 )
 
-const (
-	// soon the namespace will be changed to the cluster namespace
-	kubevirtns = "default"
-)
-
 var NewKubevirtClientSet = func(kubeconfig string) (kubevirtcli.Interface, kubernetes.Interface, error) {
 	config, err := base64.StdEncoding.DecodeString(kubeconfig)
-	if err != nil {
-		// if the decoding failed, the kubeconfig is sent already decoded without the need of decoding it,
-		// for example the value has been read from Vault during the ci tests, which is saved as json format.
-		config = []byte(kubeconfig)
-	}
-
 	clientConfig, err := clientcmd.RESTConfigFromKubeConfig(config)
 	if err != nil {
 		return nil, nil, err
@@ -103,7 +93,7 @@ func KubevirtVmiPresets(kubeconfig string) (apiv2.VirtualMachineInstancePresetLi
 	if err != nil {
 		return nil, err
 	}
-	vmipresetlist, err := kvclient.KubevirtV1().VirtualMachineInstancePresets(kubevirtns).List(context.Background(), v1.ListOptions{})
+	vmipresetlist, err := kvclient.KubevirtV1().VirtualMachineInstancePresets(metav1.NamespaceDefault).List(context.Background(), v1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -157,12 +147,11 @@ func newAPIVirtualMachineInstancePreset(vmiPreset *kubevirtv1.VirtualMachineInst
 }
 
 func KubevirtVmiPreset(kubeconfig, presetName string) (*apiv2.VirtualMachineInstancePreset, error) {
-
 	kvclient, _, err := NewKubevirtClientSet(kubeconfig)
 	if err != nil {
 		return nil, err
 	}
-	vmiPreset, err := kvclient.KubevirtV1().VirtualMachineInstancePresets(kubevirtns).Get(context.Background(), presetName, v1.GetOptions{})
+	vmiPreset, err := kvclient.KubevirtV1().VirtualMachineInstancePresets(metav1.NamespaceDefault).Get(context.Background(), presetName, v1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

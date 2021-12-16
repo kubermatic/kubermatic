@@ -102,8 +102,6 @@ type KubevirtStorageClassNoCredentialReq struct {
 	StorageClass string `json:"storageclass_id"`
 }
 
-// LIST VmiPreset
-
 // KubevirtVmiPresetsEndpoint handles the request to list available KubevirtVmiPresets (provided credentials)
 func KubevirtVmiPresetsEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
