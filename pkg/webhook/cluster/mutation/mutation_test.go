@@ -29,10 +29,10 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
-	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/test"
+	"k8c.io/kubermatic/v2/pkg/version/cni"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -307,7 +307,7 @@ func TestHandle(t *testing.T) {
 				defaultPatches,
 				jsonpatch.NewOperation("add", "/spec/cniPlugin", map[string]interface{}{
 					"type":    "cilium",
-					"version": defaulting.DefaultCNIPluginVersions[kubermaticv1.CNIPluginTypeCilium],
+					"version": cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCilium),
 				}),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/services/cidrBlocks", []interface{}{"10.240.32.0/20"}),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/pods/cidrBlocks", []interface{}{"10.241.0.0/16"}),
