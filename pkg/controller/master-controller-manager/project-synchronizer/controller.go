@@ -19,7 +19,6 @@ package projectsynchronizer
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"go.uber.org/zap"
 
@@ -45,10 +44,11 @@ const (
 )
 
 type reconciler struct {
-	log          *zap.SugaredLogger
-	recorder     record.EventRecorder
-	masterClient ctrlruntimeclient.Client
-	seedClients  map[string]ctrlruntimeclient.Client
+	log             *zap.SugaredLogger
+	recorder        record.EventRecorder
+	masterClient    ctrlruntimeclient.Client
+	masterAPIClient ctrlruntimeclient.Reader
+	seedClients     map[string]ctrlruntimeclient.Client
 }
 
 func Add(
@@ -59,17 +59,15 @@ func Add(
 ) error {
 
 	r := &reconciler{
-		log:          log.Named(ControllerName),
-		recorder:     masterManager.GetEventRecorderFor(ControllerName),
-		masterClient: masterManager.GetClient(),
-		seedClients:  map[string]ctrlruntimeclient.Client{},
+		log:             log.Named(ControllerName),
+		recorder:        masterManager.GetEventRecorderFor(ControllerName),
+		masterClient:    masterManager.GetClient(),
+		masterAPIClient: masterManager.GetAPIReader(),
+		seedClients:     map[string]ctrlruntimeclient.Client{},
 	}
 
 	for seedName, seedManager := range seedManagers {
-		// skip case when master/seed is on the same cluster as we could have races
-		if seedManager.GetConfig() != nil && masterManager.GetConfig() != nil && !strings.EqualFold(seedManager.GetConfig().Host, masterManager.GetConfig().Host) {
-			r.seedClients[seedName] = seedManager.GetClient()
-		}
+		r.seedClients[seedName] = seedManager.GetClient()
 	}
 
 	c, err := controller.New(ControllerName, masterManager, controller.Options{Reconciler: r, MaxConcurrentReconciles: numWorkers})
@@ -99,7 +97,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	log := r.log.With("request", request)
 
 	project := &kubermaticv1.Project{}
-	if err := r.masterClient.Get(ctx, request.NamespacedName, project); err != nil {
+	if err := r.masterAPIClient.Get(ctx, request.NamespacedName, project); err != nil {
 		return reconcile.Result{}, ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
