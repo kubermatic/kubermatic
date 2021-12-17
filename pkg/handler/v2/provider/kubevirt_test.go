@@ -80,10 +80,6 @@ var (
 	credentialns  = "ns"
 )
 
-var (
-	presetDefaultSmall1Content = `{"name":"preset-default-small-1","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"selector":{},"domain":{"resources":{"limits":{"cpu":"456","memory":"345"},"requests":{"cpu":"234","memory":"123"}},"cpu":{"cores":2},"devices":{"disks":[{"name":"datavolumedisk","disk":{"bus":"virtio"}},{"name":"cloudinitdisk","disk":{"bus":"virtio"}}]}}}}`
-)
-
 func getRuntimeObjects(objs ...ctrlruntimeclient.Object) []runtime.Object {
 	runtimeObjects := []runtime.Object{}
 	for _, obj := range objs {
@@ -333,8 +329,6 @@ func TestListPresetNoCredentialsEndpoint(t *testing.T) {
 }
 
 var (
-	storageClass1Content = `{"name":"storageclass-1","creationTimestamp":"0001-01-01T00:00:00Z","provisioner":"","reclaimPolicy":"Delete"}`
-
 	reclaimPolicy = v1.PersistentVolumeReclaimDelete
 	storageClass1 = storagev1.StorageClass{
 		ObjectMeta: metav1.ObjectMeta{

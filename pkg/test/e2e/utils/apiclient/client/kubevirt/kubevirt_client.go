@@ -40,7 +40,7 @@ type ClientService interface {
 }
 
 /*
-  ListKubeVirtVMIPresets lists available kubevirt virtual machine instance preset
+  ListKubeVirtVMIPresets lists available kube virt virtual machine instance preset
 */
 func (a *Client) ListKubeVirtVMIPresets(params *ListKubeVirtVMIPresetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListKubeVirtVMIPresetsOK, error) {
 	// TODO: Validate the params before sending
