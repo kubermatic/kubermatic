@@ -142,7 +142,7 @@ func NewCredentialSecret(name, namespace string) *corev1.Secret {
 	}
 }
 
-func GenKubevirtKubermaticPreset() *kubermaticv1.Preset {
+func GenKubeVirtKubermaticPreset() *kubermaticv1.Preset {
 	return &kubermaticv1.Preset{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "kubermatic-preset",
@@ -179,8 +179,8 @@ func TestListPresetEndpoint(t *testing.T) {
 		{
 			Name:               "scenario 1: preset list- kubevirt kubeconfig provided",
 			HTTPRequestMethod:  "GET",
-			HTTPRequestURL:     "/api/v2/providers/kubevirt/vmipresets",
-			HTTPRequestHeaders: []KeyValue{{Key: "KvKubeconfig", Value: fakeKvConfig}},
+			HTTPRequestURL:     "/api/v2/providers/kubevirt/vmflavors",
+			HTTPRequestHeaders: []KeyValue{{Key: "Kubeconfig", Value: fakeKvConfig}},
 			Body:               ``,
 			HTTPStatus:         http.StatusOK,
 			ExistingKubermaticObjects: []ctrlruntimeclient.Object{
@@ -193,13 +193,13 @@ func TestListPresetEndpoint(t *testing.T) {
 		{
 			Name:               "scenario 2: preset list- kubevirt kubeconfig from kubermatic preset",
 			HTTPRequestMethod:  "GET",
-			HTTPRequestURL:     "/api/v2/providers/kubevirt/vmipresets",
+			HTTPRequestURL:     "/api/v2/providers/kubevirt/vmflavors",
 			HTTPRequestHeaders: []KeyValue{{Key: "Credential", Value: "kubermatic-preset"}},
 			Body:               ``,
 			HTTPStatus:         http.StatusOK,
 			ExistingKubermaticObjects: []ctrlruntimeclient.Object{
 				test.GenDefaultProject(),
-				GenKubevirtKubermaticPreset(),
+				GenKubeVirtKubermaticPreset(),
 			},
 			ExistingKubevirtObjects: []ctrlruntimeclient.Object{&presetDefaultSmall1, &presetDefaultSmall2, &presetOtherSmall},
 			ExistingAPIUser:         *test.GenDefaultAPIUser(),
@@ -210,7 +210,7 @@ func TestListPresetEndpoint(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
 
-			providercommon.NewKubevirtClientSet = func(kubeconfig string) (kubevirtv1.Interface, kubernetesclientset.Interface, error) {
+			providercommon.NewKubeVirtClientSet = func(kubeconfig string) (kubevirtv1.Interface, kubernetesclientset.Interface, error) {
 				return kubevirtclifake.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtObjects...)...), fakerestclient.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtK8sObjects...)...), nil
 			}
 
@@ -255,7 +255,7 @@ func TestListPresetNoCredentialsEndpoint(t *testing.T) {
 		{
 			Name:              "scenario 1: preset list- kubevirt kubeconfig from cluster",
 			HTTPRequestMethod: "GET",
-			HTTPRequestURL:    fmt.Sprintf("/api/v2/projects/%s/clusters/%s/providers/kubevirt/vmipresets", test.GenDefaultProject().Name, clusterId),
+			HTTPRequestURL:    fmt.Sprintf("/api/v2/projects/%s/clusters/%s/providers/kubevirt/vmflavors", test.GenDefaultProject().Name, clusterId),
 			Body:              ``,
 			HTTPStatus:        http.StatusOK,
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
@@ -278,7 +278,7 @@ func TestListPresetNoCredentialsEndpoint(t *testing.T) {
 		{
 			Name:              "scenario 2: preset list- kubevirt kubeconfig from credential reference (secret)",
 			HTTPRequestMethod: "GET",
-			HTTPRequestURL:    fmt.Sprintf("/api/v2/projects/%s/clusters/%s/providers/kubevirt/vmipresets", test.GenDefaultProject().Name, clusterId),
+			HTTPRequestURL:    fmt.Sprintf("/api/v2/projects/%s/clusters/%s/providers/kubevirt/vmflavors", test.GenDefaultProject().Name, clusterId),
 			Body:              ``,
 			HTTPStatus:        http.StatusOK,
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
@@ -306,180 +306,7 @@ func TestListPresetNoCredentialsEndpoint(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
 
-			providercommon.NewKubevirtClientSet = func(kubeconfig string) (kubevirtv1.Interface, kubernetesclientset.Interface, error) {
-				return kubevirtclifake.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtObjects...)...), fakerestclient.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtK8sObjects...)...), nil
-			}
-
-			req := httptest.NewRequest(tc.HTTPRequestMethod, tc.HTTPRequestURL, strings.NewReader(tc.Body))
-			for _, h := range tc.HTTPRequestHeaders {
-				req.Header.Add(h.Key, h.Value)
-			}
-			res := httptest.NewRecorder()
-			ep, err := test.CreateTestEndpoint(tc.ExistingAPIUser, tc.ExistingK8sObjects, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
-			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
-			}
-
-			// act
-			ep.ServeHTTP(res, req)
-
-			// validate
-			if res.Code != tc.HTTPStatus {
-				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
-			}
-			test.CompareWithResult(t, res, tc.ExpectedResponse)
-		})
-	}
-}
-
-func TestGetPresetEndpoint(t *testing.T) {
-	testcases := []struct {
-		Name                       string
-		HTTPRequestMethod          string
-		HTTPRequestURL             string
-		HTTPRequestHeaders         []KeyValue
-		Body                       string
-		ExpectedResponse           string
-		HTTPStatus                 int
-		ExistingKubermaticObjects  []ctrlruntimeclient.Object
-		ExistingKubevirtObjects    []ctrlruntimeclient.Object
-		ExistingKubevirtK8sObjects []ctrlruntimeclient.Object
-		ExistingK8sObjects         []ctrlruntimeclient.Object
-		ExistingAPIUser            apiv1.User
-	}{
-		// KUBEVIRT PRESET GET
-		{
-			Name:               "scenario 1: preset content- kubevirt kubeconfig provided",
-			HTTPRequestMethod:  "GET",
-			HTTPRequestURL:     fmt.Sprintf("/api/v2/providers/kubevirt/vmipresets/%s", presetDefaultSmall1.Name),
-			HTTPRequestHeaders: []KeyValue{{Key: "KvKubeconfig", Value: fakeKvConfig}},
-			Body:               ``,
-			HTTPStatus:         http.StatusOK,
-			ExistingKubermaticObjects: []ctrlruntimeclient.Object{
-				test.GenDefaultProject(),
-			},
-			ExistingKubevirtObjects: []ctrlruntimeclient.Object{&presetDefaultSmall1, &presetDefaultSmall2, &presetOtherSmall},
-			ExistingAPIUser:         *test.GenDefaultAPIUser(),
-			ExpectedResponse:        presetDefaultSmall1Content,
-		},
-		{
-			Name:               "scenario 2: preset content- kubevirt kubeconfig from kubermatic preset",
-			HTTPRequestMethod:  "GET",
-			HTTPRequestURL:     fmt.Sprintf("/api/v2/providers/kubevirt/vmipresets/%s", presetDefaultSmall1.Name),
-			HTTPRequestHeaders: []KeyValue{{Key: "Credential", Value: "kubermatic-preset"}},
-			Body:               ``,
-			HTTPStatus:         http.StatusOK,
-			ExistingKubermaticObjects: []ctrlruntimeclient.Object{
-				test.GenDefaultProject(),
-				GenKubevirtKubermaticPreset(),
-			},
-			ExistingKubevirtObjects: []ctrlruntimeclient.Object{&presetDefaultSmall1, &presetDefaultSmall2, &presetOtherSmall},
-			ExistingAPIUser:         *test.GenDefaultAPIUser(),
-			ExpectedResponse:        presetDefaultSmall1Content,
-		},
-	}
-
-	for _, tc := range testcases {
-		t.Run(tc.Name, func(t *testing.T) {
-
-			providercommon.NewKubevirtClientSet = func(kubeconfig string) (kubevirtv1.Interface, kubernetesclientset.Interface, error) {
-				return kubevirtclifake.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtObjects...)...), fakerestclient.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtK8sObjects...)...), nil
-			}
-
-			req := httptest.NewRequest(tc.HTTPRequestMethod, tc.HTTPRequestURL, strings.NewReader(tc.Body))
-			for _, h := range tc.HTTPRequestHeaders {
-				req.Header.Add(h.Key, h.Value)
-			}
-			res := httptest.NewRecorder()
-			ep, err := test.CreateTestEndpoint(tc.ExistingAPIUser, tc.ExistingK8sObjects, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
-			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
-			}
-
-			// act
-			ep.ServeHTTP(res, req)
-
-			// validate
-			if res.Code != tc.HTTPStatus {
-				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
-			}
-			test.CompareWithResult(t, res, tc.ExpectedResponse)
-		})
-	}
-}
-
-func TestGetPresetNoCredentialsEndpoint(t *testing.T) {
-	testcases := []struct {
-		Name                       string
-		HTTPRequestMethod          string
-		HTTPRequestURL             string
-		HTTPRequestHeaders         []KeyValue
-		Body                       string
-		ExpectedResponse           string
-		HTTPStatus                 int
-		ExistingKubermaticObjects  []ctrlruntimeclient.Object
-		ExistingKubevirtObjects    []ctrlruntimeclient.Object
-		ExistingKubevirtK8sObjects []ctrlruntimeclient.Object
-		ExistingK8sObjects         []ctrlruntimeclient.Object
-		ExistingAPIUser            apiv1.User
-	}{
-		// KUBEVIRT PRESET GET No Credentials
-		{
-			Name:               "scenario 1: preset content- kubevirt kubeconfig from cluster",
-			HTTPRequestMethod:  "GET",
-			HTTPRequestURL:     fmt.Sprintf("/api/v2/projects/%s/clusters/%s/providers/kubevirt/vmipresets/%s", test.GenDefaultProject().Name, clusterId, presetDefaultSmall1.Name),
-			HTTPRequestHeaders: []KeyValue{{Key: "Credential", Value: "kubermatic-preset"}},
-			Body:               ``,
-			HTTPStatus:         http.StatusOK,
-			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
-				test.GenTestSeed(),
-				func() *kubermaticv1.Cluster {
-					cluster := test.GenCluster(clusterId, clusterName, test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
-					cluster.Spec.Cloud = kubermaticv1.CloudSpec{
-						DatacenterName: "KubevirtDC",
-						Kubevirt: &kubermaticv1.KubevirtCloudSpec{
-							Kubeconfig: fakeKvConfig,
-						},
-					}
-					return cluster
-				}(),
-			),
-			ExistingKubevirtObjects: []ctrlruntimeclient.Object{&presetDefaultSmall1, &presetDefaultSmall2, &presetOtherSmall},
-			ExistingAPIUser:         *test.GenDefaultAPIUser(),
-			ExpectedResponse:        presetDefaultSmall1Content,
-		},
-		{
-			Name:              "scenario 2: preset list- kubevirt kubeconfig from credential reference (secret)",
-			HTTPRequestMethod: "GET",
-			HTTPRequestURL:    fmt.Sprintf("/api/v2/projects/%s/clusters/%s/providers/kubevirt/vmipresets/%s", test.GenDefaultProject().Name, clusterId, presetDefaultSmall1.Name),
-			Body:              ``,
-			HTTPStatus:        http.StatusOK,
-			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
-				test.GenTestSeed(),
-				func() *kubermaticv1.Cluster {
-					cluster := test.GenCluster(clusterId, clusterName, test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
-					cluster.Spec.Cloud = kubermaticv1.CloudSpec{
-						DatacenterName: "KubevirtDC",
-						Kubevirt: &kubermaticv1.KubevirtCloudSpec{
-							CredentialsReference: &types.GlobalSecretKeySelector{
-								ObjectReference: corev1.ObjectReference{Name: credentialref, Namespace: credentialns},
-							},
-						},
-					}
-					return cluster
-				}(),
-			),
-			ExistingK8sObjects:      []ctrlruntimeclient.Object{NewCredentialSecret(credentialref, credentialns)},
-			ExistingKubevirtObjects: []ctrlruntimeclient.Object{&presetDefaultSmall1, &presetDefaultSmall2, &presetOtherSmall},
-			ExistingAPIUser:         *test.GenDefaultAPIUser(),
-			ExpectedResponse:        presetDefaultSmall1Content,
-		},
-	}
-
-	for _, tc := range testcases {
-		t.Run(tc.Name, func(t *testing.T) {
-
-			providercommon.NewKubevirtClientSet = func(kubeconfig string) (kubevirtv1.Interface, kubernetesclientset.Interface, error) {
+			providercommon.NewKubeVirtClientSet = func(kubeconfig string) (kubevirtv1.Interface, kubernetesclientset.Interface, error) {
 				return kubevirtclifake.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtObjects...)...), fakerestclient.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtK8sObjects...)...), nil
 			}
 
@@ -544,7 +371,7 @@ func TestListStorageClassEndpoint(t *testing.T) {
 			Name:               "scenario 1: list storage classes- kubevirt kubeconfig provided",
 			HTTPRequestMethod:  "GET",
 			HTTPRequestURL:     "/api/v2/providers/kubevirt/storageclasses",
-			HTTPRequestHeaders: []KeyValue{{Key: "KvKubeconfig", Value: fakeKvConfig}},
+			HTTPRequestHeaders: []KeyValue{{Key: "Kubeconfig", Value: fakeKvConfig}},
 			Body:               ``,
 			HTTPStatus:         http.StatusOK,
 			ExistingKubermaticObjects: []ctrlruntimeclient.Object{
@@ -563,7 +390,7 @@ func TestListStorageClassEndpoint(t *testing.T) {
 			HTTPStatus:         http.StatusOK,
 			ExistingKubermaticObjects: []ctrlruntimeclient.Object{
 				test.GenDefaultProject(),
-				GenKubevirtKubermaticPreset(),
+				GenKubeVirtKubermaticPreset(),
 			},
 			ExistingKubevirtK8sObjects: []ctrlruntimeclient.Object{&storageClass1, &storageClass2},
 			ExistingAPIUser:            *test.GenDefaultAPIUser(),
@@ -574,7 +401,7 @@ func TestListStorageClassEndpoint(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
 
-			providercommon.NewKubevirtClientSet = func(kubeconfig string) (kubevirtv1.Interface, kubernetesclientset.Interface, error) {
+			providercommon.NewKubeVirtClientSet = func(kubeconfig string) (kubevirtv1.Interface, kubernetesclientset.Interface, error) {
 				return kubevirtclifake.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtObjects...)...), fakerestclient.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtK8sObjects...)...), nil
 			}
 
@@ -600,7 +427,7 @@ func TestListStorageClassEndpoint(t *testing.T) {
 	}
 }
 
-func TestListStorageClassNoCredentailsEndpoint(t *testing.T) {
+func TestListStorageClassNoCredentialsEndpoint(t *testing.T) {
 	testcases := []struct {
 		Name                       string
 		HTTPRequestMethod          string
@@ -672,181 +499,7 @@ func TestListStorageClassNoCredentailsEndpoint(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
 
-			providercommon.NewKubevirtClientSet = func(kubeconfig string) (kubevirtv1.Interface, kubernetesclientset.Interface, error) {
-				return kubevirtclifake.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtObjects...)...), fakerestclient.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtK8sObjects...)...), nil
-			}
-
-			req := httptest.NewRequest(tc.HTTPRequestMethod, tc.HTTPRequestURL, strings.NewReader(tc.Body))
-			for _, h := range tc.HTTPRequestHeaders {
-				req.Header.Add(h.Key, h.Value)
-			}
-			res := httptest.NewRecorder()
-			ep, err := test.CreateTestEndpoint(tc.ExistingAPIUser, tc.ExistingK8sObjects, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
-			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
-			}
-
-			// act
-			ep.ServeHTTP(res, req)
-
-			// validate
-			if res.Code != tc.HTTPStatus {
-				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
-			}
-			test.CompareWithResult(t, res, tc.ExpectedResponse)
-		})
-	}
-}
-
-func TestGetStorageClassEndpoint(t *testing.T) {
-	testcases := []struct {
-		Name                       string
-		HTTPRequestMethod          string
-		HTTPRequestURL             string
-		HTTPRequestHeaders         []KeyValue
-		Body                       string
-		ExpectedResponse           string
-		HTTPStatus                 int
-		ExistingKubermaticObjects  []ctrlruntimeclient.Object
-		ExistingKubevirtObjects    []ctrlruntimeclient.Object
-		ExistingKubevirtK8sObjects []ctrlruntimeclient.Object
-		ExistingK8sObjects         []ctrlruntimeclient.Object
-		ExistingAPIUser            apiv1.User
-	}{
-		// GET Storage class
-		{
-			Name:               "scenario 1: get storage class - kubevirt kubeconfig provided",
-			HTTPRequestMethod:  "GET",
-			HTTPRequestURL:     fmt.Sprintf("/api/v2/providers/kubevirt/storageclasses/%s", storageClass1.Name),
-			HTTPRequestHeaders: []KeyValue{{Key: "KvKubeconfig", Value: fakeKvConfig}},
-			Body:               ``,
-			HTTPStatus:         http.StatusOK,
-			ExistingKubermaticObjects: []ctrlruntimeclient.Object{
-				test.GenDefaultProject(),
-			},
-			ExistingKubevirtK8sObjects: []ctrlruntimeclient.Object{&storageClass1, &storageClass2},
-			ExistingAPIUser:            *test.GenDefaultAPIUser(),
-			ExpectedResponse:           storageClass1Content,
-		},
-		{
-			Name:               "scenario 2: get storage class - kubevirt from kubermatic preset",
-			HTTPRequestMethod:  "GET",
-			HTTPRequestURL:     fmt.Sprintf("/api/v2/providers/kubevirt/storageclasses/%s", storageClass1.Name),
-			HTTPRequestHeaders: []KeyValue{{Key: "Credential", Value: "kubermatic-preset"}},
-			Body:               ``,
-			HTTPStatus:         http.StatusOK,
-			ExistingKubermaticObjects: []ctrlruntimeclient.Object{
-				test.GenDefaultProject(),
-				GenKubevirtKubermaticPreset(),
-			},
-			ExistingKubevirtK8sObjects: []ctrlruntimeclient.Object{&storageClass1, &storageClass2},
-			ExistingAPIUser:            *test.GenDefaultAPIUser(),
-			ExpectedResponse:           storageClass1Content,
-		},
-	}
-
-	for _, tc := range testcases {
-		t.Run(tc.Name, func(t *testing.T) {
-
-			providercommon.NewKubevirtClientSet = func(kubeconfig string) (kubevirtv1.Interface, kubernetesclientset.Interface, error) {
-				return kubevirtclifake.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtObjects...)...), fakerestclient.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtK8sObjects...)...), nil
-			}
-
-			req := httptest.NewRequest(tc.HTTPRequestMethod, tc.HTTPRequestURL, strings.NewReader(tc.Body))
-			for _, h := range tc.HTTPRequestHeaders {
-				req.Header.Add(h.Key, h.Value)
-			}
-			res := httptest.NewRecorder()
-			ep, err := test.CreateTestEndpoint(tc.ExistingAPIUser, tc.ExistingK8sObjects, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
-			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
-			}
-
-			// act
-			ep.ServeHTTP(res, req)
-
-			// validate
-			if res.Code != tc.HTTPStatus {
-				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
-			}
-			test.CompareWithResult(t, res, tc.ExpectedResponse)
-		})
-	}
-}
-
-func TestGetStorageClassNoCredentialsEndpoint(t *testing.T) {
-	testcases := []struct {
-		Name                       string
-		HTTPRequestMethod          string
-		HTTPRequestURL             string
-		HTTPRequestHeaders         []KeyValue
-		Body                       string
-		ExpectedResponse           string
-		HTTPStatus                 int
-		ExistingKubermaticObjects  []ctrlruntimeclient.Object
-		ExistingKubevirtObjects    []ctrlruntimeclient.Object
-		ExistingKubevirtK8sObjects []ctrlruntimeclient.Object
-		ExistingK8sObjects         []ctrlruntimeclient.Object
-		ExistingAPIUser            apiv1.User
-	}{
-		// GET Storage class No Credentials
-		{
-			Name:               "scenario 1: get storage class- kubevirt kubeconfig from cluster",
-			HTTPRequestMethod:  "GET",
-			HTTPRequestURL:     fmt.Sprintf("/api/v2/projects/%s/clusters/%s/providers/kubevirt/storageclasses/%s", test.GenDefaultProject().Name, clusterId, storageClass1.Name),
-			HTTPRequestHeaders: []KeyValue{{Key: "Credential", Value: "kubermatic-preset"}},
-			Body:               ``,
-			HTTPStatus:         http.StatusOK,
-			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
-				test.GenTestSeed(),
-				func() *kubermaticv1.Cluster {
-					cluster := test.GenCluster(clusterId, clusterName, test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
-					cluster.Spec.Cloud = kubermaticv1.CloudSpec{
-						DatacenterName: "KubevirtDC",
-						Kubevirt: &kubermaticv1.KubevirtCloudSpec{
-							Kubeconfig: fakeKvConfig,
-						},
-					}
-					return cluster
-				}(),
-			),
-			ExistingKubevirtK8sObjects: []ctrlruntimeclient.Object{&storageClass1, &storageClass2},
-			ExistingAPIUser:            *test.GenDefaultAPIUser(),
-			ExpectedResponse:           storageClass1Content,
-		},
-		{
-			Name:               "scenario 2: list storage classes- kubevirt kubeconfig from credential reference (secret)",
-			HTTPRequestMethod:  "GET",
-			HTTPRequestURL:     fmt.Sprintf("/api/v2/projects/%s/clusters/%s/providers/kubevirt/storageclasses/%s", test.GenDefaultProject().Name, clusterId, storageClass1.Name),
-			HTTPRequestHeaders: []KeyValue{{Key: "Credential", Value: "kubermatic-preset"}},
-			Body:               ``,
-			HTTPStatus:         http.StatusOK,
-			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
-				test.GenTestSeed(),
-				func() *kubermaticv1.Cluster {
-					cluster := test.GenCluster(clusterId, clusterName, test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
-					cluster.Spec.Cloud = kubermaticv1.CloudSpec{
-						DatacenterName: "KubevirtDC",
-						Kubevirt: &kubermaticv1.KubevirtCloudSpec{
-							CredentialsReference: &types.GlobalSecretKeySelector{
-								ObjectReference: corev1.ObjectReference{Name: credentialref, Namespace: credentialns},
-							},
-						},
-					}
-					return cluster
-				}(),
-			),
-			ExistingKubevirtK8sObjects: []ctrlruntimeclient.Object{&storageClass1, &storageClass2},
-			ExistingK8sObjects:         []ctrlruntimeclient.Object{NewCredentialSecret(credentialref, credentialns)},
-			ExistingAPIUser:            *test.GenDefaultAPIUser(),
-			ExpectedResponse:           storageClass1Content,
-		},
-	}
-
-	for _, tc := range testcases {
-		t.Run(tc.Name, func(t *testing.T) {
-
-			providercommon.NewKubevirtClientSet = func(kubeconfig string) (kubevirtv1.Interface, kubernetesclientset.Interface, error) {
+			providercommon.NewKubeVirtClientSet = func(kubeconfig string) (kubevirtv1.Interface, kubernetesclientset.Interface, error) {
 				return kubevirtclifake.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtObjects...)...), fakerestclient.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtK8sObjects...)...), nil
 			}
 

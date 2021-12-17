@@ -62,8 +62,8 @@ type ListKubevirtStorageClassesParams struct {
 	// Credential.
 	Credential *string
 
-	// KvKubeconfig.
-	KvKubeconfig *string
+	// Kubeconfig.
+	Kubeconfig *string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -129,15 +129,15 @@ func (o *ListKubevirtStorageClassesParams) SetCredential(credential *string) {
 	o.Credential = credential
 }
 
-// WithKvKubeconfig adds the kvKubeconfig to the list kubevirt storage classes params
-func (o *ListKubevirtStorageClassesParams) WithKvKubeconfig(kvKubeconfig *string) *ListKubevirtStorageClassesParams {
-	o.SetKvKubeconfig(kvKubeconfig)
+// WithKubeconfig adds the kubeconfig to the list kubevirt storage classes params
+func (o *ListKubevirtStorageClassesParams) WithKubeconfig(kubeconfig *string) *ListKubevirtStorageClassesParams {
+	o.SetKubeconfig(kubeconfig)
 	return o
 }
 
-// SetKvKubeconfig adds the kvKubeconfig to the list kubevirt storage classes params
-func (o *ListKubevirtStorageClassesParams) SetKvKubeconfig(kvKubeconfig *string) {
-	o.KvKubeconfig = kvKubeconfig
+// SetKubeconfig adds the kubeconfig to the list kubevirt storage classes params
+func (o *ListKubevirtStorageClassesParams) SetKubeconfig(kubeconfig *string) {
+	o.Kubeconfig = kubeconfig
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -156,10 +156,10 @@ func (o *ListKubevirtStorageClassesParams) WriteToRequest(r runtime.ClientReques
 		}
 	}
 
-	if o.KvKubeconfig != nil {
+	if o.Kubeconfig != nil {
 
-		// header param KvKubeconfig
-		if err := r.SetHeaderParam("KvKubeconfig", *o.KvKubeconfig); err != nil {
+		// header param Kubeconfig
+		if err := r.SetHeaderParam("Kubeconfig", *o.Kubeconfig); err != nil {
 			return err
 		}
 	}

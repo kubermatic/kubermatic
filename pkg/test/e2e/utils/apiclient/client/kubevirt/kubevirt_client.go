@@ -28,42 +28,34 @@ type ClientOption func(*runtime.ClientOperation)
 
 // ClientService is the interface for Client methods
 type ClientService interface {
-	GetKubevirtStorageClass(params *GetKubevirtStorageClassParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetKubevirtStorageClassOK, error)
+	ListKubeVirtVMIPresets(params *ListKubeVirtVMIPresetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListKubeVirtVMIPresetsOK, error)
 
-	GetKubevirtStorageClassNoCredentials(params *GetKubevirtStorageClassNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetKubevirtStorageClassNoCredentialsOK, error)
-
-	GetKubevirtVmiPreset(params *GetKubevirtVmiPresetParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetKubevirtVmiPresetOK, error)
-
-	GetKubevirtVmiPresetNoCredentials(params *GetKubevirtVmiPresetNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetKubevirtVmiPresetNoCredentialsOK, error)
+	ListKubeVirtVMIPresetsNoCredentials(params *ListKubeVirtVMIPresetsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListKubeVirtVMIPresetsNoCredentialsOK, error)
 
 	ListKubevirtStorageClasses(params *ListKubevirtStorageClassesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListKubevirtStorageClassesOK, error)
 
 	ListKubevirtStorageClassesNoCredentials(params *ListKubevirtStorageClassesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListKubevirtStorageClassesNoCredentialsOK, error)
 
-	ListKubevirtVmiPresets(params *ListKubevirtVmiPresetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListKubevirtVmiPresetsOK, error)
-
-	ListKubevirtVmiPresetsNoCredentials(params *ListKubevirtVmiPresetsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListKubevirtVmiPresetsNoCredentialsOK, error)
-
 	SetTransport(transport runtime.ClientTransport)
 }
 
 /*
-  GetKubevirtStorageClass gets a k8s storage class in the kubevirt cluster
+  ListKubeVirtVMIPresets lists available kubevirt virtual machine instance preset
 */
-func (a *Client) GetKubevirtStorageClass(params *GetKubevirtStorageClassParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetKubevirtStorageClassOK, error) {
+func (a *Client) ListKubeVirtVMIPresets(params *ListKubeVirtVMIPresetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListKubeVirtVMIPresetsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewGetKubevirtStorageClassParams()
+		params = NewListKubeVirtVMIPresetsParams()
 	}
 	op := &runtime.ClientOperation{
-		ID:                 "getKubevirtStorageClass",
+		ID:                 "listKubeVirtVMIPresets",
 		Method:             "GET",
-		PathPattern:        "/api/v2/providers/kubevirt/storageclasses/{storageclass_id}",
+		PathPattern:        "/api/v2/providers/kubevirt/vmflavors",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
 		Params:             params,
-		Reader:             &GetKubevirtStorageClassReader{formats: a.formats},
+		Reader:             &ListKubeVirtVMIPresetsReader{formats: a.formats},
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
@@ -76,32 +68,32 @@ func (a *Client) GetKubevirtStorageClass(params *GetKubevirtStorageClassParams, 
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetKubevirtStorageClassOK)
+	success, ok := result.(*ListKubeVirtVMIPresetsOK)
 	if ok {
 		return success, nil
 	}
 	// unexpected success response
-	unexpectedSuccess := result.(*GetKubevirtStorageClassDefault)
+	unexpectedSuccess := result.(*ListKubeVirtVMIPresetsDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-  GetKubevirtStorageClassNoCredentials Get a Storage Class
+  ListKubeVirtVMIPresetsNoCredentials Lists available VirtualMachineInstancePreset
 */
-func (a *Client) GetKubevirtStorageClassNoCredentials(params *GetKubevirtStorageClassNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetKubevirtStorageClassNoCredentialsOK, error) {
+func (a *Client) ListKubeVirtVMIPresetsNoCredentials(params *ListKubeVirtVMIPresetsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListKubeVirtVMIPresetsNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewGetKubevirtStorageClassNoCredentialsParams()
+		params = NewListKubeVirtVMIPresetsNoCredentialsParams()
 	}
 	op := &runtime.ClientOperation{
-		ID:                 "getKubevirtStorageClassNoCredentials",
+		ID:                 "listKubeVirtVMIPresetsNoCredentials",
 		Method:             "GET",
-		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/kubevirt/storageclasses/{storageclass_id}",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/kubevirt/vmflavors",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
 		Params:             params,
-		Reader:             &GetKubevirtStorageClassNoCredentialsReader{formats: a.formats},
+		Reader:             &ListKubeVirtVMIPresetsNoCredentialsReader{formats: a.formats},
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
@@ -114,88 +106,12 @@ func (a *Client) GetKubevirtStorageClassNoCredentials(params *GetKubevirtStorage
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetKubevirtStorageClassNoCredentialsOK)
+	success, ok := result.(*ListKubeVirtVMIPresetsNoCredentialsOK)
 	if ok {
 		return success, nil
 	}
 	// unexpected success response
-	unexpectedSuccess := result.(*GetKubevirtStorageClassNoCredentialsDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
-}
-
-/*
-  GetKubevirtVmiPreset gets a kubevirt virtual machine instance preset
-*/
-func (a *Client) GetKubevirtVmiPreset(params *GetKubevirtVmiPresetParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetKubevirtVmiPresetOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewGetKubevirtVmiPresetParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "getKubevirtVmiPreset",
-		Method:             "GET",
-		PathPattern:        "/api/v2/providers/kubevirt/vmipresets/{preset_id}",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &GetKubevirtVmiPresetReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*GetKubevirtVmiPresetOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetKubevirtVmiPresetDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
-}
-
-/*
-  GetKubevirtVmiPresetNoCredentials Get a VirtualMachineInstancePreset
-*/
-func (a *Client) GetKubevirtVmiPresetNoCredentials(params *GetKubevirtVmiPresetNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetKubevirtVmiPresetNoCredentialsOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewGetKubevirtVmiPresetNoCredentialsParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "getKubevirtVmiPresetNoCredentials",
-		Method:             "GET",
-		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/kubevirt/vmipresets/{preset_id}",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &GetKubevirtVmiPresetNoCredentialsReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*GetKubevirtVmiPresetNoCredentialsOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetKubevirtVmiPresetNoCredentialsDefault)
+	unexpectedSuccess := result.(*ListKubeVirtVMIPresetsNoCredentialsDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
@@ -272,82 +188,6 @@ func (a *Client) ListKubevirtStorageClassesNoCredentials(params *ListKubevirtSto
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListKubevirtStorageClassesNoCredentialsDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
-}
-
-/*
-  ListKubevirtVmiPresets lists available kubevirt virtual machine instance preset
-*/
-func (a *Client) ListKubevirtVmiPresets(params *ListKubevirtVmiPresetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListKubevirtVmiPresetsOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewListKubevirtVmiPresetsParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "listKubevirtVmiPresets",
-		Method:             "GET",
-		PathPattern:        "/api/v2/providers/kubevirt/vmipresets",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &ListKubevirtVmiPresetsReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*ListKubevirtVmiPresetsOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*ListKubevirtVmiPresetsDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
-}
-
-/*
-  ListKubevirtVmiPresetsNoCredentials Lists available VirtualMachineInstancePreset
-*/
-func (a *Client) ListKubevirtVmiPresetsNoCredentials(params *ListKubevirtVmiPresetsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListKubevirtVmiPresetsNoCredentialsOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewListKubevirtVmiPresetsNoCredentialsParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "listKubevirtVmiPresetsNoCredentials",
-		Method:             "GET",
-		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/kubevirt/vmipresets",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &ListKubevirtVmiPresetsNoCredentialsReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*ListKubevirtVmiPresetsNoCredentialsOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*ListKubevirtVmiPresetsNoCredentialsDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
