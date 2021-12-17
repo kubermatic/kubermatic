@@ -1,5 +1,25 @@
 # Kubermatic 2.18
 
+## [v2.18.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.4)
+
+### Bugfixes
+
+- Fix CNI reconciliation issue after upgrade to k8s 1.22. For clusters running Canal v3.8, automatically upgrade Canal CNI version to v3.19 upon k8s upgrade to version >= 1.22 ([#8396](https://github.com/kubermatic/kubermatic/issues/8396))
+- Fix apiserver NetworkPolicy for OIDC issuer - allow local path to KKP ingress-controller & IP address in the OIDC issuer URL ([#8419](https://github.com/kubermatic/kubermatic/issues/8419))
+- Fix minio chart template to correctly reference 'certificateSecret' value for TLS setup ([#8234](https://github.com/kubermatic/kubermatic/issues/8234))
+
+### Updates
+
+- Bump Flannel version in Canal to v0.15.1 ([#8478](https://github.com/kubermatic/kubermatic/issues/8478))
+- Add support for Kubernetes 1.22.5, 1.21.8, and 1.20.14 ([#8481](https://github.com/kubermatic/kubermatic/issues/8481))
+- Automatically upgrade clusters running Kubernetes 1.21 to 1.21.8 to include fixes for CVE-2021-44716 and CVE-2021-44717 ([#8481](https://github.com/kubermatic/kubermatic/issues/8481))
+- Automatically upgrade clusters running Kubernetes 1.22 to 1.22.5 to include fixes for CVE-2021-44716 and CVE-2021-44717 ([#8481](https://github.com/kubermatic/kubermatic/issues/8481))
+- Update to Go 1.16.12 ([#8481](https://github.com/kubermatic/kubermatic/issues/8481))
+
+### Misc
+
+- Add tolerations to user cluster system daemonsets ([#8425](https://github.com/kubermatic/kubermatic/issues/8425))
+
 ## [v2.18.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.3)
 
 ### Bugfixes
