@@ -30,6 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud"
+	"k8c.io/kubermatic/v2/pkg/version/cni"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -212,7 +213,7 @@ func (h *AdmissionHandler) mutateUpdate(oldCluster, newCluster *kubermaticv1.Clu
 		if newCluster.Spec.Version.String() != "" && upgradeConstraint.Check(newCluster.Spec.Version.Semver()) {
 			newCluster.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
 				Type:    kubermaticv1.CNIPluginTypeCanal,
-				Version: defaulting.DefaultCNIPluginVersions[kubermaticv1.CNIPluginTypeCanal],
+				Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 			}
 		}
 	}

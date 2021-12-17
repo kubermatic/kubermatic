@@ -8752,6 +8752,47 @@
         }
       }
     },
+    "/api/v2/cni/{cni_plugin_type}/versions": {
+      "get": {
+        "description": "Lists all CNI Plugin versions that are supported for a given CNI plugin type",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "cniversion"
+        ],
+        "operationId": "listVersionsByCNIPlugin",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "CNIPluginType",
+            "name": "cni_plugin_type",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CNIVersions",
+            "schema": {
+              "$ref": "#/definitions/CNIVersions"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/constraints": {
       "get": {
         "produces": [
@@ -10328,6 +10369,54 @@
             "description": "ClusterRoleBinding",
             "schema": {
               "$ref": "#/definitions/ClusterRoleBinding"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/cniversions": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Lists CNI plugin versions for a given cluster.",
+        "operationId": "listCNIPluginVersionsForCluster",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CNIVersions",
+            "schema": {
+              "$ref": "#/definitions/CNIVersions"
             }
           },
           "401": {
@@ -12858,13 +12947,6 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
-          },
-          {
-            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -12876,6 +12958,13 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
           }
         ],
         "responses": {
@@ -19289,6 +19378,24 @@
       "description": "CNIPluginType define the type of CNI plugin installed. e.g. Canal",
       "type": "string",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
+    "CNIVersions": {
+      "description": "CNIVersions is a list of versions for a CNI Plugin",
+      "type": "object",
+      "properties": {
+        "CNIPluginType": {
+          "description": "CNIPluginType represents the type of the CNI Plugin",
+          "type": "string"
+        },
+        "Versions": {
+          "description": "Versions represents the list of the CNI Plugin versions that are supported",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "CPU": {
       "type": "object",

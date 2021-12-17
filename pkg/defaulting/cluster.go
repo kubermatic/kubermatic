@@ -28,18 +28,12 @@ import (
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/version/cni"
 
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-var (
-	DefaultCNIPluginVersions = map[kubermaticv1.CNIPluginType]string{
-		kubermaticv1.CNIPluginTypeCanal:  "v3.20",
-		kubermaticv1.CNIPluginTypeCilium: "v1.11",
-	}
 )
 
 // DefaultClusterSpec defaults the cluster spec when creating a new cluster.
@@ -116,10 +110,10 @@ func DefaultClusterSpec(spec *kubermaticv1.ClusterSpec, template *kubermaticv1.C
 	if spec.CNIPlugin == nil {
 		spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
 			Type:    kubermaticv1.CNIPluginTypeCanal,
-			Version: DefaultCNIPluginVersions[kubermaticv1.CNIPluginTypeCanal],
+			Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 		}
 	} else if spec.CNIPlugin.Version == "" {
-		spec.CNIPlugin.Version = DefaultCNIPluginVersions[spec.CNIPlugin.Type]
+		spec.CNIPlugin.Version = cni.GetDefaultCNIPluginVersion(spec.CNIPlugin.Type)
 	}
 
 	if len(spec.ClusterNetwork.Services.CIDRBlocks) == 0 {
