@@ -164,7 +164,7 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				args = append(args, "-openvpn-server-port", fmt.Sprint(openvpnServerPort))
 			}
 
-			if data.Cluster().Spec.Features[kubermaticv1.ApiserverNetworkPolicy] {
+			if data.Cluster().Spec.Features[kubermaticv1.KubeSystemNetworkPolicies] {
 				args = append(args, "-enable-network-policies")
 			}
 
