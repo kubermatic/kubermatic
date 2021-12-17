@@ -1008,6 +1008,7 @@ type StorageClass struct {
 }
 
 // CNIVersions is a list of versions for a CNI Plugin
+// swagger:model CNIVersions
 type CNIVersions struct {
 	// CNIPluginType represents the type of the CNI Plugin
 	CNIPluginType string
