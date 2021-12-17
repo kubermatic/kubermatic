@@ -160,14 +160,6 @@ func DefaultClusterSpec(spec *kubermaticv1.ClusterSpec, template *kubermaticv1.C
 		}
 	}
 
-	// Network policies for Apiserver are deployed by default
-	if _, ok := spec.Features[kubermaticv1.ApiserverNetworkPolicy]; !ok {
-		if spec.Features == nil {
-			spec.Features = map[string]bool{}
-		}
-		spec.Features[kubermaticv1.ApiserverNetworkPolicy] = true
-	}
-
 	if spec.ClusterNetwork.NodeLocalDNSCacheEnabled == nil {
 		spec.ClusterNetwork.NodeLocalDNSCacheEnabled = pointer.BoolPtr(true)
 	}

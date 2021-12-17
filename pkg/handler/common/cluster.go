@@ -497,6 +497,7 @@ func PatchEndpoint(
 
 	// Prevent unconditional CNI upgrades for old clusters.
 	// Do not default cni if it was not explicitly set.
+	// Todo: Temporary hack will be removed soon
 	preventCNIDefaulting := newInternalCluster.Spec.CNIPlugin == nil
 
 	// apply default values to the new cluster

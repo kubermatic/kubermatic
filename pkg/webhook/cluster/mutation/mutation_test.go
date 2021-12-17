@@ -260,6 +260,7 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/resources", map[string]interface{}{"requests": map[string]interface{}{"memory": "500M"}}),
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/prometheus/resources", map[string]interface{}{"requests": map[string]interface{}{"memory": "500M"}}),
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
+				jsonpatch.NewOperation("add", "/spec/features/kubeSystemNetworkPolicies", true),
 				jsonpatch.NewOperation("replace", "/spec/exposeStrategy", string(defaults.DefaultExposeStrategy)),
 			},
 		},
@@ -314,6 +315,7 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", resources.EBPFProxyMode),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", true),
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
+				jsonpatch.NewOperation("add", "/spec/features/kubeSystemNetworkPolicies", true),
 			),
 		},
 		{
@@ -348,7 +350,8 @@ func TestHandle(t *testing.T) {
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 							},
 							Features: map[string]bool{
-								kubermaticv1.ApiserverNetworkPolicy: true,
+								kubermaticv1.ApiserverNetworkPolicy:    true,
+								kubermaticv1.KubeSystemNetworkPolicies: true,
 							},
 						}.Do(),
 					},
@@ -395,6 +398,7 @@ func TestHandle(t *testing.T) {
 			wantPatches: append(
 				defaultPatches,
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
+				jsonpatch.NewOperation("add", "/spec/features/kubeSystemNetworkPolicies", true),
 			),
 		},
 		{
@@ -425,7 +429,8 @@ func TestHandle(t *testing.T) {
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 							},
 							Features: map[string]bool{
-								kubermaticv1.ApiserverNetworkPolicy: true,
+								kubermaticv1.ApiserverNetworkPolicy:    true,
+								kubermaticv1.KubeSystemNetworkPolicies: true,
 							},
 						}.Do(),
 					},
@@ -463,7 +468,8 @@ func TestHandle(t *testing.T) {
 								Version: "v3.19",
 							},
 							Features: map[string]bool{
-								kubermaticv1.ApiserverNetworkPolicy: true,
+								kubermaticv1.ApiserverNetworkPolicy:    true,
+								kubermaticv1.KubeSystemNetworkPolicies: true,
 							},
 						}.Do(),
 					},
@@ -498,7 +504,8 @@ func TestHandle(t *testing.T) {
 								Version: "v3.19",
 							},
 							Features: map[string]bool{
-								kubermaticv1.ApiserverNetworkPolicy: true,
+								kubermaticv1.ApiserverNetworkPolicy:    true,
+								kubermaticv1.KubeSystemNetworkPolicies: true,
 							},
 						}.Do(),
 					},
@@ -541,7 +548,8 @@ func TestHandle(t *testing.T) {
 								IPVS: &kubermaticv1.IPVSConfiguration{},
 							},
 							Features: map[string]bool{
-								kubermaticv1.ApiserverNetworkPolicy: true,
+								kubermaticv1.ApiserverNetworkPolicy:    true,
+								kubermaticv1.KubeSystemNetworkPolicies: true,
 							},
 						}.Do(),
 					},
@@ -616,7 +624,6 @@ func TestHandle(t *testing.T) {
 			wantPatches: append(
 				append(defaultPatches, defaultNetworkingPatches...),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", resources.IPVSProxyMode),
-				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
 				jsonpatch.NewOperation("add", "/metadata/annotations", map[string]interface{}{"ccm-migration.k8c.io/migration-needed": "", "csi-migration.k8c.io/migration-needed": ""}),
 				jsonpatch.NewOperation("add", "/spec/cloud/openstack/useOctavia", true),
 			),
@@ -658,7 +665,6 @@ func TestHandle(t *testing.T) {
 			wantPatches: append(
 				append(defaultPatches, defaultNetworkingPatches...),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", resources.IPVSProxyMode),
-				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
 			),
 		},
 		{
@@ -698,7 +704,6 @@ func TestHandle(t *testing.T) {
 			wantPatches: append(
 				append(defaultPatches, defaultNetworkingPatches...),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", resources.IPTablesProxyMode),
-				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
 			),
 		},
 	}
