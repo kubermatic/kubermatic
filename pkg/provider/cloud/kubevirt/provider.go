@@ -22,8 +22,11 @@ import (
 
 	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	kubevirtv1 "k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt/kubevirtcli/client/versioned"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -38,6 +41,9 @@ func NewCloudProvider(secretKeyGetter provider.SecretKeySelectorValueFunc) provi
 }
 
 var _ provider.CloudProvider = &kubevirt{}
+
+// KubevirtClientGetter is used to get the kubevirt client and the k8s client
+type KubevirtClientGetter = func(clientConfig *rest.Config) (kubevirtv1.Interface, kubernetes.Interface, error)
 
 func (k *kubevirt) DefaultCloudSpec(spec *v1.CloudSpec) error {
 	return nil
