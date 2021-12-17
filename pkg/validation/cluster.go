@@ -30,6 +30,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/version/cni"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	apimachineryvalidation "k8s.io/apimachinery/pkg/api/validation"
@@ -42,13 +43,6 @@ var (
 	// ErrCloudChangeNotAllowed describes that it is not allowed to change the cloud provider
 	ErrCloudChangeNotAllowed  = errors.New("not allowed to change the cloud provider")
 	azureLoadBalancerSKUTypes = sets.NewString("", string(kubermaticv1.AzureStandardLBSKU), string(kubermaticv1.AzureBasicLBSKU))
-
-	supportedCNIPlugins        = sets.NewString(kubermaticv1.CNIPluginTypeCanal.String(), kubermaticv1.CNIPluginTypeCilium.String(), kubermaticv1.CNIPluginTypeNone.String())
-	supportedCNIPluginVersions = map[kubermaticv1.CNIPluginType]sets.String{
-		kubermaticv1.CNIPluginTypeCanal:  sets.NewString("v3.8", "v3.19", "v3.20"),
-		kubermaticv1.CNIPluginTypeCilium: sets.NewString("v1.11"),
-		kubermaticv1.CNIPluginTypeNone:   sets.NewString(""),
-	}
 
 	// UnsafeCNIUpgradeLabel allows unsafe CNI version upgrade (difference in versions more than one minor version).
 	UnsafeCNIUpgradeLabel = "unsafe-cni-upgrade"
@@ -78,10 +72,10 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 	}
 
 	if spec.CNIPlugin != nil {
-		if !supportedCNIPlugins.Has(spec.CNIPlugin.Type.String()) {
-			allErrs = append(allErrs, field.NotSupported(parentFieldPath.Child("cniPlugin", "type"), spec.CNIPlugin.Type.String(), supportedCNIPlugins.List()))
-		} else if !supportedCNIPluginVersions[spec.CNIPlugin.Type].Has(spec.CNIPlugin.Version) {
-			allErrs = append(allErrs, field.NotSupported(parentFieldPath.Child("cniPlugin", "version"), spec.CNIPlugin.Version, supportedCNIPluginVersions[spec.CNIPlugin.Type].List()))
+		if !cni.GetSupportedCNIPlugins().Has(spec.CNIPlugin.Type.String()) {
+			allErrs = append(allErrs, field.NotSupported(parentFieldPath.Child("cniPlugin", "type"), spec.CNIPlugin.Type.String(), cni.GetSupportedCNIPlugins().List()))
+		} else if versions, err := cni.GetSupportedCNIPluginVersions(spec.CNIPlugin.Type); err != nil || !versions.Has(spec.CNIPlugin.Version) {
+			allErrs = append(allErrs, field.NotSupported(parentFieldPath.Child("cniPlugin", "version"), spec.CNIPlugin.Version, versions.List()))
 		}
 	}
 

@@ -168,6 +168,8 @@ type ClientService interface {
 
 	ListAKSClusters(params *ListAKSClustersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSClustersOK, error)
 
+	ListCNIPluginVersionsForCluster(params *ListCNIPluginVersionsForClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListCNIPluginVersionsForClusterOK, error)
+
 	ListClusterRole(params *ListClusterRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterRoleOK, error)
 
 	ListClusterRoleBinding(params *ListClusterRoleBindingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterRoleBindingOK, error)
@@ -2960,6 +2962,44 @@ func (a *Client) ListAKSClusters(params *ListAKSClustersParams, authInfo runtime
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListAKSClustersDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListCNIPluginVersionsForCluster lists c n i plugin versions for a given cluster
+*/
+func (a *Client) ListCNIPluginVersionsForCluster(params *ListCNIPluginVersionsForClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListCNIPluginVersionsForClusterOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListCNIPluginVersionsForClusterParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listCNIPluginVersionsForCluster",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/cniversions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListCNIPluginVersionsForClusterReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListCNIPluginVersionsForClusterOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListCNIPluginVersionsForClusterDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

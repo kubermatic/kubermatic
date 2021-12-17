@@ -33,6 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/backupdestinations"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	clustertemplate "k8c.io/kubermatic/v2/pkg/handler/v2/cluster_template"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/cniversion"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
 	constrainttemplate "k8c.io/kubermatic/v2/pkg/handler/v2/constraint_template"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/etcdbackupconfig"
@@ -822,6 +823,15 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/clusters/{cluster_id}/backupdestinations").
 		Handler(r.getBackupDestinationNames())
+
+	// Defines endpoints for CNI versionsS
+	mux.Methods(http.MethodGet).
+		Path("/cni/{cni_plugin_type}/versions").
+		Handler(r.listVersionsByCNIPlugin())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clusters/{cluster_id}/cniversions").
+		Handler(r.listCNIPluginVersionsForCluster())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -5627,6 +5637,56 @@ func (r Routing) getBackupDestinationNames() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(backupdestinations.GetEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
 		backupdestinations.DecodeGetBackupDestinationNamesReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/cni/{cni_plugin_type}/versions cniversion listVersionsByCNIPlugin
+//
+// Lists all CNI Plugin versions that are supported for a given CNI plugin type
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: CNIVersions
+//       401: empty
+//       403: empty
+func (r Routing) listVersionsByCNIPlugin() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(cniversion.ListVersions()),
+		cniversion.DecodeListCNIPluginVersions,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/cniversions project listCNIPluginVersionsForCluster
+//
+// Lists CNI plugin versions for a given cluster.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: CNIVersions
+//       401: empty
+//       403: empty
+func (r Routing) listCNIPluginVersionsForCluster() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cniversion.ListVersionsForCluster(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
+		cniversion.DecodeListCNIPluginVersionsForClusterReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

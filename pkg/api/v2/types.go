@@ -1006,3 +1006,12 @@ type StorageClass struct {
 	// +listType=atomic
 	AllowedTopologies []v1.TopologySelectorTerm `json:"allowedTopologies,omitempty"`
 }
+
+// CNIVersions is a list of versions for a CNI Plugin
+// swagger:model CNIVersions
+type CNIVersions struct {
+	// CNIPluginType represents the type of the CNI Plugin
+	CNIPluginType string
+	// Versions represents the list of the CNI Plugin versions that are supported
+	Versions []string
+}
