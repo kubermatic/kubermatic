@@ -100,7 +100,7 @@ type ApplicationInstallationCondition struct {
 	// (brief) reason for the condition's last transition.
 	Reason string `json:"reason,omitempty"`
 	// Human readable message indicating details about last transition.
-	Message string `json:"Message,omitempty"`
+	Message string `json:"message,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=ManifestsRetrieved;ManifestsApplied;Ready
