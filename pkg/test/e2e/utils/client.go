@@ -1302,7 +1302,11 @@ func (r *TestClient) DetachSSHKeyFromClusterParams(projectID, clusterID, dc, key
 		KeyID:     keyID,
 		ProjectID: projectID,
 	}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	}, http.StatusForbidden)
 
 	_, err := r.client.Project.DetachSSHKeyFromCluster(params, r.bearerToken)
 	return err
