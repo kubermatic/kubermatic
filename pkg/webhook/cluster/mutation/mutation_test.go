@@ -19,14 +19,20 @@ package mutation
 import (
 	"bytes"
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/go-logr/logr"
 	"github.com/go-test/deep"
 	jsonpatch "gomodules.xyz/jsonpatch/v2"
 
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/test"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -35,12 +41,60 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/utils/pointer"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 var (
 	testScheme = runtime.NewScheme()
+	config     = operatorv1alpha1.KubermaticConfiguration{}
+	seed       = kubermaticv1.Seed{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-seed",
+			Namespace: "kubermatic",
+		},
+		Spec: kubermaticv1.SeedSpec{
+			Datacenters: map[string]kubermaticv1.Datacenter{
+				"openstack-dc": {
+					Spec: kubermaticv1.DatacenterSpec{
+						Openstack: &kubermaticv1.DatacenterSpecOpenstack{},
+					},
+				},
+				"hetzner-dc": {
+					Spec: kubermaticv1.DatacenterSpec{
+						Hetzner: &kubermaticv1.DatacenterSpecHetzner{},
+					},
+				},
+				"kubevirt-dc": {
+					Spec: kubermaticv1.DatacenterSpec{
+						Kubevirt: &kubermaticv1.DatacenterSpecKubevirt{},
+					},
+				},
+			},
+		},
+	}
+	defaultingTemplateName = "my-default-template"
+
+	// defaultPatches are the patches that occur in every mutation because of the
+	// inherit defaulting done for the KubermaticConfiguration and Seed. They are
+	// collected here for brevity sake.
+	defaultPatches = []jsonpatch.JsonPatchOperation{
+		jsonpatch.NewOperation("replace", "/spec/exposeStrategy", string(defaults.DefaultExposeStrategy)),
+		jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/clusterSize", float64(kubermaticv1.DefaultEtcdClusterSize)),
+		jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/diskSize", defaults.DefaultEtcdVolumeSize),
+		jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/replicas", float64(defaults.DefaultAPIServerReplicas)),
+		jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/nodePortRange", defaults.DefaultNodePortRange),
+		jsonpatch.NewOperation("add", "/spec/componentsOverride/controllerManager/replicas", float64(defaults.DefaultControllerManagerReplicas)),
+		jsonpatch.NewOperation("add", "/spec/componentsOverride/scheduler/replicas", float64(defaults.DefaultSchedulerReplicas)),
+	}
+
+	defaultNetworkingPatches = []jsonpatch.JsonPatchOperation{
+		jsonpatch.NewOperation("replace", "/spec/clusterNetwork/services/cidrBlocks", []interface{}{"10.240.16.0/20"}),
+		jsonpatch.NewOperation("replace", "/spec/clusterNetwork/pods/cidrBlocks", []interface{}{"172.25.0.0/16"}),
+		jsonpatch.NewOperation("replace", "/spec/clusterNetwork/dnsDomain", "cluster.local"),
+		jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", true),
+	}
 )
 
 func init() {
@@ -52,7 +106,7 @@ func TestHandle(t *testing.T) {
 	tests := []struct {
 		name                   string
 		req                    webhook.AdmissionRequest
-		defaultClusterTemplate kubermaticv1.ClusterTemplate
+		defaultClusterTemplate *kubermaticv1.ClusterTemplate
 		wantAllowed            bool
 		wantPatches            []jsonpatch.JsonPatchOperation
 	}{
@@ -69,8 +123,11 @@ func TestHandle(t *testing.T) {
 					Name: "foo",
 					Object: runtime.RawExtension{
 						Raw: rawClusterGen{
-							Name:      "foo",
-							CloudSpec: kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{}},
+							Name: "foo",
+							CloudSpec: kubermaticv1.CloudSpec{
+								DatacenterName: "openstack-dc",
+								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+							},
 							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
 								Type:    kubermaticv1.CNIPluginTypeCanal,
 								Version: "v3.19",
@@ -87,7 +144,7 @@ func TestHandle(t *testing.T) {
 					},
 				},
 			},
-			defaultClusterTemplate: kubermaticv1.ClusterTemplate{
+			defaultClusterTemplate: &kubermaticv1.ClusterTemplate{
 				Spec: kubermaticv1.ClusterSpec{
 					CNIPlugin: &kubermaticv1.CNIPluginSettings{
 						Type: kubermaticv1.CNIPluginTypeCilium,
@@ -204,6 +261,7 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/prometheus/resources", map[string]interface{}{"requests": map[string]interface{}{"memory": "500M"}}),
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
 				jsonpatch.NewOperation("add", "/spec/features/kubeSystemNetworkPolicies", true),
+				jsonpatch.NewOperation("replace", "/spec/exposeStrategy", string(defaults.DefaultExposeStrategy)),
 			},
 		},
 		{
@@ -219,14 +277,17 @@ func TestHandle(t *testing.T) {
 					Name: "foo",
 					Object: runtime.RawExtension{
 						Raw: rawClusterGen{
-							Name:                  "foo",
-							CloudSpec:             kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{}},
+							Name: "foo",
+							CloudSpec: kubermaticv1.CloudSpec{
+								DatacenterName: "openstack-dc",
+								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+							},
 							ExternalCloudProvider: true,
 						}.Do(),
 					},
 				},
 			},
-			defaultClusterTemplate: kubermaticv1.ClusterTemplate{
+			defaultClusterTemplate: &kubermaticv1.ClusterTemplate{
 				Spec: kubermaticv1.ClusterSpec{
 					CNIPlugin: &kubermaticv1.CNIPluginSettings{
 						Type: kubermaticv1.CNIPluginTypeCilium,
@@ -242,10 +303,11 @@ func TestHandle(t *testing.T) {
 			},
 
 			wantAllowed: true,
-			wantPatches: []jsonpatch.JsonPatchOperation{
+			wantPatches: append(
+				defaultPatches,
 				jsonpatch.NewOperation("add", "/spec/cniPlugin", map[string]interface{}{
 					"type":    "cilium",
-					"version": "v1.11",
+					"version": defaulting.DefaultCNIPluginVersions[kubermaticv1.CNIPluginTypeCilium],
 				}),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/services/cidrBlocks", []interface{}{"10.240.32.0/20"}),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/pods/cidrBlocks", []interface{}{"10.241.0.0/16"}),
@@ -254,7 +316,7 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", true),
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
 				jsonpatch.NewOperation("add", "/spec/features/kubeSystemNetworkPolicies", true),
-			},
+			),
 		},
 		{
 			name: "Create cluster success",
@@ -269,8 +331,11 @@ func TestHandle(t *testing.T) {
 					Name: "foo",
 					Object: runtime.RawExtension{
 						Raw: rawClusterGen{
-							Name:      "foo",
-							CloudSpec: kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{}},
+							Name: "foo",
+							CloudSpec: kubermaticv1.CloudSpec{
+								DatacenterName: "openstack-dc",
+								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+							},
 							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
 								Type:    kubermaticv1.CNIPluginTypeCanal,
 								Version: "v3.19",
@@ -293,7 +358,7 @@ func TestHandle(t *testing.T) {
 				},
 			},
 			wantAllowed: true,
-			wantPatches: []jsonpatch.JsonPatchOperation{},
+			wantPatches: defaultPatches,
 		},
 		{
 			name: "Default features",
@@ -308,8 +373,11 @@ func TestHandle(t *testing.T) {
 					Name: "foo",
 					Object: runtime.RawExtension{
 						Raw: rawClusterGen{
-							Name:      "foo",
-							CloudSpec: kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{}},
+							Name: "foo",
+							CloudSpec: kubermaticv1.CloudSpec{
+								DatacenterName: "openstack-dc",
+								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+							},
 							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
 								Type:    kubermaticv1.CNIPluginTypeCanal,
 								Version: "v3.19",
@@ -327,10 +395,11 @@ func TestHandle(t *testing.T) {
 				},
 			},
 			wantAllowed: true,
-			wantPatches: []jsonpatch.JsonPatchOperation{
+			wantPatches: append(
+				defaultPatches,
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
 				jsonpatch.NewOperation("add", "/spec/features/kubeSystemNetworkPolicies", true),
-			},
+			),
 		},
 		{
 			name: "Default CNI plugin annotation added",
@@ -345,8 +414,11 @@ func TestHandle(t *testing.T) {
 					Name: "foo",
 					Object: runtime.RawExtension{
 						Raw: rawClusterGen{
-							Name:                  "foo",
-							CloudSpec:             kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{}},
+							Name: "foo",
+							CloudSpec: kubermaticv1.CloudSpec{
+								DatacenterName: "openstack-dc",
+								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+							},
 							ExternalCloudProvider: true,
 							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
@@ -365,12 +437,13 @@ func TestHandle(t *testing.T) {
 				},
 			},
 			wantAllowed: true,
-			wantPatches: []jsonpatch.JsonPatchOperation{
+			wantPatches: append(
+				defaultPatches,
 				jsonpatch.NewOperation("add", "/spec/cniPlugin", map[string]interface{}{
 					"type":    "canal",
 					"version": "v3.20",
 				}),
-			},
+			),
 		},
 		{
 			name: "Default network configuration for any cloud provider except KubeVirt",
@@ -385,8 +458,11 @@ func TestHandle(t *testing.T) {
 					Name: "foo",
 					Object: runtime.RawExtension{
 						Raw: rawClusterGen{
-							Name:      "foo",
-							CloudSpec: kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{}},
+							Name: "foo",
+							CloudSpec: kubermaticv1.CloudSpec{
+								DatacenterName: "openstack-dc",
+								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+							},
 							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
 								Type:    kubermaticv1.CNIPluginTypeCanal,
 								Version: "v3.19",
@@ -400,13 +476,10 @@ func TestHandle(t *testing.T) {
 				},
 			},
 			wantAllowed: true,
-			wantPatches: []jsonpatch.JsonPatchOperation{
-				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/services/cidrBlocks", []interface{}{"10.240.16.0/20"}),
-				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/pods/cidrBlocks", []interface{}{"172.25.0.0/16"}),
+			wantPatches: append(
+				append(defaultPatches, defaultNetworkingPatches...),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", "ipvs"),
-				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/dnsDomain", "cluster.local"),
-				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", true),
-			},
+			),
 		},
 		{
 			name: "Default configuration for KubeVirt cloud provider",
@@ -421,8 +494,11 @@ func TestHandle(t *testing.T) {
 					Name: "foo",
 					Object: runtime.RawExtension{
 						Raw: rawClusterGen{
-							Name:      "foo",
-							CloudSpec: kubermaticv1.CloudSpec{Kubevirt: &kubermaticv1.KubevirtCloudSpec{}},
+							Name: "foo",
+							CloudSpec: kubermaticv1.CloudSpec{
+								DatacenterName: "kubevirt-dc",
+								Kubevirt:       &kubermaticv1.KubevirtCloudSpec{},
+							},
 							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
 								Type:    kubermaticv1.CNIPluginTypeCanal,
 								Version: "v3.19",
@@ -436,14 +512,15 @@ func TestHandle(t *testing.T) {
 				},
 			},
 			wantAllowed: true,
-			wantPatches: []jsonpatch.JsonPatchOperation{
+			wantPatches: append(
+				defaultPatches,
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/services/cidrBlocks", []interface{}{"10.241.0.0/20"}),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/pods/cidrBlocks", []interface{}{"172.26.0.0/16"}),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", "ipvs"),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/dnsDomain", "cluster.local"),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", true),
 				jsonpatch.NewOperation("replace", "/spec/features/externalCloudProvider", true),
-			},
+			),
 		},
 		{
 			name: "Default network configuration with IPVS Settings",
@@ -458,8 +535,11 @@ func TestHandle(t *testing.T) {
 					Name: "foo",
 					Object: runtime.RawExtension{
 						Raw: rawClusterGen{
-							Name:      "foo",
-							CloudSpec: kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{}},
+							Name: "foo",
+							CloudSpec: kubermaticv1.CloudSpec{
+								DatacenterName: "openstack-dc",
+								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+							},
 							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
 								Type:    kubermaticv1.CNIPluginTypeCanal,
 								Version: "v3.19",
@@ -476,14 +556,11 @@ func TestHandle(t *testing.T) {
 				},
 			},
 			wantAllowed: true,
-			wantPatches: []jsonpatch.JsonPatchOperation{
-				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/services/cidrBlocks", []interface{}{"10.240.16.0/20"}),
-				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/pods/cidrBlocks", []interface{}{"172.25.0.0/16"}),
-				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", "ipvs"),
-				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/dnsDomain", "cluster.local"),
-				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", true),
+			wantPatches: append(
+				append(defaultPatches, defaultNetworkingPatches...),
+				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", resources.IPVSProxyMode),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/ipvs/strictArp", true),
-			},
+			),
 		},
 		{
 			name: "Delete cluster success",
@@ -497,7 +574,14 @@ func TestHandle(t *testing.T) {
 					},
 					Name: "foo",
 					Object: runtime.RawExtension{
-						Raw: rawClusterGen{Name: "foo", CloudSpec: kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{}}, ExternalCloudProvider: true}.Do(),
+						Raw: rawClusterGen{
+							Name: "foo",
+							CloudSpec: kubermaticv1.CloudSpec{
+								DatacenterName: "openstack-dc",
+								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+							},
+							ExternalCloudProvider: true,
+						}.Do(),
 					},
 				},
 			},
@@ -515,18 +599,34 @@ func TestHandle(t *testing.T) {
 					},
 					Name: "foo",
 					Object: runtime.RawExtension{
-						Raw: rawClusterGen{Name: "foo", CloudSpec: kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{}}, ExternalCloudProvider: true}.Do(),
+						Raw: rawClusterGen{
+							Name: "foo",
+							CloudSpec: kubermaticv1.CloudSpec{
+								DatacenterName: "openstack-dc",
+								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+							},
+							ExternalCloudProvider: true,
+						}.Do(),
 					},
 					OldObject: runtime.RawExtension{
-						Raw: rawClusterGen{Name: "foo", CloudSpec: kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{}}, ExternalCloudProvider: false}.Do(),
+						Raw: rawClusterGen{
+							Name: "foo",
+							CloudSpec: kubermaticv1.CloudSpec{
+								DatacenterName: "openstack-dc",
+								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+							},
+							ExternalCloudProvider: false,
+						}.Do(),
 					},
 				},
 			},
 			wantAllowed: true,
-			wantPatches: []jsonpatch.JsonPatchOperation{
+			wantPatches: append(
+				append(defaultPatches, defaultNetworkingPatches...),
+				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", resources.IPVSProxyMode),
 				jsonpatch.NewOperation("add", "/metadata/annotations", map[string]interface{}{"ccm-migration.k8c.io/migration-needed": "", "csi-migration.k8c.io/migration-needed": ""}),
 				jsonpatch.NewOperation("add", "/spec/cloud/openstack/useOctavia", true),
-			},
+			),
 		},
 		{
 			name: "Update OpenStack cluster with enabled CCM/CSI migration",
@@ -540,15 +640,32 @@ func TestHandle(t *testing.T) {
 					},
 					Name: "foo",
 					Object: runtime.RawExtension{
-						Raw: rawClusterGen{Name: "foo", CloudSpec: kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{}}, ExternalCloudProvider: true}.Do(),
+						Raw: rawClusterGen{
+							Name: "foo",
+							CloudSpec: kubermaticv1.CloudSpec{
+								DatacenterName: "openstack-dc",
+								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+							},
+							ExternalCloudProvider: true,
+						}.Do(),
 					},
 					OldObject: runtime.RawExtension{
-						Raw: rawClusterGen{Name: "foo", CloudSpec: kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{}}, ExternalCloudProvider: true}.Do(),
+						Raw: rawClusterGen{
+							Name: "foo",
+							CloudSpec: kubermaticv1.CloudSpec{
+								DatacenterName: "openstack-dc",
+								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+							},
+							ExternalCloudProvider: true,
+						}.Do(),
 					},
 				},
 			},
 			wantAllowed: true,
-			wantPatches: []jsonpatch.JsonPatchOperation{},
+			wantPatches: append(
+				append(defaultPatches, defaultNetworkingPatches...),
+				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", resources.IPVSProxyMode),
+			),
 		},
 		{
 			name: "Update non-OpenStack cluster to enable CCM/CSI migration",
@@ -562,36 +679,79 @@ func TestHandle(t *testing.T) {
 					},
 					Name: "foo",
 					Object: runtime.RawExtension{
-						Raw: rawClusterGen{Name: "foo", CloudSpec: kubermaticv1.CloudSpec{Hetzner: &kubermaticv1.HetznerCloudSpec{}}, ExternalCloudProvider: true}.Do(),
+						Raw: rawClusterGen{
+							Name: "foo",
+							CloudSpec: kubermaticv1.CloudSpec{
+								DatacenterName: "hetzner-dc",
+								Hetzner:        &kubermaticv1.HetznerCloudSpec{},
+							},
+							ExternalCloudProvider: true,
+						}.Do(),
 					},
 					OldObject: runtime.RawExtension{
-						Raw: rawClusterGen{Name: "foo", CloudSpec: kubermaticv1.CloudSpec{Hetzner: &kubermaticv1.HetznerCloudSpec{}}, ExternalCloudProvider: false}.Do(),
+						Raw: rawClusterGen{
+							Name: "foo",
+							CloudSpec: kubermaticv1.CloudSpec{
+								DatacenterName: "hetzner-dc",
+								Hetzner:        &kubermaticv1.HetznerCloudSpec{},
+							},
+							ExternalCloudProvider: false,
+						}.Do(),
 					},
 				},
 			},
 			wantAllowed: true,
-			wantPatches: []jsonpatch.JsonPatchOperation{},
+			wantPatches: append(
+				append(defaultPatches, defaultNetworkingPatches...),
+				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", resources.IPTablesProxyMode),
+			),
 		},
 	}
 	for _, tt := range tests {
-		t.Logf("Executing test: %s", tt.name)
 		d, err := admission.NewDecoder(testScheme)
 		if err != nil {
 			t.Fatalf("error occurred while creating decoder: %v", err)
 		}
+
 		t.Run(tt.name, func(t *testing.T) {
+			testSeed := seed.DeepCopy()
+
+			builder := fake.NewClientBuilder()
+			if tt.defaultClusterTemplate != nil {
+				testSeed.Spec.DefaultClusterTemplate = defaultingTemplateName
+
+				tt.defaultClusterTemplate.Labels = map[string]string{"scope": kubermaticv1.SeedTemplateScope}
+				tt.defaultClusterTemplate.Name = defaultingTemplateName
+				tt.defaultClusterTemplate.Namespace = testSeed.Namespace
+
+				builder.WithObjects(tt.defaultClusterTemplate)
+			}
+			dummySeedClient := builder.Build()
+
+			// this getter, as do all KubermaticConfigurationGetters, performs defaulting on the config
+			configGetter, err := provider.StaticKubermaticConfigurationGetterFactory(&config)
+			if err != nil {
+				t.Fatalf("Failed to create KubermaticConfigurationGetter: %v", err)
+			}
+
 			handler := AdmissionHandler{
-				log:             logr.Discard(),
-				decoder:         d,
-				defaultTemplate: tt.defaultClusterTemplate,
+				log:                     logr.Discard(),
+				decoder:                 d,
+				seedGetter:              test.NewSeedGetter(testSeed),
+				configGetter:            configGetter,
+				client:                  dummySeedClient,
+				disableProviderMutation: true,
 			}
 			res := handler.Handle(context.Background(), tt.req)
+			if res.AdmissionResponse.Result != nil && res.AdmissionResponse.Result.Code == http.StatusInternalServerError {
+				t.Fatalf("Request failed: %v", res.AdmissionResponse.Result.Message)
+			}
+
 			if res.Allowed != tt.wantAllowed {
-				t.Logf("Response: %v", res)
+				t.Logf("Response: %#v", res)
 				t.Fatalf("Allowed %t, but wanted %t", res.Allowed, tt.wantAllowed)
 			}
 
-			t.Logf("Received patches: %+v", res.Patches)
 			a := map[string]jsonpatch.JsonPatchOperation{}
 			for _, p := range res.Patches {
 				a[p.Path] = p

@@ -18,7 +18,6 @@ package validation
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 	"testing"
 
@@ -41,13 +40,13 @@ var (
 
 func TestValidateCloudSpec(t *testing.T) {
 	tests := []struct {
-		name string
-		spec kubermaticv1.CloudSpec
-		err  error
+		name  string
+		spec  kubermaticv1.CloudSpec
+		valid bool
 	}{
 		{
-			name: "valid openstack spec",
-			err:  nil,
+			name:  "valid openstack spec",
+			valid: true,
 			spec: kubermaticv1.CloudSpec{
 				DatacenterName: "some-datacenter",
 				Openstack: &kubermaticv1.OpenstackCloudSpec{
@@ -61,8 +60,8 @@ func TestValidateCloudSpec(t *testing.T) {
 			},
 		},
 		{
-			name: "valid openstack spec - only tenantID specified",
-			err:  nil,
+			name:  "valid openstack spec - only tenantID specified",
+			valid: true,
 			spec: kubermaticv1.CloudSpec{
 				DatacenterName: "some-datacenter",
 				Openstack: &kubermaticv1.OpenstackCloudSpec{
@@ -76,8 +75,8 @@ func TestValidateCloudSpec(t *testing.T) {
 			},
 		},
 		{
-			name: "invalid openstack spec - no datacenter specified",
-			err:  errors.New("no node datacenter specified"),
+			name:  "invalid openstack spec - no datacenter specified",
+			valid: false,
 			spec: kubermaticv1.CloudSpec{
 				DatacenterName: "",
 				Openstack: &kubermaticv1.OpenstackCloudSpec{
@@ -91,10 +90,27 @@ func TestValidateCloudSpec(t *testing.T) {
 			},
 		},
 		{
-			name: "invalid openstack spec - no floating ip pool defined but required by dc",
-			err:  errors.New("no floating ip pool specified"),
+			name:  "invalid openstack spec - no floating ip pool defined but required by dc",
+			valid: false,
 			spec: kubermaticv1.CloudSpec{
 				DatacenterName: "some-datacenter",
+				Openstack: &kubermaticv1.OpenstackCloudSpec{
+					Tenant:         "some-tenant",
+					Username:       "some-user",
+					Password:       "some-password",
+					Domain:         "some-domain",
+					FloatingIPPool: "",
+				},
+			},
+		},
+		{
+			name:  "specifies multiple cloud providers",
+			valid: false,
+			spec: kubermaticv1.CloudSpec{
+				DatacenterName: "some-datacenter",
+				Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{
+					Token: "a-token",
+				},
 				Openstack: &kubermaticv1.OpenstackCloudSpec{
 					Tenant:         "some-tenant",
 					Username:       "some-user",
@@ -108,9 +124,10 @@ func TestValidateCloudSpec(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := ValidateCloudSpec(test.spec, dc)
-			if fmt.Sprint(err) != fmt.Sprint(test.err) {
-				t.Errorf("Extected err to be %v, got %v", test.err, err)
+			err := ValidateCloudSpec(test.spec, dc, nil).ToAggregate()
+
+			if (err == nil) != test.valid {
+				t.Errorf("Extected err to be %v, got %v", test.valid, err)
 			}
 		})
 	}
@@ -224,7 +241,6 @@ func TestValidateLeaderElectionSettings(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			t.Logf("Validating: %+v", test.leaderElectionSettings)
 			errs := ValidateLeaderElectionSettings(&test.leaderElectionSettings, field.NewPath("spec"))
 
 			if test.wantErr == (len(errs) == 0) {
@@ -239,13 +255,11 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 		name          string
 		networkConfig kubermaticv1.ClusterNetworkingConfig
 		wantErr       bool
-		allowEmpty    bool
 	}{
 		{
 			name:          "empty network config",
 			networkConfig: kubermaticv1.ClusterNetworkingConfig{},
-			wantErr:       false,
-			allowEmpty:    true,
+			wantErr:       true,
 		},
 		{
 			name: "valid network config",
@@ -256,8 +270,7 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 				ProxyMode:                "ipvs",
 				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 			},
-			wantErr:    false,
-			allowEmpty: false,
+			wantErr: false,
 		},
 		{
 			name: "missing pods CIDR",
@@ -267,8 +280,7 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 				ProxyMode:                "ipvs",
 				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 			},
-			wantErr:    true,
-			allowEmpty: false,
+			wantErr: true,
 		},
 		{
 			name: "missing services CIDR",
@@ -278,8 +290,7 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 				ProxyMode:                "ipvs",
 				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 			},
-			wantErr:    true,
-			allowEmpty: false,
+			wantErr: true,
 		},
 		{
 			name: "missing DNS domain",
@@ -289,8 +300,7 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 				ProxyMode:                "ipvs",
 				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 			},
-			wantErr:    true,
-			allowEmpty: false,
+			wantErr: true,
 		},
 		{
 			name: "missing proxy mode",
@@ -300,46 +310,40 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 				DNSDomain:                "cluster.local",
 				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 			},
-			wantErr:    true,
-			allowEmpty: false,
+			wantErr: true,
 		},
 		{
 			name: "invalid pod cidr",
 			networkConfig: kubermaticv1.ClusterNetworkingConfig{
 				Pods: kubermaticv1.NetworkRanges{CIDRBlocks: []string{"192.127.0.0:20"}},
 			},
-			wantErr:    true,
-			allowEmpty: true,
+			wantErr: true,
 		},
 		{
 			name: "invalid service cidr",
 			networkConfig: kubermaticv1.ClusterNetworkingConfig{
 				Services: kubermaticv1.NetworkRanges{CIDRBlocks: []string{"192.127/20"}},
 			},
-			wantErr:    true,
-			allowEmpty: true,
+			wantErr: true,
 		},
 		{
 			name: "invalid service cidr",
 			networkConfig: kubermaticv1.ClusterNetworkingConfig{
 				DNSDomain: "cluster.bla",
 			},
-			wantErr:    true,
-			allowEmpty: true,
+			wantErr: true,
 		},
 		{
 			name: "invalid proxy mode",
 			networkConfig: kubermaticv1.ClusterNetworkingConfig{
 				ProxyMode: "none",
 			},
-			wantErr:    true,
-			allowEmpty: true,
+			wantErr: true,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			t.Logf("[%s] Validating: %+v", test.name, test.networkConfig)
-			errs := ValidateClusterNetworkConfig(&test.networkConfig, nil, field.NewPath("spec", "networkConfig"), test.allowEmpty)
+			errs := ValidateClusterNetworkConfig(&test.networkConfig, nil, field.NewPath("spec", "networkConfig"))
 
 			if test.wantErr == (len(errs) == 0) {
 				t.Errorf("Want error: %t, but got: \"%v\"", test.wantErr, errs)
