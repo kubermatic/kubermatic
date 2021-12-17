@@ -81,22 +81,14 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/providers/aws/regions").
 		Handler(r.listAWSRegions())
 
-	// Defines a set of HTTP endpoints for interacting with Kubevirt clusters
+	// Defines a set of HTTP endpoints for interacting with KubeVirt clusters
 	mux.Methods(http.MethodGet).
-		Path("/providers/kubevirt/vmipresets").
-		Handler(r.listKubevirtVmiPresets())
-
-	mux.Methods(http.MethodGet).
-		Path("/providers/kubevirt/vmipresets/{preset_id}").
-		Handler(r.getKubevirtVmiPreset())
+		Path("/providers/kubevirt/vmflavors").
+		Handler(r.listKubeVirtVMIPresets())
 
 	mux.Methods(http.MethodGet).
 		Path("/providers/kubevirt/storageclasses").
 		Handler(r.listKubevirtStorageClasses())
-
-	mux.Methods(http.MethodGet).
-		Path("/providers/kubevirt/storageclasses/{storageclass_id}").
-		Handler(r.getKubevirtStorageClass())
 
 	// Defines a set of HTTP endpoints for cluster that belong to a project.
 	mux.Methods(http.MethodGet).
@@ -584,20 +576,12 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listAnexiaTemplatesNoCredentials())
 
 	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/clusters/{cluster_id}/providers/kubevirt/vmipresets").
-		Handler(r.listKubevirtVmiPresetsNoCredentials())
-
-	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/clusters/{cluster_id}/providers/kubevirt/vmipresets/{preset_id}").
-		Handler(r.getKubevirtVmiPresetNoCredentials())
+		Path("/projects/{project_id}/clusters/{cluster_id}/providers/kubevirt/vmflavors").
+		Handler(r.listKubeVirtVMIPresetsNoCredentials())
 
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/clusters/{cluster_id}/providers/kubevirt/storageclasses").
 		Handler(r.listKubevirtStorageClassesNoCredentials())
-
-	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/clusters/{cluster_id}/providers/kubevirt/storageclasses/{storageclass_id}").
-		Handler(r.getKubevirtStorageClassNoCredentials())
 
 	// Defines a set of kubernetes-dashboard-specific endpoints
 	mux.PathPrefix("/projects/{project_id}/clusters/{cluster_id}/dashboard/proxy").
@@ -3582,7 +3566,7 @@ func (r Routing) listAnexiaTemplatesNoCredentials() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/kubevirt/vmipresets kubevirt listKubevirtVmiPresetsNoCredentials
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/kubevirt/vmflavors kubevirt listKubeVirtVMIPresetsNoCredentials
 //
 // Lists available VirtualMachineInstancePreset
 //
@@ -3592,39 +3576,15 @@ func (r Routing) listAnexiaTemplatesNoCredentials() http.Handler {
 //     Responses:
 //       default: errorResponse
 //       200: VirtualMachineInstancePresetList
-func (r Routing) listKubevirtVmiPresetsNoCredentials() http.Handler {
+func (r Routing) listKubeVirtVMIPresetsNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(provider.KubevirtVmiPresetsWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
-		provider.DecodeKubevirtVmiPresetsNoCredentialReq,
-		handler.EncodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/kubevirt/vmipresets/{preset_id} kubevirt getKubevirtVmiPresetNoCredentials
-//
-// Get a VirtualMachineInstancePreset
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: VirtualMachineInstancePreset
-func (r Routing) getKubevirtVmiPresetNoCredentials() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
-			middleware.UserSaver(r.userProvider),
-			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(provider.KubevirtVmiPresetWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
-		provider.DecodeKubevirtVmiPresetNoCredentialReq,
+		)(provider.KubeVirtVMIPresetsWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
+		provider.DecodeKubeVirtGenericNoCredentialReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -3647,32 +3607,8 @@ func (r Routing) listKubevirtStorageClassesNoCredentials() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(provider.KubevirtStorageClassesWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
-		provider.DecodeKubevirtStorageClassesNoCredentialReq,
-		handler.EncodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/kubevirt/storageclasses/{storageclass_id} kubevirt getKubevirtStorageClassNoCredentials
-//
-// Get a Storage Class
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: StorageClass
-func (r Routing) getKubevirtStorageClassNoCredentials() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
-			middleware.UserSaver(r.userProvider),
-			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(provider.KubevirtStorageClassWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
-		provider.DecodeKubevirtStorageClassNoCredentialReq,
+		)(provider.KubeVirtStorageClassesWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
+		provider.DecodeKubeVirtGenericNoCredentialReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -5223,9 +5159,9 @@ func (r Routing) listAKSClusters() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v2/providers/kubevirt/vmipresets kubevirt listKubevirtVmiPresets
+// swagger:route GET /api/v2/providers/kubevirt/vmflavors kubevirt listKubeVirtVMIPresets
 //
-// Lists available Kubevirt VirtualMachineInstancePreset.
+// Lists available KubeVirt VirtualMachineInstancePreset.
 //
 //     Produces:
 //     - application/json
@@ -5233,35 +5169,13 @@ func (r Routing) listAKSClusters() http.Handler {
 //     Responses:
 //       default: errorResponse
 //       200: VirtualMachineInstancePresetList
-func (r Routing) listKubevirtVmiPresets() http.Handler {
+func (r Routing) listKubeVirtVMIPresets() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.KubevirtVmiPresetsEndpoint(r.presetProvider, r.userInfoGetter)),
-		provider.DecodeKubevirtVmiPresetsReq,
-		handler.EncodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route GET /api/v2/providers/kubevirt/vmipresets/{preset_id} kubevirt getKubevirtVmiPreset
-//
-// Get a Kubevirt VirtualMachineInstancePreset.
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: VirtualMachineInstancePreset
-func (r Routing) getKubevirtVmiPreset() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
-			middleware.UserSaver(r.userProvider),
-		)(provider.KubevirtVmiPresetEndpoint(r.presetProvider, r.userInfoGetter)),
-		provider.DecodeKubevirtVmiPresetReq,
+		)(provider.KubeVirtVMIPresetsEndpoint(r.presetProvider, r.userInfoGetter)),
+		provider.DecodeKubeVirtGenericReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -5282,30 +5196,8 @@ func (r Routing) listKubevirtStorageClasses() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.KubevirtStorageClassesEndpoint(r.presetProvider, r.userInfoGetter)),
-		provider.DecodeKubevirtStorageClassesReq,
-		handler.EncodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route GET /api/v2/providers/kubevirt/storageclasses/{storageclass_id} kubevirt getKubevirtStorageClass
-//
-// Get a K8s StorageClass in the Kubevirt cluster.
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: StorageClass
-func (r Routing) getKubevirtStorageClass() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
-			middleware.UserSaver(r.userProvider),
-		)(provider.KubevirtStorageClassEndpoint(r.presetProvider, r.userInfoGetter)),
-		provider.DecodeKubevirtStorageClassReq,
+		)(provider.KubeVirtStorageClassesEndpoint(r.presetProvider, r.userInfoGetter)),
+		provider.DecodeKubeVirtGenericReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

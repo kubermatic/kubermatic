@@ -40,7 +40,7 @@ import (
 	kubevirtv1 "kubevirt.io/api/core/v1"
 )
 
-var NewKubevirtClientSet = func(kubeconfig string) (kubevirtcli.Interface, kubernetes.Interface, error) {
+var NewKubeVirtClientSet = func(kubeconfig string) (kubevirtcli.Interface, kubernetes.Interface, error) {
 	config, err := base64.StdEncoding.DecodeString(kubeconfig)
 	if err != nil {
 		// should not happen, always sent base64 encoded
@@ -90,33 +90,32 @@ func getKvKubeConfigFromCredentials(ctx context.Context, projectProvider provide
 
 }
 
-// LIST VmiPreset
-func KubevirtVmiPresets(kubeconfig string) (apiv2.VirtualMachineInstancePresetList, error) {
+func KubeVirtVMIPresets(kubeconfig string) (apiv2.VirtualMachineInstancePresetList, error) {
 
-	kvclient, _, err := NewKubevirtClientSet(kubeconfig)
+	kvClient, _, err := NewKubeVirtClientSet(kubeconfig)
 	if err != nil {
 		return nil, err
 	}
-	vmipresetlist, err := kvclient.KubevirtV1().VirtualMachineInstancePresets(metav1.NamespaceDefault).List(context.Background(), v1.ListOptions{})
+	vmiPresets, err := kvClient.KubevirtV1().VirtualMachineInstancePresets(metav1.NamespaceDefault).List(context.Background(), v1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 	res := apiv2.VirtualMachineInstancePresetList{}
-	for _, vmiPreset := range vmipresetlist.Items {
+	for _, vmiPreset := range vmiPresets.Items {
 		res = append(res, *newAPIVirtualMachineInstancePreset(&vmiPreset))
 	}
 
 	return res, nil
 }
 
-func KubevirtVmiPresetsWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
+func KubeVirtVMIPresetsWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
 	projectID, clusterID string) (interface{}, error) {
 	kvKubeconfig, err := getKvKubeConfigFromCredentials(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID)
 	if err != nil {
 		return nil, err
 	}
 
-	return KubevirtVmiPresets(kvKubeconfig)
+	return KubeVirtVMIPresets(kvKubeconfig)
 }
 
 func newAPIVirtualMachineInstancePreset(vmiPreset *kubevirtv1.VirtualMachineInstancePreset) *apiv2.VirtualMachineInstancePreset {
@@ -149,30 +148,6 @@ func newAPIVirtualMachineInstancePreset(vmiPreset *kubevirtv1.VirtualMachineInst
 	}
 }
 
-// GET VmiPreset
-func KubevirtVmiPreset(kubeconfig, presetName string) (*apiv2.VirtualMachineInstancePreset, error) {
-	kvclient, _, err := NewKubevirtClientSet(kubeconfig)
-	if err != nil {
-		return nil, err
-	}
-	vmiPreset, err := kvclient.KubevirtV1().VirtualMachineInstancePresets(metav1.NamespaceDefault).Get(context.Background(), presetName, v1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	return newAPIVirtualMachineInstancePreset(vmiPreset), nil
-}
-
-func KubevirtVmiPresetWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
-	projectID, clusterID, presetName string) (interface{}, error) {
-	kvKubeconfig, err := getKvKubeConfigFromCredentials(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID)
-	if err != nil {
-		return nil, err
-	}
-
-	return KubevirtVmiPreset(kvKubeconfig, presetName)
-}
-
 func newAPIStorageClass(sc *storagev1.StorageClass) *apiv2.StorageClass {
 	return &apiv2.StorageClass{
 		ObjectMeta: apiv1.ObjectMeta{
@@ -192,10 +167,9 @@ func newAPIStorageClass(sc *storagev1.StorageClass) *apiv2.StorageClass {
 	}
 }
 
-// LIST StorageClass
-func KubevirtStorageClasses(kubeconfig string) (apiv2.StorageClassList, error) {
+func KubeVirtStorageClasses(kubeconfig string) (apiv2.StorageClassList, error) {
 
-	_, cli, err := NewKubevirtClientSet(kubeconfig)
+	_, cli, err := NewKubeVirtClientSet(kubeconfig)
 	if err != nil {
 		return nil, err
 	}
@@ -212,40 +186,12 @@ func KubevirtStorageClasses(kubeconfig string) (apiv2.StorageClassList, error) {
 	return res, nil
 }
 
-func KubevirtStorageClassesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
+func KubeVirtStorageClassesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
 	projectID, clusterID string) (interface{}, error) {
 	kvKubeconfig, err := getKvKubeConfigFromCredentials(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID)
 	if err != nil {
 		return nil, err
 	}
 
-	return KubevirtStorageClasses(kvKubeconfig)
-
-}
-
-// GET StorageClass
-func KubevirtStorageClass(kubeconfig, storageClass string) (*apiv2.StorageClass, error) {
-
-	_, cli, err := NewKubevirtClientSet(kubeconfig)
-	if err != nil {
-		return nil, err
-	}
-
-	storageclass, err := cli.StorageV1().StorageClasses().Get(context.Background(), storageClass, v1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	return newAPIStorageClass(storageclass), nil
-}
-
-func KubevirtStorageClassWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
-	projectID, clusterID, storageClass string) (interface{}, error) {
-	kvKubeconfig, err := getKvKubeConfigFromCredentials(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID)
-	if err != nil {
-		return nil, err
-	}
-
-	return KubevirtStorageClass(kvKubeconfig, storageClass)
-
+	return KubeVirtStorageClasses(kvKubeconfig)
 }

@@ -13376,56 +13376,7 @@
         }
       }
     },
-    "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/kubevirt/storageclasses/{storageclass_id}": {
-      "get": {
-        "description": "Get a Storage Class",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "kubevirt"
-        ],
-        "operationId": "getKubevirtStorageClassNoCredentials",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "ProjectID",
-            "name": "project_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterID",
-            "name": "cluster_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "StorageClass",
-            "name": "storageclass_id",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "StorageClass",
-            "schema": {
-              "$ref": "#/definitions/StorageClass"
-            }
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/kubevirt/vmipresets": {
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/kubevirt/vmflavors": {
       "get": {
         "description": "Lists available VirtualMachineInstancePreset",
         "produces": [
@@ -13434,7 +13385,7 @@
         "tags": [
           "kubevirt"
         ],
-        "operationId": "listKubevirtVmiPresetsNoCredentials",
+        "operationId": "listKubeVirtVMIPresetsNoCredentials",
         "parameters": [
           {
             "type": "string",
@@ -13456,55 +13407,6 @@
             "description": "VirtualMachineInstancePresetList",
             "schema": {
               "$ref": "#/definitions/VirtualMachineInstancePresetList"
-            }
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/kubevirt/vmipresets/{preset_id}": {
-      "get": {
-        "description": "Get a VirtualMachineInstancePreset",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "kubevirt"
-        ],
-        "operationId": "getKubevirtVmiPresetNoCredentials",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "ProjectID",
-            "name": "project_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterID",
-            "name": "cluster_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "PresetName",
-            "name": "preset_id",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "VirtualMachineInstancePreset",
-            "schema": {
-              "$ref": "#/definitions/VirtualMachineInstancePreset"
             }
           },
           "default": {
@@ -17078,7 +16980,7 @@
         "parameters": [
           {
             "type": "string",
-            "name": "KvKubeconfig",
+            "name": "Kubeconfig",
             "in": "header"
           },
           {
@@ -17103,7 +17005,7 @@
         }
       }
     },
-    "/api/v2/providers/kubevirt/storageclasses/{storageclass_id}": {
+    "/api/v2/providers/kubevirt/vmflavors": {
       "get": {
         "produces": [
           "application/json"
@@ -17111,57 +17013,12 @@
         "tags": [
           "kubevirt"
         ],
-        "summary": "Get a K8s StorageClass in the Kubevirt cluster.",
-        "operationId": "getKubevirtStorageClass",
+        "summary": "Lists available KubeVirt VirtualMachineInstancePreset.",
+        "operationId": "listKubeVirtVMIPresets",
         "parameters": [
           {
             "type": "string",
-            "name": "KvKubeconfig",
-            "in": "header"
-          },
-          {
-            "type": "string",
-            "name": "Credential",
-            "in": "header"
-          },
-          {
-            "type": "string",
-            "x-go-name": "StorageClass",
-            "name": "storageclass_id",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "StorageClass",
-            "schema": {
-              "$ref": "#/definitions/StorageClass"
-            }
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/providers/kubevirt/vmipresets": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "kubevirt"
-        ],
-        "summary": "Lists available Kubevirt VirtualMachineInstancePreset.",
-        "operationId": "listKubevirtVmiPresets",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "KvKubeconfig",
+            "name": "Kubeconfig",
             "in": "header"
           },
           {
@@ -17175,51 +17032,6 @@
             "description": "VirtualMachineInstancePresetList",
             "schema": {
               "$ref": "#/definitions/VirtualMachineInstancePresetList"
-            }
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/providers/kubevirt/vmipresets/{preset_id}": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "kubevirt"
-        ],
-        "summary": "Get a Kubevirt VirtualMachineInstancePreset.",
-        "operationId": "getKubevirtVmiPreset",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "KvKubeconfig",
-            "in": "header"
-          },
-          {
-            "type": "string",
-            "name": "Credential",
-            "in": "header"
-          },
-          {
-            "type": "string",
-            "x-go-name": "PresetName",
-            "name": "preset_id",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "VirtualMachineInstancePreset",
-            "schema": {
-              "$ref": "#/definitions/VirtualMachineInstancePreset"
             }
           },
           "default": {
