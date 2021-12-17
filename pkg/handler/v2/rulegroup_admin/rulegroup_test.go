@@ -272,7 +272,7 @@ func TestCreateEndpoint(t *testing.T) {
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 			RuleGroup:              test.GenAPIRuleGroup("test-rule-group", v1.RuleGroupTypeMetrics, false),
 			ExpectedHTTPStatusCode: http.StatusCreated,
-			ExpectedResponse:       test.GenAPIRuleGroup("test-rule-group", v1.RuleGroupTypeMetrics, false),
+			ExpectedResponse:       test.GenAPIRuleGroup("test-rule-group", v1.RuleGroupTypeMetrics, true),
 		},
 		{
 			Name:     "admin cannot create rule group in the given cluster because it already exists",
@@ -378,7 +378,7 @@ func TestUpdateEndpoint(t *testing.T) {
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 			RuleGroup:              test.GenAPIRuleGroup("test-rule-group", v1.RuleGroupTypeMetrics, false),
 			ExpectedHTTPStatusCode: http.StatusOK,
-			ExpectedResponse:       test.GenAPIRuleGroup("test-rule-group", v1.RuleGroupTypeMetrics, false),
+			ExpectedResponse:       test.GenAPIRuleGroup("test-rule-group", v1.RuleGroupTypeMetrics, true),
 		},
 		{
 			Name:          "admin cannot update rule group because it doesn't exists",
