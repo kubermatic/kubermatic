@@ -34,7 +34,6 @@ require (
 	github.com/go-test/deep v1.0.7
 	github.com/google/go-cmp v0.5.6
 	github.com/gophercloud/gophercloud v0.20.0
-	github.com/gopherjs/gopherjs v0.0.0-20190430165422-3e4dfb77656c // indirect
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/securecookie v1.1.1
@@ -94,7 +93,7 @@ require (
 	k8s.io/metrics v0.22.2
 	k8s.io/test-infra v0.0.0-20210826180422-39483c498f0f
 	k8s.io/utils v0.0.0-20210819203725-bdf08cb9a70a
-	kubevirt.io/api v0.0.0-20211129173424-e2813e40f15a
+	kubevirt.io/api v0.48.0-rc.0.0.20211214181217-46c75844a711
 	sigs.k8s.io/aws-iam-authenticator v0.5.3
 	sigs.k8s.io/controller-runtime v0.10.2
 	sigs.k8s.io/controller-tools v0.7.0
@@ -157,6 +156,7 @@ require (
 	github.com/google/uuid v1.2.0 // indirect
 	github.com/googleapis/gax-go/v2 v2.0.5 // indirect
 	github.com/googleapis/gnostic v0.5.5 // indirect
+	github.com/gopherjs/gopherjs v0.0.0-20191106031601-ce3c9ade29de // indirect
 	github.com/gosimple/slug v1.1.1 // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
