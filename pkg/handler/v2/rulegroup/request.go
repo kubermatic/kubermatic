@@ -59,6 +59,9 @@ type createReq struct {
 }
 
 func (req *createReq) validate() (ruleGroupName string, err error) {
+	if req.Body.IsDefault {
+		return "", fmt.Errorf("only Admin can create default rule group")
+	}
 	return GetRuleGroupNameInData(req.Body.Data)
 }
 
@@ -75,6 +78,9 @@ type updateReq struct {
 }
 
 func (req *updateReq) validate() error {
+	if req.Body.IsDefault {
+		return fmt.Errorf("only Admin can update default rule group")
+	}
 	ruleGroupNameInData, err := GetRuleGroupNameInData(req.Body.Data)
 	if err != nil {
 		return err

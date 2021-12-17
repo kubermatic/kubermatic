@@ -205,7 +205,7 @@ func TestRuleGroupReconcile(t *testing.T) {
 }
 
 func generateRuleGroup(name, clusterName string, ruleGroupType kubermaticv1.RuleGroupType, deleted bool) *kubermaticv1.RuleGroup {
-	group := test.GenRuleGroup(name, clusterName, ruleGroupType)
+	group := test.GenRuleGroup(name, clusterName, ruleGroupType, false)
 	if deleted {
 		deleteTime := metav1.NewTime(time.Now())
 		group.DeletionTimestamp = &deleteTime

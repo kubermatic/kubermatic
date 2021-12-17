@@ -109,6 +109,9 @@ func UpdateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
+		if currentRuleGroup.Spec.IsDefault {
+			return nil, utilerrors.NewBadRequest("only Admin can update default rule group")
+		}
 		ruleGroup, err := convertAPIToInternalRuleGroup(c, &req.Body, req.RuleGroupID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -229,7 +232,8 @@ func convertAPIToInternalRuleGroup(cluster *kubermaticv1.Cluster, ruleGroup *api
 				APIVersion:      cluster.APIVersion,
 				ResourceVersion: cluster.ResourceVersion,
 			},
-			Data: ruleGroup.Data,
+			Data:      ruleGroup.Data,
+			IsDefault: ruleGroup.IsDefault,
 		},
 	}
 	return internalRuleGroup, nil
@@ -245,8 +249,9 @@ func convertInternalToAPIRuleGroups(ruleGroups []*kubermaticv1.RuleGroup) []*api
 
 func convertInternalToAPIRuleGroup(ruleGroup *kubermaticv1.RuleGroup) *apiv2.RuleGroup {
 	return &apiv2.RuleGroup{
-		Data: ruleGroup.Spec.Data,
-		Type: ruleGroup.Spec.RuleGroupType,
+		Data:      ruleGroup.Spec.Data,
+		Type:      ruleGroup.Spec.RuleGroupType,
+		IsDefault: ruleGroup.Spec.IsDefault,
 	}
 }
 
