@@ -826,7 +826,7 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 
 	// Defines endpoints for CNI versionsS
 	mux.Methods(http.MethodGet).
-		Path("/api/v2/cni/{cni_plugin_type}/versions").
+		Path("/cni/{cni_plugin_type}/versions").
 		Handler(r.listVersionsByCNIPlugin())
 
 	mux.Methods(http.MethodGet).
