@@ -37,7 +37,7 @@ const (
 	// termination, this is to allow the Kubelet to reach the control plane
 	// before the agents are running.
 	//
-	// This strategy has the inconvenient of requiring an agent on worker
+	// This strategy has the inconvenience of requiring an agent on worker
 	// nodes, but has the notable advantage of requiring one single entry point
 	// (e.g. Service of type LoadBalancer) without consuming one or more ports
 	// for each user cluster.

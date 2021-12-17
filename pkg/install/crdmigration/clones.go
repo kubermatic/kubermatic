@@ -1204,6 +1204,7 @@ func clonePresetResourcesInCluster(ctx context.Context, logger logrus.FieldLogge
 				ProviderPreset:  newv1.ProviderPreset(oldSpec.EKS.ProviderPreset),
 				AccessKeyID:     oldSpec.EKS.AccessKeyID,
 				SecretAccessKey: oldSpec.EKS.SecretAccessKey,
+				Region:          oldSpec.EKS.Region,
 			}
 		}
 

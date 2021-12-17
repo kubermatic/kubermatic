@@ -17,10 +17,26 @@ limitations under the License.
 package v1
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/go-test/deep"
 )
+
+func TestEnsureThatProvidersAreSorted(t *testing.T) {
+	stringValues := []string{}
+	for _, provider := range SupportedProviders {
+		stringValues = append(stringValues, string(provider))
+	}
+
+	sort.Strings(stringValues)
+
+	for i, provider := range SupportedProviders {
+		if string(provider) != stringValues[i] {
+			t.Fatalf("The variable SupportedProviders is not sorted alphabetically. This will lead to all sorts of other tests failing.")
+		}
+	}
+}
 
 func TestSetSeedDefaults(t *testing.T) {
 	testCases := []struct {
