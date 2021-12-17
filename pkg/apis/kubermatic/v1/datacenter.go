@@ -33,9 +33,9 @@ const (
 	// Constants defining known cloud providers.
 	FakeCloudProvider         ProviderType = "fake"
 	AKSCloudProvider          ProviderType = "aks"
-	AWSCloudProvider          ProviderType = "aws"
 	AlibabaCloudProvider      ProviderType = "alibaba"
 	AnexiaCloudProvider       ProviderType = "anexia"
+	AWSCloudProvider          ProviderType = "aws"
 	AzureCloudProvider        ProviderType = "azure"
 	BringYourOwnCloudProvider ProviderType = "bringyourown"
 	DigitaloceanCloudProvider ProviderType = "digitalocean"
@@ -57,9 +57,9 @@ const (
 var (
 	SupportedProviders = []ProviderType{
 		AKSCloudProvider,
-		AWSCloudProvider,
 		AlibabaCloudProvider,
 		AnexiaCloudProvider,
+		AWSCloudProvider,
 		AzureCloudProvider,
 		BringYourOwnCloudProvider,
 		DigitaloceanCloudProvider,

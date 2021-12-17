@@ -243,6 +243,10 @@ const (
 	// ApiserverNetworkPolicy enables the deployment of network policies that
 	// restrict the egress traffic from Apiserver pods.
 	ApiserverNetworkPolicy = "apiserverNetworkPolicy"
+
+	// KubeSystemNetworkPolicies enables the deployment of network policies to kube-system namespace that
+	// restrict traffic from all pods in the namespace
+	KubeSystemNetworkPolicies = "kubeSystemNetworkPolicies"
 )
 
 // +kubebuilder:validation:Enum="";SeedResourcesUpToDate;ClusterControllerReconciledSuccessfully;AddonControllerReconciledSuccessfully;AddonInstallerControllerReconciledSuccessfully;BackupControllerReconciledSuccessfully;CloudControllerReconcilledSuccessfully;UpdateControllerReconciledSuccessfully;MonitoringControllerReconciledSuccessfully;MachineDeploymentReconciledSuccessfully;MLAControllerReconciledSuccessfully;ClusterInitialized;RancherInitializedSuccessfully;RancherClusterImportedSuccessfully;EtcdClusterInitialized;CSIKubeletMigrationCompleted;ClusterUpdateSuccessful;ClusterUpdateInProgress;CSIKubeletMigrationSuccess;CSIKubeletMigrationInProgress;
