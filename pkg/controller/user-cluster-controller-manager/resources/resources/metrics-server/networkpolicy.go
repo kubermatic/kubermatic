@@ -17,6 +17,7 @@ limitations under the License.
 package metricsserver
 
 import (
+	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -31,6 +32,7 @@ func NetworkPolicyCreator() reconciling.NamedNetworkPolicyCreatorGetter {
 	return func() (string, reconciling.NetworkPolicyCreator) {
 		return "metrics-server", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			metricsPort := intstr.FromInt(9153)
+			protoTcp := v1.ProtocolTCP
 
 			np.Spec = networkingv1.NetworkPolicySpec{
 				PodSelector: metav1.LabelSelector{
@@ -54,7 +56,8 @@ func NetworkPolicyCreator() reconciling.NamedNetworkPolicyCreatorGetter {
 						},
 						Ports: []networkingv1.NetworkPolicyPort{
 							{
-								Port: &metricsPort,
+								Port:     &metricsPort,
+								Protocol: &protoTcp,
 							},
 						},
 					},
