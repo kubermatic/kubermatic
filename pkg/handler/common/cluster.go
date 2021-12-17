@@ -30,6 +30,8 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
+	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/label"
@@ -81,6 +83,7 @@ func CreateEndpoint(
 	userInfoGetter provider.UserInfoGetter,
 	caBundle *x509.CertPool,
 	configGetter provider.KubermaticConfigurationGetter,
+	features features.FeatureGate,
 ) (interface{}, error) {
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 	privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
@@ -95,7 +98,7 @@ func CreateEndpoint(
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	partialCluster, err := GenerateCluster(ctx, projectID, body, seedsGetter, credentialManager, exposeStrategy, userInfoGetter, caBundle, configGetter)
+	partialCluster, err := GenerateCluster(ctx, projectID, body, seedsGetter, credentialManager, exposeStrategy, userInfoGetter, caBundle, configGetter, features)
 	if err != nil {
 		return nil, err
 	}
@@ -159,6 +162,7 @@ func GenerateCluster(
 	userInfoGetter provider.UserInfoGetter,
 	caBundle *x509.CertPool,
 	configGetter provider.KubermaticConfigurationGetter,
+	features features.FeatureGate,
 ) (*kubermaticv1.Cluster, error) {
 	privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
 	adminUserInfo, err := userInfoGetter(ctx, "")
@@ -170,6 +174,11 @@ func GenerateCluster(
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
+	config, err := configGetter(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	credentialName := body.Cluster.Credential
 	if len(credentialName) > 0 {
 		cloudSpec, err := credentialManager.SetCloudCredentials(adminUserInfo, credentialName, body.Cluster.Spec.Cloud, dc)
@@ -179,17 +188,18 @@ func GenerateCluster(
 		body.Cluster.Spec.Cloud = *cloudSpec
 	}
 
-	// Create the cluster.
-	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetSeedClusterAdminRuntimeClient())
-	spec, err := cluster.Spec(body.Cluster, dc, secretKeyGetter, caBundle)
+	// Fetch the defaulting ClusterTemplate.
+	seedClient := privilegedClusterProvider.GetSeedClusterAdminRuntimeClient()
+	defaultingTemplate, err := defaulting.GetDefaultingClusterTemplate(ctx, seedClient, seed)
 	if err != nil {
-		return nil, errors.NewBadRequest("invalid cluster: %v", err)
+		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	// master level ExposeStrategy is the default
-	spec.ExposeStrategy = exposeStrategy
-	if seed.Spec.ExposeStrategy != "" {
-		spec.ExposeStrategy = seed.Spec.ExposeStrategy
+	// Create the Cluster object.
+	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(ctx, seedClient)
+	spec, err := cluster.Spec(body.Cluster, defaultingTemplate, seed, dc, config, secretKeyGetter, caBundle, features)
+	if err != nil {
+		return nil, errors.NewBadRequest("invalid cluster: %v", err)
 	}
 
 	if err = validation.ValidateUpdateWindow(spec.UpdateWindow); err != nil {
@@ -240,27 +250,10 @@ func GenerateCluster(
 	partialCluster.Labels[kubermaticv1.ProjectIDLabelKey] = projectID
 	partialCluster.Spec = *spec
 
-	// Enforce audit logging
-	if dc.Spec.EnforceAuditLogging {
-		partialCluster.Spec.AuditLogging = &kubermaticv1.AuditLoggingSettings{
-			Enabled: true,
-		}
-	}
-
-	// Enforce PodSecurityPolicy
-	if dc.Spec.EnforcePodSecurityPolicy {
-		partialCluster.Spec.UsePodSecurityPolicyAdmissionPlugin = true
-	}
-
 	if body.Cluster.Spec.EnableUserSSHKeyAgent == nil {
 		partialCluster.Spec.EnableUserSSHKeyAgent = pointer.BoolPtr(true)
 	} else {
 		partialCluster.Spec.EnableUserSSHKeyAgent = body.Cluster.Spec.EnableUserSSHKeyAgent
-	}
-
-	config, err := configGetter(ctx)
-	if err != nil {
-		return nil, err
 	}
 
 	// Generate the name here so that it can be used in the secretName below.
@@ -400,6 +393,7 @@ func PatchEndpoint(
 	privilegedProjectProvider provider.PrivilegedProjectProvider,
 	caBundle *x509.CertPool,
 	configGetter provider.KubermaticConfigurationGetter,
+	features features.FeatureGate,
 ) (interface{}, error) {
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 	privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
@@ -418,7 +412,7 @@ func PatchEndpoint(
 	if err != nil {
 		return nil, errors.New(http.StatusInternalServerError, err.Error())
 	}
-	_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, oldInternalCluster.Spec.Cloud.DatacenterName)
+	seed, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, oldInternalCluster.Spec.Cloud.DatacenterName)
 	if err != nil {
 		return nil, fmt.Errorf("error getting dc: %v", err)
 	}
@@ -486,33 +480,48 @@ func PatchEndpoint(
 		return nil, errors.NewBadRequest("Cluster contains nodes running the following incompatible kubelet versions: %v. Upgrade your nodes before you upgrade the cluster.", incompatibleKubelets)
 	}
 
-	if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(ctx, privilegedClusterProvider.GetSeedClusterAdminRuntimeClient(), newInternalCluster); err != nil {
+	// find the defaulting template
+	seedClient := privilegedClusterProvider.GetSeedClusterAdminRuntimeClient()
+
+	defaultingTemplate, err := defaulting.GetDefaultingClusterTemplate(ctx, seedClient, seed)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	// determine cloud provider for defaulting
+	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(ctx, seedClient)
+	cloudProvider, err := cluster.CloudProviderForCluster(&newInternalCluster.Spec, dc, secretKeyGetter, caBundle)
+	if err != nil {
 		return nil, err
 	}
 
-	// Enforce audit logging
-	if dc.Spec.EnforceAuditLogging {
-		newInternalCluster.Spec.AuditLogging = &kubermaticv1.AuditLoggingSettings{
-			Enabled: true,
-		}
+	// Prevent unconditional CNI upgrades for old clusters.
+	// Do not default cni if it was not explicitly set.
+	// Todo: Temporary hack will be removed soon
+	preventCNIDefaulting := newInternalCluster.Spec.CNIPlugin == nil
+
+	// apply default values to the new cluster
+	if err := defaulting.DefaultClusterSpec(&newInternalCluster.Spec, defaultingTemplate, seed, config, cloudProvider); err != nil {
+		return nil, err
 	}
 
-	// Enforce PodSecurityPolicy
-	if dc.Spec.EnforcePodSecurityPolicy {
-		newInternalCluster.Spec.UsePodSecurityPolicyAdmissionPlugin = true
+	if preventCNIDefaulting {
+		newInternalCluster.Spec.CNIPlugin = nil
 	}
 
-	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
-	if !ok {
-		return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+	if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(ctx, seedClient, newInternalCluster); err != nil {
+		return nil, err
 	}
-	if err := validation.ValidateUpdateCluster(ctx, newInternalCluster, oldInternalCluster, dc, assertedClusterProvider, caBundle); err != nil {
-		return nil, errors.NewBadRequest("invalid cluster: %v", err)
+
+	// validate the new cluster
+	if errs := validation.ValidateClusterUpdate(ctx, newInternalCluster, oldInternalCluster, dc, cloudProvider, features).ToAggregate(); errs != nil {
+		return nil, errors.NewBadRequest("invalid cluster: %v", errs)
 	}
 	if err = validation.ValidateUpdateWindow(newInternalCluster.Spec.UpdateWindow); err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
+	// update the Cluster resource
 	updatedCluster, err := updateCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, newInternalCluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)

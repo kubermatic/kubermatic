@@ -79,9 +79,11 @@ func main() {
 		log.Fatalf("Failed to create comment map: %v", err)
 	}
 
+	config := createExampleKubermaticConfiguration()
+
 	examples := map[string]runtime.Object{
-		"seed":                    createExampleSeed(),
-		"kubermaticConfiguration": createExampleKubermaticConfiguration(),
+		"kubermaticConfiguration": config,
+		"seed":                    createExampleSeed(config),
 	}
 
 	for name, data := range examples {
@@ -104,7 +106,7 @@ func main() {
 	}
 }
 
-func createExampleSeed() *kubermaticv1.Seed {
+func createExampleSeed(config *operatorv1alpha1.KubermaticConfiguration) *kubermaticv1.Seed {
 	imageList := kubermaticv1.ImageList{}
 
 	for _, operatingSystem := range providerconfig.AllOperatingSystems {
@@ -178,7 +180,7 @@ func createExampleSeed() *kubermaticv1.Seed {
 		},
 	}
 
-	defaulted, err := defaults.DefaultSeed(seed, zap.NewNop().Sugar())
+	defaulted, err := defaults.DefaultSeed(seed, config, zap.NewNop().Sugar())
 	if err != nil {
 		log.Fatalf("Failed to default Seed: %v", err)
 	}

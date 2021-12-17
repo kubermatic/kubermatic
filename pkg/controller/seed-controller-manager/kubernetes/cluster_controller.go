@@ -84,7 +84,6 @@ type Reconciler struct {
 	recorder record.EventRecorder
 
 	overwriteRegistry                string
-	nodePortRange                    string
 	nodeAccessNetwork                string
 	etcdDiskSize                     resource.Quantity
 	userClusterMLAEnabled            bool
@@ -119,7 +118,6 @@ func Add(
 	configGetter provider.KubermaticConfigurationGetter,
 	userClusterConnProvider userClusterConnectionProvider,
 	overwriteRegistry string,
-	nodePortRange string,
 	nodeAccessNetwork string,
 	etcdDiskSize resource.Quantity,
 	userClusterMLAEnabled bool,
@@ -151,7 +149,6 @@ func Add(
 		recorder: mgr.GetEventRecorderFor(ControllerName),
 
 		overwriteRegistry:                overwriteRegistry,
-		nodePortRange:                    nodePortRange,
 		nodeAccessNetwork:                nodeAccessNetwork,
 		etcdDiskSize:                     etcdDiskSize,
 		userClusterMLAEnabled:            userClusterMLAEnabled,

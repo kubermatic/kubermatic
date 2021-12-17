@@ -31,8 +31,9 @@ import (
 	"testing"
 	"time"
 
-	grafanasdk "github.com/kubermatic/grafanasdk"
 	"gopkg.in/yaml.v2"
+
+	grafanasdk "github.com/kubermatic/grafanasdk"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
 	"k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/scheme"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"

@@ -75,7 +75,6 @@ type Reconciler struct {
 	seedGetter               provider.SeedGetter
 	configGetter             provider.KubermaticConfigurationGetter
 	overwriteRegistry        string
-	nodePortRange            string
 	nodeAccessNetwork        string
 	dockerPullConfigJSON     []byte
 	concurrentClusterUpdates int
@@ -96,7 +95,6 @@ func Add(
 	seedGetter provider.SeedGetter,
 	configGetter provider.KubermaticConfigurationGetter,
 	overwriteRegistry string,
-	nodePortRange string,
 	nodeAccessNetwork string,
 	dockerPullConfigJSON []byte,
 	concurrentClusterUpdates int,
@@ -115,7 +113,6 @@ func Add(
 		recorder:                mgr.GetEventRecorderFor(ControllerName),
 
 		overwriteRegistry:        overwriteRegistry,
-		nodePortRange:            nodePortRange,
 		nodeAccessNetwork:        nodeAccessNetwork,
 		dockerPullConfigJSON:     dockerPullConfigJSON,
 		concurrentClusterUpdates: concurrentClusterUpdates,

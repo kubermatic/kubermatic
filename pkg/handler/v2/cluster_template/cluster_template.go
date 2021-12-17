@@ -29,6 +29,7 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/features"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -62,6 +63,7 @@ func CreateEndpoint(
 	exposeStrategy kubermaticv1.ExposeStrategy,
 	sshKeyProvider provider.SSHKeyProvider,
 	configGetter provider.KubermaticConfigurationGetter,
+	features features.FeatureGate,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createClusterTemplateReq)
@@ -91,7 +93,7 @@ func CreateEndpoint(
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		partialCluster, err := handlercommon.GenerateCluster(ctx, req.ProjectID, req.Body.CreateClusterSpec, seedsGetter, credentialManager, exposeStrategy, userInfoGetter, caBundle, configGetter)
+		partialCluster, err := handlercommon.GenerateCluster(ctx, req.ProjectID, req.Body.CreateClusterSpec, seedsGetter, credentialManager, exposeStrategy, userInfoGetter, caBundle, configGetter, features)
 		if err != nil {
 			return nil, err
 		}

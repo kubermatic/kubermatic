@@ -76,6 +76,11 @@ func StaticKubermaticConfigurationGetterFactory(config *operatorv1alpha1.Kuberma
 	}
 
 	return func(ctx context.Context) (*operatorv1alpha1.KubermaticConfiguration, error) {
-		return config, nil
+		defaulted, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply default values: %w", err)
+		}
+
+		return defaulted, nil
 	}, nil
 }

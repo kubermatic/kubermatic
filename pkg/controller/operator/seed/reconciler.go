@@ -206,9 +206,10 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *operatorv1alph
 		return fmt.Errorf("failed to add finalizer to Seed: %v", err)
 	}
 
-	seed, err := defaults.DefaultSeed(seed, log)
+	// apply the default values from the config to the current Seed
+	seed, err := defaults.DefaultSeed(seed, cfg, log)
 	if err != nil {
-		return fmt.Errorf("failed to apply default values to Seed:  %v", err)
+		return fmt.Errorf("failed to apply defaults to Seed: %v", err)
 	}
 
 	caBundle, err := certificates.GlobalCABundle(ctx, r.masterClient, cfg)
