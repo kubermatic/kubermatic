@@ -499,6 +499,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		SeedProvider:                            prov.seedProvider,
 		Versions:                                options.versions,
 		CABundle:                                options.caBundle.CertPool(),
+		Features:                                options.featureGates,
 	}
 
 	r := handler.NewRouting(routingParams, mgr.GetClient())
