@@ -19,6 +19,7 @@
 ### Misc
 
 - Add tolerations to user cluster system daemonsets ([#8425](https://github.com/kubermatic/kubermatic/issues/8425))
+- Add seed dns overwrite option to mla links ([#3912](https://github.com/kubermatic/dashboard/issues/3912))
 
 ## [v2.18.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.3)
 
