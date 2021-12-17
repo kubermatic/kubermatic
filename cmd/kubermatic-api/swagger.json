@@ -6775,6 +6775,11 @@
           },
           {
             "type": "string",
+            "name": "VPC",
+            "in": "header"
+          },
+          {
+            "type": "string",
             "x-go-name": "DC",
             "name": "dc",
             "in": "path",
@@ -6835,16 +6840,15 @@
           },
           {
             "type": "string",
+            "name": "VPC",
+            "in": "header"
+          },
+          {
+            "type": "string",
             "x-go-name": "DC",
             "name": "dc",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "VPC",
-            "name": "vpc",
-            "in": "header"
           }
         ],
         "responses": {
@@ -6897,6 +6901,11 @@
           {
             "type": "string",
             "name": "AssumeRoleExternalID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "VPC",
             "in": "header"
           },
           {
