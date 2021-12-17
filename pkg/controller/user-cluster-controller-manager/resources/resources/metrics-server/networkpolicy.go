@@ -32,6 +32,7 @@ func NetworkPolicyCreator() reconciling.NamedNetworkPolicyCreatorGetter {
 	return func() (string, reconciling.NetworkPolicyCreator) {
 		return "metrics-server", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			metricsPort := intstr.FromInt(9153)
+			httpsPort := intstr.FromInt(443)
 			protoTcp := v1.ProtocolTCP
 
 			np.Spec = networkingv1.NetworkPolicySpec{
@@ -57,6 +58,21 @@ func NetworkPolicyCreator() reconciling.NamedNetworkPolicyCreatorGetter {
 						Ports: []networkingv1.NetworkPolicyPort{
 							{
 								Port:     &metricsPort,
+								Protocol: &protoTcp,
+							},
+						},
+					},
+					{
+						From: []networkingv1.NetworkPolicyPeer{
+							{
+								PodSelector: &metav1.LabelSelector{
+									MatchLabels: map[string]string{resources.AppLabelKey: resources.KonnectivityDeploymentName},
+								},
+							},
+						},
+						Ports: []networkingv1.NetworkPolicyPort{
+							{
+								Port:     &httpsPort,
 								Protocol: &protoTcp,
 							},
 						},
