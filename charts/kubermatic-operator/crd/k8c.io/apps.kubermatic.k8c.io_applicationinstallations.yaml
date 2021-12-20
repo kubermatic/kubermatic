@@ -80,7 +80,7 @@ spec:
                   between controllers and the API
                 items:
                   properties:
-                    Message:
+                    message:
                       description: Human readable message indicating details about
                         last transition.
                       type: string
