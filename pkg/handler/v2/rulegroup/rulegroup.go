@@ -134,6 +134,13 @@ func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 		if err != nil {
 			return nil, err
 		}
+		currentRuleGroup, err := getRuleGroup(ctx, userInfoGetter, c, req.ProjectID, req.RuleGroupID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		if currentRuleGroup.Spec.IsDefault {
+			return nil, utilerrors.NewBadRequest("only Admin can delete default rule group")
+		}
 		if err = deleteRuleGroup(ctx, userInfoGetter, c, req.ProjectID, req.RuleGroupID); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

@@ -665,6 +665,19 @@ func TestDeleteEndpoint(t *testing.T) {
 			ExpectedHTTPStatusCode: http.StatusOK,
 		},
 		{
+			Name:          "can't delete default rule group",
+			RuleGroupName: "test-rule-group",
+			ProjectID:     test.GenDefaultProject().Name,
+			ClusterID:     test.GenDefaultCluster().Name,
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+				test.GenRuleGroup("test-rule-group", test.GenDefaultCluster().Name, v1.RuleGroupTypeMetrics, true),
+			),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			ExpectedHTTPStatusCode: http.StatusBadRequest,
+		},
+		{
 			Name:          "delete rule group which doesn't exist",
 			RuleGroupName: "test-rule-group",
 			ProjectID:     test.GenDefaultProject().Name,
