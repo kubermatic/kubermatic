@@ -28,6 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/gke"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
@@ -223,7 +224,7 @@ func GKEClustersEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider
 				sa = credentials.ServiceAccount
 			}
 		}
-		return providercommon.ListGKEClusters(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, clusterProvider, req.ProjectID, sa)
+		return gke.ListGKEClusters(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, clusterProvider, req.ProjectID, sa)
 	}
 }
 
@@ -245,7 +246,7 @@ func GKEImagesEndpoint(presetProvider provider.PresetProvider, userInfoGetter pr
 				sa = credentials.ServiceAccount
 			}
 		}
-		return providercommon.ListGKEImages(ctx, sa, req.Zone)
+		return gke.ListGKEImages(ctx, sa, req.Zone)
 	}
 }
 
@@ -267,7 +268,7 @@ func GKEValidateCredentialsEndpoint(presetProvider provider.PresetProvider, user
 				sa = credentials.ServiceAccount
 			}
 		}
-		return nil, providercommon.ValidateGKECredentials(ctx, sa)
+		return nil, gke.ValidateGKECredentials(ctx, sa)
 	}
 }
 
