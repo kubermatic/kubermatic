@@ -90,9 +90,14 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 func (h *AdmissionHandler) validateUpdate(ctx context.Context, osp, oldOSP *osmv1alpha1.OperatingSystemProfile) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	// Updates for OperatingSystemProfile Spec are not allowed
-	if equal := apiequality.Semantic.DeepEqual(oldOSP.Spec, osp.Spec); !equal {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), osp.Name, "OperatingSystemProfile is immutable and updates are not allowed"))
+	if equal := apiequality.Semantic.DeepEqual(oldOSP.Spec, osp.Spec); equal {
+		// There is no change in spec so no validation is required
+		return allErrs
+	}
+
+	// OSP is immutable by nature and to make modifications a version bump is mandatory
+	if osp.Spec.Version == oldOSP.Spec.Version {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec", "version"), osp.Spec.Version, "OperatingSystemProfile is immutable. For updates .spec.version needs to be updated"))
 	}
 	return allErrs
 }

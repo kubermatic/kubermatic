@@ -92,7 +92,7 @@ func (h *AdmissionHandler) validateUpdate(ctx context.Context, osc, oldOSC *osmv
 
 	// Updates for OperatingSystemConfig Spec are not allowed
 	if equal := apiequality.Semantic.DeepEqual(oldOSC.Spec, osc.Spec); !equal {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), osc.Name, "OperatingSystemConfig is immutable and updates are not allowed"))
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), "", "OperatingSystemConfig is immutable and updates are not allowed"))
 	}
 	return allErrs
 }
