@@ -34,6 +34,8 @@ type ClientService interface {
 
 	DeleteAdmissionPlugin(params *DeleteAdmissionPluginParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAdmissionPluginOK, error)
 
+	DeleteBackupDestination(params *DeleteBackupDestinationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteBackupDestinationOK, error)
+
 	DeleteSeed(params *DeleteSeedParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteSeedOK, error)
 
 	GetAdmins(params *GetAdminsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAdminsOK, error)
@@ -172,6 +174,44 @@ func (a *Client) DeleteAdmissionPlugin(params *DeleteAdmissionPluginParams, auth
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*DeleteAdmissionPluginDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  DeleteBackupDestination deletes a backup destination from the seed
+*/
+func (a *Client) DeleteBackupDestination(params *DeleteBackupDestinationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteBackupDestinationOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewDeleteBackupDestinationParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "deleteBackupDestination",
+		Method:             "DELETE",
+		PathPattern:        "/api/v1/admin/seeds/{seed_name}/backupdestinations/{backup_destination}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteBackupDestinationReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*DeleteBackupDestinationOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DeleteBackupDestinationDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
