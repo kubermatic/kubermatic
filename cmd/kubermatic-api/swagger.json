@@ -729,6 +729,51 @@
         }
       }
     },
+    "/api/v1/admin/seeds/{seed_name}/backupdestinations/{backup_destination}": {
+      "delete": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "admin"
+        ],
+        "summary": "Deletes a backup destination from the Seed.",
+        "operationId": "deleteBackupDestination",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Name",
+            "name": "seed_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "BackupDestination",
+            "name": "backup_destination",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/settings": {
       "get": {
         "produces": [
