@@ -1011,7 +1011,7 @@ type StorageClass struct {
 // swagger:model CNIVersions
 type CNIVersions struct {
 	// CNIPluginType represents the type of the CNI Plugin
-	CNIPluginType string
+	CNIPluginType string `json:"cniPluginType"`
 	// Versions represents the list of the CNI Plugin versions that are supported
-	Versions []string
+	Versions []string `json:"versions"`
 }

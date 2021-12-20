@@ -19383,16 +19383,18 @@
       "description": "CNIVersions is a list of versions for a CNI Plugin",
       "type": "object",
       "properties": {
-        "CNIPluginType": {
+        "cniPluginType": {
           "description": "CNIPluginType represents the type of the CNI Plugin",
-          "type": "string"
+          "type": "string",
+          "x-go-name": "CNIPluginType"
         },
-        "Versions": {
+        "versions": {
           "description": "Versions represents the list of the CNI Plugin versions that are supported",
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "x-go-name": "Versions"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
