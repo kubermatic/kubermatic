@@ -824,8 +824,8 @@ func convertClusterToAPI(internalCluster *kubermaticapiv1.ExternalCluster) *apiv
 		},
 		Labels: internalCluster.Labels,
 	}
-
 	cloud := internalCluster.Spec.CloudSpec
+
 	if cloud != nil {
 		cluster.Cloud = &apiv2.ExternalClusterCloudSpec{}
 		if cloud.EKS != nil {
@@ -838,6 +838,12 @@ func convertClusterToAPI(internalCluster *kubermaticapiv1.ExternalCluster) *apiv
 			cluster.Cloud.GKE = &apiv2.GKECloudSpec{
 				Name: cloud.GKE.Name,
 				Zone: cloud.GKE.Zone,
+			}
+		}
+		if cloud.AKS != nil {
+			cluster.Cloud.AKS = &apiv2.AKSCloudSpec{
+				Name:          cloud.AKS.Name,
+				ResourceGroup: cloud.AKS.ResourceGroup,
 			}
 		}
 	}
