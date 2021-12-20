@@ -42,6 +42,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	clustermutation "k8c.io/kubermatic/v2/pkg/webhook/cluster/mutation"
 	clustervalidation "k8c.io/kubermatic/v2/pkg/webhook/cluster/validation"
+	oscvalidation "k8c.io/kubermatic/v2/pkg/webhook/operatingsystemmanager/operatingsystemconfig/validation"
+	ospvalidation "k8c.io/kubermatic/v2/pkg/webhook/operatingsystemmanager/operatingsystemprofile/validation"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
@@ -217,6 +219,12 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 
 		// Setup the mutation admission handler for kubermatic Cluster CRDs
 		clustermutation.NewAdmissionHandler(mgr.GetClient(), ctrlCtx.configGetter, seedGetter, caPool).SetupWebhookWithManager(mgr)
+
+		// Setup the validation admission handler for OperatingSystemConfig CRDs
+		oscvalidation.NewAdmissionHandler().SetupWebhookWithManager(mgr)
+
+		// Setup the validation admission handler for OperatingSystemProfile CRDs
+		ospvalidation.NewAdmissionHandler().SetupWebhookWithManager(mgr)
 	}
 
 	if err := createAllControllers(ctrlCtx); err != nil {
