@@ -15,6 +15,7 @@
 # Sourced from:
 #  https://github.com/kubernetes-sigs/vsphere-csi-driver/blob/release-2.4/manifests/vanilla/vsphere-csi-driver.yaml
 # Modifications:
+#   - change namespace
 #   - remove windows support daemon sets
 #   - template csi-migration true or false
 #   - template function to replace base registry
@@ -207,7 +208,7 @@ metadata:
   name: vsphere-csi-controller
   namespace: kube-system
 spec:
-  replicas: 3
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
