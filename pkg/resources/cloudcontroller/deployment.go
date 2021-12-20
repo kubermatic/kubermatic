@@ -67,7 +67,11 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 					return nil, err
 				}
 
-				containerNames := sets.NewString(ccmContainerName, openvpnClientContainerName)
+				containerNames := sets.NewString(ccmContainerName)
+
+				if !data.IsKonnectivityEnabled() {
+					containerNames.Insert(openvpnClientContainerName)
+				}
 
 				wrappedPodSpec, err := apiserver.IsRunningWrapper(data, modified.Spec.Template.Spec, containerNames)
 				if err != nil {
