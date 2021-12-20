@@ -1,0 +1,145 @@
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+velero:
+  # the Docker image for Velero;
+  # if you are using restic, make sure to use an official image
+  # that also contains the restic binary
+  image:
+    repository: docker.io/velero/velero
+    tag: v1.6.3
+    pullPolicy: IfNotPresent
+
+  # CLI flags to pass to velero server; note that the two flags
+  # `default-backup-storage-location` and `default-volume-snapshot-locations`
+  # are automatically set via the configuration below
+  serverFlags: []
+
+  # Init containers to add to the Velero deployment's pod spec.
+  # At least one plugin provider image is required.
+  initContainers:
+  - name: velero-plugin-for-aws
+    image: docker.io/velero/velero-plugin-for-aws:v1.1.0
+    imagePullPolicy: IfNotPresent
+    volumeMounts:
+      - mountPath: /target
+        name: plugins
+
+  # - name: velero-plugin-for-gcp
+  #   image: docker.io/velero/velero-plugin-for-gcp:v1.1.0
+  #   imagePullPolicy: IfNotPresent
+  #   volumeMounts:
+  #     - mountPath: /target
+  #       name: plugins
+
+  # - name: velero-plugin-for-microsoft-azure
+  #   image: docker.io/velero/velero-plugin-for-microsoft-azure:v1.1.0
+  #   imagePullPolicy: IfNotPresent
+  #   volumeMounts:
+  #     - mountPath: /target
+  #       name: plugins
+
+  # whether or not to create a restic daemonset
+  restic:
+    deploy: false
+    resources:
+      requests:
+        cpu: 100m
+        memory: 30Mi
+      limits:
+        # during backups memory usage can spike, see https://github.com/restic/restic/issues/979
+        memory: 1Gi
+
+    affinity: {}
+    nodeSelector: {}
+    tolerations:
+    - effect: NoExecute
+      operator: Exists
+    - effect: NoSchedule
+      operator: Exists
+
+  # configure the credentials used to make snapshots (when using
+  # persistentVolumeProvider) and to store backups; you can enable
+  # multiple credentials, if for some reason you run on GCP and
+  # still want to make restic snapshots to be stored in AWS S3.
+  credentials: #{}
+    aws:
+     accessKey: ...
+     secretKey: ...
+    #gcp:
+    #  serviceKey: '{...}'
+    #azure:
+    #  AZURE_SUBSCRIPTION_ID: ...
+    #  AZURE_TENANT_ID: ...
+    #  AZURE_RESOURCE_GROUP: ...
+    #  AZURE_CLIENT_ID: ...
+    #  AZURE_CLIENT_SECRET: ...
+    #  AZURE_STORAGE_ACCOUNT_ID: ...
+    #  AZURE_STORAGE_KEY: ...
+    #restic:
+    #  password: averysecurepassword
+
+  # define one of your backupStorageLocations as the default
+  defaultBackupStorageLocation: aws
+
+  # see https://velero.io/docs/v1.1.0/api-types/backupstoragelocation/
+  backupStorageLocations:
+   aws:
+     provider: aws
+     objectStorage:
+       bucket: myclusterbackups
+     config:
+       region: eu-west-1
+
+  # optionally define some of your volumeSnapshotLocations as the default;
+  # each element in the list must be a string of the form "provider:location"
+  defaultVolumeSnapshotLocations:
+   - aws:aws
+
+  # see https://velero.io/docs/v1.1.0/api-types/volumesnapshotlocation/
+  volumeSnapshotLocations:
+   aws:
+     provider: aws
+     config:
+       region: eu-west-1
+
+  # glob expressions to find schedule definitions
+  schedulesPath: schedules/*
+
+  # Only kube2iam: change the AWS_ACCOUNT_ID and HEPTIO_VELERO_ROLE_NAME
+  podAnnotations: {}
+  # iam.amazonaws.com/role: arn:aws:iam::<AWS_ACCOUNT_ID>:role/<HEPTIO_VELERO_ROLE_NAME>
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 50Mi
+    limits:
+      memory: 512Mi
+
+  affinity:
+    # Backups are potentially long-running tasks and rescheduling Velero
+    # in the middle of them leaves you with broken, incomplete backups.
+    # Make sure to schedule Velero on long-living, stable nodes.
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
+          - key: kubermatic.io/type
+            operator: In
+            values:
+            - stable
+  nodeSelector: {}
+  tolerations: []
