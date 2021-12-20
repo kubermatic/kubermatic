@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -euo pipefail
+
 cd $(dirname $0)/../../..
 source hack/lib.sh
 
@@ -35,17 +37,18 @@ helm upgrade \
   --set cert-manager.clusterIssuers.letsencrypt-staging.email=dev@kubermatic.com \
   cert-manager charts/cert-manager/
 
-echodate "Downloading cmctl..."
-OS=$(go env GOOS); ARCH=$(go env GOARCH); curl -sLo cmctl.tar.gz https://github.com/jetstack/cert-manager/releases/latest/download/cmctl-$OS-$ARCH.tar.gz
-tar xzf cmctl.tar.gz
+if ! which cmctl; then 
+  echodate "Downloading cmctl..."
+  OS=$(go env GOOS); ARCH=$(go env GOARCH); curl -sLo cmctl.tar.gz https://github.com/jetstack/cert-manager/releases/latest/download/cmctl-$OS-$ARCH.tar.gz
+  tar xzf cmctl.tar.gz
 
-function cmctl_cleanup {
-  echodate "Cleaning up..."
-  rm cmctl cmctl.tar.gz
-  exit $exitcode
-}
-trap cmctl_cleanup EXIT
-
+  function cmctl_cleanup {
+    echodate "Cleaning up..."
+    rm cmctl cmctl.tar.gz
+    exit $exitcode
+  }
+  trap cmctl_cleanup EXIT
+fi
 echodate "Testing cert-manager..."
 ./cmctl check api --wait=2m
 exitcode=$?
