@@ -34,6 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/gke"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
@@ -887,7 +888,7 @@ func convertClusterToAPIWithStatus(ctx context.Context, privilegedClusterProvide
 		apiCluster.Status = *aksStatus
 	}
 	if cloud.GKE != nil {
-		gkeStatus, err := getGKEClusterStatus(ctx, secretKeySelector, cloud)
+		gkeStatus, err := gke.GetGKEClusterStatus(ctx, secretKeySelector, cloud)
 		if err != nil {
 			apiCluster.Status = apiv2.ExternalClusterStatus{
 				State:         apiv2.ERROR,
