@@ -13,6 +13,9 @@
 # limitations under the License.
 
 velero:
+
+  fullnameOverride: velero
+  upgradeCRDs: false
   # the Docker image for Velero;
   # if you are using restic, make sure to use an official image
   # that also contains the restic binary
@@ -30,21 +33,21 @@ velero:
   # At least one plugin provider image is required.
   initContainers:
   # - name: velero-plugin-for-aws
-  #   image: docker.io/velero/velero-plugin-for-aws:v1.1.0
+  #   image: docker.io/velero/velero-plugin-for-aws:v1.3.0
   #   imagePullPolicy: IfNotPresent
   #   volumeMounts:
   #     - mountPath: /target
   #       name: plugins
 
   # - name: velero-plugin-for-gcp
-  #   image: docker.io/velero/velero-plugin-for-gcp:v1.1.0
+  #   image: docker.io/velero/velero-plugin-for-gcp:v1.3.0
   #   imagePullPolicy: IfNotPresent
   #   volumeMounts:
   #     - mountPath: /target
   #       name: plugins
 
   # - name: velero-plugin-for-microsoft-azure
-  #   image: docker.io/velero/velero-plugin-for-microsoft-azure:v1.1.0
+  #   image: docker.io/velero/velero-plugin-for-microsoft-azure:v1.3.0
   #   imagePullPolicy: IfNotPresent
   #   volumeMounts:
   #     - mountPath: /target
@@ -73,7 +76,9 @@ velero:
   # persistentVolumeProvider) and to store backups; you can enable
   # multiple credentials, if for some reason you run on GCP and
   # still want to make restic snapshots to be stored in AWS S3.
-  credentials: {}
+  credentials:
+    # useSecret: true
+    # name: velero
     #aws:
     #  accessKey: ...
     #  secretKey: ...
@@ -89,33 +94,39 @@ velero:
     #  AZURE_STORAGE_KEY: ...
     #restic:
     #  password: averysecurepassword
+    
+  configuration:
 
-  # define one of your backupStorageLocations as the default
-  #defaultBackupStorageLocation: aws
+    # provider: aws
 
-  # see https://velero.io/docs/v1.1.0/api-types/backupstoragelocation/
-  #backupStorageLocations:
-  #  aws:
-  #    provider: aws
-  #    objectStorage:
-  #      bucket: myclusterbackups
-  #    config:
-  #      region: eu-west-1
+    # Parameters for the `default` BackupStorageLocation. See
+    # https://velero.io/docs/v1.6/api-types/backupstoragelocation/
+    #backupStorageLocation:
+    #  name: aws
+    #  provider: aws
+    #  bucket: myclusterbackups
+    #  config:
+    #      region: eu-west-1
 
-  # optionally define some of your volumeSnapshotLocations as the default;
-  # each element in the list must be a string of the form "provider:location"
-  #defaultVolumeSnapshotLocations:
-  #  - aws:aws
+    # Parameters for the `default` VolumeSnapshotLocation. See
+    # https://velero.io/docs/v1.6/api-types/volumesnapshotlocation/
+    #volumeSnapshotLocation:
+    #  name: aws
+    #  provider: aws
+    #  config:
+    #    region: eu-west-1
 
-  # see https://velero.io/docs/v1.1.0/api-types/volumesnapshotlocation/
-  #volumeSnapshotLocations:
-  #  aws:
-  #    provider: aws
-  #    config:
-  #      region: eu-west-1
-
-  # glob expressions to find schedule definitions
-  schedulesPath: schedules/*
+  schedules:
+    hourly-cluster:
+      disabled: false
+      schedule: "0 0 * * *"
+      useOwnerReferencesInBackup: true
+      template:
+        includeClusterResources: true
+        includedNamespaces:
+        - '*'
+        snapshotVolumes: false
+        ttl: 168h # 7 days
 
   # Only kube2iam: change the AWS_ACCOUNT_ID and HEPTIO_VELERO_ROLE_NAME
   podAnnotations: {}
