@@ -17,24 +17,17 @@ limitations under the License.
 package aws
 
 import (
-	"context"
-	"encoding/base64"
 	"errors"
 	"fmt"
 
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
-	"github.com/aws/aws-sdk-go/service/eks"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	httperror "k8c.io/kubermatic/v2/pkg/util/errors"
-
-	"k8s.io/client-go/tools/clientcmd/api"
-	"sigs.k8s.io/aws-iam-authenticator/pkg/token"
 )
 
 // The functions in this file are used throughout KKP, mostly in our REST API.
@@ -130,97 +123,4 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 	}
 
 	return accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, nil
-}
-
-func GetEKSClusterConfig(ctx context.Context, accessKeyID, secretAccessKey, clusterName, region string) (*api.Config, error) {
-	sess, err := getAWSSession(accessKeyID, secretAccessKey, "", "", region, "")
-	if err != nil {
-		return nil, err
-	}
-	eksSvc := eks.New(sess)
-
-	clusterInput := &eks.DescribeClusterInput{
-		Name: aws.String(clusterName),
-	}
-	clusterOutput, err := eksSvc.DescribeCluster(clusterInput)
-	if err != nil {
-		return nil, fmt.Errorf("error calling DescribeCluster: %w", err)
-	}
-
-	cluster := clusterOutput.Cluster
-	eksclusterName := cluster.Name
-
-	config := api.Config{
-		APIVersion: "v1",
-		Kind:       "Config",
-		Clusters:   map[string]*api.Cluster{},
-		AuthInfos:  map[string]*api.AuthInfo{},
-		Contexts:   map[string]*api.Context{},
-	}
-
-	gen, err := token.NewGenerator(true, false)
-	if err != nil {
-		return nil, err
-	}
-
-	opts := &token.GetTokenOptions{
-		ClusterID: *eksclusterName,
-		Session:   sess,
-	}
-	token, err := gen.GetWithOptions(opts)
-	if err != nil {
-		return nil, err
-	}
-
-	// example: eks_eu-central-1_cluster-1 => https://XX.XX.XX.XX
-	name := fmt.Sprintf("eks_%s_%s", region, *eksclusterName)
-
-	cert, err := base64.StdEncoding.DecodeString(aws.StringValue(cluster.CertificateAuthority.Data))
-	if err != nil {
-		return nil, err
-	}
-
-	config.Clusters[name] = &api.Cluster{
-		CertificateAuthorityData: cert,
-		Server:                   *cluster.Endpoint,
-	}
-	config.CurrentContext = name
-
-	// Just reuse the context name as an auth name.
-	config.Contexts[name] = &api.Context{
-		Cluster:  name,
-		AuthInfo: name,
-	}
-	// AWS specific configation; use cloud platform scope.
-	config.AuthInfos[name] = &api.AuthInfo{
-		Token: token.Token,
-	}
-	return &config, nil
-}
-
-func GetCredentialsForEKSCluster(cloud kubermaticv1.ExternalClusterCloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (accessKeyID, secretAccessKey string, err error) {
-	accessKeyID = cloud.EKS.AccessKeyID
-	secretAccessKey = cloud.EKS.SecretAccessKey
-
-	if accessKeyID == "" {
-		if cloud.EKS.CredentialsReference == nil {
-			return "", "", errors.New("no credentials provided")
-		}
-		accessKeyID, err = secretKeySelector(cloud.EKS.CredentialsReference, resources.AWSAccessKeyID)
-		if err != nil {
-			return "", "", err
-		}
-	}
-
-	if secretAccessKey == "" {
-		if cloud.EKS.CredentialsReference == nil {
-			return "", "", errors.New("no credentials provided")
-		}
-		secretAccessKey, err = secretKeySelector(cloud.EKS.CredentialsReference, resources.AWSSecretAccessKey)
-		if err != nil {
-			return "", "", err
-		}
-	}
-
-	return accessKeyID, secretAccessKey, nil
 }
