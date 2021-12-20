@@ -14,8 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -euo pipefail
-
 cd $(dirname $0)/../../..
 source hack/lib.sh
 
@@ -54,4 +52,6 @@ echodate "Testing cert-manager..."
 exitcode=$?
 
 echodate "Deleting kind cluster..."
-kind delete cluster --name "$KIND_CLUSTER_NAME"
+kind delete cluster --name "$KIND_CLUSTER_NAME" || true
+
+exit $exitcode
