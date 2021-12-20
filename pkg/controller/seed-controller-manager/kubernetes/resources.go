@@ -159,6 +159,20 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return nil, err
 	}
 
+	// This code supports switching between OpenVPN and Konnectivity setup (in both directions).
+	// It can be removed one release after deprecating OpenVPN.
+	if r.features.Konnectivity {
+		if cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled {
+			if err := r.ensureOpenVPNSetupIsRemoved(ctx, data); err != nil {
+				return nil, err
+			}
+		} else {
+			if err := r.ensureKonnectivitySetupIsRemoved(ctx, data); err != nil {
+				return nil, err
+			}
+		}
+	}
+
 	return &reconcile.Result{}, nil
 }
 
@@ -600,6 +614,43 @@ func (r *Reconciler) ensureOldOPAIntegrationIsRemoved(ctx context.Context, data 
 		}
 	}
 
+	return nil
+}
+
+func (r *Reconciler) ensureOpenVPNSetupIsRemoved(ctx context.Context, data *resources.TemplateData) error {
+	for _, resource := range openvpn.ResourcesForDeletion(data.Cluster().Status.NamespaceName) {
+		if err := r.Client.Delete(ctx, resource); err != nil && !errors.IsNotFound(err) {
+			return fmt.Errorf("failed to ensure OpenVPN resources are removed/not present: %v", err)
+		}
+	}
+	for _, resource := range metricsserver.ResourcesForDeletion(data.Cluster().Status.NamespaceName) {
+		if err := r.Client.Delete(ctx, resource); err != nil && !errors.IsNotFound(err) {
+			return fmt.Errorf("failed to ensure metrics-server resources are removed/not present: %v", err)
+		}
+	}
+	for _, resource := range dns.ResourcesForDeletion(data.Cluster().Status.NamespaceName) {
+		if err := r.Client.Delete(ctx, resource); err != nil && !errors.IsNotFound(err) {
+			return fmt.Errorf("failed to ensure dns-resolver resources are removed/not present: %v", err)
+		}
+	}
+	dnatControllerSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resources.KubeletDnatControllerKubeconfigSecretName,
+			Namespace: data.Cluster().Status.NamespaceName,
+		},
+	}
+	if err := r.Client.Delete(ctx, dnatControllerSecret); err != nil && !errors.IsNotFound(err) {
+		return fmt.Errorf("failed to ensure DNAT controller resources are removed/not present: %v", err)
+	}
+	return nil
+}
+
+func (r *Reconciler) ensureKonnectivitySetupIsRemoved(ctx context.Context, data *resources.TemplateData) error {
+	for _, resource := range konnectivity.ResourcesForDeletion(data.Cluster().Status.NamespaceName) {
+		if err := r.Client.Delete(ctx, resource); err != nil && !errors.IsNotFound(err) {
+			return fmt.Errorf("failed to ensure Konnectivity resources are removed/not present: %v", err)
+		}
+	}
 	return nil
 }
 
