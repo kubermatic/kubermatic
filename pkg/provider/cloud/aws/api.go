@@ -79,13 +79,28 @@ func GetVPCS(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, 
 }
 
 // GetSecurityGroups returns the list of AWS Security Group.
-func GetSecurityGroups(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region string) ([]*ec2.SecurityGroup, error) {
+func GetSecurityGroups(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, vpc string) ([]*ec2.SecurityGroup, error) {
 	client, err := GetClientSet(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region)
 	if err != nil {
 		return nil, err
 	}
 
-	return getSecurityGroupsWithClient(client.EC2)
+	securityGroups, err := getSecurityGroupsWithClient(client.EC2)
+	if err != nil {
+		return nil, err
+	}
+
+	if vpc != "" {
+		vpcSecurityGroups := make([]*ec2.SecurityGroup, 0)
+		for _, sg := range securityGroups {
+			if *sg.VpcId == vpc {
+				vpcSecurityGroups = append(vpcSecurityGroups, sg)
+			}
+		}
+		return vpcSecurityGroups, nil
+	}
+
+	return securityGroups, nil
 }
 
 func getSecurityGroupsWithClient(client ec2iface.EC2API) ([]*ec2.SecurityGroup, error) {

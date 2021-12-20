@@ -74,6 +74,9 @@ type ListAWSSecurityGroupsParams struct {
 	// SecretAccessKey.
 	SecretAccessKey *string
 
+	// VPC.
+	VPC *string
+
 	// Dc.
 	DC string
 
@@ -185,6 +188,17 @@ func (o *ListAWSSecurityGroupsParams) SetSecretAccessKey(secretAccessKey *string
 	o.SecretAccessKey = secretAccessKey
 }
 
+// WithVPC adds the vPC to the list a w s security groups params
+func (o *ListAWSSecurityGroupsParams) WithVPC(vPC *string) *ListAWSSecurityGroupsParams {
+	o.SetVPC(vPC)
+	return o
+}
+
+// SetVPC adds the vPC to the list a w s security groups params
+func (o *ListAWSSecurityGroupsParams) SetVPC(vPC *string) {
+	o.VPC = vPC
+}
+
 // WithDC adds the dc to the list a w s security groups params
 func (o *ListAWSSecurityGroupsParams) WithDC(dc string) *ListAWSSecurityGroupsParams {
 	o.SetDC(dc)
@@ -240,6 +254,14 @@ func (o *ListAWSSecurityGroupsParams) WriteToRequest(r runtime.ClientRequest, re
 
 		// header param SecretAccessKey
 		if err := r.SetHeaderParam("SecretAccessKey", *o.SecretAccessKey); err != nil {
+			return err
+		}
+	}
+
+	if o.VPC != nil {
+
+		// header param VPC
+		if err := r.SetHeaderParam("VPC", *o.VPC); err != nil {
 			return err
 		}
 	}
