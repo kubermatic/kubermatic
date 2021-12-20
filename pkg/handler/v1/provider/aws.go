@@ -51,6 +51,9 @@ type AWSCommonReq struct {
 	// in: header
 	// name: ExternalID
 	AssumeRoleExternalID string
+	// in: header
+	// name: VPC
+	VPC string
 }
 
 // AWSSubnetReq represent a request for AWS subnets.
@@ -60,9 +63,6 @@ type AWSSubnetReq struct {
 	// in: path
 	// required: true
 	DC string `json:"dc"`
-	// in: header
-	// name: VPC
-	VPC string `json:"vpc"`
 }
 
 // AWSVPCReq represent a request for AWS vpc's.
@@ -74,7 +74,7 @@ type AWSVPCReq struct {
 	DC string `json:"dc"`
 }
 
-// AWSVPCReq represent a request for AWS Security Group IDs.
+// AWSSecurityGroupsReq represent a request for AWS Security Group IDs.
 // swagger:parameters listAWSSecurityGroups
 type AWSSecurityGroupsReq struct {
 	AWSCommonReq
@@ -120,6 +120,7 @@ func DecodeAWSCommonReq(c context.Context, r *http.Request) (interface{}, error)
 	req.AssumeRoleARN = r.Header.Get("AssumeRoleARN")
 	req.AssumeRoleExternalID = r.Header.Get("AssumeRoleExternalID")
 	req.Credential = r.Header.Get("Credential")
+	req.VPC = r.Header.Get("VPC")
 
 	return req, nil
 }
@@ -139,8 +140,6 @@ func DecodeAWSSubnetReq(c context.Context, r *http.Request) (interface{}, error)
 		return req, fmt.Errorf("'dc' parameter is required")
 	}
 	req.DC = dc
-
-	req.VPC = r.Header.Get("VPC")
 
 	return req, nil
 }
@@ -164,7 +163,7 @@ func DecodeAWSVPCReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-// DecodeAWSVPCReq decodes a request for a list of AWS Security Groups
+// DecodeAWSSecurityGroupsReq decodes a request for a list of AWS Security Groups
 func DecodeAWSSecurityGroupsReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req AWSSecurityGroupsReq
 
@@ -303,15 +302,15 @@ func AWSSecurityGroupsEndpoint(presetProvider provider.PresetProvider, seedsGett
 			return nil, errors.NewBadRequest(err.Error())
 		}
 
-		return listSecurityGroup(credentials.accessKeyID, credentials.secretAccessKey, credentials.assumeRoleARN, credentials.assumeRoleExternalID, datacenter.Spec.AWS.Region)
+		return listSecurityGroup(credentials.accessKeyID, credentials.secretAccessKey, credentials.assumeRoleARN, credentials.assumeRoleExternalID, datacenter.Spec.AWS.Region, credentials.vpcID)
 	}
 }
 
-func listSecurityGroup(accessKeyID, secretAccessKey, assumeRoleARN string, assumeRoleExternalID string, region string) (*apiv1.AWSSecurityGroupList, error) {
+func listSecurityGroup(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, vpc string) (*apiv1.AWSSecurityGroupList, error) {
 
 	securityGroupList := &apiv1.AWSSecurityGroupList{}
 
-	securityGroups, err := awsprovider.GetSecurityGroups(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region)
+	securityGroups, err := awsprovider.GetSecurityGroups(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, vpc)
 	if err != nil {
 		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get Security Groups: %v", err))
 	}
@@ -328,6 +327,7 @@ type awsCredentials struct {
 	secretAccessKey      string
 	assumeRoleARN        string
 	assumeRoleExternalID string
+	vpcID                string
 }
 
 func getAWSCredentialsFromRequest(ctx context.Context, req AWSCommonReq, userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) (*awsCredentials, error) {
@@ -335,6 +335,7 @@ func getAWSCredentialsFromRequest(ctx context.Context, req AWSCommonReq, userInf
 	secretAccessKey := req.SecretAccessKey
 	assumeRoleARN := req.AssumeRoleARN
 	assumeRoleExternalID := req.AssumeRoleExternalID
+	vpcID := req.VPC
 
 	userInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
@@ -351,6 +352,7 @@ func getAWSCredentialsFromRequest(ctx context.Context, req AWSCommonReq, userInf
 			secretAccessKey = credential.SecretAccessKey
 			assumeRoleARN = credential.AssumeRoleARN
 			assumeRoleExternalID = credential.AssumeRoleExternalID
+			vpcID = credential.VPCID
 		}
 	}
 
@@ -359,6 +361,7 @@ func getAWSCredentialsFromRequest(ctx context.Context, req AWSCommonReq, userInf
 		secretAccessKey:      secretAccessKey,
 		assumeRoleARN:        assumeRoleARN,
 		assumeRoleExternalID: assumeRoleExternalID,
+		vpcID:                vpcID,
 	}, nil
 }
 

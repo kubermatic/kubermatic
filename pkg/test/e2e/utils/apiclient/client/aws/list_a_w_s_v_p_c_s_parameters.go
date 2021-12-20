@@ -74,6 +74,9 @@ type ListAWSVPCSParams struct {
 	// SecretAccessKey.
 	SecretAccessKey *string
 
+	// VPC.
+	VPC *string
+
 	// Dc.
 	DC string
 
@@ -185,6 +188,17 @@ func (o *ListAWSVPCSParams) SetSecretAccessKey(secretAccessKey *string) {
 	o.SecretAccessKey = secretAccessKey
 }
 
+// WithVPC adds the vPC to the list a w s v p c s params
+func (o *ListAWSVPCSParams) WithVPC(vPC *string) *ListAWSVPCSParams {
+	o.SetVPC(vPC)
+	return o
+}
+
+// SetVPC adds the vPC to the list a w s v p c s params
+func (o *ListAWSVPCSParams) SetVPC(vPC *string) {
+	o.VPC = vPC
+}
+
 // WithDC adds the dc to the list a w s v p c s params
 func (o *ListAWSVPCSParams) WithDC(dc string) *ListAWSVPCSParams {
 	o.SetDC(dc)
@@ -240,6 +254,14 @@ func (o *ListAWSVPCSParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.R
 
 		// header param SecretAccessKey
 		if err := r.SetHeaderParam("SecretAccessKey", *o.SecretAccessKey); err != nil {
+			return err
+		}
+	}
+
+	if o.VPC != nil {
+
+		// header param VPC
+		if err := r.SetHeaderParam("VPC", *o.VPC); err != nil {
 			return err
 		}
 	}
