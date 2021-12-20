@@ -68,7 +68,7 @@ var _ = ginkgo.Describe("CCM migration", func() {
 
 		ginkgo.BeforeEach(func() {
 			vsphereCluster = &kubermaticv1.Cluster{}
-			clusterJig = providers.NewClusterJigVsphere(seedClient, options.userClusterName, options.kubernetesVersion, options.vSphereCredentials)
+			clusterJig = providers.NewClusterJigVsphere(seedClient, options.kubernetesVersion, options.vsphereSeedDatacenter, options.vSphereCredentials)
 			userClient = setupAndGetUserClient(clusterJig, vsphereCluster, clusterClientProvider)
 		})
 
@@ -88,7 +88,7 @@ var _ = ginkgo.Describe("CCM migration", func() {
 
 		ginkgo.BeforeEach(func() {
 			openstackCluster = &kubermaticv1.Cluster{}
-			clusterJig = providers.NewClusterJigOpenstack(seedClient, options.userClusterName, options.kubernetesVersion, options.osCredentials)
+			clusterJig = providers.NewClusterJigOpenstack(seedClient, options.kubernetesVersion, options.osSeedDatacenter, options.osCredentials)
 			userClient = setupAndGetUserClient(clusterJig, openstackCluster, clusterClientProvider)
 		})
 
@@ -108,8 +108,19 @@ func setupAndGetUserClient(clusterJig providers.ClusterJigInterface, cluster *ku
 	clusterJig.Log().Debugw("Cluster set up", "name", clusterJig.Name())
 	gomega.Expect(clusterJig.Seed().Get(context.TODO(), types.NamespacedName{Name: clusterJig.Name()}, cluster)).NotTo(gomega.HaveOccurred())
 
+	gomega.Expect(wait.Poll(userClusterPollInterval, customTestTimeout, func() (done bool, err error) {
+		if err := clusterJig.ExposeAPIServer(); err != nil {
+			clusterJig.Log().Debug("nodeport creation failed, retrying...")
+			return false, nil
+		}
+		return true, nil
+	})).NotTo(gomega.HaveOccurred())
+
+	clusterJig.Log().Debugw("User cluster exposed through NodePort", clusterJig.Name())
+
 	var userClient ctrlruntimeclient.Client
 	gomega.Expect(wait.Poll(userClusterPollInterval, customTestTimeout, func() (done bool, err error) {
+		gomega.Expect(clusterJig.Seed().Get(context.TODO(), types.NamespacedName{Name: clusterJig.Name()}, cluster)).NotTo(gomega.HaveOccurred())
 		userClient, err = clusterClientProvider.GetClient(context.TODO(), cluster)
 		if err != nil {
 			clusterJig.Log().Debug("user cluster client get failed, retrying...")
@@ -126,9 +137,6 @@ func setupAndGetUserClient(clusterJig providers.ClusterJigInterface, cluster *ku
 }
 
 func testBody(clusterJig providers.ClusterJigInterface, cluster *kubermaticv1.Cluster, userClient ctrlruntimeclient.Client) {
-
-	time.Sleep(100 * time.Minute)
-
 	ginkgo.By("enabling externalCloudProvider feature")
 	gomega.Expect(clusterJig.Seed().Get(context.TODO(), types.NamespacedName{Name: clusterJig.Name()}, cluster)).NotTo(gomega.HaveOccurred())
 	newCluster := cluster.DeepCopy()
@@ -186,6 +194,6 @@ func testBody(clusterJig providers.ClusterJigInterface, cluster *kubermaticv1.Cl
 
 	ginkgo.By("checking that all the needed components are up and running")
 	gomega.Expect(wait.Poll(userClusterPollInterval, customTestTimeout, func() (done bool, err error) {
-		return clusterJig.CheckComponents()
+		return clusterJig.CheckComponents(userClient)
 	})).NotTo(gomega.HaveOccurred())
 }

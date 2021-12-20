@@ -32,6 +32,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
@@ -40,8 +41,9 @@ import (
 
 type ClusterJigInterface interface {
 	Setup() error
+	ExposeAPIServer() error
 	CreateMachineDeployment(userClient ctrlruntimeclient.Client) error
-	CheckComponents() (bool, error)
+	CheckComponents(userClient ctrlruntimeclient.Client) (bool, error)
 	Cleanup(userClient ctrlruntimeclient.Client) error
 	Name() string
 	Seed() ctrlruntimeclient.Client
@@ -58,6 +60,7 @@ type CommonClusterJig struct {
 
 func (ccj *CommonClusterJig) generateAndCreateCluster(cloudSpec kubermaticv1.CloudSpec) error {
 	cluster := utils.DefaultCluster(ccj.name, ccj.Version, cloudSpec)
+
 	return ccj.SeedClient.Create(context.TODO(), cluster)
 }
 
@@ -77,6 +80,36 @@ func (ccj *CommonClusterJig) generateAndCCreateMachineDeployment(userClient ctrl
 		}
 	})
 	return userClient.Create(context.TODO(), machineDeployment)
+}
+
+func (ccj *CommonClusterJig) exposeAPIServer() error {
+	ctx := context.TODO()
+
+	NodePort := corev1.Service{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      ccj.name,
+			Namespace: fmt.Sprintf("cluster-%s", ccj.name),
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name:     "secure",
+					Port:     6443,
+					Protocol: corev1.ProtocolTCP,
+					NodePort: 31000,
+				},
+			},
+			Selector: map[string]string{
+				"app": "apiserver",
+			},
+			Type: corev1.ServiceTypeNodePort,
+		},
+	}
+	if err := ccj.SeedClient.Create(ctx, &NodePort); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // CleanUp deletes the cluster.

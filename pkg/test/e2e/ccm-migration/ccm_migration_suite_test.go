@@ -34,22 +34,28 @@ import (
 type testOptions struct {
 	skipCleanup       bool
 	debugLog          bool
-	userClusterName   string
 	kubernetesVersion semver.Semver
+	seedName          string
+
+	vsphereSeedDatacenter string
+	osSeedDatacenter      string
 
 	osCredentials      providers.OpenstackCredentialsType
 	vSphereCredentials providers.VsphereCredentialsType
 }
 
 var options = testOptions{
-	kubernetesVersion: *semver.NewSemverOrDie("v1.20.14"),
+	kubernetesVersion: *semver.NewSemverOrDie("v1.21.7"),
 }
 
 func init() {
-	flag.StringVar(&options.userClusterName, "user-cluster-name", "", "name of the user cluster to be created")
 	flag.Var(&options.kubernetesVersion, "kubernetes-version", "Kubernetes version for the user cluster")
 	flag.BoolVar(&options.debugLog, "debug-log", false, "Activate debug logs.")
 	flag.BoolVar(&options.skipCleanup, "skip-cleanup", false, "Skip clean-up of resources.")
+	flag.StringVar(&options.seedName, "seed-name", "kubermatic", "The name of the seed resource")
+
+	flag.StringVar(&options.osSeedDatacenter, "openstack-seed-datacenter", "", "openstack datacenter")
+	flag.StringVar(&options.vsphereSeedDatacenter, "vsphere-seed-datacenter", "", "vsphere seed datacenter")
 
 	flag.StringVar(&options.osCredentials.AuthURL, "openstack-auth-url", "", "openstack auth url")
 	flag.StringVar(&options.osCredentials.Username, "openstack-username", "", "openstack username")
@@ -59,12 +65,13 @@ func init() {
 	flag.StringVar(&options.osCredentials.Region, "openstack-region", "", "openstack region")
 	flag.StringVar(&options.osCredentials.FloatingIPPool, "openstack-floating-ip-pool", "", "openstack floating ip pool")
 	flag.StringVar(&options.osCredentials.Network, "openstack-network", "", "openstack network")
-	flag.StringVar(&options.osCredentials.Datacenter, "openstack-datacenter", "", "openstack datacenter")
 
 	flag.StringVar(&options.vSphereCredentials.AuthURL, "vsphere-auth-url", "", "vsphere auth-url")
 	flag.StringVar(&options.vSphereCredentials.Username, "vsphere-username", "", "vsphere username")
 	flag.StringVar(&options.vSphereCredentials.Password, "vsphere-password", "", "vsphere password")
 	flag.StringVar(&options.vSphereCredentials.Datacenter, "vsphere-datacenter", "", "vsphere datacenter")
+	flag.StringVar(&options.vSphereCredentials.Cluster, "vsphere-cluster", "", "vsphere cluster")
+
 }
 
 func TestCCMMigration(t *testing.T) {

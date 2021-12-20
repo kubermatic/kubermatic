@@ -207,7 +207,7 @@ spec:
   datacenters:
     syseleven-dbl1:
       country: DE
-      location: Syseleven - dbl1
+      location: Syseleven-dbl1
       node: {}
       spec:
         openstack:
@@ -241,7 +241,7 @@ spec:
           datacenter: dc-1
           datastore: exsi-nas
           endpoint: https://vcenter.loodse.io
-          root_path: /dc-1/vm/kubermatic
+          root_path: /dc-1/vm/kubermatic/
           storage_policy: ""
           templates:
             centos: machine-controller-e2e-centos
@@ -258,25 +258,6 @@ echodate "Waiting for Kubermatic Operator to deploy Seed components..."
 retry 15 check_all_deployments_ready kubermatic
 echodate "Kubermatic Seed is ready."
 
-cat << EOF > "${API_SERVER_NODEPORT_MANIFEST}"
-apiVersion: v1
-kind: Service
-metadata:
-  name: apiserver-external-nodeport
-  namespace: cluster-${USER_CLUSTER_NAME}
-spec:
-  ports:
-  - name: secure
-    port: 6443
-    protocol: TCP
-    nodePort: ${KIND_PORT}
-  selector:
-    app: apiserver
-  type: NodePort
-EOF
-
-time retry 10 kubectl apply -f "${API_SERVER_NODEPORT_MANIFEST}" &
-
 EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
     -openstack-project=${OS_TENANT_NAME}
     -openstack-username=${OS_USERNAME}
@@ -285,15 +266,14 @@ EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
     -openstack-region=${OS_REGION}
     -openstack-floating-ip-pool=${OS_FLOATING_IP_POOL}
     -openstack-network=${OS_NETWORK_NAME}
-    -openstack-datacenter=syseleven-dbl1
+    -openstack-seed-datacenter=syseleven-dbl1
+    -vsphere-seed-datacenter=vsphere-hamburg
+    -vsphere-datacenter=dc-1
+    -vsphere-cluster=cl-1
     -vsphere-auth-url=${VSPHERE_E2E_ADDRESS}
     -vsphere-username=${VSPHERE_E2E_USERNAME}
     -vsphere-password=${VSPHERE_E2E_PASSWORD}
-    -vsphere-datacenter=vsphere-hamburg
     "
-
-# delete userclusters when ending the test
-appendTrap cleanup_kubermatic_clusters_in_kind EXIT
 
 # run tests
 # use ginkgo binary by preference to have better output:
@@ -323,7 +303,5 @@ else
     --kubeconfig "${HOME}/.kube/config" \
     --kubernetes-version "${USER_CLUSTER_KUBERNETES_VERSION}" \
     --debug-log \
-    --user-cluster-name="${USER_CLUSTER_NAME}" \
+    --user-cluster-name="${USER_CLUSTER_NAME}"
 fi
-
-sleep(10000)

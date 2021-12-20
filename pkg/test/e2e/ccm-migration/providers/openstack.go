@@ -17,6 +17,7 @@ limitations under the License.
 package providers
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -28,12 +29,16 @@ import (
 	"k8c.io/kubermatic/v2/pkg/semver"
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/rand"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
 	osSecretPrefixName = "credentials-openstack"
+
+	osCCMDeploymentName = "openstack-cloud-controller-manager"
 )
 
 type OpenstackClusterJig struct {
@@ -44,11 +49,11 @@ type OpenstackClusterJig struct {
 	Credentials OpenstackCredentialsType
 }
 
-func NewClusterJigOpenstack(seedClient ctrlruntimeclient.Client, clusterName string, version semver.Semver, credentials OpenstackCredentialsType) *OpenstackClusterJig {
+func NewClusterJigOpenstack(seedClient ctrlruntimeclient.Client, version semver.Semver, seedDatacenter string, credentials OpenstackCredentialsType) *OpenstackClusterJig {
 	return &OpenstackClusterJig{
 		CommonClusterJig: CommonClusterJig{
-			name:           clusterName,
-			DatacenterName: credentials.Datacenter,
+			name:           fmt.Sprintf("o%s", rand.String(9)),
+			DatacenterName: seedDatacenter,
 			Version:        version,
 			SeedClient:     seedClient,
 		},
@@ -83,6 +88,10 @@ func (c *OpenstackClusterJig) Setup() error {
 	return c.waitForClusterControlPlaneReady()
 }
 
+func (c *OpenstackClusterJig) ExposeAPIServer() error {
+	return c.exposeAPIServer()
+}
+
 func (c *OpenstackClusterJig) CreateMachineDeployment(userClient ctrlruntimeclient.Client) error {
 	if err := c.generateAndCCreateMachineDeployment(userClient, c.Credentials.GenerateProviderSpec()); err != nil {
 		return errors.Wrap(err, "failed to create machine deployment")
@@ -94,8 +103,18 @@ func (c *OpenstackClusterJig) Cleanup(userClient ctrlruntimeclient.Client) error
 	return c.cleanUp(userClient)
 }
 
-func (c *OpenstackClusterJig) CheckComponents() (bool, error) {
-	return true, nil
+func (c *OpenstackClusterJig) CheckComponents(userClient ctrlruntimeclient.Client) (bool, error) {
+	ctx := context.TODO()
+
+	ccmDeploy := &appsv1.Deployment{}
+	if err := c.SeedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: fmt.Sprintf("cluster-%s", c.name), Name: osCCMDeploymentName}, ccmDeploy); err != nil {
+		return false, errors.Wrapf(err, "failed to get %s deployment", osCCMDeploymentName)
+	}
+	if ccmDeploy.Status.AvailableReplicas == 1 {
+		return true, nil
+	}
+
+	return false, nil
 }
 
 func (c *OpenstackClusterJig) Name() string {
