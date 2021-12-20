@@ -18,10 +18,10 @@ import (
 type CNIVersions struct {
 
 	// CNIPluginType represents the type of the CNI Plugin
-	CNIPluginType string `json:"CNIPluginType,omitempty"`
+	CNIPluginType string `json:"cniPluginType,omitempty"`
 
 	// Versions represents the list of the CNI Plugin versions that are supported
-	Versions []string `json:"Versions"`
+	Versions []string `json:"versions"`
 }
 
 // Validate validates this c n i versions
