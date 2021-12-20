@@ -26,7 +26,11 @@ import (
 
 func NamespaceCreator() (string, reconciling.NamespaceCreator) {
 	return resources.UserClusterMLANamespace, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
-		ns.ObjectMeta.Labels[common.ComponentLabel] = resources.MLAComponentName
+		if ns.Labels != nil {
+			ns.Labels[common.ComponentLabel] = resources.MLAComponentName
+		} else {
+			ns.SetLabels(map[string]string{common.ComponentLabel: resources.MLAComponentName})
+		}
 		return ns, nil
 	}
 }
