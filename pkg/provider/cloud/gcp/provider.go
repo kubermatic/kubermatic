@@ -31,7 +31,6 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/compute/v1"
-	"google.golang.org/api/container/v1"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 
@@ -40,8 +39,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
-
-	"k8s.io/client-go/tools/clientcmd/api"
 )
 
 const (
@@ -214,83 +211,6 @@ func ConnectToComputeService(serviceAccount string) (*compute.Service, string, e
 		return nil, "", fmt.Errorf("cannot connect to Google Cloud: %v", err)
 	}
 	return svc, projectID, nil
-}
-
-// ConnectToContainerService establishes a service connection to the Container Engine.
-func ConnectToContainerService(serviceAccount string) (*container.Service, string, error) {
-	ctx := context.Background()
-	client, projectID, err := createClient(ctx, serviceAccount, container.CloudPlatformScope)
-	if err != nil {
-		return nil, "", fmt.Errorf("cannot create Google Cloud client: %v", err)
-	}
-	svc, err := container.NewService(ctx, option.WithHTTPClient(client))
-	if err != nil {
-		return nil, "", fmt.Errorf("cannot connect to Google Cloud: %v", err)
-	}
-	return svc, projectID, nil
-}
-
-func getCredentials(serviceAccount string) (*google.Credentials, error) {
-	ctx := context.Background()
-	b, err := base64.StdEncoding.DecodeString(serviceAccount)
-	if err != nil {
-		return nil, fmt.Errorf("error decoding service account: %v", err)
-	}
-	sam := map[string]string{}
-	err = json.Unmarshal(b, &sam)
-	if err != nil {
-		return nil, fmt.Errorf("failed unmarshaling service account: %v", err)
-	}
-	return google.CredentialsFromJSON(ctx, b, container.CloudPlatformScope)
-}
-
-func GetGKECLusterConfig(ctx context.Context, sa, clusterName, zone string) (*api.Config, error) {
-	svc, project, err := ConnectToContainerService(sa)
-	if err != nil {
-		return nil, err
-	}
-	req := svc.Projects.Zones.Clusters.Get(project, zone, clusterName)
-	resp, err := req.Context(ctx).Do()
-	if err != nil {
-		return nil, fmt.Errorf("cannot get cluster for project=%s: %w", project, err)
-	}
-	config := api.Config{
-		APIVersion: "v1",
-		Kind:       "Config",
-		Clusters:   map[string]*api.Cluster{},  // Clusters is a map of referencable names to cluster configs
-		AuthInfos:  map[string]*api.AuthInfo{}, // AuthInfos is a map of referencable names to user configs
-		Contexts:   map[string]*api.Context{},  // Contexts is a map of referencable names to context configs
-	}
-
-	cred, err := getCredentials(sa)
-	if err != nil {
-		return nil, fmt.Errorf("can't get credentials %w", err)
-	}
-	token, err := cred.TokenSource.Token()
-	if err != nil {
-		return nil, fmt.Errorf("can't get token %w", err)
-	}
-	name := fmt.Sprintf("gke_%s_%s_%s", project, resp.Zone, resp.Name)
-	cert, err := base64.StdEncoding.DecodeString(resp.MasterAuth.ClusterCaCertificate)
-	if err != nil {
-		return nil, fmt.Errorf("invalid certificate cluster=%s cert=%s: %w", name, resp.MasterAuth.ClusterCaCertificate, err)
-	}
-	// example: gke_my-project_us-central1-b_cluster-1 => https://XX.XX.XX.XX
-	config.Clusters[name] = &api.Cluster{
-		CertificateAuthorityData: cert,
-		Server:                   "https://" + resp.Endpoint,
-	}
-	config.CurrentContext = name
-	// Just reuse the context name as an auth name.
-	config.Contexts[name] = &api.Context{
-		Cluster:  name,
-		AuthInfo: name,
-	}
-	// GCP specific configation; use cloud platform scope.
-	config.AuthInfos[name] = &api.AuthInfo{
-		Token: token.AccessToken,
-	}
-	return &config, nil
 }
 
 func createClient(ctx context.Context, serviceAccount string, scope string) (*http.Client, string, error) {
