@@ -503,63 +503,64 @@ func deletePreV21CertManagerDeployment(
 	}
 
 	if err := kubeClient.List(ctx, deploymentsList, client.InNamespace(CertManagerNamespace), certManagerObjectsSelector); err != nil {
-		logger.Warn("Error querying API for the existing deployment, attempting to upgrade without removing it...")
-	} else {
-		// 2: store the deployments for backup
-		if len(deploymentsList.Items) > 0 {
-			filename := fmt.Sprintf("backup_%s_%s.yaml", CertManagerReleaseName, now)
-			if err := util.DumpResources(ctx, filename, deploymentsList.Items); err != nil {
-				return fmt.Errorf("failed to back up the deployment: %v", err)
-			}
+		return fmt.Errorf("failed to query kubernetes API: %v", err)
+	}
 
-			// 3: delete the deployments
-			logger.Info("Deleting the deployments from the cluster")
-			if err := kubeClient.DeleteAllOf(ctx, &appsv1.Deployment{}, client.InNamespace(CertManagerNamespace), certManagerObjectsSelector); err != nil {
-				return fmt.Errorf("failed to remove the deployments: %v\n\nuse backup file: %s to check the changes and restore if needed", err, filename)
-			}
-		} else {
-			return fmt.Errorf("Didn't find any deployments matching cert-manager, stopping upgrade...")
+	// 2: store the deployments for backup
+	if len(deploymentsList.Items) > 0 {
+		filename := fmt.Sprintf("backup_%s_%s.yaml", CertManagerReleaseName, now)
+		if err := util.DumpResources(ctx, filename, deploymentsList.Items); err != nil {
+			return fmt.Errorf("failed to back up the deployment: %v", err)
 		}
+
+		// 3: delete the deployments
+		logger.Info("Deleting the deployments from the cluster")
+		if err := kubeClient.DeleteAllOf(ctx, &appsv1.Deployment{}, client.InNamespace(CertManagerNamespace), certManagerObjectsSelector); err != nil {
+			return fmt.Errorf("failed to remove the deployments: %v\n\nuse backup file: %s to check the changes and restore if needed", err, filename)
+		}
+	} else {
+		logger.Warn("Could not find existing deployment, attempting to upgrade without removing it...")
 	}
 
 	if err := kubeClient.List(ctx, mutatingWebhooksList, certManagerObjectsSelector); err != nil {
-		logger.Warn("Error querying API for the existing mutating webhooks configs, attempting to upgrade without removing it...")
-	} else {
-		// 4: store the mutating webhooks for backup
-		if len(mutatingWebhooksList.Items) > 0 {
-			filename := fmt.Sprintf("backup_mutatingwebhooks_%s_%s.yaml", CertManagerReleaseName, now)
-			if err := util.DumpResources(ctx, filename, mutatingWebhooksList.Items); err != nil {
-				return fmt.Errorf("failed to back up the mutating webhook config: %v", err)
-			}
+		return fmt.Errorf("failed to query kubernetes API: %v", err)
+	}
 
-			// 5: delete the mutating webhooks
-			logger.Info("Deleting the mutating webhooks from the cluster")
-			if err := kubeClient.DeleteAllOf(ctx, &admissionv1.MutatingWebhookConfiguration{}, certManagerObjectsSelector); err != nil {
-				return fmt.Errorf("failed to remove the mutating webhooks: %v\n\nuse backup file: %s to check the changes and restore if needed", err, filename)
-			}
-		} else {
-			return fmt.Errorf("Didn't find any mutating webhooks matching cert-manager, stopping upgrade...")
+	// 4: store the mutating webhooks for backup
+	if len(mutatingWebhooksList.Items) > 0 {
+		filename := fmt.Sprintf("backup_mutatingwebhooks_%s_%s.yaml", CertManagerReleaseName, now)
+		if err := util.DumpResources(ctx, filename, mutatingWebhooksList.Items); err != nil {
+			return fmt.Errorf("failed to back up the mutating webhook config: %v", err)
 		}
+
+		// 5: delete the mutating webhooks
+		logger.Info("Deleting the mutating webhooks from the cluster")
+		if err := kubeClient.DeleteAllOf(ctx, &admissionv1.MutatingWebhookConfiguration{}, certManagerObjectsSelector); err != nil {
+			return fmt.Errorf("failed to remove the mutating webhooks: %v\n\nuse backup file: %s to check the changes and restore if needed", err, filename)
+		}
+	} else {
+		logger.Warn("Could not find existing mutating webhooks, attempting to upgrade without removing it...")
 	}
 
 	if err := kubeClient.List(ctx, validatingWebhooksList, certManagerObjectsSelector); err != nil {
-		logger.Warn("Error querying API for the existing validating webhooks configs, attempting to upgrade without removing it...")
-	} else {
-		// 6: store the validating webhooks for backup
-		if len(validatingWebhooksList.Items) > 0 {
-			filename := fmt.Sprintf("backup_mutatingwebhooks_%s_%s.yaml", CertManagerReleaseName, now)
-			if err := util.DumpResources(ctx, filename, validatingWebhooksList.Items); err != nil {
-				return fmt.Errorf("failed to back up the validating webhook config: %v", err)
-			}
-
-			// 7: delete the validating webhooks
-			logger.Info("Deleting the validating webhooks from the cluster")
-			if err := kubeClient.DeleteAllOf(ctx, &admissionv1.ValidatingWebhookConfiguration{}, certManagerObjectsSelector); err != nil {
-				return fmt.Errorf("failed to remove the validating webhooks: %v\n\nuse backup file: %s to check the changes and restore if needed", err, filename)
-			}
-		} else {
-			return fmt.Errorf("Didn't find any validating webhooks matching cert-manager, stopping upgrade...")
-		}
+		return fmt.Errorf("failed to query kubernetes API: %v", err)
 	}
+
+	// 6: store the validating webhooks for backup
+	if len(validatingWebhooksList.Items) > 0 {
+		filename := fmt.Sprintf("backup_mutatingwebhooks_%s_%s.yaml", CertManagerReleaseName, now)
+		if err := util.DumpResources(ctx, filename, validatingWebhooksList.Items); err != nil {
+			return fmt.Errorf("failed to back up the validating webhook config: %v", err)
+		}
+
+		// 7: delete the validating webhooks
+		logger.Info("Deleting the validating webhooks from the cluster")
+		if err := kubeClient.DeleteAllOf(ctx, &admissionv1.ValidatingWebhookConfiguration{}, certManagerObjectsSelector); err != nil {
+			return fmt.Errorf("failed to remove the validating webhooks: %v\n\nuse backup file: %s to check the changes and restore if needed", err, filename)
+		}
+	} else {
+		logger.Warn("Could not find existing validating webhooks, attempting to upgrade without removing it...")
+	}
+
 	return nil
 }
