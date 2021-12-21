@@ -80,6 +80,7 @@ require (
 	gopkg.in/square/go-jose.v2 v2.5.1
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
+	k8c.io/operating-system-manager v0.3.0
 	k8s.io/api v0.22.2
 	k8s.io/apiextensions-apiserver v0.22.2
 	k8s.io/apimachinery v0.22.2
@@ -99,8 +100,6 @@ require (
 	sigs.k8s.io/controller-tools v0.7.0
 	sigs.k8s.io/yaml v1.3.0
 )
-
-require k8c.io/operating-system-manager v0.2.0
 
 require (
 	cloud.google.com/go v0.81.0 // indirect
