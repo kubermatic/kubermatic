@@ -1,5 +1,3 @@
-//go:build e2e
-
 /*
 Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 
@@ -35,7 +33,6 @@ type testOptions struct {
 	skipCleanup       bool
 	debugLog          bool
 	kubernetesVersion semver.Semver
-	seedName          string
 
 	vsphereSeedDatacenter string
 	osSeedDatacenter      string
@@ -52,7 +49,6 @@ func init() {
 	flag.Var(&options.kubernetesVersion, "kubernetes-version", "Kubernetes version for the user cluster")
 	flag.BoolVar(&options.debugLog, "debug-log", false, "Activate debug logs.")
 	flag.BoolVar(&options.skipCleanup, "skip-cleanup", false, "Skip clean-up of resources.")
-	flag.StringVar(&options.seedName, "seed-name", "kubermatic", "The name of the seed resource")
 
 	flag.StringVar(&options.osSeedDatacenter, "openstack-seed-datacenter", "", "openstack datacenter")
 	flag.StringVar(&options.vsphereSeedDatacenter, "vsphere-seed-datacenter", "", "vsphere seed datacenter")
