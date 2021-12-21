@@ -68,7 +68,7 @@ func TestCredentialEndpoint(t *testing.T) {
 				},
 			},
 			httpStatus:       http.StatusOK,
-			expectedResponse: `["PodNodeSelector","PodSecurityPolicy"]`,
+			expectedResponse: `["EventRateLimit","PodNodeSelector","PodSecurityPolicy"]`,
 		},
 		{
 			name:    "test get plugins for version 1.14",
@@ -85,7 +85,7 @@ func TestCredentialEndpoint(t *testing.T) {
 				},
 			},
 			httpStatus:       http.StatusOK,
-			expectedResponse: `["FirstPlugin","PodNodeSelector","PodSecurityPolicy"]`,
+			expectedResponse: `["EventRateLimit","FirstPlugin","PodNodeSelector","PodSecurityPolicy"]`,
 		},
 		{
 			name:    "test get plugins for all versions",
@@ -109,7 +109,7 @@ func TestCredentialEndpoint(t *testing.T) {
 				},
 			},
 			httpStatus:       http.StatusOK,
-			expectedResponse: `["FirstPlugin","PodNodeSelector","PodSecurityPolicy","SecondPlugin"]`,
+			expectedResponse: `["EventRateLimit","FirstPlugin","PodNodeSelector","PodSecurityPolicy","SecondPlugin"]`,
 		},
 	}
 
