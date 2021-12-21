@@ -147,6 +147,9 @@ type ClusterSpec struct {
 	// it cannot be changed after the cluster is being created.
 	EnableUserSSHKeyAgent *bool `json:"enableUserSSHKeyAgent,omitempty"`
 
+	// EnableOperatingSystemManager enables OSM which in-turn is responsible for creating and managing worker node configuration
+	EnableOperatingSystemManager bool `json:"enableOperatingSystemManager,omitempty"`
+
 	// PodNodeSelectorAdmissionPluginConfig provides the configuration for the PodNodeSelector.
 	// It's used by the backend to create a configuration file for this plugin.
 	// The key:value from the map is converted to the namespace:<node-selectors-labels> in the file.

@@ -62,6 +62,11 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 				"-ca-bundle", "/etc/kubernetes/pki/ca-bundle/ca-bundle.pem",
 			}
 
+			// Enable validations corresponding to OSM
+			if data.Cluster().Spec.EnableOperatingSystemManager {
+				args = append(args, "-use-osm")
+			}
+
 			externalCloudProvider := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]
 			if externalCloudProvider {
 				args = append(args, "-node-external-cloud-provider")
