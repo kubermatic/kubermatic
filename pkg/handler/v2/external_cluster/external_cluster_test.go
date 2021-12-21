@@ -24,6 +24,8 @@ import (
 	"strings"
 	"testing"
 
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
@@ -394,7 +396,7 @@ func TestGetClusterEndpoint(t *testing.T) {
 	}{
 		{
 			Name:                   "scenario 1: get external cluster",
-			ExpectedResponse:       `{"id":"clusterAbcID","name":"clusterAbcID","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{"version":""},"status":{"state":"PROVISIONING","statusMessage":""}}`,
+			ExpectedResponse:       `{"id":"clusterAbcID","name":"clusterAbcID","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{"version":"1.22.5"},"status":{"state":"RUNNING","statusMessage":""}}`,
 			HTTPStatus:             http.StatusOK,
 			ProjectToSync:          test.GenDefaultProject().Name,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(genExternalCluster(test.GenDefaultProject().Name, "clusterAbcID")),
@@ -403,7 +405,7 @@ func TestGetClusterEndpoint(t *testing.T) {
 		},
 		{
 			Name:             "scenario 2: the admin John can get Bob's cluster",
-			ExpectedResponse: `{"id":"clusterAbcID","name":"clusterAbcID","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{"version":""},"status":{"state":"PROVISIONING","statusMessage":""}}`,
+			ExpectedResponse: `{"id":"clusterAbcID","name":"clusterAbcID","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{"version":"1.22.5"},"status":{"state":"RUNNING","statusMessage":""}}`,
 			HTTPStatus:       http.StatusOK,
 			ProjectToSync:    test.GenDefaultProject().Name,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -850,7 +852,8 @@ func genExternalCluster(projectName, clusterName string) *kubermaticv1.ExternalC
 			},
 		},
 		Spec: kubermaticv1.ExternalClusterSpec{
-			HumanReadableName: clusterName,
+			HumanReadableName:   clusterName,
+			KubeconfigReference: &providerconfig.GlobalSecretKeySelector{},
 		},
 	}
 }
