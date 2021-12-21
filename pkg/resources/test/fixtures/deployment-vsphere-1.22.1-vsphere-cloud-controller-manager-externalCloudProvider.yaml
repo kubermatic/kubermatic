@@ -38,7 +38,7 @@ spec:
         env:
         - name: SSL_CERT_FILE
           value: /etc/kubermatic/certs/ca-bundle.pem
-        image: gcr.io/cloud-provider-vsphere/cpi/release/manager:v1.21.0
+        image: gcr.io/cloud-provider-vsphere/cpi/release/manager:v1.22.4
         name: cloud-controller-manager
         resources:
           limits:
@@ -47,6 +47,8 @@ spec:
           requests:
             cpu: 200m
             memory: 100Mi
+        securityContext:
+          runAsUser: 1001
         volumeMounts:
         - mountPath: /etc/kubernetes/kubeconfig
           name: cloud-controller-manager-kubeconfig

@@ -47,6 +47,8 @@ spec:
           requests:
             cpu: 200m
             memory: 100Mi
+        securityContext:
+          runAsUser: 1001
         volumeMounts:
         - mountPath: /etc/kubernetes/kubeconfig
           name: cloud-controller-manager-kubeconfig
