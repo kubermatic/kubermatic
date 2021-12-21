@@ -425,7 +425,7 @@ func TestHandle(t *testing.T) {
 			wantAllowed: true,
 		},
 		{
-			name: "Reject unsupported ebpf proxy mode",
+			name: "Reject unsupported ebpf proxy mode (wrong CNI)",
 			req: webhook.AdmissionRequest{
 				AdmissionRequest: admissionv1.AdmissionRequest{
 					Operation: admissionv1.Create,
@@ -446,6 +446,7 @@ func TestHandle(t *testing.T) {
 								DNSDomain:                "cluster.local",
 								ProxyMode:                resources.EBPFProxyMode,
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+								KonnectivityEnabled:      pointer.BoolPtr(true),
 							},
 							ComponentSettings: kubermaticv1.ComponentSettings{
 								Apiserver: kubermaticv1.APIServerSettings{
@@ -455,6 +456,45 @@ func TestHandle(t *testing.T) {
 							CNIPlugin: &kubermaticv1.CNIPluginSettings{
 								Type:    "canal",
 								Version: "v3.19",
+							},
+						}.Do(),
+					},
+				},
+			},
+			wantAllowed: false,
+		},
+		{
+			name: "Reject unsupported ebpf proxy mode (Konnectivity not enabled)",
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Create,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   kubermaticv1.GroupName,
+						Version: kubermaticv1.GroupVersion,
+						Kind:    "Cluster",
+					},
+					Name: "foo",
+					Object: runtime.RawExtension{
+						Raw: rawClusterGen{
+							Name:           "foo",
+							Namespace:      "kubermatic",
+							ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
+								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+								DNSDomain:                "cluster.local",
+								ProxyMode:                resources.EBPFProxyMode,
+								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+								KonnectivityEnabled:      pointer.BoolPtr(false),
+							},
+							ComponentSettings: kubermaticv1.ComponentSettings{
+								Apiserver: kubermaticv1.APIServerSettings{
+									NodePortRange: "30000-32768",
+								},
+							},
+							CNIPlugin: &kubermaticv1.CNIPluginSettings{
+								Type:    "cilium",
+								Version: "v1.11",
 							},
 						}.Do(),
 					},
@@ -484,6 +524,7 @@ func TestHandle(t *testing.T) {
 								DNSDomain:                "cluster.local",
 								ProxyMode:                resources.EBPFProxyMode,
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+								KonnectivityEnabled:      pointer.BoolPtr(true),
 							},
 							ComponentSettings: kubermaticv1.ComponentSettings{
 								Apiserver: kubermaticv1.APIServerSettings{
