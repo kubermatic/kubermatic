@@ -200,6 +200,7 @@ func (c *ClusterJig) createCluster(ctx context.Context, project *kubermaticv1.Pr
 					CIDRBlocks: []string{"172.25.0.0/16"},
 				},
 				ProxyMode: "ipvs",
+				//KonnectivityEnabled: pointer.Bool(true),
 			},
 			ComponentsOverride: kubermaticv1.ComponentSettings{
 				Apiserver: kubermaticv1.APIServerSettings{

@@ -291,7 +291,7 @@ if [ -x "$(command -v ginkgo)" ]; then
     -v \
     -- --kubeconfig "${HOME}/.kube/config" \
     --kubernetes-version "${USER_CLUSTER_KUBERNETES_VERSION}" \
-    --debug-log 
+    --debug-log
 else
   CGO_ENABLED=1 go test --tags=e2e -v -race ./pkg/test/e2e/ccm-migration/... $EXTRA_ARGS \
     --ginkgo.randomizeAllSpecs \
