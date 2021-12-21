@@ -576,6 +576,8 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *operat
 	validatingWebhookCreators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{
 		common.SeedAdmissionWebhookCreator(cfg, client),
 		kubermaticseed.ClusterValidatingWebhookConfigurationCreator(cfg, client),
+		kubermaticseed.OperatingSystemProfileValidatingWebhookConfigurationCreator(cfg, client),
+		kubermaticseed.OperatingSystemConfigValidatingWebhookConfigurationCreator(cfg, client),
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, validatingWebhookCreators, "", client); err != nil {
