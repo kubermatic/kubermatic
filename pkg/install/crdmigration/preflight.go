@@ -163,6 +163,8 @@ func validateKubermaticNotRunningInCluster(ctx context.Context, logger logrus.Fi
 
 	webhooks := []string{
 		kubermaticseed.ClusterAdmissionWebhookName,
+		kubermaticseed.OSCAdmissionWebhookName,
+		kubermaticseed.OSPAdmissionWebhookName,
 		common.SeedAdmissionWebhookName(opt.KubermaticConfiguration),
 	}
 
