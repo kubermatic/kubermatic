@@ -37,6 +37,7 @@ const (
 	clusterWebhookServiceName   = "cluster-webhook"
 	ClusterAdmissionWebhookName = "kubermatic-clusters"
 	OSCAdmissionWebhookName     = "kubermatic-operating-system-configs"
+	OSPAdmissionWebhookName     = "kubermatic-operating-system-profiles"
 )
 
 func ClusterValidatingWebhookConfigurationCreator(cfg *operatorv1alpha1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
@@ -214,7 +215,6 @@ func OperatingSystemConfigValidatingWebhookConfigurationCreator(cfg *operatorv1a
 								Scope:       &scope,
 							},
 							Operations: []admissionregistrationv1.OperationType{
-								admissionregistrationv1.Create,
 								admissionregistrationv1.Update,
 							},
 						},
@@ -229,7 +229,7 @@ func OperatingSystemConfigValidatingWebhookConfigurationCreator(cfg *operatorv1a
 
 func OperatingSystemProfileValidatingWebhookConfigurationCreator(cfg *operatorv1alpha1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
-		return OSCAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
+		return OSPAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
 			failurePolicy := admissionregistrationv1.Fail
 			sideEffects := admissionregistrationv1.SideEffectClassNone
@@ -268,7 +268,6 @@ func OperatingSystemProfileValidatingWebhookConfigurationCreator(cfg *operatorv1
 								Scope:       &scope,
 							},
 							Operations: []admissionregistrationv1.OperationType{
-								admissionregistrationv1.Create,
 								admissionregistrationv1.Update,
 							},
 						},
