@@ -202,7 +202,11 @@ func UserSaver(userProvider provider.UserProvider) endpoint.Middleware {
 
 			// Ignore conflict error during update of the lastSeen field as it is not super important.
 			// It can be updated next time.
-			if err != nil && !kerrors.IsConflict(err) {
+			if kerrors.IsConflict(err) {
+				return next(context.WithValue(ctx, kubermaticcontext.UserCRContextKey, user), request)
+			}
+
+			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 
