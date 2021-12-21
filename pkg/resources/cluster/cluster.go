@@ -52,6 +52,7 @@ func Spec(apiCluster apiv1.Cluster, template *kubermaticv1.ClusterTemplate, seed
 		UsePodSecurityPolicyAdmissionPlugin:  apiCluster.Spec.UsePodSecurityPolicyAdmissionPlugin,
 		UsePodNodeSelectorAdmissionPlugin:    apiCluster.Spec.UsePodNodeSelectorAdmissionPlugin,
 		EnableUserSSHKeyAgent:                userSSHKeysAgentEnabled,
+		EnableOperatingSystemManager:         apiCluster.Spec.EnableOperatingSystemManager,
 		AuditLogging:                         apiCluster.Spec.AuditLogging,
 		AdmissionPlugins:                     apiCluster.Spec.AdmissionPlugins,
 		OPAIntegration:                       apiCluster.Spec.OPAIntegration,
