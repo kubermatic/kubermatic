@@ -280,19 +280,19 @@ var (
 		ProviderIncompatibilities: []operatorv1alpha1.Incompatibility{
 			{
 				Provider:  kubermaticv1.VSphereCloudProvider,
-				Version:   "1.22.*",
+				Version:   "1.23.*",
 				Condition: operatorv1alpha1.AlwaysCondition,
 				Operation: operatorv1alpha1.CreateOperation,
 			},
 			{
 				Provider:  kubermaticv1.VSphereCloudProvider,
-				Version:   "1.22.*",
+				Version:   "1.23.*",
 				Condition: operatorv1alpha1.ExternalCloudProviderCondition,
 				Operation: operatorv1alpha1.UpdateOperation,
 			},
 			{
 				Provider:  kubermaticv1.VSphereCloudProvider,
-				Version:   "1.22.*",
+				Version:   "1.23.*",
 				Condition: operatorv1alpha1.ExternalCloudProviderCondition,
 				Operation: operatorv1alpha1.SupportOperation,
 			},
