@@ -31,6 +31,7 @@ import (
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
 
@@ -402,7 +403,7 @@ func TestHandle(t *testing.T) {
 			),
 		},
 		{
-			name: "Default CNI plugin annotation added",
+			name: "Default CNI plugin configuration added",
 			req: webhook.AdmissionRequest{
 				AdmissionRequest: admissionv1.AdmissionRequest{
 					Operation: admissionv1.Create,
@@ -443,6 +444,145 @@ func TestHandle(t *testing.T) {
 					"type":    "canal",
 					"version": "v3.21",
 				}),
+			),
+		},
+		{
+			name: "CNI plugin version added if not set on existing cluster",
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Update,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   kubermaticv1.GroupName,
+						Version: kubermaticv1.GroupVersion,
+						Kind:    "Cluster",
+					},
+					Name: "foo",
+					Object: runtime.RawExtension{
+						Raw: rawClusterGen{
+							Name: "foo",
+							CloudSpec: kubermaticv1.CloudSpec{
+								DatacenterName: "openstack-dc",
+								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+							},
+							ExternalCloudProvider: true,
+							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
+								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+								DNSDomain:                "example.local",
+								ProxyMode:                resources.IPTablesProxyMode,
+								IPVS:                     &kubermaticv1.IPVSConfiguration{StrictArp: pointer.BoolPtr(true)},
+								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+							},
+							Features: map[string]bool{
+								kubermaticv1.ApiserverNetworkPolicy:    true,
+								kubermaticv1.KubeSystemNetworkPolicies: true,
+							},
+						}.Do(),
+					},
+					OldObject: runtime.RawExtension{
+						Raw: rawClusterGen{
+							Name: "foo",
+							CloudSpec: kubermaticv1.CloudSpec{
+								DatacenterName: "openstack-dc",
+								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+							},
+							ExternalCloudProvider: true,
+							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
+								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+								DNSDomain:                "example.local",
+								ProxyMode:                resources.IPTablesProxyMode,
+								IPVS:                     &kubermaticv1.IPVSConfiguration{StrictArp: pointer.BoolPtr(true)},
+								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+							},
+							Features: map[string]bool{
+								kubermaticv1.ApiserverNetworkPolicy:    true,
+								kubermaticv1.KubeSystemNetworkPolicies: true,
+							},
+						}.Do(),
+					},
+				},
+			},
+			wantAllowed: true,
+			wantPatches: append(
+				defaultPatches,
+				jsonpatch.NewOperation("add", "/spec/cniPlugin", map[string]interface{}{
+					"type":    string(kubermaticv1.CNIPluginTypeCanal),
+					"version": cni.CanalCNILastUnspecifiedVersion,
+				}),
+			),
+		},
+		{
+			name: "Unsupported CNI plugin version bump on k8s version upgrade",
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Update,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   kubermaticv1.GroupName,
+						Version: kubermaticv1.GroupVersion,
+						Kind:    "Cluster",
+					},
+					Name: "foo",
+					Object: runtime.RawExtension{
+						Raw: rawClusterGen{
+							Name:    "foo",
+							Version: *semver.NewSemverOrDie("1.22"),
+							CloudSpec: kubermaticv1.CloudSpec{
+								DatacenterName: "openstack-dc",
+								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+							},
+							ExternalCloudProvider: true,
+							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
+								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+								DNSDomain:                "example.local",
+								ProxyMode:                resources.IPTablesProxyMode,
+								IPVS:                     &kubermaticv1.IPVSConfiguration{StrictArp: pointer.BoolPtr(true)},
+								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+							},
+							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
+								Type:    kubermaticv1.CNIPluginTypeCanal,
+								Version: cni.CanalCNILastUnspecifiedVersion,
+							},
+							Features: map[string]bool{
+								kubermaticv1.ApiserverNetworkPolicy:    true,
+								kubermaticv1.KubeSystemNetworkPolicies: true,
+							},
+						}.Do(),
+					},
+					OldObject: runtime.RawExtension{
+						Raw: rawClusterGen{
+							Name:    "foo",
+							Version: *semver.NewSemverOrDie("1.21"),
+							CloudSpec: kubermaticv1.CloudSpec{
+								DatacenterName: "openstack-dc",
+								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+							},
+							ExternalCloudProvider: true,
+							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
+								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+								DNSDomain:                "example.local",
+								ProxyMode:                resources.IPTablesProxyMode,
+								IPVS:                     &kubermaticv1.IPVSConfiguration{StrictArp: pointer.BoolPtr(true)},
+								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+							},
+							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
+								Type:    kubermaticv1.CNIPluginTypeCanal,
+								Version: cni.CanalCNILastUnspecifiedVersion,
+							},
+							Features: map[string]bool{
+								kubermaticv1.ApiserverNetworkPolicy:    true,
+								kubermaticv1.KubeSystemNetworkPolicies: true,
+							},
+						}.Do(),
+					},
+				},
+			},
+			wantAllowed: true,
+			wantPatches: append(
+				defaultPatches,
+				jsonpatch.NewOperation("replace", "/spec/cniPlugin/version", cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal)),
 			),
 		},
 		{
@@ -606,6 +746,10 @@ func TestHandle(t *testing.T) {
 								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
 							},
 							ExternalCloudProvider: true,
+							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
+								Type:    kubermaticv1.CNIPluginTypeCanal,
+								Version: "v3.20",
+							},
 						}.Do(),
 					},
 					OldObject: runtime.RawExtension{
@@ -616,6 +760,10 @@ func TestHandle(t *testing.T) {
 								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
 							},
 							ExternalCloudProvider: false,
+							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
+								Type:    kubermaticv1.CNIPluginTypeCanal,
+								Version: "v3.20",
+							},
 						}.Do(),
 					},
 				},
@@ -647,6 +795,10 @@ func TestHandle(t *testing.T) {
 								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
 							},
 							ExternalCloudProvider: true,
+							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
+								Type:    kubermaticv1.CNIPluginTypeCanal,
+								Version: "v3.20",
+							},
 						}.Do(),
 					},
 					OldObject: runtime.RawExtension{
@@ -657,6 +809,10 @@ func TestHandle(t *testing.T) {
 								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
 							},
 							ExternalCloudProvider: true,
+							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
+								Type:    kubermaticv1.CNIPluginTypeCanal,
+								Version: "v3.20",
+							},
 						}.Do(),
 					},
 				},
@@ -686,6 +842,10 @@ func TestHandle(t *testing.T) {
 								Hetzner:        &kubermaticv1.HetznerCloudSpec{},
 							},
 							ExternalCloudProvider: true,
+							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
+								Type:    kubermaticv1.CNIPluginTypeCanal,
+								Version: "v3.20",
+							},
 						}.Do(),
 					},
 					OldObject: runtime.RawExtension{
@@ -696,6 +856,10 @@ func TestHandle(t *testing.T) {
 								Hetzner:        &kubermaticv1.HetznerCloudSpec{},
 							},
 							ExternalCloudProvider: false,
+							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
+								Type:    kubermaticv1.CNIPluginTypeCanal,
+								Version: "v3.20",
+							},
 						}.Do(),
 					},
 				},
@@ -769,6 +933,7 @@ func TestHandle(t *testing.T) {
 
 type rawClusterGen struct {
 	Name                  string
+	Version               semver.Semver
 	CloudSpec             kubermaticv1.CloudSpec
 	CNIPluginSpec         *kubermaticv1.CNIPluginSettings
 	ExternalCloudProvider bool
@@ -786,6 +951,7 @@ func (r rawClusterGen) Do() []byte {
 			Name: r.Name,
 		},
 		Spec: kubermaticv1.ClusterSpec{
+			Version: r.Version,
 			Features: map[string]bool{
 				"externalCloudProvider": r.ExternalCloudProvider,
 			},
