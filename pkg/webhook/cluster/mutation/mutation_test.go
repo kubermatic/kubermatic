@@ -441,7 +441,7 @@ func TestHandle(t *testing.T) {
 				defaultPatches,
 				jsonpatch.NewOperation("add", "/spec/cniPlugin", map[string]interface{}{
 					"type":    "canal",
-					"version": "v3.20",
+					"version": "v3.21",
 				}),
 			),
 		},
