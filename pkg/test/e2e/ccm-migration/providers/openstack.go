@@ -73,6 +73,7 @@ func (c *OpenstackClusterJig) Setup() error {
 	if err := c.generateAndCreateCluster(kubermaticv1.CloudSpec{
 		DatacenterName: c.DatacenterName,
 		Openstack: &kubermaticv1.OpenstackCloudSpec{
+			FloatingIPPool: c.Credentials.FloatingIPPool,
 			CredentialsReference: &types2.GlobalSecretKeySelector{
 				ObjectReference: corev1.ObjectReference{
 					Name:      fmt.Sprintf("%s-%s", osSecretPrefixName, c.name),
