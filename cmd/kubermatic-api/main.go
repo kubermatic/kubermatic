@@ -75,6 +75,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	kuberneteswatcher "k8c.io/kubermatic/v2/pkg/watcher/kubernetes"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
@@ -84,6 +85,7 @@ import (
 	"k8s.io/klog"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -136,7 +138,12 @@ func main() {
 	if err != nil {
 		kubermaticlog.Logger.Fatalw("failed to construct manager: %v", err)
 	}
-
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Event{}, "involvedObject.name", func(rawObj ctrlruntimeclient.Object) []string {
+		event := rawObj.(*corev1.Event)
+		return []string{event.InvolvedObject.Name}
+	}); err != nil {
+		log.Fatalw("failed to add index on Event involvedObject name: %v", err)
+	}
 	providers, err := createInitProviders(ctx, options, masterCfg, mgr)
 	if err != nil {
 		log.Fatalw("failed to create and initialize providers", "error", err)

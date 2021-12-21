@@ -58,6 +58,12 @@ func ListNodesEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider p
 		}
 		var nodesV1 []*apiv2.ExternalClusterNode
 
+		apiCluster := convertClusterToAPIWithStatus(ctx, privilegedClusterProvider, cluster)
+
+		if apiCluster.Status.State != apiv2.RUNNING {
+			return nodesV1, nil
+		}
+
 		nodes, err := clusterProvider.ListNodes(cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -98,6 +104,12 @@ func getClusterNodesMetrics(ctx context.Context, userInfoGetter provider.UserInf
 	cluster, err := getCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, clusterID)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	apiCluster := convertClusterToAPIWithStatus(ctx, privilegedClusterProvider, cluster)
+
+	if apiCluster.Status.State != apiv2.RUNNING {
+		return nodeMetrics, nil
 	}
 
 	isMetricServer, err := clusterProvider.IsMetricServerAvailable(cluster)
@@ -217,6 +229,10 @@ func ListMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proje
 
 		var machineDeployments []apiv2.ExternalClusterMachineDeployment
 		machineDeployments = make([]apiv2.ExternalClusterMachineDeployment, 0)
+		apiCluster := convertClusterToAPIWithStatus(ctx, privilegedClusterProvider, cluster)
+		if apiCluster.Status.State != apiv2.RUNNING {
+			return machineDeployments, nil
+		}
 
 		cloud := cluster.Spec.CloudSpec
 		if cloud != nil {
@@ -272,7 +288,10 @@ func getMachineDeploymentNodes(ctx context.Context, userInfoGetter provider.User
 
 	var nodes []apiv2.ExternalClusterNode
 	nodes = make([]apiv2.ExternalClusterNode, 0)
-
+	apiCluster := convertClusterToAPIWithStatus(ctx, privilegedClusterProvider, cluster)
+	if apiCluster.Status.State != apiv2.RUNNING {
+		return nodes, nil
+	}
 	cloud := cluster.Spec.CloudSpec
 	if cloud != nil {
 		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
