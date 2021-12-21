@@ -1315,6 +1315,10 @@ spec:
                 - docker
                 - containerd
                 type: string
+              enableOperatingSystemManager:
+                description: EnableOperatingSystemManager enables OSM which in-turn
+                  is responsible for creating and managing worker node configuration
+                type: boolean
               enableUserSSHKeyAgent:
                 description: EnableUserSSHKeyAgent control whether the UserSSHKeyAgent
                   will be deployed in the user cluster or not. If it was enabled,
