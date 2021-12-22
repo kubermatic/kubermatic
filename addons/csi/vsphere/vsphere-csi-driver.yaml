@@ -174,7 +174,7 @@ data:
   "trigger-csi-fullsync": "false"
   "async-query-volume": "true"
   "improved-csi-idempotency": "true"
-  "improved-volume-topology": "true"
+  "improved-volume-topology": "false"
   "block-volume-snapshot": "false"
   "csi-windows-support": "false"
 kind: ConfigMap
