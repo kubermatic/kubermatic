@@ -37,7 +37,7 @@ KIND_PORT="${KIND_PORT-31000}"
 USER_CLUSTER_KUBERNETES_VERSION="${USER_CLUSTER_KUBERNETES_VERSION:-v1.22.7}"
 USER_CLUSTER_NAME="${USER_CLUSTER_NAME-$(head -3 /dev/urandom | tr -cd '[:alnum:]' | tr '[:upper:]' '[:lower:]' | cut -c -10)}"
 API_SERVER_NODEPORT_MANIFEST="${API_SERVER_NODEPORT_MANIFEST-apiserver_nodeport.yaml}"
-KUBECONFIG="${KUBECONFIG:-"${HOME}/.kube/config"}"
+KUBECONFIG="${HOME}/.kube/config"
 
 REPOSUFFIX=""
 if [ "${KUBERMATIC_EDITION:-}" == "ee" ]; then
