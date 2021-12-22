@@ -19,6 +19,8 @@
 #   - remove windows support daemon sets
 #   - template csi-migration true or false
 #   - template function to replace base registry
+#   - remove node selector for operator
+#   - set "improved-volume-topology": "false"
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "vsphere" }}
@@ -234,8 +236,6 @@ spec:
                       - vsphere-csi-controller
               topologyKey: "kubernetes.io/hostname"
       serviceAccountName: vsphere-csi-controller
-      nodeSelector:
-        node-role.kubernetes.io/master: ""
       tolerations:
         - key: node-role.kubernetes.io/master
           operator: Exists
