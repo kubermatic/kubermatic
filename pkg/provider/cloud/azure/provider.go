@@ -22,20 +22,14 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/Azure/azure-sdk-for-go/services/containerservice/mgmt/2018-03-31/containerservice"
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2021-03-01/network"
 	"github.com/Azure/go-autorest/autorest"
-	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
-
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/tools/clientcmd/api"
 )
 
 const (
@@ -448,81 +442,4 @@ type Credentials struct {
 	SubscriptionID string
 	ClientID       string
 	ClientSecret   string
-}
-
-func GetAKSCLusterConfig(ctx context.Context, tenantID, subscriptionID, clientID, clientSecret, clusterName, resourceGroupName string) (*api.Config, error) {
-
-	var err error
-	aksClient := containerservice.NewManagedClustersClient(subscriptionID)
-	aksClient.Authorizer, err = auth.NewClientCredentialsConfig(clientID, clientSecret, tenantID).Authorizer()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %s", err.Error())
-	}
-
-	credResult, err := aksClient.ListClusterAdminCredentials(ctx, resourceGroupName, clusterName)
-	if err != nil {
-		return nil, fmt.Errorf("cannot get azure cluster config %w", err)
-	}
-
-	data := (*credResult.Kubeconfigs)[0].Value
-	config, err := clientcmd.Load(*data)
-	if err != nil {
-		return nil, fmt.Errorf("cannot get azure cluster config %w", err)
-	}
-	return config, nil
-}
-
-func GetCredentialsForAKSCluster(cloud kubermaticv1.ExternalClusterCloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (Credentials, error) {
-	tenantID := cloud.AKS.TenantID
-	subscriptionID := cloud.AKS.SubscriptionID
-	clientID := cloud.AKS.ClientID
-	clientSecret := cloud.AKS.ClientSecret
-	var err error
-
-	if tenantID == "" {
-		if cloud.AKS.CredentialsReference == nil {
-			return Credentials{}, errors.New("no credentials provided")
-		}
-		tenantID, err = secretKeySelector(cloud.AKS.CredentialsReference, kubermaticresources.AzureTenantID)
-		if err != nil {
-			return Credentials{}, err
-		}
-	}
-
-	if subscriptionID == "" {
-		if cloud.AKS.CredentialsReference == nil {
-			return Credentials{}, errors.New("no credentials provided")
-		}
-		subscriptionID, err = secretKeySelector(cloud.AKS.CredentialsReference, kubermaticresources.AzureSubscriptionID)
-		if err != nil {
-			return Credentials{}, err
-		}
-	}
-
-	if clientID == "" {
-		if cloud.AKS.CredentialsReference == nil {
-			return Credentials{}, errors.New("no credentials provided")
-		}
-		clientID, err = secretKeySelector(cloud.AKS.CredentialsReference, kubermaticresources.AzureClientID)
-		if err != nil {
-			return Credentials{}, err
-		}
-	}
-
-	if clientSecret == "" {
-		if cloud.AKS.CredentialsReference == nil {
-			return Credentials{}, errors.New("no credentials provided")
-		}
-		clientSecret, err = secretKeySelector(cloud.AKS.CredentialsReference, kubermaticresources.AzureClientSecret)
-		if err != nil {
-			return Credentials{}, err
-		}
-	}
-
-	return Credentials{
-		TenantID:       tenantID,
-		SubscriptionID: subscriptionID,
-		ClientID:       clientID,
-		ClientSecret:   clientSecret,
-	}, nil
 }

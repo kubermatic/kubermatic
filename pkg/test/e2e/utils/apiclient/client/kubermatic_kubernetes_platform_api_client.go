@@ -43,7 +43,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/packet"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/preset"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/project"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/regions"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/rulegroup"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/seed"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/serviceaccounts"
@@ -131,7 +130,6 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Kubermatic
 	cli.Packet = packet.New(transport, formats)
 	cli.Preset = preset.New(transport, formats)
 	cli.Project = project.New(transport, formats)
-	cli.Regions = regions.New(transport, formats)
 	cli.Rulegroup = rulegroup.New(transport, formats)
 	cli.Seed = seed.New(transport, formats)
 	cli.Serviceaccounts = serviceaccounts.New(transport, formats)
@@ -252,8 +250,6 @@ type KubermaticKubernetesPlatformAPI struct {
 
 	Project project.ClientService
 
-	Regions regions.ClientService
-
 	Rulegroup rulegroup.ClientService
 
 	Seed seed.ClientService
@@ -313,7 +309,6 @@ func (c *KubermaticKubernetesPlatformAPI) SetTransport(transport runtime.ClientT
 	c.Packet.SetTransport(transport)
 	c.Preset.SetTransport(transport)
 	c.Project.SetTransport(transport)
-	c.Regions.SetTransport(transport)
 	c.Rulegroup.SetTransport(transport)
 	c.Seed.SetTransport(transport)
 	c.Serviceaccounts.SetTransport(transport)

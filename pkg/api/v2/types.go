@@ -18,6 +18,7 @@ package v2
 
 import (
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+	kubevirtv1 "kubevirt.io/api/core/v1"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	crdapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -27,7 +28,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	kubevirtv1 "kubevirt.io/api/core/v1"
 )
 
 // ConstraintTemplate represents a gatekeeper ConstraintTemplate
