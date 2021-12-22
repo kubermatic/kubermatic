@@ -291,7 +291,7 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 		apiClusters := make([]*apiv2.ExternalCluster, 0)
 
 		for _, cluster := range clusterList.Items {
-			apiClusters = append(apiClusters, convertClusterToAPIWithStatus(ctx, privilegedClusterProvider, &cluster))
+			apiClusters = append(apiClusters, convertClusterToAPIWithStatus(ctx, clusterProvider, privilegedClusterProvider, &cluster))
 		}
 
 		return apiClusters, nil
@@ -344,7 +344,7 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		apiCluster := convertClusterToAPIWithStatus(ctx, privilegedClusterProvider, cluster)
+		apiCluster := convertClusterToAPIWithStatus(ctx, clusterProvider, privilegedClusterProvider, cluster)
 
 		if apiCluster.Status.State != apiv2.RUNNING {
 			return apiCluster, nil
@@ -627,7 +627,7 @@ func GetMetricsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider 
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		apiCluster := convertClusterToAPIWithStatus(ctx, privilegedClusterProvider, cluster)
+		apiCluster := convertClusterToAPIWithStatus(ctx, clusterProvider, privilegedClusterProvider, cluster)
 
 		if apiCluster.Status.State == apiv2.RUNNING {
 			isMetricServer, err := clusterProvider.IsMetricServerAvailable(cluster)
@@ -686,7 +686,7 @@ func ListEventsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider 
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		apiCluster := convertClusterToAPIWithStatus(ctx, privilegedClusterProvider, cluster)
+		apiCluster := convertClusterToAPIWithStatus(ctx, clusterProvider, privilegedClusterProvider, cluster)
 
 		eventType := ""
 		events := make([]apiv1.Event, 0)
@@ -863,7 +863,7 @@ func convertClusterToAPI(internalCluster *kubermaticapiv1.ExternalCluster) *apiv
 	return cluster
 }
 
-func convertClusterToAPIWithStatus(ctx context.Context, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, internalCluster *kubermaticapiv1.ExternalCluster) *apiv2.ExternalCluster {
+func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, internalCluster *kubermaticapiv1.ExternalCluster) *apiv2.ExternalCluster {
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
 	status := apiv2.ExternalClusterStatus{
 		State: apiv2.UNKNOWN,
@@ -916,6 +916,14 @@ func convertClusterToAPIWithStatus(ctx context.Context, privilegedClusterProvide
 		apiCluster.Status = *gkeStatus
 	}
 
+	// check kubeconfig access
+	_, err := clusterProvider.GetVersion(internalCluster)
+	if err != nil {
+		apiCluster.Status = apiv2.ExternalClusterStatus{
+			State:         apiv2.ERROR,
+			StatusMessage: fmt.Sprintf("can't access cluster via kubeconfig, check the privilidges, %v", err),
+		}
+	}
 	return apiCluster
 }
 
