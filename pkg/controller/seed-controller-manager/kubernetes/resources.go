@@ -39,6 +39,7 @@ import (
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/resources/openvpn"
+	"k8c.io/kubermatic/v2/pkg/resources/operatingsystemmanager"
 	"k8c.io/kubermatic/v2/pkg/resources/rancherserver"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/scheduler"
@@ -310,6 +311,10 @@ func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuth
 		(!metav1.HasAnnotation(data.Cluster().ObjectMeta, kubermaticv1.CCMMigrationNeededAnnotation) ||
 			data.KCMCloudControllersDeactivated()) {
 		deployments = append(deployments, cloudcontroller.DeploymentCreator(data))
+	}
+
+	if data.Cluster().Spec.EnableOperatingSystemManager {
+		deployments = append(deployments, operatingsystemmanager.DeploymentCreator(data))
 	}
 
 	return deployments

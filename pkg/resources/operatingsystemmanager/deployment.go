@@ -18,18 +18,20 @@ package operatingsystemmanager
 
 import (
 	"fmt"
+
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
-
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 var (
@@ -49,11 +51,12 @@ var (
 
 const (
 	Name = "operating-system-manager"
-	Tag  = "v0.2.0"
+	Tag  = "v0.3.0"
 )
 
 type operatingSystemManagerData interface {
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
+	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
 	Cluster() *kubermaticv1.Cluster
 	ImageRegistry(string) string
 	NodeLocalDNSCacheEnabled() bool
@@ -61,7 +64,7 @@ type operatingSystemManagerData interface {
 	ComputedNodePortRange() string
 }
 
-// DeploymentCreator returns the function to create and update the machine controller deployment
+// DeploymentCreator returns the function to create and update the operating system manager deployment
 func DeploymentCreator(data operatingSystemManagerData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.OperatingSystemManagerDeploymentName, func(in *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -70,7 +73,6 @@ func DeploymentCreator(data operatingSystemManagerData) reconciling.NamedDeploym
 			if err != nil {
 				return nil, err
 			}
-			// TODO(mq): add osm crds to wait for
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, deployment.Spec.Template.Spec, sets.NewString(Name), "")
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
@@ -82,7 +84,7 @@ func DeploymentCreator(data operatingSystemManagerData) reconciling.NamedDeploym
 	}
 }
 
-// DeploymentCreatorWithoutInitWrapper returns the function to create and update the machine controller deployment without the
+// DeploymentCreatorWithoutInitWrapper returns the function to create and update the operating system manager deployment without the
 // wrapper that checks for apiserver availabiltiy. This allows to adjust the command.
 func DeploymentCreatorWithoutInitWrapper(data operatingSystemManagerData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
@@ -120,9 +122,14 @@ func DeploymentCreatorWithoutInitWrapper(data operatingSystemManagerData) reconc
 				}
 			}
 
+			envVars, err := getEnvVars(data)
+			if err != nil {
+				return nil, err
+			}
+
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 
-			repository := data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/operating-system-manager"
+			repository := data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/operating-system-manager"
 
 			cloudProviderName, err := provider.ClusterCloudProviderName(data.Cluster().Spec.Cloud)
 			if err != nil {
@@ -148,13 +155,8 @@ func DeploymentCreatorWithoutInitWrapper(data operatingSystemManagerData) reconc
 					Name:    Name,
 					Image:   repository + ":" + Tag,
 					Command: []string{"/usr/local/bin/operating-system-manager"},
-					Args:    getFlags(data.DC().Node, cs),
-					Env: []corev1.EnvVar{
-						{
-							Name:  "KUBECONFIG",
-							Value: "/etc/kubernetes/kubeconfig/kubeconfig",
-						},
-					},
+					Args:    getFlags(data.DC().Node, cs, data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]),
+					Env:     envVars,
 					LivenessProbe: &corev1.Probe{
 						Handler: corev1.Handler{
 							HTTPGet: &corev1.HTTPGetAction{
@@ -172,7 +174,7 @@ func DeploymentCreatorWithoutInitWrapper(data operatingSystemManagerData) reconc
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      resources.OperatingSystemManagerKubeconfigSecretName,
-							MountPath: "/etc/kubernetes/kubeconfig",
+							MountPath: "/etc/kubernetes/worker-kubeconfig",
 							ReadOnly:  true,
 						},
 						{
@@ -202,13 +204,15 @@ type clusterSpec struct {
 	podCidr          string
 }
 
-func getFlags(nodeSettings *kubermaticv1.NodeSettings, cs *clusterSpec) []string {
+func getFlags(nodeSettings *kubermaticv1.NodeSettings, cs *clusterSpec, externalCloudProvider bool) []string {
 	flags := []string{
-		"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
+		"-worker-cluster-kubeconfig", "/etc/kubernetes/worker-kubeconfig/kubeconfig",
 		"-cluster-dns", cs.clusterDNSIP,
-		"-cluster-name", cs.Name,
-		"-external-namespace", fmt.Sprintf("%s-%s", "cluster", cs.Name),
-		"-external-cloud-provider", cs.cloudProvider,
+		"-namespace", fmt.Sprintf("%s-%s", "cluster", cs.Name),
+	}
+
+	if externalCloudProvider {
+		flags = append(flags, "-external-cloud-provider")
 	}
 
 	if nodeSettings != nil {
@@ -236,4 +240,41 @@ func getFlags(nodeSettings *kubermaticv1.NodeSettings, cs *clusterSpec) []string
 	}
 
 	return flags
+}
+
+func getEnvVars(data operatingSystemManagerData) ([]corev1.EnvVar, error) {
+	credentials, err := resources.GetCredentials(data)
+	if err != nil {
+		return nil, err
+	}
+
+	var vars []corev1.EnvVar
+	if data.Cluster().Spec.Cloud.Azure != nil {
+		vars = append(vars, corev1.EnvVar{Name: "AZURE_CLIENT_ID", Value: credentials.Azure.ClientID})
+		vars = append(vars, corev1.EnvVar{Name: "AZURE_CLIENT_SECRET", Value: credentials.Azure.ClientSecret})
+		vars = append(vars, corev1.EnvVar{Name: "AZURE_TENANT_ID", Value: credentials.Azure.TenantID})
+		vars = append(vars, corev1.EnvVar{Name: "AZURE_SUBSCRIPTION_ID", Value: credentials.Azure.SubscriptionID})
+	}
+	if data.Cluster().Spec.Cloud.Openstack != nil {
+		vars = append(vars, corev1.EnvVar{Name: "OS_AUTH_URL", Value: data.DC().Spec.Openstack.AuthURL})
+		vars = append(vars, corev1.EnvVar{Name: "OS_USER_NAME", Value: credentials.Openstack.Username})
+		vars = append(vars, corev1.EnvVar{Name: "OS_PASSWORD", Value: credentials.Openstack.Password})
+		vars = append(vars, corev1.EnvVar{Name: "OS_DOMAIN_NAME", Value: credentials.Openstack.Domain})
+		vars = append(vars, corev1.EnvVar{Name: "OS_PROJECT_NAME", Value: credentials.Openstack.Project})
+		vars = append(vars, corev1.EnvVar{Name: "OS_PROJECT_ID", Value: credentials.Openstack.ProjectID})
+		vars = append(vars, corev1.EnvVar{Name: "OS_APPLICATION_CREDENTIAL_ID", Value: credentials.Openstack.ApplicationCredentialID})
+		vars = append(vars, corev1.EnvVar{Name: "OS_APPLICATION_CREDENTIAL_SECRET", Value: credentials.Openstack.ApplicationCredentialSecret})
+	}
+	if data.Cluster().Spec.Cloud.VSphere != nil {
+		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_ADDRESS", Value: data.DC().Spec.VSphere.Endpoint})
+		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_USERNAME", Value: credentials.VSphere.Username})
+		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_PASSWORD", Value: credentials.VSphere.Password})
+	}
+	if data.Cluster().Spec.Cloud.GCP != nil {
+		vars = append(vars, corev1.EnvVar{Name: "GOOGLE_SERVICE_ACCOUNT", Value: credentials.GCP.ServiceAccount})
+	}
+	if data.Cluster().Spec.Cloud.Kubevirt != nil {
+		vars = append(vars, corev1.EnvVar{Name: "KUBEVIRT_KUBECONFIG", Value: credentials.Kubevirt.KubeConfig})
+	}
+	return resources.SanitizeEnvVars(vars), nil
 }
