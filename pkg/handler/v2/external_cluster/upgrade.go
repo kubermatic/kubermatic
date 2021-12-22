@@ -27,7 +27,7 @@ import (
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud/azure"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/aks"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gke"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
@@ -70,7 +70,7 @@ func GetUpgradesEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider
 			return gke.ListGKEUpgrades(ctx, sa, cloud.GKE.Zone, cloud.GKE.Name)
 		}
 		if cloud.AKS != nil {
-			cred, err := azure.GetCredentialsForAKSCluster(*cloud, secretKeySelector)
+			cred, err := aks.GetCredentialsForCluster(*cloud, secretKeySelector)
 			if err != nil {
 				return nil, err
 			}
@@ -114,7 +114,7 @@ func GetMachineDeploymentUpgradesEndpoint(userInfoGetter provider.UserInfoGetter
 				return gke.ListGKEMachineDeploymentUpgrades(ctx, sa, cloud.GKE.Zone, cloud.GKE.Name, req.MachineDeploymentID)
 			}
 			if cloud.AKS != nil {
-				cred, err := azure.GetCredentialsForAKSCluster(*cloud, secretKeySelector)
+				cred, err := aks.GetCredentialsForCluster(*cloud, secretKeySelector)
 				if err != nil {
 					return nil, err
 				}
