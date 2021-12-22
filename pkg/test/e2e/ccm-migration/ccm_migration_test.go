@@ -1,5 +1,3 @@
-//go:build e2e
-
 /*
 Copyright 2020 The Kubermatic Kubernetes Platform contributors.
 
@@ -73,7 +71,8 @@ var _ = ginkgo.Describe("CCM migration", func() {
 		})
 
 		ginkgo.AfterEach(func() {
-			//gomega.Expect(clusterJig.Cleanup(userClient)).NotTo(gomega.HaveOccurred())
+			time.Sleep(5 * time.Minute)
+			gomega.Expect(clusterJig.Cleanup(userClient)).NotTo(gomega.HaveOccurred())
 		})
 
 		ginkgo.It("migrating cluster to external CCM", func() {
@@ -93,7 +92,8 @@ var _ = ginkgo.Describe("CCM migration", func() {
 		})
 
 		ginkgo.AfterEach(func() {
-			//gomega.Expect(clusterJig.Cleanup(userClient)).NotTo(gomega.HaveOccurred())
+			time.Sleep(5 * time.Minute)
+			gomega.Expect(clusterJig.Cleanup(userClient)).NotTo(gomega.HaveOccurred())
 		})
 
 		ginkgo.It("migrating cluster to external CCM", func() {
