@@ -23,6 +23,30 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
+export GIT_HEAD_HASH="$(git rev-parse HEAD)"
+export KUBERMATIC_VERSION="${GIT_HEAD_HASH}"
+
+TEST_NAME="Pre-warm Go build cache"
+echodate "Attempting to pre-warm Go build cache"
+
+beforeGocache=$(nowms)
+make download-gocache
+pushElapsed gocache_download_duration_milliseconds $beforeGocache
+
+echodate "Creating kind cluster"
+export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
+source hack/ci/setup-kind-cluster.sh
+
+echodate "Setting up Kubermatic in kind on revision ${KUBERMATIC_VERSION}"
+
+beforeKubermaticSetup=$(nowms)
+source hack/ci/setup-kubermatic-in-kind.sh
+pushElapsed kind_kubermatic_setup_duration_milliseconds $beforeKubermaticSetup
+
+
+sleep 10000
+exit 0
+
 function generate_secret {
   cat /dev/urandom | LC_ALL=C tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1
   echo ''
@@ -323,7 +347,7 @@ if [ -x "$(command -v ginkgo)" ]; then
   ginkgo --tags=e2e -v pkg/test/e2e/ccm-migration/ \
     -r \
     #--randomizeAllSpecs \
-    #--randomizeSuites \
+    --randomizeSuites \
     --failOnPending \
     --cover \
     --trace \
@@ -335,7 +359,7 @@ if [ -x "$(command -v ginkgo)" ]; then
     --debug-log
 else
   CGO_ENABLED=1 go test --tags=e2e -v -race ./pkg/test/e2e/ccm-migration/... $EXTRA_ARGS \
-    #--ginkgo.randomizeAllSpecs \
+    --ginkgo.randomizeAllSpecs \
     --ginkgo.failOnPending \
     --ginkgo.trace \
     --ginkgo.progress \

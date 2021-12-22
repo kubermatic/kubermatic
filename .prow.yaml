@@ -1327,6 +1327,9 @@ presubmits:
       preset-vsphere: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
+      preset-vault: "true"
+      preset-repo-ssh: "true"
+      preset-e2e-ssh: "true"
       preset-kind-volume-mounts: "true"
       preset-goproxy: "true"
     spec:
@@ -1335,6 +1338,13 @@ presubmits:
           env:
             - name: KUBERMATIC_EDITION
               value: ce
+            - name: DISTRIBUTIONS
+              value: ubuntu
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
           command:
             - ./hack/run-ccm-migration-e2e-test-in-kind.sh
           # docker-in-docker needs privileged mode
