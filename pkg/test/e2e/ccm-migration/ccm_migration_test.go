@@ -71,7 +71,6 @@ var _ = ginkgo.Describe("CCM migration", func() {
 		})
 
 		ginkgo.AfterEach(func() {
-			time.Sleep(5 * time.Minute)
 			gomega.Expect(clusterJig.Cleanup(userClient)).NotTo(gomega.HaveOccurred())
 		})
 
@@ -92,7 +91,6 @@ var _ = ginkgo.Describe("CCM migration", func() {
 		})
 
 		ginkgo.AfterEach(func() {
-			time.Sleep(5 * time.Minute)
 			gomega.Expect(clusterJig.Cleanup(userClient)).NotTo(gomega.HaveOccurred())
 		})
 
