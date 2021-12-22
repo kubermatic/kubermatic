@@ -34,6 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/gke"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
@@ -626,35 +627,37 @@ func GetMetricsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider 
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		isMetricServer, err := clusterProvider.IsMetricServerAvailable(cluster)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
+		apiCluster := convertClusterToAPIWithStatus(ctx, privilegedClusterProvider, cluster)
 
-		if isMetricServer {
-			client, err := clusterProvider.GetClient(cluster)
+		if apiCluster.Status.State == apiv2.RUNNING {
+			isMetricServer, err := clusterProvider.IsMetricServerAvailable(cluster)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			nodeList := &corev1.NodeList{}
-			if err := client.List(ctx, nodeList); err != nil {
-				return nil, err
+			if isMetricServer {
+				client, err := clusterProvider.GetClient(cluster)
+				if err != nil {
+					return nil, common.KubernetesErrorToHTTPError(err)
+				}
+				nodeList := &corev1.NodeList{}
+				if err := client.List(ctx, nodeList); err != nil {
+					return nil, err
+				}
+				availableResources := make(map[string]corev1.ResourceList)
+				for _, n := range nodeList.Items {
+					availableResources[n.Name] = n.Status.Allocatable
+				}
+				allNodeMetricsList := &v1beta1.NodeMetricsList{}
+				if err := client.List(ctx, allNodeMetricsList); err != nil {
+					return nil, common.KubernetesErrorToHTTPError(err)
+				}
+				podMetricsList := &v1beta1.PodMetricsList{}
+				if err := client.List(ctx, podMetricsList, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}); err != nil {
+					return nil, common.KubernetesErrorToHTTPError(err)
+				}
+				return handlercommon.ConvertClusterMetrics(podMetricsList, allNodeMetricsList.Items, availableResources, cluster.Name)
 			}
-			availableResources := make(map[string]corev1.ResourceList)
-			for _, n := range nodeList.Items {
-				availableResources[n.Name] = n.Status.Allocatable
-			}
-			allNodeMetricsList := &v1beta1.NodeMetricsList{}
-			if err := client.List(ctx, allNodeMetricsList); err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
-			podMetricsList := &v1beta1.PodMetricsList{}
-			if err := client.List(ctx, podMetricsList, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}); err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
-			return handlercommon.ConvertClusterMetrics(podMetricsList, allNodeMetricsList.Items, availableResources, cluster.Name)
 		}
-
 		return &apiv1.ClusterMetrics{
 			Name:                cluster.Name,
 			ControlPlaneMetrics: apiv1.ControlPlaneMetrics{},
@@ -683,10 +686,7 @@ func ListEventsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider 
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		client, err := clusterProvider.GetClient(cluster)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
+		apiCluster := convertClusterToAPIWithStatus(ctx, privilegedClusterProvider, cluster)
 
 		eventType := ""
 		events := make([]apiv1.Event, 0)
@@ -698,32 +698,44 @@ func ListEventsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider 
 			eventType = corev1.EventTypeNormal
 		}
 
-		// get nodes events
-		nodes := &corev1.NodeList{}
-		if err := client.List(ctx, nodes); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		for _, node := range nodes.Items {
-			nodeEvents, err := common.GetEvents(ctx, client, &node, "")
+		if apiCluster.Status.State == apiv2.RUNNING {
+			client, err := clusterProvider.GetClient(cluster)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			events = append(events, nodeEvents...)
-		}
-
-		// get pods events from kube-system namespace
-		pods := &corev1.PodList{}
-		if err := client.List(ctx, pods, ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		for _, pod := range pods.Items {
-			nodeEvents, err := common.GetEvents(ctx, client, &pod, metav1.NamespaceSystem)
-			if err != nil {
+			// get nodes events
+			nodes := &corev1.NodeList{}
+			if err := client.List(ctx, nodes); err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			events = append(events, nodeEvents...)
+			for _, node := range nodes.Items {
+				nodeEvents, err := common.GetEvents(ctx, client, &node, "")
+				if err != nil {
+					return nil, common.KubernetesErrorToHTTPError(err)
+				}
+				events = append(events, nodeEvents...)
+			}
+
+			// get pods events from kube-system namespace
+			pods := &corev1.PodList{}
+			if err := client.List(ctx, pods, ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)); err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			for _, pod := range pods.Items {
+				nodeEvents, err := common.GetEvents(ctx, client, &pod, metav1.NamespaceSystem)
+				if err != nil {
+					return nil, common.KubernetesErrorToHTTPError(err)
+				}
+				events = append(events, nodeEvents...)
+			}
+
+		}
+		kubermaticEvents, err := common.GetEvents(ctx, privilegedClusterProvider.GetMasterClient(), cluster, metav1.NamespaceDefault)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
+		events = append(events, kubermaticEvents...)
 		if len(eventType) > 0 {
 			events = common.FilterEventsByType(events, eventType)
 		}
@@ -824,8 +836,8 @@ func convertClusterToAPI(internalCluster *kubermaticapiv1.ExternalCluster) *apiv
 		},
 		Labels: internalCluster.Labels,
 	}
-
 	cloud := internalCluster.Spec.CloudSpec
+
 	if cloud != nil {
 		cluster.Cloud = &apiv2.ExternalClusterCloudSpec{}
 		if cloud.EKS != nil {
@@ -838,6 +850,12 @@ func convertClusterToAPI(internalCluster *kubermaticapiv1.ExternalCluster) *apiv
 			cluster.Cloud.GKE = &apiv2.GKECloudSpec{
 				Name: cloud.GKE.Name,
 				Zone: cloud.GKE.Zone,
+			}
+		}
+		if cloud.AKS != nil {
+			cluster.Cloud.AKS = &apiv2.AKSCloudSpec{
+				Name:          cloud.AKS.Name,
+				ResourceGroup: cloud.AKS.ResourceGroup,
 			}
 		}
 	}
@@ -887,7 +905,7 @@ func convertClusterToAPIWithStatus(ctx context.Context, privilegedClusterProvide
 		apiCluster.Status = *aksStatus
 	}
 	if cloud.GKE != nil {
-		gkeStatus, err := getGKEClusterStatus(ctx, secretKeySelector, cloud)
+		gkeStatus, err := gke.GetGKEClusterStatus(ctx, secretKeySelector, cloud)
 		if err != nil {
 			apiCluster.Status = apiv2.ExternalClusterStatus{
 				State:         apiv2.ERROR,

@@ -729,6 +729,51 @@
         }
       }
     },
+    "/api/v1/admin/seeds/{seed_name}/backupdestinations/{backup_destination}": {
+      "delete": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "admin"
+        ],
+        "summary": "Deletes a backup destination from the Seed.",
+        "operationId": "deleteBackupDestination",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Name",
+            "name": "seed_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "BackupDestination",
+            "name": "backup_destination",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/settings": {
       "get": {
         "produces": [
@@ -6775,6 +6820,11 @@
           },
           {
             "type": "string",
+            "name": "VPC",
+            "in": "header"
+          },
+          {
+            "type": "string",
             "x-go-name": "DC",
             "name": "dc",
             "in": "path",
@@ -6835,16 +6885,15 @@
           },
           {
             "type": "string",
+            "name": "VPC",
+            "in": "header"
+          },
+          {
+            "type": "string",
             "x-go-name": "DC",
             "name": "dc",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "VPC",
-            "name": "vpc",
-            "in": "header"
           }
         ],
         "responses": {
@@ -6897,6 +6946,11 @@
           {
             "type": "string",
             "name": "AssumeRoleExternalID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "VPC",
             "in": "header"
           },
           {
@@ -19383,16 +19437,18 @@
       "description": "CNIVersions is a list of versions for a CNI Plugin",
       "type": "object",
       "properties": {
-        "CNIPluginType": {
+        "cniPluginType": {
           "description": "CNIPluginType represents the type of the CNI Plugin",
-          "type": "string"
+          "type": "string",
+          "x-go-name": "CNIPluginType"
         },
-        "Versions": {
+        "versions": {
           "description": "Versions represents the list of the CNI Plugin versions that are supported",
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "x-go-name": "Versions"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -19938,6 +19994,11 @@
           "description": "ContainerRuntime to use, i.e. Docker or containerd. By default containerd will be used.",
           "type": "string",
           "x-go-name": "ContainerRuntime"
+        },
+        "enableOperatingSystemManager": {
+          "description": "EnableOperatingSystemManager enables OSM which in-turn is responsible for creating and managing worker node configuration",
+          "type": "boolean",
+          "x-go-name": "EnableOperatingSystemManager"
         },
         "enableUserSSHKeyAgent": {
           "description": "EnableUserSSHKeyAgent control whether the UserSSHKeyAgent will be deployed in the user cluster or not.\nIf it was enabled, the agent will be deployed and used to sync the user ssh keys, that the user attach\nto the created cluster. If the agent was disabled, it won't be deployed in the user cluster, thus after\nthe cluster creation any attached ssh keys won't be synced to the worker nodes. Once the agent is enabled/disabled\nit cannot be changed after the cluster is being created.",

@@ -30,7 +30,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/azure"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/gke"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
@@ -39,6 +39,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -54,7 +55,8 @@ const (
 // Reconciler is a controller which is responsible for managing clusters
 type Reconciler struct {
 	ctrlruntimeclient.Client
-	log *zap.SugaredLogger
+	log      *zap.SugaredLogger
+	recorder record.EventRecorder
 }
 
 // Add creates a cluster controller.
@@ -63,8 +65,9 @@ func Add(
 	mgr manager.Manager,
 	log *zap.SugaredLogger) error {
 	reconciler := &Reconciler{
-		log:    log.Named(ControllerName),
-		Client: mgr.GetClient(),
+		log:      log.Named(ControllerName),
+		Client:   mgr.GetClient(),
+		recorder: mgr.GetEventRecorderFor(ControllerName),
 	}
 	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler})
 	if err != nil {
@@ -121,6 +124,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Extern
 		err := r.createOrUpdateGKEKubeconfig(ctx, cluster)
 		if err != nil {
 			r.log.Errorf("failed to create or update kubeconfig secret %v", err)
+			r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 			return reconcile.Result{}, err
 		}
 		// the kubeconfig token is valid 1h, it will update token every 30min
@@ -131,6 +135,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Extern
 		err := r.createOrUpdateEKSKubeconfig(ctx, cluster)
 		if err != nil {
 			r.log.Errorf("failed to create or update kubeconfig secret %v", err)
+			r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 			return reconcile.Result{}, err
 		}
 		// the kubeconfig token is valid 14min, it will update token every 10min
@@ -141,6 +146,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Extern
 		err := r.createOrUpdateAKSKubeconfig(ctx, cluster)
 		if err != nil {
 			r.log.Errorf("failed to create or update kubeconfig secret %v", err)
+			r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 			return reconcile.Result{}, err
 		}
 		return reconcile.Result{}, nil
@@ -221,7 +227,7 @@ func (r *Reconciler) createOrUpdateGKEKubeconfig(ctx context.Context, cluster *k
 	if err != nil {
 		return err
 	}
-	config, err := gcp.GetGKECLusterConfig(ctx, cred.ServiceAccount, cloud.GKE.Name, cloud.GKE.Zone)
+	config, err := gke.GetGKECLusterConfig(ctx, cred.ServiceAccount, cloud.GKE.Name, cloud.GKE.Zone)
 	if err != nil {
 		return err
 	}

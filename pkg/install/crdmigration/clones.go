@@ -440,6 +440,7 @@ func convertClusterSpec(old kubermaticv1.ClusterSpec) newv1.ClusterSpec {
 		UsePodNodeSelectorAdmissionPlugin:    old.UsePodNodeSelectorAdmissionPlugin,
 		UseEventRateLimitAdmissionPlugin:     old.UseEventRateLimitAdmissionPlugin,
 		EnableUserSSHKeyAgent:                old.EnableUserSSHKeyAgent,
+		EnableOperatingSystemManager:         old.EnableOperatingSystemManager,
 		PodNodeSelectorAdmissionPluginConfig: old.PodNodeSelectorAdmissionPluginConfig,
 		AdmissionPlugins:                     old.AdmissionPlugins,
 		OPAIntegration:                       (*newv1.OPAIntegrationSettings)(old.OPAIntegration),

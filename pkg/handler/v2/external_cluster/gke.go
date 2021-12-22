@@ -36,6 +36,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/gke"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 
@@ -72,7 +73,7 @@ func GKEImagesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGet
 		}
 
 		images := apiv2.GKEImageList{}
-		svc, gcpProject, err := gcp.ConnectToContainerService(sa)
+		svc, gcpProject, err := gke.ConnectToContainerService(sa)
 		if err != nil {
 			return nil, err
 		}
@@ -274,7 +275,7 @@ func patchGKECluster(ctx context.Context, old, new *apiv2.ExternalCluster, secre
 	if err != nil {
 		return nil, err
 	}
-	svc, project, err := gcp.ConnectToContainerService(sa)
+	svc, project, err := gke.ConnectToContainerService(sa)
 	if err != nil {
 		return nil, err
 	}
@@ -298,7 +299,7 @@ func getGKENodePools(ctx context.Context, cluster *kubermaticapiv1.ExternalClust
 	if err != nil {
 		return nil, err
 	}
-	svc, project, err := gcp.ConnectToContainerService(sa)
+	svc, project, err := gke.ConnectToContainerService(sa)
 	if err != nil {
 		return nil, err
 	}
@@ -387,7 +388,7 @@ func getGKENodePool(ctx context.Context, cluster *kubermaticapiv1.ExternalCluste
 	if err != nil {
 		return nil, err
 	}
-	svc, project, err := gcp.ConnectToContainerService(sa)
+	svc, project, err := gke.ConnectToContainerService(sa)
 	if err != nil {
 		return nil, err
 	}
@@ -400,7 +401,7 @@ func getGKENodes(ctx context.Context, cluster *kubermaticapiv1.ExternalCluster, 
 	if err != nil {
 		return nil, err
 	}
-	svc, project, err := gcp.ConnectToContainerService(sa)
+	svc, project, err := gke.ConnectToContainerService(sa)
 	if err != nil {
 		return nil, err
 	}
@@ -437,7 +438,7 @@ func deleteGKENodePool(ctx context.Context, cluster *kubermaticapiv1.ExternalClu
 	if err != nil {
 		return err
 	}
-	svc, project, err := gcp.ConnectToContainerService(sa)
+	svc, project, err := gke.ConnectToContainerService(sa)
 	if err != nil {
 		return err
 	}
@@ -452,7 +453,7 @@ func patchGKEMachineDeployment(ctx context.Context, old, new *apiv2.ExternalClus
 	if err != nil {
 		return nil, err
 	}
-	svc, project, err := gcp.ConnectToContainerService(sa)
+	svc, project, err := gke.ConnectToContainerService(sa)
 	if err != nil {
 		return nil, err
 	}
@@ -514,7 +515,7 @@ func createGKENodePool(ctx context.Context, cluster *kubermaticapiv1.ExternalClu
 	if err != nil {
 		return nil, err
 	}
-	svc, project, err := gcp.ConnectToContainerService(sa)
+	svc, project, err := gke.ConnectToContainerService(sa)
 	if err != nil {
 		return nil, err
 	}
@@ -574,7 +575,7 @@ func createGKENodePool(ctx context.Context, cluster *kubermaticapiv1.ExternalClu
 
 func createNewGKECluster(ctx context.Context, gkeCloudSpec *apiv2.GKECloudSpec) error {
 
-	svc, project, err := gcp.ConnectToContainerService(gkeCloudSpec.ServiceAccount)
+	svc, project, err := gke.ConnectToContainerService(gkeCloudSpec.ServiceAccount)
 	if err != nil {
 		return err
 	}
@@ -668,43 +669,4 @@ func genGKECluster(gkeCloudSpec *apiv2.GKECloudSpec) *container.Cluster {
 	}
 
 	return newCluster
-}
-
-func getGKEClusterStatus(ctx context.Context, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticapiv1.ExternalClusterCloudSpec) (*apiv2.ExternalClusterStatus, error) {
-	sa, err := secretKeySelector(cloudSpec.GKE.CredentialsReference, resources.GCPServiceAccount)
-	if err != nil {
-		return nil, err
-	}
-	svc, project, err := gcp.ConnectToContainerService(sa)
-	if err != nil {
-		return nil, err
-	}
-
-	req := svc.Projects.Zones.Clusters.Get(project, cloudSpec.GKE.Zone, cloudSpec.GKE.Name)
-	gkeCluster, err := req.Context(ctx).Do()
-	if err != nil {
-		return nil, err
-	}
-	return &apiv2.ExternalClusterStatus{
-		State:         convertGKEStatus(gkeCluster.Status),
-		StatusMessage: gkeCluster.StatusMessage,
-	}, nil
-
-}
-
-func convertGKEStatus(status string) apiv2.ExternalClusterState {
-	switch status {
-	case "PROVISIONING":
-		return apiv2.PROVISIONING
-	case "RUNNING":
-		return apiv2.RUNNING
-	case "RECONCILING":
-		return apiv2.RECONCILING
-	case "STOPPING":
-		return apiv2.DELETING
-	case "ERROR":
-		return apiv2.ERROR
-	default:
-		return apiv2.UNKNOWN
-	}
 }
