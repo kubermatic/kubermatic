@@ -322,8 +322,8 @@ EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
 if [ -x "$(command -v ginkgo)" ]; then
   ginkgo --tags=e2e -v pkg/test/e2e/ccm-migration/ \
     -r \
-    --randomizeAllSpecs \
-    --randomizeSuites \
+    #--randomizeAllSpecs \
+    #--randomizeSuites \
     --failOnPending \
     --cover \
     --trace \
@@ -335,7 +335,7 @@ if [ -x "$(command -v ginkgo)" ]; then
     --debug-log
 else
   CGO_ENABLED=1 go test --tags=e2e -v -race ./pkg/test/e2e/ccm-migration/... $EXTRA_ARGS \
-    --ginkgo.randomizeAllSpecs \
+    #--ginkgo.randomizeAllSpecs \
     --ginkgo.failOnPending \
     --ginkgo.trace \
     --ginkgo.progress \
