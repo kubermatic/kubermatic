@@ -97,6 +97,7 @@ type controllerRunOptions struct {
 	isKonnectivityEnabled        bool
 	konnectivityServerHost       string
 	konnectivityServerPort       int
+	enableOperatingSystemManager bool
 }
 
 func main() {
@@ -141,6 +142,7 @@ func main() {
 	flag.BoolVar(&runOp.isKonnectivityEnabled, "konnectivity-enabled", false, "Enable Konnectivity.")
 	flag.StringVar(&runOp.konnectivityServerHost, "konnectivity-server-host", "", "Konnectivity Server host.")
 	flag.IntVar(&runOp.konnectivityServerPort, "konnectivity-server-port", 6443, "Konnectivity Server port.")
+	flag.BoolVar(&runOp.enableOperatingSystemManager, "operating-system-manager-enabled", false, "Enable Operating System Manager, this only enables deployment of OSM resources.")
 
 	flag.Parse()
 
@@ -290,6 +292,7 @@ func main() {
 		runOp.konnectivityServerPort,
 		runOp.ccmMigration,
 		runOp.ccmMigrationCompleted,
+		runOp.enableOperatingSystemManager,
 		log,
 	); err != nil {
 		log.Fatalw("Failed to register user cluster controller", zap.Error(err))

@@ -73,7 +73,8 @@ func DeploymentCreator(data operatingSystemManagerData) reconciling.NamedDeploym
 			if err != nil {
 				return nil, err
 			}
-			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, deployment.Spec.Template.Spec, sets.NewString(Name), "")
+
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, deployment.Spec.Template.Spec, sets.NewString(Name))
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
 			}
@@ -97,7 +98,7 @@ func DeploymentCreatorWithoutInitWrapper(data operatingSystemManagerData) reconc
 				MatchLabels: resources.BaseAppLabels(Name, nil),
 			}
 
-			volumes := []corev1.Volume{getKubeconfigVolume(), getCABundleVolume()}
+			volumes := []corev1.Volume{getKubeconfigVolume()}
 			dep.Spec.Template.Spec.Volumes = volumes
 
 			podLabels, err := data.GetPodTemplateLabels(Name, volumes, nil)
@@ -154,7 +155,7 @@ func DeploymentCreatorWithoutInitWrapper(data operatingSystemManagerData) reconc
 				{
 					Name:    Name,
 					Image:   repository + ":" + Tag,
-					Command: []string{"/usr/local/bin/operating-system-manager"},
+					Command: []string{"/usr/local/bin/osm-controller"},
 					Args:    getFlags(data.DC().Node, cs, data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]),
 					Env:     envVars,
 					LivenessProbe: &corev1.Probe{
@@ -177,14 +178,12 @@ func DeploymentCreatorWithoutInitWrapper(data operatingSystemManagerData) reconc
 							MountPath: "/etc/kubernetes/worker-kubeconfig",
 							ReadOnly:  true,
 						},
-						{
-							Name:      resources.CABundleConfigMapName,
-							MountPath: "/etc/kubernetes/pki/ca-bundle",
-							ReadOnly:  true,
-						},
 					},
 				},
 			}
+
+			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, controllerResourceRequirements, nil, dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
