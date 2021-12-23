@@ -21,7 +21,7 @@
 #   - templated cluster-pool-ipv4-cidr
 #   - templated kube-proxy-replacement parts
 #   - added seccomp profile to cilium-operator
-#   - hubble-relay and hubble-ui components moved to the separate addon "hubble"
+#   - templates/hubble, templates/hubble-relay and templates/hubble-ui components moved to a separate addon "hubble"
 
 {{ if eq .Cluster.CNIPlugin.Type "cilium" }}
 {{ if eq .Cluster.CNIPlugin.Version "v1.11" }}
@@ -44,13 +44,6 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: "cilium-operator"
-  namespace: kube-system
----
-# Source: cilium/templates/hubble/tls-cronjob/serviceaccount.yaml
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: "hubble-generate-certs"
   namespace: kube-system
 ---
 # Source: cilium/templates/cilium-configmap.yaml
@@ -404,38 +397,6 @@ rules:
   - get
   - update
 ---
-# Source: cilium/templates/hubble/tls-cronjob/clusterrole.yaml
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: hubble-generate-certs
-rules:
-  - apiGroups:
-      - ""
-    resources:
-      - secrets
-    verbs:
-      - create
-  - apiGroups:
-      - ""
-    resources:
-      - secrets
-    resourceNames:
-      - hubble-server-certs
-      - hubble-relay-client-certs
-      - hubble-relay-server-certs
-    verbs:
-      - update
-  - apiGroups:
-      - ""
-    resources:
-      - secrets
-    resourceNames:
-      - hubble-ca-secret
-    verbs:
-      - get
-      - update
----
 # Source: cilium/templates/cilium-agent/clusterrolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -462,20 +423,6 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: "cilium-operator"
-  namespace: kube-system
----
-# Source: cilium/templates/hubble/tls-cronjob/clusterrolebinding.yaml
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: hubble-generate-certs
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: hubble-generate-certs
-subjects:
-- kind: ServiceAccount
-  name: "hubble-generate-certs"
   namespace: kube-system
 ---
 # Source: cilium/templates/cilium-agent/daemonset.yaml
@@ -888,86 +835,6 @@ spec:
       - name: cilium-config-path
         configMap:
           name: cilium-config
----
-# Source: cilium/templates/hubble/tls-cronjob/job.yaml
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: hubble-generate-certs-4a617efdba
-  namespace: kube-system
-  labels:
-    k8s-app: hubble-generate-certs
-spec:
-  template:
-    metadata:
-      labels:
-        k8s-app: hubble-generate-certs
-    spec:
-      containers:
-        - name: certgen
-          image: "quay.io/cilium/certgen:v0.1.5"
-          imagePullPolicy: IfNotPresent
-          command:
-            - "/usr/bin/cilium-certgen"
-          # Because this is executed as a job, we pass the values as command
-          # line args instead of via config map. This allows users to inspect
-          # the values used in past runs by inspecting the completed pod.
-          args:
-            - "--cilium-namespace=kube-system"
-            - "--hubble-ca-generate"
-            - "--hubble-ca-reuse-secret"
-            - "--hubble-server-cert-generate"
-            - "--hubble-server-cert-common-name=*.default.hubble-grpc.cilium.io"
-            - "--hubble-server-cert-validity-duration=94608000s"
-            - "--hubble-relay-client-cert-generate"
-            - "--hubble-relay-client-cert-validity-duration=94608000s"
-      hostNetwork: true
-      serviceAccount: "hubble-generate-certs"
-      serviceAccountName: "hubble-generate-certs"
-      restartPolicy: OnFailure
-  ttlSecondsAfterFinished: 1800
----
-# Source: cilium/templates/hubble/tls-cronjob/cronjob.yaml
-apiVersion: batch/v1beta1
-kind: CronJob
-metadata:
-  name: hubble-generate-certs
-  namespace: kube-system
-  labels:
-    k8s-app: hubble-generate-certs
-spec:
-  schedule: "0 0 1 */4 *"
-  concurrencyPolicy: Forbid
-  jobTemplate:
-    spec:
-      template:
-        metadata:
-          labels:
-            k8s-app: hubble-generate-certs
-        spec:
-          containers:
-            - name: certgen
-              image: "quay.io/cilium/certgen:v0.1.5"
-              imagePullPolicy: IfNotPresent
-              command:
-                - "/usr/bin/cilium-certgen"
-              # Because this is executed as a job, we pass the values as command
-              # line args instead of via config map. This allows users to inspect
-              # the values used in past runs by inspecting the completed pod.
-              args:
-                - "--cilium-namespace=kube-system"
-                - "--hubble-ca-generate"
-                - "--hubble-ca-reuse-secret"
-                - "--hubble-server-cert-generate"
-                - "--hubble-server-cert-common-name=*.default.hubble-grpc.cilium.io"
-                - "--hubble-server-cert-validity-duration=94608000s"
-                - "--hubble-relay-client-cert-generate"
-                - "--hubble-relay-client-cert-validity-duration=94608000s"
-          hostNetwork: true
-          serviceAccount: "hubble-generate-certs"
-          serviceAccountName: "hubble-generate-certs"
-          restartPolicy: OnFailure
-      ttlSecondsAfterFinished: 1800
 
 {{ if .Cluster.Features.Has "kubeSystemNetworkPolicies" }}
 ---
