@@ -74,7 +74,7 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 	if spec.CNIPlugin != nil {
 		if !cni.GetSupportedCNIPlugins().Has(spec.CNIPlugin.Type.String()) {
 			allErrs = append(allErrs, field.NotSupported(parentFieldPath.Child("cniPlugin", "type"), spec.CNIPlugin.Type.String(), cni.GetSupportedCNIPlugins().List()))
-		} else if versions, err := cni.GetSupportedCNIPluginVersions(spec.CNIPlugin.Type); err != nil || !versions.Has(spec.CNIPlugin.Version) {
+		} else if versions, err := cni.GetAllowedCNIPluginVersions(spec.CNIPlugin.Type); err != nil || !versions.Has(spec.CNIPlugin.Version) {
 			allErrs = append(allErrs, field.NotSupported(parentFieldPath.Child("cniPlugin", "version"), spec.CNIPlugin.Version, versions.List()))
 		}
 	}
@@ -715,27 +715,24 @@ func validateClusterNetworkingConfigUpdateImmutability(c, oldC *kubermaticv1.Clu
 	return allErrs
 }
 
-func validateCNIUpdate(cni *kubermaticv1.CNIPluginSettings, oldCni *kubermaticv1.CNIPluginSettings, labels map[string]string) *field.Error {
+func validateCNIUpdate(newCni *kubermaticv1.CNIPluginSettings, oldCni *kubermaticv1.CNIPluginSettings, labels map[string]string) *field.Error {
 	basePath := field.NewPath("spec", "cniPlugin")
 
 	// if there was no CNI setting, we allow the mutation to happen
 	// allowed for backward compatibility with older KKP with existing clusters with no CNI settings
-	if cni == nil && oldCni == nil {
+	if newCni == nil && oldCni == nil {
 		return nil
 	}
 
-	if oldCni != nil && cni == nil {
+	if oldCni != nil && newCni == nil {
 		return field.Required(basePath, "CNI plugin settings cannot be removed")
 	}
 
-	if oldCni == nil && cni != nil {
-		if _, ok := labels[UnsafeCNIUpgradeLabel]; ok {
-			return nil // allowed for migration path from older KKP with existing clusters with no CNI settings
-		}
-		return field.Forbidden(basePath, fmt.Sprintf("cannot add CNI plugin settings, unless %s label is present", UnsafeCNIUpgradeLabel))
+	if oldCni == nil && newCni != nil {
+		return nil // allowed for automated setting of CNI type and version
 	}
 
-	if cni.Type != oldCni.Type {
+	if newCni.Type != oldCni.Type {
 		if _, ok := labels[UnsafeCNIMigrationLabel]; ok {
 			return nil // allowed for CNI type migration path
 		}
@@ -743,10 +740,14 @@ func validateCNIUpdate(cni *kubermaticv1.CNIPluginSettings, oldCni *kubermaticv1
 		return field.Forbidden(basePath.Child("type"), fmt.Sprintf("cannot change CNI plugin type, unless %s label is present", UnsafeCNIMigrationLabel))
 	}
 
-	if cni.Version != oldCni.Version {
-		newV, err := semver.NewVersion(cni.Version)
+	if newCni.Version != oldCni.Version {
+		if !cni.IsSupportedCNIPluginTypeAndVersion(oldCni) {
+			return nil // allowed for automated migration from deprecated CNI
+		}
+
+		newV, err := semver.NewVersion(newCni.Version)
 		if err != nil {
-			return field.Invalid(basePath.Child("version"), cni.Version, fmt.Sprintf("couldn't parse CNI version `%s`: %v", cni.Version, err))
+			return field.Invalid(basePath.Child("version"), newCni.Version, fmt.Sprintf("couldn't parse CNI version `%s`: %v", newCni.Version, err))
 		}
 
 		oldV, err := semver.NewVersion(oldCni.Version)
@@ -756,7 +757,7 @@ func validateCNIUpdate(cni *kubermaticv1.CNIPluginSettings, oldCni *kubermaticv1
 
 		if newV.Major() != oldV.Major() || (newV.Minor() != oldV.Minor()+1 && oldV.Minor() != newV.Minor()+1) {
 			if _, ok := labels[UnsafeCNIUpgradeLabel]; !ok {
-				return field.Forbidden(basePath.Child("version"), fmt.Sprintf("cannot upgrade CNI from %s to %s, only one minor version difference is allowed unless %s label is present", oldCni.Version, cni.Version, UnsafeCNIUpgradeLabel))
+				return field.Forbidden(basePath.Child("version"), fmt.Sprintf("cannot upgrade CNI from %s to %s, only one minor version difference is allowed unless %s label is present", oldCni.Version, newCni.Version, UnsafeCNIUpgradeLabel))
 			}
 		}
 	}

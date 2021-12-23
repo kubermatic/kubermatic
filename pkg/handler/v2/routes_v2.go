@@ -78,10 +78,6 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/featuregates").
 		Handler(r.getFeatureGates())
 
-	mux.Methods(http.MethodGet).
-		Path("/providers/aws/regions").
-		Handler(r.listAWSRegions())
-
 	// Defines a set of HTTP endpoints for interacting with KubeVirt clusters
 	mux.Methods(http.MethodGet).
 		Path("/providers/kubevirt/vmflavors").
@@ -5208,31 +5204,6 @@ func (r Routing) listKubevirtStorageClasses() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.KubeVirtStorageClassesEndpoint(r.presetProvider, r.userInfoGetter)),
 		provider.DecodeKubeVirtGenericReq,
-		handler.EncodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route GET /api/v2/providers/aws/regions regions listAWSRegions
-//
-//     List AWS regions.
-//
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: []Regions
-//       401: empty
-//       403: empty
-func (r Routing) listAWSRegions() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
-			middleware.UserSaver(r.userProvider),
-		)(provider.ListAWSRegionsEndpoint(r.userInfoGetter, r.presetProvider)),
-		provider.DecodeAWSCommonReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

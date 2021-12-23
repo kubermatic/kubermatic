@@ -22,14 +22,10 @@ import (
 	"net/http"
 	"strings"
 
-	ec2service "github.com/aws/aws-sdk-go/service/ec2"
-
-	"github.com/aws/aws-sdk-go/service/eks"
 	ec2 "github.com/cristim/ec2-instances-info"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
@@ -42,7 +38,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -52,10 +47,6 @@ var data *ec2.InstanceData
 func init() {
 	data, _ = ec2.Data()
 }
-
-// Region value will instruct the SDK where to make service API requests to.
-// Region must be provided before a service client request is made.
-const RegionEndpoint = "eu-central-1"
 
 func AWSSubnetNoCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID, clusterID string) (interface{}, error) {
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -330,109 +321,4 @@ type AWSCredential struct {
 	SecretAccessKey      string
 	AssumeRoleARN        string
 	AssumeRoleExternalID string
-}
-
-type EKSCredential struct {
-	AccessKeyID     string
-	SecretAccessKey string
-	Region          string
-}
-
-func ListAWSRegions(credential EKSCredential) (apiv2.Regions, error) {
-	regionInput := &ec2service.DescribeRegionsInput{}
-
-	// Must provide either a region or endpoint configured to use the SDK, even for operations that may enumerate other regions
-	// See https://github.com/aws/aws-sdk-go/issues/224 for more details
-	client, err := awsprovider.GetClientSet(credential.AccessKeyID, credential.SecretAccessKey, "", "", RegionEndpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	// Retrieves all regions/endpoints that work with EC2
-	regionOutput, err := client.EC2.DescribeRegions(regionInput)
-	if err != nil {
-		return nil, fmt.Errorf("cannot list regions: %w", err)
-	}
-
-	var regionList []string
-	for _, region := range regionOutput.Regions {
-		regionList = append(regionList, *region.RegionName)
-	}
-	return regionList, nil
-}
-
-func listEKSClusters(cred EKSCredential, region string) ([]*string, error) {
-
-	client, err := awsprovider.GetClientSet(cred.AccessKeyID, cred.SecretAccessKey, "", "", region)
-	if err != nil {
-		return nil, err
-	}
-
-	req, res := client.EKS.ListClustersRequest(&eks.ListClustersInput{})
-	err = req.Send()
-	if err != nil {
-		return nil, fmt.Errorf("cannot list clusters in region=%s: %w", region, err)
-	}
-
-	return res.Clusters, nil
-}
-
-func ListEKSClusters(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ExternalClusterProvider, cred EKSCredential, projectID string) (apiv2.EKSClusterList, error) {
-
-	var err error
-	var clusters apiv2.EKSClusterList
-
-	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID, nil)
-	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-
-	clusterList, err := clusterProvider.List(project)
-	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-
-	eksExternalCluster := make(map[string]sets.String)
-	for _, externalCluster := range clusterList.Items {
-		cloud := externalCluster.Spec.CloudSpec
-		if cloud != nil && cloud.EKS != nil {
-			region := cloud.EKS.Region
-			if _, ok := eksExternalCluster[region]; !ok {
-				eksExternalCluster[region] = make(sets.String)
-			}
-			eksExternalCluster[region] = eksExternalCluster[region].Insert(cloud.EKS.Name)
-		}
-	}
-
-	region := cred.Region
-	// list EKS clusters for user specified region
-	if region != "" {
-		eksClusters, err := listEKSClusters(cred, region)
-		if err != nil {
-			return nil, fmt.Errorf("cannot list clusters: %w", err)
-		}
-
-		for _, f := range eksClusters {
-			var imported bool
-			if clusterSet, ok := eksExternalCluster[region]; ok {
-				if clusterSet.Has(*f) {
-					imported = true
-				}
-			}
-			clusters = append(clusters, apiv2.EKSCluster{Name: *f, Region: region, IsImported: imported})
-		}
-	}
-
-	return clusters, nil
-}
-
-func ValidateEKSCredentials(ctx context.Context, credential EKSCredential) error {
-	client, err := awsprovider.GetClientSet(credential.AccessKeyID, credential.SecretAccessKey, "", "", credential.Region)
-	if err != nil {
-		return err
-	}
-
-	_, err = client.EKS.ListClusters(&eks.ListClustersInput{})
-
-	return err
 }

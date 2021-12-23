@@ -24,10 +24,11 @@ import (
 	"github.com/go-kit/kit/endpoint"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud/azure"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/aks"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gke"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
@@ -54,12 +55,15 @@ func GetUpgradesEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
+		apiCluster := convertClusterToAPIWithStatus(ctx, clusterProvider, privilegedClusterProvider, cluster)
 		upgrades := make([]*apiv1.MasterVersion, 0)
 		cloud := cluster.Spec.CloudSpec
 		if cloud == nil {
 			return upgrades, nil
 		}
-
+		if apiCluster.Status.State != apiv2.RUNNING {
+			return upgrades, nil
+		}
 		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
 
 		if cloud.GKE != nil {
@@ -70,7 +74,7 @@ func GetUpgradesEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider
 			return gke.ListGKEUpgrades(ctx, sa, cloud.GKE.Zone, cloud.GKE.Name)
 		}
 		if cloud.AKS != nil {
-			cred, err := azure.GetCredentialsForAKSCluster(*cloud, secretKeySelector)
+			cred, err := aks.GetCredentialsForCluster(*cloud, secretKeySelector)
 			if err != nil {
 				return nil, err
 			}
@@ -97,9 +101,13 @@ func GetMachineDeploymentUpgradesEndpoint(userInfoGetter provider.UserInfoGetter
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
+		apiCluster := convertClusterToAPIWithStatus(ctx, clusterProvider, privilegedClusterProvider, cluster)
 		upgrades := make([]*apiv1.MasterVersion, 0)
 		cloud := cluster.Spec.CloudSpec
 		if cloud == nil {
+			return upgrades, nil
+		}
+		if apiCluster.Status.State != apiv2.RUNNING {
 			return upgrades, nil
 		}
 
@@ -114,7 +122,7 @@ func GetMachineDeploymentUpgradesEndpoint(userInfoGetter provider.UserInfoGetter
 				return gke.ListGKEMachineDeploymentUpgrades(ctx, sa, cloud.GKE.Zone, cloud.GKE.Name, req.MachineDeploymentID)
 			}
 			if cloud.AKS != nil {
-				cred, err := azure.GetCredentialsForAKSCluster(*cloud, secretKeySelector)
+				cred, err := aks.GetCredentialsForCluster(*cloud, secretKeySelector)
 				if err != nil {
 					return nil, err
 				}

@@ -54,6 +54,23 @@ type AzureCredentials struct {
 	ClientSecret   string
 }
 
+type EKSCredentials struct {
+	AccessKeyID          string
+	SecretAccessKey      string
+	AssumeRoleARN        string
+	AssumeRoleExternalID string
+}
+
+type GKECredentials struct {
+	ServiceAccount string
+}
+type AKSCredentials struct {
+	TenantID       string
+	SubscriptionID string
+	ClientID       string
+	ClientSecret   string
+}
+
 type DigitaloceanCredentials struct {
 	Token string
 }
@@ -306,73 +323,73 @@ func GetAWSCredentials(data CredentialsData) (AWSCredentials, error) {
 	return awsCredentials, nil
 }
 
-func GetGCPGKECredentials(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.ExternalCluster) (GCPCredentials, error) {
+func GetGKECredentials(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.ExternalCluster) (GKECredentials, error) {
 	spec := cluster.Spec.CloudSpec.GKE
-	gcpCredentials := GCPCredentials{}
+	gkeCredentials := GKECredentials{}
 	GetGlobalSecretKeySelectorValue := provider.SecretKeySelectorValueFuncFactory(ctx, client)
 	var err error
 
 	if spec.ServiceAccount != "" {
-		gcpCredentials.ServiceAccount = spec.ServiceAccount
-	} else if gcpCredentials.ServiceAccount, err = GetGlobalSecretKeySelectorValue(spec.CredentialsReference, GCPServiceAccount); err != nil {
-		return GCPCredentials{}, err
+		gkeCredentials.ServiceAccount = spec.ServiceAccount
+	} else if gkeCredentials.ServiceAccount, err = GetGlobalSecretKeySelectorValue(spec.CredentialsReference, GCPServiceAccount); err != nil {
+		return GKECredentials{}, err
 	}
 
-	return gcpCredentials, nil
+	return gkeCredentials, nil
 }
 
-func GetAWSEKSCredentials(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.ExternalCluster) (AWSCredentials, error) {
+func GetEKSCredentials(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.ExternalCluster) (EKSCredentials, error) {
 	spec := cluster.Spec.CloudSpec.EKS
-	awsCredentials := AWSCredentials{}
+	eksCredentials := EKSCredentials{}
 	GetGlobalSecretKeySelectorValue := provider.SecretKeySelectorValueFuncFactory(ctx, client)
 	var err error
 
 	if spec.AccessKeyID != "" {
-		awsCredentials.AccessKeyID = spec.AccessKeyID
-	} else if awsCredentials.AccessKeyID, err = GetGlobalSecretKeySelectorValue(spec.CredentialsReference, AWSAccessKeyID); err != nil {
-		return AWSCredentials{}, err
+		eksCredentials.AccessKeyID = spec.AccessKeyID
+	} else if eksCredentials.AccessKeyID, err = GetGlobalSecretKeySelectorValue(spec.CredentialsReference, AWSAccessKeyID); err != nil {
+		return EKSCredentials{}, err
 	}
 
 	if spec.SecretAccessKey != "" {
-		awsCredentials.SecretAccessKey = spec.SecretAccessKey
-	} else if awsCredentials.SecretAccessKey, err = GetGlobalSecretKeySelectorValue(spec.CredentialsReference, AWSSecretAccessKey); err != nil {
-		return AWSCredentials{}, err
+		eksCredentials.SecretAccessKey = spec.SecretAccessKey
+	} else if eksCredentials.SecretAccessKey, err = GetGlobalSecretKeySelectorValue(spec.CredentialsReference, AWSSecretAccessKey); err != nil {
+		return EKSCredentials{}, err
 	}
 
-	return awsCredentials, nil
+	return eksCredentials, nil
 }
 
-func GetAzureAKSCredentials(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.ExternalCluster) (AzureCredentials, error) {
+func GetAKSCredentials(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.ExternalCluster) (AKSCredentials, error) {
 	spec := cluster.Spec.CloudSpec.AKS
-	azureCredentials := AzureCredentials{}
+	aksCredentials := AKSCredentials{}
 	GetGlobalSecretKeySelectorValue := provider.SecretKeySelectorValueFuncFactory(ctx, client)
 	var err error
 
 	if spec.TenantID != "" {
-		azureCredentials.TenantID = spec.TenantID
-	} else if azureCredentials.TenantID, err = GetGlobalSecretKeySelectorValue(spec.CredentialsReference, AzureTenantID); err != nil {
-		return AzureCredentials{}, err
+		aksCredentials.TenantID = spec.TenantID
+	} else if aksCredentials.TenantID, err = GetGlobalSecretKeySelectorValue(spec.CredentialsReference, AzureTenantID); err != nil {
+		return AKSCredentials{}, err
 	}
 
 	if spec.SubscriptionID != "" {
-		azureCredentials.SubscriptionID = spec.SubscriptionID
-	} else if azureCredentials.SubscriptionID, err = GetGlobalSecretKeySelectorValue(spec.CredentialsReference, AzureSubscriptionID); err != nil {
-		return AzureCredentials{}, err
+		aksCredentials.SubscriptionID = spec.SubscriptionID
+	} else if aksCredentials.SubscriptionID, err = GetGlobalSecretKeySelectorValue(spec.CredentialsReference, AzureSubscriptionID); err != nil {
+		return AKSCredentials{}, err
 	}
 
 	if spec.ClientID != "" {
-		azureCredentials.ClientID = spec.ClientID
-	} else if azureCredentials.ClientID, err = GetGlobalSecretKeySelectorValue(spec.CredentialsReference, AzureClientID); err != nil {
-		return AzureCredentials{}, err
+		aksCredentials.ClientID = spec.ClientID
+	} else if aksCredentials.ClientID, err = GetGlobalSecretKeySelectorValue(spec.CredentialsReference, AzureClientID); err != nil {
+		return AKSCredentials{}, err
 	}
 
 	if spec.ClientSecret != "" {
-		azureCredentials.ClientSecret = spec.ClientSecret
-	} else if azureCredentials.ClientSecret, err = GetGlobalSecretKeySelectorValue(spec.CredentialsReference, AzureClientSecret); err != nil {
-		return AzureCredentials{}, err
+		aksCredentials.ClientSecret = spec.ClientSecret
+	} else if aksCredentials.ClientSecret, err = GetGlobalSecretKeySelectorValue(spec.CredentialsReference, AzureClientSecret); err != nil {
+		return AKSCredentials{}, err
 	}
 
-	return azureCredentials, nil
+	return aksCredentials, nil
 }
 
 func GetAzureCredentials(data CredentialsData) (AzureCredentials, error) {

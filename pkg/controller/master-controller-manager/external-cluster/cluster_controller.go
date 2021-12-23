@@ -28,8 +28,8 @@ import (
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud/azure"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/aks"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/eks"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gke"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
@@ -223,11 +223,11 @@ func createKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client
 
 func (r *Reconciler) createOrUpdateGKEKubeconfig(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
 	cloud := cluster.Spec.CloudSpec
-	cred, err := resources.GetGCPGKECredentials(ctx, r.Client, cluster)
+	cred, err := resources.GetGKECredentials(ctx, r.Client, cluster)
 	if err != nil {
 		return err
 	}
-	config, err := gke.GetGKECLusterConfig(ctx, cred.ServiceAccount, cloud.GKE.Name, cloud.GKE.Zone)
+	config, err := gke.GetCLusterConfig(ctx, cred.ServiceAccount, cloud.GKE.Name, cloud.GKE.Zone)
 	if err != nil {
 		return err
 	}
@@ -240,11 +240,11 @@ func (r *Reconciler) createOrUpdateGKEKubeconfig(ctx context.Context, cluster *k
 
 func (r *Reconciler) createOrUpdateEKSKubeconfig(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
 	cloud := cluster.Spec.CloudSpec
-	cred, err := resources.GetAWSEKSCredentials(ctx, r.Client, cluster)
+	cred, err := resources.GetEKSCredentials(ctx, r.Client, cluster)
 	if err != nil {
 		return err
 	}
-	config, err := aws.GetEKSClusterConfig(ctx, cred.AccessKeyID, cred.SecretAccessKey, cloud.EKS.Name, cloud.EKS.Region)
+	config, err := eks.GetClusterConfig(ctx, cred.AccessKeyID, cred.SecretAccessKey, cloud.EKS.Name, cloud.EKS.Region)
 	if err != nil {
 		return err
 	}
@@ -257,11 +257,11 @@ func (r *Reconciler) createOrUpdateEKSKubeconfig(ctx context.Context, cluster *k
 
 func (r *Reconciler) createOrUpdateAKSKubeconfig(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
 	cloud := cluster.Spec.CloudSpec
-	cred, err := resources.GetAzureAKSCredentials(ctx, r.Client, cluster)
+	cred, err := resources.GetAKSCredentials(ctx, r.Client, cluster)
 	if err != nil {
 		return err
 	}
-	config, err := azure.GetAKSCLusterConfig(ctx, cred.TenantID, cred.SubscriptionID, cred.ClientID, cred.ClientSecret, cloud.AKS.Name, cloud.AKS.ResourceGroup)
+	config, err := aks.GetCLusterConfig(ctx, cred, cloud.AKS.Name, cloud.AKS.ResourceGroup)
 	if err != nil {
 		return err
 	}

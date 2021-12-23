@@ -177,11 +177,6 @@ func (h *AdmissionHandler) mutateCreate(newCluster *kubermaticv1.Cluster) error 
 		newCluster.Spec.Features[kubermaticv1.ApiserverNetworkPolicy] = true
 	}
 
-	// Network policies for kube-system are deployed by default
-	if _, ok := newCluster.Spec.Features[kubermaticv1.KubeSystemNetworkPolicies]; !ok {
-		newCluster.Spec.Features[kubermaticv1.KubeSystemNetworkPolicies] = true
-	}
-
 	return nil
 }
 
@@ -203,9 +198,19 @@ func (h *AdmissionHandler) mutateUpdate(oldCluster, newCluster *kubermaticv1.Clu
 		}
 	}
 
-	// This part handles CNI upgrade from unspecified (= very old) CNI version to the default Canal version.
-	// This upgrade is necessary for k8s versions >= 1.22, where v1beta1 CRDs are not supported anymore.
+	// For backward compatibility, if CNIPlugin is not set (possible only for clusters started before KKP v2.18 release),
+	// explicitly set it to the last Canal CNI version supported by KKP before v2.18.
 	if newCluster.Spec.CNIPlugin == nil {
+		newCluster.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
+			Type:    kubermaticv1.CNIPluginTypeCanal,
+			Version: cni.CanalCNILastUnspecifiedVersion,
+		}
+	}
+	// This part handles CNI upgrade from unsupported CNI version to the default Canal version.
+	// This upgrade is necessary for k8s versions >= 1.22, where v1beta1 CRDs used in old Canal version (v3.8)
+	// are not supported anymore.
+	if newCluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCanal &&
+		newCluster.Spec.CNIPlugin.Version == cni.CanalCNILastUnspecifiedVersion {
 		upgradeConstraint, err := semver.NewConstraint(">= 1.22")
 		if err != nil {
 			return fmt.Errorf("parsing CNI upgrade constraint failed: %v", err)

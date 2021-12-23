@@ -58,7 +58,7 @@ func ListNodesEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider p
 		}
 		var nodesV1 []*apiv2.ExternalClusterNode
 
-		apiCluster := convertClusterToAPIWithStatus(ctx, privilegedClusterProvider, cluster)
+		apiCluster := convertClusterToAPIWithStatus(ctx, clusterProvider, privilegedClusterProvider, cluster)
 
 		if apiCluster.Status.State != apiv2.RUNNING {
 			return nodesV1, nil
@@ -106,7 +106,7 @@ func getClusterNodesMetrics(ctx context.Context, userInfoGetter provider.UserInf
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	apiCluster := convertClusterToAPIWithStatus(ctx, privilegedClusterProvider, cluster)
+	apiCluster := convertClusterToAPIWithStatus(ctx, clusterProvider, privilegedClusterProvider, cluster)
 
 	if apiCluster.Status.State != apiv2.RUNNING {
 		return nodeMetrics, nil
@@ -229,7 +229,7 @@ func ListMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proje
 
 		var machineDeployments []apiv2.ExternalClusterMachineDeployment
 		machineDeployments = make([]apiv2.ExternalClusterMachineDeployment, 0)
-		apiCluster := convertClusterToAPIWithStatus(ctx, privilegedClusterProvider, cluster)
+		apiCluster := convertClusterToAPIWithStatus(ctx, clusterProvider, privilegedClusterProvider, cluster)
 		if apiCluster.Status.State != apiv2.RUNNING {
 			return machineDeployments, nil
 		}
@@ -288,7 +288,7 @@ func getMachineDeploymentNodes(ctx context.Context, userInfoGetter provider.User
 
 	var nodes []apiv2.ExternalClusterNode
 	nodes = make([]apiv2.ExternalClusterNode, 0)
-	apiCluster := convertClusterToAPIWithStatus(ctx, privilegedClusterProvider, cluster)
+	apiCluster := convertClusterToAPIWithStatus(ctx, clusterProvider, privilegedClusterProvider, cluster)
 	if apiCluster.Status.State != apiv2.RUNNING {
 		return nodes, nil
 	}

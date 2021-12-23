@@ -24,11 +24,11 @@ import (
 	"fmt"
 	"net/http"
 
+	semverlib "github.com/Masterminds/semver/v3"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/container/v1"
 	"google.golang.org/api/option"
 
-	semverlib "github.com/Masterminds/semver/v3"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -43,7 +43,7 @@ import (
 
 const allZones = "-"
 
-func GetGKECLusterConfig(ctx context.Context, sa, clusterName, zone string) (*api.Config, error) {
+func GetCLusterConfig(ctx context.Context, sa, clusterName, zone string) (*api.Config, error) {
 	svc, project, err := ConnectToContainerService(sa)
 	if err != nil {
 		return nil, err

@@ -24,6 +24,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
+// CanalCNILastUnspecifiedVersion is the last Canal CNI version applied in KKP user-clusters
+// started in KKP before v2.18 release. If cluster.spec.cniPlugin is not set, it means Canal of this version.
+const CanalCNILastUnspecifiedVersion = "v3.8"
+
 var (
 	defaultCNIPluginVersion = map[kubermaticv1.CNIPluginType]string{
 		kubermaticv1.CNIPluginTypeCanal:  "v3.21",
@@ -32,11 +36,24 @@ var (
 )
 
 var (
-	supportedCNIPlugins        = sets.NewString(kubermaticv1.CNIPluginTypeCanal.String(), kubermaticv1.CNIPluginTypeCilium.String(), kubermaticv1.CNIPluginTypeNone.String())
+	// supportedCNIPlugins contains a lis of all currently supported CNI Plugin types.
+	supportedCNIPlugins = sets.NewString(
+		kubermaticv1.CNIPluginTypeCanal.String(),
+		kubermaticv1.CNIPluginTypeCilium.String(),
+		kubermaticv1.CNIPluginTypeNone.String(),
+	)
+	// supportedCNIPluginVersions contains a list of all currently supported CNI versions for each CNI type.
+	// Only supported versions are available for selection in KKP UI.
 	supportedCNIPluginVersions = map[kubermaticv1.CNIPluginType]sets.String{
-		kubermaticv1.CNIPluginTypeCanal:  sets.NewString("v3.8", "v3.19", "v3.20", "v3.21"),
+		kubermaticv1.CNIPluginTypeCanal:  sets.NewString("v3.19", "v3.20", "v3.21"),
 		kubermaticv1.CNIPluginTypeCilium: sets.NewString("v1.11"),
 		kubermaticv1.CNIPluginTypeNone:   sets.NewString(""),
+	}
+	// deprecatedCNIPluginVersions contains a list of deprecated CNI versions for each CNI type.
+	// Deprecated versions are not available for selection in KKP UI, but are still accepted
+	// by the validation webhook for backward compatibility.
+	deprecatedCNIPluginVersions = map[kubermaticv1.CNIPluginType]sets.String{
+		kubermaticv1.CNIPluginTypeCanal: sets.NewString("v3.8"),
 	}
 )
 
@@ -60,7 +77,35 @@ func GetSupportedCNIPluginVersions(cniPluginType kubermaticv1.CNIPluginType) (se
 	return versions, nil
 }
 
+// GetAllowedCNIPluginVersions returns all allowed CNI versions for a CNI type (supported + deprecated)
+func GetAllowedCNIPluginVersions(cniPluginType kubermaticv1.CNIPluginType) (sets.String, error) {
+	supported, err := GetSupportedCNIPluginVersions(cniPluginType)
+	if err != nil {
+		return sets.NewString(), err
+	}
+	allowed := sets.NewString(supported.List()...)
+	if deprecated, ok := deprecatedCNIPluginVersions[cniPluginType]; ok {
+		allowed.Insert(deprecated.List()...)
+	}
+	return allowed, nil
+}
+
 // GetDefaultCNIPluginVersion returns the default CNI versions for a CNI type, empty string if no default version set
 func GetDefaultCNIPluginVersion(cniPluginType kubermaticv1.CNIPluginType) string {
 	return defaultCNIPluginVersion[cniPluginType]
+}
+
+// IsSupportedCNIPluginTypeAndVersion returns true if the given CNI plugin is of supported type and version
+func IsSupportedCNIPluginTypeAndVersion(cni *kubermaticv1.CNIPluginSettings) bool {
+	if cni == nil {
+		return false
+	}
+	versions, ok := supportedCNIPluginVersions[cni.Type]
+	if !ok {
+		return false
+	}
+	if versions.Has(cni.Version) {
+		return true
+	}
+	return false
 }
