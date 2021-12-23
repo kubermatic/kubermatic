@@ -26,6 +26,7 @@ import (
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/kubermatic"
 	kubermaticseed "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/kubermatic"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -135,6 +136,11 @@ func shutdownWebhooksInCluster(ctx context.Context, logger logrus.FieldLogger, c
 		kubermaticseed.OSCAdmissionWebhookName,
 		kubermaticseed.OSPAdmissionWebhookName,
 		common.SeedAdmissionWebhookName(config),
+	}
+
+	if config.Spec.FeatureGates.Has(features.OperatingSystemManager) {
+		webhooks = append(webhooks, kubermaticseed.OSCAdmissionWebhookName)
+		webhooks = append(webhooks, kubermaticseed.OSPAdmissionWebhookName)
 	}
 
 	for _, webhookName := range webhooks {
