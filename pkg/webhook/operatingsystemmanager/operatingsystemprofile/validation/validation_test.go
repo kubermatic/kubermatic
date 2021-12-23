@@ -47,11 +47,11 @@ func TestHandle(t *testing.T) {
 	osp := getOperatingSystemProfile()
 	ospRaw := ospToRawExt(osp)
 
-	osp.Spec.Version = "fake"
-	ospRawValidUpdate := ospToRawExt(osp)
-
 	osp.Spec.OSVersion = "fake"
 	ospRawInvalidUpdate := ospToRawExt(osp)
+
+	osp.Spec.Version = "fake"
+	ospRawValidUpdate := ospToRawExt(osp)
 
 	tests := []struct {
 		name        string
