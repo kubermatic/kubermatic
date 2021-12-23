@@ -67,8 +67,6 @@ const (
 	addonLabelKey        = "kubermatic-addon"
 	cleanupFinalizerName = "cleanup-manifests"
 	addonEnsureLabelKey  = "addons.kubermatic.io/ensure"
-
-	openVPNAddonName = "openvpn"
 )
 
 // KubeconfigProvider provides functionality to get a clusters admin kubeconfig
@@ -152,14 +150,20 @@ func Add(
 		return requests
 	})
 
-	// Only react cluster update events when our condition changed
+	// Only react to cluster update events when our condition changed, or when CNI config changed
 	clusterPredicate := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			old := e.ObjectOld.(*kubermaticv1.Cluster)
 			new := e.ObjectNew.(*kubermaticv1.Cluster)
 			_, oldCondition := kubermaticv1helper.GetClusterCondition(old, kubermaticv1.ClusterConditionAddonControllerReconcilingSuccess)
 			_, newCondition := kubermaticv1helper.GetClusterCondition(new, kubermaticv1.ClusterConditionAddonControllerReconcilingSuccess)
-			return !reflect.DeepEqual(oldCondition, newCondition)
+			if !reflect.DeepEqual(oldCondition, newCondition) {
+				return true
+			}
+			if !reflect.DeepEqual(old.Spec.CNIPlugin, new.Spec.CNIPlugin) {
+				return true
+			}
+			return false
 		},
 	}
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, enqueueClusterAddons, clusterPredicate); err != nil {
@@ -230,10 +234,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
-	if addon.Name == openVPNAddonName && cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled {
-		log.Debug("Skipping openvpn addon as Konnectivity is enabled")
-		return nil, nil // skip rendering openvpn addon if Konnectivity is enabled
-	}
 	if cluster.Status.ExtendedHealth.Apiserver != kubermaticv1.HealthStatusUp {
 		log.Debug("API server is not running, trying again in 10 seconds")
 		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
