@@ -30,6 +30,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -51,6 +52,9 @@ import (
 const (
 	ControllerName  = "kubermatic_addoninstaller_controller"
 	addonDefaultKey = ".spec.isDefault"
+
+	kubeProxyAddonName = "kube-proxy"
+	openVPNAddonName   = "openvpn"
 )
 
 type Reconciler struct {
@@ -246,6 +250,9 @@ func getDefaultAddonManifests() (*kubermaticv1.AddonList, error) {
 func (r *Reconciler) ensureAddons(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, addons kubermaticv1.AddonList) error {
 	ensuredAddonsMap := map[string]struct{}{}
 	for _, addon := range addons.Items {
+		if skipAddonInstallation(addon, cluster) {
+			continue
+		}
 		ensuredAddonsMap[addon.Name] = struct{}{}
 		name := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: addon.Name}
 		addonLog := log.With("addon", name)
@@ -341,4 +348,23 @@ func (r *Reconciler) deleteAddon(ctx context.Context, log *zap.SugaredLogger, ad
 		return fmt.Errorf("failed to delete addon %s from cluster %s: %v", addon.Name, addon.ClusterName, err)
 	}
 	return nil
+}
+
+// skipAddonInstallation returns true if the addon installation should be skipped based on the Cluster spec, false otherwise.
+func skipAddonInstallation(addon kubermaticv1.Addon, cluster *kubermaticv1.Cluster) bool {
+	if cluster.Spec.CNIPlugin != nil {
+		if addon.Name == string(kubermaticv1.CNIPluginTypeCanal) && cluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCilium {
+			return true // skip Canal if Cilium is used
+		}
+		if addon.Name == string(kubermaticv1.CNIPluginTypeCilium) && cluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCanal {
+			return true // skip Cilium if Canal is used
+		}
+	}
+	if addon.Name == kubeProxyAddonName && cluster.Spec.ClusterNetwork.ProxyMode == resources.EBPFProxyMode {
+		return true // skip kube-proxy if eBPF proxy mode is used
+	}
+	if addon.Name == openVPNAddonName && cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled {
+		return true // skip openvpn if Konnectivity is enabled
+	}
+	return false
 }
