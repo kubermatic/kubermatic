@@ -73,6 +73,7 @@ var (
 		"node-exporter",
 		"kube-state-metrics",
 		"multus",
+		"hubble",
 	}
 
 	DefaultUIResources = corev1.ResourceRequirements{
