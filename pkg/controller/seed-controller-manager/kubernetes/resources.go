@@ -176,7 +176,7 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 
 	// Ensure that OSM is completely removed, when disabled
 	if !cluster.Spec.EnableOperatingSystemManager {
-		if err := r.ensureOldOPAIntegrationIsRemoved(ctx, data); err != nil {
+		if err := r.ensureOSMResourcesAreRemoved(ctx, data); err != nil {
 			return nil, err
 		}
 	}
