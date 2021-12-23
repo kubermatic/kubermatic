@@ -41,6 +41,36 @@ relabel_configs:
 - source_labels: [__meta_kubernetes_service_name]
   action: keep
   regex: apiserver-external
+
+job_name: blackbox-exporter-user-cluster-mla-gateway
+scheme: http
+metrics_path: /probe
+params:
+  module: [https_2xx_skip_tls_verify]
+
+kubernetes_sd_configs:
+- role: service
+
+relabel_configs:
+- source_labels: [__address__]
+  target_label: __address__
+  replacement: 'http://${1}/'
+  action: replace
+- source_labels: [__address__]
+  target_label: __param_target
+- source_labels: [__param_target]
+  target_label: instance
+- source_labels: [__param_module]
+  target_label: module
+- target_label: __address__
+  replacement: {{ .Values.prometheus.scraping.blackBoxExporter.url }}
+- source_labels: [__meta_kubernetes_namespace]
+  action: keep
+  regex: cluster-.*
+- source_labels: [__meta_kubernetes_service_name]
+  action: keep
+  regex: mla-gateway
 {{ else }}
 job_name: blackbox-exporter-user-cluster-apiservers
+job_name: blackbox-exporter-user-cluster-mla-gateway
 {{ end }}
