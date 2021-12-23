@@ -79,14 +79,15 @@ func GetSupportedCNIPluginVersions(cniPluginType kubermaticv1.CNIPluginType) (se
 
 // GetAllowedCNIPluginVersions returns all allowed CNI versions for a CNI type (supported + deprecated)
 func GetAllowedCNIPluginVersions(cniPluginType kubermaticv1.CNIPluginType) (sets.String, error) {
-	versions, err := GetSupportedCNIPluginVersions(cniPluginType)
+	supported, err := GetSupportedCNIPluginVersions(cniPluginType)
 	if err != nil {
 		return sets.NewString(), err
 	}
+	allowed := sets.NewString(supported.List()...)
 	if deprecated, ok := deprecatedCNIPluginVersions[cniPluginType]; ok {
-		versions.Insert(deprecated.List()...)
+		allowed.Insert(deprecated.List()...)
 	}
-	return versions, nil
+	return allowed, nil
 }
 
 // GetDefaultCNIPluginVersion returns the default CNI versions for a CNI type, empty string if no default version set
