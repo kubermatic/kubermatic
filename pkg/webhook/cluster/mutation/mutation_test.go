@@ -261,7 +261,6 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/resources", map[string]interface{}{"requests": map[string]interface{}{"memory": "500M"}}),
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/prometheus/resources", map[string]interface{}{"requests": map[string]interface{}{"memory": "500M"}}),
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
-				jsonpatch.NewOperation("add", "/spec/features/kubeSystemNetworkPolicies", true),
 				jsonpatch.NewOperation("replace", "/spec/exposeStrategy", string(defaults.DefaultExposeStrategy)),
 			},
 		},
@@ -316,7 +315,6 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", resources.EBPFProxyMode),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", true),
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
-				jsonpatch.NewOperation("add", "/spec/features/kubeSystemNetworkPolicies", true),
 			),
 		},
 		{
@@ -399,7 +397,6 @@ func TestHandle(t *testing.T) {
 			wantPatches: append(
 				defaultPatches,
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
-				jsonpatch.NewOperation("add", "/spec/features/kubeSystemNetworkPolicies", true),
 			),
 		},
 		{
