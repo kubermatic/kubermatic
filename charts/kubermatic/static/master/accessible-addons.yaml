@@ -5,3 +5,4 @@ addons:
 - node-exporter
 - kube-state-metrics
 - multus
+- hubble
