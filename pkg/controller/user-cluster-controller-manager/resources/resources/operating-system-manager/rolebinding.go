@@ -70,3 +70,24 @@ func CloudInitSettingsRoleBindingCreator() reconciling.NamedRoleBindingCreatorGe
 		}
 	}
 }
+
+func MachineDeploymentsClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
+	return func() (string, reconciling.ClusterRoleBindingCreator) {
+		return resources.OperatingSystemManagerClusterRoleBindingName,
+			func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
+				crb.RoleRef = rbacv1.RoleRef{
+					APIGroup: rbacv1.GroupName,
+					Kind:     "ClusterRole",
+					Name:     resources.OperatingSystemManagerClusterRoleName,
+				}
+				crb.Subjects = []rbacv1.Subject{
+					{
+						Kind:     rbacv1.UserKind,
+						Name:     resources.OperatingSystemManagerCertUsername,
+						APIGroup: rbacv1.GroupName,
+					},
+				}
+				return crb, nil
+			}
+	}
+}

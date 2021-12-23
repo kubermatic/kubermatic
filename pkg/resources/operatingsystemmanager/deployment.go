@@ -130,7 +130,7 @@ func DeploymentCreatorWithoutInitWrapper(data operatingSystemManagerData) reconc
 
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 
-			repository := data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/operating-system-manager"
+			repository := data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/operating-system-manager"
 
 			cloudProviderName, err := provider.ClusterCloudProviderName(data.Cluster().Spec.Cloud)
 			if err != nil {
@@ -159,6 +159,20 @@ func DeploymentCreatorWithoutInitWrapper(data operatingSystemManagerData) reconc
 					Args:    getFlags(data.DC().Node, cs, data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]),
 					Env:     envVars,
 					LivenessProbe: &corev1.Probe{
+						Handler: corev1.Handler{
+							HTTPGet: &corev1.HTTPGetAction{
+								Path:   "/healthz",
+								Port:   intstr.FromInt(8085),
+								Scheme: corev1.URISchemeHTTP,
+							},
+						},
+						FailureThreshold:    3,
+						InitialDelaySeconds: 15,
+						PeriodSeconds:       10,
+						SuccessThreshold:    1,
+						TimeoutSeconds:      15,
+					},
+					ReadinessProbe: &corev1.Probe{
 						Handler: corev1.Handler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/readyz",
@@ -207,6 +221,10 @@ func getFlags(nodeSettings *kubermaticv1.NodeSettings, cs *clusterSpec, external
 	flags := []string{
 		"-worker-cluster-kubeconfig", "/etc/kubernetes/worker-kubeconfig/kubeconfig",
 		"-cluster-dns", cs.clusterDNSIP,
+		"-logtostderr",
+		"-v", "4",
+		"-health-probe-address", "0.0.0.0:8085",
+		"-metrics-address", "0.0.0.0:8080",
 		"-namespace", fmt.Sprintf("%s-%s", "cluster", cs.Name),
 	}
 

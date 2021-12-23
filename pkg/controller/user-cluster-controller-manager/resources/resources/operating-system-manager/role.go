@@ -42,6 +42,15 @@ func KubeSystemRoleCreator() reconciling.NamedRoleCreatorGetter {
 						"create",
 						"update",
 						"get",
+						"list",
+					},
+				},
+				{
+					APIGroups: []string{""},
+					Resources: []string{"events"},
+					Verbs: []string{
+						"create",
+						"patch",
 					},
 				},
 				{
@@ -68,6 +77,28 @@ func CloudInitSettingsRoleCreator() reconciling.NamedRoleCreatorGetter {
 							"list",
 							"create",
 							"delete",
+						},
+					},
+				}
+				return r, nil
+			}
+	}
+}
+
+func MachineDeploymentsClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
+	return func() (string, reconciling.ClusterRoleCreator) {
+		return resources.OperatingSystemManagerClusterRoleName,
+			func(r *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
+				r.Rules = []rbacv1.PolicyRule{
+					{
+						APIGroups: []string{"cluster.k8s.io"},
+						Resources: []string{"machinedeployments"},
+						Verbs: []string{
+							"get",
+							"list",
+							"watch",
+							"patch",
+							"update",
 						},
 					},
 				}

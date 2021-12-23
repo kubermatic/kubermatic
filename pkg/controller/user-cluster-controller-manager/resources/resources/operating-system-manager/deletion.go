@@ -50,5 +50,15 @@ func ResourcesForDeletion() []ctrlruntimeclient.Object {
 				Namespace: resources.CloudInitSettingsNamespace,
 			},
 		},
+		&rbacv1.ClusterRole{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: resources.OperatingSystemManagerClusterRoleName,
+			},
+		},
+		&rbacv1.ClusterRoleBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: resources.OperatingSystemManagerClusterRoleBindingName,
+			},
+		},
 	}
 }

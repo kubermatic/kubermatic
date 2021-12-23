@@ -508,6 +508,10 @@ func (r *reconciler) reconcileClusterRoles(ctx context.Context) error {
 		creators = append(creators, userclusterprometheus.ClusterRoleCreator())
 	}
 
+	if r.enableOperatingSystemManager {
+		creators = append(creators, operatingsystemmanager.MachineDeploymentsClusterRoleCreator())
+	}
+
 	if err := reconciling.ReconcileClusterRoles(ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoles: %v", err)
 	}
@@ -547,6 +551,10 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context) error {
 
 	if r.isKonnectivityEnabled {
 		creators = append(creators, konnectivity.ClusterRoleBindingCreator())
+	}
+
+	if r.enableOperatingSystemManager {
+		creators = append(creators, operatingsystemmanager.MachineDeploymentsClusterRoleBindingCreator())
 	}
 
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, creators, "", r.Client); err != nil {
