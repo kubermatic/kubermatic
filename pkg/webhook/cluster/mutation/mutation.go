@@ -177,11 +177,6 @@ func (h *AdmissionHandler) mutateCreate(newCluster *kubermaticv1.Cluster) error 
 		newCluster.Spec.Features[kubermaticv1.ApiserverNetworkPolicy] = true
 	}
 
-	// Network policies for kube-system are deployed by default
-	if _, ok := newCluster.Spec.Features[kubermaticv1.KubeSystemNetworkPolicies]; !ok {
-		newCluster.Spec.Features[kubermaticv1.KubeSystemNetworkPolicies] = true
-	}
-
 	return nil
 }
 
