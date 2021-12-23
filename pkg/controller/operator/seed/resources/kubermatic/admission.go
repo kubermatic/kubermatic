@@ -26,6 +26,7 @@ import (
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -190,7 +191,7 @@ func OperatingSystemConfigValidatingWebhookConfigurationCreator(cfg *operatorv1a
 			hook.Webhooks = []admissionregistrationv1.ValidatingWebhook{
 				{
 					Name:                    "operatingsystemconfigs.operatingsystemmanager.k8c.io", // this should be a FQDN
-					AdmissionReviewVersions: []string{"v1beta1"},
+					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version, admissionregistrationv1beta1.SchemeGroupVersion.Version},
 					MatchPolicy:             &matchPolicy,
 					FailurePolicy:           &failurePolicy,
 					SideEffects:             &sideEffects,
@@ -243,7 +244,7 @@ func OperatingSystemProfileValidatingWebhookConfigurationCreator(cfg *operatorv1
 			hook.Webhooks = []admissionregistrationv1.ValidatingWebhook{
 				{
 					Name:                    "operatingsystemprofiles.operatingsystemmanager.k8c.io", // this should be a FQDN
-					AdmissionReviewVersions: []string{"v1beta1"},
+					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version, admissionregistrationv1beta1.SchemeGroupVersion.Version},
 					MatchPolicy:             &matchPolicy,
 					FailurePolicy:           &failurePolicy,
 					SideEffects:             &sideEffects,

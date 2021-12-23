@@ -47,8 +47,11 @@ func TestHandle(t *testing.T) {
 	osp := getOperatingSystemProfile()
 	ospRaw := ospToRawExt(osp)
 
+	osp.Spec.Version = "fake"
+	ospRawValidUpdate := ospToRawExt(osp)
+
 	osp.Spec.OSVersion = "fake"
-	ospRawUpdate := ospToRawExt(osp)
+	ospRawInvalidUpdate := ospToRawExt(osp)
 
 	tests := []struct {
 		name        string
@@ -87,6 +90,23 @@ func TestHandle(t *testing.T) {
 			wantAllowed: true,
 		},
 		{
+			name: "Update osp rejected",
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Update,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   osmv1alpha1.GroupName,
+						Version: osmv1alpha1.GroupVersion,
+						Kind:    "OperatingSystemProfile",
+					},
+					Name:      "osp",
+					Object:    ospRaw,
+					OldObject: ospRawInvalidUpdate,
+				},
+			},
+			wantAllowed: false,
+		},
+		{
 			name: "Update osp success",
 			req: webhook.AdmissionRequest{
 				AdmissionRequest: admissionv1.AdmissionRequest{
@@ -98,10 +118,10 @@ func TestHandle(t *testing.T) {
 					},
 					Name:      "osp",
 					Object:    ospRaw,
-					OldObject: ospRawUpdate,
+					OldObject: ospRawValidUpdate,
 				},
 			},
-			wantAllowed: false,
+			wantAllowed: true,
 		},
 	}
 

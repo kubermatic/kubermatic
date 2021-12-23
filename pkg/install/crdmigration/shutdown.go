@@ -133,8 +133,6 @@ func shutdownDeployment(ctx context.Context, logger logrus.FieldLogger, client c
 func shutdownWebhooksInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client, config *operatorv1alpha1.KubermaticConfiguration) error {
 	webhooks := []string{
 		kubermaticseed.ClusterAdmissionWebhookName,
-		kubermaticseed.OSCAdmissionWebhookName,
-		kubermaticseed.OSPAdmissionWebhookName,
 		common.SeedAdmissionWebhookName(config),
 	}
 

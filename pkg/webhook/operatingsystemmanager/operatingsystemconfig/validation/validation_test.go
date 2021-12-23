@@ -47,8 +47,11 @@ func TestHandle(t *testing.T) {
 	osc := getOperatingSystemConfig()
 	oscRaw := oscToRawExt(osc)
 
+	osc.ObjectMeta.Labels = map[string]string{"key": "value"}
+	oscRawValidUpdate := oscToRawExt(osc)
+
 	osc.Spec.OSVersion = "fake"
-	oscRawUpdate := oscToRawExt(osc)
+	oscRawInvalidUpdate := oscToRawExt(osc)
 
 	tests := []struct {
 		name        string
@@ -87,6 +90,23 @@ func TestHandle(t *testing.T) {
 			wantAllowed: true,
 		},
 		{
+			name: "Update osc rejected",
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Update,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   osmv1alpha1.GroupName,
+						Version: osmv1alpha1.GroupVersion,
+						Kind:    "OperatingSystemConfig",
+					},
+					Name:      "osc",
+					Object:    oscRawInvalidUpdate,
+					OldObject: oscRaw,
+				},
+			},
+			wantAllowed: false,
+		},
+		{
 			name: "Update osc success",
 			req: webhook.AdmissionRequest{
 				AdmissionRequest: admissionv1.AdmissionRequest{
@@ -97,11 +117,11 @@ func TestHandle(t *testing.T) {
 						Kind:    "OperatingSystemConfig",
 					},
 					Name:      "osc",
-					Object:    oscRaw,
-					OldObject: oscRawUpdate,
+					Object:    oscRawValidUpdate,
+					OldObject: oscRaw,
 				},
 			},
-			wantAllowed: false,
+			wantAllowed: true,
 		},
 	}
 
