@@ -20,6 +20,8 @@
 # Modifications:
 #   - Only templates/hubble, templates/hubble-relay and templates/hubble-ui components are placed here, the rest is part of the "cilium" addon
 
+{{ if eq .Cluster.CNIPlugin.Type "cilium" }}
+
 ---
 # Source: cilium/templates/hubble/tls-cronjob/serviceaccount.yaml
 apiVersion: v1
@@ -515,3 +517,5 @@ spec:
           serviceAccountName: "hubble-generate-certs"
           restartPolicy: OnFailure
       ttlSecondsAfterFinished: 1800
+
+{{ end }}
