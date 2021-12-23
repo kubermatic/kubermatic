@@ -218,7 +218,10 @@ func CloudConfig(
 		}
 
 		tag := fmt.Sprintf("kubernetes-cluster-%s", cluster.Name)
-		localZone := dc.Spec.GCP.Region + "-" + dc.Spec.GCP.ZoneSuffixes[0]
+		localZone := ""
+		if len(dc.Spec.GCP.ZoneSuffixes) > 0 {
+			localZone = dc.Spec.GCP.Region + "-" + dc.Spec.GCP.ZoneSuffixes[0]
+		}
 
 		// By default, all GCP clusters are assumed to be the in the same zone. If the control plane
 		// and worker nodes are not it the same zone (localZone), the GCP cloud controller fails

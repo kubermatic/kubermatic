@@ -17,6 +17,7 @@ limitations under the License.
 package cloudconfig
 
 import (
+	"encoding/base64"
 	"testing"
 
 	"github.com/go-test/deep"
@@ -300,6 +301,27 @@ func TestOpenStackCloudConfig(t *testing.T) {
 				t.Errorf("cloud-config differs from the expected one: %s", diff)
 			}
 		})
+	}
+}
+
+func TestGCPCloudConfigEmptyLocalZone(t *testing.T) {
+	cluster := &kubermaticv1.Cluster{
+		Spec: kubermaticv1.ClusterSpec{
+			Cloud: kubermaticv1.CloudSpec{
+				GCP: &kubermaticv1.GCPCloudSpec{},
+			},
+		},
+	}
+	datacenter := &kubermaticv1.Datacenter{
+		Spec: kubermaticv1.DatacenterSpec{
+			GCP: &kubermaticv1.DatacenterSpecGCP{ZoneSuffixes: []string{}},
+		},
+	}
+	credentials := resources.Credentials{}
+	credentials.GCP.ServiceAccount = base64.StdEncoding.EncodeToString([]byte(`{"project_id":"foo"}`))
+	_, err := CloudConfig(cluster, datacenter, credentials)
+	if err != nil {
+		t.Fatalf("Error trying to get cloud-config: %v", err)
 	}
 }
 
