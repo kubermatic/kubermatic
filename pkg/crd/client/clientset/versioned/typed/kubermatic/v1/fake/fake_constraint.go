@@ -89,7 +89,7 @@ func (c *FakeConstraints) Update(ctx context.Context, constraint *kubermaticv1.C
 // Delete takes name of the constraint and deletes it. Returns an error if one occurs.
 func (c *FakeConstraints) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(constraintsResource, c.ns, name), &kubermaticv1.Constraint{})
+		Invokes(testing.NewDeleteActionWithOptions(constraintsResource, c.ns, name, opts), &kubermaticv1.Constraint{})
 
 	return err
 }

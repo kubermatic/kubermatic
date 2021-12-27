@@ -83,7 +83,7 @@ func (c *FakeClusterTemplateInstances) Update(ctx context.Context, clusterTempla
 // Delete takes name of the clusterTemplateInstance and deletes it. Returns an error if one occurs.
 func (c *FakeClusterTemplateInstances) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewRootDeleteAction(clustertemplateinstancesResource, name), &kubermaticv1.ClusterTemplateInstance{})
+		Invokes(testing.NewRootDeleteActionWithOptions(clustertemplateinstancesResource, name, opts), &kubermaticv1.ClusterTemplateInstance{})
 	return err
 }
 

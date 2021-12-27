@@ -83,7 +83,7 @@ func (c *FakeConstraintTemplates) Update(ctx context.Context, constraintTemplate
 // Delete takes name of the constraintTemplate and deletes it. Returns an error if one occurs.
 func (c *FakeConstraintTemplates) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewRootDeleteAction(constrainttemplatesResource, name), &kubermaticv1.ConstraintTemplate{})
+		Invokes(testing.NewRootDeleteActionWithOptions(constrainttemplatesResource, name, opts), &kubermaticv1.ConstraintTemplate{})
 	return err
 }
 
