@@ -200,6 +200,10 @@ func ListGKEUpgrades(ctx context.Context, sa, zone, name string) ([]*apiv1.Maste
 	if err != nil {
 		return nil, err
 	}
+	releaseChannel := ""
+	if cluster.ReleaseChannel != nil {
+		releaseChannel = cluster.ReleaseChannel.Channel
+	}
 
 	req := svc.Projects.Zones.GetServerconfig(project, zone)
 	resp, err := req.Context(ctx).Do()
@@ -208,13 +212,8 @@ func ListGKEUpgrades(ctx context.Context, sa, zone, name string) ([]*apiv1.Maste
 	}
 	upgradesMap := map[string]bool{}
 	for _, channel := range resp.Channels {
-
-		defaultChannelVersion, err := semverlib.NewVersion(channel.DefaultVersion)
-		if err != nil {
-			return nil, err
-		}
-		// select correct channel
-		if isValidVersion(currentClusterVer, defaultChannelVersion) {
+		// select versions from the current channel
+		if releaseChannel == channel.Channel {
 			for _, v := range channel.ValidVersions {
 				validVersion, err := semverlib.NewVersion(v)
 				if err != nil {
@@ -279,10 +278,24 @@ func ListGKEMachineDeploymentUpgrades(ctx context.Context, sa, zone, clusterName
 }
 
 func isValidVersion(currentVersion, newVersion *semverlib.Version) bool {
-	if currentVersion.Major() == newVersion.Major() && (currentVersion.Minor()+1) == newVersion.Minor() {
-		return true
+	// new version has to be different from current version
+	if currentVersion.Equal(newVersion) {
+		return false
 	}
-	return false
+	// major version can not be changed
+	if currentVersion.Major() != newVersion.Major() {
+		return false
+	}
+	// only one minor version can be updated at once
+	if (currentVersion.Minor() + 1) < newVersion.Minor() {
+		return false
+	}
+	// new version can not be lower than current one
+	if currentVersion.Minor() > newVersion.Minor() || (currentVersion.Minor() == newVersion.Minor() && currentVersion.Patch() > newVersion.Patch()) {
+		return false
+	}
+
+	return true
 }
 
 func ListGKEImages(ctx context.Context, sa, zone string) (apiv2.GKEImageList, error) {
