@@ -133,7 +133,7 @@ func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, 
 						FailureThreshold:    3,
 						InitialDelaySeconds: 30,
 						SuccessThreshold:    1,
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/-/healthy",
 								Port:   intstr.FromInt(containerPort),
@@ -147,7 +147,7 @@ func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, 
 						FailureThreshold:    3,
 						InitialDelaySeconds: 30,
 						SuccessThreshold:    1,
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/-/ready",
 								Port:   intstr.FromInt(containerPort),

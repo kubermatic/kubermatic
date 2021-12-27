@@ -84,7 +84,7 @@ func anexiaDeploymentCreator(data *resources.TemplateData) reconciling.NamedDepl
 						},
 					},
 					LivenessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/healthz",
 								Port:   intstr.FromString("http"),
@@ -98,7 +98,7 @@ func anexiaDeploymentCreator(data *resources.TemplateData) reconciling.NamedDepl
 						FailureThreshold:    3,
 					},
 					ReadinessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/healthz",
 								Port:   intstr.FromString("http"),

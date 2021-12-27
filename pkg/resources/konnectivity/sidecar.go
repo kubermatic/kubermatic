@@ -108,7 +108,7 @@ func ProxySidecar(data *resources.TemplateData, serverCount int32) (*corev1.Cont
 			},
 		},
 		LivenessProbe: &corev1.Probe{
-			Handler: corev1.Handler{
+			ProbeHandler: corev1.ProbeHandler{
 				Exec: nil,
 				HTTPGet: &corev1.HTTPGetAction{
 					Path:   "/healthz",

@@ -149,7 +149,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 					},
 				},
 				ReadinessProbe: &corev1.Probe{
-					Handler: corev1.Handler{
+					ProbeHandler: corev1.ProbeHandler{
 						HTTPGet: &corev1.HTTPGetAction{
 							Path:   "/healthz",
 							Port:   intstr.FromInt(int(data.Cluster().Address.Port)),
@@ -162,7 +162,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 					TimeoutSeconds:   15,
 				},
 				LivenessProbe: &corev1.Probe{
-					Handler: corev1.Handler{
+					ProbeHandler: corev1.ProbeHandler{
 						HTTPGet: &corev1.HTTPGetAction{
 							Path:   "/healthz",
 							Port:   intstr.FromInt(int(data.Cluster().Address.Port)),
