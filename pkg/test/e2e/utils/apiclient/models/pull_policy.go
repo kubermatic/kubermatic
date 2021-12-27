@@ -12,6 +12,7 @@ import (
 )
 
 // PullPolicy PullPolicy describes a policy for if/when to pull a container image
+// +enum
 //
 // swagger:model PullPolicy
 type PullPolicy string
