@@ -189,6 +189,14 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, cfg *operatorv1alph
 		return fmt.Errorf("failed to clean up Seed ValidatingWebhookConfiguration: %v", err)
 	}
 
+	if err := common.CleanupClusterResource(client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, kubermaticseed.OSCAdmissionWebhookName); err != nil {
+		return fmt.Errorf("failed to clean up Seed ValidatingWebhookConfiguration: %v", err)
+	}
+
+	if err := common.CleanupClusterResource(client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, kubermaticseed.OSPAdmissionWebhookName); err != nil {
+		return fmt.Errorf("failed to clean up Seed ValidatingWebhookConfiguration: %v", err)
+	}
+
 	oldSeed := seed.DeepCopy()
 	kubernetes.RemoveFinalizer(seed, common.CleanupFinalizer)
 
@@ -576,6 +584,11 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *operat
 	validatingWebhookCreators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{
 		common.SeedAdmissionWebhookCreator(cfg, client),
 		kubermaticseed.ClusterValidatingWebhookConfigurationCreator(cfg, client),
+	}
+
+	if cfg.Spec.FeatureGates.Has(features.OperatingSystemManager) {
+		validatingWebhookCreators = append(validatingWebhookCreators, kubermaticseed.OperatingSystemProfileValidatingWebhookConfigurationCreator(cfg, client))
+		validatingWebhookCreators = append(validatingWebhookCreators, kubermaticseed.OperatingSystemConfigValidatingWebhookConfigurationCreator(cfg, client))
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, validatingWebhookCreators, "", client); err != nil {
