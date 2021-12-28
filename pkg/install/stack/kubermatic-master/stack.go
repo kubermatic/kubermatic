@@ -26,6 +26,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/install/stack/common"
@@ -230,9 +231,17 @@ func deployKubermaticOperator(ctx context.Context, logger *logrus.Entry, kubeCli
 		return fmt.Errorf("failed to load Helm chart: %v", err)
 	}
 
+	crdDirectory := filepath.Join(opt.ChartsDirectory, "kubermatic-operator", "crd")
+
 	sublogger.Info("Deploying Custom Resource Definitions…")
-	if err := util.DeployCRDs(ctx, kubeClient, sublogger, filepath.Join(opt.ChartsDirectory, "kubermatic-operator", "crd"), opt.KubermaticConfiguration); err != nil {
+	if err := util.DeployCRDs(ctx, kubeClient, sublogger, crdDirectory); err != nil {
 		return fmt.Errorf("failed to deploy CRDs: %v", err)
+	}
+
+	if opt.KubermaticConfiguration.Spec.FeatureGates.Has(features.OperatingSystemManager) {
+		if err := util.DeployCRDs(ctx, kubeClient, sublogger, filepath.Join(crdDirectory, "k8c.io", "operatingsystemmanager")); err != nil {
+			return fmt.Errorf("failed to deploy CRDs: %v", err)
+		}
 	}
 
 	if err := util.EnsureNamespace(ctx, sublogger, kubeClient, KubermaticOperatorNamespace); err != nil {

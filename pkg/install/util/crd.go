@@ -23,9 +23,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/crd/util"
-	"k8c.io/kubermatic/v2/pkg/features"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -34,24 +32,13 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func DeployCRDs(ctx context.Context, kubeClient ctrlruntimeclient.Client, log logrus.FieldLogger, directory string,
-	kc *operatorv1alpha1.KubermaticConfiguration) error {
+func DeployCRDs(ctx context.Context, kubeClient ctrlruntimeclient.Client, log logrus.FieldLogger, directory string) error {
 	crds, err := util.LoadFromDirectory(directory)
 	if err != nil {
 		return fmt.Errorf("failed to load CRDs: %v", err)
 	}
 
 	for _, crd := range crds {
-		// For the time being, OSM is considered as an experimental feature, thus we don't create it's related CRDs unless
-		// the feature was enabled in the KubermaticConfiguraton object.
-		// TODO(MQ): find a better way to filter out optional CRDs
-		if crd.GetName() == "operatingsystemprofiles.operatingsystemmanager.k8c.io" ||
-			crd.GetName() == "operatingsystemconfigs.operatingsystemmanager.k8c.io" {
-			if !kc.Spec.FeatureGates.Has(features.OperatingSystemManager) {
-				continue
-			}
-		}
-
 		log.WithField("name", crd.GetName()).Debug("Creating CRD…")
 
 		if err := DeployCRD(ctx, kubeClient, crd); err != nil {
