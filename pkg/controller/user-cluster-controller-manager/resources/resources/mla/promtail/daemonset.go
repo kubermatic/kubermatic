@@ -164,7 +164,7 @@ func DaemonSetCreator(overrides *corev1.ResourceRequirements, registryWithOverwr
 						ReadOnlyRootFilesystem: pointer.BoolPtr(true),
 					},
 					ReadinessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/ready",
 								Port:   intstr.FromString(metricsPortName),

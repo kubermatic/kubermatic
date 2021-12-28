@@ -153,7 +153,7 @@ func EnvoyDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, seed 
 						SuccessThreshold: 1,
 						TimeoutSeconds:   1,
 						PeriodSeconds:    3,
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Port:   intstr.FromInt(EnvoyPort),
 								Scheme: corev1.URISchemeHTTP,
@@ -162,7 +162,7 @@ func EnvoyDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, seed 
 						},
 					},
 					Lifecycle: &corev1.Lifecycle{
-						PreStop: &corev1.Handler{
+						PreStop: &corev1.LifecycleHandler{
 							Exec: &corev1.ExecAction{
 								Command: []string{
 									"wget",

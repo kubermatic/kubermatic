@@ -101,7 +101,7 @@ func (c *FakeEtcdBackupConfigs) UpdateStatus(ctx context.Context, etcdBackupConf
 // Delete takes name of the etcdBackupConfig and deletes it. Returns an error if one occurs.
 func (c *FakeEtcdBackupConfigs) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(etcdbackupconfigsResource, c.ns, name), &kubermaticv1.EtcdBackupConfig{})
+		Invokes(testing.NewDeleteActionWithOptions(etcdbackupconfigsResource, c.ns, name, opts), &kubermaticv1.EtcdBackupConfig{})
 
 	return err
 }

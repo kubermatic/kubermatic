@@ -13,6 +13,8 @@ import (
 
 // VolumeBindingMode VolumeBindingMode indicates how PersistentVolumeClaims should be bound.
 //
+// +enum
+//
 // swagger:model VolumeBindingMode
 type VolumeBindingMode string
 

@@ -89,7 +89,7 @@ func (c *FakeMLAAdminSettings) Update(ctx context.Context, mLAAdminSetting *kube
 // Delete takes name of the mLAAdminSetting and deletes it. Returns an error if one occurs.
 func (c *FakeMLAAdminSettings) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(mlaadminsettingsResource, c.ns, name), &kubermaticv1.MLAAdminSetting{})
+		Invokes(testing.NewDeleteActionWithOptions(mlaadminsettingsResource, c.ns, name, opts), &kubermaticv1.MLAAdminSetting{})
 
 	return err
 }

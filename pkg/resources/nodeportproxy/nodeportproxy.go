@@ -317,7 +317,7 @@ func deploymentEnvoy(image string, data nodePortProxyData) reconciling.NamedDepl
 					},
 				},
 				Lifecycle: &corev1.Lifecycle{
-					PreStop: &corev1.Handler{
+					PreStop: &corev1.LifecycleHandler{
 						Exec: &corev1.ExecAction{
 							Command: []string{
 								"wget",
@@ -329,7 +329,7 @@ func deploymentEnvoy(image string, data nodePortProxyData) reconciling.NamedDepl
 				},
 				ReadinessProbe: &corev1.Probe{
 					FailureThreshold: 3,
-					Handler: corev1.Handler{
+					ProbeHandler: corev1.ProbeHandler{
 						HTTPGet: &corev1.HTTPGetAction{
 							Path:   "healthz",
 							Port:   intstr.FromInt(8002),

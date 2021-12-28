@@ -112,7 +112,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 						},
 					},
 					ReadinessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/healthz",
 								Port:   intstr.FromInt(8080),

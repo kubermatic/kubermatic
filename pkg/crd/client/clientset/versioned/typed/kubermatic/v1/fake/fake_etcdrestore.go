@@ -101,7 +101,7 @@ func (c *FakeEtcdRestores) UpdateStatus(ctx context.Context, etcdRestore *kuberm
 // Delete takes name of the etcdRestore and deletes it. Returns an error if one occurs.
 func (c *FakeEtcdRestores) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(etcdrestoresResource, c.ns, name), &kubermaticv1.EtcdRestore{})
+		Invokes(testing.NewDeleteActionWithOptions(etcdrestoresResource, c.ns, name, opts), &kubermaticv1.EtcdRestore{})
 
 	return err
 }

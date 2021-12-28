@@ -115,7 +115,7 @@ func DeploymentCreator(data clusterautoscalerData) reconciling.NamedDeploymentCr
 						// -v=4 --scale-down-delay-after-failure=1s --scale-down-delay-after-add=1s
 					},
 					LivenessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/health-check",
 								Port:   intstr.FromInt(8085),

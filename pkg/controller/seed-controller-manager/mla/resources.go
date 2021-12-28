@@ -328,7 +328,7 @@ func GatewayDeploymentCreator(data *resources.TemplateData, settings *kubermatic
 						},
 					},
 					ReadinessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/",
 								Port:   intstr.FromString(intPortName),

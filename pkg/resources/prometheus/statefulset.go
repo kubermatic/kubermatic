@@ -144,7 +144,7 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 						FailureThreshold:    10,
 						InitialDelaySeconds: 30,
 						SuccessThreshold:    1,
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/-/healthy",
 								Port:   intstr.FromString("web"),
@@ -158,7 +158,7 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 						FailureThreshold:    6,
 						InitialDelaySeconds: 5,
 						SuccessThreshold:    1,
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/-/ready",
 								Port:   intstr.FromString("web"),

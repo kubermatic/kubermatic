@@ -83,7 +83,7 @@ func (c *FakeAllowedRegistries) Update(ctx context.Context, allowedRegistry *kub
 // Delete takes name of the allowedRegistry and deletes it. Returns an error if one occurs.
 func (c *FakeAllowedRegistries) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewRootDeleteAction(allowedregistriesResource, name), &kubermaticv1.AllowedRegistry{})
+		Invokes(testing.NewRootDeleteActionWithOptions(allowedregistriesResource, name, opts), &kubermaticv1.AllowedRegistry{})
 	return err
 }
 

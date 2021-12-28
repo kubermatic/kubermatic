@@ -136,7 +136,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 					},
 					VolumeMounts: volumeMounts,
 					ReadinessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: healthAction,
 						},
 						FailureThreshold: 3,
@@ -146,7 +146,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 					},
 					LivenessProbe: &corev1.Probe{
 						FailureThreshold: 8,
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: healthAction,
 						},
 						InitialDelaySeconds: 15,

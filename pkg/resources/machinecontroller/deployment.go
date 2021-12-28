@@ -153,7 +153,7 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 						Value: "/etc/kubernetes/kubeconfig/kubeconfig",
 					}),
 					LivenessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/readyz",
 								Port:   intstr.FromInt(8085),

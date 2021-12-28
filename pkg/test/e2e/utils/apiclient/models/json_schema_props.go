@@ -230,6 +230,9 @@ type JSONSchemaProps struct {
 
 	// not
 	Not *JSONSchemaProps `json:"not,omitempty"`
+
+	// x kubernetes validations
+	XKubernetesValidations ValidationRules `json:"x-kubernetes-validations,omitempty"`
 }
 
 // Validate validates this JSON schema props
@@ -297,6 +300,10 @@ func (m *JSONSchemaProps) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateNot(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateXKubernetesValidations(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -612,6 +619,21 @@ func (m *JSONSchemaProps) validateNot(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *JSONSchemaProps) validateXKubernetesValidations(formats strfmt.Registry) error {
+	if swag.IsZero(m.XKubernetesValidations) { // not required
+		return nil
+	}
+
+	if err := m.XKubernetesValidations.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("x-kubernetes-validations")
+		}
+		return err
+	}
+
+	return nil
+}
+
 // ContextValidate validate this JSON schema props based on the context it is used
 func (m *JSONSchemaProps) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
@@ -677,6 +699,10 @@ func (m *JSONSchemaProps) ContextValidate(ctx context.Context, formats strfmt.Re
 	}
 
 	if err := m.contextValidateNot(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateXKubernetesValidations(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -917,6 +943,18 @@ func (m *JSONSchemaProps) contextValidateNot(ctx context.Context, formats strfmt
 			}
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *JSONSchemaProps) contextValidateXKubernetesValidations(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.XKubernetesValidations.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("x-kubernetes-validations")
+		}
+		return err
 	}
 
 	return nil

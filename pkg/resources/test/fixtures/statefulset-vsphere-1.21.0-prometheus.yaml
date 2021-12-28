@@ -109,4 +109,5 @@ spec:
   updateStrategy:
     type: RollingUpdate
 status:
+  availableReplicas: 0
   replicas: 0

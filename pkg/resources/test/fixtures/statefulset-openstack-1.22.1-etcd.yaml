@@ -187,4 +187,5 @@ spec:
       storageClassName: kubermatic-fast
     status: {}
 status:
+  availableReplicas: 0
   replicas: 0

@@ -121,7 +121,7 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 						Value: "/etc/kubernetes/kubeconfig/kubeconfig",
 					}),
 					ReadinessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/healthz",
 								Port:   intstr.FromInt(9876),
@@ -135,7 +135,7 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 					},
 					LivenessProbe: &corev1.Probe{
 						FailureThreshold: 8,
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/healthz",
 								Port:   intstr.FromInt(9876),

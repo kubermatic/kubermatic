@@ -93,7 +93,7 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 						},
 					},
 					ReadinessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/healthz",
 								Port:   intstr.FromInt(443),
@@ -106,7 +106,7 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 						TimeoutSeconds:   15,
 					},
 					LivenessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/healthz",
 								Port:   intstr.FromInt(443),
