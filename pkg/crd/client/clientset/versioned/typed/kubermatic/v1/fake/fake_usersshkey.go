@@ -83,7 +83,7 @@ func (c *FakeUserSSHKeys) Update(ctx context.Context, userSSHKey *kubermaticv1.U
 // Delete takes name of the userSSHKey and deletes it. Returns an error if one occurs.
 func (c *FakeUserSSHKeys) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewRootDeleteAction(usersshkeysResource, name), &kubermaticv1.UserSSHKey{})
+		Invokes(testing.NewRootDeleteActionWithOptions(usersshkeysResource, name, opts), &kubermaticv1.UserSSHKey{})
 	return err
 }
 

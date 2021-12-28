@@ -232,7 +232,7 @@ func getControllerContainers(enableMutation bool, registryWithOverwrite registry
 				}},
 		},
 		LivenessProbe: &corev1.Probe{
-			Handler: corev1.Handler{
+			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
 					Path:   "/healthz",
 					Port:   intstr.FromInt(healthzPort),
@@ -246,7 +246,7 @@ func getControllerContainers(enableMutation bool, registryWithOverwrite registry
 			TimeoutSeconds:      15,
 		},
 		ReadinessProbe: &corev1.Probe{
-			Handler: corev1.Handler{
+			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
 					Path:   "/readyz",
 					Port:   intstr.FromInt(healthzPort),
@@ -308,7 +308,7 @@ func getAuditContainers(registryWithOverwrite registry.WithOverwriteFunc) []core
 				}},
 		},
 		LivenessProbe: &corev1.Probe{
-			Handler: corev1.Handler{
+			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
 					Path:   "/healthz",
 					Port:   intstr.FromInt(healthzPort),
@@ -322,7 +322,7 @@ func getAuditContainers(registryWithOverwrite registry.WithOverwriteFunc) []core
 			TimeoutSeconds:      15,
 		},
 		ReadinessProbe: &corev1.Probe{
-			Handler: corev1.Handler{
+			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
 					Path:   "/readyz",
 					Port:   intstr.FromInt(healthzPort),

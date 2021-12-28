@@ -146,6 +146,7 @@ func main() {
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar()
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog))
 
 	versions := kubermatic.NewDefaultVersions()
 	cli.Hello(log, "User-Cluster Controller-Manager", logOpts.Debug, &versions)
@@ -202,8 +203,6 @@ func main() {
 	}
 
 	rootCtx := signals.SetupSignalHandler()
-
-	ctrlruntimelog.Log = ctrlruntimelog.NewDelegatingLogger(zapr.NewLogger(rawLog).WithName("controller_runtime"))
 
 	mgr, err := manager.New(cfg, manager.Options{
 		LeaderElection:          true,

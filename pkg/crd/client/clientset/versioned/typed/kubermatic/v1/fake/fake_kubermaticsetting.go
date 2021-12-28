@@ -83,7 +83,7 @@ func (c *FakeKubermaticSettings) Update(ctx context.Context, kubermaticSetting *
 // Delete takes name of the kubermaticSetting and deletes it. Returns an error if one occurs.
 func (c *FakeKubermaticSettings) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewRootDeleteAction(kubermaticsettingsResource, name), &kubermaticv1.KubermaticSetting{})
+		Invokes(testing.NewRootDeleteActionWithOptions(kubermaticsettingsResource, name, opts), &kubermaticv1.KubermaticSetting{})
 	return err
 }
 

@@ -86,11 +86,11 @@ func main() {
 		}
 	}()
 
+	// Set the logger used by sigs.k8s.io/controller-runtime
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog))
+
 	versions := kubermatic.NewDefaultVersions()
 	cli.Hello(log, "Seed Controller-Manager", logOpts.Debug, &versions)
-
-	// Set the logger used by sigs.k8s.io/controller-runtime
-	ctrlruntimelog.Log = ctrlruntimelog.NewDelegatingLogger(zapr.NewLogger(rawLog).WithName("controller_runtime"))
 
 	electionName := controllerName + "-leader-election"
 	if options.workerName != "" {

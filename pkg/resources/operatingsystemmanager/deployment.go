@@ -18,6 +18,7 @@ package operatingsystemmanager
 
 import (
 	"fmt"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -156,7 +157,7 @@ func DeploymentCreatorWithoutInitWrapper(data operatingSystemManagerData) reconc
 						},
 					},
 					LivenessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/readyz",
 								Port:   intstr.FromInt(8085),

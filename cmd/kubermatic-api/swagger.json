@@ -23459,6 +23459,9 @@
           "description": "x-kubernetes-preserve-unknown-fields stops the API server\ndecoding step from pruning fields which are not specified\nin the validation schema. This affects fields recursively,\nbut switches back to normal pruning behaviour if nested\nproperties or additionalProperties are specified in the schema.\nThis can either be true or undefined. False is forbidden.",
           "type": "boolean",
           "x-go-name": "XPreserveUnknownFields"
+        },
+        "x-kubernetes-validations": {
+          "$ref": "#/definitions/ValidationRules"
         }
       },
       "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -25301,6 +25304,7 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "PersistentVolumeReclaimPolicy": {
+      "description": "+enum",
       "type": "string",
       "title": "PersistentVolumeReclaimPolicy describes a policy for end-of-life maintenance of persistent volumes.",
       "x-go-package": "k8s.io/api/core/v1"
@@ -25390,7 +25394,7 @@
           "x-go-name": "Resources"
         },
         "verbs": {
-          "description": "Verbs is a list of Verbs that apply to ALL the ResourceKinds and AttributeRestrictions contained in this rule. '*' represents all verbs.",
+          "description": "Verbs is a list of Verbs that apply to ALL the ResourceKinds contained in this rule. '*' represents all verbs.",
           "type": "array",
           "items": {
             "type": "string"
@@ -25778,7 +25782,7 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "PullPolicy": {
-      "description": "PullPolicy describes a policy for if/when to pull a container image",
+      "description": "PullPolicy describes a policy for if/when to pull a container image\n+enum",
       "type": "string",
       "x-go-package": "k8s.io/api/core/v1"
     },
@@ -27088,6 +27092,31 @@
       },
       "x-go-package": "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
     },
+    "ValidationRule": {
+      "type": "object",
+      "title": "ValidationRule describes a validation rule written in the CEL expression language.",
+      "properties": {
+        "message": {
+          "description": "Message represents the message displayed when validation fails. The message is required if the Rule contains\nline breaks. The message must not contain line breaks.\nIf unset, the message is \"failed rule: {Rule}\".\ne.g. \"must be a URL with the host matching spec.host\"",
+          "type": "string",
+          "x-go-name": "Message"
+        },
+        "rule": {
+          "description": "Rule represents the expression which will be evaluated by CEL.\nref: https://github.com/google/cel-spec\nThe Rule is scoped to the location of the x-kubernetes-validations extension in the schema.\nThe `self` variable in the CEL expression is bound to the scoped value.",
+          "type": "string",
+          "x-go-name": "Rule"
+        }
+      },
+      "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+    },
+    "ValidationRules": {
+      "type": "array",
+      "title": "ValidationRules describes a list of validation rules written in the CEL expression language.",
+      "items": {
+        "$ref": "#/definitions/ValidationRule"
+      },
+      "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+    },
     "Version": {
       "type": "object",
       "title": "Version represents a single semantic version.",
@@ -27189,6 +27218,7 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "VolumeBindingMode": {
+      "description": "+enum",
       "type": "string",
       "title": "VolumeBindingMode indicates how PersistentVolumeClaims should be bound.",
       "x-go-package": "k8s.io/api/storage/v1"

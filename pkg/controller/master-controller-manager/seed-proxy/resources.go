@@ -205,7 +205,7 @@ func masterDeploymentCreator(seed *kubermaticv1.Seed, secret *corev1.Secret) rec
 				PeriodSeconds:       10,
 				SuccessThreshold:    1,
 				FailureThreshold:    3,
-				Handler: corev1.Handler{
+				ProbeHandler: corev1.ProbeHandler{
 					TCPSocket: &corev1.TCPSocketAction{
 						Port: intstr.Parse("http"),
 					},

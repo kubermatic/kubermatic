@@ -144,7 +144,7 @@ mc mirror --newer-than "32d0h0m" s3/$S3_BUCKET /metering-data || true`,
 					ImagePullPolicy: corev1.PullAlways,
 					LivenessProbe: &corev1.Probe{
 						InitialDelaySeconds: 15,
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/healthz",
 								Port:   intstr.FromInt(8081),
@@ -158,7 +158,7 @@ mc mirror --newer-than "32d0h0m" s3/$S3_BUCKET /metering-data || true`,
 					},
 					ReadinessProbe: &corev1.Probe{
 						InitialDelaySeconds: 5,
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/readyz",
 								Port:   intstr.FromInt(8081),

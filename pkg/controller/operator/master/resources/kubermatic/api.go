@@ -48,7 +48,7 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 				PeriodSeconds:       10,
 				SuccessThreshold:    1,
 				FailureThreshold:    3,
-				Handler: corev1.Handler{
+				ProbeHandler: corev1.ProbeHandler{
 					HTTPGet: &corev1.HTTPGetAction{
 						Path:   "/api/v1/healthz",
 						Scheme: corev1.URISchemeHTTP,

@@ -129,7 +129,7 @@ func DaemonSetCreator(registryWithOverwrite registry.WithOverwriteFunc) reconcil
 					},
 
 					LivenessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Host:   kubesystem.NodeLocalDNSCacheAddress,
 								Scheme: corev1.URISchemeHTTP,
