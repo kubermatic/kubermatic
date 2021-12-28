@@ -90,12 +90,12 @@ func BackupContainersConfigMapCreator(cfg *operatorv1alpha1.KubermaticConfigurat
 			c.Data[cleanupContainerKey] = cfg.Spec.SeedController.BackupCleanupContainer
 
 			if cfg.Spec.SeedController.BackupStoreContainer == strings.TrimSpace(defaults.DefaultBackupStoreContainer) &&
-				seed.Spec.BackupRestore != nil {
+				(seed.Spec.BackupRestore != nil || seed.Spec.EtcdBackupRestore != nil) {
 				c.Data[storeContainerKey] = strings.TrimSpace(defaults.DefaultNewBackupStoreContainer)
 				log.Debugw("Defaulting field", "field", "seedController.backupRestoreContainer")
 			}
 
-			if seed.Spec.BackupRestore != nil {
+			if seed.Spec.BackupRestore != nil || seed.Spec.EtcdBackupRestore != nil {
 				if cfg.Spec.SeedController.BackupDeleteContainer == "" {
 					cfg.Spec.SeedController.BackupDeleteContainer = strings.TrimSpace(defaults.DefaultNewBackupDeleteContainer)
 					log.Debugw("Defaulting field", "field", "seedController.backupDeleteContainer")
