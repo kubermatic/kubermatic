@@ -120,6 +120,36 @@ func TestValidateCloudSpec(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:  "valid provider name",
+			valid: true,
+			spec: kubermaticv1.CloudSpec{
+				DatacenterName: "some-datacenter",
+				ProviderName:   "openstack",
+				Openstack: &kubermaticv1.OpenstackCloudSpec{
+					Tenant:         "some-tenant",
+					Username:       "some-user",
+					Password:       "some-password",
+					Domain:         "some-domain",
+					FloatingIPPool: "some-network",
+				},
+			},
+		},
+		{
+			name:  "invalid provider name",
+			valid: false,
+			spec: kubermaticv1.CloudSpec{
+				DatacenterName: "some-datacenter",
+				ProviderName:   "closedstack",
+				Openstack: &kubermaticv1.OpenstackCloudSpec{
+					Tenant:         "some-tenant",
+					Username:       "some-user",
+					Password:       "some-password",
+					Domain:         "some-domain",
+					FloatingIPPool: "some-network",
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {

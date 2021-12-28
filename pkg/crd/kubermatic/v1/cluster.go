@@ -580,6 +580,11 @@ type CloudSpec struct {
 	// DatacenterName where the users 'cloud' lives in.
 	DatacenterName string `json:"dc"`
 
+	// ProviderName is the name of the cloud provider used for this cluster.
+	// This must match the given provider spec (e.g. if the providerName is
+	// "aws", then the AWSCloudSpec must be set)
+	ProviderName string `json:"providerName"`
+
 	Fake         *FakeCloudSpec         `json:"fake,omitempty"`
 	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`
 	BringYourOwn *BringYourOwnCloudSpec `json:"bringyourown,omitempty"`

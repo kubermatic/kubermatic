@@ -106,6 +106,14 @@ func DefaultClusterSpec(spec *kubermaticv1.ClusterSpec, template *kubermaticv1.C
 		spec.UsePodSecurityPolicyAdmissionPlugin = true
 	}
 
+	// Ensure provider name matches the given spec
+	providerName, err := provider.ClusterCloudProviderName(spec.Cloud)
+	if err != nil {
+		return fmt.Errorf("failed to determine cloud provider: %w", err)
+	}
+
+	spec.Cloud.ProviderName = providerName
+
 	// Add default CNI plugin settings if not present.
 	if spec.CNIPlugin == nil {
 		spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
