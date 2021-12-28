@@ -54,7 +54,7 @@ func DeployCRDs(ctx context.Context, kubeClient ctrlruntimeclient.Client, log lo
 
 		log.WithField("name", crd.GetName()).Debug("Creating CRD…")
 
-		if err := kubeClient.Create(ctx, crd); err != nil && !kerrors.IsAlreadyExists(err) {
+		if err := DeployCRD(ctx, kubeClient, crd); err != nil {
 			return fmt.Errorf("failed to deploy CRD %s: %v", crd.GetName(), err)
 		}
 	}
@@ -67,6 +67,41 @@ func DeployCRDs(ctx context.Context, kubeClient ctrlruntimeclient.Client, log lo
 	}
 
 	return nil
+}
+
+func DeployCRD(ctx context.Context, kubeClient ctrlruntimeclient.Client, crd ctrlruntimeclient.Object) error {
+	err := kubeClient.Create(ctx, crd)
+	if err == nil {
+		return nil // success!
+	}
+
+	// CRD does not exist already, but creating failed for another reason
+	if !kerrors.IsAlreadyExists(err) {
+		return err
+	}
+
+	// CRD exists already, time to update it
+	existingCRD := crd.DeepCopyObject().(ctrlruntimeclient.Object)
+	key := ctrlruntimeclient.ObjectKey{
+		Name:      crd.GetName(),
+		Namespace: crd.GetNamespace(),
+	}
+
+	if err = kubeClient.Get(ctx, key, existingCRD); err != nil {
+		return fmt.Errorf("failed to retrieve existing CRD: %v", err)
+	}
+
+	// do not use mergo to merge the existing into the new CRD,
+	// because this would bring back the "kubectl apply" semantics;
+	// we want "kubectl replace" semantics instead, so we only keep
+	// a few fields from the metadata intact and overwrite everything else
+
+	crd.SetResourceVersion(existingCRD.GetResourceVersion())
+	crd.SetAnnotations(existingCRD.GetAnnotations())
+	crd.SetLabels(existingCRD.GetLabels())
+	crd.SetGeneration(existingCRD.GetGeneration())
+
+	return kubeClient.Update(ctx, crd)
 }
 
 func WaitForReadyCRD(ctx context.Context, kubeClient ctrlruntimeclient.Client, crdName string, timeout time.Duration) error {
