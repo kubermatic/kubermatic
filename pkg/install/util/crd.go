@@ -84,8 +84,6 @@ func DeployCRD(ctx context.Context, kubeClient ctrlruntimeclient.Client, crd ctr
 	// a few fields from the metadata intact and overwrite everything else
 
 	crd.SetResourceVersion(existingCRD.GetResourceVersion())
-	crd.SetAnnotations(existingCRD.GetAnnotations())
-	crd.SetLabels(existingCRD.GetLabels())
 	crd.SetGeneration(existingCRD.GetGeneration())
 
 	return kubeClient.Update(ctx, crd)
