@@ -147,6 +147,11 @@ kubermaticOperator:
   image:
     repository: "quay.io/kubermatic/kubermatic$REPOSUFFIX"
     tag: "$KUBERMATIC_VERSION"
+
+minio:
+  credentials:
+    accessKey: test
+    secretKey: testtest
 EOF
 
 # append custom Dex configuration

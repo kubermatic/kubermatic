@@ -32,9 +32,10 @@ import (
 	"k8c.io/kubermatic/v2/pkg/install/util"
 	"k8c.io/kubermatic/v2/pkg/log"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -81,8 +82,8 @@ func (s *SeedStack) Deploy(ctx context.Context, opt stack.DeployOptions) error {
 		return fmt.Errorf("failed to deploy S3 Exporter: %v", err)
 	}
 
-	if err := s.deployKubermaticCRDs(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
-		return fmt.Errorf("failed to deploy Kubermatic CRDs: %v", err)
+	if err := s.deployKubermatic(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
+		return fmt.Errorf("failed to deploy Kubermatic: %v", err)
 	}
 
 	if err := migrateUserClustersData(ctx, opt.Logger, opt.KubeClient, opt); err != nil {
@@ -94,11 +95,23 @@ func (s *SeedStack) Deploy(ctx context.Context, opt stack.DeployOptions) error {
 	return nil
 }
 
-func (s *SeedStack) deployKubermaticCRDs(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
-	logger.Info("📦 Deploying KKP Custom Resource Definitions…")
-	sublogger := log.Prefix(logger, "   ")
+func (s *SeedStack) deployKubermatic(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
+	logger.Info("📦 Deploying KKP Dependencies…")
 
-	if err := s.InstallKubermaticCRDs(ctx, kubeClient, sublogger, opt); err != nil {
+	// The KKP Operator will not reconcile the seed cluster if the "kubermatic"
+	// namespace doesn't exist yet. This is meant as a "safety mechanism", so we
+	// must ensure the namespace exists.
+	ns := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: kubermaticmaster.KubermaticOperatorNamespace,
+		},
+	}
+
+	if err := kubeClient.Create(ctx, ns); err != nil && !kerrors.IsAlreadyExists(err) {
+		return fmt.Errorf("failed to create Namespace %s: %v", ns.Name, err)
+	}
+
+	if err := s.InstallKubermaticCRDs(ctx, kubeClient, log.Prefix(logger, "   "), opt); err != nil {
 		return fmt.Errorf("failed to deploy CRDs: %v", err)
 	}
 
@@ -245,9 +258,9 @@ func showDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlr
 
 	logger.Debugf("Waiting for %q to be ready…", svcName)
 
-	var ingresses []v1.LoadBalancerIngress
+	var ingresses []corev1.LoadBalancerIngress
 	err = wait.PollImmediate(5*time.Second, 3*time.Minute, func() (bool, error) {
-		svc := v1.Service{}
+		svc := corev1.Service{}
 		if err := kubeClient.Get(ctx, svcName, &svc); err != nil {
 			return false, err
 		}
