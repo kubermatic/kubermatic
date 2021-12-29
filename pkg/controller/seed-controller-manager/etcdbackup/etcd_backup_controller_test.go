@@ -17,6 +17,7 @@ limitations under the License.
 package etcdbackup
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"sort"
@@ -29,9 +30,11 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/util/yaml"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -44,6 +47,15 @@ import (
 	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
+
+func encodeContainerAsYAML(t *testing.T, c *corev1.Container) string {
+	var buf bytes.Buffer
+	if err := yaml.Encode(c, &buf); err != nil {
+		t.Fatalf("failed to encode container as YAML: %v", err)
+	}
+
+	return buf.String()
+}
 
 func genTestCluster() *kubermaticv1.Cluster {
 	return &kubermaticv1.Cluster{
@@ -124,7 +136,30 @@ func genCleanupContainer() *corev1.Container {
 	}
 }
 
-func genBackupJob(backupName string, jobName string) *batchv1.Job {
+func getConfigGetter(t *testing.T, storeContainer, cleanupContainer, deleteContainer *corev1.Container) provider.KubermaticConfigurationGetter {
+	config := &kubermaticv1.KubermaticConfiguration{}
+
+	if storeContainer != nil {
+		config.Spec.SeedController.BackupStoreContainer = encodeContainerAsYAML(t, storeContainer)
+	}
+
+	if cleanupContainer != nil {
+		config.Spec.SeedController.BackupCleanupContainer = encodeContainerAsYAML(t, cleanupContainer)
+	}
+
+	if deleteContainer != nil {
+		config.Spec.SeedController.BackupDeleteContainer = encodeContainerAsYAML(t, deleteContainer)
+	}
+
+	configGetter, err := provider.StaticKubermaticConfigurationGetterFactory(config)
+	if err != nil {
+		t.Fatalf("failed to create config getter: %v", err)
+	}
+
+	return configGetter
+}
+
+func genBackupJob(t *testing.T, backupName string, jobName string) *batchv1.Job {
 	// jerry-rig a cluster, BackupConfig and BackupStatus instance to create a job object
 	// that's similar to the ones an actual reconciliation will create
 	cluster := genTestCluster()
@@ -133,18 +168,22 @@ func genBackupJob(backupName string, jobName string) *batchv1.Job {
 		BackupName: backupName,
 		JobName:    jobName,
 	}
+
+	storeContainer := genStoreContainer()
+	configGetter := getConfigGetter(t, storeContainer, nil, nil)
+
 	reconciler := Reconciler{
-		log:            kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-		Client:         ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(cluster, backupConfig).Build(),
-		scheme:         scheme.Scheme,
-		storeContainer: genStoreContainer(),
-		recorder:       record.NewFakeRecorder(10),
-		clock:          clock.RealClock{},
+		log:      kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
+		Client:   ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(cluster, backupConfig).Build(),
+		scheme:   scheme.Scheme,
+		recorder: record.NewFakeRecorder(10),
+		clock:    clock.RealClock{},
 		seedGetter: func() (*kubermaticv1.Seed, error) {
 			return test.GenTestSeed(), nil
 		},
+		configGetter: configGetter,
 	}
-	job := reconciler.backupJob(backupConfig, cluster, backup, nil)
+	job := reconciler.backupJob(backupConfig, cluster, backup, nil, storeContainer)
 	job.ResourceVersion = "1"
 	// remove all env variables from the job so they're comparable against the
 	// ones we get from fake clusters during tests, where we strip the variables too
@@ -152,7 +191,7 @@ func genBackupJob(backupName string, jobName string) *batchv1.Job {
 	return job
 }
 
-func genBackupDeleteJob(backupName string, jobName string) *batchv1.Job {
+func genBackupDeleteJob(t *testing.T, backupName string, jobName string) *batchv1.Job {
 	// same thing as genBackupJob, but for delete jobs
 	cluster := genTestCluster()
 	backupConfig := genBackupConfig(cluster, "testbackup")
@@ -160,18 +199,22 @@ func genBackupDeleteJob(backupName string, jobName string) *batchv1.Job {
 		BackupName:    backupName,
 		DeleteJobName: jobName,
 	}
+
+	deleteContainer := genDeleteContainer()
+	configGetter := getConfigGetter(t, nil, nil, deleteContainer)
+
 	reconciler := Reconciler{
-		log:             kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-		Client:          ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(cluster, backupConfig).Build(),
-		scheme:          scheme.Scheme,
-		deleteContainer: genDeleteContainer(),
-		recorder:        record.NewFakeRecorder(10),
-		clock:           clock.RealClock{},
+		log:      kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
+		Client:   ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(cluster, backupConfig).Build(),
+		scheme:   scheme.Scheme,
+		recorder: record.NewFakeRecorder(10),
+		clock:    clock.RealClock{},
 		seedGetter: func() (*kubermaticv1.Seed, error) {
 			return test.GenTestSeed(), nil
 		},
+		configGetter: configGetter,
 	}
-	job := reconciler.backupDeleteJob(backupConfig, cluster, backup, nil)
+	job := reconciler.backupDeleteJob(backupConfig, cluster, backup, nil, deleteContainer)
 	job.ResourceVersion = "1"
 	// remove all env variables from the job so they're comparable against the
 	// ones we get from fake clusters during tests, where we strip the variables too
@@ -179,22 +222,26 @@ func genBackupDeleteJob(backupName string, jobName string) *batchv1.Job {
 	return job
 }
 
-func genCleanupJob(jobName string) *batchv1.Job {
+func genCleanupJob(t *testing.T, jobName string) *batchv1.Job {
 	// same thing as genBackupJob, but for cleanup jobs
 	cluster := genTestCluster()
 	backupConfig := genBackupConfig(cluster, "testbackup")
+
+	cleanupContainer := genCleanupContainer()
+	configGetter := getConfigGetter(t, nil, cleanupContainer, nil)
+
 	reconciler := Reconciler{
-		log:              kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-		Client:           ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(cluster, backupConfig).Build(),
-		scheme:           scheme.Scheme,
-		cleanupContainer: genCleanupContainer(),
-		recorder:         record.NewFakeRecorder(10),
-		clock:            clock.RealClock{},
+		log:      kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
+		Client:   ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(cluster, backupConfig).Build(),
+		scheme:   scheme.Scheme,
+		recorder: record.NewFakeRecorder(10),
+		clock:    clock.RealClock{},
 		seedGetter: func() (*kubermaticv1.Seed, error) {
 			return test.GenTestSeed(), nil
 		},
+		configGetter: configGetter,
 	}
-	job := reconciler.cleanupJob(backupConfig, cluster, jobName, nil)
+	job := reconciler.cleanupJob(backupConfig, cluster, jobName, nil, cleanupContainer)
 	job.ResourceVersion = "1"
 	// remove all env variables from the job so they're comparable against the
 	// ones we get from fake clusters during tests, where we strip the variables too
@@ -514,7 +561,7 @@ func TestStartPendingBackupJobs(t *testing.T) {
 			},
 			expectedReconcile: &reconcile.Result{RequeueAfter: assumedJobRuntime},
 			expectedJobs: []batchv1.Job{
-				*genBackupJob("testbackup-1970-01-01t00-01-00", "testcluster-backup-testbackup-create-aaaa"),
+				*genBackupJob(t, "testbackup-1970-01-01t00-01-00", "testcluster-backup-testbackup-create-aaaa"),
 			},
 		},
 		{
@@ -543,9 +590,9 @@ func TestStartPendingBackupJobs(t *testing.T) {
 				},
 			},
 			existingJobs: []batchv1.Job{
-				*jobAddCondition(genBackupJob("testbackup-1970-01-01t00-01-00", "testcluster-backup-testbackup-create-aaaa"),
+				*jobAddCondition(genBackupJob(t, "testbackup-1970-01-01t00-01-00", "testcluster-backup-testbackup-create-aaaa"),
 					batchv1.JobComplete, corev1.ConditionTrue, time.Unix(90, 0).UTC(), "job completed"),
-				*jobAddCondition(genBackupJob("testbackup-1970-01-01t00-01-10", "testcluster-backup-testbackup-create-bbbb"),
+				*jobAddCondition(genBackupJob(t, "testbackup-1970-01-01t00-01-10", "testcluster-backup-testbackup-create-bbbb"),
 					batchv1.JobFailed, corev1.ConditionTrue, time.Unix(80, 0).UTC(), "Job has reached the specified backoff limit"),
 			},
 			expectedBackups: []kubermaticv1.BackupStatus{
@@ -576,9 +623,9 @@ func TestStartPendingBackupJobs(t *testing.T) {
 			},
 			expectedReconcile: nil,
 			expectedJobs: []batchv1.Job{
-				*jobAddCondition(genBackupJob("testbackup-1970-01-01t00-01-00", "testcluster-backup-testbackup-create-aaaa"),
+				*jobAddCondition(genBackupJob(t, "testbackup-1970-01-01t00-01-00", "testcluster-backup-testbackup-create-aaaa"),
 					batchv1.JobComplete, corev1.ConditionTrue, time.Unix(90, 0).UTC(), "job completed"),
-				*jobAddCondition(genBackupJob("testbackup-1970-01-01t00-01-10", "testcluster-backup-testbackup-create-bbbb"),
+				*jobAddCondition(genBackupJob(t, "testbackup-1970-01-01t00-01-10", "testcluster-backup-testbackup-create-bbbb"),
 					batchv1.JobFailed, corev1.ConditionTrue, time.Unix(80, 0).UTC(), "Job has reached the specified backoff limit"),
 			},
 		},
@@ -595,7 +642,7 @@ func TestStartPendingBackupJobs(t *testing.T) {
 				},
 			},
 			existingJobs: []batchv1.Job{
-				*genBackupJob("testbackup-1970-01-01t00-01-00", "testcluster-backup-testbackup-create-aaaa"),
+				*genBackupJob(t, "testbackup-1970-01-01t00-01-00", "testcluster-backup-testbackup-create-aaaa"),
 			},
 			expectedBackups: []kubermaticv1.BackupStatus{
 				{
@@ -608,7 +655,7 @@ func TestStartPendingBackupJobs(t *testing.T) {
 			},
 			expectedReconcile: &reconcile.Result{RequeueAfter: assumedJobRuntime},
 			expectedJobs: []batchv1.Job{
-				*genBackupJob("testbackup-1970-01-01t00-01-00", "testcluster-backup-testbackup-create-aaaa"),
+				*genBackupJob(t, "testbackup-1970-01-01t00-01-00", "testcluster-backup-testbackup-create-aaaa"),
 			},
 		},
 	}
@@ -630,19 +677,21 @@ func TestStartPendingBackupJobs(t *testing.T) {
 			for _, j := range tc.existingJobs {
 				initObjs = append(initObjs, j.DeepCopy())
 			}
+
+			storeContainer := genStoreContainer()
 			reconciler := Reconciler{
-				log:            kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-				Client:         ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(initObjs...).Build(),
-				scheme:         scheme.Scheme,
-				storeContainer: genStoreContainer(),
-				recorder:       record.NewFakeRecorder(10),
-				clock:          clock,
+				log:      kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
+				Client:   ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(initObjs...).Build(),
+				scheme:   scheme.Scheme,
+				recorder: record.NewFakeRecorder(10),
+				clock:    clock,
 				seedGetter: func() (*kubermaticv1.Seed, error) {
 					return test.GenTestSeed(), nil
 				},
+				configGetter: getConfigGetter(t, storeContainer, nil, nil),
 			}
 
-			reconcileAfter, err := reconciler.startPendingBackupJobs(context.Background(), backupConfig, cluster, nil)
+			reconcileAfter, err := reconciler.startPendingBackupJobs(context.Background(), backupConfig, cluster, nil, storeContainer)
 			if err != nil {
 				t.Fatalf("ensurePendingBackupIsScheduled returned an error: %v", err)
 			}
@@ -742,7 +791,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 			},
 			expectedReconcile: &reconcile.Result{RequeueAfter: assumedJobRuntime},
 			expectedJobs: []batchv1.Job{
-				*genBackupDeleteJob("testbackup-1970-01-01t00-01-00", "testcluster-backup-testbackup-delete-aaaa"),
+				*genBackupDeleteJob(t, "testbackup-1970-01-01t00-01-00", "testcluster-backup-testbackup-delete-aaaa"),
 			},
 		},
 		{
@@ -775,7 +824,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 			},
 			expectedReconcile: &reconcile.Result{RequeueAfter: assumedJobRuntime},
 			expectedJobs: []batchv1.Job{
-				*genBackupDeleteJob("testbackup-1970-01-01t00-01-00", "testcluster-backup-testbackup-delete-aaaa"),
+				*genBackupDeleteJob(t, "testbackup-1970-01-01t00-01-00", "testcluster-backup-testbackup-delete-aaaa"),
 			},
 		},
 		{
@@ -846,7 +895,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 			},
 			expectedReconcile: &reconcile.Result{RequeueAfter: assumedJobRuntime},
 			expectedJobs: []batchv1.Job{
-				*genBackupDeleteJob("testbackup-1970-01-01t00-02-00", "testcluster-backup-testbackup-delete-bbbb"),
+				*genBackupDeleteJob(t, "testbackup-1970-01-01t00-02-00", "testcluster-backup-testbackup-delete-bbbb"),
 			},
 		},
 		{
@@ -919,7 +968,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 			}),
 			expectedReconcile: &reconcile.Result{RequeueAfter: assumedJobRuntime},
 			expectedJobs: genJobList(maxSimultaneousDeleteJobsPerConfig, func(i int) batchv1.Job {
-				return *genBackupDeleteJob(fmt.Sprintf("testbackup-%v", i+1), fmt.Sprintf("testcluster-backup-testbackup-%v-delete", i+1))
+				return *genBackupDeleteJob(t, fmt.Sprintf("testbackup-%v", i+1), fmt.Sprintf("testcluster-backup-testbackup-%v-delete", i+1))
 			}),
 		},
 	}
@@ -943,19 +992,21 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 			for _, j := range tc.existingJobs {
 				initObjs = append(initObjs, j.DeepCopy())
 			}
+
+			deleteContainer := genDeleteContainer()
 			reconciler := Reconciler{
-				log:             kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-				Client:          ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(initObjs...).Build(),
-				scheme:          scheme.Scheme,
-				deleteContainer: genDeleteContainer(),
-				recorder:        record.NewFakeRecorder(10),
-				clock:           clock,
+				log:      kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
+				Client:   ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(initObjs...).Build(),
+				scheme:   scheme.Scheme,
+				recorder: record.NewFakeRecorder(10),
+				clock:    clock,
 				seedGetter: func() (*kubermaticv1.Seed, error) {
 					return test.GenTestSeed(), nil
 				},
+				configGetter: getConfigGetter(t, nil, nil, deleteContainer),
 			}
 
-			reconcileAfter, err := reconciler.startPendingBackupDeleteJobs(context.Background(), backupConfig, cluster, nil)
+			reconcileAfter, err := reconciler.startPendingBackupDeleteJobs(context.Background(), backupConfig, cluster, nil, deleteContainer)
 			if err != nil {
 				t.Fatalf("ensurePendingBackupIsScheduled returned an error: %v", err)
 			}
@@ -1037,11 +1088,11 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 			},
 			existingJobs: []batchv1.Job{
 				// first backup's deletion job succeeded, second one's failed, third one's is still running
-				*jobAddCondition(genBackupDeleteJob("testbackup-1970-01-01t00-01-00", "testcluster-backup-testbackup-delete-aaaa"),
+				*jobAddCondition(genBackupDeleteJob(t, "testbackup-1970-01-01t00-01-00", "testcluster-backup-testbackup-delete-aaaa"),
 					batchv1.JobComplete, corev1.ConditionTrue, time.Unix(100, 0).UTC(), "job completed"),
-				*jobAddCondition(genBackupDeleteJob("testbackup-1970-01-01t00-02-00", "testcluster-backup-testbackup-delete-bbbb"),
+				*jobAddCondition(genBackupDeleteJob(t, "testbackup-1970-01-01t00-02-00", "testcluster-backup-testbackup-delete-bbbb"),
 					batchv1.JobFailed, corev1.ConditionTrue, time.Unix(160, 0).UTC(), "job timed out"),
-				*genBackupDeleteJob("testbackup-1970-01-01t00-03-00", "testcluster-backup-testbackup-delete-cccc"),
+				*genBackupDeleteJob(t, "testbackup-1970-01-01t00-03-00", "testcluster-backup-testbackup-delete-cccc"),
 			},
 			expectedBackups: []kubermaticv1.BackupStatus{
 				// result: 1st backup's deletion marked as completed, 2nd one's restarted, 3rd and 4th unchanged
@@ -1115,9 +1166,9 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 			},
 			existingJobs: []batchv1.Job{
 				// both backup's deletion jobs ended
-				*jobAddCondition(genBackupDeleteJob("testbackup-1970-01-01t00-01-00", "testcluster-backup-testbackup-delete-aaaa"),
+				*jobAddCondition(genBackupDeleteJob(t, "testbackup-1970-01-01t00-01-00", "testcluster-backup-testbackup-delete-aaaa"),
 					batchv1.JobComplete, corev1.ConditionTrue, time.Unix(100, 0).UTC(), "job completed"),
-				*jobAddCondition(genBackupDeleteJob("testbackup-1970-01-01t00-02-00", "testcluster-backup-testbackup-delete-bbbb"),
+				*jobAddCondition(genBackupDeleteJob(t, "testbackup-1970-01-01t00-02-00", "testcluster-backup-testbackup-delete-bbbb"),
 					batchv1.JobComplete, corev1.ConditionTrue, time.Unix(160, 0).UTC(), "job completed"),
 			},
 			expectedBackups: []kubermaticv1.BackupStatus{
@@ -1167,7 +1218,7 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 			existingJobs: genJobList(maxSimultaneousDeleteJobsPerConfig+1, func(i int) batchv1.Job {
 				// 0th job is missing, the others have failed
 				i++
-				return *jobAddCondition(genBackupDeleteJob(fmt.Sprintf("testbackup-%v", i), fmt.Sprintf("testcluster-backup-%v-delete", i)),
+				return *jobAddCondition(genBackupDeleteJob(t, fmt.Sprintf("testbackup-%v", i), fmt.Sprintf("testcluster-backup-%v-delete", i)),
 					batchv1.JobFailed, corev1.ConditionTrue, time.Unix(100+int64(i)*60, 0).UTC(), "job timed out")
 			}),
 			expectedBackups: genBackupStatusList(maxSimultaneousDeleteJobsPerConfig+2, func(i int) kubermaticv1.BackupStatus {
@@ -1209,19 +1260,20 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 			for _, j := range tc.existingJobs {
 				initObjs = append(initObjs, j.DeepCopy())
 			}
+			deleteContainer := genDeleteContainer()
 			reconciler := Reconciler{
-				log:             kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-				Client:          ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(initObjs...).Build(),
-				scheme:          scheme.Scheme,
-				deleteContainer: genDeleteContainer(),
-				recorder:        record.NewFakeRecorder(10),
-				clock:           clock,
+				log:      kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
+				Client:   ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(initObjs...).Build(),
+				scheme:   scheme.Scheme,
+				recorder: record.NewFakeRecorder(10),
+				clock:    clock,
 				seedGetter: func() (*kubermaticv1.Seed, error) {
 					return test.GenTestSeed(), nil
 				},
+				configGetter: getConfigGetter(t, nil, nil, deleteContainer),
 			}
 
-			reconcileAfter, err := reconciler.updateRunningBackupDeleteJobs(context.Background(), backupConfig, cluster, nil)
+			reconcileAfter, err := reconciler.updateRunningBackupDeleteJobs(context.Background(), backupConfig, cluster, nil, deleteContainer)
 			if err != nil {
 				t.Fatalf("ensurePendingBackupIsScheduled returned an error: %v", err)
 			}
@@ -1310,13 +1362,13 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 			currentTime: time.Unix(145, 0).Add(succeededJobRetentionTime).UTC(),
 			existingJobs: []batchv1.Job{
 				// corresponding backup and delete jobs all completed successfully
-				*jobAddCondition(genBackupJob("testbackup-1970-01-01t00-01-00", "testcluster-backup-testbackup-create-aaaa"),
+				*jobAddCondition(genBackupJob(t, "testbackup-1970-01-01t00-01-00", "testcluster-backup-testbackup-create-aaaa"),
 					batchv1.JobComplete, corev1.ConditionTrue, time.Unix(90, 0).UTC(), "job completed"),
-				*jobAddCondition(genBackupJob("testbackup-1970-01-01t00-02-00", "testcluster-backup-testbackup-create-bbbb"),
+				*jobAddCondition(genBackupJob(t, "testbackup-1970-01-01t00-02-00", "testcluster-backup-testbackup-create-bbbb"),
 					batchv1.JobComplete, corev1.ConditionTrue, time.Unix(150, 0).UTC(), "job failed"),
-				*jobAddCondition(genBackupDeleteJob("testbackup-1970-01-01t00-01-00", "testcluster-backup-testbackup-delete-cccc"),
+				*jobAddCondition(genBackupDeleteJob(t, "testbackup-1970-01-01t00-01-00", "testcluster-backup-testbackup-delete-cccc"),
 					batchv1.JobComplete, corev1.ConditionTrue, time.Unix(90, 0).UTC(), "job completed"),
-				*jobAddCondition(genBackupDeleteJob("testbackup-1970-01-01t00-02-00", "testcluster-backup-testbackup-delete-dddd"),
+				*jobAddCondition(genBackupDeleteJob(t, "testbackup-1970-01-01t00-02-00", "testcluster-backup-testbackup-delete-dddd"),
 					batchv1.JobComplete, corev1.ConditionTrue, time.Unix(150, 0).UTC(), "job failed"),
 			},
 			// result: 1st and 3rd backup's backup/delete jobs deleted, 3rd backup's status entry also deleted b/c its backup and delete jobs are both deleted
@@ -1353,9 +1405,9 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 				},
 			},
 			expectedJobs: []batchv1.Job{
-				*jobAddCondition(genBackupJob("testbackup-1970-01-01t00-02-00", "testcluster-backup-testbackup-create-bbbb"),
+				*jobAddCondition(genBackupJob(t, "testbackup-1970-01-01t00-02-00", "testcluster-backup-testbackup-create-bbbb"),
 					batchv1.JobComplete, corev1.ConditionTrue, time.Unix(150, 0).UTC(), "job failed"),
-				*jobAddCondition(genBackupDeleteJob("testbackup-1970-01-01t00-02-00", "testcluster-backup-testbackup-delete-dddd"),
+				*jobAddCondition(genBackupDeleteJob(t, "testbackup-1970-01-01t00-02-00", "testcluster-backup-testbackup-delete-dddd"),
 					batchv1.JobComplete, corev1.ConditionTrue, time.Unix(150, 0).UTC(), "job failed"),
 			},
 			// reconcile when the 2nd & 4th backup's retention times (for the backup and delete job, respectively) run out
@@ -1387,9 +1439,9 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 			currentTime: time.Unix(145, 0).Add(failedJobRetentionTime).UTC(),
 			existingJobs: []batchv1.Job{
 				// corresponding jobs have failed
-				*jobAddCondition(genBackupJob("testbackup-1970-01-01t00-01-00", "testcluster-backup-testbackup-create-aaaa"),
+				*jobAddCondition(genBackupJob(t, "testbackup-1970-01-01t00-01-00", "testcluster-backup-testbackup-create-aaaa"),
 					batchv1.JobFailed, corev1.ConditionTrue, time.Unix(90, 0).UTC(), "job failed"),
-				*jobAddCondition(genBackupJob("testbackup-1970-01-01t00-02-00", "testcluster-backup-testbackup-create-bbbb"),
+				*jobAddCondition(genBackupJob(t, "testbackup-1970-01-01t00-02-00", "testcluster-backup-testbackup-create-bbbb"),
 					batchv1.JobFailed, corev1.ConditionTrue, time.Unix(150, 0).UTC(), "job failed"),
 			},
 			expectedBackups: []kubermaticv1.BackupStatus{
@@ -1415,7 +1467,7 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 			},
 			expectedJobs: []batchv1.Job{
 				// job that was past the successful job retention time is deleted
-				*jobAddCondition(genBackupJob("testbackup-1970-01-01t00-02-00", "testcluster-backup-testbackup-create-bbbb"),
+				*jobAddCondition(genBackupJob(t, "testbackup-1970-01-01t00-02-00", "testcluster-backup-testbackup-create-bbbb"),
 					batchv1.JobFailed, corev1.ConditionTrue, time.Unix(150, 0).UTC(), "job failed"),
 			},
 			expectedReconcile: &reconcile.Result{RequeueAfter: 5 * time.Second},
@@ -1457,9 +1509,9 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 			currentTime: time.Unix(120, 0).Add(succeededJobRetentionTime).UTC(),
 			existingJobs: []batchv1.Job{
 				// first backup's deletion job succeeded, second one's is still running
-				*jobAddCondition(genBackupDeleteJob("testbackup-1970-01-01t00-01-00", "testcluster-backup-testbackup-delete-aaaa"),
+				*jobAddCondition(genBackupDeleteJob(t, "testbackup-1970-01-01t00-01-00", "testcluster-backup-testbackup-delete-aaaa"),
 					batchv1.JobComplete, corev1.ConditionTrue, time.Unix(100, 0).UTC(), "job completed"),
-				*genBackupDeleteJob("testbackup-1970-01-01t00-03-00", "testcluster-backup-testbackup-delete-bbbb"),
+				*genBackupDeleteJob(t, "testbackup-1970-01-01t00-03-00", "testcluster-backup-testbackup-delete-bbbb"),
 			},
 			expectedBackups: []kubermaticv1.BackupStatus{
 				// result: 1st backup's job and status entry are deleted, other two unchanged
@@ -1481,7 +1533,7 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 				},
 			},
 			expectedJobs: []batchv1.Job{
-				*genBackupDeleteJob("testbackup-1970-01-01t00-03-00", "testcluster-backup-testbackup-delete-bbbb"),
+				*genBackupDeleteJob(t, "testbackup-1970-01-01t00-03-00", "testcluster-backup-testbackup-delete-bbbb"),
 			},
 			// reconcile when the 2nd backup's retention time runs out
 			expectedReconcile: &reconcile.Result{RequeueAfter: 90 * time.Second},
@@ -1505,16 +1557,17 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 			for _, j := range tc.existingJobs {
 				initObjs = append(initObjs, j.DeepCopy())
 			}
+			deleteContainer := genDeleteContainer()
 			reconciler := Reconciler{
-				log:             kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-				Client:          ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(initObjs...).Build(),
-				scheme:          scheme.Scheme,
-				deleteContainer: genDeleteContainer(),
-				recorder:        record.NewFakeRecorder(10),
-				clock:           clock,
+				log:      kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
+				Client:   ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(initObjs...).Build(),
+				scheme:   scheme.Scheme,
+				recorder: record.NewFakeRecorder(10),
+				clock:    clock,
 				seedGetter: func() (*kubermaticv1.Seed, error) {
 					return test.GenTestSeed(), nil
 				},
+				configGetter: getConfigGetter(t, nil, nil, deleteContainer),
 			}
 
 			reconcileAfter, err := reconciler.deleteFinishedBackupJobs(context.Background(), reconciler.log, backupConfig, cluster)
@@ -1576,7 +1629,7 @@ func TestFinalization(t *testing.T) {
 			},
 			currentTime: time.Unix(90, 0).Add(succeededJobRetentionTime).UTC(),
 			existingJobs: []batchv1.Job{
-				*jobAddCondition(genBackupJob("backup-done-delete-not-started", "testcluster-backup-oneshot-create-xxxx"),
+				*jobAddCondition(genBackupJob(t, "backup-done-delete-not-started", "testcluster-backup-oneshot-create-xxxx"),
 					batchv1.JobComplete, corev1.ConditionTrue, time.Unix(150, 0).UTC(), "job succeeded"),
 			},
 			expectedBackups: []kubermaticv1.BackupStatus{
@@ -1593,7 +1646,7 @@ func TestFinalization(t *testing.T) {
 			},
 			expectedJobs: []batchv1.Job{
 				// completed backup job deleted, delete job started
-				*genBackupDeleteJob("oneshot", "testcluster-backup-oneshot-delete-xxxx"),
+				*genBackupDeleteJob(t, "oneshot", "testcluster-backup-oneshot-delete-xxxx"),
 			},
 			expectedReconcile: &reconcile.Result{RequeueAfter: assumedJobRuntime},
 			expectedFinalizer: true,
@@ -1617,9 +1670,9 @@ func TestFinalization(t *testing.T) {
 			},
 			currentTime: time.Unix(90, 0).Add(succeededJobRetentionTime).UTC(),
 			existingJobs: []batchv1.Job{
-				*jobAddCondition(genBackupJob("oneshot", "testcluster-backup-oneshot-create-xxxx"),
+				*jobAddCondition(genBackupJob(t, "oneshot", "testcluster-backup-oneshot-create-xxxx"),
 					batchv1.JobComplete, corev1.ConditionTrue, time.Unix(150, 0).UTC(), "job succeeded"),
-				*jobAddCondition(genBackupDeleteJob("oneshot", "testcluster-backup-oneshot-delete-xxxx"),
+				*jobAddCondition(genBackupDeleteJob(t, "oneshot", "testcluster-backup-oneshot-delete-xxxx"),
 					batchv1.JobComplete, corev1.ConditionTrue, time.Unix(150, 0).UTC(), "job succeeded"),
 			},
 			expectedBackups:   nil,
@@ -1677,14 +1730,14 @@ func TestFinalization(t *testing.T) {
 			},
 			currentTime: time.Unix(90, 0).Add(succeededJobRetentionTime).UTC(),
 			existingJobs: []batchv1.Job{
-				*genBackupJob("backup-running", "testcluster-backup-backup-running-create-xxxx"),
-				*jobAddCondition(genBackupJob("backup-done-delete-not-started", "testcluster-backup-backup-done-delete-not-started-create-xxxx"),
+				*genBackupJob(t, "backup-running", "testcluster-backup-backup-running-create-xxxx"),
+				*jobAddCondition(genBackupJob(t, "backup-done-delete-not-started", "testcluster-backup-backup-done-delete-not-started-create-xxxx"),
 					batchv1.JobComplete, corev1.ConditionTrue, time.Unix(150, 0).UTC(), "job succeeded"),
-				*jobAddCondition(genBackupJob("backup-failed-delete-not-started", "testcluster-backup-backup-failed-delete-not-started-create-xxxx"),
+				*jobAddCondition(genBackupJob(t, "backup-failed-delete-not-started", "testcluster-backup-backup-failed-delete-not-started-create-xxxx"),
 					batchv1.JobFailed, corev1.ConditionTrue, time.Unix(150, 0).UTC(), "job failed"),
-				*jobAddCondition(genBackupJob("backup-and-delete-done", "testcluster-backup-and-delete-done-testbackup-create-xxxx"),
+				*jobAddCondition(genBackupJob(t, "backup-and-delete-done", "testcluster-backup-and-delete-done-testbackup-create-xxxx"),
 					batchv1.JobComplete, corev1.ConditionTrue, time.Unix(150, 0).UTC(), "job succeeded"),
-				*jobAddCondition(genBackupDeleteJob("backup-and-delete-done", "testcluster-backup-and-delete-done-testbackup-delete-xxxx"),
+				*jobAddCondition(genBackupDeleteJob(t, "backup-and-delete-done", "testcluster-backup-and-delete-done-testbackup-delete-xxxx"),
 					batchv1.JobComplete, corev1.ConditionTrue, time.Unix(150, 0).UTC(), "job succeeded"),
 			},
 			expectedBackups: []kubermaticv1.BackupStatus{
@@ -1718,9 +1771,9 @@ func TestFinalization(t *testing.T) {
 			},
 			expectedJobs: []batchv1.Job{
 				// all completed & failed jobs deleted, previously non-started delete jobs started
-				*genBackupDeleteJob("backup-done-delete-not-started", "testcluster-backup-backup-done-delete-not-started-delete-xxxx"),
-				*genBackupDeleteJob("backup-failed-delete-not-started", "testcluster-backup-backup-failed-delete-not-started-delete-xxxx"),
-				*genBackupJob("backup-running", "testcluster-backup-backup-running-create-xxxx"),
+				*genBackupDeleteJob(t, "backup-done-delete-not-started", "testcluster-backup-backup-done-delete-not-started-delete-xxxx"),
+				*genBackupDeleteJob(t, "backup-failed-delete-not-started", "testcluster-backup-backup-failed-delete-not-started-delete-xxxx"),
+				*genBackupJob(t, "backup-running", "testcluster-backup-backup-running-create-xxxx"),
 			},
 			expectedReconcile: &reconcile.Result{RequeueAfter: assumedJobRuntime},
 			expectedFinalizer: true,
@@ -1734,7 +1787,7 @@ func TestFinalization(t *testing.T) {
 			existingJobs:            []batchv1.Job{},
 			expectedBackups:         nil,
 			expectedJobs: []batchv1.Job{
-				*genCleanupJob("testcluster-backup-testbackup-cleanup"),
+				*genCleanupJob(t, "testcluster-backup-testbackup-cleanup"),
 			},
 			expectedReconcile: &reconcile.Result{RequeueAfter: 30 * time.Second},
 			expectedFinalizer: true,
@@ -1747,11 +1800,11 @@ func TestFinalization(t *testing.T) {
 			existingCleanupRunningFlag: true,
 			currentTime:                time.Unix(60, 0).UTC(),
 			existingJobs: []batchv1.Job{
-				*genCleanupJob("testcluster-backup-testbackup-cleanup"),
+				*genCleanupJob(t, "testcluster-backup-testbackup-cleanup"),
 			},
 			expectedBackups: nil,
 			expectedJobs: []batchv1.Job{
-				*genCleanupJob("testcluster-backup-testbackup-cleanup"),
+				*genCleanupJob(t, "testcluster-backup-testbackup-cleanup"),
 			},
 			expectedReconcile: &reconcile.Result{RequeueAfter: 30 * time.Second},
 			expectedFinalizer: true,
@@ -1764,12 +1817,12 @@ func TestFinalization(t *testing.T) {
 			existingCleanupRunningFlag: true,
 			currentTime:                time.Unix(60, 0).UTC(),
 			existingJobs: []batchv1.Job{
-				*jobAddCondition(genCleanupJob("testcluster-backup-testbackup-cleanup"),
+				*jobAddCondition(genCleanupJob(t, "testcluster-backup-testbackup-cleanup"),
 					batchv1.JobFailed, corev1.ConditionTrue, time.Unix(150, 0).UTC(), "cleanup job failed"),
 			},
 			expectedBackups: nil,
 			expectedJobs: []batchv1.Job{
-				*genCleanupJob("testcluster-backup-testbackup-cleanup"),
+				*genCleanupJob(t, "testcluster-backup-testbackup-cleanup"),
 			},
 			expectedReconcile: &reconcile.Result{RequeueAfter: 30 * time.Second},
 			expectedFinalizer: true,
@@ -1782,7 +1835,7 @@ func TestFinalization(t *testing.T) {
 			existingCleanupRunningFlag: true,
 			currentTime:                time.Unix(60, 0).UTC(),
 			existingJobs: []batchv1.Job{
-				*jobAddCondition(genCleanupJob("testcluster-backup-testbackup-cleanup"),
+				*jobAddCondition(genCleanupJob(t, "testcluster-backup-testbackup-cleanup"),
 					batchv1.JobComplete, corev1.ConditionTrue, time.Unix(150, 0).UTC(), "cleanup job completed"),
 			},
 			expectedBackups:   nil,
@@ -1820,22 +1873,26 @@ func TestFinalization(t *testing.T) {
 			for _, j := range tc.existingJobs {
 				initObjs = append(initObjs, j.DeepCopy())
 			}
+
+			var cleanupContainer *corev1.Container
+			storeContainer := genStoreContainer()
+			deleteContainer := genDeleteContainer()
+			if tc.cleanupContainerDefined {
+				cleanupContainer = genCleanupContainer()
+				deleteContainer = nil
+			}
+
 			reconciler := Reconciler{
-				log:             kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-				Client:          ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(initObjs...).Build(),
-				scheme:          scheme.Scheme,
-				storeContainer:  genStoreContainer(),
-				deleteContainer: genDeleteContainer(),
-				recorder:        record.NewFakeRecorder(10),
-				clock:           clock,
-				caBundle:        certificates.NewFakeCABundle(),
+				log:      kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
+				Client:   ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(initObjs...).Build(),
+				scheme:   scheme.Scheme,
+				recorder: record.NewFakeRecorder(10),
+				clock:    clock,
+				caBundle: certificates.NewFakeCABundle(),
 				seedGetter: func() (*kubermaticv1.Seed, error) {
 					return test.GenTestSeed(), nil
 				},
-			}
-			if tc.cleanupContainerDefined {
-				reconciler.cleanupContainer = genCleanupContainer()
-				reconciler.deleteContainer = nil
+				configGetter: getConfigGetter(t, storeContainer, cleanupContainer, deleteContainer),
 			}
 
 			ctx := context.Background()
@@ -1953,19 +2010,20 @@ func TestMultipleBackupDestination(t *testing.T) {
 				genClusterRootCaSecret(),
 			}
 
+			storeContainer := genStoreContainer()
+			deleteContainer := genDeleteContainer()
 			reconciler := Reconciler{
-				log:             kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-				Client:          ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(initObjs...).Build(),
-				scheme:          scheme.Scheme,
-				storeContainer:  genStoreContainer(),
-				deleteContainer: genDeleteContainer(),
-				recorder:        record.NewFakeRecorder(10),
-				clock:           clock.NewFakeClock(time.Unix(60, 0).UTC()),
-				caBundle:        certificates.NewFakeCABundle(),
+				log:      kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
+				Client:   ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(initObjs...).Build(),
+				scheme:   scheme.Scheme,
+				recorder: record.NewFakeRecorder(10),
+				clock:    clock.NewFakeClock(time.Unix(60, 0).UTC()),
+				caBundle: certificates.NewFakeCABundle(),
 				seedGetter: func() (*kubermaticv1.Seed, error) {
 					return test.GenTestSeed(addSeedDestinations), nil
 				},
 				randStringGenerator: constRandStringGenerator("bob"),
+				configGetter:        getConfigGetter(t, storeContainer, nil, deleteContainer),
 			}
 
 			ctx := context.Background()

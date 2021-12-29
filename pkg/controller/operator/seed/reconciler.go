@@ -429,7 +429,6 @@ func (r *Reconciler) reconcileConfigMaps(ctx context.Context, cfg *kubermaticv1.
 	log.Debug("reconciling ConfigMaps")
 
 	creators := []reconciling.NamedConfigMapCreatorGetter{
-		kubermaticseed.BackupContainersConfigMapCreator(cfg, seed, log),
 		kubermaticseed.CABundleConfigMapCreator(caBundle),
 	}
 

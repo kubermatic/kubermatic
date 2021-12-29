@@ -18,12 +18,8 @@ package kubermatic
 
 import (
 	"fmt"
-	"strings"
-
-	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -32,11 +28,7 @@ import (
 
 const (
 	serviceAccountName             = "kubermatic-seed"
-	backupContainersConfigMapName  = "backup-containers"
 	restoreS3SettingsConfigMapName = "s3-settings"
-	storeContainerKey              = "store-container.yaml"
-	cleanupContainerKey            = "cleanup-container.yaml"
-	deleteContainerKey             = "delete-container.yaml"
 	s3EndpointKey                  = "ENDPOINT"
 	s3BucketNameKey                = "BUCKET_NAME"
 	caBundleConfigMapName          = "ca-bundle"
@@ -74,36 +66,6 @@ func ClusterRoleBindingCreator(cfg *kubermaticv1.KubermaticConfiguration, seed *
 			}
 
 			return crb, nil
-		}
-	}
-}
-
-func BackupContainersConfigMapCreator(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, log *zap.SugaredLogger) reconciling.NamedConfigMapCreatorGetter {
-	return func() (string, reconciling.ConfigMapCreator) {
-		return backupContainersConfigMapName, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {
-			if c.Data == nil {
-				c.Data = make(map[string]string)
-			}
-
-			c.Data[storeContainerKey] = cfg.Spec.SeedController.BackupStoreContainer
-			c.Data[cleanupContainerKey] = cfg.Spec.SeedController.BackupCleanupContainer
-
-			if cfg.Spec.SeedController.BackupStoreContainer == strings.TrimSpace(defaults.DefaultBackupStoreContainer) &&
-				(seed.Spec.BackupRestore != nil || seed.Spec.EtcdBackupRestore != nil) {
-				c.Data[storeContainerKey] = strings.TrimSpace(defaults.DefaultNewBackupStoreContainer)
-				log.Debugw("Defaulting field", "field", "seedController.backupRestoreContainer")
-			}
-
-			if seed.Spec.BackupRestore != nil || seed.Spec.EtcdBackupRestore != nil {
-				if cfg.Spec.SeedController.BackupDeleteContainer == "" {
-					cfg.Spec.SeedController.BackupDeleteContainer = strings.TrimSpace(defaults.DefaultNewBackupDeleteContainer)
-					log.Debugw("Defaulting field", "field", "seedController.backupDeleteContainer")
-				}
-
-				c.Data[deleteContainerKey] = cfg.Spec.SeedController.BackupDeleteContainer
-			}
-
-			return c, nil
 		}
 	}
 }

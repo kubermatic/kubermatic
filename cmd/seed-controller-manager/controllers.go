@@ -17,9 +17,7 @@ limitations under the License.
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"io/ioutil"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -41,9 +39,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/seedresourcesuptodatecondition"
 	updatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/update"
 	"k8c.io/kubermatic/v2/pkg/features"
-
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
 // AllControllers stores the list of all controllers that we want to run,
@@ -154,55 +149,21 @@ func createEtcdBackupController(ctrlCtx *controllerContext) error {
 	if !ctrlCtx.runOptions.enableEtcdBackupRestoreController {
 		return nil
 	}
-	storeContainer, err := getContainerFromFile(ctrlCtx.runOptions.backupContainerFile)
-	if err != nil {
-		return err
-	}
-	var deleteContainer *corev1.Container
-	if ctrlCtx.runOptions.backupDeleteContainerFile != "" {
-		deleteContainer, err = getContainerFromFile(ctrlCtx.runOptions.backupDeleteContainerFile)
-		if err != nil {
-			return err
-		}
-	}
-	var cleanupContainer *corev1.Container
-	if ctrlCtx.runOptions.cleanupContainerFile != "" {
-		cleanupContainer, err = getContainerFromFile(ctrlCtx.runOptions.cleanupContainerFile)
-		if err != nil {
-			return err
-		}
-	}
+
 	return etcdbackupcontroller.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.log,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
-		storeContainer,
-		deleteContainer,
-		cleanupContainer,
 		ctrlCtx.runOptions.backupContainerImage,
 		ctrlCtx.versions,
 		ctrlCtx.runOptions.caBundle,
 		ctrlCtx.seedGetter,
+		ctrlCtx.configGetter,
 	)
 }
 
 func createBackupController(ctrlCtx *controllerContext) error {
-	storeContainer, err := getContainerFromFile(ctrlCtx.runOptions.backupContainerFile)
-	if err != nil {
-		return err
-	}
-	var cleanupContainer *corev1.Container
-	if !ctrlCtx.runOptions.enableEtcdBackupRestoreController {
-		cleanupContainer, err = getContainerFromFile(ctrlCtx.runOptions.cleanupContainerFile)
-	} else {
-		// new backup controller is enabled, this one will only be run to delete any existing backup cronjob.
-		// cleanupContainer not needed, just pass an empty dummy
-		cleanupContainer = &corev1.Container{}
-	}
-	if err != nil {
-		return err
-	}
 	backupInterval, err := time.ParseDuration(ctrlCtx.runOptions.backupInterval)
 	if err != nil {
 		return fmt.Errorf("failed to parse %s as duration: %w", ctrlCtx.runOptions.backupInterval, err)
@@ -212,13 +173,12 @@ func createBackupController(ctrlCtx *controllerContext) error {
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
-		*storeContainer,
-		*cleanupContainer,
 		backupInterval,
 		ctrlCtx.runOptions.backupContainerImage,
 		ctrlCtx.versions,
 		ctrlCtx.runOptions.enableEtcdBackupRestoreController,
 		ctrlCtx.runOptions.caBundle,
+		ctrlCtx.configGetter,
 	)
 }
 
@@ -255,30 +215,6 @@ func createMonitoringController(ctrlCtx *controllerContext) error {
 		},
 		ctrlCtx.versions,
 	)
-}
-
-func getContainerFromFile(path string) (*corev1.Container, error) {
-	fileContents, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-	container := &corev1.Container{}
-	manifestReader := bytes.NewReader(fileContents)
-	manifestDecoder := yaml.NewYAMLToJSONDecoder(manifestReader)
-	if err := manifestDecoder.Decode(container); err != nil {
-		return nil, err
-	}
-
-	// Just because its a valid corev1.Container does not mean
-	// the APIServer will accept it, thus we do some additional
-	// checks
-	if container.Name == "" {
-		return nil, fmt.Errorf("container must have a name")
-	}
-	if container.Image == "" {
-		return nil, fmt.Errorf("container must have an image")
-	}
-	return container, nil
 }
 
 func createUpdateController(ctrlCtx *controllerContext) error {

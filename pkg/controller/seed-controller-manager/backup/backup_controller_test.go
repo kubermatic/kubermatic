@@ -17,15 +17,18 @@ limitations under the License.
 package backup
 
 import (
+	"bytes"
 	"context"
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/util/yaml"
 
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -39,13 +42,28 @@ import (
 )
 
 var (
-	testStoreContainer = corev1.Container{Name: "kubermatic-store",
-		Image:        "busybox",
-		VolumeMounts: []corev1.VolumeMount{{Name: SharedVolumeName, MountPath: "/etcd-backups"}}}
-	testCleanupContainer = corev1.Container{Name: "kubermatic-cleanup",
+	testStoreContainer = corev1.Container{
+		Name:  "kubermatic-store",
+		Image: "busybox",
+		VolumeMounts: []corev1.VolumeMount{
+			{Name: SharedVolumeName, MountPath: "/etcd-backups"},
+		},
+	}
+
+	testCleanupContainer = corev1.Container{
+		Name:  "kubermatic-cleanup",
 		Image: "busybox",
 	}
 )
+
+func encodeContainerAsYAML(t *testing.T, c *corev1.Container) string {
+	var buf bytes.Buffer
+	if err := yaml.Encode(c, &buf); err != nil {
+		t.Fatalf("failed to encode container as YAML: %v", err)
+	}
+
+	return buf.String()
+}
 
 func TestEnsureBackupCronJob(t *testing.T) {
 	cluster := &kubermaticv1.Cluster{
@@ -84,15 +102,26 @@ func TestEnsureBackupCronJob(t *testing.T) {
 		},
 	}
 
+	configGetter, err := provider.StaticKubermaticConfigurationGetterFactory(&kubermaticv1.KubermaticConfiguration{
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			SeedController: kubermaticv1.KubermaticSeedControllerConfiguration{
+				BackupStoreContainer:   encodeContainerAsYAML(t, &testStoreContainer),
+				BackupCleanupContainer: encodeContainerAsYAML(t, &testCleanupContainer),
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("failed to create config getter: %v", err)
+	}
+
 	ctx := context.Background()
 	reconciler := &Reconciler{
 		log:                  kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-		storeContainer:       testStoreContainer,
-		cleanupContainer:     testCleanupContainer,
 		backupContainerImage: DefaultBackupContainerImage,
 		Client:               ctrlruntimefakeclient.NewClientBuilder().WithObjects(caSecret, cluster).Build(),
 		scheme:               scheme.Scheme,
 		caBundle:             certificates.NewFakeCABundle(),
+		configGetter:         configGetter,
 	}
 
 	if _, err := reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{Name: cluster.Name}}); err != nil {
@@ -169,11 +198,8 @@ func TestEnsureBackupCronJob(t *testing.T) {
 }
 
 func TestCleanupJobSpec(t *testing.T) {
-	reconciler := Reconciler{
-		cleanupContainer: testCleanupContainer,
-	}
-
-	cleanupJob := reconciler.cleanupJob(&kubermaticv1.Cluster{ObjectMeta: metav1.ObjectMeta{Name: "test-cluster"}})
+	reconciler := Reconciler{}
+	cleanupJob := reconciler.cleanupJob(&kubermaticv1.Cluster{ObjectMeta: metav1.ObjectMeta{Name: "test-cluster"}}, &testCleanupContainer)
 
 	if cleanupJob.Namespace != metav1.NamespaceSystem {
 		t.Errorf("expected cleanup jobs Namespace to be %q but was %q", metav1.NamespaceSystem, cleanupJob.Namespace)
