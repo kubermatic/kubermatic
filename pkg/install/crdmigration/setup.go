@@ -24,13 +24,14 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
+	kubermaticseed "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-seed"
 )
 
 func InstallCRDs(ctx context.Context, logger logrus.FieldLogger, opt *Options) error {
 	logger.Info("Installing new CRDs…")
 
 	masterStack := kubermaticmaster.MasterStack{}
-	seedStack := kubermaticmaster.MasterStack{}
+	seedStack := kubermaticseed.SeedStack{}
 	crdOptions := stack.DeployOptions{
 		KubermaticCRDDirectory: opt.CRDDirectory,
 	}
