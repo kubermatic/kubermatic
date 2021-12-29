@@ -19,42 +19,33 @@ package crdmigration
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 
 	"github.com/sirupsen/logrus"
 
-	"k8c.io/kubermatic/v2/pkg/features"
-	"k8c.io/kubermatic/v2/pkg/install/util"
+	"k8c.io/kubermatic/v2/pkg/install/stack"
+	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
 )
 
 func InstallCRDs(ctx context.Context, logger logrus.FieldLogger, opt *Options) error {
 	logger.Info("Installing new CRDs…")
 
-	hasOSM := opt.KubermaticConfiguration.Spec.FeatureGates.Has(features.OperatingSystemManager)
-	osmCRDDirectory := filepath.Join(opt.CRDDirectory, "k8c.io", "operatingsystemmanager")
+	masterStack := kubermaticmaster.MasterStack{}
+	seedStack := kubermaticmaster.MasterStack{}
+	crdOptions := stack.DeployOptions{
+		KubermaticCRDDirectory: opt.CRDDirectory,
+	}
+
 	masterLogger := logger.WithField("master", true)
 
 	// process master cluster
-	if err := util.DeployCRDs(ctx, opt.MasterClient, masterLogger, opt.CRDDirectory); err != nil {
+	if err := masterStack.InstallKubermaticCRDs(ctx, opt.MasterClient, masterLogger, crdOptions); err != nil {
 		return fmt.Errorf("processing the master cluster failed: %w", err)
-	}
-
-	if hasOSM {
-		if err := util.DeployCRDs(ctx, opt.MasterClient, masterLogger, osmCRDDirectory); err != nil {
-			return fmt.Errorf("processing the master cluster failed: %w", err)
-		}
 	}
 
 	// process seed clusters
 	for seedName, seedClient := range opt.SeedClients {
-		if err := util.DeployCRDs(ctx, seedClient, logger.WithField("seed", seedName), opt.CRDDirectory); err != nil {
+		if err := seedStack.InstallKubermaticCRDs(ctx, seedClient, logger.WithField("seed", seedName), crdOptions); err != nil {
 			return fmt.Errorf("processing the seed cluster failed: %w", err)
-		}
-
-		if hasOSM {
-			if err := util.DeployCRDs(ctx, seedClient, logger.WithField("seed", seedName), osmCRDDirectory); err != nil {
-				return fmt.Errorf("processing the seed cluster failed: %w", err)
-			}
 		}
 	}
 

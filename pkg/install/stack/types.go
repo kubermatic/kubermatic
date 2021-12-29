@@ -30,14 +30,29 @@ import (
 )
 
 type DeployOptions struct {
-	HelmClient                         helm.Client
-	HelmValues                         *yamled.Document
-	KubeClient                         ctrlruntimeclient.Client
-	StorageClassProvider               string
-	KubermaticConfiguration            *operatorv1alpha1.KubermaticConfiguration
-	RawKubermaticConfiguration         *unstructured.Unstructured
-	ForceHelmReleaseUpgrade            bool
-	ChartsDirectory                    string
+	HelmClient                 helm.Client
+	HelmValues                 *yamled.Document
+	KubeClient                 ctrlruntimeclient.Client
+	StorageClassProvider       string
+	KubermaticConfiguration    *operatorv1alpha1.KubermaticConfiguration
+	RawKubermaticConfiguration *unstructured.Unstructured
+	ForceHelmReleaseUpgrade    bool
+
+	// ChartsDirectory is the path to the directory where all Helm
+	// charts are stored. This is the primary option to influence
+	// from where to load charts and the KKP CRDs (which are part
+	// of the kubermatic-operator chart).
+	ChartsDirectory string
+
+	// KubermaticCRDDirectory is used only during the CRD migration and should
+	// not be used by regular install commands. The migration currently needs
+	// to point to a non-standard CRD directory that the regular installer
+	// logic would not find.
+	// If this field is set, it has precedence over ChartsDirectory, but affects
+	// only the KKP CRDs. cert-manager CRDs will for example always use the
+	// ChartsDirectory instead.
+	KubermaticCRDDirectory string
+
 	Logger                             *logrus.Entry
 	EnableCertManagerV2Migration       bool
 	EnableCertManagerUpstreamMigration bool

@@ -60,7 +60,15 @@ func (*SeedStack) Name() string {
 	return "KKP seed stack"
 }
 
-func (*SeedStack) Deploy(ctx context.Context, opt stack.DeployOptions) error {
+func (s *SeedStack) InstallKubermaticCRDs(ctx context.Context, client ctrlruntimeclient.Client, logger logrus.FieldLogger, opt stack.DeployOptions) error {
+	// CRDs on seed clusters are currently identical to the master, even though
+	// we do not use all CRs on all clusters
+	masterStack := kubermaticmaster.MasterStack{}
+
+	return masterStack.InstallKubermaticCRDs(ctx, client, logger, opt)
+}
+
+func (s *SeedStack) Deploy(ctx context.Context, opt stack.DeployOptions) error {
 	if err := deployStorageClass(ctx, opt.Logger, opt.KubeClient, opt); err != nil {
 		return fmt.Errorf("failed to deploy StorageClass: %v", err)
 	}
@@ -73,11 +81,28 @@ func (*SeedStack) Deploy(ctx context.Context, opt stack.DeployOptions) error {
 		return fmt.Errorf("failed to deploy S3 Exporter: %v", err)
 	}
 
+	if err := s.deployKubermaticCRDs(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
+		return fmt.Errorf("failed to deploy Kubermatic CRDs: %v", err)
+	}
+
 	if err := migrateUserClustersData(ctx, opt.Logger, opt.KubeClient, opt); err != nil {
 		return fmt.Errorf("failed to migrate data in user-clusters: %w", err)
 	}
 
 	showDNSSettings(ctx, opt.Logger, opt.KubeClient, opt)
+
+	return nil
+}
+
+func (s *SeedStack) deployKubermaticCRDs(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
+	logger.Info("📦 Deploying KKP Custom Resource Definitions…")
+	sublogger := log.Prefix(logger, "   ")
+
+	if err := s.InstallKubermaticCRDs(ctx, kubeClient, sublogger, opt); err != nil {
+		return fmt.Errorf("failed to deploy CRDs: %v", err)
+	}
+
+	logger.Info("✅ Success.")
 
 	return nil
 }
