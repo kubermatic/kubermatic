@@ -417,6 +417,7 @@ rules:
     resources: ["challenges", "orders"]
     verbs: ["create", "delete", "deletecollection", "patch", "update"]
 
+---
 # Permission to approve CertificateRequests referencing cert-manager.io Issuers and ClusterIssuers
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
