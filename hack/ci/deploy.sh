@@ -130,6 +130,7 @@ kubermatic)
       --storageclass copy-default \
       --config "$KUBERMATIC_CONFIG" \
       --helm-values "$VALUES_FILE" \
+      --migrate-upstream-cert-manager \
       --force
 
     # We might have not configured IAP which results in nothing being deployed. This triggers https://github.com/helm/helm/issues/4295 and marks this as failed

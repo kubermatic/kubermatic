@@ -12,17 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-certManager:
+cert-manager:
   # Optional proxy server configuration
   # http_proxy: ""
   # https_proxy: ""
   # no_proxy: ""
 
+  fullnameOverride: cert-manager
+  nameOverride: cert-manager
+
+  startupapicheck: 
+    enabled: false
+
   controller:
     replicas: 1
     image:
-      repository: quay.io/jetstack/cert-manager-controller
-      tag: v1.5.2
       pullPolicy: IfNotPresent
     pullSecrets: []
 
@@ -51,8 +55,6 @@ certManager:
   webhook:
     replicas: 1
     image:
-      repository: quay.io/jetstack/cert-manager-webhook
-      tag: v1.5.2
       pullPolicy: IfNotPresent
 
     resources:
@@ -80,8 +82,6 @@ certManager:
   cainjector:
     replicas: 1
     image:
-      repository: quay.io/jetstack/cert-manager-cainjector
-      tag: v1.5.2
       pullPolicy: IfNotPresent
 
     resources:
@@ -105,32 +105,3 @@ certManager:
     # defaultIssuerName: ""
     # defaultIssuerKind: ""
     # defaultIssuerGroup: ""
-
-  clusterIssuers:
-    letsencrypt-prod:
-      server: https://acme-v02.api.letsencrypt.org/directory
-      # email: your@email.com <--- you HAVE TO set this
-      solver:
-        selector: {}
-        # if DNS validation is disabled, HTTP01 validation using
-        # ingresses with class=nginx will be used
-        dnsValidation:
-          enabled: false
-          route53:
-            region: ''
-            accessKeyID: ''
-            secretAccessKey: ''
-
-    letsencrypt-staging:
-      server: https://acme-staging-v02.api.letsencrypt.org/directory
-      # email: your@email.com <--- you HAVE TO set this
-      solver:
-        selector: {}
-        # if DNS validation is disabled, HTTP01 validation using
-        # ingresses with class=nginx will be used
-        dnsValidation:
-          enabled: false
-          route53:
-            region: ''
-            accessKeyID: ''
-            secretAccessKey: ''

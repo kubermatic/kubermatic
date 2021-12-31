@@ -1,4 +1,4 @@
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+# Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,21 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: v1
-kind: Service
-metadata:
-  name: cert-manager-webhook
-  labels:
-    app: cert-manager-webhook
-    app.kubernetes.io/name: cert-manager-webhook
-    app.kubernetes.io/instance: {{ .Release.Name }}
-spec:
-  type: ClusterIP
-  ports:
-  - name: https
-    port: 443
-    targetPort: {{ .Values.certManager.webhook.securePort }}
-  selector:
-    app: cert-manager-webhook
-    app.kubernetes.io/name: cert-manager-webhook
-    app.kubernetes.io/instance: {{ .Release.Name }}
+cert-manager:
+  clusterIssuers:
+    letsencrypt-prod:
+      email: dev@kubermatic.com
+
+    letsencrypt-staging:
+      email: dev@kubermatic.com
