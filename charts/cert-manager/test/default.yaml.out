@@ -1068,57 +1068,6 @@ spec:
               cpu: 100m
               memory: 30Mi
 ---
-# Source: cert-manager/templates/clusterissuer.yaml
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
----
-# Source: cert-manager/templates/clusterissuer.yaml
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: letsencrypt-prod
-spec:
-  acme:
-    server: https://acme-v02.api.letsencrypt.org/directory
-    email: dev@kubermatic.com
-    privateKeySecretRef:
-      name: letsencrypt-prod-acme-account-key
-    solvers:
-    - selector:
-        {}
-      http01:
-        ingress:
-          class: nginx
----
-# Source: cert-manager/templates/clusterissuer.yaml
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: letsencrypt-staging
-spec:
-  acme:
-    server: https://acme-staging-v02.api.letsencrypt.org/directory
-    email: dev@kubermatic.com
-    privateKeySecretRef:
-      name: letsencrypt-staging-acme-account-key
-    solvers:
-    - selector:
-        {}
-      http01:
-        ingress:
-          class: nginx
----
 # Source: cert-manager/charts/cert-manager/templates/webhook-mutating-webhook.yaml
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
