@@ -35,14 +35,17 @@ import (
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/log"
 
+	admissionv1 "k8s.io/api/admissionregistration/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
+	types "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -74,7 +77,8 @@ func deployCertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctr
 	// if a pre-2.0 version of the chart is installed, we must perform a
 	// larger migration to bring the cluster from cert-manager 0.16 to 1.x
 	// (and its CRD from v1alpha2 to v1)
-	v2 := semver.MustParse("2.0.0")
+	v2 := semver.MustParse("2.0.0")  // New CRDs - migration required
+	v21 := semver.MustParse("2.1.0") // Updated to use upstream chart - different label selectors
 
 	if release != nil && release.Version.LessThan(v2) && !chart.Version.LessThan(v2) {
 		if !opt.EnableCertManagerV2Migration {
@@ -93,6 +97,21 @@ func deployCertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctr
 		sublogger.Info("Deploying Custom Resource Definitions…")
 		if err := util.DeployCRDs(ctx, kubeClient, sublogger, filepath.Join(chartDir, "crd"), opt.KubermaticConfiguration); err != nil {
 			return fmt.Errorf("failed to deploy CRDs: %v", err)
+		}
+	}
+
+	if release != nil && release.Version.LessThan(v21) && !chart.Version.LessThan(v21) {
+		if !opt.EnableCertManagerUpstreamMigration {
+			sublogger.Warn("To upgrade cert-manager to a new version, the installer will")
+			sublogger.Warn("remove the old deployment objects before proceeding with the upgrade.")
+			sublogger.Warn("Rerun the installer with --migrate-upstream-cert-manager to enable the migration process.")
+			sublogger.Warn("Please refer to the KKP 2.19 upgrade notes for more information.")
+
+			return fmt.Errorf("user must acknowledge the migration using --migrate-upstream-cert-manager")
+		}
+
+		if err := preparePreV21CertManagerDeployment(ctx, sublogger, kubeClient, helmClient, opt, chart, release); err != nil {
+			return fmt.Errorf("failed to upgrade cert-manager: %v", err)
 		}
 	}
 
@@ -446,6 +465,117 @@ func deleteCertificate(ctx context.Context, kubeClient ctrlruntimeclient.Client,
 
 	if err := kubeClient.Delete(ctx, cert); err != nil {
 		return fmt.Errorf("failed to delete test certificate: %v", err)
+	}
+
+	return nil
+}
+
+func preparePreV21CertManagerDeployment(
+	ctx context.Context,
+	logger *logrus.Entry,
+	kubeClient ctrlruntimeclient.Client,
+	helmClient helm.Client,
+	opt stack.DeployOptions,
+	chart *helm.Chart,
+	release *helm.Release,
+) error {
+	logger.Infof("%s: %s detected, performing upgrade to %s…", release.Name, release.Version.String(), chart.Version.String())
+	// 1: find the old deployment
+	logger.Info("Backing up old cert-manager deployment...")
+	now := time.Now().Format("2006-01-02T150405")
+
+	deploymentsList := &unstructured.UnstructuredList{}
+	deploymentsList.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "apps",
+		Kind:    "DeploymentList",
+		Version: "v1",
+	})
+
+	validatingWebhooksList := &unstructured.UnstructuredList{}
+	validatingWebhooksList.SetGroupVersionKind(schema.FromAPIVersionAndKind("admissionregistration.k8s.io/v1", "ValidatingWebhookConfigurationList"))
+
+	mutatingWebhooksList := &unstructured.UnstructuredList{}
+	mutatingWebhooksList.SetGroupVersionKind(schema.FromAPIVersionAndKind("admissionregistration.k8s.io/v1", "MutatingWebhookConfigurationList"))
+
+	certManagerObjectsSelector := client.MatchingLabels{
+		"app.kubernetes.io/managed-by": "Helm",
+		"app.kubernetes.io/instance":   release.Name,
+	}
+
+	if err := kubeClient.List(ctx, deploymentsList, client.InNamespace(CertManagerNamespace), certManagerObjectsSelector); err != nil {
+		return fmt.Errorf("failed to query kubernetes API: %v", err)
+	}
+
+	// 2: store the deployments for backup
+	if len(deploymentsList.Items) > 0 {
+		filename := fmt.Sprintf("backup_%s_%s.yaml", CertManagerReleaseName, now)
+		if err := util.DumpResources(ctx, filename, deploymentsList.Items); err != nil {
+			return fmt.Errorf("failed to back up the deployment: %v", err)
+		}
+
+		// 3: delete the deployments
+		logger.Info("Deleting the deployments from the cluster")
+		if err := kubeClient.DeleteAllOf(ctx, &appsv1.Deployment{}, client.InNamespace(CertManagerNamespace), certManagerObjectsSelector); err != nil {
+			return fmt.Errorf("failed to remove the deployments: %v\n\nuse backup file: %s to check the changes and restore if needed", err, filename)
+		}
+	} else {
+		logger.Warn("Could not find existing deployment, attempting to upgrade without removing it...")
+	}
+
+	if err := kubeClient.List(ctx, mutatingWebhooksList, certManagerObjectsSelector); err != nil {
+		return fmt.Errorf("failed to query kubernetes API: %v", err)
+	}
+
+	// 4: store the mutating webhooks for backup
+	if len(mutatingWebhooksList.Items) > 0 {
+		filename := fmt.Sprintf("backup_mutatingwebhooks_%s_%s.yaml", CertManagerReleaseName, now)
+		if err := util.DumpResources(ctx, filename, mutatingWebhooksList.Items); err != nil {
+			return fmt.Errorf("failed to back up the mutating webhook config: %v", err)
+		}
+
+		// 5: delete the mutating webhooks
+		logger.Info("Deleting the mutating webhooks from the cluster")
+		if err := kubeClient.DeleteAllOf(ctx, &admissionv1.MutatingWebhookConfiguration{}, certManagerObjectsSelector); err != nil {
+			return fmt.Errorf("failed to remove the mutating webhooks: %v\n\nuse backup file: %s to check the changes and restore if needed", err, filename)
+		}
+	} else {
+		logger.Warn("Could not find existing mutating webhooks, attempting to upgrade without removing it...")
+	}
+
+	if err := kubeClient.List(ctx, validatingWebhooksList, certManagerObjectsSelector); err != nil {
+		return fmt.Errorf("failed to query kubernetes API: %v", err)
+	}
+
+	// 6: store the validating webhooks for backup
+	if len(validatingWebhooksList.Items) > 0 {
+		filename := fmt.Sprintf("backup_mutatingwebhooks_%s_%s.yaml", CertManagerReleaseName, now)
+		if err := util.DumpResources(ctx, filename, validatingWebhooksList.Items); err != nil {
+			return fmt.Errorf("failed to back up the validating webhook config: %v", err)
+		}
+
+		// 7: delete the validating webhooks
+		logger.Info("Deleting the validating webhooks from the cluster")
+		if err := kubeClient.DeleteAllOf(ctx, &admissionv1.ValidatingWebhookConfiguration{}, certManagerObjectsSelector); err != nil {
+			return fmt.Errorf("failed to remove the validating webhooks: %v\n\nuse backup file: %s to check the changes and restore if needed", err, filename)
+		}
+	} else {
+		logger.Warn("Could not find existing validating webhooks, attempting to upgrade without removing it...")
+	}
+
+	// 8: Patch clusterissuers so they are not removed during upgrade
+	patch := []byte(`{"metadata":{"annotations":{"helm.sh/resource-policy": "keep"}}}`)
+	issuers := []string{"letsencrypt-prod", "letsencrypt-staging"}
+
+	for _, issuer := range issuers {
+		clusterIssuer := &certmanagerv1.ClusterIssuer{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: CertManagerNamespace,
+				Name:      issuer,
+			},
+		}
+		if err := kubeClient.Patch(ctx, clusterIssuer, ctrlruntimeclient.RawPatch(types.MergePatchType, patch)); err != nil {
+			logger.Warnf("error while patching clusterIssuer %s/%s: %v", CertManagerNamespace, issuer, err)
+		}
 	}
 
 	return nil
