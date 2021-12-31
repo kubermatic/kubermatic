@@ -43,7 +43,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
+	types "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -110,7 +110,7 @@ func deployCertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctr
 			return fmt.Errorf("user must acknowledge the migration using --migrate-upstream-cert-manager")
 		}
 
-		if err := deletePreV21CertManagerDeployment(ctx, sublogger, kubeClient, helmClient, opt, chart, release); err != nil {
+		if err := preparePreV21CertManagerDeployment(ctx, sublogger, kubeClient, helmClient, opt, chart, release); err != nil {
 			return fmt.Errorf("failed to upgrade cert-manager: %v", err)
 		}
 	}
@@ -470,7 +470,7 @@ func deleteCertificate(ctx context.Context, kubeClient ctrlruntimeclient.Client,
 	return nil
 }
 
-func deletePreV21CertManagerDeployment(
+func preparePreV21CertManagerDeployment(
 	ctx context.Context,
 	logger *logrus.Entry,
 	kubeClient ctrlruntimeclient.Client,
@@ -560,6 +560,22 @@ func deletePreV21CertManagerDeployment(
 		}
 	} else {
 		logger.Warn("Could not find existing validating webhooks, attempting to upgrade without removing it...")
+	}
+
+	// 8: Patch clusterissuers so they are not removed during upgrade
+	patch := []byte(`{"metadata":{"annotations":{"helm.sh/resource-policy": "keep"}}}`)
+	issuers := []string{"letsencrypt-prod", "letsencrypt-staging"}
+
+	for _, issuer := range issuers {
+		clusterIssuer := &certmanagerv1.ClusterIssuer{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: CertManagerNamespace,
+				Name:      issuer,
+			},
+		}
+		if err := kubeClient.Patch(ctx, clusterIssuer, ctrlruntimeclient.RawPatch(types.MergePatchType, patch)); err != nil {
+			logger.Warnf("error while patching clusterIssuer %s/%s: %v", CertManagerNamespace, issuer, err)
+		}
 	}
 
 	return nil
