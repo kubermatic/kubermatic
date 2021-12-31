@@ -105,32 +105,3 @@ cert-manager:
     # defaultIssuerName: ""
     # defaultIssuerKind: ""
     # defaultIssuerGroup: ""
-
-  clusterIssuers:
-    letsencrypt-prod:
-      server: https://acme-v02.api.letsencrypt.org/directory
-      # email: your@email.com <--- you HAVE TO set this
-      solver:
-        selector: {}
-        # if DNS validation is disabled, HTTP01 validation using
-        # ingresses with class=nginx will be used
-        dnsValidation:
-          enabled: false
-          route53:
-            region: ''
-            accessKeyID: ''
-            secretAccessKey: ''
-
-    letsencrypt-staging:
-      server: https://acme-staging-v02.api.letsencrypt.org/directory
-      # email: your@email.com <--- you HAVE TO set this
-      solver:
-        selector: {}
-        # if DNS validation is disabled, HTTP01 validation using
-        # ingresses with class=nginx will be used
-        dnsValidation:
-          enabled: false
-          route53:
-            region: ''
-            accessKeyID: ''
-            secretAccessKey: ''
