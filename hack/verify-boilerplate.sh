@@ -31,7 +31,8 @@ boilerplate \
   -exclude pkg/resources/certificates/triple/triple.go \
   -exclude pkg/resources/etcd/testdata \
   -exclude pkg/ee \
-  -exclude charts/kubermatic-operator/crd
+  -exclude charts/kubermatic-operator/crd \
+  -exclude pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper/static
 
 echodate "Checking Kubermatic EE licenses..."
 boilerplate \
