@@ -63,13 +63,13 @@ func deployNginxIngressController(ctx context.Context, logger *logrus.Entry, kub
 	backupTS := time.Now().Format("2006-01-02T150405")
 
 	if release != nil && release.Version.LessThan(v13) && !chart.Version.LessThan(v13) {
-		if !opt.EnableChartMigration {
+		if !opt.EnableNginxIngressMigration {
 			sublogger.Warn("To upgrade nginx-ingress-controller to a new version, the installer")
 			sublogger.Warn("will remove the old deployment object before proceeding with the upgrade.")
-			sublogger.Warn("Rerun the installer with --migrate-charts to enable the migration process.")
+			sublogger.Warn("Rerun the installer with --migrate-upstream-nginx-ingress to enable the migration process.")
 			sublogger.Warn("Please refer to the KKP 2.19 upgrade notes for more information.")
 
-			return fmt.Errorf("user must acknowledge the migration using --migrate-charts")
+			return fmt.Errorf("user must acknowledge the migration using --migrate-upstream-nginx-ingress")
 		}
 
 		err = upgradeNginxIngress(ctx, sublogger, kubeClient, helmClient, opt, chart, release, backupTS)

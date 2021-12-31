@@ -90,8 +90,12 @@ var (
 		Name:  "migrate-cert-manager",
 		Usage: "enable the migration for cert-manager CRDs from v1alpha2 to v1",
 	}
-	enableChartsMigrationFlag = cli.BoolFlag{
-		Name:  "migrate-charts",
+	enableCertManagerUpstreamMigrationFlag = cli.BoolFlag{
+		Name:  "migrate-upstream-cert-manager",
+		Usage: "enable the migration for cert-manager to chart version 2.1.0+",
+	}
+	enableNginxIngressMigrationFlag = cli.BoolFlag{
+		Name:  "migrate-upstream-nginx-ingress",
 		Usage: "enable the migration procedure for nginx-ingress-controller (upgrade from v1.3.0+)",
 	}
 	migrateOpenstackCSIdriversFlag = cli.BoolFlag{
@@ -124,7 +128,8 @@ func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) c
 			deployHelmBinaryFlag,
 			deployStorageClassFlag,
 			enableCertManagerV2MigrationFlag,
-			enableChartsMigrationFlag,
+			enableCertManagerUpstreamMigrationFlag,
+			enableNginxIngressMigrationFlag,
 			migrateOpenstackCSIdriversFlag,
 			migrateLogrotateFlag,
 			disableTelemetryFlag,
@@ -198,18 +203,19 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 		}
 
 		opt := stack.DeployOptions{
-			HelmClient:                        helmClient,
-			HelmValues:                        helmValues,
-			KubermaticConfiguration:           kubermaticConfig,
-			RawKubermaticConfiguration:        rawKubermaticConfig,
-			StorageClassProvider:              ctx.String(deployStorageClassFlag.Name),
-			ForceHelmReleaseUpgrade:           ctx.Bool(deployForceFlag.Name),
-			ChartsDirectory:                   ctx.GlobalString(chartsDirectoryFlag.Name),
-			EnableCertManagerV2Migration:      ctx.Bool(enableCertManagerV2MigrationFlag.Name),
-			EnableChartMigration:              ctx.Bool(enableChartsMigrationFlag.Name),
-			EnableOpenstackCSIDriverMigration: ctx.Bool(migrateOpenstackCSIdriversFlag.Name),
-			EnableLogrotateMigration:          ctx.Bool(migrateLogrotateFlag.Name),
-			DisableTelemetry:                  ctx.Bool(disableTelemetryFlag.Name),
+			HelmClient:                         helmClient,
+			HelmValues:                         helmValues,
+			KubermaticConfiguration:            kubermaticConfig,
+			RawKubermaticConfiguration:         rawKubermaticConfig,
+			StorageClassProvider:               ctx.String(deployStorageClassFlag.Name),
+			ForceHelmReleaseUpgrade:            ctx.Bool(deployForceFlag.Name),
+			ChartsDirectory:                    ctx.GlobalString(chartsDirectoryFlag.Name),
+			EnableCertManagerV2Migration:       ctx.Bool(enableCertManagerV2MigrationFlag.Name),
+			EnableCertManagerUpstreamMigration: ctx.Bool(enableCertManagerUpstreamMigrationFlag.Name),
+			EnableNginxIngressMigration:        ctx.Bool(enableNginxIngressMigrationFlag.Name),
+			EnableOpenstackCSIDriverMigration:  ctx.Bool(migrateOpenstackCSIdriversFlag.Name),
+			EnableLogrotateMigration:           ctx.Bool(migrateLogrotateFlag.Name),
+			DisableTelemetry:                   ctx.Bool(disableTelemetryFlag.Name),
 		}
 
 		// validate the configuration

@@ -101,13 +101,13 @@ func deployCertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctr
 	}
 
 	if release != nil && release.Version.LessThan(v21) && !chart.Version.LessThan(v21) {
-		if !opt.EnableChartMigration {
+		if !opt.EnableCertManagerUpstreamMigration {
 			sublogger.Warn("To upgrade cert-manager to a new version, the installer will")
 			sublogger.Warn("remove the old deployment objects before proceeding with the upgrade.")
-			sublogger.Warn("Rerun the installer with --migrate-charts to enable the migration process.")
+			sublogger.Warn("Rerun the installer with --migrate-upstream-cert-manager to enable the migration process.")
 			sublogger.Warn("Please refer to the KKP 2.19 upgrade notes for more information.")
 
-			return fmt.Errorf("user must acknowledge the migration using --migrate-charts")
+			return fmt.Errorf("user must acknowledge the migration using --migrate-upstream-cert-manager")
 		}
 
 		if err := deletePreV21CertManagerDeployment(ctx, sublogger, kubeClient, helmClient, opt, chart, release); err != nil {
