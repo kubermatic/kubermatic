@@ -519,6 +519,8 @@ func preparePreV21CertManagerDeployment(
 		issuer.SetResourceVersion("")
 		issuer.SetUID("")
 		issuer.SetSelfLink("")
+		issuer.SetLabels(map[string]string{})
+		issuer.SetAnnotations(map[string]string{})
 
 		if err := kubeClient.Create(ctx, &issuer); err != nil {
 			logger.Warnf("Failed to restore ClusterIssuer: %v\n\nUse backup_%s_%s.yaml file to restore.", err, CertManagerReleaseName, now)
