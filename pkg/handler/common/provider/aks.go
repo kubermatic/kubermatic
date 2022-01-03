@@ -96,8 +96,13 @@ func ListAKSUpgrades(ctx context.Context, cred resources.AKSCredentials, resourc
 	if err != nil {
 		return nil, fmt.Errorf("failed to upgrade cluster: %v", err.Error())
 	}
-	upgradesItems := *clusterUpgradeProfile.ManagedClusterUpgradeProfileProperties.ControlPlaneProfile.Upgrades
-	for _, upgradesItem := range upgradesItems {
+
+	upgradeProperties := clusterUpgradeProfile.ManagedClusterUpgradeProfileProperties
+	if upgradeProperties == nil || upgradeProperties.ControlPlaneProfile == nil || upgradeProperties.ControlPlaneProfile.Upgrades == nil {
+		return upgrades, nil
+	}
+
+	for _, upgradesItem := range *upgradeProperties.ControlPlaneProfile.Upgrades {
 		v, err := ksemver.NewSemver(*upgradesItem.KubernetesVersion)
 		if err != nil {
 			return nil, err
@@ -121,11 +126,12 @@ func ListAKSMachineDeploymentUpgrades(ctx context.Context, cred resources.AKSCre
 	if err != nil {
 		return nil, err
 	}
-	if profile.AgentPoolUpgradeProfileProperties.Upgrades == nil {
-		return nil, nil
+	poolUpgradeProperties := profile.AgentPoolUpgradeProfileProperties
+	if poolUpgradeProperties == nil || poolUpgradeProperties.Upgrades == nil {
+		return upgrades, nil
 	}
-	poolUpgrades := *profile.AgentPoolUpgradeProfileProperties.Upgrades
-	for _, poolUpgrade := range poolUpgrades {
+
+	for _, poolUpgrade := range *poolUpgradeProperties.Upgrades {
 		if poolUpgrade.KubernetesVersion != nil {
 			upgradeMachineDeploymentVer, err := semverlib.NewVersion(*poolUpgrade.KubernetesVersion)
 			if err != nil {
