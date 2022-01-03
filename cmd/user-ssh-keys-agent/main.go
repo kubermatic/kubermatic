@@ -44,6 +44,7 @@ func main() {
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar()
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog))
 
 	cli.Hello(log, "User SSH-Key Agent", logOpts.Debug, nil)
 
@@ -53,7 +54,6 @@ func main() {
 	}
 
 	ctx := signals.SetupSignalHandler()
-	ctrlruntimelog.Log = ctrlruntimelog.NewDelegatingLogger(zapr.NewLogger(rawLog).WithName("controller_runtime"))
 
 	mgr, err := manager.New(cfg, manager.Options{
 		Namespace: metav1.NamespaceSystem,

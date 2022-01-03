@@ -83,7 +83,7 @@ func (c *FakeUserProjectBindings) Update(ctx context.Context, userProjectBinding
 // Delete takes name of the userProjectBinding and deletes it. Returns an error if one occurs.
 func (c *FakeUserProjectBindings) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewRootDeleteAction(userprojectbindingsResource, name), &kubermaticv1.UserProjectBinding{})
+		Invokes(testing.NewRootDeleteActionWithOptions(userprojectbindingsResource, name, opts), &kubermaticv1.UserProjectBinding{})
 	return err
 }
 

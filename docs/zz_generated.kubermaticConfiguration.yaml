@@ -12,6 +12,7 @@ spec:
       - node-exporter
       - kube-state-metrics
       - multus
+      - hubble
     # DebugLog enables more verbose logging.
     debugLog: false
     # DockerRepository is the repository containing the Kubermatic REST API image.

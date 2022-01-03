@@ -46,7 +46,7 @@ const (
 	// unless it's explicitly disabled at the cluster level
 	EtcdLauncher = "EtcdLauncher"
 
-	// Tunneling expose strategy enables the expose strategy based on usage of
+	// TunnelingExposeStrategy expose strategy enables the expose strategy based on usage of
 	// HTTP/2 CONNECT for tunneling traffic from the worker nodes to the
 	// control plane.
 	TunnelingExposeStrategy = "TunnelingExposeStrategy"
@@ -58,6 +58,12 @@ const (
 	// control plane to cluster communication, instead of relying on the legacy
 	// solution based on OpenVPN.
 	KonnectivityService = "KonnectivityService"
+
+	// OperatingSystemManager feature create the required resources for the deployment of OperatingSystemManager(OSM)
+	// across KKP seeds. However, this won't enable the deployment of OSM controllers on user clusters by default. To
+	// enable OSM to be used as a provisioning tool, is via the enabling of the EnableOperatingSystemManager field in
+	// user cluster.
+	OperatingSystemManager = "OperatingSystemManager"
 )
 
 // FeatureGate is map of key=value pairs that enables/disables various features.

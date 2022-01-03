@@ -14,32 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cd $(dirname $0)/../../..
-source hack/lib.sh
-
-# create kind cluster
-export KIND_CLUSTER_NAME=cert-manager-tester
-export DISABLE_CLUSTER_EXPOSER=yes
-source hack/ci/setup-kind-cluster.sh
-
-# try to install cert-manager
-echodate "Installing cert-manager..."
-kubectl apply -f charts/cert-manager/crd/
-
-helm upgrade \
-  --install \
-  --namespace cert-manager \
-  --create-namespace \
-  --atomic \
-  --values charts/cert-manager/test/test-values.yaml \
-  cert-manager charts/cert-manager/
-
-# make sure the webhook works, but before that, give the cainjector some
-# time to do its magic and make the webhook ready
-sleep 5
-
-echodate "Creating test certificate..."
-retry 5 kubectl apply -f charts/cert-manager/test/certificate.yaml
-
-echodate "Deleting kind cluster..."
-kind delete cluster --name "$KIND_CLUSTER_NAME"
+$(dirname $0)/test-render.sh
+echo
+$(dirname $0)/test-certmanager.sh

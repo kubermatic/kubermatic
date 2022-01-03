@@ -261,8 +261,8 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/resources", map[string]interface{}{"requests": map[string]interface{}{"memory": "500M"}}),
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/prometheus/resources", map[string]interface{}{"requests": map[string]interface{}{"memory": "500M"}}),
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
-				jsonpatch.NewOperation("add", "/spec/features/kubeSystemNetworkPolicies", true),
 				jsonpatch.NewOperation("replace", "/spec/exposeStrategy", string(defaults.DefaultExposeStrategy)),
+				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
 			},
 		},
 		{
@@ -316,7 +316,7 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", resources.EBPFProxyMode),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", true),
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
-				jsonpatch.NewOperation("add", "/spec/features/kubeSystemNetworkPolicies", true),
+				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
 			),
 		},
 		{
@@ -334,6 +334,7 @@ func TestHandle(t *testing.T) {
 						Raw: rawClusterGen{
 							Name: "foo",
 							CloudSpec: kubermaticv1.CloudSpec{
+								ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 								DatacenterName: "openstack-dc",
 								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
 							},
@@ -376,6 +377,7 @@ func TestHandle(t *testing.T) {
 						Raw: rawClusterGen{
 							Name: "foo",
 							CloudSpec: kubermaticv1.CloudSpec{
+								ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 								DatacenterName: "openstack-dc",
 								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
 							},
@@ -399,7 +401,110 @@ func TestHandle(t *testing.T) {
 			wantPatches: append(
 				defaultPatches,
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
-				jsonpatch.NewOperation("add", "/spec/features/kubeSystemNetworkPolicies", true),
+			),
+		},
+		{
+			name: "Default the cloud provider name",
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Update,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   kubermaticv1.GroupName,
+						Version: kubermaticv1.GroupVersion,
+						Kind:    "Cluster",
+					},
+					Name: "foo",
+					Object: runtime.RawExtension{
+						Raw: rawClusterGen{
+							Name: "foo",
+							CloudSpec: kubermaticv1.CloudSpec{
+								DatacenterName: "hetzner-dc",
+								Hetzner:        &kubermaticv1.HetznerCloudSpec{},
+							},
+							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
+								Type:    kubermaticv1.CNIPluginTypeCanal,
+								Version: "v3.19",
+							},
+							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+								ProxyMode: resources.IPVSProxyMode,
+							},
+						}.Do(),
+					},
+					OldObject: runtime.RawExtension{
+						Raw: rawClusterGen{
+							Name: "foo",
+							CloudSpec: kubermaticv1.CloudSpec{
+								DatacenterName: "hetzner-dc",
+								Hetzner:        &kubermaticv1.HetznerCloudSpec{},
+							},
+							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
+								Type:    kubermaticv1.CNIPluginTypeCanal,
+								Version: "v3.19",
+							},
+							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+								ProxyMode: resources.IPVSProxyMode,
+							},
+						}.Do(),
+					},
+				},
+			},
+			wantAllowed: true,
+			wantPatches: append(
+				append(defaultPatches, defaultNetworkingPatches...),
+				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.HetznerCloudProvider)),
+			),
+		},
+		{
+			name: "Fix bad cloud provider name",
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Update,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   kubermaticv1.GroupName,
+						Version: kubermaticv1.GroupVersion,
+						Kind:    "Cluster",
+					},
+					Name: "foo",
+					Object: runtime.RawExtension{
+						Raw: rawClusterGen{
+							Name: "foo",
+							CloudSpec: kubermaticv1.CloudSpec{
+								ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
+								DatacenterName: "hetzner-dc",
+								Hetzner:        &kubermaticv1.HetznerCloudSpec{},
+							},
+							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
+								Type:    kubermaticv1.CNIPluginTypeCanal,
+								Version: "v3.19",
+							},
+							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+								ProxyMode: resources.IPVSProxyMode,
+							},
+						}.Do(),
+					},
+					OldObject: runtime.RawExtension{
+						Raw: rawClusterGen{
+							Name: "foo",
+							CloudSpec: kubermaticv1.CloudSpec{
+								ProviderName:   string(kubermaticv1.HetznerCloudProvider),
+								DatacenterName: "hetzner-dc",
+								Hetzner:        &kubermaticv1.HetznerCloudSpec{},
+							},
+							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
+								Type:    kubermaticv1.CNIPluginTypeCanal,
+								Version: "v3.19",
+							},
+							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+								ProxyMode: resources.IPVSProxyMode,
+							},
+						}.Do(),
+					},
+				},
+			},
+			wantAllowed: true,
+			wantPatches: append(
+				append(defaultPatches, defaultNetworkingPatches...),
+				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.HetznerCloudProvider)),
 			),
 		},
 		{
@@ -417,6 +522,7 @@ func TestHandle(t *testing.T) {
 						Raw: rawClusterGen{
 							Name: "foo",
 							CloudSpec: kubermaticv1.CloudSpec{
+								ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 								DatacenterName: "openstack-dc",
 								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
 							},
@@ -461,6 +567,7 @@ func TestHandle(t *testing.T) {
 						Raw: rawClusterGen{
 							Name: "foo",
 							CloudSpec: kubermaticv1.CloudSpec{
+								ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 								DatacenterName: "openstack-dc",
 								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
 							},
@@ -483,6 +590,7 @@ func TestHandle(t *testing.T) {
 						Raw: rawClusterGen{
 							Name: "foo",
 							CloudSpec: kubermaticv1.CloudSpec{
+								ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 								DatacenterName: "openstack-dc",
 								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
 							},
@@ -528,6 +636,7 @@ func TestHandle(t *testing.T) {
 							Name:    "foo",
 							Version: *semver.NewSemverOrDie("1.22"),
 							CloudSpec: kubermaticv1.CloudSpec{
+								ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 								DatacenterName: "openstack-dc",
 								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
 							},
@@ -555,6 +664,7 @@ func TestHandle(t *testing.T) {
 							Name:    "foo",
 							Version: *semver.NewSemverOrDie("1.21"),
 							CloudSpec: kubermaticv1.CloudSpec{
+								ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 								DatacenterName: "openstack-dc",
 								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
 							},
@@ -619,6 +729,7 @@ func TestHandle(t *testing.T) {
 			wantPatches: append(
 				append(defaultPatches, defaultNetworkingPatches...),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", "ipvs"),
+				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
 			),
 		},
 		{
@@ -660,6 +771,7 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/dnsDomain", "cluster.local"),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", true),
 				jsonpatch.NewOperation("replace", "/spec/features/externalCloudProvider", true),
+				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.KubevirtCloudProvider)),
 			),
 		},
 		{
@@ -700,6 +812,7 @@ func TestHandle(t *testing.T) {
 				append(defaultPatches, defaultNetworkingPatches...),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", resources.IPVSProxyMode),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/ipvs/strictArp", true),
+				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
 			),
 		},
 		{
@@ -742,6 +855,7 @@ func TestHandle(t *testing.T) {
 						Raw: rawClusterGen{
 							Name: "foo",
 							CloudSpec: kubermaticv1.CloudSpec{
+								ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 								DatacenterName: "openstack-dc",
 								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
 							},
@@ -756,6 +870,7 @@ func TestHandle(t *testing.T) {
 						Raw: rawClusterGen{
 							Name: "foo",
 							CloudSpec: kubermaticv1.CloudSpec{
+								ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 								DatacenterName: "openstack-dc",
 								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
 							},
@@ -791,6 +906,7 @@ func TestHandle(t *testing.T) {
 						Raw: rawClusterGen{
 							Name: "foo",
 							CloudSpec: kubermaticv1.CloudSpec{
+								ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 								DatacenterName: "openstack-dc",
 								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
 							},
@@ -805,6 +921,7 @@ func TestHandle(t *testing.T) {
 						Raw: rawClusterGen{
 							Name: "foo",
 							CloudSpec: kubermaticv1.CloudSpec{
+								ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 								DatacenterName: "openstack-dc",
 								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
 							},
@@ -838,6 +955,7 @@ func TestHandle(t *testing.T) {
 						Raw: rawClusterGen{
 							Name: "foo",
 							CloudSpec: kubermaticv1.CloudSpec{
+								ProviderName:   string(kubermaticv1.HetznerCloudProvider),
 								DatacenterName: "hetzner-dc",
 								Hetzner:        &kubermaticv1.HetznerCloudSpec{},
 							},
@@ -852,6 +970,7 @@ func TestHandle(t *testing.T) {
 						Raw: rawClusterGen{
 							Name: "foo",
 							CloudSpec: kubermaticv1.CloudSpec{
+								ProviderName:   string(kubermaticv1.HetznerCloudProvider),
 								DatacenterName: "hetzner-dc",
 								Hetzner:        &kubermaticv1.HetznerCloudSpec{},
 							},

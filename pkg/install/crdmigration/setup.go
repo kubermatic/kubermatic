@@ -23,28 +23,22 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"k8c.io/kubermatic/v2/pkg/install/util"
-
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func InstallCRDs(ctx context.Context, logger logrus.FieldLogger, opt *Options) error {
+	logger.Info("Installing new CRDs…")
+
 	// process master cluster
-	if err := installCRDsInCluster(ctx, logger.WithField("master", true), opt.MasterClient, opt.CRDDirectory); err != nil {
+	if err := util.DeployCRDs(ctx, opt.MasterClient, logger.WithField("master", true), opt.CRDDirectory, opt.KubermaticConfiguration); err != nil {
 		return fmt.Errorf("processing the master cluster failed: %w", err)
 	}
 
 	// process seed clusters
 	for seedName, seedClient := range opt.SeedClients {
-		if err := installCRDsInCluster(ctx, logger.WithField("seed", seedName), seedClient, opt.CRDDirectory); err != nil {
+		if err := util.DeployCRDs(ctx, seedClient, logger.WithField("seed", seedName), opt.CRDDirectory, opt.KubermaticConfiguration); err != nil {
 			return fmt.Errorf("processing the seed cluster failed: %w", err)
 		}
 	}
 
 	return nil
-}
-
-func installCRDsInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client, src string) error {
-	logger.Info("Installing new CRDs…")
-
-	return util.DeployCRDs(ctx, client, logger, src)
 }

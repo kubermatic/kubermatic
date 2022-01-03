@@ -221,7 +221,7 @@ iptables -A INPUT -i tun0 -j DROP
 						ProcMount:  &procMountType,
 					},
 					ReadinessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							Exec: &corev1.ExecAction{
 								Command: []string{
 									"test",

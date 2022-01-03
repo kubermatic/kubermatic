@@ -43,7 +43,7 @@ var (
 func ProxySidecar(data *resources.TemplateData, serverCount int32) (*corev1.Container, error) {
 	const (
 		name    = "k8s-artifacts-prod/kas-network-proxy/proxy-server"
-		version = "v0.0.26"
+		version = "v0.0.27"
 	)
 
 	return &corev1.Container{
@@ -108,7 +108,7 @@ func ProxySidecar(data *resources.TemplateData, serverCount int32) (*corev1.Cont
 			},
 		},
 		LivenessProbe: &corev1.Probe{
-			Handler: corev1.Handler{
+			ProbeHandler: corev1.ProbeHandler{
 				Exec: nil,
 				HTTPGet: &corev1.HTTPGetAction{
 					Path:   "/healthz",

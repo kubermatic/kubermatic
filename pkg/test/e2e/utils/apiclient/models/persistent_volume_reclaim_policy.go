@@ -13,6 +13,8 @@ import (
 
 // PersistentVolumeReclaimPolicy PersistentVolumeReclaimPolicy describes a policy for end-of-life maintenance of persistent volumes.
 //
+// +enum
+//
 // swagger:model PersistentVolumeReclaimPolicy
 type PersistentVolumeReclaimPolicy string
 

@@ -52,7 +52,7 @@ func DeploymentCreator(kServerHost string, kServerPort int, registryWithOverwrit
 	return func() (string, reconciling.DeploymentCreator) {
 		const (
 			name    = "k8s-artifacts-prod/kas-network-proxy/proxy-agent"
-			version = "v0.0.26"
+			version = "v0.0.27"
 		)
 
 		return resources.KonnectivityDeploymentName, func(ds *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -100,7 +100,7 @@ func DeploymentCreator(kServerHost string, kServerPort int, registryWithOverwrit
 						},
 					},
 					LivenessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path: "/healthz",
 								Port: intstr.IntOrString{

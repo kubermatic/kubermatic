@@ -20,7 +20,8 @@ import (
 	"fmt"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+
+  kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
@@ -159,7 +160,7 @@ func DeploymentCreatorWithoutInitWrapper(data operatingSystemManagerData) reconc
 					Args:    getFlags(data.DC().Node, cs, data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]),
 					Env:     envVars,
 					LivenessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						Handler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/healthz",
 								Port:   intstr.FromInt(8085),
@@ -173,7 +174,7 @@ func DeploymentCreatorWithoutInitWrapper(data operatingSystemManagerData) reconc
 						TimeoutSeconds:      15,
 					},
 					ReadinessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						Handler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/readyz",
 								Port:   intstr.FromInt(8085),

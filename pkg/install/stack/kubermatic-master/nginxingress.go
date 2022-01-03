@@ -66,10 +66,10 @@ func deployNginxIngressController(ctx context.Context, logger *logrus.Entry, kub
 		if !opt.EnableNginxIngressMigration {
 			sublogger.Warn("To upgrade nginx-ingress-controller to a new version, the installer")
 			sublogger.Warn("will remove the old deployment object before proceeding with the upgrade.")
-			sublogger.Warn("Rerun the installer with --migrate-nginx-ingress to enable the migration process.")
+			sublogger.Warn("Rerun the installer with --migrate-upstream-nginx-ingress to enable the migration process.")
 			sublogger.Warn("Please refer to the KKP 2.19 upgrade notes for more information.")
 
-			return fmt.Errorf("user must acknowledge the migration using --migrate-nginx-ingress")
+			return fmt.Errorf("user must acknowledge the migration using --migrate-upstream-nginx-ingress")
 		}
 
 		err = upgradeNginxIngress(ctx, sublogger, kubeClient, helmClient, opt, chart, release, backupTS)

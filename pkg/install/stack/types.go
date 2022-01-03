@@ -25,25 +25,26 @@ import (
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type DeployOptions struct {
-	HelmClient                        helm.Client
-	HelmValues                        *yamled.Document
-	KubeClient                        ctrlruntimeclient.Client
-	StorageClassProvider              string
-	KubermaticConfiguration           *operatorv1alpha1.KubermaticConfiguration
-	RawKubermaticConfiguration        *unstructured.Unstructured
-	ForceHelmReleaseUpgrade           bool
-	ChartsDirectory                   string
-	Logger                            *logrus.Entry
-	EnableCertManagerV2Migration      bool
-	EnableNginxIngressMigration       bool
-	EnableOpenstackCSIDriverMigration bool
-	EnableLogrotateMigration          bool
-	DisableTelemetry                  bool
+	HelmClient                         helm.Client
+	HelmValues                         *yamled.Document
+	KubeClient                         ctrlruntimeclient.Client
+	StorageClassProvider               string
+	KubermaticConfiguration            *operatorv1alpha1.KubermaticConfiguration
+	RawKubermaticConfiguration         *unstructured.Unstructured
+	ForceHelmReleaseUpgrade            bool
+	ChartsDirectory                    string
+	Logger                             *logrus.Entry
+	EnableCertManagerV2Migration       bool
+	EnableCertManagerUpstreamMigration bool
+	EnableNginxIngressMigration        bool
+	EnableOpenstackCSIDriverMigration  bool
+	EnableLogrotateMigration           bool
+	DisableTelemetry                   bool
 }
 
 type Stack interface {
