@@ -36,7 +36,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
-	"k8c.io/kubermatic/v2/pkg/webhook"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -55,7 +54,6 @@ const (
 
 type controllerRunOptions struct {
 	internalAddr            string
-	admissionWebhook        webhook.Options
 	enableLeaderElection    bool
 	leaderElectionNamespace string
 	featureGates            features.FeatureGate
@@ -89,7 +87,6 @@ func main() {
 	pprofOpts.AddFlags(flag.CommandLine)
 	logOpts := kubermaticlog.NewDefaultOptions()
 	logOpts.AddFlags(flag.CommandLine)
-	runOpts.admissionWebhook.AddFlags(flag.CommandLine, true)
 	flag.StringVar(&runOpts.workerName, "worker-name", "", "The name of the worker that will only processes resources with label=worker-name.")
 	flag.IntVar(&ctrlCtx.workerCount, "worker-count", 4, "Number of workers which process the clusters in parallel.")
 	flag.StringVar(&runOpts.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the /metrics endpoint will be served.")
@@ -116,10 +113,6 @@ func main() {
 	ctrlCtx.namespace = runOpts.namespace
 
 	cli.Hello(log, "Master Controller-Manager", logOpts.Debug, nil)
-
-	if err := runOpts.admissionWebhook.Validate(); err != nil {
-		log.Fatalw("invalid admission webhook configuration", zap.Error(err))
-	}
 
 	// TODO remove label selector when everything is migrated to controller-runtime
 	selector, err := workerlabel.LabelSelector(runOpts.workerName)
@@ -191,21 +184,6 @@ func main() {
 	ctrlCtx.seedKubeconfigGetter, err = seedKubeconfigGetterFactory(ctx, mgr.GetClient(), runOpts)
 	if err != nil {
 		log.Fatalw("failed to construct seedKubeconfigGetter", zap.Error(err))
-	}
-
-	if runOpts.admissionWebhook.Configured() {
-		if err := runOpts.admissionWebhook.Configure(mgr.GetWebhookServer()); err != nil {
-			log.Fatalw("failed to configure admission webhook server", zap.Error(err))
-		}
-
-		// Register Seed validation handler
-		h, err := seedValidationHandler(ctx, mgr.GetClient(), runOpts)
-		if err != nil {
-			log.Fatalw("failed to build Seed validation handler", zap.Error(err))
-		}
-		h.SetupWebhookWithManager(mgr)
-	} else {
-		log.Info("the validatingAdmissionWebhook server cannot be started because certificate was not configured")
 	}
 
 	if err := createAllControllers(ctrlCtx); err != nil {

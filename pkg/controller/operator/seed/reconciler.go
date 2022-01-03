@@ -540,8 +540,7 @@ func (r *Reconciler) reconcileServices(ctx context.Context, cfg *kubermaticv1.Ku
 	log.Debug("reconciling Services")
 
 	creators := []reconciling.NamedServiceCreatorGetter{
-		common.SeedAdmissionServiceCreator(cfg, client),
-		kubermaticseed.ClusterAdmissionServiceCreator(cfg, client),
+		common.WebhookServiceCreator(cfg, client),
 	}
 
 	if err := reconciling.ReconcileServices(ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
@@ -576,7 +575,7 @@ func (r *Reconciler) reconcileServices(ctx context.Context, cfg *kubermaticv1.Ku
 }
 
 func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
-	log.Debug("reconciling AdmissionWebhooks")
+	log.Debug("reconciling Admission Webhooks")
 
 	validatingWebhookCreators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{
 		common.SeedAdmissionWebhookCreator(cfg, client),
@@ -584,12 +583,15 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 	}
 
 	if cfg.Spec.FeatureGates[features.OperatingSystemManager] {
-		validatingWebhookCreators = append(validatingWebhookCreators, kubermaticseed.OperatingSystemProfileValidatingWebhookConfigurationCreator(cfg, client))
-		validatingWebhookCreators = append(validatingWebhookCreators, kubermaticseed.OperatingSystemConfigValidatingWebhookConfigurationCreator(cfg, client))
+		validatingWebhookCreators = append(
+			validatingWebhookCreators,
+			kubermaticseed.OperatingSystemProfileValidatingWebhookConfigurationCreator(cfg, client),
+			kubermaticseed.OperatingSystemConfigValidatingWebhookConfigurationCreator(cfg, client),
+		)
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, validatingWebhookCreators, "", client); err != nil {
-		return fmt.Errorf("failed to reconcile validating AdmissionWebhooks: %w", err)
+		return fmt.Errorf("failed to reconcile validating Validating Webhooks: %w", err)
 	}
 
 	mutatingWebhookCreators := []reconciling.NamedMutatingWebhookConfigurationCreatorGetter{
@@ -597,7 +599,7 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 	}
 
 	if err := reconciling.ReconcileMutatingWebhookConfigurations(ctx, mutatingWebhookCreators, "", client); err != nil {
-		return fmt.Errorf("failed to reconcile mutating AdmissionWebhooks: %w", err)
+		return fmt.Errorf("failed to reconcile mutating Mutating Webhooks: %w", err)
 	}
 
 	return nil

@@ -20,18 +20,21 @@ package main
 
 import (
 	"context"
-	"flag"
 
-	eeseedctrlmgr "k8c.io/kubermatic/v2/pkg/ee/cmd/seed-controller-manager"
+	eewebhook "k8c.io/kubermatic/v2/pkg/ee/cmd/webhook"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func addFlags(fs *flag.FlagSet) {
-	// NOP
+func seedGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader, options *appOptions) (provider.SeedGetter, error) {
+	return eewebhook.SeedGetterFactory(ctx, client, options.seedName, options.namespace)
 }
 
-func seedGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader, options controllerRunOptions) (provider.SeedGetter, error) {
-	return eeseedctrlmgr.SeedGetterFactory(ctx, client, options.seedName, options.namespace)
+func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, namespace string) (provider.SeedsGetter, error) {
+	return eewebhook.SeedsGetterFactory(ctx, client, namespace)
+}
+
+func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, opt appOptions) (provider.SeedKubeconfigGetter, error) {
+	return eewebhook.SeedKubeconfigGetterFactory(ctx, client)
 }

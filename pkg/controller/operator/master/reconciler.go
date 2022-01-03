@@ -254,6 +254,7 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, config *kubermati
 		kubermatic.APIDeploymentCreator(config, r.workerName, r.versions),
 		kubermatic.UIDeploymentCreator(config, r.versions),
 		kubermatic.MasterControllerManagerDeploymentCreator(config, r.workerName, r.versions),
+		common.WebhookDeploymentCreator(config, r.versions),
 	}
 
 	modifiers := []reconciling.ObjectModifier{
@@ -295,7 +296,7 @@ func (r *Reconciler) reconcileServices(ctx context.Context, config *kubermaticv1
 	creators := []reconciling.NamedServiceCreatorGetter{
 		kubermatic.APIServiceCreator(config),
 		kubermatic.UIServiceCreator(config),
-		common.SeedAdmissionServiceCreator(config, r.Client),
+		common.WebhookServiceCreator(config, r.Client),
 	}
 
 	if err := reconciling.ReconcileServices(ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
@@ -325,14 +326,14 @@ func (r *Reconciler) reconcileIngresses(ctx context.Context, config *kubermaticv
 }
 
 func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
-	logger.Debug("Reconciling AdmissionWebhooks")
+	logger.Debug("Reconciling Validating Webhooks")
 
 	creators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{
 		common.SeedAdmissionWebhookCreator(config, r.Client),
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile AdmissionWebhooks: %w", err)
+		return fmt.Errorf("failed to reconcile Validating Webhooks: %w", err)
 	}
 
 	return nil

@@ -19,10 +19,7 @@ package validation
 import (
 	"context"
 	"crypto/x509"
-	"fmt"
-	"net/http"
-
-	"github.com/go-logr/logr"
+	"errors"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
@@ -31,18 +28,14 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud"
 	"k8c.io/kubermatic/v2/pkg/validation"
 
-	admissionv1 "k8s.io/api/admission/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// AdmissionHandler for validating Kubermatic Cluster CRD.
-type AdmissionHandler struct {
-	log        logr.Logger
-	decoder    *admission.Decoder
+// validator for validating Kubermatic Cluster CRD.
+type validator struct {
 	features   features.FeatureGate
 	client     ctrlruntimeclient.Client
 	seedGetter provider.SeedGetter
@@ -53,9 +46,9 @@ type AdmissionHandler struct {
 	disableProviderValidation bool
 }
 
-// NewAdmissionHandler returns a new cluster validation AdmissionHandler.
-func NewAdmissionHandler(client ctrlruntimeclient.Client, seedGetter provider.SeedGetter, features features.FeatureGate, caBundle *x509.CertPool) *AdmissionHandler {
-	return &AdmissionHandler{
+// NewValidator returns a new cluster validator.
+func NewValidator(client ctrlruntimeclient.Client, seedGetter provider.SeedGetter, features features.FeatureGate, caBundle *x509.CertPool) *validator {
+	return &validator{
 		client:     client,
 		features:   features,
 		seedGetter: seedGetter,
@@ -63,75 +56,47 @@ func NewAdmissionHandler(client ctrlruntimeclient.Client, seedGetter provider.Se
 	}
 }
 
-func (h *AdmissionHandler) SetupWebhookWithManager(mgr ctrlruntime.Manager) {
-	mgr.GetWebhookServer().Register("/validate-kubermatic-k8c-io-cluster", &webhook.Admission{Handler: h})
+var _ admission.CustomValidator = &validator{}
+
+func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+	cluster, ok := obj.(*kubermaticv1.Cluster)
+	if !ok {
+		return errors.New("object is not a Cluster")
+	}
+
+	datacenter, cloudProvider, err := v.buildValidationDependencies(ctx, cluster)
+	if err != nil {
+		return err
+	}
+
+	return validation.ValidateNewClusterSpec(&cluster.Spec, datacenter, cloudProvider, v.features, nil).ToAggregate()
 }
 
-func (h *AdmissionHandler) InjectLogger(l logr.Logger) error {
-	h.log = l.WithName("cluster-validation-handler")
+func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+	oldCluster, ok := oldObj.(*kubermaticv1.Cluster)
+	if !ok {
+		return errors.New("old object is not a Cluster")
+	}
+
+	newCluster, ok := newObj.(*kubermaticv1.Cluster)
+	if !ok {
+		return errors.New("new object is not a Cluster")
+	}
+
+	datacenter, cloudProvider, err := v.buildValidationDependencies(ctx, newCluster)
+	if err != nil {
+		return err
+	}
+
+	return validation.ValidateClusterUpdate(ctx, newCluster, oldCluster, datacenter, cloudProvider, v.features).ToAggregate()
+}
+
+func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
 	return nil
 }
 
-func (h *AdmissionHandler) InjectDecoder(d *admission.Decoder) error {
-	h.decoder = d
-	return nil
-}
-
-func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequest) webhook.AdmissionResponse {
-	allErrs := field.ErrorList{}
-	cluster := &kubermaticv1.Cluster{}
-	oldCluster := &kubermaticv1.Cluster{}
-
-	switch req.Operation {
-	case admissionv1.Create:
-		if err := h.decoder.Decode(req, cluster); err != nil {
-			return admission.Errored(http.StatusBadRequest, err)
-		}
-		allErrs = append(allErrs, h.validateCreate(ctx, cluster)...)
-
-	case admissionv1.Update:
-		if err := h.decoder.Decode(req, cluster); err != nil {
-			return admission.Errored(http.StatusBadRequest, fmt.Errorf("error occurred while decoding cluster: %w", err))
-		}
-		if err := h.decoder.DecodeRaw(req.OldObject, oldCluster); err != nil {
-			return admission.Errored(http.StatusBadRequest, fmt.Errorf("error occurred while decoding old cluster: %w", err))
-		}
-		allErrs = append(allErrs, h.validateUpdate(ctx, cluster, oldCluster)...)
-
-	case admissionv1.Delete:
-		// NOP we always allow delete operarions at the moment
-
-	default:
-		return admission.Errored(http.StatusBadRequest, fmt.Errorf("%s not supported on cluster resources", req.Operation))
-	}
-
-	if len(allErrs) > 0 {
-		return webhook.Denied(fmt.Sprintf("cluster validation request %s denied: %v", req.UID, allErrs))
-	}
-
-	return webhook.Allowed(fmt.Sprintf("cluster validation request %s allowed", req.UID))
-}
-
-func (h *AdmissionHandler) validateCreate(ctx context.Context, c *kubermaticv1.Cluster) field.ErrorList {
-	datacenter, cloudProvider, err := h.buildValidationDependencies(ctx, c)
-	if err != nil {
-		return field.ErrorList{err}
-	}
-
-	return validation.ValidateNewClusterSpec(&c.Spec, datacenter, cloudProvider, h.features, nil)
-}
-
-func (h *AdmissionHandler) validateUpdate(ctx context.Context, c, oldC *kubermaticv1.Cluster) field.ErrorList {
-	datacenter, cloudProvider, err := h.buildValidationDependencies(ctx, c)
-	if err != nil {
-		return field.ErrorList{err}
-	}
-
-	return validation.ValidateClusterUpdate(ctx, c, oldC, datacenter, cloudProvider, h.features)
-}
-
-func (h *AdmissionHandler) buildValidationDependencies(ctx context.Context, c *kubermaticv1.Cluster) (*kubermaticv1.Datacenter, provider.CloudProvider, *field.Error) {
-	seed, err := h.seedGetter()
+func (v *validator) buildValidationDependencies(ctx context.Context, c *kubermaticv1.Cluster) (*kubermaticv1.Datacenter, provider.CloudProvider, *field.Error) {
+	seed, err := v.seedGetter()
 	if err != nil {
 		return nil, nil, field.InternalError(nil, err)
 	}
@@ -141,12 +106,12 @@ func (h *AdmissionHandler) buildValidationDependencies(ctx context.Context, c *k
 		return nil, nil, fieldErr
 	}
 
-	if h.disableProviderValidation {
+	if v.disableProviderValidation {
 		return datacenter, nil, nil
 	}
 
-	secretKeySelectorFunc := provider.SecretKeySelectorValueFuncFactory(ctx, h.client)
-	cloudProvider, err := cloud.Provider(datacenter, secretKeySelectorFunc, h.caBundle)
+	secretKeySelectorFunc := provider.SecretKeySelectorValueFuncFactory(ctx, v.client)
+	cloudProvider, err := cloud.Provider(datacenter, secretKeySelectorFunc, v.caBundle)
 	if err != nil {
 		return nil, nil, field.InternalError(nil, err)
 	}
