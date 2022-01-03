@@ -62,10 +62,10 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/urfave/cli v1.22.5
 	github.com/vmware/govmomi v0.23.1
-	go.etcd.io/etcd/api/v3 v3.5.0
-	go.etcd.io/etcd/client/pkg/v3 v3.5.0
-	go.etcd.io/etcd/client/v3 v3.5.0
-	go.etcd.io/etcd/etcdutl/v3 v3.5.0
+	go.etcd.io/etcd/api/v3 v3.5.1
+	go.etcd.io/etcd/client/pkg/v3 v3.5.1
+	go.etcd.io/etcd/client/v3 v3.5.1
+	go.etcd.io/etcd/etcdutl/v3 v3.5.1
 	go.uber.org/zap v1.19.1
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
 	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f
@@ -209,10 +209,10 @@ require (
 	github.com/vincent-petithory/dataurl v0.0.0-20191104211930-d1553a71de50 // indirect
 	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
-	go.etcd.io/etcd/client/v2 v2.305.0 // indirect
-	go.etcd.io/etcd/pkg/v3 v3.5.0 // indirect
-	go.etcd.io/etcd/raft/v3 v3.5.0 // indirect
-	go.etcd.io/etcd/server/v3 v3.5.0 // indirect
+	go.etcd.io/etcd/client/v2 v2.305.1 // indirect
+	go.etcd.io/etcd/pkg/v3 v3.5.1 // indirect
+	go.etcd.io/etcd/raft/v3 v3.5.1 // indirect
+	go.etcd.io/etcd/server/v3 v3.5.1 // indirect
 	go.mongodb.org/mongo-driver v1.5.1 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	go.opentelemetry.io/contrib v0.20.0 // indirect
