@@ -81,6 +81,9 @@ func (d *Deployer) SetUp() error {
 		},
 		Spec: operatorv1alpha1.KubermaticConfigurationSpec{
 			FeatureGates: sets.NewString(features.TunnelingExposeStrategy),
+			UserCluster: operatorv1alpha1.KubermaticUserClusterConfiguration{
+				EtcdVolumeSize: "500Mi",
+			},
 		},
 	}
 
