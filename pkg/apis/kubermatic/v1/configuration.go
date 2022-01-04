@@ -82,6 +82,8 @@ type KubermaticConfigurationSpec struct {
 	SeedController KubermaticSeedControllerConfiguration `json:"seedController,omitempty"`
 	// MasterController configures the master-controller-manager.
 	MasterController KubermaticMasterControllerConfiguration `json:"masterController,omitempty"`
+	// Webhook configures the seed-controller-manager.
+	Webhook KubermaticWebhookConfiguration `json:"webhook,omitempty"`
 	// UserCluster configures various aspects of the user-created clusters.
 	UserCluster KubermaticUserClusterConfiguration `json:"userCluster,omitempty"`
 	// ExposeStrategy is the strategy to expose the cluster with.
@@ -185,6 +187,21 @@ type LegacyKubermaticBackupRestoreConfiguration struct {
 	S3Endpoint string `json:"s3Endpoint,omitempty"`
 	// S3BucketName is the S3 bucket name to use for backup and restore.
 	S3BucketName string `json:"s3BucketName,omitempty"`
+}
+
+// KubermaticWebhookConfiguration configures the Kubermatic webhook.
+type KubermaticWebhookConfiguration struct {
+	// DockerRepository is the repository containing the Kubermatic webhook image.
+	DockerRepository string `json:"dockerRepository,omitempty"`
+	// PProfEndpoint controls the port the webhook should listen on to provide pprof
+	// data. This port is never exposed from the container and only available via port-forwardings.
+	PProfEndpoint *string `json:"pprofEndpoint,omitempty"`
+	// Resources describes the requested and maximum allowed CPU/memory usage.
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	// DebugLog enables more verbose logging.
+	DebugLog bool `json:"debugLog,omitempty"`
+	// Replicas sets the number of pod replicas for the webhook.
+	Replicas *int32 `json:"replicas,omitempty"`
 }
 
 // KubermaticUserClusterConfiguration controls various aspects of the user-created clusters.

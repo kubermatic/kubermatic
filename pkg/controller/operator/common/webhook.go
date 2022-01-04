@@ -116,7 +116,7 @@ func WebhookRoleBindingCreator(cfg *operatorv1alpha1.KubermaticConfiguration) re
 func WebhookDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, versions kubermatic.Versions, seed *kubermaticv1.Seed, removeSeed bool) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return WebhookDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			d.Spec.Replicas = pointer.Int32(1)
+			d.Spec.Replicas = cfg.Spec.Webhook.Replicas
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: webhookPodLabels(),
 			}
@@ -135,11 +135,17 @@ func WebhookDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, ver
 				fmt.Sprintf("-webhook-key-name=%s", resources.ServingCertKeySecretKey),
 				fmt.Sprintf("-ca-bundle=/opt/ca-bundle/%s", resources.CABundleConfigMapKey),
 				fmt.Sprintf("-namespace=%s", cfg.Namespace),
-				fmt.Sprintf("-feature-gates=%s", StringifyFeatureGates(cfg)),
-				fmt.Sprintf("-pprof-listen-address=%s", *cfg.Spec.SeedController.PProfEndpoint),
 			}
 
-			if cfg.Spec.SeedController.DebugLog {
+			if gates := StringifyFeatureGates(cfg); gates != "" {
+				args = append(args, fmt.Sprintf("-feature-gates=%s", gates))
+			}
+
+			if cfg.Spec.Webhook.PProfEndpoint != nil && *cfg.Spec.Webhook.PProfEndpoint != "" {
+				args = append(args, fmt.Sprintf("-pprof-listen-address=%s", *cfg.Spec.Webhook.PProfEndpoint))
+			}
+
+			if cfg.Spec.Webhook.DebugLog {
 				args = append(args, "-v=4", "-log-debug=true")
 			} else {
 				args = append(args, "-v=2")
@@ -229,7 +235,7 @@ func WebhookDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, ver
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "webhook",
-					Image:   cfg.Spec.SeedController.DockerRepository + ":" + versions.Kubermatic,
+					Image:   cfg.Spec.Webhook.DockerRepository + ":" + versions.Kubermatic,
 					Command: []string{"kubermatic-webhook"},
 					Args:    args,
 					Env:     envVars,
@@ -246,7 +252,7 @@ func WebhookDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, ver
 						},
 					},
 					VolumeMounts: volumeMounts,
-					Resources:    cfg.Spec.SeedController.Resources,
+					Resources:    cfg.Spec.Webhook.Resources,
 					ReadinessProbe: &corev1.Probe{
 						InitialDelaySeconds: 3,
 						TimeoutSeconds:      2,
