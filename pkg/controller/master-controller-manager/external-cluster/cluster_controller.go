@@ -26,8 +26,10 @@ import (
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/aks"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/eks"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gke"
@@ -116,40 +118,77 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (reconcile.Result, error) {
 	cloud := cluster.Spec.CloudSpec
+	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, r.Client)
 	if cloud == nil {
 		return reconcile.Result{}, nil
 	}
 	if cloud.GKE != nil {
 		r.log.Debugf("reconcile GKE cluster")
-		err := r.createOrUpdateGKEKubeconfig(ctx, cluster)
+		status, err := gke.GetGKEClusterStatus(ctx, secretKeySelector, cloud)
 		if err != nil {
-			r.log.Errorf("failed to create or update kubeconfig secret %v", err)
+			r.log.Errorf("failed to get GKE cluster status %v", err)
 			r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 			return reconcile.Result{}, err
 		}
-		// the kubeconfig token is valid 1h, it will update token every 30min
-		return reconcile.Result{RequeueAfter: time.Minute * 30}, nil
+		if status.State == apiv2.PROVISIONING {
+			// repeat after some time to get/store kubeconfig
+			return reconcile.Result{RequeueAfter: time.Second * 10}, err
+		}
+		if status.State == apiv2.RUNNING || status.State == apiv2.RECONCILING {
+			err = r.createOrUpdateGKEKubeconfig(ctx, cluster)
+			if err != nil {
+				r.log.Errorf("failed to create or update kubeconfig secret %v", err)
+				r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+				return reconcile.Result{}, err
+			}
+			// the kubeconfig token is valid 1h, it will update token every 30min
+			return reconcile.Result{RequeueAfter: time.Minute * 30}, nil
+		}
 	}
 	if cloud.EKS != nil {
 		r.log.Debugf("reconcile EKS cluster %v", cluster.Name)
-		err := r.createOrUpdateEKSKubeconfig(ctx, cluster)
+		status, err := eks.GetEKSClusterStatus(secretKeySelector, cloud)
 		if err != nil {
-			r.log.Errorf("failed to create or update kubeconfig secret %v", err)
+			r.log.Errorf("failed to get EKS cluster status %v", err)
 			r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 			return reconcile.Result{}, err
 		}
-		// the kubeconfig token is valid 14min, it will update token every 10min
-		return reconcile.Result{RequeueAfter: time.Minute * 10}, nil
+		if status.State == apiv2.PROVISIONING {
+			// repeat after some time to get/store kubeconfig
+			return reconcile.Result{RequeueAfter: time.Second * 10}, err
+		}
+		if status.State == apiv2.RUNNING || status.State == apiv2.RECONCILING {
+			err = r.createOrUpdateEKSKubeconfig(ctx, cluster)
+			if err != nil {
+				r.log.Errorf("failed to create or update kubeconfig secret %v", err)
+				r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+				return reconcile.Result{}, err
+			}
+			// the kubeconfig token is valid 14min, it will update token every 10min
+			return reconcile.Result{RequeueAfter: time.Minute * 10}, nil
+		}
 	}
 	if cloud.AKS != nil {
 		r.log.Debugf("reconcile AKS cluster %v", cluster.Name)
-		err := r.createOrUpdateAKSKubeconfig(ctx, cluster)
+		status, err := aks.GetAKSClusterStatus(ctx, secretKeySelector, cloud)
 		if err != nil {
-			r.log.Errorf("failed to create or update kubeconfig secret %v", err)
+			r.log.Errorf("failed to get AKS cluster status %v", err)
 			r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 			return reconcile.Result{}, err
 		}
-		return reconcile.Result{}, nil
+		if status.State == apiv2.PROVISIONING {
+			// repeat after some time to get/store kubeconfig
+			return reconcile.Result{RequeueAfter: time.Second * 10}, err
+		}
+		if status.State == apiv2.RUNNING || status.State == apiv2.RECONCILING {
+			err = r.createOrUpdateAKSKubeconfig(ctx, cluster)
+			if err != nil {
+				r.log.Errorf("failed to create or update kubeconfig secret %v", err)
+				r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+				return reconcile.Result{}, err
+			}
+			return reconcile.Result{}, nil
+		}
 	}
 	return reconcile.Result{}, nil
 }
