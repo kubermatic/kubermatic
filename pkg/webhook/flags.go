@@ -17,7 +17,11 @@ limitations under the License.
 package webhook
 
 import (
+	"errors"
 	"flag"
+	"fmt"
+	"os"
+	"path/filepath"
 
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
@@ -38,7 +42,47 @@ func (opts *Options) AddFlags(fs *flag.FlagSet) {
 	fs.StringVar(&opts.keyName, "webhook-key-name", "", "The key file name.")
 }
 
+func checkValidFile(directory, filename string) error {
+	if filename == "" {
+		return errors.New("no filename configured")
+	}
+
+	fullPath := filepath.Join(directory, filename)
+
+	stat, err := os.Stat(fullPath)
+	if err != nil {
+		return fmt.Errorf("failed to stat %q: %w", fullPath, err)
+	}
+
+	if stat.IsDir() {
+		return fmt.Errorf("%q is not a file", fullPath)
+	}
+
+	return nil
+}
+
 func (opts *Options) Validate() error {
+	if opts.certDir == "" {
+		return errors.New("no -webhook-cert-dir configured")
+	}
+
+	stat, err := os.Stat(opts.certDir)
+	if err != nil {
+		return fmt.Errorf("%q is not a valid directory: %w", opts.certDir, err)
+	}
+
+	if !stat.IsDir() {
+		return fmt.Errorf("%q is not a directory", opts.certDir)
+	}
+
+	if err := checkValidFile(opts.certDir, opts.certName); err != nil {
+		return fmt.Errorf("invalid certificate file: %w", err)
+	}
+
+	if err := checkValidFile(opts.certDir, opts.keyName); err != nil {
+		return fmt.Errorf("invalid private key file: %w", err)
+	}
+
 	return nil
 }
 
