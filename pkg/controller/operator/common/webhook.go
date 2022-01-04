@@ -131,7 +131,7 @@ func WebhookDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, ver
 				{
 					Name:    "webhook",
 					Image:   cfg.Spec.SeedController.DockerRepository + ":" + versions.Kubermatic,
-					Command: []string{"webhook"},
+					Command: []string{"kubermatic-webhook"},
 					Args:    args,
 					Env:     ProxyEnvironmentVars(cfg),
 					Ports: []corev1.ContainerPort{
