@@ -32,7 +32,6 @@ import (
 )
 
 const (
-	clusterWebhookServiceName   = "cluster-webhook"
 	ClusterAdmissionWebhookName = "kubermatic-clusters"
 	OSCAdmissionWebhookName     = "kubermatic-operating-system-configs"
 	OSPAdmissionWebhookName     = "kubermatic-operating-system-profiles"
@@ -62,7 +61,7 @@ func ClusterValidatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticCo
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
 						CABundle: ca,
 						Service: &admissionregistrationv1.ServiceReference{
-							Name:      clusterWebhookServiceName,
+							Name:      common.WebhookServiceName,
 							Namespace: cfg.Namespace,
 							Path:      pointer.StringPtr("/validate-kubermatic-k8c-io-v1-cluster"),
 							Port:      pointer.Int32Ptr(443),
@@ -118,7 +117,7 @@ func ClusterMutatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticConf
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
 						CABundle: ca,
 						Service: &admissionregistrationv1.ServiceReference{
-							Name:      clusterWebhookServiceName,
+							Name:      common.WebhookServiceName,
 							Namespace: cfg.Namespace,
 							Path:      pointer.StringPtr("/mutate-kubermatic-k8c-io-v1-cluster"),
 							Port:      pointer.Int32Ptr(443),
@@ -172,7 +171,7 @@ func OperatingSystemConfigValidatingWebhookConfigurationCreator(cfg *kubermaticv
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
 						CABundle: ca,
 						Service: &admissionregistrationv1.ServiceReference{
-							Name:      clusterWebhookServiceName,
+							Name:      common.WebhookServiceName,
 							Namespace: cfg.Namespace,
 							Path:      pointer.StringPtr("/validate-operating-system-config"),
 							Port:      pointer.Int32Ptr(443),
@@ -225,7 +224,7 @@ func OperatingSystemProfileValidatingWebhookConfigurationCreator(cfg *kubermatic
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
 						CABundle: ca,
 						Service: &admissionregistrationv1.ServiceReference{
-							Name:      clusterWebhookServiceName,
+							Name:      common.WebhookServiceName,
 							Namespace: cfg.Namespace,
 							Path:      pointer.StringPtr("/validate-operating-system-profile"),
 							Port:      pointer.Int32Ptr(443),
