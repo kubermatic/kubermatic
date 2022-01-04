@@ -82,7 +82,7 @@ type KubermaticConfigurationSpec struct {
 	SeedController KubermaticSeedControllerConfiguration `json:"seedController,omitempty"`
 	// MasterController configures the master-controller-manager.
 	MasterController KubermaticMasterControllerConfiguration `json:"masterController,omitempty"`
-	// Webhook configures the seed-controller-manager.
+	// Webhook configures the webhook.
 	Webhook KubermaticWebhookConfiguration `json:"webhook,omitempty"`
 	// UserCluster configures various aspects of the user-created clusters.
 	UserCluster KubermaticUserClusterConfiguration `json:"userCluster,omitempty"`
