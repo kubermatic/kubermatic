@@ -62,12 +62,15 @@ func WebhookServiceAccountCreator(cfg *operatorv1alpha1.KubermaticConfiguration)
 func WebhookRoleCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedRoleCreatorGetter {
 	return func() (string, reconciling.RoleCreator) {
 		return WebhookRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
-			// The webhook will use the kubeconfig from a Seed to check Cluster objects,
-			// so this Role only needs to allow access to Seed objects.
 			r.Rules = []rbacv1.PolicyRule{
 				{
 					APIGroups: []string{"kubermatic.k8s.io"},
 					Resources: []string{"seeds"},
+					Verbs:     []string{"get", "list", "watch"},
+				},
+				{
+					APIGroups: []string{"operator.kubermatic.io"},
+					Resources: []string{"kubermaticconfigurations"},
 					Verbs:     []string{"get", "list", "watch"},
 				},
 				{
@@ -128,9 +131,9 @@ func WebhookDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, ver
 
 			args := []string{
 				"-webhook-cert-dir=/opt/webhook-serving-cert/",
-				fmt.Sprintf("-ca-bundle=/opt/ca-bundle/%s", resources.CABundleConfigMapKey),
 				fmt.Sprintf("-webhook-cert-name=%s", resources.ServingCertSecretKey),
 				fmt.Sprintf("-webhook-key-name=%s", resources.ServingCertKeySecretKey),
+				fmt.Sprintf("-ca-bundle=/opt/ca-bundle/%s", resources.CABundleConfigMapKey),
 				fmt.Sprintf("-namespace=%s", cfg.Namespace),
 				fmt.Sprintf("-feature-gates=%s", StringifyFeatureGates(cfg)),
 				fmt.Sprintf("-pprof-listen-address=%s", *cfg.Spec.SeedController.PProfEndpoint),
@@ -232,6 +235,11 @@ func WebhookDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, ver
 					Env:     envVars,
 					Ports: []corev1.ContainerPort{
 						{
+							Name:          "admission",
+							ContainerPort: 9443,
+							Protocol:      corev1.ProtocolTCP,
+						},
+						{
 							Name:          "metrics",
 							ContainerPort: 8080,
 							Protocol:      corev1.ProtocolTCP,
@@ -239,6 +247,18 @@ func WebhookDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, ver
 					},
 					VolumeMounts: volumeMounts,
 					Resources:    cfg.Spec.SeedController.Resources,
+					ReadinessProbe: &corev1.Probe{
+						InitialDelaySeconds: 3,
+						TimeoutSeconds:      2,
+						PeriodSeconds:       10,
+						SuccessThreshold:    1,
+						FailureThreshold:    3,
+						ProbeHandler: corev1.ProbeHandler{
+							TCPSocket: &corev1.TCPSocketAction{
+								Port: intstr.Parse("admission"),
+							},
+						},
+					},
 				},
 			}
 
