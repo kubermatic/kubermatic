@@ -30,6 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -269,7 +270,7 @@ func SeedAdmissionWebhookCreator(cfg *operatorv1alpha1.KubermaticConfiguration, 
 			hook.Webhooks = []admissionregistrationv1.ValidatingWebhook{
 				{
 					Name:                    "seeds.kubermatic.io", // this should be a FQDN
-					AdmissionReviewVersions: []string{"v1beta1"},
+					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version, admissionregistrationv1beta1.SchemeGroupVersion.Version},
 					MatchPolicy:             &matchPolicy,
 					FailurePolicy:           &failurePolicy,
 					SideEffects:             &sideEffects,

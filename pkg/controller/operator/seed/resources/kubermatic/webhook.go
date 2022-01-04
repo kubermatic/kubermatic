@@ -53,7 +53,7 @@ func ClusterValidatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticCo
 			hook.Webhooks = []admissionregistrationv1.ValidatingWebhook{
 				{
 					Name:                    "clusters.kubermatic.io", // this should be a FQDN
-					AdmissionReviewVersions: []string{"v1beta1"},
+					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version, admissionregistrationv1beta1.SchemeGroupVersion.Version},
 					MatchPolicy:             &matchPolicy,
 					FailurePolicy:           &failurePolicy,
 					SideEffects:             &sideEffects,
@@ -108,7 +108,7 @@ func ClusterMutatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticConf
 			hook.Webhooks = []admissionregistrationv1.MutatingWebhook{
 				{
 					Name:                    "clusters.kubermatic.io", // this should be a FQDN
-					AdmissionReviewVersions: []string{"v1beta1"},
+					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version, admissionregistrationv1beta1.SchemeGroupVersion.Version},
 					MatchPolicy:             &matchPolicy,
 					FailurePolicy:           &failurePolicy,
 					ReinvocationPolicy:      &reinvocationPolicy,
