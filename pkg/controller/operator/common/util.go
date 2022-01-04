@@ -48,6 +48,10 @@ const (
 	// ManagedByLabel is the label used to identify the resources
 	// created by this controller.
 	ManagedByLabel = "app.kubernetes.io/managed-by"
+
+	// helmReleaseAnnotation is the indicator for the ownership modifier to
+	// not touch the object.
+	helmReleaseAnnotation = "meta.helm.sh/release-name"
 )
 
 var (
@@ -99,6 +103,16 @@ func OwnershipModifierFactory(owner metav1.Object, scheme *runtime.Scheme) recon
 
 			o, ok := obj.(metav1.Object)
 			if !ok {
+				return obj, nil
+			}
+
+			// Sometimes, the KKP operator needs to deal with objects that are owned by Helm
+			// and then re-appropriated by KKP. This will however interfere with Helm's own
+			// ownership concept. Also, reconciling resources owned by Helm will just lead to
+			// increased resourceVersions, which might then trigger Deployments to be reconciled
+			// due to the VolumeVersion annotations.
+			// To prevent this, if an object is already owned by Helm, we never touch it.
+			if _, exists := o.GetAnnotations()[helmReleaseAnnotation]; exists {
 				return obj, nil
 			}
 
