@@ -203,6 +203,7 @@ func createBackup(ctx context.Context, t *testing.T, client ctrlruntimeclient.Cl
 				APIVersion:      cluster.APIVersion,
 				ResourceVersion: cluster.ResourceVersion,
 			},
+			Destination: "minio",
 		},
 	}
 

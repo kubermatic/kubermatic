@@ -29,9 +29,14 @@ metadata:
   labels:
     worker-name: "__BUILD_ID__"
 spec:
-  backupRestore:
-    s3BucketName: kkpbackupe2e
-    s3Endpoint: minio.minio.svc.cluster.local:9000
+  etcdBackupRestore:
+    destinations:
+      minio:
+        bucketName: kkpbackupe2e
+        endpoint: minio.minio.svc.cluster.local:9000
+        credentials:
+          namespace: kube-system
+          name: backup-s3
   country: Germany
   location: Hamburg
   kubeconfig:
