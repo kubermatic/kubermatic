@@ -261,7 +261,7 @@ func WebhookDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, ver
 						FailureThreshold:    3,
 						ProbeHandler: corev1.ProbeHandler{
 							TCPSocket: &corev1.TCPSocketAction{
-								Port: intstr.Parse("admission"),
+								Port: intstr.Parse("metrics"),
 							},
 						},
 					},
