@@ -302,6 +302,7 @@ func (r *Reconciler) reconcileServiceAccounts(ctx context.Context, cfg *kubermat
 
 	creators := []reconciling.NamedServiceAccountCreatorGetter{
 		kubermaticseed.ServiceAccountCreator(cfg, seed),
+		common.WebhookServiceAccountCreator(cfg),
 	}
 
 	if !seed.Spec.NodeportProxy.Disable {
@@ -331,12 +332,12 @@ func (r *Reconciler) reconcileServiceAccounts(ctx context.Context, cfg *kubermat
 func (r *Reconciler) reconcileRoles(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling Roles")
 
-	if seed.Spec.NodeportProxy.Disable {
-		return nil
+	creators := []reconciling.NamedRoleCreatorGetter{
+		common.WebhookRoleCreator(cfg),
 	}
 
-	creators := []reconciling.NamedRoleCreatorGetter{
-		nodeportproxy.RoleCreator(),
+	if !seed.Spec.NodeportProxy.Disable {
+		creators = append(creators, nodeportproxy.RoleCreator())
 	}
 
 	if err := reconciling.ReconcileRoles(ctx, creators, r.namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
@@ -349,12 +350,12 @@ func (r *Reconciler) reconcileRoles(ctx context.Context, cfg *kubermaticv1.Kuber
 func (r *Reconciler) reconcileRoleBindings(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling RoleBindings")
 
-	if seed.Spec.NodeportProxy.Disable {
-		return nil
+	creators := []reconciling.NamedRoleBindingCreatorGetter{
+		common.WebhookRoleBindingCreator(cfg),
 	}
 
-	creators := []reconciling.NamedRoleBindingCreatorGetter{
-		nodeportproxy.RoleBindingCreator(cfg),
+	if !seed.Spec.NodeportProxy.Disable {
+		creators = append(creators, nodeportproxy.RoleBindingCreator(cfg))
 	}
 
 	if err := reconciling.ReconcileRoleBindings(ctx, creators, r.namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {

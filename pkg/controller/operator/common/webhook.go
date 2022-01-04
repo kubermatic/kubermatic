@@ -32,6 +32,7 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -45,6 +46,54 @@ func webhookPodLabels() map[string]string {
 	}
 }
 
+func WebhookServiceAccountCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedServiceAccountCreatorGetter {
+	return func() (string, reconciling.ServiceAccountCreator) {
+		return WebhookServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
+			return sa, nil
+		}
+	}
+}
+
+func WebhookRoleCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedRoleCreatorGetter {
+	return func() (string, reconciling.RoleCreator) {
+		return WebhookRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
+			// The webhook will use the kubeconfig from a Seed to check Cluster objects,
+			// so this Role only needs to allow access to Seed objects.
+			r.Rules = []rbacv1.PolicyRule{
+				{
+					APIGroups: []string{"kubermatic.io"},
+					Resources: []string{"seed"},
+					Verbs:     []string{"get", "list", "watch"},
+				},
+			}
+
+			return r, nil
+		}
+	}
+}
+
+func WebhookRoleBindingCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedRoleBindingCreatorGetter {
+	return func() (string, reconciling.RoleBindingCreator) {
+		return WebhookRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
+			rb.RoleRef = rbacv1.RoleRef{
+				APIGroup: rbacv1.GroupName,
+				Kind:     "Role",
+				Name:     WebhookRoleName,
+			}
+
+			rb.Subjects = []rbacv1.Subject{
+				{
+					Kind:      rbacv1.ServiceAccountKind,
+					Name:      WebhookServiceAccountName,
+					Namespace: cfg.Namespace,
+				},
+			}
+
+			return rb, nil
+		}
+	}
+}
+
 func WebhookDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return WebhookDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -52,6 +101,7 @@ func WebhookDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, ver
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: webhookPodLabels(),
 			}
+			d.Spec.Template.Spec.ServiceAccountName = WebhookServiceAccountName
 
 			d.Spec.Template.Labels = d.Spec.Selector.MatchLabels
 			d.Spec.Template.Annotations = map[string]string{

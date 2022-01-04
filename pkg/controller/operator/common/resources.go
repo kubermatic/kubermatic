@@ -38,7 +38,10 @@ const (
 
 	DockercfgSecretName = "dockercfg"
 
-	WebhookServiceName = "kubermatic-webhook"
+	WebhookServiceName        = "kubermatic-webhook"
+	WebhookRoleName           = "kubermatic-webhook"
+	WebhookRoleBindingName    = "kubermatic-webhook"
+	WebhookServiceAccountName = "kubermatic-webhook"
 
 	// SeedWebhookServiceName is deprecated and only exists to facilitate cleanup by the operator.
 	SeedWebhookServiceName = "seed-webhook"
