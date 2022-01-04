@@ -14,21 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package operatingsystemmanager
+package resources
 
 import (
-	"k8c.io/kubermatic/v2/pkg/resources"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
-func getKubeconfigVolume() corev1.Volume {
-	return corev1.Volume{
-		Name: resources.OperatingSystemManagerKubeconfigSecretName,
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				SecretName: resources.OperatingSystemManagerKubeconfigSecretName,
-			},
-		},
+// sanitizeEnvVar will take the value of a environment variable and sanatises it.
+// the need for this comes from github.com/kubermatic/kubermatic/issues/7960
+func SanitizeEnvVars(envVars []corev1.EnvVar) []corev1.EnvVar {
+	sanitizedEnvVars := make([]corev1.EnvVar, len(envVars))
+
+	for idx, envVar := range envVars {
+		sanitizedEnvVars[idx] = corev1.EnvVar{
+			Name:  envVar.Name,
+			Value: strings.ReplaceAll(envVar.Value, "$", "$$"),
+		}
 	}
+
+	return sanitizedEnvVars
 }

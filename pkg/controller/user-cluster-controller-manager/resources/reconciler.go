@@ -43,6 +43,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/mla/promtail"
 	nodelocaldns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/node-local-dns"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/openvpn"
+	operatingsystemmanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/operating-system-manager"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/prometheus"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/scheduler"
 	systembasicuser "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/system-basic-user"
@@ -243,6 +244,12 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		}
 	}
 
+	if !r.enableOperatingSystemManager {
+		if err := r.ensureOSMResourcesAreRemoved(ctx); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -345,6 +352,10 @@ func (r *reconciler) reconcileRoles(ctx context.Context) error {
 		creators = append(creators, usersshkeys.RoleCreator())
 	}
 
+	if r.enableOperatingSystemManager {
+		creators = append(creators, operatingsystemmanager.KubeSystemRoleCreator())
+	}
+
 	if err := reconciling.ReconcileRoles(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %v", metav1.NamespaceSystem, err)
 	}
@@ -380,6 +391,11 @@ func (r *reconciler) reconcileRoles(ctx context.Context) error {
 	cloudInitRoleCreator := []reconciling.NamedRoleCreatorGetter{
 		cloudinitsettings.RoleCreator(),
 	}
+
+	if r.enableOperatingSystemManager {
+		cloudInitRoleCreator = append(cloudInitRoleCreator, operatingsystemmanager.CloudInitSettingsRoleCreator())
+	}
+
 	if err := reconciling.ReconcileRoles(ctx, cloudInitRoleCreator, resources.CloudInitSettingsNamespace, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile cloud-init-getter role in the namespace %s: %v", resources.CloudInitSettingsNamespace, err)
 	}
@@ -409,6 +425,10 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context) error {
 
 	if r.userSSHKeyAgent {
 		creators = append(creators, usersshkeys.RoleBindingCreator())
+	}
+
+	if r.enableOperatingSystemManager {
+		creators = append(creators, operatingsystemmanager.KubeSystemRoleBindingCreator())
 	}
 
 	if err := reconciling.ReconcileRoleBindings(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -444,6 +464,11 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context) error {
 	cloudInitRoleBindingCreator := []reconciling.NamedRoleBindingCreatorGetter{
 		cloudinitsettings.RoleBindingCreator(),
 	}
+
+	if r.enableOperatingSystemManager {
+		cloudInitRoleBindingCreator = append(cloudInitRoleBindingCreator, operatingsystemmanager.CloudInitSettingsRoleBindingCreator())
+	}
+
 	if err := reconciling.ReconcileRoleBindings(ctx, cloudInitRoleBindingCreator, resources.CloudInitSettingsNamespace, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile cloud-init-getter RoleBindings in the namespace: %s: %v", resources.CloudInitSettingsNamespace, err)
 	}
@@ -481,6 +506,10 @@ func (r *reconciler) reconcileClusterRoles(ctx context.Context) error {
 	}
 	if r.userClusterMLA.Monitoring {
 		creators = append(creators, userclusterprometheus.ClusterRoleCreator())
+	}
+
+	if r.enableOperatingSystemManager {
+		creators = append(creators, operatingsystemmanager.MachineDeploymentsClusterRoleCreator())
 	}
 
 	if err := reconciling.ReconcileClusterRoles(ctx, creators, "", r.Client); err != nil {
@@ -522,6 +551,10 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context) error {
 
 	if r.isKonnectivityEnabled {
 		creators = append(creators, konnectivity.ClusterRoleBindingCreator())
+	}
+
+	if r.enableOperatingSystemManager {
+		creators = append(creators, operatingsystemmanager.MachineDeploymentsClusterRoleBindingCreator())
 	}
 
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, creators, "", r.Client); err != nil {
@@ -1131,6 +1164,16 @@ func (r *reconciler) ensureKonnectivitySetupIsRemoved(ctx context.Context) error
 		err := r.Client.Delete(ctx, resource)
 		if err != nil && !errors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure metrics-server resources are removed/not present: %v", err)
+		}
+	}
+	return nil
+}
+
+func (r *reconciler) ensureOSMResourcesAreRemoved(ctx context.Context) error {
+	for _, resource := range operatingsystemmanager.ResourcesForDeletion() {
+		err := r.Client.Delete(ctx, resource)
+		if err != nil && !errors.IsNotFound(err) {
+			return fmt.Errorf("failed to ensure OSM resources are removed/not present: %v", err)
 		}
 	}
 	return nil
