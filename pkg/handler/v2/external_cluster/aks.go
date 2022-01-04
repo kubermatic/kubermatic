@@ -72,11 +72,11 @@ func patchAKSCluster(ctx context.Context, old, new *apiv2.ExternalCluster, secre
 		return nil, err
 	}
 
-	aksClient, err := getAKSClusterClient(cred)
+	aksClient, err := aks.GetAKSClusterClient(cred)
 	if err != nil {
 		return nil, err
 	}
-	aksCluster, err := getAKSCluster(ctx, aksClient, cloud)
+	aksCluster, err := aks.GetAKSCluster(ctx, aksClient, cloud)
 	if err != nil {
 		return nil, err
 	}
@@ -105,11 +105,11 @@ func getAKSNodePools(ctx context.Context, cluster *kubermaticapiv1.ExternalClust
 		return nil, err
 	}
 
-	aksClient, err := getAKSClusterClient(cred)
+	aksClient, err := aks.GetAKSClusterClient(cred)
 	if err != nil {
 		return nil, err
 	}
-	aksCluster, err := getAKSCluster(ctx, aksClient, cloud)
+	aksCluster, err := aks.GetAKSCluster(ctx, aksClient, cloud)
 	if err != nil {
 		return nil, err
 	}
@@ -150,11 +150,11 @@ func getAKSNodePool(ctx context.Context, cluster *kubermaticapiv1.ExternalCluste
 		return nil, err
 	}
 
-	aksClient, err := getAKSClusterClient(cred)
+	aksClient, err := aks.GetAKSClusterClient(cred)
 	if err != nil {
 		return nil, err
 	}
-	aksCluster, err := getAKSCluster(ctx, aksClient, cloud)
+	aksCluster, err := aks.GetAKSCluster(ctx, aksClient, cloud)
 	if err != nil {
 		return nil, err
 	}
@@ -345,17 +345,6 @@ func upgradeNodePool(ctx context.Context, agentPoolClient containerservice.Agent
 	return update, nil
 }
 
-func getAKSClusterClient(cred resources.AKSCredentials) (*containerservice.ManagedClustersClient, error) {
-	var err error
-
-	aksClient := containerservice.NewManagedClustersClient(cred.SubscriptionID)
-	aksClient.Authorizer, err = auth.NewClientCredentialsConfig(cred.ClientID, cred.ClientSecret, cred.TenantID).Authorizer()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %v", err.Error())
-	}
-	return &aksClient, nil
-}
-
 func getAKSNodePoolClient(cred resources.AKSCredentials) (*containerservice.AgentPoolsClient, error) {
 	var err error
 
@@ -365,18 +354,6 @@ func getAKSNodePoolClient(cred resources.AKSCredentials) (*containerservice.Agen
 		return nil, fmt.Errorf("failed to create authorizer: %v", err.Error())
 	}
 	return &agentPoolClient, nil
-}
-
-func getAKSCluster(ctx context.Context, aksClient *containerservice.ManagedClustersClient, cloud *kubermaticapiv1.ExternalClusterCloudSpec) (*containerservice.ManagedCluster, error) {
-	resourceGroup := cloud.AKS.ResourceGroup
-	clusterName := cloud.AKS.Name
-
-	aksCluster, err := aksClient.Get(ctx, cloud.AKS.ResourceGroup, cloud.AKS.Name)
-	if err != nil {
-		return nil, fmt.Errorf("cannot get AKS managed cluster %v from resource group %v: %v", clusterName, resourceGroup, err)
-	}
-
-	return &aksCluster, nil
 }
 
 func updateAKSNodePool(ctx context.Context, agentPoolClient containerservice.AgentPoolsClient, cloud *kubermaticapiv1.ExternalClusterCloudSpec, nodePoolName string, nodePool containerservice.AgentPool) (*containerservice.AgentPoolsCreateOrUpdateFuture, error) {
@@ -490,46 +467,4 @@ func createAKSNodePool(ctx context.Context, cloud *v1.ExternalClusterCloudSpec, 
 	}
 
 	return &machineDeployment, nil
-}
-
-func getAKSClusterStatus(ctx context.Context, secretKeySelector provider.SecretKeySelectorValueFunc, cloud *kubermaticapiv1.ExternalClusterCloudSpec) (*apiv2.ExternalClusterStatus, error) {
-	cred, err := aks.GetCredentialsForCluster(*cloud, secretKeySelector)
-	if err != nil {
-		return nil, err
-	}
-
-	aksClient, err := getAKSClusterClient(cred)
-	if err != nil {
-		return nil, err
-	}
-	aksCluster, err := getAKSCluster(ctx, aksClient, cloud)
-	if err != nil {
-		return nil, err
-	}
-	state := apiv2.UNKNOWN
-	if aksCluster.ManagedClusterProperties != nil {
-		state = convertAKSStatus(*aksCluster.ManagedClusterProperties.ProvisioningState)
-	}
-
-	return &apiv2.ExternalClusterStatus{
-		State: state,
-	}, nil
-
-}
-
-func convertAKSStatus(status string) apiv2.ExternalClusterState {
-	switch status {
-	case "Creating":
-		return apiv2.PROVISIONING
-	case "Succeeded":
-		return apiv2.RUNNING
-	case "Upgrading":
-		return apiv2.RECONCILING
-	case "Stopping":
-		return apiv2.RECONCILING
-	case "Deleting":
-		return apiv2.DELETING
-	default:
-		return apiv2.UNKNOWN
-	}
 }

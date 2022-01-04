@@ -24,6 +24,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/containerservice/mgmt/containerservice"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -109,4 +110,69 @@ func GetCredentialsForCluster(cloud kubermaticv1.ExternalClusterCloudSpec, secre
 		ClientSecret:   clientSecret,
 	}
 	return cred, nil
+}
+
+func GetAKSClusterClient(cred resources.AKSCredentials) (*containerservice.ManagedClustersClient, error) {
+	var err error
+
+	aksClient := containerservice.NewManagedClustersClient(cred.SubscriptionID)
+	aksClient.Authorizer, err = auth.NewClientCredentialsConfig(cred.ClientID, cred.ClientSecret, cred.TenantID).Authorizer()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create authorizer: %v", err.Error())
+	}
+	return &aksClient, nil
+}
+
+func GetAKSCluster(ctx context.Context, aksClient *containerservice.ManagedClustersClient, cloud *kubermaticv1.ExternalClusterCloudSpec) (*containerservice.ManagedCluster, error) {
+	resourceGroup := cloud.AKS.ResourceGroup
+	clusterName := cloud.AKS.Name
+
+	aksCluster, err := aksClient.Get(ctx, cloud.AKS.ResourceGroup, cloud.AKS.Name)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get AKS managed cluster %v from resource group %v: %v", clusterName, resourceGroup, err)
+	}
+
+	return &aksCluster, nil
+}
+
+func GetAKSClusterStatus(ctx context.Context, secretKeySelector provider.SecretKeySelectorValueFunc, cloud *kubermaticv1.ExternalClusterCloudSpec) (*apiv2.ExternalClusterStatus, error) {
+	cred, err := GetCredentialsForCluster(*cloud, secretKeySelector)
+	if err != nil {
+		return nil, err
+	}
+
+	aksClient, err := GetAKSClusterClient(cred)
+	if err != nil {
+		return nil, err
+	}
+	aksCluster, err := GetAKSCluster(ctx, aksClient, cloud)
+	if err != nil {
+		return nil, err
+	}
+	state := apiv2.UNKNOWN
+	if aksCluster.ManagedClusterProperties != nil {
+		state = convertAKSStatus(*aksCluster.ManagedClusterProperties.ProvisioningState)
+	}
+
+	return &apiv2.ExternalClusterStatus{
+		State: state,
+	}, nil
+
+}
+
+func convertAKSStatus(status string) apiv2.ExternalClusterState {
+	switch status {
+	case "Creating":
+		return apiv2.PROVISIONING
+	case "Succeeded":
+		return apiv2.RUNNING
+	case "Upgrading":
+		return apiv2.RECONCILING
+	case "Stopping":
+		return apiv2.RECONCILING
+	case "Deleting":
+		return apiv2.DELETING
+	default:
+		return apiv2.UNKNOWN
+	}
 }
