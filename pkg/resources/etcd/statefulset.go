@@ -351,7 +351,7 @@ func ImageTag(c *kubermaticv1.Cluster) string {
 		return "v3.4.3"
 	}
 
-	return "v3.5.0"
+	return "v3.5.1"
 }
 
 func computeReplicas(data etcdStatefulSetCreatorData, set *appsv1.StatefulSet) int32 {
