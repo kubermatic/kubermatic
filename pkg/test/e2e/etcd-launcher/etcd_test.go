@@ -235,6 +235,7 @@ func restoreBackup(ctx context.Context, t *testing.T, client ctrlruntimeclient.C
 				ResourceVersion: cluster.ResourceVersion,
 			},
 			BackupName: backup.Status.CurrentBackups[0].BackupName,
+			Destination: "minio",
 		},
 	}
 
