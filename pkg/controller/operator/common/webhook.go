@@ -41,6 +41,10 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	seedNameEnvVariable = "SEED_NAME"
+)
+
 func webhookPodLabels() map[string]string {
 	return map[string]string{
 		NameLabel: WebhookDeploymentName,
@@ -100,7 +104,13 @@ func WebhookRoleBindingCreator(cfg *operatorv1alpha1.KubermaticConfiguration) re
 	}
 }
 
-func WebhookDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
+// WebhookDeploymentCreator returns a DeploymentCreator for the Kubermatic webhook.
+// The removeSeed flag should always be set to false, except for during seed cleanup.
+// This is important because on shared master+seed clusters, when the Seed is removed,
+// the -seed-name flag must be gone. But because the creator is careful to not accidentally
+// remove the flag (so that the master-operator does not wipe the seed-operator's work),
+// a separate parameter is needed to indicate that yes, we want to in fact remove the flag.
+func WebhookDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, versions kubermatic.Versions, seed *kubermaticv1.Seed, removeSeed bool) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return WebhookDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = pointer.Int32(1)
@@ -130,6 +140,36 @@ func WebhookDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, ver
 				args = append(args, "-v=4", "-log-debug=true")
 			} else {
 				args = append(args, "-v=2")
+			}
+
+			// This Deployment lives on master and seed clusters. On seed clusters
+			// we need to add -seed-name. On a shared master+seed cluster, we must
+			// ensure that the 2 controllers will not overwrite each other (master-operator
+			// removing the -seed-name flag, seed-operator adding it again). Instead
+			// of fiddling with CLI flags, we just use an env variable to store the seed.
+			envVars := ProxyEnvironmentVars(cfg)
+
+			if !removeSeed {
+				seedName := ""
+				if seed != nil {
+					seedName = seed.Name
+				} else if d != nil && len(d.Spec.Template.Spec.Containers) > 0 {
+					// check if the old Deployment had a seed env var
+					for _, e := range d.Spec.Template.Spec.Containers[0].Env {
+						if e.Name == seedNameEnvVariable {
+							seedName = e.Value
+							break
+						}
+					}
+				}
+
+				if seedName != "" {
+					args = append(args, "-seed-name=$(SEED_NAME)")
+					envVars = append(envVars, corev1.EnvVar{
+						Name:  seedNameEnvVariable,
+						Value: seedName,
+					})
+				}
 			}
 
 			volumes := []corev1.Volume{
@@ -189,7 +229,7 @@ func WebhookDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, ver
 					Image:   cfg.Spec.SeedController.DockerRepository + ":" + versions.Kubermatic,
 					Command: []string{"kubermatic-webhook"},
 					Args:    args,
-					Env:     ProxyEnvironmentVars(cfg),
+					Env:     envVars,
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          "metrics",

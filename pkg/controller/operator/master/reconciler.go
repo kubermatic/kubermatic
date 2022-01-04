@@ -295,7 +295,7 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, config *kubermati
 		kubermatic.APIDeploymentCreator(config, r.workerName, r.versions),
 		kubermatic.UIDeploymentCreator(config, r.versions),
 		kubermatic.MasterControllerManagerDeploymentCreator(config, r.workerName, r.versions),
-		common.WebhookDeploymentCreator(config, r.versions),
+		common.WebhookDeploymentCreator(config, r.versions, nil, false),
 	}
 
 	modifiers := []reconciling.ObjectModifier{

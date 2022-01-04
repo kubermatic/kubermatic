@@ -181,19 +181,23 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, cfg *kubermaticv1.K
 	}
 
 	if err := common.CleanupClusterResource(client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, common.SeedAdmissionWebhookName(cfg)); err != nil {
-		return fmt.Errorf("failed to clean up ValidatingWebhookConfiguration: %w", err)
+		return fmt.Errorf("failed to clean up Seed ValidatingWebhookConfiguration: %w", err)
 	}
 
 	if err := common.CleanupClusterResource(client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, kubermaticseed.ClusterAdmissionWebhookName); err != nil {
-		return fmt.Errorf("failed to clean up Seed ValidatingWebhookConfiguration: %w", err)
+		return fmt.Errorf("failed to clean up Cluster ValidatingWebhookConfiguration: %w", err)
+	}
+
+	if err := common.CleanupClusterResource(client, &admissionregistrationv1.MutatingWebhookConfiguration{}, kubermaticseed.ClusterAdmissionWebhookName); err != nil {
+		return fmt.Errorf("failed to clean up Cluster MutatingWebhookConfiguration: %w", err)
 	}
 
 	if err := common.CleanupClusterResource(client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, kubermaticseed.OSCAdmissionWebhookName); err != nil {
-		return fmt.Errorf("failed to clean up Seed ValidatingWebhookConfiguration: %w", err)
+		return fmt.Errorf("failed to clean up OSC ValidatingWebhookConfiguration: %w", err)
 	}
 
 	if err := common.CleanupClusterResource(client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, kubermaticseed.OSPAdmissionWebhookName); err != nil {
-		return fmt.Errorf("failed to clean up Seed ValidatingWebhookConfiguration: %w", err)
+		return fmt.Errorf("failed to clean up OSP ValidatingWebhookConfiguration: %w", err)
 	}
 
 	oldSeed := seed.DeepCopy()
@@ -201,6 +205,29 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, cfg *kubermaticv1.K
 
 	if err := client.Patch(ctx, seed, ctrlruntimeclient.MergeFrom(oldSeed)); err != nil {
 		return fmt.Errorf("failed to remove finalizer from Seed: %w", err)
+	}
+
+	// On shared master+seed clusters, the kubermatic-webhook currently has the -seed-name
+	// flag set; now that the seed (maybe the shared seed, maybe another) is gone, we must
+	// trigger a reconciliation once to get rid of the flag. If the deleted Seed is just
+	// a standalone cluster, no problem, the webhook Deployment will simply be deleted when
+	// the kubermatic namespace is deleted. On shared seeds though the master-operator will
+	// continue to reconcile the Deployment, but would itself not remove the -seed-name flag.
+	creators := []reconciling.NamedDeploymentCreatorGetter{
+		common.WebhookDeploymentCreator(cfg, r.versions, nil, true), // true is the important thing here
+	}
+
+	modifiers := []reconciling.ObjectModifier{
+		common.OwnershipModifierFactory(seed, r.scheme),
+		common.VolumeRevisionLabelsModifierFactory(ctx, client),
+	}
+	// add the image pull secret wrapper only when an image pull secret is provided
+	if cfg.Spec.ImagePullSecret != "" {
+		modifiers = append(modifiers, reconciling.ImagePullSecretsWrapper(common.DockercfgSecretName))
+	}
+
+	if err := reconciling.ReconcileDeployments(ctx, creators, r.namespace, client, modifiers...); err != nil {
+		return fmt.Errorf("failed to reconcile webhook Deployment: %w", err)
 	}
 
 	return nil
@@ -477,6 +504,7 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, cfg *kubermaticv1
 
 	creators := []reconciling.NamedDeploymentCreatorGetter{
 		kubermaticseed.SeedControllerManagerDeploymentCreator(r.workerName, r.versions, cfg, seed),
+		common.WebhookDeploymentCreator(cfg, r.versions, seed, false),
 	}
 
 	supportsFailureDomainZoneAntiAffinity, err := resources.SupportsFailureDomainZoneAntiAffinity(ctx, client)
