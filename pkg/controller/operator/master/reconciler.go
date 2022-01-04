@@ -144,6 +144,10 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 		return err
 	}
 
+	// Since the new standalone webhook, the old service is not required anymore.
+	// Once the webhooks are reconciled above, we can now clean up unneeded services.
+	common.CleanupWebhookServices(ctx, r, logger, defaulted.Namespace)
+
 	return nil
 }
 

@@ -38,8 +38,11 @@ const (
 
 	DockercfgSecretName = "dockercfg"
 
-	WebhookServiceName        = "webhook"
-	SeedWebhookServiceName    = "seed-webhook"
+	WebhookServiceName = "kubermatic-webhook"
+
+	// SeedWebhookServiceName is deprecated and only exists to facilitate cleanup by the operator.
+	SeedWebhookServiceName = "seed-webhook"
+	// ClusterWebhookServiceName is deprecated and only exists to facilitate cleanup by the operator.
 	ClusterWebhookServiceName = "cluster-webhook"
 
 	// we use a shared certificate/CA for all webhooks, because multiple webhooks

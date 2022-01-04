@@ -272,6 +272,10 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *kubermaticv1.K
 		return err
 	}
 
+	// Since the new standalone webhook, the old service is not required anymore.
+	// Once the webhooks are reconciled above, we can now clean up unneeded services.
+	common.CleanupWebhookServices(ctx, client, log, cfg.Namespace)
+
 	if err := metering.ReconcileMeteringResources(ctx, client, cfg, seed); err != nil {
 		return err
 	}

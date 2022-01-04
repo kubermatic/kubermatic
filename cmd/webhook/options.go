@@ -23,7 +23,6 @@ import (
 	"io/ioutil"
 
 	"go.uber.org/zap"
-	"k8s.io/klog"
 
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
@@ -36,6 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/webhook"
 
+	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/yaml"
 )
