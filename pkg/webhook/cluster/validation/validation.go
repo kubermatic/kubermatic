@@ -100,6 +100,9 @@ func (v *validator) buildValidationDependencies(ctx context.Context, c *kubermat
 	if err != nil {
 		return nil, nil, field.InternalError(nil, err)
 	}
+	if seed == nil {
+		return nil, nil, field.InternalError(nil, errors.New("webhook is not configured with -seed-name, cannot validate Clusters"))
+	}
 
 	datacenter, fieldErr := defaulting.DatacenterForClusterSpec(&c.Spec, seed)
 	if fieldErr != nil {
