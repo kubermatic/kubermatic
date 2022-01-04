@@ -45,10 +45,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-const (
-	controllerName = "webhook"
-)
-
 func main() {
 	rootCtx := context.Background()
 
@@ -119,14 +115,18 @@ func main() {
 		log.Fatalw("Failed to create seed validator", zap.Error(err))
 	}
 
-	builder.WebhookManagedBy(mgr).For(&kubermaticv1.Seed{}).WithValidator(seedValidator).Complete()
+	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.Seed{}).WithValidator(seedValidator).Complete(); err != nil {
+		log.Fatalw("Failed to setup seed validation webhook", zap.Error(err))
+	}
 
 	///////////////////////////////////////////
 	// setup Cluster webhooks
 
 	// validation webhook can already use ctrl-runtime boilerplate
 	clusterValidator := clustervalidation.NewValidator(mgr.GetClient(), seedGetter, options.featureGates, caPool)
-	builder.WebhookManagedBy(mgr).For(&kubermaticv1.Cluster{}).WithValidator(clusterValidator).Complete()
+	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.Cluster{}).WithValidator(clusterValidator).Complete(); err != nil {
+		log.Fatalw("Failed to setup cluster validation webhook", zap.Error(err))
+	}
 
 	// mutation cannot, because we require separate defaulting for CREATE and UPDATE operations
 	clustermutation.NewAdmissionHandler(mgr.GetClient(), configGetter, seedGetter, caPool).SetupWebhookWithManager(mgr)

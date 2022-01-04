@@ -17,26 +17,21 @@ limitations under the License.
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"io/ioutil"
 
 	"go.uber.org/zap"
 
-	"k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/pprof"
-	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
-	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/webhook"
 
 	"k8s.io/klog"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/yaml"
 )
 
@@ -98,20 +93,6 @@ func initApplicationOptions() (appOptions, error) {
 	c.caBundle = caBundle
 
 	return c, nil
-}
-
-// controllerContext holds all controllerRunOptions plus everything that
-// needs to be initialized first
-type controllerContext struct {
-	ctx                  context.Context
-	runOptions           appOptions
-	mgr                  manager.Manager
-	clientProvider       *client.Provider
-	seedGetter           provider.SeedGetter
-	configGetter         provider.KubermaticConfigurationGetter
-	dockerPullConfigJSON []byte
-	log                  *zap.SugaredLogger
-	versions             kubermatic.Versions
 }
 
 func loadKubermaticConfiguration(filename string) (*operatorv1alpha1.KubermaticConfiguration, error) {

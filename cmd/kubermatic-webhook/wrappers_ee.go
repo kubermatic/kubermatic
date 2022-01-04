@@ -34,7 +34,3 @@ func seedGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader, opt
 func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, namespace string) (provider.SeedsGetter, error) {
 	return eewebhook.SeedsGetterFactory(ctx, client, namespace)
 }
-
-func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, opt appOptions) (provider.SeedKubeconfigGetter, error) {
-	return eewebhook.SeedKubeconfigGetterFactory(ctx, client)
-}
