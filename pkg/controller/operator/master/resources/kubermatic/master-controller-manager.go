@@ -21,7 +21,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -55,26 +54,12 @@ func MasterControllerManagerDeploymentCreator(cfg *kubermaticv1.KubermaticConfig
 
 			d.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 
-			d.Spec.Template.Spec.Volumes = []corev1.Volume{
-				{
-					Name: "webhook-serving-cert",
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: common.WebhookServingCertSecretName,
-						},
-					},
-				},
-			}
-
 			args := []string{
 				"-logtostderr",
 				"-internal-address=0.0.0.0:8085",
 				"-worker-count=20",
-				"-admissionwebhook-cert-dir=/opt/webhook-serving-cert/",
 				fmt.Sprintf("-namespace=%s", cfg.Namespace),
 				fmt.Sprintf("-pprof-listen-address=%s", *cfg.Spec.MasterController.PProfEndpoint),
-				fmt.Sprintf("-admissionwebhook-cert-name=%s", resources.ServingCertSecretKey),
-				fmt.Sprintf("-admissionwebhook-key-name=%s", resources.ServingCertKeySecretKey),
 				fmt.Sprintf("-feature-gates=%s", common.StringifyFeatureGates(cfg)),
 			}
 
@@ -100,13 +85,6 @@ func MasterControllerManagerDeploymentCreator(cfg *kubermaticv1.KubermaticConfig
 							Name:          "metrics",
 							ContainerPort: 8085,
 							Protocol:      corev1.ProtocolTCP,
-						},
-					},
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      "webhook-serving-cert",
-							MountPath: "/opt/webhook-serving-cert/",
-							ReadOnly:  true,
 						},
 					},
 					Resources: cfg.Spec.MasterController.Resources,
