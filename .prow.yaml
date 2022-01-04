@@ -1182,7 +1182,7 @@ presubmits:
   #########################################################
 
   - name: pre-kubermatic-nodeport-proxy-e2e
-    run_if_changed: "(cmd/nodeport-proxy/|pkg/controller/operator/seed/nodeportproxy/|pkg/controller/nodeport-proxy|.prow.yaml)"
+    run_if_changed: "(cmd/nodeport-proxy/|pkg/|.prow.yaml)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
