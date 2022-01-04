@@ -39,6 +39,7 @@ import (
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/resources/openvpn"
+	"k8c.io/kubermatic/v2/pkg/resources/operatingsystemmanager"
 	"k8c.io/kubermatic/v2/pkg/resources/rancherserver"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/scheduler"
@@ -170,6 +171,13 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 			if err := r.ensureKonnectivitySetupIsRemoved(ctx, data); err != nil {
 				return nil, err
 			}
+		}
+	}
+
+	// Ensure that OSM is completely removed, when disabled
+	if !cluster.Spec.EnableOperatingSystemManager {
+		if err := r.ensureOSMResourcesAreRemoved(ctx, data); err != nil {
+			return nil, err
 		}
 	}
 
@@ -312,6 +320,10 @@ func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuth
 		deployments = append(deployments, cloudcontroller.DeploymentCreator(data))
 	}
 
+	if data.Cluster().Spec.EnableOperatingSystemManager {
+		deployments = append(deployments, operatingsystemmanager.DeploymentCreator(data))
+	}
+
 	return deployments
 }
 
@@ -393,6 +405,11 @@ func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.
 		etcd.ServiceAccountCreator,
 		usercluster.ServiceAccountCreator,
 	}
+
+	if c.Spec.EnableOperatingSystemManager {
+		namedServiceAccountCreatorGetters = append(namedServiceAccountCreatorGetters, operatingsystemmanager.ServiceAccountCreator)
+	}
+
 	if err := reconciling.ReconcileServiceAccounts(ctx, namedServiceAccountCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure ServiceAccounts: %v", err)
 	}
@@ -404,6 +421,11 @@ func (r *Reconciler) ensureRoles(ctx context.Context, c *kubermaticv1.Cluster) e
 	namedRoleCreatorGetters := []reconciling.NamedRoleCreatorGetter{
 		usercluster.RoleCreator,
 	}
+
+	if c.Spec.EnableOperatingSystemManager {
+		namedRoleCreatorGetters = append(namedRoleCreatorGetters, operatingsystemmanager.RoleCreator)
+	}
+
 	if err := reconciling.ReconcileRoles(ctx, namedRoleCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure Roles: %v", err)
 	}
@@ -415,6 +437,11 @@ func (r *Reconciler) ensureRoleBindings(ctx context.Context, c *kubermaticv1.Clu
 	namedRoleBindingCreatorGetters := []reconciling.NamedRoleBindingCreatorGetter{
 		usercluster.RoleBindingCreator,
 	}
+
+	if c.Spec.EnableOperatingSystemManager {
+		namedRoleBindingCreatorGetters = append(namedRoleBindingCreatorGetters, operatingsystemmanager.RoleBindingCreator)
+	}
+
 	if err := reconciling.ReconcileRoleBindings(ctx, namedRoleBindingCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure RoleBindings: %v", err)
 	}
@@ -614,6 +641,16 @@ func (r *Reconciler) ensureOldOPAIntegrationIsRemoved(ctx context.Context, data 
 		}
 	}
 
+	return nil
+}
+
+func (r *Reconciler) ensureOSMResourcesAreRemoved(ctx context.Context, data *resources.TemplateData) error {
+	for _, resource := range operatingsystemmanager.ResourcesForDeletion(data.Cluster().Status.NamespaceName) {
+		err := r.Client.Delete(ctx, resource)
+		if err != nil && !errors.IsNotFound(err) {
+			return fmt.Errorf("failed to ensure OSM resources are removed/not present: %v", err)
+		}
+	}
 	return nil
 }
 

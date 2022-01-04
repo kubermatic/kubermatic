@@ -288,14 +288,20 @@ const (
 	ClusterInfoReaderRoleName = "cluster-info"
 	// MachineControllerRoleName is the name for the MachineController roles
 	MachineControllerRoleName = "machine-controller"
+	// OperatingSystemManagerRoleName is the name for the OperatingSystemManager roles
+	OperatingSystemManagerRoleName = "operating-system-manager"
 	// MachineControllerRoleBindingName is the name for the MachineController rolebinding
 	MachineControllerRoleBindingName = "machine-controller"
+	// OperatingSystemManagerRoleBindingName is the name for the OperatingSystemManager rolebinding
+	OperatingSystemManagerRoleBindingName = "operating-system-manager"
 	// ClusterInfoAnonymousRoleBindingName is the name for the RoleBinding giving access to the cluster-info ConfigMap to anonymous users
 	ClusterInfoAnonymousRoleBindingName = "cluster-info"
 	// MetricsServerAuthReaderRoleName is the name for the metrics server role
 	MetricsServerAuthReaderRoleName = "metrics-server-auth-reader"
 	// MachineControllerClusterRoleName is the name for the MachineController cluster role
 	MachineControllerClusterRoleName = "system:kubermatic-machine-controller"
+	// OperatingSystemManagerClusterRoleName is the name for the OperatingSystemManager cluster role
+	OperatingSystemManagerClusterRoleName = "system:kubermatic-operating-system-manager"
 	// KubeStateMetricsClusterRoleName is the name for the KubeStateMetrics cluster role
 	KubeStateMetricsClusterRoleName = "system:kubermatic-kube-state-metrics"
 	// MetricsServerClusterRoleName is the name for the metrics server cluster role
@@ -304,6 +310,8 @@ const (
 	PrometheusClusterRoleName = "external-prometheus"
 	// MachineControllerClusterRoleBindingName is the name for the MachineController ClusterRoleBinding
 	MachineControllerClusterRoleBindingName = "system:kubermatic-machine-controller"
+	// OperatingSystemManagerClusterRoleBindingName is the name for the OperatingSystemManager ClusterRoleBinding
+	OperatingSystemManagerClusterRoleBindingName = "system:kubermatic-operating-system-manager"
 	// KubeStateMetricsClusterRoleBindingName is the name for the KubeStateMetrics ClusterRoleBinding
 	KubeStateMetricsClusterRoleBindingName = "system:kubermatic-kube-state-metrics"
 	// PrometheusClusterRoleBindingName is the name for the Prometheus ClusterRoleBinding
