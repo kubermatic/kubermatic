@@ -47,8 +47,9 @@ var (
 )
 
 const (
-	scaleUpCount   = 5
-	scaleDownCount = 3
+	scaleUpCount           = 5
+	scaleDownCount         = 3
+	minioBackupDestination = "minio"
 )
 
 func TestBackup(t *testing.T) {
@@ -203,7 +204,7 @@ func createBackup(ctx context.Context, t *testing.T, client ctrlruntimeclient.Cl
 				APIVersion:      cluster.APIVersion,
 				ResourceVersion: cluster.ResourceVersion,
 			},
-			Destination: "minio",
+			Destination: minioBackupDestination,
 		},
 	}
 
@@ -235,7 +236,7 @@ func restoreBackup(ctx context.Context, t *testing.T, client ctrlruntimeclient.C
 				ResourceVersion: cluster.ResourceVersion,
 			},
 			BackupName:  backup.Status.CurrentBackups[0].BackupName,
-			Destination: "minio",
+			Destination: minioBackupDestination,
 		},
 	}
 
