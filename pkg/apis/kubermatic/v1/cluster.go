@@ -235,10 +235,6 @@ const (
 	// The cluster-name flag is often used for naming cloud resources, such as load balancers.
 	ClusterFeatureCCMClusterName = "ccmClusterName"
 
-	// ClusterFeatureRancherIntegration enables the rancher server integration feature.
-	// It will deploy a Rancher Server Managegment plane on the seed cluster and import the user cluster into it.
-	ClusterFeatureRancherIntegration = "rancherIntegration"
-
 	// ClusterFeatureEtcdLauncher enables features related to the experimental etcd-launcher. This includes user-cluster
 	// etcd scaling, automatic volume recovery and new backup/restore contorllers.
 	ClusterFeatureEtcdLauncher = "etcdLauncher"
@@ -252,7 +248,7 @@ const (
 	KubeSystemNetworkPolicies = "kubeSystemNetworkPolicies"
 )
 
-// +kubebuilder:validation:Enum="";SeedResourcesUpToDate;ClusterControllerReconciledSuccessfully;AddonControllerReconciledSuccessfully;AddonInstallerControllerReconciledSuccessfully;BackupControllerReconciledSuccessfully;CloudControllerReconcilledSuccessfully;UpdateControllerReconciledSuccessfully;MonitoringControllerReconciledSuccessfully;MachineDeploymentReconciledSuccessfully;MLAControllerReconciledSuccessfully;ClusterInitialized;RancherInitializedSuccessfully;RancherClusterImportedSuccessfully;EtcdClusterInitialized;CSIKubeletMigrationCompleted;ClusterUpdateSuccessful;ClusterUpdateInProgress;CSIKubeletMigrationSuccess;CSIKubeletMigrationInProgress;
+// +kubebuilder:validation:Enum="";SeedResourcesUpToDate;ClusterControllerReconciledSuccessfully;AddonControllerReconciledSuccessfully;AddonInstallerControllerReconciledSuccessfully;BackupControllerReconciledSuccessfully;CloudControllerReconcilledSuccessfully;UpdateControllerReconciledSuccessfully;MonitoringControllerReconciledSuccessfully;MachineDeploymentReconciledSuccessfully;MLAControllerReconciledSuccessfully;ClusterInitialized;EtcdClusterInitialized;CSIKubeletMigrationCompleted;ClusterUpdateSuccessful;ClusterUpdateInProgress;CSIKubeletMigrationSuccess;CSIKubeletMigrationInProgress;
 
 // ClusterConditionType is used to indicate the type of a cluster condition. For all condition
 // types, the `true` value must indicate success. All condition types must be registered within
@@ -280,9 +276,6 @@ const (
 	ClusterConditionMachineDeploymentControllerReconcilingSuccess ClusterConditionType = "MachineDeploymentReconciledSuccessfully"
 	ClusterConditionMLAControllerReconcilingSuccess               ClusterConditionType = "MLAControllerReconciledSuccessfully"
 	ClusterConditionClusterInitialized                            ClusterConditionType = "ClusterInitialized"
-
-	ClusterConditionRancherInitialized     ClusterConditionType = "RancherInitializedSuccessfully"
-	ClusterConditionRancherClusterImported ClusterConditionType = "RancherClusterImportedSuccessfully"
 
 	ClusterConditionEtcdClusterInitialized ClusterConditionType = "EtcdClusterInitialized"
 
