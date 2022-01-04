@@ -48,14 +48,18 @@ import (
 func main() {
 	rootCtx := context.Background()
 
+	// /////////////////////////////////////////
 	// setup flags
+
 	options, err := initApplicationOptions()
 	if err != nil {
 		fmt.Printf("Invalid flags: %v\n", err)
 		os.Exit(1)
 	}
 
+	// /////////////////////////////////////////
 	// setup logging
+
 	rawLog := kubermaticlog.New(options.log.Debug, options.log.Format)
 	log := rawLog.Sugar()
 	defer func() {
@@ -71,13 +75,17 @@ func main() {
 	versions := kubermatic.NewDefaultVersions()
 	cli.Hello(log, "Webhook", options.log.Debug, &versions)
 
+	// /////////////////////////////////////////
 	// get kubeconfig
+
 	cfg, err := ctrlruntime.GetConfig()
 	if err != nil {
 		log.Fatalw("Failed to get kubeconfig", zap.Error(err))
 	}
 
+	// /////////////////////////////////////////
 	// create manager
+
 	mgr, err := manager.New(cfg, manager.Options{
 		Namespace: options.namespace,
 	})
@@ -102,14 +110,14 @@ func main() {
 
 	caPool := options.caBundle.CertPool()
 
-	///////////////////////////////////////////
+	// /////////////////////////////////////////
 	// add pprof runnable, which will start a websever if configured
 
 	if err := mgr.Add(&options.pprof); err != nil {
 		log.Fatalw("Failed to add the pprof handler", zap.Error(err))
 	}
 
-	///////////////////////////////////////////
+	// /////////////////////////////////////////
 	// setup Seed webhook
 
 	seedValidator, err := seedwebhook.NewValidator(seedsGetter, seedClientGetter, options.featureGates)
@@ -121,7 +129,7 @@ func main() {
 		log.Fatalw("Failed to setup seed validation webhook", zap.Error(err))
 	}
 
-	///////////////////////////////////////////
+	// /////////////////////////////////////////
 	// setup Cluster webhooks
 
 	// validation webhook can already use ctrl-runtime boilerplate
@@ -133,7 +141,7 @@ func main() {
 	// mutation cannot, because we require separate defaulting for CREATE and UPDATE operations
 	clustermutation.NewAdmissionHandler(mgr.GetClient(), configGetter, seedGetter, caPool).SetupWebhookWithManager(mgr)
 
-	///////////////////////////////////////////
+	// /////////////////////////////////////////
 	// setup OSM webhooks
 
 	// Setup the validation admission handler for OperatingSystemConfig CRDs
@@ -142,7 +150,7 @@ func main() {
 	// Setup the validation admission handler for OperatingSystemProfile CRDs
 	ospvalidation.NewAdmissionHandler().SetupWebhookWithManager(mgr)
 
-	///////////////////////////////////////////
+	// /////////////////////////////////////////
 	// Here we go!
 
 	log.Info("Starting the webhook...")
