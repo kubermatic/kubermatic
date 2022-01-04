@@ -61,8 +61,13 @@ func WebhookRoleCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconcili
 			// so this Role only needs to allow access to Seed objects.
 			r.Rules = []rbacv1.PolicyRule{
 				{
-					APIGroups: []string{"kubermatic.io"},
-					Resources: []string{"seed"},
+					APIGroups: []string{"kubermatic.k8s.io"},
+					Resources: []string{"seeds"},
+					Verbs:     []string{"get", "list", "watch"},
+				},
+				{
+					APIGroups: []string{""},
+					Resources: []string{"secrets"},
 					Verbs:     []string{"get", "list", "watch"},
 				},
 			}
