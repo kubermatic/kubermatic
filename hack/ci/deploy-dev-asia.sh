@@ -25,17 +25,25 @@ source ./hack/lib.sh
 export DEPLOY_STACK=${DEPLOY_STACK:-kubermatic}
 export GIT_HEAD_HASH="$(git rev-parse HEAD | tr -d '\n')"
 
-# This job does not need to build any binaries, as we only install a few
-# CRDs and charts to this seed cluster.
+# This job does not need to build any Docker images, as we only install a few
+# CRDs and charts to this seed cluster. We still need to compile the installer
+# though.
+if [[ "${DEPLOY_STACK}" == "kubermatic" ]]; then
+  NO_DOCKER_IMAGES=true ./hack/ci/push-images.sh
+fi
 
 echodate "Getting secrets from Vault"
 retry 5 vault_ci_login
 export KUBECONFIG=/tmp/kubeconfig
 export VALUES_FILE=/tmp/values.yaml
+export DOCKER_CONFIG=/tmp/dockercfg
+export KUBERMATIC_CONFIG=/tmp/kubermatic.yaml
 
 # deploy to dev-asia
 vault kv get -field=kubeconfig dev/seed-clusters/dev.kubermatic.io > ${KUBECONFIG}
 vault kv get -field=asia-south1-c-values.yaml dev/seed-clusters/dev.kubermatic.io > ${VALUES_FILE}
+vault kv get -field=.dockerconfigjson dev/seed-clusters/dev.kubermatic.io > ${DOCKER_CONFIG}
+vault kv get -field=kubermatic.yaml dev/seed-clusters/dev.kubermatic.io > ${KUBERMATIC_CONFIG}
 kubectl config use-context asia-south1-c
 echodate "Successfully got secrets for dev-asia from Vault"
 
