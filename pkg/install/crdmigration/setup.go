@@ -22,20 +22,30 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"k8c.io/kubermatic/v2/pkg/install/util"
+	"k8c.io/kubermatic/v2/pkg/install/stack"
+	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
+	kubermaticseed "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-seed"
 )
 
 func InstallCRDs(ctx context.Context, logger logrus.FieldLogger, opt *Options) error {
 	logger.Info("Installing new CRDs…")
 
+	masterStack := kubermaticmaster.MasterStack{}
+	seedStack := kubermaticseed.SeedStack{}
+	crdOptions := stack.DeployOptions{
+		KubermaticCRDDirectory: opt.CRDDirectory,
+	}
+
+	masterLogger := logger.WithField("master", true)
+
 	// process master cluster
-	if err := util.DeployCRDs(ctx, opt.MasterClient, logger.WithField("master", true), opt.CRDDirectory, opt.KubermaticConfiguration); err != nil {
+	if err := masterStack.InstallKubermaticCRDs(ctx, opt.MasterClient, masterLogger, crdOptions); err != nil {
 		return fmt.Errorf("processing the master cluster failed: %w", err)
 	}
 
 	// process seed clusters
 	for seedName, seedClient := range opt.SeedClients {
-		if err := util.DeployCRDs(ctx, seedClient, logger.WithField("seed", seedName), opt.CRDDirectory, opt.KubermaticConfiguration); err != nil {
+		if err := seedStack.InstallKubermaticCRDs(ctx, seedClient, logger.WithField("seed", seedName), crdOptions); err != nil {
 			return fmt.Errorf("processing the seed cluster failed: %w", err)
 		}
 	}

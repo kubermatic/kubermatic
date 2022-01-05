@@ -835,7 +835,6 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData)
 }
 
 func (r *reconciler) reconcileNamespaces(ctx context.Context) error {
-
 	creators := []reconciling.NamedNamespaceCreatorGetter{
 		kubernetesdashboard.NamespaceCreator,
 		cloudinitsettings.NamespaceCreator,

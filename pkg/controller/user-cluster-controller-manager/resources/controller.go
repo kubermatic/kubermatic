@@ -397,14 +397,16 @@ func (r *reconciler) networkingData(ctx context.Context) (address *kubermaticv1.
 
 // reconcileDefaultServiceAccount ensures that the Kubernetes default service account has AutomountServiceAccountToken set to false
 func (r *reconciler) reconcileDefaultServiceAccount(ctx context.Context, namespace string) error {
-
 	var serviceAccount corev1.ServiceAccount
 	err := r.Get(ctx, types.NamespacedName{
 		Namespace: namespace,
 		Name:      resources.DefaultServiceAccountName,
 	}, &serviceAccount)
-
 	if err != nil {
+		if kerrors.IsNotFound(err) {
+			return nil
+		}
+
 		return err
 	}
 
@@ -415,13 +417,7 @@ func (r *reconciler) reconcileDefaultServiceAccount(ctx context.Context, namespa
 
 	serviceAccount.AutomountServiceAccountToken = pointer.Bool(false)
 
-	err = r.Update(ctx, &serviceAccount)
-	if err != nil {
-		return err
-	}
-
-	return nil
-
+	return r.Update(ctx, &serviceAccount)
 }
 
 func (r *reconciler) opaReconcileData(ctx context.Context) (controller, audit *corev1.ResourceRequirements, err error) {

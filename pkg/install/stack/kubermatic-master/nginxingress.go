@@ -76,12 +76,12 @@ func deployNginxIngressController(ctx context.Context, logger *logrus.Entry, kub
 		if err != nil {
 			return fmt.Errorf("failed to upgrade nginx-ingress-controller: %v", err)
 		}
-
 	}
 
 	// do not perform an atomic installation, as this will make Helm wait for the LoadBalancer to
 	// get an IP and this can require manual intervention based on the target environment
-	sublogger.Info("Deploying Helm chart...")
+	sublogger.Info("Deploying Helm chart…")
+
 	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, NginxIngressControllerNamespace, NginxIngressControllerReleaseName, opt.HelmValues, false, opt.ForceHelmReleaseUpgrade, release); err != nil {
 		return fmt.Errorf("failed to deploy Helm release: %v", err)
 	}
@@ -107,7 +107,8 @@ func upgradeNginxIngress(
 ) error {
 	logger.Infof("%s: %s detected, performing upgrade to %s…", release.Name, release.Version.String(), chart.Version.String())
 	// 1: find the old deployment
-	logger.Info("Backing up old ingress deployment...")
+	logger.Info("Backing up old ingress deployment…")
+
 	deploymentsList := &unstructured.UnstructuredList{}
 	deploymentsList.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   "apps",

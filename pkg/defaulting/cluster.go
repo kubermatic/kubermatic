@@ -168,6 +168,9 @@ func DefaultClusterSpec(spec *kubermaticv1.ClusterSpec, template *kubermaticv1.C
 
 	// Always enable external CCM
 	if spec.Cloud.Anexia != nil || spec.Cloud.Kubevirt != nil {
+		if spec.Features == nil {
+			spec.Features = map[string]bool{}
+		}
 		spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] = true
 	}
 

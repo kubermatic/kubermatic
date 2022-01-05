@@ -147,13 +147,18 @@ kubermaticOperator:
   image:
     repository: "quay.io/kubermatic/kubermatic$REPOSUFFIX"
     tag: "$KUBERMATIC_VERSION"
+
+minio:
+  credentials:
+    accessKey: test
+    secretKey: testtest
 EOF
 
 # append custom Dex configuration
 cat hack/ci/testdata/oauth_values.yaml >> $HELM_VALUES_FILE
 
 # install dependencies and Kubermatic Operator into cluster
-./_build/kubermatic-installer deploy --disable-telemetry \
+./_build/kubermatic-installer deploy kubermatic-master --disable-telemetry \
   --storageclass copy-default \
   --config "$KUBERMATIC_CONFIG" \
   --helm-values "$HELM_VALUES_FILE"
@@ -168,6 +173,15 @@ retry 10 check_all_deployments_ready kubermatic
 echodate "Finished installing Kubermatic"
 
 echodate "Installing Seed..."
+
+# master&seed are the same cluster, but we still want to test that the
+# installer can setup the seed components. Effectively, in these tests
+# this is a NOP.
+./_build/kubermatic-installer deploy kubermatic-seed \
+  --storageclass copy-default \
+  --config "$KUBERMATIC_CONFIG" \
+  --helm-values "$HELM_VALUES_FILE"
+
 SEED_MANIFEST="$(mktemp)"
 SEED_KUBECONFIG="$(cat $KUBECONFIG | sed 's/127.0.0.1.*/kubernetes.default.svc.cluster.local./' | base64 -w0)"
 
