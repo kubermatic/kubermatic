@@ -22,7 +22,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// sanitizeEnvVar will take the value of a environment variable and sanatises it.
+// SanitizeEnvVar will take the value of an environment variable and sanitize it.
 // the need for this comes from github.com/kubermatic/kubermatic/issues/7960
 func SanitizeEnvVars(envVars []corev1.EnvVar) []corev1.EnvVar {
 	sanitizedEnvVars := make([]corev1.EnvVar, len(envVars))
