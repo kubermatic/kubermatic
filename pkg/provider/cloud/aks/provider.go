@@ -151,7 +151,15 @@ func GetAKSClusterStatus(ctx context.Context, secretKeySelector provider.SecretK
 	}
 	state := apiv2.UNKNOWN
 	if aksCluster.ManagedClusterProperties != nil {
-		state = convertAKSStatus(*aksCluster.ManagedClusterProperties.ProvisioningState)
+		var powerState containerservice.Code
+		var provisioningState string
+		if aksCluster.ManagedClusterProperties.PowerState != nil {
+			powerState = aksCluster.ManagedClusterProperties.PowerState.Code
+		}
+		if aksCluster.ManagedClusterProperties.ProvisioningState != nil {
+			provisioningState = *aksCluster.ManagedClusterProperties.ProvisioningState
+		}
+		state = convertAKSStatus(provisioningState, powerState)
 	}
 
 	return &apiv2.ExternalClusterStatus{
@@ -160,18 +168,24 @@ func GetAKSClusterStatus(ctx context.Context, secretKeySelector provider.SecretK
 
 }
 
-func convertAKSStatus(status string) apiv2.ExternalClusterState {
-	switch status {
-	case "Creating":
+func convertAKSStatus(provisioningState string, powerState containerservice.Code) apiv2.ExternalClusterState {
+	switch {
+	case provisioningState == "Creating":
 		return apiv2.PROVISIONING
-	case "Succeeded":
+	case provisioningState == "Succeeded" && powerState == "Running":
 		return apiv2.RUNNING
-	case "Upgrading":
-		return apiv2.RECONCILING
-	case "Stopping":
-		return apiv2.RECONCILING
-	case "Deleting":
+	case provisioningState == "Starting":
+		return apiv2.PROVISIONING
+	case provisioningState == "Stopping":
+		return apiv2.STOPPING
+	case provisioningState == "Succeeded" && powerState == "Stopped":
+		return apiv2.STOPPED
+	case provisioningState == "Failed":
+		return apiv2.ERROR
+	case provisioningState == "Deleting":
 		return apiv2.DELETING
+	case provisioningState == "Upgrading":
+		return apiv2.RECONCILING
 	default:
 		return apiv2.UNKNOWN
 	}
