@@ -739,6 +739,12 @@ spec:
                     required:
                     - billingCycle
                     type: object
+                  providerName:
+                    description: ProviderName is the name of the cloud provider used
+                      for this cluster. This must match the given provider spec (e.g.
+                      if the providerName is "aws", then the AWSCloudSpec must be
+                      set)
+                    type: string
                   vsphere:
                     description: VSphereCloudSpec specifies access data to VSphere
                       cloud.
@@ -829,6 +835,7 @@ spec:
                     type: object
                 required:
                 - dc
+                - providerName
                 type: object
               clusterNetwork:
                 description: ClusterNetworkingConfig specifies the different networking
