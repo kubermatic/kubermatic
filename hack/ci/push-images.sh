@@ -35,11 +35,13 @@ fi
 
 apt install time -y
 
-echodate "Logging into Quay"
-docker ps > /dev/null 2>&1 || start-docker.sh
-retry 5 docker login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
-retry 5 buildah login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
-echodate "Successfully logged into Quay"
+if [ -z "${NO_DOCKER_IMAGES:-}" ]; then
+  echodate "Logging into Quay"
+  docker ps > /dev/null 2>&1 || start-docker.sh
+  retry 5 docker login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
+  retry 5 buildah login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
+  echodate "Successfully logged into Quay"
+fi
 
 # prepare special variables that will be injected into the Kubermatic Operator;
 # use the latest tagged version of the dashboard when we ourselves are a tagged
@@ -74,15 +76,16 @@ echodate "Building binaries"
 retry 1 make build
 echodate "Successfully finished building binaries"
 
-TEST_NAME="Build and push docker images"
-echodate "Building and pushing quay images"
+if [ -z "${NO_DOCKER_IMAGES:-}" ]; then
+  TEST_NAME="Build and push docker images"
+  echodate "Building and pushing quay images"
 
-# prepare Helm charts
-sed -i "s/__KUBERMATIC_TAG__/${KUBERMATICDOCKERTAG}/g" charts/*/*.yaml
-sed -i "s/__DASHBOARD_TAG__/$UIDOCKERTAG/g" charts/*/*.yaml
+  # prepare Helm charts
+  sed -i "s/__KUBERMATIC_TAG__/${KUBERMATICDOCKERTAG}/g" charts/*/*.yaml
 
-set -f # prevent globbing, do word splitting
-# shellcheck disable=SC2086
-retry 5 ./hack/release-docker-images.sh $TAGS
-echodate "Successfully finished building and pushing quay images"
-unset TEST_NAME
+  set -f # prevent globbing, do word splitting
+  # shellcheck disable=SC2086
+  retry 5 ./hack/release-docker-images.sh $TAGS
+  echodate "Successfully finished building and pushing quay images"
+  unset TEST_NAME
+fi
