@@ -19,12 +19,3 @@ metadata:
 data:
   ACCESS_KEY_ID: RlhjRDdzMHRGT1B1VHY2amFaQVJKRG91YzJIYWw4RTA=
   SECRET_ACCESS_KEY: d2RFWkdUbmhrZ0JEVERldGFIRnVpenMzcHdYSHZXVHM=
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: s3-settings
-  namespace: kube-system
-data:
-  BUCKET_NAME: kkpbackupe2e
-  ENDPOINT: minio.minio.svc.cluster.local:9000
