@@ -49,15 +49,6 @@ import (
 )
 
 const (
-	RancherStatefulSetName              = "rancher-server"
-	RancherServerServiceAccountName     = "rancher-server-sa"
-	RancherServerClusterRoleBindingName = "rancher-server-crb"
-	RancherServerClusterRoleName        = "rancher-server-rb"
-	RancherServerServiceName            = "rancher-server-svc"
-	RancherServerIngressName            = "rancher-server-ingress"
-)
-
-const (
 	// ApiServer secure port
 	APIServerSecurePort = 6443
 

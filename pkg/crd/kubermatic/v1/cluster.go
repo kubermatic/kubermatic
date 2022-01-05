@@ -224,10 +224,6 @@ const (
 	// The cluster-name flag is often used for naming cloud resources, such as load balancers.
 	ClusterFeatureCCMClusterName = "ccmClusterName"
 
-	// ClusterFeatureRancherIntegration enables the rancher server integration feature.
-	// It will deploy a Rancher Server Managegment plane on the seed cluster and import the user cluster into it.
-	ClusterFeatureRancherIntegration = "rancherIntegration"
-
 	// ClusterFeatureEtcdLauncher enables features related to the experimental etcd-launcher. This includes user-cluster
 	// etcd scaling, automatic volume recovery and new backup/restore contorllers.
 	ClusterFeatureEtcdLauncher = "etcdLauncher"
@@ -267,9 +263,6 @@ const (
 	ClusterConditionMachineDeploymentControllerReconcilingSuccess ClusterConditionType = "MachineDeploymentReconciledSuccessfully"
 	ClusterConditionMLAControllerReconcilingSuccess               ClusterConditionType = "MLAControllerReconciledSuccessfully"
 	ClusterConditionClusterInitialized                            ClusterConditionType = "ClusterInitialized"
-
-	ClusterConditionRancherInitialized     ClusterConditionType = "RancherInitializedSuccessfully"
-	ClusterConditionRancherClusterImported ClusterConditionType = "RancherClusterImportedSuccessfully"
 
 	ClusterConditionEtcdClusterInitialized ClusterConditionType = "EtcdClusterInitialized"
 
