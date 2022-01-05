@@ -404,6 +404,7 @@ func convertClusterSpec(old kubermaticv1.ClusterSpec) newv1.ClusterSpec {
 	result := newv1.ClusterSpec{
 		Cloud: newv1.CloudSpec{
 			DatacenterName: old.Cloud.DatacenterName,
+			ProviderName:   old.Cloud.ProviderName,
 
 			// Azure, VSphere and Openstack need special treatment further down
 			AWS:          (*newv1.AWSCloudSpec)(old.Cloud.AWS),
