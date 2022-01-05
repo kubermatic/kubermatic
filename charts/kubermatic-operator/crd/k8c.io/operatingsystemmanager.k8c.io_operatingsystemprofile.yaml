@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This file has been copied from
+# https://github.com/kubermatic/operating-system-manager/blob/master/deploy/crd/crd-operating-system-profile.yaml
+
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
