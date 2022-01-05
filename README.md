@@ -127,7 +127,7 @@ make test
 #### Update code generation
 
 The Kubernetes code-generator tool does not work outside of `GOPATH`
-[see related issue](https://github.com/kubernetes/kubernetes/issues/86753), so the script
+([upstream issue](https://github.com/kubernetes/kubernetes/issues/86753)), so the script
 below will automatically run the code generation in a Docker container.
 
 ```bash
