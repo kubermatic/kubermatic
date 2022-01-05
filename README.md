@@ -1,4 +1,18 @@
-# Kubermatic Kubernetes Platform
+<p align="center">
+  <img src="./docs/kkp-logo.png" alt="Kubermatic Kubernetes Platform">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/github/v/release/kubermatic/kubermatic" alt="last stable release">
+
+  <a href="https://goreportcard.com/report/k8c.io/kubermatic/v2">
+    <img src="https://goreportcard.com/badge/k8c.io/kubermatic/v2" alt="go report card">
+  </a>
+
+  <a href="https://pkg.go.dev/k8c.io/kubermatic/v2">
+    <img src="https://pkg.go.dev/badge/k8c.io/kubermatic/v2" alt="godoc">
+  </a>
+</p>
 
 ## Overview / User Guides
 
@@ -7,12 +21,14 @@ Kubermatic Kubernetes Platform is in an open source project to centrally manage 
 All user documentation is available at the [Kubermatic Kubernetes Platform docs website][21].
 
 ## Editions
+
 There are two editions of Kubermatic Kubernetes Platform:
 
 Kubermatic Kubernetes Platform Community Edition (CE) is available freely under the Apache License, Version 2.0.
 Kubermatic Kubernetes Platform Enterprise Edition (EE) includes premium features that are most useful for organizations with large-scale Kubernetes installations with more than 50 clusters. To access the Enterprise Edition and get official support please become a subscriber.
 
 ## Licensing
+
 See the [LICENSE](LICENSE) file for licensing information as it pertains to files in this repository.
 
 ## Installation
@@ -35,8 +51,6 @@ If you encounter issues [file an issue][1] or talk to us on the [#kubermatic cha
 
 Thanks for taking the time to join our community and start contributing!
 
-Feedback and discussion are available on [the mailing list][11].
-
 ### Before you start
 
 * Please familiarize yourself with the [Code of Conduct][4] before contributing.
@@ -46,20 +60,13 @@ Feedback and discussion are available on [the mailing list][11].
 ### Repository layout
 
 ```
-├── addons            # Default Kubernetes addons
-├── CHANGELOG.md      # The changelog
-├── cmd               # Various Kubermatic binaries for the API, controller-managers etc.
-├── codegen           # Helper programs to generate Go code and Helm charts
-├── charts            # The Helm charts we use to deploy, gets exported to https://github.com/kubermatic/kubermatic-installer
-├── containers        # Various utility container images
-├── docs              # Some basic docs
-├── hack              # scripts for development and CI
-├── openshift_addons  # Default Openshift addons
-├── OWNERS
-├── OWNERS_ALIASES
-├── pkg               # most of the actual codebase
-├── Procfile
-└── README.md
+├── addons    # Default Kubernetes addons
+├── charts    # The Helm charts we use to deploy
+├── cmd       # Various Kubermatic binaries for the API, controller-managers etc.
+├── codegen   # Helper programs to generate Go code and Helm charts
+├── docs      # Some basic developer-oriented documentation
+├── hack      # scripts for development and CI
+└── pkg       # most of the actual codebase
 ```
 
 ### Development environment
@@ -119,9 +126,9 @@ make test
 
 #### Update code generation
 
-Kuberneres code-generator tool does not work outside of GOPATH
-[see](https://github.com/kubernetes/kubernetes/issues/86753), so the script below will
-automatically run the code generation in a Docker container.
+The Kubernetes code-generator tool does not work outside of `GOPATH`
+[see related issue](https://github.com/kubernetes/kubernetes/issues/86753), so the script
+below will automatically run the code generation in a Docker container.
 
 ```bash
 hack/update-codegen.sh
@@ -140,7 +147,6 @@ See [the list of releases][3] to find out about feature changes.
 [3]: https://github.com/kubermatic/kubermatic/releases
 [4]: https://github.com/kubermatic/kubermatic/blob/master/CODE_OF_CONDUCT.md
 
-[11]: https://groups.google.com/forum/#!forum/kubermatic-dev
 [12]: https://kubermatic.slack.com/messages/kubermatic
 [13]: https://github.com/kubermatic/kubermatic/blob/master/Zenhub.md
 [15]: http://slack.kubermatic.io/
