@@ -65,6 +65,23 @@ spec:
                     name:
                       description: Name represents the name of the supported cloud provider
                       type: string
+                      enum:
+                        - aws
+                        - azure
+                        - digitalocean
+                        - gce
+                        - hetzner
+                        - kubevirt
+                        - linode
+                        - openstack
+                        - equinixmetal
+                        - vsphere
+                        - fake
+                        - alibaba
+                        - anexia
+                        - scaleway
+                        - baremetal
+                        - external
                     spec:
                       description: Spec represents the os/image reference in the supported cloud provider
                       type: object
@@ -124,6 +141,13 @@ spec:
                 osName:
                   description: 'OSType represent the operating system name e.g: ubuntu'
                   type: string
+                  enum:
+                    - flatcar
+                    - rhel
+                    - centos
+                    - ubuntu
+                    - sles
+                    - amzn2
                 osVersion:
                   description: OSVersion the version of the operating system
                   type: string
