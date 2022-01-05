@@ -131,7 +131,7 @@ func DeploymentCreatorWithoutInitWrapper(data operatingSystemManagerData) reconc
 
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 
-			repository := data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/operating-system-manager"
+			repository := data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/operating-system-manager"
 
 			cloudProviderName, err := provider.ClusterCloudProviderName(data.Cluster().Spec.Cloud)
 			if err != nil {
