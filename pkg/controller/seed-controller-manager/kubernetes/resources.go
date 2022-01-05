@@ -40,7 +40,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/resources/openvpn"
 	"k8c.io/kubermatic/v2/pkg/resources/operatingsystemmanager"
-	"k8c.io/kubermatic/v2/pkg/resources/rancherserver"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/scheduler"
 	"k8c.io/kubermatic/v2/pkg/resources/usercluster"
@@ -274,10 +273,6 @@ func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedService
 
 	if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
 		creators = append(creators, nodeportproxy.FrontLoadBalancerServiceCreator(data))
-	}
-
-	if flag := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureRancherIntegration]; flag {
-		creators = append(creators, rancherserver.ServiceCreator(data.Cluster().Spec.ExposeStrategy))
 	}
 
 	return creators
@@ -534,13 +529,9 @@ func (r *Reconciler) ensureConfigMaps(ctx context.Context, c *kubermaticv1.Clust
 
 // GetStatefulSetCreators returns all StatefulSetCreators that are currently in use
 func GetStatefulSetCreators(data *resources.TemplateData, enableDataCorruptionChecks bool, enableTLSOnly bool) []reconciling.NamedStatefulSetCreatorGetter {
-	creators := []reconciling.NamedStatefulSetCreatorGetter{
+	return []reconciling.NamedStatefulSetCreatorGetter{
 		etcd.StatefulSetCreator(data, enableDataCorruptionChecks, enableTLSOnly),
 	}
-	if flag := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureRancherIntegration]; flag {
-		creators = append(creators, rancherserver.StatefulSetCreator(data))
-	}
-	return creators
 }
 
 // GetEtcdBackupConfigCreators returns all EtcdBackupConfigCreators that are currently in use

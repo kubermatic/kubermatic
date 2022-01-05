@@ -38,7 +38,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/pvwatcher"
-	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/rancher"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/seedresourcesuptodatecondition"
 	updatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/update"
 	"k8c.io/kubermatic/v2/pkg/features"
@@ -61,7 +60,6 @@ var AllControllers = map[string]controllerCreator{
 	monitoring.ControllerName:                     createMonitoringController,
 	cloudcontroller.ControllerName:                createCloudController,
 	seedresourcesuptodatecondition.ControllerName: createSeedConditionUpToDateController,
-	rancher.ControllerName:                        createRancherController,
 	pvwatcher.ControllerName:                      createPvWatcherController,
 	seedconstraintsynchronizer.ControllerName:     createConstraintController,
 	constrainttemplatecontroller.ControllerName:   createConstraintTemplateController,
@@ -321,15 +319,6 @@ func createAddonInstallerController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.configGetter,
-		ctrlCtx.versions,
-	)
-}
-
-func createRancherController(ctrlCtx *controllerContext) error {
-	return rancher.Add(
-		ctrlCtx.mgr,
-		ctrlCtx.log,
-		ctrlCtx.clientProvider,
 		ctrlCtx.versions,
 	)
 }
