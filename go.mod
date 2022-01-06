@@ -163,8 +163,7 @@ require (
 	github.com/gosimple/slug v1.1.1 // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
-	github.com/hashicorp/logutils v1.0.0 // indirect
-	github.com/hashicorp/terraform-plugin-sdk v1.7.0 // indirect
+	github.com/hashicorp/terraform v0.12.28 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jessevdk/go-flags v1.5.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
@@ -255,7 +254,6 @@ replace (
 	github.com/openshift/client-go => github.com/openshift/client-go v0.0.0-20210112165513-ebc401615f47
 	github.com/openshift/library-go => github.com/mhenriks/library-go v0.0.0-20210511195009-51ba86622560
 	github.com/operator-framework/operator-lifecycle-manager => github.com/operator-framework/operator-lifecycle-manager v0.0.0-20190128024246-5eb7ae5bdb7a
-	github.com/terraform-providers/terraform-provider-nutanix => github.com/nutanix/terraform-provider-nutanix v1.2.2
 	k8s.io/api => k8s.io/api v0.23.0
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.23.0
 	k8s.io/apimachinery => k8s.io/apimachinery v0.23.0
