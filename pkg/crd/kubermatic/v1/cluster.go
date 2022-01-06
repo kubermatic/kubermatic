@@ -846,12 +846,15 @@ type AnexiaCloudSpec struct {
 type NutanixCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
-	ProjectName string `json:"projectName"`
+	// ClusterName is the Nutanix cluster that this user cluster will be deployed to.
+	ClusterName string `json:"clusterName"`
+
+	// ProjectName is the project that this cluster is deployed into. If none is given, no project will be used.
+	// +optional
+	ProjectName *string `json:"projectName,omitempty"`
 
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
-
-	SubnetName string `json:"subnetName"`
 }
 
 type HealthStatus int
@@ -972,6 +975,9 @@ func (cluster *Cluster) GetSecretName() string {
 	}
 	if cluster.Spec.Cloud.Anexia != nil {
 		return fmt.Sprintf("%s-anexia-%s", CredentialPrefix, cluster.Name)
+	}
+	if cluster.Spec.Cloud.Nutanix != nil {
+		return fmt.Sprintf("%s-nutanix-%s", CredentialPrefix, cluster.Name)
 	}
 	return ""
 }

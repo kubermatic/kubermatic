@@ -1184,6 +1184,7 @@ type NodeCloudSpec struct {
 	Kubevirt     *KubevirtNodeSpec     `json:"kubevirt,omitempty"`
 	Alibaba      *AlibabaNodeSpec      `json:"alibaba,omitempty"`
 	Anexia       *AnexiaNodeSpec       `json:"anexia,omitempty"`
+	Nutanix      *NutanixNodeSpec      `json:"nutanix,omitempty"`
 }
 
 // UbuntuSpec ubuntu specific settings
@@ -1906,6 +1907,43 @@ func (spec *AnexiaNodeSpec) MarshalJSON() ([]byte, error) {
 		DiskSize:   spec.DiskSize,
 		CPUs:       spec.CPUs,
 		Memory:     spec.Memory,
+	}
+
+	return json.Marshal(&res)
+}
+
+// NutanixNodeSpec anexia specific node settings
+// swagger:model NutanixNodeSpec
+type NutanixNodeSpec struct {
+	SubnetName     string            `json:"subnetName"`
+	ImageName      string            `json:"imageName"`
+	Categories     map[string]string `json:"categories"`
+	CPUs           int64             `json:"cpus"`
+	CPUCores       *int64            `json:"cpuCores"`
+	CPUPassthrough *bool             `json:"cpuPassthrough"`
+	MemoryMB       int64             `json:"memoryMB"`
+	DiskSize       *int64            `json:"diskSize"`
+}
+
+func (spec *NutanixNodeSpec) MarshalJSON() ([]byte, error) {
+	res := struct {
+		SubnetName     string            `json:"subnetName"`
+		ImageName      string            `json:"imageName"`
+		Categories     map[string]string `json:"categories"`
+		CPUs           int64             `json:"cpus"`
+		CPUCores       *int64            `json:"cpuCores"`
+		CPUPassthrough *bool             `json:"cpuPassthrough"`
+		MemoryMB       int64             `json:"memoryMB"`
+		DiskSize       *int64            `json:"diskSize"`
+	}{
+		SubnetName:     spec.SubnetName,
+		ImageName:      spec.ImageName,
+		Categories:     spec.Categories,
+		CPUs:           spec.CPUs,
+		CPUCores:       spec.CPUCores,
+		CPUPassthrough: spec.CPUPassthrough,
+		MemoryMB:       spec.MemoryMB,
+		DiskSize:       spec.DiskSize,
 	}
 
 	return json.Marshal(&res)

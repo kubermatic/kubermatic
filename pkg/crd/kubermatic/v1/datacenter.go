@@ -444,16 +444,14 @@ type DatacenterSpecKubevirt struct {
 
 // DatacenterSpecNutanix describes a Nutanix datacenter.
 type DatacenterSpecNutanix struct {
-	// Endpoint URL to use, including protocol, for example "https://nutanix.example.com".
+	// Endpoint to use. No protocol or port should be passed.
 	Endpoint string `json:"endpoint"`
+	// Port to use when connecting to the endpoint. Defaults to 9440 when not given.
+	Port *int32 `json:"port,omitempty"`
 	// AllowInsecure allows to disable the TLS certificate check against the endpoint.
 	AllowInsecure bool `json:"allow_insecure"`
-	// ClusterName is the Nutanix cluster to use for this datacenter.
-	ClusterName string `json:"cluster_name"`
 	// Images to use for each supported operating system.
 	Images ImageList `json:"images"`
-	// Used for automatic network creation
-	DNSServers []string `json:"dns_servers"`
 }
 
 // DatacenterSpecAlibaba describes a alibaba datacenter.

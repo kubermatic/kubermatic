@@ -20,8 +20,8 @@ import (
 	"errors"
 	"fmt"
 
-	nutanixclient "github.com/terraform-providers/terraform-provider-nutanix/client"
-	nutanixv3 "github.com/terraform-providers/terraform-provider-nutanix/client/v3"
+	nutanixclient "github.com/embik/nutanix-client-go/pkg/client"
+	nutanixv3 "github.com/embik/nutanix-client-go/pkg/client/v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"

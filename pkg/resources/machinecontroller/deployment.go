@@ -18,6 +18,7 @@ package machinecontroller
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
@@ -251,9 +252,17 @@ func getEnvVars(data machinecontrollerData) ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "ANEXIA_TOKEN", Value: credentials.Anexia.Token})
 	}
 	if data.Cluster().Spec.Cloud.Nutanix != nil {
-		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_ENDPOINT", Value: ""})
-		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_USERNAME", Value: ""})
-		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_PASSWORD", Value: ""})
+		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_ENDPOINT", Value: data.DC().Spec.Nutanix.Endpoint})
+		if port := data.DC().Spec.Nutanix.Port; port != nil {
+			vars = append(vars, corev1.EnvVar{Name: "NUTANIX_PORT", Value: strconv.Itoa(int(*port))})
+		}
+		if data.DC().Spec.Nutanix.AllowInsecure {
+			vars = append(vars, corev1.EnvVar{Name: "NUTANIX_ALLOW_INSECURE", Value: "true"})
+		}
+
+		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_USERNAME", Value: credentials.Nutanix.Username})
+		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_PASSWORD", Value: credentials.Nutanix.Password})
+		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_CLUSTER_NAME", Value: data.Cluster().Spec.Cloud.Nutanix.ClusterName})
 	}
 	vars = append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().Address.InternalName)...)
 

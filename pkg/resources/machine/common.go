@@ -31,6 +31,7 @@ import (
 	gce "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types"
 	hetzner "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner/types"
 	kubevirt "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
+	nutanix "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/nutanix/types"
 	openstack "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
@@ -41,6 +42,7 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/userdata/ubuntu"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	nutanixprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/nutanix"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/json"
@@ -438,6 +440,38 @@ func getAnexiaProviderSpec(nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter)
 		DiskSize:   int(nodeSpec.Cloud.Anexia.DiskSize),
 		LocationID: providerconfig.ConfigVarString{Value: dc.Spec.Anexia.LocationID},
 	}
+
+	ext := &runtime.RawExtension{}
+	b, err := json.Marshal(config)
+	if err != nil {
+		return nil, err
+	}
+
+	ext.Raw = b
+	return ext, nil
+}
+
+func getNutanixProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
+	config := nutanix.RawConfig{
+		SubnetName: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Nutanix.SubnetName},
+		ImageName:  providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Nutanix.ImageName},
+
+		Categories: nodeSpec.Cloud.Nutanix.Categories,
+
+		CPUs:           nodeSpec.Cloud.Nutanix.CPUs,
+		CPUCores:       nodeSpec.Cloud.Nutanix.CPUCores,
+		CPUPassthrough: nodeSpec.Cloud.Nutanix.CPUPassthrough,
+
+		MemoryMB: nodeSpec.Cloud.Nutanix.MemoryMB,
+		DiskSize: nodeSpec.Cloud.Nutanix.DiskSize,
+	}
+
+	config.Categories = map[string]string{}
+	for key, value := range nodeSpec.Cloud.Nutanix.Categories {
+		config.Categories[key] = value
+	}
+
+	config.Categories[nutanixprovider.ClusterCategoryName] = nutanixprovider.CategoryValue(c.Name)
 
 	ext := &runtime.RawExtension{}
 	b, err := json.Marshal(config)
