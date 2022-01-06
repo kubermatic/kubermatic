@@ -1912,7 +1912,7 @@ func (spec *AnexiaNodeSpec) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&res)
 }
 
-// NutanixNodeSpec anexia specific node settings
+// NutanixNodeSpec nutanix specific node settings
 // swagger:model NutanixNodeSpec
 type NutanixNodeSpec struct {
 	SubnetName     string            `json:"subnetName"`

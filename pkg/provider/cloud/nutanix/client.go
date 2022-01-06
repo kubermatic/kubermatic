@@ -62,11 +62,18 @@ func getCredentials(dc *kubermaticv1.DatacenterSpecNutanix, cloud *kubermaticv1.
 		}
 	}
 
+	port := 9440
+	if dc.Port != nil {
+		port = int(*dc.Port)
+	}
+
 	return nutanixclient.Credentials{
-		URL:      dc.Endpoint,
-		Insecure: dc.AllowInsecure,
+		URL:      fmt.Sprintf("%s:%d", dc.Endpoint, port),
+		Endpoint: dc.Endpoint,
+		Port:     port,
 		Username: username,
 		Password: password,
+		Insecure: dc.AllowInsecure,
 	}, nil
 
 }
