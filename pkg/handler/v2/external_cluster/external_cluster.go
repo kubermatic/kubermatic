@@ -871,12 +871,6 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 	}
 	apiCluster := convertClusterToAPI(internalCluster)
 	apiCluster.Status = status
-
-	if internalCluster.Spec.KubeconfigReference == nil {
-		status.State = apiv2.PROVISIONING
-		apiCluster.Status = status
-		return apiCluster
-	}
 	cloud := internalCluster.Spec.CloudSpec
 
 	if cloud == nil {
