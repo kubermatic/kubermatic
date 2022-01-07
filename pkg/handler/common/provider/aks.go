@@ -71,6 +71,9 @@ func ListAKSClusters(ctx context.Context, projectProvider provider.ProjectProvid
 	}
 
 	for _, f := range clusterListResult.Values() {
+		if f.ID == nil || f.Name == nil {
+			continue
+		}
 		var imported bool
 		resourceGroup := strings.Split(strings.SplitAfter(*f.ID, "resourcegroups/")[1], "/")[0]
 		if clusterSet, ok := aksExternalCluster[resourceGroup]; ok {
