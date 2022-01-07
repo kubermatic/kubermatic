@@ -304,7 +304,8 @@ func Validate(nd *apiv1.NodeDeployment, controlPlaneVersion *semver.Version) (*a
 		nd.Spec.Template.Cloud.GCP == nil &&
 		nd.Spec.Template.Cloud.Kubevirt == nil &&
 		nd.Spec.Template.Cloud.Alibaba == nil &&
-		nd.Spec.Template.Cloud.Anexia == nil {
+		nd.Spec.Template.Cloud.Anexia == nil &&
+		nd.Spec.Template.Cloud.Nutanix == nil {
 		return nil, fmt.Errorf("node deployment needs to have cloud provider data")
 	}
 

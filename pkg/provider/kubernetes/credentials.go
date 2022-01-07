@@ -71,6 +71,9 @@ func CreateOrUpdateCredentialSecretForCluster(ctx context.Context, seedClient ct
 	if cluster.Spec.Cloud.Anexia != nil {
 		return createOrUpdateAnexiaSecret(ctx, seedClient, cluster)
 	}
+	if cluster.Spec.Cloud.Nutanix != nil {
+		return createOrUpdateNutanixSecret(ctx, seedClient, cluster)
+	}
 	return nil
 }
 
@@ -473,6 +476,33 @@ func createOrUpdateAnexiaSecret(ctx context.Context, seedClient ctrlruntimeclien
 
 	// clean old inline credentials
 	cluster.Spec.Cloud.Anexia.Token = ""
+
+	return nil
+}
+
+func createOrUpdateNutanixSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+	spec := cluster.Spec.Cloud.Nutanix
+
+	// already migrated
+	if spec.Username == "" && spec.Password == "" {
+		return nil
+	}
+
+	credentialRef, err := ensureCredentialSecret(ctx, seedClient, cluster, map[string][]byte{
+		resources.NutanixUsername: []byte(spec.Username),
+		resources.NutanixPassword: []byte(spec.Password),
+	})
+
+	if err != nil {
+		return err
+	}
+
+	// add secret key reference to cluster object
+	cluster.Spec.Cloud.Nutanix.CredentialsReference = credentialRef
+
+	// clean old inline credentials
+	cluster.Spec.Cloud.Nutanix.Username = ""
+	cluster.Spec.Cloud.Nutanix.Password = ""
 
 	return nil
 }

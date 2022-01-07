@@ -873,6 +873,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 			Kubevirt:       newPublicKubevirtCloudSpec(cs.Cloud.Kubevirt),
 			Alibaba:        newPublicAlibabaCloudSpec(cs.Cloud.Alibaba),
 			Anexia:         newPublicAnexiaCloudSpec(cs.Cloud.Anexia),
+			Nutanix:        newPublicNutanixCloudSpec(cs.Cloud.Nutanix),
 		},
 		Version:                              cs.Version,
 		MachineNetworks:                      cs.MachineNetworks,
@@ -1084,6 +1085,17 @@ func newPublicAnexiaCloudSpec(internal *kubermaticv1.AnexiaCloudSpec) (public *P
 	}
 
 	return &PublicAnexiaCloudSpec{}
+}
+
+// PublicNutanixCloudSpec is a public counterpart of apiv1.NutanixCloudSpec.
+type PublicNutanixCloudSpec struct{}
+
+func newPublicNutanixCloudSpec(internal *kubermaticv1.NutanixCloudSpec) (public *PublicNutanixCloudSpec) {
+	if internal == nil {
+		return nil
+	}
+
+	return &PublicNutanixCloudSpec{}
 }
 
 // ClusterStatus defines the cluster status
