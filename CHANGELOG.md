@@ -37,7 +37,7 @@ TBD
 - endpoint to get external cluster upgrades ([#8115](https://github.com/kubermatic/kubermatic/issues/8115))
 - new endpoint to list external cluster machine deployments ([#8200](https://github.com/kubermatic/kubermatic/issues/8200))
 - Add PATCH endpoint for external cluster ([#8135](https://github.com/kubermatic/kubermatic/issues/8135))
-- new endpoint to list External MD Metrics:/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/metrics ([#8239](https://github.com/kubermatic/kubermatic/issues/8239))
+- new endpoint to list External MD Metrics: `/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/metrics` ([#8239](https://github.com/kubermatic/kubermatic/issues/8239))
 - Manage AKS Clusters natively. Extend external cluster functionality to import existing AKS cluster ([#8244](https://github.com/kubermatic/kubermatic/issues/8244))
 - Create AKS nodePool ([#8399](https://github.com/kubermatic/kubermatic/issues/8399))
 - Upgrade AKS NodePool Kubernetes version  
@@ -164,7 +164,9 @@ TBD
 - User clusters now expose `spec.auditLogging.policyPreset`, which can be set to `metadata`, `minimal` or `recommended` to configure audit logging policy ([#8161](https://github.com/kubermatic/kubermatic/issues/8161))
 - Provide functionality to define a default cluster template for new clusters per seed.DefaultComponentSettings of the Seed object is deprecated in favor of DefaultClusterTemplate ([#8089](https://github.com/kubermatic/kubermatic/issues/8089))
 - Child cluster etcd services now use `spec.publishNotReadyAddresses` instead of the `service.alpha.kubernetes.io/tolerate-unready-endpoints` annotation (deprecated in Kubernetes v1.11) to ensure compatibility with `EndpointSlice` consumers ([#7968](https://github.com/kubermatic/kubermatic/issues/7968))
-- GET "/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}"PATCH  "/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}" ([#8224](https://github.com/kubermatic/kubermatic/issues/8224))
+- Add endpoints for machine deployment:
+  - GET `/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}`
+  - PATCH `/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}` ([#8224](https://github.com/kubermatic/kubermatic/issues/8224))
 - Profiling endpoints on control plane components have been disabled ([#8110](https://github.com/kubermatic/kubermatic/issues/8110))
 - cert-manager's upgrade will reinstall the chart cleanly, existing ClusterIssuers created by a helm chart will be recreated ([#8555](https://github.com/kubermatic/kubermatic/issues/8555))
 
