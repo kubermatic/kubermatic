@@ -9,7 +9,7 @@ package models
 // moment only, USB devices using Usbredir's library and tooling. Another fit
 // would be a smartcard with libcacard.
 //
-// The struct is currently empty as there is no immediate request for
+// The struct is currently empty as there is no imediate request for
 // user-facing APIs. This structure simply turns on USB redirection of
 // UsbClientPassthroughMaxNumberOf devices.
 //

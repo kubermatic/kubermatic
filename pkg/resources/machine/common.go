@@ -27,11 +27,11 @@ import (
 	aws "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
 	azure "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
 	digitalocean "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean/types"
+	equinixmetal "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/equinixmetal/types"
 	gce "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types"
 	hetzner "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner/types"
 	kubevirt "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
 	openstack "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
-	packet "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/packet/types"
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"github.com/kubermatic/machine-controller/pkg/userdata/centos"
@@ -314,7 +314,7 @@ func getDigitaloceanProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpe
 }
 
 func getPacketProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
-	config := packet.RawConfig{
+	config := equinixmetal.RawConfig{
 		InstanceType: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Packet.InstanceType},
 	}
 
