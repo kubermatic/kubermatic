@@ -16,7 +16,9 @@ TBD
 
 - ACTION REQUIRED: When upgrading from older KKP versions, additional flag --migrate-nginx-ingress is required to perform upgrade of nginx-ingress-controller. Ingress will be briefly unavailable during this process ([#8333](https://github.com/kubermatic/kubermatic/issues/8333))
 - ACTION REQUIRED: Set the default Service Accounts automountServiceAccountToken property to false for all KKP provided namespaces and kube-system ([#8344](https://github.com/kubermatic/kubermatic/issues/8344))
-- cert-manager chart has been updated to use upstream chart from https://charts.jetstack.io as a dependency, updated to version 1.6.1ACTION REQUIRED: configuration for cert-manager ould now be included under key `cert-manager` in values.yaml file (changed from `certManager`)ACTION REQUIRED: The chart will no longer configure ClusterIssuers. Refer to the documentation of cert-manager for configuration guide: https://cert-manager.io/docs/configuration/ ([#8392](https://github.com/kubermatic/kubermatic/issues/8392))
+- cert-manager chart has been updated to use upstream chart from https://charts.jetstack.io as a dependency, updated to version 1.6.1
+  - ACTION REQUIRED: configuration for cert-manager ould now be included under key `cert-manager` in values.yaml file (changed from `certManager`)
+  - ACTION REQUIRED: The chart will no longer configure ClusterIssuers. Refer to the documentation of cert-manager for configuration guide: https://cert-manager.io/docs/configuration/ ([#8392](https://github.com/kubermatic/kubermatic/issues/8392))
 - The old Docker repository at `quay.io/kubermatic/api` will not receive new images anymore, please use `quay.io/kubermatic/kubermatic` (CE) or `quay.io/kubermatic/kubermatic-ee` (EE) instead. This should only affect EE users who were still using the deprecated Helm chart ([#7922](https://github.com/kubermatic/kubermatic/issues/7922))
 - BREAKING: `-dynamic-datacenters` was effectively already always true when using the KKP Operator and has now been removed as a flag. Support for handling a `datacenters.yaml` has been removed ([#7779](https://github.com/kubermatic/kubermatic/issues/7779))
 
