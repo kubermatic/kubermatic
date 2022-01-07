@@ -134,7 +134,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, oldC
 	// check all the machines have been migrated
 	var migrated = true
 	for _, machine := range machines.Items {
-		flag := common.GetKubeletFlags(&machine)[common.ExternalCloudProviderKubeletFlag]
+		flag := common.GetKubeletFlags(machine.Annotations)[common.ExternalCloudProviderKubeletFlag]
 		if boolFlag, err := strconv.ParseBool(flag); !boolFlag || err != nil {
 			migrated = false
 			break

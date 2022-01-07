@@ -44,7 +44,7 @@ require (
 	github.com/imdario/mergo v0.3.12
 	github.com/jetstack/cert-manager v1.1.0
 	github.com/kubermatic/grafanasdk v0.9.11
-	github.com/kubermatic/machine-controller v1.36.2
+	github.com/kubermatic/machine-controller v1.41.0
 	github.com/minio/minio-go v6.0.14+incompatible
 	github.com/minio/minio-go/v7 v7.0.13
 	github.com/onsi/ginkgo v1.16.5
@@ -94,7 +94,7 @@ require (
 	k8s.io/metrics v0.23.0
 	k8s.io/test-infra v0.0.0-20210826180422-39483c498f0f
 	k8s.io/utils v0.0.0-20210930125809-cb0fa318a74b
-	kubevirt.io/api v0.48.0-rc.0.0.20211214181217-46c75844a711
+	kubevirt.io/api v0.48.1
 	sigs.k8s.io/aws-iam-authenticator v0.5.3
 	sigs.k8s.io/controller-runtime v0.11.0
 	sigs.k8s.io/controller-tools v0.7.0
