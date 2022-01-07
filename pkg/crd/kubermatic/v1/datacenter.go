@@ -444,9 +444,9 @@ type DatacenterSpecKubevirt struct {
 
 // DatacenterSpecNutanix describes a Nutanix datacenter.
 type DatacenterSpecNutanix struct {
-	// Endpoint to use. No protocol or port should be passed.
+	// Endpoint to use for accessing Nutanix Prism Central. No protocol or port should be passed.
 	Endpoint string `json:"endpoint"`
-	// Port to use when connecting to the endpoint. Defaults to 9440 when not given.
+	// Port to use when connecting to the endpoint. Defaults to 9440 when none is given.
 	Port *int32 `json:"port,omitempty"`
 	// AllowInsecure allows to disable the TLS certificate check against the endpoint.
 	AllowInsecure bool `json:"allow_insecure"`

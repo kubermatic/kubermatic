@@ -540,6 +540,10 @@ func (m *PresetProvider) setNutanixCredentials(userInfo *provider.UserInfo, pres
 	cloud.Nutanix.Username = preset.Spec.Nutanix.Username
 	cloud.Nutanix.Password = preset.Spec.Nutanix.Password
 
+	if proxyURL := preset.Spec.Nutanix.ProxyURL; proxyURL != "" {
+		cloud.Nutanix.ProxyURL = proxyURL
+	}
+
 	if clusterName := preset.Spec.Nutanix.ClusterName; clusterName != "" {
 		cloud.Nutanix.ClusterName = clusterName
 	}

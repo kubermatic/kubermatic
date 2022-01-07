@@ -323,6 +323,7 @@ func (s Anexia) IsValid() bool {
 type Nutanix struct {
 	ProviderPreset `json:",inline"`
 
+	ProxyURL string `json:"proxyURL"`
 	Username string `json:"username"`
 	Password string `json:"password"`
 

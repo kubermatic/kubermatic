@@ -262,6 +262,10 @@ func getEnvVars(data machinecontrollerData) ([]corev1.EnvVar, error) {
 
 		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_USERNAME", Value: credentials.Nutanix.Username})
 		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_PASSWORD", Value: credentials.Nutanix.Password})
+		if proxyURL := credentials.Nutanix.ProxyURL; proxyURL != "" {
+			vars = append(vars, corev1.EnvVar{Name: "NUTANIX_PROXY_URL", Value: proxyURL})
+		}
+
 		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_CLUSTER_NAME", Value: data.Cluster().Spec.Cloud.Nutanix.ClusterName})
 	}
 	vars = append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().Address.InternalName)...)

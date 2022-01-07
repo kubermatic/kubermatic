@@ -18,6 +18,7 @@ require (
 	github.com/cristim/ec2-instances-info v0.0.0-20201110114654-2dfcc09f67d4
 	github.com/digitalocean/godo v1.65.0
 	github.com/docker/distribution v2.7.1+incompatible
+	github.com/embik/nutanix-client-go v0.0.0-20220106131900-50b8f27e5f60
 	github.com/envoyproxy/go-control-plane v0.9.9-0.20210512163311-63b5d3c536b0
 	github.com/evanphx/json-patch v4.12.0+incompatible
 	github.com/ghodss/yaml v1.0.0
@@ -101,8 +102,6 @@ require (
 	sigs.k8s.io/yaml v1.3.0
 )
 
-require github.com/terraform-providers/terraform-provider-nutanix v1.1.0
-
 require (
 	cloud.google.com/go v0.81.0 // indirect
 	github.com/Azure/go-autorest v14.2.0+incompatible // indirect
@@ -163,7 +162,6 @@ require (
 	github.com/gosimple/slug v1.1.1 // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
-	github.com/hashicorp/terraform v0.12.28 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jessevdk/go-flags v1.5.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect

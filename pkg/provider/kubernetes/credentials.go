@@ -484,14 +484,20 @@ func createOrUpdateNutanixSecret(ctx context.Context, seedClient ctrlruntimeclie
 	spec := cluster.Spec.Cloud.Nutanix
 
 	// already migrated
-	if spec.Username == "" && spec.Password == "" {
+	if spec.Username == "" && spec.Password == "" && spec.ProxyURL == "" {
 		return nil
 	}
 
-	credentialRef, err := ensureCredentialSecret(ctx, seedClient, cluster, map[string][]byte{
+	secretData := map[string][]byte{
 		resources.NutanixUsername: []byte(spec.Username),
 		resources.NutanixPassword: []byte(spec.Password),
-	})
+	}
+
+	if spec.ProxyURL != "" {
+		secretData[resources.NutanixProxyURL] = []byte(spec.ProxyURL)
+	}
+
+	credentialRef, err := ensureCredentialSecret(ctx, seedClient, cluster, secretData)
 
 	if err != nil {
 		return err
@@ -503,6 +509,7 @@ func createOrUpdateNutanixSecret(ctx context.Context, seedClient ctrlruntimeclie
 	// clean old inline credentials
 	cluster.Spec.Cloud.Nutanix.Username = ""
 	cluster.Spec.Cloud.Nutanix.Password = ""
+	cluster.Spec.Cloud.Nutanix.ProxyURL = ""
 
 	return nil
 }

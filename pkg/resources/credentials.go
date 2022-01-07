@@ -124,6 +124,7 @@ type AnexiaCredentials struct {
 type NutanixCredentials struct {
 	Username string
 	Password string
+	ProxyURL string
 }
 
 type CredentialsData interface {
@@ -673,6 +674,12 @@ func GetNutanixCredentials(data CredentialsData) (NutanixCredentials, error) {
 		credentials.Password = spec.Password
 	} else if credentials.Password, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, NutanixPassword); err != nil {
 		return NutanixCredentials{}, err
+	}
+
+	if spec.ProxyURL != "" {
+		credentials.ProxyURL = spec.ProxyURL
+	} else {
+		credentials.ProxyURL, _ = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, NutanixProxyURL)
 	}
 
 	return credentials, nil

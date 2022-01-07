@@ -853,6 +853,7 @@ type NutanixCloudSpec struct {
 	// +optional
 	ProjectName string `json:"projectName,omitempty"`
 
+	ProxyURL string `json:"proxyURL,omitempty"`
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
 }
