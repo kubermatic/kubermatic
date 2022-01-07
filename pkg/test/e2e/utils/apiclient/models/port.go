@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// Port Port represents a port to expose from the virtual machine.
+// Port Port repesents a port to expose from the virtual machine.
 //
 // Default protocol TCP.
 // The port field is mandatory
