@@ -58,6 +58,7 @@ type PresetSpec struct {
 	Kubevirt     *Kubevirt     `json:"kubevirt,omitempty"`
 	Alibaba      *Alibaba      `json:"alibaba,omitempty"`
 	Anexia       *Anexia       `json:"anexia,omitempty"`
+	Nutanix      *Nutanix      `json:"nutanix,omitempty"`
 	GKE          *GKE          `json:"gke,omitempty"`
 	EKS          *EKS          `json:"eks,omitempty"`
 	AKS          *AKS          `json:"aks,omitempty"`
@@ -317,6 +318,20 @@ type Anexia struct {
 
 func (s Anexia) IsValid() bool {
 	return len(s.Token) > 0
+}
+
+type Nutanix struct {
+	ProviderPreset `json:",inline"`
+
+	Username string `json:"username"`
+	Password string `json:"password"`
+
+	ClusterName string `json:"clusterName,omitempty"`
+	ProjectName string `json:"projectName,omitempty"`
+}
+
+func (s Nutanix) IsValid() bool {
+	return len(s.Username) > 0 && len(s.Password) > 0
 }
 
 type GKE struct {

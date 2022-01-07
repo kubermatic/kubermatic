@@ -233,7 +233,7 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *ku
 		}
 	case nd.Spec.Template.Cloud.Nutanix != nil:
 		config.CloudProvider = providerconfig.CloudProviderNutanix
-		cloudExt, err = getNutanixProviderSpec(nd.Spec.Template, dc)
+		cloudExt, err = getNutanixProviderSpec(c, nd.Spec.Template, dc)
 		if err != nil {
 			return nil, err
 		}

@@ -88,9 +88,9 @@ func (n *Nutanix) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 		return err
 	}
 
-	if spec.Nutanix.ProjectName != nil {
+	if spec.Nutanix.ProjectName != "" {
 		// check for project existence
-		_, err = getProjectByName(client, *spec.Nutanix.ProjectName)
+		_, err = getProjectByName(client, spec.Nutanix.ProjectName)
 		if err != nil {
 			return err
 		}
@@ -137,22 +137,6 @@ func reconcileCategoryAndValue(client *ClientSet, cluster *kubermaticv1.Cluster)
 		}
 	}
 
-	_, err = client.Prism.V3.GetCategoryKey(ProjectCategoryName)
-	if err != nil {
-		if strings.Contains(err.Error(), entityNotFoundError) {
-			_, err := client.Prism.V3.CreateOrUpdateCategoryKey(&nutanixv3.CategoryKey{
-				Name:        pointer.String(ProjectCategoryName),
-				Description: pointer.String(categoryDescription),
-			})
-
-			if err != nil {
-				return err
-			}
-		} else {
-			return err
-		}
-	}
-
 	// check if category value is present, create it if not
 	_, err = client.Prism.V3.GetCategoryValue(ClusterCategoryName, CategoryValue(cluster.Name))
 	if err != nil {
@@ -169,18 +153,38 @@ func reconcileCategoryAndValue(client *ClientSet, cluster *kubermaticv1.Cluster)
 		}
 	}
 
-	_, err = client.Prism.V3.GetCategoryValue(ProjectCategoryName)
-	if err != nil {
-		if strings.Contains(err.Error(), entityNotFoundError) {
-			_, err := client.Prism.V3.CreateOrUpdateCategoryValue(ClusterCategoryName, &nutanixv3.CategoryValue{
-				Value:       pointer.String(CategoryValue(cluster.Name)),
-				Description: pointer.String(fmt.Sprintf("value for Kubernetes cluster %s", cluster.Name)),
-			})
-			if err != nil {
+	projectID, ok := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
+	if ok {
+
+		_, err = client.Prism.V3.GetCategoryKey(ProjectCategoryName)
+		if err != nil {
+			if strings.Contains(err.Error(), entityNotFoundError) {
+				_, err := client.Prism.V3.CreateOrUpdateCategoryKey(&nutanixv3.CategoryKey{
+					Name:        pointer.String(ProjectCategoryName),
+					Description: pointer.String(categoryDescription),
+				})
+
+				if err != nil {
+					return err
+				}
+			} else {
 				return err
 			}
-		} else {
-			return err
+		}
+
+		_, err = client.Prism.V3.GetCategoryValue(ProjectCategoryName, projectID)
+		if err != nil {
+			if strings.Contains(err.Error(), entityNotFoundError) {
+				_, err := client.Prism.V3.CreateOrUpdateCategoryValue(ClusterCategoryName, &nutanixv3.CategoryValue{
+					Value:       pointer.String(projectID),
+					Description: pointer.String(fmt.Sprintf("value for KKP project %s", projectID)),
+				})
+				if err != nil {
+					return err
+				}
+			} else {
+				return err
+			}
 		}
 	}
 

@@ -851,7 +851,7 @@ type NutanixCloudSpec struct {
 
 	// ProjectName is the project that this cluster is deployed into. If none is given, no project will be used.
 	// +optional
-	ProjectName *string `json:"projectName,omitempty"`
+	ProjectName string `json:"projectName,omitempty"`
 
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`

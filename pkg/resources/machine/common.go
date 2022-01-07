@@ -473,6 +473,10 @@ func getNutanixProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc
 
 	config.Categories[nutanixprovider.ClusterCategoryName] = nutanixprovider.CategoryValue(c.Name)
 
+	if projectID, ok := c.Labels[kubermaticv1.ProjectIDLabelKey]; ok {
+		config.Categories[nutanixprovider.ProjectCategoryName] = projectID
+	}
+
 	ext := &runtime.RawExtension{}
 	b, err := json.Marshal(config)
 	if err != nil {

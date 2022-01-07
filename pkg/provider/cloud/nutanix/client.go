@@ -19,6 +19,7 @@ package nutanix
 import (
 	"errors"
 	"fmt"
+	"strconv"
 
 	nutanixclient "github.com/embik/nutanix-client-go/pkg/client"
 	nutanixv3 "github.com/embik/nutanix-client-go/pkg/client/v3"
@@ -70,7 +71,7 @@ func getCredentials(dc *kubermaticv1.DatacenterSpecNutanix, cloud *kubermaticv1.
 	return nutanixclient.Credentials{
 		URL:      fmt.Sprintf("%s:%d", dc.Endpoint, port),
 		Endpoint: dc.Endpoint,
-		Port:     port,
+		Port:     strconv.Itoa(port),
 		Username: username,
 		Password: password,
 		Insecure: dc.AllowInsecure,
