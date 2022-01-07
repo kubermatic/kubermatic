@@ -87,7 +87,6 @@ func DecodeMeteringConfigurationsReq(r *http.Request) (interface{}, error) {
 
 // CreateOrUpdateConfigurations creates or updates the metering tool configurations.
 func CreateOrUpdateConfigurations(ctx context.Context, request interface{}, masterClient ctrlruntimeclient.Client) error {
-
 	req, ok := request.(configurationReq)
 	if !ok {
 		return k8cerrors.NewBadRequest("invalid request")
@@ -108,7 +107,6 @@ func CreateOrUpdateConfigurations(ctx context.Context, request interface{}, mast
 }
 
 func updateSeedMeteringConfiguration(ctx context.Context, meteringCfg configurationReq, seed *v1.Seed, masterClient ctrlruntimeclient.Client) error {
-
 	seed.Spec.Metering = &v1.MeteringConfigurations{
 		Enabled:          meteringCfg.Enabled,
 		StorageClassName: meteringCfg.StorageClassName,
@@ -184,7 +182,6 @@ func CreateOrUpdateCredentials(ctx context.Context, request interface{}, seedsGe
 }
 
 func createOrUpdateMeteringToolSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, secretData map[string][]byte) error {
-
 	existingSecret := &corev1.Secret{}
 	if err := seedClient.Get(ctx, secretNamespacedName, existingSecret); err != nil && !kerrors.IsNotFound(err) {
 		return fmt.Errorf("failed to probe for secret %q: %v", SecretName, err)

@@ -141,7 +141,7 @@ mc mirror --newer-than "32d0h0m" s3/$S3_BUCKET /metering-data || true`,
 						"--seed",
 						seed.Name,
 					},
-					Image:           getRegistry(resources.RegistryQuay) + "/" + dockerRepository + ":" + dockerTag,
+					Image:           getMeteringImage(getRegistry),
 					ImagePullPolicy: corev1.PullAlways,
 					LivenessProbe: &corev1.Probe{
 						InitialDelaySeconds: 15,

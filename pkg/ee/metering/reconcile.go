@@ -30,6 +30,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -46,7 +47,9 @@ func getMinioImage(overwriter registry.WithOverwriteFunc) string {
 }
 
 // ReconcileMeteringResources reconciles the metering related resources.
-func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed) error {
+func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Client, cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed) error {
+	overwriter := registry.GetOverwriteFunc(cfg.Spec.UserCluster.OverwriteRegistry)
+
 	if err := persistentVolumeClaimCreator(ctx, client, seed); err != nil {
 		return fmt.Errorf("failed to reconcile metering PVC: %v", err)
 	}
@@ -67,13 +70,13 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 		common.VolumeRevisionLabelsModifierFactory(ctx, client),
 	}
 	if err := reconciling.ReconcileCronJobs(ctx, []reconciling.NamedCronJobCreatorGetter{
-		cronJobCreator(seed.Name),
+		cronJobCreator(seed.Name, overwriter),
 	}, resources.KubermaticNamespace, client, modifiers...); err != nil {
 		return fmt.Errorf("failed to reconcile metering CronJob: %v", err)
 	}
 
 	if err := reconciling.ReconcileDeployments(ctx, []reconciling.NamedDeploymentCreatorGetter{
-		deploymentCreator(seed),
+		deploymentCreator(seed, overwriter),
 	}, resources.KubermaticNamespace, client, modifiers...); err != nil {
 		return fmt.Errorf("failed to reconcile metering Deployment: %v", err)
 	}
