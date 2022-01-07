@@ -190,13 +190,15 @@ func convertEKSStatus(status string) apiv2.ExternalClusterState {
 		return apiv2.PROVISIONING
 	case "ACTIVE":
 		return apiv2.RUNNING
-	case "RECONCILING":
+	case "UPDATING":
 		return apiv2.RECONCILING
 	case "DELETING":
 		return apiv2.DELETING
 	case "CREATE_FAILED":
 		return apiv2.ERROR
 	case "DELETE_FAILED":
+		return apiv2.ERROR
+	case "FAILED":
 		return apiv2.ERROR
 	default:
 		return apiv2.UNKNOWN

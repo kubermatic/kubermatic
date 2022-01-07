@@ -371,6 +371,12 @@ const (
 	// PROVISIONING state indicates the cluster is being created.
 	PROVISIONING ExternalClusterState = "PROVISIONING"
 
+	// STOPPED state indicates the cluster is stopped, this state is specific to aks clusters.
+	STOPPED ExternalClusterState = "STOPPED"
+
+	// STOPPING state indicates the cluster is stopping, this state is specific to aks clusters.
+	STOPPING ExternalClusterState = "STOPPING"
+
 	// RUNNING state indicates the cluster has been created and is fully usable.
 	RUNNING ExternalClusterState = "RUNNING"
 
