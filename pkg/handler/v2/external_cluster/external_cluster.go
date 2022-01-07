@@ -872,12 +872,6 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 	}
 	apiCluster := convertClusterToAPI(internalCluster)
 	apiCluster.Status = status
-
-	if internalCluster.Spec.KubeconfigReference == nil {
-		status.State = apiv2.PROVISIONING
-		apiCluster.Status = status
-		return apiCluster
-	}
 	cloud := internalCluster.Spec.CloudSpec
 
 	if cloud == nil {
@@ -918,9 +912,9 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 		apiCluster.Status = *gkeStatus
 	}
 
-	// check kubeconfig access
+	// check kubeconfig access. Skip during reconciling state
 	_, err := clusterProvider.GetVersion(internalCluster)
-	if err != nil {
+	if err != nil && apiCluster.Status.State != apiv2.RECONCILING {
 		apiCluster.Status = apiv2.ExternalClusterStatus{
 			State:         apiv2.ERROR,
 			StatusMessage: fmt.Sprintf("can't access cluster via kubeconfig, check the privilidges, %v", err),
