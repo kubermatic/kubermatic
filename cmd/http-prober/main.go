@@ -39,9 +39,11 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/client-go/rest"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 type multiValFlag []string
@@ -70,7 +72,7 @@ func main() {
 	flag.IntVar(&retries, "retries", 10, "Number of retries")
 	flag.IntVar(&retryWait, "retry-wait", 1, "Wait interval in seconds between retries")
 	flag.IntVar(&timeout, "timeout", 30, "Timeout in seconds")
-	flag.Var(&crdsToWaitFor, "crd-to-wait-for", "Wait for these crds to exist. Must contain kind and apiVersion comma separated, e.G `machines,cluster.k8s.io/v1alpha1`. Can be passed multiple times. Requires the `KUBECONFIG` env var to be set and to point to a valid kubeconfig.")
+	flag.Var(&crdsToWaitFor, "crd-to-wait-for", "Wait for these crds to exist. Must contain kind and apiVersion comma separated, e.G `machines,cluster.k8s.io/v1alpha1`. Can be passed multiple times. Requires path to valid kubeconfig to work which can be passed via `PROBER_KUBECONFIG` or `KUBECONFIG` env var. If env var are missing then it will try to load in-cluster config.")
 	flag.StringVar(&commandRaw, "command", "", "If passed, the http prober will exec this command. Must be json encoded")
 	flag.Parse()
 
@@ -168,13 +170,9 @@ func crdCheckersFactory(mvf multiValFlag) ([]func() error, error) {
 		return nil, nil
 	}
 
-	kubeconfig := os.Getenv("KUBECONFIG")
-	if kubeconfig == "" {
-		return nil, errors.New("--crd-to-wait-for was set, but KUBECONFIG env var was not")
-	}
-	cfg, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+	cfg, err := getConfig()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create kubeconfig: %v", err)
+		return nil, errors.New("--crd-to-wait-for was set but couldn't load a valid kubeconfig.")
 	}
 
 	var checkers []func() error
@@ -225,4 +223,26 @@ func executeCheckers(checkers []func() error) error {
 		}
 	}
 	return nil
+}
+
+// getConfig creates a *rest.Config for interactions with kubernetes API
+// The precedence for loading configurations is as follows:
+//
+// 1. PROBER_KUBECONFIG env variable
+// 2. KUBECONFIG env variable
+// 3. -kubeconfig flag
+// 4. In-cluster config if running inside a cluster
+// 5. $HOME/.kube/config if exists.
+func getConfig() (*rest.Config, error) {
+	kubeconfig := os.Getenv("PROBER_KUBECONFIG")
+	if len(kubeconfig) > 0 {
+		return clientcmd.BuildConfigFromFlags("", kubeconfig)
+	}
+
+	kubeconfig = os.Getenv("KUBECONFIG")
+	if len(kubeconfig) > 0 {
+		return clientcmd.BuildConfigFromFlags("", kubeconfig)
+	}
+
+	return config.GetConfig()
 }

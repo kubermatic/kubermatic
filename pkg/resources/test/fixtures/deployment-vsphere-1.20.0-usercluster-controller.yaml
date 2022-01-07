@@ -83,7 +83,7 @@ spec:
         - /bin/cp
         - /usr/local/bin/http-prober
         - /http-prober-bin/http-prober
-        image: quay.io/kubermatic/http-prober:v0.3.2
+        image: quay.io/kubermatic/http-prober:v0.3.3
         name: copy-http-prober
         resources: {}
         volumeMounts:
