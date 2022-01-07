@@ -15,16 +15,14 @@ TBD
 ### Breaking Changes
 
 - ACTION REQUIRED: When upgrading from older KKP versions, additional flag --migrate-nginx-ingress is required to perform upgrade of nginx-ingress-controller. Ingress will be briefly unavailable during this process ([#8333](https://github.com/kubermatic/kubermatic/issues/8333))
-- [ACTION REQUIRED] Set the default Service Accounts automountServiceAccountToken property to false for all KKP provided namespaces and kube-system ([#8344](https://github.com/kubermatic/kubermatic/issues/8344))
+- ACTION REQUIRED: Set the default Service Accounts automountServiceAccountToken property to false for all KKP provided namespaces and kube-system ([#8344](https://github.com/kubermatic/kubermatic/issues/8344))
 - cert-manager chart has been updated to use upstream chart from https://charts.jetstack.io as a dependency, updated to version 1.6.1ACTION REQUIRED: configuration for cert-manager ould now be included under key `cert-manager` in values.yaml file (changed from `certManager`)ACTION REQUIRED: The chart will no longer configure ClusterIssuers. Refer to the documentation of cert-manager for configuration guide: https://cert-manager.io/docs/configuration/ ([#8392](https://github.com/kubermatic/kubermatic/issues/8392))
-
-
 - The old Docker repository at `quay.io/kubermatic/api` will not receive new images anymore, please use `quay.io/kubermatic/kubermatic` (CE) or `quay.io/kubermatic/kubermatic-ee` (EE) instead. This should only affect EE users who were still using the deprecated Helm chart ([#7922](https://github.com/kubermatic/kubermatic/issues/7922))
+- BREAKING: `-dynamic-datacenters` was effectively already always true when using the KKP Operator and has now been removed as a flag. Support for handling a `datacenters.yaml` has been removed ([#7779](https://github.com/kubermatic/kubermatic/issues/7779))
 
-- [BREAKING] `-dynamic-datacenters` was effectively already always true when using the KKP Operator and has now been removed as a flag. Support for handling a `datacenters.yaml` has been removed ([#7779](https://github.com/kubermatic/kubermatic/issues/7779))
-
-*Dashboard:*
-- Added multiple backup destinations. ACTION REQUIRED: KKP version 2.19 makes it possible to configure multiple destinations, therefor the current implementation of "backup buckets" will be deprecated soon. Migrate the configuration to a destination to keep using it in the future. It is reachable via the UI Admin Panel -> Backup Destinations ([#3911](https://github.com/kubermatic/dashboard/issues/3911))
+**Dashboard:**
+- Added multiple backup destinations.  
+  ACTION REQUIRED: KKP version 2.19 makes it possible to configure multiple destinations, therefor the current implementation of "backup buckets" will be deprecated soon. Migrate the configuration to a destination to keep using it in the future. It is reachable via the UI Admin Panel -> Backup Destinations ([#3911](https://github.com/kubermatic/dashboard/issues/3911))
 
 ### Supported Kubernetes Versions
 - 1.20.13
@@ -42,28 +40,34 @@ TBD
 - new endpoint to list External MD Metrics:/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/metrics ([#8239](https://github.com/kubermatic/kubermatic/issues/8239))
 - Manage AKS Clusters natively. Extend external cluster functionality to import existing AKS cluster ([#8244](https://github.com/kubermatic/kubermatic/issues/8244))
 - Create AKS nodePool ([#8399](https://github.com/kubermatic/kubermatic/issues/8399))
-- - Upgrade AKS NodePool Kubernetes version - Scale AKS NodePool - Get AKS NodePool machineDeployments and nodes- Delete AKS NodePool ([#8349](https://github.com/kubermatic/kubermatic/issues/8349))
-- GET "/providers/eks/clusters" => "/projects/{project_id}/providers/eks/clusters" ([#8423](https://github.com/kubermatic/kubermatic/issues/8423))
-- Adds GET /api/v2/providers/eks/clusters ([#8045](https://github.com/kubermatic/kubermatic/issues/8045))
-- GET /api/v2/providers/aks/clusters to list Azure AKS clusters ([#8299](https://github.com/kubermatic/kubermatic/issues/8299))
-- Adds GET Endpoint /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/kubeconfig ([#8122](https://github.com/kubermatic/kubermatic/issues/8122))
+- Upgrade AKS NodePool Kubernetes version  
+  Scale AKS NodePool
+  Get AKS NodePool machineDeployments and nodes
+  Delete AKS NodePool ([#8349](https://github.com/kubermatic/kubermatic/issues/8349))
+- GET `/providers/eks/clusters` => `/projects/{project_id}/providers/eks/clusters` ([#8423](https://github.com/kubermatic/kubermatic/issues/8423))
+- Adds GET `/api/v2/providers/eks/clusters` ([#8045](https://github.com/kubermatic/kubermatic/issues/8045))
+- GET `/api/v2/providers/aks/clusters` to list Azure AKS clusters ([#8299](https://github.com/kubermatic/kubermatic/issues/8299))
+- Adds GET Endpoint `/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/kubeconfig` ([#8122](https://github.com/kubermatic/kubermatic/issues/8122))
 
 
-#### OSM
+#### Operating System Management (OSM)
 - Integrating Operating System Manager in KKP ([#8473](https://github.com/kubermatic/kubermatic/issues/8473))
 - Validating webhooks for OSM resources, OperatingSystemProfile and OperatingSystemConfig ([#8503](https://github.com/kubermatic/kubermatic/issues/8503))
 - Deploy OSM CRDs in KKP seed clusters ([#8528](https://github.com/kubermatic/kubermatic/issues/8528))
-- * Introduce new field enableOperatingSystemManager in Cluster and ClusterTemplate CRD specification * use-osm flag is passed to machine-controller and machine-controller webhooks in case OSM is enabled * API integration for OSM ([#8523](https://github.com/kubermatic/kubermatic/issues/8523))
-- * CRDs for OSP and OSC are updated in kubermatic-operator* kubermatic-operator chart bumped to v0.3.37 ([#8573](https://github.com/kubermatic/kubermatic/issues/8573))
+- Introduce new field enableOperatingSystemManager in Cluster and ClusterTemplate CRD specification  
+  use-osm flag is passed to machine-controller and machine-controller webhooks in case OSM is enabled  
+  API integration for OSM ([#8523](https://github.com/kubermatic/kubermatic/issues/8523))
+- CRDs for OSP and OSC are updated in kubermatic-operator  
+  kubermatic-operator chart bumped to v0.3.37 ([#8573](https://github.com/kubermatic/kubermatic/issues/8573))
 
 
 #### Open Policy Agent Integration
 - Added option to set custom Gatekeeper controller and audit resource limits as part of OPAIntegration settings in the Cluster object ([#8397](https://github.com/kubermatic/kubermatic/issues/8397))
-- Changed KKP Constraint parameter type to map[string]json.RawMessage ([#8050](https://github.com/kubermatic/kubermatic/issues/8050))
+- Changed KKP Constraint parameter type to `map[string]json.RawMessage` ([#8050](https://github.com/kubermatic/kubermatic/issues/8050))
 
 ####  Backup & Restore
 - seed.backupRestore is now deprecated in favor of seed.etcdBackupRestore which offers the option to manage multiple etcd backup destinations. The deprecated seed.backupRestore is still supported for now ([#8021](https://github.com/kubermatic/kubermatic/issues/8021))
-- Added endpoint for listing possible backup destinations name for a cluster:GET /api/v2/projects/{project_id}/clusters/{cluster_id}/backupdestinations ([#8341](https://github.com/kubermatic/kubermatic/issues/8341))
+- Added endpoint for listing possible backup destinations name for a cluster: GET `/api/v2/projects/{project_id}/clusters/{cluster_id}/backupdestinations` ([#8341](https://github.com/kubermatic/kubermatic/issues/8341))
 - Added API endpoint for deleting Seed Backup Destinations ([#8512](https://github.com/kubermatic/kubermatic/issues/8512))
 - Backup credentials API endpoint now supports multiple Seed backup destinations ([#8242](https://github.com/kubermatic/kubermatic/issues/8242))
 - Extended Seed and EtcdBackupConfig API with multiple etcd backup destinations support ([#8228](https://github.com/kubermatic/kubermatic/issues/8228))
@@ -74,13 +78,25 @@ TBD
 #### User Cluster Monitoring, Logging and Alerting
 - add Prometheus scraping if minio is running with TLS ([#8467](https://github.com/kubermatic/kubermatic/issues/8467))
 - promtail chart has been updated to use upstream chart from https://grafana.github.io/helm-charts as a dependency ([#8044](https://github.com/kubermatic/kubermatic/issues/8044))
-- Upgrade User Cluster MLA components:| Component  | Image                                          | From   | To     ||------------|------------------------------------------------|--------|--------|| prometheus | prometheus/prometheus                          | 2.29.2 | 2.31.1 || prometheus | prometheus-operator/prometheus-config-reloader | 0.49.0 | 0.52.0 || promtail   | grafana/promtail                               | 2.2.1  | 2.4.1  || promtail   | busybox                                        | 1.33   | 1.34   | ([#8178](https://github.com/kubermatic/kubermatic/issues/8178))
+- Upgrade User Cluster MLA components ([#8178](https://github.com/kubermatic/kubermatic/issues/8178)):
+  | Component  | Image                                          | From   | To     |
+  |------------|------------------------------------------------|--------|--------|
+  | prometheus | prometheus/prometheus                          | 2.29.2 | 2.31.1 |
+  | prometheus | prometheus-operator/prometheus-config-reloader | 0.49.0 | 0.52.0 |
+  | promtail   | grafana/promtail                               | 2.2.1  | 2.4.1  |
+  | promtail   | busybox                                        | 1.33   | 1.34   |
+
 - Alertmanager groups alerts by alertname, namespace, seed_cluster, cluster labels ([#8193](https://github.com/kubermatic/kubermatic/issues/8193))
 - Make user cluster Prometheus replicas configurable via KKP Cluster API ([#8223](https://github.com/kubermatic/kubermatic/issues/8223))
 - Add MLA Alertmanager health status in the API /health endpoint (whether the alert manager configuration was successfully applied or not):- . extendedHealth. alertmanagerConfig ([#8128](https://github.com/kubermatic/kubermatic/issues/8128))
 - Add MLAGateway health status in the /health API-endpoint:- . extendedHealth. mlaGateway ([#8153](https://github.com/kubermatic/kubermatic/issues/8153))
 - Add MLA Health status in the API /health endpoint:- . extendedHealth. monitoring- . extendedHealth. logging ([#8082](https://github.com/kubermatic/kubermatic/issues/8082))
-- Add v2 endpoints for KKP admins to manage rule group template:GET /api/v2/seeds/{seed_name}/rulegroupsGET /api/v2/seeds/{seed_name}/rulegroups/{rulegroup_id}POST /api/v2/seeds/{seed_name}/rulegroupsPUT  /api/v2/seeds/{seed_name}/rulegroups/{rulegroup_id}DELETE /api/v2/seeds/{seed_name}/rulegroups/{rulegroup_id} ([#8158](https://github.com/kubermatic/kubermatic/issues/8158))
+- Add v2 endpoints for KKP admins to manage rule group template:
+  - GET `/api/v2/seeds/{seed_name}/rulegroups`
+  - GET `/api/v2/seeds/{seed_name}/rulegroups/{rulegroup_id}`
+  - POST `/api/v2/seeds/{seed_name}/rulegroups`
+  - PUT  `/api/v2/seeds/{seed_name}/rulegroups/{rulegroup_id}`
+  - DELETE `/api/v2/seeds/{seed_name}/rulegroups/{rulegroup_id}` ([#8158](https://github.com/kubermatic/kubermatic/issues/8158))
 - loki chart has been updated to use upstream chart from https://grafana.github.io/helm-charts as a dependency ([#8252](https://github.com/kubermatic/kubermatic/issues/8252))
 - Added configurable root_url option for grafana ([#7927](https://github.com/kubermatic/kubermatic/issues/7927))
 
@@ -204,8 +220,6 @@ TBD
 - Bump machine controller v1.36.1 ([#8099](https://github.com/kubermatic/kubermatic/issues/8099))
 - Bump operating-system-manager to v0.3.2 ([#8570](https://github.com/kubermatic/kubermatic/issues/8570))
 - Upgrade machine controller to 1.36.2 ([#8233](https://github.com/kubermatic/kubermatic/issues/8233))
-
-
 - Removed support for Kubernetes 1.19 ([#8167](https://github.com/kubermatic/kubermatic/issues/8167))
 - Add support for Kubernetes 1.22.5, 1.21.8, and 1.20.14  
   Automatically upgrade clusters running Kubernetes 1.21 to 1.21.8 to include fixes for CVE-2021-44716 and CVE-2021-44717  
@@ -676,7 +690,7 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
 - Multus has been added as an addon.  ([#6477](https://github.com/kubermatic/kubermatic/issues/6477))
 - CoreDNS version now based on Kubernetes version ([#6501](https://github.com/kubermatic/kubermatic/issues/6501))
 - Add support for "use-octavia" setting in Openstack provider specs. It defaults to "true" but leaves the possibility to set it to "false" if your provider doesn't support Octavia yet but Neutron LBaaSv2
- ([#6529](https://github.com/kubermatic/kubermatic/issues/6529))
+  ([#6529](https://github.com/kubermatic/kubermatic/issues/6529))
 - Add components override field to set nodeportrange for apiserver ([#6533](https://github.com/kubermatic/kubermatic/issues/6533))
 - OpenShift support is removed.  ([#6539](https://github.com/kubermatic/kubermatic/issues/6539))
 - OpenStack: Add support for "use-octavia" setting in Cluster Openstack cloud specs ([#6565](https://github.com/kubermatic/kubermatic/issues/6565))
@@ -2293,10 +2307,10 @@ This release contains only improvements to the image build process.
 ### Misc
 
 - Updated Dashboard to v1.2.2 ([#3553](https://github.com/kubermatic/kubermatic/issues/3553))
-    - Missing parameters for OIDC providers have been added. ([#1273](https://github.com/kubermatic/dashboard/issues/1273))
-    - `containerRuntimeVersion` and `kernelVersion` are now displayed on NodeDeployment detail page ([#1217](https://github.com/kubermatic/dashboard/issues/1217))
-    - Fixed changing default OpenStack image on Operating System change ([#1218](https://github.com/kubermatic/dashboard/issues/1218))
-    - The OIDC provider URL is now configurable via "oidc_provider_url" variable. ([#1224](https://github.com/kubermatic/dashboard/issues/1224))
+  - Missing parameters for OIDC providers have been added. ([#1273](https://github.com/kubermatic/dashboard/issues/1273))
+  - `containerRuntimeVersion` and `kernelVersion` are now displayed on NodeDeployment detail page ([#1217](https://github.com/kubermatic/dashboard/issues/1217))
+  - Fixed changing default OpenStack image on Operating System change ([#1218](https://github.com/kubermatic/dashboard/issues/1218))
+  - The OIDC provider URL is now configurable via "oidc_provider_url" variable. ([#1224](https://github.com/kubermatic/dashboard/issues/1224))
 - Insecure Kubernetes versions v1.13.6 and v1.14.2 have been disabled. ([#3554](https://github.com/kubermatic/kubermatic/issues/3554))
 
 
@@ -2480,7 +2494,7 @@ This release contains only improvements to the image build process.
 - VSphere: Setting a dedicated VSphere user for cloud provider functionalities is now possible. ([#834](https://github.com/kubermatic/dashboard/issues/834))
 - Fixed that the cluster upgrade link did not appear directly when the details page is loaded ([#836](https://github.com/kubermatic/dashboard/issues/836))
 - Kubeconfig can now be shared via a generated link from the UI ([#857](https://github.com/kubermatic/dashboard/issues/857))
-    - See https://docs.kubermatic.io/advanced/oidc_auth/ for more information.
+  - See https://docs.kubermatic.io/advanced/oidc_auth/ for more information.
 - Fixed duplicated SSH keys in summary view during cluster creation. ([#879](https://github.com/kubermatic/dashboard/issues/879))
 - On project change, the user will stay on the same page, if he has the corresponding rights. ([#889](https://github.com/kubermatic/dashboard/issues/889))
 - Fixed issues with caching the main page. ([#893](https://github.com/kubermatic/dashboard/issues/893))
