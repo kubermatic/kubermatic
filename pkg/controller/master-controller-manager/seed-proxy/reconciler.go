@@ -25,6 +25,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -50,6 +51,7 @@ type Reconciler struct {
 	seedsGetter          provider.SeedsGetter
 	seedKubeconfigGetter provider.SeedKubeconfigGetter
 	seedClientGetter     provider.SeedClientGetter
+	configGetter         provider.KubermaticConfigurationGetter
 
 	recorder record.EventRecorder
 }
@@ -312,8 +314,13 @@ func (r *Reconciler) reconcileMasterSecrets(ctx context.Context, seed *kubermati
 }
 
 func (r *Reconciler) reconcileMasterDeployments(ctx context.Context, seed *kubermaticv1.Seed, secret *corev1.Secret) error {
+	config, err := r.configGetter(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve KubermaticConfiguration: %w", err)
+	}
+
 	creators := []reconciling.NamedDeploymentCreatorGetter{
-		masterDeploymentCreator(seed, secret),
+		masterDeploymentCreator(seed, secret, registry.GetOverwriteFunc(config.Spec.UserCluster.OverwriteRegistry)),
 	}
 
 	if err := reconciling.ReconcileDeployments(ctx, creators, seed.Namespace, r.Client); err != nil {

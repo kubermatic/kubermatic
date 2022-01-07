@@ -32,13 +32,21 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+func getMeteringImage(overwriter registry.WithOverwriteFunc) string {
+	return overwriter(resources.RegistryDocker) + "/kubermatic/metering:v0.6"
+}
+
+func getMinioImage(overwriter registry.WithOverwriteFunc) string {
+	return overwriter(resources.RegistryDocker) + "/minio/mc:RELEASE.2021-07-27T06-46-19Z"
+}
+
 // ReconcileMeteringResources reconciles the metering related resources.
 func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed) error {
-
 	if err := persistentVolumeClaimCreator(ctx, client, seed); err != nil {
 		return fmt.Errorf("failed to reconcile metering PVC: %v", err)
 	}

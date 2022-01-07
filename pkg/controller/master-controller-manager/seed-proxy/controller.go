@@ -102,6 +102,7 @@ func Add(
 	namespace string,
 	seedsGetter provider.SeedsGetter,
 	seedKubeconfigGetter provider.SeedKubeconfigGetter,
+	configGetter provider.KubermaticConfigurationGetter,
 ) error {
 	log = log.Named(ControllerName)
 
@@ -113,6 +114,7 @@ func Add(
 		seedsGetter:          seedsGetter,
 		seedKubeconfigGetter: seedKubeconfigGetter,
 		seedClientGetter:     provider.SeedClientGetterFactory(seedKubeconfigGetter),
+		configGetter:         configGetter,
 	}
 
 	ctrlOptions := controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers}

@@ -23,7 +23,9 @@ import (
 	"text/template"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -187,7 +189,7 @@ func convertServiceAccountToKubeconfig(host string, credentials *corev1.Secret) 
 	return clientcmd.Write(*kubeconfig)
 }
 
-func masterDeploymentCreator(seed *kubermaticv1.Seed, secret *corev1.Secret) reconciling.NamedDeploymentCreatorGetter {
+func masterDeploymentCreator(seed *kubermaticv1.Seed, secret *corev1.Secret, getRegistry registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
 	name := deploymentName(seed)
 
 	return func() (string, reconciling.DeploymentCreator) {
@@ -228,7 +230,7 @@ func masterDeploymentCreator(seed *kubermaticv1.Seed, secret *corev1.Secret) rec
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "proxy",
-					Image:   "quay.io/kubermatic/util:2.0.0",
+					Image:   getRegistry(resources.RegistryQuay) + "/kubermatic/util:2.0.0",
 					Command: []string{"/bin/bash"},
 					Args:    []string{"-c", strings.TrimSpace(proxyScript)},
 					Env: []corev1.EnvVar{
@@ -281,6 +283,12 @@ func masterDeploymentCreator(seed *kubermaticv1.Seed, secret *corev1.Secret) rec
 							SecretName: secret.Name,
 						},
 					},
+				},
+			}
+
+			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
+				{
+					Name: resources.ImagePullSecretName,
 				},
 			}
 
