@@ -916,6 +916,7 @@ type PublicCloudSpec struct {
 	Kubevirt       *PublicKubevirtCloudSpec     `json:"kubevirt,omitempty"`
 	Alibaba        *PublicAlibabaCloudSpec      `json:"alibaba,omitempty"`
 	Anexia         *PublicAnexiaCloudSpec       `json:"anexia,omitempty"`
+	Nutanix        *PublicNutanixCloudSpec      `json:"nutanix,omitempty"`
 }
 
 // PublicFakeCloudSpec is a public counterpart of apiv1.FakeCloudSpec.
