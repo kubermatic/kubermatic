@@ -55,11 +55,12 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.MachineControllerWebhookDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			args := []string{
-				"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
+				"-worker-cluster-kubeconfig", "/etc/kubernetes/worker-kubeconfig/kubeconfig",
 				"-logtostderr",
 				"-v", "4",
 				"-listen-address", "0.0.0.0:9876",
 				"-ca-bundle", "/etc/kubernetes/pki/ca-bundle/ca-bundle.pem",
+				"-namespace", fmt.Sprintf("%s-%s", "cluster", data.Cluster().Name),
 			}
 
 			// Enable validations corresponding to OSM
@@ -117,8 +118,8 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 					Command: []string{"/usr/local/bin/webhook"},
 					Args:    args,
 					Env: append(envVars, corev1.EnvVar{
-						Name:  "KUBECONFIG",
-						Value: "/etc/kubernetes/kubeconfig/kubeconfig",
+						Name:  "PROBER_KUBECONFIG",
+						Value: "/etc/kubernetes/worker-kubeconfig/kubeconfig",
 					}),
 					ReadinessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
@@ -150,7 +151,7 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      resources.MachineControllerKubeconfigSecretName,
-							MountPath: "/etc/kubernetes/kubeconfig",
+							MountPath: "/etc/kubernetes/worker-kubeconfig",
 							ReadOnly:  true,
 						},
 						{
@@ -170,6 +171,8 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}
+
+			dep.Spec.Template.Spec.ServiceAccountName = webhookServiceAccountName
 
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(Name), "Machine,cluster.k8s.io/v1alpha1")
 			if err != nil {

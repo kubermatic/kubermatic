@@ -399,6 +399,8 @@ func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.
 	namedServiceAccountCreatorGetters := []reconciling.NamedServiceAccountCreatorGetter{
 		etcd.ServiceAccountCreator,
 		usercluster.ServiceAccountCreator,
+		machinecontroller.ServiceAccountCreator,
+		machinecontroller.WebhookServiceAccountCreator,
 	}
 
 	if c.Spec.EnableOperatingSystemManager {
@@ -415,6 +417,7 @@ func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.
 func (r *Reconciler) ensureRoles(ctx context.Context, c *kubermaticv1.Cluster) error {
 	namedRoleCreatorGetters := []reconciling.NamedRoleCreatorGetter{
 		usercluster.RoleCreator,
+		machinecontroller.WebhookRoleCreator,
 	}
 
 	if c.Spec.EnableOperatingSystemManager {
@@ -431,6 +434,7 @@ func (r *Reconciler) ensureRoles(ctx context.Context, c *kubermaticv1.Cluster) e
 func (r *Reconciler) ensureRoleBindings(ctx context.Context, c *kubermaticv1.Cluster) error {
 	namedRoleBindingCreatorGetters := []reconciling.NamedRoleBindingCreatorGetter{
 		usercluster.RoleBindingCreator,
+		machinecontroller.WebhookRoleBindingCreator,
 	}
 
 	if c.Spec.EnableOperatingSystemManager {

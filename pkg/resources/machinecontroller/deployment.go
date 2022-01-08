@@ -149,7 +149,7 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 					Command: []string{"/usr/local/bin/machine-controller"},
 					Args:    getFlags(clusterDNSIP, data.DC().Node, data.Cluster().Spec.ContainerRuntime, data.Cluster().Spec.EnableOperatingSystemManager),
 					Env: append(envVars, corev1.EnvVar{
-						Name:  "KUBECONFIG",
+						Name:  "PROBER_KUBECONFIG",
 						Value: "/etc/kubernetes/kubeconfig/kubeconfig",
 					}),
 					LivenessProbe: &corev1.Probe{
@@ -180,6 +180,9 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 					},
 				},
 			}
+
+			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, controllerResourceRequirements, nil, dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
