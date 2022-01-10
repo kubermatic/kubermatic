@@ -68,14 +68,34 @@ func getCredentials(dc *kubermaticv1.DatacenterSpecNutanix, cloud *kubermaticv1.
 		port = int(*dc.Port)
 	}
 
-	return nutanixclient.Credentials{
+	creds := nutanixclient.Credentials{
 		URL:      fmt.Sprintf("%s:%d", dc.Endpoint, port),
 		Endpoint: dc.Endpoint,
 		Port:     strconv.Itoa(port),
 		Username: username,
 		Password: password,
 		Insecure: dc.AllowInsecure,
-	}, nil
+	}
+
+	// set up proxy URL if it's given through the cloud spec
+
+	proxyURL := ""
+	if cloud.ProxyURL == "" {
+		if cloud.CredentialsReference != nil {
+			credsProxyURL, _ := secretKeyGetter(cloud.CredentialsReference, resources.NutanixProxyURL)
+			if credsProxyURL != "" {
+				proxyURL = credsProxyURL
+			}
+		}
+	} else {
+		proxyURL = cloud.ProxyURL
+	}
+
+	if proxyURL != "" {
+		creds.ProxyURL = proxyURL
+	}
+
+	return creds, nil
 
 }
 
