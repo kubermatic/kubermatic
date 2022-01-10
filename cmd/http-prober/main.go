@@ -233,6 +233,8 @@ func executeCheckers(checkers []func() error) error {
 // 3. -kubeconfig flag
 // 4. In-cluster config if running inside a cluster
 // 5. $HOME/.kube/config if exists.
+//
+// PROBER_KUBECONFIG is added specifically to facilitate scenarios where we are using multiple kubeconfigs within the same environment/container.
 func getConfig() (*rest.Config, error) {
 	kubeconfig := os.Getenv("PROBER_KUBECONFIG")
 	if len(kubeconfig) > 0 {
