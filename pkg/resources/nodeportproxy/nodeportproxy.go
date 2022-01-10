@@ -154,7 +154,7 @@ type nodePortProxyData interface {
 }
 
 func EnsureResources(ctx context.Context, client ctrlruntimeclient.Client, data nodePortProxyData) error {
-	image := data.ImageRegistry("quay.io") + "/" + imageName + ":" + data.NodePortProxyTag()
+	image := data.ImageRegistry(resources.RegistryQuay) + "/" + imageName + ":" + data.NodePortProxyTag()
 	namespace := data.Cluster().Status.NamespaceName
 	if namespace == "" {
 		return fmt.Errorf(".Status.NamespaceName is empty for cluster %q", data.Cluster().Name)
