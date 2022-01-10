@@ -141,7 +141,7 @@ spec:
       spec:
         nutanix:
           endpoint: "__NUTANIX_ENDPOINT__"
-          allowInsecure: true
+          allow_insecure: true
           images:
             centos: machine-controller-e2e-centos
             ubuntu: machine-controller-e2e-ubuntu
