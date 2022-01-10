@@ -914,7 +914,7 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 
 	// check kubeconfig access. Skip during reconciling state
 	_, err := clusterProvider.GetVersion(internalCluster)
-	if err != nil && apiCluster.Status.State != apiv2.RECONCILING {
+	if err != nil && apiCluster.Status.State == apiv2.RUNNING {
 		apiCluster.Status = apiv2.ExternalClusterStatus{
 			State:         apiv2.ERROR,
 			StatusMessage: fmt.Sprintf("can't access cluster via kubeconfig, check the privilidges, %v", err),
