@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 
 	nutanixclient "github.com/embik/nutanix-client-go/pkg/client"
 	nutanixv3 "github.com/embik/nutanix-client-go/pkg/client/v3"
@@ -233,10 +234,13 @@ func parseNutanixError(err error) (*ErrorResponse, error) {
 		return nil, nil
 	}
 
+	// the api returns a json error ... but with a string prefixed to it
+	errJsonString := strings.TrimPrefix(err.Error(), "error: ")
+
 	var resp ErrorResponse
 
-	if parseErr := json.Unmarshal([]byte(err.Error()), &resp); parseErr != nil {
-		return nil, fmt.Errorf("failed to parse %v: %s", err, parseErr)
+	if parseErr := json.Unmarshal([]byte(errJsonString), &resp); parseErr != nil {
+		return nil, fmt.Errorf("failed to parse '%v': %s", err, parseErr)
 	}
 
 	return &resp, nil
