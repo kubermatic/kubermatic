@@ -52,28 +52,9 @@ func (m *MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions
 		return append(errs, fmt.Errorf("failed to list Seeds: %w", err))
 	}
 
-	configuredVersions := defaulted.Spec.Versions.Kubernetes
-	upgradeConstraints := []*semver.Constraints{}
-
-	// do not parse and check the validity of constraints for each usercluster, but just once
-	for i, update := range configuredVersions.Updates {
-		// only consider automated updates, otherwise we might accept an unsupported
-		// cluster that is never manually updated
-		if update.Automatic == nil || !*update.Automatic {
-			continue
-		}
-
-		from, err := semver.NewConstraint(update.From)
-		if err != nil {
-			errs = append(errs, fmt.Errorf("`from` constraint %q for update rule %d is invalid: %w", update.From, i, err))
-			continue
-		}
-
-		upgradeConstraints = append(upgradeConstraints, from)
-	}
-
-	if len(errs) > 0 {
-		return errs
+	upgradeConstraints, contraintErrs := getAutoUpdateConstraints(defaulted)
+	if len(contraintErrs) > 0 {
+		return contraintErrs
 	}
 
 	for seedName, seed := range allSeeds {
@@ -96,35 +77,56 @@ func (m *MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions
 		// check that each cluster still matches the configured versions
 		for _, cluster := range clusters.Items {
 			clusterVersion := cluster.Spec.Version.Semver()
-			validVersion := false
 
-			// is this version still straight up supported?
-			for _, configured := range configuredVersions.Versions {
-				if configured.Equal(clusterVersion) {
-					validVersion = true
-					break
-				}
-			}
-
-			if validVersion {
-				continue
-			}
-
-			// is an upgrade path defined from the current version to something else?
-			for _, update := range upgradeConstraints {
-				if update.Check(clusterVersion) {
-					validVersion = true
-					break
-				}
-			}
-
-			if !validVersion {
+			if !clusterVersionIsConfigured(clusterVersion, defaulted, upgradeConstraints) {
 				errs = append(errs, fmt.Errorf("cluster %s (version %s) on Seed %s would not be supported anymore", cluster.Name, clusterVersion, seedName))
 			}
 		}
 	}
 
 	return errs
+}
+
+func getAutoUpdateConstraints(defaultedConfig *operatorv1alpha1.KubermaticConfiguration) ([]*semver.Constraints, []error) {
+	var errs []error
+
+	upgradeConstraints := []*semver.Constraints{}
+
+	for i, update := range defaultedConfig.Spec.Versions.Kubernetes.Updates {
+		// only consider automated updates, otherwise we might accept an unsupported
+		// cluster that is never manually updated
+		if update.Automatic == nil || !*update.Automatic {
+			continue
+		}
+
+		from, err := semver.NewConstraint(update.From)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("`from` constraint %q for update rule %d is invalid: %w", update.From, i, err))
+			continue
+		}
+
+		upgradeConstraints = append(upgradeConstraints, from)
+	}
+
+	return upgradeConstraints, errs
+}
+
+func clusterVersionIsConfigured(version *semver.Version, defaultedConfig *operatorv1alpha1.KubermaticConfiguration, constraints []*semver.Constraints) bool {
+	// is this version still straight up supported?
+	for _, configured := range defaultedConfig.Spec.Versions.Kubernetes.Versions {
+		if configured.Equal(version) {
+			return true
+		}
+	}
+
+	// is an upgrade path defined from the current version to something else?
+	for _, update := range constraints {
+		if update.Check(version) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (*MasterStack) ValidateConfiguration(config *operatorv1alpha1.KubermaticConfiguration, helmValues *yamled.Document, opt stack.DeployOptions, logger logrus.FieldLogger) (*operatorv1alpha1.KubermaticConfiguration, *yamled.Document, []error) {
