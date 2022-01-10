@@ -303,7 +303,7 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 		opt.SeedsGetter = seedsGetter
 		opt.SeedClientGetter = provider.SeedClientGetterFactory(seedKubeconfigGetter)
 
-		logger.Info("🩺 Validating existing installation…")
+		logger.Info("🚦 Validating existing installation…")
 
 		if errs := kubermaticStack.ValidateState(appContext, opt); errs != nil {
 			logger.Error("⛔ Cannot proceed with the installation:")
@@ -314,6 +314,8 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 
 			return errors.New("preflight checks have failed")
 		}
+
+		logger.Info("✅ Existing installation is valid.")
 
 		logger.Infof("🛫 Deploying %s…", kubermaticStack.Name())
 

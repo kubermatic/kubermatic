@@ -33,12 +33,27 @@ import (
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
+	"k8c.io/kubermatic/v2/pkg/install/util"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 )
 
 func (m *MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions) []error {
 	var errs []error
+
+	// validation can only happen if KKP was already installed, otherwise the resource types
+	// won't even be known by the kube-apiserver
+	crdsExists, err := util.HasAllReadyCRDs(ctx, opt.KubeClient, []string{
+		"clusters.kubermatic.k8c.io",
+		"seeds.kubermatic.k8c.io",
+	})
+	if err != nil {
+		return append(errs, fmt.Errorf("failed to check for CRDs: %v", err))
+	}
+
+	if !crdsExists {
+		return nil // nothing to do
+	}
 
 	// we need the actual, effective versioning configuration, which most users will
 	// probably not override
