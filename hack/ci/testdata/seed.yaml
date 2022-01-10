@@ -135,7 +135,7 @@ spec:
             minimum_memory: 0
             minimum_vcpus: 0
           region: dbl
-    nx-ger:
+    nutanix-ger:
       country: DE
       location: Hamburg
       spec:
