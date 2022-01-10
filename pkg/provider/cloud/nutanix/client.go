@@ -115,7 +115,7 @@ func getClientSet(dc *kubermaticv1.DatacenterSpecNutanix, cloud *kubermaticv1.Nu
 	}, nil
 }
 
-func getSubnetByName(client *ClientSet, name string) (*nutanixv3.SubnetIntentResponse, error) {
+func getSubnetByName(client *ClientSet, name, clusterID string) (*nutanixv3.SubnetIntentResponse, error) {
 	filter := fmt.Sprintf("name==%s", name)
 	subnets, err := client.Prism.V3.ListAllSubnet(filter)
 
@@ -123,8 +123,28 @@ func getSubnetByName(client *ClientSet, name string) (*nutanixv3.SubnetIntentRes
 		return nil, err
 	}
 
+	if subnets == nil || subnets.Entities == nil {
+		return nil, fmt.Errorf("subnets list is nil for '%s'", filter)
+	}
+
 	for _, subnet := range subnets.Entities {
-		if *subnet.Metadata.Name == name {
+		if subnet == nil {
+			return nil, errors.New("subnet is nil")
+		}
+
+		if subnet.Status == nil {
+			return nil, errors.New("subnet status is nil")
+		}
+
+		if subnet.Status.Name == nil {
+			return nil, errors.New("subnet name is nil")
+		}
+
+		if subnet.Status.ClusterReference == nil || subnet.Status.ClusterReference.UUID == nil {
+			return nil, errors.New("subnet status does not contain valid cluster reference")
+		}
+
+		if *subnet.Status.Name == name && *subnet.Status.ClusterReference.UUID == clusterID {
 			return subnet, nil
 		}
 	}
@@ -140,8 +160,20 @@ func getProjectByName(client *ClientSet, name string) (*nutanixv3.Project, error
 		return nil, err
 	}
 
+	if projects == nil || projects.Entities == nil {
+		return nil, fmt.Errorf("projects list is nil for '%s'", filter)
+	}
+
 	for _, project := range projects.Entities {
-		if *project.Metadata.Name == name {
+		if project == nil {
+			return nil, errors.New("project is nil")
+		}
+
+		if project.Status == nil {
+			return nil, errors.New("project status is nil")
+		}
+
+		if project.Status.Name == name {
 			return project, nil
 		}
 	}
@@ -157,8 +189,24 @@ func getClusterByName(client *ClientSet, name string) (*nutanixv3.ClusterIntentR
 		return nil, err
 	}
 
+	if clusters == nil || clusters.Entities == nil {
+		return nil, fmt.Errorf("clusters list is nil for '%s'", filter)
+	}
+
 	for _, cluster := range clusters.Entities {
-		if *cluster.Metadata.Name == name {
+		if cluster == nil {
+			return nil, errors.New("cluster is nil")
+		}
+
+		if cluster.Status == nil {
+			return nil, errors.New("cluster status is nil")
+		}
+
+		if cluster.Status.Name == nil {
+			return nil, errors.New("cluster name is nil")
+		}
+
+		if *cluster.Status.Name == name {
 			return cluster, nil
 		}
 	}
