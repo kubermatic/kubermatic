@@ -19,7 +19,6 @@ package providers
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -31,8 +30,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/ccm-migration/utils"
 
 	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
@@ -41,7 +38,6 @@ import (
 
 type ClusterJigInterface interface {
 	Setup() error
-	ExposeAPIServer() error
 	CreateMachineDeployment(userClient ctrlruntimeclient.Client) error
 	CheckComponents(userClient ctrlruntimeclient.Client) (bool, error)
 	Cleanup(userClient ctrlruntimeclient.Client) error
@@ -82,36 +78,6 @@ func (ccj *CommonClusterJig) generateAndCCreateMachineDeployment(userClient ctrl
 	return userClient.Create(context.TODO(), machineDeployment)
 }
 
-func (ccj *CommonClusterJig) exposeAPIServer() error {
-	ctx := context.TODO()
-
-	NodePort := corev1.Service{
-		ObjectMeta: v1.ObjectMeta{
-			Name:      ccj.name,
-			Namespace: fmt.Sprintf("cluster-%s", ccj.name),
-		},
-		Spec: corev1.ServiceSpec{
-			Ports: []corev1.ServicePort{
-				{
-					Name:     "secure",
-					Port:     6443,
-					Protocol: corev1.ProtocolTCP,
-					NodePort: 31000,
-				},
-			},
-			Selector: map[string]string{
-				"app": "apiserver",
-			},
-			Type: corev1.ServiceTypeNodePort,
-		},
-	}
-	if err := ccj.SeedClient.Create(ctx, &NodePort); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // CleanUp deletes the cluster.
 func (ccj *CommonClusterJig) cleanUp(userClient ctrlruntimeclient.Client) error {
 	ctx := context.TODO()
@@ -147,50 +113,16 @@ func (ccj *CommonClusterJig) cleanUp(userClient ctrlruntimeclient.Client) error 
 		}
 	}
 
-	// Delete MachineDeployment and Cluster
-	deleteTimeout := 15 * time.Minute
-	return wait.PollImmediate(5*time.Second, deleteTimeout, func() (bool, error) {
-		mdKey := ctrlruntimeclient.ObjectKey{Name: utils.MachineDeploymentName, Namespace: utils.MachineDeploymentNamespace}
-
-		md := &clusterv1alpha1.MachineDeployment{}
-		err := userClient.Get(ctx, mdKey, md)
-		if err == nil {
-			if md.DeletionTimestamp != nil {
-				return false, nil
-			}
-			err := userClient.Delete(ctx, md)
-			if err != nil {
-				return false, errors.Wrap(err, "failed to delete user cluster machinedeployment")
-			}
-			return false, nil
-		} else if err != nil && !k8serrors.IsNotFound(err) {
-			return false, errors.Wrap(err, "failed to get user cluster machinedeployment")
+	// Delete Cluster
+	return wait.PollImmediate(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (bool, error) {
+		cluster := &kubermaticv1.Cluster{}
+		if err := ccj.SeedClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: ccj.name, Namespace: ""}, cluster); err != nil {
+			return false, errors.Wrap(err, "failed to get user cluster")
 		}
-
-		clusters := &kubermaticv1.ClusterList{}
-		err = ccj.SeedClient.List(ctx, clusters)
+		err := ccj.SeedClient.Delete(ctx, cluster)
 		if err != nil {
-			return false, errors.Wrap(err, "failed to list user clusters")
+			return false, errors.Wrap(err, "failed to delete user cluster")
 		}
-
-		if len(clusters.Items) == 0 {
-			return true, nil
-		}
-		if len(clusters.Items) > 1 {
-			return false, errors.Wrap(err, "there is more than one user cluster, expected one or zero cluster")
-		}
-
-		if clusters.Items[0].DeletionTimestamp == nil {
-			cluster := &kubermaticv1.Cluster{}
-			if err := ccj.SeedClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: ccj.name, Namespace: ""}, cluster); err != nil {
-				return false, errors.Wrap(err, "failed to get user cluster")
-			}
-			err := ccj.SeedClient.Delete(ctx, cluster)
-			if err != nil {
-				return false, errors.Wrap(err, "failed to delete user cluster")
-			}
-		}
-
 		return false, nil
 	})
 }

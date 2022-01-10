@@ -26,4 +26,7 @@ const (
 	MachineDeploymentNamespace = "kube-system"
 
 	KubeletVersion = "1.21.7"
+
+	UserClusterPollInterval = 5 * time.Second
+	CustomTestTimeout       = 10 * time.Minute
 )

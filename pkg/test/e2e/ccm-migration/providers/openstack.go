@@ -89,10 +89,6 @@ func (c *OpenstackClusterJig) Setup() error {
 	return c.waitForClusterControlPlaneReady()
 }
 
-func (c *OpenstackClusterJig) ExposeAPIServer() error {
-	return c.exposeAPIServer()
-}
-
 func (c *OpenstackClusterJig) CreateMachineDeployment(userClient ctrlruntimeclient.Client) error {
 	if err := c.generateAndCCreateMachineDeployment(userClient, c.Credentials.GenerateProviderSpec()); err != nil {
 		return errors.Wrap(err, "failed to create machine deployment")
