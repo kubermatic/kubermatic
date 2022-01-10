@@ -886,6 +886,15 @@ spec:
                 description: EtcdBackupRestore holds the configuration of the automatic
                   etcd backup restores for the Seed
                 properties:
+                  defaultDestination:
+                    description: DefaultDestination Optional setting which marks the
+                      default destination that will be used for the default etcd backup
+                      config which is created for every user cluster. If not set,
+                      the default etcd backup config won't be created (unless the
+                      legacy Seed.Spec.BackupRestore is used). Has to correspond to
+                      a destination in Destinations. If removed, it removes the related
+                      default etcd backup configs.
+                    type: string
                   destinations:
                     additionalProperties:
                       description: BackupDestination defines the bucket name and endpoint
