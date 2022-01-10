@@ -117,7 +117,10 @@ func (ccj *CommonClusterJig) cleanUp(userClient ctrlruntimeclient.Client) error 
 	return wait.PollImmediate(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (bool, error) {
 		cluster := &kubermaticv1.Cluster{}
 		if err := ccj.SeedClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: ccj.name, Namespace: ""}, cluster); err != nil {
-			return false, errors.Wrap(err, "failed to get user cluster")
+			return true, nil
+		}
+		if cluster.DeletionTimestamp != nil {
+			return false, nil
 		}
 		err := ccj.SeedClient.Delete(ctx, cluster)
 		if err != nil {
