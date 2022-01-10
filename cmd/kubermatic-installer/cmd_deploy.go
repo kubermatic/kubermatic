@@ -36,6 +36,7 @@ import (
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
 	kubermaticseed "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-seed"
 	"k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/edition"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -284,10 +285,23 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 			return fmt.Errorf("failed to add scheme: %v", err)
 		}
 
+		// prepare seed access components
+		seedsGetter, err := seedsGetterFactory(appContext, kubeClient)
+		if err != nil {
+			return fmt.Errorf("failed to create Seeds getter: %w", err)
+		}
+
+		seedKubeconfigGetter, err := seedKubeconfigGetterFactory(appContext, kubeClient)
+		if err != nil {
+			return fmt.Errorf("failed to create Seed kubeconfig getter: %w", err)
+		}
+
 		opt.KubermaticConfiguration = kubermaticConfig
 		opt.HelmValues = helmValues
 		opt.KubeClient = kubeClient
 		opt.Logger = subLogger
+		opt.SeedsGetter = seedsGetter
+		opt.SeedClientGetter = provider.SeedClientGetterFactory(seedKubeconfigGetter)
 
 		logger.Infof("🧩 Deploying %s…", kubermaticStack.Name())
 
