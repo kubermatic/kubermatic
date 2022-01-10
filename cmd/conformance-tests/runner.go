@@ -20,6 +20,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"encoding/xml"
 	"errors"
 	"fmt"
@@ -966,7 +967,7 @@ func (r *testRunner) createCluster(ctx context.Context, log *zap.SugaredLogger, 
 
 	response, err := r.kubermaticClient.Project.CreateCluster(params, r.kubermaticAuthenticator)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(getErrorResponse(err))
 	}
 
 	clusterID := response.Payload.ID
@@ -1647,4 +1648,13 @@ func logUserClusterPodEventsAndLogs(
 	); err != nil {
 		log.Errorw("Failed to print events and logs for usercluster pods", zap.Error(err))
 	}
+}
+
+// getErrorResponse converts the client error response to string
+func getErrorResponse(err error) string {
+	rawData, newErr := json.Marshal(err)
+	if newErr != nil {
+		return err.Error()
+	}
+	return string(rawData)
 }
