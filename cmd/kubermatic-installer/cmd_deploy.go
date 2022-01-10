@@ -186,7 +186,7 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 			return fmt.Errorf("unknown stack %q specified", stackName)
 		}
 
-		logger.WithFields(fields).Info("🛫 Initializing installer…")
+		logger.WithFields(fields).Info("🚀 Initializing installer…")
 
 		// load config files
 		if len(kubeconfig) == 0 {
@@ -303,7 +303,19 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 		opt.SeedsGetter = seedsGetter
 		opt.SeedClientGetter = provider.SeedClientGetterFactory(seedKubeconfigGetter)
 
-		logger.Infof("🧩 Deploying %s…", kubermaticStack.Name())
+		logger.Info("🩺 Validating existing installation…")
+
+		if errs := kubermaticStack.ValidateState(appContext, opt); errs != nil {
+			logger.Error("⛔ Cannot proceed with the installation:")
+
+			for _, e := range errs {
+				subLogger.Errorf("%v", e)
+			}
+
+			return errors.New("preflight checks have failed")
+		}
+
+		logger.Infof("🛫 Deploying %s…", kubermaticStack.Name())
 
 		if err := kubermaticStack.Deploy(appContext, opt); err != nil {
 			return err

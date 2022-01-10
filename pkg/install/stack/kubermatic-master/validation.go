@@ -17,22 +17,115 @@ limitations under the License.
 package kubermaticmaster
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
 	"fmt"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 )
+
+func (m *MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions) []error {
+	var errs []error
+
+	// we need the actual, effective versioning configuration, which most users will
+	// probably not override
+	defaulted, err := defaults.DefaultConfiguration(opt.KubermaticConfiguration, zap.NewNop().Sugar())
+	if err != nil {
+		return append(errs, fmt.Errorf("failed to apply default values to the KubermaticConfiguration: %w", err))
+	}
+
+	allSeeds, err := opt.SeedsGetter()
+	if err != nil {
+		return append(errs, fmt.Errorf("failed to list Seeds: %w", err))
+	}
+
+	configuredVersions := defaulted.Spec.Versions.Kubernetes
+	upgradeConstraints := []*semver.Constraints{}
+
+	// do not parse and check the validity of constraints for each usercluster, but just once
+	for i, update := range configuredVersions.Updates {
+		// only consider automated updates, otherwise we might accept an unsupported
+		// cluster that is never manually updated
+		if update.Automatic == nil || !*update.Automatic {
+			continue
+		}
+
+		from, err := semver.NewConstraint(update.From)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("`from` constraint %q for update rule %d is invalid: %w", update.From, i, err))
+			continue
+		}
+
+		upgradeConstraints = append(upgradeConstraints, from)
+	}
+
+	if len(errs) > 0 {
+		return errs
+	}
+
+	for seedName, seed := range allSeeds {
+		opt.Logger.WithField("seed", seedName).Info("Checking seed cluster…")
+
+		// create client into seed
+		seedClient, err := opt.SeedClientGetter(seed)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("failed to create client for Seed cluster %q: %w", seedName, err))
+			continue
+		}
+
+		// list all userclusters
+		clusters := kubermaticv1.ClusterList{}
+		if err := seedClient.List(ctx, &clusters); err != nil {
+			errs = append(errs, fmt.Errorf("failed to list user clusters on Seed %q: %w", seedName, err))
+			continue
+		}
+
+		// check that each cluster still matches the configured versions
+		for _, cluster := range clusters.Items {
+			clusterVersion := cluster.Spec.Version.Semver()
+			validVersion := false
+
+			// is this version still straight up supported?
+			for _, configured := range configuredVersions.Versions {
+				if configured.Equal(clusterVersion) {
+					validVersion = true
+					break
+				}
+			}
+
+			if validVersion {
+				continue
+			}
+
+			// is an upgrade path defined from the current version to something else?
+			for _, update := range upgradeConstraints {
+				if update.Check(clusterVersion) {
+					validVersion = true
+					break
+				}
+			}
+
+			if !validVersion {
+				errs = append(errs, fmt.Errorf("cluster %s (version %s) on Seed %s would not be supported anymore", cluster.Name, clusterVersion, seedName))
+			}
+		}
+	}
+
+	return errs
+}
 
 func (*MasterStack) ValidateConfiguration(config *operatorv1alpha1.KubermaticConfiguration, helmValues *yamled.Document, opt stack.DeployOptions, logger logrus.FieldLogger) (*operatorv1alpha1.KubermaticConfiguration, *yamled.Document, []error) {
 	kubermaticFailures := validateKubermaticConfiguration(config)

@@ -73,6 +73,8 @@ func NewStack() stack.Stack {
 	return &MasterStack{}
 }
 
+var _ stack.Stack = &MasterStack{}
+
 func (*MasterStack) Name() string {
 	return "KKP master stack"
 }

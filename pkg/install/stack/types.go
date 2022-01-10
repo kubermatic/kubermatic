@@ -69,5 +69,6 @@ type DeployOptions struct {
 type Stack interface {
 	Name() string
 	ValidateConfiguration(config *operatorv1alpha1.KubermaticConfiguration, helmValues *yamled.Document, opt DeployOptions, logger logrus.FieldLogger) (*operatorv1alpha1.KubermaticConfiguration, *yamled.Document, []error)
+	ValidateState(ctx context.Context, opt DeployOptions) []error
 	Deploy(ctx context.Context, opt DeployOptions) error
 }

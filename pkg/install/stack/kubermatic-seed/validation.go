@@ -17,6 +17,7 @@ limitations under the License.
 package kubermaticseed
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/sirupsen/logrus"
@@ -26,6 +27,10 @@ import (
 	"k8c.io/kubermatic/v2/pkg/install/stack/common"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 )
+
+func (m *SeedStack) ValidateState(ctx context.Context, opt stack.DeployOptions) []error {
+	return nil
+}
 
 func (*SeedStack) ValidateConfiguration(config *operatorv1alpha1.KubermaticConfiguration, helmValues *yamled.Document, opt stack.DeployOptions, logger logrus.FieldLogger) (*operatorv1alpha1.KubermaticConfiguration, *yamled.Document, []error) {
 	helmFailures := validateHelmValues(helmValues)
