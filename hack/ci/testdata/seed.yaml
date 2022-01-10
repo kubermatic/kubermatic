@@ -140,8 +140,8 @@ spec:
       location: Hamburg
       spec:
         nutanix:
-          Endpoint: "__NUTANIX_ENDPOINT__"
-          AllowInsecure: true
+          endpoint: "__NUTANIX_ENDPOINT__"
+          allowInsecure: true
           images:
             centos: machine-controller-e2e-centos
             ubuntu: machine-controller-e2e-ubuntu

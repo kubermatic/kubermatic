@@ -536,6 +536,9 @@ func DatacenterCloudProviderName(spec *kubermaticv1.DatacenterSpec) (string, err
 	if spec.Anexia != nil {
 		clouds = append(clouds, kubermaticv1.AnexiaCloudProvider)
 	}
+	if spec.Nutanix != nil {
+		clouds = append(clouds, kubermaticv1.NutanixCloudProvider)
+	}
 	if len(clouds) == 0 {
 		return "", nil
 	}
