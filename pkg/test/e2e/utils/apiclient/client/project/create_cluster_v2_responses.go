@@ -150,7 +150,7 @@ func (o *CreateClusterV2Default) Code() int {
 }
 
 func (o *CreateClusterV2Default) Error() string {
-	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters][%d] createClusterV2 default  %+v", o._statusCode, o.Payload.Error)
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters][%d] createClusterV2 default  %+v", o._statusCode, o.Payload)
 }
 func (o *CreateClusterV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
