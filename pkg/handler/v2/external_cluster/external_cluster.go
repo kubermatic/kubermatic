@@ -912,7 +912,7 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 		apiCluster.Status = *gkeStatus
 	}
 
-	// check kubeconfig access. Skip during reconciling state
+	// check kubeconfig access
 	_, err := clusterProvider.GetVersion(internalCluster)
 	if err != nil && apiCluster.Status.State == apiv2.RUNNING {
 		apiCluster.Status = apiv2.ExternalClusterStatus{
