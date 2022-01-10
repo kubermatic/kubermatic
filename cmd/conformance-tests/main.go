@@ -152,6 +152,14 @@ type secrets struct {
 		AccessKeyID     string
 		AccessKeySecret string
 	}
+	Nutanix struct {
+		Username    string
+		Password    string
+		ProxyURL    string
+		ClusterName string
+		ProjectName string
+		SubnetName  string
+	}
 	kubermaticClient        *apiclient.KubermaticKubernetesPlatformAPI
 	kubermaticAuthenticator runtime.ClientAuthInfoWriter
 }
@@ -190,7 +198,7 @@ func main() {
 	supportedVersions := getLatestMinorVersions(defaults.DefaultKubernetesVersioning.Versions)
 
 	flag.StringVar(&opts.existingClusterLabel, "existing-cluster-label", "", "label to use to select an existing cluster for testing. If provided, no cluster will be created. Sample: my=cluster")
-	flag.StringVar(&providers, "providers", "aws,digitalocean,openstack,hetzner,vsphere,azure,packet,gcp", "comma separated list of providers to test")
+	flag.StringVar(&providers, "providers", "aws,digitalocean,openstack,hetzner,vsphere,azure,packet,gcp,nutanix", "comma separated list of providers to test")
 	flag.StringVar(&opts.namePrefix, "name-prefix", "", "prefix used for all cluster names")
 	flag.StringVar(&opts.repoRoot, "repo-root", "/opt/kube-test/", "Root path for the different kubernetes repositories")
 	flag.StringVar(&opts.kubermaticEndpoint, "kubermatic-endpoint", "http://localhost:8080", "scheme://host[:port] of the Kubermatic API endpoint to talk to")
@@ -244,6 +252,12 @@ func main() {
 	flag.StringVar(&kubevirtKubeconfigFile, "kubevirt-kubeconfig", "", "Kubevirt: Cluster Kubeconfig filename")
 	flag.StringVar(&opts.secrets.Alibaba.AccessKeyID, "alibaba-access-key-id", "", "Alibaba: AccessKeyID")
 	flag.StringVar(&opts.secrets.Alibaba.AccessKeySecret, "alibaba-access-key-secret", "", "Alibaba: AccessKeySecret")
+	flag.StringVar(&opts.secrets.Nutanix.Username, "nutanix-username", "", "Nutanix: Username")
+	flag.StringVar(&opts.secrets.Nutanix.Password, "nutanix-password", "", "Nutanix: Password")
+	flag.StringVar(&opts.secrets.Nutanix.ProxyURL, "nutanix-proxy-url", "", "Nutanix: HTTP Proxy URL to access endpoint")
+	flag.StringVar(&opts.secrets.Nutanix.ClusterName, "nutanix-cluster-name", "", "Nutanix: Cluster Name")
+	flag.StringVar(&opts.secrets.Nutanix.ProjectName, "nutanix-project-name", "", "Nutanix: Project Name")
+	flag.StringVar(&opts.secrets.Nutanix.SubnetName, "nutanix-subnet-name", "", "Nutanix: Subnet Name")
 
 	flag.Parse()
 
@@ -484,6 +498,10 @@ func getScenarios(opts Opts, log *zap.SugaredLogger) []testScenario {
 	if opts.providers.Has("alibaba") {
 		log.Info("Adding Alibaba scenarios")
 		scenarios = append(scenarios, getAlibabaScenarios(opts.versions)...)
+	}
+	if opts.providers.Has("nutanix") {
+		log.Info("Adding Nutanix scenarios")
+		scenarios = append(scenarios, getNutanixScenarios(opts.versions)...)
 	}
 
 	hasDistribution := func(distribution providerconfig.OperatingSystem) bool {
