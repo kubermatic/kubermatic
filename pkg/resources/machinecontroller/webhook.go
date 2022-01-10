@@ -117,7 +117,7 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 					Command: []string{"/usr/local/bin/webhook"},
 					Args:    args,
 					Env: append(envVars, corev1.EnvVar{
-						Name:  "KUBECONFIG",
+						Name:  "PROBER_KUBECONFIG",
 						Value: "/etc/kubernetes/kubeconfig/kubeconfig",
 					}),
 					ReadinessProbe: &corev1.Probe{
