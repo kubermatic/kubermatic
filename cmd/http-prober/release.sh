@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ver=v0.3.2
+ver=v0.3.3
 
 set -euox pipefail
 
