@@ -17,6 +17,7 @@ limitations under the License.
 package nutanix
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -31,6 +32,19 @@ import (
 
 type ClientSet struct {
 	Prism *nutanixv3.Client
+}
+
+type ErrorResponse struct {
+	APIVersion  string             `json:"api_version"`
+	Kind        string             `json:"kind"`
+	State       string             `json:"state"`
+	MessageList []ErrorResponseMsg `json:"message_list"`
+	Code        int32              `json:"code"`
+}
+
+type ErrorResponseMsg struct {
+	Message string `json:"message"`
+	Reason  string `json:"reason"`
 }
 
 func GetClientSet(dc *kubermaticv1.DatacenterSpecNutanix, cloud *kubermaticv1.NutanixCloudSpec, secretKeyGetter provider.SecretKeySelectorValueFunc) (*ClientSet, error) {
@@ -149,7 +163,7 @@ func getSubnetByName(client *ClientSet, name, clusterID string) (*nutanixv3.Subn
 		}
 	}
 
-	return nil, errors.New(entityNotFoundError)
+	return nil, fmt.Errorf("no subnet found for '%s' on cluster '%s'", filter, clusterID)
 }
 
 func getProjectByName(client *ClientSet, name string) (*nutanixv3.Project, error) {
@@ -178,7 +192,7 @@ func getProjectByName(client *ClientSet, name string) (*nutanixv3.Project, error
 		}
 	}
 
-	return nil, errors.New(entityNotFoundError)
+	return nil, fmt.Errorf("no project found for '%s'", filter)
 }
 
 func getClusterByName(client *ClientSet, name string) (*nutanixv3.ClusterIntentResponse, error) {
@@ -211,5 +225,19 @@ func getClusterByName(client *ClientSet, name string) (*nutanixv3.ClusterIntentR
 		}
 	}
 
-	return nil, errors.New(entityNotFoundError)
+	return nil, fmt.Errorf("no cluster found for '%s'", filter)
+}
+
+func parseNutanixError(err error) (*ErrorResponse, error) {
+	if err == nil {
+		return nil, nil
+	}
+
+	var resp ErrorResponse
+
+	if parseErr := json.Unmarshal([]byte(err.Error()), &resp); parseErr != nil {
+		return nil, fmt.Errorf("failed to parse %v: %s", err, parseErr)
+	}
+
+	return &resp, nil
 }
