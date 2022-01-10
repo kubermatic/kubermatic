@@ -181,7 +181,7 @@ func OperatingSystemConfigValidatingWebhookConfigurationCreator(cfg *operatorv1a
 			matchPolicy := admissionregistrationv1.Exact
 			failurePolicy := admissionregistrationv1.Fail
 			sideEffects := admissionregistrationv1.SideEffectClassNone
-			scope := admissionregistrationv1.ClusterScope
+			scope := admissionregistrationv1.AllScopes
 
 			ca, err := common.WebhookCABundle(cfg, client)
 			if err != nil {
@@ -234,7 +234,7 @@ func OperatingSystemProfileValidatingWebhookConfigurationCreator(cfg *operatorv1
 			matchPolicy := admissionregistrationv1.Exact
 			failurePolicy := admissionregistrationv1.Fail
 			sideEffects := admissionregistrationv1.SideEffectClassNone
-			scope := admissionregistrationv1.ClusterScope
+			scope := admissionregistrationv1.AllScopes
 
 			ca, err := common.WebhookCABundle(cfg, client)
 			if err != nil {
