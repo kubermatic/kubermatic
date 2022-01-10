@@ -411,7 +411,7 @@ spec:
     # range of the seed cluster.
     nodePortRange: 30000-32767
     # OverwriteRegistry specifies a custom Docker registry which will be used for all images
-    # used inside user clusters (user cluster control plane + addons). This also applies to
+    # used for user clusters (user cluster control plane + addons). This also applies to
     # the KubermaticDockerRepository and DNATControllerDockerRepository fields.
     overwriteRegistry: ""
   # Versions configures the available and default Kubernetes versions and updates.

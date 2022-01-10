@@ -27,6 +27,7 @@ package metering
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -34,7 +35,7 @@ import (
 )
 
 // cronJobCreator returns the func to create/update the etcd defragger cronjob
-func cronJobCreator(seedName string) reconciling.NamedCronJobCreatorGetter {
+func cronJobCreator(seedName string, getRegistry registry.WithOverwriteFunc) reconciling.NamedCronJobCreatorGetter {
 	return func() (string, reconciling.CronJobCreator) {
 		return meteringCronJobWeeklyName, func(job *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
 
@@ -47,7 +48,7 @@ func cronJobCreator(seedName string) reconciling.NamedCronJobCreatorGetter {
 			job.Spec.JobTemplate.Spec.Template.Spec.InitContainers = []corev1.Container{
 				{
 					Name:  "s3fetch",
-					Image: "docker.io/minio/mc:RELEASE.2021-07-27T06-46-19Z",
+					Image: getMinioImage(getRegistry),
 					Command: []string{
 						"/bin/sh",
 					},
@@ -115,7 +116,7 @@ mc mirror --newer-than "65d0h0m" s3/$S3_BUCKET /metering-data || true`,
 			job.Spec.JobTemplate.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            "kubermatic-metering-report",
-					Image:           "quay.io/kubermatic/metering:v0.5",
+					Image:           getMeteringImage(getRegistry),
 					ImagePullPolicy: corev1.PullAlways,
 					Command: []string{
 						"/bin/sh",
@@ -144,7 +145,7 @@ mc mirror --newer-than "65d0h0m" s3/$S3_BUCKET /metering-data || true`,
 				},
 				{
 					Name:  "s3upload",
-					Image: "docker.io/minio/mc:RELEASE.2021-07-27T06-46-19Z",
+					Image: getMinioImage(getRegistry),
 					Command: []string{
 						"/bin/sh",
 					},

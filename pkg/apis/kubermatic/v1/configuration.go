@@ -197,7 +197,7 @@ type KubermaticUserClusterConfiguration struct {
 	// etcd-launcher image.
 	EtcdLauncherDockerRepository string `json:"etcdLauncherDockerRepository,omitempty"`
 	// OverwriteRegistry specifies a custom Docker registry which will be used for all images
-	// used inside user clusters (user cluster control plane + addons). This also applies to
+	// used for user clusters (user cluster control plane + addons). This also applies to
 	// the KubermaticDockerRepository and DNATControllerDockerRepository fields.
 	OverwriteRegistry string `json:"overwriteRegistry,omitempty"`
 	// Addons controls the optional additions installed into each user cluster.

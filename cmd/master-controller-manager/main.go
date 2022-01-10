@@ -20,10 +20,13 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io/ioutil"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
+	"gopkg.in/yaml.v2"
 
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -56,6 +59,7 @@ type controllerRunOptions struct {
 	enableLeaderElection    bool
 	leaderElectionNamespace string
 	featureGates            features.FeatureGate
+	configFile              string
 
 	workerName string
 	namespace  string
@@ -73,6 +77,8 @@ type controllerContext struct {
 	seedKubeconfigGetter    provider.SeedKubeconfigGetter
 	labelSelectorFunc       func(*metav1.ListOptions)
 	namespace               string
+
+	configGetter provider.KubermaticConfigurationGetter
 }
 
 func main() {
@@ -92,6 +98,7 @@ func main() {
 		"Enabling this will ensure there is only one active controller manager.")
 	flag.StringVar(&runOpts.leaderElectionNamespace, "leader-election-namespace", "", "Leader election namespace. In-cluster discovery will be attempted in such case.")
 	flag.Var(&runOpts.featureGates, "feature-gates", "A set of key=value pairs that describe feature gates for various features.")
+	flag.StringVar(&runOpts.configFile, "kubermatic-configuration-file", "", "(for development only) path to a KubermaticConfiguration YAML file")
 	addFlags(flag.CommandLine)
 	flag.Parse()
 
@@ -123,6 +130,15 @@ func main() {
 
 	ctrlCtx.workerNamePredicate = workerlabel.Predicates(runOpts.workerName)
 
+	// for development purposes, a local configuration file
+	// can be used to provide the KubermaticConfiguration
+	var config *operatorv1alpha1.KubermaticConfiguration
+	if runOpts.configFile != "" {
+		if config, err = loadKubermaticConfiguration(runOpts.configFile); err != nil {
+			log.Fatalw("invalid KubermaticConfiguration", zap.Error(err))
+		}
+	}
+
 	// register the global error metric. Ensures that runtime.HandleError() increases the error metric
 	metrics.RegisterRuntimErrorMetricCounter("kubermatic_master_controller_manager", prometheus.DefaultRegisterer)
 
@@ -148,6 +164,15 @@ func main() {
 		log.Fatalw("failed to create Controller Manager instance", zap.Error(err))
 	}
 	ctrlCtx.mgr = mgr
+
+	if config != nil {
+		ctrlCtx.configGetter, err = provider.StaticKubermaticConfigurationGetterFactory(config)
+	} else {
+		ctrlCtx.configGetter, err = provider.DynamicKubermaticConfigurationGetterFactory(mgr.GetClient(), runOpts.namespace)
+	}
+	if err != nil {
+		log.Fatalw("Unable to create the configuration getter", zap.Error(err))
+	}
 
 	if err := mgr.Add(pprofOpts); err != nil {
 		log.Fatalw("failed to add pprof endpoint", zap.Error(err))
@@ -195,4 +220,23 @@ func main() {
 	if err := mgr.Start(ctx); err != nil {
 		log.Fatalw("problem running manager", zap.Error(err))
 	}
+}
+
+func loadKubermaticConfiguration(filename string) (*operatorv1alpha1.KubermaticConfiguration, error) {
+	content, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file: %v", err)
+	}
+
+	config := &operatorv1alpha1.KubermaticConfiguration{}
+	if err := yaml.Unmarshal(content, &config); err != nil {
+		return nil, fmt.Errorf("failed to parse file as YAML: %v", err)
+	}
+
+	defaulted, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
+	if err != nil {
+		return nil, fmt.Errorf("failed to process: %v", err)
+	}
+
+	return defaulted, nil
 }

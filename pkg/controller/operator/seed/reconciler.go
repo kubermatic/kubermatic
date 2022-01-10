@@ -274,7 +274,7 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *operatorv1alph
 	}
 
 	if seed.Spec.Metering != nil && seed.Spec.Metering.Enabled {
-		if err := metering.ReconcileMeteringResources(ctx, client, seed); err != nil {
+		if err := metering.ReconcileMeteringResources(ctx, client, cfg, seed); err != nil {
 			return err
 		}
 	}

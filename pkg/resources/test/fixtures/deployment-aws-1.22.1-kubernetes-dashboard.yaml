@@ -75,6 +75,8 @@ spec:
           name: tmp-volume
         - mountPath: /http-prober-bin
           name: http-prober-bin
+      imagePullSecrets:
+      - name: dockercfg
       initContainers:
       - command:
         - /bin/cp
