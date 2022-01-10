@@ -13001,6 +13001,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
+          },
+          {
+            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -13012,13 +13019,6 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
           }
         ],
         "responses": {
@@ -19655,6 +19655,9 @@
         "kubevirt": {
           "$ref": "#/definitions/KubevirtCloudSpec"
         },
+        "nutanix": {
+          "$ref": "#/definitions/NutanixCloudSpec"
+        },
         "openstack": {
           "$ref": "#/definitions/OpenstackCloudSpec"
         },
@@ -24310,6 +24313,9 @@
         "kubevirt": {
           "$ref": "#/definitions/KubevirtNodeSpec"
         },
+        "nutanix": {
+          "$ref": "#/definitions/NutanixNodeSpec"
+        },
         "openstack": {
           "$ref": "#/definitions/OpenstackNodeSpec"
         },
@@ -24652,6 +24658,84 @@
           "type": "integer",
           "format": "int64",
           "x-go-name": "MemoryUsedPercentage"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "NutanixCloudSpec": {
+      "type": "object",
+      "title": "NutanixCloudSpec specifies the access data to Nutanix.",
+      "properties": {
+        "clusterName": {
+          "description": "ClusterName is the Nutanix cluster that this user cluster will be deployed to.",
+          "type": "string",
+          "x-go-name": "ClusterName"
+        },
+        "credentialsReference": {
+          "$ref": "#/definitions/GlobalSecretKeySelector"
+        },
+        "password": {
+          "type": "string",
+          "x-go-name": "Password"
+        },
+        "projectName": {
+          "description": "ProjectName is the project that this cluster is deployed into. If none is given, no project will be used.\n+optional",
+          "type": "string",
+          "x-go-name": "ProjectName"
+        },
+        "proxyURL": {
+          "type": "string",
+          "x-go-name": "ProxyURL"
+        },
+        "username": {
+          "type": "string",
+          "x-go-name": "Username"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
+    "NutanixNodeSpec": {
+      "description": "NutanixNodeSpec nutanix specific node settings",
+      "type": "object",
+      "properties": {
+        "categories": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Categories"
+        },
+        "cpuCores": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "CPUCores"
+        },
+        "cpuPassthrough": {
+          "type": "boolean",
+          "x-go-name": "CPUPassthrough"
+        },
+        "cpus": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "CPUs"
+        },
+        "diskSize": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "DiskSize"
+        },
+        "imageName": {
+          "type": "string",
+          "x-go-name": "ImageName"
+        },
+        "memoryMB": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MemoryMB"
+        },
+        "subnetName": {
+          "type": "string",
+          "x-go-name": "SubnetName"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -25649,6 +25733,9 @@
         "kubevirt": {
           "$ref": "#/definitions/PublicKubevirtCloudSpec"
         },
+        "nutanix": {
+          "$ref": "#/definitions/PublicNutanixCloudSpec"
+        },
         "openstack": {
           "$ref": "#/definitions/PublicOpenstackCloudSpec"
         },
@@ -25684,6 +25771,11 @@
     "PublicKubevirtCloudSpec": {
       "type": "object",
       "title": "PublicKubevirtCloudSpec is a public counterpart of apiv1.KubevirtCloudSpec.",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "PublicNutanixCloudSpec": {
+      "type": "object",
+      "title": "PublicNutanixCloudSpec is a public counterpart of apiv1.NutanixCloudSpec.",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "PublicOpenstackCloudSpec": {

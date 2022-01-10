@@ -42,6 +42,9 @@ type NodeCloudSpec struct {
 	// kubevirt
 	Kubevirt *KubevirtNodeSpec `json:"kubevirt,omitempty"`
 
+	// nutanix
+	Nutanix *NutanixNodeSpec `json:"nutanix,omitempty"`
+
 	// openstack
 	Openstack *OpenstackNodeSpec `json:"openstack,omitempty"`
 
@@ -85,6 +88,10 @@ func (m *NodeCloudSpec) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateKubevirt(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateNutanix(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -242,6 +249,23 @@ func (m *NodeCloudSpec) validateKubevirt(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *NodeCloudSpec) validateNutanix(formats strfmt.Registry) error {
+	if swag.IsZero(m.Nutanix) { // not required
+		return nil
+	}
+
+	if m.Nutanix != nil {
+		if err := m.Nutanix.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("nutanix")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *NodeCloudSpec) validateOpenstack(formats strfmt.Registry) error {
 	if swag.IsZero(m.Openstack) { // not required
 		return nil
@@ -326,6 +350,10 @@ func (m *NodeCloudSpec) ContextValidate(ctx context.Context, formats strfmt.Regi
 	}
 
 	if err := m.contextValidateKubevirt(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateNutanix(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -451,6 +479,20 @@ func (m *NodeCloudSpec) contextValidateKubevirt(ctx context.Context, formats str
 		if err := m.Kubevirt.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("kubevirt")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *NodeCloudSpec) contextValidateNutanix(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Nutanix != nil {
+		if err := m.Nutanix.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("nutanix")
 			}
 			return err
 		}
