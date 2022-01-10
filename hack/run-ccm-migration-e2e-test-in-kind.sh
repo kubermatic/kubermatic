@@ -68,7 +68,7 @@ EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
 if [ -x "$(command -v ginkgo)" ]; then
   ginkgo --tags=e2e -v pkg/test/e2e/ccm-migration/ \
     -r \
-    #--randomizeAllSpecs \
+    --randomizeAllSpecs \
     --randomizeSuites \
     --failOnPending \
     --cover \
