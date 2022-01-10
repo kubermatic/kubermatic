@@ -631,7 +631,7 @@ func (r *Reconciler) ensureEtcdBackupConfigs(ctx context.Context, c *kubermaticv
 	}
 	// If default etcd automatic backups are not enabled, remove them if any
 	ebc := &kubermaticv1.EtcdBackupConfig{}
-	err := r.Client.Get(ctx,types.NamespacedName{Name: resources.EtcdDefaultBackupConfigName, Namespace: c.Status.NamespaceName}, ebc)
+	err := r.Client.Get(ctx, types.NamespacedName{Name: resources.EtcdDefaultBackupConfigName, Namespace: c.Status.NamespaceName}, ebc)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return nil
