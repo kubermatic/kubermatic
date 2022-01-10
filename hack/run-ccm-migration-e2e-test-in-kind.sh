@@ -332,7 +332,7 @@ EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
     -openstack-floating-ip-pool=${OS_FLOATING_IP_POOL}
     -openstack-network=${OS_NETWORK_NAME}
     -openstack-seed-datacenter=syseleven-dbl1
-    -vsphere-seed-datacenter=vsphere-hamburg
+    -vsphere-seed-datacenter=vsphere-ger
     -vsphere-datacenter=dc-1
     -vsphere-cluster=cl-1
     -vsphere-auth-url=${VSPHERE_E2E_ADDRESS}

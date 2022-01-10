@@ -121,7 +121,7 @@ func DefaultCluster(clusterName string, version semver.Semver, cloudSpec kuberma
 				},
 			},
 			EnableUserSSHKeyAgent: pointer.BoolPtr(false),
-			ExposeStrategy:        kubermaticv1.ExposeStrategyTunneling,
+			ExposeStrategy:        kubermaticv1.ExposeStrategyNodePort,
 			HumanReadableName:     "test",
 			Version:               version,
 		},

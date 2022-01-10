@@ -106,15 +106,14 @@ func setupAndGetUserClient(clusterJig providers.ClusterJigInterface, cluster *ku
 	clusterJig.Log().Debugw("Cluster set up", "name", clusterJig.Name())
 	gomega.Expect(clusterJig.Seed().Get(context.TODO(), types.NamespacedName{Name: clusterJig.Name()}, cluster)).NotTo(gomega.HaveOccurred())
 
-	gomega.Expect(wait.Poll(userClusterPollInterval, customTestTimeout, func() (done bool, err error) {
-		if err := clusterJig.ExposeAPIServer(); err != nil {
-			clusterJig.Log().Debug("nodeport creation failed, retrying...")
-			return false, nil
-		}
-		return true, nil
-	})).NotTo(gomega.HaveOccurred())
-
-	clusterJig.Log().Debugw("User cluster exposed through NodePort", clusterJig.Name())
+	// gomega.Expect(wait.Poll(userClusterPollInterval, customTestTimeout, func() (done bool, err error) {
+	// 	if err := clusterJig.ExposeAPIServer(); err != nil {
+	// 		clusterJig.Log().Debug("nodeport creation failed: %s", err)
+	// 		return false, nil
+	// 	}
+	// 	return true, nil
+	// })).NotTo(gomega.HaveOccurred())
+	//clusterJig.Log().Debugw("User cluster exposed through NodePort", clusterJig.Name())
 
 	var userClient ctrlruntimeclient.Client
 	gomega.Expect(wait.Poll(userClusterPollInterval, customTestTimeout, func() (done bool, err error) {
@@ -126,6 +125,8 @@ func setupAndGetUserClient(clusterJig providers.ClusterJigInterface, cluster *ku
 		}
 		return true, nil
 	})).NotTo(gomega.HaveOccurred())
+	clusterJig.Log().Debugw("User cluster client correctly created")
+
 	gomega.Expect(clusterv1alpha1.AddToScheme(userClient.Scheme())).NotTo(gomega.HaveOccurred())
 
 	gomega.Expect(clusterJig.CreateMachineDeployment(userClient)).NotTo(gomega.HaveOccurred())
