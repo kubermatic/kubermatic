@@ -40,6 +40,8 @@ import (
 	kruntime "k8s.io/apimachinery/pkg/util/runtime"
 )
 
+// comment to trigger CI
+
 const (
 	folderCleanupFinalizer = "kubermatic.io/cleanup-vsphere-folder"
 )
