@@ -515,10 +515,9 @@ spec:
                     type: string
                   overwriteRegistry:
                     description: OverwriteRegistry specifies a custom Docker registry
-                      which will be used for all images used for user clusters
-                      (user cluster control plane + addons). This also applies to
-                      the KubermaticDockerRepository and DNATControllerDockerRepository
-                      fields.
+                      which will be used for all images used for user clusters (user
+                      cluster control plane + addons). This also applies to the KubermaticDockerRepository
+                      and DNATControllerDockerRepository fields.
                     type: string
                 type: object
               versions:
