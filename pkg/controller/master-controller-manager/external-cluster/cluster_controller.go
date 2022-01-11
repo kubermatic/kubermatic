@@ -187,9 +187,9 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Extern
 				r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 				return reconcile.Result{}, err
 			}
-			// reconcile to update kubeconfig for cases like starting a stopped cluster
-			return reconcile.Result{RequeueAfter: time.Minute * 2}, nil
 		}
+		// reconcile to update kubeconfig for cases like starting a stopped cluster
+		return reconcile.Result{RequeueAfter: time.Minute * 2}, nil
 	}
 	return reconcile.Result{}, nil
 }
