@@ -453,6 +453,8 @@ func getAnexiaProviderSpec(nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter)
 
 func getNutanixProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
 	config := nutanix.RawConfig{
+		AllowInsecure: providerconfig.ConfigVarBool{Value: dc.Spec.Nutanix.AllowInsecure},
+
 		SubnetName: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Nutanix.SubnetName},
 		ImageName:  providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Nutanix.ImageName},
 
