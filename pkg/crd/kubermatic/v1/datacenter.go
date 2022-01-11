@@ -442,15 +442,16 @@ type DatacenterSpecKubevirt struct {
 	DNSConfig *corev1.PodDNSConfig `json:"dns_config,omitempty"`
 }
 
-// DatacenterSpecNutanix describes a Nutanix datacenter.
+// DatacenterSpecNutanix describes a Nutanix datacenter
 type DatacenterSpecNutanix struct {
-	// Endpoint to use for accessing Nutanix Prism Central. No protocol or port should be passed.
+	// Endpoint to use for accessing Nutanix Prism Central. No protocol or port should be passed,
+	// for example "nutanix.example.com" or "10.0.0.1"
 	Endpoint string `json:"endpoint"`
-	// Port to use when connecting to the endpoint. Defaults to 9440 when none is given.
+	// Optional: Port to use when connecting to the Nutanix Prism Central endpoint (defaults to 9440)
 	Port *int32 `json:"port,omitempty"`
-	// AllowInsecure allows to disable the TLS certificate check against the endpoint.
+	// Optional: AllowInsecure allows to disable the TLS certificate check against the endpoint (defaults to false)
 	AllowInsecure bool `json:"allow_insecure"`
-	// Images to use for each supported operating system.
+	// Images to use for each supported operating system
 	Images ImageList `json:"images"`
 }
 
