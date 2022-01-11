@@ -30,7 +30,9 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/ccm-migration/utils"
 
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -116,13 +118,17 @@ func (ccj *CommonClusterJig) cleanUp(userClient ctrlruntimeclient.Client) error 
 	// Delete Cluster
 	return wait.PollImmediate(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (bool, error) {
 		cluster := &kubermaticv1.Cluster{}
-		if err := ccj.SeedClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: ccj.name, Namespace: ""}, cluster); err != nil {
+		var err error
+		if err = ccj.SeedClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: ccj.name, Namespace: ""}, cluster); kerrors.IsNotFound(err) {
 			return true, nil
+		}
+		if err != nil {
+			return false, errors.Wrap(err, "failed to retrieve user cluster")
 		}
 		if cluster.DeletionTimestamp != nil {
 			return false, nil
 		}
-		err := ccj.SeedClient.Delete(ctx, cluster)
+		err = ccj.SeedClient.Delete(ctx, cluster)
 		if err != nil {
 			return false, errors.Wrap(err, "failed to delete user cluster")
 		}
