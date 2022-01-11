@@ -300,7 +300,7 @@ spec:
             - name: X_CSI_SERIAL_VOL_ACCESS_TIMEOUT
               value: 3m
             - name: VSPHERE_CSI_CONFIG
-              value: "/etc/cloud/csi-vsphere.conf"
+              value: "/etc/cloud/config"
             - name: LOGGER_LEVEL
               value: "PRODUCTION" # Options: DEVELOPMENT, PRODUCTION
             - name: INCLUSTER_CLIENT_QPS
