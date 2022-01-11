@@ -26,6 +26,7 @@ import (
 	"k8s.io/utils/pointer"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
@@ -35,6 +36,8 @@ const (
 	ProjectCategoryName = "KKPProject"
 	categoryDescription = "automatically created by KKP"
 	categoryValuePrefix = "kubernetes-"
+
+	categoryCleanupFinalizer = "kubermatic.io/cleanup-nutanix-categories"
 )
 
 type Nutanix struct {
@@ -66,7 +69,30 @@ func (n *Nutanix) ReconcileCluster(cluster *kubermaticv1.Cluster, update provide
 }
 
 func (n *Nutanix) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	return nil, nil
+	logger := n.log.With("cluster", cluster.Name)
+
+	client, err := GetClientSet(n.dc, cluster.Spec.Cloud.Nutanix, n.secretKeySelector)
+	if err != nil {
+		return nil, err
+	}
+
+	logger.Infow("removing category values")
+
+	if kuberneteshelper.HasFinalizer(cluster, categoryCleanupFinalizer) {
+		if err = deleteCategoryValues(client, cluster); err != nil {
+			return nil, err
+		}
+
+		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			kuberneteshelper.RemoveFinalizer(cluster, categoryCleanupFinalizer)
+		})
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return cluster, nil
 }
 
 func (n *Nutanix) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
@@ -111,7 +137,54 @@ func (n *Nutanix) reconcileCluster(cluster *kubermaticv1.Cluster, update provide
 		return nil, fmt.Errorf("failed to reconcile category and cluster value: %v", err)
 	}
 
+	cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		kuberneteshelper.AddFinalizer(cluster, categoryCleanupFinalizer)
+	})
+
 	return cluster, nil
+}
+
+func deleteCategoryValues(client *ClientSet, cluster *kubermaticv1.Cluster) error {
+	projectID, ok := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
+	if ok {
+		_, err := client.Prism.V3.GetCategoryValue(ProjectCategoryName, projectID)
+		if err != nil {
+			nutanixError, parseErr := parseNutanixError(err)
+
+			// failed to parse nutanix error? likely auth issues
+			if parseErr != nil {
+				return parseErr
+			}
+
+			if nutanixError.Code != http.StatusNotFound {
+				return err
+			}
+		} else {
+			if err = client.Prism.V3.DeleteCategoryValue(ProjectCategoryName, projectID); err != nil {
+				return err
+			}
+		}
+	}
+
+	_, err := client.Prism.V3.GetCategoryValue(ClusterCategoryName, CategoryValue(cluster.Name))
+	if err != nil {
+		nutanixError, parseErr := parseNutanixError(err)
+
+		// failed to parse nutanix error? likely auth issues
+		if parseErr != nil {
+			return parseErr
+		}
+
+		if nutanixError.Code != http.StatusNotFound {
+			return err
+		}
+	} else {
+		if err = client.Prism.V3.DeleteCategoryValue(ClusterCategoryName, CategoryValue(cluster.Name)); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func reconcileCategoryAndValue(client *ClientSet, cluster *kubermaticv1.Cluster) error {
@@ -198,7 +271,7 @@ func reconcileCategoryAndValue(client *ClientSet, cluster *kubermaticv1.Cluster)
 			}
 
 			if nutanixError.Code == http.StatusNotFound {
-				_, err := client.Prism.V3.CreateOrUpdateCategoryValue(ClusterCategoryName, &nutanixv3.CategoryValue{
+				_, err := client.Prism.V3.CreateOrUpdateCategoryValue(ProjectCategoryName, &nutanixv3.CategoryValue{
 					Value:       pointer.String(projectID),
 					Description: pointer.String(fmt.Sprintf("value for KKP project %s", projectID)),
 				})
