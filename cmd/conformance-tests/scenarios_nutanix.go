@@ -81,7 +81,9 @@ func (s *nutanixScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec 
 }
 
 func (s *nutanixScenario) NodeDeployments(_ context.Context, num int, secrets secrets) ([]apimodels.NodeDeployment, error) {
+	osName := getOSNameFromSpec(s.nodeOsSpec)
 	replicas := int32(num)
+
 	return []apimodels.NodeDeployment{
 		{
 			Spec: &apimodels.NodeDeploymentSpec{
@@ -90,6 +92,7 @@ func (s *nutanixScenario) NodeDeployments(_ context.Context, num int, secrets se
 					Cloud: &apimodels.NodeCloudSpec{
 						Nutanix: &apimodels.NutanixNodeSpec{
 							SubnetName: secrets.Nutanix.SubnetName,
+							ImageName:  fmt.Sprintf("machine-controller-e2e-%s", osName),
 							CPUs:       2,
 							MemoryMB:   4096,
 						},
