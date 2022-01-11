@@ -468,6 +468,10 @@ func getNutanixProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc
 		DiskSize: nodeSpec.Cloud.Nutanix.DiskSize,
 	}
 
+	if c.Spec.Cloud.Nutanix.ProjectName != "" {
+		config.ProjectName = &providerconfig.ConfigVarString{Value: c.Spec.Cloud.Nutanix.ProjectName}
+	}
+
 	config.Categories = map[string]string{}
 	for key, value := range nodeSpec.Cloud.Nutanix.Categories {
 		config.Categories[key] = value

@@ -95,6 +95,7 @@ func (s *nutanixScenario) NodeDeployments(_ context.Context, num int, secrets se
 							ImageName:  fmt.Sprintf("machine-controller-e2e-%s", osName),
 							CPUs:       2,
 							MemoryMB:   4096,
+							DiskSize:   40,
 						},
 					},
 					Versions: &apimodels.NodeVersionInfo{
