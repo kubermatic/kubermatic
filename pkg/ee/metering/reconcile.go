@@ -35,6 +35,10 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
+	appsv1 "k8s.io/api/apps/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -49,6 +53,10 @@ func getMinioImage(overwriter registry.WithOverwriteFunc) string {
 // ReconcileMeteringResources reconciles the metering related resources.
 func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Client, cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed) error {
 	overwriter := registry.GetOverwriteFunc(cfg.Spec.UserCluster.OverwriteRegistry)
+
+	if seed.Spec.Metering == nil || !seed.Spec.Metering.Enabled {
+		return cleanupMeteringResources(ctx, client)
+	}
 
 	if err := persistentVolumeClaimCreator(ctx, client, seed); err != nil {
 		return fmt.Errorf("failed to reconcile metering PVC: %v", err)
@@ -82,4 +90,32 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 	}
 
 	return nil
+}
+
+// cleanupMeteringResources removes active parts of the metering
+// components, in case the admin disables the feature.
+func cleanupMeteringResources(ctx context.Context, client ctrlruntimeclient.Client) error {
+	key := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: meteringToolName}
+	if err := cleanupResource(ctx, client, key, &appsv1.Deployment{}); err != nil {
+		return fmt.Errorf("failed to cleanup metering Deployment: %v", err)
+	}
+
+	key.Name = meteringCronJobWeeklyName
+	if err := cleanupResource(ctx, client, key, &batchv1beta1.CronJob{}); err != nil {
+		return fmt.Errorf("failed to cleanup metering CronJob: %v", err)
+	}
+
+	return nil
+}
+
+func cleanupResource(ctx context.Context, client ctrlruntimeclient.Client, key types.NamespacedName, obj ctrlruntimeclient.Object) error {
+	if err := client.Get(ctx, key, obj); err != nil {
+		if kerrors.IsNotFound(err) {
+			return nil
+		}
+
+		return err
+	}
+
+	return client.Delete(ctx, obj)
 }
