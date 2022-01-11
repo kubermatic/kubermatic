@@ -355,7 +355,7 @@ spec:
             - name: FULL_SYNC_INTERVAL_MINUTES
               value: "30"
             - name: VSPHERE_CSI_CONFIG
-              value: "/etc/cloud/csi-vsphere.conf"
+              value: "/etc/cloud/config"
             - name: LOGGER_LEVEL
               value: "PRODUCTION" # Options: DEVELOPMENT, PRODUCTION
             - name: INCLUSTER_CLIENT_QPS
