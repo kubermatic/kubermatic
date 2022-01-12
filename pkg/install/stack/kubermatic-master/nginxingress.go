@@ -62,6 +62,8 @@ func deployNginxIngressController(ctx context.Context, logger *logrus.Entry, kub
 	v13 := semver.MustParse("1.3.0")
 	backupTS := time.Now().Format("2006-01-02T150405")
 
+	isUpgrading := false
+
 	if release != nil && release.Version.LessThan(v13) && !chart.Version.LessThan(v13) {
 		if !opt.EnableNginxIngressMigration {
 			sublogger.Warn("To upgrade nginx-ingress-controller to a new version, the installer")
@@ -72,9 +74,10 @@ func deployNginxIngressController(ctx context.Context, logger *logrus.Entry, kub
 			return fmt.Errorf("user must acknowledge the migration using --migrate-upstream-nginx-ingress")
 		}
 
+		isUpgrading = true
 		err = upgradeNginxIngress(ctx, sublogger, kubeClient, helmClient, opt, chart, release, backupTS)
 		if err != nil {
-			return fmt.Errorf("failed to upgrade nginx-ingress-controller: %v", err)
+			return fmt.Errorf("failed to prepare nginx-ingress-controller for upgrade: %v", err)
 		}
 	}
 
@@ -83,6 +86,9 @@ func deployNginxIngressController(ctx context.Context, logger *logrus.Entry, kub
 	sublogger.Info("Deploying Helm chart…")
 
 	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, NginxIngressControllerNamespace, NginxIngressControllerReleaseName, opt.HelmValues, false, opt.ForceHelmReleaseUpgrade, release); err != nil {
+		if isUpgrading {
+			return fmt.Errorf("failed to deploy Helm release: %v\n\nuse backup file to restore the deployment or re-try the installation after fixing any errors.", err)
+		}
 		return fmt.Errorf("failed to deploy Helm release: %v", err)
 	}
 
@@ -123,23 +129,26 @@ func upgradeNginxIngress(
 	}); err != nil {
 		logger.Warn("Error querying API for the existing deployment, attempting to upgrade without removing it...")
 	} else {
-		logger.Info("attempting to store the deployment")
 		// 2: store the deployment for backup
 		// There can be only one...
-		if len(deploymentsList.Items) == 1 {
+		switch foundDeployments := len(deploymentsList.Items); foundDeployments {
+		case 1:
 			filename := fmt.Sprintf("backup_%s_%s.yaml", NginxIngressControllerReleaseName, backupTS)
+			logger.Infof("Attempting to store the deployment in file: %s", filename)
 			if err := util.DumpResources(ctx, filename, deploymentsList.Items); err != nil {
-				return fmt.Errorf("failed to back up the deployment: %v", err)
+				return fmt.Errorf("failed to back up the deployment, it is not removed: %v", err)
 			}
 
 			// 3: delete the deployment
 			logger.Info("Deleting the deployment from the cluster")
 			if err := kubeClient.Delete(ctx, &deploymentsList.Items[0]); err != nil {
-				return fmt.Errorf("failed to remove the deployment: %v\n\nuse backup file: %s to check the changes and restore if needed", err, filename)
+				return fmt.Errorf("failed to remove the deployment: %v\n\nuse backup file to check the changes and restore if needed", err)
 			}
 
-		} else {
-			return fmt.Errorf("found more than one deployment (%d) matching the nginx-ingress-controller release, stopping upgrade...", len(deploymentsList.Items))
+		case 0:
+			logger.Info("No deployments matching the criteria were found, assuming clean state and attempting to upgrade...")
+		default:
+			return fmt.Errorf("found more than one deployment (%d) matching the nginx-ingress-controller release, stopping upgrade - clean up manually before proceeding", len(deploymentsList.Items))
 		}
 	}
 	return nil
