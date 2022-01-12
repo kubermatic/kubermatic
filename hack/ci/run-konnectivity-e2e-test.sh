@@ -30,10 +30,9 @@ function cleanup() {
 }
 trap cleanup EXIT SIGINT SIGTERM
 
-export KUBERMATIC_OIDC_LOGIN=${KUBERMATIC_OIDC_LOGIN:-roxy@loodse.com}
-export KUBERMATIC_OIDC_PASSWORD=${KUBERMATIC_OIDC_PASSWORD:-password}
-export KUBERMATIC_DEX_VALUES_FILE=${KUBERMATIC_DEX_VALUES_FILE:-$(realpath hack/ci/testdata/oauth_values.yaml)}
-export KUBERMATIC_API_ENDPOINT=${KUBERMATIC_API_ENDPOINT:-http://localhost:8080}
+
+export KUBERMATIC_DEX_VALUES_FILE=${KUBERMATIC_DEX_VALUES_FILE:-$(realpath hack/ci/testdata/konnectivity_oauth_values.yaml)}
+export KUBERMATIC_API_ENDPOINT=${KUBERMATIC_API_ENDPOINT:-https://dev.kubermatic.io}
 
 export GIT_HEAD_HASH="$(git rev-parse HEAD | tr -d '\n')"
 
@@ -46,6 +45,11 @@ if [ -z "${KUBECONFIG:-}" ]; then
   KUBECONFIG="$(mktemp)"
   vault kv get -field=kubeconfig dev/seed-clusters/dev.kubermatic.io > $KUBECONFIG
 fi
+
+export KUBERMATIC_OIDC_LOGIN=$(vault kv get -field=username dev/e2e-dex)
+export KUBERMATIC_OIDC_PASSWORD=$(vault kv get -field=password dev/e2e-dex)
+export AWS_ACCESS_KEY_ID=$(vault kv get -field=accessKeyID dev/e2e-aws)
+export AWS_SECRET_ACCESS_KEY=$(vault kv get -field=secretAccessKey dev/e2e-aws)
 
 echodate "Successfully got secrets for dev from Vault"
 

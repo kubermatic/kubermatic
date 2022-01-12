@@ -449,6 +449,9 @@ func (r *TestClient) CreateAWSCluster(projectID, dc, name, secretAccessKey, acce
 				},
 			},
 			Version: models.Semver(version),
+			ClusterNetwork: &models.ClusterNetworkingConfig{
+				KonnectivityEnabled: true,
+			},
 		},
 	}
 

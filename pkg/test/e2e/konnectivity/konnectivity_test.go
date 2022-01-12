@@ -5,15 +5,17 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"io"
 	"io/ioutil"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"os"
 	"strings"
 	"testing"
 	"time"
-	
+
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
-	
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -30,33 +32,30 @@ import (
 
 const (
 	tailLines       = 5
-	seed            = "kubermatic"
+	seed            = "europe-west3-c"
 	projectName     = "konne-test-project"
 	userclusterName = "konne-test-usercluster"
 )
 
-var kubeconfig string
+var userconfig string
 
 func init() {
-	flag.StringVar(&kubeconfig, "userconfig", "", "path to kubeconfig of usercluster")
+	flag.StringVar(&userconfig, "userconfig", "", "path to kubeconfig of usercluster")
+
 }
 
 func TestKonnectivity(t *testing.T) {
 	var cleanup func()
 	var err error
-	if kubeconfig == "" {
-		kubeconfig, cleanup, err = createUsercluster(t)
+	if userconfig == "" {
+		userconfig, cleanup, err = createUsercluster(t)
 		defer cleanup()
 		if err != nil {
-			t.Fatalf("failed to setup usercluster: %s", err)
+			t.Fatalf("failed to setup usercluster: %s", spew.Sdump(err))
 		}
-
-		//TODO: ensure that cluster is up and running
-		
-		time.Sleep(time.Minute)
 	}
 
-	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+	config, err := clientcmd.BuildConfigFromFlags("", userconfig)
 	if err != nil {
 		t.Fatalf("failed to build config: %s", err)
 	}
@@ -71,10 +70,61 @@ func TestKonnectivity(t *testing.T) {
 		t.Fatalf("failed to create metrics client: %s", err)
 	}
 
-	//TODO: test fails if the nodes are not up yet. ensure they are up here.
 	//TODO: ensure apiserver sidecar has konnectivity-proxy containers
 
 	ctx := context.Background()
+
+	t.Logf("waiting for nodes to come up")
+	{
+		err := wait.Poll(30*time.Second, 10*time.Minute, func() (bool, error) {
+			t.Logf("checking node readiness...")
+			nodes, err := kubeClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+			if err != nil {
+				t.Logf("failed to get nodes list: %s", err)
+				return false, nil
+			}
+			if len(nodes.Items) != 1 {
+				t.Logf(fmt.Sprintf("node count: %d", len(nodes.Items)))
+				return false, nil
+			}
+
+			// assume ready if node has external ip
+			for _, addr := range nodes.Items[0].Status.Addresses {
+				if addr.Type == corev1.NodeExternalIP {
+					return true, nil
+				}
+			}
+			t.Logf(fmt.Sprintf("no nodes with external ip"))
+			return false, nil
+		})
+		if err != nil {
+			t.Fatalf("nodes never became ready: %v", err)
+		}
+	}
+
+	t.Logf("waiting for pods to get ready")
+	{
+		err := wait.Poll(30*time.Second, 10*time.Minute, func() (bool, error) {
+			t.Logf("checking pod readiness...")
+			pods, err := getPods(ctx, kubeClient, "konnectivity-agent")
+			if err != nil {
+				t.Logf("failed to get pod list: %s", err)
+				return false, nil
+			}
+
+			for _, pod := range pods {
+				if pod.Status.Phase != corev1.PodRunning {
+					t.Logf("not all pods are ready yet...")
+					return false, nil
+				}
+			}
+
+			return true, nil
+		})
+		if err != nil {
+			t.Fatalf("nodes never became ready: %v", err)
+		}
+	}
 
 	t.Log("check if konnectivity-agents are deployed")
 	{
@@ -227,8 +277,7 @@ func createUsercluster(t *testing.T) (string, func(), error) {
 		for i := range teardowns {
 			teardowns[n-1-i]()
 		}
-	}
-	// get kubermatic-api client
+	} // get kubermatic-api client
 	token, err := utils.RetrieveMasterToken(context.Background())
 	if err != nil {
 		return "", nil, err
@@ -248,9 +297,12 @@ func createUsercluster(t *testing.T) (string, func(), error) {
 		}
 	})
 
+	accessKeyID := os.Getenv("AWS_ACCESS_KEY_ID")
+	secretAccessKey := os.Getenv("AWS_SECRET_ACCESS_KEY")
+
 	// create a usercluster on aws
 	cluster, err := apicli.CreateAWSCluster(project.ID, seed, userclusterName,
-		"whatever", "whatever", utils.KubernetesVersion(),
+		secretAccessKey, accessKeyID, utils.KubernetesVersion(),
 		"aws-eu-central-1a", "eu-central-1a", 1)
 	if err != nil {
 		return "", cleanup, err
@@ -261,11 +313,19 @@ func createUsercluster(t *testing.T) (string, func(), error) {
 			t.Errorf("failed to delete cluster %s/%s: %s", project.ID, cluster.ID, err)
 		}
 	})
-	
-	time.Sleep(time.Minute) // TODO: check for cluster readiness
-	
-	// construct clients
-	data, err := apicli.GetKubeconfig(seed, project.ID, cluster.ID)
+
+	// try to get kubeconfig
+	var data string
+	err = wait.Poll(30*time.Second, 10*time.Minute, func() (bool, error) {
+		t.Logf("trying to get kubeconfig...")
+		// construct clients
+		data, err = apicli.GetKubeconfig(seed, project.ID, cluster.ID)
+		if err != nil {
+			t.Logf("error tyring to get kubeconfig: %s", err)
+			return false, nil
+		}
+		return true, nil
+	})
 	if err != nil {
 		return "", cleanup, err
 	}
@@ -286,5 +346,5 @@ func createUsercluster(t *testing.T) (string, func(), error) {
 		}
 	})
 
-	return kubeconfig, cleanup, nil
+	return file.Name(), cleanup, nil
 }
