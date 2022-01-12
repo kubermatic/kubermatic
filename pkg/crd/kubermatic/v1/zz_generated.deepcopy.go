@@ -1760,11 +1760,6 @@ func (in *DatacenterSpec) DeepCopyInto(out *DatacenterSpec) {
 		*out = new(DatacenterSpecKubevirt)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.Nutanix != nil {
-		in, out := &in.Nutanix, &out.Nutanix
-		*out = new(DatacenterSpecNutanix)
-		(*in).DeepCopyInto(*out)
-	}
 	if in.Alibaba != nil {
 		in, out := &in.Alibaba, &out.Alibaba
 		*out = new(DatacenterSpecAlibaba)
@@ -1774,6 +1769,11 @@ func (in *DatacenterSpec) DeepCopyInto(out *DatacenterSpec) {
 		in, out := &in.Anexia, &out.Anexia
 		*out = new(DatacenterSpecAnexia)
 		**out = **in
+	}
+	if in.Nutanix != nil {
+		in, out := &in.Nutanix, &out.Nutanix
+		*out = new(DatacenterSpecNutanix)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.Fake != nil {
 		in, out := &in.Fake, &out.Fake

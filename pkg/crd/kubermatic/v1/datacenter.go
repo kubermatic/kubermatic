@@ -249,9 +249,10 @@ type DatacenterSpec struct {
 	VSphere      *DatacenterSpecVSphere      `json:"vsphere,omitempty"`
 	GCP          *DatacenterSpecGCP          `json:"gcp,omitempty"`
 	Kubevirt     *DatacenterSpecKubevirt     `json:"kubevirt,omitempty"`
-	Nutanix      *DatacenterSpecNutanix      `json:"nutanix,omitempty"`
 	Alibaba      *DatacenterSpecAlibaba      `json:"alibaba,omitempty"`
 	Anexia       *DatacenterSpecAnexia       `json:"anexia,omitempty"`
+	// Nutanix is experimental and unsupported
+	Nutanix *DatacenterSpecNutanix `json:"nutanix,omitempty"`
 
 	//nolint:staticcheck
 	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
@@ -442,7 +443,8 @@ type DatacenterSpecKubevirt struct {
 	DNSConfig *corev1.PodDNSConfig `json:"dns_config,omitempty"`
 }
 
-// DatacenterSpecNutanix describes a Nutanix datacenter
+// DatacenterSpecNutanix describes a Nutanix datacenter.
+// NUTANIX IMPLEMENTATION IS EXPERIMENTAL AND UNSUPPORTED.
 type DatacenterSpecNutanix struct {
 	// Endpoint to use for accessing Nutanix Prism Central. No protocol or port should be passed,
 	// for example "nutanix.example.com" or "10.0.0.1"

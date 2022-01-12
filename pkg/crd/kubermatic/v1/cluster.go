@@ -843,6 +843,7 @@ type AnexiaCloudSpec struct {
 }
 
 // NutanixCloudSpec specifies the access data to Nutanix.
+// NUTANIX IMPLEMENTATION IS EXPERIMENTAL AND UNSUPPORTED.
 type NutanixCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
