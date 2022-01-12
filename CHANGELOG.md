@@ -158,7 +158,7 @@ TBD
 - Add support to remove a preset provider via the REST API ([#8093](https://github.com/kubermatic/kubermatic/issues/8093))
 - Add support to update the requiredEmails of a preset via REST-API and Admins will see all presets within KKP independent of their email ([#8087](https://github.com/kubermatic/kubermatic/issues/8087))
 - Add an endpoint to list users and extend the user object to allow checking the last seen date ([#7989](https://github.com/kubermatic/kubermatic/issues/7989))
-- - etcd-launcher uses TLS peer connections for new etcd clusters and automatically upgrades existing etcd clusters- etcd-launcher cannot be disabled as a feature on a cluster to go back to plain etcd ([#8065](https://github.com/kubermatic/kubermatic/issues/8065))
+- etcd-launcher uses TLS peer connections for new etcd clusters and automatically upgrades existing etcd clusters- etcd-launcher cannot be disabled as a feature on a cluster to go back to plain etcd ([#8065](https://github.com/kubermatic/kubermatic/issues/8065))
 - Delete flatcar update operator if flatcar nodes are not schedulable ([#7316](https://github.com/kubermatic/kubermatic/issues/7316))
 - OpenAPI v3 CRD schema generation ([#8027](https://github.com/kubermatic/kubermatic/issues/8027))
 - Cluster resources are now defaulted and validated a lot more thoroughly by the webhooks ([#8346](https://github.com/kubermatic/kubermatic/issues/8346))
@@ -181,6 +181,10 @@ TBD
 #### User Cluster Monitoring, Logging and Alerting
 - Fixed user cluster MLA certificate issue by LoadBalancer expose strategy ([#7877](https://github.com/kubermatic/kubermatic/issues/7877))
 
+### Metering 
+- Fix some hardcoded Docker images for seed-proxy and metering components ([#8615](https://github.com/kubermatic/kubermatic/issues/8615))
+- Fix disabling metering not having any effect ([#8673](https://github.com/kubermatic/kubermatic/issues/8673))
+- Fixed high resource usage during metering startup ([#8270](https://github.com/kubermatic/kubermatic/issues/8270))
 
 ### Network
 - Fix setting of nodeport-proxy resource requests/limits, relax default nodeport-proxy envoy limits ([#8169](https://github.com/kubermatic/kubermatic/issues/8169))
@@ -205,9 +209,9 @@ TBD
 - Fix IDP icons in Dex theme ([#8319](https://github.com/kubermatic/kubermatic/issues/8319))
 - Create missing ClusterRole 'cert-manager-edit' for cert-manager ([#8554](https://github.com/kubermatic/kubermatic/issues/8554))
 - Fixes a bug where `$$` in the environment-variables for machine-controller was interpreted in the Kubernetes Manifest and caused machine-controller to be unable to deploy resources, when for e.g. the password contains two consecutive `$` signs ([#7984](https://github.com/kubermatic/kubermatic/issues/7984))
-- Fixed high resource usage during metering startup ([#8270](https://github.com/kubermatic/kubermatic/issues/8270))
 - kubeadm-config is updated based on Kubernetes version ([#8149](https://github.com/kubermatic/kubermatic/issues/8149))
 - Fix kubermatic-installer not properly updating CRDs ([#8552](https://github.com/kubermatic/kubermatic/issues/8552))
+- Fix PodDisruptionBudgets for master/seed-controller-manager blocking node rotations ([#8672](https://github.com/kubermatic/kubermatic/issues/8672))
 
 
 ### Updates
@@ -224,6 +228,7 @@ TBD
 - Bump machine controller v1.36.1 ([#8099](https://github.com/kubermatic/kubermatic/issues/8099))
 - Bump operating-system-manager to v0.3.2 ([#8570](https://github.com/kubermatic/kubermatic/issues/8570))
 - Upgrade machine controller to 1.36.2 ([#8233](https://github.com/kubermatic/kubermatic/issues/8233))
+- machine-controller is updated to v1.41.0 ([#8590](https://github.com/kubermatic/kubermatic/issues/8590))
 - Removed support for Kubernetes 1.19 ([#8167](https://github.com/kubermatic/kubermatic/issues/8167))
 - Add support for Kubernetes 1.22.5, 1.21.8, and 1.20.14  
   Automatically upgrade clusters running Kubernetes 1.21 to 1.21.8 to include fixes for CVE-2021-44716 and CVE-2021-44717  
