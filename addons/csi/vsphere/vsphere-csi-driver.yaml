@@ -251,6 +251,9 @@ spec:
         #  effect: NoExecute
         #  tolerationSeconds: 30
       dnsPolicy: "Default"
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: csi-attacher
           image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-attacher:v3.3.0
@@ -420,6 +423,9 @@ spec:
       serviceAccountName: vsphere-csi-node
       hostNetwork: true
       dnsPolicy: "ClusterFirstWithHostNet"
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: node-driver-registrar
           image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-node-driver-registrar:v2.3.0
