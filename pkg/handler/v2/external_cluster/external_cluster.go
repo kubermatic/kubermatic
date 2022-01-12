@@ -82,7 +82,7 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 
 		cloud := req.Body.Cloud
 
-		// import cluster by kubeconfig
+		// connect cluster by kubeconfig
 		if cloud == nil {
 			config, err := base64.StdEncoding.DecodeString(req.Body.Kubeconfig)
 			if err != nil {
@@ -167,7 +167,7 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 			apiCluster.Status = apiv2.ExternalClusterStatus{State: apiv2.PROVISIONING}
 			return apiCluster, nil
 		}
-		return nil, errors.NewBadRequest("kubeconfig or provider structure missing")
+		return nil, errors.NewBadRequest("kubeconfig or cloud provider structure missing")
 	}
 }
 
@@ -876,40 +876,40 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 
 	if cloud == nil {
 		apiCluster.Status.State = apiv2.RUNNING
-		return apiCluster
-	}
-	if cloud.EKS != nil {
-		eksStatus, err := eks.GetEKSClusterStatus(secretKeySelector, cloud)
-		if err != nil {
-			apiCluster.Status = apiv2.ExternalClusterStatus{
-				State:         apiv2.ERROR,
-				StatusMessage: err.Error(),
+	} else {
+		if cloud.EKS != nil {
+			eksStatus, err := eks.GetEKSClusterStatus(secretKeySelector, cloud)
+			if err != nil {
+				apiCluster.Status = apiv2.ExternalClusterStatus{
+					State:         apiv2.ERROR,
+					StatusMessage: err.Error(),
+				}
+				return apiCluster
 			}
-			return apiCluster
+			apiCluster.Status = *eksStatus
 		}
-		apiCluster.Status = *eksStatus
-	}
-	if cloud.AKS != nil {
-		aksStatus, err := aks.GetAKSClusterStatus(ctx, secretKeySelector, cloud)
-		if err != nil {
-			apiCluster.Status = apiv2.ExternalClusterStatus{
-				State:         apiv2.ERROR,
-				StatusMessage: err.Error(),
+		if cloud.AKS != nil {
+			aksStatus, err := aks.GetAKSClusterStatus(ctx, secretKeySelector, cloud)
+			if err != nil {
+				apiCluster.Status = apiv2.ExternalClusterStatus{
+					State:         apiv2.ERROR,
+					StatusMessage: err.Error(),
+				}
+				return apiCluster
 			}
-			return apiCluster
+			apiCluster.Status = *aksStatus
 		}
-		apiCluster.Status = *aksStatus
-	}
-	if cloud.GKE != nil {
-		gkeStatus, err := gke.GetGKEClusterStatus(ctx, secretKeySelector, cloud)
-		if err != nil {
-			apiCluster.Status = apiv2.ExternalClusterStatus{
-				State:         apiv2.ERROR,
-				StatusMessage: err.Error(),
+		if cloud.GKE != nil {
+			gkeStatus, err := gke.GetGKEClusterStatus(ctx, secretKeySelector, cloud)
+			if err != nil {
+				apiCluster.Status = apiv2.ExternalClusterStatus{
+					State:         apiv2.ERROR,
+					StatusMessage: err.Error(),
+				}
+				return apiCluster
 			}
-			return apiCluster
+			apiCluster.Status = *gkeStatus
 		}
-		apiCluster.Status = *gkeStatus
 	}
 
 	// check kubeconfig access
