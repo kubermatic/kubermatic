@@ -1286,8 +1286,9 @@ github.com/kubermatic/grafanasdk v0.9.11/go.mod h1:rjbIRhEXuIdXR4BCYTxtgJ3Ekmemq
 github.com/kubermatic/machine-controller v1.23.1/go.mod h1:mXWbT7SjqpgFhzCFT3yMEHKdIlT+KkGy4KQCkNRM9Fc=
 github.com/kubermatic/machine-controller v1.26.0/go.mod h1:dcJ+GdDSCxCwM0poxwOK8hVO7epiOORDmNMmb2veyw4=
 github.com/kubermatic/machine-controller v1.36.1/go.mod h1:6BFZEvEMZi8OT8aHOsS7DXYsF6ZSpmsNxsci7OLTTn8=
-github.com/kubermatic/machine-controller v1.41.0 h1:TCyyHNtT3HbvfLHDIu0iqRCw4JsC5lYilcj7YlE64VY=
-github.com/kubermatic/machine-controller v1.41.0/go.mod h1:YZiKz9OQaf8HpXclws3zpLTML9LFSovwK1cQJGCGXAo=
+github.com/kubermatic/machine-controller v1.40.1/go.mod h1:5LVcN4tCybGg+55hIHcVzCjNsBJy2PlnXG0xIzKmXGY=
+github.com/kubermatic/machine-controller v1.41.1 h1:jwYXIEWc4UiNXDJBvk1hhBUfjnK1X5yFiwWBNX1efso=
+github.com/kubermatic/machine-controller v1.41.1/go.mod h1:YZiKz9OQaf8HpXclws3zpLTML9LFSovwK1cQJGCGXAo=
 github.com/kulti/thelper v0.4.0/go.mod h1:vMu2Cizjy/grP+jmsvOFDx1kYP6+PD1lqg4Yu5exl2U=
 github.com/kunwardeep/paralleltest v1.0.2/go.mod h1:ZPqNm1fVHPllh5LPVujzbVz1JN2GhLxSfY+oqUsvG30=
 github.com/kylelemons/godebug v0.0.0-20170820004349-d65d576e9348/go.mod h1:B69LEHPfb2qLo0BaaOLcbitczOKLWTsrBG9LczfCD4k=
@@ -2865,8 +2866,9 @@ honnef.co/go/tools v0.0.1-2020.1.4/go.mod h1:X/FiERA/W4tHapMX5mGpAtMSVEeEUOyHaw9
 honnef.co/go/tools v0.1.4/go.mod h1:NgwopIslSNH47DimFoV78dnkksY2EFtX0ajyb3K/las=
 k8c.io/kubermatic/v2 v2.16.2/go.mod h1:NdW+2mq4ynRtfZs9yPnvcnFWQpzmM7ngntW6GeuQicU=
 k8c.io/operating-system-manager v0.1.0/go.mod h1:ULyZQO1irKjsQTNjIdrHld7SZ+joHjmPnOEs5Db8G8M=
-k8c.io/operating-system-manager v0.3.0 h1:xu1BA1Uj22MAeXSx9mNumfm63/6P8xjRcojel+QD5wI=
 k8c.io/operating-system-manager v0.3.0/go.mod h1:ME5GOCNUrHG+57igEKP1JCJKVHynaLfodT8bRiYH3MY=
+k8c.io/operating-system-manager v0.3.6 h1:irFFYE/IJM2Qo+lH1zat2o3Yvgb8hUaypPWAc0qGHNM=
+k8c.io/operating-system-manager v0.3.6/go.mod h1:aFyB/RH9DBAk0Kj5JVtCixhm9ugTeC8akgRGMW28lPg=
 k8s.io/api v0.23.0 h1:WrL1gb73VSC8obi8cuYETJGXEoFNEh3LU0Pt+Sokgro=
 k8s.io/api v0.23.0/go.mod h1:8wmDdLBHBNxtOIytwLstXt5E9PddnZb0GaMcqsvDBpg=
 k8s.io/apiextensions-apiserver v0.23.0 h1:uii8BYmHYiT2ZTAJxmvc3X8UhNYMxl2A0z0Xq3Pm+WY=
@@ -2910,6 +2912,7 @@ k8s.io/gengo v0.0.0-20191108084044-e500ee069b5c/go.mod h1:ezvh/TsK7cY6rbqRK0oQQ8
 k8s.io/gengo v0.0.0-20200205140755-e0e292d8aa12/go.mod h1:ezvh/TsK7cY6rbqRK0oQQ8IAqLxYwwyPxAX1Pzy0ii0=
 k8s.io/gengo v0.0.0-20200413195148-3a45101e95ac/go.mod h1:ezvh/TsK7cY6rbqRK0oQQ8IAqLxYwwyPxAX1Pzy0ii0=
 k8s.io/gengo v0.0.0-20201113003025-83324d819ded/go.mod h1:FiNAH4ZV3gBg2Kwh89tzAEV2be7d5xI0vBa/VySYy3E=
+k8s.io/gengo v0.0.0-20201214224949-b6c5ce23f027/go.mod h1:FiNAH4ZV3gBg2Kwh89tzAEV2be7d5xI0vBa/VySYy3E=
 k8s.io/gengo v0.0.0-20210813121822-485abfe95c7c h1:GohjlNKauSai7gN4wsJkeZ3WAJx4Sh+oT/b5IYn5suA=
 k8s.io/gengo v0.0.0-20210813121822-485abfe95c7c/go.mod h1:FiNAH4ZV3gBg2Kwh89tzAEV2be7d5xI0vBa/VySYy3E=
 k8s.io/klog v0.0.0-20181102134211-b9b56d5dfc92/go.mod h1:Gq+BEi5rUBO/HRz0bTSXDUcqjScdoY3a9IHpCEIOOfk=
