@@ -1749,8 +1749,6 @@ spec:
                       - MachineDeploymentReconciledSuccessfully
                       - MLAControllerReconciledSuccessfully
                       - ClusterInitialized
-                      - RancherInitializedSuccessfully
-                      - RancherClusterImportedSuccessfully
                       - EtcdClusterInitialized
                       - CSIKubeletMigrationCompleted
                       - ClusterUpdateSuccessful
