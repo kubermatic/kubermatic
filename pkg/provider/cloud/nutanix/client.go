@@ -130,7 +130,7 @@ func getClientSet(dc *kubermaticv1.DatacenterSpecNutanix, cloud *kubermaticv1.Nu
 	}, nil
 }
 
-func getSubnetByName(client *ClientSet, name, clusterID string) (*nutanixv3.SubnetIntentResponse, error) {
+func GetSubnetByName(client *ClientSet, name, clusterID string) (*nutanixv3.SubnetIntentResponse, error) {
 	filter := fmt.Sprintf("name==%s", name)
 	subnets, err := client.Prism.V3.ListAllSubnet(filter)
 
@@ -167,7 +167,7 @@ func getSubnetByName(client *ClientSet, name, clusterID string) (*nutanixv3.Subn
 	return nil, fmt.Errorf("no subnet found for '%s' on cluster '%s'", filter, clusterID)
 }
 
-func getProjectByName(client *ClientSet, name string) (*nutanixv3.Project, error) {
+func GetProjectByName(client *ClientSet, name string) (*nutanixv3.Project, error) {
 	filter := fmt.Sprintf("name==%s", name)
 	projects, err := client.Prism.V3.ListAllProject(filter)
 
@@ -196,7 +196,7 @@ func getProjectByName(client *ClientSet, name string) (*nutanixv3.Project, error
 	return nil, fmt.Errorf("no project found for '%s'", filter)
 }
 
-func getClusterByName(client *ClientSet, name string) (*nutanixv3.ClusterIntentResponse, error) {
+func GetClusterByName(client *ClientSet, name string) (*nutanixv3.ClusterIntentResponse, error) {
 	filter := fmt.Sprintf("name==%s", name)
 	clusters, err := client.Prism.V3.ListAllCluster(filter)
 
@@ -229,7 +229,7 @@ func getClusterByName(client *ClientSet, name string) (*nutanixv3.ClusterIntentR
 	return nil, fmt.Errorf("no cluster found for '%s'", filter)
 }
 
-func parseNutanixError(err error) (*ErrorResponse, error) {
+func ParseNutanixError(err error) (*ErrorResponse, error) {
 	if err == nil {
 		return nil, nil
 	}

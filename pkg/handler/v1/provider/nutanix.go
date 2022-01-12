@@ -20,8 +20,8 @@ import (
 	"context"
 	"net/http"
 	"strconv"
-	//"github.com/go-kit/kit/endpoint"
-	//"k8c.io/kubermatic/v2/pkg/provider"
+	// "github.com/go-kit/kit/endpoint"
+	// "k8c.io/kubermatic/v2/pkg/provider"
 )
 
 type NutanixCommonReq struct {

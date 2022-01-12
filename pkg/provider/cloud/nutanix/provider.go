@@ -111,7 +111,7 @@ func (n *Nutanix) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 
 	if spec.Nutanix.ProjectName != "" {
 		// check for project existence
-		_, err = getProjectByName(client, spec.Nutanix.ProjectName)
+		_, err = GetProjectByName(client, spec.Nutanix.ProjectName)
 		if err != nil {
 			return err
 		}
@@ -141,6 +141,10 @@ func (n *Nutanix) reconcileCluster(cluster *kubermaticv1.Cluster, update provide
 		kuberneteshelper.AddFinalizer(cluster, categoryCleanupFinalizer)
 	})
 
+	if err != nil {
+		return nil, err
+	}
+
 	return cluster, nil
 }
 
@@ -149,7 +153,7 @@ func deleteCategoryValues(client *ClientSet, cluster *kubermaticv1.Cluster) erro
 	if ok {
 		_, err := client.Prism.V3.GetCategoryValue(ProjectCategoryName, projectID)
 		if err != nil {
-			nutanixError, parseErr := parseNutanixError(err)
+			nutanixError, parseErr := ParseNutanixError(err)
 
 			// failed to parse nutanix error? likely auth issues
 			if parseErr != nil {
@@ -159,16 +163,14 @@ func deleteCategoryValues(client *ClientSet, cluster *kubermaticv1.Cluster) erro
 			if nutanixError.Code != http.StatusNotFound {
 				return err
 			}
-		} else {
-			if err = client.Prism.V3.DeleteCategoryValue(ProjectCategoryName, projectID); err != nil {
-				return err
-			}
+		} else if err = client.Prism.V3.DeleteCategoryValue(ProjectCategoryName, projectID); err != nil {
+			return err
 		}
 	}
 
 	_, err := client.Prism.V3.GetCategoryValue(ClusterCategoryName, CategoryValue(cluster.Name))
 	if err != nil {
-		nutanixError, parseErr := parseNutanixError(err)
+		nutanixError, parseErr := ParseNutanixError(err)
 
 		// failed to parse nutanix error? likely auth issues
 		if parseErr != nil {
@@ -178,10 +180,8 @@ func deleteCategoryValues(client *ClientSet, cluster *kubermaticv1.Cluster) erro
 		if nutanixError.Code != http.StatusNotFound {
 			return err
 		}
-	} else {
-		if err = client.Prism.V3.DeleteCategoryValue(ClusterCategoryName, CategoryValue(cluster.Name)); err != nil {
-			return err
-		}
+	} else if err = client.Prism.V3.DeleteCategoryValue(ClusterCategoryName, CategoryValue(cluster.Name)); err != nil {
+		return err
 	}
 
 	return nil
@@ -191,7 +191,7 @@ func reconcileCategoryAndValue(client *ClientSet, cluster *kubermaticv1.Cluster)
 	// check if category (key) is present, create it if not
 	_, err := client.Prism.V3.GetCategoryKey(ClusterCategoryName)
 	if err != nil {
-		nutanixError, err := parseNutanixError(err)
+		nutanixError, err := ParseNutanixError(err)
 
 		// failed to parse nutanix error? likely auth issues
 		if err != nil {
@@ -215,7 +215,7 @@ func reconcileCategoryAndValue(client *ClientSet, cluster *kubermaticv1.Cluster)
 	// check if category value is present, create it if not
 	_, err = client.Prism.V3.GetCategoryValue(ClusterCategoryName, CategoryValue(cluster.Name))
 	if err != nil {
-		nutanixError, err := parseNutanixError(err)
+		nutanixError, err := ParseNutanixError(err)
 
 		// failed to parse nutanix error? likely auth issues
 		if err != nil {
@@ -240,7 +240,7 @@ func reconcileCategoryAndValue(client *ClientSet, cluster *kubermaticv1.Cluster)
 
 		_, err = client.Prism.V3.GetCategoryKey(ProjectCategoryName)
 		if err != nil {
-			nutanixError, err := parseNutanixError(err)
+			nutanixError, err := ParseNutanixError(err)
 
 			// failed to parse nutanix error? likely auth issues
 			if err != nil {
@@ -263,7 +263,7 @@ func reconcileCategoryAndValue(client *ClientSet, cluster *kubermaticv1.Cluster)
 
 		_, err = client.Prism.V3.GetCategoryValue(ProjectCategoryName, projectID)
 		if err != nil {
-			nutanixError, err := parseNutanixError(err)
+			nutanixError, err := ParseNutanixError(err)
 
 			// failed to parse nutanix error? likely auth issues
 			if err != nil {
