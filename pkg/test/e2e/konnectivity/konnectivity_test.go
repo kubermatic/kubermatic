@@ -7,13 +7,13 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 	"testing"
-
+	"time"
+	
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
-
+	
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -38,7 +38,7 @@ const (
 var kubeconfig string
 
 func init() {
-	flag.StringVar(&kubeconfig, "userconfig", "/home/prtk/Downloads/kubeconfig-admin-2n2n4727qt", "path to kubeconfig of usercluster")
+	flag.StringVar(&kubeconfig, "userconfig", "", "path to kubeconfig of usercluster")
 }
 
 func TestKonnectivity(t *testing.T) {
@@ -52,6 +52,8 @@ func TestKonnectivity(t *testing.T) {
 		}
 
 		//TODO: ensure that cluster is up and running
+		
+		time.Sleep(time.Minute)
 	}
 
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
@@ -254,21 +256,23 @@ func createUsercluster(t *testing.T) (string, func(), error) {
 		return "", cleanup, err
 	}
 	teardowns = append(teardowns, func() {
-		err := apicli.DeleteCluster(project.ID, seed, cluster.ID)
+		err := apicli.DeleteCluster(project.ID, seed, cluster.ID) //TODO: this succeeds but cluster is not actually gone why?
 		if err != nil {
 			t.Errorf("failed to delete cluster %s/%s: %s", project.ID, cluster.ID, err)
 		}
 	})
-
+	
+	time.Sleep(time.Minute) // TODO: check for cluster readiness
+	
 	// construct clients
 	data, err := apicli.GetKubeconfig(seed, project.ID, cluster.ID)
 	if err != nil {
 		return "", cleanup, err
 	}
 
-	file, err := ioutil.TempFile("tmp", "kubeconfig-")
+	file, err := ioutil.TempFile("/tmp", "kubeconfig-")
 	if err != nil {
-		log.Fatal(err)
+		return "", cleanup, err
 	}
 
 	err = os.WriteFile(file.Name(), []byte(data), 0664)
