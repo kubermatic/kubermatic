@@ -179,6 +179,7 @@ func Add(
 		&appsv1.Deployment{},
 		&v1beta1.PodDisruptionBudget{},
 		&networkingv1.NetworkPolicy{},
+		&appsv1.DaemonSet{},
 	}
 
 	// Avoid getting triggered by the leader lease AKA: If the annotation exists AND changed on
