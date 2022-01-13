@@ -86,8 +86,7 @@ func getKvKubeConfigFromCredentials(ctx context.Context, projectProvider provide
 	if err != nil {
 		return "", err
 	}
-	return kvKubeconfig, nil
-
+	return base64.StdEncoding.EncodeToString([]byte(kvKubeconfig)), nil
 }
 
 func KubeVirtVMIPresets(kubeconfig string) (apiv2.VirtualMachineInstancePresetList, error) {
