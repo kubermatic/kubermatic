@@ -156,7 +156,7 @@ func TestKonnectivity(t *testing.T) {
 		}
 	}
 
-	t.Log("check if metric server can talk to kubelet")
+	t.Log("check if metric server pods are running")
 	{
 		pods, err := getPods(ctx, kubeClient, "metrics-server")
 		if err != nil {
@@ -165,16 +165,6 @@ func TestKonnectivity(t *testing.T) {
 
 		if len(pods) != 2 {
 			t.Errorf("expected 2 metrics-server pods got: %d", len(pods))
-		}
-
-		for _, pod := range pods {
-			lines := strings.TrimSpace(getPodLogs(ctx, kubeClient, pod))
-			if n := len(strings.Split(lines, "\n")); n != tailLines {
-				t.Fatalf("expected 5 lines got: %d", n)
-			}
-			if !strings.Contains(lines, "Scrape finished") { // TODO: fragile. fix it.
-				t.Fatalf(lines)
-			}
 		}
 	}
 
@@ -321,7 +311,7 @@ func createUsercluster(t *testing.T) (string, func(), error) {
 	// create a usercluster on aws
 	cluster, err := apicli.CreateAWSCluster(project.ID, seed, userclusterName,
 		secretAccessKey, accessKeyID, utils.KubernetesVersion(),
-		"aws-eu-central-1a", "eu-central-1a", 1)
+		"aws-eu-central-1a", "eu-central-1a", 1, true)
 	if err != nil {
 		return "", cleanup, err
 	}
