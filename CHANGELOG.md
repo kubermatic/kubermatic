@@ -129,7 +129,6 @@ TBD
 - Introduce periodic reconciling for cloud resources used by userclusters; currently implemented for AWS-based userclusters ([#8101](https://github.com/kubermatic/kubermatic/issues/8101))
 - removed list aws regions endpoint ([#8529](https://github.com/kubermatic/kubermatic/issues/8529))
 - Added API support for assuming AWS IAM roles. This allows running user clusters in e.g. external AWS accounts ([#8038](https://github.com/kubermatic/kubermatic/issues/8038))
-- Adds GET /api/v2/providers/ec2/regions ([#8052](https://github.com/kubermatic/kubermatic/issues/8052))
 
 #### Microsoft Azure
 - Open Azure Network Security Group for external traffic to NodePort port ranges ([#7966](https://github.com/kubermatic/kubermatic/issues/7966))
