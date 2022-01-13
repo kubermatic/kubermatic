@@ -321,6 +321,11 @@ groups:
     labels:
       severity: warning
 
+  - record: job:kube_node_info:count
+    expr: count(kube_node_info)
+    labels:
+      kubermatic: federate
+
 - name: kubernetes-absent
   rules:
   - alert: KubernetesApiserverDown
