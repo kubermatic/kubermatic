@@ -37,6 +37,7 @@ import (
 	monitoringcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
@@ -782,7 +783,7 @@ func TestLoadFiles(t *testing.T) {
 						checkTestResult(t, fixturePath, res)
 					}
 
-					for _, creatorGetter := range kubernetescontroller.GetEtcdBackupConfigCreators(data) {
+					for _, creatorGetter := range kubernetescontroller.GetEtcdBackupConfigCreators(data, test.GenTestSeed()) {
 						_, create := creatorGetter()
 						res, err := create(&kubermaticv1.EtcdBackupConfig{})
 						if err != nil {

@@ -178,6 +178,13 @@ func (v *validator) validate(ctx context.Context, subject *kubermaticv1.Seed, se
 		}
 	}
 
+	if subject.Spec.EtcdBackupRestore != nil && len(subject.Spec.EtcdBackupRestore.Destinations) > 0 &&
+		subject.Spec.EtcdBackupRestore.DefaultDestination != nil && *subject.Spec.EtcdBackupRestore.DefaultDestination != "" {
+		if _, ok := subject.Spec.EtcdBackupRestore.Destinations[*subject.Spec.EtcdBackupRestore.DefaultDestination]; !ok {
+			return fmt.Errorf("default etcd backup destination %q has to match a destination in the backup destinations", *subject.Spec.EtcdBackupRestore.DefaultDestination)
+		}
+	}
+
 	return nil
 }
 

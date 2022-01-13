@@ -2305,6 +2305,11 @@ func (in *EtcdBackupRestore) DeepCopyInto(out *EtcdBackupRestore) {
 			(*out)[key] = outVal
 		}
 	}
+	if in.DefaultDestination != nil {
+		in, out := &in.DefaultDestination, &out.DefaultDestination
+		*out = new(string)
+		**out = **in
+	}
 	return
 }
 

@@ -109,7 +109,7 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return nil, err
 	}
 
-	if err := r.ensureEtcdBackupConfigs(ctx, cluster, data); err != nil {
+	if err := r.ensureEtcdBackupConfigs(ctx, cluster, data, seed); err != nil {
 		return nil, err
 	}
 
@@ -539,9 +539,9 @@ func GetStatefulSetCreators(data *resources.TemplateData, enableDataCorruptionCh
 }
 
 // GetEtcdBackupConfigCreators returns all EtcdBackupConfigCreators that are currently in use
-func GetEtcdBackupConfigCreators(data *resources.TemplateData) []reconciling.NamedEtcdBackupConfigCreatorGetter {
+func GetEtcdBackupConfigCreators(data *resources.TemplateData, seed *kubermaticv1.Seed) []reconciling.NamedEtcdBackupConfigCreatorGetter {
 	creators := []reconciling.NamedEtcdBackupConfigCreatorGetter{
-		etcd.BackupConfigCreator(data),
+		etcd.BackupConfigCreator(data, seed),
 	}
 	return creators
 }
@@ -623,10 +623,22 @@ func (r *Reconciler) ensureStatefulSets(ctx context.Context, c *kubermaticv1.Clu
 	return reconciling.ReconcileStatefulSets(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c)))
 }
 
-func (r *Reconciler) ensureEtcdBackupConfigs(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	creators := GetEtcdBackupConfigCreators(data)
-
-	return reconciling.ReconcileEtcdBackupConfigs(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c)))
+func (r *Reconciler) ensureEtcdBackupConfigs(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData,
+	seed *kubermaticv1.Seed) error {
+	if seed.IsDefaultEtcdAutomaticBackupEnabled() {
+		creators := GetEtcdBackupConfigCreators(data, seed)
+		return reconciling.ReconcileEtcdBackupConfigs(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c)))
+	}
+	// If default etcd automatic backups are not enabled, remove them if any
+	ebc := &kubermaticv1.EtcdBackupConfig{}
+	err := r.Client.Get(ctx, types.NamespacedName{Name: resources.EtcdDefaultBackupConfigName, Namespace: c.Status.NamespaceName}, ebc)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+	return r.Client.Delete(ctx, ebc)
 }
 
 func (r *Reconciler) ensureOldOPAIntegrationIsRemoved(ctx context.Context, data *resources.TemplateData) error {

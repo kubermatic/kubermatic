@@ -181,6 +181,11 @@ type EtcdBackupRestore struct {
 	// Destinations stores all the possible destinations where the backups for the Seed can be stored. If not empty,
 	// it enables automatic backup and restore for the seed.
 	Destinations map[string]*BackupDestination `json:"destinations,omitempty"`
+	// DefaultDestination Optional setting which marks the default destination that will be used for the default etcd backup config which is
+	// created for every user cluster. If not set, the default etcd backup config won't be created (unless the legacy Seed.Spec.BackupRestore is used).
+	// Has to correspond to a destination in Destinations.
+	// If removed, it removes the related default etcd backup configs.
+	DefaultDestination *string `json:"defaultDestination,omitempty"`
 }
 
 // BackupDestination defines the bucket name and endpoint as a backup destination, and holds reference to the credentials secret.
@@ -534,4 +539,11 @@ type MeteringConfiguration struct {
 	StorageClassName string `json:"storageClassName"`
 	// StorageSize is the size of the storage class. Default value is 100Gi.
 	StorageSize string `json:"storageSize"`
+}
+
+// IsDefaultEtcdAutomaticBackupEnabled returns true if etcd automatic backup is configured for the seed
+func (s *Seed) IsDefaultEtcdAutomaticBackupEnabled() bool {
+	return s.Spec.BackupRestore != nil ||
+		(s.Spec.EtcdBackupRestore != nil && len(s.Spec.EtcdBackupRestore.Destinations) > 0 &&
+			s.Spec.EtcdBackupRestore.DefaultDestination != nil && *s.Spec.EtcdBackupRestore.DefaultDestination != "")
 }

@@ -1352,7 +1352,8 @@ func cloneSeedResourcesInCluster(ctx context.Context, logger logrus.FieldLogger,
 				}
 			}
 			newObject.Spec.EtcdBackupRestore = &newv1.EtcdBackupRestore{
-				Destinations: destinations,
+				Destinations:       destinations,
+				DefaultDestination: oldObject.Spec.EtcdBackupRestore.DefaultDestination,
 			}
 		}
 
