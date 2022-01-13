@@ -229,6 +229,8 @@ TBD
 - Bump operating-system-manager to v0.3.2 ([#8570](https://github.com/kubermatic/kubermatic/issues/8570))
 - Upgrade machine controller to 1.36.2 ([#8233](https://github.com/kubermatic/kubermatic/issues/8233))
 - machine-controller is updated to v1.41.0 ([#8590](https://github.com/kubermatic/kubermatic/issues/8590))
+- machine-controller updated to v1.41.1  
+  operating-system-manager updated to v0.3.6 ([#8693](https://github.com/kubermatic/kubermatic/issues/8693))
 - Removed support for Kubernetes 1.19 ([#8167](https://github.com/kubermatic/kubermatic/issues/8167))
 - Add support for Kubernetes 1.22.5, 1.21.8, and 1.20.14  
   Automatically upgrade clusters running Kubernetes 1.21 to 1.21.8 to include fixes for CVE-2021-44716 and CVE-2021-44717  
