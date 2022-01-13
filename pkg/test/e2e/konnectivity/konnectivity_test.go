@@ -112,7 +112,7 @@ func TestKonnectivity(t *testing.T) {
 					return true, nil
 				}
 			}
-			t.Logf(fmt.Sprintf("no nodes with external ip"))
+			t.Logf("no nodes with external ip")
 			return false, nil
 		})
 		if err != nil {
@@ -339,7 +339,7 @@ func createUsercluster(t *testing.T) (string, func(), error) {
 		// construct clients
 		data, err = apicli.GetKubeconfig(seed, project.ID, cluster.ID)
 		if err != nil {
-			t.Logf("error tyring to get kubeconfig: %s", err)
+			t.Logf("error trying to get kubeconfig: %s", err)
 			return false, nil
 		}
 		return true, nil

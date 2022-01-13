@@ -22,14 +22,12 @@ set -euo pipefail
 cd $(dirname $0)/../..
 source hack/lib.sh
 
-
 function cleanup() {
   if [[ -n "${TMP:-}" ]]; then
     rm -rf "${TMP}"
   fi
 }
 trap cleanup EXIT SIGINT SIGTERM
-
 
 export KUBERMATIC_DEX_VALUES_FILE=${KUBERMATIC_DEX_VALUES_FILE:-$(realpath hack/ci/testdata/konnectivity_oauth_values.yaml)}
 export KUBERMATIC_API_ENDPOINT=${KUBERMATIC_API_ENDPOINT:-https://dev.kubermatic.io}
