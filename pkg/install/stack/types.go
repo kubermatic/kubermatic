@@ -23,6 +23,7 @@ import (
 
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 
 	unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -53,6 +54,9 @@ type DeployOptions struct {
 	// ChartsDirectory instead.
 	KubermaticCRDDirectory string
 
+	SeedsGetter      provider.SeedsGetter
+	SeedClientGetter provider.SeedClientGetter
+
 	Logger                             *logrus.Entry
 	EnableCertManagerV2Migration       bool
 	EnableCertManagerUpstreamMigration bool
@@ -65,5 +69,6 @@ type DeployOptions struct {
 type Stack interface {
 	Name() string
 	ValidateConfiguration(config *operatorv1alpha1.KubermaticConfiguration, helmValues *yamled.Document, opt DeployOptions, logger logrus.FieldLogger) (*operatorv1alpha1.KubermaticConfiguration, *yamled.Document, []error)
+	ValidateState(ctx context.Context, opt DeployOptions) []error
 	Deploy(ctx context.Context, opt DeployOptions) error
 }
