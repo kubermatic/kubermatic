@@ -122,34 +122,33 @@ func upgradeNginxIngress(
 		Version: "v1",
 	})
 
-	if err := kubeClient.List(ctx, deploymentsList, client.InNamespace(NginxIngressControllerNamespace), client.MatchingLabels{
+	nginxMatcher := client.MatchingLabels{
 		"app.kubernetes.io/name":       "ingress-nginx",
 		"app.kubernetes.io/managed-by": "Helm",
 		"app.kubernetes.io/instance":   release.Name,
-	}); err != nil {
-		logger.Warn("Error querying API for the existing deployment, attempting to upgrade without removing it...")
-	} else {
-		// 2: store the deployment for backup
-		// There can be only one...
-		switch foundDeployments := len(deploymentsList.Items); foundDeployments {
-		case 1:
-			filename := fmt.Sprintf("backup_%s_%s.yaml", NginxIngressControllerReleaseName, backupTS)
-			logger.Infof("Attempting to store the deployment in file: %s", filename)
-			if err := util.DumpResources(ctx, filename, deploymentsList.Items); err != nil {
-				return fmt.Errorf("failed to back up the deployment, it is not removed: %v", err)
-			}
-
-			// 3: delete the deployment
-			logger.Info("Deleting the deployment from the cluster")
-			if err := kubeClient.Delete(ctx, &deploymentsList.Items[0]); err != nil {
-				return fmt.Errorf("failed to remove the deployment: %v\n\nuse backup file to check the changes and restore if needed", err)
-			}
-
-		case 0:
-			logger.Info("No deployments matching the criteria were found, assuming clean state and attempting to upgrade...")
-		default:
-			return fmt.Errorf("found more than one deployment (%d) matching the nginx-ingress-controller release, stopping upgrade - clean up manually before proceeding", len(deploymentsList.Items))
+	}
+	if err := kubeClient.List(ctx, deploymentsList, client.InNamespace(NginxIngressControllerNamespace), nginxMatcher); err != nil {
+		return fmt.Errorf("Error querying API for the existing Deployment object, aborting upgrade process.")
+	}
+	// 2: store the deployment for backup
+	// There can be only one...
+	switch foundDeployments := len(deploymentsList.Items); foundDeployments {
+	case 1:
+		filename := fmt.Sprintf("backup_%s_%s.yaml", NginxIngressControllerReleaseName, backupTS)
+		logger.Infof("Attempting to store the deployment in file: %s", filename)
+		if err := util.DumpResources(ctx, filename, deploymentsList.Items); err != nil {
+			return fmt.Errorf("failed to back up the deployment, it is not removed: %v", err)
 		}
+
+		// 3: delete the deployment
+		logger.Info("Deleting the deployment from the cluster")
+		if err := kubeClient.Delete(ctx, &deploymentsList.Items[0]); err != nil {
+			return fmt.Errorf("failed to remove the deployment: %v\n\nuse backup file to check the changes and restore if needed", err)
+		}
+	case 0:
+		logger.Info("No deployments matching the criteria were found, assuming clean state and attempting to upgrade...")
+	default:
+		return fmt.Errorf("found more than one deployment (%d) matching the nginx-ingress-controller release, stopping upgrade - clean up manually before proceeding", len(deploymentsList.Items))
 	}
 	return nil
 }
