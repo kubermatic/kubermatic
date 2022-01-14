@@ -112,6 +112,7 @@ func getAWSProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *ku
 		SpotInstanceConfig:   spotConfig,
 		AssumeRoleARN:        providerconfig.ConfigVarString{Value: nodeSpec.Cloud.AWS.AssumeRoleARN},
 		AssumeRoleExternalID: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.AWS.AssumeRoleExternalID},
+		EBSVolumeEncrypted:   providerconfig.ConfigVarBool{Value: pointer.Bool(false)},
 	}
 	if config.DiskType.Value == "" {
 		config.DiskType.Value = ec2.VolumeTypeGp2
@@ -227,6 +228,7 @@ func getOpenstackProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, 
 		SecurityGroups:            []providerconfig.ConfigVarString{{Value: c.Spec.Cloud.Openstack.SecurityGroups}},
 		InstanceReadyCheckPeriod:  providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Openstack.InstanceReadyCheckPeriod},
 		InstanceReadyCheckTimeout: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Openstack.InstanceReadyCheckTimeout},
+		TrustDevicePath:           providerconfig.ConfigVarBool{Value: pointer.Bool(false)},
 	}
 
 	if nodeSpec.Cloud.Openstack.UseFloatingIP || dc.Spec.Openstack.EnforceFloatingIP {
@@ -359,6 +361,8 @@ func getGCPProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *ku
 		Subnetwork:            providerconfig.ConfigVarString{Value: c.Spec.Cloud.GCP.Subnetwork},
 		AssignPublicIPAddress: &providerconfig.ConfigVarBool{Value: pointer.Bool(true)},
 		CustomImage:           providerconfig.ConfigVarString{Value: nodeSpec.Cloud.GCP.CustomImage},
+		MultiZone:             providerconfig.ConfigVarBool{Value: pointer.Bool(false)},
+		Regional:              providerconfig.ConfigVarBool{Value: pointer.Bool(false)},
 	}
 
 	tags := sets.NewString(nodeSpec.Cloud.GCP.Tags...)
