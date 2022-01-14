@@ -229,7 +229,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(kube_node_info{cluster=~\"$cluster\"}) by (cluster)",
+          "expr": "sum(job:kube_node_info:count{cluster=~\"$cluster\"}) by (cluster)",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{ cluster }}",
