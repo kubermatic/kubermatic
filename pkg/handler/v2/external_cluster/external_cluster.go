@@ -94,8 +94,13 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 
-			if _, err := clusterProvider.GenerateClient(cfg); err != nil {
+			cli, err := clusterProvider.GenerateClient(cfg)
+			if err != nil {
 				return nil, errors.NewBadRequest(fmt.Sprintf("cannot connect to the kubernetes cluster: %v", err))
+			}
+			// check if kubeconfig can automatically authenticate and get resources.
+			if err := cli.List(ctx, &corev1.PodList{}); err != nil {
+				return nil, errors.NewBadRequest(fmt.Sprintf("can not retrieve data, check your kubeconfig: %v", err))
 			}
 
 			newCluster := genExternalCluster(req.Body.Name, project.Name)
