@@ -251,7 +251,7 @@ func genWRConstraint(registrySet sets.String) *kubermaticv1.Constraint {
 	ct.Name = allowedregistrycontroller.AllowedRegistryCTName
 	ct.Namespace = testNamespace
 
-	jsonRegSet, _ := json.Marshal(registrySet)
+	jsonRegSet, _ := json.Marshal(registrySet.List())
 
 	ct.Spec = kubermaticv1.ConstraintSpec{
 		ConstraintType: allowedregistrycontroller.AllowedRegistryCTName,
