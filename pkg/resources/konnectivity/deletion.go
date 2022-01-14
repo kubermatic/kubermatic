@@ -20,6 +20,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -47,6 +48,12 @@ func ResourcesForDeletion(namespace string) []ctrlruntimeclient.Object {
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      resources.KonnectivityProxyTLSSecretName,
+				Namespace: namespace,
+			},
+		},
+		&networkingv1.NetworkPolicy{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      resources.NetworkPolicyClusterExternalAddrAllow,
 				Namespace: namespace,
 			},
 		},

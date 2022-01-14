@@ -477,7 +477,9 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 			apiserver.EctdAllowCreator(c),
 			apiserver.MachineControllerWebhookCreator(c),
 		}
-		if !data.IsKonnectivityEnabled() {
+		if data.IsKonnectivityEnabled() {
+			namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters, apiserver.ClusterExternalAddrAllowCreator(c))
+		} else {
 			namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters,
 				apiserver.OpenVPNServerAllowCreator(c),
 				apiserver.MetricsServerAllowCreator(c),
