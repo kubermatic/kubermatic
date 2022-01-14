@@ -1,7 +1,6 @@
 **What does this PR do / Why do we need it**:
 
-**Does this PR close any issues?**:
-<!-- optional, in `fixes #<issue number>(, fixes #<issue_number>, ...)` format, will close the issue(s) when PR gets merged -->
+**Does this PR close any issues?**:<!-- optional, in `fixes #<issue number>(, fixes #<issue_number>, ...)` format, will close the issue(s) when PR gets merged -->
 Fixes #
 
 **Special notes for your reviewer**:

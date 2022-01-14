@@ -40,6 +40,7 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 		creator        ObjectCreator
 		existingObject ctrlruntimeclient.Object
 		expectedObject ctrlruntimeclient.Object
+		recreate       bool
 	}{
 		{
 			name: "Object gets created",
@@ -151,6 +152,48 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:     "Recreating objects works",
+			recreate: true,
+			existingObject: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:            testResourceName,
+					Namespace:       testNamespace,
+					ResourceVersion: "123",
+					UID:             "abcd-1234",
+				},
+				Data: map[string]string{
+					"foo": "bar",
+				},
+			},
+			creator: func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+				var sa *corev1.ConfigMap
+				if existing == nil {
+					sa = &corev1.ConfigMap{}
+				} else {
+					sa = existing.(*corev1.ConfigMap)
+				}
+				sa.Name = testResourceName
+				sa.Namespace = testNamespace
+				sa.Data = map[string]string{
+					"foo": "bar-new",
+				}
+				return sa, nil
+			},
+			expectedObject: &corev1.ConfigMap{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "ConfigMap",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      testResourceName,
+					Namespace: testNamespace,
+				},
+				Data: map[string]string{
+					"foo": "bar-new",
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -163,7 +206,7 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 			client := clientBuilder.Build()
 			ctx := context.Background()
 			name := types.NamespacedName{Namespace: testNamespace, Name: testResourceName}
-			if err := EnsureNamedObject(ctx, name, test.creator, client, &corev1.ConfigMap{}, false); err != nil {
+			if err := EnsureNamedObject(ctx, name, test.creator, client, &corev1.ConfigMap{}, test.recreate); err != nil {
 				t.Errorf("EnsureObject returned an error while none was expected: %v", err)
 			}
 
@@ -175,6 +218,8 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 			}
 
 			test.expectedObject.SetResourceVersion(gotConfigMap.ResourceVersion)
+			test.expectedObject.SetUID(gotConfigMap.UID)
+			test.expectedObject.SetGeneration(gotConfigMap.Generation)
 
 			if diff := deep.Equal(gotConfigMap, test.expectedObject); diff != nil {
 				t.Errorf("The ConfigMap from the client does not match the expected ConfigMap. Diff: \n%v", diff)
