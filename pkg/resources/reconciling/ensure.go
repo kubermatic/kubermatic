@@ -123,6 +123,11 @@ func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName,
 		if err := client.Delete(ctx, obj.DeepCopyObject().(ctrlruntimeclient.Object)); err != nil {
 			return fmt.Errorf("failed to delete object %T %q: %v", obj, namespacedName.String(), err)
 		}
+
+		obj.SetResourceVersion("")
+		obj.SetUID("")
+		obj.SetGeneration(0)
+
 		if err := client.Create(ctx, obj); err != nil {
 			return fmt.Errorf("failed to create object %T %q: %v", obj, namespacedName.String(), err)
 		}
