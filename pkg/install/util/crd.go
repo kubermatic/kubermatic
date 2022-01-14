@@ -89,28 +89,43 @@ func DeployCRD(ctx context.Context, kubeClient ctrlruntimeclient.Client, crd ctr
 	return kubeClient.Update(ctx, crd)
 }
 
-func WaitForReadyCRD(ctx context.Context, kubeClient ctrlruntimeclient.Client, crdName string, timeout time.Duration) error {
-	return wait.PollImmediate(1*time.Second, timeout, func() (bool, error) {
-		retrievedCRD := &apiextensionsv1.CustomResourceDefinition{}
-		name := types.NamespacedName{Name: crdName}
-
-		if err := kubeClient.Get(ctx, name, retrievedCRD); err != nil {
-			// in theory this should never happen after the .Create() call above
-			// has succeeded, but it can happen temporarily
-			if kerrors.IsNotFound(err) {
-				return false, nil
-			}
-
+func HasAllReadyCRDs(ctx context.Context, kubeClient ctrlruntimeclient.Client, crdNames []string) (bool, error) {
+	for _, crdName := range crdNames {
+		exists, err := HasReadyCRD(ctx, kubeClient, crdName)
+		if err != nil || !exists {
 			return false, err
 		}
+	}
 
-		for _, condition := range retrievedCRD.Status.Conditions {
-			if condition.Type == apiextensionsv1.Established {
-				return condition.Status == apiextensionsv1.ConditionTrue, nil
-			}
+	return true, nil
+}
+
+func HasReadyCRD(ctx context.Context, kubeClient ctrlruntimeclient.Client, crdName string) (bool, error) {
+	retrievedCRD := &apiextensionsv1.CustomResourceDefinition{}
+	name := types.NamespacedName{Name: crdName}
+
+	if err := kubeClient.Get(ctx, name, retrievedCRD); err != nil {
+		// in theory this should never happen after the .Create() call above
+		// has succeeded, but it can happen temporarily
+		if kerrors.IsNotFound(err) {
+			return false, nil
 		}
 
-		return false, nil
+		return false, err
+	}
+
+	for _, condition := range retrievedCRD.Status.Conditions {
+		if condition.Type == apiextensionsv1.Established {
+			return condition.Status == apiextensionsv1.ConditionTrue, nil
+		}
+	}
+
+	return false, nil
+}
+
+func WaitForReadyCRD(ctx context.Context, kubeClient ctrlruntimeclient.Client, crdName string, timeout time.Duration) error {
+	return wait.PollImmediate(1*time.Second, timeout, func() (bool, error) {
+		return HasReadyCRD(ctx, kubeClient, crdName)
 	})
 }
 

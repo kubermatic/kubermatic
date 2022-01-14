@@ -57,6 +57,8 @@ func NewStack() stack.Stack {
 	return &SeedStack{}
 }
 
+var _ stack.Stack = &SeedStack{}
+
 func (*SeedStack) Name() string {
 	return "KKP seed stack"
 }
