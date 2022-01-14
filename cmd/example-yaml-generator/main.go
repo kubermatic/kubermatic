@@ -170,6 +170,7 @@ func createExampleSeed(config *operatorv1alpha1.KubermaticConfiguration) *kuberm
 						Anexia:  &kubermaticv1.DatacenterSpecAnexia{},
 						Nutanix: &kubermaticv1.DatacenterSpecNutanix{
 							Images: imageList,
+							Port:   pointer.Int32(9440),
 						},
 					},
 				},

@@ -20,8 +20,6 @@ import (
 	"context"
 	"net/http"
 	"strconv"
-	// "github.com/go-kit/kit/endpoint"
-	// "k8c.io/kubermatic/v2/pkg/provider"
 )
 
 type NutanixCommonReq struct {
@@ -109,9 +107,3 @@ func DecodeNutanixSubnetReq(c context.Context, r *http.Request) (interface{}, er
 
 	return req, nil
 }
-
-/*
-func NutanixClusterEndpoint(presetProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
-
-}
-*/

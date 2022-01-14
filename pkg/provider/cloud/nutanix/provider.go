@@ -76,7 +76,7 @@ func (n *Nutanix) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update pro
 		return nil, err
 	}
 
-	logger.Infow("removing category values")
+	logger.Info("removing category values")
 
 	if kuberneteshelper.HasFinalizer(cluster, categoryCleanupFinalizer) {
 		if err = deleteCategoryValues(client, cluster); err != nil {
@@ -132,7 +132,7 @@ func (n *Nutanix) reconcileCluster(cluster *kubermaticv1.Cluster, update provide
 		return nil, err
 	}
 
-	logger.Infow("reconciling category and value")
+	logger.Info("reconciling category and value")
 	if err := reconcileCategoryAndValue(client, cluster); err != nil {
 		return nil, fmt.Errorf("failed to reconcile category and cluster value: %v", err)
 	}

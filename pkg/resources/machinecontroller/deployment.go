@@ -257,7 +257,7 @@ func getEnvVars(data machinecontrollerData) ([]corev1.EnvVar, error) {
 			vars = append(vars, corev1.EnvVar{Name: "NUTANIX_PORT", Value: strconv.Itoa(int(*port))})
 		}
 		if data.DC().Spec.Nutanix.AllowInsecure {
-			vars = append(vars, corev1.EnvVar{Name: "NUTANIX_ALLOW_INSECURE", Value: "true"})
+			vars = append(vars, corev1.EnvVar{Name: "NUTANIX_INSECURE", Value: "true"})
 		}
 
 		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_USERNAME", Value: credentials.Nutanix.Username})

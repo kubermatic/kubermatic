@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Kubermatic Kubernetes Platform contributors.
+Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"strconv"
 	"strings"
 
@@ -84,7 +85,7 @@ func getCredentials(dc *kubermaticv1.DatacenterSpecNutanix, cloud *kubermaticv1.
 	}
 
 	creds := nutanixclient.Credentials{
-		URL:      fmt.Sprintf("%s:%d", dc.Endpoint, port),
+		URL:      net.JoinHostPort(dc.Endpoint, fmt.Sprint(port)),
 		Endpoint: dc.Endpoint,
 		Port:     strconv.Itoa(port),
 		Username: username,
@@ -94,16 +95,12 @@ func getCredentials(dc *kubermaticv1.DatacenterSpecNutanix, cloud *kubermaticv1.
 
 	// set up proxy URL if it's given through the cloud spec
 
-	proxyURL := ""
-	if cloud.ProxyURL == "" {
-		if cloud.CredentialsReference != nil {
-			credsProxyURL, _ := secretKeyGetter(cloud.CredentialsReference, resources.NutanixProxyURL)
-			if credsProxyURL != "" {
-				proxyURL = credsProxyURL
-			}
+	proxyURL := cloud.ProxyURL
+	if proxyURL == "" && cloud.CredentialsReference != nil {
+		credsProxyURL, _ := secretKeyGetter(cloud.CredentialsReference, resources.NutanixProxyURL)
+		if credsProxyURL != "" {
+			proxyURL = credsProxyURL
 		}
-	} else {
-		proxyURL = cloud.ProxyURL
 	}
 
 	if proxyURL != "" {

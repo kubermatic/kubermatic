@@ -498,7 +498,6 @@ func createOrUpdateNutanixSecret(ctx context.Context, seedClient ctrlruntimeclie
 	}
 
 	credentialRef, err := ensureCredentialSecret(ctx, seedClient, cluster, secretData)
-
 	if err != nil {
 		return err
 	}

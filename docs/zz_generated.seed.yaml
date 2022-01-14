@@ -147,7 +147,7 @@ spec:
             sles: ""
             ubuntu: ""
           # Optional: Port to use when connecting to the Nutanix Prism Central endpoint (defaults to 9440)
-          port: null
+          port: 9440
         openstack:
           auth_url: ""
           availability_zone: ""
