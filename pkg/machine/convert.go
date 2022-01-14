@@ -150,7 +150,7 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 		}
 		cloudSpec.Azure = &apiv1.AzureNodeSpec{
 			Size:           config.VMSize.Value,
-			AssignPublicIP: config.AssignPublicIP.Value,
+			AssignPublicIP: config.AssignPublicIP.Value != nil && *config.AssignPublicIP.Value,
 			Tags:           config.Tags,
 			ImageID:        config.ImageID.Value,
 			Zones:          config.Zones,
@@ -163,10 +163,10 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 			return nil, fmt.Errorf("failed to parse digitalocean config: %v", err)
 		}
 		cloudSpec.Digitalocean = &apiv1.DigitaloceanNodeSpec{
-			IPv6:       config.IPv6.Value,
+			IPv6:       config.IPv6.Value != nil && *config.IPv6.Value,
 			Size:       config.Size.Value,
-			Backups:    config.Backups.Value,
-			Monitoring: config.Monitoring.Value,
+			Backups:    config.Backups.Value != nil && *config.Backups.Value,
+			Monitoring: config.Monitoring.Value != nil && *config.Backups.Value,
 		}
 		for _, v := range config.Tags {
 			cloudSpec.Digitalocean.Tags = append(cloudSpec.Digitalocean.Tags, v.Value)
@@ -234,7 +234,7 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 			MachineType: config.MachineType.Value,
 			DiskSize:    config.DiskSize,
 			DiskType:    config.DiskType.Value,
-			Preemptible: config.Preemptible.Value,
+			Preemptible: config.Preemptible.Value != nil && *config.Preemptible.Value,
 			Labels:      config.Labels,
 			Tags:        config.Tags,
 			CustomImage: config.CustomImage.Value,
@@ -311,7 +311,7 @@ func extractSpotInstanceConfigs(config *aws.RawConfig) (*string, *string, *bool)
 		config.SpotInstanceConfig != nil {
 		return &config.SpotInstanceConfig.MaxPrice.Value,
 			&config.SpotInstanceConfig.InterruptionBehavior.Value,
-			&config.SpotInstanceConfig.PersistentRequest.Value
+			config.SpotInstanceConfig.PersistentRequest.Value
 	}
 
 	return nil, nil, nil
