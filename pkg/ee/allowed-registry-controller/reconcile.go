@@ -201,7 +201,7 @@ func allowedRegistryConstraintCreatorGetter(regSet sets.String) reconciling.Name
 			ct.Spec.ConstraintType = AllowedRegistryCTName
 			ct.Spec.Disabled = regSet.Len() == 0
 
-			jsonRegSet, err := json.Marshal(regSet)
+			jsonRegSet, err := json.Marshal(regSet.List())
 			if err != nil {
 				return nil, fmt.Errorf("error marshalling registry set: %v", err)
 			}
