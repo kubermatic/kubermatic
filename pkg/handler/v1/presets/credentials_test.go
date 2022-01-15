@@ -380,6 +380,34 @@ func TestCredentialEndpoint(t *testing.T) {
 			expectedResponse: `{"names":["anexia-first"]}`,
 		},
 		{
+			name:     "test list of credential names for Nutanix",
+			provider: "nutanix",
+			credentials: []ctrlruntimeclient.Object{
+				&kubermaticv1.Preset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "nutanix-first",
+					},
+					Spec: kubermaticv1.PresetSpec{
+						RequiredEmailDomain: test.RequiredEmailDomain,
+						Nutanix: &kubermaticv1.Nutanix{
+							Username:    "username",
+							Password:    "password",
+							ClusterName: "cluster",
+							ProjectName: "project",
+						},
+					},
+				},
+			},
+			httpStatus:       http.StatusOK,
+			expectedResponse: `{"names":["nutanix-first"]}`,
+		},
+		{
+			name:             "test no credentials for Nutanix",
+			provider:         "nutanix",
+			httpStatus:       http.StatusOK,
+			expectedResponse: "{}",
+		},
+		{
 			name:       "test no existing provider",
 			provider:   "test",
 			httpStatus: http.StatusBadRequest,

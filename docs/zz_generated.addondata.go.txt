@@ -109,6 +109,7 @@ type Credentials struct {
 	VSphere      VSphereCredentials
 	Alibaba      AlibabaCredentials
 	Anexia       AnexiaCredentials
+	Nutanix      NutanixCredentials
 }
 
 type AWSCredentials struct {
@@ -172,4 +173,10 @@ type AlibabaCredentials struct {
 
 type AnexiaCredentials struct {
 	Token string
+}
+
+type NutanixCredentials struct {
+	Username string
+	Password string
+	ProxyURL string
 }

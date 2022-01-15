@@ -38,6 +38,7 @@ type Credentials struct {
 	VSphere      VSphereCredentials
 	Alibaba      AlibabaCredentials
 	Anexia       AnexiaCredentials
+	Nutanix      NutanixCredentials
 }
 
 type AWSCredentials struct {
@@ -118,6 +119,12 @@ type AlibabaCredentials struct {
 
 type AnexiaCredentials struct {
 	Token string
+}
+
+type NutanixCredentials struct {
+	Username string
+	Password string
+	ProxyURL string
 }
 
 type CredentialsData interface {
@@ -201,6 +208,12 @@ func GetCredentials(data CredentialsData) (Credentials, error) {
 	}
 	if data.Cluster().Spec.Cloud.Anexia != nil {
 		if credentials.Anexia, err = GetAnexiaCredentials(data); err != nil {
+			return Credentials{}, err
+		}
+	}
+
+	if data.Cluster().Spec.Cloud.Nutanix != nil {
+		if credentials.Nutanix, err = GetNutanixCredentials(data); err != nil {
 			return Credentials{}, err
 		}
 	}
@@ -644,4 +657,30 @@ func GetAnexiaCredentials(data CredentialsData) (AnexiaCredentials, error) {
 	}
 
 	return anexiaCredentials, nil
+}
+
+func GetNutanixCredentials(data CredentialsData) (NutanixCredentials, error) {
+	spec := data.Cluster().Spec.Cloud.Nutanix
+	credentials := NutanixCredentials{}
+	var err error
+
+	if spec.Username != "" {
+		credentials.Username = spec.Username
+	} else if credentials.Username, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, NutanixUsername); err != nil {
+		return NutanixCredentials{}, err
+	}
+
+	if spec.Password != "" {
+		credentials.Password = spec.Password
+	} else if credentials.Password, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, NutanixPassword); err != nil {
+		return NutanixCredentials{}, err
+	}
+
+	if spec.ProxyURL != "" {
+		credentials.ProxyURL = spec.ProxyURL
+	} else {
+		credentials.ProxyURL, _ = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, NutanixProxyURL)
+	}
+
+	return credentials, nil
 }

@@ -53,7 +53,9 @@ spec:
           # Region to use, for a full list of regions see
           # https://www.alibabacloud.com/help/doc-detail/40654.htm
           region: ""
-        anexia: null
+        anexia:
+          # LocationID the location of the region
+          location_id: ""
         aws:
           # List of AMIs to use for a given operating system.
           # This gets defaulted by querying for the latest AMI for the given distribution
@@ -129,6 +131,23 @@ spec:
           # 'Default' or 'None'. Defaults to "ClusterFirst". DNS parameters given in DNSConfig will be merged with the
           # policy selected with DNSPolicy.
           dns_policy: ""
+        # Nutanix is experimental and unsupported
+        nutanix:
+          # Optional: AllowInsecure allows to disable the TLS certificate check against the endpoint (defaults to false)
+          allow_insecure: false
+          # Endpoint to use for accessing Nutanix Prism Central. No protocol or port should be passed,
+          # for example "nutanix.example.com" or "10.0.0.1"
+          endpoint: ""
+          # Images to use for each supported operating system
+          images:
+            amzn2: ""
+            centos: ""
+            flatcar: ""
+            rhel: ""
+            sles: ""
+            ubuntu: ""
+          # Optional: Port to use when connecting to the Nutanix Prism Central endpoint (defaults to 9440)
+          port: 9440
         openstack:
           auth_url: ""
           availability_zone: ""

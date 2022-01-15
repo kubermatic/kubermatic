@@ -873,6 +873,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 			Kubevirt:       newPublicKubevirtCloudSpec(cs.Cloud.Kubevirt),
 			Alibaba:        newPublicAlibabaCloudSpec(cs.Cloud.Alibaba),
 			Anexia:         newPublicAnexiaCloudSpec(cs.Cloud.Anexia),
+			Nutanix:        newPublicNutanixCloudSpec(cs.Cloud.Nutanix),
 		},
 		Version:                              cs.Version,
 		MachineNetworks:                      cs.MachineNetworks,
@@ -915,6 +916,7 @@ type PublicCloudSpec struct {
 	Kubevirt       *PublicKubevirtCloudSpec     `json:"kubevirt,omitempty"`
 	Alibaba        *PublicAlibabaCloudSpec      `json:"alibaba,omitempty"`
 	Anexia         *PublicAnexiaCloudSpec       `json:"anexia,omitempty"`
+	Nutanix        *PublicNutanixCloudSpec      `json:"nutanix,omitempty"`
 }
 
 // PublicFakeCloudSpec is a public counterpart of apiv1.FakeCloudSpec.
@@ -1086,6 +1088,17 @@ func newPublicAnexiaCloudSpec(internal *kubermaticv1.AnexiaCloudSpec) (public *P
 	return &PublicAnexiaCloudSpec{}
 }
 
+// PublicNutanixCloudSpec is a public counterpart of apiv1.NutanixCloudSpec.
+type PublicNutanixCloudSpec struct{}
+
+func newPublicNutanixCloudSpec(internal *kubermaticv1.NutanixCloudSpec) (public *PublicNutanixCloudSpec) {
+	if internal == nil {
+		return nil
+	}
+
+	return &PublicNutanixCloudSpec{}
+}
+
 // ClusterStatus defines the cluster status
 type ClusterStatus struct {
 	// Version actual version of the kubernetes master components
@@ -1184,6 +1197,7 @@ type NodeCloudSpec struct {
 	Kubevirt     *KubevirtNodeSpec     `json:"kubevirt,omitempty"`
 	Alibaba      *AlibabaNodeSpec      `json:"alibaba,omitempty"`
 	Anexia       *AnexiaNodeSpec       `json:"anexia,omitempty"`
+	Nutanix      *NutanixNodeSpec      `json:"nutanix,omitempty"`
 }
 
 // UbuntuSpec ubuntu specific settings
@@ -1906,6 +1920,43 @@ func (spec *AnexiaNodeSpec) MarshalJSON() ([]byte, error) {
 		DiskSize:   spec.DiskSize,
 		CPUs:       spec.CPUs,
 		Memory:     spec.Memory,
+	}
+
+	return json.Marshal(&res)
+}
+
+// NutanixNodeSpec nutanix specific node settings
+// swagger:model NutanixNodeSpec
+type NutanixNodeSpec struct {
+	SubnetName     string            `json:"subnetName"`
+	ImageName      string            `json:"imageName"`
+	Categories     map[string]string `json:"categories"`
+	CPUs           int64             `json:"cpus"`
+	CPUCores       *int64            `json:"cpuCores"`
+	CPUPassthrough *bool             `json:"cpuPassthrough"`
+	MemoryMB       int64             `json:"memoryMB"`
+	DiskSize       *int64            `json:"diskSize"`
+}
+
+func (spec *NutanixNodeSpec) MarshalJSON() ([]byte, error) {
+	res := struct {
+		SubnetName     string            `json:"subnetName"`
+		ImageName      string            `json:"imageName"`
+		Categories     map[string]string `json:"categories"`
+		CPUs           int64             `json:"cpus"`
+		CPUCores       *int64            `json:"cpuCores"`
+		CPUPassthrough *bool             `json:"cpuPassthrough"`
+		MemoryMB       int64             `json:"memoryMB"`
+		DiskSize       *int64            `json:"diskSize"`
+	}{
+		SubnetName:     spec.SubnetName,
+		ImageName:      spec.ImageName,
+		Categories:     spec.Categories,
+		CPUs:           spec.CPUs,
+		CPUCores:       spec.CPUCores,
+		CPUPassthrough: spec.CPUPassthrough,
+		MemoryMB:       spec.MemoryMB,
+		DiskSize:       spec.DiskSize,
 	}
 
 	return json.Marshal(&res)

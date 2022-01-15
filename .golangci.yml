@@ -60,6 +60,7 @@ issues:
   - cyclomatic complexity [0-9]+ of func `initTestEndpoint` is high
   - cyclomatic complexity [0-9]+ of func `\(\*Provider\)\.InitializeCloudProvider` is high
   - cyclomatic complexity [0-9]+ of func `\(\*Reconciler\)\.ensureResourcesAreDeployed` is high
+  - cyclomatic complexity [0-9]+ of func `GetAPIV2NodeCloudSpec` is high
   # goconst
   - string `(get|openshift-kube-scheduler|us-central1|quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:86255c4efe6bbc141a0f41444f863bbd5cd832ffca21d2b737a4f9c225ed00ad)` has [0-9]+ occurrences. make it a constant
   # gocritic
