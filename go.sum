@@ -1288,8 +1288,8 @@ github.com/kubermatic/machine-controller v1.23.1/go.mod h1:mXWbT7SjqpgFhzCFT3yME
 github.com/kubermatic/machine-controller v1.26.0/go.mod h1:dcJ+GdDSCxCwM0poxwOK8hVO7epiOORDmNMmb2veyw4=
 github.com/kubermatic/machine-controller v1.36.1/go.mod h1:6BFZEvEMZi8OT8aHOsS7DXYsF6ZSpmsNxsci7OLTTn8=
 github.com/kubermatic/machine-controller v1.40.1/go.mod h1:5LVcN4tCybGg+55hIHcVzCjNsBJy2PlnXG0xIzKmXGY=
-github.com/kubermatic/machine-controller v1.41.1 h1:jwYXIEWc4UiNXDJBvk1hhBUfjnK1X5yFiwWBNX1efso=
-github.com/kubermatic/machine-controller v1.41.1/go.mod h1:YZiKz9OQaf8HpXclws3zpLTML9LFSovwK1cQJGCGXAo=
+github.com/kubermatic/machine-controller v1.42.0 h1:534x1LNB/tJITMpYKZDxZzOyoJdJWM2m7YlLN7fwIcw=
+github.com/kubermatic/machine-controller v1.42.0/go.mod h1:8hiLufILoAD4SM+TqRwUh9nmwLHrkkw2nAkAOkn+uAc=
 github.com/kulti/thelper v0.4.0/go.mod h1:vMu2Cizjy/grP+jmsvOFDx1kYP6+PD1lqg4Yu5exl2U=
 github.com/kunwardeep/paralleltest v1.0.2/go.mod h1:ZPqNm1fVHPllh5LPVujzbVz1JN2GhLxSfY+oqUsvG30=
 github.com/kylelemons/godebug v0.0.0-20170820004349-d65d576e9348/go.mod h1:B69LEHPfb2qLo0BaaOLcbitczOKLWTsrBG9LczfCD4k=
