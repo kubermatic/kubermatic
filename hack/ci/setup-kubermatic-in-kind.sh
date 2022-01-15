@@ -191,6 +191,10 @@ sed -i "s/__SEED_NAME__/$SEED_NAME/g" $SEED_MANIFEST
 sed -i "s/__BUILD_ID__/$BUILD_ID/g" $SEED_MANIFEST
 sed -i "s/__KUBECONFIG__/$SEED_KUBECONFIG/g" $SEED_MANIFEST
 
+if [[ ! -z "${NUTANIX_E2E_ENDPOINT:-}" ]]; then
+  sed -i "s/__NUTANIX_ENDPOINT__/$NUTANIX_E2E_ENDPOINT/g" $SEED_MANIFEST
+fi
+
 retry 8 kubectl apply -f $SEED_MANIFEST
 echodate "Finished installing Seed"
 

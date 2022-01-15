@@ -167,6 +167,11 @@ func createExampleSeed(config *operatorv1alpha1.KubermaticConfiguration) *kuberm
 							DNSConfig: &corev1.PodDNSConfig{},
 						},
 						Alibaba: &kubermaticv1.DatacenterSpecAlibaba{},
+						Anexia:  &kubermaticv1.DatacenterSpecAnexia{},
+						Nutanix: &kubermaticv1.DatacenterSpecNutanix{
+							Images: imageList,
+							Port:   pointer.Int32(9440),
+						},
 					},
 				},
 			},

@@ -135,6 +135,16 @@ spec:
             minimum_memory: 0
             minimum_vcpus: 0
           region: dbl
+    nutanix-ger:
+      country: DE
+      location: Hamburg
+      spec:
+        nutanix:
+          endpoint: "__NUTANIX_ENDPOINT__"
+          allow_insecure: true
+          images:
+            centos: machine-controller-e2e-centos
+            ubuntu: machine-controller-e2e-ubuntu
     dc-to-delete:
       location: Amsterdam
       country: NL

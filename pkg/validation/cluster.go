@@ -392,6 +392,8 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter,
 		providerErr = validatePacketCloudSpec(spec.Packet)
 	case spec.VSphere != nil:
 		providerErr = validateVSphereCloudSpec(spec.VSphere)
+	case spec.Nutanix != nil:
+		providerErr = validateNutanixCloudSpec(spec.Nutanix)
 	default:
 		providerErr = errors.New("no cloud provider specified")
 	}
@@ -612,6 +614,34 @@ func validateAnexiaCloudSpec(spec *kubermaticv1.AnexiaCloudSpec) error {
 		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.AnexiaToken); err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func validateNutanixCloudSpec(spec *kubermaticv1.NutanixCloudSpec) error {
+	if spec.Username == "" {
+		if spec.CredentialsReference == nil {
+			return errors.New("no username or credentials reference specified")
+		}
+
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.NutanixUsername); err != nil {
+			return err
+		}
+	}
+
+	if spec.Password == "" {
+		if spec.CredentialsReference == nil {
+			return errors.New("no password or credentials reference specified")
+		}
+
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.NutanixPassword); err != nil {
+			return err
+		}
+	}
+
+	if spec.ClusterName == "" {
+		return errors.New("no cluster name specified")
 	}
 
 	return nil

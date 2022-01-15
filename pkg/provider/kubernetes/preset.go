@@ -282,6 +282,9 @@ func (m *PresetProvider) SetCloudCredentials(userInfo *provider.UserInfo, preset
 	if cloud.Anexia != nil {
 		return m.setAnexiaCredentials(userInfo, presetName, cloud)
 	}
+	if cloud.Nutanix != nil {
+		return m.setNutanixCredentials(userInfo, presetName, cloud)
+	}
 
 	return nil, fmt.Errorf("can not find provider to set credentials")
 }
@@ -523,4 +526,31 @@ func (m *PresetProvider) setAnexiaCredentials(userInfo *provider.UserInfo, prese
 	cloud.Anexia.Token = preset.Spec.Anexia.Token
 	return &cloud, nil
 
+}
+
+func (m *PresetProvider) setNutanixCredentials(userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
+	preset, err := m.GetPreset(userInfo, presetName)
+	if err != nil {
+		return nil, err
+	}
+	if preset.Spec.Nutanix == nil {
+		return nil, emptyCredentialError(presetName, "Nutanix")
+	}
+
+	cloud.Nutanix.Username = preset.Spec.Nutanix.Username
+	cloud.Nutanix.Password = preset.Spec.Nutanix.Password
+
+	if proxyURL := preset.Spec.Nutanix.ProxyURL; proxyURL != "" {
+		cloud.Nutanix.ProxyURL = proxyURL
+	}
+
+	if clusterName := preset.Spec.Nutanix.ClusterName; clusterName != "" {
+		cloud.Nutanix.ClusterName = clusterName
+	}
+
+	if projectName := preset.Spec.Nutanix.ProjectName; projectName != "" {
+		cloud.Nutanix.ProjectName = projectName
+	}
+
+	return &cloud, nil
 }

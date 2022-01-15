@@ -46,3 +46,6 @@ exceptions:
   - github.com/ajeddeloh/go-json # Since it's a fork, https://github.com/golang/go/blob/master/LICENSE
   - github.com/gosimple/slug # MPL-2.0. Required for https://github.com/grafana-tools/sdk
   - github.com/go-sql-driver/mysql # MPL-2.0. Required for https://github.com/grafana/grafana
+  - github.com/embik/nutanix-client-go/pkg/client # MPL-2.0
+  - github.com/embik/nutanix-client-go/pkg/client/v3 # MPL-2.0
+  - github.com/embik/nutanix-client-go/internal/utils # MPL-2.0

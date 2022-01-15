@@ -42,6 +42,7 @@ const (
 	GKECloudProvider          ProviderType = "gke"
 	HetznerCloudProvider      ProviderType = "hetzner"
 	KubevirtCloudProvider     ProviderType = "kubevirt"
+	NutanixCloudProvider      ProviderType = "nutanix"
 	OpenstackCloudProvider    ProviderType = "openstack"
 	PacketCloudProvider       ProviderType = "packet"
 	VSphereCloudProvider      ProviderType = "vsphere"
@@ -67,6 +68,7 @@ var (
 		GKECloudProvider,
 		HetznerCloudProvider,
 		KubevirtCloudProvider,
+		NutanixCloudProvider,
 		OpenstackCloudProvider,
 		PacketCloudProvider,
 		VSphereCloudProvider,
@@ -254,6 +256,8 @@ type DatacenterSpec struct {
 	Kubevirt     *DatacenterSpecKubevirt     `json:"kubevirt,omitempty"`
 	Alibaba      *DatacenterSpecAlibaba      `json:"alibaba,omitempty"`
 	Anexia       *DatacenterSpecAnexia       `json:"anexia,omitempty"`
+	// Nutanix is experimental and unsupported
+	Nutanix *DatacenterSpecNutanix `json:"nutanix,omitempty"`
 
 	//nolint:staticcheck
 	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
@@ -442,6 +446,20 @@ type DatacenterSpecKubevirt struct {
 	// DNSConfig represents the DNS parameters of a pod. Parameters specified here will be merged to the generated DNS
 	// configuration based on DNSPolicy.
 	DNSConfig *corev1.PodDNSConfig `json:"dns_config,omitempty"`
+}
+
+// DatacenterSpecNutanix describes a Nutanix datacenter.
+// NUTANIX IMPLEMENTATION IS EXPERIMENTAL AND UNSUPPORTED.
+type DatacenterSpecNutanix struct {
+	// Endpoint to use for accessing Nutanix Prism Central. No protocol or port should be passed,
+	// for example "nutanix.example.com" or "10.0.0.1"
+	Endpoint string `json:"endpoint"`
+	// Optional: Port to use when connecting to the Nutanix Prism Central endpoint (defaults to 9440)
+	Port *int32 `json:"port,omitempty"`
+	// Optional: AllowInsecure allows to disable the TLS certificate check against the endpoint (defaults to false)
+	AllowInsecure bool `json:"allow_insecure"`
+	// Images to use for each supported operating system
+	Images ImageList `json:"images"`
 }
 
 // DatacenterSpecAlibaba describes a alibaba datacenter.

@@ -51,6 +51,9 @@ type PublicCloudSpec struct {
 	// kubevirt
 	Kubevirt PublicKubevirtCloudSpec `json:"kubevirt,omitempty"`
 
+	// nutanix
+	Nutanix PublicNutanixCloudSpec `json:"nutanix,omitempty"`
+
 	// openstack
 	Openstack *PublicOpenstackCloudSpec `json:"openstack,omitempty"`
 

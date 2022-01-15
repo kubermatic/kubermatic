@@ -29,6 +29,7 @@ import (
 	gce "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types"
 	hetzner "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner/types"
 	kubevirt "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
+	nutanix "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/nutanix/types"
 	openstack "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
@@ -278,6 +279,23 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 				CPUs:       config.CPUs,
 				Memory:     int64(config.Memory),
 				DiskSize:   int64(config.DiskSize),
+			}
+		}
+	case providerconfig.CloudProviderNutanix:
+		{
+			config := &nutanix.RawConfig{}
+			if err := json.Unmarshal(decodedProviderSpec.CloudProviderSpec.Raw, &config); err != nil {
+				return nil, fmt.Errorf("failed to parse nutanix config: %v", err)
+			}
+			cloudSpec.Nutanix = &apiv1.NutanixNodeSpec{
+				SubnetName:     config.SubnetName.Value,
+				ImageName:      config.ImageName.Value,
+				Categories:     config.Categories,
+				CPUs:           config.CPUs,
+				CPUCores:       config.CPUCores,
+				CPUPassthrough: config.CPUPassthrough,
+				MemoryMB:       config.MemoryMB,
+				DiskSize:       config.DiskSize,
 			}
 		}
 	default:
