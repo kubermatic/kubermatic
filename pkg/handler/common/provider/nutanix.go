@@ -17,8 +17,18 @@ limitations under the License.
 package provider
 
 import (
+	"context"
+	"fmt"
+	"net/http"
+
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
+	"k8c.io/kubermatic/v2/pkg/handler/middleware"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	nutanixprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/nutanix"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 type NutanixCredentials struct {
@@ -78,7 +88,11 @@ func ListNutanixSubnets(creds NutanixCredentials, clusterName, projectName strin
 		return nil, err
 	}
 
-	subnetResp, err := nutanixprovider.GetSubnets(clientSet, clusterName, projectName)
+	return listNutanixSubnets(clientSet, clusterName, projectName)
+}
+
+func listNutanixSubnets(client *nutanixprovider.ClientSet, clusterName, projectName string) (apiv1.NutanixSubnetList, error) {
+	subnetResp, err := nutanixprovider.GetSubnets(client, clusterName, projectName)
 	if err != nil {
 		return nil, err
 	}
@@ -93,4 +107,43 @@ func ListNutanixSubnets(creds NutanixCredentials, clusterName, projectName strin
 	}
 
 	return subnets, nil
+}
+
+func NutanixSubnetsWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID, clusterID string) (interface{}, error) {
+	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+
+	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+	if err != nil {
+		return nil, err
+	}
+	if cluster.Spec.Cloud.Nutanix == nil {
+		return nil, errors.NewNotFound("no cloud spec for %s", clusterID)
+	}
+
+	datacenterName := cluster.Spec.Cloud.DatacenterName
+
+	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
+	if !ok {
+		return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+	}
+
+	userInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find Datacenter %q: %v", datacenterName, err)
+	}
+
+	clusterName := cluster.Spec.Cloud.Nutanix.ClusterName
+	projectName := cluster.Spec.Cloud.Nutanix.ProjectName
+
+	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
+	client, err := nutanixprovider.GetClientSet(datacenter.Spec.Nutanix, cluster.Spec.Cloud.Nutanix, secretKeySelector)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get client set: %v", err)
+	}
+
+	return listNutanixSubnets(client, clusterName, projectName)
 }
