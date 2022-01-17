@@ -147,6 +147,10 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				fmt.Sprintf("-node-local-dns-cache=%t", data.NodeLocalDNSCacheEnabled()),
 			}, getNetworkArgs(data)...)
 
+			if data.Cluster().Spec.DebugLog {
+				args = append(args, "-log-debug=true")
+			}
+
 			if data.IsKonnectivityEnabled() {
 				args = append(args, "-konnectivity-enabled=true")
 			}
