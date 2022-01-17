@@ -67,9 +67,9 @@ groups:
       message: The kubernetes apiserver has terminated {{ $value | humanizePercentage }} of its incoming requests.
       runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubeapiterminatedrequests
     expr: |
-      sum(rate(apiserver_request_terminations_total{%(kubeApiserverSelector)s}[10m]))
+      sum(rate(apiserver_request_terminations_total{job="apiserver"}[10m]))
         / 
-      (  sum(rate(apiserver_request_total{%(kubeApiserverSelector)s}[10m])) + sum(rate(apiserver_request_terminations_total{%(kubeApiserverSelector)s}[10m])) ) > 0.20
+      (sum(rate(apiserver_request_total{job="apiserver"}[10m])) + sum(rate(apiserver_request_terminations_total{job="apiserver"}[10m])) ) > 0.20
     for: 5m
     labels:
       severity: warning
@@ -79,9 +79,9 @@ groups:
       message: The kubernetes apiserver has terminated {{ $value | humanizePercentage }} of its incoming requests.
       runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubeapiterminatedrequests
     expr: |
-      sum(rate(apiserver_request_terminations_total{%(kubeApiserverSelector)s}[10m]))
+      sum(rate(apiserver_request_terminations_total{job="apiserver"}[10m]))
         / 
-      (  sum(rate(apiserver_request_total{%(kubeApiserverSelector)s}[10m])) + sum(rate(apiserver_request_terminations_total{%(kubeApiserverSelector)s}[10m])) ) > 0.20
+      (sum(rate(apiserver_request_total{job="apiserver"}[10m])) + sum(rate(apiserver_request_terminations_total{job="apiserver"}[10m])) ) > 0.20
     for: 10m
     labels:
       severity: critical
