@@ -87,6 +87,12 @@ type NutanixSubnetReq struct {
 	ProjectName string `json:"project_name,omitempty"`
 }
 
+// NutanixNoCredentialReq represent a request for Nutanix information with cluster-provided credentials
+// swagger:parameters listNutanixSubnetsNoCredentials
+type NutanixNoCredentialReq struct {
+	common.GetClusterReq
+}
+
 func DecodeNutanixCommonReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req NutanixCommonReq
 
@@ -132,6 +138,18 @@ func DecodeNutanixSubnetReq(c context.Context, r *http.Request) (interface{}, er
 		return nil, fmt.Errorf("'cluster_name' parameter is required")
 	}
 	req.ClusterName = cluster
+
+	return req, nil
+}
+
+func DecodeNutanixNoCredentialReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req NutanixNoCredentialReq
+
+	commonReq, err := common.DecodeGetClusterReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.GetClusterReq = commonReq.(common.GetClusterReq)
 
 	return req, nil
 }
@@ -262,5 +280,12 @@ func NutanixSubnetEndpoint(presetProvider provider.PresetProvider, userInfoGette
 		}
 
 		return subnets, nil
+	}
+}
+
+func NutanixSubnetsWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(NutanixNoCredentialReq)
+		return providercommon.NutanixSubnetsWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID, req.ClusterID)
 	}
 }
