@@ -562,6 +562,7 @@ spec:
                           - packet
                           - gcp
                           - kubevirt
+                          - nutanix
                           - alibaba
                           - anexia
                           - fake

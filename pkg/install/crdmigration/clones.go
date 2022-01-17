@@ -417,6 +417,7 @@ func convertClusterSpec(old kubermaticv1.ClusterSpec) newv1.ClusterSpec {
 			Hetzner:      (*newv1.HetznerCloudSpec)(old.Cloud.Hetzner),
 			Kubevirt:     (*newv1.KubevirtCloudSpec)(old.Cloud.Kubevirt),
 			Packet:       (*newv1.PacketCloudSpec)(old.Cloud.Packet),
+			Nutanix:      (*newv1.NutanixCloudSpec)(old.Cloud.Nutanix),
 		},
 		ClusterNetwork: newv1.ClusterNetworkingConfig{
 			Pods:                     newv1.NetworkRanges(old.ClusterNetwork.Pods),
@@ -1154,6 +1155,17 @@ func clonePresetResourcesInCluster(ctx context.Context, logger logrus.FieldLogge
 			}
 		}
 
+		if oldSpec.Nutanix != nil {
+			newObject.Spec.Nutanix = &newv1.Nutanix{
+				ProviderPreset: newv1.ProviderPreset(oldSpec.Nutanix.ProviderPreset),
+				ProxyURL:       oldSpec.Nutanix.ProxyURL,
+				Username:       oldSpec.Nutanix.Username,
+				Password:       oldSpec.Nutanix.Password,
+				ClusterName:    oldSpec.Nutanix.ClusterName,
+				ProjectName:    oldSpec.Nutanix.ProjectName,
+			}
+		}
+
 		if oldSpec.Openstack != nil {
 			newObject.Spec.Openstack = &newv1.Openstack{
 				ProviderPreset:              newv1.ProviderPreset(oldSpec.Openstack.ProviderPreset),
@@ -1508,6 +1520,15 @@ func convertDatacenter(oldDC kubermaticv1.Datacenter) newv1.Datacenter {
 		newDC.Spec.Kubevirt = &newv1.DatacenterSpecKubevirt{
 			DNSPolicy: oldSpec.Kubevirt.DNSPolicy,
 			DNSConfig: oldSpec.Kubevirt.DNSConfig.DeepCopy(),
+		}
+	}
+
+	if oldSpec.Nutanix != nil {
+		newDC.Spec.Nutanix = &newv1.DatacenterSpecNutanix{
+			Endpoint:      oldSpec.Nutanix.Endpoint,
+			Port:          oldSpec.Nutanix.Port,
+			AllowInsecure: oldSpec.Nutanix.AllowInsecure,
+			Images:        newv1.ImageList(oldSpec.Nutanix.Images),
 		}
 	}
 
