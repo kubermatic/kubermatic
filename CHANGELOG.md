@@ -56,9 +56,9 @@ TBD
 - Integrating Operating System Manager in KKP ([#8473](https://github.com/kubermatic/kubermatic/issues/8473))
 - Validating webhooks for OSM resources, OperatingSystemProfile and OperatingSystemConfig ([#8503](https://github.com/kubermatic/kubermatic/issues/8503))
 - Deploy OSM CRDs in KKP seed clusters ([#8528](https://github.com/kubermatic/kubermatic/issues/8528))
-- Introduce new field enableOperatingSystemManager in Cluster and ClusterTemplate CRD specification  
-  use-osm flag is passed to machine-controller and machine-controller webhooks in case OSM is enabled  
-  API integration for OSM ([#8523](https://github.com/kubermatic/kubermatic/issues/8523))
+- Introduce new field enableOperatingSystemManager in Cluster and ClusterTemplate CRD specification:  
+  - use-osm flag is passed to machine-controller and machine-controller webhooks in case OSM is enabled  
+  - API integration for OSM ([#8523](https://github.com/kubermatic/kubermatic/issues/8523))
 - CRDs for OSP and OSC are updated in kubermatic-operator  
   kubermatic-operator chart bumped to v0.3.37 ([#8573](https://github.com/kubermatic/kubermatic/issues/8573))
 
