@@ -124,6 +124,9 @@ type ClusterSpec struct {
 	// PauseReason is the reason why the cluster is no being managed.
 	PauseReason string `json:"pauseReason,omitempty"`
 
+	// DebugLog enables more verbose logging by KKP's usercluster-controller-manager.
+	DebugLog bool `json:"debugLog,omitempty"`
+
 	// Optional component specific overrides
 	ComponentsOverride ComponentSettings `json:"componentsOverride"`
 
