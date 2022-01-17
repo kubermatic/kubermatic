@@ -618,6 +618,7 @@ type CloudSpec struct {
 	Kubevirt     *KubevirtCloudSpec     `json:"kubevirt,omitempty"`
 	Alibaba      *AlibabaCloudSpec      `json:"alibaba,omitempty"`
 	Anexia       *AnexiaCloudSpec       `json:"anexia,omitempty"`
+	Nutanix      *NutanixCloudSpec      `json:"nutanix,omitempty"`
 }
 
 // KeyCert is a pair of key and cert.
@@ -840,6 +841,23 @@ type AnexiaCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
 	Token string `json:"token,omitempty"`
+}
+
+// NutanixCloudSpec specifies the access data to Nutanix.
+// NUTANIX IMPLEMENTATION IS EXPERIMENTAL AND UNSUPPORTED.
+type NutanixCloudSpec struct {
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+
+	// ClusterName is the Nutanix cluster that this user cluster will be deployed to.
+	ClusterName string `json:"clusterName"`
+
+	// ProjectName is the project that this cluster is deployed into. If none is given, no project will be used.
+	// +optional
+	ProjectName string `json:"projectName,omitempty"`
+
+	ProxyURL string `json:"proxyURL,omitempty"`
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=HealthStatusDown;HealthStatusUp;HealthStatusProvisioning
