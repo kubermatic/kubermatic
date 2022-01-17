@@ -154,7 +154,10 @@ func waitUntilUpdateIsInCacheConditionFunc(
 			klog.Errorf("failed retrieving object %T %s while waiting for the cache to contain our latest changes: %v", currentObj, namespacedName, err)
 			return false, nil
 		}
-		// Check if the object from the store differs the old object
+
+		// Check if the object from the store differs the old object;
+		// We are waiting for the resourceVersion/generation to change
+		// and for this new version to be then present in our cache.
 		if !DeepEqual(currentObj.(metav1.Object), oldObj.(metav1.Object)) {
 			return true, nil
 		}
