@@ -37,19 +37,18 @@ TBD
 ### New and Enhanced Features
 
 #### External Cluster
-- endpoint to get external cluster upgrades ([#8115](https://github.com/kubermatic/kubermatic/issues/8115))
-- new endpoint to list external cluster machine deployments ([#8200](https://github.com/kubermatic/kubermatic/issues/8200))
-- Add PATCH endpoint for external cluster ([#8135](https://github.com/kubermatic/kubermatic/issues/8135))
+- endpoint to get external cluster upgrades `GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/upgrades` ([#8115](https://github.com/kubermatic/kubermatic/issues/8115))
+- new endpoint to list external cluster machine deployments `GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments` ([#8200](https://github.com/kubermatic/kubermatic/issues/8200))
+- Add PATCH endpoint for external cluster `PATCH /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}`([#8135](https://github.com/kubermatic/kubermatic/issues/8135))
 - new endpoint to list External MD Metrics: `/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/metrics` ([#8239](https://github.com/kubermatic/kubermatic/issues/8239))
 - Manage AKS Clusters natively. Extend external cluster functionality to import existing AKS cluster ([#8244](https://github.com/kubermatic/kubermatic/issues/8244))
 - Create AKS nodePool ([#8399](https://github.com/kubermatic/kubermatic/issues/8399))
-- Upgrade AKS NodePool Kubernetes version  
-  Scale AKS NodePool
-  Get AKS NodePool machineDeployments and nodes
-  Delete AKS NodePool ([#8349](https://github.com/kubermatic/kubermatic/issues/8349))
+- Upgrade AKS NodePool Kubernetes version  ([#8349](https://github.com/kubermatic/kubermatic/issues/8349))
+- Scale AKS NodePool ([#8349](https://github.com/kubermatic/kubermatic/issues/8349))
+- Get AKS NodePool machineDeployments and nodes([#8349](https://github.com/kubermatic/kubermatic/issues/8349))
+- Delete AKS NodePool ([#8349](https://github.com/kubermatic/kubermatic/issues/8349))
+- Modified GET `/providers/aks/clusters` => `/projects/{project_id}/providers/aks/clusters` ([#8423](https://github.com/kubermatic/kubermatic/issues/8423))
 - GET `/providers/eks/clusters` => `/projects/{project_id}/providers/eks/clusters` ([#8423](https://github.com/kubermatic/kubermatic/issues/8423))
-- Adds GET `/api/v2/providers/eks/clusters` ([#8045](https://github.com/kubermatic/kubermatic/issues/8045))
-- GET `/api/v2/providers/aks/clusters` to list Azure AKS clusters ([#8299](https://github.com/kubermatic/kubermatic/issues/8299))
 - Adds GET Endpoint `/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/kubeconfig` ([#8122](https://github.com/kubermatic/kubermatic/issues/8122))
 
 
@@ -133,12 +132,9 @@ TBD
 #### Microsoft Azure
 - Open Azure Network Security Group for external traffic to NodePort port ranges ([#7966](https://github.com/kubermatic/kubermatic/issues/7966))
 - Azure cloud resources are periodically reconciled ([#8213](https://github.com/kubermatic/kubermatic/issues/8213))
-- Modified GET "/providers/aks/clusters" => "/projects/{project_id}/providers/aks/clusters" ([#8423](https://github.com/kubermatic/kubermatic/issues/8423))
-
 
 #### OpenStack
 - Add support for Openstack authentication with `project name` and  `project id`. `tenant name`  and `tenant id`  are deprecated ([#8211](https://github.com/kubermatic/kubermatic/issues/8211))
-
 
 #### VMware vSphere
 - Support latest vSphere Cloud Controller Manager and  CSI driver for Kubernetes 1.22 ([#8505](https://github.com/kubermatic/kubermatic/issues/8505))
