@@ -298,6 +298,36 @@ spec:
                               - None
                               type: string
                           type: object
+                        nutanix:
+                          description: Nutanix is experimental and unsupported
+                          properties:
+                            allowInsecure:
+                              description: 'Optional: AllowInsecure allows to disable
+                                the TLS certificate check against the endpoint (defaults
+                                to false)'
+                              type: boolean
+                            endpoint:
+                              description: Endpoint to use for accessing Nutanix Prism
+                                Central. No protocol or port should be passed, for
+                                example "nutanix.example.com" or "10.0.0.1"
+                              type: string
+                            images:
+                              additionalProperties:
+                                type: string
+                              description: Images to use for each supported operating
+                                system
+                              type: object
+                            port:
+                              description: 'Optional: Port to use when connecting
+                                to the Nutanix Prism Central endpoint (defaults to
+                                9440)'
+                              format: int32
+                              type: integer
+                          required:
+                          - allowInsecure
+                          - endpoint
+                          - images
+                          type: object
                         openstack:
                           description: DatacenterSpecOpenstack describes an OpenStack
                             datacenter

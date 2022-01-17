@@ -250,6 +250,27 @@ spec:
                 required:
                 - kubeconfig
                 type: object
+              nutanix:
+                properties:
+                  clusterName:
+                    type: string
+                  datacenter:
+                    type: string
+                  enabled:
+                    type: boolean
+                  password:
+                    type: string
+                  projectName:
+                    type: string
+                  proxyURL:
+                    type: string
+                  username:
+                    type: string
+                required:
+                - password
+                - proxyURL
+                - username
+                type: object
               openstack:
                 properties:
                   applicationCredentialID:
