@@ -213,6 +213,18 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listAnexiaTemplates())
 
 	mux.Methods(http.MethodGet).
+		Path("/providers/nutanix/clusters").
+		Handler(r.listNutanixClusters())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/nutanix/projects").
+		Handler(r.listNutanixProjects())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/nutanix/{cluster_name}/subnets").
+		Handler(r.listNutanixSubnets())
+
+	mux.Methods(http.MethodGet).
 		Path("/providers/{provider_name}/presets/credentials").
 		Handler(r.listCredentials())
 
@@ -566,6 +578,20 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/alibaba/zones").
 		Handler(r.listAlibabaZonesNoCredentials())
+
+		/*
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/nutanix/clusters").
+				Handler(r.listNutanixClustersNoCredentials())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/nutanix/projects").
+				Handler(r.listNutanixProjectsNoCredentials())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/nutanix/subnets").
+				Handler(r.listNutanixSubnetsNoCredentials())
+		*/
 
 	//
 	// Defines a set of kubernetes-dashboard-specific endpoints
@@ -1376,6 +1402,72 @@ func (r Routing) listAnexiaTemplates() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.AnexiaTemplateEndpoint(r.presetProvider, r.userInfoGetter)),
 		provider.DecodeAnexiaTemplateReq,
+		EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/providers/nutanix/clusters nutanix listNutanixClusters
+//
+// List clusters from nutanix
+//
+//      Produces:
+//      - application/json
+//
+//      Responses:
+//      default: errorResponse
+//      200: NutanixClusterList
+func (r Routing) listNutanixClusters() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.NutanixSubnetEndpoint(r.presetProvider, r.userInfoGetter)),
+		provider.DecodeNutanixCommonReq,
+		EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/providers/nutanix/clusters nutanix listNutanixClusters
+//
+// List clusters from nutanix
+//
+//      Produces:
+//      - application/json
+//
+//      Responses:
+//      default: errorResponse
+//      200: NutanixClusterList
+func (r Routing) listNutanixProjects() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.NutanixProjectEndpoint(r.presetProvider, r.userInfoGetter)),
+		provider.DecodeNutanixCommonReq,
+		EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/providers/nutanix/{cluster}/subnets nutanix listNutanixSubnets
+//
+// List subnets from nutanix
+//
+//      Produces:
+//      - application/json
+//
+//      Responses:
+//      default: errorResponse
+//      200: NutanixSubnetList
+func (r Routing) listNutanixSubnets() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.NutanixSubnetEndpoint(r.presetProvider, r.userInfoGetter)),
+		provider.DecodeNutanixSubnetReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
