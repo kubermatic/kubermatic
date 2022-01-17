@@ -75,7 +75,7 @@ TBD
 - Extended Seed and EtcdBackupConfig API with multiple etcd backup destinations support ([#8228](https://github.com/kubermatic/kubermatic/issues/8228))
 - EtcdRestore now supports multiple backup destinations. As there are multiple destinations, destination name needs to be provided alongside the usual backup name ([#8316](https://github.com/kubermatic/kubermatic/issues/8316))
 - Etcd backups now support multiple destinations, which can be configured per Seed. If a destination is set for an EtcdBackupConfig, it will be used instead of the legacy `backup-s3` credentials secret and `s3-settings` backup bucket details ([#8283](https://github.com/kubermatic/kubermatic/issues/8283))
-
+- Added support for setting a default etcd backup destination when using the new multiple etcd backup destinations feature. The default destination is used for the default EtcdBackupConfig which is created for each user cluster when automatic etcd backups are configured for a Seed ([#8628](https://github.com/kubermatic/kubermatic/issues/8628))
 
 #### User Cluster Monitoring, Logging and Alerting
 - add Prometheus scraping if minio is running with TLS ([#8467](https://github.com/kubermatic/kubermatic/issues/8467))
@@ -146,6 +146,8 @@ TBD
 - Add API endpoints for Kubevirt VirtualMachineInstancePresets and StorageClasses ([#8441](https://github.com/kubermatic/kubermatic/issues/8441))
 - Support for KubeVirt CSI driver ([#8416](https://github.com/kubermatic/kubermatic/issues/8416))
 
+### Nutanix
+- Add experimental/alpha cloud provider support for Nutanix ([#8448](https://github.com/kubermatic/kubermatic/issues/8448))
 
 ### Mics
 - Add tolerations to user cluster system daemonsets ([#8425](https://github.com/kubermatic/kubermatic/issues/8425))
@@ -167,15 +169,21 @@ TBD
   - PATCH `/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}` ([#8224](https://github.com/kubermatic/kubermatic/issues/8224))
 - Profiling endpoints on control plane components have been disabled ([#8110](https://github.com/kubermatic/kubermatic/issues/8110))
 - cert-manager's upgrade will reinstall the chart cleanly, existing ClusterIssuers created by a helm chart will be recreated ([#8555](https://github.com/kubermatic/kubermatic/issues/8555))
+- KKP Installer will now check that all userclusters match the given versioning configuration prior to upgrading KKP. This ensures no userclusters are suddenly "orphaned" and incompatible with KKP ([#8670](https://github.com/kubermatic/kubermatic/issues/8670))
 
 
 ### Bugfixes
+
+#### Open Policy Agent Integration
+- Fix for AllowedRegistry Constraint parameters being badly parsed, causing the Constraint not to work ([#8722](https://github.com/kubermatic/kubermatic/issues/8722))
+
 ####  Backup & Restore
 - Fix for issue with EtcdBackupConfigs from multiple clusters having the same ID, which was causing a bug in the UI ([#7896](https://github.com/kubermatic/kubermatic/issues/7896))
 - Fix minio chart template to correctly reference 'certificateSecret' value for TLS setup ([#8234](https://github.com/kubermatic/kubermatic/issues/8234))
 
 #### User Cluster Monitoring, Logging and Alerting
 - Fixed user cluster MLA certificate issue by LoadBalancer expose strategy ([#7877](https://github.com/kubermatic/kubermatic/issues/7877))
+- Fix Grafana dashboard for MinIO to display the correct Prometheus metrics ([#8687](https://github.com/kubermatic/kubermatic/issues/8687))
 
 ### Metering 
 - Fix some hardcoded Docker images for seed-proxy and metering components ([#8615](https://github.com/kubermatic/kubermatic/issues/8615))
@@ -227,6 +235,7 @@ TBD
 - machine-controller is updated to v1.41.0 ([#8590](https://github.com/kubermatic/kubermatic/issues/8590))
 - machine-controller updated to v1.41.1  
   operating-system-manager updated to v0.3.6 ([#8693](https://github.com/kubermatic/kubermatic/issues/8693))
+- Update machine-controller to v1.42.0 ([#8731](https://github.com/kubermatic/kubermatic/issues/8731))
 - Removed support for Kubernetes 1.19 ([#8167](https://github.com/kubermatic/kubermatic/issues/8167))
 - Add support for Kubernetes 1.22.5, 1.21.8, and 1.20.14  
   Automatically upgrade clusters running Kubernetes 1.21 to 1.21.8 to include fixes for CVE-2021-44716 and CVE-2021-44717  
