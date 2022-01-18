@@ -1,3 +1,5 @@
+//go:build e2e
+
 /*
 Copyright 2020 The Kubermatic Kubernetes Platform contributors.
 
@@ -29,6 +31,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/ccm-migration/providers"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/ccm-migration/utils"
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"

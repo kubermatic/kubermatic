@@ -1342,6 +1342,11 @@ presubmits:
               value: openstack
             - name: VERSION_TO_TEST
               value: "v1.22.5"
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
           command:
             - ./hack/run-ccm-migration-e2e-test-in-kind.sh
           # docker-in-docker needs privileged mode
@@ -1379,6 +1384,11 @@ presubmits:
               value: vsphere
             - name: VERSION_TO_TEST
               value: "v1.22.5"
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
           command:
             - ./hack/run-ccm-migration-e2e-test-in-kind.sh
           # docker-in-docker needs privileged mode
