@@ -55,7 +55,7 @@ const (
 	clusterIPUnknownRetryTimeout = 5 * time.Second
 )
 
-func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *kubermaticv1.Cluster, namespace *corev1.Namespace) (*reconcile.Result, error) {
 	seed, err := r.seedGetter()
 	if err != nil {
 		return nil, err
@@ -94,7 +94,7 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return nil, err
 	}
 
-	if err := r.ensureRBAC(ctx, cluster); err != nil {
+	if err := r.ensureRBAC(ctx, cluster, namespace); err != nil {
 		return nil, err
 	}
 
@@ -225,19 +225,23 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 }
 
 // ensureNamespaceExists will create the cluster namespace
-func (r *Reconciler) ensureNamespaceExists(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+func (r *Reconciler) ensureNamespaceExists(ctx context.Context, cluster *kubermaticv1.Cluster) (*corev1.Namespace, error) {
 	if cluster.Status.NamespaceName == "" {
 		err := r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
 			c.Status.NamespaceName = fmt.Sprintf("cluster-%s", c.Name)
 		})
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	ns := &corev1.Namespace{}
-	if err := r.Get(ctx, types.NamespacedName{Name: cluster.Status.NamespaceName}, ns); !errors.IsNotFound(err) {
-		return err
+	err := r.Get(ctx, types.NamespacedName{Name: cluster.Status.NamespaceName}, ns)
+	if err == nil {
+		return ns, nil // found it
+	}
+	if !errors.IsNotFound(err) {
+		return nil, err // something bad happened when trying to get the namespace
 	}
 
 	ns = &corev1.Namespace{
@@ -246,11 +250,11 @@ func (r *Reconciler) ensureNamespaceExists(ctx context.Context, cluster *kuberma
 			OwnerReferences: []metav1.OwnerReference{r.getOwnerRefForCluster(cluster)},
 		},
 	}
-	if err := r.Client.Create(ctx, ns); err != nil {
-		return fmt.Errorf("failed to create Namespace %s: %v", cluster.Status.NamespaceName, err)
+	if err := r.Create(ctx, ns); err != nil {
+		return nil, fmt.Errorf("failed to create Namespace %s: %v", cluster.Status.NamespaceName, err)
 	}
 
-	return nil
+	return ns, nil
 }
 
 // GetServiceCreators returns all service creators that are currently in use
@@ -447,9 +451,9 @@ func (r *Reconciler) ensureRoleBindings(ctx context.Context, c *kubermaticv1.Clu
 	return nil
 }
 
-func (r *Reconciler) ensureClusterRoles(ctx context.Context) error {
+func (r *Reconciler) ensureClusterRoles(ctx context.Context, namespace *corev1.Namespace) error {
 	namedClusterRoleCreatorGetters := []reconciling.NamedClusterRoleCreatorGetter{
-		usercluster.ClusterRoleCreator,
+		usercluster.ClusterRole(namespace),
 	}
 	if err := reconciling.ReconcileClusterRoles(ctx, namedClusterRoleCreatorGetters, "", r.Client); err != nil {
 		return fmt.Errorf("failed to ensure Cluster Roles: %v", err)
@@ -458,9 +462,9 @@ func (r *Reconciler) ensureClusterRoles(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) ensureClusterRoleBindings(ctx context.Context, c *kubermaticv1.Cluster) error {
+func (r *Reconciler) ensureClusterRoleBindings(ctx context.Context, c *kubermaticv1.Cluster, namespace *corev1.Namespace) error {
 	namedClusterRoleBindingsCreatorGetters := []reconciling.NamedClusterRoleBindingCreatorGetter{
-		usercluster.ClusterRoleBinding(c.Status.NamespaceName),
+		usercluster.ClusterRoleBinding(namespace),
 	}
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, namedClusterRoleBindingsCreatorGetters, "", r.Client); err != nil {
 		return fmt.Errorf("failed to ensure Cluster Role Bindings: %v", err)
@@ -700,7 +704,7 @@ func (r *Reconciler) ensureKonnectivitySetupIsRemoved(ctx context.Context, data 
 	return nil
 }
 
-func (r *Reconciler) ensureRBAC(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+func (r *Reconciler) ensureRBAC(ctx context.Context, cluster *kubermaticv1.Cluster, namespace *corev1.Namespace) error {
 	if err := r.ensureServiceAccounts(ctx, cluster); err != nil {
 		return err
 	}
@@ -713,11 +717,11 @@ func (r *Reconciler) ensureRBAC(ctx context.Context, cluster *kubermaticv1.Clust
 		return err
 	}
 
-	if err := r.ensureClusterRoles(ctx); err != nil {
+	if err := r.ensureClusterRoles(ctx, namespace); err != nil {
 		return err
 	}
 
-	if err := r.ensureClusterRoleBindings(ctx, cluster); err != nil {
+	if err := r.ensureClusterRoleBindings(ctx, cluster, namespace); err != nil {
 		return err
 	}
 
