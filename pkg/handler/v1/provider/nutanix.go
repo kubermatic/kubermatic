@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
@@ -33,17 +32,10 @@ import (
 )
 
 type NutanixCommonReq struct {
-	// in: header
-	// name: NutanixEndpoint
-	Endpoint string
-
-	// in: header
-	// name: NutanixPort
-	Port int32
-
-	// in: header
-	// name: AllowInsecure
-	AllowInsecure *bool
+	// KKP Datacenter to use for endpoint
+	// in: path
+	// required: true
+	DC string `json:"dc"`
 
 	// in: header
 	// name: NutanixUsername
@@ -96,29 +88,16 @@ type NutanixNoCredentialReq struct {
 func DecodeNutanixCommonReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req NutanixCommonReq
 
-	req.Endpoint = r.Header.Get("NutanixEndpoint")
 	req.Username = r.Header.Get("NutanixUsername")
 	req.Password = r.Header.Get("NutanixPassword")
-	req.ProxyURL = r.Header.Get("ProxyURL")
+	req.ProxyURL = r.Header.Get("NutanixProxyURL")
 	req.Credential = r.Header.Get("Credential")
 
-	portHeader := r.Header.Get("NutanixPort")
-	if portHeader != "" {
-		port, err := strconv.Atoi(r.Header.Get("NutanixPort"))
-		if err != nil {
-			return nil, err
-		}
-		req.Port = int32(port)
+	dc, ok := mux.Vars(r)["dc"]
+	if !ok {
+		return nil, fmt.Errorf("'dc' parameter is required")
 	}
-
-	allowInsecureHeader := r.Header.Get("AllowInsecure")
-	if allowInsecureHeader != "" {
-		allowInsecure, err := strconv.ParseBool(r.Header.Get("AllowInsecure"))
-		if err != nil {
-			return nil, err
-		}
-		req.AllowInsecure = &allowInsecure
-	}
+	req.DC = dc
 
 	return req, nil
 }
@@ -155,20 +134,14 @@ func DecodeNutanixNoCredentialReq(c context.Context, r *http.Request) (interface
 }
 
 // NutanixClusterEndpoint handles the request for a list of clusters, using provided credentials
-func NutanixClusterEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func NutanixClusterEndpoint(presetProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(NutanixCommonReq)
 
 		creds := providercommon.NutanixCredentials{
-			Endpoint:      req.Endpoint,
-			AllowInsecure: req.AllowInsecure,
-			ProxyURL:      req.ProxyURL,
-			Username:      req.Username,
-			Password:      req.Password,
-		}
-
-		if req.Port != 0 {
-			creds.Port = &req.Port
+			ProxyURL: req.ProxyURL,
+			Username: req.Username,
+			Password: req.Password,
 		}
 
 		userInfo, err := userInfoGetter(ctx, "")
@@ -188,7 +161,15 @@ func NutanixClusterEndpoint(presetProvider provider.PresetProvider, userInfoGett
 			}
 		}
 
-		clusters, err := providercommon.ListNutanixClusters(creds)
+		_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, req.DC)
+		if err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+		if dc.Spec.Nutanix == nil {
+			return nil, errors.NewBadRequest("datacenter '%s' is not a Nutanix datacenter", req.DC)
+		}
+
+		clusters, err := providercommon.ListNutanixClusters(creds, dc.Spec.Nutanix)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("cannot list clusters: %s", err.Error()))
 		}
@@ -198,20 +179,14 @@ func NutanixClusterEndpoint(presetProvider provider.PresetProvider, userInfoGett
 }
 
 // NutanixProjectEndpoint handles the request for a list of projects, using provided credentials
-func NutanixProjectEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func NutanixProjectEndpoint(presetProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(NutanixCommonReq)
 
 		creds := providercommon.NutanixCredentials{
-			Endpoint:      req.Endpoint,
-			AllowInsecure: req.AllowInsecure,
-			ProxyURL:      req.ProxyURL,
-			Username:      req.Username,
-			Password:      req.Password,
-		}
-
-		if req.Port != 0 {
-			creds.Port = &req.Port
+			ProxyURL: req.ProxyURL,
+			Username: req.Username,
+			Password: req.Password,
 		}
 
 		userInfo, err := userInfoGetter(ctx, "")
@@ -231,7 +206,15 @@ func NutanixProjectEndpoint(presetProvider provider.PresetProvider, userInfoGett
 			}
 		}
 
-		projects, err := providercommon.ListNutanixProjects(creds)
+		_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, req.DC)
+		if err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+		if dc.Spec.Nutanix == nil {
+			return nil, errors.NewBadRequest("datacenter '%s' is not a Nutanix datacenter", req.DC)
+		}
+
+		projects, err := providercommon.ListNutanixProjects(creds, dc.Spec.Nutanix)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("cannot list projects: %s", err.Error()))
 		}
@@ -241,20 +224,14 @@ func NutanixProjectEndpoint(presetProvider provider.PresetProvider, userInfoGett
 }
 
 // NutanixSubnetEndpoint handles the request for a list of subnets on a specific Nutanix cluster, using provided credentials
-func NutanixSubnetEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func NutanixSubnetEndpoint(presetProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(NutanixSubnetReq)
 
 		creds := providercommon.NutanixCredentials{
-			Endpoint:      req.Endpoint,
-			AllowInsecure: req.AllowInsecure,
-			ProxyURL:      req.ProxyURL,
-			Username:      req.Username,
-			Password:      req.Password,
-		}
-
-		if req.Port != 0 {
-			creds.Port = &req.Port
+			ProxyURL: req.ProxyURL,
+			Username: req.Username,
+			Password: req.Password,
 		}
 
 		userInfo, err := userInfoGetter(ctx, "")
@@ -274,7 +251,15 @@ func NutanixSubnetEndpoint(presetProvider provider.PresetProvider, userInfoGette
 			}
 		}
 
-		subnets, err := providercommon.ListNutanixSubnets(creds, req.ClusterName, req.ProjectName)
+		_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, req.DC)
+		if err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+		if dc.Spec.Nutanix == nil {
+			return nil, errors.NewBadRequest("datacenter '%s' is not a Nutanix datacenter", req.DC)
+		}
+
+		subnets, err := providercommon.ListNutanixSubnets(creds, dc.Spec.Nutanix, req.ClusterName, req.ProjectName)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("cannot list subnets: %s", err.Error()))
 		}

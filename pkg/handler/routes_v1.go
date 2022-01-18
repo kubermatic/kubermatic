@@ -213,15 +213,15 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listAnexiaTemplates())
 
 	mux.Methods(http.MethodGet).
-		Path("/providers/nutanix/clusters").
+		Path("/providers/nutanix/{dc}/clusters").
 		Handler(r.listNutanixClusters())
 
 	mux.Methods(http.MethodGet).
-		Path("/providers/nutanix/projects").
+		Path("/providers/nutanix/{dc}/projects").
 		Handler(r.listNutanixProjects())
 
 	mux.Methods(http.MethodGet).
-		Path("/providers/nutanix/{cluster_name}/subnets").
+		Path("/providers/nutanix/{dc}/{cluster_name}/subnets").
 		Handler(r.listNutanixSubnets())
 
 	mux.Methods(http.MethodGet).
@@ -1397,9 +1397,9 @@ func (r Routing) listAnexiaTemplates() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/providers/nutanix/clusters nutanix listNutanixClusters
+// swagger:route GET /api/v1/providers/nutanix/{dc}/clusters nutanix listNutanixClusters
 //
-// List clusters from nutanix
+// List clusters from Nutanix
 //
 //      Produces:
 //      - application/json
@@ -1412,16 +1412,16 @@ func (r Routing) listNutanixClusters() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.NutanixSubnetEndpoint(r.presetProvider, r.userInfoGetter)),
+		)(provider.NutanixSubnetEndpoint(r.presetProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeNutanixCommonReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
 
-// swagger:route GET /api/v1/providers/nutanix/clusters nutanix listNutanixClusters
+// swagger:route GET /api/v1/providers/nutanix/{dc}/projects nutanix listNutanixProjects
 //
-// List clusters from nutanix
+// List projects from Nutanix
 //
 //      Produces:
 //      - application/json
@@ -1434,16 +1434,16 @@ func (r Routing) listNutanixProjects() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.NutanixProjectEndpoint(r.presetProvider, r.userInfoGetter)),
+		)(provider.NutanixProjectEndpoint(r.presetProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeNutanixCommonReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
 
-// swagger:route GET /api/v1/providers/nutanix/{cluster_name}/subnets nutanix listNutanixSubnets
+// swagger:route GET /api/v1/providers/nutanix/{dc}/{cluster_name}/subnets nutanix listNutanixSubnets
 //
-// List subnets from nutanix
+// List subnets from Nutanix
 //
 //      Produces:
 //      - application/json
@@ -1456,7 +1456,7 @@ func (r Routing) listNutanixSubnets() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.NutanixSubnetEndpoint(r.presetProvider, r.userInfoGetter)),
+		)(provider.NutanixSubnetEndpoint(r.presetProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeNutanixSubnetReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
