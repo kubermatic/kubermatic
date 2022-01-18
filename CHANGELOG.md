@@ -1,5 +1,20 @@
 # Kubermatic 2.18
 
+## [v2.18.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.5)
+
+### Bugfixes
+
+- Fix PodDisruptionBudgets for master/seed-controller-manager blocking node rotations ([#8672](https://github.com/kubermatic/kubermatic/issues/8672))
+- Fix vSphere clusters getting stuck after CSI migration due to bad ValidatingWebhookConfiguration reconciling ([#8738](https://github.com/kubermatic/kubermatic/issues/8738))
+
+### Misc
+
+- Upgrade etcd to 3.5.1 for Kubernetes 1.22 (and higher) ([#8563](https://github.com/kubermatic/kubermatic/issues/8563))
+- Add `spec.debugLog` field to `Cluster` objects to toggle the verbose log on the usercluster-controller-manager ([#8735](https://github.com/kubermatic/kubermatic/issues/8735))
+
+
+
+
 ## [v2.18.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.4)
 
 ### Bugfixes
@@ -20,6 +35,9 @@
 
 - Add tolerations to user cluster system daemonsets ([#8425](https://github.com/kubermatic/kubermatic/issues/8425))
 - Add seed dns overwrite option to mla links ([#3912](https://github.com/kubermatic/dashboard/issues/3912))
+
+
+
 
 ## [v2.18.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.3)
 
