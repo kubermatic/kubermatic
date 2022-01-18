@@ -7392,9 +7392,9 @@
         }
       }
     },
-    "/api/v1/providers/nutanix/clusters": {
+    "/api/v1/providers/nutanix/{dc}/clusters": {
       "get": {
-        "description": "List clusters from nutanix",
+        "description": "List clusters from Nutanix",
         "produces": [
           "application/json"
         ],
@@ -7405,19 +7405,11 @@
         "parameters": [
           {
             "type": "string",
-            "name": "Endpoint",
-            "in": "header"
-          },
-          {
-            "type": "integer",
-            "format": "int32",
-            "name": "Port",
-            "in": "header"
-          },
-          {
-            "type": "boolean",
-            "name": "AllowInsecure",
-            "in": "header"
+            "x-go-name": "DC",
+            "description": "KKP Datacenter to use for endpoint",
+            "name": "dc",
+            "in": "path",
+            "required": true
           },
           {
             "type": "string",
@@ -7456,9 +7448,35 @@
         }
       }
     },
-    "/api/v1/providers/nutanix/{cluster_name}/subnets": {
+    "/api/v1/providers/nutanix/{dc}/projects": {
       "get": {
-        "description": "List subnets from nutanix",
+        "description": "List projects from Nutanix",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "nutanix"
+        ],
+        "operationId": "listNutanixProjects",
+        "responses": {
+          "200": {
+            "description": "NutanixClusterList",
+            "schema": {
+              "$ref": "#/definitions/NutanixClusterList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/providers/nutanix/{dc}/{cluster_name}/subnets": {
+      "get": {
+        "description": "List subnets from Nutanix",
         "produces": [
           "application/json"
         ],
@@ -7469,19 +7487,11 @@
         "parameters": [
           {
             "type": "string",
-            "name": "Endpoint",
-            "in": "header"
-          },
-          {
-            "type": "integer",
-            "format": "int32",
-            "name": "Port",
-            "in": "header"
-          },
-          {
-            "type": "boolean",
-            "name": "AllowInsecure",
-            "in": "header"
+            "x-go-name": "DC",
+            "description": "KKP Datacenter to use for endpoint",
+            "name": "dc",
+            "in": "path",
+            "required": true
           },
           {
             "type": "string",
@@ -13191,13 +13201,6 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
-          },
-          {
-            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -13209,6 +13212,13 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
           }
         ],
         "responses": {
