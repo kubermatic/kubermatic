@@ -1,5 +1,3 @@
-//go:build e2e
-
 /*
 Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 
@@ -20,6 +18,7 @@ package ccmmigration
 
 import (
 	"flag"
+	"os"
 	"testing"
 
 	"github.com/onsi/ginkgo"
@@ -36,6 +35,8 @@ type testOptions struct {
 	debugLog          bool
 	kubernetesVersion semver.Semver
 
+	provider string
+
 	vsphereSeedDatacenter string
 	osSeedDatacenter      string
 
@@ -44,13 +45,14 @@ type testOptions struct {
 }
 
 var options = testOptions{
-	kubernetesVersion: *semver.NewSemverOrDie("v1.21.7"),
+	kubernetesVersion: *semver.NewSemverOrDie(os.Getenv("VERSION_TO_TEST")),
 }
 
 func init() {
-	flag.Var(&options.kubernetesVersion, "kubernetes-version", "Kubernetes version for the user cluster")
 	flag.BoolVar(&options.debugLog, "debug-log", false, "Activate debug logs.")
 	flag.BoolVar(&options.skipCleanup, "skip-cleanup", false, "Skip clean-up of resources.")
+
+	flag.StringVar(&options.provider, "provider", "", "Cloud provider to test")
 
 	flag.StringVar(&options.osSeedDatacenter, "openstack-seed-datacenter", "", "openstack datacenter")
 	flag.StringVar(&options.vsphereSeedDatacenter, "vsphere-seed-datacenter", "", "vsphere seed datacenter")
@@ -69,7 +71,6 @@ func init() {
 	flag.StringVar(&options.vSphereCredentials.Password, "vsphere-password", "", "vsphere password")
 	flag.StringVar(&options.vSphereCredentials.Datacenter, "vsphere-datacenter", "", "vsphere datacenter")
 	flag.StringVar(&options.vSphereCredentials.Cluster, "vsphere-cluster", "", "vsphere cluster")
-
 }
 
 func TestCCMMigration(t *testing.T) {

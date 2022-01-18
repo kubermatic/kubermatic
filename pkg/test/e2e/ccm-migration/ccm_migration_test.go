@@ -1,5 +1,3 @@
-//go:build e2e
-
 /*
 Copyright 2020 The Kubermatic Kubernetes Platform contributors.
 
@@ -61,6 +59,9 @@ var _ = ginkgo.Describe("CCM migration", func() {
 		)
 
 		ginkgo.BeforeEach(func() {
+			if options.provider != string(kubermaticv1.VSphereCloudProvider) {
+				ginkgo.Skip("skipping vsphere test")
+			}
 			vsphereCluster = &kubermaticv1.Cluster{}
 			clusterJig = providers.NewClusterJigVsphere(seedClient, options.kubernetesVersion, options.vsphereSeedDatacenter, options.vSphereCredentials)
 			userClient = setupAndGetUserClient(clusterJig, vsphereCluster, clusterClientProvider)
@@ -81,6 +82,9 @@ var _ = ginkgo.Describe("CCM migration", func() {
 		)
 
 		ginkgo.BeforeEach(func() {
+			if options.provider != string(kubermaticv1.OpenstackCloudProvider) {
+				ginkgo.Skip("skipping vsphere test")
+			}
 			openstackCluster = &kubermaticv1.Cluster{}
 			clusterJig = providers.NewClusterJigOpenstack(seedClient, options.kubernetesVersion, options.osSeedDatacenter, options.osCredentials)
 			userClient = setupAndGetUserClient(clusterJig, openstackCluster, clusterClientProvider)

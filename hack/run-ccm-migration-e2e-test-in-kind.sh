@@ -43,8 +43,6 @@ beforeKubermaticSetup=$(nowms)
 source hack/ci/setup-kubermatic-in-kind.sh
 pushElapsed kind_kubermatic_setup_duration_milliseconds $beforeKubermaticSetup
 
-USER_CLUSTER_KUBERNETES_VERSION="${USER_CLUSTER_KUBERNETES_VERSION:-v1.21.7}"
-
 EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
     -openstack-project=${OS_TENANT_NAME}
     -openstack-username=${OS_USERNAME}
@@ -77,8 +75,8 @@ if [ -x "$(command -v ginkgo)" ]; then
     --progress \
     -v \
     -- --kubeconfig "${HOME}/.kube/config" \
-    --kubernetes-version "${USER_CLUSTER_KUBERNETES_VERSION}" \
-    --debug-log
+    --debug-log \
+    --provider "${PROVIDER}"
 else
   CGO_ENABLED=1 go test --tags=e2e -v -race ./pkg/test/e2e/ccm-migration/... $EXTRA_ARGS \
     --ginkgo.randomizeAllSpecs \
@@ -87,6 +85,6 @@ else
     --ginkgo.progress \
     --ginkgo.v \
     --kubeconfig "${HOME}/.kube/config" \
-    --kubernetes-version "${USER_CLUSTER_KUBERNETES_VERSION}" \
-    --debug-log
+    --debug-log \
+    --provider "${PROVIDER}"
 fi
