@@ -18,7 +18,6 @@ package resources
 
 import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	nodelabelerapi "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/node-labeler/api"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -57,9 +56,6 @@ func OperatorDeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc,
 			dep.Spec.Selector = &metav1.LabelSelector{MatchLabels: labels}
 			dep.Spec.Template.ObjectMeta.Labels = labels
 			dep.Spec.Template.Spec.ServiceAccountName = OperatorServiceAccountName
-
-			// The operator should only run on Flatcar nodes
-			dep.Spec.Template.Spec.NodeSelector = map[string]string{nodelabelerapi.DistributionLabelKey: nodelabelerapi.FlatcarLabelValue}
 
 			env := []corev1.EnvVar{
 				{

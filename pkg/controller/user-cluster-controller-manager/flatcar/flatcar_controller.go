@@ -25,7 +25,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/flatcar/resources"
 	nodelabelerapi "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/node-labeler/api"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
-	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
@@ -63,12 +62,7 @@ func Add(mgr manager.Manager, overwriteRegistry string, updateWindow kubermaticv
 		return err
 	}
 
-	predicate := predicateutil.Factory(func(o ctrlruntimeclient.Object) bool {
-		node := o.(*corev1.Node)
-		return o.GetLabels()[nodelabelerapi.DistributionLabelKey] == nodelabelerapi.FlatcarLabelValue && !node.Spec.Unschedulable
-	})
-
-	return c.Watch(&source.Kind{Type: &corev1.Node{}}, controllerutil.EnqueueConst(""), predicate)
+	return c.Watch(&source.Kind{Type: &corev1.Node{}}, controllerutil.EnqueueConst(""))
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile.Result, error) {
@@ -80,11 +74,28 @@ func (r *Reconciler) Reconcile(ctx context.Context, _ reconcile.Request) (reconc
 		return reconcile.Result{}, nil
 	}
 
-	if err := r.reconcileUpdateOperatorResources(ctx); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to reconcile the UpdateOperator resources: %w", err)
+	var nodes corev1.NodeList
+	if err := r.List(ctx, &nodes,
+		ctrlruntimeclient.MatchingLabels{nodelabelerapi.DistributionLabelKey: nodelabelerapi.FlatcarLabelValue},
+	); err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to list nodes: %v", err)
+	}
+
+	if len(nodes.Items) == 0 {
+		if err := r.cleanupUpdateOperatorResources(ctx); err != nil {
+			return reconcile.Result{}, fmt.Errorf("failed to clean up UpdateOperator resources: %v", err)
+		}
+	} else {
+		if err := r.reconcileUpdateOperatorResources(ctx); err != nil {
+			return reconcile.Result{}, fmt.Errorf("failed to reconcile the UpdateOperator resources: %v", err)
+		}
 	}
 
 	return reconcile.Result{}, nil
+}
+
+func (r *Reconciler) cleanupUpdateOperatorResources(ctx context.Context) error {
+	return resources.EnsureAllDeleted(ctx, r.Client)
 }
 
 // reconcileUpdateOperatorResources deploys the FlatcarUpdateOperator
