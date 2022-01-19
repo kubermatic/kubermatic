@@ -102,10 +102,9 @@ func RoleBindingCreator() (string, reconciling.RoleBindingCreator) {
 	}
 }
 
-func ClusterRole(namespace *corev1.Namespace) reconciling.NamedClusterRoleCreatorGetter {
+func ClusterRole() reconciling.NamedClusterRoleCreatorGetter {
 	return func() (string, reconciling.ClusterRoleCreator) {
 		return roleName, func(r *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
-			r.OwnerReferences = []metav1.OwnerReference{genOwnerReference(namespace)}
 			r.Rules = []rbacv1.PolicyRule{
 				{
 					APIGroups: []string{"kubermatic.k8s.io"},

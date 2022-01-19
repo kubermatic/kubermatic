@@ -451,9 +451,9 @@ func (r *Reconciler) ensureRoleBindings(ctx context.Context, c *kubermaticv1.Clu
 	return nil
 }
 
-func (r *Reconciler) ensureClusterRoles(ctx context.Context, namespace *corev1.Namespace) error {
+func (r *Reconciler) ensureClusterRoles(ctx context.Context) error {
 	namedClusterRoleCreatorGetters := []reconciling.NamedClusterRoleCreatorGetter{
-		usercluster.ClusterRole(namespace),
+		usercluster.ClusterRole(),
 	}
 	if err := reconciling.ReconcileClusterRoles(ctx, namedClusterRoleCreatorGetters, "", r.Client); err != nil {
 		return fmt.Errorf("failed to ensure Cluster Roles: %v", err)
@@ -717,7 +717,7 @@ func (r *Reconciler) ensureRBAC(ctx context.Context, cluster *kubermaticv1.Clust
 		return err
 	}
 
-	if err := r.ensureClusterRoles(ctx, namespace); err != nil {
+	if err := r.ensureClusterRoles(ctx); err != nil {
 		return err
 	}
 
