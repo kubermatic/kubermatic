@@ -33,20 +33,30 @@ func routeTableName(cluster *kubermaticv1.Cluster) string {
 }
 
 func reconcileRouteTable(ctx context.Context, clients *ClientSet, location string, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	name := cluster.Spec.Cloud.Azure.RouteTableName
+
 	if cluster.Spec.Cloud.Azure.RouteTableName == "" {
 		cluster.Spec.Cloud.Azure.RouteTableName = routeTableName(cluster)
 	}
 
 	routeTable, err := clients.RouteTables.Get(ctx, cluster.Spec.Cloud.Azure.ResourceGroup, cluster.Spec.Cloud.Azure.RouteTableName, "")
 	if err != nil && !isNotFound(routeTable.Response) {
-		return cluster, err
+		return nil, err
 	}
 
 	// usually, we check for ownership tags here and then compare attributes of interest to a target representation
 	// of the resource. Since there is nothing in the route table we could compare to eventually reconcile (the subnet setting
 	// you see later on is ineffective), we skip all of that and return early if we found a route table during our API call earlier.
 	if !isNotFound(routeTable.Response) {
-		return cluster, nil
+		return update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+			updatedCluster.Spec.Cloud.Azure.RouteTableName = cluster.Spec.Cloud.Azure.RouteTableName
+			// this is a special case; because we cannot determine if a route table was created by
+			// the controller or not, we only add the finalizer if by the beginning of this loop, the
+			// name was not set. Otherwise we risk deleting a route table we do not own.
+			if name == "" && !kuberneteshelper.HasFinalizer(updatedCluster, FinalizerRouteTable) {
+				kuberneteshelper.AddFinalizer(updatedCluster, FinalizerRouteTable)
+			}
+		})
 	}
 
 	target := targetRouteTable(cluster.Spec.Cloud, location)

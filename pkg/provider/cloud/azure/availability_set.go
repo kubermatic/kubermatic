@@ -40,18 +40,20 @@ func reconcileAvailabilitySet(ctx context.Context, clients *ClientSet, location 
 
 	availabilitySet, err := clients.AvailabilitySets.Get(ctx, cluster.Spec.Cloud.Azure.ResourceGroup, cluster.Spec.Cloud.Azure.AvailabilitySet)
 	if err != nil && !isNotFound(availabilitySet.Response) {
-		return cluster, err
+		return nil, err
 	}
 
 	// if we found an availability set, we can check for the ownership tag to determine
 	// if the referenced availability set is owned by this cluster and should be reconciled
 	if !isNotFound(availabilitySet.Response) && !hasOwnershipTag(availabilitySet.Tags, cluster) {
-		return cluster, nil
+		return update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+			updatedCluster.Spec.Cloud.Azure.AvailabilitySet = cluster.Spec.Cloud.Azure.AvailabilitySet
+		})
 	}
 
 	target, err := targetAvailabilitySet(cluster.Spec.Cloud, location, cluster.Name)
 	if err != nil {
-		return cluster, err
+		return nil, err
 	}
 
 	// check for attributes of the existing availability set and return early if all values are already
@@ -62,19 +64,19 @@ func reconcileAvailabilitySet(ctx context.Context, clients *ClientSet, location 
 	// - SKU name
 	// - fault domain count
 	// - update domain count
-	if (availabilitySet.Sku != nil && availabilitySet.Sku.Name != nil && *availabilitySet.Sku.Name == *target.Sku.Name) && availabilitySet.AvailabilitySetProperties != nil &&
+	if !((availabilitySet.Sku != nil && availabilitySet.Sku.Name != nil && *availabilitySet.Sku.Name == *target.Sku.Name) && availabilitySet.AvailabilitySetProperties != nil &&
 		(availabilitySet.AvailabilitySetProperties.PlatformFaultDomainCount != nil && *availabilitySet.AvailabilitySetProperties.PlatformFaultDomainCount == *target.AvailabilitySetProperties.PlatformFaultDomainCount) &&
-		(availabilitySet.AvailabilitySetProperties.PlatformUpdateDomainCount != nil && *availabilitySet.AvailabilitySetProperties.PlatformUpdateDomainCount == *target.AvailabilitySetProperties.PlatformUpdateDomainCount) {
-		return cluster, nil
-	}
-
-	if err := ensureAvailabilitySet(ctx, clients.AvailabilitySets, cluster.Spec.Cloud, target); err != nil {
-		return nil, fmt.Errorf("failed to ensure AvailabilitySet exists: %v", err)
+		(availabilitySet.AvailabilitySetProperties.PlatformUpdateDomainCount != nil && *availabilitySet.AvailabilitySetProperties.PlatformUpdateDomainCount == *target.AvailabilitySetProperties.PlatformUpdateDomainCount)) {
+		if err := ensureAvailabilitySet(ctx, clients.AvailabilitySets, cluster.Spec.Cloud, target); err != nil {
+			return nil, fmt.Errorf("failed to ensure AvailabilitySet exists: %v", err)
+		}
 	}
 
 	return update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 		updatedCluster.Spec.Cloud.Azure.AvailabilitySet = cluster.Spec.Cloud.Azure.AvailabilitySet
-		kuberneteshelper.AddFinalizer(updatedCluster, FinalizerAvailabilitySet)
+		if !kuberneteshelper.HasFinalizer(updatedCluster, FinalizerAvailabilitySet) {
+			kuberneteshelper.AddFinalizer(updatedCluster, FinalizerAvailabilitySet)
+		}
 	})
 }
 

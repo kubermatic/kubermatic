@@ -37,7 +37,12 @@ func reconcileVNet(ctx context.Context, clients *ClientSet, location string, clu
 		cluster.Spec.Cloud.Azure.VNetName = vnetName(cluster)
 	}
 
-	vnet, err := clients.Networks.Get(ctx, cluster.Spec.Cloud.Azure.ResourceGroup, cluster.Spec.Cloud.Azure.VNetName, "")
+	var resourceGroup = cluster.Spec.Cloud.Azure.ResourceGroup
+	if cluster.Spec.Cloud.Azure.VNetResourceGroup != "" {
+		resourceGroup = cluster.Spec.Cloud.Azure.VNetResourceGroup
+	}
+
+	vnet, err := clients.Networks.Get(ctx, resourceGroup, cluster.Spec.Cloud.Azure.VNetName, "")
 	if err != nil && !isNotFound(vnet.Response) {
 		return cluster, err
 	}
@@ -45,7 +50,9 @@ func reconcileVNet(ctx context.Context, clients *ClientSet, location string, clu
 	// if we found a VNET, we can check for the ownership tag to determine
 	// if the referenced VNET is owned by this cluster and should be reconciled
 	if !isNotFound(vnet.Response) && !hasOwnershipTag(vnet.Tags, cluster) {
-		return cluster, nil
+		return update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+			updatedCluster.Spec.Cloud.Azure.VNetName = cluster.Spec.Cloud.Azure.VNetName
+		})
 	}
 
 	target := targetVnet(cluster.Spec.Cloud, location, cluster.Name)
@@ -56,18 +63,18 @@ func reconcileVNet(ctx context.Context, clients *ClientSet, location string, clu
 	//
 	// Attributes we check:
 	// - Address space CIDR
-	if vnet.VirtualNetworkPropertiesFormat != nil && vnet.VirtualNetworkPropertiesFormat.AddressSpace != nil && vnet.VirtualNetworkPropertiesFormat.AddressSpace.AddressPrefixes != nil &&
-		len(*vnet.VirtualNetworkPropertiesFormat.AddressSpace.AddressPrefixes) == 1 && (*vnet.VirtualNetworkPropertiesFormat.AddressSpace.AddressPrefixes)[0] == (*target.VirtualNetworkPropertiesFormat.AddressSpace.AddressPrefixes)[0] {
-		return cluster, nil
-	}
-
-	if err := ensureVNet(ctx, clients, cluster.Spec.Cloud, target); err != nil {
-		return cluster, err
+	if !(vnet.VirtualNetworkPropertiesFormat != nil && vnet.VirtualNetworkPropertiesFormat.AddressSpace != nil && vnet.VirtualNetworkPropertiesFormat.AddressSpace.AddressPrefixes != nil &&
+		len(*vnet.VirtualNetworkPropertiesFormat.AddressSpace.AddressPrefixes) == 1 && (*vnet.VirtualNetworkPropertiesFormat.AddressSpace.AddressPrefixes)[0] == (*target.VirtualNetworkPropertiesFormat.AddressSpace.AddressPrefixes)[0]) {
+		if err := ensureVNet(ctx, clients, cluster.Spec.Cloud, target); err != nil {
+			return nil, err
+		}
 	}
 
 	return update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 		updatedCluster.Spec.Cloud.Azure.VNetName = cluster.Spec.Cloud.Azure.VNetName
-		kuberneteshelper.AddFinalizer(updatedCluster, FinalizerVNet)
+		if !kuberneteshelper.HasFinalizer(updatedCluster, FinalizerVNet) {
+			kuberneteshelper.AddFinalizer(updatedCluster, FinalizerVNet)
+		}
 	})
 }
 
