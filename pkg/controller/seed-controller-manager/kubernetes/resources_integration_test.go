@@ -137,6 +137,12 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 	// This is used as basis to sync the clusters address which we in turn do
 	// before creating any deployments.
 	namespace := &corev1.Namespace{
+		// explicitly set TypeMeta because we need them for setting owner references
+		// and in a real-life scenario, the type meta is always set
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Namespace",
+			APIVersion: "v1",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: testCluster.Status.NamespaceName,
 		},
