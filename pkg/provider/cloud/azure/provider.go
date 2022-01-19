@@ -185,22 +185,6 @@ func (a *Azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 		}
 	}
 
-	if kuberneteshelper.HasFinalizer(cluster, FinalizerResourceGroup) {
-		logger.Infow("deleting resource group", "resourceGroup", cluster.Spec.Cloud.Azure.ResourceGroup)
-		if err := deleteResourceGroup(a.ctx, clientSet, cluster.Spec.Cloud); err != nil {
-			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
-				return cluster, fmt.Errorf("failed to delete resource group %q: %v", cluster.Spec.Cloud.Azure.ResourceGroup, err)
-			}
-		}
-
-		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
-			kuberneteshelper.RemoveFinalizer(updatedCluster, FinalizerResourceGroup)
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerAvailabilitySet) {
 		logger.Infow("deleting availability set", "availabilitySet", cluster.Spec.Cloud.Azure.AvailabilitySet)
 		if err := deleteAvailabilitySet(a.ctx, clientSet, cluster.Spec.Cloud); err != nil {
@@ -211,6 +195,22 @@ func (a *Azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 
 		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(updatedCluster, FinalizerAvailabilitySet)
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if kuberneteshelper.HasFinalizer(cluster, FinalizerResourceGroup) {
+		logger.Infow("deleting resource group", "resourceGroup", cluster.Spec.Cloud.Azure.ResourceGroup)
+		if err := deleteResourceGroup(a.ctx, clientSet, cluster.Spec.Cloud); err != nil {
+			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
+				return cluster, fmt.Errorf("failed to delete resource group %q: %v", cluster.Spec.Cloud.Azure.ResourceGroup, err)
+			}
+		}
+
+		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+			kuberneteshelper.RemoveFinalizer(updatedCluster, FinalizerResourceGroup)
 		})
 		if err != nil {
 			return nil, err
