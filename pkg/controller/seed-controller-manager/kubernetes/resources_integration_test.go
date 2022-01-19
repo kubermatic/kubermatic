@@ -137,12 +137,6 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 	// This is used as basis to sync the clusters address which we in turn do
 	// before creating any deployments.
 	namespace := &corev1.Namespace{
-		// explicitly set TypeMeta because we need them for setting owner references
-		// and in a real-life scenario, the type meta is always set
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Namespace",
-			APIVersion: "v1",
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: testCluster.Status.NamespaceName,
 		},
@@ -180,6 +174,14 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 	}
 	if err := mgr.GetClient().Create(ctx, caBundleConfigMap); err != nil {
 		t.Fatalf("failed to create the CA bundle: %v", err)
+	}
+
+	// explicitly set TypeMeta because we need them for setting owner references
+	// and in a real-life scenario, the type meta is always set;
+	// set this *afte* the Create() call, which would remove the TypeMeta for some reason.
+	namespace.TypeMeta = metav1.TypeMeta{
+		Kind:       "Namespace",
+		APIVersion: "v1",
 	}
 
 	// Status must be set *after* the Service has been created, because
