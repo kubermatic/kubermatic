@@ -176,6 +176,14 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		t.Fatalf("failed to create the CA bundle: %v", err)
 	}
 
+	// explicitly set TypeMeta because we need them for setting owner references
+	// and in a real-life scenario, the type meta is always set;
+	// set this *afte* the Create() call, which would remove the TypeMeta for some reason.
+	namespace.TypeMeta = metav1.TypeMeta{
+		Kind:       "Namespace",
+		APIVersion: "v1",
+	}
+
 	// Status must be set *after* the Service has been created, because
 	// the Create() call would reset it to nil.
 	lbService.Status = corev1.ServiceStatus{
@@ -216,11 +224,11 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		userClusterConnProvider: new(testUserClusterConnectionProvider),
 	}
 
-	if _, err := r.ensureResourcesAreDeployed(ctx, testCluster); err != nil {
+	if _, err := r.ensureResourcesAreDeployed(ctx, testCluster, namespace); err != nil {
 		t.Fatalf("Initial resource deployment failed, this indicates that some resources are invalid. Error: %v", err)
 	}
 
-	if _, err := r.ensureResourcesAreDeployed(ctx, testCluster); err != nil {
+	if _, err := r.ensureResourcesAreDeployed(ctx, testCluster, namespace); err != nil {
 		t.Fatalf("The second resource reconciliation failed, indicating we don't properly default some fields. Check the `Object differs from generated one` error for the object for which we timed out. Original error: %v", err)
 	}
 

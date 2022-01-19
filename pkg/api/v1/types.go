@@ -2340,7 +2340,8 @@ const (
 	SeedUserProjectBindingCleanupFinalizer = "kubermatic.io/cleanup-seed-user-project-bindings"
 	// SeedUserCleanupFinalizer indicates that Kubermatic Users on the seed clusters need cleanup
 	SeedUserCleanupFinalizer = "kubermatic.io/cleanup-seed-users"
-	// ClusterRoleBindingsCleanupFinalizer indicates that the cluster ClusterRoleBindings on the seed cluster need cleanup
+	// ClusterRoleBindingsCleanupFinalizer indicates that the cluster ClusterRoleBindings on the seed cluster need cleanup.
+	// This finalizer is deprecated and should not be used anymore since we migrated to using owner references for cleanup.
 	ClusterRoleBindingsCleanupFinalizer = "kubermatic.io/cleanup-cluster-role-bindings"
 	// ClusterTemplateSeedCleanupFinalizer indicates that synced cluster template on seed clusters need cleanup
 	ClusterTemplateSeedCleanupFinalizer = "kubermatic.io/cleanup-seed-cluster-template"
