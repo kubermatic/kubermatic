@@ -46,6 +46,9 @@ cp ../docs/zz_generated.addondata.go.txt content/kubermatic/master/data/addondat
 # re-create Prometheus runbook
 make runbook
 
+# update CRDs reference
+hack/render-crds.sh
+
 # update repo
 git add .
 
