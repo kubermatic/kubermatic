@@ -38,9 +38,10 @@ function clean_up {
 }
 appendTrap clean_up EXIT
 
-# Only start docker daemon in CI envorinment.
+# Only start docker daemon / download cache in CI envorinment.
 if [[ ! -z "${JOB_NAME:-}" ]] && [[ ! -z "${PROW_JOB_ID:-}" ]]; then
   start_docker_daemon
+  make download-gocache
 fi
 
 # build Docker images
