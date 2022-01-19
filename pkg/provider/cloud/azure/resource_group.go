@@ -54,7 +54,7 @@ func reconcileResourceGroup(ctx context.Context, clients *ClientSet, location st
 			// this is a special case; because we cannot determine if a resource group was created by
 			// the controller or not, we only add the finalizer if by the beginning of this loop, the
 			// name was not set. Otherwise we risk deleting a resource group we do not own.
-			if name == "" && !kuberneteshelper.HasFinalizer(updatedCluster, FinalizerResourceGroup) {
+			if name == "" {
 				kuberneteshelper.AddFinalizer(updatedCluster, FinalizerResourceGroup)
 			}
 		})
@@ -66,9 +66,7 @@ func reconcileResourceGroup(ctx context.Context, clients *ClientSet, location st
 
 	return update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 		updatedCluster.Spec.Cloud.Azure.ResourceGroup = cluster.Spec.Cloud.Azure.ResourceGroup
-		if !kuberneteshelper.HasFinalizer(updatedCluster, FinalizerResourceGroup) {
-			kuberneteshelper.AddFinalizer(updatedCluster, FinalizerResourceGroup)
-		}
+		kuberneteshelper.AddFinalizer(updatedCluster, FinalizerResourceGroup)
 	})
 }
 

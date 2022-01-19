@@ -79,9 +79,7 @@ func reconcileSecurityGroup(ctx context.Context, clients *ClientSet, location st
 
 	return update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 		updatedCluster.Spec.Cloud.Azure.SecurityGroup = cluster.Spec.Cloud.Azure.SecurityGroup
-		if !kuberneteshelper.HasFinalizer(updatedCluster, FinalizerSecurityGroup) {
-			kuberneteshelper.AddFinalizer(updatedCluster, FinalizerSecurityGroup)
-		}
+		kuberneteshelper.AddFinalizer(updatedCluster, FinalizerSecurityGroup)
 	})
 }
 

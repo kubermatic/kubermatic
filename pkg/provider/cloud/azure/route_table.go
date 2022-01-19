@@ -53,7 +53,7 @@ func reconcileRouteTable(ctx context.Context, clients *ClientSet, location strin
 			// this is a special case; because we cannot determine if a route table was created by
 			// the controller or not, we only add the finalizer if by the beginning of this loop, the
 			// name was not set. Otherwise we risk deleting a route table we do not own.
-			if name == "" && !kuberneteshelper.HasFinalizer(updatedCluster, FinalizerRouteTable) {
+			if name == "" {
 				kuberneteshelper.AddFinalizer(updatedCluster, FinalizerRouteTable)
 			}
 		})

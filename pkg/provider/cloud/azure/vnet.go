@@ -72,9 +72,7 @@ func reconcileVNet(ctx context.Context, clients *ClientSet, location string, clu
 
 	return update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 		updatedCluster.Spec.Cloud.Azure.VNetName = cluster.Spec.Cloud.Azure.VNetName
-		if !kuberneteshelper.HasFinalizer(updatedCluster, FinalizerVNet) {
-			kuberneteshelper.AddFinalizer(updatedCluster, FinalizerVNet)
-		}
+		kuberneteshelper.AddFinalizer(updatedCluster, FinalizerVNet)
 	})
 }
 

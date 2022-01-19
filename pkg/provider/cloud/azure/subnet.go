@@ -78,9 +78,7 @@ func reconcileSubnet(ctx context.Context, clients *ClientSet, location string, c
 
 	return update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 		updatedCluster.Spec.Cloud.Azure.SubnetName = cluster.Spec.Cloud.Azure.SubnetName
-		if !kuberneteshelper.HasFinalizer(updatedCluster, FinalizerSubnet) {
-			kuberneteshelper.AddFinalizer(updatedCluster, FinalizerSubnet)
-		}
+		kuberneteshelper.AddFinalizer(updatedCluster, FinalizerSubnet)
 	})
 }
 

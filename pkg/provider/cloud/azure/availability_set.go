@@ -74,9 +74,7 @@ func reconcileAvailabilitySet(ctx context.Context, clients *ClientSet, location 
 
 	return update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 		updatedCluster.Spec.Cloud.Azure.AvailabilitySet = cluster.Spec.Cloud.Azure.AvailabilitySet
-		if !kuberneteshelper.HasFinalizer(updatedCluster, FinalizerAvailabilitySet) {
-			kuberneteshelper.AddFinalizer(updatedCluster, FinalizerAvailabilitySet)
-		}
+		kuberneteshelper.AddFinalizer(updatedCluster, FinalizerAvailabilitySet)
 	})
 }
 
