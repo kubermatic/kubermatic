@@ -57,23 +57,23 @@ func reconcileSubnet(ctx context.Context, clients *ClientSet, location string, c
 	// VNET isn't owned by KKP, we should not try to reconcile subnets and
 	// return early
 	if !isNotFound(subnet.Response) && !hasOwnershipTag(vnet.Tags, cluster) {
-		return cluster, nil
+		return update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+			updatedCluster.Spec.Cloud.Azure.SubnetName = cluster.Spec.Cloud.Azure.SubnetName
+		})
 	}
 
 	target := targetSubnet(cluster.Spec.Cloud)
 
-	// check for attributes of the existing subnet and return early if all values are already
+	// check for attributes of the existing subnet and skip ensuring if all values are already
 	// as expected. Since there are a lot of pointers in the network.Subnet struct, we need to
 	// do a lot of "!= nil" checks so this does not panic.
 	//
 	// Attributes we check:
 	// - Subnet CIDR
-	if subnet.SubnetPropertiesFormat != nil && subnet.SubnetPropertiesFormat.AddressPrefix != nil && *subnet.SubnetPropertiesFormat.AddressPrefix == *target.SubnetPropertiesFormat.AddressPrefix {
-		return cluster, nil
-	}
-
-	if err := ensureSubnet(ctx, clients, cluster.Spec.Cloud, target); err != nil {
-		return cluster, err
+	if !(subnet.SubnetPropertiesFormat != nil && subnet.SubnetPropertiesFormat.AddressPrefix != nil && *subnet.SubnetPropertiesFormat.AddressPrefix == *target.SubnetPropertiesFormat.AddressPrefix) {
+		if err := ensureSubnet(ctx, clients, cluster.Spec.Cloud, target); err != nil {
+			return nil, err
+		}
 	}
 
 	return update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {

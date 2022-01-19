@@ -40,13 +40,15 @@ func reconcileSecurityGroup(ctx context.Context, clients *ClientSet, location st
 
 	securityGroup, err := clients.SecurityGroups.Get(ctx, cluster.Spec.Cloud.Azure.ResourceGroup, cluster.Spec.Cloud.Azure.SecurityGroup, "")
 	if err != nil && !isNotFound(securityGroup.Response) {
-		return cluster, err
+		return nil, err
 	}
 
 	// if we found a security group, we can check for the ownership tag to determine
 	// if the referenced security group is owned by this cluster and should be reconciled
 	if !isNotFound(securityGroup.Response) && !hasOwnershipTag(securityGroup.Tags, cluster) {
-		return cluster, nil
+		return update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+			updatedCluster.Spec.Cloud.Azure.SecurityGroup = cluster.Spec.Cloud.Azure.SecurityGroup
+		})
 	}
 
 	lowPort, highPort := kubermaticresources.NewTemplateDataBuilder().
@@ -68,13 +70,11 @@ func reconcileSecurityGroup(ctx context.Context, clients *ClientSet, location st
 	//
 	// Attributes we check:
 	// - defined security rules
-	if securityGroup.SecurityGroupPropertiesFormat != nil && securityGroup.SecurityGroupPropertiesFormat.SecurityRules != nil &&
-		compareSecurityRules(*securityGroup.SecurityGroupPropertiesFormat.SecurityRules, *target.SecurityGroupPropertiesFormat.SecurityRules) {
-		return cluster, nil
-	}
-
-	if err := ensureSecurityGroup(ctx, clients, cluster.Spec.Cloud, target); err != nil {
-		return cluster, err
+	if !(securityGroup.SecurityGroupPropertiesFormat != nil && securityGroup.SecurityGroupPropertiesFormat.SecurityRules != nil &&
+		compareSecurityRules(*securityGroup.SecurityGroupPropertiesFormat.SecurityRules, *target.SecurityGroupPropertiesFormat.SecurityRules)) {
+		if err := ensureSecurityGroup(ctx, clients, cluster.Spec.Cloud, target); err != nil {
+			return cluster, err
+		}
 	}
 
 	return update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
