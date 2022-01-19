@@ -119,7 +119,7 @@ func (r *userGrafanaReconciler) Reconcile(ctx context.Context, request reconcile
 	}
 
 	if err := r.userGrafanaController.ensureGrafanaUser(ctx, user); err != nil {
-		return reconcile.Result{}, fmt.Errorf("unable to add grafana user : %w", err)
+		return reconcile.Result{}, fmt.Errorf("unable to add grafana user: %w", err)
 	}
 	return reconcile.Result{}, nil
 }
@@ -201,8 +201,11 @@ func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kub
 	grafanaUser := &grafanasdk.User{}
 	defer resp.Body.Close()
 	decoder := json.NewDecoder(resp.Body)
-	if err := decoder.Decode(grafanaUser); err != nil || grafanaUser.ID == 0 {
-		return fmt.Errorf("unable to decode response : %w", err)
+	if err := decoder.Decode(grafanaUser); err != nil {
+		return fmt.Errorf("unable to decode response: %w", err)
+	}
+	if grafanaUser.ID == 0 {
+		return fmt.Errorf("user %q was not found", user.Spec.Email)
 	}
 
 	// delete user from default org
