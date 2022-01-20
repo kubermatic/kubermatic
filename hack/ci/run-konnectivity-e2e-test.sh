@@ -65,6 +65,6 @@ appendTrap print_kubermatic_logs EXIT
 
 echodate "Running konnectivity tests..."
 
-go test -tags e2e -v ./pkg/test/e2e/konnectivity/... -kubeconfig $KUBECONFIG
+go test -timeout 1h -tags e2e -v ./pkg/test/e2e/konnectivity/... -kubeconfig $KUBECONFIG
 
 echodate "Konnecitvity tests done."
