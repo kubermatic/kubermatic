@@ -33,6 +33,8 @@ spec:
     VerticalPodAutoscaler: {}
     KonnectivityService:
       enabled: true
+    TunnelingExposeStrategy:
+      enabled: true
   ui:
     replicas: 0
   # Dex integration
