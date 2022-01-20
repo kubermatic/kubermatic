@@ -146,38 +146,7 @@ func TestKonnectivity(t *testing.T) {
 	
 	//TODO: ensure apiserver sidecar has konnectivity-proxy containers
 	
-	// add alpine pod for testing copy
-	_, err = kubeClient.CoreV1().Pods("kube-system").Create(context.Background(), &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:                       alpineSleeper,
-			Namespace:                  "kube-system",
-		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Image: "alpine:latest",
-					Name:  alpineSleeper,
-					 Command: []string{
-					"/bin/sh", "-c", "--",
-				},
-					Args: []string{
-					"sleep 1001d",
-				},
-				},
-			},
-		},
-	}, metav1.CreateOptions{})
-	if err != nil {
-		t.Fatalf("failed to create alpine-sleeper pod")
-	}
-	
-	defer func() {
-		err := kubeClient.CoreV1().Pods("kube-system").Delete(context.Background(), alpineSleeper, metav1.DeleteOptions{})
-		if err != nil {
-			t.Fatalf("failed to delete alpine-sleeper pod")
-		}
-	}()
-	
+
 	ctx := context.Background()
 	
 	t.Logf("waiting for nodes to come up")
@@ -212,6 +181,39 @@ func TestKonnectivity(t *testing.T) {
 			t.Fatalf("nodes never became ready: %v", err)
 		}
 	}
+	
+	// add alpine pod for testing copy
+	_, err = kubeClient.CoreV1().Pods("kube-system").Create(context.Background(), &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:                       alpineSleeper,
+			Namespace:                  "kube-system",
+		},
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Image: "alpine:latest",
+					Name:  alpineSleeper,
+					Command: []string{
+						"/bin/sh", "-c", "--",
+					},
+					Args: []string{
+						"sleep 1001d",
+					},
+				},
+			},
+		},
+	}, metav1.CreateOptions{})
+	if err != nil {
+		t.Fatalf("failed to create alpine-sleeper pod")
+	}
+	
+	defer func() {
+		err := kubeClient.CoreV1().Pods("kube-system").Delete(context.Background(), alpineSleeper, metav1.DeleteOptions{})
+		if err != nil {
+			t.Fatalf("failed to delete alpine-sleeper pod")
+		}
+	}()
+	
 	
 	t.Logf("waiting for pods to get ready")
 	{
