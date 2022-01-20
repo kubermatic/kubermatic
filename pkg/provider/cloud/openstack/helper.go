@@ -88,9 +88,9 @@ func getNetworkByName(netClient *gophercloud.ServiceClient, name string, isExter
 	}
 
 	candidates := []*NetworkWithExternalExt{}
-	for _, n := range existingNetworks {
+	for i, n := range existingNetworks {
 		if n.External == isExternal {
-			candidates = append(candidates, &n)
+			candidates = append(candidates, &existingNetworks[i])
 		}
 	}
 
