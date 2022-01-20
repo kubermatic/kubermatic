@@ -18,6 +18,7 @@ package resources
 
 import (
 	"context"
+	"crypto/sha1"
 	"fmt"
 	"net"
 	"strings"
@@ -664,25 +665,30 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 	}
 
 	if len(r.tunnelingAgentIP) > 0 {
+		envoyConfig := envoyagent.Config{
+			AdminPort: 9902,
+			ProxyHost: r.clusterURL.Hostname(),
+			ProxyPort: 8088,
+			Listeners: []envoyagent.Listener{
+				{
+					BindAddress: r.tunnelingAgentIP.String(),
+					BindPort:    r.kasSecurePort,
+					Authority:   net.JoinHostPort(fmt.Sprintf("apiserver-external.%s.svc.cluster.local", r.namespace), "443"),
+				},
+			},
+		}
+		if !r.isKonnectivityEnabled {
+			// add OpenVPN server port listener if Konnectivity is NOT enabled
+			envoyConfig.Listeners = append(envoyConfig.Listeners,
+				envoyagent.Listener{
+					BindAddress: r.tunnelingAgentIP.String(),
+					BindPort:    r.openvpnServerPort,
+					Authority:   net.JoinHostPort(fmt.Sprintf("openvpn-server.%s.svc.cluster.local", r.namespace), "1194"),
+				})
+		}
 		creators = []reconciling.NamedConfigMapCreatorGetter{
 			cabundle.ConfigMapCreator(r.caBundle),
-			envoyagent.ConfigMapCreator(envoyagent.Config{
-				AdminPort: 9902,
-				ProxyHost: r.clusterURL.Hostname(),
-				ProxyPort: 8088,
-				Listeners: []envoyagent.Listener{
-					{
-						BindAddress: r.tunnelingAgentIP.String(),
-						BindPort:    r.openvpnServerPort,
-						Authority:   net.JoinHostPort(fmt.Sprintf("openvpn-server.%s.svc.cluster.local", r.namespace), "1194"),
-					},
-					{
-						BindAddress: r.tunnelingAgentIP.String(),
-						BindPort:    r.kasSecurePort,
-						Authority:   net.JoinHostPort(fmt.Sprintf("apiserver-external.%s.svc.cluster.local", r.namespace), "443"),
-					},
-				},
-			}),
+			envoyagent.ConfigMapCreator(envoyConfig),
 		}
 		if !r.isKonnectivityEnabled {
 			creators = append(creators, openvpn.ClientConfigConfigMapCreator(r.tunnelingAgentIP.String(), r.openvpnServerPort))
@@ -816,7 +822,11 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData)
 	}
 
 	if len(r.tunnelingAgentIP) > 0 {
-		dsCreators = append(dsCreators, envoyagent.DaemonSetCreator(r.tunnelingAgentIP, r.versions, r.overwriteRegistryFunc))
+		configHash, err := r.getEnvoyAgentConfigHash(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to retrieve envoy-agent config hash: %w", err)
+		}
+		dsCreators = append(dsCreators, envoyagent.DaemonSetCreator(r.tunnelingAgentIP, r.versions, configHash, r.overwriteRegistryFunc))
 	}
 
 	if err := reconciling.ReconcileDaemonSets(ctx, dsCreators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -1196,6 +1206,17 @@ func (r *reconciler) getUserClusterPrometheusCustomScrapeConfigs(ctx context.Con
 		}
 	}
 	return customScrapeConfigs, nil
+}
+
+func (r *reconciler) getEnvoyAgentConfigHash(ctx context.Context) (string, error) {
+	cm := corev1.ConfigMap{}
+	err := r.Client.Get(ctx, types.NamespacedName{Name: resources.EnvoyAgentConfigMapName, Namespace: metav1.NamespaceSystem}, &cm)
+	if err != nil {
+		return "", fmt.Errorf("failed to get envoy-agent configmap: %w", err)
+	}
+	configHash := sha1.New()
+	configHash.Write([]byte(cm.Data[resources.EnvoyAgentConfigFileName]))
+	return fmt.Sprintf("%x", configHash.Sum(nil)), nil
 }
 
 func (r *reconciler) cleanUpOPAHealthStatus(ctx context.Context, errC error) error {

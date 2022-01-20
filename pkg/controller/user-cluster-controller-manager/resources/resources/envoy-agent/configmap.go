@@ -99,7 +99,7 @@ func ConfigMapCreator(cfg Config) reconciling.NamedConfigMapCreatorGetter {
 			if err != nil {
 				return nil, err
 			}
-			cm.Data["envoy.yaml"] = b.String()
+			cm.Data[resources.EnvoyAgentConfigFileName] = b.String()
 
 			return cm, nil
 		}
