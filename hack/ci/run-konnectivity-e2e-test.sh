@@ -30,7 +30,7 @@ function cleanup() {
 trap cleanup EXIT SIGINT SIGTERM
 
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
-
+export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_konnectivity.yaml
 source hack/ci/setup-kind-cluster.sh
 source hack/ci/setup-kubermatic-in-kind.sh
 

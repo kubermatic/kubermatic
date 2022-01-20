@@ -107,7 +107,7 @@ func debug() {
 			return
 		}
 		for _, p := range pods.Items {
-			log.Println(n, p.Name, p.Status.Phase)
+			log.Println(n.Name, p.Name, p.Status.Phase)
 		}
 	}
 }
