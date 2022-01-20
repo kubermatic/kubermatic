@@ -44,7 +44,7 @@ func Factory(filter func(o ctrlruntimeclient.Object) bool) predicate.Funcs {
 	}
 }
 
-// MultiFactory returns a predicate func tha tapplies the given filter functions
+// MultiFactory returns a predicate func that applies the given filter functions
 // to the respective events for CREATE, UPDATE and DELETE. For UPDATE events, the
 // filter is applied to both the old and new object and OR's the result.
 func MultiFactory(createFilter func(o ctrlruntimeclient.Object) bool, updateFilter func(o ctrlruntimeclient.Object) bool, deleteFilter func(o ctrlruntimeclient.Object) bool) predicate.Funcs {
