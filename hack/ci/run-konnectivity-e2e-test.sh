@@ -39,13 +39,6 @@ export GIT_HEAD_HASH="$(git rev-parse HEAD | tr -d '\n')"
 echodate "Getting secrets from Vault"
 retry 5 vault_ci_login
 
-if [ -z "${KUBECONFIG:-}" ]; then
-  echodate "No \$KUBECONFIG set, defaulting to Vault key dev/seed-clusters/dev.kubermatic.io"
-
-  KUBECONFIG="$(mktemp)"
-  vault kv get -field=kubeconfig dev/seed-clusters/dev.kubermatic.io > $KUBECONFIG
-fi
-
 export AWS_ACCESS_KEY_ID=$(vault kv get -field=accessKeyID dev/e2e-aws)
 export AWS_SECRET_ACCESS_KEY=$(vault kv get -field=secretAccessKey dev/e2e-aws)
 
@@ -65,6 +58,6 @@ appendTrap print_kubermatic_logs EXIT
 
 echodate "Running konnectivity tests..."
 
-go test -timeout 1h -tags e2e -v ./pkg/test/e2e/konnectivity/... -kubeconfig $KUBECONFIG
+go test -timeout 1h -tags e2e -v ./pkg/test/e2e/konnectivity/...
 
 echodate "Konnecitvity tests done."

@@ -66,13 +66,14 @@ func init() {
 	flag.StringVar(&userconfig, "userconfig", "", "path to kubeconfig of usercluster")
 	accessKeyID = os.Getenv("AWS_ACCESS_KEY_ID")
 	if accessKeyID == "" {
-		panic(fmt.Sprintf("AWS_ACCESS_KEY_ID not set"))
+		panic("AWS_ACCESS_KEY_ID not set")
 	}
 	secretAccessKey = os.Getenv("AWS_SECRET_ACCESS_KEY")
 	if secretAccessKey == "" {
-		panic(fmt.Sprintf("AWS_SECRET_ACCESS_KEY not set"))
+		panic("AWS_SECRET_ACCESS_KEY not set")
 	}
 }
+
 
 func TestKonnectivity(t *testing.T) {
 	var cleanup func()
