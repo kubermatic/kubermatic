@@ -165,7 +165,9 @@ func TestKonnectivity(t *testing.T) {
 			}
 
 			t.Logf("%d are running", len(pods))
-
+			for _, pod := range pods {
+				t.Logf(pod.Name, pod.Status.Phase)
+			}
 			return true, nil
 		})
 		if err != nil {
