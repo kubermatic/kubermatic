@@ -101,6 +101,7 @@ TBD
   - DELETE `/api/v2/seeds/{seed_name}/rulegroups/{rulegroup_id}` ([#8158](https://github.com/kubermatic/kubermatic/issues/8158))
 - loki chart has been updated to use upstream chart from https://grafana.github.io/helm-charts as a dependency ([#8252](https://github.com/kubermatic/kubermatic/issues/8252))
 - Added configurable root_url option for grafana ([#7927](https://github.com/kubermatic/kubermatic/issues/7927))
+- Prometheus alert KubeAPILatencyHIGH has been replaced with KubeAPITerminatedRequests, which is more reliable ([#8727](https://github.com/kubermatic/kubermatic/issues/8727))
 
 
 ### Network
@@ -170,7 +171,7 @@ TBD
 - Profiling endpoints on control plane components have been disabled ([#8110](https://github.com/kubermatic/kubermatic/issues/8110))
 - cert-manager's upgrade will reinstall the chart cleanly, existing ClusterIssuers created by a helm chart will be recreated ([#8555](https://github.com/kubermatic/kubermatic/issues/8555))
 - KKP Installer will now check that all userclusters match the given versioning configuration prior to upgrading KKP. This ensures no userclusters are suddenly "orphaned" and incompatible with KKP ([#8670](https://github.com/kubermatic/kubermatic/issues/8670))
-
+- Add `spec.debugLog` field to `Cluster` objects to toggle the verbose log on the usercluster-controller-manager ([#8735](https://github.com/kubermatic/kubermatic/issues/8735))
 
 ### Bugfixes
 
@@ -184,6 +185,7 @@ TBD
 #### User Cluster Monitoring, Logging and Alerting
 - Fixed user cluster MLA certificate issue by LoadBalancer expose strategy ([#7877](https://github.com/kubermatic/kubermatic/issues/7877))
 - Fix Grafana dashboard for MinIO to display the correct Prometheus metrics ([#8687](https://github.com/kubermatic/kubermatic/issues/8687))
+- Fix Grafana dashboards using legacy kube-state-metrics metrics for CPU/memory limits and requests ([#8749](https://github.com/kubermatic/kubermatic/issues/8749))
 
 ### Metering 
 - Fix some hardcoded Docker images for seed-proxy and metering components ([#8615](https://github.com/kubermatic/kubermatic/issues/8615))
@@ -207,6 +209,8 @@ TBD
 #### Google Cloud Platform (GCP)
 - Fix missing validation for GCE datacenter zone_suffixes ([#8525](https://github.com/kubermatic/kubermatic/issues/8525))
 
+#### VMware vSphere
+- Fix vSphere clusters getting stuck after CSI migration due to bad ValidatingWebhookConfiguration reconciling ([#8738](https://github.com/kubermatic/kubermatic/issues/8738))
 
 ### Mics
 - The field `userCluster.overwriteRegistry` in the KubermaticConfiguration is now properly respectedby all provided addons and by more user cluster controllers: core-dns, envoy-agent, gatekeeper,konnectivity, kubernetes-dashboard, mla-prometheus, mla-promtail, node-local-dns ([#8055](https://github.com/kubermatic/kubermatic/issues/8055))
@@ -216,7 +220,7 @@ TBD
 - kubeadm-config is updated based on Kubernetes version ([#8149](https://github.com/kubermatic/kubermatic/issues/8149))
 - Fix kubermatic-installer not properly updating CRDs ([#8552](https://github.com/kubermatic/kubermatic/issues/8552))
 - Fix PodDisruptionBudgets for master/seed-controller-manager blocking node rotations ([#8672](https://github.com/kubermatic/kubermatic/issues/8672))
-
+- Fix clusters being occasionally stuck in deletion because seed-level RBAC resources were deleted too early ([#8744](https://github.com/kubermatic/kubermatic/issues/8744))
 
 ### Updates
 - update nginx-ingress-controller to 1.0.0 to support Kubernetes 1.22 master/seed clusters ([#7845](https://github.com/kubermatic/kubermatic/issues/7845))
@@ -236,6 +240,7 @@ TBD
 - machine-controller updated to v1.41.1  
   operating-system-manager updated to v0.3.6 ([#8693](https://github.com/kubermatic/kubermatic/issues/8693))
 - Update machine-controller to v1.42.0 ([#8731](https://github.com/kubermatic/kubermatic/issues/8731))
+- Update machine controller to 1.42.1 ([#8757](https://github.com/kubermatic/kubermatic/issues/8757))
 - Removed support for Kubernetes 1.19 ([#8167](https://github.com/kubermatic/kubermatic/issues/8167))
 - Add support for Kubernetes 1.22.5, 1.21.8, and 1.20.14  
   Automatically upgrade clusters running Kubernetes 1.21 to 1.21.8 to include fixes for CVE-2021-44716 and CVE-2021-44717  
@@ -266,6 +271,8 @@ TBD
 - Support for EventRateLimit admission plugin ([#3948](https://github.com/kubermatic/dashboard/issues/3948))
 - Cluster and MachineDeployment names are validated to be lowercase, alphanumerical and with dashes in between ([#3963](https://github.com/kubermatic/dashboard/issues/3963))
 - Support to enable experimental feature OSM ([#3980](https://github.com/kubermatic/dashboard/issues/3980))
+- Redesigned the cluster details additional information section ([#4078](https://github.com/kubermatic/dashboard/issues/4078))
+- Add option for administrators to specify default destination in "Backup Destinations" view ([#4080](https://github.com/kubermatic/dashboard/issues/4080))
 
 # Kubermatic 2.18
 
