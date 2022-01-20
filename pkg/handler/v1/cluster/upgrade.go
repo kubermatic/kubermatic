@@ -106,7 +106,7 @@ func filterIncompatibleVersions(possibleKubeletVersions []*version.Version, cont
 		if err := nodeupdate.EnsureVersionCompatible(controlPlaneVersion, v.Version); err == nil {
 			compatibleVersions = append(compatibleVersions, v)
 		} else {
-			_, ok := err.(nodeupdate.ErrVersionSkew)
+			_, ok := err.(nodeupdate.VersionSkewError)
 			if !ok {
 				return nil, fmt.Errorf("failed to check compatibility between kubelet %q and control plane %q: %v", v.Version, controlPlaneVersion, err)
 			}

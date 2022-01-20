@@ -35,6 +35,7 @@ linters:
     - deadcode
     - durationcheck
     - errcheck
+    - errname
     - goconst
     - gocritic
     - gocyclo

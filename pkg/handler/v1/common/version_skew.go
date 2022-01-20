@@ -56,8 +56,8 @@ func CheckClusterVersionSkew(ctx context.Context, userInfoGetter provider.UserIn
 		}
 
 		if err = nodeupdate.EnsureVersionCompatible(clusterVersion, kubeletVersion); err != nil {
-			// errVersionSkew says it's incompatible
-			if _, ok := err.(nodeupdate.ErrVersionSkew); ok {
+			// VersionSkewError says it's incompatible
+			if _, ok := err.(nodeupdate.VersionSkewError); ok {
 				incompatibleVersionsSet[kubeletVersion.String()] = true
 				continue
 			}
