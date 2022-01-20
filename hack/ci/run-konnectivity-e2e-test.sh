@@ -29,8 +29,11 @@ function cleanup() {
 }
 trap cleanup EXIT SIGINT SIGTERM
 
-export KUBERMATIC_DEX_VALUES_FILE=${KUBERMATIC_DEX_VALUES_FILE:-$(realpath hack/ci/testdata/konnectivity_oauth_values.yaml)}
-export KUBERMATIC_API_ENDPOINT=${KUBERMATIC_API_ENDPOINT:-https://dev.kubermatic.io}
+export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
+
+source hack/ci/setup-kind-cluster.sh
+source hack/ci/setup-kubermatic-in-kind.sh
+
 
 export GIT_HEAD_HASH="$(git rev-parse HEAD | tr -d '\n')"
 
@@ -44,15 +47,26 @@ if [ -z "${KUBECONFIG:-}" ]; then
   vault kv get -field=kubeconfig dev/seed-clusters/dev.kubermatic.io > $KUBECONFIG
 fi
 
-export KUBERMATIC_OIDC_LOGIN=$(vault kv get -field=username dev/e2e-dex)
-export KUBERMATIC_OIDC_PASSWORD=$(vault kv get -field=password dev/e2e-dex)
 export AWS_ACCESS_KEY_ID=$(vault kv get -field=accessKeyID dev/e2e-aws)
 export AWS_SECRET_ACCESS_KEY=$(vault kv get -field=secretAccessKey dev/e2e-aws)
 
 echodate "Successfully got secrets for dev from Vault"
 
+function print_kubermatic_logs {
+  if [[ $? -ne 0 ]]; then
+    echodate "Printing logs for Kubermatic API"
+    kubectl -n kubermatic logs --tail=-1 --selector='app.kubernetes.io/name=kubermatic-api'
+    echodate "Printing logs for Master Controller Manager"
+    kubectl -n kubermatic logs --tail=-1 --selector='app.kubernetes.io/name=kubermatic-master-controller-manager'
+    echodate "Printing logs for Seed Controller Manager"
+    kubectl -n kubermatic logs --tail=-1 --selector='app.kubernetes.io/name=kubermatic-seed-controller-manager'
+  fi
+}
+appendTrap print_kubermatic_logs EXIT
+
+
 echodate "Running konnectivity tests..."
 
-go test -tags e2e -v ./pkg/test/e2e/konnectivity/...
+go test -tags e2e -v ./pkg/test/e2e/konnectivity/... -kubeconfig $KUBECONFIG
 
 echodate "Konnecitvity tests done."
