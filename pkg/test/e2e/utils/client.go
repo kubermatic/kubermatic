@@ -24,11 +24,11 @@ import (
 	"strings"
 	"testing"
 	"time"
-	
+
 	"github.com/Masterminds/semver/v3"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
-	
+
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -50,7 +50,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/tokens"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/users"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
-	
+
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -71,12 +71,12 @@ func NewTestClient(token string, t *testing.T) *TestClient {
 	if err != nil {
 		t.Fatalf("Failed to get API endpoint: %v", err)
 	}
-	
+
 	client, err := NewKubermaticClient(endpoint)
 	if err != nil {
 		t.Fatalf("Failed to create API client: %v", err)
 	}
-	
+
 	bearerTokenAuth := httptransport.BearerToken(token)
 	return &TestClient{
 		client:      client,
@@ -89,21 +89,21 @@ func NewTestClient(token string, t *testing.T) *TestClient {
 func (r *TestClient) CreateProject(name string, ignoredStatusCodes ...int) (*apiv1.Project, error) {
 	before := time.Now()
 	timeout := 30 * time.Second
-	
+
 	params := &project.CreateProjectParams{Body: project.CreateProjectBody{Name: name}}
 	SetupRetryParams(r.test, params, Backoff{
 		Duration: 1 * time.Second,
 		Steps:    4,
 		Factor:   1.5,
 	}, ignoredStatusCodes...)
-	
+
 	r.test.Logf("Creating project %s...", name)
-	
+
 	response, err := r.client.Project.CreateProject(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var apiProject *apiv1.Project
 	if !WaitFor(1*time.Second, timeout, func() bool {
 		apiProject, _ = r.GetProject(response.Payload.ID)
@@ -111,12 +111,12 @@ func (r *TestClient) CreateProject(name string, ignoredStatusCodes ...int) (*api
 	}) {
 		// best effort cleanup of a failed cluster
 		_ = r.DeleteProject(name)
-		
+
 		return nil, fmt.Errorf("project is not ready after %s", timeout)
 	}
-	
+
 	r.test.Logf("Created project and it became ready after %v", time.Since(before))
-	
+
 	return apiProject, nil
 }
 
@@ -124,21 +124,21 @@ func (r *TestClient) CreateProject(name string, ignoredStatusCodes ...int) (*api
 func (r *TestClient) CreateProjectBySA(name string, users []string) (*apiv1.Project, error) {
 	before := time.Now()
 	timeout := 30 * time.Second
-	
+
 	params := &project.CreateProjectParams{Body: project.CreateProjectBody{Name: name, Users: users}}
 	SetupRetryParams(r.test, params, Backoff{
 		Duration: 1 * time.Second,
 		Steps:    4,
 		Factor:   1.5,
 	})
-	
+
 	r.test.Logf("Creating project %s...", name)
-	
+
 	response, err := r.client.Project.CreateProject(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var apiProject *apiv1.Project
 	if !WaitFor(1*time.Second, timeout, func() bool {
 		apiProject, _ = r.GetProject(response.Payload.ID)
@@ -146,12 +146,12 @@ func (r *TestClient) CreateProjectBySA(name string, users []string) (*apiv1.Proj
 	}) {
 		// best effort cleanup of a failed cluster
 		_ = r.DeleteProject(name)
-		
+
 		return nil, fmt.Errorf("project is not ready after %s", timeout)
 	}
-	
+
 	r.test.Logf("Created project and it became ready after %v", time.Since(before))
-	
+
 	return apiProject, nil
 }
 
@@ -160,12 +160,12 @@ func (r *TestClient) CreateProjectBySA(name string, users []string) (*apiv1.Proj
 func (r *TestClient) GetProject(id string) (*apiv1.Project, error) {
 	params := &project.GetProjectParams{ProjectID: id}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusUnauthorized)
-	
+
 	project, err := r.client.Project.GetProject(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return convertProject(project.Payload)
 }
 
@@ -173,12 +173,12 @@ func (r *TestClient) GetProject(id string) (*apiv1.Project, error) {
 func (r *TestClient) ListProjects(displayAll bool) ([]*apiv1.Project, error) {
 	params := &project.ListProjectsParams{DisplayAll: &displayAll}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
-	
+
 	projects, err := r.client.Project.ListProjects(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	projectList := make([]*apiv1.Project, 0)
 	for _, project := range projects.Payload {
 		apiProject, err := convertProject(project)
@@ -187,7 +187,7 @@ func (r *TestClient) ListProjects(displayAll bool) ([]*apiv1.Project, error) {
 		}
 		projectList = append(projectList, apiProject)
 	}
-	
+
 	return projectList, nil
 }
 
@@ -195,16 +195,16 @@ func (r *TestClient) ListProjects(displayAll bool) ([]*apiv1.Project, error) {
 func (r *TestClient) UpdateProject(projectToUpdate *apiv1.Project) (*apiv1.Project, error) {
 	params := &project.UpdateProjectParams{ProjectID: projectToUpdate.ID, Body: &models.Project{Name: projectToUpdate.Name}}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
-	
+
 	r.test.Log("Updating project...")
-	
+
 	response, err := r.client.Project.UpdateProject(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	r.test.Log("Project updated successfully")
-	
+
 	return convertProject(response.Payload)
 }
 
@@ -213,43 +213,43 @@ func convertProject(project *models.Project) (*apiv1.Project, error) {
 	apiProject.Name = project.Name
 	apiProject.ID = project.ID
 	apiProject.Status = project.Status
-	
+
 	creationTime, err := time.Parse(time.RFC3339, project.CreationTimestamp.String())
 	if err != nil {
 		return nil, err
 	}
 	apiProject.CreationTimestamp = apiv1.NewTime(creationTime)
-	
+
 	return apiProject, nil
 }
 
 // DeleteProject deletes given project
 func (r *TestClient) DeleteProject(id string) error {
 	r.test.Log("Deleting project...")
-	
+
 	params := &project.DeleteProjectParams{ProjectID: id}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusConflict)
-	
+
 	_, err := r.client.Project.DeleteProject(params, r.bearerToken)
 	if err != nil {
 		return err
 	}
-	
+
 	r.test.Log("Project deleted successfully")
 	return nil
 }
 
 func (r *TestClient) CleanupProject(t *testing.T, id string) {
 	before := time.Now()
-	
+
 	t.Logf("Deleting project %s...", id)
 	if err := r.DeleteProject(id); err != nil {
 		t.Fatalf("Failed to delete project: %v", err)
 	}
-	
+
 	timeout := 3 * time.Minute
 	t.Logf("Waiting %v for project to be gone...", timeout)
-	
+
 	err := wait.PollImmediate(time.Second, timeout, func() (bool, error) {
 		_, err := r.GetProject(id)
 		return err != nil, nil // return true if there *was* an error, i.e. project is gone
@@ -257,21 +257,21 @@ func (r *TestClient) CleanupProject(t *testing.T, id string) {
 	if err != nil {
 		t.Fatalf("Failed to wait for project to be gone: %v", err)
 	}
-	
+
 	t.Logf("Project deleted successfully after %v", time.Since(before))
 }
 
 func (r *TestClient) CleanupCluster(t *testing.T, projectID, dc, clusterID string) {
 	before := time.Now()
-	
+
 	t.Logf("Deleting cluster %s...", clusterID)
 	if err := r.DeleteCluster(projectID, dc, clusterID); err != nil {
 		t.Fatalf("Failed to delete cluster: %v", err)
 	}
-	
+
 	timeout := 3 * time.Minute
 	t.Logf("Waiting %v for cluster to be gone...", timeout)
-	
+
 	err := wait.PollImmediate(time.Second, timeout, func() (bool, error) {
 		_, err := r.GetCluster(projectID, dc, clusterID)
 		return err != nil, nil // return true if there *was* an error, i.e. project is gone
@@ -279,7 +279,7 @@ func (r *TestClient) CleanupCluster(t *testing.T, projectID, dc, clusterID strin
 	if err != nil {
 		t.Fatalf("Failed to wait for cluster to be gone: %v", err)
 	}
-	
+
 	t.Logf("Cluster deleted successfully after %v", time.Since(before))
 }
 
@@ -288,16 +288,16 @@ func (r *TestClient) CleanupCluster(t *testing.T, projectID, dc, clusterID strin
 func (r *TestClient) CreateServiceAccount(name, group, projectID string) (*apiv1.ServiceAccount, error) {
 	params := &serviceaccounts.AddServiceAccountToProjectParams{ProjectID: projectID, Body: &models.ServiceAccount{Name: name, Group: group}}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
-	
+
 	r.test.Logf("Creating ServiceAccount %q in group %q...", name, group)
-	
+
 	sa, err := r.client.Serviceaccounts.AddServiceAccountToProject(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	before := time.Now()
-	
+
 	var apiServiceAccount *apiv1.ServiceAccount
 	if !WaitFor(1*time.Second, 60*time.Second, func() bool {
 		apiServiceAccount, _ = r.GetServiceAccount(sa.Payload.ID, projectID)
@@ -305,9 +305,9 @@ func (r *TestClient) CreateServiceAccount(name, group, projectID string) (*apiv1
 	}) {
 		return nil, err
 	}
-	
+
 	r.test.Logf("Created ServiceAccount and it became active after %v", time.Since(before))
-	
+
 	return apiServiceAccount, nil
 }
 
@@ -315,36 +315,36 @@ func (r *TestClient) CreateServiceAccount(name, group, projectID string) (*apiv1
 func (r *TestClient) GetServiceAccount(saID, projectID string) (*apiv1.ServiceAccount, error) {
 	params := &serviceaccounts.ListServiceAccountsParams{ProjectID: projectID}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
-	
+
 	saList, err := r.client.Serviceaccounts.ListServiceAccounts(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	for _, sa := range saList.Payload {
 		if sa.ID == saID {
 			return convertServiceAccount(sa)
 		}
 	}
-	
+
 	return nil, fmt.Errorf("ServiceAccount %s not found", saID)
 }
 
 // DeleteServiceAccount deletes service account for given ID and project
 func (r *TestClient) DeleteServiceAccount(saID, projectID string) error {
 	r.test.Logf("Deleting ServiceAccount %s...", saID)
-	
+
 	params := &serviceaccounts.DeleteServiceAccountParams{
 		ProjectID:        projectID,
 		ServiceAccountID: saID,
 	}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
-	
+
 	_, err := r.client.Serviceaccounts.DeleteServiceAccount(params, r.bearerToken)
 	if err != nil {
 		return err
 	}
-	
+
 	r.test.Log("ServiceAccount deleted successfully")
 	return nil
 }
@@ -355,45 +355,45 @@ func convertServiceAccount(sa *models.ServiceAccount) (*apiv1.ServiceAccount, er
 	apiServiceAccount.Group = sa.Group
 	apiServiceAccount.Name = sa.Name
 	apiServiceAccount.Status = sa.Status
-	
+
 	creationTime, err := time.Parse(time.RFC3339, sa.CreationTimestamp.String())
 	if err != nil {
 		return nil, err
 	}
 	apiServiceAccount.CreationTimestamp = apiv1.NewTime(creationTime)
-	
+
 	return apiServiceAccount, nil
 }
 
 // AddTokenToServiceAccount creates a new token for service account
 func (r *TestClient) AddTokenToServiceAccount(name, saID, projectID string) (*apiv1.ServiceAccountToken, error) {
 	r.test.Logf("Adding token %s to ServiceAccount %s...", name, saID)
-	
+
 	params := &tokens.AddTokenToServiceAccountParams{ProjectID: projectID, ServiceAccountID: saID, Body: &models.ServiceAccountToken{Name: name}}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusForbidden)
-	
+
 	token, err := r.client.Tokens.AddTokenToServiceAccount(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	r.test.Log("ServiceAccount token added successfully")
-	
+
 	return convertServiceAccountToken(token.Payload)
 }
 
 // DeleteTokenForServiceAccount deletes a token for service account
 func (r *TestClient) DeleteTokenForServiceAccount(tokenID, saID, projectID string) error {
 	r.test.Logf("Deleting token %s from ServiceAccount %s...", tokenID, saID)
-	
+
 	params := &tokens.DeleteServiceAccountTokenParams{ProjectID: projectID, ServiceAccountID: saID, TokenID: tokenID}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
-	
+
 	_, err := r.client.Tokens.DeleteServiceAccountToken(params, r.bearerToken)
 	if err != nil {
 		return err
 	}
-	
+
 	r.test.Log("ServiceAccount token deleted successfully")
 	return nil
 }
@@ -403,13 +403,13 @@ func convertServiceAccountToken(saToken *models.ServiceAccountToken) (*apiv1.Ser
 	apiServiceAccountToken.ID = saToken.ID
 	apiServiceAccountToken.Name = saToken.Name
 	apiServiceAccountToken.Token = saToken.Token
-	
+
 	expiry, err := time.Parse(time.RFC3339, saToken.Expiry.String())
 	if err != nil {
 		return nil, err
 	}
 	apiServiceAccountToken.Expiry = apiv1.NewTime(expiry)
-	
+
 	return apiServiceAccountToken, nil
 }
 
@@ -417,15 +417,15 @@ func convertServiceAccountToken(saToken *models.ServiceAccountToken) (*apiv1.Ser
 func (r *TestClient) ListCredentials(providerName, datacenter string) ([]string, error) {
 	params := &credentials.ListCredentialsParams{ProviderName: providerName, Datacenter: &datacenter}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
-	
+
 	credentialsResponse, err := r.client.Credentials.ListCredentials(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	names := make([]string, 0)
 	names = append(names, credentialsResponse.Payload.Names...)
-	
+
 	return names, nil
 }
 
@@ -435,7 +435,7 @@ func (r *TestClient) CreateAWSCluster(projectID, dc, name, secretAccessKey, acce
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse version %s: %v", version, err)
 	}
-	
+
 	clusterSpec := &models.CreateClusterSpec{}
 	clusterSpec.Cluster = &models.Cluster{
 		Type: "kubernetes",
@@ -451,18 +451,18 @@ func (r *TestClient) CreateAWSCluster(projectID, dc, name, secretAccessKey, acce
 			Version: models.Semver(version),
 		},
 	}
-	
+
 	if konnectivityEnabled {
 		clusterSpec.Cluster.Spec.ClusterNetwork = &models.ClusterNetworkingConfig{
 			KonnectivityEnabled: true,
 		}
 	}
-	
+
 	if replicas > 0 {
 		instanceType := "t3.small"
 		volumeSize := int64(25)
 		volumeType := "standard"
-		
+
 		clusterSpec.NodeDeployment = &models.NodeDeployment{
 			Spec: &models.NodeDeploymentSpec{
 				Replicas: &replicas,
@@ -484,19 +484,19 @@ func (r *TestClient) CreateAWSCluster(projectID, dc, name, secretAccessKey, acce
 			},
 		}
 	}
-	
+
 	r.test.Logf("Creating AWS cluster %q (%s, %d nodes)...", name, version, replicas)
-	
+
 	params := &project.CreateClusterParams{ProjectID: projectID, DC: dc, Body: clusterSpec}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
-	
+
 	clusterResponse, err := r.client.Project.CreateCluster(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	r.test.Log("Cluster created successfully.")
-	
+
 	return convertCluster(clusterResponse.Payload)
 }
 
@@ -506,7 +506,7 @@ func (r *TestClient) CreateKubevirtCluster(projectID, dc, name, credential, vers
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse version %s: %v", version, err)
 	}
-	
+
 	clusterSpec := &models.CreateClusterSpec{}
 	clusterSpec.Cluster = &models.Cluster{
 		Type:       "kubernetes",
@@ -520,7 +520,7 @@ func (r *TestClient) CreateKubevirtCluster(projectID, dc, name, credential, vers
 			Version: models.Semver(version),
 		},
 	}
-	
+
 	if replicas > 0 {
 		cpu := "1"
 		memory := "2Gi"
@@ -528,7 +528,7 @@ func (r *TestClient) CreateKubevirtCluster(projectID, dc, name, credential, vers
 		pvcSize := "20Gi"
 		sourceURL := "http://vm-repo.default.svc.cluster.local/CentOS-7-x86_64-GenericCloud.qcow2"
 		storageClassName := "standard"
-		
+
 		clusterSpec.NodeDeployment = &models.NodeDeployment{
 			Spec: &models.NodeDeploymentSpec{
 				Replicas: &replicas,
@@ -552,23 +552,23 @@ func (r *TestClient) CreateKubevirtCluster(projectID, dc, name, credential, vers
 			},
 		}
 	}
-	
+
 	params := &project.CreateClusterParams{ProjectID: projectID, DC: dc, Body: clusterSpec}
 	SetupRetryParams(r.test, params, Backoff{
 		Duration: 1 * time.Second,
 		Steps:    4,
 		Factor:   1.5,
 	})
-	
+
 	r.test.Logf("Creating Kubevirt cluster %q (%s, %d nodes)...", name, version, replicas)
-	
+
 	clusterResponse, err := r.client.Project.CreateCluster(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	r.test.Log("Cluster created successfully.")
-	
+
 	return convertCluster(clusterResponse.Payload)
 }
 
@@ -578,7 +578,7 @@ func (r *TestClient) CreateDOCluster(projectID, dc, name, credential, version, l
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse version %s: %v", version, err)
 	}
-	
+
 	clusterSpec := &models.CreateClusterSpec{}
 	clusterSpec.Cluster = &models.Cluster{
 		Type:       "kubernetes",
@@ -592,10 +592,10 @@ func (r *TestClient) CreateDOCluster(projectID, dc, name, credential, version, l
 			Version: models.Semver(version),
 		},
 	}
-	
+
 	if replicas > 0 {
 		instanceSize := "s-2vcpu-2gb"
-		
+
 		clusterSpec.NodeDeployment = &models.NodeDeployment{
 			Spec: &models.NodeDeploymentSpec{
 				Replicas: &replicas,
@@ -617,34 +617,34 @@ func (r *TestClient) CreateDOCluster(projectID, dc, name, credential, version, l
 			},
 		}
 	}
-	
+
 	params := &project.CreateClusterParams{ProjectID: projectID, DC: dc, Body: clusterSpec}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
-	
+
 	r.test.Logf("Creating DigitalOcean cluster %q (%s, %d nodes)...", name, version, replicas)
-	
+
 	clusterResponse, err := r.client.Project.CreateCluster(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	r.test.Log("Cluster created successfully.")
-	
+
 	return convertCluster(clusterResponse.Payload)
 }
 
 // DeleteCluster delete cluster method
 func (r *TestClient) DeleteCluster(projectID, dc, clusterID string) error {
 	r.test.Logf("Deleting cluster %s...", clusterID)
-	
+
 	params := &project.DeleteClusterParams{ProjectID: projectID, DC: dc, ClusterID: clusterID}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusConflict)
-	
+
 	_, err := r.client.Project.DeleteCluster(params, r.bearerToken)
 	if err != nil {
 		return err
 	}
-	
+
 	r.test.Log("Cluster deleted successfully")
 	return nil
 }
@@ -653,12 +653,12 @@ func (r *TestClient) DeleteCluster(projectID, dc, clusterID string) error {
 func (r *TestClient) GetCluster(projectID, dc, clusterID string) (*apiv1.Cluster, error) {
 	params := &project.GetClusterParams{ProjectID: projectID, DC: dc, ClusterID: clusterID}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
-	
+
 	cluster, err := r.client.Project.GetCluster(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return convertCluster(cluster.Payload)
 }
 
@@ -666,12 +666,12 @@ func (r *TestClient) GetCluster(projectID, dc, clusterID string) (*apiv1.Cluster
 func (r *TestClient) GetClusterEvents(projectID, dc, clusterID string) ([]*models.Event, error) {
 	params := &project.GetClusterEventsParams{ProjectID: projectID, DC: dc, ClusterID: clusterID}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
-	
+
 	events, err := r.client.Project.GetClusterEvents(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return events.Payload, nil
 }
 
@@ -681,12 +681,12 @@ func (r *TestClient) PrintClusterEvents(projectID, dc, clusterID string) error {
 	if err != nil {
 		return fmt.Errorf("failed to get cluster events: %v", err)
 	}
-	
+
 	encodedEvents, err := json.Marshal(events)
 	if err != nil {
 		return fmt.Errorf("failed to serialize events: %v", err)
 	}
-	
+
 	r.test.Logf("Cluster events:\n%s", string(encodedEvents))
 	return nil
 }
@@ -695,12 +695,12 @@ func (r *TestClient) PrintClusterEvents(projectID, dc, clusterID string) error {
 func (r *TestClient) GetClusterHealthStatus(projectID, dc, clusterID string) (*apiv1.ClusterHealth, error) {
 	params := &project.GetClusterHealthParams{DC: dc, ProjectID: projectID, ClusterID: clusterID}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
-	
+
 	response, err := r.client.Project.GetClusterHealth(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	apiClusterHealth := &apiv1.ClusterHealth{}
 	apiClusterHealth.Apiserver = convertHealthStatus(response.Payload.Apiserver)
 	apiClusterHealth.Controller = convertHealthStatus(response.Payload.Controller)
@@ -710,23 +710,23 @@ func (r *TestClient) GetClusterHealthStatus(projectID, dc, clusterID string) (*a
 	apiClusterHealth.UserClusterControllerManager = convertHealthStatus(response.Payload.UserClusterControllerManager)
 	apiClusterHealth.GatekeeperController = convertHealthStatus(response.Payload.GatekeeperController).Ptr()
 	apiClusterHealth.GatekeeperAudit = convertHealthStatus(response.Payload.GatekeeperAudit).Ptr()
-	
+
 	return apiClusterHealth, nil
 }
 
 func (r *TestClient) WaitForClusterHealthy(projectID, dc, clusterID string) error {
 	timeout := 5 * time.Minute
 	before := time.Now()
-	
+
 	r.test.Logf("Waiting %v for cluster %s to become healthy...", timeout, clusterID)
-	
+
 	if !WaitFor(5*time.Second, timeout, func() bool {
 		healthStatus, _ := r.GetClusterHealthStatus(projectID, dc, clusterID)
 		return IsHealthyCluster(healthStatus)
 	}) {
 		return errors.New("cluster did not become healthy")
 	}
-	
+
 	r.test.Logf("Cluster became healthy after %v", time.Since(before))
 	return nil
 }
@@ -734,9 +734,9 @@ func (r *TestClient) WaitForClusterHealthy(projectID, dc, clusterID string) erro
 func (r *TestClient) WaitForOPAEnabledClusterHealthy(projectID, dc, clusterID string) error {
 	timeout := 5 * time.Minute
 	before := time.Now()
-	
+
 	r.test.Logf("Waiting %v for OPA enabled cluster %s to become healthy...", timeout, clusterID)
-	
+
 	if !WaitFor(5*time.Second, timeout, func() bool {
 		healthStatus, _ := r.GetClusterHealthStatus(projectID, dc, clusterID)
 		return IsHealthyCluster(healthStatus) &&
@@ -744,11 +744,11 @@ func (r *TestClient) WaitForOPAEnabledClusterHealthy(projectID, dc, clusterID st
 			*healthStatus.GatekeeperController == kubermaticv1.HealthStatusUp &&
 			healthStatus.GatekeeperAudit != nil &&
 			*healthStatus.GatekeeperAudit == kubermaticv1.HealthStatusUp
-		
+
 	}) {
 		return errors.New("OPA enabled cluster did not become healthy")
 	}
-	
+
 	r.test.Logf("OPA enabled cluster became healthy after %v", time.Since(before))
 	return nil
 }
@@ -768,12 +768,12 @@ func convertHealthStatus(status models.HealthStatus) kubermaticv1.HealthStatus {
 func (r *TestClient) GetClusterNodeDeployments(projectID, dc, clusterID string) ([]apiv1.NodeDeployment, error) {
 	params := &project.ListNodeDeploymentsParams{ClusterID: clusterID, ProjectID: projectID, DC: dc}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
-	
+
 	response, err := r.client.Project.ListNodeDeployments(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	list := make([]apiv1.NodeDeployment, 0)
 	for _, nd := range response.Payload {
 		apiNd := apiv1.NodeDeployment{}
@@ -783,26 +783,26 @@ func (r *TestClient) GetClusterNodeDeployments(projectID, dc, clusterID string) 
 			Replicas:          nd.Status.Replicas,
 			AvailableReplicas: nd.Status.AvailableReplicas,
 		}
-		
+
 		list = append(list, apiNd)
 	}
-	
+
 	return list, nil
 }
 
 func (r *TestClient) WaitForClusterNodeDeploymentsToExist(projectID, dc, clusterID string) error {
 	timeout := 30 * time.Second
 	before := time.Now()
-	
+
 	r.test.Logf("Waiting %v for NodeDeployment in cluster %s to exist...", timeout, clusterID)
-	
+
 	if !WaitFor(1*time.Second, timeout, func() bool {
 		deployments, _ := r.GetClusterNodeDeployments(projectID, dc, clusterID)
 		return len(deployments) > 0
 	}) {
 		return errors.New("NodeDeployment did not appear")
 	}
-	
+
 	r.test.Logf("NodeDeployment appeared after %v", time.Since(before))
 	return nil
 }
@@ -810,18 +810,18 @@ func (r *TestClient) WaitForClusterNodeDeploymentsToExist(projectID, dc, cluster
 func (r *TestClient) WaitForClusterNodeDeploymentsToByReady(projectID, dc, clusterID string, replicas int32) error {
 	timeout := 15 * time.Minute
 	before := time.Now()
-	
+
 	r.test.Logf("Waiting %v for NodeDeployment in cluster %s to become ready...", timeout, clusterID)
-	
+
 	if !WaitFor(5*time.Second, timeout, func() bool {
 		deployments, _ := r.GetClusterNodeDeployments(projectID, dc, clusterID)
 		return len(deployments) > 0 && deployments[0].Status.AvailableReplicas == replicas
 	}) {
 		return fmt.Errorf("NodeDeployment has not reached %d ready replicas", replicas)
 	}
-	
+
 	r.test.Logf("All nodes became ready after %v.", time.Since(before))
-	
+
 	return nil
 }
 
@@ -831,13 +831,13 @@ func convertCluster(cluster *models.Cluster) (*apiv1.Cluster, error) {
 	apiCluster.Name = cluster.Name
 	apiCluster.Type = cluster.Type
 	apiCluster.Labels = cluster.Labels
-	
+
 	creationTime, err := time.Parse(time.RFC3339, cluster.CreationTimestamp.String())
 	if err != nil {
 		return nil, err
 	}
 	apiCluster.CreationTimestamp = apiv1.NewTime(creationTime)
-	
+
 	return apiCluster, nil
 }
 
@@ -845,17 +845,17 @@ func convertCluster(cluster *models.Cluster) (*apiv1.Cluster, error) {
 func (r *TestClient) ListGCPZones(credential, dc string) ([]string, error) {
 	params := &gcp.ListGCPZonesParams{Credential: &credential, DC: dc}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
-	
+
 	zonesResponse, err := r.client.Gcp.ListGCPZones(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	names := make([]string, 0)
 	for _, name := range zonesResponse.Payload {
 		names = append(names, name.Name)
 	}
-	
+
 	return names, nil
 }
 
@@ -863,17 +863,17 @@ func (r *TestClient) ListGCPZones(credential, dc string) ([]string, error) {
 func (r *TestClient) ListGCPDiskTypes(credential, zone string) ([]string, error) {
 	params := &gcp.ListGCPDiskTypesParams{Credential: &credential, Zone: &zone}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
-	
+
 	typesResponse, err := r.client.Gcp.ListGCPDiskTypes(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	names := make([]string, 0)
 	for _, name := range typesResponse.Payload {
 		names = append(names, name.Name)
 	}
-	
+
 	return names, nil
 }
 
@@ -881,12 +881,12 @@ func (r *TestClient) ListGCPDiskTypes(credential, zone string) ([]string, error)
 func (r *TestClient) ListGCPSizes(credential, zone string) ([]apiv1.GCPMachineSize, error) {
 	params := &gcp.ListGCPSizesParams{Credential: &credential, Zone: &zone}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
-	
+
 	sizesResponse, err := r.client.Gcp.ListGCPSizes(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	sizes := make([]apiv1.GCPMachineSize, 0)
 	for _, machineType := range sizesResponse.Payload {
 		mt := apiv1.GCPMachineSize{
@@ -897,7 +897,7 @@ func (r *TestClient) ListGCPSizes(credential, zone string) ([]apiv1.GCPMachineSi
 		}
 		sizes = append(sizes, mt)
 	}
-	
+
 	return sizes, nil
 }
 
@@ -915,7 +915,7 @@ func IsHealthyCluster(healthStatus *apiv1.ClusterHealth) bool {
 func (r *TestClient) DeleteUserFromProject(projectID, userID string) error {
 	params := &users.DeleteUserFromProjectParams{ProjectID: projectID, UserID: userID}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
-	
+
 	_, err := r.client.Users.DeleteUserFromProject(params, r.bearerToken)
 	return err
 }
@@ -923,12 +923,12 @@ func (r *TestClient) DeleteUserFromProject(projectID, userID string) error {
 func (r *TestClient) GetProjectUsers(projectID string) ([]apiv1.User, error) {
 	params := &users.GetUsersForProjectParams{ProjectID: projectID}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusForbidden)
-	
+
 	response, err := r.client.Users.GetUsersForProject(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	users := make([]apiv1.User, 0)
 	for _, user := range response.Payload {
 		users = append(users, apiv1.User{
@@ -939,7 +939,7 @@ func (r *TestClient) GetProjectUsers(projectID string) ([]apiv1.User, error) {
 			},
 		})
 	}
-	
+
 	return users, nil
 }
 
@@ -954,12 +954,12 @@ func (r *TestClient) AddProjectUser(projectID, email, name, group string) (*apiv
 		},
 	}}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusForbidden)
-	
+
 	responseUser, err := r.client.Users.AddUserToProject(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	user := &apiv1.User{
 		Email: responseUser.Payload.Email,
 		ObjectMeta: apiv1.ObjectMeta{
@@ -967,19 +967,19 @@ func (r *TestClient) AddProjectUser(projectID, email, name, group string) (*apiv
 			Name: responseUser.Payload.Name,
 		},
 	}
-	
+
 	return user, nil
 }
 
 func (r *TestClient) GetGlobalSettings() (*apiv1.GlobalSettings, error) {
 	params := &admin.GetKubermaticSettingsParams{}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
-	
+
 	responseSettings, err := r.client.Admin.GetKubermaticSettings(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return convertGlobalSettings(responseSettings.Payload), nil
 }
 
@@ -988,12 +988,12 @@ func (r *TestClient) UpdateGlobalSettings(patch json.RawMessage) (*apiv1.GlobalS
 		Patch: &patch,
 	}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
-	
+
 	responseSettings, err := r.client.Admin.PatchKubermaticSettings(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return convertGlobalSettings(responseSettings.Payload), nil
 }
 
@@ -1007,7 +1007,7 @@ func convertGlobalSettings(gSettings *models.GlobalSettings) *apiv1.GlobalSettin
 			Location: customLink.Location,
 		})
 	}
-	
+
 	return &apiv1.GlobalSettings{
 		CustomLinks: customLinks,
 		CleanupOptions: kubermaticv1.CleanupOptions{
@@ -1044,7 +1044,7 @@ func (r *TestClient) SetAdmin(email string, isAdmin bool) error {
 		},
 	}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
-	
+
 	_, err := r.client.Admin.SetAdmin(params, r.bearerToken)
 	return err
 }
@@ -1052,12 +1052,12 @@ func (r *TestClient) SetAdmin(email string, isAdmin bool) error {
 func (r *TestClient) GetRoles(projectID, dc, clusterID string) ([]apiv1.RoleName, error) {
 	params := &project.ListRoleNamesParams{DC: dc, ProjectID: projectID, ClusterID: clusterID}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
-	
+
 	response, err := r.client.Project.ListRoleNames(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	roleNames := []apiv1.RoleName{}
 	for _, roleName := range response.Payload {
 		roleNames = append(roleNames, apiv1.RoleName{
@@ -1065,7 +1065,7 @@ func (r *TestClient) GetRoles(projectID, dc, clusterID string) ([]apiv1.RoleName
 			Namespace: roleName.Namespace,
 		})
 	}
-	
+
 	return roleNames, nil
 }
 
@@ -1084,12 +1084,12 @@ func (r *TestClient) BindUserToRole(projectID, dc, clusterID, roleName, namespac
 		Factor:   5.0,
 		Jitter:   0.1,
 	})
-	
+
 	response, err := r.client.Project.BindUserToRole(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &apiv1.RoleBinding{
 		Namespace:   response.Payload.Namespace,
 		RoleRefName: response.Payload.RoleRefName,
@@ -1104,19 +1104,19 @@ func (r *TestClient) GetClusterRoles(projectID, dc, clusterID string) ([]apiv1.C
 		Factor:   5.0,
 		Jitter:   0.1,
 	})
-	
+
 	response, err := r.client.Project.ListClusterRoleNames(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	clusterRoleNames := []apiv1.ClusterRoleName{}
 	for _, roleName := range response.Payload {
 		clusterRoleNames = append(clusterRoleNames, apiv1.ClusterRoleName{
 			Name: roleName.Name,
 		})
 	}
-	
+
 	return clusterRoleNames, nil
 }
 
@@ -1135,12 +1135,12 @@ func (r *TestClient) BindUserToClusterRole(projectID, dc, clusterID, roleName, u
 		Factor:   5.0,
 		Jitter:   0.1,
 	})
-	
+
 	response, err := r.client.Project.BindUserToClusterRole(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &apiv1.ClusterRoleBinding{
 		RoleRefName: response.Payload.RoleRefName,
 	}, nil
@@ -1154,12 +1154,12 @@ func (r *TestClient) GetRoleBindings(projectID, dc, clusterID string) ([]apiv1.R
 		Factor:   5.0,
 		Jitter:   0.1,
 	})
-	
+
 	response, err := r.client.Project.ListRoleBinding(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	roleBindings := []apiv1.RoleBinding{}
 	for _, roleBinding := range response.Payload {
 		subjects := []rbacv1.Subject{}
@@ -1170,13 +1170,13 @@ func (r *TestClient) GetRoleBindings(projectID, dc, clusterID string) ([]apiv1.R
 				Name:     subject.Name,
 			})
 		}
-		
+
 		roleBindings = append(roleBindings, apiv1.RoleBinding{
 			RoleRefName: roleBinding.RoleRefName,
 			Subjects:    subjects,
 		})
 	}
-	
+
 	return roleBindings, nil
 }
 
@@ -1188,12 +1188,12 @@ func (r *TestClient) GetClusterBindings(projectID, dc, clusterID string) ([]apiv
 		Factor:   5.0,
 		Jitter:   0.1,
 	})
-	
+
 	response, err := r.client.Project.ListClusterRoleBinding(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	clusterRoleBindings := []apiv1.ClusterRoleBinding{}
 	for _, roleBinding := range response.Payload {
 		subjects := []rbacv1.Subject{}
@@ -1204,25 +1204,25 @@ func (r *TestClient) GetClusterBindings(projectID, dc, clusterID string) ([]apiv
 				Name:     subject.Name,
 			})
 		}
-		
+
 		clusterRoleBindings = append(clusterRoleBindings, apiv1.ClusterRoleBinding{
 			RoleRefName: roleBinding.RoleRefName,
 			Subjects:    subjects,
 		})
 	}
-	
+
 	return clusterRoleBindings, nil
 }
 
 func (r *TestClient) UpdateCluster(projectID, dc, clusterID string, patch PatchCluster) (*apiv1.Cluster, error) {
 	params := &project.PatchClusterParams{ProjectID: projectID, DC: dc, ClusterID: clusterID, Patch: patch}
 	SetupParams(r.test, params, 1*time.Second, 5*time.Minute, http.StatusConflict)
-	
+
 	cluster, err := r.client.Project.PatchCluster(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return convertCluster(cluster.Payload)
 }
 
@@ -1243,12 +1243,12 @@ func (r *TestClient) CreateUserSSHKey(projectID, keyName, publicKey string) (*ap
 		ProjectID: projectID,
 	}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
-	
+
 	key, err := r.client.Project.CreateSSHKey(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return convertSSHKey(key.Payload), nil
 }
 
@@ -1258,17 +1258,17 @@ func (r *TestClient) ListUserSSHKey(projectID string) ([]*apiv1.SSHKey, error) {
 		ProjectID: projectID,
 	}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
-	
+
 	keyList, err := r.client.Project.ListSSHKeys(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	resultList := []*apiv1.SSHKey{}
 	for _, key := range keyList.Payload {
 		resultList = append(resultList, convertSSHKey(key))
 	}
-	
+
 	return resultList, nil
 }
 
@@ -1281,7 +1281,7 @@ func (r *TestClient) DeleteUserSSHKey(projectID, keyID string) error {
 	// consider HTTP 403 (Forbidden) to be transient, as it can take a few
 	// moments for the UserProjectBindings to be properly reconciled
 	SetupParams(r.test, params, 1*time.Second, 1*time.Minute, http.StatusForbidden)
-	
+
 	_, err := r.client.Project.DeleteSSHKey(params, r.bearerToken)
 	return err
 }
@@ -1295,7 +1295,7 @@ func (r *TestClient) AssignSSHKeyToCluster(projectID, clusterID, dc, keyID strin
 		ProjectID: projectID,
 	}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
-	
+
 	_, err := r.client.Project.AssignSSHKeyToCluster(params, r.bearerToken)
 	return err
 }
@@ -1313,7 +1313,7 @@ func (r *TestClient) DetachSSHKeyFromClusterParams(projectID, clusterID, dc, key
 		Steps:    4,
 		Factor:   1.5,
 	}, http.StatusForbidden)
-	
+
 	_, err := r.client.Project.DetachSSHKeyFromCluster(params, r.bearerToken)
 	return err
 }
@@ -1342,12 +1342,12 @@ func (r *TestClient) ListDCForProvider(provider string) ([]*models.Datacenter, e
 		Steps:    4,
 		Factor:   1.5,
 	})
-	
+
 	list, err := r.client.Datacenter.ListDCForProvider(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return list.GetPayload(), nil
 }
 
@@ -1361,12 +1361,12 @@ func (r *TestClient) GetDCForProvider(provider, dc string) (*models.Datacenter, 
 		Steps:    4,
 		Factor:   1.5,
 	})
-	
+
 	receivedDC, err := r.client.Datacenter.GetDCForProvider(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return receivedDC.GetPayload(), nil
 }
 
@@ -1383,12 +1383,12 @@ func (r *TestClient) CreateDC(seed string, dc *models.Datacenter) (*models.Datac
 		Steps:    4,
 		Factor:   1.5,
 	})
-	
+
 	createdDC, err := r.client.Datacenter.CreateDC(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return createdDC.GetPayload(), nil
 }
 
@@ -1403,7 +1403,7 @@ func (r *TestClient) DeleteDC(seed, dc string) error {
 		Steps:    4,
 		Factor:   1.5,
 	}, http.StatusBadRequest)
-	
+
 	_, err := r.client.Datacenter.DeleteDC(params, r.bearerToken)
 	return err
 }
@@ -1422,12 +1422,12 @@ func (r *TestClient) UpdateDC(seed, dcToUpdate string, dc *models.Datacenter) (*
 		Steps:    4,
 		Factor:   1.5,
 	}, http.StatusBadRequest)
-	
+
 	updatedDC, err := r.client.Datacenter.UpdateDC(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return updatedDC.GetPayload(), nil
 }
 
@@ -1442,12 +1442,12 @@ func (r *TestClient) PatchDC(seed, dcToPatch, patch string) (*models.Datacenter,
 		Steps:    4,
 		Factor:   1.5,
 	})
-	
+
 	patchedDC, err := r.client.Datacenter.PatchDC(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return patchedDC.GetPayload(), nil
 }
 
@@ -1461,12 +1461,12 @@ func (r *TestClient) GetDCForSeed(seed, dc string) (*models.Datacenter, error) {
 		Steps:    4,
 		Factor:   1.5,
 	}, http.StatusNotFound)
-	
+
 	receivedDC, err := r.client.Datacenter.GetDCForSeed(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return receivedDC.GetPayload(), nil
 }
 
@@ -1479,12 +1479,12 @@ func (r *TestClient) ListDCForSeed(seed string) ([]*models.Datacenter, error) {
 		Steps:    4,
 		Factor:   1.5,
 	})
-	
+
 	list, err := r.client.Datacenter.ListDCForSeed(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return list.GetPayload(), nil
 }
 
@@ -1497,12 +1497,12 @@ func (r *TestClient) GetDC(dc string) (*models.Datacenter, error) {
 		Steps:    4,
 		Factor:   1.5,
 	})
-	
+
 	receivedDC, err := r.client.Datacenter.GetDatacenter(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return receivedDC.GetPayload(), nil
 }
 
@@ -1513,12 +1513,12 @@ func (r *TestClient) ListDC() ([]*models.Datacenter, error) {
 		Steps:    4,
 		Factor:   1.5,
 	})
-	
+
 	list, err := r.client.Datacenter.ListDatacenters(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return list.GetPayload(), nil
 }
 
@@ -1529,7 +1529,7 @@ func (r *TestClient) Logout() error {
 		Steps:    4,
 		Factor:   1.5,
 	})
-	
+
 	_, err := r.client.Users.LogoutCurrentUser(params, r.bearerToken)
 	return err
 }
@@ -1541,12 +1541,12 @@ func (r *TestClient) GetKubeconfig(dc, projectID, clusterID string) (string, err
 		ProjectID: projectID,
 	}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
-	
+
 	conf, err := r.client.Project.GetClusterKubeconfig(params, r.bearerToken)
 	if err != nil {
 		return "", err
 	}
-	
+
 	return string(conf.Payload), nil
 }
 
@@ -1559,7 +1559,7 @@ func (r *TestClient) GetUserClusterClient(dc, projectID, clusterID string) (ctrl
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return ctrlruntimeclient.New(config, ctrlruntimeclient.Options{Scheme: scheme.Scheme})
 }
 
@@ -1571,23 +1571,23 @@ func (r *TestClient) GetConstraint(projectID, clusterID, name string) (*apiv2.Co
 		ClusterID: clusterID,
 		Name:      name,
 	}
-	
+
 	SetupRetryParams(r.test, params, Backoff{
 		Duration: 1 * time.Second,
 		Steps:    4,
 		Factor:   1.5,
 	})
-	
+
 	project, err := r.client.Project.GetConstraint(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return convertConstraint(project.Payload)
 }
 
 func (r *TestClient) CreateConstraint(name, ctKind string) (*kubermaticv1.Constraint, error) {
-	
+
 	kind := &models.Kind{
 		Kinds: []string{"ConfigMap"}, APIGroups: []string{""},
 	}
@@ -1600,7 +1600,7 @@ func (r *TestClient) CreateConstraint(name, ctKind string) (*kubermaticv1.Constr
 			"labels": json.RawMessage(`["gatekeeper"]`),
 		},
 	}
-	
+
 	params := &constraint.CreateDefaultConstraintParams{
 		Body: &models.ConstraintBody{
 			Name: name,
@@ -1612,13 +1612,13 @@ func (r *TestClient) CreateConstraint(name, ctKind string) (*kubermaticv1.Constr
 		Steps:    4,
 		Factor:   1.5,
 	})
-	
+
 	constraint, err := r.client.Constraint.CreateDefaultConstraint(params, r.bearerToken)
-	
+
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return convertDefaultConstraint(constraint.Payload)
 }
 
@@ -1628,7 +1628,7 @@ func convertConstraint(constraint *models.Constraint) (*apiv2.Constraint, error)
 	apiConstraint.Spec = kubermaticv1.ConstraintSpec{
 		ConstraintType: constraint.Spec.ConstraintType,
 	}
-	
+
 	return apiConstraint, nil
 }
 
@@ -1639,7 +1639,7 @@ func convertDefaultConstraint(constraint *models.Constraint) (*kubermaticv1.Cons
 }
 
 func (r *TestClient) CreateCT(name, ctKind string) (*kubermaticv1.ConstraintTemplate, error) {
-	
+
 	spec := models.ConstraintTemplateSpec{
 		Crd: &models.CRD{
 			Spec: &models.CRDSpec{
@@ -1680,7 +1680,7 @@ func (r *TestClient) CreateCT(name, ctKind string) (*kubermaticv1.ConstraintTemp
 		Steps:    4,
 		Factor:   1.5,
 	})
-	
+
 	r.test.Logf("Creating constraint template %s...", name)
 	ct, err := r.client.Constrainttemplates.CreateConstraintTemplate(params, r.bearerToken)
 	if err != nil {
@@ -1697,34 +1697,34 @@ func convertDefaultConstraintTemplate(constraintTemplate *models.ConstraintTempl
 
 func (r *TestClient) DeleteConstraintTemplate(name string) error {
 	r.test.Log("Deleting constraint template...")
-	
+
 	params := &constrainttemplates.DeleteConstraintTemplateParams{
 		Name: name,
 	}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusConflict)
-	
+
 	_, err := r.client.Constrainttemplates.DeleteConstraintTemplate(params, r.bearerToken)
 	if err != nil {
 		return err
 	}
-	
+
 	r.test.Log("Constraint template deleted successfully")
 	return nil
 }
 
 func (r *TestClient) DeleteConstraint(name string) error {
 	r.test.Log("Deleting constraint...")
-	
+
 	params := &constraints.DeleteDefaultConstraintParams{
 		Name: name,
 	}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusConflict)
-	
+
 	_, err := r.client.Constraints.DeleteDefaultConstraint(params, r.bearerToken)
 	if err != nil {
 		return err
 	}
-	
+
 	r.test.Log("Constraint deleted successfully")
 	return nil
 }
@@ -1735,7 +1735,7 @@ func (r *TestClient) CreateClusterTemplate(projectID, name, scope, credential, v
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse version %s: %v", version, err)
 	}
-	
+
 	params := &project.CreateClusterTemplateParams{
 		Body: project.CreateClusterTemplateBody{
 			Name:  name,
@@ -1756,18 +1756,18 @@ func (r *TestClient) CreateClusterTemplate(projectID, name, scope, credential, v
 		},
 		ProjectID: projectID,
 	}
-	
+
 	SetupRetryParams(r.test, params, Backoff{
 		Duration: 1 * time.Second,
 		Steps:    4,
 		Factor:   1.5,
 	})
-	
+
 	template, err := r.client.Project.CreateClusterTemplate(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &apiv2.ClusterTemplate{
 		Name:      template.Payload.Name,
 		ID:        template.Payload.ID,
@@ -1782,7 +1782,7 @@ func (r *TestClient) CreateClusterTemplate(projectID, name, scope, credential, v
 			InheritedLabels: template.Payload.Cluster.InheritedLabels,
 			Type:            template.Payload.Cluster.Type,
 			Credential:      template.Payload.Cluster.Credential,
-			
+
 			Status: apiv1.ClusterStatus{},
 		},
 	}, nil
@@ -1790,7 +1790,7 @@ func (r *TestClient) CreateClusterTemplate(projectID, name, scope, credential, v
 
 // CreateClusterTemplate method creates cluster template instance object
 func (r *TestClient) CreateClusterTemplateInstance(projectID, templateID string, replicas int64) (*apiv2.ClusterTemplateInstance, error) {
-	
+
 	params := &project.CreateClusterTemplateInstanceParams{
 		Body: project.CreateClusterTemplateInstanceBody{
 			Replicas: replicas,
@@ -1798,18 +1798,18 @@ func (r *TestClient) CreateClusterTemplateInstance(projectID, templateID string,
 		ProjectID:         projectID,
 		ClusterTemplateID: templateID,
 	}
-	
+
 	SetupRetryParams(r.test, params, Backoff{
 		Duration: 1 * time.Second,
 		Steps:    4,
 		Factor:   1.5,
 	})
-	
+
 	instance, err := r.client.Project.CreateClusterTemplateInstance(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &apiv2.ClusterTemplateInstance{
 		Name: instance.Payload.Name,
 		Spec: kubermaticv1.ClusterTemplateInstanceSpec{
@@ -1823,24 +1823,24 @@ func (r *TestClient) CreateClusterTemplateInstance(projectID, templateID string,
 
 // ListClusters method lists user clusters
 func (r *TestClient) ListClusters(projectID string) ([]*apiv1.Cluster, error) {
-	
+
 	params := &project.ListClustersV2Params{
 		ProjectID: projectID,
 	}
-	
+
 	SetupRetryParams(r.test, params, Backoff{
 		Duration: 1 * time.Second,
 		Steps:    4,
 		Factor:   1.5,
 	})
-	
+
 	clusterList := []*apiv1.Cluster{}
-	
+
 	clusters, err := r.client.Project.ListClustersV2(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	for _, cluster := range clusters.Payload {
 		apiCluster, err := convertCluster(cluster)
 		if err != nil {
@@ -1848,7 +1848,7 @@ func (r *TestClient) ListClusters(projectID string) ([]*apiv1.Cluster, error) {
 		}
 		clusterList = append(clusterList, apiCluster)
 	}
-	
+
 	return clusterList, nil
 }
 
@@ -1862,12 +1862,12 @@ func (r *TestClient) ListDOSizes(credential string) (*models.DigitaloceanSizeLis
 		Steps:    4,
 		Factor:   1.5,
 	})
-	
+
 	sizesResponse, err := r.client.Digitalocean.ListDigitaloceanSizes(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return sizesResponse.Payload, nil
 }
 
@@ -1882,12 +1882,12 @@ func (r *TestClient) ListAzureSizes(credential, location string) (models.AzureSi
 		Steps:    4,
 		Factor:   1.5,
 	})
-	
+
 	sizesResponse, err := r.client.Azure.ListAzureSizes(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return sizesResponse.Payload, nil
 }
 

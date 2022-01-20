@@ -9,10 +9,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	
+
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
-	
+
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
@@ -75,14 +75,14 @@ func (o *CreateClusterCreated) GetPayload() *models.Cluster {
 }
 
 func (o *CreateClusterCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
-	
+
 	o.Payload = new(models.Cluster)
-	
+
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
 		return err
 	}
-	
+
 	return nil
 }
 
@@ -103,7 +103,7 @@ func (o *CreateClusterUnauthorized) Error() string {
 }
 
 func (o *CreateClusterUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
-	
+
 	return nil
 }
 
@@ -124,7 +124,7 @@ func (o *CreateClusterForbidden) Error() string {
 }
 
 func (o *CreateClusterForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
-	
+
 	return nil
 }
 
@@ -141,7 +141,7 @@ errorResponse
 */
 type CreateClusterDefault struct {
 	_statusCode int
-	
+
 	Payload *models.ErrorResponse
 }
 
@@ -158,14 +158,14 @@ func (o *CreateClusterDefault) GetPayload() *models.ErrorResponse {
 }
 
 func (o *CreateClusterDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
-	
+
 	o.Payload = new(models.ErrorResponse)
-	
+
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
 		return err
 	}
-	
+
 	return nil
 }
 
