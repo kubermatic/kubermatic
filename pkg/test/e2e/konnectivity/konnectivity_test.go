@@ -101,7 +101,7 @@ func debug() {
 	
 	for _, n := range ns.Items {
 		log.Println(n.Name)
-		pods, err := kubeClient.CoreV1().Pods(n).List(context.Background(), metav1.ListOptions{})
+		pods, err := kubeClient.CoreV1().Pods(n.Name).List(context.Background(), metav1.ListOptions{})
 		if err != nil {
 			log.Println("failed to list pods", n, err)
 			return
@@ -153,7 +153,7 @@ func TestKonnectivity(t *testing.T) {
 			t.Logf("checking node readiness...")
 			////
 			t.Logf("printing seedcluster pods")
-			debug() 
+			debug()
 			////
 			
 			nodes, err := kubeClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
