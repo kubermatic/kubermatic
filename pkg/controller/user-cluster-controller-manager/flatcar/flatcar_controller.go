@@ -25,6 +25,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/flatcar/resources"
 	nodelabelerapi "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/node-labeler/api"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
+	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
@@ -62,7 +63,11 @@ func Add(mgr manager.Manager, overwriteRegistry string, updateWindow kubermaticv
 		return err
 	}
 
-	return c.Watch(&source.Kind{Type: &corev1.Node{}}, controllerutil.EnqueueConst(""))
+	predicate := predicateutil.MultiFactory(predicateutil.TrueFilter, func(o ctrlruntimeclient.Object) bool {
+		return o.GetLabels()[nodelabelerapi.DistributionLabelKey] == nodelabelerapi.FlatcarLabelValue
+	}, predicateutil.TrueFilter)
+
+	return c.Watch(&source.Kind{Type: &corev1.Node{}}, controllerutil.EnqueueConst(""), predicate)
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile.Result, error) {
@@ -74,14 +79,22 @@ func (r *Reconciler) Reconcile(ctx context.Context, _ reconcile.Request) (reconc
 		return reconcile.Result{}, nil
 	}
 
-	var nodes corev1.NodeList
-	if err := r.List(ctx, &nodes,
+	var nodeList corev1.NodeList
+	if err := r.List(ctx, &nodeList,
 		ctrlruntimeclient.MatchingLabels{nodelabelerapi.DistributionLabelKey: nodelabelerapi.FlatcarLabelValue},
 	); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to list nodes: %v", err)
 	}
 
-	if len(nodes.Items) == 0 {
+	// filter out any Flatcar nodes that are already being deleted
+	var nodes []corev1.Node
+	for _, node := range nodeList.Items {
+		if node.ObjectMeta.DeletionTimestamp == nil {
+			nodes = append(nodes, node)
+		}
+	}
+
+	if len(nodes) == 0 {
 		if err := r.cleanupUpdateOperatorResources(ctx); err != nil {
 			return reconcile.Result{}, fmt.Errorf("failed to clean up UpdateOperator resources: %v", err)
 		}
