@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"strings"
 	"testing"
@@ -74,6 +75,42 @@ func init() {
 	}
 }
 
+func debug() {
+	kubeconfig := os.Getenv("KUBECONFIG")
+	if kubeconfig == "" {
+		log.Println("KUBECONFIG not set")
+		return
+	}
+	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+	if err != nil {
+		log.Println("failed to build config", err)
+		return
+	}
+	
+	kubeClient, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		log.Println("failed to build kubeclient", err)
+		return
+	}
+	
+	ns, err := kubeClient.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		log.Println("failed to get namespaces", err)
+		return
+	}
+	
+	for _, n := range ns.Items {
+		log.Println(n.Name)
+		pods, err := kubeClient.CoreV1().Pods(n).List(context.Background(), metav1.ListOptions{})
+		if err != nil {
+			log.Println("failed to list pods", n, err)
+			return
+		}
+		for _, p := range pods.Items {
+			log.Println(n, p.Name, p.Status.Phase)
+		}
+	}
+}
 
 func TestKonnectivity(t *testing.T) {
 	var cleanup func()
@@ -114,6 +151,11 @@ func TestKonnectivity(t *testing.T) {
 	{
 		err := wait.Poll(30*time.Second, 10*time.Minute, func() (bool, error) {
 			t.Logf("checking node readiness...")
+			////
+			t.Logf("printing seedcluster pods")
+			debug() 
+			////
+			
 			nodes, err := kubeClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 			if err != nil {
 				t.Logf("failed to get nodes list: %s", err)
