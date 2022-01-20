@@ -201,7 +201,7 @@ spec:
         # given domains can make use of this datacenter. You can define multiple
         # domains, e.g. "example.com", one of which must match the email domain
         # exactly (i.e. "example.com" will not match "user@test.example.com").
-        requiredEmails: null
+        requiredEmails: []
         vsphere:
           # If set to true, disables the TLS certificate check against the endpoint.
           allowInsecure: false
