@@ -125,10 +125,11 @@ func TestKonnectivity(t *testing.T) {
 			
 			for _, c := range nodes.Items[0].Status.Conditions {
 				if c.Type == corev1.NodeReady {
+					t.Logf("node is ready")
 					return true, nil
 				}
 			}
-			t.Logf("no nodes with external ip")
+			t.Logf("no nodes are ready")
 			return false, nil
 		})
 		if err != nil {
@@ -140,7 +141,7 @@ func TestKonnectivity(t *testing.T) {
 	{
 		err := wait.Poll(30*time.Second, 10*time.Minute, func() (bool, error) {
 			t.Logf("checking pod readiness...")
-			pods, err := getPods(ctx, kubeClient, "konnectivity-agent")
+			pods, err := getPods(ctx, kubeClient, "")
 			if err != nil {
 				t.Logf("failed to get pod list: %s", err)
 				return false, nil
@@ -150,14 +151,14 @@ func TestKonnectivity(t *testing.T) {
 				t.Logf("no konnectivity-agent pods found")
 				return false, nil
 			}
-			
+
 			for _, pod := range pods {
 				if pod.Status.Phase != corev1.PodRunning {
 					t.Logf("not all pods are ready yet...")
 					return false, nil
 				}
 			}
-			
+			t.Logf("%d are running", len(pods))
 			return true, nil
 		})
 		if err != nil {
