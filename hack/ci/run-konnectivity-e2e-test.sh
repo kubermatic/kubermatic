@@ -34,7 +34,6 @@ export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
 source hack/ci/setup-kind-cluster.sh
 source hack/ci/setup-kubermatic-in-kind.sh
 
-
 export GIT_HEAD_HASH="$(git rev-parse HEAD | tr -d '\n')"
 
 echodate "Getting secrets from Vault"
@@ -63,7 +62,6 @@ function print_kubermatic_logs {
   fi
 }
 appendTrap print_kubermatic_logs EXIT
-
 
 echodate "Running konnectivity tests..."
 
