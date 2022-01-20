@@ -19,6 +19,7 @@ package cluster
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -29,7 +30,7 @@ import (
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
 	"k8c.io/kubermatic/v2/pkg/version"
 )
@@ -38,7 +39,7 @@ func GetUpgradesEndpoint(configGetter provider.KubermaticConfigurationGetter, pr
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(common.GetClusterReq)
 		if !ok {
-			return nil, errors.NewWrongMethod(request, common.GetClusterReq{})
+			return nil, kubermaticerrors.NewWrongMethod(request, common.GetClusterReq{})
 		}
 		return handlercommon.GetUpgradesEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, projectProvider, privilegedProjectProvider, configGetter)
 	}
@@ -70,11 +71,11 @@ func GetNodeUpgrades(configGetter provider.KubermaticConfigurationGetter) endpoi
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(NodeUpgradesReq)
 		if !ok {
-			return nil, errors.NewWrongMethod(request, NodeUpgradesReq{})
+			return nil, kubermaticerrors.NewWrongMethod(request, NodeUpgradesReq{})
 		}
 		err := req.TypeReq.Validate()
 		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, kubermaticerrors.NewBadRequest(err.Error())
 		}
 		config, err := configGetter(ctx)
 		if err != nil {
@@ -83,17 +84,17 @@ func GetNodeUpgrades(configGetter provider.KubermaticConfigurationGetter) endpoi
 
 		controlPlaneVersion, err := semver.NewVersion(req.ControlPlaneVersion)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse control plane version: %v", err)
+			return nil, fmt.Errorf("failed to parse control plane version: %w", err)
 		}
 
 		versions, err := version.NewFromConfiguration(config).GetVersions(req.Type)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get master versions: %v", err)
+			return nil, fmt.Errorf("failed to get master versions: %w", err)
 		}
 
 		compatibleVersions, err := filterIncompatibleVersions(versions, controlPlaneVersion)
 		if err != nil {
-			return nil, fmt.Errorf("failed filter incompatible versions: %v", err)
+			return nil, fmt.Errorf("failed filter incompatible versions: %w", err)
 		}
 
 		return convertVersionsToExternal(compatibleVersions), nil
@@ -105,11 +106,8 @@ func filterIncompatibleVersions(possibleKubeletVersions []*version.Version, cont
 	for _, v := range possibleKubeletVersions {
 		if err := nodeupdate.EnsureVersionCompatible(controlPlaneVersion, v.Version); err == nil {
 			compatibleVersions = append(compatibleVersions, v)
-		} else {
-			_, ok := err.(nodeupdate.VersionSkewError)
-			if !ok {
-				return nil, fmt.Errorf("failed to check compatibility between kubelet %q and control plane %q: %v", v.Version, controlPlaneVersion, err)
-			}
+		} else if !errors.Is(err, nodeupdate.VersionSkewError{}) {
+			return nil, fmt.Errorf("failed to check compatibility between kubelet %q and control plane %q: %w", v.Version, controlPlaneVersion, err)
 		}
 	}
 	return compatibleVersions, nil
@@ -144,7 +142,7 @@ func UpgradeNodeDeploymentsEndpoint(projectProvider provider.ProjectProvider, pr
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(UpgradeNodeDeploymentsReq)
 		if !ok {
-			return nil, errors.NewWrongMethod(request, common.GetClusterReq{})
+			return nil, kubermaticerrors.NewWrongMethod(request, common.GetClusterReq{})
 		}
 		return handlercommon.UpgradeNodeDeploymentsEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, req.Body, projectProvider, privilegedProjectProvider)
 	}
@@ -155,7 +153,7 @@ func GetMasterVersionsEndpoint(configGetter provider.KubermaticConfigurationGett
 		req := request.(TypeReq)
 		err := req.Validate()
 		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, kubermaticerrors.NewBadRequest(err.Error())
 		}
 
 		config, err := configGetter(ctx)
@@ -165,7 +163,7 @@ func GetMasterVersionsEndpoint(configGetter provider.KubermaticConfigurationGett
 
 		versions, err := version.NewFromConfiguration(config).GetVersions(req.Type)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get master versions: %v", err)
+			return nil, fmt.Errorf("failed to get master versions: %w", err)
 		}
 		return convertVersionsToExternal(versions), nil
 	}

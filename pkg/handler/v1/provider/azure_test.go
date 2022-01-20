@@ -104,7 +104,7 @@ func TestAzureSizeEndpoint(t *testing.T) {
 			res := httptest.NewRecorder()
 			router, _, err := test.CreateTestEndpointAndGetClients(apiUser, buildAzureDatacenterMeta(), []ctrlruntimeclient.Object{}, []ctrlruntimeclient.Object{}, []ctrlruntimeclient.Object{test.APIUserToKubermaticUser(apiUser)}, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v\n", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			router.ServeHTTP(res, req)

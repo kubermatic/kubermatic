@@ -19,6 +19,7 @@ package yaml
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 
@@ -33,10 +34,10 @@ func ParseMultipleDocuments(input io.Reader) ([]runtime.RawExtension, error) {
 	for {
 		b, err := reader.Read()
 		if err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				break
 			}
-			return nil, fmt.Errorf("failed reading from YAML reader: %v", err)
+			return nil, fmt.Errorf("failed reading from YAML reader: %w", err)
 		}
 
 		b = bytes.TrimSpace(b)
@@ -47,7 +48,7 @@ func ParseMultipleDocuments(input io.Reader) ([]runtime.RawExtension, error) {
 		decoder := kyaml.NewYAMLToJSONDecoder(bytes.NewBuffer(b))
 		raw := runtime.RawExtension{}
 		if err := decoder.Decode(&raw); err != nil {
-			return nil, fmt.Errorf("decoding failed: %v", err)
+			return nil, fmt.Errorf("decoding failed: %w", err)
 		}
 
 		// skip empty documents (e.g. documents that are only comments)

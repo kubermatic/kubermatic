@@ -79,7 +79,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			return reconcile.Result{}, nil
 		}
 
-		return reconcile.Result{}, fmt.Errorf("failed to get allowed registry %s: %v", allowedRegistry.Name, err)
+		return reconcile.Result{}, fmt.Errorf("failed to get allowed registry %s: %w", allowedRegistry.Name, err)
 	}
 
 	err := r.reconcile(ctx, allowedRegistry)
@@ -93,7 +93,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 func (r *Reconciler) reconcile(ctx context.Context, allowedRegistry *kubermaticv1.AllowedRegistry) error {
 	regSet, err := r.getRegistrySet()
 	if err != nil {
-		return fmt.Errorf("error getting registry set from AllowedRegistries: %v", err)
+		return fmt.Errorf("error getting registry set from AllowedRegistries: %w", err)
 	}
 
 	if allowedRegistry.DeletionTimestamp != nil {
@@ -108,13 +108,13 @@ func (r *Reconciler) reconcile(ctx context.Context, allowedRegistry *kubermaticv
 
 		err := reconciling.ReconcileKubermaticV1Constraints(ctx, constraintCreatorGetters, r.namespace, r.masterClient)
 		if err != nil {
-			return fmt.Errorf("error ensuring AllowedRegistry Constraint Template: %v", err)
+			return fmt.Errorf("error ensuring AllowedRegistry Constraint Template: %w", err)
 		}
 
 		oldAllowedRegistry := allowedRegistry.DeepCopy()
 		kuberneteshelper.RemoveFinalizer(allowedRegistry, kubermaticapiv1.AllowedRegistryCleanupFinalizer)
 		if err := r.masterClient.Patch(ctx, allowedRegistry, ctrlruntimeclient.MergeFrom(oldAllowedRegistry)); err != nil {
-			return fmt.Errorf("failed to remove allowed registry finalizer %s: %v", allowedRegistry.Name, err)
+			return fmt.Errorf("failed to remove allowed registry finalizer %s: %w", allowedRegistry.Name, err)
 		}
 		return nil
 	}
@@ -123,7 +123,7 @@ func (r *Reconciler) reconcile(ctx context.Context, allowedRegistry *kubermaticv
 		oldAllowedRegistry := allowedRegistry.DeepCopy()
 		kuberneteshelper.AddFinalizer(allowedRegistry, kubermaticapiv1.AllowedRegistryCleanupFinalizer)
 		if err := r.masterClient.Patch(ctx, allowedRegistry, ctrlruntimeclient.MergeFrom(oldAllowedRegistry)); err != nil {
-			return fmt.Errorf("failed to set allowed registry finalizer %s: %v", allowedRegistry.Name, err)
+			return fmt.Errorf("failed to set allowed registry finalizer %s: %w", allowedRegistry.Name, err)
 		}
 	}
 
@@ -133,7 +133,7 @@ func (r *Reconciler) reconcile(ctx context.Context, allowedRegistry *kubermaticv
 	}
 	err = reconciling.ReconcileKubermaticV1ConstraintTemplates(ctx, ctCreatorGetters, "", r.masterClient)
 	if err != nil {
-		return fmt.Errorf("error ensuring AllowedRegistry Constraint Template: %v", err)
+		return fmt.Errorf("error ensuring AllowedRegistry Constraint Template: %w", err)
 	}
 
 	// Ensure Constraint with registry data
@@ -143,7 +143,7 @@ func (r *Reconciler) reconcile(ctx context.Context, allowedRegistry *kubermaticv
 
 	err = reconciling.ReconcileKubermaticV1Constraints(ctx, constraintCreatorGetters, r.namespace, r.masterClient)
 	if err != nil {
-		return fmt.Errorf("error ensuring AllowedRegistry Constraint Template: %v", err)
+		return fmt.Errorf("error ensuring AllowedRegistry Constraint Template: %w", err)
 	}
 
 	return nil
@@ -203,7 +203,7 @@ func allowedRegistryConstraintCreatorGetter(regSet sets.String) reconciling.Name
 
 			jsonRegSet, err := json.Marshal(regSet.List())
 			if err != nil {
-				return nil, fmt.Errorf("error marshalling registry set: %v", err)
+				return nil, fmt.Errorf("error marshalling registry set: %w", err)
 			}
 
 			ct.Spec.Parameters = map[string]json.RawMessage{

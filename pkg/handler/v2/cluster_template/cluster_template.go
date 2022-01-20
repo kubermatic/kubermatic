@@ -365,7 +365,7 @@ func CreateInstanceEndpoint(projectProvider provider.ProjectProvider, privileged
 
 		seed, _, err := provider.DatacenterFromSeedMap(adminUserInfo, seedsGetter, ct.Spec.Cloud.DatacenterName)
 		if err != nil {
-			return nil, fmt.Errorf("error getting seed: %v", err)
+			return nil, fmt.Errorf("error getting seed: %w", err)
 		}
 
 		clusterTemplateInstanceProvider, err := clusterTemplateProviderGetter(seed)

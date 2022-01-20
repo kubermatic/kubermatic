@@ -47,12 +47,12 @@ func NewClientFromHelmValues(valuesFile string, clientID string, log *zap.Sugare
 
 	f, err := os.Open(valuesFile)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open %s: %v", valuesFile, err)
+		return nil, fmt.Errorf("failed to open %s: %w", valuesFile, err)
 	}
 	defer f.Close()
 
 	if err := yaml.NewDecoder(f).Decode(&values); err != nil {
-		return nil, fmt.Errorf("failed to decode %s as YAML: %v", valuesFile, err)
+		return nil, fmt.Errorf("failed to decode %s as YAML: %w", valuesFile, err)
 	}
 
 	redirectURI := ""

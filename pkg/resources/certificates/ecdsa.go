@@ -48,7 +48,7 @@ func GetECDSAClientCertificateCreator(name, commonName string, organizations []s
 	return func(se *corev1.Secret) (*corev1.Secret, error) {
 		ca, err := getCA()
 		if err != nil {
-			return nil, fmt.Errorf("failed to get CA: %v", err)
+			return nil, fmt.Errorf("failed to get CA: %w", err)
 		}
 
 		se.Name = name
@@ -59,7 +59,7 @@ func GetECDSAClientCertificateCreator(name, commonName string, organizations []s
 		if b, exists := se.Data[dataCertKey]; exists {
 			certs, err := certutil.ParseCertsPEM(b)
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret %s: %v", name, dataCertKey, err)
+				return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret %s: %w", name, dataCertKey, err)
 			}
 
 			if resources.IsClientCertificateValidForAllOf(certs[0], commonName, organizations, ca.Cert) {
@@ -74,7 +74,7 @@ func GetECDSAClientCertificateCreator(name, commonName string, organizations []s
 		}
 		cert, key, err := GetSignedECDSACertAndKey(Duration365d, config, ca.Cert, ca.Key)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get a signed ECDSA cert and key: %v", err)
+			return nil, fmt.Errorf("failed to get a signed ECDSA cert and key: %w", err)
 		}
 
 		se.Data[dataCertKey] = cert
@@ -110,13 +110,13 @@ func generateECDSACertAndKey(notAfter time.Duration, isCA bool, cfg certutil.Con
 
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to generate private key: %v", err)
+		return nil, nil, fmt.Errorf("failed to generate private key: %w", err)
 	}
 
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to generate serial number: %v", err)
+		return nil, nil, fmt.Errorf("failed to generate serial number: %w", err)
 	}
 
 	template := x509.Certificate{
@@ -147,22 +147,22 @@ func generateECDSACertAndKey(notAfter time.Duration, isCA bool, cfg certutil.Con
 		derBytes, err = x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
 	}
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to generate certificate: %v", err)
+		return nil, nil, fmt.Errorf("failed to generate certificate: %w", err)
 	}
 
 	pemCertReader := bytes.NewBuffer([]byte{})
 	if err := pem.Encode(pemCertReader, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes}); err != nil {
-		return nil, nil, fmt.Errorf("failed to pem-encode cert: %v", err)
+		return nil, nil, fmt.Errorf("failed to pem-encode cert: %w", err)
 	}
 
 	privateKeyPemBlock, err := x509.MarshalECPrivateKey(privateKey)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to marshal private key into pem.Block: %v", err)
+		return nil, nil, fmt.Errorf("failed to marshal private key into pem.Block: %w", err)
 	}
 
 	pemKeyReader := bytes.NewBuffer([]byte{})
 	if err := pem.Encode(pemKeyReader, &pem.Block{Type: "EC PRIVATE KEY", Bytes: privateKeyPemBlock}); err != nil {
-		return nil, nil, fmt.Errorf("failed to pem-encode private key: %v", err)
+		return nil, nil, fmt.Errorf("failed to pem-encode private key: %w", err)
 	}
 
 	return pemCertReader.Bytes(), pemKeyReader.Bytes(), nil

@@ -49,7 +49,7 @@ func (c *Cache) Client(cfg *rest.Config) (ctrlruntimeclient.Client, error) {
 		var err error
 		mapper, err = apiutil.NewDynamicRESTMapper(cfg)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create restMapper: %v", err)
+			return nil, fmt.Errorf("failed to create restMapper: %w", err)
 		}
 		c.cache.Store(key, mapper)
 	} else {

@@ -97,7 +97,7 @@ type defraggerCommandTplData struct {
 func defraggerCommand(data cronJobCreatorData) ([]string, error) {
 	tpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(defraggerCommandTpl)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse etcd command template: %v", err)
+		return nil, fmt.Errorf("failed to parse etcd command template: %w", err)
 	}
 
 	tplData := defraggerCommandTplData{

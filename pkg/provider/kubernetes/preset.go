@@ -80,7 +80,7 @@ func presetsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, 
 		return func(userInfo *provider.UserInfo) ([]kubermaticv1.Preset, error) {
 			presetList := &kubermaticv1.PresetList{}
 			if err := client.List(ctx, presetList); err != nil {
-				return nil, fmt.Errorf("failed to get presets %v", err)
+				return nil, fmt.Errorf("failed to get presets: %w", err)
 			}
 			return filterOutPresets(userInfo, presetList)
 		}, nil
@@ -91,7 +91,7 @@ func presetsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, 
 	if presetsFile != "" {
 		presets, err = LoadPresetsFromFile(presetsFile)
 		if err != nil {
-			return nil, fmt.Errorf("failed to load presets from %s: %v", presetsFile, err)
+			return nil, fmt.Errorf("failed to load presets from %s: %w", presetsFile, err)
 		}
 	}
 

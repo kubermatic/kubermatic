@@ -186,7 +186,7 @@ func getUploaderFromCtx(c *cli.Context) (*storeuploader.StoreUploader, error) {
 	if caBundleFile := c.String("ca-bundle"); caBundleFile != "" {
 		bundle, err := certificates.NewCABundleFromFile(caBundleFile)
 		if err != nil {
-			return nil, fmt.Errorf("cannot open CA bundle: %v", err)
+			return nil, fmt.Errorf("cannot open CA bundle: %w", err)
 		}
 
 		rootCAs = bundle.CertPool()
@@ -201,7 +201,7 @@ func getUploaderFromCtx(c *cli.Context) (*storeuploader.StoreUploader, error) {
 		rootCAs,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create store uploader: %v", err)
+		return nil, fmt.Errorf("failed to create store uploader: %w", err)
 	}
 
 	return uploader, nil

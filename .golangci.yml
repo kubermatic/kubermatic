@@ -36,6 +36,7 @@ linters:
     - durationcheck
     - errcheck
     - errname
+    - errorlint
     - goconst
     - gocritic
     - gocyclo

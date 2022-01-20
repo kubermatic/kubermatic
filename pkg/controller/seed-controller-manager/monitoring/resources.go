@@ -115,7 +115,7 @@ func (r *Reconciler) ensureSecrets(ctx context.Context, cluster *kubermaticv1.Cl
 	namedSecretCreatorGetters := GetSecretCreatorOperations(data)
 
 	if err := reconciling.ReconcileSecrets(ctx, namedSecretCreatorGetters, cluster.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(cluster))); err != nil {
-		return fmt.Errorf("failed to ensure that the Secret exists: %v", err)
+		return fmt.Errorf("failed to ensure that the Secret exists: %w", err)
 	}
 
 	return nil
@@ -132,7 +132,7 @@ func (r *Reconciler) ensureConfigMaps(ctx context.Context, cluster *kubermaticv1
 	creators := GetConfigMapCreators(data)
 
 	if err := reconciling.ReconcileConfigMaps(ctx, creators, cluster.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(cluster))); err != nil {
-		return fmt.Errorf("failed to ensure that the ConfigMap exists: %v", err)
+		return fmt.Errorf("failed to ensure that the ConfigMap exists: %w", err)
 	}
 
 	return nil
@@ -167,7 +167,7 @@ func (r *Reconciler) ensureVerticalPodAutoscalers(ctx context.Context, cluster *
 		cluster.Status.NamespaceName,
 		r.features.VPA)
 	if err != nil {
-		return fmt.Errorf("failed to create the functions to handle VPA resources: %v", err)
+		return fmt.Errorf("failed to create the functions to handle VPA resources: %w", err)
 	}
 	return reconciling.ReconcileVerticalPodAutoscalers(ctx, creators, cluster.Status.NamespaceName, r.Client)
 }

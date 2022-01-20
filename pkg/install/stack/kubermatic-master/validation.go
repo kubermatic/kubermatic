@@ -48,7 +48,7 @@ func (m *MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions
 		"seeds.kubermatic.k8c.io",
 	})
 	if err != nil {
-		return append(errs, fmt.Errorf("failed to check for CRDs: %v", err))
+		return append(errs, fmt.Errorf("failed to check for CRDs: %w", err))
 	}
 
 	if !crdsExists {
@@ -174,7 +174,7 @@ func validateKubermaticConfiguration(config *operatorv1alpha1.KubermaticConfigur
 	failures = validateRandomSecret(config, config.Spec.Auth.ServiceAccountKey, "spec.auth.serviceAccountKey", failures)
 
 	if err := serviceaccount.ValidateKey([]byte(config.Spec.Auth.ServiceAccountKey)); err != nil {
-		failures = append(failures, fmt.Errorf("spec.auth.serviceAccountKey is invalid: %v", err))
+		failures = append(failures, fmt.Errorf("spec.auth.serviceAccountKey is invalid: %w", err))
 	}
 
 	if config.Spec.FeatureGates.Has(features.OIDCKubeCfgEndpoint) {
@@ -222,7 +222,7 @@ func validateHelmValues(config *operatorv1alpha1.KubermaticConfiguration, helmVa
 
 	defaultedConfig, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
 	if err != nil {
-		failures = append(failures, fmt.Errorf("failed to process KubermaticConfiguration: %v", err))
+		failures = append(failures, fmt.Errorf("failed to process KubermaticConfiguration: %w", err))
 		return failures // must stop here, without defaulting the clientID check can be misleading
 	}
 
@@ -269,7 +269,7 @@ func validateHelmValues(config *operatorv1alpha1.KubermaticConfiguration, helmVa
 }
 
 func prefixError(prefix string, e error) error {
-	return fmt.Errorf("%s%v", prefix, e)
+	return fmt.Errorf("%s%w", prefix, e)
 }
 
 func randomString() (string, error) {

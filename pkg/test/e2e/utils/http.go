@@ -88,7 +88,7 @@ func (r *retryRoundTripper) RoundTrip(request *http.Request) (*http.Response, er
 
 		bodyBytes, err = ioutil.ReadAll(request.Body)
 		if err != nil {
-			return nil, fmt.Errorf("failed to read request body: %v", err)
+			return nil, fmt.Errorf("failed to read request body: %w", err)
 		}
 	}
 

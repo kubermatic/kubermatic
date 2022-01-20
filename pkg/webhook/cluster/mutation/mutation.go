@@ -93,12 +93,12 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 		err := h.applyDefaults(ctx, cluster)
 		if err != nil {
 			h.log.Info("cluster mutation failed", "error", err)
-			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %v", req.UID, err))
+			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %w", req.UID, err))
 		}
 
 		if err := h.mutateCreate(cluster); err != nil {
 			h.log.Info("cluster mutation failed", "error", err)
-			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %v", req.UID, err))
+			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %w", req.UID, err))
 		}
 
 	case admissionv1.Update:
@@ -118,7 +118,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 		err := h.applyDefaults(ctx, cluster)
 		if err != nil {
 			h.log.Info("cluster mutation failed", "error", err)
-			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %v", req.UID, err))
+			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %w", req.UID, err))
 		}
 
 		if preventCNIDefaulting {
@@ -127,7 +127,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 
 		if err := h.mutateUpdate(oldCluster, cluster); err != nil {
 			h.log.Info("cluster mutation failed", "error", err)
-			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %v", req.UID, err))
+			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %w", req.UID, err))
 		}
 
 	case admissionv1.Delete:
@@ -139,7 +139,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 
 	mutatedCluster, err := json.Marshal(cluster)
 	if err != nil {
-		return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("marshaling cluster object failed: %v", err))
+		return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("marshaling cluster object failed: %w", err))
 	}
 
 	return admission.PatchResponseFromRaw(req.Object.Raw, mutatedCluster)
@@ -213,7 +213,7 @@ func (h *AdmissionHandler) mutateUpdate(oldCluster, newCluster *kubermaticv1.Clu
 		newCluster.Spec.CNIPlugin.Version == cni.CanalCNILastUnspecifiedVersion {
 		upgradeConstraint, err := semver.NewConstraint(">= 1.22")
 		if err != nil {
-			return fmt.Errorf("parsing CNI upgrade constraint failed: %v", err)
+			return fmt.Errorf("parsing CNI upgrade constraint failed: %w", err)
 		}
 		if newCluster.Spec.Version.String() != "" && upgradeConstraint.Check(newCluster.Spec.Version.Semver()) {
 			newCluster.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{

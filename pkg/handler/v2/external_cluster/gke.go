@@ -423,7 +423,7 @@ func getGKENodes(ctx context.Context, cluster *kubermaticapiv1.ExternalCluster, 
 			if n.Labels[GKENodepoolNameLabel] == resp.Name {
 				outNode, err := outputNode(n)
 				if err != nil {
-					return nil, fmt.Errorf("failed to output node %s: %v", n.Name, err)
+					return nil, fmt.Errorf("failed to output node %s: %w", n.Name, err)
 				}
 				nodesV1 = append(nodesV1, *outNode)
 			}

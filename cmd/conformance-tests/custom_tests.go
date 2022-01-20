@@ -51,7 +51,7 @@ func (r *testRunner) testPVC(ctx context.Context, log *zap.SugaredLogger, userCl
 		},
 	}
 	if err := userClusterClient.Create(ctx, ns); err != nil {
-		return fmt.Errorf("failed to create namespace: %v", err)
+		return fmt.Errorf("failed to create namespace: %w", err)
 	}
 
 	log.Info("Creating a StatefulSet with PVC...")
@@ -121,7 +121,7 @@ func (r *testRunner) testPVC(ctx context.Context, log *zap.SugaredLogger, userCl
 		},
 	}
 	if err := userClusterClient.Create(ctx, set); err != nil {
-		return fmt.Errorf("failed to create statefulset: %v", err)
+		return fmt.Errorf("failed to create statefulset: %w", err)
 	}
 
 	log.Info("Waiting until the StatefulSet is ready...")
@@ -139,7 +139,7 @@ func (r *testRunner) testPVC(ctx context.Context, log *zap.SugaredLogger, userCl
 		return false, nil
 	})
 	if err != nil {
-		return fmt.Errorf("failed to check if StatefulSet is running: %v", err)
+		return fmt.Errorf("failed to check if StatefulSet is running: %w", err)
 	}
 
 	log.Info("Successfully validated PVC support")
@@ -155,7 +155,7 @@ func (r *testRunner) testLB(ctx context.Context, log *zap.SugaredLogger, userClu
 		},
 	}
 	if err := userClusterClient.Create(ctx, ns); err != nil {
-		return fmt.Errorf("failed to create namespace: %v", err)
+		return fmt.Errorf("failed to create namespace: %w", err)
 	}
 
 	log.Info("Creating a Service of type LoadBalancer...")
@@ -180,7 +180,7 @@ func (r *testRunner) testLB(ctx context.Context, log *zap.SugaredLogger, userClu
 		},
 	}
 	if err := userClusterClient.Create(ctx, service); err != nil {
-		return fmt.Errorf("failed to create Service: %v", err)
+		return fmt.Errorf("failed to create Service: %w", err)
 	}
 
 	pod := &corev1.Pod{
@@ -207,7 +207,7 @@ func (r *testRunner) testLB(ctx context.Context, log *zap.SugaredLogger, userClu
 	}
 
 	if err := userClusterClient.Create(ctx, pod); err != nil {
-		return fmt.Errorf("failed to create Pod: %v", err)
+		return fmt.Errorf("failed to create Pod: %w", err)
 	}
 
 	var host string
@@ -234,7 +234,7 @@ func (r *testRunner) testLB(ctx context.Context, log *zap.SugaredLogger, userClu
 		return false, nil
 	})
 	if err != nil {
-		return fmt.Errorf("failed to check if Service is ready: %v", err)
+		return fmt.Errorf("failed to check if Service is ready: %w", err)
 	}
 	log.Debug("The Service has an external IP/Name")
 
@@ -263,7 +263,7 @@ func (r *testRunner) testLB(ctx context.Context, log *zap.SugaredLogger, userClu
 		return false, nil
 	})
 	if err != nil {
-		return fmt.Errorf("failed to check if Pod is available via LB: %v", err)
+		return fmt.Errorf("failed to check if Pod is available via LB: %w", err)
 	}
 
 	log.Info("Successfully validated LB support")
@@ -292,7 +292,7 @@ func (r *testRunner) testUserClusterMetrics(ctx context.Context, log *zap.Sugare
 		Do(ctx)
 
 	if err := res.Error(); err != nil {
-		return fmt.Errorf("request to Prometheus failed: %v", err)
+		return fmt.Errorf("request to Prometheus failed: %w", err)
 	}
 
 	code := 0
@@ -303,12 +303,12 @@ func (r *testRunner) testUserClusterMetrics(ctx context.Context, log *zap.Sugare
 
 	body, err := res.Raw()
 	if err != nil {
-		return fmt.Errorf("failed to read response body: %v", err)
+		return fmt.Errorf("failed to read response body: %w", err)
 	}
 
 	data := &metricsData{}
 	if err := json.Unmarshal(body, data); err != nil {
-		return fmt.Errorf("failed to unmarshal metrics response: %v", err)
+		return fmt.Errorf("failed to unmarshal metrics response: %w", err)
 	}
 
 	if data.Status != "success" {
@@ -343,7 +343,7 @@ func (r *testRunner) testUserClusterPodAndNodeMetrics(ctx context.Context, log *
 	// check node metrics
 	allNodeMetricsList := &v1beta1.NodeMetricsList{}
 	if err := userClusterClient.List(ctx, allNodeMetricsList); err != nil {
-		return fmt.Errorf("error getting node metrics list: %v", err)
+		return fmt.Errorf("error getting node metrics list: %w", err)
 	}
 	if len(allNodeMetricsList.Items) == 0 {
 		return fmt.Errorf("node metrics list is empty")
@@ -380,7 +380,7 @@ func (r *testRunner) testUserClusterPodAndNodeMetrics(ctx context.Context, log *
 	}
 
 	if err := userClusterClient.Create(ctx, pod); err != nil {
-		return fmt.Errorf("failed to create Pod: %v", err)
+		return fmt.Errorf("failed to create Pod: %w", err)
 	}
 
 	err := wait.Poll(r.userClusterPollInterval, r.customTestTimeout, func() (done bool, err error) {
@@ -397,7 +397,7 @@ func (r *testRunner) testUserClusterPodAndNodeMetrics(ctx context.Context, log *
 		return true, nil
 	})
 	if err != nil {
-		return fmt.Errorf("failed to check if test metrics pod is ready: %v", err)
+		return fmt.Errorf("failed to check if test metrics pod is ready: %w", err)
 	}
 
 	// check pod metrics
@@ -416,7 +416,7 @@ func (r *testRunner) testUserClusterPodAndNodeMetrics(ctx context.Context, log *
 		return true, nil
 	})
 	if err != nil {
-		return fmt.Errorf("failed to get metric test pod metrics: %v", err)
+		return fmt.Errorf("failed to get metric test pod metrics: %w", err)
 	}
 
 	log.Info("Successfully validated user cluster pod and node metrics.")

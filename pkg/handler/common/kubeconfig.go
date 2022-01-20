@@ -118,7 +118,7 @@ func GetKubeconfigEndpoint(cluster *kubermaticv1.ExternalCluster, privilegedClus
 
 	cfg, err := clientcmd.Load(kubeconfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse kubeconfig: %v", err)
+		return nil, fmt.Errorf("failed to parse kubeconfig: %w", err)
 	}
 
 	return &encodeKubeConifgResponse{clientCfg: cfg, filePrefix: filePrefix}, nil
@@ -187,11 +187,11 @@ func CreateOIDCKubeconfigEndpoint(ctx context.Context, projectProvider provider.
 	if req.phase == exchangeCodePhase {
 		// validate the state
 		if req.decodedState.Nonce != req.cookieNonceValue {
-			return nil, kcerrors.NewBadRequest("incorrect value of state parameter = %s", req.decodedState.Nonce)
+			return nil, kcerrors.NewBadRequest("incorrect value of state parameter: %s", req.decodedState.Nonce)
 		}
 		oidcTokens, err := oidcIssuer.Exchange(ctx, req.code)
 		if err != nil {
-			return nil, kcerrors.NewBadRequest("error while exchanging oidc code for token = %v", err)
+			return nil, kcerrors.NewBadRequest("error while exchanging oidc code for token: %v", err)
 		}
 		if len(oidcTokens.RefreshToken) == 0 {
 			return nil, kcerrors.NewBadRequest("the refresh token is missing but required, try setting/unsetting \"oidc-offline-access-as-scope\" command line flag")
@@ -341,7 +341,7 @@ func EncodeOIDCKubeconfig(c context.Context, w http.ResponseWriter, response int
 		// clear cookie by setting MaxAge<0
 		err = setCookie(w, "", rsp.secureCookieMode, -1)
 		if err != nil {
-			return fmt.Errorf("the cookie can't be removed, err = %v", err)
+			return fmt.Errorf("the cookie can't be removed: %w", err)
 		}
 		return EncodeKubeconfig(c, w, &encodeKubeConifgResponse{clientCfg: rsp.oidcKubeConfig})
 	}
@@ -351,7 +351,7 @@ func EncodeOIDCKubeconfig(c context.Context, w http.ResponseWriter, response int
 	// and set cookie with nonce
 	err = setCookie(w, rsp.nonce, rsp.secureCookieMode, cookieMaxAge)
 	if err != nil {
-		return fmt.Errorf("the cookie can't be created, err = %v", err)
+		return fmt.Errorf("the cookie can't be created: %w", err)
 	}
 	w.Header().Add("Location", rsp.authCodeURL)
 	w.Header().Add("Cache-Control", "no-cache")
@@ -379,15 +379,15 @@ func DecodeCreateOIDCKubeconfig(c context.Context, r *http.Request) (interface{}
 	if len(req.code) != 0 && len(req.encodedState) != 0 {
 		unescapedState, err := url.QueryUnescape(req.encodedState)
 		if err != nil {
-			return nil, kcerrors.NewBadRequest("incorrect value of state parameter, expected url encoded value, err = %v", err)
+			return nil, kcerrors.NewBadRequest("incorrect value of state parameter, expected url encoded value: %v", err)
 		}
 		rawState, err := base64.StdEncoding.DecodeString(unescapedState)
 		if err != nil {
-			return nil, kcerrors.NewBadRequest("incorrect value of state parameter, expected base64 encoded value, err = %v", err)
+			return nil, kcerrors.NewBadRequest("incorrect value of state parameter, expected base64 encoded value: %v", err)
 		}
 		oidcState := OIDCState{}
 		if err := json.Unmarshal(rawState, &oidcState); err != nil {
-			return nil, kcerrors.NewBadRequest("incorrect value of state parameter, expected json encoded value, err = %v", err)
+			return nil, kcerrors.NewBadRequest("incorrect value of state parameter, expected json encoded value: %v", err)
 		}
 		// handle cookie when new endpoint is created and secureCookie was initialized
 		if secureCookie != nil {
@@ -398,7 +398,7 @@ func DecodeCreateOIDCKubeconfig(c context.Context, r *http.Request) (interface{}
 					req.cookieNonceValue = value
 				}
 			} else {
-				return nil, kcerrors.NewBadRequest("incorrect value of cookie or cookie not set, err = %v", err)
+				return nil, kcerrors.NewBadRequest("incorrect value of cookie or cookie not set: %v", err)
 			}
 		}
 		req.phase = exchangeCodePhase
@@ -442,7 +442,7 @@ func setCookie(w http.ResponseWriter, nonce string, secureMode bool, maxAge int)
 
 	encoded, err := secureCookie.Encode(csrfCookieName, nonce)
 	if err != nil {
-		return fmt.Errorf("the encode cookie failed, err = %v", err)
+		return fmt.Errorf("the encode cookie failed: %w", err)
 	}
 	cookie := &http.Cookie{
 		Name:     csrfCookieName,

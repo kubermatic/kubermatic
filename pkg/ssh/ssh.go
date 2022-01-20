@@ -75,11 +75,11 @@ func (sb *UserSSHKeyBuilder) Validate() error {
 // Build returns a instance of a ssh key
 func (sb *UserSSHKeyBuilder) Build() (*kubermaticv1.UserSSHKey, error) {
 	if err := sb.Validate(); err != nil {
-		return nil, fmt.Errorf("key is not valid: %v", err)
+		return nil, fmt.Errorf("key is not valid: %w", err)
 	}
 	pubKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(sb.publicKey))
 	if err != nil {
-		return nil, fmt.Errorf("the provided ssh key is invalid due to = %v", err)
+		return nil, fmt.Errorf("the provided ssh key is invalid: %w", err)
 	}
 	sshKeyHash := ssh.FingerprintLegacyMD5(pubKey)
 	// Construct a key with the name containing the hash fragment for people to recognize it faster.

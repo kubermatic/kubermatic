@@ -18,6 +18,7 @@ package middleware
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -174,7 +175,7 @@ func UserSaver(userProvider provider.UserProvider) endpoint.Middleware {
 
 			user, err := userProvider.UserByEmail(authenticatedUser.Email)
 			if err != nil {
-				if err != provider.ErrNotFound {
+				if !errors.Is(err, provider.ErrNotFound) {
 					return nil, common.KubernetesErrorToHTTPError(err)
 				}
 				// handling ErrNotFound
@@ -270,7 +271,7 @@ func TokenVerifier(tokenVerifier auth.TokenVerifier, userProvider provider.UserP
 			defer cancel()
 			claims, err := tokenVerifier.Verify(verifyCtx, token)
 			if err != nil {
-				return nil, k8cerrors.New(http.StatusUnauthorized, fmt.Sprintf("access denied due to an invalid token, details = %v", err))
+				return nil, k8cerrors.New(http.StatusUnauthorized, fmt.Sprintf("access denied, invalid token: %v", err))
 			}
 
 			if claims.Subject == "" {
@@ -430,7 +431,7 @@ func getClusterProviderByClusterID(ctx context.Context, seeds map[string]*kuberm
 func checkBlockedTokens(email, token string, userProvider provider.UserProvider) error {
 	user, err := userProvider.UserByEmail(email)
 	if err != nil {
-		if err != provider.ErrNotFound {
+		if !errors.Is(err, provider.ErrNotFound) {
 			return common.KubernetesErrorToHTTPError(err)
 		}
 		return nil

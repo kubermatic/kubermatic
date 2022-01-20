@@ -19,6 +19,7 @@ package user
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -37,7 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
-	"k8s.io/apimachinery/pkg/api/errors"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 // DeleteEndpoint deletes the given user/member from the given project
@@ -152,8 +153,8 @@ func EditEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		memberToUpdate, err := userProvider.UserByEmail(currentMemberFromRequest.Email)
-		if err != nil && err == provider.ErrNotFound {
-			return nil, k8cerrors.NewBadRequest("cannot add the user = %s to the project %s because the user doesn't exist.", currentMemberFromRequest.Email, projectFromRequest.ID)
+		if err != nil && errors.Is(err, provider.ErrNotFound) {
+			return nil, k8cerrors.NewBadRequest("cannot add the user %s to the project %s because the user doesn't exist.", currentMemberFromRequest.Email, projectFromRequest.ID)
 		} else if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -251,8 +252,8 @@ func AddEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProv
 		projectFromRequest := apiUserFromRequest.Projects[0]
 
 		userToInvite, err := userProvider.UserByEmail(apiUserFromRequest.Email)
-		if err != nil && err == provider.ErrNotFound {
-			return nil, k8cerrors.NewBadRequest("cannot add the user = %s to the project %s because the user doesn't exist.", apiUserFromRequest.Email, projectFromRequest.ID)
+		if err != nil && errors.Is(err, provider.ErrNotFound) {
+			return nil, k8cerrors.NewBadRequest("cannot add the user %s to the project %s because the user doesn't exist.", apiUserFromRequest.Email, projectFromRequest.ID)
 		} else if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -266,7 +267,7 @@ func AddEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProv
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		if len(memberList) > 0 {
-			return nil, k8cerrors.New(http.StatusBadRequest, fmt.Sprintf("cannot add the user = %s to the project %s because user is already in the project", req.Body.Email, req.ProjectID))
+			return nil, k8cerrors.New(http.StatusBadRequest, fmt.Sprintf("cannot add the user %s to the project %s because user is already in the project", req.Body.Email, req.ProjectID))
 		}
 
 		generatedGroupName := rbac.GenerateActualGroupNameFor(project.Name, projectFromRequest.GroupPrefix)
@@ -351,18 +352,18 @@ func PatchSettingsEndpoint(userProvider provider.UserProvider) endpoint.Endpoint
 
 		existingSettingsJSON, err := json.Marshal(existingSettings)
 		if err != nil {
-			return nil, errors.NewBadRequest(fmt.Sprintf("cannot decode existing user settings: %v", err))
+			return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot decode existing user settings: %v", err))
 		}
 
 		patchedSettingsJSON, err := jsonpatch.MergePatch(existingSettingsJSON, req.Patch)
 		if err != nil {
-			return nil, errors.NewBadRequest(fmt.Sprintf("cannot patch user settings: %v", err))
+			return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot patch user settings: %v", err))
 		}
 
 		var patchedSettings *kubermaticapiv1.UserSettings
 		err = json.Unmarshal(patchedSettingsJSON, &patchedSettings)
 		if err != nil {
-			return nil, errors.NewBadRequest(fmt.Sprintf("cannot decode patched user settings: %v", err))
+			return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot decode patched user settings: %v", err))
 		}
 
 		existingUser.Spec.Settings = patchedSettings

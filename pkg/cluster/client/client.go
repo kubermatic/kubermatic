@@ -83,14 +83,14 @@ func (p *Provider) GetAdminKubeconfig(ctx context.Context, c *kubermaticv1.Clust
 func setExternalAddress(c *kubermaticv1.Cluster, config []byte) ([]byte, error) {
 	cfg, err := clientcmd.Load(config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load kubeconfig: %v", err)
+		return nil, fmt.Errorf("failed to load kubeconfig: %w", err)
 	}
 	for _, cluster := range cfg.Clusters {
 		cluster.Server = c.Address.URL
 	}
 	data, err := clientcmd.Write(*cfg)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal kubeconfig: %v", err)
+		return nil, fmt.Errorf("failed to marshal kubeconfig: %w", err)
 	}
 
 	return data, nil

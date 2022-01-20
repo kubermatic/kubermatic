@@ -104,7 +104,7 @@ func DeploymentCreator(data deploymentCreatorData) reconciling.NamedDeploymentCr
 			volumes := getVolumes(data.IsKonnectivityEnabled())
 			podLabels, err := data.GetPodTemplateLabels(resources.DNSResolverDeploymentName, volumes, nil)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get pod labels: %v", err)
+				return nil, fmt.Errorf("failed to get pod labels: %w", err)
 			}
 
 			dep.Spec.Template.ObjectMeta.Labels = podLabels
@@ -151,7 +151,7 @@ func DeploymentCreator(data deploymentCreatorData) reconciling.NamedDeploymentCr
 			if !data.IsKonnectivityEnabled() {
 				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
 				if err != nil {
-					return nil, fmt.Errorf("failed to get openvpn sidecar for dns resolver: %v", err)
+					return nil, fmt.Errorf("failed to get openvpn sidecar for dns resolver: %w", err)
 				}
 				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers,
 					*openvpnSidecar,
@@ -160,7 +160,7 @@ func DeploymentCreator(data deploymentCreatorData) reconciling.NamedDeploymentCr
 			}
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			dep.Spec.Template.Spec.Volumes = volumes

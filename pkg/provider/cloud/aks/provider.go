@@ -39,7 +39,7 @@ func GetCLusterConfig(ctx context.Context, cred resources.AKSCredentials, cluste
 	aksClient := containerservice.NewManagedClustersClient(cred.SubscriptionID)
 	aksClient.Authorizer, err = auth.NewClientCredentialsConfig(cred.ClientID, cred.ClientSecret, cred.TenantID).Authorizer()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %s", err.Error())
+		return nil, fmt.Errorf("failed to create authorizer: %w", err)
 	}
 
 	credResult, err := aksClient.ListClusterAdminCredentials(ctx, resourceGroupName, clusterName, "")
@@ -118,7 +118,7 @@ func GetAKSClusterClient(cred resources.AKSCredentials) (*containerservice.Manag
 	aksClient := containerservice.NewManagedClustersClient(cred.SubscriptionID)
 	aksClient.Authorizer, err = auth.NewClientCredentialsConfig(cred.ClientID, cred.ClientSecret, cred.TenantID).Authorizer()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %v", err.Error())
+		return nil, fmt.Errorf("failed to create authorizer: %w", err)
 	}
 	return &aksClient, nil
 }
@@ -129,7 +129,7 @@ func GetAKSCluster(ctx context.Context, aksClient *containerservice.ManagedClust
 
 	aksCluster, err := aksClient.Get(ctx, cloud.AKS.ResourceGroup, cloud.AKS.Name)
 	if err != nil {
-		return nil, fmt.Errorf("cannot get AKS managed cluster %v from resource group %v: %v", clusterName, resourceGroup, err)
+		return nil, fmt.Errorf("cannot get AKS managed cluster %v from resource group %v: %w", clusterName, resourceGroup, err)
 	}
 
 	return &aksCluster, nil

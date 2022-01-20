@@ -112,7 +112,7 @@ func (p *PrivilegedSSHKeyProvider) CreateUnsecured(project *kubermaticapiv1.Proj
 func genUserSSHKey(project *kubermaticapiv1.Project, keyName, pubKey string) (*kubermaticapiv1.UserSSHKey, error) {
 	pubKeyParsed, _, _, _, err := ssh.ParseAuthorizedKey([]byte(pubKey))
 	if err != nil {
-		return nil, fmt.Errorf("the provided ssh key is invalid due to = %v", err)
+		return nil, fmt.Errorf("the provided ssh key is invalid: %w", err)
 	}
 	sshKeyHash := ssh.FingerprintLegacyMD5(pubKeyParsed)
 

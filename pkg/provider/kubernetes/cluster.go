@@ -214,7 +214,7 @@ func (p *ClusterProvider) List(project *kubermaticv1.Project, options *provider.
 	selector := labels.SelectorFromSet(map[string]string{kubermaticv1.ProjectIDLabelKey: project.Name})
 	listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: selector}
 	if err := p.client.List(context.Background(), projectClusters, listOpts); err != nil {
-		return nil, fmt.Errorf("failed to list clusters: %v", err)
+		return nil, fmt.Errorf("failed to list clusters: %w", err)
 	}
 
 	if options == nil || len(options.ClusterSpecName) == 0 {
@@ -344,7 +344,7 @@ func (p *ClusterProvider) RevokeAdminKubeconfig(c *kubermaticv1.Cluster) error {
 	oldCluster := c.DeepCopy()
 	c.Address.AdminToken = kuberneteshelper.GenerateToken()
 	if err := p.GetSeedClusterAdminRuntimeClient().Patch(ctx, c, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
-		return fmt.Errorf("failed to patch cluster with new token: %v", err)
+		return fmt.Errorf("failed to patch cluster with new token: %w", err)
 	}
 	return nil
 }
@@ -478,7 +478,7 @@ func (p *ClusterProvider) ListAll() (*kubermaticv1.ClusterList, error) {
 
 	projectClusters := &kubermaticv1.ClusterList{}
 	if err := p.client.List(context.Background(), projectClusters); err != nil {
-		return nil, fmt.Errorf("failed to list clusters: %v", err)
+		return nil, fmt.Errorf("failed to list clusters: %w", err)
 	}
 
 	return projectClusters, nil

@@ -95,7 +95,7 @@ func main() {
 	pprofOpts.AddFlags(flag.CommandLine)
 	options, err := newServerRunOptions()
 	if err != nil {
-		fmt.Printf("failed to create server run options due to = %v\n", err)
+		fmt.Printf("failed to create server run options: %v\n", err)
 		os.Exit(1)
 	}
 	if err := options.validate(); err != nil {
@@ -129,20 +129,20 @@ func main() {
 
 	masterCfg, err := ctrlruntime.GetConfig()
 	if err != nil {
-		kubermaticlog.Logger.Fatalw("unable to build client configuration from kubeconfig due to %v", err)
+		kubermaticlog.Logger.Fatalw("unable to build client configuration from kubeconfig: %v", err)
 	}
 
 	// We use the manager only to get a lister-backed ctrlruntimeclient.Client. We can not use it for most
 	// other actions, because it doesn't support impersonation (and can't be changed to do that as that would mean it has to replicate the apiservers RBAC for the lister)
 	mgr, err := manager.New(masterCfg, manager.Options{MetricsBindAddress: "0"})
 	if err != nil {
-		kubermaticlog.Logger.Fatalw("failed to construct manager: %v", err)
+		kubermaticlog.Logger.Fatalw("failed to construct manager: %w", err)
 	}
 	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Event{}, "involvedObject.name", func(rawObj ctrlruntimeclient.Object) []string {
 		event := rawObj.(*corev1.Event)
 		return []string{event.InvolvedObject.Name}
 	}); err != nil {
-		log.Fatalw("failed to add index on Event involvedObject name: %v", err)
+		log.Fatalw("failed to add index on Event involvedObject name: %w", err)
 	}
 	providers, err := createInitProviders(ctx, options, masterCfg, mgr)
 	if err != nil {
@@ -243,7 +243,7 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 	sshKeyProvider := kubernetesprovider.NewSSHKeyProvider(defaultImpersonationClient.CreateImpersonatedClient, client)
 	privilegedSSHKeyProvider, err := kubernetesprovider.NewPrivilegedSSHKeyProvider(client)
 	if err != nil {
-		return providers{}, fmt.Errorf("failed to create privileged SSH key provider due to %v", err)
+		return providers{}, fmt.Errorf("failed to create privileged SSH key provider: %w", err)
 	}
 	userProvider := kubernetesprovider.NewUserProvider(client, kubernetesprovider.IsProjectServiceAccount, kubermaticMasterClient)
 	settingsProvider := kubernetesprovider.NewSettingsProvider(ctx, kubermaticMasterClient, client)
@@ -252,49 +252,49 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 
 	serviceAccountTokenProvider, err := kubernetesprovider.NewServiceAccountTokenProvider(defaultImpersonationClient.CreateImpersonatedClient, client)
 	if err != nil {
-		return providers{}, fmt.Errorf("failed to create service account token provider due to %v", err)
+		return providers{}, fmt.Errorf("failed to create service account token provider: %w", err)
 	}
 
 	serviceAccountProvider := kubernetesprovider.NewServiceAccountProvider(defaultImpersonationClient.CreateImpersonatedClient, client, options.domain)
 	projectMemberProvider := kubernetesprovider.NewProjectMemberProvider(defaultImpersonationClient.CreateImpersonatedClient, client, kubernetesprovider.IsProjectServiceAccount)
 	projectProvider, err := kubernetesprovider.NewProjectProvider(defaultImpersonationClient.CreateImpersonatedClient, client)
 	if err != nil {
-		return providers{}, fmt.Errorf("failed to create project provider due to %v", err)
+		return providers{}, fmt.Errorf("failed to create project provider: %w", err)
 	}
 
 	privilegedProjectProvider, err := kubernetesprovider.NewPrivilegedProjectProvider(client)
 	if err != nil {
-		return providers{}, fmt.Errorf("failed to create privileged project provider due to %v", err)
+		return providers{}, fmt.Errorf("failed to create privileged project provider: %w", err)
 	}
 
 	userInfoGetter, err := provider.UserInfoGetterFactory(projectMemberProvider)
 	if err != nil {
-		return providers{}, fmt.Errorf("failed to create user info getter due to %v", err)
+		return providers{}, fmt.Errorf("failed to create user info getter: %w", err)
 	}
 
 	externalClusterProvider, err := kubernetesprovider.NewExternalClusterProvider(defaultImpersonationClient.CreateImpersonatedClient, mgr.GetClient())
 	if err != nil {
-		return providers{}, fmt.Errorf("failed to create external cluster provider due to %v", err)
+		return providers{}, fmt.Errorf("failed to create external cluster provider: %w", err)
 	}
 
 	defaultConstraintProvider, err := kubernetesprovider.NewDefaultConstraintProvider(defaultImpersonationClient.CreateImpersonatedClient, mgr.GetClient(), options.namespace)
 	if err != nil {
-		return providers{}, fmt.Errorf("failed to create default constraint provider due to %w", err)
+		return providers{}, fmt.Errorf("failed to create default constraint provider: %w", err)
 	}
 
 	constraintTemplateProvider, err := kubernetesprovider.NewConstraintTemplateProvider(defaultImpersonationClient.CreateImpersonatedClient, mgr.GetClient())
 	if err != nil {
-		return providers{}, fmt.Errorf("failed to create constraint template provider due to %v", err)
+		return providers{}, fmt.Errorf("failed to create constraint template provider: %w", err)
 	}
 
 	clusterTemplateProvider, err := kubernetesprovider.NewClusterTemplateProvider(defaultImpersonationClient.CreateImpersonatedClient, client)
 	if err != nil {
-		return providers{}, fmt.Errorf("failed to create cluster template provider due to %v", err)
+		return providers{}, fmt.Errorf("failed to create cluster template provider: %w", err)
 	}
 
 	privilegedAllowedRegistryProvider, err := kubernetesprovider.NewAllowedRegistryPrivilegedProvider(mgr.GetClient())
 	if err != nil {
-		return providers{}, fmt.Errorf("failed to create allowed registry provider due to %v", err)
+		return providers{}, fmt.Errorf("failed to create allowed registry provider: %w", err)
 	}
 
 	constraintProviderGetter := kubernetesprovider.ConstraintProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter)
@@ -330,12 +330,12 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 
 	settingsWatcher, err := kuberneteswatcher.NewSettingsWatcher(settingsProvider)
 	if err != nil {
-		return providers{}, fmt.Errorf("failed to create settings watcher due to %v", err)
+		return providers{}, fmt.Errorf("failed to create settings watcher: %w", err)
 	}
 
 	userWatcher, err := kuberneteswatcher.NewUserWatcher(userProvider)
 	if err != nil {
-		return providers{}, fmt.Errorf("failed to create user watcher due to %v", err)
+		return providers{}, fmt.Errorf("failed to create user watcher: %w", err)
 	}
 
 	featureGatesProvider := kubernetesprovider.NewFeatureGatesProvider(options.featureGates)
@@ -419,7 +419,7 @@ func createAuthClients(options serverRunOptions, prov providers) (auth.TokenVeri
 	)
 
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create OIDC Authenticator: %v", err)
+		return nil, nil, fmt.Errorf("failed to create OIDC Authenticator: %w", err)
 	}
 
 	jwtExtractorVerifier := auth.NewServiceAccountAuthClient(
@@ -602,18 +602,18 @@ func clusterProviderFactory(mapper meta.RESTMapper, seedKubeconfigGetter provide
 		}
 		kubeClient, err := kubernetes.NewForConfig(cfg)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create kubeClient: %v", err)
+			return nil, fmt.Errorf("failed to create kubeClient: %w", err)
 		}
 		defaultImpersonationClientForSeed := kubernetesprovider.NewImpersonationClient(cfg, mapper)
 
 		seedCtrlruntimeClient, err := seedClientGetter(seed)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create dynamic seed client: %v", err)
+			return nil, fmt.Errorf("failed to create dynamic seed client: %w", err)
 		}
 
 		userClusterConnectionProvider, err := client.NewExternal(seedCtrlruntimeClient)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get userClusterConnectionProvider: %v", err)
+			return nil, fmt.Errorf("failed to get userClusterConnectionProvider: %w", err)
 		}
 
 		return kubernetesprovider.NewClusterProvider(

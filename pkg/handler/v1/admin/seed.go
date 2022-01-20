@@ -121,7 +121,7 @@ func UpdateSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter prov
 		seed.Spec = *seedSpec
 
 		if err := masterClient.Update(ctx, seed); err != nil {
-			return nil, fmt.Errorf("failed to update Seed: %v", err)
+			return nil, fmt.Errorf("failed to update Seed: %w", err)
 		}
 
 		return apiv1.Seed{
@@ -144,7 +144,7 @@ func DeleteSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter prov
 		}
 
 		if err := masterClient.Delete(ctx, seed); err != nil {
-			return nil, fmt.Errorf("failed to delete seed: %v", err)
+			return nil, fmt.Errorf("failed to delete seed: %w", err)
 		}
 
 		return nil, nil

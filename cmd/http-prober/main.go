@@ -179,7 +179,7 @@ func crdCheckersFactory(mvf multiValFlag) ([]func() error, error) {
 	for _, val := range mvf {
 		checker, err := crdCheckerFromFlag(val, cfg)
 		if err != nil {
-			return nil, fmt.Errorf("failed to construct crd checker: %v", err)
+			return nil, fmt.Errorf("failed to construct crd checker: %w", err)
 		}
 		checkers = append(checkers, checker)
 	}
@@ -205,11 +205,11 @@ func crdCheckerFromFlag(flag string, cfg *restclient.Config) (func() error, erro
 		// when the API may not be up yet.
 		client, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{})
 		if err != nil {
-			return fmt.Errorf("failed to create kube client: %v", err)
+			return fmt.Errorf("failed to create kube client: %w", err)
 		}
 
 		if err := client.List(context.Background(), list, listOpts); err != nil {
-			return fmt.Errorf("failed to list %s.%s: %v", kind, apiVersion, err)
+			return fmt.Errorf("failed to list %s.%s: %w", kind, apiVersion, err)
 		}
 
 		return nil

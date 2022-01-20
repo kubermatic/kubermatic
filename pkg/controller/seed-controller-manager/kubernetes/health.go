@@ -53,7 +53,7 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 		key := types.NamespacedName{Namespace: ns, Name: name}
 		status, err := resources.HealthyDeployment(ctx, r, key, healthMapping[name].minReady)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get dep health %q: %v", name, err)
+			return nil, fmt.Errorf("failed to get dep health %q: %w", name, err)
 		}
 		*healthMapping[name].healthStatus = kubermaticv1helper.GetHealthStatus(status, cluster, r.versions)
 	}
@@ -63,7 +63,7 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 
 	etcdHealthStatus, err := resources.HealthyStatefulSet(ctx, r, key, 2)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get etcd health: %v", err)
+		return nil, fmt.Errorf("failed to get etcd health: %w", err)
 	}
 	extendedHealth.Etcd = kubermaticv1helper.GetHealthStatus(etcdHealthStatus, cluster, r.versions)
 
@@ -97,7 +97,7 @@ func (r *Reconciler) syncHealth(ctx context.Context, cluster *kubermaticv1.Clust
 				"Etcd Cluster has been initialized successfully",
 			)
 		}); err != nil {
-			return fmt.Errorf("failed to sec cluster %s condition: %v", kubermaticv1.ClusterConditionEtcdClusterInitialized, err)
+			return fmt.Errorf("failed to sec cluster %s condition: %w", kubermaticv1.ClusterConditionEtcdClusterInitialized, err)
 		}
 	}
 

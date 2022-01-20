@@ -625,7 +625,7 @@ func convertInternalTokenToPublicExternal(internal *v1.Secret, authenticator ser
 
 	publicClaim, _, err := authenticator.Authenticate(string(token))
 	if err != nil {
-		return nil, fmt.Errorf("unable to create a token for %s due to %v", internal.Name, err)
+		return nil, fmt.Errorf("unable to create a token for %s: %w", internal.Name, err)
 	}
 
 	externalToken.Expiry = apiv1.NewTime(publicClaim.Expiry.Time())

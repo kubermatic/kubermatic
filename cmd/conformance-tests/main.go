@@ -538,7 +538,7 @@ func setupHomeDir(log *zap.SugaredLogger) (string, []byte, error) {
 	// We'll set the env-var $HOME to this directory when executing the tests
 	homeDir, err := ioutil.TempDir("/tmp", "e2e-home-")
 	if err != nil {
-		return "", nil, fmt.Errorf("failed to setup temporary home dir: %v", err)
+		return "", nil, fmt.Errorf("failed to setup temporary home dir: %w", err)
 	}
 	log.Infof("Setting up temporary home directory with ssh keys at %s...", homeDir)
 
@@ -612,7 +612,7 @@ func createProject(ctx context.Context, client *apiclient.KubermaticKubernetesPl
 
 	result, err := client.Project.CreateProject(params, bearerToken)
 	if err != nil {
-		return "", fmt.Errorf("failed to create project: %v", err)
+		return "", fmt.Errorf("failed to create project: %w", err)
 	}
 	projectID := result.Payload.ID
 
@@ -635,7 +635,7 @@ func createProject(ctx context.Context, client *apiclient.KubermaticKubernetesPl
 		}
 		return true, nil
 	}); err != nil {
-		return "", fmt.Errorf("failed to wait for project to be ready: %v", err)
+		return "", fmt.Errorf("failed to wait for project to be ready: %w", err)
 	}
 
 	return projectID, nil
@@ -658,7 +658,7 @@ func createSSHKeys(ctx context.Context, client *apiclient.KubermaticKubernetesPl
 		utils.SetupParams(nil, body, 3*time.Second, 1*time.Minute, http.StatusConflict)
 
 		if _, err := client.Project.CreateSSHKey(body, bearerToken); err != nil {
-			return fmt.Errorf("failed to create SSH key: %v", err)
+			return fmt.Errorf("failed to create SSH key: %w", err)
 		}
 	}
 

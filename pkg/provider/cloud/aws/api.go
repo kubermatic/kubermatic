@@ -51,6 +51,16 @@ func GetSubnets(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalI
 	return out.Subnets, nil
 }
 
+func isAuthFailure(err error) (bool, string) {
+	var awsErr awserr.Error
+
+	if errors.As(err, &awsErr) && awsErr.Code() == authFailure {
+		return true, awsErr.Message()
+	}
+
+	return false, ""
+}
+
 // GetVPCS returns the list of AWS VPCs.
 func GetVPCS(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region string) ([]*ec2.Vpc, error) {
 	client, err := GetClientSet(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region)
@@ -61,8 +71,8 @@ func GetVPCS(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, 
 	vpcOut, err := client.EC2.DescribeVpcs(&ec2.DescribeVpcsInput{})
 
 	if err != nil {
-		if awsErr, ok := err.(awserr.Error); ok && awsErr.Code() == authFailure {
-			return nil, httperror.New(401, fmt.Sprintf("failed to list VPCs: %s", awsErr.Message()))
+		if ok, msg := isAuthFailure(err); ok {
+			return nil, httperror.New(401, fmt.Sprintf("failed to list VPCs: %s", msg))
 		}
 
 		return nil, fmt.Errorf("failed to list VPCs: %w", err)
@@ -100,8 +110,8 @@ func getSecurityGroupsWithClient(client ec2iface.EC2API) ([]*ec2.SecurityGroup, 
 	sgOut, err := client.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{})
 
 	if err != nil {
-		if awsErr, ok := err.(awserr.Error); ok && awsErr.Code() == authFailure {
-			return nil, httperror.New(401, fmt.Sprintf("failed to list security groups: %s", awsErr.Message()))
+		if ok, msg := isAuthFailure(err); ok {
+			return nil, httperror.New(401, fmt.Sprintf("failed to list security groups: %s", msg))
 		}
 
 		return nil, fmt.Errorf("failed to list security groups: %w", err)

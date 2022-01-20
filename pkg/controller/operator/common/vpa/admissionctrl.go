@@ -169,12 +169,12 @@ func AdmissionControllerServingCertCreator() reconciling.NamedSecretCreatorGette
 
 			ca, err := triple.NewCA(AdmissionControllerName)
 			if err != nil {
-				return nil, fmt.Errorf("failed to create CA: %v", err)
+				return nil, fmt.Errorf("failed to create CA: %w", err)
 			}
 
 			key, err := triple.NewPrivateKey()
 			if err != nil {
-				return nil, fmt.Errorf("unable to create a server private key: %v", err)
+				return nil, fmt.Errorf("unable to create a server private key: %w", err)
 			}
 
 			config := certutil.Config{
@@ -185,7 +185,7 @@ func AdmissionControllerServingCertCreator() reconciling.NamedSecretCreatorGette
 
 			cert, err := triple.NewSignedCert(config, key, ca.Cert, ca.Key)
 			if err != nil {
-				return nil, fmt.Errorf("unable to sign the server certificate: %v", err)
+				return nil, fmt.Errorf("unable to sign the server certificate: %w", err)
 			}
 
 			se.Data[AdmissionControllerServingCertKeyName] = triple.EncodePrivateKeyPEM(key)

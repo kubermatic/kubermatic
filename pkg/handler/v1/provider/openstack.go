@@ -66,7 +66,7 @@ func getAuthInfo(ctx context.Context, req OpenstackReq, userInfoGetter provider.
 	// Preset is used
 	cred, err = getPresetCredentials(userInfo, presetName, presetProvider, token)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error getting preset credentials for OpenStack: %v", err)
+		return nil, nil, fmt.Errorf("error getting preset credentials for OpenStack: %w", err)
 	}
 	return userInfo, cred, nil
 }
@@ -85,7 +85,7 @@ func OpenstackSizeEndpoint(seedsGetter provider.SeedsGetter, presetProvider prov
 		datacenterName := req.DatacenterName
 		_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
 		if err != nil {
-			return nil, fmt.Errorf("error getting dc: %v", err)
+			return nil, fmt.Errorf("error getting dc: %w", err)
 		}
 		settings, err := settingsProvider.GetGlobalSettings()
 		if err != nil {
@@ -233,7 +233,7 @@ func OpenstackAvailabilityZoneEndpoint(seedsGetter provider.SeedsGetter, presetP
 		datacenterName := req.DatacenterName
 		_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
 		if err != nil {
-			return nil, fmt.Errorf("error getting dc: %v", err)
+			return nil, fmt.Errorf("error getting dc: %w", err)
 		}
 		return providercommon.GetOpenstackAvailabilityZones(datacenter, cred, caBundle)
 	}

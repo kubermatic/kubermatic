@@ -79,7 +79,7 @@ type Session struct {
 // Logout closes the idling vCenter connections
 func (s *Session) Logout() {
 	if err := s.Client.Logout(context.Background()); err != nil {
-		kruntime.HandleError(fmt.Errorf("vSphere client failed to logout: %s", err))
+		kruntime.HandleError(fmt.Errorf("vSphere client failed to logout: %w", err))
 	}
 }
 
@@ -110,13 +110,13 @@ func newSession(ctx context.Context, dc *kubermaticv1.DatacenterSpecVSphere, use
 	}
 
 	if err = client.Login(ctx, user); err != nil {
-		return nil, fmt.Errorf("failed to login: %v", err)
+		return nil, fmt.Errorf("failed to login: %w", err)
 	}
 
 	finder := find.NewFinder(client.Client, true)
 	datacenter, err := finder.Datacenter(ctx, dc.Datacenter)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get vSphere datacenter %q: %v", dc.Datacenter, err)
+		return nil, fmt.Errorf("failed to get vSphere datacenter %q: %w", dc.Datacenter, err)
 	}
 	finder.SetDatacenter(datacenter)
 
@@ -149,7 +149,7 @@ func (v *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update
 	}
 	session, err := newSession(ctx, v.dc, username, password, v.caBundle)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create vCenter session: %v", err)
+		return nil, fmt.Errorf("failed to create vCenter session: %w", err)
 	}
 	defer session.Logout()
 
@@ -159,7 +159,7 @@ func (v *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update
 		// the VM management in vCenter
 		clusterFolder := path.Join(rootPath, cluster.Name)
 		if err := createVMFolder(ctx, session, clusterFolder); err != nil {
-			return nil, fmt.Errorf("failed to create the VM folder %q: %v", clusterFolder, err)
+			return nil, fmt.Errorf("failed to create the VM folder %q: %w", clusterFolder, err)
 		}
 
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
@@ -188,7 +188,7 @@ func GetNetworks(dc *kubermaticv1.DatacenterSpecVSphere, username, password stri
 	// networks without entering credentials
 	session, err := newSession(ctx, dc, username, password, caBundle)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create vCenter session: %v", err)
+		return nil, fmt.Errorf("failed to create vCenter session: %w", err)
 	}
 	defer session.Logout()
 
@@ -201,7 +201,7 @@ func GetVMFolders(dc *kubermaticv1.DatacenterSpecVSphere, username, password str
 
 	session, err := newSession(ctx, dc, username, password, caBundle)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create vCenter session: %v", err)
+		return nil, fmt.Errorf("failed to create vCenter session: %w", err)
 	}
 	defer session.Logout()
 
@@ -210,7 +210,7 @@ func GetVMFolders(dc *kubermaticv1.DatacenterSpecVSphere, username, password str
 	// vCenter only lists folders recursively if you just specify "*".
 	folderRefs, err := session.Finder.FolderList(ctx, "*")
 	if err != nil {
-		return nil, fmt.Errorf("couldn't retrieve folder list: %v", err)
+		return nil, fmt.Errorf("couldn't retrieve folder list: %w", err)
 	}
 
 	rootPath := getVMRootPath(dc)
@@ -251,31 +251,31 @@ func (v *Provider) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	ctx := context.Background()
 	session, err := newSession(ctx, v.dc, username, password, v.caBundle)
 	if err != nil {
-		return fmt.Errorf("failed to create vCenter session: %v", err)
+		return fmt.Errorf("failed to create vCenter session: %w", err)
 	}
 	defer session.Logout()
 
 	if ds := v.dc.DefaultDatastore; ds != "" {
 		if _, err := session.Finder.Datastore(ctx, ds); err != nil {
-			return fmt.Errorf("failed to get default datastore provided by datacenter spec %q: %v", ds, err)
+			return fmt.Errorf("failed to get default datastore provided by datacenter spec %q: %w", ds, err)
 		}
 	}
 
 	if rp := spec.VSphere.ResourcePool; rp != "" {
 		if _, err := session.Finder.ResourcePool(ctx, rp); err != nil {
-			return fmt.Errorf("failed to get resource pool %s: %v", rp, err)
+			return fmt.Errorf("failed to get resource pool %s: %w", rp, err)
 		}
 	}
 
 	if dc := spec.VSphere.DatastoreCluster; dc != "" {
 		if _, err := session.Finder.DatastoreCluster(ctx, spec.VSphere.DatastoreCluster); err != nil {
-			return fmt.Errorf("failed to get datastore cluster provided by cluster spec %q: %v", dc, err)
+			return fmt.Errorf("failed to get datastore cluster provided by cluster spec %q: %w", dc, err)
 		}
 	}
 
 	if ds := spec.VSphere.Datastore; ds != "" {
 		if _, err = session.Finder.Datastore(ctx, ds); err != nil {
-			return fmt.Errorf("failed to get datastore cluster provided by cluste spec %q: %v", ds, err)
+			return fmt.Errorf("failed to get datastore cluster provided by cluste spec %q: %w", ds, err)
 		}
 	}
 
@@ -294,7 +294,7 @@ func (v *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update pr
 
 	session, err := newSession(ctx, v.dc, username, password, v.caBundle)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create vCenter session: %v", err)
+		return nil, fmt.Errorf("failed to create vCenter session: %w", err)
 	}
 	defer session.Logout()
 
@@ -324,13 +324,13 @@ func GetDatastoreList(dc *kubermaticv1.DatacenterSpecVSphere, username, password
 
 	session, err := newSession(ctx, dc, username, password, caBundle)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create vCenter session: %v", err)
+		return nil, fmt.Errorf("failed to create vCenter session: %w", err)
 	}
 	defer session.Logout()
 
 	datastoreList, err := session.Finder.DatastoreList(ctx, "*")
 	if err != nil {
-		return nil, fmt.Errorf("couldn't retrieve datastore list: %v", err)
+		return nil, fmt.Errorf("couldn't retrieve datastore list: %w", err)
 	}
 
 	return datastoreList, nil

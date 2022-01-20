@@ -39,7 +39,7 @@ func LabelSelector(workerName string) (labels.Selector, error) {
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to build label selector: %v", err)
+		return nil, fmt.Errorf("failed to build label selector: %w", err)
 	}
 
 	return labels.Parse(req.String())

@@ -133,7 +133,7 @@ func ListAWSSubnets(accessKeyID, secretAccessKey, assumeRoleID string, assumeRol
 
 	subnetResults, err := awsprovider.GetSubnets(accessKeyID, secretAccessKey, assumeRoleID, assumeRoleExternalID, datacenter.Spec.AWS.Region, vpcID)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get subnets: %v", err)
+		return nil, fmt.Errorf("couldn't get subnets: %w", err)
 	}
 
 	subnets := apiv1.AWSSubnetList{}
@@ -196,7 +196,7 @@ func SetDefaultSubnet(machineDeployments *clusterv1alpha1.MachineDeploymentList,
 	for _, md := range machineDeployments.Items {
 		cloudSpec, err := machineconversions.GetAPIV2NodeCloudSpec(md.Spec.Template.Spec)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get node cloud spec from machine deployment: %v", err)
+			return nil, fmt.Errorf("failed to get node cloud spec from machine deployment: %w", err)
 		}
 		if cloudSpec.AWS == nil {
 			return nil, errors.NewBadRequest("cloud spec missing")

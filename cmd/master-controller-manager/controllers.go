@@ -80,28 +80,28 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		projectSynchronizerFactory,
 	); err != nil {
 		//TODO: Find a better name
-		return fmt.Errorf("failed to create seedcontrollerlifecycle: %v", err)
+		return fmt.Errorf("failed to create seedcontrollerlifecycle: %w", err)
 	}
 	if err := userprojectbinding.Add(ctrlCtx.mgr); err != nil {
-		return fmt.Errorf("failed to create userprojectbinding controller: %v", err)
+		return fmt.Errorf("failed to create userprojectbinding controller: %w", err)
 	}
 	if err := serviceaccount.Add(ctrlCtx.mgr); err != nil {
-		return fmt.Errorf("failed to create serviceaccount controller: %v", err)
+		return fmt.Errorf("failed to create serviceaccount controller: %w", err)
 	}
 	if err := seedsync.Add(ctrlCtx.ctx, ctrlCtx.mgr, 1, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.seedKubeconfigGetter, ctrlCtx.seedsGetter); err != nil {
-		return fmt.Errorf("failed to create seedsync controller: %v", err)
+		return fmt.Errorf("failed to create seedsync controller: %w", err)
 	}
 	if err := seedproxy.Add(ctrlCtx.ctx, ctrlCtx.mgr, 1, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.seedsGetter, ctrlCtx.seedKubeconfigGetter, ctrlCtx.configGetter); err != nil {
-		return fmt.Errorf("failed to create seedproxy controller: %v", err)
+		return fmt.Errorf("failed to create seedproxy controller: %w", err)
 	}
 	if err := externalcluster.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log); err != nil {
-		return fmt.Errorf("failed to create external cluster controller: %v", err)
+		return fmt.Errorf("failed to create external cluster controller: %w", err)
 	}
 	if err := masterconstrainttemplatecontroller.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log, 1, ctrlCtx.namespace, ctrlCtx.seedKubeconfigGetter); err != nil {
-		return fmt.Errorf("failed to create master constraint template controller: %v", err)
+		return fmt.Errorf("failed to create master constraint template controller: %w", err)
 	}
 	if err := allowedregistrycontroller.Add(ctrlCtx.mgr, ctrlCtx.log, 1, ctrlCtx.namespace); err != nil {
-		return fmt.Errorf("failed to create allowedregistry controller: %v", err)
+		return fmt.Errorf("failed to create allowedregistry controller: %w", err)
 	}
 
 	return nil
@@ -121,7 +121,7 @@ func rbacControllerFactoryCreator(
 	return func(ctx context.Context, mgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
 		_, err := rbac.New(ctx, rbacMetrics, mgr, seedManagerMap, selectorOps, workerNamePredicate, workerCount)
 		if err != nil {
-			return "", fmt.Errorf("failed to create rbac controller: %v", err)
+			return "", fmt.Errorf("failed to create rbac controller: %w", err)
 		}
 		return "rbac-controller", nil
 	}

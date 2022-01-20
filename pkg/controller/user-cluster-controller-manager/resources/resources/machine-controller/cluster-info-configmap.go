@@ -49,7 +49,7 @@ func ClusterInfoConfigMapCreator(url string, caCert *x509.Certificate) reconcili
 
 			bconfig, err := clientcmd.Write(kubeconfig)
 			if err != nil {
-				return nil, fmt.Errorf("failed to encode kubeconfig: %v", err)
+				return nil, fmt.Errorf("failed to encode kubeconfig: %w", err)
 			}
 			cm.Data["kubeconfig"] = string(bconfig)
 

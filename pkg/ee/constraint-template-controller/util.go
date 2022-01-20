@@ -43,7 +43,7 @@ func GetClustersForConstraintTemplate(ctx context.Context, client ctrlruntimecli
 
 	ctLabelSelector, err := v1.LabelSelectorAsSelector(&ct.Spec.Selector.LabelSelector)
 	if err != nil {
-		return nil, fmt.Errorf("error converting Constraint Template label selector (%v) to a kubernetes selector: %v", ct.Spec.Selector.LabelSelector, err)
+		return nil, fmt.Errorf("error converting Constraint Template label selector (%v) to a kubernetes selector: %w", ct.Spec.Selector.LabelSelector, err)
 	}
 
 	var selector labels.Selector

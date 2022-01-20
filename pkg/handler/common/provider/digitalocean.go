@@ -82,7 +82,7 @@ func DigitaloceanSize(ctx context.Context, quota kubermaticv1.MachineDeploymentV
 
 	sizes, _, err := client.Sizes.List(ctx, listOptions)
 	if err != nil {
-		return apiv1.DigitaloceanSizeList{}, fmt.Errorf("failed to list sizes: %v", err)
+		return apiv1.DigitaloceanSizeList{}, fmt.Errorf("failed to list sizes: %w", err)
 	}
 
 	sizeList := apiv1.DigitaloceanSizeList{

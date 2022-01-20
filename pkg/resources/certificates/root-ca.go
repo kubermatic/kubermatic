@@ -41,7 +41,7 @@ func GetCACreator(commonName string) reconciling.SecretCreator {
 		if certPEM, exists := se.Data[resources.CACertSecretKey]; exists {
 			certs, err := certutil.ParseCertsPEM(certPEM)
 			if err != nil {
-				return se, fmt.Errorf("certificate is not valid PEM-encoded: %v", err)
+				return se, fmt.Errorf("certificate is not valid PEM-encoded: %w", err)
 			}
 
 			if time.Now().After(certs[0].NotAfter) {
@@ -53,7 +53,7 @@ func GetCACreator(commonName string) reconciling.SecretCreator {
 
 		caKp, err := triple.NewCA(commonName)
 		if err != nil {
-			return nil, fmt.Errorf("unable to create a new CA: %v", err)
+			return nil, fmt.Errorf("unable to create a new CA: %w", err)
 		}
 
 		se.Data[resources.CAKeySecretKey] = triple.EncodePrivateKeyPEM(caKp.Key)

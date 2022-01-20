@@ -106,13 +106,13 @@ func run(cmd *cobra.Command, _ []string) error {
 	log := rawLog.Sugar()
 	outerCfg, err := clientcmd.BuildConfigFromFlags("", kubeconfigOuterFile)
 	if err != nil {
-		return fmt.Errorf("unable to set up client config for outer cluster %v", err)
+		return fmt.Errorf("unable to set up client config for outer cluster: %w", err)
 	}
 
 	// Get a config to talk to the apiserver
 	innerCfg, err := clientcmd.BuildConfigFromFlags("", kubeconfigInnerFile)
 	if err != nil {
-		return fmt.Errorf("unable to set up client config for user cluster %v", err)
+		return fmt.Errorf("unable to set up client config for user cluster: %w", err)
 	}
 
 	log.Info("Setting up outer manager")
@@ -121,7 +121,7 @@ func run(cmd *cobra.Command, _ []string) error {
 		Port:               0,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to set up outer manager: %v", err)
+		return fmt.Errorf("failed to set up outer manager: %w", err)
 	}
 
 	// Create a new Cmd to provide shared dependencies and start components
@@ -131,21 +131,21 @@ func run(cmd *cobra.Command, _ []string) error {
 		Port:               0,
 	})
 	if err != nil {
-		return fmt.Errorf("unable to set up inner manager %v", err)
+		return fmt.Errorf("unable to set up inner manager: %w", err)
 	}
 	if err := mgr.Add(outerManager); err != nil {
-		return fmt.Errorf("failed to add outer manager: %v", err)
+		return fmt.Errorf("failed to add outer manager: %w", err)
 	}
 
 	// Setup all Controllers
 	log.Info("Setting up controller")
 	if err := controller.Add(log, outerManager, mgr, buildID); err != nil {
-		return fmt.Errorf("failed to register controller: %v", err)
+		return fmt.Errorf("failed to register controller: %w", err)
 	}
 	log.Info("Registered controller")
 	log.Info("Starting manager")
 	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
-		return fmt.Errorf("unable to run the manager %v", err)
+		return fmt.Errorf("unable to run the manager: %w", err)
 	}
 	log.Info("Finished")
 	return nil

@@ -60,7 +60,7 @@ func ReconcileUnstructureds(ctx context.Context, namedGetters []NamedUnstructure
 		}
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, emptyObject, false); err != nil {
-			return fmt.Errorf("failed to ensure Unstructured %s.%s %s/%s: %v", kind, apiVersion, namespace, name, err)
+			return fmt.Errorf("failed to ensure Unstructured %s.%s %s/%s: %w", kind, apiVersion, namespace, name, err)
 		}
 	}
 

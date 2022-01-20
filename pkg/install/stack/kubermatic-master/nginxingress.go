@@ -47,16 +47,16 @@ func deployNginxIngressController(ctx context.Context, logger *logrus.Entry, kub
 
 	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, "nginx-ingress-controller"))
 	if err != nil {
-		return fmt.Errorf("failed to load Helm chart: %v", err)
+		return fmt.Errorf("failed to load Helm chart: %w", err)
 	}
 
 	if err := util.EnsureNamespace(ctx, sublogger, kubeClient, NginxIngressControllerNamespace); err != nil {
-		return fmt.Errorf("failed to create namespace: %v", err)
+		return fmt.Errorf("failed to create namespace: %w", err)
 	}
 
 	release, err := util.CheckHelmRelease(ctx, sublogger, helmClient, NginxIngressControllerNamespace, NginxIngressControllerReleaseName)
 	if err != nil {
-		return fmt.Errorf("failed to check to Helm release: %v", err)
+		return fmt.Errorf("failed to check to Helm release: %w", err)
 	}
 
 	// if version older than 1.3.0 is installed, we must perform a migration
@@ -79,7 +79,7 @@ func deployNginxIngressController(ctx context.Context, logger *logrus.Entry, kub
 		isUpgrading = true
 		err = upgradeNginxIngress(ctx, sublogger, kubeClient, helmClient, opt, chart, release, backupTS)
 		if err != nil {
-			return fmt.Errorf("failed to prepare nginx-ingress-controller for upgrade: %v", err)
+			return fmt.Errorf("failed to prepare nginx-ingress-controller for upgrade: %w", err)
 		}
 	}
 
@@ -89,13 +89,13 @@ func deployNginxIngressController(ctx context.Context, logger *logrus.Entry, kub
 
 	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, NginxIngressControllerNamespace, NginxIngressControllerReleaseName, opt.HelmValues, false, opt.ForceHelmReleaseUpgrade, release); err != nil {
 		if isUpgrading {
-			return fmt.Errorf("failed to deploy Helm release: %v\n\nuse backup file to restore the deployment or re-try the installation after fixing any errors.", err)
+			return fmt.Errorf("failed to deploy Helm release: %w\n\nuse backup file to restore the deployment or re-try the installation after fixing any errors.", err)
 		}
-		return fmt.Errorf("failed to deploy Helm release: %v", err)
+		return fmt.Errorf("failed to deploy Helm release: %w", err)
 	}
 
 	if err := waitForNginxIngressWebhook(ctx, sublogger, kubeClient, helmClient, opt); err != nil {
-		return fmt.Errorf("failed to verify that the webhook is functioning: %v", err)
+		return fmt.Errorf("failed to verify that the webhook is functioning: %w", err)
 	}
 
 	logger.Info("✅ Success.")
@@ -139,13 +139,13 @@ func upgradeNginxIngress(
 		filename := fmt.Sprintf("backup_%s_%s.yaml", NginxIngressControllerReleaseName, backupTS)
 		logger.Infof("Attempting to store the deployment in file: %s", filename)
 		if err := util.DumpResources(ctx, filename, deploymentsList.Items); err != nil {
-			return fmt.Errorf("failed to back up the deployment, it is not removed: %v", err)
+			return fmt.Errorf("failed to back up the deployment, it is not removed: %w", err)
 		}
 
 		// 3: delete the deployment
 		logger.Info("Deleting the deployment from the cluster")
 		if err := kubeClient.Delete(ctx, &deploymentsList.Items[0]); err != nil {
-			return fmt.Errorf("failed to remove the deployment: %v\n\nuse backup file to check the changes and restore if needed", err)
+			return fmt.Errorf("failed to remove the deployment: %w\n\nuse backup file to check the changes and restore if needed", err)
 		}
 	case 0:
 		logger.Info("No deployments matching the criteria were found, assuming clean state and attempting to upgrade...")
@@ -167,7 +167,7 @@ func waitForNginxIngressWebhook(
 
 	// delete any leftovers from previous installer runs
 	if err := deleteIngress(ctx, kubeClient, NginxIngressControllerNamespace, ingressName); err != nil {
-		return fmt.Errorf("failed to prepare webhook: %v", err)
+		return fmt.Errorf("failed to prepare webhook: %w", err)
 	}
 
 	// always clean up on a best-effort basis
@@ -205,7 +205,7 @@ func waitForNginxIngressWebhook(
 		return lastCreateErr == nil, nil
 	})
 	if err != nil {
-		return fmt.Errorf("failed to wait for webhook to become ready: %v", lastCreateErr)
+		return fmt.Errorf("failed to wait for webhook to become ready: %w", lastCreateErr)
 	}
 
 	return nil
@@ -223,11 +223,11 @@ func deleteIngress(ctx context.Context, kubeClient ctrlruntimeclient.Client, nam
 			return nil
 		}
 
-		return fmt.Errorf("failed to probe for leftover test ingress: %v", err)
+		return fmt.Errorf("failed to probe for leftover test ingress: %w", err)
 	}
 
 	if err := kubeClient.Delete(ctx, ingress); err != nil {
-		return fmt.Errorf("failed to delete test ingress: %v", err)
+		return fmt.Errorf("failed to delete test ingress: %w", err)
 	}
 
 	return nil

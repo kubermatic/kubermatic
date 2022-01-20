@@ -156,12 +156,12 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 
 		helmClient, err := helm.NewCLI(helmBinary, kubeconfig, kubeContext, helmTimeout, logger)
 		if err != nil {
-			return fmt.Errorf("failed to create Helm client: %v", err)
+			return fmt.Errorf("failed to create Helm client: %w", err)
 		}
 
 		helmVersion, err := helmClient.Version()
 		if err != nil {
-			return fmt.Errorf("failed to check Helm version: %v", err)
+			return fmt.Errorf("failed to check Helm version: %w", err)
 		}
 
 		if helmVersion.LessThan(minHelmVersion) {
@@ -195,12 +195,12 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 
 		kubermaticConfig, rawKubermaticConfig, err := loadKubermaticConfiguration(ctx.String(deployConfigFlag.Name))
 		if err != nil {
-			return fmt.Errorf("failed to load KubermaticConfiguration: %v", err)
+			return fmt.Errorf("failed to load KubermaticConfiguration: %w", err)
 		}
 
 		helmValues, err := loadHelmValues(ctx.String(deployHelmValuesFlag.Name))
 		if err != nil {
-			return fmt.Errorf("failed to load Helm values: %v", err)
+			return fmt.Errorf("failed to load Helm values: %w", err)
 		}
 
 		opt := stack.DeployOptions{
@@ -240,7 +240,7 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 		// prepapre Kubernetes and Helm clients
 		ctrlConfig, err := ctrlruntimeconfig.GetConfigWithContext(kubeContext)
 		if err != nil {
-			return fmt.Errorf("failed to get config: %v", err)
+			return fmt.Errorf("failed to get config: %w", err)
 		}
 
 		mgr, err := manager.New(ctrlConfig, manager.Options{
@@ -248,7 +248,7 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 			HealthProbeBindAddress: "0",
 		})
 		if err != nil {
-			return fmt.Errorf("failed to construct mgr: %v", err)
+			return fmt.Errorf("failed to construct mgr: %w", err)
 		}
 
 		// start the manager in its own goroutine
@@ -270,19 +270,19 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 		kubeClient := mgr.GetClient()
 
 		if err := apiextensionsv1.AddToScheme(mgr.GetScheme()); err != nil {
-			return fmt.Errorf("failed to add scheme: %v", err)
+			return fmt.Errorf("failed to add scheme: %w", err)
 		}
 
 		if err := kubermaticv1.AddToScheme(mgr.GetScheme()); err != nil {
-			return fmt.Errorf("failed to add scheme: %v", err)
+			return fmt.Errorf("failed to add scheme: %w", err)
 		}
 
 		if err := operatorv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
-			return fmt.Errorf("failed to add scheme: %v", err)
+			return fmt.Errorf("failed to add scheme: %w", err)
 		}
 
 		if err := certmanagerv1.AddToScheme(mgr.GetScheme()); err != nil {
-			return fmt.Errorf("failed to add scheme: %v", err)
+			return fmt.Errorf("failed to add scheme: %w", err)
 		}
 
 		// prepare seed access components

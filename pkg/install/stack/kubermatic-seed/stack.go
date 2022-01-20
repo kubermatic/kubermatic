@@ -73,19 +73,19 @@ func (s *SeedStack) InstallKubermaticCRDs(ctx context.Context, client ctrlruntim
 
 func (s *SeedStack) Deploy(ctx context.Context, opt stack.DeployOptions) error {
 	if err := deployStorageClass(ctx, opt.Logger, opt.KubeClient, opt); err != nil {
-		return fmt.Errorf("failed to deploy StorageClass: %v", err)
+		return fmt.Errorf("failed to deploy StorageClass: %w", err)
 	}
 
 	if err := deployMinio(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
-		return fmt.Errorf("failed to deploy Minio: %v", err)
+		return fmt.Errorf("failed to deploy Minio: %w", err)
 	}
 
 	if err := deployS3Exporter(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
-		return fmt.Errorf("failed to deploy S3 Exporter: %v", err)
+		return fmt.Errorf("failed to deploy S3 Exporter: %w", err)
 	}
 
 	if err := s.deployKubermatic(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
-		return fmt.Errorf("failed to deploy Kubermatic: %v", err)
+		return fmt.Errorf("failed to deploy Kubermatic: %w", err)
 	}
 
 	if err := migrateUserClustersData(ctx, opt.Logger, opt.KubeClient, opt); err != nil {
@@ -110,11 +110,11 @@ func (s *SeedStack) deployKubermatic(ctx context.Context, logger *logrus.Entry, 
 	}
 
 	if err := kubeClient.Create(ctx, ns); err != nil && !kerrors.IsAlreadyExists(err) {
-		return fmt.Errorf("failed to create Namespace %s: %v", ns.Name, err)
+		return fmt.Errorf("failed to create Namespace %s: %w", ns.Name, err)
 	}
 
 	if err := s.InstallKubermaticCRDs(ctx, kubeClient, log.Prefix(logger, "   "), opt); err != nil {
-		return fmt.Errorf("failed to deploy CRDs: %v", err)
+		return fmt.Errorf("failed to deploy CRDs: %w", err)
 	}
 
 	logger.Info("✅ Success.")
@@ -143,7 +143,7 @@ func deployStorageClass(ctx context.Context, logger *logrus.Entry, kubeClient ct
 	}
 
 	if !kerrors.IsNotFound(err) {
-		return fmt.Errorf("failed to check for StorageClass %s: %v", common.StorageClassName, err)
+		return fmt.Errorf("failed to check for StorageClass %s: %w", common.StorageClassName, err)
 	}
 
 	if opt.StorageClassProvider == "" {
@@ -156,16 +156,16 @@ func deployStorageClass(ctx context.Context, logger *logrus.Entry, kubeClient ct
 
 	factory, err := common.StorageClassCreator(opt.StorageClassProvider)
 	if err != nil {
-		return fmt.Errorf("invalid StorageClass provider: %v", err)
+		return fmt.Errorf("invalid StorageClass provider: %w", err)
 	}
 
 	sc, err := factory(ctx, sublogger, kubeClient, common.StorageClassName)
 	if err != nil {
-		return fmt.Errorf("failed to define StorageClass: %v", err)
+		return fmt.Errorf("failed to define StorageClass: %w", err)
 	}
 
 	if err := kubeClient.Create(ctx, &sc); err != nil {
-		return fmt.Errorf("failed to create StorageClass: %v", err)
+		return fmt.Errorf("failed to create StorageClass: %w", err)
 	}
 
 	logger.Info("✅ Success.")
@@ -179,20 +179,20 @@ func deployMinio(ctx context.Context, logger *logrus.Entry, kubeClient ctrlrunti
 
 	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, "minio"))
 	if err != nil {
-		return fmt.Errorf("failed to load Helm chart: %v", err)
+		return fmt.Errorf("failed to load Helm chart: %w", err)
 	}
 
 	if err := util.EnsureNamespace(ctx, sublogger, kubeClient, MinioNamespace); err != nil {
-		return fmt.Errorf("failed to create namespace: %v", err)
+		return fmt.Errorf("failed to create namespace: %w", err)
 	}
 
 	release, err := util.CheckHelmRelease(ctx, sublogger, helmClient, MinioNamespace, MinioReleaseName)
 	if err != nil {
-		return fmt.Errorf("failed to check to Helm release: %v", err)
+		return fmt.Errorf("failed to check to Helm release: %w", err)
 	}
 
 	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, MinioNamespace, MinioReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, release); err != nil {
-		return fmt.Errorf("failed to deploy Helm release: %v", err)
+		return fmt.Errorf("failed to deploy Helm release: %w", err)
 	}
 
 	logger.Info("✅ Success.")
@@ -206,20 +206,20 @@ func deployS3Exporter(ctx context.Context, logger *logrus.Entry, kubeClient ctrl
 
 	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, "s3-exporter"))
 	if err != nil {
-		return fmt.Errorf("failed to load Helm chart: %v", err)
+		return fmt.Errorf("failed to load Helm chart: %w", err)
 	}
 
 	if err := util.EnsureNamespace(ctx, sublogger, kubeClient, S3ExporterNamespace); err != nil {
-		return fmt.Errorf("failed to create namespace: %v", err)
+		return fmt.Errorf("failed to create namespace: %w", err)
 	}
 
 	release, err := util.CheckHelmRelease(ctx, sublogger, helmClient, S3ExporterNamespace, S3ExporterReleaseName)
 	if err != nil {
-		return fmt.Errorf("failed to check to Helm release: %v", err)
+		return fmt.Errorf("failed to check to Helm release: %w", err)
 	}
 
 	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, S3ExporterNamespace, S3ExporterReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, release); err != nil {
-		return fmt.Errorf("failed to deploy Helm release: %v", err)
+		return fmt.Errorf("failed to deploy Helm release: %w", err)
 	}
 
 	logger.Info("✅ Success.")

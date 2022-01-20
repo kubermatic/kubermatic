@@ -433,7 +433,7 @@ func (r *TestClient) ListCredentials(providerName, datacenter string) ([]string,
 func (r *TestClient) CreateAWSCluster(projectID, dc, name, secretAccessKey, accessKeyID, version, location, availabilityZone string, replicas int32) (*apiv1.Cluster, error) {
 	_, err := semver.NewVersion(version)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse version %s: %v", version, err)
+		return nil, fmt.Errorf("failed to parse version %s: %w", version, err)
 	}
 
 	clusterSpec := &models.CreateClusterSpec{}
@@ -498,7 +498,7 @@ func (r *TestClient) CreateAWSCluster(projectID, dc, name, secretAccessKey, acce
 func (r *TestClient) CreateKubevirtCluster(projectID, dc, name, credential, version, location string, replicas int32) (*apiv1.Cluster, error) {
 	_, err := semver.NewVersion(version)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse version %s: %v", version, err)
+		return nil, fmt.Errorf("failed to parse version %s: %w", version, err)
 	}
 
 	clusterSpec := &models.CreateClusterSpec{}
@@ -570,7 +570,7 @@ func (r *TestClient) CreateKubevirtCluster(projectID, dc, name, credential, vers
 func (r *TestClient) CreateDOCluster(projectID, dc, name, credential, version, location string, replicas int32) (*apiv1.Cluster, error) {
 	_, err := semver.NewVersion(version)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse version %s: %v", version, err)
+		return nil, fmt.Errorf("failed to parse version %s: %w", version, err)
 	}
 
 	clusterSpec := &models.CreateClusterSpec{}
@@ -673,12 +673,12 @@ func (r *TestClient) GetClusterEvents(projectID, dc, clusterID string) ([]*model
 func (r *TestClient) PrintClusterEvents(projectID, dc, clusterID string) error {
 	events, err := r.GetClusterEvents(projectID, dc, clusterID)
 	if err != nil {
-		return fmt.Errorf("failed to get cluster events: %v", err)
+		return fmt.Errorf("failed to get cluster events: %w", err)
 	}
 
 	encodedEvents, err := json.Marshal(events)
 	if err != nil {
-		return fmt.Errorf("failed to serialize events: %v", err)
+		return fmt.Errorf("failed to serialize events: %w", err)
 	}
 
 	r.test.Logf("Cluster events:\n%s", string(encodedEvents))
@@ -1727,7 +1727,7 @@ func (r *TestClient) DeleteConstraint(name string) error {
 func (r *TestClient) CreateClusterTemplate(projectID, name, scope, credential, version, location string) (*apiv2.ClusterTemplate, error) {
 	_, err := semver.NewVersion(version)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse version %s: %v", version, err)
+		return nil, fmt.Errorf("failed to parse version %s: %w", version, err)
 	}
 
 	params := &project.CreateClusterTemplateParams{

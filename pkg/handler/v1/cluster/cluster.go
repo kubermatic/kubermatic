@@ -267,11 +267,11 @@ func (r CreateReq) Validate(clusterType kubermaticv1.ClusterType, updateManager 
 
 	providerName, err := provider.ClusterCloudProviderName(r.Body.Cluster.Spec.Cloud)
 	if err != nil {
-		return fmt.Errorf("failed to get the cloud provider name: %v", err)
+		return fmt.Errorf("failed to get the cloud provider name: %w", err)
 	}
 	versions, err := updateManager.GetVersionsV2(r.Body.Cluster.Type, kubermaticv1.ProviderType(providerName))
 	if err != nil {
-		return fmt.Errorf("failed to get available cluster versions: %v", err)
+		return fmt.Errorf("failed to get available cluster versions: %w", err)
 	}
 	for _, availableVersion := range versions {
 		if r.Body.Cluster.Spec.Version.Semver().Equal(availableVersion.Version) {

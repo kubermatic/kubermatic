@@ -80,7 +80,7 @@ func (m *MetricsServer) Start(ctx context.Context) error {
 		WriteTimeout: 10 * time.Second,
 	}
 
-	return fmt.Errorf("metrics server stopped: %v", s.ListenAndServe())
+	return fmt.Errorf("metrics server stopped: %w", s.ListenAndServe())
 }
 
 // MetricsServer implements LeaderElectionRunnable to indicate that it does not require to run

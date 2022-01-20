@@ -143,7 +143,7 @@ func (u *LBUpdater) syncLB(ctx context.Context, s string) error {
 	services := &corev1.ServiceList{}
 	opts := &ctrlruntimeclient.ListOptions{Namespace: u.namespace}
 	if err := u.client.List(ctx, services, opts); err != nil {
-		return fmt.Errorf("failed to list services: %v", err)
+		return fmt.Errorf("failed to list services: %w", err)
 	}
 
 	var wantLBPorts []corev1.ServicePort
@@ -203,7 +203,7 @@ func (u *LBUpdater) syncLB(ctx context.Context, s string) error {
 
 	lb := &corev1.Service{}
 	if err := u.client.Get(ctx, types.NamespacedName{Namespace: u.lbNamespace, Name: u.lbName}, lb); err != nil {
-		return fmt.Errorf("failed to get service %s/%s from lister: %v", u.lbNamespace, u.lbName, err)
+		return fmt.Errorf("failed to get service %s/%s from lister: %w", u.lbNamespace, u.lbName, err)
 	}
 
 	// We need to sort both port list to be able to compare them for equality
@@ -226,7 +226,7 @@ func (u *LBUpdater) syncLB(ctx context.Context, s string) error {
 	u.log.Debugw("Updating LB ports", "diff", diff)
 	lb.Spec.Ports = wantLBPorts
 	if err := u.client.Update(ctx, lb); err != nil {
-		return fmt.Errorf("failed to update LB service %s/%s: %v", u.lbNamespace, u.lbName, err)
+		return fmt.Errorf("failed to update LB service %s/%s: %w", u.lbNamespace, u.lbName, err)
 	}
 
 	buf := &bytes.Buffer{}

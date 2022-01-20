@@ -89,7 +89,7 @@ func (cc ClusterCollector) Describe(ch chan<- *prometheus.Desc) {
 func (cc ClusterCollector) Collect(ch chan<- prometheus.Metric) {
 	clusters := &kubermaticv1.ClusterList{}
 	if err := cc.client.List(context.Background(), clusters); err != nil {
-		utilruntime.HandleError(fmt.Errorf("failed to list clusters from clusterLister in ClusterCollector: %v", err))
+		utilruntime.HandleError(fmt.Errorf("failed to list clusters from clusterLister in ClusterCollector: %w", err))
 		return
 	}
 
@@ -117,7 +117,7 @@ func (cc *ClusterCollector) collectCluster(ch chan<- prometheus.Metric, c *kuber
 
 	labels, err := cc.clusterLabels(c)
 	if err != nil {
-		utilruntime.HandleError(fmt.Errorf("failed to determine labels for cluster %s: %v", c.Name, err))
+		utilruntime.HandleError(fmt.Errorf("failed to determine labels for cluster %s: %w", c.Name, err))
 	} else {
 		ch <- prometheus.MustNewConstMetric(
 			cc.clusterInfo,

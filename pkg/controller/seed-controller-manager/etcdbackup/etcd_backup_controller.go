@@ -1206,7 +1206,7 @@ func parseCronSchedule(scheduleString string) (cron.Schedule, error) {
 		}()
 
 		if res, err := cron.ParseStandard(scheduleString); err != nil {
-			validationErrors = append(validationErrors, fmt.Errorf("invalid schedule: %v", err))
+			validationErrors = append(validationErrors, fmt.Errorf("invalid schedule: %w", err))
 		} else {
 			schedule = res
 		}

@@ -103,7 +103,7 @@ func DeploymentCreator(data openVPNDeploymentCreatorData) reconciling.NamedDeplo
 			volumes := getVolumes()
 			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
 			if err != nil {
-				return nil, fmt.Errorf("failed to create pod labels: %v", err)
+				return nil, fmt.Errorf("failed to create pod labels: %w", err)
 			}
 
 			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
@@ -136,7 +136,7 @@ func DeploymentCreator(data openVPNDeploymentCreatorData) reconciling.NamedDeplo
 			// node access network route
 			_, nodeAccessNetwork, err := net.ParseCIDR(data.NodeAccessNetwork())
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse node access network %s: %v", data.NodeAccessNetwork(), err)
+				return nil, fmt.Errorf("failed to parse node access network %s: %w", data.NodeAccessNetwork(), err)
 			}
 			pushRoutes = append(pushRoutes, []string{
 				"--push", fmt.Sprintf("route %s %s", nodeAccessNetwork.IP.String(), net.IP(nodeAccessNetwork.Mask).String()),
@@ -301,7 +301,7 @@ done`,
 			}
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			return dep, nil

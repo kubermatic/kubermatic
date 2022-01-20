@@ -80,7 +80,7 @@ func (p *ClusterProvider) WaitForCachesToSync(stopCh <-chan struct{}) error {
 	}
 
 	if err := p.kubeInformerProvider.WaitForCachesToSync(stopCh); err != nil {
-		return fmt.Errorf("unable to sync caches for kubermatic provider for cluster provider %s due to %v", p.providerName, err)
+		return fmt.Errorf("unable to sync caches for kubermatic provider for cluster provider %s: %w", p.providerName, err)
 	}
 	return nil
 }

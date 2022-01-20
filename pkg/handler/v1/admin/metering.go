@@ -42,7 +42,7 @@ func CreateOrUpdateMeteringCredentials(userInfoGetter provider.UserInfoGetter, s
 		}
 
 		if err := createOrUpdateMeteringCredentials(ctx, req, seedsGetter, seedClientGetter); err != nil {
-			return nil, fmt.Errorf("failed to create/update metering credentials: %v", err)
+			return nil, fmt.Errorf("failed to create/update metering credentials: %w", err)
 		}
 
 		return nil, nil
@@ -62,7 +62,7 @@ func CreateOrUpdateMeteringConfigurations(userInfoGetter provider.UserInfoGetter
 		}
 
 		if err := createOrUpdateMeteringConfigurations(ctx, req, masterClient); err != nil {
-			return nil, fmt.Errorf("failed to create/update metering SecretReq: %v", err)
+			return nil, fmt.Errorf("failed to create/update metering SecretReq: %w", err)
 		}
 
 		return nil, nil

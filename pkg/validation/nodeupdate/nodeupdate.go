@@ -34,6 +34,10 @@ func (e VersionSkewError) Error() string {
 	return fmt.Sprintf("kubelet version %s is not compatible with control plane version %s", e.Kubelet, e.ControlPlane)
 }
 
+func (e VersionSkewError) Is(other error) bool {
+	return errors.As(other, &VersionSkewError{})
+}
+
 var _ error = VersionSkewError{}
 
 // EnsureVersionCompatible checks whether the given kubelet version

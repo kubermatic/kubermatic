@@ -229,11 +229,11 @@ func (r *Reconciler) deleteSecret(ctx context.Context, secretName string) error 
 
 	// Something failed while loading the secret
 	if err != nil {
-		return fmt.Errorf("failed to get Secret %q: %v", name.String(), err)
+		return fmt.Errorf("failed to get Secret %q: %w", name.String(), err)
 	}
 
 	if err := r.Delete(ctx, secret); err != nil {
-		return fmt.Errorf("failed to delete Secret %q: %v", name.String(), err)
+		return fmt.Errorf("failed to delete Secret %q: %w", name.String(), err)
 	}
 
 	// We successfully deleted the secret
@@ -251,7 +251,7 @@ func createKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client
 		Data: secretData,
 	}
 	if err := client.Create(ctx, secret); err != nil {
-		return nil, fmt.Errorf("failed to create kubeconfig secret: %v", err)
+		return nil, fmt.Errorf("failed to create kubeconfig secret: %w", err)
 	}
 	return &providerconfig.GlobalSecretKeySelector{
 		ObjectReference: corev1.ObjectReference{
@@ -329,7 +329,7 @@ func (r *Reconciler) updateKubeconfigSecret(ctx context.Context, config *api.Con
 
 	existingSecret := &corev1.Secret{}
 	if err := r.Get(ctx, namespacedName, existingSecret); err != nil && !kerrors.IsNotFound(err) {
-		return fmt.Errorf("failed to probe for secret %v: %v", namespacedName, err)
+		return fmt.Errorf("failed to probe for secret %v: %w", namespacedName, err)
 	}
 
 	secretData := map[string][]byte{

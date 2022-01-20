@@ -255,7 +255,7 @@ func getAKSNodes(cluster *kubermaticapiv1.ExternalCluster, nodePoolName string, 
 			if n.Labels[AKSNodepoolNameLabel] == nodePoolName {
 				outNode, err := outputNode(n)
 				if err != nil {
-					return nil, fmt.Errorf("failed to output node %s: %v", n.Name, err)
+					return nil, fmt.Errorf("failed to output node %s: %w", n.Name, err)
 				}
 				nodesV1 = append(nodesV1, *outNode)
 			}
@@ -351,7 +351,7 @@ func getAKSNodePoolClient(cred resources.AKSCredentials) (*containerservice.Agen
 	agentPoolClient := containerservice.NewAgentPoolsClient(cred.SubscriptionID)
 	agentPoolClient.Authorizer, err = auth.NewClientCredentialsConfig(cred.ClientID, cred.ClientSecret, cred.TenantID).Authorizer()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %v", err.Error())
+		return nil, fmt.Errorf("failed to create authorizer: %w", err)
 	}
 	return &agentPoolClient, nil
 }

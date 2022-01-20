@@ -63,7 +63,7 @@ func AlibabaInstanceTypesWithClusterCredentialsEndpoint(ctx context.Context, use
 	}
 	_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to find Datacenter %q: %v", datacenterName, err)
+		return nil, fmt.Errorf("failed to find Datacenter %q: %w", datacenterName, err)
 	}
 
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
@@ -186,7 +186,7 @@ func AlibabaZonesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGet
 	}
 	_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to find Datacenter %q: %v", datacenterName, err)
+		return nil, fmt.Errorf("failed to find Datacenter %q: %w", datacenterName, err)
 	}
 
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
@@ -274,7 +274,7 @@ func AlibabaVswitchesWithClusterCredentialsEndpoint(ctx context.Context, userInf
 	}
 	_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to find Datacenter %q: %v", datacenterName, err)
+		return nil, fmt.Errorf("failed to find Datacenter %q: %w", datacenterName, err)
 	}
 
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())

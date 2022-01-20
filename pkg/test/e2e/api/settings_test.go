@@ -21,6 +21,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"testing"
@@ -227,8 +228,8 @@ func TestRestrictProjectCreation(t *testing.T) {
 			if err == nil {
 				t.Fatal("expected error during cluster creation")
 			}
-			createError, ok := err.(*project.CreateProjectDefault)
-			if !ok {
+			var createError *project.CreateProjectDefault
+			if !errors.As(err, &createError) {
 				t.Fatalf("create project: expected error, but got %v", err)
 			}
 			if createError.Code() != http.StatusForbidden {

@@ -64,7 +64,7 @@ func checkProviderCompatibility(version *semver.Version, provider kubermaticv1.P
 func CheckUnconstrained(baseVersion *semver.Version, version string) (bool, error) {
 	c, err := semver.NewConstraint(version)
 	if err != nil {
-		return false, fmt.Errorf("failed to parse to constraint %s: %v", c, err)
+		return false, fmt.Errorf("failed to parse to constraint %s: %w", c, err)
 	}
 
 	return !c.Check(baseVersion), nil

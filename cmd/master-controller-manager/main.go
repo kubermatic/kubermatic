@@ -225,17 +225,17 @@ func main() {
 func loadKubermaticConfiguration(filename string) (*operatorv1alpha1.KubermaticConfiguration, error) {
 	content, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read file: %v", err)
+		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
 
 	config := &operatorv1alpha1.KubermaticConfiguration{}
 	if err := yaml.Unmarshal(content, &config); err != nil {
-		return nil, fmt.Errorf("failed to parse file as YAML: %v", err)
+		return nil, fmt.Errorf("failed to parse file as YAML: %w", err)
 	}
 
 	defaulted, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
 	if err != nil {
-		return nil, fmt.Errorf("failed to process: %v", err)
+		return nil, fmt.Errorf("failed to process: %w", err)
 	}
 
 	return defaulted, nil

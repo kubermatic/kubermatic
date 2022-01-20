@@ -67,7 +67,7 @@ func ServerClientConfigsConfigMapCreator(data serverClientConfigsData) reconcili
 
 			_, nodeAccessNetwork, err := net.ParseCIDR(data.NodeAccessNetwork())
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse node access network %s: %v", data.NodeAccessNetwork(), err)
+				return nil, fmt.Errorf("failed to parse node access network %s: %w", data.NodeAccessNetwork(), err)
 			}
 			iroutes = append(iroutes, fmt.Sprintf("iroute %s %s",
 				nodeAccessNetwork.IP.String(),

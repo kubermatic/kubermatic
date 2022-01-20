@@ -149,7 +149,7 @@ func (r *Reconciler) syncDnatRules(ctx context.Context) error {
 	// Get nodes from lister, make a copy.
 	nodeList := &corev1.NodeList{}
 	if err := r.List(ctx, nodeList); err != nil {
-		return fmt.Errorf("failed to list nodes: %v", err)
+		return fmt.Errorf("failed to list nodes: %w", err)
 	}
 
 	// Create the set of rules from all listed nodes.
@@ -158,7 +158,7 @@ func (r *Reconciler) syncDnatRules(ctx context.Context) error {
 	// Get the actual state (current iptable rules)
 	allActualRules, err := execSave()
 	if err != nil {
-		return fmt.Errorf("failed to read iptable rules: %v", err)
+		return fmt.Errorf("failed to read iptable rules: %w", err)
 	}
 	// filter out everything that's not relevant for us
 	actualRules, haveJump, haveMasquerade := r.filterDnatRules(allActualRules, r.nodeTranslationChainName)
@@ -167,7 +167,7 @@ func (r *Reconciler) syncDnatRules(ctx context.Context) error {
 		// Need to update chain in kernel.
 		r.log.Debugw("Updating iptables chain in kernel", "rules-count", len(desiredRules))
 		if err := r.applyDNATRules(desiredRules, haveJump, haveMasquerade); err != nil {
-			return fmt.Errorf("failed to apply iptable rules: %v", err)
+			return fmt.Errorf("failed to apply iptable rules: %w", err)
 		}
 	}
 
@@ -210,7 +210,7 @@ func (r *Reconciler) getRulesForNode(node corev1.Node) ([]*dnatRule, error) {
 
 	internalIP, err := getInternalNodeAddress(node)
 	if err != nil {
-		return rules, fmt.Errorf("failed to get internal node address: %v", err)
+		return rules, fmt.Errorf("failed to get internal node address: %w", err)
 	}
 	octets := strings.Split(internalIP, ".")
 
@@ -266,7 +266,7 @@ func execSave() ([]string, error) {
 	cmd := exec.Command("iptables-save", []string{"-t", "nat"}...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute %q: %v. Output: \n%s", strings.Join(cmd.Args, " "), err, out)
+		return nil, fmt.Errorf("failed to execute %q: %w. Output: \n%s", strings.Join(cmd.Args, " "), err, out)
 	}
 	return strings.Split(string(out), "\n"), err
 }
@@ -279,10 +279,10 @@ func execRestore(rules []string) error {
 		return err
 	}
 	if _, err := io.WriteString(stdin, strings.Join(rules, "\n")+"\n"); err != nil {
-		return fmt.Errorf("failed to write to iptables-restore stdin: %v", err)
+		return fmt.Errorf("failed to write to iptables-restore stdin: %w", err)
 	}
 	if err := stdin.Close(); err != nil {
-		return fmt.Errorf("failed to close iptables-restore stdin: %v", err)
+		return fmt.Errorf("failed to close iptables-restore stdin: %w", err)
 	}
 
 	out, err := cmd.CombinedOutput()
@@ -290,9 +290,9 @@ func execRestore(rules []string) error {
 		return nil
 	}
 	if len(out) > 0 {
-		return fmt.Errorf("iptables-restore failed: %v (output: %s)", err, string(out))
+		return fmt.Errorf("iptables-restore failed: %w (output: %s)", err, string(out))
 	}
-	return fmt.Errorf("iptables-restore failed: %v", err)
+	return fmt.Errorf("iptables-restore failed: %w", err)
 }
 
 // GetMatchArgs returns iptables arguments to match for the

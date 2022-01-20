@@ -54,7 +54,7 @@ func DeleteBackupDestinationEndpoint(userInfoGetter provider.UserInfoGetter, see
 		delete(seed.Spec.EtcdBackupRestore.Destinations, req.BackupDestination)
 
 		if err := masterClient.Update(ctx, seed); err != nil {
-			return nil, fmt.Errorf("failed to update seed: %v", err)
+			return nil, fmt.Errorf("failed to update seed: %w", err)
 		}
 
 		return nil, nil

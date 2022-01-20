@@ -156,7 +156,7 @@ func (p *ExternalClusterProvider) List(project *kubermaticapiv1.Project) (*kuber
 	selector := labels.SelectorFromSet(map[string]string{kubermaticapiv1.ProjectIDLabelKey: project.Name})
 	listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: selector}
 	if err := p.clientPrivileged.List(context.Background(), projectClusters, listOpts); err != nil {
-		return nil, fmt.Errorf("failed to list clusters: %v", err)
+		return nil, fmt.Errorf("failed to list clusters: %w", err)
 	}
 
 	return projectClusters, nil
@@ -308,7 +308,7 @@ func (p *ExternalClusterProvider) IsMetricServerAvailable(cluster *kubermaticapi
 
 	allNodeMetricsList := &v1beta1.NodeMetricsList{}
 	if err := client.List(context.Background(), allNodeMetricsList); err != nil {
-		if _, ok := err.(*meta.NoKindMatchError); ok {
+		if meta.IsNoMatchError(err) {
 			return false, nil
 		}
 		return false, err
@@ -332,7 +332,7 @@ func (p *ExternalClusterProvider) ensureKubeconfigSecret(ctx context.Context, cl
 
 	if err := p.clientPrivileged.Get(ctx, namespacedName, existingSecret); err != nil {
 		if !kerrors.IsNotFound(err) {
-			return nil, fmt.Errorf("failed to probe for secret %q: %v", name, err)
+			return nil, fmt.Errorf("failed to probe for secret %q: %w", name, err)
 		}
 		return createKubeconfigSecret(ctx, p.clientPrivileged, name, projectID, secretData)
 	}
@@ -352,7 +352,7 @@ func createKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client
 		Data: secretData,
 	}
 	if err := client.Create(ctx, secret); err != nil {
-		return nil, fmt.Errorf("failed to create kubeconfig secret: %v", err)
+		return nil, fmt.Errorf("failed to create kubeconfig secret: %w", err)
 	}
 	return &providerconfig.GlobalSecretKeySelector{
 		ObjectReference: corev1.ObjectReference{
@@ -384,7 +384,7 @@ func updateKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client
 	if requiresUpdate {
 		existingSecret.Data = secretData
 		if err := client.Update(ctx, existingSecret); err != nil {
-			return nil, fmt.Errorf("failed to update kubeconfig secret: %v", err)
+			return nil, fmt.Errorf("failed to update kubeconfig secret: %w", err)
 		}
 	}
 

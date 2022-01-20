@@ -67,7 +67,7 @@ func Add(
 
 	workerSelector, err := workerlabel.LabelSelector(workerName)
 	if err != nil {
-		return fmt.Errorf("failed to build worker-name selector: %v", err)
+		return fmt.Errorf("failed to build worker-name selector: %w", err)
 	}
 
 	reconciler := &reconciler{
@@ -81,11 +81,11 @@ func Add(
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
 	if err != nil {
-		return fmt.Errorf("failed to construct controller: %v", err)
+		return fmt.Errorf("failed to construct controller: %w", err)
 	}
 
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.ClusterTemplateInstance{}}, &handler.EnqueueRequestForObject{}); err != nil {
-		return fmt.Errorf("failed to create watch for seed cluster template instance: %v", err)
+		return fmt.Errorf("failed to create watch for seed cluster template instance: %w", err)
 	}
 
 	return nil
@@ -152,7 +152,7 @@ func (r *reconciler) patchFinalizer(ctx context.Context, instance *kubermaticv1.
 	}
 
 	if err := r.seedClient.Update(ctx, instance); err != nil {
-		return fmt.Errorf("failed to update cluster template instance %s finalizer: %v", instance.Name, err)
+		return fmt.Errorf("failed to update cluster template instance %s finalizer: %w", instance.Name, err)
 	}
 
 	return nil
@@ -184,7 +184,7 @@ func (r *reconciler) createClusters(ctx context.Context, instance *kubermaticv1.
 			// Here partialCluster is used to copy credentials to the new cluster
 			err := resources.CopyCredentials(resources.NewCredentialsData(context.Background(), partialCluster, r.seedClient), newCluster)
 			if err != nil {
-				return fmt.Errorf("failed to get credentials: %v", err)
+				return fmt.Errorf("failed to get credentials: %w", err)
 			}
 			if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(ctx, r.seedClient, newCluster); err != nil {
 				return err

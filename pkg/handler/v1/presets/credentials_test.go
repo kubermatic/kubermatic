@@ -423,7 +423,7 @@ func TestCredentialEndpoint(t *testing.T) {
 			apiUser := test.GenDefaultAPIUser()
 			router, err := test.CreateTestEndpoint(*apiUser, nil, tc.credentials, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v\n", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			router.ServeHTTP(res, req)
 

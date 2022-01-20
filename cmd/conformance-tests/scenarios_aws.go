@@ -106,7 +106,7 @@ func (s *awsScenario) NodeDeployments(ctx context.Context, num int, secrets secr
 
 	vpcResponse, err := secrets.kubermaticClient.Aws.ListAWSVPCS(listVPCParams, secrets.kubermaticAuthenticator)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get vpcs: %v", err)
+		return nil, fmt.Errorf("failed to get vpcs: %w", err)
 	}
 	if len(vpcResponse.Payload) < 1 {
 		return nil, errors.New("got zero vpcs back")
@@ -130,7 +130,7 @@ func (s *awsScenario) NodeDeployments(ctx context.Context, num int, secrets secr
 
 	subnetResponse, err := secrets.kubermaticClient.Aws.ListAWSSubnets(listSubnetParams, secrets.kubermaticAuthenticator)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get subnets: %v", err)
+		return nil, fmt.Errorf("failed to get subnets: %w", err)
 	}
 	if n := len(subnetResponse.Payload); n < 3 {
 		return nil, fmt.Errorf("expected to get at least three subnets, got %d", n)

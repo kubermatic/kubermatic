@@ -111,7 +111,7 @@ func genUser(id, name, email string) *kubermaticv1.User {
 		h := sha512.New512_224()
 		if _, err := io.WriteString(h, email); err != nil {
 			// not nice, better to use t.Error
-			panic("unable to generate a test user due to " + err.Error())
+			panic("unable to generate a test user: " + err.Error())
 		}
 		specID = fmt.Sprintf("%x_KUBE", h.Sum(nil))
 	}

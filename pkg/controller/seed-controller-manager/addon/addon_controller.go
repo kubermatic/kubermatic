@@ -195,7 +195,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		// Remove the cleanup finalizer if the cluster is gone, as we can not delete the addons manifests
 		// from the cluster anymore
 		if err := r.removeCleanupFinalizer(ctx, log, addon); err != nil {
-			return reconcile.Result{}, fmt.Errorf("failed to remove addon cleanup finalizer: %v", err)
+			return reconcile.Result{}, fmt.Errorf("failed to remove addon cleanup finalizer: %w", err)
 		}
 
 		return reconcile.Result{}, nil
@@ -241,7 +241,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 
 	reqeueAfter, err := r.ensureRequiredResourceTypesExist(ctx, log, addon, cluster)
 	if err != nil {
-		return nil, fmt.Errorf("failed to check if all required resources exist: %v", err)
+		return nil, fmt.Errorf("failed to check if all required resources exist: %w", err)
 	}
 	if reqeueAfter != nil {
 		return reqeueAfter, nil
@@ -249,10 +249,10 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 
 	if addon.DeletionTimestamp != nil {
 		if err := r.cleanupManifests(ctx, log, addon, cluster); err != nil {
-			return nil, fmt.Errorf("failed to delete manifests from cluster: %v", err)
+			return nil, fmt.Errorf("failed to delete manifests from cluster: %w", err)
 		}
 		if err := r.removeCleanupFinalizer(ctx, log, addon); err != nil {
-			return nil, fmt.Errorf("failed to ensure that the cleanup finalizer got removed from the addon: %v", err)
+			return nil, fmt.Errorf("failed to ensure that the cleanup finalizer got removed from the addon: %w", err)
 		}
 		return nil, nil
 	}
@@ -265,13 +265,13 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 
 	// Reconciling
 	if err := r.ensureIsInstalled(ctx, log, addon, cluster); err != nil {
-		return nil, fmt.Errorf("failed to deploy the addon manifests into the cluster: %v", err)
+		return nil, fmt.Errorf("failed to deploy the addon manifests into the cluster: %w", err)
 	}
 	if err := r.ensureFinalizerIsSet(ctx, addon); err != nil {
-		return nil, fmt.Errorf("failed to ensure that the cleanup finalizer exists on the addon: %v", err)
+		return nil, fmt.Errorf("failed to ensure that the cleanup finalizer exists on the addon: %w", err)
 	}
 	if err := r.ensureResourcesCreatedConditionIsSet(ctx, addon); err != nil {
-		return nil, fmt.Errorf("failed to set add ResourcesCreated Condition: %v", err)
+		return nil, fmt.Errorf("failed to set add ResourcesCreated Condition: %w", err)
 	}
 	return nil, nil
 }
@@ -307,7 +307,7 @@ func (r *Reconciler) getAddonManifests(ctx context.Context, log *zap.SugaredLogg
 
 	credentials, err := resources.GetCredentials(resources.NewCredentialsData(context.Background(), cluster, r.Client))
 	if err != nil {
-		return nil, fmt.Errorf("failed to get credentials: %v", err)
+		return nil, fmt.Errorf("failed to get credentials: %w", err)
 	}
 
 	// Add addon variables if available.
@@ -332,13 +332,13 @@ func (r *Reconciler) getAddonManifests(ctx context.Context, log *zap.SugaredLogg
 		variables,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create template data for addon manifests: %v", err)
+		return nil, fmt.Errorf("failed to create template data for addon manifests: %w", err)
 	}
 
 	manifestPath := path.Join(addonDir, addon.Spec.Name)
 	allManifests, err := addonutils.ParseFromFolder(log, r.overwriteRegistry, manifestPath, data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse addon templates in %s: %v", manifestPath, err)
+		return nil, fmt.Errorf("failed to parse addon templates in %s: %w", manifestPath, err)
 	}
 
 	return allManifests, nil
@@ -366,7 +366,7 @@ func (r *Reconciler) ensureAddonLabelOnManifests(addon *kubermaticv1.Addon, mani
 	for _, m := range manifests {
 		parsedUnstructuredObj := &metav1unstructured.Unstructured{}
 		if _, _, err := metav1unstructured.UnstructuredJSONScheme.Decode(m.Raw, nil, parsedUnstructuredObj); err != nil {
-			return nil, fmt.Errorf("parsing unstructured failed: %v", err)
+			return nil, fmt.Errorf("parsing unstructured failed: %w", err)
 		}
 
 		existingLabels := parsedUnstructuredObj.GetLabels()
@@ -382,7 +382,7 @@ func (r *Reconciler) ensureAddonLabelOnManifests(addon *kubermaticv1.Addon, mani
 
 		jsonBuffer := &bytes.Buffer{}
 		if err := metav1unstructured.UnstructuredJSONScheme.Encode(parsedUnstructuredObj, jsonBuffer); err != nil {
-			return nil, fmt.Errorf("encoding json failed: %v", err)
+			return nil, fmt.Errorf("encoding json failed: %w", err)
 		}
 
 		// Must be encoding back to yaml, otherwise kubectl fails to apply because it tries to parse the whole
@@ -418,7 +418,7 @@ func (r *Reconciler) writeCombinedManifest(log *zap.SugaredLogger, manifest *byt
 	// Write combined Manifest to disk
 	manifestFilename := path.Join("/tmp", fmt.Sprintf("cluster-%s-%s.yaml", cluster.Name, addon.Name))
 	if err := ioutil.WriteFile(manifestFilename, manifest.Bytes(), 0644); err != nil {
-		return "", nil, fmt.Errorf("failed to write combined manifest to %s: %v", manifestFilename, err)
+		return "", nil, fmt.Errorf("failed to write combined manifest to %s: %w", manifestFilename, err)
 	}
 	log.Debugw("Wrote combined manifest", "file", manifestFilename)
 
@@ -429,11 +429,11 @@ func (r *Reconciler) writeAdminKubeconfig(ctx context.Context, log *zap.SugaredL
 	// Write kubeconfig to disk
 	kubeconfig, err := r.KubeconfigProvider.GetAdminKubeconfig(ctx, cluster)
 	if err != nil {
-		return "", nil, fmt.Errorf("failed to get admin kubeconfig for cluster %s: %v", cluster.Name, err)
+		return "", nil, fmt.Errorf("failed to get admin kubeconfig for cluster %s: %w", cluster.Name, err)
 	}
 	kubeconfigFilename := path.Join("/tmp", fmt.Sprintf("cluster-%s-addon-%s-kubeconfig", cluster.Name, addon.Name))
 	if err := ioutil.WriteFile(kubeconfigFilename, kubeconfig, 0644); err != nil {
-		return "", nil, fmt.Errorf("failed to write admin kubeconfig for cluster %s: %v", cluster.Name, err)
+		return "", nil, fmt.Errorf("failed to write admin kubeconfig for cluster %s: %w", cluster.Name, err)
 	}
 	log.Debugw("Wrote admin kubeconfig", "file", kubeconfigFilename)
 
@@ -443,23 +443,23 @@ func (r *Reconciler) writeAdminKubeconfig(ctx context.Context, log *zap.SugaredL
 func (r *Reconciler) setupManifestInteraction(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (string, string, fileHandlingDone, error) {
 	manifests, err := r.getAddonManifests(ctx, log, addon, cluster)
 	if err != nil {
-		return "", "", nil, fmt.Errorf("failed to get addon manifests: %v", err)
+		return "", "", nil, fmt.Errorf("failed to get addon manifests: %w", err)
 	}
 
 	rawManifests, err := r.ensureAddonLabelOnManifests(addon, manifests)
 	if err != nil {
-		return "", "", nil, fmt.Errorf("failed to add the addon specific label to all addon resources: %v", err)
+		return "", "", nil, fmt.Errorf("failed to add the addon specific label to all addon resources: %w", err)
 	}
 
 	rawManifest := r.combineManifests(rawManifests)
 	manifestFilename, manifestDone, err := r.writeCombinedManifest(log, rawManifest, addon, cluster)
 	if err != nil {
-		return "", "", nil, fmt.Errorf("failed to write all addon resources into a combined manifest file: %v", err)
+		return "", "", nil, fmt.Errorf("failed to write all addon resources into a combined manifest file: %w", err)
 	}
 
 	kubeconfigFilename, kubeconfigDone, err := r.writeAdminKubeconfig(ctx, log, addon, cluster)
 	if err != nil {
-		return "", "", nil, fmt.Errorf("failed to write the admin kubeconfig to the local filesystem: %v", err)
+		return "", "", nil, fmt.Errorf("failed to write the admin kubeconfig to the local filesystem: %w", err)
 	}
 
 	done := func() {
@@ -517,7 +517,7 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 	out, err := cmd.CombinedOutput()
 	cmdLog.Debugw("Finished executing command", "output", string(out))
 	if err != nil {
-		return fmt.Errorf("failed to execute '%s' for addon %s of cluster %s: %v\n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, err, string(out))
+		return fmt.Errorf("failed to execute '%s' for addon %s of cluster %s: %w\n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, err, string(out))
 	}
 	return err
 }
@@ -566,20 +566,19 @@ func (r *Reconciler) cleanupManifests(ctx context.Context, log *zap.SugaredLogge
 	out, err := cmd.CombinedOutput()
 	cmdLog.Debugw("Finished executing command", "output", string(out))
 	if err != nil {
-		return fmt.Errorf("failed to execute '%s' for addon %s of cluster %s: %v\n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, err, string(out))
+		return fmt.Errorf("failed to execute '%s' for addon %s of cluster %s: %w\n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, err, string(out))
 	}
 	return nil
 }
 
 func (r *Reconciler) ensureRequiredResourceTypesExist(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
-
 	if len(addon.Spec.RequiredResourceTypes) == 0 {
 		// Avoid constructing a client we don't need and just return early
 		return nil, nil
 	}
 	userClusterClient, err := r.KubeconfigProvider.GetClient(ctx, cluster)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get client for usercluster: %v", err)
+		return nil, fmt.Errorf("failed to get client for usercluster: %w", err)
 	}
 
 	for _, requiredResource := range addon.Spec.RequiredResourceTypes {
@@ -591,12 +590,12 @@ func (r *Reconciler) ensureRequiredResourceTypesExist(ctx context.Context, log *
 		// get as little as possible.
 		listOpts := &ctrlruntimeclient.ListOptions{Limit: 1}
 		if err := userClusterClient.List(ctx, unstructuedList, listOpts); err != nil {
-			if _, ok := err.(*meta.NoKindMatchError); ok {
+			if meta.IsNoMatchError(err) {
 				// Try again later
 				log.Infow("Required resource isn't served, trying again in 10 seconds", "resource", requiredResource.String())
 				return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 			}
-			return nil, fmt.Errorf("failed to check if type %q is served: %v", requiredResource.String(), err)
+			return nil, fmt.Errorf("failed to check if type %q is served: %w", requiredResource.String(), err)
 		}
 	}
 

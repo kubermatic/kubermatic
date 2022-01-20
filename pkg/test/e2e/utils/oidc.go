@@ -105,7 +105,7 @@ func retrieveToken(ctx context.Context, token *string, login string, password st
 
 	client, err := dex.NewClientFromHelmValues(valuesFile, "kubermatic", logger)
 	if err != nil {
-		return "", fmt.Errorf("failed to create OIDC client: %v", err)
+		return "", fmt.Errorf("failed to create OIDC client: %w", err)
 	}
 
 	newToken, err := client.Login(ctx, login, password)

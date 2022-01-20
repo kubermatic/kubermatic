@@ -61,7 +61,7 @@ func getAWSSession(accessKeyID, secretAccessKey, region, endpoint string) (*sess
 func getClientSet(accessKeyID, secretAccessKey, region, endpoint string) (*aws.ClientSet, error) {
 	sess, err := getAWSSession(accessKeyID, secretAccessKey, region, endpoint)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create API session: %v", err)
+		return nil, fmt.Errorf("failed to create API session: %w", err)
 	}
 
 	return &aws.ClientSet{

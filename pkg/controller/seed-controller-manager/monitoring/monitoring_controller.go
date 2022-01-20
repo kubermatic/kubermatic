@@ -143,7 +143,7 @@ func Add(
 
 	for _, t := range typesToWatch {
 		if err := c.Watch(&source.Kind{Type: t}, controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient())); err != nil {
-			return fmt.Errorf("failed to create watcher for %T: %v", t, err)
+			return fmt.Errorf("failed to create watcher for %T: %w", t, err)
 		}
 	}
 
@@ -159,7 +159,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		if kubeapierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, fmt.Errorf("failed to get cluster: %v", err)
+		return reconcile.Result{}, fmt.Errorf("failed to get cluster: %w", err)
 	}
 
 	log = log.With("cluster", cluster.Name)

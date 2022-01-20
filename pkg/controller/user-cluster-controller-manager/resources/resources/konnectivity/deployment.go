@@ -146,7 +146,7 @@ func DeploymentCreator(kServerHost string, kServerPort int, registryWithOverwrit
 
 			err := resources.SetResourceRequirements(ds.Spec.Template.Spec.Containers, defResourceRequirements, nil, ds.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			ds.Spec.Template.Spec.Affinity = &corev1.Affinity{

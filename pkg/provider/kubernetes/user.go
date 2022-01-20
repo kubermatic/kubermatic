@@ -236,7 +236,7 @@ func ensureTokenBlacklistSecret(ctx context.Context, client ctrlruntimeclient.Cl
 	namespacedName := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: name}
 	existingSecret := &corev1.Secret{}
 	if err := client.Get(ctx, namespacedName, existingSecret); err != nil && !kerrors.IsNotFound(err) {
-		return nil, fmt.Errorf("failed to probe for secret %q: %v", name, err)
+		return nil, fmt.Errorf("failed to probe for secret %q: %w", name, err)
 	}
 
 	if existingSecret.Name == "" {
@@ -252,7 +252,7 @@ func ensureTokenBlacklistSecret(ctx context.Context, client ctrlruntimeclient.Cl
 		}
 
 		if err := client.Create(ctx, existingSecret); err != nil {
-			return nil, fmt.Errorf("failed to create token blacklist secret: %v", err)
+			return nil, fmt.Errorf("failed to create token blacklist secret: %w", err)
 		}
 	}
 
@@ -264,7 +264,7 @@ func ensureTokenBlacklistSecret(ctx context.Context, client ctrlruntimeclient.Cl
 			},
 		}
 		if err := client.Update(ctx, user); err != nil {
-			return nil, fmt.Errorf("failed to update user: %v", err)
+			return nil, fmt.Errorf("failed to update user: %w", err)
 		}
 	}
 

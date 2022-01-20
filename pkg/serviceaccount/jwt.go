@@ -17,6 +17,7 @@ limitations under the License.
 package serviceaccount
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -52,7 +53,6 @@ type CustomTokenClaim struct {
 }
 
 func Claims(email, projectID, tokenID string) (*jwt.Claims, *CustomTokenClaim) {
-
 	sc := &jwt.Claims{
 		IssuedAt:  jwt.NewNumericDate(Now()),
 		NotBefore: jwt.NewNumericDate(Now()),
@@ -107,7 +107,6 @@ func JWTTokenAuthenticator(privateKey []byte) TokenAuthenticator {
 
 // Authenticate decrypts signed token data to CustomTokenClaim object and checks if token expired
 func (a *jwtTokenAuthenticator) Authenticate(tokenData string) (*jwt.Claims, *CustomTokenClaim, error) {
-
 	tok, err := jwt.ParseSigned(tokenData)
 	if err != nil {
 		return nil, nil, err
@@ -123,12 +122,11 @@ func (a *jwtTokenAuthenticator) Authenticate(tokenData string) (*jwt.Claims, *Cu
 	err = public.Validate(jwt.Expected{
 		Time: Now(),
 	})
-	switch {
-	case err == nil:
-	case err == jwt.ErrExpired:
-		return nil, nil, fmt.Errorf("token has expired")
-	default:
-		return nil, nil, fmt.Errorf("token could not be validated due to error: %v", err)
+	if errors.Is(err, jwt.ErrExpired) {
+		return nil, nil, errors.New("token has expired")
+	}
+	if err != nil {
+		return nil, nil, fmt.Errorf("token could not be validated: %w", err)
 	}
 
 	return public, customClaims, nil
@@ -136,10 +134,10 @@ func (a *jwtTokenAuthenticator) Authenticate(tokenData string) (*jwt.Claims, *Cu
 
 func ValidateKey(privateKey []byte) error {
 	if len(privateKey) == 0 {
-		return fmt.Errorf("the signing key can not be empty")
+		return errors.New("the signing key can not be empty")
 	}
 	if len(privateKey) < 32 {
-		return fmt.Errorf("the signing key is to short, use 32 bytes or longer")
+		return errors.New("the signing key is to short, use 32 bytes or longer")
 	}
 	return nil
 }

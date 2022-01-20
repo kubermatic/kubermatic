@@ -198,7 +198,7 @@ func Add(
 	}
 	for _, t := range typesToWatch {
 		if err := c.Watch(&source.Kind{Type: t}, mapFn, predicateIgnoreLeaderLeaseRenew); err != nil {
-			return fmt.Errorf("failed to create watch for %T: %v", t, err)
+			return fmt.Errorf("failed to create watch for %T: %w", t, err)
 		}
 	}
 
@@ -209,10 +209,10 @@ func Add(
 	for _, t := range seedTypesToWatch {
 		seedWatch := &source.Kind{Type: t}
 		if err := seedWatch.InjectCache(seedMgr.GetCache()); err != nil {
-			return fmt.Errorf("failed to inject cache in seed cluster watch for %T: %v", t, err)
+			return fmt.Errorf("failed to inject cache in seed cluster watch for %T: %w", t, err)
 		}
 		if err := c.Watch(seedWatch, mapFn); err != nil {
-			return fmt.Errorf("failed to watch %T in seed: %v", t, err)
+			return fmt.Errorf("failed to watch %T in seed: %w", t, err)
 		}
 	}
 
@@ -362,7 +362,7 @@ func (r *reconciler) cloudConfig(ctx context.Context, cloudConfigConfigmapName s
 	configmap := &corev1.ConfigMap{}
 	name := types.NamespacedName{Namespace: r.namespace, Name: cloudConfigConfigmapName}
 	if err := r.seedClient.Get(ctx, name, configmap); err != nil {
-		return nil, fmt.Errorf("failed to get cloud-config: %v", err)
+		return nil, fmt.Errorf("failed to get cloud-config: %w", err)
 	}
 	value, exists := configmap.Data[resources.CloudConfigConfigMapKey]
 	if !exists {

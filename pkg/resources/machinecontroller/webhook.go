@@ -96,7 +96,7 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 
 			podLabels, err := data.GetPodTemplateLabels(resources.MachineControllerWebhookDeploymentName, volumes, nil)
 			if err != nil {
-				return nil, fmt.Errorf("failed to create pod labels: %v", err)
+				return nil, fmt.Errorf("failed to create pod labels: %w", err)
 			}
 			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{Labels: podLabels}
 
@@ -169,14 +169,14 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 			}
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, webhookResourceRequirements, nil, dep.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			dep.Spec.Template.Spec.ServiceAccountName = webhookServiceAccountName
 
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(Name), "Machine,cluster.k8s.io/v1alpha1")
 			if err != nil {
-				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
+				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
 			}
 			dep.Spec.Template.Spec = *wrappedPodSpec
 
@@ -225,7 +225,7 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.Na
 
 			ca, err := data.GetRootCA()
 			if err != nil {
-				return nil, fmt.Errorf("failed to get root ca: %v", err)
+				return nil, fmt.Errorf("failed to get root ca: %w", err)
 			}
 			commonName := fmt.Sprintf("%s.%s.svc.cluster.local.", resources.MachineControllerWebhookServiceName, data.Cluster().Status.NamespaceName)
 			altNames := certutil.AltNames{
@@ -240,7 +240,7 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.Na
 			if b, exists := se.Data[resources.MachineControllerWebhookServingCertCertKeyName]; exists {
 				certs, err := certutil.ParseCertsPEM(b)
 				if err != nil {
-					return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %v", resources.MachineControllerWebhookServingCertCertKeyName, err)
+					return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %w", resources.MachineControllerWebhookServingCertCertKeyName, err)
 				}
 				if resources.IsServerCertificateValidForAllOf(certs[0], commonName, altNames, ca.Cert) {
 					return se, nil
@@ -256,7 +256,7 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.Na
 				// For some reason the name the APIServer validates against must be in the SANs, having it as CN is not enough
 				[]string{commonName})
 			if err != nil {
-				return nil, fmt.Errorf("failed to generate serving cert: %v", err)
+				return nil, fmt.Errorf("failed to generate serving cert: %w", err)
 			}
 			se.Data[resources.MachineControllerWebhookServingCertCertKeyName] = triple.EncodeCertPEM(newKP.Cert)
 			se.Data[resources.MachineControllerWebhookServingCertKeyKeyName] = triple.EncodePrivateKeyPEM(newKP.Key)

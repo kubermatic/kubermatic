@@ -47,7 +47,7 @@ func AdminKubeconfigCreator(data adminKubeconfigCreatorData) reconciling.NamedSe
 
 			ca, err := data.GetRootCA()
 			if err != nil {
-				return nil, fmt.Errorf("failed to get cluster ca: %v", err)
+				return nil, fmt.Errorf("failed to get cluster ca: %w", err)
 			}
 
 			config := GetBaseKubeconfig(ca.Cert, data.Cluster().Address.URL, data.Cluster().Name)
@@ -79,13 +79,13 @@ func ViewerKubeconfigCreator(data *TemplateData) reconciling.NamedSecretCreatorG
 
 			ca, err := data.GetRootCA()
 			if err != nil {
-				return nil, fmt.Errorf("failed to get cluster ca: %v", err)
+				return nil, fmt.Errorf("failed to get cluster ca: %w", err)
 			}
 
 			config := GetBaseKubeconfig(ca.Cert, data.Cluster().Address.URL, data.Cluster().Name)
 			token, err := data.GetViewerToken()
 			if err != nil {
-				return nil, fmt.Errorf("failed to get token: %v", err)
+				return nil, fmt.Errorf("failed to get token: %w", err)
 			}
 			config.AuthInfos = map[string]*clientcmdapi.AuthInfo{
 				KubeconfigDefaultContextKey: {
@@ -120,7 +120,7 @@ func GetInternalKubeconfigCreator(name, commonName string, organizations []strin
 
 			ca, err := data.GetRootCA()
 			if err != nil {
-				return nil, fmt.Errorf("failed to get cluster ca: %v", err)
+				return nil, fmt.Errorf("failed to get cluster ca: %w", err)
 			}
 
 			b := se.Data[KubeconfigSecretKey]
@@ -135,7 +135,7 @@ func GetInternalKubeconfigCreator(name, commonName string, organizations []strin
 
 				se.Data[KubeconfigSecretKey], err = BuildNewKubeconfigAsByte(ca, apiserverURL, commonName, organizations, data.Cluster().Name)
 				if err != nil {
-					return nil, fmt.Errorf("failed to create new kubeconfig: %v", err)
+					return nil, fmt.Errorf("failed to create new kubeconfig: %w", err)
 				}
 				return se, nil
 			}
@@ -159,7 +159,7 @@ func buildNewKubeconfig(ca *triple.KeyPair, server, commonName string, organizat
 
 	kp, err := triple.NewClientKeyPair(ca, commonName, organizations)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create key pair: %v", err)
+		return nil, fmt.Errorf("failed to create key pair: %w", err)
 	}
 
 	baseKubconfig.AuthInfos = map[string]*clientcmdapi.AuthInfo{

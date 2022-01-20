@@ -272,7 +272,7 @@ type cookieHeaderBearerTokenExtractor struct {
 func (e cookieHeaderBearerTokenExtractor) Extract(r *http.Request) (string, error) {
 	cookie, err := r.Cookie("token")
 	if err != nil {
-		return "", fmt.Errorf("haven't found a Bearer token in the Cookie header %s: %v", e.name, err)
+		return "", fmt.Errorf("haven't found a Bearer token in the Cookie header %s: %w", e.name, err)
 	}
 
 	return cookie.Value, nil

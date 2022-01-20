@@ -107,12 +107,12 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 			if data.IsKonnectivityEnabled() {
 				konnectivityProxySidecar, err = konnectivity.ProxySidecar(data, *dep.Spec.Replicas)
 				if err != nil {
-					return nil, fmt.Errorf("failed to get konnectivity-proxy sidecar: %v", err)
+					return nil, fmt.Errorf("failed to get konnectivity-proxy sidecar: %w", err)
 				}
 			} else {
 				openvpnSidecar, err = vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
 				if err != nil {
-					return nil, fmt.Errorf("failed to get openvpn-client sidecar: %v", err)
+					return nil, fmt.Errorf("failed to get openvpn-client sidecar: %w", err)
 				}
 
 				dnatControllerSidecar, err = vpnsidecar.DnatControllerContainer(
@@ -121,7 +121,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 					fmt.Sprintf("https://127.0.0.1:%d", data.Cluster().Address.Port),
 				)
 				if err != nil {
-					return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
+					return nil, fmt.Errorf("failed to get dnat-controller sidecar: %w", err)
 				}
 			}
 
@@ -204,7 +204,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), dep.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			if auditLogEnabled {
@@ -245,7 +245,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, enableOIDCAuthentication, auditLogEnabled bool) ([]string, error) {
 	overrideFlags, err := getApiserverOverrideFlags(data)
 	if err != nil {
-		return nil, fmt.Errorf("could not get components override flags: %v", err)
+		return nil, fmt.Errorf("could not get components override flags: %w", err)
 	}
 
 	cluster := data.Cluster()

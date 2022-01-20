@@ -102,7 +102,7 @@ func BindUserToRoleEndpoint(ctx context.Context, userInfoGetter provider.UserInf
 	}
 
 	if err := client.Patch(ctx, existingRoleBinding, ctrlruntimeclient.MergeFrom(oldBinding)); err != nil {
-		return nil, fmt.Errorf("failed to update role binding: %v", err)
+		return nil, fmt.Errorf("failed to update role binding: %w", err)
 	}
 
 	return convertInternalRoleBindingToExternal(existingRoleBinding), nil
@@ -170,7 +170,7 @@ func BindUserToClusterRoleEndpoint(ctx context.Context, userInfoGetter provider.
 	}
 
 	if err := client.Patch(ctx, existingClusterRoleBinding, ctrlruntimeclient.MergeFrom(oldBinding)); err != nil {
-		return nil, fmt.Errorf("failed to update cluster role binding: %v", err)
+		return nil, fmt.Errorf("failed to update cluster role binding: %w", err)
 	}
 
 	return convertInternalClusterRoleBindingToExternal(existingClusterRoleBinding), nil
@@ -224,7 +224,7 @@ func UnbindUserFromRoleBindingEndpoint(ctx context.Context, userInfoGetter provi
 	binding.Subjects = newSubjects
 
 	if err := client.Update(ctx, binding); err != nil {
-		return nil, fmt.Errorf("failed to update role binding: %v", err)
+		return nil, fmt.Errorf("failed to update role binding: %w", err)
 	}
 
 	return convertInternalRoleBindingToExternal(binding), nil
@@ -279,7 +279,7 @@ func UnbindUserFromClusterRoleBindingEndpoint(ctx context.Context, userInfoGette
 	binding.Subjects = newSubjects
 
 	if err := client.Update(ctx, binding); err != nil {
-		return nil, fmt.Errorf("failed to update cluster role binding: %v", err)
+		return nil, fmt.Errorf("failed to update cluster role binding: %w", err)
 	}
 
 	return convertInternalClusterRoleBindingToExternal(binding), nil

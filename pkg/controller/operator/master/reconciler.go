@@ -64,12 +64,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			return reconcile.Result{}, nil
 		}
 
-		return reconcile.Result{}, fmt.Errorf("could not get KubermaticConfiguration %q: %v", request, err)
+		return reconcile.Result{}, fmt.Errorf("could not get KubermaticConfiguration %q: %w", request, err)
 	}
 
 	identifier, err := cache.MetaNamespaceKeyFunc(config)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to determine string key for KubermaticConfiguration: %v", err)
+		return reconcile.Result{}, fmt.Errorf("failed to determine string key for KubermaticConfiguration: %w", err)
 	}
 
 	logger := r.log.With("config", identifier)
@@ -94,14 +94,14 @@ func (r *Reconciler) reconcile(ctx context.Context, config *operatorv1alpha1.Kub
 	oldConfig := config.DeepCopy()
 	kubernetes.AddFinalizer(config, common.CleanupFinalizer)
 	if err := r.Patch(ctx, config, ctrlruntimeclient.MergeFrom(oldConfig)); err != nil {
-		return fmt.Errorf("failed to add finalizer: %v", err)
+		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
 	// patching the config will refresh the object, so any attempts to set the default values
 	// before calling Patch() are pointless, as the defaults would be gone after the call
 	defaulted, err := defaults.DefaultConfiguration(config, logger)
 	if err != nil {
-		return fmt.Errorf("failed to apply defaults: %v", err)
+		return fmt.Errorf("failed to apply defaults: %w", err)
 	}
 
 	if err := r.reconcileNamespaces(ctx, defaulted, logger); err != nil {
@@ -155,18 +155,18 @@ func (r *Reconciler) cleanupDeletedConfiguration(ctx context.Context, config *op
 	logger.Debug("KubermaticConfiguration was deleted, cleaning up cluster-wide resources")
 
 	if err := common.CleanupClusterResource(r, &rbacv1.ClusterRoleBinding{}, kubermatic.ClusterRoleBindingName(config)); err != nil {
-		return fmt.Errorf("failed to clean up ClusterRoleBinding: %v", err)
+		return fmt.Errorf("failed to clean up ClusterRoleBinding: %w", err)
 	}
 
 	if err := common.CleanupClusterResource(r, &admissionregistrationv1.ValidatingWebhookConfiguration{}, common.SeedAdmissionWebhookName(config)); err != nil {
-		return fmt.Errorf("failed to clean up ValidatingWebhookConfiguration: %v", err)
+		return fmt.Errorf("failed to clean up ValidatingWebhookConfiguration: %w", err)
 	}
 
 	oldConfig := config.DeepCopy()
 	kubernetes.RemoveFinalizer(config, common.CleanupFinalizer)
 
 	if err := r.Patch(ctx, config, ctrlruntimeclient.MergeFrom(oldConfig)); err != nil {
-		return fmt.Errorf("failed to remove finalizer: %v", err)
+		return fmt.Errorf("failed to remove finalizer: %w", err)
 	}
 
 	return nil
@@ -180,7 +180,7 @@ func (r *Reconciler) reconcileNamespaces(ctx context.Context, config *operatorv1
 	}
 
 	if err := reconciling.ReconcileNamespaces(ctx, creators, "", r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile Namespaces: %v", err)
+		return fmt.Errorf("failed to reconcile Namespaces: %w", err)
 	}
 
 	return nil
@@ -194,7 +194,7 @@ func (r *Reconciler) reconcileConfigMaps(ctx context.Context, config *operatorv1
 	}
 
 	if err := reconciling.ReconcileConfigMaps(ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
-		return fmt.Errorf("failed to reconcile ConfigMaps: %v", err)
+		return fmt.Errorf("failed to reconcile ConfigMaps: %w", err)
 	}
 
 	return nil
@@ -213,7 +213,7 @@ func (r *Reconciler) reconcileSecrets(ctx context.Context, config *operatorv1alp
 	}
 
 	if err := reconciling.ReconcileSecrets(ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
-		return fmt.Errorf("failed to reconcile Secrets: %v", err)
+		return fmt.Errorf("failed to reconcile Secrets: %w", err)
 	}
 
 	return nil
@@ -227,7 +227,7 @@ func (r *Reconciler) reconcileServiceAccounts(ctx context.Context, config *opera
 	}
 
 	if err := reconciling.ReconcileServiceAccounts(ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
-		return fmt.Errorf("failed to reconcile ServiceAccounts: %v", err)
+		return fmt.Errorf("failed to reconcile ServiceAccounts: %w", err)
 	}
 
 	return nil
@@ -241,7 +241,7 @@ func (r *Reconciler) reconcileClusterRoleBindings(ctx context.Context, config *o
 	}
 
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, creators, "", r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile ClusterRoleBindings: %v", err)
+		return fmt.Errorf("failed to reconcile ClusterRoleBindings: %w", err)
 	}
 
 	return nil
@@ -267,7 +267,7 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, config *operatorv
 	}
 
 	if err := reconciling.ReconcileDeployments(ctx, creators, config.Namespace, r.Client, modifiers...); err != nil {
-		return fmt.Errorf("failed to reconcile Deployments: %v", err)
+		return fmt.Errorf("failed to reconcile Deployments: %w", err)
 	}
 
 	return nil
@@ -283,7 +283,7 @@ func (r *Reconciler) reconcilePodDisruptionBudgets(ctx context.Context, config *
 	}
 
 	if err := reconciling.ReconcilePodDisruptionBudgets(ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
-		return fmt.Errorf("failed to reconcile PodDisruptionBudgets: %v", err)
+		return fmt.Errorf("failed to reconcile PodDisruptionBudgets: %w", err)
 	}
 
 	return nil
@@ -299,7 +299,7 @@ func (r *Reconciler) reconcileServices(ctx context.Context, config *operatorv1al
 	}
 
 	if err := reconciling.ReconcileServices(ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
-		return fmt.Errorf("failed to reconcile Services: %v", err)
+		return fmt.Errorf("failed to reconcile Services: %w", err)
 	}
 
 	return nil
@@ -318,7 +318,7 @@ func (r *Reconciler) reconcileIngresses(ctx context.Context, config *operatorv1a
 	}
 
 	if err := reconciling.ReconcileIngresses(ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
-		return fmt.Errorf("failed to reconcile Ingresses: %v", err)
+		return fmt.Errorf("failed to reconcile Ingresses: %w", err)
 	}
 
 	return nil
@@ -332,7 +332,7 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, config *ope
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile AdmissionWebhooks: %v", err)
+		return fmt.Errorf("failed to reconcile AdmissionWebhooks: %w", err)
 	}
 
 	return nil

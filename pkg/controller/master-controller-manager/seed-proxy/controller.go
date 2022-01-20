@@ -129,7 +129,7 @@ func Add(
 
 	seed := &kubermaticv1.Seed{}
 	if err := c.Watch(&source.Kind{Type: seed}, &handler.EnqueueRequestForObject{}, namespacePredicate); err != nil {
-		return fmt.Errorf("failed to create watcher for %T: %v", seed, err)
+		return fmt.Errorf("failed to create watcher for %T: %w", seed, err)
 	}
 
 	// watch related resources
@@ -159,7 +159,7 @@ func Add(
 
 	for _, t := range typesToWatch {
 		if err := c.Watch(&source.Kind{Type: t}, eventHandler, namespacePredicate, ownedPredicate); err != nil {
-			return fmt.Errorf("failed to create watcher for %T: %v", t, err)
+			return fmt.Errorf("failed to create watcher for %T: %w", t, err)
 		}
 	}
 

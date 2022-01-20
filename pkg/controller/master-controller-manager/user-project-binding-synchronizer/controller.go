@@ -72,7 +72,7 @@ func Add(
 
 	c, err := controller.New(ControllerName, masterManager, controller.Options{Reconciler: r, MaxConcurrentReconciles: numWorkers})
 	if err != nil {
-		return fmt.Errorf("failed to construct controller: %v", err)
+		return fmt.Errorf("failed to construct controller: %w", err)
 	}
 
 	serviceAccountPredicate := predicate.NewPredicateFuncs(func(object ctrlruntimeclient.Object) bool {
@@ -86,14 +86,14 @@ func Add(
 		&handler.EnqueueRequestForObject{},
 		serviceAccountPredicate,
 	); err != nil {
-		return fmt.Errorf("failed to create watch for userprojectbindings: %v", err)
+		return fmt.Errorf("failed to create watch for userprojectbindings: %w", err)
 	}
 
 	if err := c.Watch(
 		&source.Kind{Type: &kubermaticv1.Seed{}},
 		enqueueUserProjectBindingsForSeed(r.masterClient, r.log),
 	); err != nil {
-		return fmt.Errorf("failed to create watch for seeds: %v", err)
+		return fmt.Errorf("failed to create watch for seeds: %w", err)
 	}
 
 	return nil
@@ -110,7 +110,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	if !userProjectBinding.DeletionTimestamp.IsZero() {
 		if err := r.handleDeletion(ctx, log, userProjectBinding); err != nil {
-			return reconcile.Result{}, fmt.Errorf("handling deletion: %v", err)
+			return reconcile.Result{}, fmt.Errorf("handling deletion: %w", err)
 		}
 		return reconcile.Result{}, nil
 	}
@@ -118,7 +118,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	if !kuberneteshelper.HasFinalizer(userProjectBinding, kubermaticapiv1.SeedUserProjectBindingCleanupFinalizer) {
 		kuberneteshelper.AddFinalizer(userProjectBinding, kubermaticapiv1.SeedUserProjectBindingCleanupFinalizer)
 		if err := r.masterClient.Update(ctx, userProjectBinding); err != nil {
-			return reconcile.Result{}, fmt.Errorf("failed to add userProjectBinding finalizer %s: %v", userProjectBinding.Name, err)
+			return reconcile.Result{}, fmt.Errorf("failed to add userProjectBinding finalizer %s: %w", userProjectBinding.Name, err)
 		}
 	}
 
@@ -132,7 +132,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	if err != nil {
 		r.recorder.Eventf(userProjectBinding, corev1.EventTypeWarning, "ReconcilingError", err.Error())
-		return reconcile.Result{}, fmt.Errorf("reconciled userprojectbinding: %s: %v", userProjectBinding.Name, err)
+		return reconcile.Result{}, fmt.Errorf("reconciled userprojectbinding: %s: %w", userProjectBinding.Name, err)
 	}
 	return reconcile.Result{}, nil
 }
@@ -150,7 +150,7 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 	if kuberneteshelper.HasFinalizer(userProjectBinding, kubermaticapiv1.SeedUserProjectBindingCleanupFinalizer) {
 		kuberneteshelper.RemoveFinalizer(userProjectBinding, kubermaticapiv1.SeedUserProjectBindingCleanupFinalizer)
 		if err := r.masterClient.Update(ctx, userProjectBinding); err != nil {
-			return fmt.Errorf("failed to remove userprojectbinding finalizer %s: %v", userProjectBinding.Name, err)
+			return fmt.Errorf("failed to remove userprojectbinding finalizer %s: %w", userProjectBinding.Name, err)
 		}
 	}
 	return nil
@@ -176,7 +176,7 @@ func enqueueUserProjectBindingsForSeed(client ctrlruntimeclient.Client, log *zap
 		userProjectBindingList := &kubermaticv1.UserProjectBindingList{}
 		if err := client.List(context.Background(), userProjectBindingList); err != nil {
 			log.Error(err)
-			utilruntime.HandleError(fmt.Errorf("failed to list userprojectbindings: %v", err))
+			utilruntime.HandleError(fmt.Errorf("failed to list userprojectbindings: %w", err))
 		}
 		for _, userProjectBinding := range userProjectBindingList.Items {
 			// We don't trigger reconciliation for UserProjectBinding of service account.

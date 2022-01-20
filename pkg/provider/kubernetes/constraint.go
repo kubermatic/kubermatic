@@ -84,7 +84,7 @@ func ConstraintProviderFactory(mapper meta.RESTMapper, seedKubeconfigGetter prov
 func (p *ConstraintProvider) List(cluster *kubermaticv1.Cluster) (*kubermaticv1.ConstraintList, error) {
 	constraints := &kubermaticv1.ConstraintList{}
 	if err := p.clientPrivileged.List(context.Background(), constraints, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName)); err != nil {
-		return nil, fmt.Errorf("failed to list constraints: %v", err)
+		return nil, fmt.Errorf("failed to list constraints: %w", err)
 	}
 
 	return constraints, nil
@@ -171,7 +171,7 @@ func (p *DefaultConstraintProvider) List() (*kubermaticv1.ConstraintList, error)
 
 	constraints := &kubermaticv1.ConstraintList{}
 	if err := p.clientPrivileged.List(context.Background(), constraints, ctrlruntimeclient.InNamespace(p.kubermaticNamespace)); err != nil {
-		return nil, fmt.Errorf("failed to list default constraints: %v", err)
+		return nil, fmt.Errorf("failed to list default constraints: %w", err)
 	}
 
 	return constraints, nil

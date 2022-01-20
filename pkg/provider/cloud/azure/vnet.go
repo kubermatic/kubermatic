@@ -101,11 +101,11 @@ func ensureVNet(ctx context.Context, clients *ClientSet, cloud kubermaticv1.Clou
 	}
 	future, err := clients.Networks.CreateOrUpdate(ctx, resourceGroup, cloud.Azure.VNetName, *vnet)
 	if err != nil {
-		return fmt.Errorf("failed to create or update virtual network %q: %v", cloud.Azure.VNetName, err)
+		return fmt.Errorf("failed to create or update virtual network %q: %w", cloud.Azure.VNetName, err)
 	}
 
 	if err = future.WaitForCompletionRef(ctx, *clients.Autorest); err != nil {
-		return fmt.Errorf("failed to create or update virtual network %q: %v", cloud.Azure.VNetName, err)
+		return fmt.Errorf("failed to create or update virtual network %q: %w", cloud.Azure.VNetName, err)
 	}
 
 	return nil

@@ -102,7 +102,7 @@ func DaemonSetCreator(agentIP net.IP, versions kubermatic.Versions, configHash s
 				},
 			}
 			if err := resources.SetResourceRequirements(ds.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, ds.Annotations); err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			return ds, nil

@@ -58,7 +58,7 @@ func DownloadImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, im
 		default:
 		}
 		if err := DownloadImage(ctx, log, dryRun, image); err != nil {
-			return fmt.Errorf("failed to download %s: %v", image, err)
+			return fmt.Errorf("failed to download %s: %w", image, err)
 		}
 	}
 
@@ -72,7 +72,7 @@ func DownloadImage(ctx context.Context, log *zap.SugaredLogger, dryRun bool, ima
 
 	cmd := exec.CommandContext(ctx, "docker", "pull", image)
 	if err := execCommand(log, dryRun, cmd); err != nil {
-		return fmt.Errorf("failed to pull image %s: %v", image, err)
+		return fmt.Errorf("failed to pull image %s: %w", image, err)
 	}
 
 	return nil
@@ -90,7 +90,7 @@ func RetagImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, image
 		}
 		retaggedImage, err := RetagImage(ctx, log, dryRun, image, registry)
 		if err != nil {
-			return nil, fmt.Errorf("failed to re-tag %q: %v", image, err)
+			return nil, fmt.Errorf("failed to re-tag %q: %w", image, err)
 		}
 
 		retaggedImages = append(retaggedImages, retaggedImage)
@@ -104,7 +104,7 @@ func RetagImage(ctx context.Context, log *zap.SugaredLogger, dryRun bool, source
 	log = log.With("source-image", sourceImage)
 	imageRef, err := reference.ParseNamed(sourceImage)
 	if err != nil {
-		return "", fmt.Errorf("failed to parse image: %v", err)
+		return "", fmt.Errorf("failed to parse image: %w", err)
 	}
 	taggedImageRef, ok := imageRef.(reference.NamedTagged)
 	if !ok {
@@ -117,7 +117,7 @@ func RetagImage(ctx context.Context, log *zap.SugaredLogger, dryRun bool, source
 	log.Info("Tagging image...")
 	cmd := exec.CommandContext(ctx, "docker", "tag", sourceImage, targetImage)
 	if err := execCommand(log, dryRun, cmd); err != nil {
-		return "", fmt.Errorf("failed to tag image %s to %s: %v", sourceImage, targetImage, err)
+		return "", fmt.Errorf("failed to tag image %s to %s: %w", sourceImage, targetImage, err)
 	}
 
 	return targetImage, nil
@@ -133,7 +133,7 @@ func PushImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, images
 		default:
 		}
 		if err := PushImage(ctx, log, dryRun, image); err != nil {
-			return fmt.Errorf("failed to push image %s: %v", image, err)
+			return fmt.Errorf("failed to push image %s: %w", image, err)
 		}
 	}
 
@@ -164,7 +164,7 @@ func Copy(ctx context.Context, log *zap.SugaredLogger, image string, dst string,
 
 	dst, err = filepath.Abs(dst)
 	if err != nil {
-		return fmt.Errorf("failed to determine absolute path: %v", err)
+		return fmt.Errorf("failed to determine absolute path: %w", err)
 	}
 
 	mountPoint := "/kubermaticextractor"

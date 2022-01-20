@@ -101,7 +101,7 @@ func Add(
 		if !mlaEnabled {
 			return nil // do not return an error if MLA is disabled (e.g. if MLA is not installed in Seed)
 		}
-		return fmt.Errorf("failed to get Grafana Secret: %v", err)
+		return fmt.Errorf("failed to get Grafana Secret: %w", err)
 	}
 	adminName, ok := secret.Data[GrafanaUserKey]
 	if !ok {

@@ -163,7 +163,7 @@ func getGroupsClient(cloud kubermaticv1.CloudSpec, credentials Credentials) (*re
 	groupsClient := resources.NewGroupsClient(credentials.SubscriptionID)
 	groupsClient.Authorizer, err = auth.NewClientCredentialsConfig(credentials.ClientID, credentials.ClientSecret, credentials.TenantID).Authorizer()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %s", err.Error())
+		return nil, fmt.Errorf("failed to create authorizer: %w", err)
 	}
 
 	return &groupsClient, nil
@@ -174,7 +174,7 @@ func getNetworksClient(cloud kubermaticv1.CloudSpec, credentials Credentials) (*
 	networksClient := network.NewVirtualNetworksClient(credentials.SubscriptionID)
 	networksClient.Authorizer, err = auth.NewClientCredentialsConfig(credentials.ClientID, credentials.ClientSecret, credentials.TenantID).Authorizer()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %s", err.Error())
+		return nil, fmt.Errorf("failed to create authorizer: %w", err)
 	}
 
 	return &networksClient, nil
@@ -185,7 +185,7 @@ func getSubnetsClient(cloud kubermaticv1.CloudSpec, credentials Credentials) (*n
 	subnetsClient := network.NewSubnetsClient(credentials.SubscriptionID)
 	subnetsClient.Authorizer, err = auth.NewClientCredentialsConfig(credentials.ClientID, credentials.ClientSecret, credentials.TenantID).Authorizer()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %s", err.Error())
+		return nil, fmt.Errorf("failed to create authorizer: %w", err)
 	}
 
 	return &subnetsClient, nil
@@ -196,7 +196,7 @@ func getRouteTablesClient(cloud kubermaticv1.CloudSpec, credentials Credentials)
 	routeTablesClient := network.NewRouteTablesClient(credentials.SubscriptionID)
 	routeTablesClient.Authorizer, err = auth.NewClientCredentialsConfig(credentials.ClientID, credentials.ClientSecret, credentials.TenantID).Authorizer()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %s", err.Error())
+		return nil, fmt.Errorf("failed to create authorizer: %w", err)
 	}
 
 	return &routeTablesClient, nil
@@ -207,7 +207,7 @@ func getSecurityGroupsClient(cloud kubermaticv1.CloudSpec, credentials Credentia
 	securityGroupsClient := network.NewSecurityGroupsClient(credentials.SubscriptionID)
 	securityGroupsClient.Authorizer, err = auth.NewClientCredentialsConfig(credentials.ClientID, credentials.ClientSecret, credentials.TenantID).Authorizer()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %s", err.Error())
+		return nil, fmt.Errorf("failed to create authorizer: %w", err)
 	}
 
 	return &securityGroupsClient, nil
@@ -218,7 +218,7 @@ func getAvailabilitySetClient(cloud kubermaticv1.CloudSpec, credentials Credenti
 	asClient := compute.NewAvailabilitySetsClient(credentials.SubscriptionID)
 	asClient.Authorizer, err = auth.NewClientCredentialsConfig(credentials.ClientID, credentials.ClientSecret, credentials.TenantID).Authorizer()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %s", err.Error())
+		return nil, fmt.Errorf("failed to create authorizer: %w", err)
 	}
 
 	return &asClient, nil

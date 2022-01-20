@@ -64,7 +64,7 @@ func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreat
 
 			cloudConfig, err := CloudConfig(data.Cluster(), data.DC(), credentials)
 			if err != nil {
-				return nil, fmt.Errorf("failed to create cloud-config: %v", err)
+				return nil, fmt.Errorf("failed to create cloud-config: %w", err)
 			}
 
 			cm.Labels = resources.BaseAppLabels(name, nil)
@@ -205,12 +205,12 @@ func CloudConfig(
 	case cloud.GCP != nil:
 		b, err := base64.StdEncoding.DecodeString(credentials.GCP.ServiceAccount)
 		if err != nil {
-			return "", fmt.Errorf("error decoding service account: %v", err)
+			return "", fmt.Errorf("error decoding service account: %w", err)
 		}
 		sam := map[string]string{}
 		err = json.Unmarshal(b, &sam)
 		if err != nil {
-			return "", fmt.Errorf("failed unmarshaling service account: %v", err)
+			return "", fmt.Errorf("failed unmarshaling service account: %w", err)
 		}
 		projectID := sam["project_id"]
 		if projectID == "" {
@@ -285,7 +285,7 @@ func getVsphereCloudConfig(
 ) (*vsphere.CloudConfig, error) {
 	vspherURL, err := url.Parse(dc.Spec.VSphere.Endpoint)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse vsphere endpoint: %v", err)
+		return nil, fmt.Errorf("failed to parse vsphere endpoint: %w", err)
 	}
 	port := "443"
 	if urlPort := vspherURL.Port(); urlPort != "" {

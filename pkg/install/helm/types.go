@@ -63,18 +63,18 @@ func (c *Chart) Clone() Chart {
 func LoadChart(directory string) (*Chart, error) {
 	f, err := os.Open(filepath.Join(directory, "Chart.yaml"))
 	if err != nil {
-		return nil, fmt.Errorf("failed to open Chart.yaml: %v", err)
+		return nil, fmt.Errorf("failed to open Chart.yaml: %w", err)
 	}
 	defer f.Close()
 
 	chart := &Chart{}
 	if err := yaml.NewDecoder(f).Decode(chart); err != nil {
-		return nil, fmt.Errorf("failed to read Chart.yaml: %v", err)
+		return nil, fmt.Errorf("failed to read Chart.yaml: %w", err)
 	}
 
 	version, err := semver.NewVersion(chart.VersionRaw)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse version %q: %v", chart.VersionRaw, err)
+		return nil, fmt.Errorf("failed to parse version %q: %w", chart.VersionRaw, err)
 	}
 
 	chart.Version = version

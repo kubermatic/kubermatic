@@ -113,13 +113,13 @@ func TestGetConfigEndpoint(t *testing.T) {
 
 			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, tc.ExistingKubermaticObjs, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			for _, gkObject := range tc.ExistingGatekeeperObjs {
 				err = clientsSets.FakeClient.Create(context.Background(), gkObject)
 				if err != nil {
-					t.Fatalf("failed to create gk object %v due to %v", gkObject, err)
+					t.Fatalf("failed to create gk object %v: %v", gkObject, err)
 				}
 			}
 
@@ -209,13 +209,13 @@ func TestDeleteConfigEndpoint(t *testing.T) {
 
 			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, tc.ExistingKubermaticObjs, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			for _, gkObject := range tc.ExistingGatekeeperObjs {
 				err = clientsSets.FakeClient.Create(context.Background(), gkObject)
 				if err != nil {
-					t.Fatalf("failed to create gk object %v due to %v", gkObject, err)
+					t.Fatalf("failed to create gk object %v: %v", gkObject, err)
 				}
 			}
 
@@ -312,13 +312,13 @@ func TestCreateConfigEndpoint(t *testing.T) {
 
 			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, tc.ExistingKubermaticObjs, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			for _, gkObject := range tc.ExistingGatekeeperObjs {
 				err = clientsSets.FakeClient.Create(context.Background(), gkObject)
 				if err != nil {
-					t.Fatalf("failed to create gk object %v due to %v", gkObject, err)
+					t.Fatalf("failed to create gk object %v: %v", gkObject, err)
 				}
 			}
 
@@ -413,13 +413,13 @@ func TestPatchConfigEndpoint(t *testing.T) {
 
 			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, tc.ExistingKubermaticObjs, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			for _, gkObject := range tc.ExistingGatekeeperObjs {
 				err = clientsSets.FakeClient.Create(context.Background(), gkObject)
 				if err != nil {
-					t.Fatalf("failed to create gk object %v due to %v", gkObject, err)
+					t.Fatalf("failed to create gk object %v: %v", gkObject, err)
 				}
 			}
 

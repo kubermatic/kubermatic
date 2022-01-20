@@ -18,6 +18,7 @@ package util
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -38,7 +39,7 @@ func EnqueueClusterForNamespacedObject(client ctrlruntimeclient.Client) handler.
 	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		clusterList := &kubermaticv1.ClusterList{}
 		if err := client.List(context.Background(), clusterList); err != nil {
-			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %v", err))
+			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %w", err))
 			return []reconcile.Request{}
 		}
 		for _, cluster := range clusterList.Items {
@@ -61,7 +62,7 @@ func EnqueueClusterForNamespacedObjectWithSeedName(client ctrlruntimeclient.Clie
 		}
 
 		if err := client.List(context.Background(), clusterList, listOpts); err != nil {
-			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %v", err))
+			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %w", err))
 			return []reconcile.Request{}
 		}
 
@@ -129,7 +130,7 @@ func ClusterAvailableForReconciling(ctx context.Context, client ctrlruntimeclien
 func ConcurrencyLimitReached(ctx context.Context, client ctrlruntimeclient.Client, limit int) (bool, error) {
 	clusters := &kubermaticv1.ClusterList{}
 	if err := client.List(ctx, clusters); err != nil {
-		return true, fmt.Errorf("failed to list clusters: %v", err)
+		return true, fmt.Errorf("failed to list clusters: %w", err)
 	}
 
 	finishedUpdatingClustersCount := 0
@@ -147,10 +148,5 @@ func ConcurrencyLimitReached(ctx context.Context, client ctrlruntimeclient.Clien
 // IsCacheNotStarted returns true if the given error is not nil and an instance of
 // cache.ErrCacheNotStarted.
 func IsCacheNotStarted(err error) bool {
-	if err == nil {
-		return false
-	}
-
-	_, ok := err.(*cache.ErrCacheNotStarted)
-	return ok
+	return errors.Is(err, &cache.ErrCacheNotStarted{})
 }

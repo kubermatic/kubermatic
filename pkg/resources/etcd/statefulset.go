@@ -89,7 +89,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 			volumes := getVolumes()
 			podLabels, err := data.GetPodTemplateLabels(resources.EtcdStatefulSetName, volumes, baseLabels)
 			if err != nil {
-				return nil, fmt.Errorf("failed to create pod labels: %v", err)
+				return nil, fmt.Errorf("failed to create pod labels: %w", err)
 			}
 
 			set.Spec.Template.ObjectMeta = metav1.ObjectMeta{
@@ -270,7 +270,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 
 			err = resources.SetResourceRequirements(set.Spec.Template.Spec.Containers, defaultResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), set.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			set.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.EtcdStatefulSetName, data.Cluster().Name)
@@ -434,7 +434,7 @@ func getEtcdCommand(name, namespace string, enableCorruptionCheck, launcherEnabl
 
 	tpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(etcdStartCommandTpl)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse etcd command template: %v", err)
+		return nil, fmt.Errorf("failed to parse etcd command template: %w", err)
 	}
 
 	tplData := commandTplData{

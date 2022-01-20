@@ -340,7 +340,7 @@ func getEKSNodes(cluster *kubermaticapiv1.ExternalCluster, nodeGroupName string,
 			if n.Labels[EKSNodeGroupNameLabel] == nodeGroupName {
 				outNode, err := outputNode(n)
 				if err != nil {
-					return nil, fmt.Errorf("failed to output node %s: %v", n.Name, err)
+					return nil, fmt.Errorf("failed to output node %s: %w", n.Name, err)
 				}
 				nodesV1 = append(nodesV1, *outNode)
 			}

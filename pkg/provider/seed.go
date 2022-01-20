@@ -100,7 +100,7 @@ func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader, see
 				return nil, err
 			}
 
-			return nil, fmt.Errorf("failed to get seed %q: %v", seedName, err)
+			return nil, fmt.Errorf("failed to get seed %q: %w", seedName, err)
 		}
 
 		seed.SetDefaults()
@@ -119,7 +119,7 @@ func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, na
 				return emptySeedMap, nil
 			}
 
-			return nil, fmt.Errorf("failed to get seed %q: %v", DefaultSeedName, err)
+			return nil, fmt.Errorf("failed to get seed %q: %w", DefaultSeedName, err)
 		}
 
 		seed.SetDefaults()
@@ -141,7 +141,7 @@ func SeedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.C
 			name.Namespace = seed.Namespace
 		}
 		if err := client.Get(ctx, name, secret); err != nil {
-			return nil, fmt.Errorf("failed to get kubeconfig secret %q: %v", name.String(), err)
+			return nil, fmt.Errorf("failed to get kubeconfig secret %q: %w", name.String(), err)
 		}
 
 		fieldPath := seed.Spec.Kubeconfig.FieldPath
@@ -154,7 +154,7 @@ func SeedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.C
 
 		cfg, err := clientcmd.RESTConfigFromKubeConfig(secret.Data[fieldPath])
 		if err != nil {
-			return nil, fmt.Errorf("failed to load kubeconfig: %v", err)
+			return nil, fmt.Errorf("failed to load kubeconfig: %w", err)
 		}
 		return cfg, nil
 	}, nil

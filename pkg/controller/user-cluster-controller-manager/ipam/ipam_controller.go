@@ -74,7 +74,7 @@ func Add(mgr manager.Manager, cidrRanges []Network, log *zap.SugaredLogger) erro
 	c, err := controller.New(ControllerName, mgr,
 		controller.Options{Reconciler: reconciler})
 	if err != nil {
-		return fmt.Errorf("failed to create controller: %v", err)
+		return fmt.Errorf("failed to create controller: %w", err)
 	}
 
 	return c.Watch(&source.Kind{Type: &clusterv1alpha1.Machine{}}, &handler.EnqueueRequestForObject{})
@@ -139,7 +139,7 @@ func (r *reconciler) reconcile(ctx context.Context, machine *clusterv1alpha1.Mac
 		"")
 	machine.Annotations[annotationMachineUninitialized] = newAnnotationVal
 	if err := r.Update(ctx, machine); err != nil {
-		return fmt.Errorf("failed to update machine %q after adding network: %v", machine.Name, err)
+		return fmt.Errorf("failed to update machine %q after adding network: %w", machine.Name, err)
 	}
 
 	// Block until the change is in the lister to make sure we don't hand out an IP twice
@@ -185,7 +185,7 @@ func (r *reconciler) ipsToStrs(ips []net.IP) []string {
 func (r *reconciler) getUsedIPs(ctx context.Context) ([]net.IP, error) {
 	machines := &clusterv1alpha1.MachineList{}
 	if err := r.List(ctx, machines); err != nil {
-		return nil, fmt.Errorf("failed to list machines: %v", err)
+		return nil, fmt.Errorf("failed to list machines: %w", err)
 	}
 
 	ips := make([]net.IP, 0)

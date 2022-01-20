@@ -40,7 +40,7 @@ func GetClientCertificateCreator(name, commonName string, organizations []string
 
 			ca, err := getCA()
 			if err != nil {
-				return nil, fmt.Errorf("failed to get CA: %v", err)
+				return nil, fmt.Errorf("failed to get CA: %w", err)
 			}
 
 			if se.Data == nil {
@@ -50,7 +50,7 @@ func GetClientCertificateCreator(name, commonName string, organizations []string
 			if b, exists := se.Data[dataCertKey]; exists {
 				certs, err := certutil.ParseCertsPEM(b)
 				if err != nil {
-					return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %v", dataCertKey, err)
+					return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %w", dataCertKey, err)
 				}
 
 				if resources.IsClientCertificateValidForAllOf(certs[0], commonName, organizations, ca.Cert) {
@@ -60,7 +60,7 @@ func GetClientCertificateCreator(name, commonName string, organizations []string
 
 			newKP, err := triple.NewClientKeyPair(ca, commonName, organizations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to create key pair: %v", err)
+				return nil, fmt.Errorf("failed to create key pair: %w", err)
 			}
 
 			se.Data[dataKeyKey] = triple.EncodePrivateKeyPEM(newKP.Key)

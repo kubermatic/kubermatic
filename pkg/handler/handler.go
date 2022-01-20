@@ -19,11 +19,12 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"reflect"
 
 	"k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 const (
@@ -64,11 +65,14 @@ func ErrorEncoder(ctx context.Context, err error, w http.ResponseWriter) {
 	var additional []string
 	errorCode := http.StatusInternalServerError
 	msg := err.Error()
-	if h, ok := err.(errors.HTTPError); ok {
-		errorCode = h.StatusCode()
-		msg = h.Error()
-		additional = h.Details()
+
+	var httpErr kubermaticerrors.HTTPError
+	if errors.As(err, &httpErr) {
+		errorCode = httpErr.StatusCode()
+		msg = httpErr.Error()
+		additional = httpErr.Details()
 	}
+
 	e := ErrorResponse{
 		Error: ErrorDetails{
 			Code:       errorCode,

@@ -64,7 +64,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager, label
 		Reconciler: r,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to create controller: %v", err)
+		return fmt.Errorf("failed to create controller: %w", err)
 	}
 
 	// Ignore update events that don't touch the labels
@@ -79,7 +79,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager, label
 		&handler.EnqueueRequestForObject{},
 		labelsChangedPredicate,
 	); err != nil {
-		return fmt.Errorf("failed to establish watch for nodes: %v", err)
+		return fmt.Errorf("failed to establish watch for nodes: %w", err)
 	}
 
 	return nil
@@ -95,7 +95,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			log.Debug("Node not found, returning")
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, fmt.Errorf("failed to get node: %v", err)
+		return reconcile.Result{}, fmt.Errorf("failed to get node: %w", err)
 	}
 
 	err := r.reconcile(ctx, log, node)
@@ -122,7 +122,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, node
 
 	distributionLabelChanged, err := applyDistributionLabel(log, node)
 	if err != nil {
-		return fmt.Errorf("failed to apply distribution label: %v", err)
+		return fmt.Errorf("failed to apply distribution label: %w", err)
 	}
 
 	labelsChanged = labelsChanged || distributionLabelChanged
@@ -132,7 +132,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, node
 	}
 
 	if err := r.client.Patch(ctx, node, ctrlruntimeclient.MergeFrom(oldNode)); err != nil {
-		return fmt.Errorf("failed to update node: %v", err)
+		return fmt.Errorf("failed to update node: %w", err)
 	}
 
 	return nil

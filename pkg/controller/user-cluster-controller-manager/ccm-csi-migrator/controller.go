@@ -72,7 +72,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 		Reconciler: r,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to create controller %s: %v", controllerName, err)
+		return fmt.Errorf("failed to create controller %s: %w", controllerName, err)
 	}
 
 	// Watch for changes to Machines
@@ -88,7 +88,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 			}
 		}),
 	); err != nil {
-		return fmt.Errorf("failed to establish watch for the Machines %v", err)
+		return fmt.Errorf("failed to establish watch for the Machines %w", err)
 	}
 
 	return nil
@@ -112,7 +112,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			log.Debug("cluster not found, returning")
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, fmt.Errorf("failed to get cluster: %v", err)
+		return reconcile.Result{}, fmt.Errorf("failed to get cluster: %w", err)
 	}
 
 	err = r.reconcile(ctx, log, cluster)
@@ -145,7 +145,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, oldC
 	newCluster := oldCluster.DeepCopy()
 	if toPatch := r.ensureMigrationConditionStatus(migrated, newCluster); toPatch {
 		if err := r.seedClient.Patch(ctx, newCluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
-			return fmt.Errorf("failed to update cluster: %v", err)
+			return fmt.Errorf("failed to update cluster: %w", err)
 		}
 	}
 

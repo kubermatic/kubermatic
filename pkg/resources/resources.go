@@ -828,7 +828,7 @@ func UserClusterDNSResolverIP(cluster *kubermaticv1.Cluster) (string, error) {
 	block := cluster.Spec.ClusterNetwork.Services.CIDRBlocks[0]
 	_, ipnet, err := net.ParseCIDR(block)
 	if err != nil {
-		return "", fmt.Errorf("failed to get cluster dns ip for cluster `%s`: %v'", block, err)
+		return "", fmt.Errorf("failed to get cluster dns ip for cluster `%s`: %w", block, err)
 	}
 	ip := ipnet.IP
 	ip[len(ip)-1] = ip[len(ip)-1] + 10
@@ -954,7 +954,7 @@ func IsServerCertificateValidForAllOf(cert *x509.Certificate, commonName string,
 		KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 	}
 	if _, err := cert.Verify(verifyOptions); err != nil {
-		klog.Errorf("Certificate verification for CN %s failed due to: %v", commonName, err)
+		klog.Errorf("Certificate verification for CN %s failed: %v", commonName, err)
 		return false
 	}
 
@@ -986,7 +986,7 @@ func IsClientCertificateValidForAllOf(cert *x509.Certificate, commonName string,
 		KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 	}
 	if _, err := cert.Verify(verifyOptions); err != nil {
-		klog.Errorf("Certificate verification for CN %s failed due to: %v", commonName, err)
+		klog.Errorf("Certificate verification for CN %s failed: %v", commonName, err)
 		return false
 	}
 
@@ -1022,12 +1022,12 @@ func getClusterCAFromLister(ctx context.Context, namespace, name string, client 
 	caSecret := &corev1.Secret{}
 	caSecretKey := types.NamespacedName{Namespace: namespace, Name: name}
 	if err := client.Get(ctx, caSecretKey, caSecret); err != nil {
-		return nil, nil, fmt.Errorf("unable to check if a CA cert already exists: %v", err)
+		return nil, nil, fmt.Errorf("unable to check if a CA cert already exists: %w", err)
 	}
 
 	certs, err := certutil.ParseCertsPEM(caSecret.Data[CACertSecretKey])
 	if err != nil {
-		return nil, nil, fmt.Errorf("got an invalid cert from the CA secret %s: %v", caSecretKey, err)
+		return nil, nil, fmt.Errorf("got an invalid cert from the CA secret %s: %w", caSecretKey, err)
 	}
 
 	if len(certs) != 1 {
@@ -1036,7 +1036,7 @@ func getClusterCAFromLister(ctx context.Context, namespace, name string, client 
 
 	key, err := triple.ParsePrivateKeyPEM(caSecret.Data[CAKeySecretKey])
 	if err != nil {
-		return nil, nil, fmt.Errorf("got an invalid private key from the CA secret %s: %v", caSecretKey, err)
+		return nil, nil, fmt.Errorf("got an invalid private key from the CA secret %s: %w", caSecretKey, err)
 	}
 
 	return certs[0], key, nil
@@ -1046,12 +1046,12 @@ func getClusterCAFromLister(ctx context.Context, namespace, name string, client 
 func GetCABundleFromFile(file string) ([]*x509.Certificate, error) {
 	rawData, err := ioutil.ReadFile(file)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read file %q: %v", file, err)
+		return nil, fmt.Errorf("failed to read file %q: %w", file, err)
 	}
 
 	caCerts, err := certutil.ParseCertsPEM(rawData)
 	if err != nil {
-		return nil, fmt.Errorf("got an invalid cert: %v", err)
+		return nil, fmt.Errorf("got an invalid cert: %w", err)
 	}
 
 	return caCerts, nil
@@ -1081,7 +1081,7 @@ func GetMLAGatewayCA(ctx context.Context, namespace string, client ctrlruntimecl
 func ClusterIPForService(name, namespace string, serviceLister corev1lister.ServiceLister) (*net.IP, error) {
 	service, err := serviceLister.Services(namespace).Get(name)
 	if err != nil {
-		return nil, fmt.Errorf("could not get service %s/%s from lister: %v", namespace, name, err)
+		return nil, fmt.Errorf("could not get service %s/%s from lister: %w", namespace, name, err)
 	}
 
 	if service.Spec.ClusterIP == "" {
@@ -1090,7 +1090,7 @@ func ClusterIPForService(name, namespace string, serviceLister corev1lister.Serv
 
 	ip := net.ParseIP(service.Spec.ClusterIP)
 	if ip == nil {
-		return nil, fmt.Errorf("service %s/%s has no valid cluster ip (\"%s\"): %v", namespace, name, service.Spec.ClusterIP, err)
+		return nil, fmt.Errorf("service %s/%s has no valid cluster ip (\"%s\"): %w", namespace, name, service.Spec.ClusterIP, err)
 	}
 
 	return &ip, nil
@@ -1105,7 +1105,7 @@ func GetAbsoluteServiceDNSName(service, namespace string) string {
 func SecretRevision(ctx context.Context, key types.NamespacedName, client ctrlruntimeclient.Client) (string, error) {
 	secret := &corev1.Secret{}
 	if err := client.Get(ctx, key, secret); err != nil {
-		return "", fmt.Errorf("could not get Secret %s: %v", key, err)
+		return "", fmt.Errorf("could not get Secret %s: %w", key, err)
 	}
 	return secret.ResourceVersion, nil
 }
@@ -1114,7 +1114,7 @@ func SecretRevision(ctx context.Context, key types.NamespacedName, client ctrlru
 func ConfigMapRevision(ctx context.Context, key types.NamespacedName, client ctrlruntimeclient.Client) (string, error) {
 	cm := &corev1.ConfigMap{}
 	if err := client.Get(ctx, key, cm); err != nil {
-		return "", fmt.Errorf("could not get ConfigMap %s: %v", key, err)
+		return "", fmt.Errorf("could not get ConfigMap %s: %w", key, err)
 	}
 	return cm.ResourceVersion, nil
 }
@@ -1231,7 +1231,7 @@ func SetResourceRequirements(containers []corev1.Container, defaultRequirements,
 		var req []Requirements
 		err := json.Unmarshal([]byte(val), &req)
 		if err != nil {
-			return fmt.Errorf("failed to unmarshal resource requirements provided by vpa from annotation %s: %v", kubermaticv1.UpdatedByVPALabelKey, err)
+			return fmt.Errorf("failed to unmarshal resource requirements provided by vpa from annotation %s: %w", kubermaticv1.UpdatedByVPALabelKey, err)
 		}
 		for _, r := range req {
 			requirements[r.Name] = r.Requires
@@ -1276,7 +1276,7 @@ func GetOverrides(componentSettings kubermaticv1.ComponentSettings) map[string]*
 func SupportsFailureDomainZoneAntiAffinity(ctx context.Context, client ctrlruntimeclient.Client) (bool, error) {
 	selector, err := labels.Parse(TopologyKeyFailureDomainZone)
 	if err != nil {
-		return false, fmt.Errorf("failed to parse selector: %v", err)
+		return false, fmt.Errorf("failed to parse selector: %w", err)
 	}
 	opts := &ctrlruntimeclient.ListOptions{
 		LabelSelector: selector,
@@ -1287,7 +1287,7 @@ func SupportsFailureDomainZoneAntiAffinity(ctx context.Context, client ctrlrunti
 
 	nodeList := &corev1.NodeList{}
 	if err := client.List(ctx, nodeList, opts); err != nil {
-		return false, fmt.Errorf("failed to list nodes having the %s label: %v", TopologyKeyFailureDomainZone, err)
+		return false, fmt.Errorf("failed to list nodes having the %s label: %w", TopologyKeyFailureDomainZone, err)
 	}
 
 	return len(nodeList.Items) != 0, nil
@@ -1310,7 +1310,7 @@ func GetEtcdRestoreS3Client(ctx context.Context, restore *kubermaticv1.EtcdResto
 	if restore.Spec.BackupDownloadCredentialsSecret != "" {
 		secret := &corev1.Secret{}
 		if err := client.Get(ctx, types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: restore.Spec.BackupDownloadCredentialsSecret}, secret); err != nil {
-			return nil, "", fmt.Errorf("failed to get BackupDownloadCredentialsSecret credentials secret %v: %v", restore.Spec.BackupDownloadCredentialsSecret, err)
+			return nil, "", fmt.Errorf("failed to get BackupDownloadCredentialsSecret credentials secret %v: %w", restore.Spec.BackupDownloadCredentialsSecret, err)
 		}
 
 		for k, v := range secret.Data {

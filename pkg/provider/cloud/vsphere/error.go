@@ -17,10 +17,12 @@ limitations under the License.
 package vsphere
 
 import (
+	"errors"
+
 	"github.com/vmware/govmomi/find"
 )
 
 func isNotFound(err error) bool {
-	_, ok := err.(*find.NotFoundError)
-	return ok
+	var e *find.NotFoundError
+	return errors.As(err, &e)
 }

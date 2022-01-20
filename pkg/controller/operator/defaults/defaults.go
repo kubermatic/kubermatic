@@ -605,7 +605,7 @@ func DefaultSeed(seed *kubermaticv1.Seed, config *operatorv1alpha1.KubermaticCon
 	if settings.Etcd.DiskSize == nil {
 		etcdDiskSize, err := resource.ParseQuantity(config.Spec.UserCluster.EtcdVolumeSize)
 		if err != nil {
-			return copy, fmt.Errorf("failed to parse spec.userCluster.etcdVolumeSize %q in KubermaticConfiguration: %v", config.Spec.UserCluster.EtcdVolumeSize, err)
+			return copy, fmt.Errorf("failed to parse spec.userCluster.etcdVolumeSize %q in KubermaticConfiguration: %w", config.Spec.UserCluster.EtcdVolumeSize, err)
 		}
 		settings.Etcd.DiskSize = &etcdDiskSize
 	}
@@ -627,7 +627,7 @@ func defaultDockerRepo(repo *string, defaultRepo string, key string, logger *zap
 
 	ref, err := reference.Parse(*repo)
 	if err != nil {
-		return fmt.Errorf("invalid docker repository '%s' configured for %s: %v", *repo, key, err)
+		return fmt.Errorf("invalid docker repository '%s' configured for %s: %w", *repo, key, err)
 	}
 
 	if _, ok := ref.(reference.Tagged); ok {
@@ -644,11 +644,11 @@ func defaultResources(settings *corev1.ResourceRequirements, defaults corev1.Res
 	}
 
 	if err := defaultResourceList(&settings.Requests, defaults.Requests, key+".requests", logger); err != nil {
-		return fmt.Errorf("failed to default requests: %v", err)
+		return fmt.Errorf("failed to default requests: %w", err)
 	}
 
 	if err := defaultResourceList(&settings.Limits, defaults.Limits, key+".limits", logger); err != nil {
-		return fmt.Errorf("failed to default limits: %v", err)
+		return fmt.Errorf("failed to default limits: %w", err)
 	}
 
 	return nil

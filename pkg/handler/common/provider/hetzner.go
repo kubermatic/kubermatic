@@ -82,7 +82,7 @@ func HetznerSize(ctx context.Context, quota kubermaticv1.MachineDeploymentVMReso
 
 	sizes, _, err := client.ServerType.List(ctx, listOptions)
 	if err != nil {
-		return apiv1.HetznerSizeList{}, fmt.Errorf("failed to list sizes: %v", err)
+		return apiv1.HetznerSizeList{}, fmt.Errorf("failed to list sizes: %w", err)
 	}
 
 	sizeList := apiv1.HetznerSizeList{}

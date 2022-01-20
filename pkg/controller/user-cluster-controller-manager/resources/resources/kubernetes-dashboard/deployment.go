@@ -73,7 +73,7 @@ func DeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) reconci
 			dep.Spec.Template.Spec.Containers = getContainers(registryWithOverwrite)
 			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			dep.Spec.Template.Spec.ServiceAccountName = scraperName

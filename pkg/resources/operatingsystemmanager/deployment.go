@@ -77,7 +77,7 @@ func DeploymentCreator(data operatingSystemManagerData) reconciling.NamedDeploym
 
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, deployment.Spec.Template.Spec, sets.NewString(Name))
 			if err != nil {
-				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
+				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
 			}
 			deployment.Spec.Template.Spec = *wrappedPodSpec
 
@@ -104,7 +104,7 @@ func DeploymentCreatorWithoutInitWrapper(data operatingSystemManagerData) reconc
 
 			podLabels, err := data.GetPodTemplateLabels(Name, volumes, nil)
 			if err != nil {
-				return nil, fmt.Errorf("failed to create pod labels: %v", err)
+				return nil, fmt.Errorf("failed to create pod labels: %w", err)
 			}
 
 			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
@@ -201,7 +201,7 @@ func DeploymentCreatorWithoutInitWrapper(data operatingSystemManagerData) reconc
 
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, controllerResourceRequirements, nil, dep.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			return dep, nil

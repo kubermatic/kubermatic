@@ -18,6 +18,7 @@ package metricsserver
 
 import (
 	"fmt"
+
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -113,7 +114,7 @@ func DeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) reconci
 			}
 			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			dep.Spec.Template.Spec.ServiceAccountName = resources.MetricsServerServiceAccountName

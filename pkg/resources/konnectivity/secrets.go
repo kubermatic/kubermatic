@@ -25,7 +25,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/tools/clientcmd/api/v1"
+	v1 "k8s.io/client-go/tools/clientcmd/api/v1"
 )
 
 // ProxyKubeconfig returns kubeconfig for konnectivity proxy server.
@@ -38,12 +38,12 @@ func ProxyKubeconfig(data *resources.TemplateData) reconciling.NamedSecretCreato
 
 			ca, err := data.GetRootCA()
 			if err != nil {
-				return nil, fmt.Errorf("failed to get cluster CA: %v", err)
+				return nil, fmt.Errorf("failed to get cluster CA: %w", err)
 			}
 
 			clientKeyPair, err := triple.NewClientKeyPair(ca, "system:konnectivity-server", nil)
 			if err != nil {
-				return nil, fmt.Errorf("failed to create client key pair: %v", err)
+				return nil, fmt.Errorf("failed to create client key pair: %w", err)
 			}
 
 			konnectivityServerConf := v1.Config{
@@ -81,7 +81,7 @@ func ProxyKubeconfig(data *resources.TemplateData) reconciling.NamedSecretCreato
 
 			data, err := json.Marshal(konnectivityServerConf)
 			if err != nil {
-				return nil, fmt.Errorf("failed to marshall konnectivity-server config: %v", err)
+				return nil, fmt.Errorf("failed to marshall konnectivity-server config: %w", err)
 			}
 
 			se.Data = map[string][]byte{

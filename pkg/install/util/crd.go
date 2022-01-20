@@ -35,21 +35,21 @@ import (
 func DeployCRDs(ctx context.Context, kubeClient ctrlruntimeclient.Client, log logrus.FieldLogger, directory string) error {
 	crds, err := util.LoadFromDirectory(directory)
 	if err != nil {
-		return fmt.Errorf("failed to load CRDs: %v", err)
+		return fmt.Errorf("failed to load CRDs: %w", err)
 	}
 
 	for _, crd := range crds {
 		log.WithField("name", crd.GetName()).Debug("Creating CRD…")
 
 		if err := DeployCRD(ctx, kubeClient, crd); err != nil {
-			return fmt.Errorf("failed to deploy CRD %s: %v", crd.GetName(), err)
+			return fmt.Errorf("failed to deploy CRD %s: %w", crd.GetName(), err)
 		}
 	}
 
 	// wait for CRDs to be established
 	for _, crd := range crds {
 		if err := WaitForReadyCRD(ctx, kubeClient, crd.GetName(), 30*time.Second); err != nil {
-			return fmt.Errorf("failed to wait for CRD %s to have Established=True condition: %v", crd.GetName(), err)
+			return fmt.Errorf("failed to wait for CRD %s to have Established=True condition: %w", crd.GetName(), err)
 		}
 	}
 
@@ -75,7 +75,7 @@ func DeployCRD(ctx context.Context, kubeClient ctrlruntimeclient.Client, crd ctr
 	}
 
 	if err = kubeClient.Get(ctx, key, existingCRD); err != nil {
-		return fmt.Errorf("failed to retrieve existing CRD: %v", err)
+		return fmt.Errorf("failed to retrieve existing CRD: %w", err)
 	}
 
 	// do not use mergo to merge the existing into the new CRD,

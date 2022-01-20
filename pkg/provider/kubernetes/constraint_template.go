@@ -49,7 +49,7 @@ func (p *ConstraintTemplateProvider) List() (*kubermaticv1.ConstraintTemplateLis
 
 	constraintTemplates := &kubermaticv1.ConstraintTemplateList{}
 	if err := p.clientPrivileged.List(context.Background(), constraintTemplates); err != nil {
-		return nil, fmt.Errorf("failed to list constraint templates: %v", err)
+		return nil, fmt.Errorf("failed to list constraint templates: %w", err)
 	}
 
 	return constraintTemplates, nil

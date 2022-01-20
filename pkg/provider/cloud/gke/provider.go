@@ -97,11 +97,11 @@ func ConnectToContainerService(serviceAccount string) (*container.Service, strin
 	ctx := context.Background()
 	client, projectID, err := createClient(ctx, serviceAccount, container.CloudPlatformScope)
 	if err != nil {
-		return nil, "", fmt.Errorf("cannot create Google Cloud client: %v", err)
+		return nil, "", fmt.Errorf("cannot create Google Cloud client: %w", err)
 	}
 	svc, err := container.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
-		return nil, "", fmt.Errorf("cannot connect to Google Cloud: %v", err)
+		return nil, "", fmt.Errorf("cannot connect to Google Cloud: %w", err)
 	}
 	return svc, projectID, nil
 }
@@ -351,12 +351,12 @@ func getCredentials(serviceAccount string) (*google.Credentials, error) {
 	ctx := context.Background()
 	b, err := base64.StdEncoding.DecodeString(serviceAccount)
 	if err != nil {
-		return nil, fmt.Errorf("error decoding service account: %v", err)
+		return nil, fmt.Errorf("error decoding service account: %w", err)
 	}
 	sam := map[string]string{}
 	err = json.Unmarshal(b, &sam)
 	if err != nil {
-		return nil, fmt.Errorf("failed unmarshaling service account: %v", err)
+		return nil, fmt.Errorf("failed unmarshaling service account: %w", err)
 	}
 	return google.CredentialsFromJSON(ctx, b, container.CloudPlatformScope)
 }
@@ -364,12 +364,12 @@ func getCredentials(serviceAccount string) (*google.Credentials, error) {
 func createClient(ctx context.Context, serviceAccount string, scope string) (*http.Client, string, error) {
 	b, err := base64.StdEncoding.DecodeString(serviceAccount)
 	if err != nil {
-		return nil, "", fmt.Errorf("error decoding service account: %v", err)
+		return nil, "", fmt.Errorf("error decoding service account: %w", err)
 	}
 	sam := map[string]string{}
 	err = json.Unmarshal(b, &sam)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed unmarshaling service account: %v", err)
+		return nil, "", fmt.Errorf("failed unmarshaling service account: %w", err)
 	}
 
 	projectID := sam["project_id"]

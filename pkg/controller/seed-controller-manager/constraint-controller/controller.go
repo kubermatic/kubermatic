@@ -104,7 +104,7 @@ func Add(ctx context.Context,
 
 	workerSelector, err := workerlabel.LabelSelector(workerName)
 	if err != nil {
-		return fmt.Errorf("failed to build worker-name selector: %v", err)
+		return fmt.Errorf("failed to build worker-name selector: %w", err)
 	}
 
 	reconciler := &reconciler{
@@ -117,7 +117,7 @@ func Add(ctx context.Context,
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
 	if err != nil {
-		return fmt.Errorf("failed to construct controller: %v", err)
+		return fmt.Errorf("failed to construct controller: %w", err)
 	}
 
 	if err := c.Watch(
@@ -134,7 +134,7 @@ func Add(ctx context.Context,
 		&handler.EnqueueRequestForObject{},
 		kubermaticpred.ByNamespace(namespace),
 	); err != nil {
-		return fmt.Errorf("failed to create watch for seed constraints: %v", err)
+		return fmt.Errorf("failed to create watch for seed constraints: %w", err)
 	}
 
 	if err := c.Watch(
@@ -145,7 +145,7 @@ func Add(ctx context.Context,
 		ByLabel(Key),
 		withEventFilter(),
 	); err != nil {
-		return fmt.Errorf("failed to create watch for user cluster namespace constraints: %v", err)
+		return fmt.Errorf("failed to create watch for user cluster namespace constraints: %w", err)
 	}
 
 	return nil
@@ -173,7 +173,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	constraint := &kubermaticv1.Constraint{}
 	if err := r.seedClient.Get(ctx, request.NamespacedName, constraint); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to get constraint %s: %v", constraint.Name, ctrlruntimeclient.IgnoreNotFound(err))
+		return reconcile.Result{}, fmt.Errorf("failed to get constraint %s: %w", constraint.Name, ctrlruntimeclient.IgnoreNotFound(err))
 	}
 
 	err := r.reconcile(ctx, constraint, log)
@@ -215,7 +215,7 @@ func (r *reconciler) patchFinalizer(ctx context.Context, constraint *kubermaticv
 	}
 
 	if err := r.seedClient.Patch(ctx, constraint, ctrlruntimeclient.MergeFrom(oldconstraint)); err != nil {
-		return fmt.Errorf("failed to %s constraint finalizer %s: %v", action, constraint.Name, err)
+		return fmt.Errorf("failed to %s constraint finalizer %s: %w", action, constraint.Name, err)
 	}
 
 	return nil
@@ -362,7 +362,7 @@ func enqueueConstraints(client ctrlruntimeclient.Client, log *zap.SugaredLogger,
 
 		if err := client.List(context.Background(), constraintList, &ctrlruntimeclient.ListOptions{Namespace: namespace}); err != nil {
 			log.Error(err)
-			utilruntime.HandleError(fmt.Errorf("failed to list constraints: %v", err))
+			utilruntime.HandleError(fmt.Errorf("failed to list constraints: %w", err))
 		}
 
 		for _, constraint := range constraintList.Items {

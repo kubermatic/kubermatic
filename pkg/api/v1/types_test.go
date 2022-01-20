@@ -138,7 +138,7 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			jsonByteArray, err := c.cluster.MarshalJSON()
 			if err != nil {
-				t.Errorf("failed to marshal due to an error: %s", err)
+				t.Errorf("failed to marshal: %v", err)
 			}
 
 			if jsonString := string(jsonByteArray); strings.Contains(jsonString, valueToBeFiltered) {
@@ -147,7 +147,7 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 
 			var jsonObject ClusterSpec
 			if err := json.Unmarshal(jsonByteArray, &jsonObject); err != nil {
-				t.Errorf("failed to unmarshal due to an error: %s", err)
+				t.Errorf("failed to unmarshal: %v", err)
 			}
 		})
 	}

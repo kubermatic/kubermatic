@@ -133,7 +133,7 @@ func SecretKeySelectorValueFuncFactory(ctx context.Context, client ctrlruntimecl
 		secret := &corev1.Secret{}
 		namespacedName := types.NamespacedName{Namespace: configVar.Namespace, Name: configVar.Name}
 		if err := client.Get(ctx, namespacedName, secret); err != nil {
-			return "", fmt.Errorf("failed to get secret %q: %v", namespacedName.String(), err)
+			return "", fmt.Errorf("failed to get secret %q: %w", namespacedName.String(), err)
 		}
 
 		if _, ok := secret.Data[key]; !ok {

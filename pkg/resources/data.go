@@ -346,7 +346,7 @@ func (d *TemplateData) ClusterIPByServiceName(name string) (string, error) {
 	service := &corev1.Service{}
 	key := types.NamespacedName{Namespace: d.cluster.Status.NamespaceName, Name: name}
 	if err := d.client.Get(d.ctx, key, service); err != nil {
-		return "", fmt.Errorf("could not get service %s: %v", key, err)
+		return "", fmt.Errorf("could not get service %s: %w", key, err)
 	}
 
 	if net.ParseIP(service.Spec.ClusterIP) == nil {
@@ -407,7 +407,7 @@ func (d *TemplateData) GetOpenVPNServerPort() (int32, error) {
 	service := &corev1.Service{}
 	key := types.NamespacedName{Namespace: d.cluster.Status.NamespaceName, Name: OpenVPNServerServiceName}
 	if err := d.client.Get(d.ctx, key, service); err != nil {
-		return 0, fmt.Errorf("failed to get NodePort for openvpn server service: %v", err)
+		return 0, fmt.Errorf("failed to get NodePort for openvpn server service: %w", err)
 	}
 
 	return service.Spec.Ports[0].NodePort, nil
@@ -422,7 +422,7 @@ func (d *TemplateData) GetKonnectivityServerPort() (int32, error) {
 	service := &corev1.Service{}
 	key := types.NamespacedName{Namespace: d.cluster.Status.NamespaceName, Name: KonnectivityProxyServiceName}
 	if err := d.client.Get(d.ctx, key, service); err != nil {
-		return 0, fmt.Errorf("failed to get NodePort for Konnectivity Server service: %v", err)
+		return 0, fmt.Errorf("failed to get NodePort for Konnectivity Server service: %w", err)
 	}
 
 	return service.Spec.Ports[0].NodePort, nil
@@ -437,7 +437,7 @@ func (d *TemplateData) GetMLAGatewayPort() (int32, error) {
 	service := &corev1.Service{}
 	key := types.NamespacedName{Namespace: d.cluster.Status.NamespaceName, Name: MLAGatewayExternalServiceName}
 	if err := d.client.Get(d.ctx, key, service); err != nil {
-		return 0, fmt.Errorf("failed to get NodePort for MLA Gateway service: %v", err)
+		return 0, fmt.Errorf("failed to get NodePort for MLA Gateway service: %w", err)
 	}
 
 	return service.Spec.Ports[0].NodePort, nil

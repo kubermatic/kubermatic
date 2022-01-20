@@ -35,7 +35,7 @@ import (
 func NewKubermaticClient(endpointURL string) (*client.KubermaticKubernetesPlatformAPI, error) {
 	parsed, err := url.Parse(endpointURL)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse URL: %v", err)
+		return nil, fmt.Errorf("failed to parse URL: %w", err)
 	}
 
 	if parsed.Host == "" || parsed.Scheme == "" {

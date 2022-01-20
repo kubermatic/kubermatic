@@ -80,7 +80,7 @@ func (v *ValidationHandlerBuilder) Build(ctx context.Context) (AdmissionHandler,
 		// Handler used in master cluster
 		seedKubeconfigGetter, err := provider.SeedKubeconfigGetterFactory(ctx, v.client)
 		if err != nil {
-			return nil, fmt.Errorf("error occurred while creating seed kubeconfig getter: %v", err)
+			return nil, fmt.Errorf("error occurred while creating seed kubeconfig getter: %w", err)
 		}
 		seedClientGetter = provider.SeedClientGetterFactory(seedKubeconfigGetter)
 	} else {
@@ -95,7 +95,7 @@ func (v *ValidationHandlerBuilder) Build(ctx context.Context) (AdmissionHandler,
 		v.features,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error occurred while creating seed validator: %v", err)
+		return nil, fmt.Errorf("error occurred while creating seed validator: %w", err)
 	}
 
 	if v.singleSeedValidator != nil {

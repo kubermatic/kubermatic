@@ -100,12 +100,12 @@ func convertExternalToAPI(conf *configv1alpha1.Config) (*apiv2.GatekeeperConfig,
 
 	specRaw, err := json.Marshal(&conf.Spec)
 	if err != nil {
-		return nil, fmt.Errorf("error marshalling gatekeeper config spec: %v", err)
+		return nil, fmt.Errorf("error marshalling gatekeeper config spec: %w", err)
 	}
 
 	err = json.Unmarshal(specRaw, &apiConf.Spec)
 	if err != nil {
-		return nil, fmt.Errorf("error unmarshalling gatekeeper config spec: %v", err)
+		return nil, fmt.Errorf("error unmarshalling gatekeeper config spec: %w", err)
 	}
 
 	return apiConf, nil
@@ -116,12 +116,12 @@ func convertAPIToExternal(conf *apiv2.GatekeeperConfig) (*configv1alpha1.Config,
 
 	specRaw, err := json.Marshal(&conf.Spec)
 	if err != nil {
-		return nil, fmt.Errorf("error marshalling gatekeeper config spec: %v", err)
+		return nil, fmt.Errorf("error marshalling gatekeeper config spec: %w", err)
 	}
 
 	err = json.Unmarshal(specRaw, &externalConf.Spec)
 	if err != nil {
-		return nil, fmt.Errorf("error unmarshalling gatekeeper config spec: %v", err)
+		return nil, fmt.Errorf("error unmarshalling gatekeeper config spec: %w", err)
 	}
 
 	return externalConf, nil

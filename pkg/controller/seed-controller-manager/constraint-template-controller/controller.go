@@ -75,7 +75,7 @@ func Add(ctx context.Context,
 
 	workerSelector, err := workerlabel.LabelSelector(workerName)
 	if err != nil {
-		return fmt.Errorf("failed to build worker-name selector: %v", err)
+		return fmt.Errorf("failed to build worker-name selector: %w", err)
 	}
 
 	reconciler := &reconciler{
@@ -89,7 +89,7 @@ func Add(ctx context.Context,
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
 	if err != nil {
-		return fmt.Errorf("failed to construct controller: %v", err)
+		return fmt.Errorf("failed to construct controller: %w", err)
 	}
 
 	if err := c.Watch(
@@ -104,7 +104,7 @@ func Add(ctx context.Context,
 		&source.Kind{Type: &kubermaticv1.ConstraintTemplate{}},
 		&handler.EnqueueRequestForObject{},
 	); err != nil {
-		return fmt.Errorf("failed to create watch for constraintTemplates: %v", err)
+		return fmt.Errorf("failed to create watch for constraintTemplates: %w", err)
 	}
 
 	return nil
@@ -126,7 +126,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 		}
 
-		return reconcile.Result{}, fmt.Errorf("failed to get constraint template %s: %v", constraintTemplate.Name, err)
+		return reconcile.Result{}, fmt.Errorf("failed to get constraint template %s: %w", constraintTemplate.Name, err)
 	}
 
 	err := r.reconcile(ctx, log, constraintTemplate)
@@ -162,7 +162,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cons
 		oldConstraintTemplate := constraintTemplate.DeepCopy()
 		kuberneteshelper.RemoveFinalizer(constraintTemplate, kubermaticapiv1.GatekeeperConstraintTemplateCleanupFinalizer)
 		if err := r.seedClient.Patch(ctx, constraintTemplate, ctrlruntimeclient.MergeFrom(oldConstraintTemplate)); err != nil {
-			return fmt.Errorf("failed to remove constraint template finalizer %s: %v", constraintTemplate.Name, err)
+			return fmt.Errorf("failed to remove constraint template finalizer %s: %w", constraintTemplate.Name, err)
 		}
 		return nil
 	}
@@ -171,7 +171,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cons
 		oldConstraintTemplate := constraintTemplate.DeepCopy()
 		kuberneteshelper.AddFinalizer(constraintTemplate, kubermaticapiv1.GatekeeperConstraintTemplateCleanupFinalizer)
 		if err := r.seedClient.Patch(ctx, constraintTemplate, ctrlruntimeclient.MergeFrom(oldConstraintTemplate)); err != nil {
-			return fmt.Errorf("failed to set constraint template finalizer %s: %v", constraintTemplate.Name, err)
+			return fmt.Errorf("failed to set constraint template finalizer %s: %w", constraintTemplate.Name, err)
 		}
 	}
 
@@ -258,7 +258,7 @@ func enqueueAllConstraintTemplates(client ctrlruntimeclient.Client, log *zap.Sug
 		ctList := &kubermaticv1.ConstraintTemplateList{}
 		if err := client.List(context.Background(), ctList); err != nil {
 			log.Error(err)
-			utilruntime.HandleError(fmt.Errorf("failed to list constraint templates: %v", err))
+			utilruntime.HandleError(fmt.Errorf("failed to list constraint templates: %w", err))
 		}
 		for _, ct := range ctList.Items {
 			requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{

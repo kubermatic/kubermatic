@@ -99,7 +99,7 @@ func IsDeploymentRolloutComplete(deployment *appsv1.Deployment, revision int64) 
 	if revision > 0 {
 		deploymentRev, err := Revision(deployment)
 		if err != nil {
-			return false, fmt.Errorf("cannot get the revision of deployment %q: %v", deployment.Name, err)
+			return false, fmt.Errorf("cannot get the revision of deployment %q: %w", deployment.Name, err)
 		}
 		if revision != deploymentRev {
 			return false, fmt.Errorf("desired revision (%d) is different from the running revision (%d)", revision, deploymentRev)
@@ -111,15 +111,15 @@ func IsDeploymentRolloutComplete(deployment *appsv1.Deployment, revision int64) 
 			return false, fmt.Errorf("deployment %q exceeded its progress deadline", deployment.Name)
 		}
 		if deployment.Spec.Replicas != nil && deployment.Status.UpdatedReplicas < *deployment.Spec.Replicas {
-			klog.Infof("Deployment %q rollout did not complete: %d out of %d new replicas have been updated...\n", deployment.Name, deployment.Status.UpdatedReplicas, *deployment.Spec.Replicas)
+			klog.Infof("Deployment %q rollout did not complete: %d out of %d new replicas have been updated...", deployment.Name, deployment.Status.UpdatedReplicas, *deployment.Spec.Replicas)
 			return false, nil
 		}
 		if deployment.Status.Replicas > deployment.Status.UpdatedReplicas {
-			klog.Infof("Deployment %q rollout did not complete: %d old replicas are pending termination...\n", deployment.Name, deployment.Status.Replicas-deployment.Status.UpdatedReplicas)
+			klog.Infof("Deployment %q rollout did not complete: %d old replicas are pending termination...", deployment.Name, deployment.Status.Replicas-deployment.Status.UpdatedReplicas)
 			return false, nil
 		}
 		if deployment.Status.AvailableReplicas < deployment.Status.UpdatedReplicas {
-			klog.Infof("Deployment %q rollout did not complete: %d of %d updated replicas are available...\n", deployment.Name, deployment.Status.AvailableReplicas, deployment.Status.UpdatedReplicas)
+			klog.Infof("Deployment %q rollout did not complete: %d of %d updated replicas are available...", deployment.Name, deployment.Status.AvailableReplicas, deployment.Status.UpdatedReplicas)
 			return false, nil
 		}
 		return true, nil

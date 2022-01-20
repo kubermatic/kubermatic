@@ -82,7 +82,7 @@ func (cc AddonCollector) Collect(ch chan<- prometheus.Metric) {
 		context.Background(),
 		addons,
 		&ctrlruntimeclient.ListOptions{}); err != nil {
-		utilruntime.HandleError(fmt.Errorf("failed to list addons in AddonCollector: %v", err))
+		utilruntime.HandleError(fmt.Errorf("failed to list addons in AddonCollector: %w", err))
 		return
 	}
 	for _, addon := range addons.Items {

@@ -177,11 +177,11 @@ func cleanupFiles(tmpFiles []string) error {
 
 func changeFileModes(sshDir, authorizedKeysFile string) error {
 	if err := os.Chmod(authorizedKeysFile, 0700); err != nil {
-		return fmt.Errorf("error while changing file mode: %v", err)
+		return fmt.Errorf("error while changing file mode: %w", err)
 	}
 
 	if err := os.Chmod(sshDir, 0600); err != nil {
-		return fmt.Errorf("error while changing file mode: %v", err)
+		return fmt.Errorf("error while changing file mode: %w", err)
 	}
 	return nil
 }

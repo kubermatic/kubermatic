@@ -134,7 +134,7 @@ func (n *Nutanix) reconcileCluster(cluster *kubermaticv1.Cluster, update provide
 
 	logger.Info("reconciling category and value")
 	if err := reconcileCategoryAndValue(client, cluster); err != nil {
-		return nil, fmt.Errorf("failed to reconcile category and cluster value: %v", err)
+		return nil, fmt.Errorf("failed to reconcile category and cluster value: %w", err)
 	}
 
 	cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {

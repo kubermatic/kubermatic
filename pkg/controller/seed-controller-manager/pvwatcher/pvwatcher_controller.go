@@ -75,7 +75,7 @@ func Add(
 		MaxConcurrentReconciles: numWorkers,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to create controller: %v", err)
+		return fmt.Errorf("failed to create controller: %w", err)
 	}
 	// reconcile PVCs in ClaimLost phase only
 	LostClaimPredicates := predicate.Funcs{
@@ -88,7 +88,7 @@ func Add(
 	if err := c.Watch(&source.Kind{Type: &corev1.PersistentVolumeClaim{}}, &handler.EnqueueRequestForObject{},
 		LostClaimPredicates,
 		predicateutils.ByLabel(resources.AppLabelKey, resources.EtcdStatefulSetName)); err != nil {
-		return fmt.Errorf("failed to create watch for PersistentVolumeClaims: %v", err)
+		return fmt.Errorf("failed to create watch for PersistentVolumeClaims: %w", err)
 	}
 	return nil
 }

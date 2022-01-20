@@ -54,7 +54,7 @@ func (a *Alibaba) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 
 	_, err = ecs.NewClientWithAccessKey(a.dc.Region, accessKeyID, accessKeySecret)
 	if err != nil {
-		return fmt.Errorf("failed to get Alibaba cloud client: %v", err)
+		return fmt.Errorf("failed to get Alibaba cloud client: %w", err)
 	}
 	return nil
 }

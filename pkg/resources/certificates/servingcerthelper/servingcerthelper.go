@@ -40,7 +40,7 @@ func ServingCertSecretCreator(caGetter CAGetter, secretName, commonName string, 
 
 			ca, err := caGetter()
 			if err != nil {
-				return nil, fmt.Errorf("failed to get CA: %v", err)
+				return nil, fmt.Errorf("failed to get CA: %w", err)
 			}
 			altNames := certutil.AltNames{
 				DNSNames: altNamesDNS,
@@ -49,7 +49,7 @@ func ServingCertSecretCreator(caGetter CAGetter, secretName, commonName string, 
 			if b, exists := s.Data[resources.ServingCertSecretKey]; exists {
 				certs, err := certutil.ParseCertsPEM(b)
 				if err != nil {
-					return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %v", resources.ApiserverTLSCertSecretKey, err)
+					return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %w", resources.ApiserverTLSCertSecretKey, err)
 				}
 
 				if resources.IsServerCertificateValidForAllOf(certs[0], commonName, altNames, ca.Cert) {
@@ -59,7 +59,7 @@ func ServingCertSecretCreator(caGetter CAGetter, secretName, commonName string, 
 
 			key, err := triple.NewPrivateKey()
 			if err != nil {
-				return nil, fmt.Errorf("unable to create a serving cert key: %v", err)
+				return nil, fmt.Errorf("unable to create a serving cert key: %w", err)
 			}
 
 			config := certutil.Config{
@@ -70,7 +70,7 @@ func ServingCertSecretCreator(caGetter CAGetter, secretName, commonName string, 
 
 			cert, err := triple.NewSignedCert(config, key, ca.Cert, ca.Key)
 			if err != nil {
-				return nil, fmt.Errorf("unable to sign serving certificate: %v", err)
+				return nil, fmt.Errorf("unable to sign serving certificate: %w", err)
 			}
 
 			if s.Data == nil {

@@ -113,7 +113,7 @@ func ProxyEndpoint(
 				kubernetesdashboard.AppLabel,
 				kubernetesdashboard.ContainerPort)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get portforwarder for console: %v", err)
+				return nil, fmt.Errorf("failed to get portforwarder for console: %w", err)
 			}
 			defer func() {
 				portforwarder.Close()
@@ -127,7 +127,7 @@ func ProxyEndpoint(
 
 			ports, err := portforwarder.GetPorts()
 			if err != nil {
-				common.WriteHTTPError(log, w, fmt.Errorf("failed to get backend port: %v", err))
+				common.WriteHTTPError(log, w, fmt.Errorf("failed to get backend port: %w", err))
 				return nil, nil
 			}
 			if len(ports) != 1 {

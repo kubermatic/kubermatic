@@ -127,8 +127,9 @@ func (a *Azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerSecurityGroup) {
 		logger.Infow("deleting security group", "group", cluster.Spec.Cloud.Azure.SecurityGroup)
 		if err := deleteSecurityGroup(a.ctx, clientSet, cluster.Spec.Cloud); err != nil {
-			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
-				return cluster, fmt.Errorf("failed to delete security group %q: %v", cluster.Spec.Cloud.Azure.SecurityGroup, err)
+			var detErr *autorest.DetailedError
+			if !errors.As(err, &detErr) || detErr.StatusCode != http.StatusNotFound {
+				return cluster, fmt.Errorf("failed to delete security group %q: %w", cluster.Spec.Cloud.Azure.SecurityGroup, err)
 			}
 		}
 		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
@@ -142,8 +143,9 @@ func (a *Azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerRouteTable) {
 		logger.Infow("deleting route table", "routeTableName", cluster.Spec.Cloud.Azure.RouteTableName)
 		if err := deleteRouteTable(a.ctx, clientSet, cluster.Spec.Cloud); err != nil {
-			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
-				return cluster, fmt.Errorf("failed to delete route table %q: %v", cluster.Spec.Cloud.Azure.RouteTableName, err)
+			var detErr *autorest.DetailedError
+			if !errors.As(err, &detErr) || detErr.StatusCode != http.StatusNotFound {
+				return cluster, fmt.Errorf("failed to delete route table %q: %w", cluster.Spec.Cloud.Azure.RouteTableName, err)
 			}
 		}
 		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
@@ -157,8 +159,9 @@ func (a *Azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerSubnet) {
 		logger.Infow("deleting subnet", "subnet", cluster.Spec.Cloud.Azure.SubnetName)
 		if err := deleteSubnet(a.ctx, clientSet, cluster.Spec.Cloud); err != nil {
-			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
-				return cluster, fmt.Errorf("failed to delete sub-network %q: %v", cluster.Spec.Cloud.Azure.SubnetName, err)
+			var detErr *autorest.DetailedError
+			if !errors.As(err, &detErr) || detErr.StatusCode != http.StatusNotFound {
+				return cluster, fmt.Errorf("failed to delete sub-network %q: %w", cluster.Spec.Cloud.Azure.SubnetName, err)
 			}
 		}
 		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
@@ -172,8 +175,9 @@ func (a *Azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerVNet) {
 		logger.Infow("deleting vnet", "vnet", cluster.Spec.Cloud.Azure.VNetName)
 		if err := deleteVNet(a.ctx, clientSet, cluster.Spec.Cloud); err != nil {
-			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
-				return cluster, fmt.Errorf("failed to delete virtual network %q: %v", cluster.Spec.Cloud.Azure.VNetName, err)
+			var detErr *autorest.DetailedError
+			if !errors.As(err, &detErr) || detErr.StatusCode != http.StatusNotFound {
+				return cluster, fmt.Errorf("failed to delete virtual network %q: %w", cluster.Spec.Cloud.Azure.VNetName, err)
 			}
 		}
 
@@ -188,8 +192,9 @@ func (a *Azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerAvailabilitySet) {
 		logger.Infow("deleting availability set", "availabilitySet", cluster.Spec.Cloud.Azure.AvailabilitySet)
 		if err := deleteAvailabilitySet(a.ctx, clientSet, cluster.Spec.Cloud); err != nil {
-			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
-				return cluster, fmt.Errorf("failed to delete availability set %q: %v", cluster.Spec.Cloud.Azure.AvailabilitySet, err)
+			var detErr *autorest.DetailedError
+			if !errors.As(err, &detErr) || detErr.StatusCode != http.StatusNotFound {
+				return cluster, fmt.Errorf("failed to delete availability set %q: %w", cluster.Spec.Cloud.Azure.AvailabilitySet, err)
 			}
 		}
 
@@ -204,8 +209,9 @@ func (a *Azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerResourceGroup) {
 		logger.Infow("deleting resource group", "resourceGroup", cluster.Spec.Cloud.Azure.ResourceGroup)
 		if err := deleteResourceGroup(a.ctx, clientSet, cluster.Spec.Cloud); err != nil {
-			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
-				return cluster, fmt.Errorf("failed to delete resource group %q: %v", cluster.Spec.Cloud.Azure.ResourceGroup, err)
+			var detErr *autorest.DetailedError
+			if !errors.As(err, &detErr) || detErr.StatusCode != http.StatusNotFound {
+				return cluster, fmt.Errorf("failed to delete resource group %q: %w", cluster.Spec.Cloud.Azure.ResourceGroup, err)
 			}
 		}
 
@@ -382,11 +388,11 @@ func (a *Azure) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error {
 	}
 	sgClient, err := getSecurityGroupsClient(cluster.Spec.Cloud, credentials)
 	if err != nil {
-		return fmt.Errorf("failed to get security group client: %v", err)
+		return fmt.Errorf("failed to get security group client: %w", err)
 	}
 	sg, err := sgClient.Get(a.ctx, azure.ResourceGroup, azure.SecurityGroup, "")
 	if err != nil {
-		return fmt.Errorf("failed to get security group %q: %v", azure.SecurityGroup, err)
+		return fmt.Errorf("failed to get security group %q: %w", azure.SecurityGroup, err)
 	}
 
 	var hasDenyAllTCPRule, hasDenyAllUDPRule, hasICMPAllowAllRule bool
@@ -426,7 +432,7 @@ func (a *Azure) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error {
 		sg.SecurityRules = &newSecurityGroupRules
 		_, err := sgClient.CreateOrUpdate(a.ctx, azure.ResourceGroup, azure.SecurityGroup, sg)
 		if err != nil {
-			return fmt.Errorf("failed to add new rules to security group %q: %v", *sg.Name, err)
+			return fmt.Errorf("failed to add new rules to security group %q: %w", *sg.Name, err)
 		}
 	}
 	return nil
