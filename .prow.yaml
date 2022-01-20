@@ -1246,7 +1246,7 @@ presubmits:
         - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-5
           imagePullPolicy: Always
           command:
-            - "./hack/ci/run-konnectivity-e2e.sh"
+            - "./hack/ci/run-konnectivity-e2e-test.sh"
           env:
             - name: VERSION_TO_TEST
               value: v1.22.5
