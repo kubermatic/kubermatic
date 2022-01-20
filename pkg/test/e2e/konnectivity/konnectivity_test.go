@@ -61,6 +61,7 @@ const (
 	seed            = "kubermatic"
 	projectName     = "konne-test-project"
 	userclusterName = "konne-test-usercluster"
+	alpineSleeper   = "alpine-sleeper"
 )
 
 func init() {
@@ -145,6 +146,38 @@ func TestKonnectivity(t *testing.T) {
 	
 	//TODO: ensure apiserver sidecar has konnectivity-proxy containers
 	
+	// add alpine pod for testing copy
+	_, err = kubeClient.CoreV1().Pods("kube-system").Create(context.Background(), &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:                       alpineSleeper,
+			Namespace:                  "kube-system",
+		},
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Image: "alpine:latest",
+					Name:  alpineSleeper,
+					 Command: []string{
+					"/bin/sh", "-c", "--",
+				},
+					Args: []string{
+					"sleep 1001d",
+				},
+				},
+			},
+		},
+	}, metav1.CreateOptions{})
+	if err != nil {
+		t.Fatalf("failed to create alpine-sleeper pod")
+	}
+	
+	defer func() {
+		err := kubeClient.CoreV1().Pods("kube-system").Delete(context.Background(), alpineSleeper, metav1.DeleteOptions{})
+		if err != nil {
+			t.Fatalf("failed to delete alpine-sleeper pod")
+		}
+	}()
+	
 	ctx := context.Background()
 	
 	t.Logf("waiting for nodes to come up")
@@ -188,7 +221,7 @@ func TestKonnectivity(t *testing.T) {
 			for _, prefix := range []string{
 				"konnectivity-agent",
 				"metrics-server",
-				"envoy-agent",
+				alpineSleeper,
 			} {
 				pods, err := getPods(ctx, kubeClient, prefix)
 				if err != nil {
@@ -218,7 +251,7 @@ func TestKonnectivity(t *testing.T) {
 			return true, nil
 		})
 		if err != nil {
-			t.Fatalf("nodes never became ready: %v", err)
+			t.Fatalf("pods never became ready: %v", err)
 		}
 	}
 	
@@ -255,9 +288,9 @@ func TestKonnectivity(t *testing.T) {
 	
 	t.Log("check if it is possible to copy")
 	{
-		pods, err := getPods(ctx, kubeClient, "envoy-agent")
+		pods, err := getPods(ctx, kubeClient, alpineSleeper)
 		if err != nil {
-			t.Fatalf("failed to get envoy-agent pods: %s", err)
+			t.Fatalf("failed to get alpine-sleeper pods: %s", err)
 		}
 		
 		if len(pods) == 0 {
@@ -268,7 +301,7 @@ func TestKonnectivity(t *testing.T) {
 		err = podExec.PodCopyFile(
 			"./testdata/copyMe.txt",
 			fmt.Sprintf("%s/%s:/", "kube-system", pods[0].Name),
-			"envoy-agent",
+			alpineSleeper,
 		)
 		
 		if err != nil {

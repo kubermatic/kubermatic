@@ -27,14 +27,11 @@ spec:
   api:
     replicas: 1
     debugLog: true
-  exposeStrategy: "Tunneling"
   featureGates:
     # VPA won't do anything useful due to missing Prometheus, but we can
     # at least ensure we deploy a working set of Deployments.
     VerticalPodAutoscaler: {}
     KonnectivityService:
-      enabled: true
-    TunnelingExposeStrategy:
       enabled: true
   ui:
     replicas: 0
