@@ -33,6 +33,7 @@ linters:
     - bidichk
     - bodyclose
     - deadcode
+    - durationcheck
     - errcheck
     - goconst
     - gocritic
