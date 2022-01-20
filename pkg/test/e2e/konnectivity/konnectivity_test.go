@@ -139,7 +139,7 @@ func TestKonnectivity(t *testing.T) {
 	
 	t.Logf("waiting for pods to get ready")
 	{
-		err := wait.Poll(30*time.Second, 10*time.Minute, func() (bool, error) {
+		err := wait.Poll(30*time.Second, 30*time.Minute, func() (bool, error) {
 			t.Logf("checking pod readiness...")
 			
 			for _, prefix := range []string{
