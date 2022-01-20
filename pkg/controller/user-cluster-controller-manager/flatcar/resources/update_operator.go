@@ -92,17 +92,6 @@ func OperatorDeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc,
 				},
 			}
 
-			dep.Spec.Template.Spec.Tolerations = []corev1.Toleration{
-				{
-					Effect:   corev1.TaintEffectNoSchedule,
-					Operator: corev1.TolerationOpExists,
-				},
-				{
-					Effect:   corev1.TaintEffectNoExecute,
-					Operator: corev1.TolerationOpExists,
-				},
-			}
-
 			return dep, nil
 		}
 	}
