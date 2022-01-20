@@ -30,6 +30,7 @@ run:
 linters:
   enable:
     - asciicheck
+    - bidichk
     - bodyclose
     - deadcode
     - errcheck
