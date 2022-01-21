@@ -1230,7 +1230,7 @@ presubmits:
   #########################################################
 
   - name: pre-kubermatic-konnectivity-e2e
-    run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|.prow.yaml)"
+    run_if_changed: "(.*[kK]onnectivity.*|pkg/resources/apiserver|.prow.yaml)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
