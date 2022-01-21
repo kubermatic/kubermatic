@@ -67,21 +67,6 @@ const (
 func init() {
 	flag.StringVar(&seedconfig, "seedconfig", "", "path to kubeconfig of seedcluster")
 	flag.StringVar(&userconfig, "userconfig", "", "path to kubeconfig of usercluster")
-
-	if userconfig != "" {
-		log.Println("running against ready usercluster")
-		return
-	}
-
-	accessKeyID = os.Getenv("AWS_ACCESS_KEY_ID")
-	if accessKeyID == "" {
-		panic("AWS_ACCESS_KEY_ID not set")
-	}
-
-	secretAccessKey = os.Getenv("AWS_SECRET_ACCESS_KEY")
-	if secretAccessKey == "" {
-		panic("AWS_SECRET_ACCESS_KEY not set")
-	}
 }
 
 func TestKonnectivity(t *testing.T) {
@@ -89,6 +74,16 @@ func TestKonnectivity(t *testing.T) {
 	var err error
 	var clusterID string
 	if userconfig == "" {
+		accessKeyID = os.Getenv("AWS_ACCESS_KEY_ID")
+		if accessKeyID == "" {
+			t.Fatalf("AWS_ACCESS_KEY_ID not set")
+		}
+
+		secretAccessKey = os.Getenv("AWS_SECRET_ACCESS_KEY")
+		if secretAccessKey == "" {
+			t.Fatalf("AWS_SECRET_ACCESS_KEY not set")
+		}
+
 		userconfig, clusterID, cleanup, err = createUsercluster(t)
 		defer cleanup()
 		if err != nil {
@@ -96,6 +91,8 @@ func TestKonnectivity(t *testing.T) {
 		}
 
 	} else {
+		t.Logf("running against ready usercluster")
+
 		config, err := clientcmd.LoadFromFile(userconfig)
 		if err != nil {
 			t.Fatalf("failed to parse seedconfig: %s", err)
@@ -321,23 +318,34 @@ func TestKonnectivity(t *testing.T) {
 
 	t.Log("check if it is possible to get metrics")
 	{
-		// TODO: check if metrics have sane values.
-		nodeMetrics, err := metricsClient.MetricsV1beta1().NodeMetricses().List(ctx, metav1.ListOptions{})
+		err := wait.Poll(30*time.Second, 10*time.Minute, func() (bool, error) {
+			// TODO: check if metrics have sane values.
+			nodeMetrics, err := metricsClient.MetricsV1beta1().NodeMetricses().List(ctx, metav1.ListOptions{})
+			if err != nil {
+				t.Logf("failed to get node metrics: %s", err)
+				return false, nil
+			}
+
+			if len(nodeMetrics.Items) == 0 {
+				t.Logf("no node metrics")
+				return false, nil
+			}
+
+			podMetrics, err := metricsClient.MetricsV1beta1().PodMetricses(metav1.NamespaceAll).List(ctx, metav1.ListOptions{})
+			if err != nil {
+				t.Logf("failed to get pod metrics: %s", err)
+				return false, nil
+			}
+
+			if len(podMetrics.Items) == 0 {
+				t.Logf("no pod metrics")
+				return false, nil
+			}
+
+			return true, nil
+		})
 		if err != nil {
-			t.Fatalf("failed to get node metrics: %s", err)
-		}
-
-		if len(nodeMetrics.Items) == 0 {
-			t.Fatalf("no node metrics")
-		}
-
-		podMetrics, err := metricsClient.MetricsV1beta1().PodMetricses(metav1.NamespaceAll).List(ctx, metav1.ListOptions{})
-		if err != nil {
-			t.Error("failed to get pod metrics: ", err)
-		}
-
-		if len(podMetrics.Items) == 0 {
-			t.Fatalf("no podmetrics")
+			t.Fatalf("failed to get metrics: %v", err)
 		}
 	}
 }
