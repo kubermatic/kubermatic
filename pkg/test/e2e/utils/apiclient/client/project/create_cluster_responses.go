@@ -6,7 +6,6 @@ package project
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 
@@ -167,12 +166,4 @@ func (o *CreateClusterDefault) readResponse(response runtime.ClientResponse, con
 	}
 
 	return nil
-}
-
-func (o *CreateClusterDefault) String() string {
-	payload, err := json.Marshal(o.Payload)
-	if err != nil {
-		return fmt.Sprintf("CreateClusterDefault.String() failed: %s", err)
-	}
-	return string(payload)
 }

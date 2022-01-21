@@ -16,7 +16,6 @@ require (
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/coreos/locksmith v0.6.2
 	github.com/cristim/ec2-instances-info v0.0.0-20201110114654-2dfcc09f67d4
-	github.com/davecgh/go-spew v1.1.1
 	github.com/digitalocean/godo v1.65.0
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/embik/nutanix-client-go v0.0.0-20220106131900-50b8f27e5f60
@@ -135,6 +134,7 @@ require (
 	github.com/coreos/go-systemd/v22 v22.3.2 // indirect
 	github.com/coreos/ignition v0.35.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dimchansky/utfbom v1.1.1 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/emicklei/go-restful v2.11.2+incompatible // indirect
