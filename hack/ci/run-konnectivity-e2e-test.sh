@@ -44,20 +44,8 @@ export AWS_SECRET_ACCESS_KEY=$(vault kv get -field=secretAccessKey dev/e2e-aws)
 
 echodate "Successfully got secrets for dev from Vault"
 
-function print_kubermatic_logs {
-  if [[ $? -ne 0 ]]; then
-    echodate "Printing logs for Kubermatic API"
-    kubectl -n kubermatic logs --tail=-1 --selector='app.kubernetes.io/name=kubermatic-api'
-    echodate "Printing logs for Master Controller Manager"
-    kubectl -n kubermatic logs --tail=-1 --selector='app.kubernetes.io/name=kubermatic-master-controller-manager'
-    echodate "Printing logs for Seed Controller Manager"
-    kubectl -n kubermatic logs --tail=-1 --selector='app.kubernetes.io/name=kubermatic-seed-controller-manager'
-  fi
-}
-appendTrap print_kubermatic_logs EXIT
-
 echodate "Running konnectivity tests..."
 
-go test -timeout 1h -tags e2e -v ./pkg/test/e2e/konnectivity/...
+go test -timeout 1h -tags e2e -v ./pkg/test/e2e/konnectivity/... -args -seedconfig=${KUBECONFIG}
 
 echodate "Konnecitvity tests done."

@@ -31,10 +31,9 @@ import (
 	"testing"
 	"time"
 	
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/project"
 	
-	"github.com/davecgh/go-spew/spew"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -52,6 +51,7 @@ import (
 
 var (
 	userconfig      string
+	seedconfig      string
 	accessKeyID     string
 	secretAccessKey string
 )
@@ -65,68 +65,43 @@ const (
 )
 
 func init() {
+	flag.StringVar(&seedconfig, "seedconfig", "", "path to kubeconfig of seedcluster")
 	flag.StringVar(&userconfig, "userconfig", "", "path to kubeconfig of usercluster")
+	
+	if userconfig != "" {
+		log.Println("running agaist ready usercluster")
+		return
+	}
+	
 	accessKeyID = os.Getenv("AWS_ACCESS_KEY_ID")
 	if accessKeyID == "" {
 		panic("AWS_ACCESS_KEY_ID not set")
 	}
+	
 	secretAccessKey = os.Getenv("AWS_SECRET_ACCESS_KEY")
 	if secretAccessKey == "" {
 		panic("AWS_SECRET_ACCESS_KEY not set")
 	}
 }
 
-func debug() {
-	kubeconfig := os.Getenv("KUBECONFIG")
-	if kubeconfig == "" {
-		log.Println("KUBECONFIG not set")
-		return
-	}
-	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
-	if err != nil {
-		log.Println("failed to build config", err)
-		return
-	}
-	
-	kubeClient, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		log.Println("failed to build kubeclient", err)
-		return
-	}
-	
-	ns, err := kubeClient.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		log.Println("failed to get namespaces", err)
-		return
-	}
-	
-	for _, n := range ns.Items {
-		log.Println(n.Name)
-		pods, err := kubeClient.CoreV1().Pods(n.Name).List(context.Background(), metav1.ListOptions{})
-		if err != nil {
-			log.Println("failed to list pods", n, err)
-			return
-		}
-		for _, p := range pods.Items {
-			log.Println(n.Name, p.Name, p.Status.Phase)
-		}
-	}
-}
-
 func TestKonnectivity(t *testing.T) {
 	var cleanup func()
 	var err error
+	var clusterID string
 	if userconfig == "" {
-		userconfig, cleanup, err = createUsercluster(t)
+		userconfig, clusterID, cleanup, err = createUsercluster(t)
 		defer cleanup()
 		if err != nil {
-			switch e := err.(type) {
-			case *project.CreateClusterDefault:
-				t.Fatalf("failed to setup usercluster: %s", e.String())
-			default:
-				t.Fatalf("failed to setup usercluster: %s", spew.Sdump(err))
-			}
+			t.Fatalf("failed to setup usercluster: %s", err)
 		}
+		
+	} else {
+		config, err := clientcmd.LoadFromFile(userconfig)
+		if err != nil {
+			t.Fatalf("failed to parse seedconfig: %s", err)
+		}
+		
+		clusterID = config.Contexts[config.CurrentContext].Cluster
 	}
 	
 	config, err := clientcmd.BuildConfigFromFlags("", userconfig)
@@ -134,7 +109,7 @@ func TestKonnectivity(t *testing.T) {
 		t.Fatalf("failed to build config: %s", err)
 	}
 	
-	kubeClient, err := kubernetes.NewForConfig(config)
+	userClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		t.Fatalf("failed to create client: %s", err)
 	}
@@ -144,21 +119,12 @@ func TestKonnectivity(t *testing.T) {
 		t.Fatalf("failed to create metrics client: %s", err)
 	}
 	
-	//TODO: ensure apiserver sidecar has konnectivity-proxy containers
-	
-
 	ctx := context.Background()
 	
 	t.Logf("waiting for nodes to come up")
 	{
 		err := wait.Poll(30*time.Second, 10*time.Minute, func() (bool, error) {
-			t.Logf("checking node readiness...")
-			////
-			t.Logf("printing seedcluster pods")
-			debug()
-			////
-			
-			nodes, err := kubeClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+			nodes, err := userClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 			if err != nil {
 				t.Logf("failed to get nodes list: %s", err)
 				return false, nil
@@ -182,38 +148,80 @@ func TestKonnectivity(t *testing.T) {
 		}
 	}
 	
-	// add alpine pod for testing copy
-	_, err = kubeClient.CoreV1().Pods("kube-system").Create(context.Background(), &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:                       alpineSleeper,
-			Namespace:                  "kube-system",
-		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Image: "alpine:latest",
-					Name:  alpineSleeper,
-					Command: []string{
-						"/bin/sh", "-c", "--",
-					},
-					Args: []string{
-						"sleep 1001d",
+	t.Logf("checking if apiserver has konnectivity-proxy in sidecar")
+	{
+		config, err := clientcmd.BuildConfigFromFlags("", seedconfig)
+		if err != nil {
+			t.Fatal("failed to build config", err)
+		}
+		
+		seedClient, err := kubernetes.NewForConfig(config)
+		if err != nil {
+			t.Fatal("failed to build kubeclient", err)
+		}
+		
+		ns := "cluster-" + clusterID
+		
+		pods, err := seedClient.CoreV1().Pods(ns).List(context.Background(), metav1.ListOptions{})
+		if err != nil {
+			log.Println("failed to list pods", ns, err)
+		}
+		
+		var apiserverPod corev1.Pod
+		for _, p := range pods.Items {
+			if strings.HasPrefix(p.Name, "apiserver") {
+				apiserverPod = p
+				break
+			}
+		}
+		
+		found := false
+		for _, c := range apiserverPod.Spec.Containers {
+			if c.Name == resources.KonnectivityServerContainer {
+				found = true
+				break
+			}
+		}
+		
+		if !found {
+			t.Fatalf("no konnectivity-proxy container was found in apiserver sidecar")
+		}
+	}
+	
+	t.Logf("creating alpine-sleeper pod for testing cp")
+	{
+		_, err = userClient.CoreV1().Pods("kube-system").Create(context.Background(), &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      alpineSleeper,
+				Namespace: "kube-system",
+			},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					{
+						Image: "alpine:latest",
+						Name:  alpineSleeper,
+						Command: []string{
+							"/bin/sh", "-c", "--",
+						},
+						Args: []string{
+							"sleep 1001d",
+						},
 					},
 				},
 			},
-		},
-	}, metav1.CreateOptions{})
-	if err != nil {
-		t.Fatalf("failed to create alpine-sleeper pod")
-	}
-	
-	defer func() {
-		err := kubeClient.CoreV1().Pods("kube-system").Delete(context.Background(), alpineSleeper, metav1.DeleteOptions{})
+		}, metav1.CreateOptions{})
 		if err != nil {
-			t.Fatalf("failed to delete alpine-sleeper pod")
+			t.Fatalf("failed to create alpine-sleeper pod")
 		}
-	}()
-	
+		
+		defer func() {
+			t.Logf("deleting alpine-sleeper pod")
+			err := userClient.CoreV1().Pods("kube-system").Delete(context.Background(), alpineSleeper, metav1.DeleteOptions{})
+			if err != nil {
+				t.Fatalf("failed to delete alpine-sleeper pod")
+			}
+		}()
+	}
 	
 	t.Logf("waiting for pods to get ready")
 	{
@@ -225,7 +233,7 @@ func TestKonnectivity(t *testing.T) {
 				"metrics-server",
 				alpineSleeper,
 			} {
-				pods, err := getPods(ctx, kubeClient, prefix)
+				pods, err := getPods(ctx, userClient, prefix)
 				if err != nil {
 					t.Logf("failed to get pod list: %s", err)
 					return false, nil
@@ -241,7 +249,7 @@ func TestKonnectivity(t *testing.T) {
 					if pod.Status.Phase != corev1.PodRunning {
 						allRunning = false
 					}
-					t.Logf(pod.Name, pod.Status.Phase)
+					t.Log(pod.Name, pod.Status.Phase)
 				}
 				
 				if !allRunning {
@@ -259,7 +267,7 @@ func TestKonnectivity(t *testing.T) {
 	
 	t.Log("check if konnectivity-agents are deployed")
 	{
-		pods, err := getPods(ctx, kubeClient, "konnectivity-agent")
+		pods, err := getPods(ctx, userClient, "konnectivity-agent")
 		if err != nil {
 			t.Errorf("failed to get konnectivity-agent pods: %s", err)
 		}
@@ -271,7 +279,7 @@ func TestKonnectivity(t *testing.T) {
 	
 	t.Log("check if we can get logs from pods")
 	{
-		pods, err := getPods(ctx, kubeClient, "metrics-server")
+		pods, err := getPods(ctx, userClient, "metrics-server")
 		if err != nil {
 			t.Errorf("failed to get metrics-server pods: %s", err)
 		}
@@ -281,7 +289,7 @@ func TestKonnectivity(t *testing.T) {
 		}
 		
 		for _, pod := range pods {
-			lines := strings.TrimSpace(getPodLogs(ctx, kubeClient, pod))
+			lines := strings.TrimSpace(getPodLogs(ctx, userClient, pod))
 			if n := len(strings.Split(lines, "\n")); n != tailLines {
 				t.Fatalf("expected 5 lines got: %d", n)
 			}
@@ -290,7 +298,7 @@ func TestKonnectivity(t *testing.T) {
 	
 	t.Log("check if it is possible to copy")
 	{
-		pods, err := getPods(ctx, kubeClient, alpineSleeper)
+		pods, err := getPods(ctx, userClient, alpineSleeper)
 		if err != nil {
 			t.Fatalf("failed to get alpine-sleeper pods: %s", err)
 		}
@@ -299,7 +307,7 @@ func TestKonnectivity(t *testing.T) {
 			t.Fatalf("no envoy-agent pods")
 		}
 		
-		podExec := NewPodExec(*config, kubeClient)
+		podExec := NewPodExec(*config, userClient)
 		err = podExec.PodCopyFile(
 			"./testdata/copyMe.txt",
 			fmt.Sprintf("%s/%s:/", "kube-system", pods[0].Name),
@@ -402,7 +410,7 @@ func getPodLogs(ctx context.Context, cli *kubernetes.Clientset, pod corev1.Pod) 
 }
 
 // creates a usercluster on aws
-func createUsercluster(t *testing.T) (string, func(), error) {
+func createUsercluster(t *testing.T) (string, string, func(), error) {
 	var teardowns []func()
 	cleanup := func() {
 		n := len(teardowns)
@@ -412,7 +420,7 @@ func createUsercluster(t *testing.T) (string, func(), error) {
 	} // get kubermatic-api client
 	token, err := utils.RetrieveMasterToken(context.Background())
 	if err != nil {
-		return "", nil, err
+		return "", "", nil, err
 	}
 	
 	apicli := utils.NewTestClient(token, t)
@@ -420,7 +428,7 @@ func createUsercluster(t *testing.T) (string, func(), error) {
 	// create a project
 	project, err := apicli.CreateProject(projectName)
 	if err != nil {
-		return "", nil, err
+		return "", "", nil, err
 	}
 	teardowns = append(teardowns, func() {
 		err := apicli.DeleteProject(project.ID)
@@ -434,7 +442,7 @@ func createUsercluster(t *testing.T) (string, func(), error) {
 		secretAccessKey, accessKeyID, utils.KubernetesVersion(),
 		"aws-eu-central-1a", "eu-central-1a", 1, true)
 	if err != nil {
-		return "", cleanup, err
+		return "", "", nil, err
 	}
 	teardowns = append(teardowns, func() {
 		err := apicli.DeleteCluster(project.ID, seed, cluster.ID) //TODO: this succeeds but cluster is not actually gone why?
@@ -456,17 +464,17 @@ func createUsercluster(t *testing.T) (string, func(), error) {
 		return true, nil
 	})
 	if err != nil {
-		return "", cleanup, err
+		return "", "", nil, err
 	}
 	
 	file, err := ioutil.TempFile("/tmp", "kubeconfig-")
 	if err != nil {
-		return "", cleanup, err
+		return "", "", nil, err
 	}
 	
 	err = os.WriteFile(file.Name(), []byte(data), 0664)
 	if err != nil {
-		return "", cleanup, err
+		return "", "", nil, err
 	}
 	teardowns = append(teardowns, func() {
 		err = os.Remove(file.Name())
@@ -475,5 +483,5 @@ func createUsercluster(t *testing.T) (string, func(), error) {
 		}
 	})
 	
-	return file.Name(), cleanup, nil
+	return file.Name(), cluster.ID, cleanup, nil
 }
