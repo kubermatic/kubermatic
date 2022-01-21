@@ -251,6 +251,9 @@ spec:
         #  effect: NoExecute
         #  tolerationSeconds: 30
       dnsPolicy: "Default"
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: csi-attacher
           image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-attacher:v3.3.0
@@ -300,7 +303,7 @@ spec:
             - name: X_CSI_SERIAL_VOL_ACCESS_TIMEOUT
               value: 3m
             - name: VSPHERE_CSI_CONFIG
-              value: "/etc/cloud/csi-vsphere.conf"
+              value: "/etc/cloud/config"
             - name: LOGGER_LEVEL
               value: "PRODUCTION" # Options: DEVELOPMENT, PRODUCTION
             - name: INCLUSTER_CLIENT_QPS
@@ -355,7 +358,7 @@ spec:
             - name: FULL_SYNC_INTERVAL_MINUTES
               value: "30"
             - name: VSPHERE_CSI_CONFIG
-              value: "/etc/cloud/csi-vsphere.conf"
+              value: "/etc/cloud/config"
             - name: LOGGER_LEVEL
               value: "PRODUCTION" # Options: DEVELOPMENT, PRODUCTION
             - name: INCLUSTER_CLIENT_QPS
@@ -392,7 +395,7 @@ spec:
       volumes:
         - name: vsphere-config-volume
           secret:
-            secretName: vsphere-config-secret
+            secretName: cloud-config-csi
         - name: socket-dir
           emptyDir: {}
 ---
@@ -420,6 +423,9 @@ spec:
       serviceAccountName: vsphere-csi-node
       hostNetwork: true
       dnsPolicy: "ClusterFirstWithHostNet"
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: node-driver-registrar
           image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-node-driver-registrar:v2.3.0
