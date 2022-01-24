@@ -1354,6 +1354,9 @@ spec:
                 - docker
                 - containerd
                 type: string
+              debugLog:
+                description: DebugLog enables more verbose logging by KKP's usercluster-controller-manager.
+                type: boolean
               enableOperatingSystemManager:
                 description: EnableOperatingSystemManager enables OSM which in-turn
                   is responsible for creating and managing worker node configuration

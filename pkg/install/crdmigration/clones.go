@@ -434,6 +434,7 @@ func convertClusterSpec(old kubermaticv1.ClusterSpec) newv1.ClusterSpec {
 		ExposeStrategy:                       newv1.ExposeStrategy(old.ExposeStrategy),
 		Pause:                                old.Pause,
 		PauseReason:                          old.PauseReason,
+		DebugLog:                             old.DebugLog,
 		ComponentsOverride:                   convertComponentSettings(old.ComponentsOverride),
 		OIDC:                                 newv1.OIDCSettings(old.OIDC),
 		Features:                             old.Features,
