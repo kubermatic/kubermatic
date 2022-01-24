@@ -48,6 +48,7 @@ linters:
     - misspell
     - staticcheck
     - structcheck
+    - tenv
     - unconvert
     - unused
     - varcheck
