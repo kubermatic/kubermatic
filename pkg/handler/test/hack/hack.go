@@ -187,7 +187,7 @@ func generateDefaultMetrics() common.ServerMetrics {
 	return common.ServerMetrics{
 		InitNodeDeploymentFailures: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
-				Name: "kubermatic_api_init_node_deployment_failures",
+				Name: "kubermatic_api_failed_init_node_deployment_total",
 				Help: "The number of times initial node deployment couldn't be created within the timeout",
 			},
 			[]string{"cluster", "datacenter"},

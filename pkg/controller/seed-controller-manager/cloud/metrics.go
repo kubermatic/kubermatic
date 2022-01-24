@@ -29,7 +29,7 @@ var (
 	successfulProviderReconciliations = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "kubermatic",
 		Subsystem: "cloud_controller",
-		Name:      "provider_reconciliations_successful",
+		Name:      "provider_successful_reconciliations_total",
 		Help:      "The number of successful provider reconciliations for a usercluster",
 	}, []string{"cluster", "provider"})
 )
