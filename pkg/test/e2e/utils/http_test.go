@@ -17,6 +17,7 @@ limitations under the License.
 package utils
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -157,9 +158,10 @@ func TestHttpClientWithRetries(t *testing.T) {
 			if tt.requestTimeout == 0 {
 				tt.requestTimeout = apiRequestTimeout
 			}
+			ctx := context.Background()
 			rt := NewRoundTripperWithRetries(t, tt.requestTimeout, Backoff{Steps: tt.numRetries, Duration: tt.retryInterval, Factor: 1.0}, tt.allowedErrorCodes...)
 			cli := &http.Client{Transport: rt}
-			req, err := http.NewRequest("GET", ts.URL, nil)
+			req, err := http.NewRequestWithContext(ctx, "GET", ts.URL, nil)
 			if err != nil {
 				t.Fatalf("Error occurred while creating request: %v", err)
 			}

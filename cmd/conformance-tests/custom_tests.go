@@ -241,7 +241,11 @@ func (r *testRunner) testLB(ctx context.Context, log *zap.SugaredLogger, userClu
 	hostURL := fmt.Sprintf("http://%s:80", host)
 	log.Debug("Waiting until the pod is available via the LB...")
 	err = wait.Poll(3*time.Second, r.customTestTimeout, func() (done bool, err error) {
-		resp, err := http.Get(hostURL)
+		request, err := http.NewRequestWithContext(ctx, "GET", hostURL, nil)
+		if err != nil {
+			return false, err
+		}
+		resp, err := http.DefaultClient.Do(request)
 		if err != nil {
 			log.Warnf("Failed to call Pod via LB (%s) during LB test: %v", hostURL, err)
 			return false, nil

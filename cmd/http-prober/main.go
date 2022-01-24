@@ -106,7 +106,9 @@ func main() {
 		log.Fatalw("Invalid endpoint specified", zap.Error(err))
 	}
 
-	req, err := http.NewRequest("GET", e.String(), nil)
+	ctx := context.Background()
+
+	req, err := http.NewRequestWithContext(ctx, "GET", e.String(), nil)
 	if err != nil {
 		log.Fatalw("Failed to build request", zap.Error(err))
 	}

@@ -188,7 +188,7 @@ func (r *userGrafanaController) handleDeletion(ctx context.Context, user *kuberm
 }
 
 func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kubermaticv1.User) error {
-	req, err := http.NewRequest("GET", r.grafanaURL+"/api/user", nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", r.grafanaURL+"/api/user", nil)
 	if err != nil {
 		return err
 	}

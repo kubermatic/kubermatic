@@ -46,6 +46,7 @@ linters:
     - govet
     - ineffassign
     - misspell
+    - noctx
     - nolintlint
     - predeclared
     - promlinter
