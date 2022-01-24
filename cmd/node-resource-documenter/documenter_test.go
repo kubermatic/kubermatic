@@ -50,7 +50,7 @@ spec:
     spec:
       containers:
       - name: kubernetes-dashboard
-        image: 'gcr.io/google_containers/kubernetes-dashboard-amd64:v1.10.1'
+        image: 'docker.io/kubernetesui/dashboard:v2.4.0'
         ports:
         - containerPort: 8443
           protocol: TCP
