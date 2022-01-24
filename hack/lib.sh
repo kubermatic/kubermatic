@@ -89,15 +89,15 @@ write_junit() {
     errors=1
     failure='<failure type="Failure">Step failed</failure>'
   fi
-  TEST_NAME="[Kubermatic] ${TEST_NAME#\[Kubermatic\] }"
-  cat << EOF > ${ARTIFACTS}/junit.$(echo $TEST_NAME | sed 's/ /_/g').xml
+  TEST_CLASS="${TEST_CLASS:-Kubermatic}"
+  cat << EOF > ${ARTIFACTS}/junit.$(echo $TEST_NAME | sed 's/ /_/g' | tr '[:upper:]' '[:lower:]').xml
 <?xml version="1.0" ?>
 <testsuites>
-    <testsuite errors="$errors" failures="$errors" name="$TEST_NAME" tests="1">
-        <testcase classname="$TEST_NAME" name="$TEST_NAME" time="$duration">
-          $failure
-        </testcase>
-    </testsuite>
+  <testsuite errors="$errors" failures="$errors" name="$TEST_CLASS" tests="1">
+    <testcase classname="$TEST_CLASS" name="$TEST_NAME" time="$duration">
+      $failure
+    </testcase>
+  </testsuite>
 </testsuites>
 EOF
 }
