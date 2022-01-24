@@ -128,7 +128,6 @@ func (o *IssuerVerifier) Exchange(ctx context.Context, code string) (auth.OIDCTo
 func (o *IssuerVerifier) Verify(ctx context.Context, token string) (auth.TokenClaims, error) {
 	if o == nil {
 		return auth.TokenClaims{}, nil
-
 	}
 	if ctx == nil {
 		return auth.TokenClaims{}, nil

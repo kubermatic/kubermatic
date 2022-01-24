@@ -63,7 +63,6 @@ var userNameMap = map[string]string{
 
 // GetSSHUserName returns SSH login name for the provider and distribution
 func GetSSHUserName(distribution *apiv1.OperatingSystemSpec, cloudProvider *apiv1.NodeCloudSpec) (string, error) {
-
 	distributionName, err := getDistributionName(distribution)
 	if err != nil {
 		return "", err

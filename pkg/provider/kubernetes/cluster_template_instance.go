@@ -83,7 +83,6 @@ func (r ClusterTemplateInstanceProvider) Create(userInfo *provider.UserInfo, tem
 }
 
 func (r ClusterTemplateInstanceProvider) CreateUnsecured(template *kubermaticv1.ClusterTemplate, project *kubermaticv1.Project, replicas int64) (*kubermaticv1.ClusterTemplateInstance, error) {
-
 	instance := createClusterTemplateInstance(template, project, replicas)
 
 	err := r.privilegedClient.Create(context.Background(), instance)

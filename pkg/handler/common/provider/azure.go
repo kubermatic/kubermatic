@@ -145,7 +145,6 @@ func (s *azureClientSetImpl) ListRouteTables(ctx context.Context, resourceGroupN
 		return nil, fmt.Errorf("failed to list resource groups: %w", err)
 	}
 	return routeTables.Values(), nil
-
 }
 
 func (s *azureClientSetImpl) ListResourceGroups(ctx context.Context) ([]resources.Group, error) {
@@ -154,7 +153,6 @@ func (s *azureClientSetImpl) ListResourceGroups(ctx context.Context) ([]resource
 		return nil, fmt.Errorf("failed to list resource groups: %w", err)
 	}
 	return resourceGroups.Values(), nil
-
 }
 
 func (s *azureClientSetImpl) ListSubnets(ctx context.Context, resourceGroupName, virtualNetworkName string) ([]network.Subnet, error) {
@@ -163,7 +161,6 @@ func (s *azureClientSetImpl) ListSubnets(ctx context.Context, resourceGroupName,
 		return nil, fmt.Errorf("failed to list subnets: %w", err)
 	}
 	return subnets.Values(), nil
-
 }
 
 func (s *azureClientSetImpl) ListVnets(ctx context.Context, resourceGroupName string) ([]network.VirtualNetwork, error) {
@@ -172,7 +169,6 @@ func (s *azureClientSetImpl) ListVnets(ctx context.Context, resourceGroupName st
 		return nil, fmt.Errorf("failed to list vnets: %w", err)
 	}
 	return vnets.Values(), nil
-
 }
 
 func AzureSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, settingsProvider provider.SettingsProvider, projectID, clusterID string) (interface{}, error) {
@@ -278,7 +274,6 @@ func isLocation(sku compute.ResourceSku, location string) bool {
 
 // isValidVM checks all constrains for VM
 func isValidVM(sku compute.ResourceSku, location string) bool {
-
 	if !isLocation(sku, location) {
 		return false
 	}

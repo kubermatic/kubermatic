@@ -503,7 +503,6 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 
 		cloud := cluster.Spec.CloudSpec
 		if cloud != nil {
-
 			secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
 
 			if cloud.GKE != nil {
@@ -735,7 +734,6 @@ func ListEventsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider 
 				}
 				events = append(events, nodeEvents...)
 			}
-
 		}
 		kubermaticEvents, err := common.GetEvents(ctx, privilegedClusterProvider.GetMasterClient(), cluster, metav1.NamespaceDefault)
 		if err != nil {

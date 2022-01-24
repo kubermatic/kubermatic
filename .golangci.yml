@@ -52,6 +52,7 @@ linters:
     - unused
     - varcheck
     - wastedassign
+    - whitespace
   disable-all: true
 
 # NOTE: Do not use commas in the exclude patterns, or else the regex will be

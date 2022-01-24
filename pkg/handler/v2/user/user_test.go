@@ -80,7 +80,6 @@ func TestListEndpoint(t *testing.T) {
 
 				userSlice.EqualOrDie(expectedUserSlice, t)
 			}
-
 		})
 	}
 }

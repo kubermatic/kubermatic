@@ -44,7 +44,6 @@ import (
 const ctName = "requiredlabels"
 
 func TestReconcile(t *testing.T) {
-
 	testCases := []struct {
 		name                 string
 		requestName          string

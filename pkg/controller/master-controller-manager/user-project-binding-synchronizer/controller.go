@@ -58,7 +58,6 @@ func Add(
 	log *zap.SugaredLogger,
 	numWorkers int,
 ) error {
-
 	r := &reconciler{
 		log:          log.Named(ControllerName),
 		recorder:     masterManager.GetEventRecorderFor(ControllerName),

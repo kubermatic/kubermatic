@@ -38,7 +38,6 @@ import (
 func cronJobCreator(seedName string, getRegistry registry.WithOverwriteFunc) reconciling.NamedCronJobCreatorGetter {
 	return func() (string, reconciling.CronJobCreator) {
 		return meteringCronJobWeeklyName, func(job *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
-
 			job.Spec.Schedule = "0 6 * * 1"
 			job.Spec.JobTemplate.Spec.Parallelism = pointer.Int32Ptr(1)
 			job.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = meteringToolName

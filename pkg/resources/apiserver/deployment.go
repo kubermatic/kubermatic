@@ -724,7 +724,6 @@ func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
 	}
 
 	return vs
-
 }
 
 type kubeAPIServerEnvData interface {

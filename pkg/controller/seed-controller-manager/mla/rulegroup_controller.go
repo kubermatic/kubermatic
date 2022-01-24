@@ -196,7 +196,6 @@ func (r *ruleGroupReconciler) Reconcile(ctx context.Context, request reconcile.R
 		result = &reconcile.Result{}
 	}
 	return *result, err
-
 }
 
 type ruleGroupController struct {

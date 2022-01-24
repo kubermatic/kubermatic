@@ -263,7 +263,6 @@ func getAdminUserInfoPrivilegedRuleGroupProvider(ctx context.Context, userInfoGe
 }
 
 func getUserInfoRuleGroupProvider(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID string) (*provider.UserInfo, provider.RuleGroupProvider, error) {
-
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return nil, nil, err

@@ -161,7 +161,6 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
 			// validate if deletion was successful
 			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s", tc.ProjectToSync, tc.ClusterToSync), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
@@ -2031,7 +2030,6 @@ func TestRevokeClusterAdminTokenEndpoint(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestGetClusterEventsEndpoint(t *testing.T) {

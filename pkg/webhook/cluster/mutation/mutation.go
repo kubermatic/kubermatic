@@ -167,7 +167,6 @@ func (h *AdmissionHandler) applyDefaults(ctx context.Context, c *kubermaticv1.Cl
 // mutateCreate is an addition to regular defaulting for new clusters.
 // at the time of writing it handles features that should only be enabled for new clusters.
 func (h *AdmissionHandler) mutateCreate(newCluster *kubermaticv1.Cluster) error {
-
 	if newCluster.Spec.Features == nil {
 		newCluster.Spec.Features = map[string]bool{}
 	}
@@ -187,7 +186,6 @@ func (h *AdmissionHandler) mutateUpdate(oldCluster, newCluster *kubermaticv1.Clu
 	//   * Enable the UseOctaiva flag
 	if v, oldV := newCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider],
 		oldCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; v && !oldV {
-
 		switch {
 		case newCluster.Spec.Cloud.Openstack != nil:
 			addCCMCSIMigrationAnnotations(newCluster)

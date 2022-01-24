@@ -55,7 +55,6 @@ func ListEndpoint(constraintTemplateProvider provider.ConstraintTemplateProvider
 
 func GetEndpoint(constraintTemplateProvider provider.ConstraintTemplateProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-
 		req := request.(constraintTemplateReq)
 		if err := req.Validate(); err != nil {
 			return nil, errors.NewBadRequest(err.Error())

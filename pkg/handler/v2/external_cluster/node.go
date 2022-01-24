@@ -681,7 +681,6 @@ func PatchMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proj
 
 		cloud := cluster.Spec.CloudSpec
 		if cloud != nil {
-
 			secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
 			mdToPatch := apiv2.ExternalClusterMachineDeployment{}
 			patchedMD := apiv2.ExternalClusterMachineDeployment{}
@@ -757,7 +756,6 @@ func CreateMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, pro
 }
 
 func patchMD(mdToPatch, patchedMD *apiv2.ExternalClusterMachineDeployment, patchJson json.RawMessage) error {
-
 	existingMDJSON, err := json.Marshal(mdToPatch)
 	if err != nil {
 		return errors.NewBadRequest("cannot decode existing md: %v", err)

@@ -104,7 +104,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clusterRoleName string) error {
-
 	clusterRoleBindingList := &rbacv1.ClusterRoleBindingList{}
 	if err := r.client.List(ctx, clusterRoleBindingList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: handlercommon.UserClusterBindingComponentValue}); err != nil {
 		return fmt.Errorf("failed get cluster role binding list: %w", err)

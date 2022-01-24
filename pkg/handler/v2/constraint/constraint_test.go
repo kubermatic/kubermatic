@@ -361,7 +361,6 @@ func genGatekeeperConstraint(name, kind string, t *testing.T) *unstructured.Unst
 }
 
 func unmarshallToJSONMap(object interface{}) (map[string]interface{}, error) {
-
 	raw, err := json.Marshal(object)
 	if err != nil {
 		return nil, fmt.Errorf("error marshalling: %w", err)
@@ -808,7 +807,6 @@ func TestCreateDefaultConstraints(t *testing.T) {
 			t.Fatalf("error marshalling body into json: %v", err)
 		}
 		t.Run(tc.Name, func(t *testing.T) {
-
 			tc.ExistingObjects = append(tc.ExistingObjects, test.APIUserToKubermaticUser(*tc.ExistingAPIUser))
 
 			req := httptest.NewRequest("POST", "/api/v2/constraints", bytes.NewBuffer(body))
@@ -925,7 +923,6 @@ func TestGetDefaultConstraint(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/constraints/%s", tc.CTName), strings.NewReader(""))
 			res := httptest.NewRecorder()
 
@@ -982,7 +979,6 @@ func TestDeleteDefaultConstraints(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
 			tc.ExistingObjects = append(tc.ExistingObjects, test.APIUserToKubermaticUser(*tc.ExistingAPIUser))
 			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v2/constraints/%s", tc.CTToDeleteName), strings.NewReader(""))
 			res := httptest.NewRecorder()
@@ -1087,7 +1083,6 @@ func TestPatchDefaultConstraints(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
 			tc.ExistingObjects = append(tc.ExistingObjects, test.APIUserToKubermaticUser(*tc.ExistingAPIUser))
 
 			req := httptest.NewRequest("PATCH", fmt.Sprintf("/api/v2/constraints/%s", tc.ConstraintName), strings.NewReader(tc.Patch))

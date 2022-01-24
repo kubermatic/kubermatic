@@ -553,8 +553,8 @@ func GetClusterProviderFromRequest(
 	request interface{},
 	projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider,
-	userInfoGetter provider.UserInfoGetter) (*kubermaticv1.Cluster, *kubernetesprovider.ClusterProvider, error) {
-
+	userInfoGetter provider.UserInfoGetter,
+) (*kubermaticv1.Cluster, *kubernetesprovider.ClusterProvider, error) {
 	req, ok := request.(common.GetClusterReq)
 	if !ok {
 		return nil, nil, kubermaticerrors.New(http.StatusBadRequest, "invalid request")

@@ -211,7 +211,6 @@ func DeleteMachineNode(ctx context.Context, userInfoGetter provider.UserInfoGett
 		return nil, common.KubernetesErrorToHTTPError(client.Delete(ctx, node))
 	}
 	return nil, nil
-
 }
 
 func ListMachineDeployments(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID, clusterID string) (interface{}, error) {
@@ -785,7 +784,6 @@ func getNodeList(ctx context.Context, cluster *kubermaticv1.Cluster, clusterProv
 }
 
 func getMachinesForNodeDeployment(ctx context.Context, clusterProvider provider.ClusterProvider, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID, nodeDeploymentID string) (*clusterv1alpha1.MachineList, error) {
-
 	client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, projectID)
 	if err != nil {
 		return nil, err

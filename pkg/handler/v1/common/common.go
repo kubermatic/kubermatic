@@ -146,7 +146,8 @@ func GetPortForwarder(
 	cfg *rest.Config,
 	namespace string,
 	labelSelector string,
-	containerPort int) (*portforward.PortForwarder, chan struct{}, error) {
+	containerPort int,
+) (*portforward.PortForwarder, chan struct{}, error) {
 	pod, err := GetReadyPod(coreClient.Pods(namespace), labelSelector)
 	if err != nil {
 		return nil, nil, err
@@ -188,11 +189,7 @@ func isPodReady(pod corev1.Pod) bool {
 	return false
 }
 
-func getDialerForPod(
-	pod *corev1.Pod,
-	restClient rest.Interface,
-	cfg *rest.Config) (httpstream.Dialer, error) {
-
+func getDialerForPod(pod *corev1.Pod, restClient rest.Interface, cfg *rest.Config) (httpstream.Dialer, error) {
 	// The logic here is copied straight from kubectl at
 	// https://github.com/kubernetes/kubernetes/blob/b88662505d288297750becf968bf307dacf872fa/staging/src/k8s.io/kubectl/pkg/cmd/portforward/portforward.go#L334
 	req := restClient.Post().

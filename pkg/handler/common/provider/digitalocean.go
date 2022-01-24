@@ -40,7 +40,6 @@ var reStandard = regexp.MustCompile("(^s|S)")
 var reOptimized = regexp.MustCompile("(^c|C)")
 
 func DigitaloceanSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, settingsProvider provider.SettingsProvider, projectID, clusterID string) (interface{}, error) {
-
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
 	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
@@ -68,7 +67,6 @@ func DigitaloceanSizeWithClusterCredentialsEndpoint(ctx context.Context, userInf
 	}
 
 	return DigitaloceanSize(ctx, settings.Spec.MachineDeploymentVMResourceQuota, accessToken)
-
 }
 
 func DigitaloceanSize(ctx context.Context, quota kubermaticv1.MachineDeploymentVMResourceQuota, token string) (apiv1.DigitaloceanSizeList, error) {

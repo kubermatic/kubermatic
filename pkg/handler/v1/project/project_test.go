@@ -792,7 +792,6 @@ func TestCreateProjectEndpoint(t *testing.T) {
 				expectedResponse = fmt.Sprintf(tc.ExpectedResponse, actualProject.ID)
 			}
 			test.CompareWithResult(t, res, expectedResponse)
-
 		})
 	}
 }
@@ -1008,7 +1007,6 @@ func TestServiceAccountProjectAccess(t *testing.T) {
 }
 
 func genToken(sa *kubermaticv1.User, projectID, tokenName string) (*v1.Secret, error) {
-
 	tokenGenerator, err := serviceaccount.JWTTokenGenerator([]byte(test.TestServiceAccountHashKey))
 	if err != nil {
 		return nil, fmt.Errorf("can init token generator: %w", err)

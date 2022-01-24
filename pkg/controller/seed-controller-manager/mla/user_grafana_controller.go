@@ -142,7 +142,6 @@ func newUserGrafanaController(
 	grafanaURL string,
 	grafanaHeader string,
 ) *userGrafanaController {
-
 	return &userGrafanaController{
 		Client:        client,
 		grafanaClient: grafanaClient,

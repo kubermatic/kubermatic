@@ -241,7 +241,6 @@ func TestGetEndpoint(t *testing.T) {
 
 				test.CompareWithResult(t, resp, string(b))
 			}
-
 		})
 	}
 }
@@ -332,7 +331,6 @@ func TestListEndpoint(t *testing.T) {
 
 				etcdRestores.EqualOrDie(expectedEtcdRestores, t)
 			}
-
 		})
 	}
 }
@@ -523,7 +521,6 @@ func TestProjectListEndpoint(t *testing.T) {
 
 				etcdRestores.EqualOrDie(expectedEtcdRestores, t)
 			}
-
 		})
 	}
 }

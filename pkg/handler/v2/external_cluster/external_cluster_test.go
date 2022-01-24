@@ -268,7 +268,6 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
 			// validate if deletion was successful
 			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v2/projects/%s/kubernetes/clusters/%s", tc.ProjectToSync, tc.ClusterToSync), strings.NewReader(""))
 			res := httptest.NewRecorder()
@@ -433,7 +432,6 @@ func TestGetClusterEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
 			// validate if deletion was successful
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/kubernetes/clusters/%s", tc.ProjectToSync, tc.ClusterToSync), strings.NewReader(""))
 			res := httptest.NewRecorder()
@@ -508,7 +506,6 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
 			// validate if deletion was successful
 			req := httptest.NewRequest("PUT", fmt.Sprintf("/api/v2/projects/%s/kubernetes/clusters/%s", tc.ProjectToSync, tc.ClusterToSync), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()

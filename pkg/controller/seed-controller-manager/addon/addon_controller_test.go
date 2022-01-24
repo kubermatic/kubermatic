@@ -371,7 +371,6 @@ func TestController_getAddonManifests(t *testing.T) {
 			t.Errorf("Invalid manifest returned, expected \n%q\n, got \n%q", string(expected.Raw), string(manifests[idx].Raw))
 		}
 	}
-
 }
 
 func TestController_ensureAddonLabelOnManifests(t *testing.T) {

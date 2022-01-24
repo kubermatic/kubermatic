@@ -269,7 +269,6 @@ func TestListTokens(t *testing.T) {
 			wrappedExpectedToken.Sort()
 
 			actualSA.EqualOrDie(wrappedExpectedToken, t)
-
 		})
 	}
 }
@@ -680,7 +679,6 @@ func TestUpdateToken(t *testing.T) {
 				if token.Token == test.TestFakeToken {
 					t.Fatalf("token should be regenerated")
 				}
-
 			} else {
 				test.CompareWithResult(t, res, tc.expectedErrorMsg)
 			}
@@ -789,7 +787,6 @@ func TestDeleteToken(t *testing.T) {
 			if err == nil {
 				t.Fatalf("failed to delete token %s", tc.tokenToDelete)
 			}
-
 		})
 	}
 }

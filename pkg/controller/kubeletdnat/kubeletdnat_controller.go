@@ -74,8 +74,8 @@ func Add(
 	nodeTranslationChainName string,
 	nodeAccessNetwork net.IP,
 	log *zap.SugaredLogger,
-	vpnInterface string) error {
-
+	vpnInterface string,
+) error {
 	reconciler := &Reconciler{
 		Client:                   mgr.GetClient(),
 		nodeTranslationChainName: nodeTranslationChainName,
@@ -183,7 +183,6 @@ func getNodeAddresses(node corev1.Node) []string {
 			if address.Type == addressType {
 				addresses = append(addresses, address.Address)
 			}
-
 		}
 	}
 	return addresses

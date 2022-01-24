@@ -111,7 +111,6 @@ func (cj *clientJig) QueryApiserverVersion(kasHostPort string, insecure bool, ex
 				s++
 			}
 		}
-
 	}
 
 	return s >= minSuccess
@@ -163,5 +162,6 @@ func newClientPod(ns string) *corev1.Pod {
 			},
 		},
 	}
+
 	return pod
 }

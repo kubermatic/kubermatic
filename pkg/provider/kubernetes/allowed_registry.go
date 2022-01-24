@@ -39,7 +39,6 @@ func NewAllowedRegistryPrivilegedProvider(client ctrlruntimeclient.Client) (*Pri
 
 // CreateUnsecured creates a allowed registry
 func (p *PrivilegedAllowedRegistryProvider) CreateUnsecured(wr *kubermaticv1.AllowedRegistry) (*kubermaticv1.AllowedRegistry, error) {
-
 	if err := p.clientPrivileged.Create(context.Background(), wr); err != nil {
 		return nil, err
 	}
@@ -49,7 +48,6 @@ func (p *PrivilegedAllowedRegistryProvider) CreateUnsecured(wr *kubermaticv1.All
 
 // GetUnsecured gets a allowed registry
 func (p *PrivilegedAllowedRegistryProvider) GetUnsecured(name string) (*kubermaticv1.AllowedRegistry, error) {
-
 	wr := &kubermaticv1.AllowedRegistry{}
 	err := p.clientPrivileged.Get(context.Background(), types.NamespacedName{Name: name}, wr)
 	return wr, err
@@ -57,7 +55,6 @@ func (p *PrivilegedAllowedRegistryProvider) GetUnsecured(name string) (*kubermat
 
 // ListUnsecured lists a allowed registries
 func (p *PrivilegedAllowedRegistryProvider) ListUnsecured() (*kubermaticv1.AllowedRegistryList, error) {
-
 	wrList := &kubermaticv1.AllowedRegistryList{}
 	err := p.clientPrivileged.List(context.Background(), wrList)
 	return wrList, err
@@ -74,7 +71,6 @@ func (p *PrivilegedAllowedRegistryProvider) UpdateUnsecured(ar *kubermaticv1.All
 
 // DeleteUnsecured deletes a allowed registry
 func (p *PrivilegedAllowedRegistryProvider) DeleteUnsecured(name string) error {
-
 	wr := &kubermaticv1.AllowedRegistry{}
 	wr.Name = name
 	return p.clientPrivileged.Delete(context.Background(), wr)

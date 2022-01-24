@@ -106,7 +106,6 @@ func (r Routing) RegisterV1Admin(mux *mux.Router) {
 	mux.Methods(http.MethodGet).
 		Path("/admin/metering/reports/{report_name}").
 		Handler(r.getMeteringReport())
-
 }
 
 // swagger:route GET /api/v1/admin/settings admin getKubermaticSettings

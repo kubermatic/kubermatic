@@ -515,7 +515,6 @@ func preparePreV21CertManagerDeployment(
 
 	logger.Info("Recreating ClusterIssuers...")
 	for _, issuer := range clusterIssuersList.Items {
-
 		issuer.SetResourceVersion("")
 		issuer.SetUID("")
 		issuer.SetSelfLink("")

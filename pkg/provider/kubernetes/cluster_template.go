@@ -70,7 +70,6 @@ func (p *ClusterTemplateProvider) New(userInfo *provider.UserInfo, newClusterTem
 	}
 
 	return p.createTemplate(newClusterTemplate)
-
 }
 
 func (p *ClusterTemplateProvider) createTemplate(newClusterTemplate *kubermaticv1.ClusterTemplate) (*kubermaticv1.ClusterTemplate, error) {

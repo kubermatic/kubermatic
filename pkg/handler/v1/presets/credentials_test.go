@@ -416,7 +416,6 @@ func TestCredentialEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/providers/%s/presets/credentials?datacenter=%s", tc.provider, tc.datacenter), strings.NewReader(""))
 			res := httptest.NewRecorder()
 

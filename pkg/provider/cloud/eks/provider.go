@@ -163,7 +163,6 @@ func GetCredentialsForCluster(cloud kubermaticv1.ExternalClusterCloudSpec, secre
 }
 
 func GetEKSClusterStatus(secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterCloudSpec) (*apiv2.ExternalClusterStatus, error) {
-
 	accessKeyID, secretAccessKey, err := GetCredentialsForCluster(*cloudSpec, secretKeySelector)
 	if err != nil {
 		return nil, err

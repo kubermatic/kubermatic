@@ -623,7 +623,6 @@ func generateVerbsForNamedResourceInNamespace(groupName, resourceKind, namespace
 	// special case - only the owners of a project can manipulate secrets in "ssaSecretsNamespaceNam" namespace
 	//
 	if namespace == saSecretsNamespaceName {
-
 		switch {
 		case strings.HasPrefix(groupName, OwnerGroupNamePrefix) && resourceKind == secretV1Kind:
 			return []string{"get", "update", "delete"}, nil

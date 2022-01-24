@@ -45,5 +45,4 @@ func PodDisruptionBudgetCreator(data pdbData) reconciling.NamedPodDisruptionBudg
 			return pdb, nil
 		}
 	}
-
 }

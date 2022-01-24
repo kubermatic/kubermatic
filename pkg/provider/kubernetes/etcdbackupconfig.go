@@ -63,7 +63,6 @@ func EtcdBackupConfigProviderFactory(mapper meta.RESTMapper, seedKubeconfigGette
 }
 
 func (p *EtcdBackupConfigProvider) Create(userInfo *provider.UserInfo, etcdBackupConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
-
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
@@ -79,7 +78,6 @@ func (p *EtcdBackupConfigProvider) CreateUnsecured(etcdBackupConfig *kubermaticv
 }
 
 func (p *EtcdBackupConfigProvider) Get(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdBackupConfig, error) {
-
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
@@ -97,7 +95,6 @@ func (p *EtcdBackupConfigProvider) GetUnsecured(cluster *kubermaticv1.Cluster, n
 }
 
 func (p *EtcdBackupConfigProvider) List(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdBackupConfigList, error) {
-
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
@@ -115,7 +112,6 @@ func (p *EtcdBackupConfigProvider) ListUnsecured(cluster *kubermaticv1.Cluster) 
 }
 
 func (p *EtcdBackupConfigProvider) Delete(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, name string) error {
-
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return err
@@ -141,7 +137,6 @@ func (p *EtcdBackupConfigProvider) DeleteUnsecured(cluster *kubermaticv1.Cluster
 }
 
 func (p *EtcdBackupConfigProvider) Patch(userInfo *provider.UserInfo, old, new *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
-
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err

@@ -81,7 +81,6 @@ func Add(
 		return err
 	}
 	return nil
-
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -313,7 +312,6 @@ func (r *Reconciler) createOrUpdateAKSKubeconfig(ctx context.Context, cluster *k
 }
 
 func (r *Reconciler) updateKubeconfigSecret(ctx context.Context, config *api.Config, cluster *kubermaticv1.ExternalCluster) error {
-
 	kubeconfigSecretName := cluster.GetKubeconfigSecretName()
 	kubeconfig, err := clientcmd.Write(*config)
 	if err != nil {

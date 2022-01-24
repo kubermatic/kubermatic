@@ -26,7 +26,6 @@ import (
 )
 
 func TestServiceAccountIssuer(t *testing.T) {
-
 	testcases := []struct {
 		name            string
 		expectedEmail   string
@@ -76,7 +75,6 @@ func TestServiceAccountIssuer(t *testing.T) {
 			if threeYearsString != expiryString {
 				t.Fatalf("expected expire after 3 years from Now. Expected %s got %s", threeYearsString, expiryString)
 			}
-
 		})
 	}
 }

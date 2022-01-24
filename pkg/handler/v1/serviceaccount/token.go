@@ -162,7 +162,6 @@ func ListTokenEndpoint(projectProvider provider.ProjectProvider, privilegedProje
 
 		var errorList []string
 		for _, secret := range existingSecretList {
-
 			externalToken, err := convertInternalTokenToPublicExternal(secret, tokenAuthenticator)
 			if err != nil {
 				errorList = append(errorList, err.Error())
@@ -293,8 +292,8 @@ func getSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, ser
 
 func updateEndpoint(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, serviceAccountProvider provider.ServiceAccountProvider,
 	privilegedServiceAccount provider.PrivilegedServiceAccountProvider, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, userInfoGetter provider.UserInfoGetter, tokenGenerator serviceaccount.TokenGenerator,
-	projectID, saID, tokenID, newName string, regenerateToken bool) (*v1.Secret, error) {
-
+	projectID, saID, tokenID, newName string, regenerateToken bool,
+) (*v1.Secret, error) {
 	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID, nil)
 	if err != nil {
 		return nil, err
@@ -501,7 +500,6 @@ func DecodeTokenReq(c context.Context, r *http.Request) (interface{}, error) {
 	prjReq, err := common.DecodeProjectRequest(c, r)
 	if err != nil {
 		return nil, err
-
 	}
 	req.ProjectReq = prjReq.(common.ProjectReq)
 

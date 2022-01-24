@@ -37,8 +37,7 @@ import (
 )
 
 const (
-	name = "etcd"
-
+	name    = "etcd"
 	dataDir = "/var/run/etcd/pod_${POD_NAME}/"
 )
 
@@ -72,7 +71,6 @@ type etcdStatefulSetCreatorData interface {
 func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChecks bool, enableTLSOnly bool) reconciling.NamedStatefulSetCreatorGetter {
 	return func() (string, reconciling.StatefulSetCreator) {
 		return resources.EtcdStatefulSetName, func(set *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
-
 			replicas := computeReplicas(data, set)
 			set.Name = resources.EtcdStatefulSetName
 			set.Spec.Replicas = resources.Int32(replicas)

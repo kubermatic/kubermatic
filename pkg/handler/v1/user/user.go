@@ -127,7 +127,6 @@ func getMemberList(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 	}
 
 	return memberProvider.List(userInfo, project, options)
-
 }
 
 // EditEndpoint changes the group the given user/member belongs in the given project
@@ -441,7 +440,6 @@ func DecodeAddReq(c context.Context, r *http.Request) (interface{}, error) {
 	prjReq, err := common.DecodeProjectRequest(c, r)
 	if err != nil {
 		return nil, err
-
 	}
 	req.ProjectReq = prjReq.(common.ProjectReq)
 
@@ -496,7 +494,6 @@ func DecodeEditReq(c context.Context, r *http.Request) (interface{}, error) {
 	prjReq, err := common.DecodeProjectRequest(c, r)
 	if err != nil {
 		return nil, err
-
 	}
 	req.ProjectReq = prjReq.(common.ProjectReq)
 

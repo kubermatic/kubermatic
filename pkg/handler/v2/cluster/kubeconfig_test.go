@@ -189,7 +189,6 @@ func TestGetMasterKubeconfig(t *testing.T) {
 			test.CompareWithResult(t, res, tc.ExpectedResponseString)
 		})
 	}
-
 }
 
 func genToken(tokenID string) string {

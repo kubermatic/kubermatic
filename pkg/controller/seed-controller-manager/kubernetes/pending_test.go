@@ -81,5 +81,4 @@ func TestEnsureEtcdLauncherFeatureFlag(t *testing.T) {
 			}
 		})
 	}
-
 }

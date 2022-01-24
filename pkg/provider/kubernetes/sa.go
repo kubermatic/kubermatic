@@ -143,7 +143,6 @@ func (p *ServiceAccountProvider) ListProjectServiceAccount(userInfo *provider.Us
 	// Note:
 	// After we get the list of SA we try to get at least one item using unprivileged account to see if the user have read access
 	if len(resultList) > 0 {
-
 		masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 		if err != nil {
 			return nil, err
@@ -154,7 +153,6 @@ func (p *ServiceAccountProvider) ListProjectServiceAccount(userInfo *provider.Us
 		if err != nil {
 			return nil, err
 		}
-
 	}
 
 	for _, sa := range resultList {

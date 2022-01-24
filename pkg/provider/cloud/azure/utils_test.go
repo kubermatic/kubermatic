@@ -62,7 +62,6 @@ func getFakeCredentials() (*Credentials, error) {
 		ClientID:       clientID,
 		ClientSecret:   clientSecret,
 	}, nil
-
 }
 
 // makeCluster returns a KKP Cluster object with the Azure cloud spec inserted.

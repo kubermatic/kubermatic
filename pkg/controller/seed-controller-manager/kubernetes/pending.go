@@ -79,7 +79,6 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 		if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.NodeDeletionFinalizer) {
 			finalizers = append(finalizers, kubermaticapiv1.NodeDeletionFinalizer)
 		}
-
 	}
 
 	if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.KubermaticConstraintCleanupFinalizer) {

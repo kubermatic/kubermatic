@@ -1404,7 +1404,6 @@ func TestMachineDeploymentMetrics(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 			test.CompareWithResult(t, res, tc.ExpectedResponse)
-
 		})
 	}
 }

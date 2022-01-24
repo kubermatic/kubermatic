@@ -738,7 +738,6 @@ func (r *TestClient) WaitForOPAEnabledClusterHealthy(projectID, dc, clusterID st
 			*healthStatus.GatekeeperController == kubermaticv1.HealthStatusUp &&
 			healthStatus.GatekeeperAudit != nil &&
 			*healthStatus.GatekeeperAudit == kubermaticv1.HealthStatusUp
-
 	}) {
 		return errors.New("OPA enabled cluster did not become healthy")
 	}
@@ -1581,7 +1580,6 @@ func (r *TestClient) GetConstraint(projectID, clusterID, name string) (*apiv2.Co
 }
 
 func (r *TestClient) CreateConstraint(name, ctKind string) (*kubermaticv1.Constraint, error) {
-
 	kind := &models.Kind{
 		Kinds: []string{"ConfigMap"}, APIGroups: []string{""},
 	}
@@ -1633,7 +1631,6 @@ func convertDefaultConstraint(constraint *models.Constraint) (*kubermaticv1.Cons
 }
 
 func (r *TestClient) CreateCT(name, ctKind string) (*kubermaticv1.ConstraintTemplate, error) {
-
 	spec := models.ConstraintTemplateSpec{
 		Crd: &models.CRD{
 			Spec: &models.CRDSpec{
@@ -1784,7 +1781,6 @@ func (r *TestClient) CreateClusterTemplate(projectID, name, scope, credential, v
 
 // CreateClusterTemplate method creates cluster template instance object
 func (r *TestClient) CreateClusterTemplateInstance(projectID, templateID string, replicas int64) (*apiv2.ClusterTemplateInstance, error) {
-
 	params := &project.CreateClusterTemplateInstanceParams{
 		Body: project.CreateClusterTemplateInstanceBody{
 			Replicas: replicas,
@@ -1817,7 +1813,6 @@ func (r *TestClient) CreateClusterTemplateInstance(projectID, templateID string,
 
 // ListClusters method lists user clusters
 func (r *TestClient) ListClusters(projectID string) ([]*apiv1.Cluster, error) {
-
 	params := &project.ListClustersV2Params{
 		ProjectID: projectID,
 	}

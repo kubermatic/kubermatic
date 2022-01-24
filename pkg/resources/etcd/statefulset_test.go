@@ -28,7 +28,6 @@ import (
 var update = flag.Bool("update", false, "update .golden files")
 
 func TestGetEtcdCommand(t *testing.T) {
-
 	tests := []struct {
 		name                  string
 		clusterName           string

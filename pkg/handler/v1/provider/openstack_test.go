@@ -143,7 +143,6 @@ func SetupOpenstackServer(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TeardownOpenstackServer() {
@@ -290,7 +289,6 @@ func TestOpenstackEndpoints(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
 			req := httptest.NewRequest("GET", tc.URL, strings.NewReader(""))
 			if tc.QueryParams != nil {
 				q := req.URL.Query()

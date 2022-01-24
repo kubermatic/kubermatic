@@ -23,7 +23,6 @@ import (
 )
 
 func TestGenerateVerbsForNamedResources(t *testing.T) {
-
 	tests := []struct {
 		name          string
 		groupName     string
@@ -113,7 +112,6 @@ func TestGenerateVerbsForNamedResources(t *testing.T) {
 }
 
 func TestGenerateVerbsForResources(t *testing.T) {
-
 	tests := []struct {
 		name          string
 		groupName     string

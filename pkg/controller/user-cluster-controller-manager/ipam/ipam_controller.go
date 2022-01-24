@@ -97,7 +97,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *reconciler) reconcile(ctx context.Context, machine *clusterv1alpha1.Machine) error {
-
 	if machine.DeletionTimestamp != nil {
 		return nil
 	}

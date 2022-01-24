@@ -756,7 +756,6 @@ func TestDeploymentStrategyDefaulting(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestImagePullSecretsWrapper(t *testing.T) {

@@ -44,7 +44,6 @@ const (
 )
 
 func TestReconcile(t *testing.T) {
-
 	testCases := []struct {
 		name                 string
 		namespacedName       types.NamespacedName

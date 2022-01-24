@@ -126,7 +126,6 @@ func AWSSizeNoCredentialsEndpoint(ctx context.Context, userInfoGetter provider.U
 }
 
 func ListAWSSubnets(accessKeyID, secretAccessKey, assumeRoleID string, assumeRoleExternalID string, vpcID string, datacenter *kubermaticv1.Datacenter) (apiv1.AWSSubnetList, error) {
-
 	if datacenter.Spec.AWS == nil {
 		return nil, errors.NewBadRequest("datacenter is not an AWS datacenter")
 	}
@@ -171,7 +170,6 @@ func ListAWSSubnets(accessKeyID, secretAccessKey, assumeRoleID string, assumeRol
 			AvailableIPAddressCount: *s.AvailableIpAddressCount,
 			DefaultForAz:            *s.DefaultForAz,
 		})
-
 	}
 
 	return subnets, nil

@@ -428,7 +428,6 @@ type hostClusterName struct {
 func makeSNIListener(t *testing.T, portValue uint32, hostClusterNames ...hostClusterName) *envoylistenerv3.Listener {
 	fcs := []*envoylistenerv3.FilterChain{}
 	for _, hc := range hostClusterNames {
-
 		tcpProxyConfig := &envoytcpfilterv3.TcpProxy{
 			StatPrefix: "ingress_tcp",
 			ClusterSpecifier: &envoytcpfilterv3.TcpProxy_Cluster{

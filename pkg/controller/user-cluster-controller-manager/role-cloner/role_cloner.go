@@ -204,7 +204,6 @@ func (r *reconciler) reconcileRoles(ctx context.Context, log *zap.SugaredLogger,
 				}
 			}
 		}
-
 	}
 
 	return nil

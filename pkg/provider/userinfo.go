@@ -28,7 +28,6 @@ import (
 type UserInfoGetter = func(ctx context.Context, projectID string) (*UserInfo, error)
 
 func UserInfoGetterFactory(userProjectMapper ProjectMemberMapper) (UserInfoGetter, error) {
-
 	return func(ctx context.Context, projectID string) (*UserInfo, error) {
 		user, ok := ctx.Value(kubermaticcontext.UserCRContextKey).(*kubermaticapiv1.User)
 		if !ok {

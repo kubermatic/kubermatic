@@ -63,8 +63,8 @@ func Add(ctx context.Context,
 	log *zap.SugaredLogger,
 	numWorkers int,
 	namespace string,
-	seedKubeconfigGetter provider.SeedKubeconfigGetter) error {
-
+	seedKubeconfigGetter provider.SeedKubeconfigGetter,
+) error {
 	reconciler := &reconciler{
 		log:              log.Named(ControllerName),
 		recorder:         mgr.GetEventRecorderFor(ControllerName),
@@ -175,8 +175,8 @@ func (r *reconciler) syncAllSeeds(
 	ctx context.Context,
 	log *zap.SugaredLogger,
 	constraintTemplate *kubermaticv1.ConstraintTemplate,
-	action func(seedClusterClient ctrlruntimeclient.Client, ct *kubermaticv1.ConstraintTemplate) error) error {
-
+	action func(seedClusterClient ctrlruntimeclient.Client, ct *kubermaticv1.ConstraintTemplate) error,
+) error {
 	seedList := &kubermaticv1.SeedList{}
 	if err := r.masterClient.List(ctx, seedList, &ctrlruntimeclient.ListOptions{Namespace: r.namespace}); err != nil {
 		return fmt.Errorf("failed listing seeds: %w", err)

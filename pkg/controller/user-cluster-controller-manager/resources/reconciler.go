@@ -932,7 +932,6 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 }
 
 func (r *reconciler) reconcileNetworkPolicies(ctx context.Context, data reconcileData) error {
-
 	namedNetworkPolicyCreatorGetters := []reconciling.NamedNetworkPolicyCreatorGetter{
 		kubesystem.DefaultNetworkPolicyCreator(),
 		coredns.KubeDNSNetworkPolicyCreator(data.clusterAddress.IP, int(data.clusterAddress.Port), data.k8sServiceApiIP.String()),
@@ -1064,9 +1063,7 @@ func (r *reconciler) healthCheck(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) getGatekeeperHealth(ctx context.Context) (
-	ctlrHealth kubermaticv1.HealthStatus, auditHealth kubermaticv1.HealthStatus, err error) {
-
+func (r *reconciler) getGatekeeperHealth(ctx context.Context) (ctlrHealth kubermaticv1.HealthStatus, auditHealth kubermaticv1.HealthStatus, err error) {
 	ctlrHealth, err = resources.HealthyDeployment(ctx,
 		r.Client,
 		types.NamespacedName{Namespace: resources.GatekeeperNamespace, Name: resources.GatekeeperControllerDeploymentName},
@@ -1087,9 +1084,7 @@ func (r *reconciler) getGatekeeperHealth(ctx context.Context) (
 	return ctlrHealth, auditHealth, nil
 }
 
-func (r *reconciler) getMLAMonitoringHealth(ctx context.Context) (
-	health kubermaticv1.HealthStatus, err error) {
-
+func (r *reconciler) getMLAMonitoringHealth(ctx context.Context) (health kubermaticv1.HealthStatus, err error) {
 	health, err = resources.HealthyDeployment(ctx,
 		r.Client,
 		types.NamespacedName{Namespace: resources.UserClusterMLANamespace, Name: resources.UserClusterPrometheusDeploymentName},

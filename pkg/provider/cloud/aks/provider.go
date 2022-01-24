@@ -34,7 +34,6 @@ import (
 )
 
 func GetCLusterConfig(ctx context.Context, cred resources.AKSCredentials, clusterName, resourceGroupName string) (*api.Config, error) {
-
 	var err error
 	aksClient := containerservice.NewManagedClustersClient(cred.SubscriptionID)
 	aksClient.Authorizer, err = auth.NewClientCredentialsConfig(cred.ClientID, cred.ClientSecret, cred.TenantID).Authorizer()
@@ -165,7 +164,6 @@ func GetAKSClusterStatus(ctx context.Context, secretKeySelector provider.SecretK
 	return &apiv2.ExternalClusterStatus{
 		State: state,
 	}, nil
-
 }
 
 func convertAKSStatus(provisioningState string, powerState containerservice.Code) apiv2.ExternalClusterState {

@@ -51,7 +51,6 @@ type KubeVirtGenericNoCredentialReq struct {
 // KubeVirtVMIPresetsEndpoint handles the request to list available KubeVirtVMIPresets (provided credentials)
 func KubeVirtVMIPresetsEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-
 		req := request.(KubeVirtGenericReq)
 		kubeconfig := req.Kubeconfig
 
@@ -83,7 +82,6 @@ func KubeVirtVMIPresetsWithClusterCredentialsEndpoint(projectProvider provider.P
 // KubeVirtStorageClassesEndpoint handles the request to list available k8s StorageClasses (provided credentials)
 func KubeVirtStorageClassesEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-
 		req := request.(KubeVirtGenericReq)
 		Kubeconfig := req.Kubeconfig
 

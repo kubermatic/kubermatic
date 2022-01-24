@@ -453,7 +453,6 @@ func TestGetMasterKubeconfig(t *testing.T) {
 			test.CompareWithResult(t, res, tc.ExpectedResponseString)
 		})
 	}
-
 }
 
 func genTestKubeconfigKubermaticObjects() []ctrlruntimeclient.Object {
@@ -472,14 +471,12 @@ func genTestKubeconfigKubermaticObjects() []ctrlruntimeclient.Object {
 }
 
 func marshalEncodeState(oidcState handlercommon.OIDCState) (string, error) {
-
 	rawState, err := json.Marshal(oidcState)
 	if err != nil {
 		return "", err
 	}
 	encodedState := base64.StdEncoding.EncodeToString(rawState)
 	return url.QueryEscape(encodedState), nil
-
 }
 
 func unmarshalState(rawState []byte) (handlercommon.OIDCState, error) {

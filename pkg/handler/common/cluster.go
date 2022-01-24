@@ -648,8 +648,8 @@ func GetMetricsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGet
 
 func MigrateEndpointToExternalCCM(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID,
 	clusterID string, projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter,
-	privilegedProjectProvider provider.PrivilegedProjectProvider, configGetter provider.KubermaticConfigurationGetter) (interface{}, error) {
-
+	privilegedProjectProvider provider.PrivilegedProjectProvider, configGetter provider.KubermaticConfigurationGetter,
+) (interface{}, error) {
 	privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
 
 	adminUserInfo, err := userInfoGetter(ctx, "")
@@ -884,7 +884,6 @@ func updateCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 }
 
 func updateAndDeleteCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, privilegedClusterProvider provider.PrivilegedClusterProvider, project *kubermaticv1.Project, cluster *kubermaticv1.Cluster) error {
-
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return kubermaticerrors.New(http.StatusInternalServerError, err.Error())
@@ -905,7 +904,6 @@ func updateAndDeleteCluster(ctx context.Context, userInfoGetter provider.UserInf
 }
 
 func updateAndDeleteClusterForRegularUser(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, project *kubermaticv1.Project, cluster *kubermaticv1.Cluster) error {
-
 	userInfo, err := userInfoGetter(ctx, project.Name)
 	if err != nil {
 		return kubermaticerrors.New(http.StatusInternalServerError, err.Error())
@@ -959,7 +957,6 @@ func getClusterForRegularUser(ctx context.Context, userInfoGetter provider.UserI
 	}
 	cluster, err := clusterProvider.Get(userInfo, clusterID, options)
 	if err != nil {
-
 		// Request came from the specified user. Instead `Not found` error status the `Forbidden` is returned.
 		// Next request with privileged user checks if the cluster doesn't exist or some other error occurred.
 		if !isStatus(err, http.StatusForbidden) {
@@ -1134,7 +1131,6 @@ func getSSHKey(ctx context.Context, userInfoGetter provider.UserInfoGetter, sshK
 
 func convertInternalCCMStatusToExternal(cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.Datacenter, incompatibilities ...*version.ProviderIncompatibility) apiv1.ExternalCCMMigrationStatus {
 	switch externalCCMEnabled, externalCCMSupported := cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider], cloudcontroller.MigrationToExternalCloudControllerSupported(datacenter, cluster, incompatibilities...); {
-
 	case externalCCMEnabled:
 		_, ccmOk := cluster.Annotations[kubermaticv1.CCMMigrationNeededAnnotation]
 		_, csiOk := cluster.Annotations[kubermaticv1.CSIMigrationNeededAnnotation]
@@ -1150,5 +1146,4 @@ func convertInternalCCMStatusToExternal(cluster *kubermaticv1.Cluster, datacente
 	default:
 		return apiv1.ExternalCCMMigrationUnsupported
 	}
-
 }

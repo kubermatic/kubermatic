@@ -202,11 +202,9 @@ func TestCreateServiceAccountProject(t *testing.T) {
 				if expectedSA.Spec.Name != tc.expectedSAName {
 					t.Fatalf("expected name %s got %s", tc.expectedSAName, expectedSA.Spec.Name)
 				}
-
 			} else {
 				test.CompareWithResult(t, res, tc.expectedResponse)
 			}
-
 		})
 	}
 }
@@ -359,11 +357,9 @@ func TestList(t *testing.T) {
 				wrappedExpectedSA.Sort()
 
 				actualSA.EqualOrDie(wrappedExpectedSA, t)
-
 			} else {
 				test.CompareWithResult(t, res, tc.expectedError)
 			}
-
 		})
 	}
 }
@@ -503,11 +499,9 @@ func TestEdit(t *testing.T) {
 				if group != tc.expectedGroup {
 					t.Fatalf("expected group from binding %s got %s", tc.expectedGroup, group)
 				}
-
 			} else {
 				test.CompareWithResult(t, res, tc.expectedErrorResponse)
 			}
-
 		})
 	}
 }

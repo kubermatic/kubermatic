@@ -32,7 +32,6 @@ import (
 
 // NewProjectProvider returns a project provider
 func NewProjectProvider(createMasterImpersonatedClient ImpersonationClient, client ctrlruntimeclient.Client) (*ProjectProvider, error) {
-
 	return &ProjectProvider{
 		createMasterImpersonatedClient: createMasterImpersonatedClient,
 		clientPrivileged:               client,

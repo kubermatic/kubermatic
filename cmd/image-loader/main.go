@@ -481,7 +481,6 @@ func getTemplateData(clusterVersion *kubermaticversion.Version, kubermaticVersio
 		WithVersions(kubermaticVersions).
 		WithCABundle(caBundle).
 		Build(), nil
-
 }
 
 func createNamedSecrets(secretNames []string) *corev1.SecretList {

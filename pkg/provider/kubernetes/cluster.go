@@ -475,7 +475,6 @@ func (p *ClusterProvider) SeedAdminConfig() *restclient.Config {
 //
 // Note that the admin privileges are used to list all clusters
 func (p *ClusterProvider) ListAll() (*kubermaticv1.ClusterList, error) {
-
 	projectClusters := &kubermaticv1.ClusterList{}
 	if err := p.client.List(context.Background(), projectClusters); err != nil {
 		return nil, fmt.Errorf("failed to list clusters: %w", err)

@@ -90,7 +90,6 @@ func (p *ExternalClusterProvider) NewUnsecured(project *kubermaticapiv1.Project,
 
 // Get returns the given cluster
 func (p *ExternalClusterProvider) Get(userInfo *provider.UserInfo, clusterName string) (*kubermaticapiv1.ExternalCluster, error) {
-
 	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
@@ -137,7 +136,6 @@ func (p *ExternalClusterProvider) DeleteUnsecured(cluster *kubermaticapiv1.Exter
 //
 // Note that the admin privileges are used to get cluster
 func (p *ExternalClusterProvider) GetUnsecured(clusterName string) (*kubermaticapiv1.ExternalCluster, error) {
-
 	cluster := &kubermaticapiv1.ExternalCluster{}
 	if err := p.clientPrivileged.Get(context.Background(), types.NamespacedName{Name: clusterName}, cluster); err != nil {
 		return nil, err
@@ -198,7 +196,6 @@ func addProjectReference(project *kubermaticapiv1.Project, cluster *kubermaticap
 }
 
 func (p *ExternalClusterProvider) GenerateClient(cfg *clientcmdapi.Config) (ctrlruntimeclient.Client, error) {
-
 	clientConfig, err := getRestConfig(cfg)
 	if err != nil {
 		return nil, err
@@ -338,7 +335,6 @@ func (p *ExternalClusterProvider) ensureKubeconfigSecret(ctx context.Context, cl
 	}
 
 	return updateKubeconfigSecret(ctx, p.clientPrivileged, existingSecret, projectID, secretData)
-
 }
 
 func createKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client, name, projectID string, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {

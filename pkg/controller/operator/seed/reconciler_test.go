@@ -411,7 +411,6 @@ func TestBasicReconciling(t *testing.T) {
 				}
 
 				return nil
-
 			},
 		},
 	}

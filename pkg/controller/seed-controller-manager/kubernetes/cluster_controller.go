@@ -138,8 +138,8 @@ func Add(
 	caBundle *certificates.CABundle,
 
 	features Features,
-	versions kubermatic.Versions) error {
-
+	versions kubermatic.Versions,
+) error {
 	reconciler := &Reconciler{
 		log:                     log.Named(ControllerName),
 		Client:                  mgr.GetClient(),

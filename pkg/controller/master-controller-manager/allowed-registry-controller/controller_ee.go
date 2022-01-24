@@ -40,8 +40,8 @@ const (
 func Add(mgr manager.Manager,
 	log *zap.SugaredLogger,
 	numWorkers int,
-	namespace string) error {
-
+	namespace string,
+) error {
 	reconciler := allowedregistrycontroller.NewReconciler(
 		log.Named(ControllerName),
 		mgr.GetEventRecorderFor(ControllerName),

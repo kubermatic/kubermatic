@@ -254,7 +254,6 @@ func AWSSubnetWithClusterCredentialsEndpoint(projectProvider provider.ProjectPro
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
 		return providercommon.AWSSubnetNoCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID, req.ClusterID)
-
 	}
 }
 
@@ -307,7 +306,6 @@ func AWSSecurityGroupsEndpoint(presetProvider provider.PresetProvider, seedsGett
 }
 
 func listSecurityGroup(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, vpc string) (*apiv1.AWSSecurityGroupList, error) {
-
 	securityGroupList := &apiv1.AWSSecurityGroupList{}
 
 	securityGroups, err := awsprovider.GetSecurityGroups(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, vpc)
@@ -366,7 +364,6 @@ func getAWSCredentialsFromRequest(ctx context.Context, req AWSCommonReq, userInf
 }
 
 func listAWSVPCS(accessKeyID, secretAccessKey string, assumeRoleARN string, assumeRoleExternalID string, datacenter *kubermaticv1.Datacenter) (apiv1.AWSVPCList, error) {
-
 	if datacenter.Spec.AWS == nil {
 		return nil, errors.NewBadRequest("datacenter is not an AWS datacenter")
 	}
@@ -438,7 +435,6 @@ func listAWSVPCS(accessKeyID, secretAccessKey string, assumeRoleARN string, assu
 			Ipv6CidrBlockAssociationSet: Ipv6CidrBlocList,
 			CidrBlockAssociationSet:     cidrBlockList,
 		})
-
 	}
 
 	return vpcs, err

@@ -71,8 +71,8 @@ func Add(ctx context.Context,
 	clientProvider UserClusterClientProvider,
 	log *zap.SugaredLogger,
 	workerName string,
-	numWorkers int) error {
-
+	numWorkers int,
+) error {
 	workerSelector, err := workerlabel.LabelSelector(workerName)
 	if err != nil {
 		return fmt.Errorf("failed to build worker-name selector: %w", err)
@@ -138,7 +138,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, constraintTemplate *kubermaticv1.ConstraintTemplate) error {
-
 	if constraintTemplate.DeletionTimestamp != nil {
 		if !kuberneteshelper.HasFinalizer(constraintTemplate, kubermaticapiv1.GatekeeperConstraintTemplateCleanupFinalizer) {
 			return nil
@@ -188,8 +187,8 @@ func (r *reconciler) syncAllClusters(
 	ctx context.Context,
 	log *zap.SugaredLogger,
 	constraintTemplate *kubermaticv1.ConstraintTemplate,
-	action func(userClusterClient ctrlruntimeclient.Client, ct *kubermaticv1.ConstraintTemplate) error) error {
-
+	action func(userClusterClient ctrlruntimeclient.Client, ct *kubermaticv1.ConstraintTemplate) error,
+) error {
 	clusterList, err := r.getClustersForConstraintTemplate(ctx, constraintTemplate)
 	if err != nil {
 		return fmt.Errorf("failed listing clusters: %w", err)

@@ -205,7 +205,6 @@ func (r *Reconciler) cleanupJobs(ctx context.Context) {
 
 	for _, job := range jobs.Items {
 		if job.Status.Succeeded >= 1 && (job.Status.CompletionTime != nil && time.Since(job.Status.CompletionTime.Time).Minutes() > 5) {
-
 			deletePropagationForeground := metav1.DeletePropagationForeground
 			delOpts := &ctrlruntimeclient.DeleteOptions{
 				PropagationPolicy: &deletePropagationForeground,

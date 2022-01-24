@@ -46,7 +46,6 @@ func NewConstraintTemplateProvider(createMasterImpersonatedClient ImpersonationC
 
 // List gets all constraint templates
 func (p *ConstraintTemplateProvider) List() (*kubermaticv1.ConstraintTemplateList, error) {
-
 	constraintTemplates := &kubermaticv1.ConstraintTemplateList{}
 	if err := p.clientPrivileged.List(context.Background(), constraintTemplates); err != nil {
 		return nil, fmt.Errorf("failed to list constraint templates: %w", err)
@@ -57,7 +56,6 @@ func (p *ConstraintTemplateProvider) List() (*kubermaticv1.ConstraintTemplateLis
 
 // Get gets a constraint template
 func (p *ConstraintTemplateProvider) Get(name string) (*kubermaticv1.ConstraintTemplate, error) {
-
 	constraintTemplate := &kubermaticv1.ConstraintTemplate{}
 	if err := p.clientPrivileged.Get(context.Background(), types.NamespacedName{Name: name}, constraintTemplate); err != nil {
 		return nil, err
@@ -68,7 +66,6 @@ func (p *ConstraintTemplateProvider) Get(name string) (*kubermaticv1.ConstraintT
 
 // Create creates a constraint template
 func (p *ConstraintTemplateProvider) Create(ct *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error) {
-
 	if err := p.clientPrivileged.Create(context.Background(), ct); err != nil {
 		return nil, err
 	}
@@ -78,7 +75,6 @@ func (p *ConstraintTemplateProvider) Create(ct *kubermaticv1.ConstraintTemplate)
 
 // Update updates a constraint template
 func (p *ConstraintTemplateProvider) Update(ct *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error) {
-
 	if err := p.clientPrivileged.Update(context.Background(), ct); err != nil {
 		return nil, err
 	}

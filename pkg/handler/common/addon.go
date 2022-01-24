@@ -233,7 +233,6 @@ func createAddon(ctx context.Context, userInfoGetter provider.UserInfoGetter, cl
 	}
 	addonProvider := ctx.Value(middleware.AddonProviderContextKey).(provider.AddonProvider)
 	return addonProvider.New(userInfo, cluster, name, rawVars, labels)
-
 }
 
 func getAddon(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticapiv1.Cluster, projectID, addonID string) (*kubermaticapiv1.Addon, error) {

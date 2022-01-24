@@ -192,7 +192,6 @@ func (p *SSHKeyProvider) List(project *kubermaticapiv1.Project, options *provide
 		}
 	}
 	return filteredKeys, nil
-
 }
 
 // Get returns a key with the given name

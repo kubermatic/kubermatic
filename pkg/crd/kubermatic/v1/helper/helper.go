@@ -44,8 +44,8 @@ func ClusterReconcileWrapper(
 	cluster *kubermaticv1.Cluster,
 	versions kubermatic.Versions,
 	conditionType kubermaticv1.ClusterConditionType,
-	reconcile func() (*reconcile.Result, error)) (*reconcile.Result, error) {
-
+	reconcile func() (*reconcile.Result, error),
+) (*reconcile.Result, error) {
 	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != workerName {
 		return nil, nil
 	}

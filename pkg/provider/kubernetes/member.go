@@ -85,7 +85,6 @@ func (p *ProjectMemberProvider) List(userInfo *provider.UserInfo, project *kuber
 	projectMembers := []*kubermaticapiv1.UserProjectBinding{}
 	for _, member := range allMembers.Items {
 		if member.Spec.ProjectID == project.Name {
-
 			// The provider should serve only regular users as a members.
 			// The ServiceAccount is another type of the user and should not be append to project members.
 			if p.isServiceAccountFunc(member.Spec.UserEmail) {

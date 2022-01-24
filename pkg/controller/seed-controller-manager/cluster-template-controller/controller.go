@@ -63,8 +63,8 @@ func Add(
 	log *zap.SugaredLogger,
 	workerName string,
 	namespace string,
-	numWorkers int) error {
-
+	numWorkers int,
+) error {
 	workerSelector, err := workerlabel.LabelSelector(workerName)
 	if err != nil {
 		return fmt.Errorf("failed to build worker-name selector: %w", err)
@@ -93,7 +93,6 @@ func Add(
 
 // Reconcile reconciles the kubermatic cluster template instance in the seed cluster
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-
 	log := r.log.With("request", request)
 	log.Debug("Reconciling")
 
@@ -109,7 +108,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	return reconcile.Result{}, err
-
 }
 
 func (r *reconciler) reconcile(ctx context.Context, instance *kubermaticv1.ClusterTemplateInstance, log *zap.SugaredLogger) error {
@@ -144,7 +142,6 @@ func (r *reconciler) reconcile(ctx context.Context, instance *kubermaticv1.Clust
 }
 
 func (r *reconciler) patchFinalizer(ctx context.Context, instance *kubermaticv1.ClusterTemplateInstance, remove bool) error {
-
 	kuberneteshelper.AddFinalizer(instance, finalizer)
 
 	if remove {
@@ -178,7 +175,6 @@ func (r *reconciler) createClusters(ctx context.Context, instance *kubermaticv1.
 
 		oldInstance := instance.DeepCopy()
 		for i := 0; i < int(instance.Spec.Replicas); i++ {
-
 			newCluster := genNewCluster(template, instance, r.workerName)
 
 			// Here partialCluster is used to copy credentials to the new cluster
@@ -228,7 +224,6 @@ func (r *reconciler) assignSSHKeyToCluster(ctx context.Context, clusterID string
 }
 
 func genNewCluster(template *kubermaticv1.ClusterTemplate, instance *kubermaticv1.ClusterTemplateInstance, workerName string) *kubermaticv1.Cluster {
-
 	name := rand.String(10)
 	newCluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{

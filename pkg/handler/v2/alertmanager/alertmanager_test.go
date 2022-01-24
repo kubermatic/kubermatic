@@ -173,7 +173,6 @@ func TestGetEndpoint(t *testing.T) {
 
 				test.CompareWithResult(t, resp, string(b))
 			}
-
 		})
 	}
 }

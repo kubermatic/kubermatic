@@ -139,7 +139,6 @@ func (c *projectController) ensureProjectOwner(ctx context.Context, project *kub
 				binding.Spec.Group == GenerateActualGroupNameFor(project.Name, OwnerGroupNamePrefix) {
 				projectOwnerMap.Insert(owner.Spec.Email)
 			}
-
 		}
 	}
 
@@ -191,7 +190,6 @@ func (c *projectController) ensureClusterRBACRoleForResources(ctx context.Contex
 		}
 
 		for _, groupPrefix := range AllGroupsPrefixes {
-
 			if projectResource.destination == destinationSeed {
 				for _, seedClusterRESTClient := range c.seedClientMap {
 					err := ensureClusterRBACRoleForResource(ctx, seedClusterRESTClient, groupPrefix, rmapping.Resource.Resource, gvk.Kind)
@@ -272,7 +270,6 @@ func ensureClusterRBACRoleForResource(ctx context.Context, c ctrlruntimeclient.C
 	if err := c.Get(ctx, key, &sharedExistingClusterRole); err != nil {
 		if kerrors.IsNotFound(err) {
 			return c.Create(ctx, generatedClusterRole)
-
 		}
 
 		return err
@@ -295,7 +292,6 @@ func ensureClusterRBACRoleBindingForResource(ctx context.Context, c ctrlruntimec
 	if err := c.Get(ctx, key, &sharedExistingClusterRoleBinding); err != nil {
 		if kerrors.IsNotFound(err) {
 			return c.Create(ctx, generatedClusterRoleBinding)
-
 		}
 
 		return err
@@ -338,7 +334,6 @@ func (c *projectController) ensureRBACRoleForResources(ctx context.Context) erro
 		}
 
 		for _, groupPrefix := range AllGroupsPrefixes {
-
 			if projectResource.destination == destinationSeed {
 				for _, seedClusterRESTClient := range c.seedClientMap {
 					err := ensureRBACRoleForResource(

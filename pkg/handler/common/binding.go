@@ -231,7 +231,6 @@ func UnbindUserFromRoleBindingEndpoint(ctx context.Context, userInfoGetter provi
 }
 
 func UnbindUserFromClusterRoleBindingEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterRoleUser apiv1.ClusterRoleUser, projectID, clusterID, roleID string) (interface{}, error) {
-
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
 	cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, nil)
@@ -361,7 +360,6 @@ func convertInternalRoleBindingToExternal(clusterRole *rbacv1.RoleBinding) *apiv
 
 // generateRBACRoleBinding creates role binding
 func generateRBACRoleBinding(ctx context.Context, client ctrlruntimeclient.Client, namespace, roleName string) (*rbacv1.RoleBinding, error) {
-
 	roleBinding := &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s:%s", rand.String(10), roleName),

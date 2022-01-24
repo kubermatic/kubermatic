@@ -90,7 +90,6 @@ func TestAutomaticUpdate(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-
 			updateVersion, err := tc.manager.AutomaticControlplaneUpdate(tc.versionFrom, tc.clusterType)
 
 			if len(tc.expectedError) > 0 {
@@ -100,9 +99,7 @@ func TestAutomaticUpdate(t *testing.T) {
 				if tc.expectedError != err.Error() {
 					t.Fatalf("Expected error: %s got %v", tc.expectedError, err)
 				}
-
 			} else {
-
 				if err != nil {
 					t.Fatalf("Unexpected error: %v", err)
 				}
@@ -262,7 +259,6 @@ func TestProviderIncompatibilitiesVersions(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-
 			availableVersions, err := tc.manager.GetVersionsV2(tc.clusterType, tc.provider, tc.conditions...)
 			if err != nil {
 				t.Fatalf("unexpected error %s", err)
@@ -421,7 +417,6 @@ func TestProviderIncompatibilitiesUpdate(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-
 			availableVersions, err := tc.manager.GetPossibleUpdates(tc.fromVersion, tc.clusterType, tc.provider, tc.conditions...)
 			if err != nil {
 				t.Fatalf("unexpected error %s", err)

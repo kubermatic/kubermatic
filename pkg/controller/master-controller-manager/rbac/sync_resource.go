@@ -389,7 +389,6 @@ func (c *resourcesController) ensureRBACRoleForNamedResource(ctx context.Context
 
 func (c *resourcesController) ensureRBACRoleBindingForNamedResource(ctx context.Context, projectName string, resourceName string, gvk schema.GroupVersionKind, namespace string, object metav1.Object) error {
 	for _, groupPrefix := range AllGroupsPrefixes {
-
 		skip, _, err := shouldSkipRBACRoleBindingForNamedResource(projectName, resourceName, gvk, groupPrefix, namespace, object)
 		if err != nil {
 			return err
@@ -700,7 +699,6 @@ func shouldSkipRBACRoleForClusterNamespaceNamedResource(projectName string, clus
 
 // ensureClusterRBACRoleBindingForEtcdLauncher ensures the ClusterRoleBinding required to allow the etcd launcher to get Clusters on the Seed
 func (c *resourcesController) ensureClusterRBACRoleBindingForEtcdLauncher(ctx context.Context, resourceName, resourceKind, namespace, projectName string, object metav1.Object) error {
-
 	_, ok := object.(*kubermaticv1.Cluster)
 	if !ok {
 		return fmt.Errorf("ensureClusterRBACRoleBindingForEtcdLauncher called with non-cluster: %+v", object)

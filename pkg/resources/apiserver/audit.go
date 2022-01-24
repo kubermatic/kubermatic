@@ -97,7 +97,6 @@ func AuditConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfig
 
 			// if the policyPreset field is empty, only update the ConfigMap on creation
 			if preset != "" || cm.Data == nil {
-
 				// if the preset is empty, set it to 'metadata' to generate a valid audit policy
 				if preset == "" {
 					preset = kubermaticv1.AuditPolicyMetadata

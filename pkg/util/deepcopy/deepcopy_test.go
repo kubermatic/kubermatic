@@ -25,7 +25,6 @@ import (
 )
 
 func TestStringInterfaceMapCopy(t *testing.T) {
-
 	testcases := []struct {
 		name           string
 		copyFrom       map[string]interface{}
@@ -54,20 +53,14 @@ func TestStringInterfaceMapCopy(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-
 			err := deepcopy.StringInterfaceMapCopy(tc.copyFrom, tc.copyTo)
-			if err != nil {
-				if tc.expectedErr != nil {
-
-				} else {
-					t.Fatal(err)
-				}
+			if err != nil && tc.expectedErr == nil {
+				t.Fatal(err)
 			}
 
 			if diff := deep.Equal(tc.copyFrom, tc.expectedResult); diff != nil {
 				t.Errorf("Got unexpected difference in maps. Diff to expected: %v", diff)
 			}
-
 		})
 	}
 }

@@ -67,7 +67,6 @@ func HetznerSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGett
 	}
 
 	return HetznerSize(ctx, settings.Spec.MachineDeploymentVMResourceQuota, hetznerToken)
-
 }
 
 func HetznerSize(ctx context.Context, quota kubermaticv1.MachineDeploymentVMResourceQuota, token string) (apiv1.HetznerSizeList, error) {

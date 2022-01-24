@@ -134,7 +134,6 @@ func KubePublicRoleCreator() reconciling.NamedRoleCreatorGetter {
 				},
 			}
 			return r, nil
-
 		}
 	}
 }

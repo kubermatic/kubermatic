@@ -108,7 +108,6 @@ func TestVsphereEndpoint(t *testing.T) {
 			compareJSON(t, res, tc.ExpectedResponse)
 		})
 	}
-
 }
 
 func (v *vSphereMock) buildVSphereDatacenter() provider.SeedsGetter {

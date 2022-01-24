@@ -609,7 +609,6 @@ func TestListRoleNmaes(t *testing.T) {
 			wrappedExpectedRoles := test.NewRoleNameSliceWrapper(tc.expectedResponse)
 			wrappedExpectedRoles.Sort()
 			actualRoles.EqualOrDie(wrappedExpectedRoles, t)
-
 		})
 	}
 }

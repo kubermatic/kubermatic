@@ -108,7 +108,6 @@ func getCredentials(dc *kubermaticv1.DatacenterSpecNutanix, cloud *kubermaticv1.
 	}
 
 	return creds, nil
-
 }
 
 func getClientSet(dc *kubermaticv1.DatacenterSpecNutanix, cloud *kubermaticv1.NutanixCloudSpec, secretKeyGetter provider.SecretKeySelectorValueFunc) (*ClientSet, error) {

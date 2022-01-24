@@ -100,8 +100,8 @@ func Add(ctx context.Context,
 	log *zap.SugaredLogger,
 	workerName string,
 	namespace string,
-	numWorkers int) error {
-
+	numWorkers int,
+) error {
 	workerSelector, err := workerlabel.LabelSelector(workerName)
 	if err != nil {
 		return fmt.Errorf("failed to build worker-name selector: %w", err)
@@ -167,7 +167,6 @@ func ByLabel(key string) predicate.Funcs {
 // Reconcile reconciles the kubermatic constraints in the seed cluster and syncs them to all user clusters namespace
 // which have opa integration enabled
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-
 	log := r.log.With("request", request)
 	log.Debug("Reconciling")
 
@@ -222,7 +221,6 @@ func (r *reconciler) patchFinalizer(ctx context.Context, constraint *kubermaticv
 }
 
 func (r *reconciler) reconcile(ctx context.Context, constraint *kubermaticv1.Constraint, log *zap.SugaredLogger) error {
-
 	clusterList := &kubermaticv1.ClusterList{}
 	if err := r.seedClient.List(ctx, clusterList, &ctrlruntimeclient.ListOptions{LabelSelector: r.workerNameLabelSelector}); err != nil {
 		return fmt.Errorf("failed listing clusters: %w", err)
@@ -235,7 +233,6 @@ func (r *reconciler) reconcile(ctx context.Context, constraint *kubermaticv1.Con
 
 	// constraint deletion
 	if !constraint.DeletionTimestamp.IsZero() {
-
 		if !kuberneteshelper.HasFinalizer(constraint, finalizer) {
 			return nil
 		}
@@ -284,9 +281,7 @@ func (r *reconciler) ensureConstraint(ctx context.Context, log *zap.SugaredLogge
 }
 
 func (r *reconciler) cleanupConstraint(ctx context.Context, log *zap.SugaredLogger, constraint *kubermaticv1.Constraint, clusterList []kubermaticv1.Cluster) error {
-
 	if err := r.syncAllClustersNS(ctx, log, constraint, clusterList, func(seedClient ctrlruntimeclient.Client, constraint *kubermaticv1.Constraint, namespace string) error {
-
 		log := log.With("constraint", constraint)
 
 		constraint = &kubermaticv1.Constraint{
@@ -304,8 +299,8 @@ func (r *reconciler) cleanupConstraint(ctx context.Context, log *zap.SugaredLogg
 
 		log.Debugw("cleanup processing:", namespace)
 		err = seedClient.Delete(ctx, constraint)
-		return ctrlruntimeclient.IgnoreNotFound(err)
 
+		return ctrlruntimeclient.IgnoreNotFound(err)
 	}); err != nil {
 		return err
 	}
@@ -322,10 +317,9 @@ func (r *reconciler) syncAllClustersNS(
 	log *zap.SugaredLogger,
 	constraint *kubermaticv1.Constraint,
 	clusterList []kubermaticv1.Cluster,
-	actionFunc func(seedClient ctrlruntimeclient.Client, constraint *kubermaticv1.Constraint, namespace string) error) error {
-
+	actionFunc func(seedClient ctrlruntimeclient.Client, constraint *kubermaticv1.Constraint, namespace string) error,
+) error {
 	for _, userCluster := range clusterList {
-
 		clusterName := userCluster.Spec.HumanReadableName
 
 		// cluster Validation
@@ -340,7 +334,6 @@ func (r *reconciler) syncAllClustersNS(
 		}
 
 		if isOPAEnabled(&userCluster) {
-
 			if err := actionFunc(r.seedClient, constraint, userCluster.Status.NamespaceName); err != nil {
 				return fmt.Errorf("failed syncing constraint for cluster %s namespace: %w", clusterName, err)
 			}

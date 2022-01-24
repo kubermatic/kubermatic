@@ -254,7 +254,6 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 			projects = append(projects, common.ConvertInternalProjectToExternal(projectInternal, projectOwners, clustersNumber))
-
 		}
 
 		if len(errorList) > 0 {
@@ -429,7 +428,6 @@ type updateRq struct {
 
 // validate validates updateProject request
 func (r updateRq) validate() error {
-
 	if len(r.ProjectID) == 0 {
 		return fmt.Errorf("the id of the project cannot be empty")
 	}

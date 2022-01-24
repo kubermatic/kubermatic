@@ -228,7 +228,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			// All is well, requeue in addonEnforceInterval minutes. We do this to enforce default addons and prevent cluster admins from disabling them.
 			result.RequeueAfter = time.Duration(r.addonEnforceInterval) * time.Minute
 		}
-
 	}
 	return *result, err
 }

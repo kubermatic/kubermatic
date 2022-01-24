@@ -50,7 +50,6 @@ type Reconciler struct {
 }
 
 func Add(mgr manager.Manager, overwriteRegistry string, updateWindow kubermaticv1.UpdateWindow, clusterIsPaused userclustercontrollermanager.IsPausedChecker) error {
-
 	reconciler := &Reconciler{
 		Client:            mgr.GetClient(),
 		overwriteRegistry: overwriteRegistry,

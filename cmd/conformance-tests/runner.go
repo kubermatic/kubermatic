@@ -1187,7 +1187,6 @@ func (r *testRunner) getGinkgoRuns(
 	binRoot := path.Join(versionRoot, "/platforms/linux/amd64")
 	var ginkgoRuns []*ginkgoRun
 	for _, run := range runs {
-
 		reportsDir := path.Join("/tmp", scenario.Name(), run.name)
 		env := []string{
 			// `kubectl diff` needs to find /usr/bin/diff

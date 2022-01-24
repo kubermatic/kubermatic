@@ -90,7 +90,6 @@ func getKvKubeConfigFromCredentials(ctx context.Context, projectProvider provide
 }
 
 func KubeVirtVMIPresets(kubeconfig string) (apiv2.VirtualMachineInstancePresetList, error) {
-
 	kvClient, _, err := NewKubeVirtClientSet(kubeconfig)
 	if err != nil {
 		return nil, err
@@ -167,7 +166,6 @@ func newAPIStorageClass(sc *storagev1.StorageClass) *apiv2.StorageClass {
 }
 
 func KubeVirtStorageClasses(kubeconfig string) (apiv2.StorageClassList, error) {
-
 	_, cli, err := NewKubeVirtClientSet(kubeconfig)
 	if err != nil {
 		return nil, err

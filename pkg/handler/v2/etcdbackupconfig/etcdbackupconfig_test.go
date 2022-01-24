@@ -240,7 +240,6 @@ func TestGetEndpoint(t *testing.T) {
 
 				test.CompareWithResult(t, resp, string(b))
 			}
-
 		})
 	}
 }
@@ -337,7 +336,6 @@ func TestListEndpoint(t *testing.T) {
 
 				etcdBackupConfigs.EqualOrDie(expectedEtcdBackupConfigs, t)
 			}
-
 		})
 	}
 }
@@ -575,7 +573,6 @@ func TestPatchEndpoint(t *testing.T) {
 
 				test.CompareWithResult(t, resp, string(b))
 			}
-
 		})
 	}
 }
@@ -748,7 +745,6 @@ func TestProjectListEndpoint(t *testing.T) {
 
 				etcdBackupConfigs.EqualOrDie(expectedEtcdBackupConfigs, t)
 			}
-
 		})
 	}
 }

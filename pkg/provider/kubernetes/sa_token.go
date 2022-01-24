@@ -39,7 +39,6 @@ const (
 
 // NewServiceAccountProvider returns a service account provider
 func NewServiceAccountTokenProvider(impersonationClient ImpersonationClient, clientPrivileged ctrlruntimeclient.Client) (*ServiceAccountTokenProvider, error) {
-
 	return &ServiceAccountTokenProvider{
 		kubernetesImpersonationClient: impersonationClient,
 		kubernetesClientPrivileged:    clientPrivileged,
@@ -134,7 +133,6 @@ func (p *ServiceAccountTokenProvider) List(userInfo *provider.UserInfo, project 
 
 	allSecrets := &v1.SecretList{}
 	if err := p.kubernetesClientPrivileged.List(context.Background(), allSecrets, ctrlruntimeclient.MatchingLabels{kubermaticv1.ProjectIDLabelKey: project.Name}); err != nil {
-
 		return nil, err
 	}
 
@@ -200,7 +198,6 @@ func (p *ServiceAccountTokenProvider) ListUnsecured(options *provider.ServiceAcc
 	}
 	allSecrets := &v1.SecretList{}
 	if err := p.kubernetesClientPrivileged.List(context.Background(), allSecrets, ctrlruntimeclient.MatchingLabelsSelector{Selector: labelSelector}); err != nil {
-
 		return nil, err
 	}
 	allTokens := []*v1.Secret{}

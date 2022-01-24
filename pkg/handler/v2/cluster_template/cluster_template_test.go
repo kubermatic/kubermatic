@@ -420,7 +420,6 @@ func TestGetClusterTemplates(t *testing.T) {
 			}
 
 			test.CompareWithResult(t, res, tc.ExpectedResponse)
-
 		})
 	}
 }
@@ -536,7 +535,6 @@ func TestDeleteClusterTemplates(t *testing.T) {
 			}
 
 			test.CompareWithResult(t, res, tc.ExpectedResponse)
-
 		})
 	}
 }
@@ -596,7 +594,6 @@ func TestCreateClusterTemplateInstance(t *testing.T) {
 			expectedResponse := fmt.Sprintf(tc.ExpectedResponse, actualClusterTemplateInstance.Name)
 
 			test.CompareWithResult(t, res, expectedResponse)
-
 		})
 	}
 }

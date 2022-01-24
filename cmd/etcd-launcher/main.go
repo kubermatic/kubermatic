@@ -495,7 +495,6 @@ func (e *etcdCluster) getClientWithEndpoints(eps []string) (*client.Client, erro
 		time.Sleep(5 * time.Second)
 	}
 	return nil, fmt.Errorf("failed to establish client connection: %w", err)
-
 }
 
 func (e *etcdCluster) listMembers(log *zap.SugaredLogger) ([]*etcdserverpb.Member, error) {

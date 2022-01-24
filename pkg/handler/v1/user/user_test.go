@@ -271,7 +271,6 @@ func TestGetUsersForProject(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestDeleteUserFromProject(t *testing.T) {
@@ -933,7 +932,6 @@ func TestNewUser(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint: %v", err)

@@ -342,7 +342,6 @@ func (r *Reconciler) ensurePendingBackupIsScheduled(ctx context.Context, backupC
 			corev1.ConditionFalse,
 			"TooManyBackups",
 			"tracking too many backups; not scheduling new ones") {
-
 			// condition changed, need to persist and generate an event
 			if err := r.Update(ctx, backupConfig); err != nil {
 				return nil, errors.Wrap(err, "failed to update backup config")
@@ -351,14 +350,12 @@ func (r *Reconciler) ensurePendingBackupIsScheduled(ctx context.Context, backupC
 		}
 
 		return nil, nil
-
 	} else if r.setBackupConfigCondition(
 		backupConfig,
 		kubermaticv1.EtcdBackupConfigConditionSchedulingActive,
 		corev1.ConditionTrue,
 		"",
 		"") {
-
 		// condition changed, need to persist and generate an event
 		if err := r.Update(ctx, backupConfig); err != nil {
 			return nil, errors.Wrap(err, "failed to update backup config")
@@ -384,7 +381,6 @@ func (r *Reconciler) ensurePendingBackupIsScheduled(ctx context.Context, backupC
 		backupToSchedule.ScheduledTime = &metav1.Time{Time: r.clock.Now()}
 		backupToSchedule.BackupName = backupConfig.Name
 		requeueAfter = 0
-
 	} else {
 		// compute the pending (i.e. latest past) and the next (i.e. earliest future) backup time,
 		// based on the most recent scheduled backup or, as a fallback, the backupConfig's creation time
@@ -496,7 +492,6 @@ func (r *Reconciler) startPendingBackupJobs(ctx context.Context, backupConfig *k
 						returnReconcile = minReconcile(returnReconcile, &reconcile.Result{RequeueAfter: assumedJobRuntime})
 					}
 				}
-
 			} else if backup.BackupPhase == "" && r.clock.Now().Sub(backup.ScheduledTime.Time) >= 0 && backupConfig.DeletionTimestamp == nil {
 				job := r.backupJob(backupConfig, cluster, backup, destination)
 				if err := r.Create(ctx, job); err != nil && !kerrors.IsAlreadyExists(err) {
@@ -682,7 +677,6 @@ func (r *Reconciler) deleteFinishedBackupJobs(ctx context.Context, backupConfig 
 			if age < retentionTime {
 				// don't delete the job yet, but reconcile when the time has come to delete it
 				returnReconcile = minReconcile(returnReconcile, &reconcile.Result{RequeueAfter: retentionTime - age})
-
 			} else {
 				// delete job
 				job := &batchv1.Job{}
@@ -700,7 +694,6 @@ func (r *Reconciler) deleteFinishedBackupJobs(ctx context.Context, backupConfig 
 				case !kerrors.IsNotFound(err):
 					return nil, errors.Wrapf(err, "backup %s: failed to get backup job %s", backup.BackupName, backup.JobName)
 				}
-
 			}
 		}
 
@@ -718,7 +711,6 @@ func (r *Reconciler) deleteFinishedBackupJobs(ctx context.Context, backupConfig 
 			if age < retentionTime {
 				// don't delete the job yet, but reconcile when the time has come to delete it
 				returnReconcile = minReconcile(returnReconcile, &reconcile.Result{RequeueAfter: retentionTime - age})
-
 			} else {
 				// delete job
 				job := &batchv1.Job{}
@@ -780,7 +772,6 @@ func (r *Reconciler) handleFinalization(ctx context.Context, backupConfig *kuber
 			}
 			backupConfig.Status.CleanupRunning = true
 			canRemoveFinalizer = false
-
 		} else {
 			// job was started before. Re-acquire it and check completion status
 			cleanupJob := &batchv1.Job{}
@@ -805,7 +796,6 @@ func (r *Reconciler) handleFinalization(ctx context.Context, backupConfig *kuber
 					// job still running
 					canRemoveFinalizer = false
 				}
-
 			} else if !kerrors.IsNotFound(err) {
 				return nil, errors.Wrapf(err, "error getting cleanup job previously started (%v)", cleanupJobName)
 			}

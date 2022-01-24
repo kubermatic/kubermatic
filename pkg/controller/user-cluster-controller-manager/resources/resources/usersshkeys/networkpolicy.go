@@ -36,7 +36,6 @@ func NetworkPolicyCreator(k8sApiIP string, k8sApiPort int, k8sServiceApi string)
 		protoTcp := v1.ProtocolTCP
 
 		return "user-ssh-key-agent", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
-
 			np.Spec = networkingv1.NetworkPolicySpec{
 				PodSelector: metav1.LabelSelector{
 					MatchLabels: map[string]string{resources.AppLabelKey: "user-ssh-keys-agent"},

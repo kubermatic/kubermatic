@@ -273,7 +273,6 @@ func CopyCredentials(data CredentialsData, cluster *kubermaticv1.Cluster) error 
 		cluster.Spec.Cloud.Openstack.ApplicationCredentialSecret = credentials.Openstack.ApplicationCredentialSecret
 		cluster.Spec.Cloud.Openstack.Password = credentials.Openstack.Password
 		cluster.Spec.Cloud.Openstack.Username = credentials.Openstack.Username
-
 	}
 	if data.Cluster().Spec.Cloud.Packet != nil {
 		if credentials.Packet, err = GetPacketCredentials(data); err != nil {

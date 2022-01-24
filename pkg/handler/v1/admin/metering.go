@@ -32,7 +32,6 @@ import (
 // CreateOrUpdateMeteringCredentials creates or updates metering tool SecretReq.
 func CreateOrUpdateMeteringCredentials(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
 			return nil, err
@@ -52,7 +51,6 @@ func CreateOrUpdateMeteringCredentials(userInfoGetter provider.UserInfoGetter, s
 // CreateOrUpdateMeteringConfigurations configures kkp metering tool.
 func CreateOrUpdateMeteringConfigurations(userInfoGetter provider.UserInfoGetter, masterClient client.Client) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
 			return nil, err
@@ -72,7 +70,6 @@ func CreateOrUpdateMeteringConfigurations(userInfoGetter provider.UserInfoGetter
 // ListMeteringReportsEndpoint lists available reports
 func ListMeteringReportsEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
 			return nil, err
@@ -93,7 +90,6 @@ func ListMeteringReportsEndpoint(userInfoGetter provider.UserInfoGetter, seedsGe
 // GetMeteringReportEndpoint get a presigned url to download specific report.
 func GetMeteringReportEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
 			return nil, err

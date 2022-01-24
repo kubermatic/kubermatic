@@ -574,7 +574,6 @@ func createGKENodePool(ctx context.Context, cluster *kubermaticapiv1.ExternalClu
 }
 
 func createNewGKECluster(ctx context.Context, gkeCloudSpec *apiv2.GKECloudSpec) error {
-
 	svc, project, err := gke.ConnectToContainerService(gkeCloudSpec.ServiceAccount)
 	if err != nil {
 		return err

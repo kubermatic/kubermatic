@@ -131,7 +131,6 @@ func CreateEndpoint(
 
 		// SSH check
 		if len(req.Body.UserSSHKeys) > 0 && req.Body.Scope == kubermaticv1.ProjectClusterTemplateScope {
-
 			projectSSHKeys, err := sshKeyProvider.List(project, nil)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)

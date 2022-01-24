@@ -430,7 +430,6 @@ func convertInternalToAPIEtcdBackupConfig(ebc *kubermaticv1.EtcdBackupConfig) *a
 }
 
 func convertAPIToInternalEtcdBackupConfig(name string, ebcSpec *apiv2.EtcdBackupConfigSpec, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdBackupConfig, error) {
-
 	clusterObjectRef, err := reference.GetReference(scheme.Scheme, cluster)
 	if err != nil {
 		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("error getting cluster object reference: %v", err))
@@ -561,7 +560,6 @@ func getAdminUserInfoPrivilegedEtcdBackupConfigProvider(ctx context.Context, use
 }
 
 func getUserInfoEtcdBackupConfigProvider(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID string) (*provider.UserInfo, provider.EtcdBackupConfigProvider, error) {
-
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return nil, nil, err

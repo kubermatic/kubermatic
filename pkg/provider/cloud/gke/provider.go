@@ -125,7 +125,6 @@ func GetGKEClusterStatus(ctx context.Context, secretKeySelector provider.SecretK
 		State:         convertGKEStatus(gkeCluster.Status),
 		StatusMessage: gkeCluster.StatusMessage,
 	}, nil
-
 }
 
 func ListGKEClusters(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ExternalClusterProvider, projectID, sa string) (apiv2.GKEClusterList, error) {

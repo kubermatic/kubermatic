@@ -64,7 +64,6 @@ func createEKSCluster(ctx context.Context, name string, userInfoGetter provider.
 }
 
 func patchEKSCluster(old, new *apiv2.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticapiv1.ExternalClusterCloudSpec) (*apiv2.ExternalCluster, error) {
-
 	accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(*cloudSpec, secretKeySelector)
 	if err != nil {
 		return nil, err
@@ -140,7 +139,6 @@ func getEKSNodeGroups(cluster *kubermaticapiv1.ExternalCluster, secretKeySelecto
 		}
 		nodeGroup := nodeGroupOutput.Nodegroup
 		machineDeployments = append(machineDeployments, createMachineDeploymentFromEKSNodePoll(nodeGroup, readyReplicas))
-
 	}
 
 	return machineDeployments, err
@@ -278,7 +276,6 @@ func upgradeEKSNodeGroup(client *awsprovider.ClientSet, clusterName, nodeGroupNa
 }
 
 func resizeEKSNodeGroup(client *awsprovider.ClientSet, clusterName, nodeGroupName string, currentSize, desiredSize int64) (*eks.UpdateNodegroupConfigOutput, error) {
-
 	nodeGroupInput := eks.DescribeNodegroupInput{
 		ClusterName:   &clusterName,
 		NodegroupName: &nodeGroupName,
@@ -310,7 +307,6 @@ func resizeEKSNodeGroup(client *awsprovider.ClientSet, clusterName, nodeGroupNam
 
 	case desiredSize < minSize:
 		newScalingConfig.MinSize = &desiredSize
-
 	}
 
 	configInput := eks.UpdateNodegroupConfigInput{
@@ -328,7 +324,6 @@ func resizeEKSNodeGroup(client *awsprovider.ClientSet, clusterName, nodeGroupNam
 }
 
 func getEKSNodes(cluster *kubermaticapiv1.ExternalCluster, nodeGroupName string, clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterNode, error) {
-
 	var nodesV1 []apiv2.ExternalClusterNode
 
 	nodes, err := clusterProvider.ListNodes(cluster)

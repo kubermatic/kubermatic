@@ -96,7 +96,6 @@ func GetAdminKubeconfigEndpoint(ctx context.Context, userInfoGetter provider.Use
 }
 
 func GetKubeconfigEndpoint(cluster *kubermaticv1.ExternalCluster, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (interface{}, error) {
-
 	filePrefix := "external-cluster"
 
 	kubeconfigReference := cluster.Spec.KubeconfigReference
@@ -439,7 +438,6 @@ func (r CreateOIDCKubeconfigReq) GetProjectID() string {
 
 // setCookie add cookie with random string value
 func setCookie(w http.ResponseWriter, nonce string, secureMode bool, maxAge int) error {
-
 	encoded, err := secureCookie.Encode(csrfCookieName, nonce)
 	if err != nil {
 		return fmt.Errorf("the encode cookie failed: %w", err)

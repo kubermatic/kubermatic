@@ -125,7 +125,6 @@ func TestDeleteSSHKey(t *testing.T) {
 			if res.Code != tc.HTTPStatus {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
-
 		})
 	}
 }

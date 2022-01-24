@@ -803,7 +803,6 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
 			// validate if deletion was successful
 			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v2/projects/%s/clusters/%s", tc.ProjectToSync, tc.ClusterToSync), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
@@ -2287,7 +2286,6 @@ func TestRevokeClusterAdminTokenEndpoint(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func genUser(name, email string, isAdmin bool) *kubermaticv1.User {

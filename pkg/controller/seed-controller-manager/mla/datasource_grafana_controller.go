@@ -309,7 +309,6 @@ func (r *datasourceGrafanaController) reconcileDatasource(ctx context.Context, g
 			err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 	}
 	return nil
-
 }
 
 func (r *datasourceGrafanaController) ensureDeployments(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData, settings *kubermaticv1.MLAAdminSetting) error {
@@ -433,5 +432,4 @@ func (r *datasourceGrafanaController) mlaGatewayHealth(ctx context.Context, clus
 		}
 	}
 	return nil
-
 }

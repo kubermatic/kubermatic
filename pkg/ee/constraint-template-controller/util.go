@@ -39,8 +39,8 @@ import (
 
 // GetClustersForConstraintTemplate gets clusters for the CT by using the CT selector to filter out unselected clusters
 func GetClustersForConstraintTemplate(ctx context.Context, client ctrlruntimeclient.Client,
-	ct *kubermaticv1.ConstraintTemplate, workerNamesLabelSelector labels.Selector) (*kubermaticv1.ClusterList, error) {
-
+	ct *kubermaticv1.ConstraintTemplate, workerNamesLabelSelector labels.Selector,
+) (*kubermaticv1.ClusterList, error) {
 	ctLabelSelector, err := v1.LabelSelectorAsSelector(&ct.Spec.Selector.LabelSelector)
 	if err != nil {
 		return nil, fmt.Errorf("error converting Constraint Template label selector (%v) to a kubernetes selector: %w", ct.Spec.Selector.LabelSelector, err)

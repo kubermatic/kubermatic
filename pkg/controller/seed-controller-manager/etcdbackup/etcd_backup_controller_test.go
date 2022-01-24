@@ -1942,8 +1942,8 @@ func TestMultipleBackupDestination(t *testing.T) {
 			expectedErr:        fmt.Sprintf("can't find backup destination %q in Seed %q", "missing", test.GenTestSeed().Name),
 		},
 	}
-	for _, tc := range testCases {
 
+	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			initObjs := []client.Object{
 				genTestCluster(),

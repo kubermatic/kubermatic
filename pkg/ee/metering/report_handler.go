@@ -72,7 +72,6 @@ func ListReports(ctx context.Context, req interface{}, seedsGetter provider.Seed
 	}
 
 	for _, seed := range seedsMap {
-
 		seedClient, err := seedClientGetter(seed)
 		if err != nil {
 			return nil, err
@@ -84,7 +83,6 @@ func ListReports(ctx context.Context, req interface{}, seedsGetter provider.Seed
 		}
 
 		return reports, nil
-
 	}
 
 	return nil, nil
@@ -106,7 +104,6 @@ func GetReport(ctx context.Context, req interface{}, seedsGetter provider.SeedsG
 	}
 
 	for _, seed := range seedsMap {
-
 		seedClient, err := seedClientGetter(seed)
 		if err != nil {
 			return "", err
@@ -195,7 +192,6 @@ func getS3DataFromSeed(ctx context.Context, seedClient ctrlruntimeclient.Client)
 	s3bucket := string(s3.Data[Bucket])
 
 	return mc, s3bucket, nil
-
 }
 
 // swagger:parameters listMeteringReports

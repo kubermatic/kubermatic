@@ -121,7 +121,6 @@ func (g *gcp) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 
 // CleanUpCloudProvider removes firewall rules and related finalizer.
 func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-
 	serviceAccount, err := GetCredentialsForCluster(cluster.Spec.Cloud, g.secretKeySelector)
 	if err != nil {
 		return nil, err

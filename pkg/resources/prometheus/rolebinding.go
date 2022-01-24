@@ -44,5 +44,4 @@ func RoleBindingCreator(clusterNamespace string) reconciling.NamedRoleBindingCre
 			return rb, nil
 		}
 	}
-
 }

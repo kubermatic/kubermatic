@@ -205,7 +205,6 @@ func TestListPresetEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
 			providercommon.NewKubeVirtClientSet = func(kubeconfig string) (kubevirtv1.Interface, kubernetesclientset.Interface, error) {
 				return kubevirtclifake.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtObjects...)...), fakerestclient.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtK8sObjects...)...), nil
 			}
@@ -301,7 +300,6 @@ func TestListPresetNoCredentialsEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
 			providercommon.NewKubeVirtClientSet = func(kubeconfig string) (kubevirtv1.Interface, kubernetesclientset.Interface, error) {
 				return kubevirtclifake.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtObjects...)...), fakerestclient.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtK8sObjects...)...), nil
 			}
@@ -394,7 +392,6 @@ func TestListStorageClassEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
 			providercommon.NewKubeVirtClientSet = func(kubeconfig string) (kubevirtv1.Interface, kubernetesclientset.Interface, error) {
 				return kubevirtclifake.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtObjects...)...), fakerestclient.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtK8sObjects...)...), nil
 			}
@@ -492,7 +489,6 @@ func TestListStorageClassNoCredentialsEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
 			providercommon.NewKubeVirtClientSet = func(kubeconfig string) (kubevirtv1.Interface, kubernetesclientset.Interface, error) {
 				return kubevirtclifake.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtObjects...)...), fakerestclient.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtK8sObjects...)...), nil
 			}

@@ -41,7 +41,6 @@ import (
 const clusterTemplateName = "cluster-template-test"
 
 func TestReconcile(t *testing.T) {
-
 	testCases := []struct {
 		name                    string
 		requestName             string

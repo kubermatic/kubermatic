@@ -37,7 +37,6 @@ type CAGetter = func() (*triple.KeyPair, error)
 func ServingCertSecretCreator(caGetter CAGetter, secretName, commonName string, altNamesDNS []string, altNamesIP []net.IP) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return secretName, func(s *corev1.Secret) (*corev1.Secret, error) {
-
 			ca, err := caGetter()
 			if err != nil {
 				return nil, fmt.Errorf("failed to get CA: %w", err)

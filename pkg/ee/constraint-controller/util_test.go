@@ -152,10 +152,8 @@ func TestGetClustersForConstraint(t *testing.T) {
 			if !resultSetUnwanted.Equal(tc.expectedUnwantedClusters) {
 				t.Fatalf("received clusters differ from expected: diff: %s", diff.ObjectGoPrintSideBySide(resultSetUnwanted, tc.expectedUnwantedClusters))
 			}
-
 		})
 	}
-
 }
 
 func genCluster(name string, labels map[string]string, bringYourOwnProvider bool) *v1.Cluster {

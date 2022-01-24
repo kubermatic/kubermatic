@@ -59,8 +59,6 @@ func ServiceAccountKeyCreator() reconciling.NamedSecretCreatorGetter {
 			se.Data[resources.ServiceAccountKeySecretKey] = pem.EncodeToMemory(&privKeyBlock)
 			se.Data[resources.ServiceAccountKeyPublicKey] = pem.EncodeToMemory(&publicKeyBlock)
 			return se, nil
-
 		}
 	}
-
 }

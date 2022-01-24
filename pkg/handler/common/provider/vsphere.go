@@ -34,8 +34,8 @@ import (
 
 func VsphereNetworksWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter,
 	projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
-	seedsGetter provider.SeedsGetter, projectID, clusterID string, caBundle *x509.CertPool) (interface{}, error) {
-
+	seedsGetter provider.SeedsGetter, projectID, clusterID string, caBundle *x509.CertPool,
+) (interface{}, error) {
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
 	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
@@ -68,7 +68,6 @@ func VsphereNetworksWithClusterCredentialsEndpoint(ctx context.Context, userInfo
 		return nil, err
 	}
 	return GetVsphereNetworks(userInfo, seedsGetter, username, password, datacenterName, caBundle)
-
 }
 
 func GetVsphereNetworks(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter, username, password, datacenterName string, caBundle *x509.CertPool) ([]apiv1.VSphereNetwork, error) {
@@ -97,8 +96,8 @@ func GetVsphereNetworks(userInfo *provider.UserInfo, seedsGetter provider.SeedsG
 
 func VsphereFoldersWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter,
 	projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
-	seedsGetter provider.SeedsGetter, projectID, clusterID string, caBundle *x509.CertPool) (interface{}, error) {
-
+	seedsGetter provider.SeedsGetter, projectID, clusterID string, caBundle *x509.CertPool,
+) (interface{}, error) {
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
 	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
@@ -130,7 +129,6 @@ func VsphereFoldersWithClusterCredentialsEndpoint(ctx context.Context, userInfoG
 		return nil, err
 	}
 	return GetVsphereFolders(userInfo, seedsGetter, username, password, datacenterName, caBundle)
-
 }
 
 func GetVsphereFolders(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter, username, password, datacenterName string, caBundle *x509.CertPool) ([]apiv1.VSphereFolder, error) {

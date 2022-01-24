@@ -56,8 +56,8 @@ type reconciler struct {
 func Add(
 	masterMgr manager.Manager,
 	seedManagers map[string]manager.Manager,
-	log *zap.SugaredLogger) error {
-
+	log *zap.SugaredLogger,
+) error {
 	log = log.Named(ControllerName)
 	r := &reconciler{
 		log:          log,
@@ -86,7 +86,6 @@ func Add(
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-
 	log := r.log.With("resource", request.Name)
 	log.Debug("Processing")
 
@@ -137,7 +136,6 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 }
 
 func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, template *kubermaticv1.ClusterTemplate) error {
-
 	if kuberneteshelper.HasFinalizer(template, kubermaticapiv1.ClusterTemplateSeedCleanupFinalizer) {
 		if err := r.syncAllSeeds(log, template, func(seedClient ctrlruntimeclient.Client, template *kubermaticv1.ClusterTemplate) error {
 			err := seedClient.Delete(ctx, &kubermaticv1.ClusterTemplate{
@@ -180,7 +178,6 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 
 func (r *reconciler) syncAllSeeds(log *zap.SugaredLogger, template *kubermaticv1.ClusterTemplate, action func(seedClient ctrlruntimeclient.Client, template *kubermaticv1.ClusterTemplate) error) error {
 	for seedName, seedClient := range r.seedClients {
-
 		log := log.With("seed", seedName)
 
 		log.Debug("Reconciling cluster template with seed")

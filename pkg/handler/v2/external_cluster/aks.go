@@ -176,7 +176,6 @@ func getAKSNodePool(ctx context.Context, cluster *kubermaticapiv1.ExternalCluste
 }
 
 func getAKSMachineDeployment(poolProfile containerservice.ManagedClusterAgentPoolProfile, cluster *kubermaticapiv1.ExternalCluster, clusterProvider provider.ExternalClusterProvider) (*apiv2.ExternalClusterMachineDeployment, error) {
-
 	nodes, err := clusterProvider.ListNodes(cluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
@@ -243,7 +242,6 @@ func createMachineDeploymentFromAKSNodePoll(nodePool containerservice.ManagedClu
 }
 
 func getAKSNodes(cluster *kubermaticapiv1.ExternalCluster, nodePoolName string, clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterNode, error) {
-
 	var nodesV1 []apiv2.ExternalClusterNode
 
 	nodes, err := clusterProvider.ListNodes(cluster)

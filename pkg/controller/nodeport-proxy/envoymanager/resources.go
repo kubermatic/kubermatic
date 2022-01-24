@@ -275,7 +275,6 @@ func (sb *snapshotBuilder) makeSNIListener(fcs ...*envoylistenerv3.FilterChain) 
 }
 
 func (sb *snapshotBuilder) makeTunnelingVirtualHosts(service *corev1.Service) (vhs []*envoyroutev3.VirtualHost, ports sets.String) {
-
 	serviceKey := ServiceKey(service)
 	ports = sets.NewString()
 
@@ -611,9 +610,7 @@ func (sb *snapshotBuilder) makeInitialResources() (listeners []envoycachetype.Re
 // service/target port combination.
 // Based on:
 // https://github.com/kubernetes/ingress-nginx/blob/decc1346dd956a7f3edfc23c2547abbc75598e36/internal/ingress/controller/endpoints.go#L35
-func (sb *snapshotBuilder) getEndpoints(s *corev1.Service, port *corev1.ServicePort, proto corev1.Protocol,
-	eps *corev1.Endpoints) []*envoyendpointv3.LbEndpoint {
-
+func (sb *snapshotBuilder) getEndpoints(s *corev1.Service, port *corev1.ServicePort, proto corev1.Protocol, eps *corev1.Endpoints) []*envoyendpointv3.LbEndpoint {
 	var upsServers []*envoyendpointv3.LbEndpoint
 
 	if s == nil || port == nil {
@@ -629,7 +626,6 @@ func (sb *snapshotBuilder) getEndpoints(s *corev1.Service, port *corev1.ServiceP
 
 	for _, ss := range eps.Subsets {
 		for _, epPort := range ss.Ports {
-
 			if !reflect.DeepEqual(epPort.Protocol, proto) {
 				continue
 			}

@@ -34,7 +34,6 @@ import (
 func (r *reconciler) reconcile(ctx context.Context, constraint *kubermaticv1.Constraint, log *zap.SugaredLogger) error {
 	// constraint deletion
 	if constraint.Spec.Disabled {
-
 		if err := r.cleanupConstraint(ctx, constraint, log); err != nil {
 			return err
 		}

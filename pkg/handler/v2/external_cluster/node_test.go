@@ -92,7 +92,6 @@ func TestListNodesEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
 			// validate if deletion was successful
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/kubernetes/clusters/%s/nodes", tc.ProjectToSync, tc.ClusterToSync), strings.NewReader(""))
 			res := httptest.NewRecorder()
@@ -177,7 +176,6 @@ func TestGetNodeEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
 			// validate if deletion was successful
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/kubernetes/clusters/%s/nodes/%s", tc.ProjectToSync, tc.ClusterToSync, tc.NodeToSync), strings.NewReader(""))
 			res := httptest.NewRecorder()

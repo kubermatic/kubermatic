@@ -297,7 +297,6 @@ func convertInternalToAPIEtcdRestore(er *kubermaticv1.EtcdRestore) *apiv2.EtcdRe
 }
 
 func convertAPIToInternalEtcdRestore(name string, erSpec *apiv2.EtcdRestoreSpec, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdRestore, error) {
-
 	clusterObjectRef, err := reference.GetReference(scheme.Scheme, cluster)
 	if err != nil {
 		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("error getting cluster object reference: %v", err))
@@ -402,7 +401,6 @@ func getAdminUserInfoPrivilegedEtcdRestoreProvider(ctx context.Context, userInfo
 }
 
 func getUserInfoEtcdRestoreProvider(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID string) (*provider.UserInfo, provider.EtcdRestoreProvider, error) {
-
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return nil, nil, err

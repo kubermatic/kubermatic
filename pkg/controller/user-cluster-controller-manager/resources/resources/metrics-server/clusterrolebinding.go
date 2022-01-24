@@ -57,7 +57,6 @@ func ClusterRoleBindingResourceReaderCreator(isKonnectivityEnabled bool) reconci
 			return crb, nil
 		}
 	}
-
 }
 
 // ClusterRoleBindingAuthDelegatorCreator returns the ClusterRoleBinding required for the metrics server to create token review requests

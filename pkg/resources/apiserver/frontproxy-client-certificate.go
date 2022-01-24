@@ -36,5 +36,4 @@ func FrontProxyClientCertificateCreator(data frontProxyClientCertificateCreatorD
 		resources.ApiserverProxyClientCertificateCertSecretKey,
 		resources.ApiserverProxyClientCertificateKeySecretKey,
 		data.GetFrontProxyCA)
-
 }

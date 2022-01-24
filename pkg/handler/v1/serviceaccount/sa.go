@@ -200,7 +200,6 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 		currentGroup, err := memberMapper.MapUserToGroup(sa.Spec.Email, project.Name)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
-
 		}
 
 		newGroup := rbac.GenerateActualGroupNameFor(project.Name, saFromRequest.Group)
@@ -374,7 +373,6 @@ func DecodeAddReq(c context.Context, r *http.Request) (interface{}, error) {
 	prjReq, err := common.DecodeProjectRequest(c, r)
 	if err != nil {
 		return nil, err
-
 	}
 	req.ProjectReq = prjReq.(common.ProjectReq)
 
@@ -392,7 +390,6 @@ func DecodeUpdateReq(c context.Context, r *http.Request) (interface{}, error) {
 	prjReq, err := common.DecodeProjectRequest(c, r)
 	if err != nil {
 		return nil, err
-
 	}
 	req.ProjectReq = prjReq.(common.ProjectReq)
 
@@ -416,7 +413,6 @@ func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
 	prjReq, err := common.DecodeProjectRequest(c, r)
 	if err != nil {
 		return nil, err
-
 	}
 	req.ProjectReq = prjReq.(common.ProjectReq)
 

@@ -237,7 +237,6 @@ func reconcileCategoryAndValue(client *ClientSet, cluster *kubermaticv1.Cluster)
 
 	projectID, ok := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
 	if ok {
-
 		_, err = client.Prism.V3.GetCategoryKey(ProjectCategoryName)
 		if err != nil {
 			nutanixError, err := ParseNutanixError(err)

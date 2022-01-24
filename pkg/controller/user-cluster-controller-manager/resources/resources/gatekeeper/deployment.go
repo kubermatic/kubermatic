@@ -187,7 +187,6 @@ func AuditDeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc, re
 }
 
 func getControllerContainers(enableMutation bool, registryWithOverwrite registry.WithOverwriteFunc) []corev1.Container {
-
 	return []corev1.Container{{
 		Name:            controllerName,
 		Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryDocker), imageName, tag),
@@ -275,7 +274,6 @@ func getControllerContainers(enableMutation bool, registryWithOverwrite registry
 }
 
 func getAuditContainers(registryWithOverwrite registry.WithOverwriteFunc) []corev1.Container {
-
 	return []corev1.Container{{
 		Name:            auditName,
 		Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryDocker), imageName, tag),

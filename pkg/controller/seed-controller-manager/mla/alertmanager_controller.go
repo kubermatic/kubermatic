@@ -182,7 +182,6 @@ func (r *alertmanagerReconciler) Reconcile(ctx context.Context, request reconcil
 		result = &reconcile.Result{}
 	}
 	return *result, err
-
 }
 
 type alertmanagerController struct {
@@ -209,7 +208,6 @@ func newAlertmanagerController(
 }
 
 func (r *alertmanagerController) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
-
 	mlaEnabled := cluster.Spec.MLA != nil && (cluster.Spec.MLA.MonitoringEnabled || cluster.Spec.MLA.LoggingEnabled)
 	// Currently, we don't have a dedicated flag for enabling/disabling Alertmanager, and Alertmanager will be enabled
 	// or disabled based on MLA flag.
@@ -414,7 +412,6 @@ func (r *alertmanagerController) getAlertmanagerConfigForCluster(ctx context.Con
 	alertmanager, err := r.getAlertmanagerForCluster(ctx, cluster)
 	if err != nil {
 		return nil, err
-
 	}
 
 	if alertmanager.Spec.ConfigSecret.Name == "" {
@@ -484,7 +481,6 @@ func (r *alertmanagerController) getCurrentAlertmanagerConfig(alertmanagerURL st
 }
 
 func (r *alertmanagerController) ensureAlertManagerConfigStatus(ctx context.Context, cluster *kubermaticv1.Cluster, configErr error) error {
-
 	alertmanager, err := r.getAlertmanagerForCluster(ctx, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get alertmanager: %w", err)

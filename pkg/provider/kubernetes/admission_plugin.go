@@ -78,7 +78,6 @@ func (p *AdmissionPluginsProvider) ListPluginNamesFromVersion(fromVersion string
 		}
 	}
 	return plugins, nil
-
 }
 
 func (p *AdmissionPluginsProvider) List(userInfo *provider.UserInfo) ([]kubermaticv1.AdmissionPlugin, error) {
@@ -109,7 +108,6 @@ func (p *AdmissionPluginsProvider) Get(userInfo *provider.UserInfo, name string)
 }
 
 func (p *AdmissionPluginsProvider) Delete(userInfo *provider.UserInfo, name string) error {
-
 	plugin, err := p.Get(userInfo, name)
 	if err != nil {
 		return err

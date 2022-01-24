@@ -105,7 +105,6 @@ func (v *ValidationHandlerBuilder) Build(ctx context.Context) (AdmissionHandler,
 		}, nil
 	}
 	return &seedAdmissionHandler{validateFunc: sv.Validate}, nil
-
 }
 
 // identitySeedClientGetter is a Seed Client getter used when the webhook is
