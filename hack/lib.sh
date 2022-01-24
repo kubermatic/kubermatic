@@ -391,3 +391,19 @@ start_docker_daemon() {
   retry 5 docker stats --no-stream
   echodate "Docker became ready"
 }
+
+repeat() {
+  local end=$1
+  local str="${2:-=}"
+
+  for i in $(seq 1 $end); do
+    echo -n "${str}"
+  done
+}
+
+heading() {
+  local title="$@"
+  echo "$title"
+  repeat ${#title} "="
+  echo
+}
