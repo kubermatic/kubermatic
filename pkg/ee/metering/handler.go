@@ -91,6 +91,10 @@ func CreateOrUpdateConfigurations(ctx context.Context, request interface{}, mast
 	if !ok {
 		return k8cerrors.NewBadRequest("invalid request")
 	}
+	err := req.Validate()
+	if err != nil {
+		return k8cerrors.NewBadRequest(err.Error())
+	}
 
 	seedList := &kubermaticv1.SeedList{}
 	if err := masterClient.List(ctx, seedList, &ctrlruntimeclient.ListOptions{Namespace: resources.KubermaticNamespace}); err != nil {
