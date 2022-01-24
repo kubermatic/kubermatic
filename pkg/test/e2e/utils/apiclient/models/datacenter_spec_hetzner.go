@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// DatacenterSpecHetzner DatacenterSpecHetzner describes a Hetzner cloud datacenter
+// DatacenterSpecHetzner DatacenterSpecHetzner describes a Hetzner cloud datacenter.
 //
 // swagger:model DatacenterSpecHetzner
 type DatacenterSpecHetzner struct {

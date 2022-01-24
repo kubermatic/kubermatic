@@ -13,7 +13,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// ExternalClusterStatus ExternalClusterStatus defines the external cluster status
+// ExternalClusterStatus ExternalClusterStatus defines the external cluster status.
 //
 // swagger:model ExternalClusterStatus
 type ExternalClusterStatus struct {

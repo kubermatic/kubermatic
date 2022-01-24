@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// VSphereCredentials VSphereCredentials credentials represents a credential for accessing vSphere
+// VSphereCredentials VSphereCredentials credentials represents a credential for accessing vSphere.
 //
 // swagger:model VSphereCredentials
 type VSphereCredentials struct {

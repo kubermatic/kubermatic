@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// UserSettings UserSettings represent an user settings
+// UserSettings UserSettings represent an user settings.
 //
 // swagger:model UserSettings
 type UserSettings struct {

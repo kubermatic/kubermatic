@@ -14,7 +14,7 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// SeedSpec The spec for a seed data
+// SeedSpec The spec for a seed data.
 //
 // swagger:model SeedSpec
 type SeedSpec struct {

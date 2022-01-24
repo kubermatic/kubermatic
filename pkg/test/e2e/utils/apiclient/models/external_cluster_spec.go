@@ -13,7 +13,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// ExternalClusterSpec ExternalClusterSpec defines the external cluster specification
+// ExternalClusterSpec ExternalClusterSpec defines the external cluster specification.
 //
 // swagger:model ExternalClusterSpec
 type ExternalClusterSpec struct {

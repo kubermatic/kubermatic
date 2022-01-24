@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// DatacenterSpecGCP DatacenterSpecGCP describes a GCP datacenter
+// DatacenterSpecGCP DatacenterSpecGCP describes a GCP datacenter.
 //
 // swagger:model DatacenterSpecGCP
 type DatacenterSpecGCP struct {

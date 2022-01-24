@@ -14,7 +14,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// ClusterSpec ClusterSpec defines the cluster specification
+// ClusterSpec ClusterSpec defines the cluster specification.
 //
 // swagger:model ClusterSpec
 type ClusterSpec struct {

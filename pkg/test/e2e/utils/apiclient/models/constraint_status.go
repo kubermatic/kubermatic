@@ -14,7 +14,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// ConstraintStatus ConstraintStatus represents a constraint status which holds audit info
+// ConstraintStatus ConstraintStatus represents a constraint status which holds audit info.
 //
 // swagger:model ConstraintStatus
 type ConstraintStatus struct {

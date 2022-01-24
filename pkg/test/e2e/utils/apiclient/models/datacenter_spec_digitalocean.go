@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// DatacenterSpecDigitalocean DatacenterSpecDigitalocean describes a DigitalOcean datacenter
+// DatacenterSpecDigitalocean DatacenterSpecDigitalocean describes a DigitalOcean datacenter.
 //
 // swagger:model DatacenterSpecDigitalocean
 type DatacenterSpecDigitalocean struct {

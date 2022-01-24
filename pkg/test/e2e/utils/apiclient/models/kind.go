@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// Kind Kind specifies the resource Kind and APIGroup
+// Kind Kind specifies the resource Kind and APIGroup.
 //
 // swagger:model Kind
 type Kind struct {
