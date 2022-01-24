@@ -532,8 +532,6 @@ func getNetClient(authURL, region string, credentials *resources.OpenstackCreden
 	serviceClient, err := goopenstack.NewNetworkV2(authClient, gophercloud.EndpointOpts{Region: region})
 	if err != nil {
 		// this is special case for services that span only one region.
-		//nolint:gosimple
-		//lint:ignore S1020 false positive, we must do the errcheck regardless of if its an ErrEndpointNotFound
 		if isEndpointNotFoundErr(err) {
 			serviceClient, err = goopenstack.NewNetworkV2(authClient, gophercloud.EndpointOpts{})
 			if err != nil {
@@ -554,9 +552,7 @@ func getComputeClient(authURL, region string, credentials *resources.OpenstackCr
 
 	serviceClient, err := goopenstack.NewComputeV2(authClient, gophercloud.EndpointOpts{Region: region})
 	if err != nil {
-		// this is special case for  services that span only one region.
-		//nolint:gosimple
-		//lint:ignore S1020 false positive, we must do the errcheck regardless of if its an ErrEndpointNotFound
+		// this is special case for services that span only one region.
 		if isEndpointNotFoundErr(err) {
 			serviceClient, err = goopenstack.NewComputeV2(authClient, gophercloud.EndpointOpts{})
 			if err != nil {

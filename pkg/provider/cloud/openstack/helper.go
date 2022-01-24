@@ -388,8 +388,6 @@ func getFlavors(authClient *gophercloud.ProviderClient, region string) ([]osflav
 	computeClient, err := goopenstack.NewComputeV2(authClient, gophercloud.EndpointOpts{Availability: gophercloud.AvailabilityPublic, Region: region})
 	if err != nil {
 		// this is special case for services that span only one region.
-		//nolint:gosimple
-		//lint:ignore S1020 false positive, we must do the errcheck regardless of if its an ErrEndpointNotFound
 		if isEndpointNotFoundErr(err) {
 			computeClient, err = goopenstack.NewComputeV2(authClient, gophercloud.EndpointOpts{})
 			if err != nil {
@@ -420,9 +418,7 @@ func getFlavors(authClient *gophercloud.ProviderClient, region string) ([]osflav
 func getTenants(authClient *gophercloud.ProviderClient, region string) ([]osprojects.Project, error) {
 	sc, err := goopenstack.NewIdentityV3(authClient, gophercloud.EndpointOpts{Region: region})
 	if err != nil {
-		// this is special case for  services that span only one region.
-		//nolint:gosimple
-		//lint:ignore S1020 false positive, we must do the errcheck regardless of if its an ErrEndpointNotFound
+		// this is special case for services that span only one region.
 		if isEndpointNotFoundErr(err) {
 			sc, err = goopenstack.NewIdentityV3(authClient, gophercloud.EndpointOpts{})
 			if err != nil {
