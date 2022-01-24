@@ -599,6 +599,7 @@ const (
 
 const (
 	EnvoyAgentConfigMapName                    = "envoy-agent"
+	EnvoyAgentConfigFileName                   = "envoy.yaml"
 	EnvoyAgentDaemonSetName                    = "envoy-agent"
 	EnvoyAgentCreateInterfaceInitContainerName = "create-dummy-interface"
 	EnvoyAgentAssignAddressInitContainerName   = "assign-address"
