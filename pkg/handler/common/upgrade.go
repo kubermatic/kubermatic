@@ -86,8 +86,7 @@ func GetUpgradesEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGe
 
 	upgrades := make([]*apiv1.MasterVersion, 0)
 	for _, v := range versions {
-		isRestricted := false
-		isRestricted, err = isRestrictedByKubeletVersions(v, machineDeployments.Items)
+		isRestricted, err := isRestrictedByKubeletVersions(v, machineDeployments.Items)
 		if err != nil {
 			return nil, err
 		}

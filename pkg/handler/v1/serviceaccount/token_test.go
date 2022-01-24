@@ -307,7 +307,7 @@ func TestServiceAccountCanGetProject(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 			// set up
-			token := ""
+			var token string
 			var ep http.Handler
 			{
 				req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/projects/%s/serviceaccounts/%s/tokens", tc.projectToSync, "1"), strings.NewReader(`{"name":"ci-v","group":"viewers"}`))

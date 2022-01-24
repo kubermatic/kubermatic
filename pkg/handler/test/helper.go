@@ -818,15 +818,12 @@ func GenUser(id, name, email string) *kubermaticv1.User {
 		id = fmt.Sprintf("%x", sha256.Sum256([]byte(email)))
 	}
 
-	specID := ""
-	{
-		h := sha512.New512_224()
-		if _, err := io.WriteString(h, email); err != nil {
-			// not nice, better to use t.Error
-			panic("unable to generate a test user: " + err.Error())
-		}
-		specID = fmt.Sprintf("%x_KUBE", h.Sum(nil))
+	h := sha512.New512_224()
+	if _, err := io.WriteString(h, email); err != nil {
+		// not nice, better to use t.Error
+		panic("unable to generate a test user: " + err.Error())
 	}
+	specID := fmt.Sprintf("%x_KUBE", h.Sum(nil))
 
 	return &kubermaticv1.User{
 		ObjectMeta: metav1.ObjectMeta{

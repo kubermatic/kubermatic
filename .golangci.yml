@@ -51,6 +51,7 @@ linters:
     - unconvert
     - unused
     - varcheck
+    - wastedassign
   disable-all: true
 
 # NOTE: Do not use commas in the exclude patterns, or else the regex will be
