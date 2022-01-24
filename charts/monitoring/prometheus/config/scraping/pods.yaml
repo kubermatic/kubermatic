@@ -21,6 +21,12 @@ relabel_configs:
   regex: '{{ .Release.Namespace }};node-exporter'
   action: drop
 
+# drop minio, if it's running with TLS
+{{ if .Values.prometheus.scraping.minio.tls.enabled }}
+- source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_pod_label_app]
+  regex: '{{ .Values.prometheus.scraping.minio.namespace | default "minio" }};{{ .Values.prometheus.scraping.minio.appLabel | default "minio" }}'
+  action: drop
+{{ end }}
 # drop kube-state-metrics, as we have dedicated rules to properly map all the labels
 # to their original pods
 - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_pod_label_app]
