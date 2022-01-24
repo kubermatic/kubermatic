@@ -63,7 +63,7 @@ func createEKSCluster(ctx context.Context, name string, userInfoGetter provider.
 	return createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, newCluster, project)
 }
 
-func patchEKSCluster(old, new *apiv2.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticapiv1.ExternalClusterCloudSpec) (*apiv2.ExternalCluster, error) {
+func patchEKSCluster(oldCluster, newCluster *apiv2.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticapiv1.ExternalClusterCloudSpec) (*apiv2.ExternalCluster, error) {
 	accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(*cloudSpec, secretKeySelector)
 	if err != nil {
 		return nil, err
@@ -74,7 +74,7 @@ func patchEKSCluster(old, new *apiv2.ExternalCluster, secretKeySelector provider
 		return nil, err
 	}
 
-	newVersion := new.Spec.Version.Semver()
+	newVersion := newCluster.Spec.Version.Semver()
 	newVersionString := strings.TrimSuffix(newVersion.String(), ".0")
 
 	updateInput := eks.UpdateClusterVersionInput{
@@ -86,7 +86,7 @@ func patchEKSCluster(old, new *apiv2.ExternalCluster, secretKeySelector provider
 		return nil, err
 	}
 
-	return new, nil
+	return newCluster, nil
 }
 
 func getEKSNodeGroups(cluster *kubermaticapiv1.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterMachineDeployment, error) {
@@ -215,7 +215,7 @@ func createMachineDeploymentFromEKSNodePoll(nodeGroup *eks.Nodegroup, readyRepli
 	}
 }
 
-func patchEKSMachineDeployment(old, new *apiv2.ExternalClusterMachineDeployment, secretKeySelector provider.SecretKeySelectorValueFunc, cluster *kubermaticapiv1.ExternalCluster) (*apiv2.ExternalClusterMachineDeployment, error) {
+func patchEKSMachineDeployment(oldMD, newMD *apiv2.ExternalClusterMachineDeployment, secretKeySelector provider.SecretKeySelectorValueFunc, cluster *kubermaticapiv1.ExternalCluster) (*apiv2.ExternalClusterMachineDeployment, error) {
 	cloudSpec := cluster.Spec.CloudSpec
 
 	accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(*cloudSpec, secretKeySelector)
@@ -232,20 +232,20 @@ func patchEKSMachineDeployment(old, new *apiv2.ExternalClusterMachineDeployment,
 	// It's required to update NodeGroup size separately.
 
 	clusterName := cloudSpec.EKS.Name
-	nodeGroupName := new.NodeDeployment.Name
+	nodeGroupName := newMD.NodeDeployment.Name
 
-	currentReplicas := old.NodeDeployment.Spec.Replicas
-	desiredReplicas := new.NodeDeployment.Spec.Replicas
-	currentVersion := old.NodeDeployment.Spec.Template.Versions.Kubelet
-	desiredVersion := new.NodeDeployment.Spec.Template.Versions.Kubelet
+	currentReplicas := oldMD.NodeDeployment.Spec.Replicas
+	desiredReplicas := newMD.NodeDeployment.Spec.Replicas
+	currentVersion := oldMD.NodeDeployment.Spec.Template.Versions.Kubelet
+	desiredVersion := newMD.NodeDeployment.Spec.Template.Versions.Kubelet
 	if desiredReplicas != currentReplicas {
 		_, err = resizeEKSNodeGroup(client, clusterName, nodeGroupName, int64(currentReplicas), int64(desiredReplicas))
 		if err != nil {
 			return nil, err
 		}
-		new.NodeDeployment.Status.Replicas = desiredReplicas
-		new.NodeDeployment.Spec.Template.Versions.Kubelet = currentVersion
-		return new, nil
+		newMD.NodeDeployment.Status.Replicas = desiredReplicas
+		newMD.NodeDeployment.Spec.Template.Versions.Kubelet = currentVersion
+		return newMD, nil
 	}
 
 	if desiredVersion != currentVersion {
@@ -253,11 +253,11 @@ func patchEKSMachineDeployment(old, new *apiv2.ExternalClusterMachineDeployment,
 		if err != nil {
 			return nil, err
 		}
-		new.NodeDeployment.Spec.Replicas = currentReplicas
-		return new, nil
+		newMD.NodeDeployment.Spec.Replicas = currentReplicas
+		return newMD, nil
 	}
 
-	return new, nil
+	return newMD, nil
 }
 
 func upgradeEKSNodeGroup(client *awsprovider.ClientSet, clusterName, nodeGroupName, currentVersion, desiredVersion *string) (*eks.UpdateNodegroupVersionOutput, error) {

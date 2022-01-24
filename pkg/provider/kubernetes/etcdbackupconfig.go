@@ -136,19 +136,19 @@ func (p *EtcdBackupConfigProvider) DeleteUnsecured(cluster *kubermaticv1.Cluster
 	return p.clientPrivileged.Delete(context.Background(), ebc)
 }
 
-func (p *EtcdBackupConfigProvider) Patch(userInfo *provider.UserInfo, old, new *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
+func (p *EtcdBackupConfigProvider) Patch(userInfo *provider.UserInfo, oldConfig, newConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
 
-	err = impersonationClient.Patch(context.Background(), new, ctrlruntimeclient.MergeFrom(old))
-	return new, err
+	err = impersonationClient.Patch(context.Background(), newConfig, ctrlruntimeclient.MergeFrom(oldConfig))
+	return newConfig, err
 }
 
-func (p *EtcdBackupConfigProvider) PatchUnsecured(old, new *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
-	err := p.clientPrivileged.Patch(context.Background(), new, ctrlruntimeclient.MergeFrom(old))
-	return new, err
+func (p *EtcdBackupConfigProvider) PatchUnsecured(oldConfig, newConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
+	err := p.clientPrivileged.Patch(context.Background(), newConfig, ctrlruntimeclient.MergeFrom(oldConfig))
+	return newConfig, err
 }
 
 // EtcdBackupConfigProjectProvider struct that holds required components in order manage etcd backup backupConfigs across projects

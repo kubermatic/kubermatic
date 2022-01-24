@@ -70,7 +70,7 @@ func (p *BackupCredentialsProvider) GetUnsecured() (*corev1.Secret, error) {
 	return credentials, err
 }
 
-func (p *BackupCredentialsProvider) UpdateUnsecured(new *corev1.Secret) (*corev1.Secret, error) {
-	err := p.clientPrivileged.Update(context.Background(), new)
-	return new, err
+func (p *BackupCredentialsProvider) UpdateUnsecured(newSecret *corev1.Secret) (*corev1.Secret, error) {
+	err := p.clientPrivileged.Update(context.Background(), newSecret)
+	return newSecret, err
 }

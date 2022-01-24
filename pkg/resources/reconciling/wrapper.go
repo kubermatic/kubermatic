@@ -110,39 +110,39 @@ func DefaultContainer(c *corev1.Container, procMountType *corev1.ProcMountType) 
 }
 
 // DefaultPodSpec defaults all Container attributes to the same values as they would get from the Kubernetes API
-func DefaultPodSpec(old, new corev1.PodSpec) (corev1.PodSpec, error) {
+func DefaultPodSpec(oldPodSpec, newPodSpec corev1.PodSpec) (corev1.PodSpec, error) {
 	// make sure to keep the old procmount types in case a creator overrides the entire PodSpec
 	initContainerProcMountType := map[string]*corev1.ProcMountType{}
 	containerProcMountType := map[string]*corev1.ProcMountType{}
-	for _, container := range old.InitContainers {
+	for _, container := range oldPodSpec.InitContainers {
 		if container.SecurityContext != nil {
 			initContainerProcMountType[container.Name] = container.SecurityContext.ProcMount
 		}
 	}
-	for _, container := range old.Containers {
+	for _, container := range oldPodSpec.Containers {
 		if container.SecurityContext != nil {
 			containerProcMountType[container.Name] = container.SecurityContext.ProcMount
 		}
 	}
 
-	for idx, container := range new.InitContainers {
-		DefaultContainer(&new.InitContainers[idx], initContainerProcMountType[container.Name])
+	for idx, container := range newPodSpec.InitContainers {
+		DefaultContainer(&newPodSpec.InitContainers[idx], initContainerProcMountType[container.Name])
 	}
 
-	for idx, container := range new.Containers {
-		DefaultContainer(&new.Containers[idx], containerProcMountType[container.Name])
+	for idx, container := range newPodSpec.Containers {
+		DefaultContainer(&newPodSpec.Containers[idx], containerProcMountType[container.Name])
 	}
 
-	for idx, vol := range new.Volumes {
+	for idx, vol := range newPodSpec.Volumes {
 		if vol.VolumeSource.Secret != nil && vol.VolumeSource.Secret.DefaultMode == nil {
-			new.Volumes[idx].Secret.DefaultMode = utilpointer.Int32Ptr(corev1.SecretVolumeSourceDefaultMode)
+			newPodSpec.Volumes[idx].Secret.DefaultMode = utilpointer.Int32Ptr(corev1.SecretVolumeSourceDefaultMode)
 		}
 		if vol.VolumeSource.ConfigMap != nil && vol.VolumeSource.ConfigMap.DefaultMode == nil {
-			new.Volumes[idx].ConfigMap.DefaultMode = utilpointer.Int32Ptr(corev1.ConfigMapVolumeSourceDefaultMode)
+			newPodSpec.Volumes[idx].ConfigMap.DefaultMode = utilpointer.Int32Ptr(corev1.ConfigMapVolumeSourceDefaultMode)
 		}
 	}
 
-	return new, nil
+	return newPodSpec, nil
 }
 
 // DefaultDeployment defaults all Deployment attributes to the same values as they would get from the Kubernetes API

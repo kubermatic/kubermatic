@@ -132,9 +132,9 @@ func TestReconcile(t *testing.T) {
 	}
 }
 
-func genConstraint(name, namespace, kind string, delete bool) *kubermaticv1.Constraint {
+func genConstraint(name, namespace, kind string, deleted bool) *kubermaticv1.Constraint {
 	constraint := test.GenConstraint(name, namespace, kind)
-	if delete {
+	if deleted {
 		deleteTime := metav1.NewTime(time.Now())
 		constraint.DeletionTimestamp = &deleteTime
 		constraint.Finalizers = append(constraint.Finalizers, v1.GatekeeperSeedConstraintCleanupFinalizer)

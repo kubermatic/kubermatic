@@ -37,10 +37,10 @@ type Release struct {
 }
 
 func (r *Release) Clone() Release {
-	copy := *r
-	copy.Version = semver.MustParse(r.Version.Original())
+	releaseCopy := *r
+	releaseCopy.Version = semver.MustParse(r.Version.Original())
 
-	return copy
+	return releaseCopy
 }
 
 type Chart struct {
@@ -54,10 +54,10 @@ type Chart struct {
 }
 
 func (c *Chart) Clone() Chart {
-	copy := *c
-	copy.Version = semver.MustParse(c.Version.Original())
+	chartCopy := *c
+	chartCopy.Version = semver.MustParse(c.Version.Original())
 
-	return copy
+	return chartCopy
 }
 
 func LoadChart(directory string) (*Chart, error) {

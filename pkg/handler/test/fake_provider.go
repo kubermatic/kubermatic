@@ -316,8 +316,8 @@ func (p *FakeEtcdBackupConfigProvider) Delete(userInfo *provider.UserInfo, clust
 	return p.Provider.Delete(userInfo, cluster, name)
 }
 
-func (p *FakeEtcdBackupConfigProvider) Patch(userInfo *provider.UserInfo, old, new *kubermaticapiv1.EtcdBackupConfig) (*kubermaticapiv1.EtcdBackupConfig, error) {
-	return p.Provider.Patch(userInfo, old, new)
+func (p *FakeEtcdBackupConfigProvider) Patch(userInfo *provider.UserInfo, oldConfig, newConfig *kubermaticapiv1.EtcdBackupConfig) (*kubermaticapiv1.EtcdBackupConfig, error) {
+	return p.Provider.Patch(userInfo, oldConfig, newConfig)
 }
 
 type FakeEtcdRestoreProvider struct {

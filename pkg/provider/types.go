@@ -1096,7 +1096,7 @@ type EtcdBackupConfigProvider interface {
 	Delete(userInfo *UserInfo, cluster *kubermaticv1.Cluster, name string) error
 
 	// Patch updates the given etcdBackupConfig
-	Patch(userInfo *UserInfo, old, new *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
+	Patch(userInfo *UserInfo, oldConfig, newConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
 }
 
 // PrivilegedEtcdBackupConfigProvider declares the set of method for interacting with etcd backup configs using a privileged client
@@ -1129,7 +1129,7 @@ type PrivilegedEtcdBackupConfigProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to patch the resource
-	PatchUnsecured(old, new *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
+	PatchUnsecured(oldConfig, newConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
 }
 
 // EtcdRestoreProvider declares the set of method for interacting with etcd backup restores
@@ -1227,7 +1227,7 @@ type BackupCredentialsProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to update the resource
-	UpdateUnsecured(new *corev1.Secret) (*corev1.Secret, error)
+	UpdateUnsecured(newSecret *corev1.Secret) (*corev1.Secret, error)
 }
 
 type PrivilegedMLAAdminSettingProvider interface {

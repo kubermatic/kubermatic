@@ -153,14 +153,14 @@ func Add(
 	// Only react to cluster update events when our condition changed, or when CNI config changed
 	clusterPredicate := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			old := e.ObjectOld.(*kubermaticv1.Cluster)
-			new := e.ObjectNew.(*kubermaticv1.Cluster)
-			_, oldCondition := kubermaticv1helper.GetClusterCondition(old, kubermaticv1.ClusterConditionAddonControllerReconcilingSuccess)
-			_, newCondition := kubermaticv1helper.GetClusterCondition(new, kubermaticv1.ClusterConditionAddonControllerReconcilingSuccess)
+			oldObj := e.ObjectOld.(*kubermaticv1.Cluster)
+			newObj := e.ObjectNew.(*kubermaticv1.Cluster)
+			_, oldCondition := kubermaticv1helper.GetClusterCondition(oldObj, kubermaticv1.ClusterConditionAddonControllerReconcilingSuccess)
+			_, newCondition := kubermaticv1helper.GetClusterCondition(newObj, kubermaticv1.ClusterConditionAddonControllerReconcilingSuccess)
 			if !reflect.DeepEqual(oldCondition, newCondition) {
 				return true
 			}
-			if !reflect.DeepEqual(old.Spec.CNIPlugin, new.Spec.CNIPlugin) {
+			if !reflect.DeepEqual(oldObj.Spec.CNIPlugin, newObj.Spec.CNIPlugin) {
 				return true
 			}
 			return false

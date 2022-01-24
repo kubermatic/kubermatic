@@ -56,7 +56,6 @@ type Reconciler struct {
 
 // add the controller
 func Add(
-
 	log *zap.SugaredLogger,
 	mgr manager.Manager,
 	numWorkers int,
@@ -80,8 +79,8 @@ func Add(
 	// reconcile PVCs in ClaimLost phase only
 	LostClaimPredicates := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			new := e.ObjectNew.(*corev1.PersistentVolumeClaim)
-			return new.Status.Phase == corev1.ClaimLost
+			newObj := e.ObjectNew.(*corev1.PersistentVolumeClaim)
+			return newObj.Status.Phase == corev1.ClaimLost
 		},
 	}
 
