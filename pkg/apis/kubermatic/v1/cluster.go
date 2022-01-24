@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -129,6 +130,9 @@ type ClusterSpec struct {
 	Pause bool `json:"pause"`
 	// PauseReason is the reason why the cluster is no being managed.
 	PauseReason string `json:"pauseReason,omitempty"`
+
+	// DebugLog enables more verbose logging by KKP's usercluster-controller-manager.
+	DebugLog bool `json:"debugLog,omitempty"`
 
 	// Optional component specific overrides
 	ComponentsOverride ComponentSettings `json:"componentsOverride"`
