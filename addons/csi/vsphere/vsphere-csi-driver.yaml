@@ -31,7 +31,10 @@ metadata:
   name: csi.vsphere.vmware.com
 spec:
   attachRequired: true
-  podInfoOnMount: false
+  podInfoOnMount: true
+  volumeLifecycleModes:
+    - Persistent
+    - Ephemeral
 ---
 kind: ServiceAccount
 apiVersion: v1
