@@ -34,7 +34,7 @@ import (
 	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
 )
 
-// ClientSet provides a set of Azure service clients that are necessary to reconcile resources needed by KKP
+// ClientSet provides a set of Azure service clients that are necessary to reconcile resources needed by KKP.
 type ClientSet struct {
 	// Autorest client is used to wait for completion of futures
 	Autorest *autorest.Client
@@ -47,7 +47,7 @@ type ClientSet struct {
 	AvailabilitySets computeapi.AvailabilitySetsClientAPI
 }
 
-// GetClientSet returns a ClientSet using the passed credentials as authorization
+// GetClientSet returns a ClientSet using the passed credentials as authorization.
 func GetClientSet(cloud kubermaticv1.CloudSpec, credentials Credentials) (*ClientSet, error) {
 	return getClientSet(cloud, credentials)
 }
@@ -102,7 +102,7 @@ func getClientSet(cloud kubermaticv1.CloudSpec, credentials Credentials) (*Clien
 	}, nil
 }
 
-// GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error
+// GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error.
 func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (Credentials, error) {
 	tenantID := cloud.Azure.TenantID
 	subscriptionID := cloud.Azure.SubscriptionID

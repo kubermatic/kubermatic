@@ -52,7 +52,7 @@ const (
 	ControllerName = "gatekeeper_constraint_template_controller"
 )
 
-// UserClusterClientProvider provides functionality to get a user cluster client
+// UserClusterClientProvider provides functionality to get a user cluster client.
 type UserClusterClientProvider interface {
 	GetClient(ctx context.Context, c *kubermaticv1.Cluster, options ...clusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
 }
@@ -111,7 +111,7 @@ func Add(ctx context.Context,
 }
 
 // Reconcile reconciles the kubermatic constraint template on the seed cluster to all user clusters
-// which have opa integration enabled
+// which have opa integration enabled.
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("request", request)
 	log.Debug("Reconciling")

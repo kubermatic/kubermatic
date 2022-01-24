@@ -59,7 +59,7 @@ func OIDCAdminCredentials() (string, string, error) {
 }
 
 // these variables are runtime caches to not have to login to Dex
-// over and over again
+// over and over again.
 var (
 	masterToken      = ""
 	adminMasterToken = ""

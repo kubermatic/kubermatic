@@ -27,7 +27,7 @@ import (
 
 var once = &sync.Once{}
 
-// ServeForever the prometheus metrics endpoint
+// ServeForever the prometheus metrics endpoint.
 func ServeForever(addr, path string) {
 	once.Do(func() {
 		log.Logger.Infow("the Prometheus exposed metrics", "listenAddress", addr, "path", path)

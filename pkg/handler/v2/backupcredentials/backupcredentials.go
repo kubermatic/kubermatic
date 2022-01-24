@@ -149,7 +149,7 @@ func convertAPIToInternalBackupCredentials(bc *apiv2.BackupCredentials) *v1.Secr
 	}
 }
 
-// GenBackupCredentialsSecretName generates etcd backup credentials secret name. If backup destination is not set, then use the legacy credentials secret
+// GenBackupCredentialsSecretName generates etcd backup credentials secret name. If backup destination is not set, then use the legacy credentials secret.
 func GenBackupCredentialsSecretName(destination string) string {
 	if len(destination) != 0 {
 		return fmt.Sprintf("%s-etcd-backup-credentials", destination)

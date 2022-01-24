@@ -62,7 +62,7 @@ var mapFn = handler.EnqueueRequestsFromMapFunc(func(o ctrlruntimeclient.Object) 
 })
 
 // Add creates a new RBAC generator controller that is responsible for creating Cluster Roles and Cluster Role Bindings
-// for groups: `owners`, `editors` and `viewers``
+// for groups: `owners`, `editors` and `viewers``.
 func Add(mgr manager.Manager, registerReconciledCheck func(name string, check healthz.Checker) error, clusterIsPaused userclustercontrollermanager.IsPausedChecker) error {
 	reconcile := &reconcileRBAC{Client: mgr.GetClient(), rLock: &sync.Mutex{}, clusterIsPaused: clusterIsPaused}
 
@@ -93,7 +93,7 @@ func Add(mgr manager.Manager, registerReconciledCheck func(name string, check he
 	})
 }
 
-// reconcileRBAC reconciles Cluster Role and Cluster Role Binding objects
+// reconcileRBAC reconciles Cluster Role and Cluster Role Binding objects.
 type reconcileRBAC struct {
 	ctrlruntimeclient.Client
 
@@ -102,7 +102,7 @@ type reconcileRBAC struct {
 	reconciledSuccessfullyOnce bool
 }
 
-// Reconcile makes changes in response to Cluster Role and Cluster Role Binding related changes
+// Reconcile makes changes in response to Cluster Role and Cluster Role Binding related changes.
 func (r *reconcileRBAC) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	paused, err := r.clusterIsPaused(ctx)
 	if err != nil {

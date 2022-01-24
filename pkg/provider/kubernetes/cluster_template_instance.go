@@ -45,7 +45,7 @@ type ClusterTemplateInstanceProvider struct {
 	privilegedClient ctrlruntimeclient.Client
 }
 
-// ClusterTemplateInstanceProvider returns provider
+// ClusterTemplateInstanceProvider returns provider.
 func NewClusterTemplateInstanceProvider(createSeedImpersonatedClient ImpersonationClient, privilegedClient ctrlruntimeclient.Client) *ClusterTemplateInstanceProvider {
 	return &ClusterTemplateInstanceProvider{
 		createSeedImpersonatedClient: createSeedImpersonatedClient,

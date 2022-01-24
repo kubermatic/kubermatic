@@ -34,7 +34,7 @@ import (
 )
 
 // EnqueueClusterForNamespacedObject enqueues the cluster that owns a namespaced object, if any
-// It is used by various controllers to react to changes in the resources in the cluster namespace
+// It is used by various controllers to react to changes in the resources in the cluster namespace.
 func EnqueueClusterForNamespacedObject(client ctrlruntimeclient.Client) handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		clusterList := &kubermaticv1.ClusterList{}
@@ -53,7 +53,7 @@ func EnqueueClusterForNamespacedObject(client ctrlruntimeclient.Client) handler.
 
 // EnqueueClusterForNamespacedObjectWithSeedName enqueues the cluster that owns a namespaced object,
 // if any. The seedName is put into the namespace field
-// It is used by various controllers to react to changes in the resources in the cluster namespace
+// It is used by various controllers to react to changes in the resources in the cluster namespace.
 func EnqueueClusterForNamespacedObjectWithSeedName(client ctrlruntimeclient.Client, seedName string, clusterSelector labels.Selector) handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		clusterList := &kubermaticv1.ClusterList{}
@@ -96,7 +96,7 @@ func EnqueueClusterScopedObjectWithSeedName(seedName string) handler.EventHandle
 
 // EnqueueConst enqueues a constant. It is meant for controllers that don't have a parent object
 // they could enc and instead reconcile everything at once.
-// The queueKey will be defaulted if empty
+// The queueKey will be defaulted if empty.
 func EnqueueConst(queueKey string) handler.EventHandler {
 	if queueKey == "" {
 		queueKey = "const"

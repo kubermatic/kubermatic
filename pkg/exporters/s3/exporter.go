@@ -44,7 +44,7 @@ type s3Exporter struct {
 	logger                 *zap.SugaredLogger
 }
 
-// MustRun starts a s3 exporter or panic
+// MustRun starts a s3 exporter or panic.
 func MustRun(minioClient *minio.Client, kubermaticClient kubermaticclientset.Interface, bucket, listenAddress string, logger *zap.SugaredLogger) {
 	exporter := s3Exporter{}
 	exporter.minioClient = minioClient

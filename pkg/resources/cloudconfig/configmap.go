@@ -49,7 +49,7 @@ type configMapCreatorData interface {
 	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
 }
 
-// ConfigMapCreator returns a function to create the ConfigMap containing the cloud-config
+// ConfigMapCreator returns a function to create the ConfigMap containing the cloud-config.
 func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.CloudConfigConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
@@ -106,7 +106,7 @@ func ConfigmapVsphereCSICreator(data configMapCreatorData) reconciling.NamedConf
 	}
 }
 
-// CloudConfig returns the cloud-config for the supplied data
+// CloudConfig returns the cloud-config for the supplied data.
 func CloudConfig(
 	cluster *kubermaticv1.Cluster,
 	dc *kubermaticv1.Datacenter,

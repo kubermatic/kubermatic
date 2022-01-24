@@ -46,24 +46,24 @@ import (
 
 const (
 	// The monitoring controller waits for the cluster to become healthy,
-	// before adding the monitoring components to the clusters
+	// before adding the monitoring components to the clusters.
 	healthCheckPeriod = 5 * time.Second
 
 	ControllerName = "kubermatic_monitoring_controller"
 )
 
-// userClusterConnectionProvider offers functions to retrieve clients for the given user clusters
+// userClusterConnectionProvider offers functions to retrieve clients for the given user clusters.
 type userClusterConnectionProvider interface {
 	GetClient(context.Context, *kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
 }
 
-// Features describes the enabled features for the monitoring controller
+// Features describes the enabled features for the monitoring controller.
 type Features struct {
 	VPA          bool
 	Konnectivity bool
 }
 
-// Reconciler stores all components required for monitoring
+// Reconciler stores all components required for monitoring.
 type Reconciler struct {
 	ctrlruntimeclient.Client
 
@@ -84,7 +84,7 @@ type Reconciler struct {
 }
 
 // Add creates a new Monitoring controller that is responsible for
-// operating the monitoring components for all managed user clusters
+// operating the monitoring components for all managed user clusters.
 func Add(
 	mgr manager.Manager,
 	log *zap.SugaredLogger,

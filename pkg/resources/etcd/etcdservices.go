@@ -33,7 +33,7 @@ type serviceCreatorData interface {
 	GetClusterRef() metav1.OwnerReference
 }
 
-// ServiceCreator returns the function to reconcile the etcd service
+// ServiceCreator returns the function to reconcile the etcd service.
 func ServiceCreator(data serviceCreatorData) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.EtcdServiceName, func(se *corev1.Service) (*corev1.Service, error) {
@@ -71,7 +71,7 @@ func ServiceCreator(data serviceCreatorData) reconciling.NamedServiceCreatorGett
 	}
 }
 
-// GetClientEndpoints returns the slice with the etcd endpoints for client communication
+// GetClientEndpoints returns the slice with the etcd endpoints for client communication.
 func GetClientEndpoints(namespace string) []string {
 	var endpoints []string
 	for i := 0; i < 3; i++ {

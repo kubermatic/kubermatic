@@ -29,7 +29,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// OwnerRefWrapper is responsible for wrapping a ObjectCreator function, solely to set the OwnerReference to the cluster object
+// OwnerRefWrapper is responsible for wrapping a ObjectCreator function, solely to set the OwnerReference to the cluster object.
 func OwnerRefWrapper(ref metav1.OwnerReference) ObjectModifier {
 	return func(create ObjectCreator) ObjectCreator {
 		return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
@@ -83,7 +83,7 @@ func configureImagePullSecrets(podSpec *corev1.PodSpec, secretNames []string) {
 	}
 }
 
-// DefaultContainer defaults all Container attributes to the same values as they would get from the Kubernetes API
+// DefaultContainer defaults all Container attributes to the same values as they would get from the Kubernetes API.
 func DefaultContainer(c *corev1.Container, procMountType *corev1.ProcMountType) {
 	if c.ImagePullPolicy == "" {
 		c.ImagePullPolicy = corev1.PullIfNotPresent
@@ -109,7 +109,7 @@ func DefaultContainer(c *corev1.Container, procMountType *corev1.ProcMountType) 
 	}
 }
 
-// DefaultPodSpec defaults all Container attributes to the same values as they would get from the Kubernetes API
+// DefaultPodSpec defaults all Container attributes to the same values as they would get from the Kubernetes API.
 func DefaultPodSpec(oldPodSpec, newPodSpec corev1.PodSpec) (corev1.PodSpec, error) {
 	// make sure to keep the old procmount types in case a creator overrides the entire PodSpec
 	initContainerProcMountType := map[string]*corev1.ProcMountType{}
@@ -145,7 +145,7 @@ func DefaultPodSpec(oldPodSpec, newPodSpec corev1.PodSpec) (corev1.PodSpec, erro
 	return newPodSpec, nil
 }
 
-// DefaultDeployment defaults all Deployment attributes to the same values as they would get from the Kubernetes API
+// DefaultDeployment defaults all Deployment attributes to the same values as they would get from the Kubernetes API.
 func DefaultDeployment(creator DeploymentCreator) DeploymentCreator {
 	return func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 		old := d.DeepCopy()
@@ -181,7 +181,7 @@ func DefaultDeployment(creator DeploymentCreator) DeploymentCreator {
 	}
 }
 
-// DefaultStatefulSet defaults all StatefulSet attributes to the same values as they would get from the Kubernetes API
+// DefaultStatefulSet defaults all StatefulSet attributes to the same values as they would get from the Kubernetes API.
 func DefaultStatefulSet(creator StatefulSetCreator) StatefulSetCreator {
 	return func(ss *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
 		old := ss.DeepCopy()
@@ -200,7 +200,7 @@ func DefaultStatefulSet(creator StatefulSetCreator) StatefulSetCreator {
 	}
 }
 
-// DefaultDaemonSet defaults all DaemonSet attributes to the same values as they would get from the Kubernetes API
+// DefaultDaemonSet defaults all DaemonSet attributes to the same values as they would get from the Kubernetes API.
 func DefaultDaemonSet(creator DaemonSetCreator) DaemonSetCreator {
 	return func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
 		old := ds.DeepCopy()
@@ -219,7 +219,7 @@ func DefaultDaemonSet(creator DaemonSetCreator) DaemonSetCreator {
 	}
 }
 
-// DefaultCronJob defaults all CronJob attributes to the same values as they would get from the Kubernetes API
+// DefaultCronJob defaults all CronJob attributes to the same values as they would get from the Kubernetes API.
 func DefaultCronJob(creator CronJobCreator) CronJobCreator {
 	return func(cj *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
 		old := cj.DeepCopy()

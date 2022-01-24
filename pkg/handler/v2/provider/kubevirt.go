@@ -48,7 +48,7 @@ type KubeVirtGenericNoCredentialReq struct {
 	cluster.GetClusterReq
 }
 
-// KubeVirtVMIPresetsEndpoint handles the request to list available KubeVirtVMIPresets (provided credentials)
+// KubeVirtVMIPresetsEndpoint handles the request to list available KubeVirtVMIPresets (provided credentials).
 func KubeVirtVMIPresetsEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(KubeVirtGenericReq)
@@ -71,7 +71,7 @@ func KubeVirtVMIPresetsEndpoint(presetsProvider provider.PresetProvider, userInf
 	}
 }
 
-// KubeVirtVMIPresetsWithClusterCredentialsEndpoint handles the request to list available KubeVirtVMIPresets (cluster credentials)
+// KubeVirtVMIPresetsWithClusterCredentialsEndpoint handles the request to list available KubeVirtVMIPresets (cluster credentials).
 func KubeVirtVMIPresetsWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(KubeVirtGenericNoCredentialReq)
@@ -79,7 +79,7 @@ func KubeVirtVMIPresetsWithClusterCredentialsEndpoint(projectProvider provider.P
 	}
 }
 
-// KubeVirtStorageClassesEndpoint handles the request to list available k8s StorageClasses (provided credentials)
+// KubeVirtStorageClassesEndpoint handles the request to list available k8s StorageClasses (provided credentials).
 func KubeVirtStorageClassesEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(KubeVirtGenericReq)
@@ -102,7 +102,7 @@ func KubeVirtStorageClassesEndpoint(presetsProvider provider.PresetProvider, use
 	}
 }
 
-// KubeVirtStorageClassesWithClusterCredentialsEndpoint handles the request to list storage classes (cluster credentials)
+// KubeVirtStorageClassesWithClusterCredentialsEndpoint handles the request to list storage classes (cluster credentials).
 func KubeVirtStorageClassesWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(KubeVirtGenericNoCredentialReq)

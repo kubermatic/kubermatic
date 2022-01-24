@@ -54,7 +54,7 @@ const (
 	ControllerName = "external_cluster_controller"
 )
 
-// Reconciler is a controller which is responsible for managing clusters
+// Reconciler is a controller which is responsible for managing clusters.
 type Reconciler struct {
 	ctrlruntimeclient.Client
 	log      *zap.SugaredLogger

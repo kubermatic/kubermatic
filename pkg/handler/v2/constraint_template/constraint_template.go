@@ -95,7 +95,7 @@ func DecodeConstraintTemplateRequest(c context.Context, r *http.Request) (interf
 	}, nil
 }
 
-// Validate validates constraintTemplate request
+// Validate validates constraintTemplate request.
 func (req constraintTemplateReq) Validate() error {
 	if len(req.Name) == 0 {
 		return fmt.Errorf("the constraint template name cannot be empty")
@@ -255,7 +255,7 @@ type patchConstraintTemplateReq struct {
 	Patch json.RawMessage
 }
 
-// DecodePatchCTReq decodes http request into patchConstraintTemplateReq
+// DecodePatchCTReq decodes http request into patchConstraintTemplateReq.
 func DecodePatchConstraintTemplateReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req patchConstraintTemplateReq
 

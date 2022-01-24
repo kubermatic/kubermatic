@@ -24,7 +24,7 @@ import (
 //+genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// AddonConfig specifies addon configuration
+// AddonConfig specifies addon configuration.
 type AddonConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -32,7 +32,7 @@ type AddonConfig struct {
 	Spec AddonConfigSpec `json:"spec"`
 }
 
-// AddonConfigSpec specifies configuration of addon
+// AddonConfigSpec specifies configuration of addon.
 type AddonConfigSpec struct {
 	// ShortDescription of the configured addon that contains more detailed information about the addon,
 	// it will be displayed in the addon details view in the UI
@@ -47,7 +47,7 @@ type AddonConfigSpec struct {
 	Controls []AddonFormControl `json:"formSpec,omitempty"`
 }
 
-// AddonFormControl specifies addon form control
+// AddonFormControl specifies addon form control.
 type AddonFormControl struct {
 	// DisplayName is visible in the UI
 	DisplayName string `json:"displayName,omitempty"`
@@ -63,7 +63,7 @@ type AddonFormControl struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// AddonConfigList is a list of addon configs
+// AddonConfigList is a list of addon configs.
 type AddonConfigList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

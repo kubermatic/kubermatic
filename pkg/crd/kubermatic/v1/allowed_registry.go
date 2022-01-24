@@ -19,10 +19,10 @@ package v1
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 const (
-	// AllowedRegistryResourceName represents "Resource" defined in Kubernetes
+	// AllowedRegistryResourceName represents "Resource" defined in Kubernetes.
 	AllowedRegistryResourceName = "allowedregistry"
 
-	// AllowedRegistryKindName represents "Kind" defined in Kubernetes
+	// AllowedRegistryKindName represents "Kind" defined in Kubernetes.
 	AllowedRegistryKindName = "AllowedRegistry"
 )
 
@@ -47,7 +47,7 @@ type AllowedRegistrySpec struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// AllowedRegistryList specifies a list of allowed registries
+// AllowedRegistryList specifies a list of allowed registries.
 type AllowedRegistryList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

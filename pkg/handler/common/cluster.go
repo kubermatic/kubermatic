@@ -57,7 +57,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// ClusterTypes holds a list of supported cluster types
+// ClusterTypes holds a list of supported cluster types.
 var ClusterTypes = sets.NewString(apiv1.KubernetesClusterType)
 
 // patchClusterSpec is equivalent of ClusterSpec but it uses default JSON marshalling method instead of custom
@@ -307,7 +307,7 @@ func GetClusters(ctx context.Context, userInfoGetter provider.UserInfoGetter, cl
 	return apiClusters, nil
 }
 
-// GetCluster returns the cluster for a given request
+// GetCluster returns the cluster for a given request.
 func GetCluster(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, projectID, clusterID string, options *provider.ClusterGetOptions) (*kubermaticv1.Cluster, error) {
 	clusterProvider, ok := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 	if !ok {

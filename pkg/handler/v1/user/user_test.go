@@ -1048,7 +1048,7 @@ func TestLogoutCurrentUser(t *testing.T) {
 }
 
 // genUser generates a User resource
-// note if the id is empty then it will be auto generated
+// note if the id is empty then it will be auto generated.
 func genUser(id, name, email string) *kubermaticapiv1.User {
 	return test.GenUser(id, name, email)
 }

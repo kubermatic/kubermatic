@@ -20,19 +20,19 @@ const (
 	// DistributionLabelKey is the label that gets applied.
 	DistributionLabelKey = "x-kubernetes.io/distribution"
 
-	// CentOSLabelValue is the value of the label for CentOS
+	// CentOSLabelValue is the value of the label for CentOS.
 	CentOSLabelValue = "centos"
 
-	// UbuntuLabelValue is the value of the label for Ubuntu
+	// UbuntuLabelValue is the value of the label for Ubuntu.
 	UbuntuLabelValue = "ubuntu"
 
-	// SLESLabelValue is the value of the label for SLES
+	// SLESLabelValue is the value of the label for SLES.
 	SLESLabelValue = "sles"
 
-	// RHELLabelValue is the value of the label for RHEL
+	// RHELLabelValue is the value of the label for RHEL.
 	RHELLabelValue = "rhel"
 
-	// FlatcarLabelValue is the value of the label for Flatcar Linux
+	// FlatcarLabelValue is the value of the label for Flatcar Linux.
 	FlatcarLabelValue = "flatcar"
 )
 

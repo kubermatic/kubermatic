@@ -25,7 +25,7 @@ import (
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 
-// AdmissionPluginList is the type representing a AdmissionPluginList
+// AdmissionPluginList is the type representing a AdmissionPluginList.
 type AdmissionPluginList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
@@ -38,7 +38,7 @@ type AdmissionPluginList struct {
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 
-// AdmissionPlugin is the type representing a AdmissionPlugin
+// AdmissionPlugin is the type representing a AdmissionPlugin.
 type AdmissionPlugin struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

@@ -32,10 +32,10 @@ import (
 
 //go:generate go run ../../../codegen/reconcile/main.go
 
-// ObjectCreator defines an interface to create/update a ctrlruntimeclient.Object
+// ObjectCreator defines an interface to create/update a ctrlruntimeclient.Object.
 type ObjectCreator = func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error)
 
-// ObjectModifier is a wrapper function which modifies the object which gets returned by the passed in ObjectCreator
+// ObjectModifier is a wrapper function which modifies the object which gets returned by the passed in ObjectCreator.
 type ObjectModifier func(create ObjectCreator) ObjectCreator
 
 func createWithNamespace(rawcreate ObjectCreator, namespace string) ObjectCreator {

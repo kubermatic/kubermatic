@@ -44,7 +44,7 @@ const (
 // note:
 // the project resources live only on master cluster and cluster resources are on master and seed clusters
 // we cannot use OwnerReferences for cluster resources because they are on clusters that don't have corresponding
-// project resource and will be automatically gc'ed
+// project resource and will be automatically gc'ed.
 func (c *resourcesController) syncClusterScopedProjectResource(ctx context.Context, obj ctrlruntimeclient.Object) error {
 	metaObject, err := meta.Accessor(obj)
 	if err != nil {
@@ -83,7 +83,7 @@ func (c *resourcesController) syncClusterScopedProjectResource(ctx context.Conte
 // note:
 // the project resources live only on master cluster and cluster resources are on master and seed clusters
 // we cannot use OwnerReferences for cluster resources because they are on clusters that don't have corresponding
-// project resource and will be automatically gc'ed
+// project resource and will be automatically gc'ed.
 func (c *resourcesController) syncNamespaceScopedProjectResource(ctx context.Context, obj ctrlruntimeclient.Object) error {
 	metaObject, err := meta.Accessor(obj)
 	if err != nil {
@@ -136,7 +136,7 @@ func (c *resourcesController) syncNamespaceScopedProjectResource(ctx context.Con
 // note:
 // the project resources live only on master cluster and cluster resources are on master and seed clusters
 // we cannot use OwnerReferences for cluster resources because they are on clusters that don't have corresponding
-// project resource and will be automatically gc'ed
+// project resource and will be automatically gc'ed.
 func (c *resourcesController) syncClusterResource(ctx context.Context, obj ctrlruntimeclient.Object) error {
 	metaObject, err := meta.Accessor(obj)
 	if err != nil {
@@ -327,7 +327,7 @@ func ensureClusterRBACRoleBindingForNamedResource(ctx context.Context, cli ctrlr
 // shouldSkipClusterRBACRoleBindingForNamedResource will tell you if you should skip the generation of ClusterResource or not,
 // because for some kinds we actually don't create ClusterRole
 //
-// note that this method returns generated role if is not meant to be skipped
+// note that this method returns generated role if is not meant to be skipped.
 func shouldSkipClusterRBACRoleBindingForNamedResource(projectName string, objectResource string, objectKind string, groupPrefix string, object metav1.Object) (bool, *rbacv1.ClusterRole, error) {
 	generatedRole, err := generateClusterRBACRoleNamedResource(
 		objectKind,
@@ -437,7 +437,7 @@ func (c *resourcesController) ensureRBACRoleBindingForNamedResource(ctx context.
 // shouldSkipRBACRoleBindingForNamedResource will tell you if you should skip the generation of ClusterResource or not,
 // because for some kinds we actually don't create Role
 //
-// note that this method returns generated role if is not meant to be skipped
+// note that this method returns generated role if is not meant to be skipped.
 func shouldSkipRBACRoleBindingForNamedResource(projectName string, resourceName string, gvk schema.GroupVersionKind, groupPrefix string, namespace string, object metav1.Object) (bool, *rbacv1.Role, error) {
 	generatedRole, err := generateRBACRoleNamedResource(
 		gvk.Kind,
@@ -657,7 +657,7 @@ func (c *resourcesController) ensureRBACRoleBindingForEtcdLauncher(ctx context.C
 // shouldSkipRBACRoleForClusterNamespaceResource will tell you if you should skip the generation of Role/Rolebinding or not,
 // because for some groupPrefixes we actually don't create Role
 //
-// note that this method returns generated role if is not meant to be skipped
+// note that this method returns generated role if is not meant to be skipped.
 func shouldSkipRBACRoleForClusterNamespaceResource(projectName string, cluster *kubermaticv1.Cluster, policyResource, policyAPIGroups, kind, groupPrefix string) (bool, *rbacv1.Role, error) {
 	generatedRole, err := generateRBACRoleForClusterNamespaceResource(
 		cluster,
@@ -678,7 +678,7 @@ func shouldSkipRBACRoleForClusterNamespaceResource(projectName string, cluster *
 
 // shouldSkipRBACRoleForClusterNamespaceNamedResource will tell you if you should skip the generation of Role/Rolebinding of a named resource or not,
 // because for some groupPrefixes we actually don't create Role
-// note that this method returns generated role if is not meant to be skipped
+// note that this method returns generated role if is not meant to be skipped.
 func shouldSkipRBACRoleForClusterNamespaceNamedResource(projectName string, cluster *kubermaticv1.Cluster, resourceName, policyAPIGroups, policyResource, kind, groupPrefix string) (bool, *rbacv1.Role, error) {
 	generatedRole, err := generateRBACRoleForClusterNamespaceNamedResource(
 		cluster,
@@ -697,7 +697,7 @@ func shouldSkipRBACRoleForClusterNamespaceNamedResource(projectName string, clus
 	return false, generatedRole, nil
 }
 
-// ensureClusterRBACRoleBindingForEtcdLauncher ensures the ClusterRoleBinding required to allow the etcd launcher to get Clusters on the Seed
+// ensureClusterRBACRoleBindingForEtcdLauncher ensures the ClusterRoleBinding required to allow the etcd launcher to get Clusters on the Seed.
 func (c *resourcesController) ensureClusterRBACRoleBindingForEtcdLauncher(ctx context.Context, resourceName, resourceKind, namespace, projectName string, object metav1.Object) error {
 	_, ok := object.(*kubermaticv1.Cluster)
 	if !ok {

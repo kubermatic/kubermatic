@@ -71,7 +71,7 @@ func (a *Alibaba) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpe
 	return nil
 }
 
-// GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error
+// GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error.
 func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc, dc *kubermaticv1.DatacenterSpecAlibaba) (accessKeyID string, accessKeySecret string, err error) {
 	accessKeyID = cloud.Alibaba.AccessKeyID
 	accessKeySecret = cloud.Alibaba.AccessKeySecret

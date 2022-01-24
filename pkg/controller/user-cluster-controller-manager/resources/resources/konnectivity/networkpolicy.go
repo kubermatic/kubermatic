@@ -24,7 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// NetworkPolicyCreator NetworkPolicy allows all egress traffic
+// NetworkPolicyCreator NetworkPolicy allows all egress traffic.
 func NetworkPolicyCreator() reconciling.NamedNetworkPolicyCreatorGetter {
 	return func() (string, reconciling.NetworkPolicyCreator) {
 		return "konnectivity", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {

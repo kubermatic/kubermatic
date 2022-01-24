@@ -28,37 +28,37 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// UserSSHKeyBuilder is builder to create ssh key structs including validation
+// UserSSHKeyBuilder is builder to create ssh key structs including validation.
 type UserSSHKeyBuilder struct {
 	owner     string
 	name      string
 	publicKey string
 }
 
-// NewUserSSHKeyBuilder returns a new instance of a UserSSHKeyBuilder
+// NewUserSSHKeyBuilder returns a new instance of a UserSSHKeyBuilder.
 func NewUserSSHKeyBuilder() *UserSSHKeyBuilder {
 	return &UserSSHKeyBuilder{}
 }
 
-// SetName sets the name for a ssh key
+// SetName sets the name for a ssh key.
 func (sb *UserSSHKeyBuilder) SetName(keyName string) *UserSSHKeyBuilder {
 	sb.name = keyName
 	return sb
 }
 
-// SetRawKey sets the raw public key for a ssh key
+// SetRawKey sets the raw public key for a ssh key.
 func (sb *UserSSHKeyBuilder) SetRawKey(publicKey string) *UserSSHKeyBuilder {
 	sb.publicKey = publicKey
 	return sb
 }
 
-// SetOwner sets the username for a ssh key
+// SetOwner sets the username for a ssh key.
 func (sb *UserSSHKeyBuilder) SetOwner(username string) *UserSSHKeyBuilder {
 	sb.owner = username
 	return sb
 }
 
-// Validate returns errors if the supplied data is not valid
+// Validate returns errors if the supplied data is not valid.
 func (sb *UserSSHKeyBuilder) Validate() error {
 	if sb.name == "" {
 		return fmt.Errorf("name is missing but required")
@@ -72,7 +72,7 @@ func (sb *UserSSHKeyBuilder) Validate() error {
 	return nil
 }
 
-// Build returns a instance of a ssh key
+// Build returns a instance of a ssh key.
 func (sb *UserSSHKeyBuilder) Build() (*kubermaticv1.UserSSHKey, error) {
 	if err := sb.Validate(); err != nil {
 		return nil, fmt.Errorf("key is not valid: %w", err)

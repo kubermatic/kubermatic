@@ -50,7 +50,7 @@ var (
 	}
 )
 
-// DeploymentCreator returns the function to create and update the CoreDNS deployment
+// DeploymentCreator returns the function to create and update the CoreDNS deployment.
 func DeploymentCreator(kubernetesVersion *semver.Version, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.CoreDNSDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {

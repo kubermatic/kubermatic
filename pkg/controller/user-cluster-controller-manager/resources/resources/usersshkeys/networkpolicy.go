@@ -28,7 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 )
 
-// NetworkPolicyCreator NetworkPolicy allows egress traffic of user ssh keys agent to the world
+// NetworkPolicyCreator NetworkPolicy allows egress traffic of user ssh keys agent to the world.
 func NetworkPolicyCreator(k8sApiIP string, k8sApiPort int, k8sServiceApi string) reconciling.NamedNetworkPolicyCreatorGetter {
 	return func() (string, reconciling.NetworkPolicyCreator) {
 		apiServicePort := intstr.FromInt(443)

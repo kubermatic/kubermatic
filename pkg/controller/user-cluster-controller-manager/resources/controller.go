@@ -270,7 +270,7 @@ func Add(
 	})
 }
 
-// reconcileUserCluster reconciles objects in the user cluster
+// reconcileUserCluster reconciles objects in the user cluster.
 type reconciler struct {
 	ctrlruntimeclient.Client
 	seedClient                   ctrlruntimeclient.Client
@@ -396,7 +396,7 @@ func (r *reconciler) networkingData(ctx context.Context) (address *kubermaticv1.
 	return &cluster.Address, ip, nil
 }
 
-// reconcileDefaultServiceAccount ensures that the Kubernetes default service account has AutomountServiceAccountToken set to false
+// reconcileDefaultServiceAccount ensures that the Kubernetes default service account has AutomountServiceAccountToken set to false.
 func (r *reconciler) reconcileDefaultServiceAccount(ctx context.Context, namespace string) error {
 	var serviceAccount corev1.ServiceAccount
 	err := r.Get(ctx, types.NamespacedName{

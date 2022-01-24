@@ -26,7 +26,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ExternalNameServiceCreator returns the function to reconcile the metrics server service
+// ExternalNameServiceCreator returns the function to reconcile the metrics server service.
 func ExternalNameServiceCreator(namespace string) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.MetricsServerExternalNameServiceName, func(se *corev1.Service) (*corev1.Service, error) {

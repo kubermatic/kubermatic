@@ -77,7 +77,7 @@ func CheckClusterVersionSkew(ctx context.Context, userInfoGetter provider.UserIn
 	return incompatibleVersionsList, nil
 }
 
-// getKubeletVersions returns the list of all kubelet versions used by a given cluster's Machines and MachineDeployments
+// getKubeletVersions returns the list of all kubelet versions used by a given cluster's Machines and MachineDeployments.
 func getKubeletVersions(ctx context.Context, client ctrlruntimeclient.Client) ([]string, error) {
 	machineList := &clusterv1alpha1.MachineList{}
 	if err := client.List(ctx, machineList); err != nil {

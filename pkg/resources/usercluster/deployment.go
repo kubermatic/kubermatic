@@ -56,7 +56,7 @@ const name = "usercluster-controller"
 // userclusterControllerData is the subet of the deploymentData interface
 // that is actually required by the usercluster deployment
 // This makes importing the the deployment elsewhere (openshift controller)
-// easier as only have to implement the parts that are actually in use
+// easier as only have to implement the parts that are actually in use.
 type userclusterControllerData interface {
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
 	ImageRegistry(string) string

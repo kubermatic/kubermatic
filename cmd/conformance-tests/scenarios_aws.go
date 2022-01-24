@@ -33,7 +33,7 @@ import (
 
 const awsDC = "aws-eu-central-1a"
 
-// Returns a matrix of (version x operating system)
+// Returns a matrix of (version x operating system).
 func getAWSScenarios(versions []*semver.Semver) []testScenario {
 	var scenarios []testScenario
 	for _, v := range versions {

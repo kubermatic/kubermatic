@@ -46,7 +46,7 @@ func (b *bringyourown) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, _ pro
 	return cluster, nil
 }
 
-// ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted
+// ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted.
 func (b *bringyourown) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
 	return nil
 }

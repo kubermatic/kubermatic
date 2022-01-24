@@ -57,7 +57,7 @@ const (
 	tag = "v0.5.0"
 )
 
-// metricsServerData is the data needed to construct the metrics-server components
+// metricsServerData is the data needed to construct the metrics-server components.
 type metricsServerData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
@@ -70,7 +70,7 @@ type metricsServerData interface {
 }
 
 // TLSServingCertSecretCreator returns a function to manage the TLS serving cert for the metrics
-// server
+// server.
 func TLSServingCertSecretCreator(caGetter servingcerthelper.CAGetter) reconciling.NamedSecretCreatorGetter {
 	dnsName := "metrics-server.kube-system.svc"
 	return servingcerthelper.ServingCertSecretCreator(caGetter,
@@ -82,7 +82,7 @@ func TLSServingCertSecretCreator(caGetter servingcerthelper.CAGetter) reconcilin
 		nil)
 }
 
-// DeploymentCreator returns the function to create and update the metrics server deployment
+// DeploymentCreator returns the function to create and update the metrics server deployment.
 func DeploymentCreator(data metricsServerData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.MetricsServerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {

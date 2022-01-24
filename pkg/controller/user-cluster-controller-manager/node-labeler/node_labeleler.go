@@ -40,7 +40,7 @@ import (
 )
 
 const (
-	// This controller creates events on the nodes, so do not put the word Kubermatic in it
+	// This controller creates events on the nodes, so do not put the word Kubermatic in it.
 	controllerName = "node_label_controller"
 )
 

@@ -29,7 +29,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// ConstraintProvider struct that holds required components in order manage constraints
+// ConstraintProvider struct that holds required components in order manage constraints.
 type ConstraintProvider struct {
 	// createSeedImpersonatedClient is used as a ground for impersonation
 	// whenever a connection to Seed API server is required
@@ -37,7 +37,7 @@ type ConstraintProvider struct {
 	clientPrivileged             ctrlruntimeclient.Client
 }
 
-// DefaultConstraintProvider struct that holds required components in order manage constraints
+// DefaultConstraintProvider struct that holds required components in order manage constraints.
 type DefaultConstraintProvider struct {
 	// createMasterImpersonatedClient is used as a ground for impersonation
 	createMasterImpersonatedClient ImpersonationClient
@@ -45,7 +45,7 @@ type DefaultConstraintProvider struct {
 	kubermaticNamespace            string
 }
 
-// NewConstraintProvider returns a constraint provider
+// NewConstraintProvider returns a constraint provider.
 func NewConstraintProvider(createSeedImpersonatedClient ImpersonationClient, client ctrlruntimeclient.Client) (*ConstraintProvider, error) {
 	return &ConstraintProvider{
 		clientPrivileged:             client,
@@ -53,7 +53,7 @@ func NewConstraintProvider(createSeedImpersonatedClient ImpersonationClient, cli
 	}, nil
 }
 
-// NewDefaultConstraintProvider returns a default constraint provider
+// NewDefaultConstraintProvider returns a default constraint provider.
 func NewDefaultConstraintProvider(createMasterImpersonatedClient ImpersonationClient, client ctrlruntimeclient.Client, namespace string) (*DefaultConstraintProvider, error) {
 	return &DefaultConstraintProvider{
 		createMasterImpersonatedClient: createMasterImpersonatedClient,
@@ -80,7 +80,7 @@ func ConstraintProviderFactory(mapper meta.RESTMapper, seedKubeconfigGetter prov
 	}
 }
 
-// List gets all constraints
+// List gets all constraints.
 func (p *ConstraintProvider) List(cluster *kubermaticv1.Cluster) (*kubermaticv1.ConstraintList, error) {
 	constraints := &kubermaticv1.ConstraintList{}
 	if err := p.clientPrivileged.List(context.Background(), constraints, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName)); err != nil {
@@ -90,7 +90,7 @@ func (p *ConstraintProvider) List(cluster *kubermaticv1.Cluster) (*kubermaticv1.
 	return constraints, nil
 }
 
-// Get gets a constraint using a privileged client
+// Get gets a constraint using a privileged client.
 func (p *ConstraintProvider) Get(cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.Constraint, error) {
 	constraint := &kubermaticv1.Constraint{}
 	if err := p.clientPrivileged.Get(context.Background(), types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: name}, constraint); err != nil {
@@ -100,7 +100,7 @@ func (p *ConstraintProvider) Get(cluster *kubermaticv1.Cluster, name string) (*k
 	return constraint, nil
 }
 
-// Delete deletes a constraint
+// Delete deletes a constraint.
 func (p *ConstraintProvider) Delete(cluster *kubermaticv1.Cluster, userInfo *provider.UserInfo, name string) error {
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
@@ -115,7 +115,7 @@ func (p *ConstraintProvider) Delete(cluster *kubermaticv1.Cluster, userInfo *pro
 	})
 }
 
-// DeleteUnsecured deletes a constraint using a privileged client
+// DeleteUnsecured deletes a constraint using a privileged client.
 func (p *ConstraintProvider) DeleteUnsecured(cluster *kubermaticv1.Cluster, name string) error {
 	return p.clientPrivileged.Delete(context.Background(), &kubermaticv1.Constraint{
 		ObjectMeta: metav1.ObjectMeta{

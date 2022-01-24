@@ -106,54 +106,54 @@ func init() {
 }
 
 const (
-	// UserID holds a test user ID
+	// UserID holds a test user ID.
 	UserID = "1233"
-	// UserID2 holds a test user ID
+	// UserID2 holds a test user ID.
 	UserID2 = "1523"
-	// UserName holds a test user name
+	// UserName holds a test user name.
 	UserName = "user1"
-	// UserName2 holds a test user name
+	// UserName2 holds a test user name.
 	UserName2 = "user2"
-	// UserEmail holds a test user email
+	// UserEmail holds a test user email.
 	UserEmail = "john@acme.com"
-	// UserEmail2 holds a test user email
+	// UserEmail2 holds a test user email.
 	UserEmail2 = "bob@example.com"
-	// ClusterID holds the test cluster ID
+	// ClusterID holds the test cluster ID.
 	ClusterID = "AbcClusterID"
-	// DefaultClusterID holds the test default cluster ID
+	// DefaultClusterID holds the test default cluster ID.
 	DefaultClusterID = "defClusterID"
-	// DefaultClusterName holds the test default cluster name
+	// DefaultClusterName holds the test default cluster name.
 	DefaultClusterName = "defClusterName"
-	// ProjectName holds the test project ID
+	// ProjectName holds the test project ID.
 	ProjectName = "my-first-project-ID"
-	// TestDatacenter holds datacenter name
+	// TestDatacenter holds datacenter name.
 	TestSeedDatacenter = "us-central1"
-	// TestServiceAccountHashKey authenticates the service account's token value using HMAC
+	// TestServiceAccountHashKey authenticates the service account's token value using HMAC.
 	TestServiceAccountHashKey = "eyJhbGciOiJIUzI1NeyJhbGciOiJIUzI1N"
-	// TestFakeToken signed JWT token with fake data
+	// TestFakeToken signed JWT token with fake data.
 	TestFakeToken = "eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6IjEiLCJleHAiOjE2NDk3NDg4NTYsImlhdCI6MTU1NTA1NDQ1NiwibmJmIjoxNTU1MDU0NDU2LCJwcm9qZWN0X2lkIjoiMSIsInRva2VuX2lkIjoiMSJ9.Q4qxzOaCvUnWfXneY654YiQjUTd_Lsmw56rE17W2ouo"
-	// TestOSdomain OpenStack domain
+	// TestOSdomain OpenStack domain.
 	TestOSdomain = "OSdomain"
-	// TestOSuserPass OpenStack user password
+	// TestOSuserPass OpenStack user password.
 	TestOSuserPass = "OSpass"
-	// TestOSuserName OpenStack user name
+	// TestOSuserName OpenStack user name.
 	TestOSuserName = "OSuser"
-	// TestFakeCredential Fake provider credential name
+	// TestFakeCredential Fake provider credential name.
 	TestFakeCredential = "fake"
-	// RequiredEmailDomain required domain for predefined credentials
+	// RequiredEmailDomain required domain for predefined credentials.
 	RequiredEmailDomain = "acme.com"
-	// DefaultKubernetesVersion kubernetes version
+	// DefaultKubernetesVersion kubernetes version.
 	DefaultKubernetesVersion = "1.22.5"
-	// Kubermatic namespace
+	// Kubermatic namespace.
 	KubermaticNamespace = "kubermatic"
 )
 
 var (
-	// UserLastSeen hold a time the user was last seen
+	// UserLastSeen hold a time the user was last seen.
 	UserLastSeen = time.Date(2020, time.December, 31, 23, 0, 0, 0, time.UTC)
 )
 
-// GetUser is a convenience function for generating apiv1.User
+// GetUser is a convenience function for generating apiv1.User.
 func GetUser(email, id, name string) apiv1.User {
 	u := apiv1.User{
 		ObjectMeta: apiv1.ObjectMeta{
@@ -167,7 +167,7 @@ func GetUser(email, id, name string) apiv1.User {
 
 // newRoutingFunc defines a func that knows how to create and set up routing required for testing
 // this function is temporal until all types end up in their own packages.
-// it is meant to be used by legacy handler.createTestEndpointAndGetClients function
+// it is meant to be used by legacy handler.createTestEndpointAndGetClients function.
 type newRoutingFunc func(
 	adminProvider provider.AdminProvider,
 	settingsProvider provider.SettingsProvider,
@@ -607,12 +607,12 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	return mainRouter, &ClientsSets{kubermaticClient, fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil
 }
 
-// CreateTestEndpointAndGetClients is a convenience function that instantiates fake providers and sets up routes for the tests
+// CreateTestEndpointAndGetClients is a convenience function that instantiates fake providers and sets up routes for the tests.
 func CreateTestEndpointAndGetClients(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObjects, machineObjects, kubermaticObjects []ctrlruntimeclient.Object, config *operatorv1alpha1.KubermaticConfiguration, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
 	return initTestEndpoint(user, seedsGetter, kubeObjects, machineObjects, kubermaticObjects, config, routingFunc)
 }
 
-// CreateTestEndpoint does exactly the same as CreateTestEndpointAndGetClients except it omits ClientsSets when returning
+// CreateTestEndpoint does exactly the same as CreateTestEndpointAndGetClients except it omits ClientsSets when returning.
 func CreateTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []ctrlruntimeclient.Object, config *operatorv1alpha1.KubermaticConfiguration, routingFunc newRoutingFunc) (http.Handler, error) {
 	router, _, err := CreateTestEndpointAndGetClients(user, nil, kubeObjects, nil, kubermaticObjects, config, routingFunc)
 	return router, err
@@ -740,7 +740,7 @@ func (f *fakeUserClusterConnection) GetClient(_ context.Context, _ *kubermaticv1
 	return f.fakeDynamicClient, nil
 }
 
-// ClientsSets a simple wrapper that holds fake client sets
+// ClientsSets a simple wrapper that holds fake client sets.
 type ClientsSets struct {
 	FakeKubermaticClient *kubermaticfakeclientset.Clientset
 	FakeClient           ctrlruntimeclient.Client
@@ -751,7 +751,7 @@ type ClientsSets struct {
 	TokenGenerator     serviceaccount.TokenGenerator
 }
 
-// GenerateTestKubeconfig returns test kubeconfig yaml structure
+// GenerateTestKubeconfig returns test kubeconfig yaml structure.
 func GenerateTestKubeconfig(clusterID, token string) string {
 	return fmt.Sprintf(`
 apiVersion: v1
@@ -773,7 +773,7 @@ users:
     token: %s`, clusterID, clusterID, token)
 }
 
-// APIUserToKubermaticUser simply converts apiv1.User to kubermaticv1.User type
+// APIUserToKubermaticUser simply converts apiv1.User to kubermaticv1.User type.
 func APIUserToKubermaticUser(user apiv1.User) *kubermaticv1.User {
 	var deletionTimestamp *metav1.Time
 	if user.DeletionTimestamp != nil {
@@ -794,7 +794,7 @@ func APIUserToKubermaticUser(user apiv1.User) *kubermaticv1.User {
 	}
 }
 
-// CompareWithResult a convenience function for comparing http.Body content with response
+// CompareWithResult a convenience function for comparing http.Body content with response.
 func CompareWithResult(t *testing.T, res *httptest.ResponseRecorder, response string) {
 	t.Helper()
 	bBytes, err := ioutil.ReadAll(res.Body)
@@ -811,7 +811,7 @@ func CompareWithResult(t *testing.T, res *httptest.ResponseRecorder, response st
 }
 
 // GenUser generates a User resource
-// note if the id is empty then it will be auto generated
+// note if the id is empty then it will be auto generated.
 func GenUser(id, name, email string) *kubermaticv1.User {
 	if len(id) == 0 {
 		// the name of the object is derived from the email address and encoded as sha256
@@ -841,7 +841,7 @@ func GenUser(id, name, email string) *kubermaticv1.User {
 	}
 }
 
-// GenInactiveProjectServiceAccount generates a Service Account resource
+// GenInactiveProjectServiceAccount generates a Service Account resource.
 func GenInactiveProjectServiceAccount(id, name, group, projectName string) *kubermaticv1.User {
 	user := GenUser(id, name, fmt.Sprintf("serviceaccount-%s@sa.kubermatic.io", id))
 	user.Labels = map[string]string{kubernetes.ServiceAccountLabelGroup: fmt.Sprintf("%s-%s", group, projectName)}
@@ -877,7 +877,7 @@ func GenMainServiceAccount(id, name, group, ownerEmail string) *kubermaticv1.Use
 	return user
 }
 
-// GenAPIUser generates a API user
+// GenAPIUser generates a API user.
 func GenAPIUser(name, email string) *apiv1.User {
 	usr := GenUser("", name, email)
 	return &apiv1.User{
@@ -889,19 +889,19 @@ func GenAPIUser(name, email string) *apiv1.User {
 	}
 }
 
-// GenAPIAdminUser generates an admin API user
+// GenAPIAdminUser generates an admin API user.
 func GenAPIAdminUser(name, email string, isAdmin bool) *apiv1.User {
 	user := GenAPIUser(name, email)
 	user.IsAdmin = isAdmin
 	return user
 }
 
-// DefaultCreationTimestamp returns default test timestamp
+// DefaultCreationTimestamp returns default test timestamp.
 func DefaultCreationTimestamp() time.Time {
 	return time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)
 }
 
-// GenDefaultAPIUser generates a default API user
+// GenDefaultAPIUser generates a default API user.
 func GenDefaultAPIUser() *apiv1.User {
 	return &apiv1.User{
 		ObjectMeta: apiv1.ObjectMeta{
@@ -913,27 +913,27 @@ func GenDefaultAPIUser() *apiv1.User {
 	}
 }
 
-// GenDefaultAdminAPIUser generates a default admin API user
+// GenDefaultAdminAPIUser generates a default admin API user.
 func GenDefaultAdminAPIUser() *apiv1.User {
 	user := GenDefaultAPIUser()
 	user.IsAdmin = true
 	return user
 }
 
-// GenDefaultUser generates a default user
+// GenDefaultUser generates a default user.
 func GenDefaultUser() *kubermaticv1.User {
 	userEmail := "bob@acme.com"
 	return GenUser("", "Bob", userEmail)
 }
 
-// GenDefaultAdminUser generates a default admin user
+// GenDefaultAdminUser generates a default admin user.
 func GenDefaultAdminUser() *kubermaticv1.User {
 	user := GenDefaultUser()
 	user.Spec.IsAdmin = true
 	return user
 }
 
-// GenProject generates new empty project
+// GenProject generates new empty project.
 func GenProject(name, phase string, creationTime time.Time, oRef ...metav1.OwnerReference) *kubermaticv1.Project {
 	return &kubermaticv1.Project{
 		ObjectMeta: metav1.ObjectMeta{
@@ -948,7 +948,7 @@ func GenProject(name, phase string, creationTime time.Time, oRef ...metav1.Owner
 	}
 }
 
-// GenDefaultProject generates a default project
+// GenDefaultProject generates a default project.
 func GenDefaultProject() *kubermaticv1.Project {
 	user := GenDefaultUser()
 	oRef := metav1.OwnerReference{
@@ -960,7 +960,7 @@ func GenDefaultProject() *kubermaticv1.Project {
 	return GenProject("my-first-project", kubermaticv1.ProjectActive, DefaultCreationTimestamp(), oRef)
 }
 
-// GenBinding generates a binding
+// GenBinding generates a binding.
 func GenBinding(projectID, email, group string) *kubermaticv1.UserProjectBinding {
 	return &kubermaticv1.UserProjectBinding{
 		ObjectMeta: metav1.ObjectMeta{
@@ -981,12 +981,12 @@ func GenBinding(projectID, email, group string) *kubermaticv1.UserProjectBinding
 	}
 }
 
-// GenDefaultOwnerBinding generates default owner binding
+// GenDefaultOwnerBinding generates default owner binding.
 func GenDefaultOwnerBinding() *kubermaticv1.UserProjectBinding {
 	return GenBinding(GenDefaultProject().Name, GenDefaultUser().Spec.Email, "owners")
 }
 
-// GenDefaultKubermaticObjects generates default kubermatic object
+// GenDefaultKubermaticObjects generates default kubermatic object.
 func GenDefaultKubermaticObjects(objs ...ctrlruntimeclient.Object) []ctrlruntimeclient.Object {
 	defaultsObjs := []ctrlruntimeclient.Object{
 		// add a project

@@ -529,7 +529,7 @@ type patchConstraintReq struct {
 	Patch json.RawMessage
 }
 
-// DecodePatchConstraintReq decodes http request into patchConstraintReq
+// DecodePatchConstraintReq decodes http request into patchConstraintReq.
 func DecodePatchConstraintReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req patchConstraintReq
 
@@ -595,7 +595,7 @@ type defaultConstraintReq struct {
 	Name string `json:"constraint_name"`
 }
 
-// Validate validates defaultConstraint request
+// Validate validates defaultConstraint request.
 func (req defaultConstraintReq) Validate() error {
 	if len(req.Name) == 0 {
 		return fmt.Errorf("the default constraint name cannot be empty")

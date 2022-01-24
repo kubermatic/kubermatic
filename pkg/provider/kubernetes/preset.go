@@ -33,19 +33,19 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-// presetsGetter is a function to retrieve preset list
+// presetsGetter is a function to retrieve preset list.
 type presetsGetter = func(userInfo *provider.UserInfo) ([]kubermaticv1.Preset, error)
 
-// presetCreator is a function to create a preset
+// presetCreator is a function to create a preset.
 type presetCreator = func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
 
-// presetUpdater is a function to update a preset
+// presetUpdater is a function to update a preset.
 type presetUpdater = func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
 
-// presetDeleter is a function to delete a preset
+// presetDeleter is a function to delete a preset.
 type presetDeleter = func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
 
-// LoadPresets loads the custom presets for supported providers
+// LoadPresets loads the custom presets for supported providers.
 func LoadPresets(yamlContent []byte) (*kubermaticv1.PresetList, error) {
 	s := struct {
 		Presets *kubermaticv1.PresetList `json:"presets"`
@@ -59,7 +59,7 @@ func LoadPresets(yamlContent []byte) (*kubermaticv1.PresetList, error) {
 	return s.Presets, nil
 }
 
-// LoadPresetsFromFile loads the custom presets for supported providers
+// LoadPresetsFromFile loads the custom presets for supported providers.
 func LoadPresetsFromFile(path string) (*kubermaticv1.PresetList, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -147,7 +147,7 @@ func presetDeleterFactory(ctx context.Context, client ctrlruntimeclient.Client) 
 	}, nil
 }
 
-// PresetProvider is a object to handle presets from a predefined config
+// PresetProvider is a object to handle presets from a predefined config.
 type PresetProvider struct {
 	getter  presetsGetter
 	creator presetCreator
@@ -187,12 +187,12 @@ func (m *PresetProvider) UpdatePreset(preset *kubermaticv1.Preset) (*kubermaticv
 	return m.patcher(preset)
 }
 
-// GetPresets returns presets which belong to the specific email group and for all users
+// GetPresets returns presets which belong to the specific email group and for all users.
 func (m *PresetProvider) GetPresets(userInfo *provider.UserInfo) ([]kubermaticv1.Preset, error) {
 	return m.getter(userInfo)
 }
 
-// GetPreset returns preset with the name which belong to the specific email group
+// GetPreset returns preset with the name which belong to the specific email group.
 func (m *PresetProvider) GetPreset(userInfo *provider.UserInfo, name string) (*kubermaticv1.Preset, error) {
 	presets, err := m.getter(userInfo)
 	if err != nil {
@@ -207,7 +207,7 @@ func (m *PresetProvider) GetPreset(userInfo *provider.UserInfo, name string) (*k
 	return nil, errors.NewNotFound(kubermaticv1.Resource("preset"), name)
 }
 
-// DeletePreset Provider or delete Preset completely if empty
+// DeletePreset Provider or delete Preset completely if empty.
 func (m *PresetProvider) DeletePreset(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
 	existingProviders := helper.GetProviderList(preset)
 	if len(existingProviders) > 0 {

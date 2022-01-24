@@ -43,94 +43,94 @@ import (
 const (
 	datacenterContextKey kubermaticcontext.Key = "datacenter"
 
-	// RawTokenContextKey key under which the current token (OpenID ID Token) is kept in the ctx
+	// RawTokenContextKey key under which the current token (OpenID ID Token) is kept in the ctx.
 	RawTokenContextKey kubermaticcontext.Key = "raw-auth-token"
 
-	// TokenExpiryContextKey key under which the current token expiry (OpenID ID Token) is kept in the ctx
+	// TokenExpiryContextKey key under which the current token expiry (OpenID ID Token) is kept in the ctx.
 	TokenExpiryContextKey kubermaticcontext.Key = "auth-token-expiry"
 
-	// noTokenFoundKey key under which an error is kept when no suitable token has been found in a request
+	// noTokenFoundKey key under which an error is kept when no suitable token has been found in a request.
 	noTokenFoundKey kubermaticcontext.Key = "no-token-found"
 
-	// ClusterProviderContextKey key under which the current ClusterProvider is kept in the ctx
+	// ClusterProviderContextKey key under which the current ClusterProvider is kept in the ctx.
 	ClusterProviderContextKey kubermaticcontext.Key = "cluster-provider"
 
-	// PrivilegedClusterProviderContextKey key under which the current PrivilegedClusterProvider is kept in the ctx
+	// PrivilegedClusterProviderContextKey key under which the current PrivilegedClusterProvider is kept in the ctx.
 	PrivilegedClusterProviderContextKey kubermaticcontext.Key = "privileged-cluster-provider"
 
-	// UserInfoContextKey key under which the current UserInfoExtractor is kept in the ctx
+	// UserInfoContextKey key under which the current UserInfoExtractor is kept in the ctx.
 	UserInfoContextKey kubermaticcontext.Key = "user-info"
 
-	// AuthenticatedUserContextKey key under which the current User (from OIDC provider) is kept in the ctx
+	// AuthenticatedUserContextKey key under which the current User (from OIDC provider) is kept in the ctx.
 	AuthenticatedUserContextKey kubermaticcontext.Key = "authenticated-user"
 
-	// AddonProviderContextKey key under which the current AddonProvider is kept in the ctx
+	// AddonProviderContextKey key under which the current AddonProvider is kept in the ctx.
 	AddonProviderContextKey kubermaticcontext.Key = "addon-provider"
 
-	// PrivilegedAddonProviderContextKey key under which the current PrivilegedAddonProvider is kept in the ctx
+	// PrivilegedAddonProviderContextKey key under which the current PrivilegedAddonProvider is kept in the ctx.
 	PrivilegedAddonProviderContextKey kubermaticcontext.Key = "privileged-addon-provider"
 
-	// ConstraintProviderContextKey key under which the current ConstraintProvider is kept in the ctx
+	// ConstraintProviderContextKey key under which the current ConstraintProvider is kept in the ctx.
 	ConstraintProviderContextKey kubermaticcontext.Key = "constraint-provider"
 
-	// PrivilegedConstraintProviderContextKey key under which the current PrivilegedConstraintProvider is kept in the ctx
+	// PrivilegedConstraintProviderContextKey key under which the current PrivilegedConstraintProvider is kept in the ctx.
 	PrivilegedConstraintProviderContextKey kubermaticcontext.Key = "privileged-constraint-provider"
 
-	// AlertmanagerProviderContextKey key under which the current AlertmanagerProvider is kept in the ctx
+	// AlertmanagerProviderContextKey key under which the current AlertmanagerProvider is kept in the ctx.
 	AlertmanagerProviderContextKey kubermaticcontext.Key = "alertmanager-provider"
 
-	// PrivilegedAlertmanagerProviderContextKey key under which the current PrivilegedAlertmanagerProvider is kept in the ctx
+	// PrivilegedAlertmanagerProviderContextKey key under which the current PrivilegedAlertmanagerProvider is kept in the ctx.
 	PrivilegedAlertmanagerProviderContextKey kubermaticcontext.Key = "privileged-alertmanager-provider"
 
-	// RuleGroupProviderContextKey key under which the current RuleGroupProvider is kept in the ctx
+	// RuleGroupProviderContextKey key under which the current RuleGroupProvider is kept in the ctx.
 	RuleGroupProviderContextKey kubermaticcontext.Key = "rulegroup-provider"
 
-	// PrivilegedRuleGroupProviderContextKey key under which the current PrivilegedRuleGroupProvider is kept in the ctx
+	// PrivilegedRuleGroupProviderContextKey key under which the current PrivilegedRuleGroupProvider is kept in the ctx.
 	PrivilegedRuleGroupProviderContextKey kubermaticcontext.Key = "privileged-rulegroup-provider"
 
-	// EtcdBackupConfigProviderContextKey key under which the current EtcdBackupConfigProvider is kept in the ctx
+	// EtcdBackupConfigProviderContextKey key under which the current EtcdBackupConfigProvider is kept in the ctx.
 	EtcdBackupConfigProviderContextKey kubermaticcontext.Key = "etcdbackupconfig-provider"
 
-	// PrivilegedEtcdBackupConfigProviderContextKey key under which the current PrivilegedEtcdBackupConfigProvider is kept in the ctx
+	// PrivilegedEtcdBackupConfigProviderContextKey key under which the current PrivilegedEtcdBackupConfigProvider is kept in the ctx.
 	PrivilegedEtcdBackupConfigProviderContextKey kubermaticcontext.Key = "privileged-etcdbackupconfig-provider"
 
-	// EtcdRestoreProviderContextKey key under which the current EtcdRestoreProvider is kept in the ctx
+	// EtcdRestoreProviderContextKey key under which the current EtcdRestoreProvider is kept in the ctx.
 	EtcdRestoreProviderContextKey kubermaticcontext.Key = "etcdbrestore-provider"
 
-	// PrivilegedEtcdRestoreProviderContextKey key under which the current PrivilegedEtcdRestoreProvider is kept in the ctx
+	// PrivilegedEtcdRestoreProviderContextKey key under which the current PrivilegedEtcdRestoreProvider is kept in the ctx.
 	PrivilegedEtcdRestoreProviderContextKey kubermaticcontext.Key = "privileged-etcdrestore-provider"
 
-	// EtcdBackupConfigProjectProviderContextKey key under which the current EtcdBackupConfigProjectProvider is kept in the ctx
+	// EtcdBackupConfigProjectProviderContextKey key under which the current EtcdBackupConfigProjectProvider is kept in the ctx.
 	EtcdBackupConfigProjectProviderContextKey kubermaticcontext.Key = "etcdbackupconfig-project-provider"
 
-	// PrivilegedEtcdBackupConfigProjectProviderContextKey key under which the current PrivilegedEtcdBackupConfigProjectProvider is kept in the ctx
+	// PrivilegedEtcdBackupConfigProjectProviderContextKey key under which the current PrivilegedEtcdBackupConfigProjectProvider is kept in the ctx.
 	PrivilegedEtcdBackupConfigProjectProviderContextKey kubermaticcontext.Key = "privileged-etcdbackupconfig-project-provider"
 
-	// EtcdRestoreProjectProviderContextKey key under which the current EtcdRestoreProjectProvider is kept in the ctx
+	// EtcdRestoreProjectProviderContextKey key under which the current EtcdRestoreProjectProvider is kept in the ctx.
 	EtcdRestoreProjectProviderContextKey kubermaticcontext.Key = "etcdbrestore-project-provider"
 
-	// PrivilegedEtcdRestoreProjectProviderContextKey key under which the current PrivilegedEtcdRestoreProjectProvider is kept in the ctx
+	// PrivilegedEtcdRestoreProjectProviderContextKey key under which the current PrivilegedEtcdRestoreProjectProvider is kept in the ctx.
 	PrivilegedEtcdRestoreProjectProviderContextKey kubermaticcontext.Key = "privileged-etcdrestore-project-provider"
 
-	// BackupCredentialsProviderContextKey key under which the current BackupCredentialsProvider is kept in the ctx
+	// BackupCredentialsProviderContextKey key under which the current BackupCredentialsProvider is kept in the ctx.
 	BackupCredentialsProviderContextKey kubermaticcontext.Key = "backupcredentials-provider"
 
-	// PrivilegedMLAAdminSettingProviderContextKey key under which the current PrivilegedMLAAdminSettingProvider is kept in the ctx
+	// PrivilegedMLAAdminSettingProviderContextKey key under which the current PrivilegedMLAAdminSettingProvider is kept in the ctx.
 	PrivilegedMLAAdminSettingProviderContextKey kubermaticcontext.Key = "privileged-mla-admin-setting-provider"
 
 	UserCRContextKey                            = kubermaticcontext.UserCRContextKey
 	SeedsGetterContextKey kubermaticcontext.Key = "seeds-getter"
 )
 
-// Now stubbed out to allow testing
+// Now stubbed out to allow testing.
 var Now = time.Now
 
-// seedClusterGetter defines functionality to retrieve a seed name
+// seedClusterGetter defines functionality to retrieve a seed name.
 type seedClusterGetter interface {
 	GetSeedCluster() apiv1.SeedCluster
 }
 
-// SetClusterProvider is a middleware that injects the current ClusterProvider into the ctx
+// SetClusterProvider is a middleware that injects the current ClusterProvider into the ctx.
 func SetClusterProvider(clusterProviderGetter provider.ClusterProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -145,7 +145,7 @@ func SetClusterProvider(clusterProviderGetter provider.ClusterProviderGetter, se
 	}
 }
 
-// SetPrivilegedClusterProvider is a middleware that injects the current ClusterProvider into the ctx
+// SetPrivilegedClusterProvider is a middleware that injects the current ClusterProvider into the ctx.
 func SetPrivilegedClusterProvider(clusterProviderGetter provider.ClusterProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -163,7 +163,7 @@ func SetPrivilegedClusterProvider(clusterProviderGetter provider.ClusterProvider
 }
 
 // UserSaver is a middleware that checks if authenticated user already exists in the database
-// next it creates/retrieve an internal object (kubermaticv1.User) and stores it the ctx under UserCRContexKey
+// next it creates/retrieve an internal object (kubermaticv1.User) and stores it the ctx under UserCRContexKey.
 func UserSaver(userProvider provider.UserProvider) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -217,7 +217,7 @@ func UserSaver(userProvider provider.UserProvider) endpoint.Middleware {
 }
 
 // UserInfoUnauthorized tries to build userInfo for not authenticated (token) user
-// instead it reads the user_id from the request and finds the associated user in the database
+// instead it reads the user_id from the request and finds the associated user in the database.
 func UserInfoUnauthorized(userProjectMapper provider.ProjectMemberMapper, userProvider provider.UserProvider) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -249,7 +249,7 @@ func UserInfoUnauthorized(userProjectMapper provider.ProjectMemberMapper, userPr
 	}
 }
 
-// TokenVerifier knows how to verify a token from the incoming request
+// TokenVerifier knows how to verify a token from the incoming request.
 func TokenVerifier(tokenVerifier auth.TokenVerifier, userProvider provider.UserProvider) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -305,7 +305,7 @@ func TokenVerifier(tokenVerifier auth.TokenVerifier, userProvider provider.UserP
 	}
 }
 
-// Addons is a middleware that injects the current AddonProvider into the ctx
+// Addons is a middleware that injects the current AddonProvider into the ctx.
 func Addons(clusterProviderGetter provider.ClusterProviderGetter, addonProviderGetter provider.AddonProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -321,7 +321,7 @@ func Addons(clusterProviderGetter provider.ClusterProviderGetter, addonProviderG
 	}
 }
 
-// PrivilegedAddons is a middleware that injects the current PrivilegedAddonProvider into the ctx
+// PrivilegedAddons is a middleware that injects the current PrivilegedAddonProvider into the ctx.
 func PrivilegedAddons(clusterProviderGetter provider.ClusterProviderGetter, addonProviderGetter provider.AddonProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -364,7 +364,7 @@ func getAddonProvider(clusterProviderGetter provider.ClusterProviderGetter, addo
 	return addonProviderGetter(seed)
 }
 
-// TokenExtractor knows how to extract a token from the incoming request
+// TokenExtractor knows how to extract a token from the incoming request.
 func TokenExtractor(o auth.TokenExtractor) transporthttp.RequestFunc {
 	return func(ctx context.Context, r *http.Request) context.Context {
 		token, err := o.Extract(r)
@@ -448,14 +448,14 @@ func checkBlockedTokens(email, token string, userProvider provider.UserProvider)
 	return nil
 }
 
-// SetSeedsGetter injects the current SeedsGetter into the ctx
+// SetSeedsGetter injects the current SeedsGetter into the ctx.
 func SetSeedsGetter(seedsGetter provider.SeedsGetter) transporthttp.RequestFunc {
 	return func(ctx context.Context, r *http.Request) context.Context {
 		return context.WithValue(ctx, SeedsGetterContextKey, seedsGetter)
 	}
 }
 
-// Constraints is a middleware that injects the current ConstraintProvider into the ctx
+// Constraints is a middleware that injects the current ConstraintProvider into the ctx.
 func Constraints(clusterProviderGetter provider.ClusterProviderGetter, constraintProviderGetter provider.ConstraintProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -471,7 +471,7 @@ func Constraints(clusterProviderGetter provider.ClusterProviderGetter, constrain
 	}
 }
 
-// PrivilegedConstraints is a middleware that injects the current PrivilegedConstraintProvider into the ctx
+// PrivilegedConstraints is a middleware that injects the current PrivilegedConstraintProvider into the ctx.
 func PrivilegedConstraints(clusterProviderGetter provider.ClusterProviderGetter, constraintProviderGetter provider.ConstraintProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -514,7 +514,7 @@ func getConstraintProvider(clusterProviderGetter provider.ClusterProviderGetter,
 	return constraintProviderGetter(seed)
 }
 
-// Alertmanagers is a middleware that injects the current AlertmanagerProvider into the ctx
+// Alertmanagers is a middleware that injects the current AlertmanagerProvider into the ctx.
 func Alertmanagers(clusterProviderGetter provider.ClusterProviderGetter, alertmanagerProviderGetter provider.AlertmanagerProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -530,7 +530,7 @@ func Alertmanagers(clusterProviderGetter provider.ClusterProviderGetter, alertma
 	}
 }
 
-// PrivilegedAlertmanagers is a middleware that injects the current PrivilegedAlertmanagerProvider into the ctx
+// PrivilegedAlertmanagers is a middleware that injects the current PrivilegedAlertmanagerProvider into the ctx.
 func PrivilegedAlertmanagers(clusterProviderGetter provider.ClusterProviderGetter, alertmanagerProviderGetter provider.AlertmanagerProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -573,7 +573,7 @@ func getAlertmanagerProvider(clusterProviderGetter provider.ClusterProviderGette
 	return alertmanagerProviderGetter(seed)
 }
 
-// RuleGroups is a middleware that injects the current RuleGroupProvider into the ctx
+// RuleGroups is a middleware that injects the current RuleGroupProvider into the ctx.
 func RuleGroups(clusterProviderGetter provider.ClusterProviderGetter, ruleGroupProviderGetter provider.RuleGroupProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -589,7 +589,7 @@ func RuleGroups(clusterProviderGetter provider.ClusterProviderGetter, ruleGroupP
 	}
 }
 
-// PrivilegedRuleGroups is a middleware that injects the current PrivilegedRuleGroupProvider into the ctx
+// PrivilegedRuleGroups is a middleware that injects the current PrivilegedRuleGroupProvider into the ctx.
 func PrivilegedRuleGroups(clusterProviderGetter provider.ClusterProviderGetter, ruleGroupProviderGetter provider.RuleGroupProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -632,7 +632,7 @@ func getRuleGroupProvider(clusterProviderGetter provider.ClusterProviderGetter, 
 	return ruleGroupProviderGetter(seed)
 }
 
-// EtcdBackupConfig is a middleware that injects the current EtcdBackupConfigProvider into the ctx
+// EtcdBackupConfig is a middleware that injects the current EtcdBackupConfigProvider into the ctx.
 func EtcdBackupConfig(clusterProviderGetter provider.ClusterProviderGetter, etcdBackupConfigProviderGetter provider.EtcdBackupConfigProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -648,7 +648,7 @@ func EtcdBackupConfig(clusterProviderGetter provider.ClusterProviderGetter, etcd
 	}
 }
 
-// PrivilegedEtcdBackupConfig is a middleware that injects the current PrivilegedEtcdBackupConfigProvider into the ctx
+// PrivilegedEtcdBackupConfig is a middleware that injects the current PrivilegedEtcdBackupConfigProvider into the ctx.
 func PrivilegedEtcdBackupConfig(clusterProviderGetter provider.ClusterProviderGetter, etcdBackupConfigProviderGetter provider.EtcdBackupConfigProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -691,7 +691,7 @@ func getEtcdBackupConfigProvider(clusterProviderGetter provider.ClusterProviderG
 	return etcdBackupConfigProviderGetter(seed)
 }
 
-// EtcdRestore is a middleware that injects the current EtcdRestoreProvider into the ctx
+// EtcdRestore is a middleware that injects the current EtcdRestoreProvider into the ctx.
 func EtcdRestore(clusterProviderGetter provider.ClusterProviderGetter, etcdRestoreProviderGetter provider.EtcdRestoreProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -707,7 +707,7 @@ func EtcdRestore(clusterProviderGetter provider.ClusterProviderGetter, etcdResto
 	}
 }
 
-// PrivilegedEtcdRestore is a middleware that injects the current PrivilegedEtcdRestoreProvider into the ctx
+// PrivilegedEtcdRestore is a middleware that injects the current PrivilegedEtcdRestoreProvider into the ctx.
 func PrivilegedEtcdRestore(clusterProviderGetter provider.ClusterProviderGetter, etcdRestoreProviderGetter provider.EtcdRestoreProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -750,7 +750,7 @@ func getEtcdRestoreProvider(clusterProviderGetter provider.ClusterProviderGetter
 	return etcdRestoreProviderGetter(seed)
 }
 
-// EtcdBackupConfigProject is a middleware that injects the current EtcdBackupConfigProjectProvider into the ctx
+// EtcdBackupConfigProject is a middleware that injects the current EtcdBackupConfigProjectProvider into the ctx.
 func EtcdBackupConfigProject(etcdBackupConfigProjectProviderGetter provider.EtcdBackupConfigProjectProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -764,7 +764,7 @@ func EtcdBackupConfigProject(etcdBackupConfigProjectProviderGetter provider.Etcd
 	}
 }
 
-// PrivilegedEtcdBackupConfigProject is a middleware that injects the current PrivilegedEtcdBackupConfigProjectProvider into the ctx
+// PrivilegedEtcdBackupConfigProject is a middleware that injects the current PrivilegedEtcdBackupConfigProjectProvider into the ctx.
 func PrivilegedEtcdBackupConfigProject(etcdBackupConfigProjectProviderGetter provider.EtcdBackupConfigProjectProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -788,7 +788,7 @@ func getEtcdBackupConfigProjectProvider(etcdBackupConfigProjectProviderGetter pr
 	return etcdBackupConfigProjectProviderGetter(seeds)
 }
 
-// EtcdRestoreProject is a middleware that injects the current EtcdRestoreProjectProvider into the ctx
+// EtcdRestoreProject is a middleware that injects the current EtcdRestoreProjectProvider into the ctx.
 func EtcdRestoreProject(etcdRestoreProjectProviderGetter provider.EtcdRestoreProjectProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -802,7 +802,7 @@ func EtcdRestoreProject(etcdRestoreProjectProviderGetter provider.EtcdRestorePro
 	}
 }
 
-// PrivilegedEtcdRestoreProject is a middleware that injects the current PrivilegedEtcdRestoreProjectProvider into the ctx
+// PrivilegedEtcdRestoreProject is a middleware that injects the current PrivilegedEtcdRestoreProjectProvider into the ctx.
 func PrivilegedEtcdRestoreProject(etcdRestoreProjectProviderGetter provider.EtcdRestoreProjectProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -826,7 +826,7 @@ func getEtcdRestoreProjectProvider(etcdRestoreProjectProviderGetter provider.Etc
 	return etcdRestoreProjectProviderGetter(seeds)
 }
 
-// BackupCredentials is a middleware that injects the current BackupCredentialsProvider into the ctx
+// BackupCredentials is a middleware that injects the current BackupCredentialsProvider into the ctx.
 func BackupCredentials(backupCredentialsProviderGetter provider.BackupCredentialsProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -853,7 +853,7 @@ func BackupCredentials(backupCredentialsProviderGetter provider.BackupCredential
 	}
 }
 
-// PrivilegedMLAAdminSetting is a middleware that injects the current PrivilegedMLAAdminSettingProvider into the ctx
+// PrivilegedMLAAdminSetting is a middleware that injects the current PrivilegedMLAAdminSettingProvider into the ctx.
 func PrivilegedMLAAdminSetting(clusterProviderGetter provider.ClusterProviderGetter, mlaAdminSettingProviderGetter provider.PrivilegedMLAAdminSettingProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {

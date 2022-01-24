@@ -67,7 +67,7 @@ func CreateOrUpdateMeteringConfigurations(userInfoGetter provider.UserInfoGetter
 	}
 }
 
-// ListMeteringReportsEndpoint lists available reports
+// ListMeteringReportsEndpoint lists available reports.
 func ListMeteringReportsEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		userInfo, err := userInfoGetter(ctx, "")

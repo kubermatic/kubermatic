@@ -43,7 +43,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/json"
 )
 
-// GetAPIV1OperatingSystemSpec returns the api compatible OperatingSystemSpec for the given machine
+// GetAPIV1OperatingSystemSpec returns the api compatible OperatingSystemSpec for the given machine.
 func GetAPIV1OperatingSystemSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.OperatingSystemSpec, error) {
 	decodedProviderSpec, err := providerconfig.GetConfig(machineSpec.ProviderSpec)
 	if err != nil {
@@ -109,7 +109,7 @@ func GetAPIV1OperatingSystemSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv
 	return operatingSystemSpec, nil
 }
 
-// GetAPIV2NodeCloudSpec returns the api compatible NodeCloudSpec for the given machine
+// GetAPIV2NodeCloudSpec returns the api compatible NodeCloudSpec for the given machine.
 func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.NodeCloudSpec, error) {
 	decodedProviderSpec, err := providerconfig.GetConfig(machineSpec.ProviderSpec)
 	if err != nil {

@@ -39,7 +39,7 @@ const (
 	assignMetadataAPIVersion              = "v1alpha1"
 )
 
-// ConfigCRDCreator returns the gatekeeper config CRD definition
+// ConfigCRDCreator returns the gatekeeper config CRD definition.
 func ConfigCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return resources.GatekeeperConfigCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
@@ -70,7 +70,7 @@ func ConfigCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
 	}
 }
 
-// ConstraintTemplateCRDCreator returns the gatekeeper constraintTemplate CRD definition
+// ConstraintTemplateCRDCreator returns the gatekeeper constraintTemplate CRD definition.
 func ConstraintTemplateCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return resources.GatekeeperConstraintTemplateCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
@@ -116,7 +116,7 @@ func ConstraintTemplateCRDCreator() reconciling.NamedCustomResourceDefinitionCre
 	}
 }
 
-// ConstraintPodStatusCRDCreator returns the gatekeeper ConstraintPodStatus CRD definition
+// ConstraintPodStatusCRDCreator returns the gatekeeper ConstraintPodStatus CRD definition.
 func ConstraintPodStatusCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return resources.GatekeeperConstraintPodStatusCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
@@ -147,7 +147,7 @@ func ConstraintPodStatusCRDCreator() reconciling.NamedCustomResourceDefinitionCr
 	}
 }
 
-// ConstraintTemplatePodStatusCRDCreator returns the gatekeeper ConstraintTemplatePodStatus CRD definition
+// ConstraintTemplatePodStatusCRDCreator returns the gatekeeper ConstraintTemplatePodStatus CRD definition.
 func ConstraintTemplatePodStatusCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return resources.GatekeeperConstraintTemplatePodStatusCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {

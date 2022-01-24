@@ -46,7 +46,7 @@ const (
 	// VersionLabel is the label containing the application's version.
 	VersionLabel = "app.kubernetes.io/version"
 
-	// InstanceLabel is A unique name identifying the instance of an application
+	// InstanceLabel is A unique name identifying the instance of an application.
 	InstanceLabel = "app.kubernetes.io/instance"
 
 	// ComponentLabel is the label of the component within the architecture.
@@ -59,7 +59,7 @@ const (
 
 	// we use a shared certificate/CA for all webhooks, because multiple webhooks
 	// run in the same controller manager so it's much easier if they all use the
-	// same certs
+	// same certs.
 	webhookCommonName            = "webhook"
 	WebhookServingCASecretName   = "webhook-ca"
 	WebhookServingCertSecretName = "webhook-cert"

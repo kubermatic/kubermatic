@@ -22,19 +22,19 @@ import (
 )
 
 const (
-	// EtcdRestoreResourceName represents "Resource" defined in Kubernetes
+	// EtcdRestoreResourceName represents "Resource" defined in Kubernetes.
 	EtcdRestoreResourceName = "etcdrestores"
 
-	// EtcdRestoreKindName represents "Kind" defined in Kubernetes
+	// EtcdRestoreKindName represents "Kind" defined in Kubernetes.
 	EtcdRestoreKindName = "EtcdRestore"
 
-	// EtcdRestorePhaseStarted value indicating that the restore has started
+	// EtcdRestorePhaseStarted value indicating that the restore has started.
 	EtcdRestorePhaseStarted = "Started"
 
-	// EtcdRestorePhaseStsRebuilding value indicating that the old Etcd statefulset has been deleted and is now rebuilding
+	// EtcdRestorePhaseStsRebuilding value indicating that the old Etcd statefulset has been deleted and is now rebuilding.
 	EtcdRestorePhaseStsRebuilding = "StsRebuilding"
 
-	// EtcdRestorePhaseCompleted value indicating that the old Etcd statefulset has completed successfully
+	// EtcdRestorePhaseCompleted value indicating that the old Etcd statefulset has completed successfully.
 	EtcdRestorePhaseCompleted = "Completed"
 )
 
@@ -53,7 +53,7 @@ type EtcdRestore struct {
 	Status EtcdRestoreStatus `json:"status,omitempty"`
 }
 
-// EtcdRestoreSpec specifies details of an etcd restore
+// EtcdRestoreSpec specifies details of an etcd restore.
 type EtcdRestoreSpec struct {
 	// Name defines the name of the restore
 	// The name of the restore file in S3 will be <cluster>-<restore name>

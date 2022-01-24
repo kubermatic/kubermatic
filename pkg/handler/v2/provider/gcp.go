@@ -44,7 +44,7 @@ type gcpTypesNoCredentialReq struct {
 	Zone string
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req gcpTypesNoCredentialReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
@@ -63,7 +63,7 @@ type gcpSubnetworksNoCredentialReq struct {
 	Network string
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req gcpSubnetworksNoCredentialReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,

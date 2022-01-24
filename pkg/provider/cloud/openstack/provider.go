@@ -46,25 +46,25 @@ import (
 )
 
 const (
-	// SecurityGroupCleanupFinalizer will instruct the deletion of the security group
+	// SecurityGroupCleanupFinalizer will instruct the deletion of the security group.
 	SecurityGroupCleanupFinalizer = "kubermatic.io/cleanup-openstack-security-group"
 	// OldNetworkCleanupFinalizer will instruct the deletion of all network components. Router, Network, Subnet
-	// Deprecated: Got split into dedicated finalizers
+	// Deprecated: Got split into dedicated finalizers.
 	OldNetworkCleanupFinalizer = "kubermatic.io/cleanup-openstack-network"
 
-	// NetworkCleanupFinalizer will instruct the deletion of the network
+	// NetworkCleanupFinalizer will instruct the deletion of the network.
 	NetworkCleanupFinalizer = "kubermatic.io/cleanup-openstack-network-v2"
-	// SubnetCleanupFinalizer will instruct the deletion of the subnet
+	// SubnetCleanupFinalizer will instruct the deletion of the subnet.
 	SubnetCleanupFinalizer = "kubermatic.io/cleanup-openstack-subnet-v2"
-	// RouterCleanupFinalizer will instruct the deletion of the router
+	// RouterCleanupFinalizer will instruct the deletion of the router.
 	RouterCleanupFinalizer = "kubermatic.io/cleanup-openstack-router-v2"
-	// RouterSubnetLinkCleanupFinalizer will instruct the deletion of the link between the router and the subnet
+	// RouterSubnetLinkCleanupFinalizer will instruct the deletion of the link between the router and the subnet.
 	RouterSubnetLinkCleanupFinalizer = "kubermatic.io/cleanup-openstack-router-subnet-link-v2"
 )
 
 type getClientFunc func(cluster kubermaticv1.CloudSpec, dc *kubermaticv1.DatacenterSpecOpenstack, secretKeySelector provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool) (*gophercloud.ServiceClient, error)
 
-// Provider is a struct that implements CloudProvider interface
+// Provider is a struct that implements CloudProvider interface.
 type Provider struct {
 	dc                *kubermaticv1.DatacenterSpecOpenstack
 	secretKeySelector provider.SecretKeySelectorValueFunc
@@ -91,12 +91,12 @@ func NewCloudProvider(
 
 var _ provider.CloudProvider = &Provider{}
 
-// DefaultCloudSpec adds defaults to the cloud spec
+// DefaultCloudSpec adds defaults to the cloud spec.
 func (os *Provider) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-// ValidateCloudSpec validates the given CloudSpec
+// ValidateCloudSpec validates the given CloudSpec.
 func (os *Provider) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	netClient, err := os.getClientFunc(spec, os.dc, os.secretKeySelector, os.caBundle)
 	if err != nil {
@@ -134,7 +134,7 @@ func (os *Provider) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-// validateExistingSubnetOverlap checks whether any subnets in the given network overlap with the default subnet CIDR
+// validateExistingSubnetOverlap checks whether any subnets in the given network overlap with the default subnet CIDR.
 func validateExistingSubnetOverlap(networkID string, netClient *gophercloud.ServiceClient) error {
 	_, defaultCIDR, err := net.ParseCIDR(subnetCIDR)
 	if err != nil {
@@ -187,7 +187,7 @@ func ensureFinalizers(cluster *kubermaticv1.Cluster, finalizers []string, update
 }
 
 // InitializeCloudProvider initializes a cluster, in particular
-// creates security group and network configuration
+// creates security group and network configuration.
 func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	netClient, err := os.getClientFunc(cluster.Spec.Cloud, os.dc, os.secretKeySelector, os.caBundle)
 	if err != nil {
@@ -347,7 +347,7 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 // }
 
 // CleanUpCloudProvider does the clean-up in particular:
-// removes security group and network configuration
+// removes security group and network configuration.
 func (os *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	netClient, err := os.getClientFunc(cluster.Spec.Cloud, os.dc, os.secretKeySelector, os.caBundle)
 	if err != nil {
@@ -416,7 +416,7 @@ func (os *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update p
 	return cluster, nil
 }
 
-// GetFlavors lists available flavors for the given CloudSpec.DatacenterName and OpenstackSpec.Region
+// GetFlavors lists available flavors for the given CloudSpec.DatacenterName and OpenstackSpec.Region.
 func GetFlavors(authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]osflavors.Flavor, error) {
 	authClient, err := getAuthClient(authURL, credentials, caBundle)
 	if err != nil {
@@ -430,7 +430,7 @@ func GetFlavors(authURL, region string, credentials *resources.OpenstackCredenti
 	return flavors, nil
 }
 
-// GetTenants lists all available tenents for the given CloudSpec.DatacenterName
+// GetTenants lists all available tenents for the given CloudSpec.DatacenterName.
 func GetTenants(authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]osprojects.Project, error) {
 	authClient, err := getAuthClient(authURL, credentials, caBundle)
 	if err != nil {
@@ -445,7 +445,7 @@ func GetTenants(authURL, region string, credentials *resources.OpenstackCredenti
 	return tenants, nil
 }
 
-// GetNetworks lists all available networks for the given CloudSpec.DatacenterName
+// GetNetworks lists all available networks for the given CloudSpec.DatacenterName.
 func GetNetworks(authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]NetworkWithExternalExt, error) {
 	authClient, err := getNetClient(authURL, region, credentials, caBundle)
 	if err != nil {
@@ -460,7 +460,7 @@ func GetNetworks(authURL, region string, credentials *resources.OpenstackCredent
 	return networks, nil
 }
 
-// GetSecurityGroups lists all available security groups for the given CloudSpec.DatacenterName
+// GetSecurityGroups lists all available security groups for the given CloudSpec.DatacenterName.
 func GetSecurityGroups(authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]ossecuritygroups.SecGroup, error) {
 	netClient, err := getNetClient(authURL, region, credentials, caBundle)
 	if err != nil {
@@ -478,7 +478,7 @@ func GetSecurityGroups(authURL, region string, credentials *resources.OpenstackC
 	return secGroups, nil
 }
 
-// GetAvailabilityZones lists availability zones for the given CloudSpec.DatacenterName and OpenstackSpec.Region
+// GetAvailabilityZones lists availability zones for the given CloudSpec.DatacenterName and OpenstackSpec.Region.
 func GetAvailabilityZones(authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]osavailabilityzones.AvailabilityZone, error) {
 	computeClient, err := getComputeClient(authURL, region, credentials, caBundle)
 	if err != nil {
@@ -569,7 +569,7 @@ func getComputeClient(authURL, region string, credentials *resources.OpenstackCr
 	return serviceClient, err
 }
 
-// GetSubnets list all available subnet ids for a given CloudSpec
+// GetSubnets list all available subnet ids for a given CloudSpec.
 func GetSubnets(authURL, region, networkID string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]ossubnets.Subnet, error) {
 	serviceClient, err := getNetClient(authURL, region, credentials, caBundle)
 	if err != nil {
@@ -660,7 +660,7 @@ func addICMPRulesToSecurityGroupIfNecesary(cluster *kubermaticv1.Cluster, secGro
 	return nil
 }
 
-// ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted
+// ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted.
 func (os *Provider) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
 	return nil
 }
@@ -788,7 +788,7 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 }
 
 // firstKey read the secret and return value for the firstkey. if the firstKey does not exist, tries with
-// fallbackKey. if the fallbackKey does not exist then return an error
+// fallbackKey. if the fallbackKey does not exist then return an error.
 func firstKey(secretKeySelector provider.SecretKeySelectorValueFunc, configVar *providerconfig.GlobalSecretKeySelector, firstKey string, fallbackKey string) (string, error) {
 	var value string
 	var err error

@@ -58,13 +58,13 @@ type OIDCToken struct {
 	IDToken string
 }
 
-// OIDCIssuerVerifier combines OIDCIssuer and TokenVerifier
+// OIDCIssuerVerifier combines OIDCIssuer and TokenVerifier.
 type OIDCIssuerVerifier interface {
 	OIDCIssuer
 	TokenVerifier
 }
 
-// OIDCIssuer exposes methods for getting OIDC tokens
+// OIDCIssuer exposes methods for getting OIDC tokens.
 type OIDCIssuer interface {
 	// AuthCodeURL returns a URL to OpenID provider's consent page
 	// that asks for permissions for the required scopes explicitly.
@@ -79,7 +79,7 @@ type OIDCIssuer interface {
 	Exchange(ctx context.Context, code string) (OIDCToken, error)
 }
 
-// OpenIDClient implements OIDCIssuerVerifier and TokenExtractorVerifier
+// OpenIDClient implements OIDCIssuerVerifier and TokenExtractorVerifier.
 type OpenIDClient struct {
 	issuer         string
 	tokenExtractor TokenExtractor
@@ -130,7 +130,7 @@ func NewOpenIDClient(issuer, clientID, clientSecret, redirectURI string, extract
 	}, nil
 }
 
-// Extractor knows how to extract the ID token from the request
+// Extractor knows how to extract the ID token from the request.
 func (o *OpenIDClient) Extract(rq *http.Request) (string, error) {
 	return o.tokenExtractor.Extract(rq)
 }
@@ -224,7 +224,7 @@ func (o *OpenIDClient) oauth2Config(scopes ...string) *oauth2.Config {
 	}
 }
 
-// NewHeaderBearerTokenExtractor returns a token extractor which extracts the token from the given header
+// NewHeaderBearerTokenExtractor returns a token extractor which extracts the token from the given header.
 func NewHeaderBearerTokenExtractor(header string) TokenExtractor {
 	return headerBearerTokenExtractor{name: header}
 }
@@ -233,7 +233,7 @@ type headerBearerTokenExtractor struct {
 	name string
 }
 
-// Extract extracts the bearer token from the header
+// Extract extracts the bearer token from the header.
 func (e headerBearerTokenExtractor) Extract(r *http.Request) (string, error) {
 	header := r.Header.Get(e.name)
 	if len(header) < 7 {
@@ -243,7 +243,7 @@ func (e headerBearerTokenExtractor) Extract(r *http.Request) (string, error) {
 	return header[7:], nil
 }
 
-// NewQueryParamBearerTokenExtractor returns a token extractor which extracts the token from the given query parameter
+// NewQueryParamBearerTokenExtractor returns a token extractor which extracts the token from the given query parameter.
 func NewQueryParamBearerTokenExtractor(header string) TokenExtractor {
 	return queryParamBearerTokenExtractor{name: header}
 }
@@ -252,7 +252,7 @@ type queryParamBearerTokenExtractor struct {
 	name string
 }
 
-// Extract extracts the bearer token from the query parameter
+// Extract extracts the bearer token from the query parameter.
 func (e queryParamBearerTokenExtractor) Extract(r *http.Request) (string, error) {
 	val := r.URL.Query().Get(e.name)
 	if len(val) == 0 {
@@ -278,7 +278,7 @@ func (e cookieHeaderBearerTokenExtractor) Extract(r *http.Request) (string, erro
 	return cookie.Value, nil
 }
 
-// NewCombinedExtractor returns an token extractor which tries a list of token extractors until it finds a token
+// NewCombinedExtractor returns an token extractor which tries a list of token extractors until it finds a token.
 func NewCombinedExtractor(extractors ...TokenExtractor) TokenExtractor {
 	return combinedExtractor{extractors: extractors}
 }
@@ -287,7 +287,7 @@ type combinedExtractor struct {
 	extractors []TokenExtractor
 }
 
-// Extract extracts the token via the given token extractors. Returns as soon as it finds a token
+// Extract extracts the token via the given token extractors. Returns as soon as it finds a token.
 func (c combinedExtractor) Extract(r *http.Request) (string, error) {
 	for _, extractor := range c.extractors {
 		token, err := extractor.Extract(r)

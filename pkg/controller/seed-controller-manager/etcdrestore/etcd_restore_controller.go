@@ -53,7 +53,7 @@ import (
 const (
 	ControllerName = "kubermatic_etcd_restore_controller"
 
-	// FinishRestoreFinalizer indicates that the restore is rebuilding the etcd statefulset
+	// FinishRestoreFinalizer indicates that the restore is rebuilding the etcd statefulset.
 	FinishRestoreFinalizer = "kubermatic.io/finish-restore"
 
 	// ActiveRestoreAnnotationName is the cluster annotation that records the EtcdRestore resource that's currently
@@ -62,7 +62,7 @@ const (
 	ActiveRestoreAnnotationName = "kubermatic.io/active-restore"
 )
 
-// Reconciler stores necessary components that are required to restore etcd backups
+// Reconciler stores necessary components that are required to restore etcd backups.
 type Reconciler struct {
 	log        *zap.SugaredLogger
 	workerName string
@@ -73,7 +73,7 @@ type Reconciler struct {
 }
 
 // Add creates a new etcd restore controller that is responsible for
-// managing cluster etcd restores
+// managing cluster etcd restores.
 func Add(
 	mgr manager.Manager,
 	log *zap.SugaredLogger,

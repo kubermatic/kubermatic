@@ -30,14 +30,14 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// ClusterTemplateProvider struct that holds required components in order manage cluster templates
+// ClusterTemplateProvider struct that holds required components in order manage cluster templates.
 type ClusterTemplateProvider struct {
 	// createMasterImpersonatedClient is used as a ground for impersonation
 	createMasterImpersonatedClient ImpersonationClient
 	clientPrivileged               ctrlruntimeclient.Client
 }
 
-// NewClusterTemplateProvider returns a cluster template provider
+// NewClusterTemplateProvider returns a cluster template provider.
 func NewClusterTemplateProvider(createMasterImpersonatedClient ImpersonationClient, client ctrlruntimeclient.Client) (*ClusterTemplateProvider, error) {
 	return &ClusterTemplateProvider{
 		createMasterImpersonatedClient: createMasterImpersonatedClient,

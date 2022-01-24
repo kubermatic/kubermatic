@@ -33,7 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/cni"
 )
 
-// ListVersions returns a list of available versions for the given CNI plugin type
+// ListVersions returns a list of available versions for the given CNI plugin type.
 func ListVersions() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(listCNIPluginVersionsReq)
@@ -76,7 +76,7 @@ func DecodeListCNIPluginVersions(ctx context.Context, r *http.Request) (interfac
 	}, nil
 }
 
-// Validate validates listProviderVersionsReq request
+// Validate validates listProviderVersionsReq request.
 func (l listCNIPluginVersionsReq) Validate() error {
 	if !cni.GetSupportedCNIPlugins().Has(l.CNIPluginType) {
 		return fmt.Errorf("CNI plugin type %q not supported. Supported types: %v", l.CNIPluginType, cni.GetSupportedCNIPlugins().List())
@@ -84,7 +84,7 @@ func (l listCNIPluginVersionsReq) Validate() error {
 	return nil
 }
 
-// ListVersionsForCluster returns a list of available versions for the given CNI plugin type
+// ListVersionsForCluster returns a list of available versions for the given CNI plugin type.
 func ListVersionsForCluster(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {

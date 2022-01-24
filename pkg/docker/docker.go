@@ -28,7 +28,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// execCommand is an internal helper function to execute commands and log them
+// execCommand is an internal helper function to execute commands and log them.
 func execCommand(log *zap.SugaredLogger, dryRun bool, cmd *exec.Cmd) error {
 	log = log.With("command", strings.Join(cmd.Args, " "))
 	if dryRun {
@@ -49,7 +49,7 @@ func execCommand(log *zap.SugaredLogger, dryRun bool, cmd *exec.Cmd) error {
 }
 
 // DownloadImages pulls all given images using the Docker CLI
-// Invokes DownloadImage for actual pulling
+// Invokes DownloadImage for actual pulling.
 func DownloadImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, images []string) error {
 	for _, image := range images {
 		select {
@@ -65,7 +65,7 @@ func DownloadImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, im
 	return nil
 }
 
-// DownloadImage invokes the Docker CLI and pulls an image
+// DownloadImage invokes the Docker CLI and pulls an image.
 func DownloadImage(ctx context.Context, log *zap.SugaredLogger, dryRun bool, image string) error {
 	log = log.With("image", image)
 	log.Info("Downloading image...")
@@ -79,7 +79,7 @@ func DownloadImage(ctx context.Context, log *zap.SugaredLogger, dryRun bool, ima
 }
 
 // RetagImages invokes the Docker CLI and tags the given images so they belongs to the given registry.
-// Invokes RetagImage for actual tagging
+// Invokes RetagImage for actual tagging.
 func RetagImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, images []string, registry string) ([]string, error) {
 	var retaggedImages []string
 	for _, image := range images {
@@ -124,7 +124,7 @@ func RetagImage(ctx context.Context, log *zap.SugaredLogger, dryRun bool, source
 }
 
 // PushImages pushes all given images using the Docker CLI
-// Invokes PushImage for actual pushing
+// Invokes PushImage for actual pushing.
 func PushImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, images []string) error {
 	for _, image := range images {
 		select {
@@ -140,7 +140,7 @@ func PushImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, images
 	return nil
 }
 
-// PushImage invokes the Docker CLI and pushes the given image
+// PushImage invokes the Docker CLI and pushes the given image.
 func PushImage(ctx context.Context, log *zap.SugaredLogger, dryRun bool, image string) error {
 	log = log.With("image", image)
 
@@ -154,7 +154,7 @@ func PushImage(ctx context.Context, log *zap.SugaredLogger, dryRun bool, image s
 }
 
 // Copy copies the content from a directory out of the
-// container onto the host system
+// container onto the host system.
 func Copy(ctx context.Context, log *zap.SugaredLogger, image string, dst string, src string) error {
 	var err error
 

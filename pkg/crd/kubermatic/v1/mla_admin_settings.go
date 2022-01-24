@@ -21,10 +21,10 @@ import (
 )
 
 const (
-	// MLAAdminSettingResourceName represents "Resource" defined in Kubernetes
+	// MLAAdminSettingResourceName represents "Resource" defined in Kubernetes.
 	MLAAdminSettingResourceName = "mlaadminsettings"
 
-	// MLAAdminSettingKindName represents "Kind" defined in Kubernetes
+	// MLAAdminSettingKindName represents "Kind" defined in Kubernetes.
 	MLAAdminSettingKindName = "MLAAdminSetting"
 )
 
@@ -88,7 +88,7 @@ type LoggingRateLimitSettings struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // MLAAdminSettingList specifies a list of administrtor settings for KKP
-// user cluster MLA (monitoring, logging & alerting) stack
+// user cluster MLA (monitoring, logging & alerting) stack.
 type MLAAdminSettingList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

@@ -53,7 +53,7 @@ type clusterautoscalerData interface {
 	Cluster() *kubermaticv1.Cluster
 }
 
-// DeploymentCreator returns the function to create and update the cluster-autoscaler deployment
+// DeploymentCreator returns the function to create and update the cluster-autoscaler deployment.
 func DeploymentCreator(data clusterautoscalerData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.ClusterAutoscalerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -158,7 +158,7 @@ func DeploymentCreator(data clusterautoscalerData) reconciling.NamedDeploymentCr
 
 // getTag returns the correct tag for the cluster version. We need to have a distinct CA
 // version for each Kubernetes version, because the CA imports the scheduler code and the
-// behaviour of that imported code has to match with what the actual scheduler does
+// behaviour of that imported code has to match with what the actual scheduler does.
 func getTag(cluster *kubermaticv1.Cluster) string {
 	switch cluster.Spec.Version.Semver().Minor() {
 	case 14:

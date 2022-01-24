@@ -169,7 +169,7 @@ func DeploymentCreator(kServerHost string, kServerPort int, registryWithOverwrit
 	}
 }
 
-// PodDisruptionBudgetCreator returns a func to create/update the Konnectivity agent's PodDisruptionBudget
+// PodDisruptionBudgetCreator returns a func to create/update the Konnectivity agent's PodDisruptionBudget.
 func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
 		return resources.KonnectivityPodDisruptionBudgetName, func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {

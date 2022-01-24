@@ -38,7 +38,7 @@ const (
 	kubeconfigPath      = "/etc/kubernetes"
 )
 
-// KubeVersions is used to unmarshal the output of 'kubectl version -ojson'
+// KubeVersions is used to unmarshal the output of 'kubectl version -ojson'.
 type KubeVersions struct {
 	ServerVersion KubeVersion `json:"serverVersion"`
 	ClientVersion KubeVersion `json:"clientVersion"`

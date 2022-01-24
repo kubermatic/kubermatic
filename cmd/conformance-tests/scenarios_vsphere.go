@@ -25,7 +25,7 @@ import (
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
-// Returns a matrix of (version x operating system)
+// Returns a matrix of (version x operating system).
 func getVSphereScenarios(scenarioOptions []string, versions []*semver.Semver) []testScenario {
 	var (
 		customFolder     bool

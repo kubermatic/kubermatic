@@ -65,7 +65,7 @@ type operatingSystemManagerData interface {
 	ComputedNodePortRange() string
 }
 
-// DeploymentCreator returns the function to create and update the operating system manager deployment
+// DeploymentCreator returns the function to create and update the operating system manager deployment.
 func DeploymentCreator(data operatingSystemManagerData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.OperatingSystemManagerDeploymentName, func(in *appsv1.Deployment) (*appsv1.Deployment, error) {

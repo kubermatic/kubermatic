@@ -73,12 +73,12 @@ func (p *packet) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update p
 // 	return cluster, nil
 // }
 
-// CleanUpCloudProvider
+// CleanUpCloudProvider.
 func (p *packet) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, _ provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	return cluster, nil
 }
 
-// ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted
+// ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted.
 func (p *packet) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
 	return nil
 }

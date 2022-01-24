@@ -47,7 +47,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// ResourceMetricsInfo is a struct that holds the node metrics
+// ResourceMetricsInfo is a struct that holds the node metrics.
 type ResourceMetricsInfo struct {
 	Name      string
 	Metrics   corev1.ResourceList
@@ -55,7 +55,7 @@ type ResourceMetricsInfo struct {
 }
 
 // OIDCConfiguration is a struct that holds
-// OIDC provider configuration data, read from command line arguments
+// OIDC provider configuration data, read from command line arguments.
 type OIDCConfiguration struct {
 	// URL holds OIDC Issuer URL address
 	URL string
@@ -73,7 +73,7 @@ type OIDCConfiguration struct {
 	OfflineAccessAsScope bool
 }
 
-// UpdateManager specifies a set of methods to handle cluster versions & updates
+// UpdateManager specifies a set of methods to handle cluster versions & updates.
 type UpdateManager interface {
 	GetVersions(string) ([]*version.Version, error)
 	// TODO: GetVersionsV2 is a temporary function that will replace GetVersions once the new handler will be used by the UI (https://github.com/kubermatic/kubermatic/pull/7590)
@@ -93,7 +93,7 @@ type ServerMetrics struct {
 	InitNodeDeploymentFailures *prometheus.CounterVec
 }
 
-// IsBringYourOwnProvider determines whether the spec holds BringYourOwn provider
+// IsBringYourOwnProvider determines whether the spec holds BringYourOwn provider.
 func IsBringYourOwnProvider(spec kubermaticv1.CloudSpec) (bool, error) {
 	providerName, err := provider.ClusterCloudProviderName(spec)
 	if err != nil {
@@ -206,7 +206,7 @@ func getDialerForPod(pod *corev1.Pod, restClient rest.Interface, cfg *rest.Confi
 	return spdy.NewDialer(upgrader, &http.Client{Transport: transport}, http.MethodPost, req.URL()), nil
 }
 
-// WaitForPortForwarder waits until started port forwarder is ready, or emits an error to provided errChan
+// WaitForPortForwarder waits until started port forwarder is ready, or emits an error to provided errChan.
 func WaitForPortForwarder(p *portforward.PortForwarder, errChan <-chan error) error {
 	timeout := time.After(10 * time.Second)
 	select {

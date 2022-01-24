@@ -31,13 +31,13 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// UserProvider manages user resources
+// UserProvider manages user resources.
 type SettingsProvider struct {
 	client        kubermaticclientset.Interface
 	runtimeClient ctrlruntimeclient.Client
 }
 
-// NewUserProvider returns a user provider
+// NewUserProvider returns a user provider.
 func NewSettingsProvider(ctx context.Context, client kubermaticclientset.Interface, runtimeClient ctrlruntimeclient.Client) *SettingsProvider {
 	return &SettingsProvider{
 		client:        client,

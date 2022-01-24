@@ -69,7 +69,7 @@ type machinecontrollerData interface {
 	MachineControllerImageRepository() string
 }
 
-// DeploymentCreator returns the function to create and update the machine controller deployment
+// DeploymentCreator returns the function to create and update the machine controller deployment.
 func DeploymentCreator(data machinecontrollerData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.MachineControllerDeploymentName, func(in *appsv1.Deployment) (*appsv1.Deployment, error) {

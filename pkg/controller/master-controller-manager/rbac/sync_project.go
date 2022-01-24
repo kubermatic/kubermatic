@@ -106,7 +106,7 @@ func (c *projectController) ensureProjectIsInActivePhase(ctx context.Context, pr
 	return nil
 }
 
-// ensureProjectOwner makes sure that the owner of the project is assign to "owners" group
+// ensureProjectOwner makes sure that the owner of the project is assign to "owners" group.
 func (c *projectController) ensureProjectOwner(ctx context.Context, project *kubermaticv1.Project) error {
 	var sharedOwnerPtrList []*kubermaticv1.User
 	for _, ref := range project.OwnerReferences {
@@ -480,7 +480,7 @@ func ensureRBACRoleBindingForResource(ctx context.Context, c ctrlruntimeclient.C
 // In particular:
 // - removes no longer needed Subject from RBAC Binding for project's resources
 // - removes cluster resources on master and seed because for them we use Labels not OwnerReferences
-// - removes cleanupFinalizer
+// - removes cleanupFinalizer.
 func (c *projectController) ensureProjectCleanup(ctx context.Context, project *kubermaticv1.Project) error {
 	// cluster resources don't have OwnerReferences set thus we need to manually remove them
 	for _, seedClient := range c.seedClientMap {

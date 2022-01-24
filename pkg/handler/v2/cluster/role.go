@@ -81,7 +81,7 @@ func DecodeListClusterRoleReq(c context.Context, r *http.Request) (interface{}, 
 	return req, nil
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req listReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,

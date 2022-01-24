@@ -49,7 +49,7 @@ func DecodeGetSeedSettingsReq(c context.Context, r *http.Request) (interface{}, 
 	return req, nil
 }
 
-// GetSeedSettingsEndpoint returns SeedSettings for a Seed cluster
+// GetSeedSettingsEndpoint returns SeedSettings for a Seed cluster.
 func GetSeedSettingsEndpoint(seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(getSeedSettingsReq)

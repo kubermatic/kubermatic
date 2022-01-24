@@ -92,7 +92,7 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 	return &reconcile.Result{}, nil
 }
 
-// ensureEtcdLauncherFeatureFlag will apply seed controller etcdLauncher setting on the cluster level
+// ensureEtcdLauncherFeatureFlag will apply seed controller etcdLauncher setting on the cluster level.
 func (r *Reconciler) ensureEtcdLauncherFeatureFlag(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	return r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
 		if r.features.EtcdLauncher { // enabled at the controller level

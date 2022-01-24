@@ -131,7 +131,7 @@ type createRoleReq struct {
 	Body apiv1.Role
 }
 
-// Validate validates createRoleReq request
+// Validate validates createRoleReq request.
 func (r createRoleReq) Validate() error {
 	if len(r.ProjectID) == 0 || len(r.DC) == 0 {
 		return fmt.Errorf("the project ID and datacenter cannot be empty")
@@ -143,7 +143,7 @@ func (r createRoleReq) Validate() error {
 	return nil
 }
 
-// Validate validates createRoleReq request
+// Validate validates createRoleReq request.
 func (r createClusterRoleReq) Validate() error {
 	if len(r.ProjectID) == 0 || len(r.DC) == 0 {
 		return fmt.Errorf("the project ID and datacenter cannot be empty")
@@ -309,7 +309,7 @@ func GetRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	}
 }
 
-// DeleteClusterRoleEndpoint deletes ClusterRole with given name
+// DeleteClusterRoleEndpoint deletes ClusterRole with given name.
 func DeleteClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(getClusterRoleReq)
@@ -341,7 +341,7 @@ func DeleteClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.
 	}
 }
 
-// DeleteRoleEndpoint deletes Role with given name
+// DeleteRoleEndpoint deletes Role with given name.
 func DeleteRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(getRoleReq)
@@ -453,7 +453,7 @@ func DecodeGetClusterRoleReq(c context.Context, r *http.Request) (interface{}, e
 	return req, nil
 }
 
-// PatchRoleEndpoint patches Role with given name
+// PatchRoleEndpoint patches Role with given name.
 func PatchRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(patchRoleReq)
@@ -548,7 +548,7 @@ func DecodePatchRoleReq(c context.Context, r *http.Request) (interface{}, error)
 	return req, nil
 }
 
-// PatchRoleEndpoint patches ClusterRole with given name
+// PatchRoleEndpoint patches ClusterRole with given name.
 func PatchClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(patchClusterRoleReq)
@@ -635,7 +635,7 @@ func DecodePatchClusterRoleReq(c context.Context, r *http.Request) (interface{},
 	return req, nil
 }
 
-// generateRBACClusterRole creates cluster role
+// generateRBACClusterRole creates cluster role.
 func generateRBACClusterRole(name string, rules []rbacv1.PolicyRule) (*rbacv1.ClusterRole, error) {
 	if rules == nil {
 		return nil, fmt.Errorf("the policy rule can not be nil")
@@ -650,7 +650,7 @@ func generateRBACClusterRole(name string, rules []rbacv1.PolicyRule) (*rbacv1.Cl
 	return clusterRole, nil
 }
 
-// generateRBACRole creates role
+// generateRBACRole creates role.
 func generateRBACRole(name, namespace string, rules []rbacv1.PolicyRule) (*rbacv1.Role, error) {
 	if rules == nil {
 		return nil, fmt.Errorf("the policy rule can not be nil")

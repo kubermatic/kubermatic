@@ -23,7 +23,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// SecretCreator creates the secret for gatekeeper webhook controller
+// SecretCreator creates the secret for gatekeeper webhook controller.
 func SecretCreator() reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.GatekeeperWebhookServerCertSecretName, func(secret *corev1.Secret) (*corev1.Secret, error) {

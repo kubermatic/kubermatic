@@ -37,7 +37,7 @@ type adminKubeconfigCreatorData interface {
 	GetRootCA() (*triple.KeyPair, error)
 }
 
-// AdminKubeconfigCreator returns a function to create/update the secret with the admin kubeconfig
+// AdminKubeconfigCreator returns a function to create/update the secret with the admin kubeconfig.
 func AdminKubeconfigCreator(data adminKubeconfigCreatorData) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return AdminKubeconfigSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
@@ -69,7 +69,7 @@ func AdminKubeconfigCreator(data adminKubeconfigCreatorData) reconciling.NamedSe
 	}
 }
 
-// ViewerKubeconfigCreator returns a function to create/update the secret with the viewer kubeconfig
+// ViewerKubeconfigCreator returns a function to create/update the secret with the viewer kubeconfig.
 func ViewerKubeconfigCreator(data *TemplateData) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return ViewerKubeconfigSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {

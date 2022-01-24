@@ -49,7 +49,7 @@ const (
 	CleanupFinalizer = "kubermatic.io/cleanup-seed-sync"
 )
 
-// Add creates a new Seed-Sync controller and sets up Watches
+// Add creates a new Seed-Sync controller and sets up Watches.
 func Add(
 	ctx context.Context,
 	mgr manager.Manager,

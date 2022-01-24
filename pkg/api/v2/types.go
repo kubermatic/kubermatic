@@ -49,7 +49,7 @@ type Constraint struct {
 	Status *ConstraintStatus       `json:"status,omitempty"`
 }
 
-// ConstraintStatus represents a constraint status which holds audit info
+// ConstraintStatus represents a constraint status which holds audit info.
 type ConstraintStatus struct {
 	Enforcement    string      `json:"enforcement,omitempty"`
 	AuditTimestamp string      `json:"auditTimestamp,omitempty"`
@@ -57,7 +57,7 @@ type ConstraintStatus struct {
 	Synced         *bool       `json:"synced,omitempty"`
 }
 
-// Violation represents a gatekeeper constraint violation
+// Violation represents a gatekeeper constraint violation.
 type Violation struct {
 	EnforcementAction string `json:"enforcementAction,omitempty"`
 	Kind              string `json:"kind,omitempty"`
@@ -117,7 +117,7 @@ type ReadinessSpec struct {
 	StatsEnabled bool `json:"statsEnabled,omitempty"`
 }
 
-// GVK group version kind of a resource
+// GVK group version kind of a resource.
 type GVK struct {
 	Group   string `json:"group,omitempty"`
 	Version string `json:"version,omitempty"`
@@ -395,13 +395,13 @@ const (
 	ERROR ExternalClusterState = "ERROR"
 )
 
-// ExternalClusterStatus defines the external cluster status
+// ExternalClusterStatus defines the external cluster status.
 type ExternalClusterStatus struct {
 	State         ExternalClusterState `json:"state"`
 	StatusMessage string               `json:"statusMessage"`
 }
 
-// ExternalClusterSpec defines the external cluster specification
+// ExternalClusterSpec defines the external cluster specification.
 type ExternalClusterSpec struct {
 	// Version desired version of the kubernetes master components
 	Version ksemver.Semver `json:"version"`
@@ -917,7 +917,7 @@ type GKEUpgradeSettings struct {
 type VirtualMachineInstancePresetList []VirtualMachineInstancePreset
 
 // Need to copy the following type to avoid a collision on Resources
-// between kubevirtv1.ResourceRequirements and corev1.ResourceRequirements used in different part of the API
+// between kubevirtv1.ResourceRequirements and corev1.ResourceRequirements used in different part of the API.
 type DomainSpec struct {
 	// Resources describes the Compute Resources required by this vmi.
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`

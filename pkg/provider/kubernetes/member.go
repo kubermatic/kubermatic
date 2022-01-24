@@ -33,7 +33,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// NewProjectMemberProvider returns a project members provider
+// NewProjectMemberProvider returns a project members provider.
 func NewProjectMemberProvider(createMasterImpersonatedClient ImpersonationClient, clientPrivileged ctrlruntimeclient.Client, isServiceAccountFunc func(string) bool) *ProjectMemberProvider {
 	return &ProjectMemberProvider{
 		createMasterImpersonatedClient: createMasterImpersonatedClient,
@@ -44,7 +44,7 @@ func NewProjectMemberProvider(createMasterImpersonatedClient ImpersonationClient
 
 var _ provider.ProjectMemberProvider = &ProjectMemberProvider{}
 
-// ProjectMemberProvider binds users with projects
+// ProjectMemberProvider binds users with projects.
 type ProjectMemberProvider struct {
 	// createMasterImpersonatedClient is used as a ground for impersonation
 	createMasterImpersonatedClient ImpersonationClient
@@ -57,7 +57,7 @@ type ProjectMemberProvider struct {
 	isServiceAccountFunc func(email string) bool
 }
 
-// Create creates a binding for the given member and the given project
+// Create creates a binding for the given member and the given project.
 func (p *ProjectMemberProvider) Create(userInfo *provider.UserInfo, project *kubermaticapiv1.Project, memberEmail, group string) (*kubermaticapiv1.UserProjectBinding, error) {
 	if p.isServiceAccountFunc(memberEmail) {
 		return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot add the given member %s to the project %s because the email indicates a service account", memberEmail, project.Spec.Name))
@@ -75,7 +75,7 @@ func (p *ProjectMemberProvider) Create(userInfo *provider.UserInfo, project *kub
 	return binding, nil
 }
 
-// List gets all members of the given project
+// List gets all members of the given project.
 func (p *ProjectMemberProvider) List(userInfo *provider.UserInfo, project *kubermaticapiv1.Project, options *provider.ProjectMemberListOptions) ([]*kubermaticapiv1.UserProjectBinding, error) {
 	allMembers := &kubermaticapiv1.UserProjectBindingList{}
 	if err := p.clientPrivileged.List(context.Background(), allMembers); err != nil {
@@ -134,7 +134,7 @@ func (p *ProjectMemberProvider) List(userInfo *provider.UserInfo, project *kuber
 
 // Delete deletes the given binding
 // Note:
-// Use List to get binding for the specific member of the given project
+// Use List to get binding for the specific member of the given project.
 func (p *ProjectMemberProvider) Delete(userInfo *provider.UserInfo, bindingName string) error {
 	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
@@ -143,7 +143,7 @@ func (p *ProjectMemberProvider) Delete(userInfo *provider.UserInfo, bindingName 
 	return masterImpersonatedClient.Delete(context.Background(), &kubermaticapiv1.UserProjectBinding{ObjectMeta: metav1.ObjectMeta{Name: bindingName}})
 }
 
-// Update updates the given binding
+// Update updates the given binding.
 func (p *ProjectMemberProvider) Update(userInfo *provider.UserInfo, binding *kubermaticapiv1.UserProjectBinding) (*kubermaticapiv1.UserProjectBinding, error) {
 	if rbac.ExtractGroupPrefix(binding.Spec.Group) == rbac.OwnerGroupNamePrefix && !kuberneteshelper.HasFinalizer(binding, rbac.CleanupFinalizerName) {
 		kuberneteshelper.AddFinalizer(binding, rbac.CleanupFinalizerName)
@@ -159,7 +159,7 @@ func (p *ProjectMemberProvider) Update(userInfo *provider.UserInfo, binding *kub
 }
 
 // MapUserToGroup maps the given user to a specific group of the given project
-// This function is unsafe in a sense that it uses privileged account to list all members in the system
+// This function is unsafe in a sense that it uses privileged account to list all members in the system.
 func (p *ProjectMemberProvider) MapUserToGroup(userEmail string, projectID string) (string, error) {
 	allMembers := &kubermaticapiv1.UserProjectBindingList{}
 	if err := p.clientPrivileged.List(context.Background(), allMembers); err != nil {
@@ -176,7 +176,7 @@ func (p *ProjectMemberProvider) MapUserToGroup(userEmail string, projectID strin
 }
 
 // MappingsFor returns the list of projects (bindings) for the given user
-// This function is unsafe in a sense that it uses privileged account to list all members in the system
+// This function is unsafe in a sense that it uses privileged account to list all members in the system.
 func (p *ProjectMemberProvider) MappingsFor(userEmail string) ([]*kubermaticapiv1.UserProjectBinding, error) {
 	allMemberMappings := &kubermaticapiv1.UserProjectBindingList{}
 	if err := p.clientPrivileged.List(context.Background(), allMemberMappings); err != nil {
@@ -194,7 +194,7 @@ func (p *ProjectMemberProvider) MappingsFor(userEmail string) ([]*kubermaticapiv
 }
 
 // CreateUnsecured creates a binding for the given member and the given project
-// This function is unsafe in a sense that it uses privileged account to create the resource
+// This function is unsafe in a sense that it uses privileged account to create the resource.
 func (p *ProjectMemberProvider) CreateUnsecured(project *kubermaticapiv1.Project, memberEmail, group string) (*kubermaticapiv1.UserProjectBinding, error) {
 	if p.isServiceAccountFunc(memberEmail) {
 		return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot add the given member %s to the project %s because the email indicates a service account", memberEmail, project.Spec.Name))
@@ -209,7 +209,7 @@ func (p *ProjectMemberProvider) CreateUnsecured(project *kubermaticapiv1.Project
 }
 
 // CreateUnsecuredForServiceAccount creates a binding for the given service account and the given project
-// This function is unsafe in a sense that it uses privileged account to create the resource
+// This function is unsafe in a sense that it uses privileged account to create the resource.
 func (p *ProjectMemberProvider) CreateUnsecuredForServiceAccount(project *kubermaticapiv1.Project, memberEmail, group string) (*kubermaticapiv1.UserProjectBinding, error) {
 	if p.isServiceAccountFunc(memberEmail) && !strings.HasPrefix(group, rbac.ProjectManagerGroupNamePrefix) {
 		return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot add the given member %s to the project %s because the email indicates a service account", memberEmail, project.Spec.Name))
@@ -226,13 +226,13 @@ func (p *ProjectMemberProvider) CreateUnsecuredForServiceAccount(project *kuberm
 // DeleteUnsecured deletes the given binding
 // Note:
 // Use List to get binding for the specific member of the given project
-// This function is unsafe in a sense that it uses privileged account to delete the resource
+// This function is unsafe in a sense that it uses privileged account to delete the resource.
 func (p *ProjectMemberProvider) DeleteUnsecured(bindingName string) error {
 	return p.clientPrivileged.Delete(context.Background(), &kubermaticapiv1.UserProjectBinding{ObjectMeta: metav1.ObjectMeta{Name: bindingName}})
 }
 
 // UpdateUnsecured updates the given binding
-// This function is unsafe in a sense that it uses privileged account to update the resource
+// This function is unsafe in a sense that it uses privileged account to update the resource.
 func (p *ProjectMemberProvider) UpdateUnsecured(binding *kubermaticapiv1.UserProjectBinding) (*kubermaticapiv1.UserProjectBinding, error) {
 	if rbac.ExtractGroupPrefix(binding.Spec.Group) == rbac.OwnerGroupNamePrefix && !kuberneteshelper.HasFinalizer(binding, rbac.CleanupFinalizerName) {
 		kuberneteshelper.AddFinalizer(binding, rbac.CleanupFinalizerName)

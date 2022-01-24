@@ -38,7 +38,7 @@ type cronJobCreatorData interface {
 	GetClusterRef() metav1.OwnerReference
 }
 
-// CronJobCreator returns the func to create/update the etcd defragger cronjob
+// CronJobCreator returns the func to create/update the etcd defragger cronjob.
 func CronJobCreator(data cronJobCreatorData) reconciling.NamedCronJobCreatorGetter {
 	return func() (string, reconciling.CronJobCreator) {
 		return resources.EtcdDefragCronJobName, func(job *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {

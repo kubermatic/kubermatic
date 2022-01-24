@@ -54,7 +54,7 @@ type Reconciler struct {
 	recorder record.EventRecorder
 }
 
-// add the controller
+// add the controller.
 func Add(
 	log *zap.SugaredLogger,
 	mgr manager.Manager,

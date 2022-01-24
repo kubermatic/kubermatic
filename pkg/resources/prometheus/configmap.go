@@ -58,7 +58,7 @@ type configTemplateData struct {
 	ScrapingAnnotationPrefix string
 }
 
-// ConfigMapCreator returns a ConfigMapCreator containing the prometheus config for the supplied data
+// ConfigMapCreator returns a ConfigMapCreator containing the prometheus config for the supplied data.
 func ConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.PrometheusConfigConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {

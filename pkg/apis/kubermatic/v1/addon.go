@@ -23,10 +23,10 @@ import (
 )
 
 const (
-	// AddonResourceName represents "Resource" defined in Kubernetes
+	// AddonResourceName represents "Resource" defined in Kubernetes.
 	AddonResourceName = "addons"
 
-	// AddonKindName represents "Kind" defined in Kubernetes
+	// AddonKindName represents "Kind" defined in Kubernetes.
 	AddonKindName = "Addon"
 
 	AddonResourcesCreated AddonConditionType = "AddonResourcesCreatedSuccessfully"
@@ -36,7 +36,7 @@ const (
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// Addon specifies a add-on
+// Addon specifies a add-on.
 type Addon struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -45,15 +45,15 @@ type Addon struct {
 	Status AddonStatus `json:"status,omitempty"`
 }
 
-// GroupVersionKind unambiguously identifies a kind.  It doesn't anonymously include GroupVersion
-// to avoid automatic coercion.  It doesn't use a GroupVersion to avoid custom marshalling
+// GroupVersionKind unambiguously identifies a kind. It doesn't anonymously include GroupVersion
+// to avoid automatic coercion. It doesn't use a GroupVersion to avoid custom marshalling.
 type GroupVersionKind struct {
 	Group   string `json:"group,omitempty"`
 	Version string `json:"version,omitempty"`
 	Kind    string `json:"kind,omitempty"`
 }
 
-// AddonSpec specifies details of an addon
+// AddonSpec specifies details of an addon.
 type AddonSpec struct {
 	// Name defines the name of the addon to install
 	Name string `json:"name"`
@@ -73,7 +73,7 @@ type AddonSpec struct {
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 
-// AddonList is a list of addons
+// AddonList is a list of addons.
 type AddonList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

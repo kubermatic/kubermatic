@@ -54,7 +54,7 @@ const (
 	name = "apiserver"
 )
 
-// DeploymentCreator returns the function to create and update the API server deployment
+// DeploymentCreator returns the function to create and update the API server deployment.
 func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bool) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.ApiserverDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -442,7 +442,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 }
 
 // getApiserverOverrideFlags creates all settings that may be overridden by cluster specific componentsOverrideSettings
-// otherwise global overrides or defaults will be set
+// otherwise global overrides or defaults will be set.
 func getApiserverOverrideFlags(data *resources.TemplateData) (kubermaticv1.APIServerSettings, error) {
 	settings := kubermaticv1.APIServerSettings{
 		NodePortRange: data.ComputedNodePortRange(),

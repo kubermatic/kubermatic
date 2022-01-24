@@ -37,7 +37,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// GetClustersForConstraintTemplate gets clusters for the CT by using the CT selector to filter out unselected clusters
+// GetClustersForConstraintTemplate gets clusters for the CT by using the CT selector to filter out unselected clusters.
 func GetClustersForConstraintTemplate(ctx context.Context, client ctrlruntimeclient.Client,
 	ct *kubermaticv1.ConstraintTemplate, workerNamesLabelSelector labels.Selector,
 ) (*kubermaticv1.ClusterList, error) {

@@ -30,7 +30,7 @@ type pdbData interface {
 	Cluster() *kubermaticv1.Cluster
 }
 
-// PodDisruptionBudgetCreator returns a func to create/update the etcd PodDisruptionBudget
+// PodDisruptionBudgetCreator returns a func to create/update the etcd PodDisruptionBudget.
 func PodDisruptionBudgetCreator(data pdbData) reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
 		return resources.EtcdPodDisruptionBudgetName, func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {

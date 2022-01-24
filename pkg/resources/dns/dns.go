@@ -61,7 +61,7 @@ func GetCoreDNSImage(kubernetesVersion *semver.Version) string {
 	}
 }
 
-// ServiceCreator returns the function to reconcile the DNS service
+// ServiceCreator returns the function to reconcile the DNS service.
 func ServiceCreator() reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.DNSResolverServiceName, func(se *corev1.Service) (*corev1.Service, error) {
@@ -88,7 +88,7 @@ type deploymentCreatorData interface {
 	IsKonnectivityEnabled() bool
 }
 
-// DeploymentCreator returns the function to create and update the DNS resolver deployment
+// DeploymentCreator returns the function to create and update the DNS resolver deployment.
 func DeploymentCreator(data deploymentCreatorData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.DNSResolverDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -216,7 +216,7 @@ type configMapCreatorData interface {
 	Cluster() *kubermaticv1.Cluster
 }
 
-// ConfigMapCreator returns a ConfigMap containing the cloud-config for the supplied data
+// ConfigMapCreator returns a ConfigMap containing the cloud-config for the supplied data.
 func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.DNSResolverConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
@@ -252,7 +252,7 @@ func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreat
 	}
 }
 
-// PodDisruptionBudgetCreator returns a func to create/update the apiserver PodDisruptionBudget
+// PodDisruptionBudgetCreator returns a func to create/update the apiserver PodDisruptionBudget.
 func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
 		return resources.DNSResolverPodDisruptionBudetName, func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {

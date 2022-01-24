@@ -61,7 +61,7 @@ func getSecurityGroups(netClient *gophercloud.ServiceClient, opts ossecuritygrou
 	return secGroups, nil
 }
 
-// NetworkWithExternalExt is a struct that implements all networks
+// NetworkWithExternalExt is a struct that implements all networks.
 type NetworkWithExternalExt struct {
 	osnetworks.Network
 	osextnetwork.NetworkExternalExt

@@ -28,7 +28,7 @@ import (
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// ApplicationInstallation describes a single installation of an Application
+// ApplicationInstallation describes a single installation of an Application.
 type ApplicationInstallation struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -39,7 +39,7 @@ type ApplicationInstallation struct {
 
 // +kubebuilder:object:root=true
 
-// ApplicationInstallationList is a list of ApplicationInstallations
+// ApplicationInstallationList is a list of ApplicationInstallations.
 type ApplicationInstallationList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
@@ -63,7 +63,7 @@ type ApplicationInstallationSpec struct {
 	// As kubebuilder does not support interface{} as a type, deferring json decoding, seems to be our best option (see https://github.com/kubernetes-sigs/controller-tools/issues/294#issuecomment-518379253)
 }
 
-// ApplicationRef describes a KKP-wide, unique reference to an Application
+// ApplicationRef describes a KKP-wide, unique reference to an Application.
 type ApplicationRef struct {
 	// Name of the Application
 	Name string `json:"name"`
@@ -85,7 +85,7 @@ type Version struct {
 	semverlib.Version
 }
 
-// ApplicationInstallationStatus denotes status information about an ApplicationInstallation
+// ApplicationInstallationStatus denotes status information about an ApplicationInstallation.
 type ApplicationInstallationStatus struct {
 	LastUpdated metav1.Time `json:"lastUpdated,omitempty"`
 	// Conditions contains conditions an installation is in, its primary use case is status signaling between controllers or between controllers and the API
@@ -107,10 +107,10 @@ type ApplicationInstallationCondition struct {
 type ApplicationInstallationConditionType string
 
 const (
-	// ManifestsRetrieved indicates all necessary manifests have been fetched from the external source
+	// ManifestsRetrieved indicates all necessary manifests have been fetched from the external source.
 	ManifestsRetrieved ApplicationInstallationConditionType = "ManifestsRetrieved"
-	// ManifestsApplied indicates that all manifests have been applied in the target user-cluster
+	// ManifestsApplied indicates that all manifests have been applied in the target user-cluster.
 	ManifestsApplied ApplicationInstallationConditionType = "ManifestsApplied"
-	// Ready describes all components have been successfully rolled out and are ready
+	// Ready describes all components have been successfully rolled out and are ready.
 	Ready ApplicationInstallationConditionType = "Ready"
 )

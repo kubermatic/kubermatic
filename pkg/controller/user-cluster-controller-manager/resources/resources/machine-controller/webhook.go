@@ -28,7 +28,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// MutatingwebhookConfigurationCreator returns the MutatingwebhookConfiguration for the machine controller
+// MutatingwebhookConfigurationCreator returns the MutatingwebhookConfiguration for the machine controller.
 func MutatingwebhookConfigurationCreator(caCert *x509.Certificate, namespace string) reconciling.NamedMutatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.MutatingWebhookConfigurationCreator) {
 		return resources.MachineControllerMutatingWebhookConfigurationName, func(mutatingWebhookConfiguration *admissionregistrationv1.MutatingWebhookConfiguration) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {

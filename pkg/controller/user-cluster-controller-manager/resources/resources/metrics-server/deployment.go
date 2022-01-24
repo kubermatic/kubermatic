@@ -62,7 +62,7 @@ func TLSServingCertSecretCreator(caGetter servingcerthelper.CAGetter) reconcilin
 	return servingcerthelper.ServingCertSecretCreator(caGetter, servingCertSecretName, dnsName, []string{dnsName}, nil)
 }
 
-// DeploymentCreator returns the function to create and update the metrics server deployment
+// DeploymentCreator returns the function to create and update the metrics server deployment.
 func DeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.MetricsServerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -146,7 +146,7 @@ func DeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) reconci
 	}
 }
 
-// PodDisruptionBudgetCreator returns a func to create/update the metrics-server PodDisruptionBudget
+// PodDisruptionBudgetCreator returns a func to create/update the metrics-server PodDisruptionBudget.
 func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
 		return resources.MetricsServerPodDisruptionBudgetName, func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {

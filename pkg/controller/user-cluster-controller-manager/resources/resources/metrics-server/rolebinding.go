@@ -24,7 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// RolebindingAuthReaderCreator returns a func to create/update the RoleBinding used by the metrics-server to get access to the token subject review API
+// RolebindingAuthReaderCreator returns a func to create/update the RoleBinding used by the metrics-server to get access to the token subject review API.
 func RolebindingAuthReaderCreator(isKonnectivityEnabled bool) reconciling.NamedRoleBindingCreatorGetter {
 	return func() (string, reconciling.RoleBindingCreator) {
 		return resources.MetricsServerAuthReaderRoleName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {

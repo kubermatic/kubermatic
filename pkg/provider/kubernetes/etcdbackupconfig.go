@@ -28,7 +28,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// EtcdBackupConfigProvider struct that holds required components in order manage etcd backup configs
+// EtcdBackupConfigProvider struct that holds required components in order manage etcd backup configs.
 type EtcdBackupConfigProvider struct {
 	// createSeedImpersonatedClient is used as a ground for impersonation
 	// whenever a connection to Seed API server is required
@@ -36,7 +36,7 @@ type EtcdBackupConfigProvider struct {
 	clientPrivileged             ctrlruntimeclient.Client
 }
 
-// NewEtcdBackupConfigProvider returns a constraint provider
+// NewEtcdBackupConfigProvider returns a constraint provider.
 func NewEtcdBackupConfigProvider(createSeedImpersonatedClient ImpersonationClient, client ctrlruntimeclient.Client) *EtcdBackupConfigProvider {
 	return &EtcdBackupConfigProvider{
 		clientPrivileged:             client,
@@ -151,7 +151,7 @@ func (p *EtcdBackupConfigProvider) PatchUnsecured(oldConfig, newConfig *kubermat
 	return newConfig, err
 }
 
-// EtcdBackupConfigProjectProvider struct that holds required components in order manage etcd backup backupConfigs across projects
+// EtcdBackupConfigProjectProvider struct that holds required components in order manage etcd backup backupConfigs across projects.
 type EtcdBackupConfigProjectProvider struct {
 	// createSeedImpersonatedClient is used as a ground for impersonation
 	// whenever a connection to Seed API server is required
@@ -159,7 +159,7 @@ type EtcdBackupConfigProjectProvider struct {
 	clientsPrivileged             map[string]ctrlruntimeclient.Client
 }
 
-// NewEtcdBackupConfigProjectProvider returns an etcd backupConfig global provider
+// NewEtcdBackupConfigProjectProvider returns an etcd backupConfig global provider.
 func NewEtcdBackupConfigProjectProvider(createSeedImpersonatedClients map[string]ImpersonationClient, clients map[string]ctrlruntimeclient.Client) *EtcdBackupConfigProjectProvider {
 	return &EtcdBackupConfigProjectProvider{
 		clientsPrivileged:             clients,

@@ -272,7 +272,7 @@ func isLocation(sku compute.ResourceSku, location string) bool {
 	return false
 }
 
-// isValidVM checks all constrains for VM
+// isValidVM checks all constrains for VM.
 func isValidVM(sku compute.ResourceSku, location string) bool {
 	if !isLocation(sku, location) {
 		return false

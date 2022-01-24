@@ -338,7 +338,7 @@ func breakAndRecover(ctx context.Context, t *testing.T, client ctrlruntimeclient
 	return nil
 }
 
-// enable etcd launcher for the cluster
+// enable etcd launcher for the cluster.
 func enableLauncherForCluster(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
 	return setClusterLauncherFeature(ctx, client, cluster, true)
 }

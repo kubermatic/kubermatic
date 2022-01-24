@@ -91,7 +91,7 @@ func Add(
 	return nil
 }
 
-// Reconcile reconciles Kubermatic Project objects on the master cluster to all seed clusters
+// Reconcile reconciles Kubermatic Project objects on the master cluster to all seed clusters.
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("request", request)
 

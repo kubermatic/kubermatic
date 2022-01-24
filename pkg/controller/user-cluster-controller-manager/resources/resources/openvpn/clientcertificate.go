@@ -23,7 +23,7 @@ import (
 )
 
 // ClientCertificate returns a function to create/update the secret with the client certificate
-// for the openvpn client in the user cluster
+// for the openvpn client in the user cluster.
 func ClientCertificate(ca *resources.ECDSAKeyPair) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.OpenVPNClientCertificatesSecretName,

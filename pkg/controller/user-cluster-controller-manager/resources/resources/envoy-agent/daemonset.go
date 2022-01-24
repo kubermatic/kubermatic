@@ -51,7 +51,7 @@ const (
 	envoyImageName = "envoyproxy/envoy"
 )
 
-// DaemonSetCreator returns the function to create and update the Envoy DaemonSet
+// DaemonSetCreator returns the function to create and update the Envoy DaemonSet.
 func DaemonSetCreator(agentIP net.IP, versions kubermatic.Versions, configHash string, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDaemonSetCreatorGetter {
 	return func() (string, reconciling.DaemonSetCreator) {
 		return resources.EnvoyAgentDaemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {

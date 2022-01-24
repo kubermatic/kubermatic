@@ -92,7 +92,7 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPr
 	}
 }
 
-// ListEndpoint list clusters within the given datacenter
+// ListEndpoint list clusters within the given datacenter.
 func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, configGetter provider.KubermaticConfigurationGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(ListReq)
@@ -105,7 +105,7 @@ func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 	}
 }
 
-// ListAllEndpoint list clusters for the given project in all datacenters
+// ListAllEndpoint list clusters for the given project in all datacenters.
 func ListAllEndpoint(
 	projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider,
@@ -244,7 +244,7 @@ type CreateReq struct {
 	Body apiv1.CreateClusterSpec
 }
 
-// Validate validates CreateEndpoint request
+// Validate validates CreateEndpoint request.
 func (r CreateReq) Validate(clusterType kubermaticv1.ClusterType, updateManager common.UpdateManager) error {
 	if len(r.ProjectID) == 0 || len(r.DC) == 0 {
 		return fmt.Errorf("the service account ID and datacenter cannot be empty")

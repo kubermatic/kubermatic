@@ -120,7 +120,7 @@ func getSecurityGroupsWithClient(client ec2iface.EC2API) ([]*ec2.SecurityGroup, 
 	return sgOut.SecurityGroups, nil
 }
 
-// GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error
+// GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error.
 func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID string, err error) {
 	accessKeyID = cloud.AWS.AccessKeyID
 	secretAccessKey = cloud.AWS.SecretAccessKey

@@ -36,7 +36,7 @@ type tlsServingCertCreatorData interface {
 	GetRootCA() (*triple.KeyPair, error)
 }
 
-// TLSServingCertificateCreator returns a function to create/update the secret with the apiserver tls certificate used to serve https
+// TLSServingCertificateCreator returns a function to create/update the secret with the apiserver tls certificate used to serve https.
 func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.ApiserverTLSSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {

@@ -39,7 +39,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
-// CreateEndpoint defines an HTTP endpoint that creates a new project in the system
+// CreateEndpoint defines an HTTP endpoint that creates a new project in the system.
 func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, settingsProvider provider.SettingsProvider, memberMapper provider.ProjectMemberMapper, memberProvider provider.ProjectMemberProvider, privilegedMemberProvider provider.PrivilegedProjectMemberProvider, userProvider provider.UserProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		projectRq, ok := request.(projectReq)
@@ -203,7 +203,7 @@ func validateUserProjectsLimit(user *kubermaticapiv1.User, settings *kubermatica
 	return nil
 }
 
-// ListEndpoint defines an HTTP endpoint for listing projects
+// ListEndpoint defines an HTTP endpoint for listing projects.
 func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, memberMapper provider.ProjectMemberMapper, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider, clusterProviderGetter provider.ClusterProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(ListReq)
@@ -292,7 +292,7 @@ func isStatus(err error, status int32) bool {
 	return errors.As(err, &statusErr) && status == statusErr.Status().Code
 }
 
-// DeleteEndpoint defines an HTTP endpoint for deleting a project
+// DeleteEndpoint defines an HTTP endpoint for deleting a project.
 func DeleteEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(deleteRq)
@@ -328,7 +328,7 @@ func deleteProjectByRegularUser(ctx context.Context, userInfoGetter provider.Use
 }
 
 // UpdateEndpoint defines an HTTP endpoint that updates an existing project in the system
-// in the current implementation only project renaming is supported
+// in the current implementation only project renaming is supported.
 func UpdateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider, userInfoGetter provider.UserInfoGetter, clusterProviderGetter provider.ClusterProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(updateRq)
@@ -385,7 +385,7 @@ func updateProject(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 	return projectProvider.Update(userInfo, kubermaticProject)
 }
 
-// GeEndpoint defines an HTTP endpoint for getting a project
+// GeEndpoint defines an HTTP endpoint for getting a project.
 func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider, userInfoGetter provider.UserInfoGetter, clusterProviderGetter provider.ClusterProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(common.GetProjectRq)
@@ -426,7 +426,7 @@ type updateRq struct {
 	Body apiv1.Project
 }
 
-// validate validates updateProject request
+// validate validates updateProject request.
 func (r updateRq) validate() error {
 	if len(r.ProjectID) == 0 {
 		return fmt.Errorf("the id of the project cannot be empty")
@@ -437,7 +437,7 @@ func (r updateRq) validate() error {
 	return nil
 }
 
-// DecodeUpdateRq decodes an HTTP request into updateRq
+// DecodeUpdateRq decodes an HTTP request into updateRq.
 func DecodeUpdateRq(c context.Context, r *http.Request) (interface{}, error) {
 	var req updateRq
 
@@ -466,7 +466,7 @@ type projectReq struct {
 	}
 }
 
-// DecodeCreate decodes an HTTP request into projectReq
+// DecodeCreate decodes an HTTP request into projectReq.
 func DecodeCreate(c context.Context, r *http.Request) (interface{}, error) {
 	var req projectReq
 
@@ -483,7 +483,7 @@ type deleteRq struct {
 	common.ProjectReq
 }
 
-// DecodeDelete decodes an HTTP request into deleteRq
+// DecodeDelete decodes an HTTP request into deleteRq.
 func DecodeDelete(c context.Context, r *http.Request) (interface{}, error) {
 	req, err := common.DecodeProjectRequest(c, r)
 	if err != nil {

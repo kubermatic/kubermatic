@@ -150,7 +150,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	return nil
 }
 
-// enqueueAPIBindings enqueues the ClusterRoleBindings with a special label component=userClusterRole
+// enqueueAPIBindings enqueues the ClusterRoleBindings with a special label component=userClusterRole.
 func enqueueAPIBindings(client ctrlruntimeclient.Client) handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		clusterRoleList := &rbacv1.ClusterRoleList{}

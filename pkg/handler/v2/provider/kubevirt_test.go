@@ -62,7 +62,7 @@ var (
 		},
 		Spec: *NewKubevirtPresetSpec(123, 234, 345, 456),
 	}
-	// Should not be returned, not in "default" namespace
+	// Should not be returned, not in "default" namespace.
 	presetOtherSmall = kvapiv1.VirtualMachineInstancePreset{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "preset-default-small",
@@ -71,11 +71,11 @@ var (
 		Spec: *NewKubevirtPresetSpec(123, 234, 345, 456),
 	}
 
-	// Cluster settings
+	// Cluster settings.
 	clusterId    = "keen-snyder"
 	clusterName  = "clusterAbc"
 	fakeKvConfig = "eyJhcGlWZXJzaW9uIjoidjEiLCJjbHVzdGVycyI6W3siY2x1c3RlciI6eyJjZXJ0aWZpY2F0ZS1hdXRob3JpdHktZGF0YSI6IiIsInNlcnZlciI6Imh0dHBzOi8vOTUuMjE2LjIwLjE0Njo2NDQzIn0sIm5hbWUiOiJrdWJlcm5ldGVzIn1dLCJjb250ZXh0cyI6W3siY29udGV4dCI6eyJjbHVzdGVyIjoia3ViZXJuZXRlcyIsIm5hbWVzcGFjZSI6Imt1YmUtc3lzdGVtIiwidXNlciI6Imt1YmVybmV0ZXMtYWRtaW4ifSwibmFtZSI6Imt1YmVybmV0ZXMtYWRtaW5Aa3ViZXJuZXRlcyJ9XSwiY3VycmVudC1jb250ZXh0Ijoia3ViZXJuZXRlcy1hZG1pbkBrdWJlcm5ldGVzIiwia2luZCI6IkNvbmZpZyIsInByZWZlcmVuY2VzIjp7fSwidXNlcnMiOlt7Im5hbWUiOiJrdWJlcm5ldGVzLWFkbWluIiwidXNlciI6eyJjbGllbnQtY2VydGlmaWNhdGUtZGF0YSI6IiIsImNsaWVudC1rZXktZGF0YSI6IiJ9fV19"
-	// Credential ref name
+	// Credential ref name.
 	credentialref = "credentialref"
 	credentialns  = "ns"
 )

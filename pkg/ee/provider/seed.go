@@ -58,7 +58,7 @@ func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, na
 
 type EESeedKubeconfigGetter = func(seed *kubermaticv1.Seed) (*rest.Config, error)
 
-// Ensures that SeedKubeconfigGetter implements EESeedKubeconfigGetter
+// Ensures that SeedKubeconfigGetter implements EESeedKubeconfigGetter.
 var _ EESeedKubeconfigGetter = SeedKubeconfigGetter
 
 // SeedKubeconfigGetter implements provider.SeedKubeconfigGetter.

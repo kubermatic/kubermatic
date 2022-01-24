@@ -24,7 +24,7 @@ import (
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// AdmissionPluginList is the type representing a AdmissionPluginList
+// AdmissionPluginList is the type representing a AdmissionPluginList.
 type AdmissionPluginList struct {
 	metav1.TypeMeta `json:",inline"`
 	// Standard list metadata.
@@ -39,7 +39,7 @@ type AdmissionPluginList struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// AdmissionPlugin is the type representing a AdmissionPlugin
+// AdmissionPlugin is the type representing a AdmissionPlugin.
 type AdmissionPlugin struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

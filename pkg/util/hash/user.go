@@ -23,11 +23,11 @@ import (
 )
 
 const (
-	// UserIDSuffix defines a static suffix to append to all user ID's. That way we can tell during a migration if its our current format
+	// UserIDSuffix defines a static suffix to append to all user ID's. That way we can tell during a migration if its our current format.
 	UserIDSuffix = "_KUBE"
 )
 
-// GetUserID returns a hashed user ID which is a valid label
+// GetUserID returns a hashed user ID which is a valid label.
 func GetUserID(v string) (string, error) {
 	h := sha512.New512_224()
 	if _, err := io.WriteString(h, v); err != nil {

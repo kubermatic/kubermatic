@@ -62,54 +62,54 @@ const (
 	// ControllerName name of etcd backup controller.
 	ControllerName = "kubermatic_etcd_backup_controller"
 
-	// DeleteAllBackupsFinalizer indicates that the backups still need to be deleted in the backend
+	// DeleteAllBackupsFinalizer indicates that the backups still need to be deleted in the backend.
 	DeleteAllBackupsFinalizer = "kubermatic.io/delete-all-backups"
 
-	// BackupConfigNameLabelKey is the label key which should be used to name the BackupConfig a job belongs to
+	// BackupConfigNameLabelKey is the label key which should be used to name the BackupConfig a job belongs to.
 	BackupConfigNameLabelKey = "backupConfig"
-	// DefaultBackupContainerImage holds the default Image used for creating the etcd backups
+	// DefaultBackupContainerImage holds the default Image used for creating the etcd backups.
 	DefaultBackupContainerImage = "gcr.io/etcd-development/etcd"
 	// SharedVolumeName is the name of the `emptyDir` volume the initContainer
-	// will write the backup to
+	// will write the backup to.
 	SharedVolumeName = "etcd-backup"
-	// backupJobLabel defines the label we use on all backup jobs
+	// backupJobLabel defines the label we use on all backup jobs.
 	backupJobLabel = "kubermatic-etcd-backup"
-	// clusterEnvVarKey defines the environment variable key for the cluster name
+	// clusterEnvVarKey defines the environment variable key for the cluster name.
 	clusterEnvVarKey = "CLUSTER"
-	// backupToCreateEnvVarKey defines the environment variable key for the name of the backup to create
+	// backupToCreateEnvVarKey defines the environment variable key for the name of the backup to create.
 	backupToCreateEnvVarKey = "BACKUP_TO_CREATE"
-	// backupToDeleteEnvVarKey defines the environment variable key for the name of the backup to delete
+	// backupToDeleteEnvVarKey defines the environment variable key for the name of the backup to delete.
 	backupToDeleteEnvVarKey = "BACKUP_TO_DELETE"
-	// backupScheduleEnvVarKey defines the environment variable key for the backup schedule
+	// backupScheduleEnvVarKey defines the environment variable key for the backup schedule.
 	backupScheduleEnvVarKey = "BACKUP_SCHEDULE"
-	// backupKeepCountEnvVarKey defines the environment variable key for the number of backups to keep
+	// backupKeepCountEnvVarKey defines the environment variable key for the number of backups to keep.
 	backupKeepCountEnvVarKey = "BACKUP_KEEP_COUNT"
-	// backupConfigEnvVarKey defines the environment variable key for the name of the backup configuration resource
+	// backupConfigEnvVarKey defines the environment variable key for the name of the backup configuration resource.
 	backupConfigEnvVarKey = "BACKUP_CONFIG"
-	// accessKeyIdEnvVarKey defines the environment variable key for the backup credentials access key id
+	// accessKeyIdEnvVarKey defines the environment variable key for the backup credentials access key id.
 	accessKeyIdEnvVarKey = "ACCESS_KEY_ID"
-	// secretAccessKeyEnvVarKey defines the environment variable key for the backup credentials secret access key
+	// secretAccessKeyEnvVarKey defines the environment variable key for the backup credentials secret access key.
 	secretAccessKeyEnvVarKey = "SECRET_ACCESS_KEY"
-	// bucketNameEnvVarKey defines the environment variable key for the backup bucket name
+	// bucketNameEnvVarKey defines the environment variable key for the backup bucket name.
 	bucketNameEnvVarKey = "BUCKET_NAME"
-	// backupEndpointEnvVarKey defines the environment variable key for the backup endpoint
+	// backupEndpointEnvVarKey defines the environment variable key for the backup endpoint.
 	backupEndpointEnvVarKey = "ENDPOINT"
 
 	// requeueAfter time after starting a job
-	// should be the time after which a started job will usually have completed
+	// should be the time after which a started job will usually have completed.
 	assumedJobRuntime = 50 * time.Second
 
 	// how long to keep succeeded and failed jobs around.
 	// applies to both backup and backup delete jobs (except failed delete jobs, which will be restarted).
-	// when the backup delete job is deleted, the corresponding etcdbackupconfig.status.currentBackups entry is also removed
+	// when the backup delete job is deleted, the corresponding etcdbackupconfig.status.currentBackups entry is also removed.
 	succeededJobRetentionTime = 1 * time.Minute
 	failedJobRetentionTime    = 10 * time.Minute
 
-	// maximum number of simultaneously running backup delete jobs per BackupConfig
+	// maximum number of simultaneously running backup delete jobs per BackupConfig.
 	maxSimultaneousDeleteJobsPerConfig = 3
 )
 
-// Reconciler stores necessary components that are required to create etcd backups
+// Reconciler stores necessary components that are required to create etcd backups.
 type Reconciler struct {
 	ctrlruntimeclient.Client
 
@@ -131,7 +131,7 @@ type Reconciler struct {
 }
 
 // Add creates a new Backup controller that is responsible for
-// managing cluster etcd backups
+// managing cluster etcd backups.
 func Add(
 	mgr manager.Manager,
 	log *zap.SugaredLogger,
@@ -327,7 +327,7 @@ func minReconcile(reconciles ...*reconcile.Result) *reconcile.Result {
 }
 
 // ensure a backup is scheduled for the most recent backup time, according to the backup config's schedule.
-// "schedule a backup" means set the scheduled time, backup name and job names of the corresponding element of backupConfig.Status.CurrentBackups
+// "schedule a backup" means set the scheduled time, backup name and job names of the corresponding element of backupConfig.Status.CurrentBackups.
 func (r *Reconciler) ensurePendingBackupIsScheduled(ctx context.Context, backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	if backupConfig.DeletionTimestamp != nil || cluster.DeletionTimestamp != nil {
 		// backupConfig is deleting. Don't schedule any new backups.
@@ -434,7 +434,7 @@ func (r *Reconciler) limitNameLength(name string) string {
 	return name[0:63-len(randomness)] + randomness
 }
 
-// set a condition on a backupConfig, return true iff the condition's status was changed
+// set a condition on a backupConfig, return true iff the condition's status was changed.
 func (r *Reconciler) setBackupConfigCondition(backupConfig *kubermaticv1.EtcdBackupConfig, conditionType kubermaticv1.EtcdBackupConfigConditionType, status corev1.ConditionStatus, reason, message string) bool {
 	newCond := kubermaticv1.EtcdBackupConfigCondition{
 		Type:               conditionType,
@@ -459,7 +459,7 @@ func (r *Reconciler) setBackupConfigCondition(backupConfig *kubermaticv1.EtcdBac
 }
 
 // create any backup jobs that can be created, i.e. that don't exist yet while their scheduled time has arrived
-// also update status of backups whose jobs have completed
+// also update status of backups whose jobs have completed.
 func (r *Reconciler) startPendingBackupJobs(ctx context.Context, backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster,
 	destination *kubermaticv1.BackupDestination) (*reconcile.Result, error) {
 	var returnReconcile *reconcile.Result
@@ -578,7 +578,7 @@ func (r *Reconciler) createBackupDeleteJob(ctx context.Context, backupConfig *ku
 	return nil
 }
 
-// update status of all delete jobs that have completed and are still marked as running
+// update status of all delete jobs that have completed and are still marked as running.
 func (r *Reconciler) updateRunningBackupDeleteJobs(ctx context.Context, backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster,
 	destination *kubermaticv1.BackupDestination) (*reconcile.Result, error) {
 	var returnReconcile *reconcile.Result

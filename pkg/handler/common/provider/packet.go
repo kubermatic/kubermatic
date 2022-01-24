@@ -36,7 +36,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
-// Used to decode response object
+// Used to decode response object.
 type plansRoot struct {
 	Plans []packngo.Plan `json:"plans"`
 }

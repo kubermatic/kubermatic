@@ -24,7 +24,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// SeedProvider struct that holds required components in order seeds
+// SeedProvider struct that holds required components in order seeds.
 type SeedProvider struct {
 	clientPrivileged ctrlruntimeclient.Client
 }

@@ -27,12 +27,12 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// reconciler creates and updates ClusterRoles and ClusterRoleBinding to achieve the desired state
+// reconciler creates and updates ClusterRoles and ClusterRoleBinding to achieve the desired state.
 type reconciler struct {
 	client ctrlruntimeclient.Client
 }
 
-// Reconcile creates and updates ClusterRoles and ClusterRoleBinding to achieve the desired state
+// Reconcile creates and updates ClusterRoles and ClusterRoleBinding to achieve the desired state.
 func (r *reconciler) Reconcile(ctx context.Context, resourceName string) error {
 	klog.V(4).Infof("Reconciling RBAC for %s", resourceName)
 

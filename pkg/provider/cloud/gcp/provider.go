@@ -371,12 +371,12 @@ func (g *gcp) ensureFirewallRules(cluster *kubermaticv1.Cluster, update provider
 	return err
 }
 
-// ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted
+// ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted.
 func (g *gcp) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-// GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error
+// GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error.
 func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (serviceAccount string, err error) {
 	serviceAccount = cloud.GCP.ServiceAccount
 
@@ -400,7 +400,7 @@ func isHTTPError(err error, status int) bool {
 	return errors.As(err, &gerr) && gerr.Code == status
 }
 
-// cleanUnusedRoutes finds and remove unused gcp routes
+// cleanUnusedRoutes finds and remove unused gcp routes.
 func (g *gcp) cleanUnusedRoutes(cluster *kubermaticv1.Cluster) error {
 	serviceAccount, err := GetCredentialsForCluster(cluster.Spec.Cloud, g.secretKeySelector)
 	if err != nil {
@@ -441,7 +441,7 @@ func (g *gcp) cleanUnusedRoutes(cluster *kubermaticv1.Cluster) error {
 	return nil
 }
 
-// networkURL checks the network name and retuen the network URL based on it
+// networkURL checks the network name and retuen the network URL based on it.
 func (g *gcp) networkURL(project, network string) string {
 	url, err := url.Parse(network)
 	if err == nil && url.Host != "" {
@@ -450,7 +450,7 @@ func (g *gcp) networkURL(project, network string) string {
 	return computeAPIEndpoint + strings.Join([]string{"projects", project, "global", "networks", path.Base(network)}, "/")
 }
 
-// isClusterRoute checks if the route CIDR is part of the Cluster CIDR
+// isClusterRoute checks if the route CIDR is part of the Cluster CIDR.
 func isClusterRoute(cluster *kubermaticv1.Cluster, route *compute.Route) (bool, error) {
 	_, routeCIDR, err := net.ParseCIDR(route.DestRange)
 	if err != nil {
@@ -475,7 +475,7 @@ func isClusterRoute(cluster *kubermaticv1.Cluster, route *compute.Route) (bool, 
 	return false, nil
 }
 
-// isNextHopNotFound checks if the route has a NEXT_HOP_INSTANCE_NOT_FOUND warning
+// isNextHopNotFound checks if the route has a NEXT_HOP_INSTANCE_NOT_FOUND warning.
 func isNextHopNotFound(route *compute.Route) bool {
 	for _, w := range route.Warnings {
 		if w.Code == "NEXT_HOP_INSTANCE_NOT_FOUND" {

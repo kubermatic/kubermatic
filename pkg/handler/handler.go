@@ -41,7 +41,7 @@ type ErrorResponse struct {
 	Error ErrorDetails `json:"error"`
 }
 
-// ErrorDetails contains details about the error
+// ErrorDetails contains details about the error.
 type ErrorDetails struct {
 	// The error code
 	//
@@ -89,7 +89,7 @@ func ErrorEncoder(ctx context.Context, err error, w http.ResponseWriter) {
 	}
 }
 
-// EncodeJSON writes the JSON encoding of response to the http response writer
+// EncodeJSON writes the JSON encoding of response to the http response writer.
 func EncodeJSON(c context.Context, w http.ResponseWriter, response interface{}) (err error) {
 	w.Header().Set(headerContentType, contentTypeJSON)
 
@@ -115,7 +115,7 @@ func EncodeJSON(c context.Context, w http.ResponseWriter, response interface{}) 
 	return json.NewEncoder(w).Encode(response)
 }
 
-// statusOK returns the status code 200
+// statusOK returns the status code 200.
 func statusOK(res http.ResponseWriter, _ *http.Request) {
 	res.WriteHeader(http.StatusOK)
 }

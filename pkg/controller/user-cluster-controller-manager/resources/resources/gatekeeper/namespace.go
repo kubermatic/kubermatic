@@ -24,7 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// NamespaceCreator creates the namespace for Gatekeeper
+// NamespaceCreator creates the namespace for Gatekeeper.
 func NamespaceCreator() (string, reconciling.NamespaceCreator) {
 	return resources.GatekeeperNamespace, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
 		if ns.Labels == nil {
@@ -35,7 +35,7 @@ func NamespaceCreator() (string, reconciling.NamespaceCreator) {
 	}
 }
 
-// KubeSystemLabeler labels the kube-system namespace to be exempt from Gatekeeper
+// KubeSystemLabeler labels the kube-system namespace to be exempt from Gatekeeper.
 func KubeSystemLabeler() (string, reconciling.NamespaceCreator) {
 	return metav1.NamespaceSystem, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
 		if ns.Labels == nil {

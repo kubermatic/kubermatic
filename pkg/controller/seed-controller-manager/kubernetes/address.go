@@ -26,7 +26,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/address"
 )
 
-// syncAddress will set the all address relevant fields on the cluster
+// syncAddress will set the all address relevant fields on the cluster.
 func (r *Reconciler) syncAddress(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, seed *kubermaticv1.Seed) error {
 	var err error
 	// TODO(mrIncompetent): The token should be moved out of Address. But maybe we rather implement another auth-handling? Like openid-connect?

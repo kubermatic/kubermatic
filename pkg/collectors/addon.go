@@ -32,7 +32,7 @@ const (
 	addonPrefix = "kubermatic_addon_"
 )
 
-// AddonCollector exports metrics for addon resources
+// AddonCollector exports metrics for addon resources.
 type AddonCollector struct {
 	client ctrlruntimeclient.Reader
 
@@ -41,7 +41,7 @@ type AddonCollector struct {
 	addonReconcileFail *prometheus.Desc
 }
 
-// MustRegisterAddonCollector registers the addon collector at the given prometheus registry
+// MustRegisterAddonCollector registers the addon collector at the given prometheus registry.
 func MustRegisterAddonCollector(registry prometheus.Registerer, client ctrlruntimeclient.Reader) {
 	cc := &AddonCollector{
 		client: client,
@@ -68,14 +68,14 @@ func MustRegisterAddonCollector(registry prometheus.Registerer, client ctrlrunti
 	registry.MustRegister(cc)
 }
 
-// Describe returns the metrics descriptors
+// Describe returns the metrics descriptors.
 func (cc AddonCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- cc.addonCreated
 	ch <- cc.addonDeleted
 	ch <- cc.addonReconcileFail
 }
 
-// Collect gets called by prometheus to collect the metrics
+// Collect gets called by prometheus to collect the metrics.
 func (cc AddonCollector) Collect(ch chan<- prometheus.Metric) {
 	addons := &kubermaticv1.AddonList{}
 	if err := cc.client.List(

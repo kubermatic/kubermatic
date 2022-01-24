@@ -23,7 +23,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-// ClusterRole returns a cluster role for the metrics server
+// ClusterRole returns a cluster role for the metrics server.
 func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 	return func() (string, reconciling.ClusterRoleCreator) {
 		return resources.MetricsServerClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {

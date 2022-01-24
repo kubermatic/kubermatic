@@ -69,13 +69,13 @@ const (
 	addonEnsureLabelKey  = "addons.kubermatic.io/ensure"
 )
 
-// KubeconfigProvider provides functionality to get a clusters admin kubeconfig
+// KubeconfigProvider provides functionality to get a clusters admin kubeconfig.
 type KubeconfigProvider interface {
 	GetAdminKubeconfig(ctx context.Context, c *kubermaticv1.Cluster) ([]byte, error)
 	GetClient(ctx context.Context, c *kubermaticv1.Cluster, options ...clusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
 }
 
-// Reconciler stores necessary components that are required to manage in-cluster Add-On's
+// Reconciler stores necessary components that are required to manage in-cluster Add-On's.
 type Reconciler struct {
 	ctrlruntimeclient.Client
 
@@ -91,7 +91,7 @@ type Reconciler struct {
 }
 
 // Add creates a new Addon controller that is responsible for
-// managing in-cluster addons
+// managing in-cluster addons.
 func Add(
 	mgr manager.Manager,
 	log *zap.SugaredLogger,
@@ -343,7 +343,7 @@ func (r *Reconciler) getAddonManifests(ctx context.Context, log *zap.SugaredLogg
 	return allManifests, nil
 }
 
-// combineManifests returns all manifests combined into a multi document yaml
+// combineManifests returns all manifests combined into a multi document yaml.
 func (r *Reconciler) combineManifests(manifests []*bytes.Buffer) *bytes.Buffer {
 	parts := make([]string, len(manifests))
 	for i, m := range manifests {
@@ -357,7 +357,7 @@ func (r *Reconciler) combineManifests(manifests []*bytes.Buffer) *bytes.Buffer {
 }
 
 // ensureAddonLabelOnManifests adds the addonLabelKey label to all manifests.
-// For this to happen we need to decode all yaml files to json, parse them, add the label and finally encode to yaml again
+// For this to happen we need to decode all yaml files to json, parse them, add the label and finally encode to yaml again.
 func (r *Reconciler) ensureAddonLabelOnManifests(addon *kubermaticv1.Addon, manifests []runtime.RawExtension) ([]*bytes.Buffer, error) {
 	var rawManifests []*bytes.Buffer
 

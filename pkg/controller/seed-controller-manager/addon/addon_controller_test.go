@@ -119,7 +119,7 @@ spec:
 )
 
 var (
-	// testManifest1 & testManifest3 have a linebreak at the end, testManifest2 not
+	// testManifest1 & testManifest3 have a linebreak at the end, testManifest2 not.
 	combinedTestManifest = fmt.Sprintf("%s---\n%s\n---\n%s", testManifests[0], testManifests[1], testManifests[2])
 )
 

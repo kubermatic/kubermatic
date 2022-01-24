@@ -151,7 +151,7 @@ func Add(ctx context.Context,
 	return nil
 }
 
-// ByLabel returns a predicate func that only includes objects with the given label
+// ByLabel returns a predicate func that only includes objects with the given label.
 func ByLabel(key string) predicate.Funcs {
 	return kubermaticpred.Factory(func(o ctrlruntimeclient.Object) bool {
 		labels := o.GetLabels()
@@ -165,7 +165,7 @@ func ByLabel(key string) predicate.Funcs {
 }
 
 // Reconcile reconciles the kubermatic constraints in the seed cluster and syncs them to all user clusters namespace
-// which have opa integration enabled
+// which have opa integration enabled.
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("request", request)
 	log.Debug("Reconciling")

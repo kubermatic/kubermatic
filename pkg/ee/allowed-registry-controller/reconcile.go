@@ -67,7 +67,7 @@ func NewReconciler(log *zap.SugaredLogger, recorder record.EventRecorder, master
 	}
 }
 
-// Reconcile reconciles the allowed registry
+// Reconcile reconciles the allowed registry.
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("request", request)
 	log.Debug("Reconciling")

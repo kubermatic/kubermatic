@@ -36,7 +36,7 @@ import (
 // any cluster reconciliaton. It:
 // * Checks if the cluster is paused
 // * Checks if the worker-name matches
-// * Sets the ReconcileSuccess condition for the controller
+// * Sets the ReconcileSuccess condition for the controller.
 func ClusterReconcileWrapper(
 	ctx context.Context,
 	client ctrlruntimeclient.Client,

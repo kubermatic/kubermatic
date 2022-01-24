@@ -23,7 +23,7 @@ import (
 )
 
 // SanitizeEnvVar will take the value of an environment variable and sanitize it.
-// the need for this comes from github.com/kubermatic/kubermatic/issues/7960
+// the need for this comes from github.com/kubermatic/kubermatic/issues/7960.
 func SanitizeEnvVars(envVars []corev1.EnvVar) []corev1.EnvVar {
 	sanitizedEnvVars := make([]corev1.EnvVar, len(envVars))
 

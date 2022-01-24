@@ -35,7 +35,7 @@ type tlsCertificateCreatorData interface {
 	GetRootCA() (*triple.KeyPair, error)
 }
 
-// TLSCertificateCreator returns a function to create/update the secret with the etcd tls certificate
+// TLSCertificateCreator returns a function to create/update the secret with the etcd tls certificate.
 func TLSCertificateCreator(data tlsCertificateCreatorData) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.EtcdTLSCertificateSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {

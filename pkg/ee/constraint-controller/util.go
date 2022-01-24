@@ -41,7 +41,7 @@ const (
 	Key = "default"
 )
 
-// FilterClustersForConstraint gets clusters for the constraints by using the constraints selector to filter out unselected clusters
+// FilterClustersForConstraint gets clusters for the constraints by using the constraints selector to filter out unselected clusters.
 func FilterClustersForConstraint(ctx context.Context, client ctrlruntimeclient.Client, constraint *kubermaticv1.Constraint, clusterList *kubermaticv1.ClusterList) ([]kubermaticv1.Cluster, []kubermaticv1.Cluster, error) {
 	constraintLabelSelector, err := v1.LabelSelectorAsSelector(&constraint.Spec.Selector.LabelSelector)
 	if err != nil {

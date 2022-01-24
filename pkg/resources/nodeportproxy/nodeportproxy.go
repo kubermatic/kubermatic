@@ -43,7 +43,7 @@ const (
 	// NodePortProxyExposeNamespacedAnnotationKey is the annotation key used to indicate that
 	// a service should be exposed by the namespaced NodeportProxy instance.
 	// We use it when clusters get exposed via a LoadBalancer, to allow re-using that LoadBalancer
-	// for both the kube-apiserver and the openVPN server
+	// for both the kube-apiserver and the openVPN server.
 	NodePortProxyExposeNamespacedAnnotationKey = "nodeport-proxy.k8s.io/expose-namespaced"
 	DefaultExposeAnnotationKey                 = "nodeport-proxy.k8s.io/expose"
 	// PortHostMappingAnnotationKey contains the mapping between the port to be
@@ -424,7 +424,7 @@ func podDisruptionBudget() reconciling.NamedPodDisruptionBudgetCreatorGetter {
 }
 
 // FrontLoadBalancerServiceCreator returns the creator for the LoadBalancer that fronts apiserver
-// and openVPN when using exposeStrategy=LoadBalancer
+// and openVPN when using exposeStrategy=LoadBalancer.
 func FrontLoadBalancerServiceCreator(data *resources.TemplateData) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.FrontLoadBalancerServiceName, func(s *corev1.Service) (*corev1.Service, error) {

@@ -60,7 +60,7 @@ type Reconciler struct {
 	versions                      kubermatic.Versions
 }
 
-// Add creates a new update controller
+// Add creates a new update controller.
 func Add(mgr manager.Manager, numWorkers int, workerName string, configGetter provider.KubermaticConfigurationGetter,
 	userClusterConnectionProvider *client.Provider, log *zap.SugaredLogger, versions kubermatic.Versions) error {
 	reconciler := &Reconciler{

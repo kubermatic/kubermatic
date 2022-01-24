@@ -44,14 +44,14 @@ func Factory(filter func(o ctrlruntimeclient.Object) bool) predicate.Funcs {
 	}
 }
 
-// ByNamespace returns a predicate func that only includes objects in the given namespace
+// ByNamespace returns a predicate func that only includes objects in the given namespace.
 func ByNamespace(namespace string) predicate.Funcs {
 	return Factory(func(o ctrlruntimeclient.Object) bool {
 		return o.GetNamespace() == namespace
 	})
 }
 
-// ByName returns a predicate func that only includes objects in the given names
+// ByName returns a predicate func that only includes objects in the given names.
 func ByName(names ...string) predicate.Funcs {
 	namesSet := sets.NewString(names...)
 	return Factory(func(o ctrlruntimeclient.Object) bool {
@@ -59,7 +59,7 @@ func ByName(names ...string) predicate.Funcs {
 	})
 }
 
-// ByLabel returns a predicate func that only includes objects with the given label
+// ByLabel returns a predicate func that only includes objects with the given label.
 func ByLabel(key, value string) predicate.Funcs {
 	return Factory(func(o ctrlruntimeclient.Object) bool {
 		labels := o.GetLabels()

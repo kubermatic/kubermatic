@@ -34,7 +34,7 @@ import (
 
 // ValidateFunc validates a Seed resource
 // On DELETE, the only set fields of seed are Name and Namespace as
-// admissionReview.Request.Object is unset
+// admissionReview.Request.Object is unset.
 type validateFunc func(ctx context.Context, seed *kubermaticv1.Seed, op admissionv1.Operation) error
 
 func newSeedValidator(
@@ -57,7 +57,7 @@ func newSeedValidator(
 	}, nil
 }
 
-// Ensure that Validator.Validate implements ValidateFunc
+// Ensure that Validator.Validate implements ValidateFunc.
 var _ validateFunc = (&validator{}).Validate
 
 type validator struct {
@@ -196,7 +196,7 @@ type ensureSingleSeedValidatorWrapper struct {
 	Namespace string
 }
 
-// Ensure that SeedValidator.Validate implements ValidateFunc
+// Ensure that SeedValidator.Validate implements ValidateFunc.
 var _ validateFunc = ensureSingleSeedValidatorWrapper{}.Validate
 
 func (e ensureSingleSeedValidatorWrapper) Validate(ctx context.Context, seed *kubermaticv1.Seed, op admissionv1.Operation) error {

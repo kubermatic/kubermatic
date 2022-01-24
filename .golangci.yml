@@ -41,6 +41,7 @@ linters:
     - goconst
     - gocritic
     - gocyclo
+    - godot
     - gofmt
     - gosimple
     - govet

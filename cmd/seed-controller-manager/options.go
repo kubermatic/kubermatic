@@ -225,7 +225,7 @@ func (o controllerRunOptions) validate() error {
 }
 
 // controllerContext holds all controllerRunOptions plus everything that
-// needs to be initialized first
+// needs to be initialized first.
 type controllerContext struct {
 	ctx                  context.Context
 	runOptions           controllerRunOptions

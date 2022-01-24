@@ -67,7 +67,7 @@ type etcdStatefulSetCreatorData interface {
 	SupportsFailureDomainZoneAntiAffinity() bool
 }
 
-// StatefulSetCreator returns the function to reconcile the etcd StatefulSet
+// StatefulSetCreator returns the function to reconcile the etcd StatefulSet.
 func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChecks bool, enableTLSOnly bool) reconciling.NamedStatefulSetCreatorGetter {
 	return func() (string, reconciling.StatefulSetCreator) {
 		return resources.EtcdStatefulSetName, func(set *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
@@ -362,7 +362,7 @@ func GetBasePodLabels(cluster *kubermaticv1.Cluster) map[string]string {
 }
 
 // ImageTag returns the correct etcd image tag for a given Cluster
-// TODO: Other functions use this function, switch them to getLauncherImage
+// TODO: Other functions use this function, switch them to getLauncherImage.
 func ImageTag(c *kubermaticv1.Cluster) string {
 	if c.Spec.Version.Semver().Minor() < 22 {
 		return "v3.4.3"

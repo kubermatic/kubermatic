@@ -33,7 +33,7 @@ const (
 	prefix = "kubermatic_cluster_"
 )
 
-// ClusterCollector exports metrics for cluster resources
+// ClusterCollector exports metrics for cluster resources.
 type ClusterCollector struct {
 	client ctrlruntimeclient.Reader
 
@@ -42,7 +42,7 @@ type ClusterCollector struct {
 	clusterInfo    *prometheus.Desc
 }
 
-// MustRegisterClusterCollector registers the cluster collector at the given prometheus registry
+// MustRegisterClusterCollector registers the cluster collector at the given prometheus registry.
 func MustRegisterClusterCollector(registry prometheus.Registerer, client ctrlruntimeclient.Reader) {
 	cc := &ClusterCollector{
 		client: client,
@@ -78,14 +78,14 @@ func MustRegisterClusterCollector(registry prometheus.Registerer, client ctrlrun
 	registry.MustRegister(cc)
 }
 
-// Describe returns the metrics descriptors
+// Describe returns the metrics descriptors.
 func (cc ClusterCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- cc.clusterCreated
 	ch <- cc.clusterDeleted
 	ch <- cc.clusterInfo
 }
 
-// Collect gets called by prometheus to collect the metrics
+// Collect gets called by prometheus to collect the metrics.
 func (cc ClusterCollector) Collect(ch chan<- prometheus.Metric) {
 	clusters := &kubermaticv1.ClusterList{}
 	if err := cc.client.List(context.Background(), clusters); err != nil {

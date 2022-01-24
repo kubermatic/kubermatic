@@ -50,7 +50,7 @@ type awsSizeNoCredentialsReq struct {
 	Architecture string `json:"architecture,omitempty"`
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req awsSizeNoCredentialsReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
@@ -83,7 +83,7 @@ func DecodeAWSSizeNoCredentialsReq(c context.Context, r *http.Request) (interfac
 	return req, nil
 }
 
-// AWSSubnetNoCredentialsEndpoint handles the request to list AWS availability subnets in a given vpc, using credentials
+// AWSSubnetNoCredentialsEndpoint handles the request to list AWS availability subnets in a given vpc, using credentials.
 func AWSSubnetNoCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(cluster.GetClusterReq)
@@ -216,7 +216,7 @@ func DecodeAWSCommonReq(c context.Context, r *http.Request) (interface{}, error)
 	return req, nil
 }
 
-// Validate validates AWSCommonReq request
+// Validate validates AWSCommonReq request.
 func (req AWSCommonReq) Validate() error {
 	if len(req.Credential) == 0 && len(req.AccessKeyID) == 0 && len(req.SecretAccessKey) == 0 {
 		return fmt.Errorf("AWS credentials cannot be empty")

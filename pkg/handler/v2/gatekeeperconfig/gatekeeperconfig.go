@@ -40,9 +40,9 @@ import (
 
 const (
 	// Gatekeeper only uses the configs from the namespace which is set as "gatekeeper namespace" in the gatekeeper controller and audit.
-	// For our deployment, its always `gatekeeper-system`
+	// For our deployment, its always `gatekeeper-system`.
 	ConfigNamespace = "gatekeeper-system"
-	// Gatekeeper audit also uses the hardcoded config name `config`
+	// Gatekeeper audit also uses the hardcoded config name `config`.
 	ConfigName = "config"
 )
 
@@ -275,7 +275,7 @@ type patchGatekeeperConfigReq struct {
 	Patch json.RawMessage
 }
 
-// DecodePatchGatekeeperConfigReq decodes http request into patchGatekeeperConfigReq
+// DecodePatchGatekeeperConfigReq decodes http request into patchGatekeeperConfigReq.
 func DecodePatchGatekeeperConfigReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req patchGatekeeperConfigReq
 

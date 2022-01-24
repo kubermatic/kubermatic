@@ -112,7 +112,7 @@ func (d *Deletion) cleanupLB(ctx context.Context, log *zap.SugaredLogger, userCl
 
 // checkIfAllLoadbalancersAreGone checks if all the services of type LoadBalancer were successfully
 // deleted. The in-tree cloud providers do this without a finalizer and only after the service
-// object is gone from the API, the only way to check is to wait for the relevant event
+// object is gone from the API, the only way to check is to wait for the relevant event.
 func (d *Deletion) checkIfAllLoadbalancersAreGone(ctx context.Context, cluster *kubermaticv1.Cluster) (bool, error) {
 	// This check is only required for in-tree cloud provider that support LoadBalancers
 	// TODO once we start external cloud controllers for one of these three: Make this check

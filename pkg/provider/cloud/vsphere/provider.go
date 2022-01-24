@@ -76,7 +76,7 @@ type Session struct {
 	Datacenter *object.Datacenter
 }
 
-// Logout closes the idling vCenter connections
+// Logout closes the idling vCenter connections.
 func (s *Session) Logout() {
 	if err := s.Client.Logout(context.Background()); err != nil {
 		kruntime.HandleError(fmt.Errorf("vSphere client failed to logout: %w", err))
@@ -128,7 +128,7 @@ func newSession(ctx context.Context, dc *kubermaticv1.DatacenterSpecVSphere, use
 }
 
 // getVMRootPath is a helper func to get the root path for VM's
-// We extracted it because we use it in several places
+// We extracted it because we use it in several places.
 func getVMRootPath(dc *kubermaticv1.DatacenterSpecVSphere) string {
 	// Each datacenter root directory for VM's is: ${DATACENTER_NAME}/vm
 	rootPath := path.Join("/", dc.Datacenter, "vm")
@@ -227,7 +227,7 @@ func GetVMFolders(dc *kubermaticv1.DatacenterSpecVSphere, username, password str
 	return folders, nil
 }
 
-// DefaultCloudSpec adds defaults to the cloud spec
+// DefaultCloudSpec adds defaults to the cloud spec.
 func (v *Provider) DefaultCloudSpec(cloud *kubermaticv1.CloudSpec) error {
 	return nil
 }
@@ -284,7 +284,7 @@ func (v *Provider) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 
 // CleanUpCloudProvider we always check if the folder is there and remove it if yes because we know its absolute path
 // This covers cases where the finalizer was not added
-// We also remove the finalizer if either the folder is not present or we successfully deleted it
+// We also remove the finalizer if either the folder is not present or we successfully deleted it.
 func (v *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	ctx := context.TODO()
 	username, password, err := GetCredentialsForCluster(cluster.Spec.Cloud, v.secretKeySelector, v.dc)
@@ -313,7 +313,7 @@ func (v *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update pr
 	return cluster, nil
 }
 
-// ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted
+// ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted.
 func (v *Provider) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
 	return nil
 }
@@ -343,7 +343,7 @@ func GetDatastoreList(dc *kubermaticv1.DatacenterSpecVSphere, username, password
 // * User from clusters infraManagementUser
 // * User from cluster
 // * User form clusters secret infraManagementUser
-// * User from clusters secret
+// * User from clusters secret.
 func getUsernameAndPassword(cloud kubermaticv1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc, infraManagementUser bool) (username, password string, err error) {
 	if infraManagementUser {
 		username = cloud.VSphere.InfraManagementUser.Username

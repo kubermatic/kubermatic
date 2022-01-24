@@ -41,7 +41,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
-// DeleteEndpoint deletes the given user/member from the given project
+// DeleteEndpoint deletes the given user/member from the given project.
 func DeleteEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider, privilegedMemberProvider provider.PrivilegedProjectMemberProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(DeleteReq)
@@ -129,7 +129,7 @@ func getMemberList(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 	return memberProvider.List(userInfo, project, options)
 }
 
-// EditEndpoint changes the group the given user/member belongs in the given project
+// EditEndpoint changes the group the given user/member belongs in the given project.
 func EditEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider, privilegedMemberProvider provider.PrivilegedProjectMemberProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(EditReq)
@@ -199,7 +199,7 @@ func updateBinding(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 	return memberProvider.Update(userInfo, binding)
 }
 
-// ListEndpoint returns user/members of the given project
+// ListEndpoint returns user/members of the given project.
 func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(common.GetProjectRq)
@@ -235,7 +235,7 @@ func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 	}
 }
 
-// AddEndpoint adds the given user to the given group within the given project
+// AddEndpoint adds the given user to the given group within the given project.
 func AddEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider, privilegedMemberProvider provider.PrivilegedProjectMemberProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AddReq)
@@ -281,7 +281,7 @@ func AddEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProv
 	}
 }
 
-// LogoutEndpoint
+// LogoutEndpoint.
 func LogoutEndpoint(userProvider provider.UserProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		authenticatedUser := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
@@ -316,7 +316,7 @@ func createBinding(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 	return memberProvider.Create(userInfo, project, email, group)
 }
 
-// GetEndpoint returns info about the current user
+// GetEndpoint returns info about the current user.
 func GetEndpoint(memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		authenticatedUser := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
@@ -330,7 +330,7 @@ func GetEndpoint(memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
 	}
 }
 
-// GetSettingsEndpoint returns settings of the current user
+// GetSettingsEndpoint returns settings of the current user.
 func GetSettingsEndpoint(memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		authenticatedUser := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
@@ -338,7 +338,7 @@ func GetSettingsEndpoint(memberMapper provider.ProjectMemberMapper) endpoint.End
 	}
 }
 
-// PatchSettingsEndpoint patches settings of the current user
+// PatchSettingsEndpoint patches settings of the current user.
 func PatchSettingsEndpoint(userProvider provider.UserProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(PatchSettingsReq)
@@ -395,7 +395,7 @@ type AddReq struct {
 	Body apiv1.User
 }
 
-// Validate validates AddReq request
+// Validate validates AddReq request.
 func (r AddReq) Validate(authenticatesUserInfo *provider.UserInfo) error {
 	if len(r.ProjectID) == 0 {
 		return k8cerrors.NewBadRequest("the name of the project cannot be empty")
@@ -433,7 +433,7 @@ func (r AddReq) Validate(authenticatesUserInfo *provider.UserInfo) error {
 	return nil
 }
 
-// DecodeAddReq  decodes an HTTP request into AddReq
+// DecodeAddReq  decodes an HTTP request into AddReq.
 func DecodeAddReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req AddReq
 
@@ -450,7 +450,7 @@ func DecodeAddReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-// IDReq represents a request that contains userID in the path
+// IDReq represents a request that contains userID in the path.
 type IDReq struct {
 	// in: path
 	UserID string `json:"user_id"`
@@ -475,7 +475,7 @@ type EditReq struct {
 	IDReq
 }
 
-// Validate validates EditUserToProject request
+// Validate validates EditUserToProject request.
 func (r EditReq) Validate(authenticatesUserInfo *provider.UserInfo) error {
 	err := r.AddReq.Validate(authenticatesUserInfo)
 	if err != nil {
@@ -487,7 +487,7 @@ func (r EditReq) Validate(authenticatesUserInfo *provider.UserInfo) error {
 	return nil
 }
 
-// DecodeEditReq  decodes an HTTP request into EditReq
+// DecodeEditReq  decodes an HTTP request into EditReq.
 func DecodeEditReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req EditReq
 
@@ -517,7 +517,7 @@ type DeleteReq struct {
 	IDReq
 }
 
-// DecodeDeleteReq  decodes an HTTP request into DeleteReq
+// DecodeDeleteReq  decodes an HTTP request into DeleteReq.
 func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req DeleteReq
 
@@ -543,7 +543,7 @@ type PatchSettingsReq struct {
 	Patch json.RawMessage
 }
 
-// DecodePatchSettingsReq  decodes an HTTP request into PatchSettingsReq
+// DecodePatchSettingsReq  decodes an HTTP request into PatchSettingsReq.
 func DecodePatchSettingsReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req PatchSettingsReq
 	var err error

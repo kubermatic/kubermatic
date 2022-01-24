@@ -26,7 +26,7 @@ import (
 )
 
 // KubeSystemRoleCreator returns the func to create/update the Role for the OSM
-// to facilitate leaderelection
+// to facilitate leaderelection.
 func KubeSystemRoleCreator() reconciling.NamedRoleCreatorGetter {
 	return func() (string, reconciling.RoleCreator) {
 		return resources.OperatingSystemManagerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {

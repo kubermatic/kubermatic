@@ -32,7 +32,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// AddonProvider struct that holds required components of the AddonProvider implementation
+// AddonProvider struct that holds required components of the AddonProvider implementation.
 type AddonProvider struct {
 	// createSeedImpersonatedClient is used as a ground for impersonation
 	// whenever a connection to Seed API server is required
@@ -45,7 +45,7 @@ type AddonProvider struct {
 }
 
 // NewAddonProvider returns a new addon provider that respects RBAC policies
-// it uses createSeedImpersonatedClient to create a connection that uses user impersonation
+// it uses createSeedImpersonatedClient to create a connection that uses user impersonation.
 func NewAddonProvider(
 	clientPrivileged ctrlruntimeclient.Client,
 	createSeedImpersonatedClient ImpersonationClient,
@@ -79,7 +79,7 @@ func (p *AddonProvider) checkAddonAccessible(addonName string) error {
 	return nil
 }
 
-// New creates a new addon in the given cluster
+// New creates a new addon in the given cluster.
 func (p *AddonProvider) New(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, addonName string, variables *runtime.RawExtension, labels map[string]string) (*kubermaticv1.Addon, error) {
 	if err := p.checkAddonAccessible(addonName); err != nil {
 		return nil, err
@@ -102,7 +102,7 @@ func (p *AddonProvider) New(userInfo *provider.UserInfo, cluster *kubermaticv1.C
 // NewUnsecured creates a new addon in the given cluster
 //
 // Note that this function:
-// is unsafe in a sense that it uses privileged account to create the resource
+// is unsafe in a sense that it uses privileged account to create the resource.
 func (p *AddonProvider) NewUnsecured(cluster *kubermaticv1.Cluster, addonName string, variables *runtime.RawExtension, labels map[string]string) (*kubermaticv1.Addon, error) {
 	if err := p.checkAddonAccessible(addonName); err != nil {
 		return nil, err
@@ -143,7 +143,7 @@ func genAddon(cluster *kubermaticv1.Cluster, addonName string, variables *runtim
 	}
 }
 
-// Get returns the given addon, it uses the projectInternalName to determine the group the user belongs to
+// Get returns the given addon, it uses the projectInternalName to determine the group the user belongs to.
 func (p *AddonProvider) Get(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, addonName string) (*kubermaticv1.Addon, error) {
 	if err := p.checkAddonAccessible(addonName); err != nil {
 		return nil, err
@@ -164,7 +164,7 @@ func (p *AddonProvider) Get(userInfo *provider.UserInfo, cluster *kubermaticv1.C
 // GetUnsecured returns the given addon
 //
 // Note that this function:
-// is unsafe in a sense that it uses privileged account to get the resource
+// is unsafe in a sense that it uses privileged account to get the resource.
 func (p *AddonProvider) GetUnsecured(cluster *kubermaticv1.Cluster, addonName string) (*kubermaticv1.Addon, error) {
 	if err := p.checkAddonAccessible(addonName); err != nil {
 		return nil, err
@@ -177,7 +177,7 @@ func (p *AddonProvider) GetUnsecured(cluster *kubermaticv1.Cluster, addonName st
 	return addon, nil
 }
 
-// List returns all addons in the given cluster
+// List returns all addons in the given cluster.
 func (p *AddonProvider) List(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster) ([]*kubermaticv1.Addon, error) {
 	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
@@ -224,7 +224,7 @@ func (p *AddonProvider) ListUnsecured(cluster *kubermaticv1.Cluster) ([]*kuberma
 	return result, nil
 }
 
-// Update updates an addon
+// Update updates an addon.
 func (p *AddonProvider) Update(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, addon *kubermaticv1.Addon) (*kubermaticv1.Addon, error) {
 	if err := p.checkAddonAccessible(addon.Name); err != nil {
 		return nil, err
@@ -243,7 +243,7 @@ func (p *AddonProvider) Update(userInfo *provider.UserInfo, cluster *kubermaticv
 	return addon, nil
 }
 
-// Delete deletes the given addon
+// Delete deletes the given addon.
 func (p *AddonProvider) Delete(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, addonName string) error {
 	if err := p.checkAddonAccessible(addonName); err != nil {
 		return err
@@ -260,7 +260,7 @@ func (p *AddonProvider) Delete(userInfo *provider.UserInfo, cluster *kubermaticv
 // UpdateUnsecured updates an addon
 //
 // Note that this function:
-// is unsafe in a sense that it uses privileged account to update the resource
+// is unsafe in a sense that it uses privileged account to update the resource.
 func (p *AddonProvider) UpdateUnsecured(cluster *kubermaticv1.Cluster, addon *kubermaticv1.Addon) (*kubermaticv1.Addon, error) {
 	if err := p.checkAddonAccessible(addon.Name); err != nil {
 		return nil, err
@@ -277,7 +277,7 @@ func (p *AddonProvider) UpdateUnsecured(cluster *kubermaticv1.Cluster, addon *ku
 // DeleteUnsecured deletes the given addon
 //
 // Note that this function:
-// is unsafe in a sense that it uses privileged account to delete the resource
+// is unsafe in a sense that it uses privileged account to delete the resource.
 func (p *AddonProvider) DeleteUnsecured(cluster *kubermaticv1.Cluster, addonName string) error {
 	if err := p.checkAddonAccessible(addonName); err != nil {
 		return err

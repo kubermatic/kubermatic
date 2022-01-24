@@ -34,7 +34,7 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-// cronJobCreator returns the func to create/update the etcd defragger cronjob
+// cronJobCreator returns the func to create/update the etcd defragger cronjob.
 func cronJobCreator(seedName string, getRegistry registry.WithOverwriteFunc) reconciling.NamedCronJobCreatorGetter {
 	return func() (string, reconciling.CronJobCreator) {
 		return meteringCronJobWeeklyName, func(job *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {

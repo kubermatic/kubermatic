@@ -33,7 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// clusterIsReachable checks if the cluster is reachable via its external name
+// clusterIsReachable checks if the cluster is reachable via its external name.
 func (r *Reconciler) clusterIsReachable(ctx context.Context, c *kubermaticv1.Cluster) (bool, error) {
 	client, err := r.userClusterConnProvider.GetClient(ctx, c)
 	if err != nil {

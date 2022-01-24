@@ -50,7 +50,7 @@ var (
 	}
 )
 
-// WebhookDeploymentCreator returns the function to create and update the machine controller webhook deployment
+// WebhookDeploymentCreator returns the function to create and update the machine controller webhook deployment.
 func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.MachineControllerWebhookDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -185,7 +185,7 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 	}
 }
 
-// ServiceCreator returns the function to reconcile the DNS service
+// ServiceCreator returns the function to reconcile the DNS service.
 func ServiceCreator() reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.MachineControllerWebhookServiceName, func(se *corev1.Service) (*corev1.Service, error) {
@@ -215,7 +215,7 @@ type tlsServingCertCreatorData interface {
 	Cluster() *kubermaticv1.Cluster
 }
 
-// TLSServingCertificateCreator returns a function to create/update the secret with the machine-controller-webhook tls certificate
+// TLSServingCertificateCreator returns a function to create/update the secret with the machine-controller-webhook tls certificate.
 func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.MachineControllerWebhookServingCertSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {

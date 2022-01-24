@@ -19,10 +19,10 @@ package v1
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 const (
-	// ClusterTemplateInstanceResourceName represents "Resource" defined in Kubernetes
+	// ClusterTemplateInstanceResourceName represents "Resource" defined in Kubernetes.
 	ClusterTemplateInstanceResourceName = "clustertemplateinstances"
 
-	// ClusterTemplateInstanceKindName represents "Kind" defined in Kubernetes
+	// ClusterTemplateInstanceKindName represents "Kind" defined in Kubernetes.
 	ClusterTemplateInstanceKindName = "ClusterTemplateInstance"
 )
 
@@ -48,7 +48,7 @@ type ClusterTemplateInstanceSpec struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ClusterTemplateInstanceList specifies a list of cluster template instances
+// ClusterTemplateInstanceList specifies a list of cluster template instances.
 type ClusterTemplateInstanceList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

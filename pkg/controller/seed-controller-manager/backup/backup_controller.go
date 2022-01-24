@@ -61,19 +61,19 @@ import (
 
 const (
 	// SharedVolumeName is the name of the `emptyDir` volume the initContainer
-	// will write the backup to
+	// will write the backup to.
 	SharedVolumeName = "etcd-backup"
-	// DefaultBackupContainerImage holds the default Image used for creating the etcd backups
+	// DefaultBackupContainerImage holds the default Image used for creating the etcd backups.
 	DefaultBackupContainerImage = "gcr.io/etcd-development/etcd"
-	// DefaultBackupInterval defines the default interval used to create backups
+	// DefaultBackupInterval defines the default interval used to create backups.
 	DefaultBackupInterval = "20m"
-	// cronJobPrefix defines the prefix used for all backup cronjob names
+	// cronJobPrefix defines the prefix used for all backup cronjob names.
 	cronJobPrefix = "etcd-backup"
-	// cleanupFinalizer defines the name for the finalizer to ensure we cleanup after we deleted a cluster
+	// cleanupFinalizer defines the name for the finalizer to ensure we cleanup after we deleted a cluster.
 	cleanupFinalizer = "kubermatic.io/cleanup-backups"
-	// backupCleanupJobLabel defines the label we use on all cleanup jobs
+	// backupCleanupJobLabel defines the label we use on all cleanup jobs.
 	backupCleanupJobLabel = "kubermatic-etcd-backup-cleaner"
-	// clusterEnvVarKey defines the environment variable key for the cluster name
+	// clusterEnvVarKey defines the environment variable key for the cluster name.
 	clusterEnvVarKey = "CLUSTER"
 
 	ControllerName = "kubermatic_backup_controller"
@@ -104,7 +104,7 @@ type Reconciler struct {
 }
 
 // Add creates a new Backup controller that is responsible for creating backupjobs
-// for all managed user clusters
+// for all managed user clusters.
 func Add(
 	log *zap.SugaredLogger,
 	mgr manager.Manager,

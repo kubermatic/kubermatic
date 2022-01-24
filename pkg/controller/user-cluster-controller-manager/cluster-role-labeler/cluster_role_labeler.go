@@ -39,7 +39,7 @@ import (
 )
 
 const (
-	// This controller adds special label for build-it cluster roles to make them visible in the API
+	// This controller adds special label for build-it cluster roles to make them visible in the API.
 	controllerName = "cluster_role_label_controller"
 )
 

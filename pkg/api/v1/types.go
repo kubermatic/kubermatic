@@ -431,7 +431,7 @@ type SSHKey struct {
 	Spec SSHKeySpec `json:"spec"`
 }
 
-// SSHKeySpec represents the details of a ssh key
+// SSHKeySpec represents the details of a ssh key.
 type SSHKeySpec struct {
 	Fingerprint string `json:"fingerprint"`
 	PublicKey   string `json:"publicKey"`
@@ -505,7 +505,7 @@ type Admin struct {
 }
 
 // ProjectGroup is a helper data structure that
-// stores the information about a project and a group prefix that a user belongs to
+// stores the information about a project and a group prefix that a user belongs to.
 type ProjectGroup struct {
 	ID          string `json:"id"`
 	GroupPrefix string `json:"group"`
@@ -513,13 +513,13 @@ type ProjectGroup struct {
 
 // These are the valid statuses of a ServiceAccount.
 const (
-	// ServiceAccountActive means the ServiceAccount is available for use in the system
+	// ServiceAccountActive means the ServiceAccount is available for use in the system.
 	ServiceAccountActive string = "Active"
 
-	// ServiceAccountInactive means the ServiceAccount is inactive and requires further initialization
+	// ServiceAccountInactive means the ServiceAccount is inactive and requires further initialization.
 	ServiceAccountInactive string = "Inactive"
 
-	// ServiceAccountTerminating means the ServiceAccount is undergoing graceful termination
+	// ServiceAccountTerminating means the ServiceAccount is undergoing graceful termination.
 	ServiceAccountTerminating string = "Terminating"
 )
 
@@ -734,7 +734,7 @@ type CreateClusterSpec struct {
 }
 
 const (
-	// KubernetesClusterType defines the Kubernetes cluster type
+	// KubernetesClusterType defines the Kubernetes cluster type.
 	KubernetesClusterType string = "kubernetes"
 )
 
@@ -755,7 +755,7 @@ type Cluster struct {
 	Status          ClusterStatus     `json:"status"`
 }
 
-// ClusterSpec defines the cluster specification
+// ClusterSpec defines the cluster specification.
 type ClusterSpec struct {
 	// Cloud specifies the cloud providers configuration
 	Cloud kubermaticv1.CloudSpec `json:"cloud"`
@@ -1099,7 +1099,7 @@ func newPublicNutanixCloudSpec(internal *kubermaticv1.NutanixCloudSpec) (public 
 	return &PublicNutanixCloudSpec{}
 }
 
-// ClusterStatus defines the cluster status
+// ClusterStatus defines the cluster status.
 type ClusterStatus struct {
 	// Version actual version of the kubernetes master components
 	Version ksemver.Semver `json:"version"`
@@ -1112,13 +1112,13 @@ type ClusterStatus struct {
 type ExternalCCMMigrationStatus string
 
 var (
-	// ExternalCCMMigrationNotNeeded indicates that the external CCM is already in use
+	// ExternalCCMMigrationNotNeeded indicates that the external CCM is already in use.
 	ExternalCCMMigrationNotNeeded ExternalCCMMigrationStatus = "NotNeeded"
-	// ExternalCCMMigrationSupported indicates that the external CCM is not used but supported
+	// ExternalCCMMigrationSupported indicates that the external CCM is not used but supported.
 	ExternalCCMMigrationSupported ExternalCCMMigrationStatus = "Supported"
-	// ExternalCCMMigrationUnsupported indicates that the external CCM is not used and not supported
+	// ExternalCCMMigrationUnsupported indicates that the external CCM is not used and not supported.
 	ExternalCCMMigrationUnsupported ExternalCCMMigrationStatus = "Unsupported"
-	// ExternalCCMMigrationInProgress indicates that the migration procedure to the external CCM is in progress
+	// ExternalCCMMigrationInProgress indicates that the migration procedure to the external CCM is in progress.
 	ExternalCCMMigrationInProgress ExternalCCMMigrationStatus = "InProgress"
 )
 
@@ -1207,7 +1207,7 @@ type UbuntuSpec struct {
 	DistUpgradeOnBoot bool `json:"distUpgradeOnBoot"`
 }
 
-// CentOSSpec contains CentOS specific settings
+// CentOSSpec contains CentOS specific settings.
 type CentOSSpec struct {
 	// do a dist-upgrade on boot and reboot it required afterwards
 	DistUpgradeOnBoot bool `json:"distUpgradeOnBoot"`
@@ -1257,7 +1257,7 @@ type NodeVersionInfo struct {
 	Kubelet string `json:"kubelet"`
 }
 
-// TaintSpec defines a node taint
+// TaintSpec defines a node taint.
 type TaintSpec struct {
 	Key    string `json:"key"`
 	Value  string `json:"value"`
@@ -2252,7 +2252,7 @@ type Seed struct {
 	SeedSpec `json:"spec"`
 }
 
-// The spec for a seed data
+// The spec for a seed data.
 type SeedSpec struct {
 	// Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.
 	// For informational purposes in the Kubermatic dashboard only.
@@ -2289,7 +2289,7 @@ type SeedSpec struct {
 // swagger:model SeedNamesList
 type SeedNamesList []string
 
-// SeedCluster holds seed name for the cluster
+// SeedCluster holds seed name for the cluster.
 type SeedCluster struct {
 	SeedName  string
 	ClusterID string
@@ -2308,46 +2308,46 @@ type MeteringReport struct {
 type ReportURL string
 
 const (
-	// NodeDeletionFinalizer indicates that the nodes still need cleanup
+	// NodeDeletionFinalizer indicates that the nodes still need cleanup.
 	NodeDeletionFinalizer = "kubermatic.io/delete-nodes"
-	// InClusterPVCleanupFinalizer indicates that the PVs still need cleanup
+	// InClusterPVCleanupFinalizer indicates that the PVs still need cleanup.
 	InClusterPVCleanupFinalizer = "kubermatic.io/cleanup-in-cluster-pv"
-	// InClusterLBCleanupFinalizer indicates that the LBs still need cleanup
+	// InClusterLBCleanupFinalizer indicates that the LBs still need cleanup.
 	InClusterLBCleanupFinalizer = "kubermatic.io/cleanup-in-cluster-lb"
-	// CredentialsSecretsCleanupFinalizer indicates that secrets for credentials still need cleanup
+	// CredentialsSecretsCleanupFinalizer indicates that secrets for credentials still need cleanup.
 	CredentialsSecretsCleanupFinalizer = "kubermatic.io/cleanup-credentials-secrets"
-	// UserClusterRoleCleanupFinalizer indicates that user cluster role still need cleanup
+	// UserClusterRoleCleanupFinalizer indicates that user cluster role still need cleanup.
 	UserClusterRoleCleanupFinalizer = "kubermatic.io/user-cluster-role"
-	// ExternalClusterKubeconfigCleanupFinalizer indicates that secrets for kubeconfig still need cleanup
+	// ExternalClusterKubeconfigCleanupFinalizer indicates that secrets for kubeconfig still need cleanup.
 	ExternalClusterKubeconfigCleanupFinalizer = "kubermatic.io/cleanup-kubeconfig-secret"
-	// EtcdBackConfigCleanupFinalizer indicates that EtcdBackupConfigs for the cluster still need cleanup
+	// EtcdBackConfigCleanupFinalizer indicates that EtcdBackupConfigs for the cluster still need cleanup.
 	EtcdBackupConfigCleanupFinalizer = "kubermatic.io/cleanup-etcdbackupconfigs"
-	// GatekeeperConstraintTemplateCleanupFinalizer indicates that synced gatekeeper Constraint Templates on user cluster need cleanup
+	// GatekeeperConstraintTemplateCleanupFinalizer indicates that synced gatekeeper Constraint Templates on user cluster need cleanup.
 	GatekeeperConstraintTemplateCleanupFinalizer = "kubermatic.io/cleanup-gatekeeper-constraint-templates"
-	// GatekeeperSeedConstraintTemplateCleanupFinalizer indicates that synced gatekeeper Constraint Templates on seed clusters need cleanup
+	// GatekeeperSeedConstraintTemplateCleanupFinalizer indicates that synced gatekeeper Constraint Templates on seed clusters need cleanup.
 	GatekeeperSeedConstraintTemplateCleanupFinalizer = "kubermatic.io/cleanup-gatekeeper-master-constraint-templates"
-	// GatekeeperSeedConstraintCleanupFinalizer indicates that synced gatekeeper Constraint on seed clusters need cleanup
+	// GatekeeperSeedConstraintCleanupFinalizer indicates that synced gatekeeper Constraint on seed clusters need cleanup.
 	GatekeeperSeedConstraintCleanupFinalizer = "kubermatic.io/cleanup-gatekeeper-seed-constraint"
-	// GatekeeperConstraintCleanupFinalizer indicates that gatkeeper constraints on the user cluster need cleanup
+	// GatekeeperConstraintCleanupFinalizer indicates that gatkeeper constraints on the user cluster need cleanup.
 	GatekeeperConstraintCleanupFinalizer = "kubermatic.io/cleanup-gatekeeper-constraints"
-	// KubermaticUserClusterNsDefaultConstraintCleanupFinalizer indicates that kubermatic constraints on the user cluster namespace need cleanup
+	// KubermaticUserClusterNsDefaultConstraintCleanupFinalizer indicates that kubermatic constraints on the user cluster namespace need cleanup.
 	KubermaticUserClusterNsDefaultConstraintCleanupFinalizer = "kubermatic.io/cleanup-kubermatic-usercluster-ns-default-constraints"
-	// KubermaticConstraintCleanupFinalizer indicates that Kubermatic constraints for the cluster need cleanup
+	// KubermaticConstraintCleanupFinalizer indicates that Kubermatic constraints for the cluster need cleanup.
 	KubermaticConstraintCleanupFinalizer = "kubermatic.io/cleanup-kubermatic-constraints"
-	// SeedProjectCleanupFinalizer indicates that Kubermatic Projects on the seed clusters need cleanup
+	// SeedProjectCleanupFinalizer indicates that Kubermatic Projects on the seed clusters need cleanup.
 	SeedProjectCleanupFinalizer = "kubermatic.io/cleanup-seed-projects"
-	// SeedUserProjectBindingCleanupFinalizer indicates that Kubermatic UserProjectBindings on the seed clusters need cleanup
+	// SeedUserProjectBindingCleanupFinalizer indicates that Kubermatic UserProjectBindings on the seed clusters need cleanup.
 	SeedUserProjectBindingCleanupFinalizer = "kubermatic.io/cleanup-seed-user-project-bindings"
-	// SeedUserCleanupFinalizer indicates that Kubermatic Users on the seed clusters need cleanup
+	// SeedUserCleanupFinalizer indicates that Kubermatic Users on the seed clusters need cleanup.
 	SeedUserCleanupFinalizer = "kubermatic.io/cleanup-seed-users"
 	// ClusterRoleBindingsCleanupFinalizer indicates that the cluster ClusterRoleBindings on the seed cluster need cleanup.
 	// This finalizer is deprecated and should not be used anymore since we migrated to using owner references for cleanup.
 	ClusterRoleBindingsCleanupFinalizer = "kubermatic.io/cleanup-cluster-role-bindings"
-	// ClusterTemplateSeedCleanupFinalizer indicates that synced cluster template on seed clusters need cleanup
+	// ClusterTemplateSeedCleanupFinalizer indicates that synced cluster template on seed clusters need cleanup.
 	ClusterTemplateSeedCleanupFinalizer = "kubermatic.io/cleanup-seed-cluster-template"
-	// AllowedRegistryCleanupFinalizer indicates that allowed registry Constraints need to be cleaned up
+	// AllowedRegistryCleanupFinalizer indicates that allowed registry Constraints need to be cleaned up.
 	AllowedRegistryCleanupFinalizer = "kubermatic.io/cleanup-allowed-registry"
-	// ClusterTemplateSeedCleanupFinalizer indicates that cluster template instance on seed clusters need cleanup
+	// ClusterTemplateSeedCleanupFinalizer indicates that cluster template instance on seed clusters need cleanup.
 	SeedClusterTemplateInstanceFinalizer = "kubermatic.io/cleanup-seed-cluster-template-instance"
 )
 

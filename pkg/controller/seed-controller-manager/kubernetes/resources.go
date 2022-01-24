@@ -224,7 +224,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		Build(), nil
 }
 
-// ensureNamespaceExists will create the cluster namespace
+// ensureNamespaceExists will create the cluster namespace.
 func (r *Reconciler) ensureNamespaceExists(ctx context.Context, cluster *kubermaticv1.Cluster) (*corev1.Namespace, error) {
 	if cluster.Status.NamespaceName == "" {
 		err := r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
@@ -257,7 +257,7 @@ func (r *Reconciler) ensureNamespaceExists(ctx context.Context, cluster *kuberma
 	return ns, nil
 }
 
-// GetServiceCreators returns all service creators that are currently in use
+// GetServiceCreators returns all service creators that are currently in use.
 func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedServiceCreatorGetter {
 	creators := []reconciling.NamedServiceCreatorGetter{
 		apiserver.ServiceCreator(data.Cluster().Spec.ExposeStrategy, data.Cluster().Address.ExternalName),
@@ -287,7 +287,7 @@ func (r *Reconciler) ensureServices(ctx context.Context, c *kubermaticv1.Cluster
 	return reconciling.ReconcileServices(ctx, creators, c.Status.NamespaceName, r, reconciling.OwnerRefWrapper(resources.GetClusterRef(c)))
 }
 
-// GetDeploymentCreators returns all DeploymentCreators that are currently in use
+// GetDeploymentCreators returns all DeploymentCreators that are currently in use.
 func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuthentication bool) []reconciling.NamedDeploymentCreatorGetter {
 	deployments := []reconciling.NamedDeploymentCreatorGetter{
 		apiserver.DeploymentCreator(data, enableAPIserverOIDCAuthentication),
@@ -331,7 +331,7 @@ func (r *Reconciler) ensureDeployments(ctx context.Context, cluster *kubermaticv
 	return reconciling.ReconcileDeployments(ctx, creators, cluster.Status.NamespaceName, r, reconciling.OwnerRefWrapper(resources.GetClusterRef(cluster)))
 }
 
-// GetSecretCreators returns all SecretCreators that are currently in use
+// GetSecretCreators returns all SecretCreators that are currently in use.
 func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconciling.NamedSecretCreatorGetter {
 	creators := []reconciling.NamedSecretCreatorGetter{
 		certificates.RootCACreator(data),
@@ -502,7 +502,7 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 	return nil
 }
 
-// GetConfigMapCreators returns all ConfigMapCreators that are currently in use
+// GetConfigMapCreators returns all ConfigMapCreators that are currently in use.
 func GetConfigMapCreators(data *resources.TemplateData) []reconciling.NamedConfigMapCreatorGetter {
 	creators := []reconciling.NamedConfigMapCreatorGetter{
 		cloudconfig.ConfigMapCreator(data),
@@ -537,14 +537,14 @@ func (r *Reconciler) ensureConfigMaps(ctx context.Context, c *kubermaticv1.Clust
 	return nil
 }
 
-// GetStatefulSetCreators returns all StatefulSetCreators that are currently in use
+// GetStatefulSetCreators returns all StatefulSetCreators that are currently in use.
 func GetStatefulSetCreators(data *resources.TemplateData, enableDataCorruptionChecks bool, enableTLSOnly bool) []reconciling.NamedStatefulSetCreatorGetter {
 	return []reconciling.NamedStatefulSetCreatorGetter{
 		etcd.StatefulSetCreator(data, enableDataCorruptionChecks, enableTLSOnly),
 	}
 }
 
-// GetEtcdBackupConfigCreators returns all EtcdBackupConfigCreators that are currently in use
+// GetEtcdBackupConfigCreators returns all EtcdBackupConfigCreators that are currently in use.
 func GetEtcdBackupConfigCreators(data *resources.TemplateData, seed *kubermaticv1.Seed) []reconciling.NamedEtcdBackupConfigCreatorGetter {
 	creators := []reconciling.NamedEtcdBackupConfigCreatorGetter{
 		etcd.BackupConfigCreator(data, seed),
@@ -552,7 +552,7 @@ func GetEtcdBackupConfigCreators(data *resources.TemplateData, seed *kubermaticv
 	return creators
 }
 
-// GetPodDisruptionBudgetCreators returns all PodDisruptionBudgetCreators that are currently in use
+// GetPodDisruptionBudgetCreators returns all PodDisruptionBudgetCreators that are currently in use.
 func GetPodDisruptionBudgetCreators(data *resources.TemplateData) []reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	creators := []reconciling.NamedPodDisruptionBudgetCreatorGetter{
 		etcd.PodDisruptionBudgetCreator(data),
@@ -577,7 +577,7 @@ func (r *Reconciler) ensurePodDisruptionBudgets(ctx context.Context, c *kubermat
 	return nil
 }
 
-// GetCronJobCreators returns all CronJobCreators that are currently in use
+// GetCronJobCreators returns all CronJobCreators that are currently in use.
 func GetCronJobCreators(data *resources.TemplateData) []reconciling.NamedCronJobCreatorGetter {
 	return []reconciling.NamedCronJobCreatorGetter{
 		etcd.CronJobCreator(data),

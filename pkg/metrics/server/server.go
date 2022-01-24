@@ -36,7 +36,7 @@ import (
 // out because they are both there and in the default prometheus registry.
 // This is not extremely nice but as pretty as "collect metrics from the
 // two registries" will ever got, unless the ctrltuntimemetrics.Registry
-// becomes configurable
+// becomes configurable.
 func init() {
 	ctrlruntimemetrics.Registry.Unregister(
 		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
@@ -44,7 +44,7 @@ func init() {
 }
 
 // New returns a brand new *MetricsServer that gathers the metrics
-// from both the prometheus default registry and the ctrlruntimemetrics registry
+// from both the prometheus default registry and the ctrlruntimemetrics registry.
 func New(listenAddress string) *MetricsServer {
 	return &MetricsServer{
 		gatherers:     []prometheus.Gatherer{prometheus.DefaultGatherer, ctrlruntimemetrics.Registry},
@@ -56,13 +56,13 @@ func New(listenAddress string) *MetricsServer {
 // both the default prometheus registry and the ctrltuntimemetrics registry.
 // The background is that the latter is not configurable at all and we don't
 // want to force developers into using it, because that is counterintuitive
-// and prone to be forgotten
+// and prone to be forgotten.
 type MetricsServer struct {
 	gatherers     prometheus.Gatherers
 	listenAddress string
 }
 
-// Start implements sigs.k8s.io/controller-runtime/pkg/manager.Runnable
+// Start implements sigs.k8s.io/controller-runtime/pkg/manager.Runnable.
 func (m *MetricsServer) Start(ctx context.Context) error {
 	if len(m.gatherers) < 1 {
 		return errors.New("no gatherers defined")
@@ -84,7 +84,7 @@ func (m *MetricsServer) Start(ctx context.Context) error {
 }
 
 // MetricsServer implements LeaderElectionRunnable to indicate that it does not require to run
-// within an elected leader
+// within an elected leader.
 var _ manager.LeaderElectionRunnable = &MetricsServer{}
 
 func (m *MetricsServer) NeedLeaderElection() bool {

@@ -307,7 +307,7 @@ type CreateOIDCKubeconfigReq struct {
 	cookieNonceValue string
 }
 
-// OIDCState holds data that are send and retrieved from OIDC provider
+// OIDCState holds data that are send and retrieved from OIDC provider.
 type OIDCState struct {
 	// nonce a random string that binds requests / responses of API server and OIDC provider
 	// see https://tools.ietf.org/html/rfc6749#section-10.12
@@ -419,24 +419,24 @@ func DecodeCreateOIDCKubeconfig(c context.Context, r *http.Request) (interface{}
 	return req, nil
 }
 
-// GetUserID implements UserGetter interface
+// GetUserID implements UserGetter interface.
 func (r CreateOIDCKubeconfigReq) GetUserID() string {
 	return r.UserID
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (r CreateOIDCKubeconfigReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: r.ClusterID,
 	}
 }
 
-// GetProjectID implements ProjectGetter interface
+// GetProjectID implements ProjectGetter interface.
 func (r CreateOIDCKubeconfigReq) GetProjectID() string {
 	return r.ProjectID
 }
 
-// setCookie add cookie with random string value
+// setCookie add cookie with random string value.
 func setCookie(w http.ResponseWriter, nonce string, secureMode bool, maxAge int) error {
 	encoded, err := secureCookie.Encode(csrfCookieName, nonce)
 	if err != nil {

@@ -27,7 +27,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// ConstraintTemplateProvider struct that holds required components in order manage constraint templates
+// ConstraintTemplateProvider struct that holds required components in order manage constraint templates.
 type ConstraintTemplateProvider struct {
 	// createSeedImpersonatedClient is used as a ground for impersonation
 	createMasterImpersonatedClient ImpersonationClient
@@ -35,7 +35,7 @@ type ConstraintTemplateProvider struct {
 	restMapperCache                *restmapper.Cache
 }
 
-// NewConstraintTemplateProvider returns a constraint template provider
+// NewConstraintTemplateProvider returns a constraint template provider.
 func NewConstraintTemplateProvider(createMasterImpersonatedClient ImpersonationClient, client ctrlruntimeclient.Client) (*ConstraintTemplateProvider, error) {
 	return &ConstraintTemplateProvider{
 		createMasterImpersonatedClient: createMasterImpersonatedClient,
@@ -44,7 +44,7 @@ func NewConstraintTemplateProvider(createMasterImpersonatedClient ImpersonationC
 	}, nil
 }
 
-// List gets all constraint templates
+// List gets all constraint templates.
 func (p *ConstraintTemplateProvider) List() (*kubermaticv1.ConstraintTemplateList, error) {
 	constraintTemplates := &kubermaticv1.ConstraintTemplateList{}
 	if err := p.clientPrivileged.List(context.Background(), constraintTemplates); err != nil {
@@ -54,7 +54,7 @@ func (p *ConstraintTemplateProvider) List() (*kubermaticv1.ConstraintTemplateLis
 	return constraintTemplates, nil
 }
 
-// Get gets a constraint template
+// Get gets a constraint template.
 func (p *ConstraintTemplateProvider) Get(name string) (*kubermaticv1.ConstraintTemplate, error) {
 	constraintTemplate := &kubermaticv1.ConstraintTemplate{}
 	if err := p.clientPrivileged.Get(context.Background(), types.NamespacedName{Name: name}, constraintTemplate); err != nil {
@@ -64,7 +64,7 @@ func (p *ConstraintTemplateProvider) Get(name string) (*kubermaticv1.ConstraintT
 	return constraintTemplate, nil
 }
 
-// Create creates a constraint template
+// Create creates a constraint template.
 func (p *ConstraintTemplateProvider) Create(ct *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error) {
 	if err := p.clientPrivileged.Create(context.Background(), ct); err != nil {
 		return nil, err
@@ -73,7 +73,7 @@ func (p *ConstraintTemplateProvider) Create(ct *kubermaticv1.ConstraintTemplate)
 	return ct, nil
 }
 
-// Update updates a constraint template
+// Update updates a constraint template.
 func (p *ConstraintTemplateProvider) Update(ct *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error) {
 	if err := p.clientPrivileged.Update(context.Background(), ct); err != nil {
 		return nil, err
@@ -82,7 +82,7 @@ func (p *ConstraintTemplateProvider) Update(ct *kubermaticv1.ConstraintTemplate)
 	return ct, nil
 }
 
-// Delete deletes a constraint template
+// Delete deletes a constraint template.
 func (p *ConstraintTemplateProvider) Delete(ct *kubermaticv1.ConstraintTemplate) error {
 	return p.clientPrivileged.Delete(context.Background(), ct)
 }

@@ -98,7 +98,7 @@ func constraintCreatorGetter(constraint *kubermaticv1.Constraint) reconciling.Na
 	}
 }
 
-// Reconcile reconciles the kubermatic constraints in the master cluster and syncs them to all seeds
+// Reconcile reconciles the kubermatic constraints in the master cluster and syncs them to all seeds.
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("resource", request.Name)
 	log.Debug("Processing")

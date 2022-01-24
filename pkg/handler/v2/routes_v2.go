@@ -53,7 +53,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/version"
 )
 
-// RegisterV2 declares all router paths for v2
+// RegisterV2 declares all router paths for v2.
 func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	// Defines a set of HTTP endpoint for interacting with
 	// various cloud providers

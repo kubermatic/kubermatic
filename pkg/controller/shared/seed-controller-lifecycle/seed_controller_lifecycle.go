@@ -45,7 +45,7 @@ import (
 const (
 	ControllerName = "seedcontroller_lifecycle_manager"
 
-	// We must only enqueue this one key
+	// We must only enqueue this one key.
 	queueKey = ControllerName
 )
 
@@ -74,7 +74,7 @@ type Reconciler struct {
 	activeManager        *managerInstance
 }
 
-// managerInstance represents an instance of controllerManager
+// managerInstance represents an instance of controllerManager.
 type managerInstance struct {
 	config    map[string]rest.Config
 	mgr       manager.Manager
@@ -82,7 +82,7 @@ type managerInstance struct {
 	cancelCtx context.CancelFunc
 }
 
-// ControllerFactory is a function to create a new controller instance
+// ControllerFactory is a function to create a new controller instance.
 type ControllerFactory func(context.Context, manager.Manager, map[string]manager.Manager) (controllerName string, err error)
 
 func Add(

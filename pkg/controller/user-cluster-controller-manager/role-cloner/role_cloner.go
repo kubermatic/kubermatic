@@ -44,7 +44,7 @@ import (
 )
 
 const (
-	// This controller duplicate roles with label component=userClusterRole for all namespaces
+	// This controller duplicate roles with label component=userClusterRole for all namespaces.
 	controllerName = "clone_role_controller"
 )
 
@@ -209,7 +209,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, log *zap.SugaredLogger,
 	return nil
 }
 
-// enqueueTemplateRoles enqueues the roles from kube-system namespace and special label component=userClusterRole
+// enqueueTemplateRoles enqueues the roles from kube-system namespace and special label component=userClusterRole.
 func enqueueTemplateRoles(client ctrlruntimeclient.Client) handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		roleList := &rbacv1.RoleList{}

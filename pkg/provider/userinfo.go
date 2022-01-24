@@ -24,7 +24,7 @@ import (
 	kubermaticcontext "k8c.io/kubermatic/v2/pkg/util/context"
 )
 
-// UserInfoGetter is a function to retrieve a UserInfo
+// UserInfoGetter is a function to retrieve a UserInfo.
 type UserInfoGetter = func(ctx context.Context, projectID string) (*UserInfo, error)
 
 func UserInfoGetterFactory(userProjectMapper ProjectMemberMapper) (UserInfoGetter, error) {

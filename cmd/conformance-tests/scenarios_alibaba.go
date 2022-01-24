@@ -26,7 +26,7 @@ import (
 
 const alibabaDC = "alibaba-eu-central-1a"
 
-// Returns a matrix of (version x operating system)
+// Returns a matrix of (version x operating system).
 func getAlibabaScenarios(versions []*semver.Semver) []testScenario {
 	var scenarios []testScenario
 	for _, v := range versions {

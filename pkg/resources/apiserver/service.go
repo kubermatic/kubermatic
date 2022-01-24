@@ -29,7 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// ServiceCreator returns the function to reconcile the external API server service
+// ServiceCreator returns the function to reconcile the external API server service.
 func ServiceCreator(exposeStrategy kubermaticv1.ExposeStrategy, externalURL string) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.ApiserverServiceName, func(se *corev1.Service) (*corev1.Service, error) {

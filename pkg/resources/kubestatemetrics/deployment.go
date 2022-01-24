@@ -51,7 +51,7 @@ const (
 	version = "v2.2.3"
 )
 
-// DeploymentCreator returns the function to create and update the kube-state-metrics deployment
+// DeploymentCreator returns the function to create and update the kube-state-metrics deployment.
 func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.KubeStateMetricsDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {

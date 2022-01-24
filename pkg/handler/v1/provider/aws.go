@@ -95,7 +95,7 @@ type AWSSizeReq struct {
 	Architecture string `json:"architecture,omitempty"`
 }
 
-// DecodeAWSSizesReq decodes the base type for a AWS special endpoint request
+// DecodeAWSSizesReq decodes the base type for a AWS special endpoint request.
 func DecodeAWSSizesReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req AWSSizeReq
 	req.Region = r.Header.Get("Region")
@@ -111,7 +111,7 @@ func DecodeAWSSizesReq(c context.Context, r *http.Request) (interface{}, error) 
 	return req, nil
 }
 
-// DecodeAWSCommonReq decodes the base type for a AWS special endpoint request
+// DecodeAWSCommonReq decodes the base type for a AWS special endpoint request.
 func DecodeAWSCommonReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req AWSCommonReq
 
@@ -125,7 +125,7 @@ func DecodeAWSCommonReq(c context.Context, r *http.Request) (interface{}, error)
 	return req, nil
 }
 
-// DecodeAWSSubnetReq decodes a request for a list of AWS subnets
+// DecodeAWSSubnetReq decodes a request for a list of AWS subnets.
 func DecodeAWSSubnetReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req AWSSubnetReq
 
@@ -144,7 +144,7 @@ func DecodeAWSSubnetReq(c context.Context, r *http.Request) (interface{}, error)
 	return req, nil
 }
 
-// DecodeAWSVPCReq decodes a request for a list of AWS vpc's
+// DecodeAWSVPCReq decodes a request for a list of AWS vpc's.
 func DecodeAWSVPCReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req AWSVPCReq
 
@@ -163,7 +163,7 @@ func DecodeAWSVPCReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-// DecodeAWSSecurityGroupsReq decodes a request for a list of AWS Security Groups
+// DecodeAWSSecurityGroupsReq decodes a request for a list of AWS Security Groups.
 func DecodeAWSSecurityGroupsReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req AWSSecurityGroupsReq
 
@@ -202,7 +202,7 @@ func AWSSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider, priv
 	}
 }
 
-// AWSSubnetEndpoint handles the request to list AWS availability subnets in a given vpc, using provided credentials
+// AWSSubnetEndpoint handles the request to list AWS availability subnets in a given vpc, using provided credentials.
 func AWSSubnetEndpoint(presetProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AWSSubnetReq)
@@ -249,7 +249,7 @@ func AWSSubnetEndpoint(presetProvider provider.PresetProvider, seedsGetter provi
 	}
 }
 
-// AWSSubnetWithClusterCredentialsEndpoint handles the request to list AWS availability subnets in a given vpc, using credentials
+// AWSSubnetWithClusterCredentialsEndpoint handles the request to list AWS availability subnets in a given vpc, using credentials.
 func AWSSubnetWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
@@ -257,7 +257,7 @@ func AWSSubnetWithClusterCredentialsEndpoint(projectProvider provider.ProjectPro
 	}
 }
 
-// AWSVPCEndpoint handles the request to list AWS VPC's, using provided credentials
+// AWSVPCEndpoint handles the request to list AWS VPC's, using provided credentials.
 func AWSVPCEndpoint(presetProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AWSVPCReq)
@@ -281,7 +281,7 @@ func AWSVPCEndpoint(presetProvider provider.PresetProvider, seedsGetter provider
 	}
 }
 
-// AWSSecurityGroupsEndpoint handles the request to list AWS Security Groups, using provided credentials
+// AWSSecurityGroupsEndpoint handles the request to list AWS Security Groups, using provided credentials.
 func AWSSecurityGroupsEndpoint(presetProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AWSSecurityGroupsReq)

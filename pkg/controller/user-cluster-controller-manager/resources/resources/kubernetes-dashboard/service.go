@@ -24,7 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// ServiceCreator creates the service for the dashboard-metrics-scraper
+// ServiceCreator creates the service for the dashboard-metrics-scraper.
 func ServiceCreator() reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.MetricsScraperServiceName, func(s *corev1.Service) (*corev1.Service, error) {

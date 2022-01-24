@@ -29,7 +29,7 @@ import (
 
 type caGetter func() (*triple.KeyPair, error)
 
-// GetClientCertificateCreator is a generic function to return a secret generator to create a client certificate signed by the cluster CA
+// GetClientCertificateCreator is a generic function to return a secret generator to create a client certificate signed by the cluster CA.
 func GetClientCertificateCreator(name, commonName string, organizations []string, dataCertKey, dataKeyKey string, getCA caGetter) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return name, func(se *corev1.Secret) (*corev1.Secret, error) {

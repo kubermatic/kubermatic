@@ -48,7 +48,7 @@ import (
 
 // AllControllers stores the list of all controllers that we want to run,
 // each entry holds the name of the controller and the corresponding
-// start function that will essentially run the controller
+// start function that will essentially run the controller.
 var AllControllers = map[string]controllerCreator{
 	kubernetescontroller.ControllerName:           createKubernetesController,
 	updatecontroller.ControllerName:               createUpdateController,

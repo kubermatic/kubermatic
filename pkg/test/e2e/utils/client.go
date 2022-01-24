@@ -169,7 +169,7 @@ func (r *TestClient) GetProject(id string) (*apiv1.Project, error) {
 	return convertProject(project.Payload)
 }
 
-// ListProjects gets projects
+// ListProjects gets projects.
 func (r *TestClient) ListProjects(displayAll bool) ([]*apiv1.Project, error) {
 	params := &project.ListProjectsParams{DisplayAll: &displayAll}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
@@ -191,7 +191,7 @@ func (r *TestClient) ListProjects(displayAll bool) ([]*apiv1.Project, error) {
 	return projectList, nil
 }
 
-// UpdateProject updates the given project
+// UpdateProject updates the given project.
 func (r *TestClient) UpdateProject(projectToUpdate *apiv1.Project) (*apiv1.Project, error) {
 	params := &project.UpdateProjectParams{ProjectID: projectToUpdate.ID, Body: &models.Project{Name: projectToUpdate.Name}}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
@@ -223,7 +223,7 @@ func convertProject(project *models.Project) (*apiv1.Project, error) {
 	return apiProject, nil
 }
 
-// DeleteProject deletes given project
+// DeleteProject deletes given project.
 func (r *TestClient) DeleteProject(id string) error {
 	r.test.Log("Deleting project...")
 
@@ -311,7 +311,7 @@ func (r *TestClient) CreateServiceAccount(name, group, projectID string) (*apiv1
 	return apiServiceAccount, nil
 }
 
-// GetServiceAccount returns service account for given ID and project
+// GetServiceAccount returns service account for given ID and project.
 func (r *TestClient) GetServiceAccount(saID, projectID string) (*apiv1.ServiceAccount, error) {
 	params := &serviceaccounts.ListServiceAccountsParams{ProjectID: projectID}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
@@ -330,7 +330,7 @@ func (r *TestClient) GetServiceAccount(saID, projectID string) (*apiv1.ServiceAc
 	return nil, fmt.Errorf("ServiceAccount %s not found", saID)
 }
 
-// DeleteServiceAccount deletes service account for given ID and project
+// DeleteServiceAccount deletes service account for given ID and project.
 func (r *TestClient) DeleteServiceAccount(saID, projectID string) error {
 	r.test.Logf("Deleting ServiceAccount %s...", saID)
 
@@ -365,7 +365,7 @@ func convertServiceAccount(sa *models.ServiceAccount) (*apiv1.ServiceAccount, er
 	return apiServiceAccount, nil
 }
 
-// AddTokenToServiceAccount creates a new token for service account
+// AddTokenToServiceAccount creates a new token for service account.
 func (r *TestClient) AddTokenToServiceAccount(name, saID, projectID string) (*apiv1.ServiceAccountToken, error) {
 	r.test.Logf("Adding token %s to ServiceAccount %s...", name, saID)
 
@@ -382,7 +382,7 @@ func (r *TestClient) AddTokenToServiceAccount(name, saID, projectID string) (*ap
 	return convertServiceAccountToken(token.Payload)
 }
 
-// DeleteTokenForServiceAccount deletes a token for service account
+// DeleteTokenForServiceAccount deletes a token for service account.
 func (r *TestClient) DeleteTokenForServiceAccount(tokenID, saID, projectID string) error {
 	r.test.Logf("Deleting token %s from ServiceAccount %s...", tokenID, saID)
 
@@ -413,7 +413,7 @@ func convertServiceAccountToken(saToken *models.ServiceAccountToken) (*apiv1.Ser
 	return apiServiceAccountToken, nil
 }
 
-// ListCredentials returns list of credential names for the provider
+// ListCredentials returns list of credential names for the provider.
 func (r *TestClient) ListCredentials(providerName, datacenter string) ([]string, error) {
 	params := &credentials.ListCredentialsParams{ProviderName: providerName, Datacenter: &datacenter}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
@@ -429,7 +429,7 @@ func (r *TestClient) ListCredentials(providerName, datacenter string) ([]string,
 	return names, nil
 }
 
-// CreateAWSCluster creates cluster for AWS provider
+// CreateAWSCluster creates cluster for AWS provider.
 func (r *TestClient) CreateAWSCluster(projectID, dc, name, secretAccessKey, accessKeyID, version, location, availabilityZone string, replicas int32) (*apiv1.Cluster, error) {
 	_, err := semver.NewVersion(version)
 	if err != nil {
@@ -494,7 +494,7 @@ func (r *TestClient) CreateAWSCluster(projectID, dc, name, secretAccessKey, acce
 	return convertCluster(clusterResponse.Payload)
 }
 
-// CreateKubevirtCluster creates cluster for Kubevirt provider
+// CreateKubevirtCluster creates cluster for Kubevirt provider.
 func (r *TestClient) CreateKubevirtCluster(projectID, dc, name, credential, version, location string, replicas int32) (*apiv1.Cluster, error) {
 	_, err := semver.NewVersion(version)
 	if err != nil {
@@ -566,7 +566,7 @@ func (r *TestClient) CreateKubevirtCluster(projectID, dc, name, credential, vers
 	return convertCluster(clusterResponse.Payload)
 }
 
-// CreateDOCluster creates cluster for DigitalOcean provider
+// CreateDOCluster creates cluster for DigitalOcean provider.
 func (r *TestClient) CreateDOCluster(projectID, dc, name, credential, version, location string, replicas int32) (*apiv1.Cluster, error) {
 	_, err := semver.NewVersion(version)
 	if err != nil {
@@ -627,7 +627,7 @@ func (r *TestClient) CreateDOCluster(projectID, dc, name, credential, version, l
 	return convertCluster(clusterResponse.Payload)
 }
 
-// DeleteCluster delete cluster method
+// DeleteCluster delete cluster method.
 func (r *TestClient) DeleteCluster(projectID, dc, clusterID string) error {
 	r.test.Logf("Deleting cluster %s...", clusterID)
 
@@ -643,7 +643,7 @@ func (r *TestClient) DeleteCluster(projectID, dc, clusterID string) error {
 	return nil
 }
 
-// GetCluster cluster getter
+// GetCluster cluster getter.
 func (r *TestClient) GetCluster(projectID, dc, clusterID string) (*apiv1.Cluster, error) {
 	params := &project.GetClusterParams{ProjectID: projectID, DC: dc, ClusterID: clusterID}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
@@ -656,7 +656,7 @@ func (r *TestClient) GetCluster(projectID, dc, clusterID string) (*apiv1.Cluster
 	return convertCluster(cluster.Payload)
 }
 
-// GetClusterEvents returns the cluster events
+// GetClusterEvents returns the cluster events.
 func (r *TestClient) GetClusterEvents(projectID, dc, clusterID string) ([]*models.Event, error) {
 	params := &project.GetClusterEventsParams{ProjectID: projectID, DC: dc, ClusterID: clusterID}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
@@ -669,7 +669,7 @@ func (r *TestClient) GetClusterEvents(projectID, dc, clusterID string) ([]*model
 	return events.Payload, nil
 }
 
-// PrintClusterEvents prints all cluster events using its test.Logf
+// PrintClusterEvents prints all cluster events using its test.Logf.
 func (r *TestClient) PrintClusterEvents(projectID, dc, clusterID string) error {
 	events, err := r.GetClusterEvents(projectID, dc, clusterID)
 	if err != nil {
@@ -685,7 +685,7 @@ func (r *TestClient) PrintClusterEvents(projectID, dc, clusterID string) error {
 	return nil
 }
 
-// GetClusterHealthStatus gets the cluster status
+// GetClusterHealthStatus gets the cluster status.
 func (r *TestClient) GetClusterHealthStatus(projectID, dc, clusterID string) (*apiv1.ClusterHealth, error) {
 	params := &project.GetClusterHealthParams{DC: dc, ProjectID: projectID, ClusterID: clusterID}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
@@ -757,7 +757,7 @@ func convertHealthStatus(status models.HealthStatus) kubermaticv1.HealthStatus {
 	}
 }
 
-// GetClusterNodeDeployments returns the cluster node deployments
+// GetClusterNodeDeployments returns the cluster node deployments.
 func (r *TestClient) GetClusterNodeDeployments(projectID, dc, clusterID string) ([]apiv1.NodeDeployment, error) {
 	params := &project.ListNodeDeploymentsParams{ClusterID: clusterID, ProjectID: projectID, DC: dc}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
@@ -834,7 +834,7 @@ func convertCluster(cluster *models.Cluster) (*apiv1.Cluster, error) {
 	return apiCluster, nil
 }
 
-// ListGCPZones returns list of GCP zones
+// ListGCPZones returns list of GCP zones.
 func (r *TestClient) ListGCPZones(credential, dc string) ([]string, error) {
 	params := &gcp.ListGCPZonesParams{Credential: &credential, DC: dc}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
@@ -852,7 +852,7 @@ func (r *TestClient) ListGCPZones(credential, dc string) ([]string, error) {
 	return names, nil
 }
 
-// ListGCPDiskTypes returns list of GCP disk types
+// ListGCPDiskTypes returns list of GCP disk types.
 func (r *TestClient) ListGCPDiskTypes(credential, zone string) ([]string, error) {
 	params := &gcp.ListGCPDiskTypesParams{Credential: &credential, Zone: &zone}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
@@ -870,7 +870,7 @@ func (r *TestClient) ListGCPDiskTypes(credential, zone string) ([]string, error)
 	return names, nil
 }
 
-// ListGCPSizes returns list of GCP sizes
+// ListGCPSizes returns list of GCP sizes.
 func (r *TestClient) ListGCPSizes(credential, zone string) ([]apiv1.GCPMachineSize, error) {
 	params := &gcp.ListGCPSizesParams{Credential: &credential, Zone: &zone}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
@@ -894,7 +894,7 @@ func (r *TestClient) ListGCPSizes(credential, zone string) ([]apiv1.GCPMachineSi
 	return sizes, nil
 }
 
-// IsHealthyCluster check if all cluster components are up
+// IsHealthyCluster check if all cluster components are up.
 func IsHealthyCluster(healthStatus *apiv1.ClusterHealth) bool {
 	return healthStatus != nil &&
 		kubermaticv1.HealthStatusUp == healthStatus.UserClusterControllerManager &&
@@ -1113,7 +1113,7 @@ func (r *TestClient) GetClusterRoles(projectID, dc, clusterID string) ([]apiv1.C
 	return clusterRoleNames, nil
 }
 
-// BindUserToClusterRole
+// BindUserToClusterRole.
 func (r *TestClient) BindUserToClusterRole(projectID, dc, clusterID, roleName, user string) (*apiv1.ClusterRoleBinding, error) {
 	params := &project.BindUserToClusterRoleParams{
 		Body:      &models.ClusterRoleUser{UserEmail: user},
@@ -1224,7 +1224,7 @@ type PatchCluster struct {
 	Labels map[string]string `json:"labels,omitempty"`
 }
 
-// CreateUserSSHKey creates a new user SSH key
+// CreateUserSSHKey creates a new user SSH key.
 func (r *TestClient) CreateUserSSHKey(projectID, keyName, publicKey string) (*apiv1.SSHKey, error) {
 	params := &project.CreateSSHKeyParams{
 		Key: &models.SSHKey{
@@ -1245,7 +1245,7 @@ func (r *TestClient) CreateUserSSHKey(projectID, keyName, publicKey string) (*ap
 	return convertSSHKey(key.Payload), nil
 }
 
-// ListUserSSHKey list user SSH keys
+// ListUserSSHKey list user SSH keys.
 func (r *TestClient) ListUserSSHKey(projectID string) ([]*apiv1.SSHKey, error) {
 	params := &project.ListSSHKeysParams{
 		ProjectID: projectID,
@@ -1265,7 +1265,7 @@ func (r *TestClient) ListUserSSHKey(projectID string) ([]*apiv1.SSHKey, error) {
 	return resultList, nil
 }
 
-// DeleteUserSSHKey deletes user SSH keys
+// DeleteUserSSHKey deletes user SSH keys.
 func (r *TestClient) DeleteUserSSHKey(projectID, keyID string) error {
 	params := &project.DeleteSSHKeyParams{
 		ProjectID: projectID,
@@ -1279,7 +1279,7 @@ func (r *TestClient) DeleteUserSSHKey(projectID, keyID string) error {
 	return err
 }
 
-// AssignSSHKeyToCluster adds user SSH key to the cluster
+// AssignSSHKeyToCluster adds user SSH key to the cluster.
 func (r *TestClient) AssignSSHKeyToCluster(projectID, clusterID, dc, keyID string) error {
 	params := &project.AssignSSHKeyToClusterParams{
 		ClusterID: clusterID,
@@ -1293,7 +1293,7 @@ func (r *TestClient) AssignSSHKeyToCluster(projectID, clusterID, dc, keyID strin
 	return err
 }
 
-// DetachSSHKeyFromClusterParams detaches user SSH key from the cluster
+// DetachSSHKeyFromClusterParams detaches user SSH key from the cluster.
 func (r *TestClient) DetachSSHKeyFromClusterParams(projectID, clusterID, dc, keyID string) error {
 	params := &project.DetachSSHKeyFromClusterParams{
 		ClusterID: clusterID,
@@ -1720,7 +1720,7 @@ func (r *TestClient) DeleteConstraint(name string) error {
 	return nil
 }
 
-// CreateClusterTemplate method creates cluster template object
+// CreateClusterTemplate method creates cluster template object.
 func (r *TestClient) CreateClusterTemplate(projectID, name, scope, credential, version, location string) (*apiv2.ClusterTemplate, error) {
 	_, err := semver.NewVersion(version)
 	if err != nil {
@@ -1779,7 +1779,7 @@ func (r *TestClient) CreateClusterTemplate(projectID, name, scope, credential, v
 	}, nil
 }
 
-// CreateClusterTemplate method creates cluster template instance object
+// CreateClusterTemplate method creates cluster template instance object.
 func (r *TestClient) CreateClusterTemplateInstance(projectID, templateID string, replicas int64) (*apiv2.ClusterTemplateInstance, error) {
 	params := &project.CreateClusterTemplateInstanceParams{
 		Body: project.CreateClusterTemplateInstanceBody{
@@ -1811,7 +1811,7 @@ func (r *TestClient) CreateClusterTemplateInstance(projectID, templateID string,
 	}, nil
 }
 
-// ListClusters method lists user clusters
+// ListClusters method lists user clusters.
 func (r *TestClient) ListClusters(projectID string) ([]*apiv1.Cluster, error) {
 	params := &project.ListClustersV2Params{
 		ProjectID: projectID,
@@ -1841,7 +1841,7 @@ func (r *TestClient) ListClusters(projectID string) ([]*apiv1.Cluster, error) {
 	return clusterList, nil
 }
 
-// ListDOSizes returns list DO sizes
+// ListDOSizes returns list DO sizes.
 func (r *TestClient) ListDOSizes(credential string) (*models.DigitaloceanSizeList, error) {
 	params := &digitalocean.ListDigitaloceanSizesParams{
 		Credential: &credential,
@@ -1860,7 +1860,7 @@ func (r *TestClient) ListDOSizes(credential string) (*models.DigitaloceanSizeLis
 	return sizesResponse.Payload, nil
 }
 
-// ListAzureSizes returns list Azure sizes
+// ListAzureSizes returns list Azure sizes.
 func (r *TestClient) ListAzureSizes(credential, location string) (models.AzureSizeList, error) {
 	params := &azure.ListAzureSizesParams{
 		Credential: &credential,
@@ -1880,7 +1880,7 @@ func (r *TestClient) ListAzureSizes(credential, location string) (models.AzureSi
 	return sizesResponse.Payload, nil
 }
 
-// UpdateAlertmanager updates alertmanager config for specific cluster
+// UpdateAlertmanager updates alertmanager config for specific cluster.
 func (r *TestClient) UpdateAlertmanager(clusterID, projectID, config string) (*models.Alertmanager, error) {
 	params := &project.UpdateAlertmanagerParams{
 		Body: &models.Alertmanager{
@@ -1903,7 +1903,7 @@ func (r *TestClient) UpdateAlertmanager(clusterID, projectID, config string) (*m
 	return updateResponse.Payload, nil
 }
 
-// CreateRuleGroup creates rule group with specific type
+// CreateRuleGroup creates rule group with specific type.
 func (r *TestClient) CreateRuleGroup(clusterID, projectID string, ruleGroupType kubermaticv1.RuleGroupType, config []byte) (*models.RuleGroup, error) {
 	params := &rulegroup.CreateRuleGroupParams{
 		Body: &models.RuleGroup{

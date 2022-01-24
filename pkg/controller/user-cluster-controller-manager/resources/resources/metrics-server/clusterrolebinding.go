@@ -24,7 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ClusterRoleBindingResourceReaderCreator returns the ClusterRoleBinding required for the metrics server to read all required resources
+// ClusterRoleBindingResourceReaderCreator returns the ClusterRoleBinding required for the metrics server to read all required resources.
 func ClusterRoleBindingResourceReaderCreator(isKonnectivityEnabled bool) reconciling.NamedClusterRoleBindingCreatorGetter {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return resources.MetricsServerResourceReaderClusterRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
@@ -59,7 +59,7 @@ func ClusterRoleBindingResourceReaderCreator(isKonnectivityEnabled bool) reconci
 	}
 }
 
-// ClusterRoleBindingAuthDelegatorCreator returns the ClusterRoleBinding required for the metrics server to create token review requests
+// ClusterRoleBindingAuthDelegatorCreator returns the ClusterRoleBinding required for the metrics server to create token review requests.
 func ClusterRoleBindingAuthDelegatorCreator(isKonnectivityEnabled bool) reconciling.NamedClusterRoleBindingCreatorGetter {
 	if !isKonnectivityEnabled {
 		// metrics server running in the seed cluster

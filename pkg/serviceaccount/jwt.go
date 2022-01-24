@@ -25,10 +25,10 @@ import (
 	"gopkg.in/square/go-jose.v2/jwt"
 )
 
-// Now stubbed out to allow testing
+// Now stubbed out to allow testing.
 var Now = time.Now
 
-// TokenGenerator declares the method to generate JWT token
+// TokenGenerator declares the method to generate JWT token.
 type TokenGenerator interface {
 	// Generate generates a token which will identify the given
 	// ServiceAccount. privateClaims is an interface that will be
@@ -39,13 +39,13 @@ type TokenGenerator interface {
 	Generate(claims *jwt.Claims, customClaims *CustomTokenClaim) (string, error)
 }
 
-// TokenAuthenticator declares the method to check JWT token
+// TokenAuthenticator declares the method to check JWT token.
 type TokenAuthenticator interface {
 	// Authenticate checks given token and transform it to custom claim object
 	Authenticate(tokenData string) (*jwt.Claims, *CustomTokenClaim, error)
 }
 
-// CustomTokenClaim represents authenticated user
+// CustomTokenClaim represents authenticated user.
 type CustomTokenClaim struct {
 	Email     string `json:"email,omitempty"`
 	ProjectID string `json:"project_id,omitempty"`
@@ -89,7 +89,7 @@ type jwtTokenAuthenticator struct {
 	key interface{}
 }
 
-// Generate generates new token from claims
+// Generate generates new token from claims.
 func (j *jwtTokenGenerator) Generate(claims *jwt.Claims, customClaims *CustomTokenClaim) (string, error) {
 	// claims are applied in reverse precedence
 	return jwt.Signed(j.signer).
@@ -98,14 +98,14 @@ func (j *jwtTokenGenerator) Generate(claims *jwt.Claims, customClaims *CustomTok
 		CompactSerialize()
 }
 
-// JWTTokenAuthenticator authenticates tokens as JWT tokens produced by JWTTokenGenerator
+// JWTTokenAuthenticator authenticates tokens as JWT tokens produced by JWTTokenGenerator.
 func JWTTokenAuthenticator(privateKey []byte) TokenAuthenticator {
 	return &jwtTokenAuthenticator{
 		key: privateKey,
 	}
 }
 
-// Authenticate decrypts signed token data to CustomTokenClaim object and checks if token expired
+// Authenticate decrypts signed token data to CustomTokenClaim object and checks if token expired.
 func (a *jwtTokenAuthenticator) Authenticate(tokenData string) (*jwt.Claims, *CustomTokenClaim, error) {
 	tok, err := jwt.ParseSigned(tokenData)
 	if err != nil {

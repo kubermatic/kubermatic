@@ -57,7 +57,7 @@ const (
 	ControllerName = "kubermatic_kubernetes_controller"
 )
 
-// userClusterConnectionProvider offers functions to retrieve clients for the given user clusters
+// userClusterConnectionProvider offers functions to retrieve clients for the given user clusters.
 type userClusterConnectionProvider interface {
 	GetClient(context.Context, *kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
 }
@@ -70,7 +70,7 @@ type Features struct {
 	Konnectivity                 bool
 }
 
-// Reconciler is a controller which is responsible for managing clusters
+// Reconciler is a controller which is responsible for managing clusters.
 type Reconciler struct {
 	ctrlruntimeclient.Client
 	log                     *zap.SugaredLogger

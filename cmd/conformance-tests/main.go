@@ -65,7 +65,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
-// Opts represent combination of flags and ENV options
+// Opts represent combination of flags and ENV options.
 type Opts struct {
 	namePrefix                   string
 	providers                    sets.String

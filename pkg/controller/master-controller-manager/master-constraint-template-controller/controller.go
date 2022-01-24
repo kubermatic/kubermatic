@@ -96,7 +96,7 @@ func Add(ctx context.Context,
 	return nil
 }
 
-// Reconcile reconciles the kubermatic constraint template on the master cluster to all seed clusters
+// Reconcile reconciles the kubermatic constraint template on the master cluster to all seed clusters.
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("request", request)
 	log.Debug("Reconciling")

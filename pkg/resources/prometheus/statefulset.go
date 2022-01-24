@@ -52,7 +52,7 @@ var (
 	}
 )
 
-// StatefulSetCreator returns the function to reconcile the Prometheus StatefulSet
+// StatefulSetCreator returns the function to reconcile the Prometheus StatefulSet.
 func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulSetCreatorGetter {
 	return func() (string, reconciling.StatefulSetCreator) {
 		return resources.PrometheusStatefulSetName, func(existing *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {

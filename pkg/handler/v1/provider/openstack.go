@@ -407,7 +407,7 @@ type OpenstackReq struct {
 	Credential string
 }
 
-// GetProjectOrDefaultToTenant returns the the project if defined otherwise fallback to tenant
+// GetProjectOrDefaultToTenant returns the the project if defined otherwise fallback to tenant.
 func (r OpenstackReq) GetProjectOrDefaultToTenant() string {
 	if len(r.Project) > 0 {
 		return r.Project
@@ -416,7 +416,7 @@ func (r OpenstackReq) GetProjectOrDefaultToTenant() string {
 	}
 }
 
-// GetProjectIdOrDefaultToTenantId returns the the projectID if defined otherwise fallback to tenantID
+// GetProjectIdOrDefaultToTenantId returns the the projectID if defined otherwise fallback to tenantID.
 func (r OpenstackReq) GetProjectIdOrDefaultToTenantId() string {
 	if len(r.ProjectID) > 0 {
 		return r.ProjectID

@@ -358,7 +358,7 @@ func convertInternalRoleBindingToExternal(clusterRole *rbacv1.RoleBinding) *apiv
 	return roleBinding
 }
 
-// generateRBACRoleBinding creates role binding
+// generateRBACRoleBinding creates role binding.
 func generateRBACRoleBinding(ctx context.Context, client ctrlruntimeclient.Client, namespace, roleName string) (*rbacv1.RoleBinding, error) {
 	roleBinding := &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{

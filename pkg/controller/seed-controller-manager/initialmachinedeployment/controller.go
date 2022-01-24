@@ -48,7 +48,7 @@ const (
 	ControllerName = "kubermatic_initialmachinedeployment_controller"
 )
 
-// UserClusterClientProvider provides functionality to get a user cluster client
+// UserClusterClientProvider provides functionality to get a user cluster client.
 type UserClusterClientProvider interface {
 	GetClient(ctx context.Context, c *kubermaticv1.Cluster, options ...clusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
 }
@@ -64,7 +64,7 @@ type Reconciler struct {
 	versions                      kubermatic.Versions
 }
 
-// Add creates a new initialmachinedeployment controller
+// Add creates a new initialmachinedeployment controller.
 func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName string, seedGetter provider.SeedGetter, userClusterConnectionProvider UserClusterClientProvider, log *zap.SugaredLogger, versions kubermatic.Versions) error {
 	reconciler := &Reconciler{
 		Client: mgr.GetClient(),

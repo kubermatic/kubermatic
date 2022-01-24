@@ -175,7 +175,7 @@ func DecodeListNodesReq(c context.Context, r *http.Request) (interface{}, error)
 	return req, nil
 }
 
-// Validate validates CreateEndpoint request
+// Validate validates CreateEndpoint request.
 func (req listNodesReq) Validate() error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("the project ID cannot be empty")
@@ -394,7 +394,7 @@ func ListMachineDeploymentMetricsEndpoint(userInfoGetter provider.UserInfoGetter
 	}
 }
 
-// Validate validates getMachineDeploymentReq request
+// Validate validates getMachineDeploymentReq request.
 func (req machineDeploymentReq) Validate() error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("the project ID cannot be empty")
@@ -468,7 +468,7 @@ type listMachineDeploymentsReq struct {
 	ClusterID string `json:"cluster_id"`
 }
 
-// Validate validates ListMachineDeploymentEndpoint request
+// Validate validates ListMachineDeploymentEndpoint request.
 func (req listMachineDeploymentsReq) Validate() error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("the project ID cannot be empty")
@@ -529,7 +529,7 @@ func DecodeGetNodeReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-// Validate validates CreateEndpoint request
+// Validate validates CreateEndpoint request.
 func (req getNodeReq) Validate() error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("the project ID cannot be empty")
@@ -819,7 +819,7 @@ type createMachineDeploymentsReq struct {
 	Body apiv2.ExternalClusterMachineDeployment
 }
 
-// Validate validates CreateMachineDeploymentEndpoint request
+// Validate validates CreateMachineDeploymentEndpoint request.
 func (req createMachineDeploymentsReq) Validate() error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("the project ID cannot be empty")

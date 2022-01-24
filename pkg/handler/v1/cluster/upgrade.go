@@ -169,7 +169,7 @@ func GetMasterVersionsEndpoint(configGetter provider.KubermaticConfigurationGett
 	}
 }
 
-// TypeReq represents a request that contains the cluster type
+// TypeReq represents a request that contains the cluster type.
 type TypeReq struct {
 	// in: query
 	Type string `json:"type"`
@@ -182,7 +182,7 @@ func (r TypeReq) Validate() error {
 	return fmt.Errorf("invalid cluster type %s", r.Type)
 }
 
-// DecodeAddReq  decodes an HTTP request into TypeReq
+// DecodeAddReq  decodes an HTTP request into TypeReq.
 func DecodeClusterTypeReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req TypeReq
 

@@ -45,17 +45,17 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// UserClusterConnectionProvider offers functions to interact with an user cluster
+// UserClusterConnectionProvider offers functions to interact with an user cluster.
 type UserClusterConnectionProvider interface {
 	GetClient(context.Context, *kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
 }
 
 // extractGroupPrefixFunc is a function that knows how to extract a prefix (owners, editors) from "projectID-owners" group,
-// group names inside leaf/user clusters don't have projectID in their names
+// group names inside leaf/user clusters don't have projectID in their names.
 type extractGroupPrefixFunc func(groupName string) string
 
 // NewClusterProvider returns a new cluster provider that respects RBAC policies
-// it uses createSeedImpersonatedClient to create a connection that uses user impersonation
+// it uses createSeedImpersonatedClient to create a connection that uses user impersonation.
 func NewClusterProvider(
 	cfg *restclient.Config,
 	createSeedImpersonatedClient ImpersonationClient,
@@ -82,7 +82,7 @@ func NewClusterProvider(
 }
 
 // ClusterProvider struct that holds required components in order to provide
-// cluster provided that is RBAC compliant
+// cluster provided that is RBAC compliant.
 type ClusterProvider struct {
 	// createSeedImpersonatedClient is used as a ground for impersonation
 	// whenever a connection to Seed API server is required
@@ -101,7 +101,7 @@ type ClusterProvider struct {
 	seedName             string
 }
 
-// New creates a brand new cluster that is bound to the given project
+// New creates a brand new cluster that is bound to the given project.
 func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	if project == nil || userInfo == nil || cluster == nil {
 		return nil, errors.New("project and/or userInfo and/or cluster is missing but required")
@@ -125,7 +125,7 @@ func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.
 
 // NewUnsecured creates a brand new cluster that is bound to the given project.
 //
-// Note that the admin privileges are used to create cluster
+// Note that the admin privileges are used to create cluster.
 func (p *ClusterProvider) NewUnsecured(project *kubermaticv1.Project, cluster *kubermaticv1.Cluster, userEmail string) (*kubermaticv1.Cluster, error) {
 	if project == nil || cluster == nil {
 		return nil, errors.New("project and/or cluster is missing but required")
@@ -231,7 +231,7 @@ func (p *ClusterProvider) List(project *kubermaticv1.Project, options *provider.
 	return filteredProjectClusters, nil
 }
 
-// Get returns the given cluster, it uses the projectInternalName to determine the group the user belongs to
+// Get returns the given cluster, it uses the projectInternalName to determine the group the user belongs to.
 func (p *ClusterProvider) Get(userInfo *provider.UserInfo, clusterName string, options *provider.ClusterGetOptions) (*kubermaticv1.Cluster, error) {
 	if options == nil {
 		options = &provider.ClusterGetOptions{}
@@ -254,7 +254,7 @@ func (p *ClusterProvider) Get(userInfo *provider.UserInfo, clusterName string, o
 	return cluster, nil
 }
 
-// IsCluster checks if cluster exist with the given name
+// IsCluster checks if cluster exist with the given name.
 func (p *ClusterProvider) IsCluster(clusterName string) bool {
 	if err := p.client.Get(context.Background(), types.NamespacedName{Name: clusterName}, &kubermaticv1.Cluster{}); err != nil {
 		return false
@@ -262,7 +262,7 @@ func (p *ClusterProvider) IsCluster(clusterName string) bool {
 	return true
 }
 
-// Delete deletes the given cluster
+// Delete deletes the given cluster.
 func (p *ClusterProvider) Delete(userInfo *provider.UserInfo, clusterName string) error {
 	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
@@ -278,7 +278,7 @@ func (p *ClusterProvider) Delete(userInfo *provider.UserInfo, clusterName string
 	return seedImpersonatedClient.Delete(context.Background(), &kubermaticv1.Cluster{ObjectMeta: metav1.ObjectMeta{Name: clusterName}}, delOpts)
 }
 
-// Update updates a cluster
+// Update updates a cluster.
 func (p *ClusterProvider) Update(project *kubermaticv1.Project, userInfo *provider.UserInfo, newCluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
@@ -293,7 +293,7 @@ func (p *ClusterProvider) Update(project *kubermaticv1.Project, userInfo *provid
 	return newCluster, nil
 }
 
-// GetAdminKubeconfigForCustomerCluster returns the admin kubeconfig for the given cluster
+// GetAdminKubeconfigForCustomerCluster returns the admin kubeconfig for the given cluster.
 func (p *ClusterProvider) GetAdminKubeconfigForCustomerCluster(c *kubermaticv1.Cluster) (*clientcmdapi.Config, error) {
 	secret := &corev1.Secret{}
 	name := types.NamespacedName{
@@ -307,7 +307,7 @@ func (p *ClusterProvider) GetAdminKubeconfigForCustomerCluster(c *kubermaticv1.C
 	return clientcmd.Load(secret.Data[resources.KubeconfigSecretKey])
 }
 
-// GetViewerKubeconfigForCustomerCluster returns the viewer kubeconfig for the given cluster
+// GetViewerKubeconfigForCustomerCluster returns the viewer kubeconfig for the given cluster.
 func (p *ClusterProvider) GetViewerKubeconfigForCustomerCluster(c *kubermaticv1.Cluster) (*clientcmdapi.Config, error) {
 	s := &corev1.Secret{}
 
@@ -323,7 +323,7 @@ func (p *ClusterProvider) GetViewerKubeconfigForCustomerCluster(c *kubermaticv1.
 	return clientcmd.Load(d)
 }
 
-// RevokeViewerKubeconfig revokes the viewer token and kubeconfig
+// RevokeViewerKubeconfig revokes the viewer token and kubeconfig.
 func (p *ClusterProvider) RevokeViewerKubeconfig(c *kubermaticv1.Cluster) error {
 	s := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -338,7 +338,7 @@ func (p *ClusterProvider) RevokeViewerKubeconfig(c *kubermaticv1.Cluster) error 
 	return nil
 }
 
-// RevokeAdminKubeconfig revokes the viewer token and kubeconfig
+// RevokeAdminKubeconfig revokes the viewer token and kubeconfig.
 func (p *ClusterProvider) RevokeAdminKubeconfig(c *kubermaticv1.Cluster) error {
 	ctx := context.Background()
 	oldCluster := c.DeepCopy()
@@ -351,7 +351,7 @@ func (p *ClusterProvider) RevokeAdminKubeconfig(c *kubermaticv1.Cluster) error {
 
 // GetAdminClientForCustomerCluster returns a client to interact with all resources in the given cluster
 //
-// Note that the client you will get has admin privileges
+// Note that the client you will get has admin privileges.
 func (p *ClusterProvider) GetAdminClientForCustomerCluster(ctx context.Context, c *kubermaticv1.Cluster) (ctrlruntimeclient.Client, error) {
 	return p.userClusterConnProvider.GetClient(ctx, c)
 }
@@ -359,7 +359,7 @@ func (p *ClusterProvider) GetAdminClientForCustomerCluster(ctx context.Context, 
 // GetClientForCustomerCluster returns a client to interact with all resources in the given cluster
 //
 // Note that the client doesn't use admin account instead it authn/authz as userInfo(email, group)
-// This implies that you have to make sure the user has the appropriate permissions inside the user cluster
+// This implies that you have to make sure the user has the appropriate permissions inside the user cluster.
 func (p *ClusterProvider) GetClientForCustomerCluster(ctx context.Context, userInfo *provider.UserInfo, c *kubermaticv1.Cluster) (ctrlruntimeclient.Client, error) {
 	return p.userClusterConnProvider.GetClient(ctx, c, p.withImpersonation(userInfo))
 }
@@ -411,7 +411,7 @@ func (p *ClusterProvider) withImpersonation(userInfo *provider.UserInfo) k8cuser
 
 // GetUnsecured returns a cluster for the project and given name.
 //
-// Note that the admin privileges are used to get cluster
+// Note that the admin privileges are used to get cluster.
 func (p *ClusterProvider) GetUnsecured(project *kubermaticv1.Project, clusterName string, options *provider.ClusterGetOptions) (*kubermaticv1.Cluster, error) {
 	if project == nil {
 		return nil, errors.New("project is missing but required")
@@ -438,7 +438,7 @@ func (p *ClusterProvider) GetUnsecured(project *kubermaticv1.Project, clusterNam
 
 // UpdateUnsecured updates a cluster.
 //
-// Note that the admin privileges are used to update cluster
+// Note that the admin privileges are used to update cluster.
 func (p *ClusterProvider) UpdateUnsecured(project *kubermaticv1.Project, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	if project == nil {
 		return nil, errors.New("project is missing but required")
@@ -454,7 +454,7 @@ func (p *ClusterProvider) UpdateUnsecured(project *kubermaticv1.Project, cluster
 
 // DeleteUnsecured deletes a cluster.
 //
-// Note that the admin privileges are used to delete cluster
+// Note that the admin privileges are used to delete cluster.
 func (p *ClusterProvider) DeleteUnsecured(cluster *kubermaticv1.Cluster) error {
 	// Will delete all child's after the object is gone - otherwise the etcd might be deleted before all machines are gone
 	// See https://kubernetes.io/docs/concepts/workloads/controllers/garbage-collection/#controlling-how-the-garbage-collector-deletes-dependents
@@ -473,7 +473,7 @@ func (p *ClusterProvider) SeedAdminConfig() *restclient.Config {
 
 // ListAll gets all clusters
 //
-// Note that the admin privileges are used to list all clusters
+// Note that the admin privileges are used to list all clusters.
 func (p *ClusterProvider) ListAll() (*kubermaticv1.ClusterList, error) {
 	projectClusters := &kubermaticv1.ClusterList{}
 	if err := p.client.List(context.Background(), projectClusters); err != nil {
@@ -483,7 +483,7 @@ func (p *ClusterProvider) ListAll() (*kubermaticv1.ClusterList, error) {
 	return projectClusters, nil
 }
 
-// GetSeedName gets the seed name of the cluster
+// GetSeedName gets the seed name of the cluster.
 func (p *ClusterProvider) GetSeedName() string {
 	return p.seedName
 }

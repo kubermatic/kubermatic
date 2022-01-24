@@ -51,7 +51,7 @@ const (
 	UserSSHKeysClusterIDsCleanupFinalizer = "kubermatic.io/cleanup-usersshkeys-cluster-ids"
 )
 
-// Reconciler is a controller which is responsible for managing clusters
+// Reconciler is a controller which is responsible for managing clusters.
 type Reconciler struct {
 	client      ctrlruntimeclient.Client
 	log         *zap.SugaredLogger
@@ -240,7 +240,7 @@ func buildUserSSHKeysForCluster(clusterName string, list *kubermaticv1.UserSSHKe
 	return clusterKeys
 }
 
-// enqueueAllClusters enqueues all clusters
+// enqueueAllClusters enqueues all clusters.
 func enqueueAllClusters(clients map[string]ctrlruntimeclient.Client, workerSelector labels.Selector) handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		var requests []reconcile.Request

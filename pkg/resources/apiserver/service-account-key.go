@@ -28,7 +28,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// ServiceAccountKeyCreator returns a function to create/update a secret with the ServiceAccount key
+// ServiceAccountKeyCreator returns a function to create/update a secret with the ServiceAccount key.
 func ServiceAccountKeyCreator() reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.ServiceAccountKeySecretName, func(se *corev1.Secret) (*corev1.Secret, error) {

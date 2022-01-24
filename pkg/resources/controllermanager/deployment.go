@@ -54,7 +54,7 @@ const (
 	name = "controller-manager"
 )
 
-// DeploymentCreator returns the function to create and update the controller manager deployment
+// DeploymentCreator returns the function to create and update the controller manager deployment.
 func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.ControllerManagerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {

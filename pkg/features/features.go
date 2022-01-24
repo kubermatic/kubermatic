@@ -23,10 +23,10 @@ import (
 )
 
 const (
-	// OIDCKubeCfgEndpoint if enabled exposes an HTTP endpoint for generating kubeconfig for a cluster that will contain OIDC tokens
+	// OIDCKubeCfgEndpoint if enabled exposes an HTTP endpoint for generating kubeconfig for a cluster that will contain OIDC tokens.
 	OIDCKubeCfgEndpoint = "OIDCKubeCfgEndpoint"
 
-	// PrometheusEndpoint if enabled exposes cluster's metrics HTTP endpoint
+	// PrometheusEndpoint if enabled exposes cluster's metrics HTTP endpoint.
 	PrometheusEndpoint = "PrometheusEndpoint"
 
 	// OpenIDAuthPlugin if enabled configures the flags on the API server to use
@@ -34,16 +34,16 @@ const (
 	OpenIDAuthPlugin = "OpenIDAuthPlugin"
 
 	// VerticalPodAutoscaler if enabled the cluster-controller will enable the
-	// VerticalPodAutoscaler for all control plane components
+	// VerticalPodAutoscaler for all control plane components.
 	VerticalPodAutoscaler = "VerticalPodAutoscaler"
 
 	// EtcdDataCorruptionChecks if enabled etcd will be started with
 	// --experimental-initial-corrupt-check=true +
-	// --experimental-corrupt-check-time=10m
+	// --experimental-corrupt-check-time=10m.
 	EtcdDataCorruptionChecks = "EtcdDataCorruptionChecks"
 
 	// EtcdLauncher if enabled will apply the cluster level etcd-launcher feature flag on all clusters,
-	// unless it's explicitly disabled at the cluster level
+	// unless it's explicitly disabled at the cluster level.
 	EtcdLauncher = "EtcdLauncher"
 
 	// TunnelingExposeStrategy expose strategy enables the expose strategy based on usage of
@@ -51,7 +51,7 @@ const (
 	// control plane.
 	TunnelingExposeStrategy = "TunnelingExposeStrategy"
 
-	// UserClusterMLA if enabled MonitoringLoggingAlerting stack will be deployed with corresponding controller
+	// UserClusterMLA if enabled MonitoringLoggingAlerting stack will be deployed with corresponding controller.
 	UserClusterMLA = "UserClusterMLA"
 
 	// KonnectivityService enables the deployment of Konnectivity proxy for the

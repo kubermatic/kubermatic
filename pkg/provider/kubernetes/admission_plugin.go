@@ -30,10 +30,10 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// admissionPluginsGetter is a function to retrieve admission plugins
+// admissionPluginsGetter is a function to retrieve admission plugins.
 type admissionPluginsGetter = func() ([]kubermaticv1.AdmissionPlugin, error)
 
-// AdmissionPluginsProvider is a object to handle admission plugins
+// AdmissionPluginsProvider is a object to handle admission plugins.
 type AdmissionPluginsProvider struct {
 	admissionPluginsGetter admissionPluginsGetter
 	client                 ctrlruntimeclient.Client

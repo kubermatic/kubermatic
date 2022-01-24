@@ -30,7 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// DeleteBackupDestinationEndpoint deletes a backup destination from a seed
+// DeleteBackupDestinationEndpoint deletes a backup destination from a seed.
 func DeleteBackupDestinationEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, masterClient client.Client) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(backupDestinationReq)

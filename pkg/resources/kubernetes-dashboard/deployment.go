@@ -57,14 +57,14 @@ const (
 	AppLabel      = resources.AppLabelKey + "=" + name
 )
 
-// kubernetesDashboardData is the data needed to construct the Kubernetes Dashboard components
+// kubernetesDashboardData is the data needed to construct the Kubernetes Dashboard components.
 type kubernetesDashboardData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
 	ImageRegistry(string) string
 }
 
-// DeploymentCreator returns the function to create and update the Kubernetes Dashboard deployment
+// DeploymentCreator returns the function to create and update the Kubernetes Dashboard deployment.
 func DeploymentCreator(data kubernetesDashboardData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return name, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {

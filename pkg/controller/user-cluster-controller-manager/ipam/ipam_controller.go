@@ -45,13 +45,13 @@ import (
 )
 
 const (
-	// ControllerName is the name of this controller
+	// ControllerName is the name of this controller.
 	ControllerName                 = "kubermatic_ipam_controller"
 	annotationMachineUninitialized = "machine-controller.kubermatic.io/initializers"
 	annotationValue                = "ipam"
 )
 
-// Network represents a machine network configuration
+// Network represents a machine network configuration.
 type Network struct {
 	IP         net.IP
 	IPNet      net.IPNet

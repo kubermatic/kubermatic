@@ -33,13 +33,13 @@ import (
 )
 
 const (
-	// RevisionAnnotation is the revision annotation of a deployment's replica sets which records its rollout sequence
+	// RevisionAnnotation is the revision annotation of a deployment's replica sets which records its rollout sequence.
 	RevisionAnnotation = "deployment.kubernetes.io/revision"
 )
 
 var tokenValidator = regexp.MustCompile(`[bcdfghjklmnpqrstvwxz2456789]{6}\.[bcdfghjklmnpqrstvwxz2456789]{16}`)
 
-// HasFinalizer tells if a object has all the given finalizers
+// HasFinalizer tells if a object has all the given finalizers.
 func HasFinalizer(o metav1.Object, names ...string) bool {
 	return sets.NewString(o.GetFinalizers()...).HasAll(names...)
 }
@@ -48,20 +48,20 @@ func HasAnyFinalizer(o metav1.Object, names ...string) bool {
 	return sets.NewString(o.GetFinalizers()...).HasAny(names...)
 }
 
-// HasOnlyFinalizer tells if an object has only the given finalizer
+// HasOnlyFinalizer tells if an object has only the given finalizer.
 func HasOnlyFinalizer(o metav1.Object, name string) bool {
 	set := sets.NewString(o.GetFinalizers()...)
 	return set.Has(name) && set.Len() == 1
 }
 
-// RemoveFinalizer removes the given finalizers from the object
+// RemoveFinalizer removes the given finalizers from the object.
 func RemoveFinalizer(obj metav1.Object, toRemove ...string) {
 	set := sets.NewString(obj.GetFinalizers()...)
 	set.Delete(toRemove...)
 	obj.SetFinalizers(set.List())
 }
 
-// AddFinalizer will add the given finalizer to the object. It uses a StringSet to avoid duplicates
+// AddFinalizer will add the given finalizer to the object. It uses a StringSet to avoid duplicates.
 func AddFinalizer(obj metav1.Object, finalizers ...string) {
 	set := sets.NewString(obj.GetFinalizers()...)
 	set.Insert(finalizers...)

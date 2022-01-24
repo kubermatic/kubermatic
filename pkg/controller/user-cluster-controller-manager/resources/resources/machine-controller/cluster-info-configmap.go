@@ -29,7 +29,7 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
-// ClusterInfoConfigMapCreator returns the func to create/update the ConfigMap
+// ClusterInfoConfigMapCreator returns the func to create/update the ConfigMap.
 func ClusterInfoConfigMapCreator(url string, caCert *x509.Certificate) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.ClusterInfoConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {

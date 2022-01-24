@@ -57,7 +57,7 @@ type providerReq struct {
 	Datacenter string `json:"datacenter,omitempty"`
 }
 
-// CredentialEndpoint returns custom credential list name for the provider
+// CredentialEndpoint returns custom credential list name for the provider.
 func CredentialEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(providerReq)
@@ -141,7 +141,7 @@ func DecodeProviderReq(c context.Context, r *http.Request) (interface{}, error) 
 	}, nil
 }
 
-// Validate validates providerReq request
+// Validate validates providerReq request.
 func (r providerReq) Validate() error {
 	if len(r.ProviderName) == 0 {
 		return fmt.Errorf("the provider name cannot be empty")

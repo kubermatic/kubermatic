@@ -134,12 +134,12 @@ func NewClientKeyPair(ca *KeyPair, commonName string, organizations []string) (*
 	}, nil
 }
 
-// newPrivateKey creates an RSA private key
+// newPrivateKey creates an RSA private key.
 func newPrivateKey() (*rsa.PrivateKey, error) {
 	return rsa.GenerateKey(rand.Reader, rsaKeySize)
 }
 
-// newSignedCert creates a signed certificate using the given CA certificate and key
+// newSignedCert creates a signed certificate using the given CA certificate and key.
 func newSignedCert(cfg certutil.Config, key crypto.Signer, caCert *x509.Certificate, caKey crypto.Signer) (*x509.Certificate, error) {
 	serial, err := rand.Int(rand.Reader, new(big.Int).SetInt64(math.MaxInt64))
 	if err != nil {
@@ -195,7 +195,7 @@ func ParseRSAKeyPair(certPEM, keyPEM []byte) (*KeyPair, error) {
 	return &KeyPair{Cert: certs[0], Key: rsaKey}, nil
 }
 
-// EncodeCertPEM returns PEM-endcoded certificate data
+// EncodeCertPEM returns PEM-endcoded certificate data.
 func EncodeCertPEM(cert *x509.Certificate) []byte {
 	block := pem.Block{
 		Type:  certificateBlockType,
@@ -204,7 +204,7 @@ func EncodeCertPEM(cert *x509.Certificate) []byte {
 	return pem.EncodeToMemory(&block)
 }
 
-// EncodePrivateKeyPEM returns PEM-encoded private key data
+// EncodePrivateKeyPEM returns PEM-encoded private key data.
 func EncodePrivateKeyPEM(key *rsa.PrivateKey) []byte {
 	block := pem.Block{
 		Type:  RSAPrivateKeyBlockType,
@@ -214,7 +214,7 @@ func EncodePrivateKeyPEM(key *rsa.PrivateKey) []byte {
 }
 
 // ParsePrivateKeyPEM returns a private key parsed from a PEM block in the supplied data.
-// Recognizes PEM blocks for "EC PRIVATE KEY", "RSA PRIVATE KEY", or "PRIVATE KEY"
+// Recognizes PEM blocks for "EC PRIVATE KEY", "RSA PRIVATE KEY", or "PRIVATE KEY".
 func ParsePrivateKeyPEM(keyData []byte) (interface{}, error) {
 	var privateKeyPemBlock *pem.Block
 	for {
@@ -250,7 +250,7 @@ func ParsePrivateKeyPEM(keyData []byte) (interface{}, error) {
 }
 
 // ParseCertsPEM returns the x509.Certificates contained in the given PEM-encoded byte array
-// Returns an error if a certificate could not be parsed, or if the data does not contain any certificates
+// Returns an error if a certificate could not be parsed, or if the data does not contain any certificates.
 func ParseCertsPEM(pemCerts []byte) ([]*x509.Certificate, error) {
 	ok := false
 	certs := []*x509.Certificate{}
@@ -280,12 +280,12 @@ func ParseCertsPEM(pemCerts []byte) ([]*x509.Certificate, error) {
 	return certs, nil
 }
 
-// NewPrivateKey creates an RSA private key
+// NewPrivateKey creates an RSA private key.
 func NewPrivateKey() (*rsa.PrivateKey, error) {
 	return rsa.GenerateKey(rand.Reader, rsaKeySize)
 }
 
-// NewSignedCert creates a signed certificate using the given CA certificate and key
+// NewSignedCert creates a signed certificate using the given CA certificate and key.
 func NewSignedCert(cfg certutil.Config, key crypto.Signer, caCert *x509.Certificate, caKey crypto.Signer) (*x509.Certificate, error) {
 	serial, err := rand.Int(rand.Reader, new(big.Int).SetInt64(math.MaxInt64))
 	if err != nil {
