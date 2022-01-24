@@ -45,7 +45,10 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const fakeDC = "fake-dc"
+const (
+	fakeDC     = "fake-dc"
+	usCentral1 = "us-central1"
+)
 
 func TestDeleteClusterEndpoint(t *testing.T) {
 	t.Parallel()
@@ -1197,7 +1200,7 @@ func TestPatchCluster(t *testing.T) {
 	t.Parallel()
 
 	cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
-	cluster.Spec.Cloud.DatacenterName = "us-central1"
+	cluster.Spec.Cloud.DatacenterName = usCentral1
 
 	testcases := []struct {
 		Name                      string
@@ -1274,11 +1277,11 @@ func TestPatchCluster(t *testing.T) {
 			ExistingAPIUser:  test.GenDefaultAPIUser(),
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(func(seed *kubermaticv1.Seed) {
-					seed.Spec.Datacenters["us-central1"] = kubermaticv1.Datacenter{}
+					seed.Spec.Datacenters[usCentral1] = kubermaticv1.Datacenter{}
 				}),
 				func() *kubermaticv1.Cluster {
 					cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
-					cluster.Spec.Cloud.DatacenterName = "us-central1"
+					cluster.Spec.Cloud.DatacenterName = usCentral1
 					return cluster
 				}(),
 			),
@@ -1298,11 +1301,11 @@ func TestPatchCluster(t *testing.T) {
 			ExistingAPIUser:  test.GenDefaultAPIUser(),
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(func(seed *kubermaticv1.Seed) {
-					seed.Spec.Datacenters["us-central1"] = kubermaticv1.Datacenter{}
+					seed.Spec.Datacenters[usCentral1] = kubermaticv1.Datacenter{}
 				}),
 				func() *kubermaticv1.Cluster {
 					cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
-					cluster.Spec.Cloud.DatacenterName = "us-central1"
+					cluster.Spec.Cloud.DatacenterName = usCentral1
 					return cluster
 				}(),
 			),
