@@ -18,10 +18,10 @@ import (
 type OpenstackNodeSizeRequirements struct {
 
 	// MinimumMemory is the minimum required amount of memory, measured in MB
-	MinimumMemory int64 `json:"minimum_memory,omitempty"`
+	MinimumMemory int64 `json:"minimumMemory,omitempty"`
 
 	// VCPUs is the minimum required amount of (virtual) CPUs
-	MinimumVCPUs int64 `json:"minimum_vcpus,omitempty"`
+	MinimumVCPUs int64 `json:"minimumVCPUs,omitempty"`
 }
 
 // Validate validates this openstack node size requirements

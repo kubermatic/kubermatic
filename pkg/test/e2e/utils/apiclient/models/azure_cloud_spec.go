@@ -30,8 +30,7 @@ type AzureCloudSpec struct {
 	// client secret
 	ClientSecret string `json:"clientSecret,omitempty"`
 
-	// NodePortsAllowedIPRange is the range of addresses allowed to access the cluster nodeports.
-	// If not specified, the default value is 0.0.0.0/0, i.e., no restriction.
+	// node ports allowed IP range
 	NodePortsAllowedIPRange string `json:"nodePortsAllowedIPRange,omitempty"`
 
 	// resource group
