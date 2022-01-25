@@ -3,7 +3,7 @@
 
 Before upgrading, make sure to read the [general upgrade guidelines](https://docs.kubermatic.com/kubermatic/v2.19/upgrading/guidelines/). Consider tweaking `seedControllerManager.maximumParallelReconciles` to ensure usercluster reconciliations will not cause resource exhausting on seed clusters.
 
-Several vulnerabilities were identified in Kubernetes (CVE-2021-44716, CVE-2021-44717, CVE-2021-3711, CVE-2021-3712, CVE-2021-33910) have been identified and fixed in Kubernetes 1.20.13, 1.21.8, 1.22.5.
+Several vulnerabilities were identified in Kubernetes (CVE-2021-44716, CVE-2021-44717, CVE-2021-3711, CVE-2021-3712, CVE-2021-33910) which have been fixed in Kubernetes 1.20.13, 1.21.8, 1.22.5.
 Because of these updates, this KKP release includes automatic update rules for all 1.20/1.21/1.22 clusters older than these patch releases. This release also removes all affected Kubernetes versions from the list of supported versions. Once the automated controlplane updates have completed, an administrator must manually patch all vulnerable `MachineDeployment`s in all affected userclusters.
 
 To lower the resource consumption on the seed clusters during the reconciliation / node rotation, it's recommended to adjust the `spec.seedControllerManager.maximumParallelReconciles` option in the `KubermaticConfiguration` to restrict the number of parallel updates.
@@ -20,7 +20,7 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
 
 ### Breaking Changes
 
-- ACTION REQUIRED: When upgrading from older KKP versions, additional flag --migrate-nginx-ingress is required to perform upgrade of nginx-ingress-controller. Ingress will be briefly unavailable during this process ([#8333](https://github.com/kubermatic/kubermatic/issues/8333))
+- ACTION REQUIRED: When upgrading from older KKP versions, additional flag `--migrate-nginx-ingress` is required to perform upgrade of nginx-ingress-controller. Ingress will be briefly unavailable during this process ([#8333](https://github.com/kubermatic/kubermatic/issues/8333))
 - ACTION REQUIRED: Set the default Service Accounts automountServiceAccountToken property to false for all KKP provided namespaces and kube-system ([#8344](https://github.com/kubermatic/kubermatic/issues/8344))
 - cert-manager chart has been updated to use upstream chart from https://charts.jetstack.io as a dependency, updated to version 1.6.1
   - ACTION REQUIRED: configuration for cert-manager ould now be included under key `cert-manager` in values.yaml file (changed from `certManager`)
@@ -42,10 +42,10 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
 ### New and Enhanced Features
 
 #### External Cluster
-- endpoint to get external cluster upgrades `GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/upgrades` ([#8115](https://github.com/kubermatic/kubermatic/issues/8115))
-- new endpoint to list external cluster machine deployments `GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments` ([#8200](https://github.com/kubermatic/kubermatic/issues/8200))
+- New endpoint to get external cluster upgrades `GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/upgrades` ([#8115](https://github.com/kubermatic/kubermatic/issues/8115))
+- New endpoint to list external cluster machine deployments `GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments` ([#8200](https://github.com/kubermatic/kubermatic/issues/8200))
 - Add PATCH endpoint for external cluster `PATCH /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}`([#8135](https://github.com/kubermatic/kubermatic/issues/8135))
-- new endpoint to list External MD Metrics: `/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/metrics` ([#8239](https://github.com/kubermatic/kubermatic/issues/8239))
+- New endpoint to list External MD Metrics: `/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/metrics` ([#8239](https://github.com/kubermatic/kubermatic/issues/8239))
 - Manage AKS Clusters natively. Extend external cluster functionality to import existing AKS cluster ([#8244](https://github.com/kubermatic/kubermatic/issues/8244))
 - Create AKS nodePool ([#8399](https://github.com/kubermatic/kubermatic/issues/8399))
 - Upgrade AKS NodePool Kubernetes version  ([#8349](https://github.com/kubermatic/kubermatic/issues/8349))
