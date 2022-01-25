@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/sirupsen/logrus"
@@ -337,9 +338,11 @@ func validateNoStuckResourcesInCluster(ctx context.Context, logger logrus.FieldL
 func validateCRDsExist(ctx context.Context, logger logrus.FieldLogger, opt *Options) error {
 	logger.Info("Validating all new KKP CRDs exist…")
 
-	crds, err := util.LoadFromDirectory(opt.CRDDirectory)
+	crdDirectory := filepath.Join(opt.ChartsDirectory, "kubermatic-operator", "crd", "k8c.io")
+
+	crds, err := util.LoadFromDirectory(crdDirectory)
 	if err != nil {
-		return fmt.Errorf("failed to load CRDs from %s: %w", opt.CRDDirectory, err)
+		return fmt.Errorf("failed to load CRDs from %s: %w", crdDirectory, err)
 	}
 
 	checklist := sets.NewString()
