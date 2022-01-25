@@ -172,7 +172,7 @@ spec:
       creationTimestamp: null
       name: data
       ownerReferences:
-      - apiVersion: kubermatic.k8s.io/v1
+      - apiVersion: kubermatic.k8c.io/v1
         blockOwnerDeletion: true
         controller: true
         kind: Cluster
