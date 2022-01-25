@@ -280,6 +280,10 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
 - Redesigned the cluster details additional information section ([#4078](https://github.com/kubermatic/dashboard/issues/4078))
 - Add option for administrators to specify default destination in "Backup Destinations" view ([#4080](https://github.com/kubermatic/dashboard/issues/4080))
 
+### Known issues
+- CNI: service LoadBalancer not working on Azure RHEL ([8768](https://github.com/kubermatic/kubermatic/issues/8768))
+- Incompatibilty between Kubevirt csi driver and Kubevirt ccm (namespace)([8772](https://github.com/kubermatic/kubermatic/issues/8772))
+
 # Kubermatic 2.18
 
 ## [v2.18.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.4)
