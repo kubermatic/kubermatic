@@ -19,7 +19,7 @@ package kubermatic
 import (
 	"testing"
 
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	networkingv1 "k8s.io/api/networking/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"

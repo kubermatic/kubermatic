@@ -24,10 +24,10 @@ import (
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 
+	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	masterctrl "k8c.io/kubermatic/v2/pkg/controller/operator/master"
 	seedctrl "k8c.io/kubermatic/v2/pkg/controller/operator/seed"
 	seedcontrollerlifecycle "k8c.io/kubermatic/v2/pkg/controller/shared/seed-controller-lifecycle"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/pprof"
 	"k8c.io/kubermatic/v2/pkg/provider"
