@@ -26,8 +26,10 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -91,6 +93,46 @@ func EnqueueClusterScopedObjectWithSeedName(seedName string) handler.EventHandle
 			Name:      a.GetName(),
 		}}}
 	})
+}
+
+const (
+	CreateOperation = "create"
+	UpdateOperation = "update"
+	DeleteOperation = "delete"
+)
+
+// EnqueueObjectWithOperation enqueues a the namespaced name for any resource. It puts
+// the current operation (create, update, delete) as the namespace and "namespace/name"
+// of the object into the name of the reconcile request.
+func EnqueueObjectWithOperation() handler.EventHandler {
+	return handler.Funcs{
+		CreateFunc: func(e event.CreateEvent, queue workqueue.RateLimitingInterface) {
+			queue.Add(reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Namespace: CreateOperation,
+					Name:      fmt.Sprintf("%s/%s", e.Object.GetNamespace(), e.Object.GetName()),
+				},
+			})
+		},
+
+		UpdateFunc: func(e event.UpdateEvent, queue workqueue.RateLimitingInterface) {
+			queue.Add(reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Namespace: UpdateOperation,
+					Name:      fmt.Sprintf("%s/%s", e.ObjectNew.GetNamespace(), e.ObjectNew.GetName()),
+				},
+			})
+		},
+
+		DeleteFunc: func(e event.DeleteEvent, queue workqueue.RateLimitingInterface) {
+			queue.Add(reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Namespace: DeleteOperation,
+					Name:      fmt.Sprintf("%s/%s", e.Object.GetNamespace(), e.Object.GetName()),
+				},
+			})
+		},
+	}
 }
 
 // EnqueueConst enqueues a constant. It is meant for controllers that don't have a parent object
