@@ -30,7 +30,7 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
 
 **Dashboard:**
 - Added multiple backup destinations.  
-  ACTION REQUIRED: KKP version 2.19 makes it possible to configure multiple destinations, therefor the current implementation of "backup buckets" will be deprecated soon. Migrate the configuration to a destination to keep using it in the future. It is reachable via the UI Admin Panel -> Backup Destinations ([#3911](https://github.com/kubermatic/dashboard/issues/3911))
+  ACTION REQUIRED: KKP version 2.19 makes it possible to configure multiple destinations, therefore the current implementation of "backup buckets" will be deprecated soon. Migrate the configuration to a destination to keep using it in the future. It is reachable via the UI Admin Panel -> Backup Destinations ([#3911](https://github.com/kubermatic/dashboard/issues/3911))
 
 ### Supported Kubernetes Versions
 - 1.20.13
