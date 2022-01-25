@@ -111,7 +111,7 @@ func CreateOrUpdateConfigurations(ctx context.Context, request interface{}, mast
 }
 
 func updateSeedMeteringConfiguration(ctx context.Context, meteringCfg configurationReq, seed *v1.Seed, masterClient ctrlruntimeclient.Client) error {
-	seed.Spec.Metering = &v1.MeteringConfigurations{
+	seed.Spec.Metering = &v1.MeteringConfiguration{
 		Enabled:          meteringCfg.Enabled,
 		StorageClassName: meteringCfg.StorageClassName,
 		StorageSize:      meteringCfg.StorageSize,
