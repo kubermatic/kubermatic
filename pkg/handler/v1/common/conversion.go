@@ -87,7 +87,7 @@ func ConvertInternalProjectToExternal(kubermaticProject *kubermaticapiv1.Project
 			}(),
 		},
 		Labels:         label.FilterLabels(label.ProjectResourceType, kubermaticProject.Labels),
-		Status:         kubermaticProject.Status.Phase,
+		Status:         string(kubermaticProject.Status.Phase),
 		Owners:         projectOwners,
 		ClustersNumber: clustersNumber,
 	}

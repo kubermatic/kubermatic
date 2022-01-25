@@ -1226,8 +1226,9 @@ func (r *reconciler) cleanUpOPAHealthStatus(ctx context.Context, errC error) err
 	cluster.Status.ExtendedHealth.GatekeeperAudit = nil
 	cluster.Status.ExtendedHealth.GatekeeperController = nil
 	if errC != nil && !errors.IsNotFound(errC) {
-		cluster.Status.ExtendedHealth.GatekeeperAudit = kubermaticv1.HealthStatusDown.Ptr()
-		cluster.Status.ExtendedHealth.GatekeeperController = kubermaticv1.HealthStatusDown.Ptr()
+		down := kubermaticv1.HealthStatusDown
+		cluster.Status.ExtendedHealth.GatekeeperAudit = &down
+		cluster.Status.ExtendedHealth.GatekeeperController = &down
 	}
 	if oldCluster.Status.ExtendedHealth != cluster.Status.ExtendedHealth {
 		if err := r.seedClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
@@ -1245,17 +1246,18 @@ func (r *reconciler) cleanUpMLAHealthStatus(ctx context.Context, logging, monito
 		return fmt.Errorf("failed getting cluster for cluster health check: %w", err)
 	}
 	oldCluster := cluster.DeepCopy()
+	down := kubermaticv1.HealthStatusDown
 
 	if !r.userClusterMLA.Logging && logging {
 		cluster.Status.ExtendedHealth.Logging = nil
 		if errC != nil && !errors.IsNotFound(errC) {
-			cluster.Status.ExtendedHealth.Logging = kubermaticv1.HealthStatusDown.Ptr()
+			cluster.Status.ExtendedHealth.Logging = &down
 		}
 	}
 	if !r.userClusterMLA.Monitoring && monitoring {
 		cluster.Status.ExtendedHealth.Monitoring = nil
 		if errC != nil && !errors.IsNotFound(errC) {
-			cluster.Status.ExtendedHealth.Monitoring = kubermaticv1.HealthStatusDown.Ptr()
+			cluster.Status.ExtendedHealth.Monitoring = &down
 		}
 	}
 	if oldCluster.Status.ExtendedHealth != cluster.Status.ExtendedHealth {
