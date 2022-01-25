@@ -22,7 +22,7 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
 
 - ACTION REQUIRED: When upgrading from older KKP versions (before v2.19.0), additional flags:
   - `--migrate-upstream-nginx-ingress` is required to perform upgrade of nginx-ingress-controller. Ingress will be briefly unavailable during this process ([#8333](https://github.com/kubermatic/kubermatic/issues/8333))
-  - `--migrate-upstream-cert-manager` is required to perform to perform the migration of the `cert-manager`. During the upgrade, the chart is uninstalled completely so there is a short time when certificates will not be renewed.([#8392](https://github.com/kubermatic/kubermatic/issues/8392))
+  - `--migrate-upstream-cert-manager` is required to perform the migration of the `cert-manager`. During the upgrade, the chart is uninstalled completely so there is a short time when certificates will not be renewed.([#8392](https://github.com/kubermatic/kubermatic/issues/8392))
 - ACTION REQUIRED: Set the default Service Accounts `automountServiceAccountToken` property to false for all KKP provided namespaces and kube-system ([#8344](https://github.com/kubermatic/kubermatic/issues/8344))
 - cert-manager chart has been updated to use upstream chart from https://charts.jetstack.io as a dependency, updated to version 1.6.1
   - ACTION REQUIRED: configuration for cert-manager should now be included under key `cert-manager` in values.yaml file (changed from `certManager`)
