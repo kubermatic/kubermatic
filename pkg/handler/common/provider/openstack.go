@@ -248,7 +248,7 @@ func GetOpenstackNetworks(userInfo *provider.UserInfo, seedsGetter provider.Seed
 	return apiNetworks, nil
 }
 
-func GetOpenstackProjects(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter, credentials *resources.OpenstackCredentials, datacenterName string, caBundle *x509.CertPool) ([]apiv1.OpenstackProject, error) {
+func GetOpenstackProjects(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter, credentials *resources.OpenstackCredentials, datacenterName string, caBundle *x509.CertPool) ([]apiv1.OpenstackTenant, error) {
 	authURL, region, err := getOpenstackAuthURLAndRegion(userInfo, seedsGetter, datacenterName)
 	if err != nil {
 		return nil, err
@@ -259,9 +259,9 @@ func GetOpenstackProjects(userInfo *provider.UserInfo, seedsGetter provider.Seed
 		return nil, fmt.Errorf("couldn't get projects: %w", err)
 	}
 
-	apiProjects := []apiv1.OpenstackProject{}
+	apiProjects := []apiv1.OpenstackTenant{}
 	for _, project := range projects {
-		apiProjects = append(apiProjects, apiv1.OpenstackProject{
+		apiProjects = append(apiProjects, apiv1.OpenstackTenant{
 			Name: project.Name,
 			ID:   project.ID,
 		})
