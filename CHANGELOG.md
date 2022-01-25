@@ -49,14 +49,14 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
 - Add PATCH endpoint for external cluster `PATCH /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}`([#8135](https://github.com/kubermatic/kubermatic/issues/8135))
 - New endpoint to list External MD Metrics: `/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/metrics` ([#8239](https://github.com/kubermatic/kubermatic/issues/8239))
 - Manage AKS Clusters natively. Extend external cluster functionality to import existing AKS cluster ([#8244](https://github.com/kubermatic/kubermatic/issues/8244))
-- Create AKS nodePool ([#8399](https://github.com/kubermatic/kubermatic/issues/8399))
+- Create AKS NodePool ([#8399](https://github.com/kubermatic/kubermatic/issues/8399))
 - Upgrade AKS NodePool Kubernetes version  ([#8349](https://github.com/kubermatic/kubermatic/issues/8349))
 - Scale AKS NodePool ([#8349](https://github.com/kubermatic/kubermatic/issues/8349))
 - Get AKS NodePool machineDeployments and nodes([#8349](https://github.com/kubermatic/kubermatic/issues/8349))
 - Delete AKS NodePool ([#8349](https://github.com/kubermatic/kubermatic/issues/8349))
 - Modified GET `/providers/aks/clusters` => `/projects/{project_id}/providers/aks/clusters` ([#8423](https://github.com/kubermatic/kubermatic/issues/8423))
 - GET `/providers/eks/clusters` => `/projects/{project_id}/providers/eks/clusters` ([#8423](https://github.com/kubermatic/kubermatic/issues/8423))
-- Adds GET Endpoint `/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/kubeconfig` ([#8122](https://github.com/kubermatic/kubermatic/issues/8122))
+- Added GET Endpoint `/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/kubeconfig` ([#8122](https://github.com/kubermatic/kubermatic/issues/8122))
 
 
 #### Operating System Management (OSM)
@@ -84,8 +84,8 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
 - Added support for setting a default etcd backup destination when using the new multiple etcd backup destinations feature. The default destination is used for the default EtcdBackupConfig which is created for each user cluster when automatic etcd backups are configured for a Seed ([#8628](https://github.com/kubermatic/kubermatic/issues/8628))
 
 #### User Cluster Monitoring, Logging and Alerting
-- add Prometheus scraping if minio is running with TLS ([#8467](https://github.com/kubermatic/kubermatic/issues/8467))
-- promtail chart has been updated to use upstream chart from https://grafana.github.io/helm-charts as a dependency ([#8044](https://github.com/kubermatic/kubermatic/issues/8044))
+- Added Prometheus scraping if minio is running with TLS ([#8467](https://github.com/kubermatic/kubermatic/issues/8467))
+- Promtail chart has been updated to use upstream chart from https://grafana.github.io/helm-charts as a dependency ([#8044](https://github.com/kubermatic/kubermatic/issues/8044))
 - Upgrade User Cluster MLA components ([#8178](https://github.com/kubermatic/kubermatic/issues/8178)):
   | Component  | Image                                          | From   | To     |
   |------------|------------------------------------------------|--------|--------|
@@ -96,16 +96,16 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
 
 - Alertmanager groups alerts by alertname, namespace, seed_cluster, cluster labels ([#8193](https://github.com/kubermatic/kubermatic/issues/8193))
 - Make user cluster Prometheus replicas configurable via KKP Cluster API ([#8223](https://github.com/kubermatic/kubermatic/issues/8223))
-- Add MLA Alertmanager health status in the API /health endpoint (whether the alert manager configuration was successfully applied or not):- . extendedHealth. alertmanagerConfig ([#8128](https://github.com/kubermatic/kubermatic/issues/8128))
-- Add MLAGateway health status in the /health API-endpoint:- . extendedHealth. mlaGateway ([#8153](https://github.com/kubermatic/kubermatic/issues/8153))
-- Add MLA Health status in the API /health endpoint:- . extendedHealth. monitoring- . extendedHealth. logging ([#8082](https://github.com/kubermatic/kubermatic/issues/8082))
-- Add v2 endpoints for KKP admins to manage rule group template:
+- Added MLA Alertmanager health status in the API /health endpoint (whether the alert manager configuration was successfully applied or not):- . extendedHealth. alertmanagerConfig ([#8128](https://github.com/kubermatic/kubermatic/issues/8128))
+- Added MLAGateway health status in the /health API-endpoint:- . extendedHealth. mlaGateway ([#8153](https://github.com/kubermatic/kubermatic/issues/8153))
+- Added MLA Health status in the API /health endpoint:- . extendedHealth. monitoring- . extendedHealth. logging ([#8082](https://github.com/kubermatic/kubermatic/issues/8082))
+- Added v2 endpoints for KKP admins to manage rule group template:
   - GET `/api/v2/seeds/{seed_name}/rulegroups`
   - GET `/api/v2/seeds/{seed_name}/rulegroups/{rulegroup_id}`
   - POST `/api/v2/seeds/{seed_name}/rulegroups`
   - PUT  `/api/v2/seeds/{seed_name}/rulegroups/{rulegroup_id}`
   - DELETE `/api/v2/seeds/{seed_name}/rulegroups/{rulegroup_id}` ([#8158](https://github.com/kubermatic/kubermatic/issues/8158))
-- loki chart has been updated to use upstream chart from https://grafana.github.io/helm-charts as a dependency ([#8252](https://github.com/kubermatic/kubermatic/issues/8252))
+- Loki chart has been updated to use upstream chart from https://grafana.github.io/helm-charts as a dependency ([#8252](https://github.com/kubermatic/kubermatic/issues/8252))
 - Added configurable root_url option for grafana ([#7927](https://github.com/kubermatic/kubermatic/issues/7927))
 - Prometheus alert KubeAPILatencyHIGH has been replaced with KubeAPITerminatedRequests, which is more reliable ([#8727](https://github.com/kubermatic/kubermatic/issues/8727))
 
@@ -120,20 +120,20 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
 - Change KonnectivityEnabled flag to a pointer in ClusterNetworkingConfig to make defaulting easier ([#8103](https://github.com/kubermatic/kubermatic/issues/8103))
 
 #### Cilium
-- Add Cilium CNI addon ([#7853](https://github.com/kubermatic/kubermatic/issues/7853))
-- Add ebpf proxy mode support for Cilium CNI ([#7861](https://github.com/kubermatic/kubermatic/issues/7861))
-- Add Cilium Hubble addon for CNI network observability ([#8548](https://github.com/kubermatic/kubermatic/issues/8548))
+- Added Cilium CNI addon ([#7853](https://github.com/kubermatic/kubermatic/issues/7853))
+- Added ebpf proxy mode support for Cilium CNI ([#7861](https://github.com/kubermatic/kubermatic/issues/7861))
+- Added Cilium Hubble addon for CNI network observability ([#8548](https://github.com/kubermatic/kubermatic/issues/8548))
 
 #### Canal
-- Add Canal CNI addon v3.20 and make it the default CNI for new clusters ([#8081](https://github.com/kubermatic/kubermatic/issues/8081))
+- Added Canal CNI addon v3.20 and make it the default CNI for new clusters ([#8081](https://github.com/kubermatic/kubermatic/issues/8081))
 - Bump Flannel version in Canal to v0.15.1 to prevent segfaults in iptables ([#8478](https://github.com/kubermatic/kubermatic/issues/8478))
-- Add Canal CNI v3.21 make it the default CNI ([#8510](https://github.com/kubermatic/kubermatic/issues/8510))
+- Added Canal CNI v3.21 make it the default CNI ([#8510](https://github.com/kubermatic/kubermatic/issues/8510))
 
 ### Cloud Providers
 
 #### Amazon Web Services (AWS)
 - Introduce periodic reconciling for cloud resources used by userclusters; currently implemented for AWS-based userclusters ([#8101](https://github.com/kubermatic/kubermatic/issues/8101))
-- removed list aws regions endpoint ([#8529](https://github.com/kubermatic/kubermatic/issues/8529))
+- Removed list aws regions endpoint ([#8529](https://github.com/kubermatic/kubermatic/issues/8529))
 - Added API support for assuming AWS IAM roles. This allows running user clusters in e.g. external AWS accounts ([#8038](https://github.com/kubermatic/kubermatic/issues/8038))
 
 #### Microsoft Azure
@@ -141,7 +141,7 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
 - Azure cloud resources are periodically reconciled ([#8213](https://github.com/kubermatic/kubermatic/issues/8213))
 
 #### OpenStack
-- Add support for Openstack authentication with `project name` and  `project id`. `tenant name`  and `tenant id`  are deprecated ([#8211](https://github.com/kubermatic/kubermatic/issues/8211))
+- Added support for Openstack authentication with `project name` and  `project id`. `tenant name`  and `tenant id`  are deprecated ([#8211](https://github.com/kubermatic/kubermatic/issues/8211))
 
 #### VMware vSphere
 - Support latest vSphere Cloud Controller Manager and  CSI driver for Kubernetes 1.22 ([#8505](https://github.com/kubermatic/kubermatic/issues/8505))
@@ -150,19 +150,19 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
 - Manage GKE Clusters natively. Extend external cluster functionality to import existing GKE cluster ([#8046](https://github.com/kubermatic/kubermatic/issues/8046))
 
 #### KubeVirt
-- Add API endpoints for Kubevirt VirtualMachineInstancePresets and StorageClasses ([#8441](https://github.com/kubermatic/kubermatic/issues/8441))
+- Added API endpoints for Kubevirt VirtualMachineInstancePresets and StorageClasses ([#8441](https://github.com/kubermatic/kubermatic/issues/8441))
 - Support for KubeVirt CSI driver ([#8416](https://github.com/kubermatic/kubermatic/issues/8416))
 
 ### Nutanix
-- Add experimental/alpha cloud provider support for Nutanix ([#8448](https://github.com/kubermatic/kubermatic/issues/8448))
+- Added experimental/alpha cloud provider support for Nutanix ([#8448](https://github.com/kubermatic/kubermatic/issues/8448))
 
 ### Misc
 - Add tolerations to user cluster system daemonsets ([#8425](https://github.com/kubermatic/kubermatic/issues/8425))
 - Components running on user clusters are set up with the runtime's default seccomp profile ([#8326](https://github.com/kubermatic/kubermatic/issues/8326))
 - Support for configuring the EventRateLimit admission plugin ([#8291](https://github.com/kubermatic/kubermatic/issues/8291))
-- Add support to remove a preset provider via the REST API ([#8093](https://github.com/kubermatic/kubermatic/issues/8093))
-- Add support to update the requiredEmails of a preset via REST-API and Admins will see all presets within KKP independent of their email ([#8087](https://github.com/kubermatic/kubermatic/issues/8087))
-- Add an endpoint to list users and extend the user object to allow checking the last seen date ([#7989](https://github.com/kubermatic/kubermatic/issues/7989))
+- Added support to remove a preset provider via the REST API ([#8093](https://github.com/kubermatic/kubermatic/issues/8093))
+- Added support to update the requiredEmails of a preset via REST-API and Admins will see all presets within KKP independent of their email ([#8087](https://github.com/kubermatic/kubermatic/issues/8087))
+- Added an endpoint to list users and extend the user object to allow checking the last seen date ([#7989](https://github.com/kubermatic/kubermatic/issues/7989))
 - etcd-launcher uses TLS peer connections for new etcd clusters and automatically upgrades existing etcd clusters- etcd-launcher cannot be disabled as a feature on a cluster to go back to plain etcd ([#8065](https://github.com/kubermatic/kubermatic/issues/8065))
 - Delete flatcar update operator if flatcar nodes are not schedulable ([#7316](https://github.com/kubermatic/kubermatic/issues/7316))
 - OpenAPI v3 CRD schema generation ([#8027](https://github.com/kubermatic/kubermatic/issues/8027))
@@ -177,7 +177,7 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
 - Profiling endpoints on control plane components have been disabled ([#8110](https://github.com/kubermatic/kubermatic/issues/8110))
 - cert-manager's upgrade will reinstall the chart cleanly, existing ClusterIssuers created by a helm chart will be recreated ([#8555](https://github.com/kubermatic/kubermatic/issues/8555))
 - KKP Installer will now check that all userclusters match the given versioning configuration prior to upgrading KKP. This ensures no userclusters are suddenly "orphaned" and incompatible with KKP ([#8670](https://github.com/kubermatic/kubermatic/issues/8670))
-- Add `spec.debugLog` field to `Cluster` objects to toggle the verbose log on the usercluster-controller-manager ([#8735](https://github.com/kubermatic/kubermatic/issues/8735))
+- Added `spec.debugLog` field to `Cluster` objects to toggle the verbose log on the usercluster-controller-manager ([#8735](https://github.com/kubermatic/kubermatic/issues/8735))
 
 ### Bugfixes
 
@@ -229,32 +229,32 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
 - Fix clusters being occasionally stuck in deletion because seed-level RBAC resources were deleted too early ([#8744](https://github.com/kubermatic/kubermatic/issues/8744))
 
 ### Updates
-- update nginx-ingress-controller to 1.0.0 to support Kubernetes 1.22 master/seed clusters ([#7845](https://github.com/kubermatic/kubermatic/issues/7845))
-- update nginx-ingress-controller to 1.0.2 ([#7875](https://github.com/kubermatic/kubermatic/issues/7875))
+- Update nginx-ingress-controller to 1.0.0 to support Kubernetes 1.22 master/seed clusters ([#7845](https://github.com/kubermatic/kubermatic/issues/7845))
+- Update nginx-ingress-controller to 1.0.2 ([#7875](https://github.com/kubermatic/kubermatic/issues/7875))
 - Update Kubernetes Dashboard to v2.4.0 ([#8172](https://github.com/kubermatic/kubermatic/issues/8172))
 - update Dex to 2.30.0 ([#7846](https://github.com/kubermatic/kubermatic/issues/7846))
 - Update to controller-runtime 0.10 / k8s 1.22 ([#7671](https://github.com/kubermatic/kubermatic/issues/7671))
 - update controller-runtime to 0.10.1 ([#7857](https://github.com/kubermatic/kubermatic/issues/7857))
 - Update to controller-runtime 0.11.0 ([#8551](https://github.com/kubermatic/kubermatic/issues/8551))
-- update to Go 1.17.1 ([#7873](https://github.com/kubermatic/kubermatic/issues/7873))
+- Update to Go 1.17.1 ([#7873](https://github.com/kubermatic/kubermatic/issues/7873))
 - Upgrade etcd to 3.5.1 for Kubernetes 1.22 (and higher) ([#8559](https://github.com/kubermatic/kubermatic/issues/8559))
-- update kube-state-metrics to 2.2.3 ([#8049](https://github.com/kubermatic/kubermatic/issues/8049))
+- Update kube-state-metrics to 2.2.3 ([#8049](https://github.com/kubermatic/kubermatic/issues/8049))
 - Bump machine controller v1.36.1 ([#8099](https://github.com/kubermatic/kubermatic/issues/8099))
 - Bump operating-system-manager to v0.3.2 ([#8570](https://github.com/kubermatic/kubermatic/issues/8570))
 - Upgrade machine controller to 1.36.2 ([#8233](https://github.com/kubermatic/kubermatic/issues/8233))
 - machine-controller is updated to v1.41.0 ([#8590](https://github.com/kubermatic/kubermatic/issues/8590))
-- machine-controller updated to v1.41.1  
-  operating-system-manager updated to v0.3.6 ([#8693](https://github.com/kubermatic/kubermatic/issues/8693))
+- machine-controller updated to v1.41.1 ([#8693](https://github.com/kubermatic/kubermatic/issues/8693))
+- operating-system-manager updated to v0.3.6 ([#8693](https://github.com/kubermatic/kubermatic/issues/8693))
 - Update machine-controller to v1.42.0 ([#8731](https://github.com/kubermatic/kubermatic/issues/8731))
 - Update machine controller to 1.42.1 ([#8757](https://github.com/kubermatic/kubermatic/issues/8757))
 - Removed support for Kubernetes 1.19 ([#8167](https://github.com/kubermatic/kubermatic/issues/8167))
-- Add support for Kubernetes 1.22.5, 1.21.8, and 1.20.14  
-  Automatically upgrade clusters running Kubernetes 1.21 to 1.21.8 to include fixes for CVE-2021-44716 and CVE-2021-44717  
-  Automatically upgrade clusters running Kubernetes 1.22 to 1.22.5 to include fixes for CVE-2021-44716 and CVE-2021-44717  
-  Update to Go 1.17.5 ([#8472](https://github.com/kubermatic/kubermatic/issues/8472))
-- Added support for Kubernetes version v1.20.13 and automatically upgrading clusters with version < v1.20.13 (fixes CVE-2021-3711, CVE-2021-3712, CVE-2021-33910)  
-  Added support for Kubernetes version v1.21.7 and automatically upgrading clusters with version < v1.21.7 (fixes CVE-2021-3711, CVE-2021-3712, CVE-2021-33910)  
-  Added support for Kubernetes version v1.22.4 and automatically upgrading clusters with version < v1.22.4 (fixes CVE-2021-3711, CVE-2021-3712, CVE-2021-33910) ([#8251](https://github.com/kubermatic/kubermatic/issues/8251))
+- Added support for Kubernetes 1.22.5, 1.21.8, and 1.20.14  ([#8472](https://github.com/kubermatic/kubermatic/issues/8472))
+- Automatically upgrade clusters running Kubernetes 1.21 to 1.21.8 to include fixes for CVE-2021-44716 and CVE-2021-44717  ([#8472](https://github.com/kubermatic/kubermatic/issues/8472))
+- Automatically upgrade clusters running Kubernetes 1.22 to 1.22.5 to include fixes for CVE-2021-44716 and CVE-2021-44717 ([#8472](https://github.com/kubermatic/kubermatic/issues/8472))
+- Update to Go 1.17.5 ([#8472](https://github.com/kubermatic/kubermatic/issues/8472))
+- Added support for Kubernetes version v1.20.13 and automatically upgrading clusters with version < v1.20.13 (fixes CVE-2021-3711, CVE-2021-3712, CVE-2021-33910) ([#8251](https://github.com/kubermatic/kubermatic/issues/8251))
+- Added support for Kubernetes version v1.21.7 and automatically upgrading clusters with version < v1.21.7 (fixes CVE-2021-3711, CVE-2021-3712, CVE-2021-33910) ([#8251](https://github.com/kubermatic/kubermatic/issues/8251))
+- Added support for Kubernetes version v1.22.4 and automatically upgrading clusters with version < v1.22.4 (fixes CVE-2021-3711, CVE-2021-3712, CVE-2021-33910) ([#8251](https://github.com/kubermatic/kubermatic/issues/8251))
 
 
 ### Dashboard
@@ -262,11 +262,11 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
 - Remove type column from cluster list ([#3751](https://github.com/kubermatic/dashboard/issues/3751))
 - Add account audits support to the admin settings ([#3782](https://github.com/kubermatic/dashboard/issues/3782))
 - Allow configuring AWS AssumeRole credentials for user clusters ([#3811](https://github.com/kubermatic/dashboard/issues/3811))
-- Add Konnectivity support ([#3822](https://github.com/kubermatic/dashboard/issues/3822))
-- Add support for RHEL and Flatcar to the VSphere provider. Make RHEL subscription manager fields optional ([#3824](https://github.com/kubermatic/dashboard/issues/3824))
+- Added Konnectivity support ([#3822](https://github.com/kubermatic/dashboard/issues/3822))
+- Added support for RHEL and Flatcar to the VSphere provider. Make RHEL subscription manager fields optional ([#3824](https://github.com/kubermatic/dashboard/issues/3824))
 - Disable dialog select form until existing template is selected ([#3836](https://github.com/kubermatic/dashboard/issues/3836))
 - Fix a bug where OPA data was not retrieved when there were no machine deployments in the cluster ([#3851](https://github.com/kubermatic/dashboard/issues/3851))
-- Add support for Openstack authentication with `project name` and  `project id`.  `tenant name`  and `tenant id`  are deprecated and have been renamed to `project name` and  `project id` in the UI ([#3854](https://github.com/kubermatic/dashboard/issues/3854))
+- Added support for Openstack authentication with `project name` and  `project id`.  `tenant name`  and `tenant id`  are deprecated and have been renamed to `project name` and  `project id` in the UI ([#3854](https://github.com/kubermatic/dashboard/issues/3854))
 - Added audit policy preset picker to the wizard ([#3862](https://github.com/kubermatic/dashboard/issues/3862))
 - Added support for importing GKE clusters ([#3892](https://github.com/kubermatic/dashboard/issues/3892))
 - Allow audit policy preset changes during cluster edit ([#3908](https://github.com/kubermatic/dashboard/issues/3908))
@@ -278,7 +278,7 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
 - Cluster and MachineDeployment names are validated to be lowercase, alphanumerical and with dashes in between ([#3963](https://github.com/kubermatic/dashboard/issues/3963))
 - Support to enable experimental feature OSM ([#3980](https://github.com/kubermatic/dashboard/issues/3980))
 - Redesigned the cluster details additional information section ([#4078](https://github.com/kubermatic/dashboard/issues/4078))
-- Add option for administrators to specify default destination in "Backup Destinations" view ([#4080](https://github.com/kubermatic/dashboard/issues/4080))
+- Added option for administrators to specify default destination in "Backup Destinations" view ([#4080](https://github.com/kubermatic/dashboard/issues/4080))
 
 # Kubermatic 2.18
 
