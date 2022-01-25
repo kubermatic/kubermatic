@@ -31,8 +31,8 @@ type Options struct {
 	// API group already. Beware.
 	KubermaticConfiguration *operatorv1alpha1.KubermaticConfiguration
 
-	MasterClient ctrlruntimeclient.Client
-	Seeds        map[string]*kubermaticv1.Seed
-	SeedClients  map[string]ctrlruntimeclient.Client
-	CRDDirectory string
+	MasterClient    ctrlruntimeclient.Client
+	Seeds           map[string]*kubermaticv1.Seed
+	SeedClients     map[string]ctrlruntimeclient.Client
+	ChartsDirectory string
 }

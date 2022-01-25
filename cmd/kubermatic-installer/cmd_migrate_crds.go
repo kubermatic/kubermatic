@@ -19,7 +19,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -57,6 +56,7 @@ func MigrateCRDsCommand(logger *logrus.Logger) cli.Command {
 		Action: MigrateCRDsAction(logger),
 		Hidden: true, // users must not run this before it's released
 		Flags: []cli.Flag{
+			chartsDirectoryFlag,
 			migrateCRDsKubeContextFlag,
 			keepOldResourcesFlag,
 		},
@@ -130,7 +130,7 @@ func MigrateCRDsAction(logger *logrus.Logger) cli.ActionFunc {
 			MasterClient:            kubeClient,
 			Seeds:                   allSeeds,
 			SeedClients:             seedClients,
-			CRDDirectory:            filepath.Join(ctx.GlobalString(chartsDirectoryFlag.Name), "kubermatic-operator", "crd", "k8c.io"),
+			ChartsDirectory:         ctx.GlobalString(chartsDirectoryFlag.Name),
 		}
 
 		// ////////////////////////////////////

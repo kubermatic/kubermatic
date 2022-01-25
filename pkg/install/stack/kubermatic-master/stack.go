@@ -25,7 +25,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/install/stack/common"
@@ -77,18 +77,6 @@ var _ stack.Stack = &MasterStack{}
 
 func (*MasterStack) Name() string {
 	return "KKP master stack"
-}
-
-func (*MasterStack) InstallKubermaticCRDs(ctx context.Context, client ctrlruntimeclient.Client, logger logrus.FieldLogger, opt stack.DeployOptions) error {
-	// handle the custom temporary KubermaticCRDDirectory field that is only used during
-	// CRD migration to point to the new CRD directory. Once the migration is done, this
-	// can be removed and only the line in the if-statement can stay.
-	crdDirectory := opt.KubermaticCRDDirectory
-	if crdDirectory == "" {
-		crdDirectory = filepath.Join(opt.ChartsDirectory, "kubermatic-operator", "crd")
-	}
-
-	return util.DeployCRDs(ctx, client, logger, crdDirectory)
 }
 
 func (s *MasterStack) Deploy(ctx context.Context, opt stack.DeployOptions) error {
@@ -268,10 +256,26 @@ func (s *MasterStack) deployKubermaticOperator(ctx context.Context, logger *logr
 	return nil
 }
 
+func (*MasterStack) InstallKubermaticCRDs(ctx context.Context, client ctrlruntimeclient.Client, logger logrus.FieldLogger, opt stack.DeployOptions) error {
+	crdDirectory := filepath.Join(opt.ChartsDirectory, "kubermatic-operator", "crd")
+
+	// install KKP CRDs
+	if err := util.DeployCRDs(ctx, client, logger, filepath.Join(crdDirectory, "k8c.io")); err != nil {
+		return err
+	}
+
+	// install VPA CRDs
+	if err := util.DeployCRDs(ctx, client, logger, filepath.Join(crdDirectory, "k8s.io")); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func applyKubermaticConfiguration(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) error {
 	logger.Info("📝 Applying Kubermatic Configuration…")
 
-	existingConfig := &operatorv1alpha1.KubermaticConfiguration{}
+	existingConfig := &kubermaticv1.KubermaticConfiguration{}
 	name := types.NamespacedName{
 		Name:      opt.KubermaticConfiguration.Name,
 		Namespace: opt.KubermaticConfiguration.Namespace,

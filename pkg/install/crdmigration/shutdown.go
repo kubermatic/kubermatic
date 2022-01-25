@@ -22,7 +22,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/kubermatic"
 	kubermaticseed "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/kubermatic"
@@ -136,7 +136,7 @@ func shutdownWebhooksInCluster(ctx context.Context, logger logrus.FieldLogger, c
 	webhooks := []string{
 		kubermaticseed.ClusterAdmissionWebhookName,
 		// this cheats a bit and assumes that the function only needs the object meta
-		common.SeedAdmissionWebhookName(&v1.KubermaticConfiguration{
+		common.SeedAdmissionWebhookName(&kubermaticv1.KubermaticConfiguration{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      config.Name,
 				Namespace: config.Namespace,
