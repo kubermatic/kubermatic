@@ -49,8 +49,7 @@ const (
 )
 
 var (
-	healthUp   = kubermaticv1.HealthStatusUp
-	healthDown = kubermaticv1.HealthStatusDown
+	healthUp = kubermaticv1.HealthStatusUp
 )
 
 func TestDeleteClusterEndpoint(t *testing.T) {

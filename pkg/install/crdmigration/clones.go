@@ -176,7 +176,7 @@ func migrateOwnerReferences(ownerRefs []metav1.OwnerReference, namespace string)
 	for _, ref := range ownerRefs {
 		newRef := ref.DeepCopy()
 
-		if newRef.APIVersion == "kubermatic.k8c.io/v1" {
+		if newRef.APIVersion == "kubermatic.k8s.io/v1" {
 			newRef.APIVersion = "kubermatic.k8c.io/v1"
 
 			cacheKey := getUIDCacheKey(newRef.Kind, namespace, newRef.Name)
@@ -197,7 +197,7 @@ func migrateOwnerReferences(ownerRefs []metav1.OwnerReference, namespace string)
 func migrateObjectReference(objectRef corev1.ObjectReference, namespace string) corev1.ObjectReference {
 	newRef := *objectRef.DeepCopy()
 
-	if newRef.APIVersion == "kubermatic.k8c.io/v1" {
+	if newRef.APIVersion == "kubermatic.k8s.io/v1" {
 		newRef.APIVersion = "kubermatic.k8c.io/v1"
 
 		if newRef.Namespace != "" {
@@ -270,7 +270,7 @@ func cloneKubermaticConfigurationResourcesInCluster(ctx context.Context, logger 
 					APIServerReplicas:                   oldObject.Spec.UserCluster.APIServerReplicas,
 					MachineController:                   newv1.MachineControllerConfiguration(oldObject.Spec.UserCluster.MachineController),
 				},
-				ExposeStrategy: newv1.ExposeStrategy(oldObject.Spec.ExposeStrategy),
+				ExposeStrategy: oldObject.Spec.ExposeStrategy,
 				Ingress:        newv1.KubermaticIngressConfiguration(oldObject.Spec.Ingress),
 				Versions:       *versions,
 				VerticalPodAutoscaler: newv1.KubermaticVPAConfiguration{
@@ -316,7 +316,7 @@ func convertKubermaticVersioningConfiguration(old operatorv1alpha1.KubermaticVer
 
 	for _, i := range old.ProviderIncompatibilities {
 		result.ProviderIncompatibilities = append(result.ProviderIncompatibilities, newv1.Incompatibility{
-			Provider:  newv1.ProviderType(i.Provider),
+			Provider:  i.Provider,
 			Version:   i.Version,
 			Condition: newv1.ConditionType(i.Condition),
 			Operation: newv1.OperationType(i.Operation),
