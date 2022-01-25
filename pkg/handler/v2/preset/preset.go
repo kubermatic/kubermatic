@@ -27,7 +27,7 @@ import (
 	"github.com/gorilla/mux"
 
 	v2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	crdapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	crdapiv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"

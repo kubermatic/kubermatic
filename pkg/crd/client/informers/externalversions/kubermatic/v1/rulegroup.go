@@ -6,10 +6,10 @@ import (
 	"context"
 	time "time"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	versioned "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned"
 	internalinterfaces "k8c.io/kubermatic/v2/pkg/crd/client/informers/externalversions/internalinterfaces"
 	v1 "k8c.io/kubermatic/v2/pkg/crd/client/listers/kubermatic/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"

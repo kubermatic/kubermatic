@@ -20,7 +20,7 @@ import (
 	"strings"
 	"testing"
 
-	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/common/provider"
 )
 

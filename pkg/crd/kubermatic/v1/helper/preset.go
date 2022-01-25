@@ -21,7 +21,7 @@ import (
 	"reflect"
 	"strings"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 )
 
 func getProviderValue(s *kubermaticv1.PresetSpec, providerType kubermaticv1.ProviderType) reflect.Value {
