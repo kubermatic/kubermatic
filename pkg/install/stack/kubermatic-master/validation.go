@@ -34,6 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/install/util"
+	k8csemver "k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 )
@@ -91,7 +92,7 @@ func (m *MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions
 
 		// check that each cluster still matches the configured versions
 		for _, cluster := range clusters.Items {
-			clusterVersion := cluster.Spec.Version.Semver()
+			clusterVersion := cluster.Spec.Version
 
 			if !clusterVersionIsConfigured(clusterVersion, defaulted, upgradeConstraints) {
 				errs = append(errs, fmt.Errorf("cluster %s (version %s) on Seed %s would not be supported anymore", cluster.Name, clusterVersion, seedName))
@@ -107,7 +108,7 @@ func getAutoUpdateConstraints(defaultedConfig *operatorv1alpha1.KubermaticConfig
 
 	upgradeConstraints := []*semver.Constraints{}
 
-	for i, update := range defaultedConfig.Spec.Versions.Kubernetes.Updates {
+	for i, update := range defaultedConfig.Spec.Versions.Updates {
 		// only consider automated updates, otherwise we might accept an unsupported
 		// cluster that is never manually updated
 		if update.Automatic == nil || !*update.Automatic {
@@ -126,17 +127,19 @@ func getAutoUpdateConstraints(defaultedConfig *operatorv1alpha1.KubermaticConfig
 	return upgradeConstraints, errs
 }
 
-func clusterVersionIsConfigured(version *semver.Version, defaultedConfig *operatorv1alpha1.KubermaticConfiguration, constraints []*semver.Constraints) bool {
+func clusterVersionIsConfigured(version k8csemver.Semver, defaultedConfig *operatorv1alpha1.KubermaticConfiguration, constraints []*semver.Constraints) bool {
 	// is this version still straight up supported?
-	for _, configured := range defaultedConfig.Spec.Versions.Kubernetes.Versions {
-		if configured.Equal(version) {
+	for _, configured := range defaultedConfig.Spec.Versions.Versions {
+		if configured.Equal(&version) {
 			return true
 		}
 	}
 
+	sversion := version.Semver()
+
 	// is an upgrade path defined from the current version to something else?
 	for _, update := range constraints {
-		if update.Check(version) {
+		if update.Check(sversion) {
 			return true
 		}
 	}
@@ -177,7 +180,7 @@ func validateKubermaticConfiguration(config *operatorv1alpha1.KubermaticConfigur
 		failures = append(failures, fmt.Errorf("spec.auth.serviceAccountKey is invalid: %w", err))
 	}
 
-	if config.Spec.FeatureGates.Has(features.OIDCKubeCfgEndpoint) {
+	if config.Spec.FeatureGates[features.OIDCKubeCfgEndpoint] {
 		failures = validateRandomSecret(config, config.Spec.Auth.IssuerClientSecret, "spec.auth.issuerClientSecret", failures)
 		failures = validateRandomSecret(config, config.Spec.Auth.IssuerCookieKey, "spec.auth.issuerCookieKey", failures)
 	}

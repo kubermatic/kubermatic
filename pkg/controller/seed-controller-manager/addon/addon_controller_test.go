@@ -403,7 +403,7 @@ func TestController_ensureAddonLabelOnManifests(t *testing.T) {
 
 func TestController_getApplyCommand(t *testing.T) {
 	controller := &Reconciler{}
-	clusterVersion := defaults.DefaultKubernetesVersioning.Default
+	clusterVersion := defaults.DefaultKubernetesVersioning.Default.Semver()
 
 	binary, err := kubectl.BinaryForClusterVersion(clusterVersion)
 	if err != nil {

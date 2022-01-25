@@ -24,8 +24,8 @@ import (
 	"github.com/sirupsen/logrus"
 
 	newv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
@@ -223,6 +223,11 @@ func cloneKubermaticConfigurationResourcesInCluster(ctx context.Context, logger 
 	}
 
 	for _, oldObject := range oldObjects.Items {
+		versions, err := convertKubermaticVersioningConfiguration(oldObject.Spec.Versions.Kubernetes)
+		if err != nil {
+			return 0, fmt.Errorf("KubermaticConfiguration %s is invalid: %w", oldObject.Name, err)
+		}
+
 		newObject := newv1.KubermaticConfiguration{
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.KubermaticConfigurationSpec{
@@ -267,7 +272,7 @@ func cloneKubermaticConfigurationResourcesInCluster(ctx context.Context, logger 
 				},
 				ExposeStrategy: newv1.ExposeStrategy(oldObject.Spec.ExposeStrategy),
 				Ingress:        newv1.KubermaticIngressConfiguration(oldObject.Spec.Ingress),
-				Versions:       convertKubermaticVersioningConfiguration(oldObject.Spec.Versions.Kubernetes),
+				Versions:       *versions,
 				VerticalPodAutoscaler: newv1.KubermaticVPAConfiguration{
 					Recommender:         newv1.KubermaticVPAComponent(oldObject.Spec.VerticalPodAutoscaler.Recommender),
 					Updater:             newv1.KubermaticVPAComponent(oldObject.Spec.VerticalPodAutoscaler.Updater),
@@ -289,11 +294,16 @@ func cloneKubermaticConfigurationResourcesInCluster(ctx context.Context, logger 
 	return len(oldObjects.Items), nil
 }
 
-func convertKubermaticVersioningConfiguration(old operatorv1alpha1.KubermaticVersioningConfiguration) newv1.KubermaticVersioningConfiguration {
+func convertKubermaticVersioningConfiguration(old operatorv1alpha1.KubermaticVersioningConfiguration) (*newv1.KubermaticVersioningConfiguration, error) {
 	result := newv1.KubermaticVersioningConfiguration{}
 
 	if old.Default != nil {
-		result.Default = semver.Semver(old.Default.String())
+		parsed, err := semver.NewSemver(old.Default.String())
+		if err != nil {
+			return nil, fmt.Errorf("invalid default version %q: %w", old.Default.String(), err)
+		}
+
+		result.Default = parsed
 	}
 
 	for _, v := range old.Versions {
@@ -313,7 +323,7 @@ func convertKubermaticVersioningConfiguration(old operatorv1alpha1.KubermaticVer
 		})
 	}
 
-	return result
+	return &result, nil
 }
 
 func convertHealthStatus(oldHs kubermaticv1.HealthStatus) newv1.HealthStatus {

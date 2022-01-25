@@ -18,6 +18,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -26,11 +27,13 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/yaml"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func handleErrors(logger *logrus.Logger, action cli.ActionFunc) cli.ActionFunc {
@@ -55,7 +58,7 @@ func setupLogger(logger *logrus.Logger, action cli.ActionFunc) cli.ActionFunc {
 	}
 }
 
-func loadKubermaticConfiguration(filename string) (*operatorv1alpha1.KubermaticConfiguration, *unstructured.Unstructured, error) {
+func loadKubermaticConfiguration(filename string) (*kubermaticv1.KubermaticConfiguration, *unstructured.Unstructured, error) {
 	if filename == "" {
 		return nil, nil, errors.New("no file specified via --config flag")
 	}
@@ -70,12 +73,35 @@ func loadKubermaticConfiguration(filename string) (*operatorv1alpha1.KubermaticC
 		return nil, nil, fmt.Errorf("failed to decode %s: %w", filename, err)
 	}
 
-	config := &operatorv1alpha1.KubermaticConfiguration{}
+	config := &kubermaticv1.KubermaticConfiguration{}
 	if err := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(content), 1024).Decode(config); err != nil {
 		return nil, raw, fmt.Errorf("failed to decode %s: %w", filename, err)
 	}
 
 	return config, raw, nil
+}
+
+// loadLegacyKubermaticConfiguration is only used during the CRD migration and in its
+// related commands. Once the CRD migration phase is over, this can be safely deleted.
+func loadLegacyKubermaticConfiguration(ctx context.Context, client ctrlruntimeclient.Reader, namespace string) (*operatorv1alpha1.KubermaticConfiguration, error) {
+	if len(namespace) == 0 {
+		return nil, fmt.Errorf("a namespace must be provided")
+	}
+
+	configList := operatorv1alpha1.KubermaticConfigurationList{}
+	if err := client.List(ctx, &configList, &ctrlruntimeclient.ListOptions{Namespace: namespace}); err != nil {
+		return nil, fmt.Errorf("failed to list KubermaticConfigurations in namespace %q: %w", namespace, err)
+	}
+
+	if len(configList.Items) == 0 {
+		return nil, fmt.Errorf("no KubermaticConfiguration resource found in namespace %q", namespace)
+	}
+
+	if len(configList.Items) > 1 {
+		return nil, fmt.Errorf("more than one KubermaticConfiguration resource found in namespace %q", namespace)
+	}
+
+	return &configList.Items[0], nil
 }
 
 func loadHelmValues(filename string) (*yamled.Document, error) {

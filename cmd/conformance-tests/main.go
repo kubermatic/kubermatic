@@ -667,14 +667,15 @@ func createSSHKeys(ctx context.Context, client *apiclient.KubermaticKubernetesPl
 	return nil
 }
 
-func getLatestMinorVersions(versions []*semver.Version) []string {
+func getLatestMinorVersions(versions []kubermativsemver.Semver) []string {
 	minorMap := map[uint64]*semver.Version{}
 
-	for i, version := range versions {
-		minor := version.Minor()
+	for _, version := range versions {
+		sversion := version.Semver()
+		minor := sversion.Minor()
 
-		if existing := minorMap[minor]; existing == nil || existing.LessThan(version) {
-			minorMap[minor] = versions[i]
+		if existing := minorMap[minor]; existing == nil || existing.LessThan(sversion) {
+			minorMap[minor] = sversion
 		}
 	}
 

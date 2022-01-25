@@ -185,7 +185,7 @@ func (r *Reconciler) getAddons(ctx context.Context) (*kubermaticv1.AddonList, er
 		return nil, fmt.Errorf("failed to get KubermaticConfiguration: %w", err)
 	}
 
-	c := cfg.Spec.UserCluster.Addons.Kubernetes
+	c := cfg.Spec.UserCluster.Addons
 
 	if len(c.Default) > 0 && c.DefaultManifests != "" {
 		return nil, errors.New("default addons are configured both as a list and a default manifest, which are mutually exclusive; configure addons using one of the two mechanisms")

@@ -31,7 +31,6 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
@@ -77,9 +76,9 @@ type OIDCConfiguration struct {
 type UpdateManager interface {
 	GetVersions(string) ([]*version.Version, error)
 	// TODO: GetVersionsV2 is a temporary function that will replace GetVersions once the new handler will be used by the UI (https://github.com/kubermatic/kubermatic/pull/7590)
-	GetVersionsV2(string, kubermaticv1.ProviderType, ...operatorv1alpha1.ConditionType) ([]*version.Version, error)
+	GetVersionsV2(string, kubermaticv1.ProviderType, ...kubermaticv1.ConditionType) ([]*version.Version, error)
 	GetDefault() (*version.Version, error)
-	GetPossibleUpdates(from, clusterType string, provider kubermaticv1.ProviderType, condition ...operatorv1alpha1.ConditionType) ([]*version.Version, error)
+	GetPossibleUpdates(from, clusterType string, provider kubermaticv1.ProviderType, condition ...kubermaticv1.ConditionType) ([]*version.Version, error)
 }
 
 type SupportManager interface {

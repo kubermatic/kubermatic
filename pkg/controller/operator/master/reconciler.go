@@ -22,7 +22,7 @@ import (
 
 	"go.uber.org/zap"
 
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/kubermatic"
@@ -58,7 +58,7 @@ type Reconciler struct {
 // failed, otherwise will return an empty dummy Result struct.
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	// find the requested configuration
-	config := &operatorv1alpha1.KubermaticConfiguration{}
+	config := &kubermaticv1.KubermaticConfiguration{}
 	if err := r.Get(ctx, request.NamespacedName, config); err != nil {
 		if kerrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
@@ -82,7 +82,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return reconcile.Result{}, err
 }
 
-func (r *Reconciler) reconcile(ctx context.Context, config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling Kubermatic configuration")
 
 	// config was deleted, let's clean up
@@ -147,7 +147,7 @@ func (r *Reconciler) reconcile(ctx context.Context, config *operatorv1alpha1.Kub
 	return nil
 }
 
-func (r *Reconciler) cleanupDeletedConfiguration(ctx context.Context, config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+func (r *Reconciler) cleanupDeletedConfiguration(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	if !kubernetes.HasAnyFinalizer(config, common.CleanupFinalizer) {
 		return nil
 	}
@@ -172,7 +172,7 @@ func (r *Reconciler) cleanupDeletedConfiguration(ctx context.Context, config *op
 	return nil
 }
 
-func (r *Reconciler) reconcileNamespaces(ctx context.Context, config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileNamespaces(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling Namespaces")
 
 	creators := []reconciling.NamedNamespaceCreatorGetter{
@@ -186,7 +186,7 @@ func (r *Reconciler) reconcileNamespaces(ctx context.Context, config *operatorv1
 	return nil
 }
 
-func (r *Reconciler) reconcileConfigMaps(ctx context.Context, config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileConfigMaps(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling ConfigMaps")
 
 	creators := []reconciling.NamedConfigMapCreatorGetter{
@@ -200,7 +200,7 @@ func (r *Reconciler) reconcileConfigMaps(ctx context.Context, config *operatorv1
 	return nil
 }
 
-func (r *Reconciler) reconcileSecrets(ctx context.Context, config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileSecrets(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling Secrets")
 
 	creators := []reconciling.NamedSecretCreatorGetter{
@@ -219,7 +219,7 @@ func (r *Reconciler) reconcileSecrets(ctx context.Context, config *operatorv1alp
 	return nil
 }
 
-func (r *Reconciler) reconcileServiceAccounts(ctx context.Context, config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileServiceAccounts(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling ServiceAccounts")
 
 	creators := []reconciling.NamedServiceAccountCreatorGetter{
@@ -233,7 +233,7 @@ func (r *Reconciler) reconcileServiceAccounts(ctx context.Context, config *opera
 	return nil
 }
 
-func (r *Reconciler) reconcileClusterRoleBindings(ctx context.Context, config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileClusterRoleBindings(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling ClusterRoleBindings")
 
 	creators := []reconciling.NamedClusterRoleBindingCreatorGetter{
@@ -247,7 +247,7 @@ func (r *Reconciler) reconcileClusterRoleBindings(ctx context.Context, config *o
 	return nil
 }
 
-func (r *Reconciler) reconcileDeployments(ctx context.Context, config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileDeployments(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling Deployments")
 
 	creators := []reconciling.NamedDeploymentCreatorGetter{
@@ -273,7 +273,7 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, config *operatorv
 	return nil
 }
 
-func (r *Reconciler) reconcilePodDisruptionBudgets(ctx context.Context, config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+func (r *Reconciler) reconcilePodDisruptionBudgets(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling PodDisruptionBudgets")
 
 	creators := []reconciling.NamedPodDisruptionBudgetCreatorGetter{
@@ -289,7 +289,7 @@ func (r *Reconciler) reconcilePodDisruptionBudgets(ctx context.Context, config *
 	return nil
 }
 
-func (r *Reconciler) reconcileServices(ctx context.Context, config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileServices(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling Services")
 
 	creators := []reconciling.NamedServiceCreatorGetter{
@@ -305,7 +305,7 @@ func (r *Reconciler) reconcileServices(ctx context.Context, config *operatorv1al
 	return nil
 }
 
-func (r *Reconciler) reconcileIngresses(ctx context.Context, config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileIngresses(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	if config.Spec.Ingress.Disable {
 		logger.Debug("Skipping Ingress creation because it was explicitly disabled")
 		return nil
@@ -324,7 +324,7 @@ func (r *Reconciler) reconcileIngresses(ctx context.Context, config *operatorv1a
 	return nil
 }
 
-func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling AdmissionWebhooks")
 
 	creators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{

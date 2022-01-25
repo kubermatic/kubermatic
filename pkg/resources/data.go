@@ -31,7 +31,6 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	httpproberapi "k8c.io/kubermatic/v2/cmd/http-prober/api"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -66,7 +65,7 @@ type TemplateData struct {
 	cluster                          *kubermaticv1.Cluster
 	dc                               *kubermaticv1.Datacenter
 	seed                             *kubermaticv1.Seed
-	config                           *operatorv1alpha1.KubermaticConfiguration
+	config                           *kubermaticv1.KubermaticConfiguration
 	OverwriteRegistry                string
 	nodePortRange                    string
 	nodeAccessNetwork                string
@@ -121,7 +120,7 @@ func (td *TemplateDataBuilder) WithSeed(s *kubermaticv1.Seed) *TemplateDataBuild
 	return td
 }
 
-func (td *TemplateDataBuilder) WithKubermaticConfiguration(cfg *operatorv1alpha1.KubermaticConfiguration) *TemplateDataBuilder {
+func (td *TemplateDataBuilder) WithKubermaticConfiguration(cfg *kubermaticv1.KubermaticConfiguration) *TemplateDataBuilder {
 	td.data.config = cfg
 	return td
 }
@@ -649,6 +648,6 @@ func (d *TemplateData) Seed() *kubermaticv1.Seed {
 	return d.seed
 }
 
-func (d *TemplateData) KubermaticConfiguration() *operatorv1alpha1.KubermaticConfiguration {
+func (d *TemplateData) KubermaticConfiguration() *kubermaticv1.KubermaticConfiguration {
 	return d.config
 }

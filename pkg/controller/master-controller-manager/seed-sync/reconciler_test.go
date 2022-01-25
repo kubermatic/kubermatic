@@ -26,7 +26,6 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,7 +39,7 @@ import (
 )
 
 func init() {
-	utilruntime.Must(operatorv1alpha1.AddToScheme(scheme.Scheme))
+	utilruntime.Must(kubermaticv1.AddToScheme(scheme.Scheme))
 }
 
 func TestReconcilingSeed(t *testing.T) {
@@ -65,7 +64,7 @@ func TestReconcilingSeed(t *testing.T) {
 		name          string
 		shouldFail    bool
 		seed          *kubermaticv1.Seed
-		config        *operatorv1alpha1.KubermaticConfiguration
+		config        *kubermaticv1.KubermaticConfiguration
 		existingSeeds []ctrlruntimeclient.Object
 		validate      func(input, result *kubermaticv1.Seed, masterClient, seedClient ctrlruntimeclient.Client) error
 	}{
@@ -81,7 +80,7 @@ func TestReconcilingSeed(t *testing.T) {
 					ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				},
 			},
-			config: &operatorv1alpha1.KubermaticConfiguration{
+			config: &kubermaticv1.KubermaticConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kubermatic",
 					Namespace: "kubermatic",
@@ -123,7 +122,7 @@ func TestReconcilingSeed(t *testing.T) {
 					Country: "Germany",
 				},
 			},
-			config: &operatorv1alpha1.KubermaticConfiguration{
+			config: &kubermaticv1.KubermaticConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kubermatic",
 					Namespace: "kubermatic",
@@ -167,7 +166,7 @@ func TestReconcilingSeed(t *testing.T) {
 					ExposeStrategy: kubermaticv1.ExposeStrategy("wtf"),
 				},
 			},
-			config: &operatorv1alpha1.KubermaticConfiguration{
+			config: &kubermaticv1.KubermaticConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kubermatic",
 					Namespace: "kubermatic",
@@ -189,18 +188,18 @@ func TestReconcilingSeed(t *testing.T) {
 					ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				},
 			},
-			config: &operatorv1alpha1.KubermaticConfiguration{
+			config: &kubermaticv1.KubermaticConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kubermatic",
 					Namespace: "kubermatic",
 				},
-				Spec: operatorv1alpha1.KubermaticConfigurationSpec{
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
 					ImagePullSecret: "hello world",
 				},
 			},
 			existingSeeds: existingSeeds,
 			validate: func(_, _ *kubermaticv1.Seed, masterClient, seedClient ctrlruntimeclient.Client) error {
-				cfg := &operatorv1alpha1.KubermaticConfiguration{}
+				cfg := &kubermaticv1.KubermaticConfiguration{}
 				err := seedClient.Get(context.TODO(), types.NamespacedName{
 					Namespace: "kubermatic",
 					Name:      "kubermatic",

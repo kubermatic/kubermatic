@@ -143,7 +143,7 @@ func main() {
 			},
 			{
 				ResourceName:       "KubermaticConfiguration",
-				ImportAlias:        "operatorv1alpha1",
+				ImportAlias:        "kubermaticv1",
 				ResourceImportPath: "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1",
 			},
 			{

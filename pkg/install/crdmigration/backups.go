@@ -30,7 +30,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 
 	metav1unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -117,6 +117,8 @@ func createClusterBackup(ctx context.Context, logger logrus.FieldLogger, ts time
 	return nil
 }
 
+// addKubermaticConfigurationToBackup backs up the KubermaticConfiguration,
+// which is conveniently not even defaulted during the CRD migration.
 func addKubermaticConfigurationToBackup(out *tar.Writer, t time.Time, config *operatorv1alpha1.KubermaticConfiguration) error {
 	filename := getBackupResourceFilename("master", "KubermaticConfiguration", config.GetNamespace(), config.GetName())
 

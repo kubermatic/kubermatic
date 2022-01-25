@@ -10,7 +10,6 @@ import (
 
 	gatekeeperv1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -768,7 +767,7 @@ func ReconcileIngresses(ctx context.Context, namedGetters []NamedIngressCreatorG
 }
 
 // KubermaticConfigurationCreator defines an interface to create/update KubermaticConfigurations
-type KubermaticConfigurationCreator = func(existing *operatorv1alpha1.KubermaticConfiguration) (*operatorv1alpha1.KubermaticConfiguration, error)
+type KubermaticConfigurationCreator = func(existing *kubermaticv1.KubermaticConfiguration) (*kubermaticv1.KubermaticConfiguration, error)
 
 // NamedKubermaticConfigurationCreatorGetter returns the name of the resource and the corresponding creator function
 type NamedKubermaticConfigurationCreatorGetter = func() (name string, create KubermaticConfigurationCreator)
@@ -778,9 +777,9 @@ type NamedKubermaticConfigurationCreatorGetter = func() (name string, create Kub
 func KubermaticConfigurationObjectWrapper(create KubermaticConfigurationCreator) ObjectCreator {
 	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 		if existing != nil {
-			return create(existing.(*operatorv1alpha1.KubermaticConfiguration))
+			return create(existing.(*kubermaticv1.KubermaticConfiguration))
 		}
-		return create(&operatorv1alpha1.KubermaticConfiguration{})
+		return create(&kubermaticv1.KubermaticConfiguration{})
 	}
 }
 
@@ -796,7 +795,7 @@ func ReconcileKubermaticConfigurations(ctx context.Context, namedGetters []Named
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &operatorv1alpha1.KubermaticConfiguration{}, false); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kubermaticv1.KubermaticConfiguration{}, false); err != nil {
 			return fmt.Errorf("failed to ensure KubermaticConfiguration %s/%s: %w", namespace, name, err)
 		}
 	}

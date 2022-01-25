@@ -22,16 +22,18 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/kubermatic"
 	kubermaticseed "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/kubermatic"
+	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -133,7 +135,13 @@ func shutdownDeployment(ctx context.Context, logger logrus.FieldLogger, client c
 func shutdownWebhooksInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client, config *operatorv1alpha1.KubermaticConfiguration) error {
 	webhooks := []string{
 		kubermaticseed.ClusterAdmissionWebhookName,
-		common.SeedAdmissionWebhookName(config),
+		// this cheats a bit and assumes that the function only needs the object meta
+		common.SeedAdmissionWebhookName(&v1.KubermaticConfiguration{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      config.Name,
+				Namespace: config.Namespace,
+			},
+		}),
 	}
 
 	if config.Spec.FeatureGates.Has(features.OperatingSystemManager) {

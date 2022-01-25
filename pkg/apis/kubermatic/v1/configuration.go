@@ -315,7 +315,7 @@ type KubermaticVersioningConfiguration struct {
 	// Versions lists the available versions.
 	Versions []semver.Semver `json:"versions,omitempty"`
 	// Default is the default version to offer users.
-	Default semver.Semver `json:"default,omitempty"`
+	Default *semver.Semver `json:"default,omitempty"`
 
 	// Updates is a list of available and automatic upgrades.
 	// All 'to' versions must be configured in the version list for this orchestrator.

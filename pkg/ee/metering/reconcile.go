@@ -29,7 +29,6 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -51,7 +50,7 @@ func getMinioImage(overwriter registry.WithOverwriteFunc) string {
 }
 
 // ReconcileMeteringResources reconciles the metering related resources.
-func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Client, cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed) error {
+func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Client, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) error {
 	overwriter := registry.GetOverwriteFunc(cfg.Spec.UserCluster.OverwriteRegistry)
 
 	if seed.Spec.Metering == nil || !seed.Spec.Metering.Enabled {

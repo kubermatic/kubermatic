@@ -24,7 +24,6 @@ import (
 	"github.com/go-test/deep"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/scheme"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -176,19 +175,17 @@ func TestCreateAddon(t *testing.T) {
 	}
 }
 
-func createKubermaticConfiguration(addons kubermaticv1.AddonList) *operatorv1alpha1.KubermaticConfiguration {
+func createKubermaticConfiguration(addons kubermaticv1.AddonList) *kubermaticv1.KubermaticConfiguration {
 	encoded, err := yaml.Marshal(addons)
 	if err != nil {
 		panic(fmt.Sprintf("failed to marshal addon list: %v", err))
 	}
 
-	return &operatorv1alpha1.KubermaticConfiguration{
-		Spec: operatorv1alpha1.KubermaticConfigurationSpec{
-			UserCluster: operatorv1alpha1.KubermaticUserClusterConfiguration{
-				Addons: operatorv1alpha1.KubermaticAddonsConfiguration{
-					Kubernetes: operatorv1alpha1.KubermaticAddonConfiguration{
-						DefaultManifests: string(encoded),
-					},
+	return &kubermaticv1.KubermaticConfiguration{
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
+				Addons: kubermaticv1.KubermaticAddonsConfiguration{
+					DefaultManifests: string(encoded),
 				},
 			},
 		},
