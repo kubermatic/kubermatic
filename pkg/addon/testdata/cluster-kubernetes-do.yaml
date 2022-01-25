@@ -115,14 +115,14 @@ status:
     status: "True"
     type: UpdateControllerReconciledSuccessfully
   extendedHealth:
-    apiserver: 1
-    cloudProviderInfrastructure: 1
-    controller: 1
-    etcd: 2
-    machineController: 1
-    openvpn: 1
-    scheduler: 1
-    userClusterControllerManager: 1
+    apiserver: down
+    cloudProviderInfrastructure: down
+    controller: down
+    etcd: up
+    machineController: down
+    openvpn: down
+    scheduler: down
+    userClusterControllerManager: down
   kubermatic_version: 1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
   lastUpdated: null
   namespaceName: cluster-nmxjm7ngzw

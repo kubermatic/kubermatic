@@ -77,7 +77,7 @@ spec:
           datacenter: "dc-1"
           datastore: "exsi-nas"
           cluster: "cl-1"
-          root_path: "/dc-1/vm/e2e-tests"
+          rootPath: "/dc-1/vm/e2e-tests"
           templates:
             ubuntu: "machine-controller-e2e-ubuntu"
             centos: "machine-controller-e2e-centos"
@@ -94,7 +94,7 @@ spec:
       spec:
         gcp:
           region: europe-west3
-          zone_suffixes:
+          zoneSuffixes:
           - c
     packet-ewr1:
       location: "Packet EWR1 (New York)"
@@ -120,7 +120,7 @@ spec:
       country: DE
       spec:
         kubevirt:
-          dns_config:
+          dnsConfig:
             nameservers:
             - 8.8.8.8
     syseleven-dbl1:
@@ -128,20 +128,20 @@ spec:
       location: Syseleven - dbl1
       spec:
         openstack:
-          auth_url: https://api.cbk.cloud.syseleven.net:5000/v3
-          availability_zone: dbl1
-          dns_servers:
+          authURL: https://api.cbk.cloud.syseleven.net:5000/v3
+          availabilityZone: dbl1
+          dnsServers:
           - 37.123.105.116
           - 37.123.105.117
-          enforce_floating_ip: true
-          ignore_volume_az: false
+          enforceFloatingIP: true
+          ignoreVolumeAZ: false
           images:
             centos: kubermatic-e2e-centos
             coreos: kubermatic-e2e-coreos
             ubuntu: kubermatic-e2e-ubuntu
-          node_size_requirements:
-            minimum_memory: 0
-            minimum_vcpus: 0
+          nodeSizeRequirements:
+            minimumMemory: 0
+            minimumVCPUs: 0
           region: dbl
     dc-to-delete:
       location: Amsterdam

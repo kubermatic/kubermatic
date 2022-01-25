@@ -212,7 +212,7 @@ spec:
       country: DE
       spec:
         bringyourown: {}
-  expose_strategy: Tunneling
+  exposeStrategy: Tunneling
 EOF
 
 retry 3 kubectl apply -f $SEED_MANIFEST
