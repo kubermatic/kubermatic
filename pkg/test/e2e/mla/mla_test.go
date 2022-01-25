@@ -34,10 +34,10 @@ import (
 	"gopkg.in/yaml.v2"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
+	"k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
 	"k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/scheme"
-	"k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
