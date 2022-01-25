@@ -162,6 +162,7 @@ run-master-controller-manager:
 .PHONY: verify
 verify:
 	./hack/verify-codegen.sh
+	./hack/verify-import-order.sh
 	./hack/verify-swagger.sh
 	./hack/verify-api-client.sh
 

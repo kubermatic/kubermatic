@@ -36,7 +36,6 @@ import (
 )
 
 func TestReconcileBindingForProjectServiceAccount(t *testing.T) {
-
 	tests := []struct {
 		name                      string
 		saName                    string

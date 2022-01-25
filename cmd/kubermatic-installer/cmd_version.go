@@ -60,7 +60,7 @@ func VersionAction(logger *logrus.Logger, versions kubermaticversion.Versions) c
 
 		charts, err := loadCharts(ctx.GlobalString(chartsDirectoryFlag.Name))
 		if err != nil {
-			return fmt.Errorf("failed to determine installer chart state: %v", err)
+			return fmt.Errorf("failed to determine installer chart state: %w", err)
 		}
 
 		nameWidth := len(name)
@@ -126,7 +126,7 @@ func loadCharts(chartDirectory string) ([]helm.Chart, error) {
 			if _, err := os.Stat(chartFile); err == nil {
 				chart, err := helm.LoadChart(path)
 				if err != nil {
-					return fmt.Errorf("failed to read %s: %v", chartFile, err)
+					return fmt.Errorf("failed to read %s: %w", chartFile, err)
 				}
 
 				charts = append(charts, *chart)

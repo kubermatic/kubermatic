@@ -13,7 +13,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// DatacenterSpecAWS DatacenterSpecAWS describes an AWS datacenter
+// DatacenterSpecAWS DatacenterSpecAWS describes an AWS datacenter.
 //
 // swagger:model DatacenterSpecAWS
 type DatacenterSpecAWS struct {

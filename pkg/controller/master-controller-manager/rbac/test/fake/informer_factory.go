@@ -29,35 +29,35 @@ type SharedInformerFactory struct {
 	kubeinformers.SharedInformerFactory
 }
 
-// NewFakeSharedInformerFactory returns a new factory
+// NewFakeSharedInformerFactory returns a new factory.
 func NewFakeSharedInformerFactory(kubeClient kubernetes.Interface, namespace string) *SharedInformerFactory {
 	f := kubeinformers.NewFilteredSharedInformerFactory(kubeClient, time.Minute*5, namespace, nil)
 	factory := &SharedInformerFactory{SharedInformerFactory: f}
 	return factory
 }
 
-// AddFakeClusterRoleInformer adds a dummy informer that returns items from clusterRoleIndexer
+// AddFakeClusterRoleInformer adds a dummy informer that returns items from clusterRoleIndexer.
 func (f *SharedInformerFactory) AddFakeClusterRoleInformer(clusterRoleIndexer cache.Indexer) {
 	f.InformerFor(&rbacv1.ClusterRole{}, func(fakeKubeClient kubernetes.Interface, resync time.Duration) cache.SharedIndexInformer {
 		return &dummySharedIndexInformer{indexer: clusterRoleIndexer}
 	})
 }
 
-// AddFakeClusterRoleBindingInformer adds a dummy informer that returns items from clusterRoleBindingIndexer
+// AddFakeClusterRoleBindingInformer adds a dummy informer that returns items from clusterRoleBindingIndexer.
 func (f *SharedInformerFactory) AddFakeClusterRoleBindingInformer(clusterRoleBindingIndexer cache.Indexer) {
 	f.InformerFor(&rbacv1.ClusterRoleBinding{}, func(fakeKubeClient kubernetes.Interface, resync time.Duration) cache.SharedIndexInformer {
 		return &dummySharedIndexInformer{indexer: clusterRoleBindingIndexer}
 	})
 }
 
-// AddFakeRoleInformer adds a dummy informer that returns items from roleIndexer
+// AddFakeRoleInformer adds a dummy informer that returns items from roleIndexer.
 func (f *SharedInformerFactory) AddFakeRoleInformer(roleIndexer cache.Indexer) {
 	f.InformerFor(&rbacv1.Role{}, func(fakeKubeClient kubernetes.Interface, resync time.Duration) cache.SharedIndexInformer {
 		return &dummySharedIndexInformer{indexer: roleIndexer}
 	})
 }
 
-// AddFakeRoleBindingInformer adds a dummy informer that returns items from roleBindingIndexer
+// AddFakeRoleBindingInformer adds a dummy informer that returns items from roleBindingIndexer.
 func (f *SharedInformerFactory) AddFakeRoleBindingInformer(roleBindingIndexer cache.Indexer) {
 	f.InformerFor(&rbacv1.RoleBinding{}, func(fakeKubeClient kubernetes.Interface, resync time.Duration) cache.SharedIndexInformer {
 		return &dummySharedIndexInformer{indexer: roleBindingIndexer}

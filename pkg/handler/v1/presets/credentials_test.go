@@ -416,14 +416,13 @@ func TestCredentialEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/providers/%s/presets/credentials?datacenter=%s", tc.provider, tc.datacenter), strings.NewReader(""))
 			res := httptest.NewRecorder()
 
 			apiUser := test.GenDefaultAPIUser()
 			router, err := test.CreateTestEndpoint(*apiUser, nil, tc.credentials, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v\n", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			router.ServeHTTP(res, req)
 

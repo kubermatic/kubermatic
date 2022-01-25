@@ -217,7 +217,7 @@ func TestOPAIntegration(t *testing.T) {
 	masterClient.CleanupCluster(t, project.ID, datacenter, apiCluster.ID)
 }
 
-// getErrorResponse converts the client error response to string
+// getErrorResponse converts the client error response to string.
 func getErrorResponse(err error) string {
 	rawData, newErr := json.Marshal(err)
 	if newErr != nil {

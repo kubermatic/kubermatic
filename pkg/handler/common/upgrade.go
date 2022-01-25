@@ -31,7 +31,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
 	"k8c.io/kubermatic/v2/pkg/version"
 
@@ -56,7 +56,7 @@ func GetUpgradesEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGe
 	machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
 	if err := client.List(ctx, machineDeployments, ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)); err != nil {
 		// Happens during cluster creation when the CRD is not setup yet
-		if _, ok := err.(*meta.NoKindMatchError); ok {
+		if meta.IsNoMatchError(err) {
 			return nil, nil
 		}
 		return nil, common.KubernetesErrorToHTTPError(err)
@@ -64,7 +64,7 @@ func GetUpgradesEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGe
 
 	providerName, err := provider.ClusterCloudProviderName(cluster.Spec.Cloud)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get the cloud provider name: %v", err)
+		return nil, fmt.Errorf("failed to get the cloud provider name: %w", err)
 	}
 	var updateConditions []operatorv1alpha1.ConditionType
 	externalCloudProvider := cluster.Spec.Features[v1.ClusterFeatureExternalCloudProvider]
@@ -86,8 +86,7 @@ func GetUpgradesEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGe
 
 	upgrades := make([]*apiv1.MasterVersion, 0)
 	for _, v := range versions {
-		isRestricted := false
-		isRestricted, err = isRestrictedByKubeletVersions(v, machineDeployments.Items)
+		isRestricted, err := isRestrictedByKubeletVersions(v, machineDeployments.Items)
 		if err != nil {
 			return nil, err
 		}
@@ -110,11 +109,11 @@ func UpgradeNodeDeploymentsEndpoint(ctx context.Context, userInfoGetter provider
 
 	requestedKubeletVersion, err := semver.NewVersion(version.Version.String())
 	if err != nil {
-		return nil, errors.NewBadRequest(err.Error())
+		return nil, kubermaticerrors.NewBadRequest(err.Error())
 	}
 
 	if err = nodeupdate.EnsureVersionCompatible(cluster.Spec.Version.Semver(), requestedKubeletVersion); err != nil {
-		return nil, errors.NewBadRequest(err.Error())
+		return nil, kubermaticerrors.NewBadRequest(err.Error())
 	}
 
 	client, err := clusterProvider.GetAdminClientForCustomerCluster(ctx, cluster)
@@ -136,7 +135,7 @@ func UpgradeNodeDeploymentsEndpoint(ctx context.Context, userInfoGetter provider
 	}
 
 	if len(updateErrors) > 0 {
-		return nil, errors.NewWithDetails(http.StatusInternalServerError, "failed to update some node deployments", updateErrors)
+		return nil, kubermaticerrors.NewWithDetails(http.StatusInternalServerError, "failed to update some node deployments", updateErrors)
 	}
 
 	return nil, nil

@@ -35,10 +35,10 @@ import (
 	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
-// Minimal wrapper to implement the http.Handler interface
+// Minimal wrapper to implement the http.Handler interface.
 type dynamicHTTPHandler func(http.ResponseWriter, *http.Request)
 
-// ServeHTTP implements http.Handler
+// ServeHTTP implements http.Handler.
 func (dHandler dynamicHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	dHandler(w, r)
 }
@@ -113,7 +113,7 @@ func ProxyEndpoint(
 				kubernetesdashboard.AppLabel,
 				kubernetesdashboard.ContainerPort)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get portforwarder for console: %v", err)
+				return nil, fmt.Errorf("failed to get portforwarder for console: %w", err)
 			}
 			defer func() {
 				portforwarder.Close()
@@ -127,7 +127,7 @@ func ProxyEndpoint(
 
 			ports, err := portforwarder.GetPorts()
 			if err != nil {
-				common.WriteHTTPError(log, w, fmt.Errorf("failed to get backend port: %v", err))
+				common.WriteHTTPError(log, w, fmt.Errorf("failed to get backend port: %w", err))
 				return nil, nil
 			}
 			if len(ports) != 1 {
@@ -158,7 +158,7 @@ func ProxyEndpoint(
 	})
 }
 
-// It's responsible for adjusting proxy request, so we can properly access Kubernetes Dashboard
+// It's responsible for adjusting proxy request, so we can properly access Kubernetes Dashboard.
 type dashboardProxyDirector struct {
 	proxyURL        *url.URL
 	token           string

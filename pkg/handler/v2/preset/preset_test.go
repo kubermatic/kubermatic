@@ -202,7 +202,7 @@ func TestListPresets(t *testing.T) {
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -344,7 +344,7 @@ func TestListProviderPresets(t *testing.T) {
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -562,7 +562,7 @@ func TestUpdatePresetStatus(t *testing.T) {
 
 			ep, clientSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, []ctrlruntimeclient.Object{}, []ctrlruntimeclient.Object{}, existingKubermaticObjs, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -806,7 +806,7 @@ func TestCreatePreset(t *testing.T) {
 
 			ep, clientSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, []ctrlruntimeclient.Object{}, []ctrlruntimeclient.Object{}, existingKubermaticObjs, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -1165,7 +1165,7 @@ func TestUpdatePreset(t *testing.T) {
 
 			ep, clientSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, []ctrlruntimeclient.Object{}, []ctrlruntimeclient.Object{}, existingKubermaticObjs, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -1269,7 +1269,7 @@ func TestDeletePreset(t *testing.T) {
 
 			ep, clientSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, []ctrlruntimeclient.Object{}, []ctrlruntimeclient.Object{}, existingKubermaticObjs, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)

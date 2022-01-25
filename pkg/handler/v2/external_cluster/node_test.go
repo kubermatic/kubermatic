@@ -92,7 +92,6 @@ func TestListNodesEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
 			// validate if deletion was successful
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/kubernetes/clusters/%s/nodes", tc.ProjectToSync, tc.ClusterToSync), strings.NewReader(""))
 			res := httptest.NewRecorder()
@@ -100,7 +99,7 @@ func TestListNodesEndpoint(t *testing.T) {
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, tc.ExistingKubeObjs, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -177,7 +176,6 @@ func TestGetNodeEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
 			// validate if deletion was successful
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/kubernetes/clusters/%s/nodes/%s", tc.ProjectToSync, tc.ClusterToSync, tc.NodeToSync), strings.NewReader(""))
 			res := httptest.NewRecorder()
@@ -185,7 +183,7 @@ func TestGetNodeEndpoint(t *testing.T) {
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, tc.ExistingKubeObjs, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -315,7 +313,7 @@ func TestGetClusterNodesMetrics(t *testing.T) {
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)

@@ -13,7 +13,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// DatacenterSpecVSphere DatacenterSpecVSphere describes a vSphere datacenter
+// DatacenterSpecVSphere DatacenterSpecVSphere describes a vSphere datacenter.
 //
 // swagger:model DatacenterSpecVSphere
 type DatacenterSpecVSphere struct {

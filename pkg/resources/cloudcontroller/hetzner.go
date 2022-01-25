@@ -73,7 +73,7 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 
 			credentials, err := resources.GetCredentials(data)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get credentials: %v", err)
+				return nil, fmt.Errorf("failed to get credentials: %w", err)
 			}
 
 			network := data.Cluster().Spec.Cloud.Hetzner.Network
@@ -123,7 +123,7 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 			if !data.IsKonnectivityEnabled() {
 				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
 				if err != nil {
-					return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
+					return nil, fmt.Errorf("failed to get openvpn sidecar: %w", err)
 				}
 				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers, *openvpnSidecar)
 				defResourceRequirements[openvpnSidecar.Name] = openvpnSidecar.Resources.DeepCopy()
@@ -131,7 +131,7 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			return dep, nil

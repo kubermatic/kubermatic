@@ -145,10 +145,10 @@ func main() {
 			log.Warnw("No data dir, to ensure recovery removing and adding the member")
 			_, err = client.MemberRemove(context.Background(), thisMember.ID)
 			if err != nil {
-				close(client, log)
+				closeClient(client, log)
 				log.Panicw("remove itself due to data dir loss", zap.Error(err))
 			}
-			close(client, log)
+			closeClient(client, log)
 			if err := joinCluster(e, log); err != nil {
 				log.Panicw("join cluster as fresh member", zap.Error(err))
 			}
@@ -274,11 +274,11 @@ func joinCluster(e *etcdCluster, log *zap.SugaredLogger) error {
 	defer cancelFunc()
 
 	if _, err := client.MemberAdd(ctx, peerURLs); err != nil {
-		close(client, log)
+		closeClient(client, log)
 		return errors.Wrap(err, "add itself as a member")
 	}
 
-	defer close(client, log)
+	defer closeClient(client, log)
 
 	log.Info("joined etcd cluster successfully.")
 	return nil
@@ -294,7 +294,7 @@ func (e *etcdCluster) updatePeerURLs(log *zap.SugaredLogger) error {
 		return err
 	}
 
-	defer close(client, log)
+	defer closeClient(client, log)
 
 	for _, member := range members {
 		peerURL, err := url.Parse(member.PeerURLs[0])
@@ -481,7 +481,7 @@ func (e *etcdCluster) getClientWithEndpoints(eps []string) (*client.Client, erro
 	}
 	tlsConfig, err := tlsInfo.ClientConfig()
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate client TLS config: %v", err)
+		return nil, fmt.Errorf("failed to generate client TLS config: %w", err)
 	}
 	for i := 0; i < 5; i++ {
 		cli, err := client.New(client.Config{
@@ -494,16 +494,15 @@ func (e *etcdCluster) getClientWithEndpoints(eps []string) (*client.Client, erro
 		}
 		time.Sleep(5 * time.Second)
 	}
-	return nil, fmt.Errorf("failed to establish client connection: %v", err)
-
+	return nil, fmt.Errorf("failed to establish client connection: %w", err)
 }
 
 func (e *etcdCluster) listMembers(log *zap.SugaredLogger) ([]*etcdserverpb.Member, error) {
 	client, err := e.getClientWithEndpoints(clientEndpoints(e.clusterSize, e.namespace))
 	if err != nil {
-		return nil, fmt.Errorf("can't find cluster client: %v", err)
+		return nil, fmt.Errorf("can't find cluster client: %w", err)
 	}
-	defer close(client, log)
+	defer closeClient(client, log)
 
 	ctx, cancelFunc := context.WithTimeout(context.Background(), timeoutListMembers)
 	defer cancelFunc()
@@ -581,12 +580,12 @@ func (e *etcdCluster) isHealthyWithEndpoints(endpoints []string, log *zap.Sugare
 	if err != nil {
 		return false, err
 	}
-	defer close(client, log)
+	defer closeClient(client, log)
 	// just get a key from etcd, this is how `etcdctl endpoint health` works!
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	_, err = client.Get(ctx, "healthy")
 	defer cancel()
-	if err != nil && err != rpctypes.ErrPermissionDenied {
+	if err != nil && !errors.Is(err, rpctypes.ErrPermissionDenied) {
 		// silently swallow/drop transient errors
 		return false, nil
 	}
@@ -598,7 +597,7 @@ func (e *etcdCluster) isLeader(log *zap.SugaredLogger) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	defer close(localClient, log)
+	defer closeClient(localClient, log)
 
 	for i := 0; i < 10; i++ {
 		resp, err := localClient.Status(context.Background(), e.endpoint())
@@ -616,9 +615,9 @@ func (e *etcdCluster) isLeader(log *zap.SugaredLogger) (bool, error) {
 func (e *etcdCluster) removeDeadMembers(log *zap.SugaredLogger, unwantedMembers []*etcdserverpb.Member) error {
 	client, err := e.getClusterClient()
 	if err != nil {
-		return fmt.Errorf("can't find cluster client: %v", err)
+		return fmt.Errorf("can't find cluster client: %w", err)
 	}
-	defer close(client, log)
+	defer closeClient(client, log)
 
 	for _, member := range unwantedMembers {
 		log.Infow("checking cluster member for removal", "member-name", member.Name)
@@ -697,7 +696,7 @@ func (e *etcdCluster) restoreDatadirFromBackupIfNeeded(ctx context.Context, k8cC
 	})
 }
 
-func close(c io.Closer, log *zap.SugaredLogger) {
+func closeClient(c io.Closer, log *zap.SugaredLogger) {
 	err := c.Close()
 	if err != nil {
 		log.Warn(zap.Error(err))
@@ -707,7 +706,7 @@ func close(c io.Closer, log *zap.SugaredLogger) {
 func (e *etcdCluster) setInitialState(clusterClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	k8cCluster, err := getK8cCluster(clusterClient, strings.ReplaceAll(e.namespace, "cluster-", ""), log)
 	if err != nil {
-		return fmt.Errorf("failed to get user cluster: %v", err)
+		return fmt.Errorf("failed to get user cluster: %w", err)
 	}
 
 	// check if the etcd cluster is initialized successfully.
@@ -723,7 +722,7 @@ func (e *etcdCluster) setInitialState(clusterClient ctrlruntimeclient.Client, lo
 		e.usePeerTLSOnly = true
 
 		if err := e.restoreDatadirFromBackupIfNeeded(context.Background(), k8cCluster, clusterClient, log); err != nil {
-			return fmt.Errorf("failed to restore datadir from backup: %v", err)
+			return fmt.Errorf("failed to restore datadir from backup: %w", err)
 		}
 	}
 	return nil
@@ -733,7 +732,7 @@ func (e *etcdCluster) setClusterSize(clusterClient ctrlruntimeclient.Client) err
 	sts := &appsv1.StatefulSet{}
 
 	if err := clusterClient.Get(context.Background(), types.NamespacedName{Name: "etcd", Namespace: e.namespace}, sts); err != nil {
-		return fmt.Errorf("failed to get etcd sts: %v", err)
+		return fmt.Errorf("failed to get etcd sts: %w", err)
 	}
 	e.clusterSize = defaultClusterSize
 	if sts.Spec.Replicas != nil {

@@ -35,7 +35,7 @@ const (
 	initContainerName  = "copy-http-prober"
 )
 
-// IsRunningInitContainer returns a init container which will wait until the apiserver is reachable via its ClusterIP
+// IsRunningInitContainer returns a init container which will wait until the apiserver is reachable via its ClusterIP.
 type isRunningInitContainerData interface {
 	ImageRegistry(string) string
 	Cluster() *kubermaticv1.Cluster
@@ -45,7 +45,7 @@ type isRunningInitContainerData interface {
 // This is achieved by copying a `http-prober` binary via an init container into an emptyDir volume,
 // then mounting that volume onto all named containers and replacing the command with a call to
 // the `http-prober` binary. The http prober binary gets the original command as serialized string
-// and does an syscall.Exec onto it once the apiserver became reachable
+// and does an syscall.Exec onto it once the apiserver became reachable.
 func IsRunningWrapper(data isRunningInitContainerData, spec corev1.PodSpec, containersToWrap sets.String, crdsToWaitFor ...string) (*corev1.PodSpec, error) {
 	if containersToWrap.Len() == 0 {
 		return nil, errors.New("no containers to wrap passed")
@@ -98,7 +98,7 @@ func IsRunningWrapper(data isRunningInitContainerData, spec corev1.PodSpec, cont
 		}
 		wrappedContainer, err := wrapContainer(data, spec.InitContainers[idx], crdsToWaitFor...)
 		if err != nil {
-			return nil, fmt.Errorf("failed to wrap initContainer %q: %v", spec.InitContainers[idx].Name, err)
+			return nil, fmt.Errorf("failed to wrap initContainer %q: %w", spec.InitContainers[idx].Name, err)
 		}
 		spec.InitContainers[idx] = *wrappedContainer
 	}
@@ -108,7 +108,7 @@ func IsRunningWrapper(data isRunningInitContainerData, spec corev1.PodSpec, cont
 		}
 		wrappedContainer, err := wrapContainer(data, spec.Containers[idx], crdsToWaitFor...)
 		if err != nil {
-			return nil, fmt.Errorf("failed to wrap container %q: %v", spec.Containers[idx].Name, err)
+			return nil, fmt.Errorf("failed to wrap container %q: %w", spec.Containers[idx].Name, err)
 		}
 		spec.Containers[idx] = *wrappedContainer
 	}
@@ -139,7 +139,7 @@ func wrapContainer(data isRunningInitContainerData, container corev1.Container, 
 	}
 	serializedCommand, err := json.Marshal(command)
 	if err != nil {
-		return nil, fmt.Errorf("failed to serialize command: %v", err)
+		return nil, fmt.Errorf("failed to serialize command: %w", err)
 	}
 
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{

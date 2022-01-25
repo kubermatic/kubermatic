@@ -29,7 +29,7 @@ const (
 	clusterAPIVersion = "v1alpha1"
 )
 
-// MachineCRD returns the machine CRD definition
+// MachineCRD returns the machine CRD definition.
 func MachineCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return resources.MachineCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
@@ -103,7 +103,7 @@ func MachineCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter 
 	}
 }
 
-// MachineSetCRD returns the machineset CRD definition
+// MachineSetCRD returns the machineset CRD definition.
 func MachineSetCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return resources.MachineSetCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
@@ -184,7 +184,7 @@ func MachineSetCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGett
 	}
 }
 
-// MachineDeploymentCRD returns the machinedeployments CRD definition
+// MachineDeploymentCRD returns the machinedeployments CRD definition.
 func MachineDeploymentCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return resources.MachineDeploymentCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
@@ -260,7 +260,7 @@ func MachineDeploymentCRDCreator() reconciling.NamedCustomResourceDefinitionCrea
 	}
 }
 
-// ClusterCRD returns the cluster crd definition
+// ClusterCRD returns the cluster crd definition.
 func ClusterCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return resources.ClusterCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {

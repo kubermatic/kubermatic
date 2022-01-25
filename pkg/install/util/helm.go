@@ -39,7 +39,7 @@ func CheckHelmRelease(ctx context.Context, log logrus.FieldLogger, helmClient he
 
 	release, err := helmClient.GetRelease(namespace, releaseName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to check for an existing release: %v", err)
+		return nil, fmt.Errorf("failed to check for an existing release: %w", err)
 	}
 
 	// release exists already, check if it's valid
@@ -58,7 +58,7 @@ func CheckHelmRelease(ctx context.Context, log logrus.FieldLogger, helmClient he
 			log.Warn("Uninstalling defunct release before a clean installation is attempted…")
 
 			if err := helmClient.UninstallRelease(namespace, releaseName); err != nil {
-				return release, fmt.Errorf("failed to uninstall release %s: %v", releaseName, err)
+				return release, fmt.Errorf("failed to uninstall release %s: %w", releaseName, err)
 			}
 
 			release = nil
@@ -90,7 +90,7 @@ func DeployHelmChart(ctx context.Context, log logrus.FieldLogger, helmClient hel
 		// existing release; if there are changes, perform an update
 		appliedValues, err := helmClient.GetValues(namespace, releaseName)
 		if err != nil {
-			return fmt.Errorf("failed to retrieve Helm values used for release: %v", err)
+			return fmt.Errorf("failed to retrieve Helm values used for release: %w", err)
 		}
 
 		if appliedValues.Equal(values) {
@@ -115,11 +115,11 @@ func DeployHelmChart(ctx context.Context, log logrus.FieldLogger, helmClient hel
 	}
 
 	if err := helmClient.BuildChartDependencies(chart.Directory, flags); err != nil {
-		return fmt.Errorf("failed to download dependencies: %v", err)
+		return fmt.Errorf("failed to download dependencies: %w", err)
 	}
 
 	if err := helmClient.InstallChart(namespace, releaseName, chart.Directory, helmValues, nil, flags); err != nil {
-		return fmt.Errorf("failed to install: %v", err)
+		return fmt.Errorf("failed to install: %w", err)
 	}
 
 	return nil
@@ -143,7 +143,7 @@ func dumpHelmValues(values *yamled.Document) (string, error) {
 
 	err = yaml.NewEncoder(f).Encode(values)
 	if err != nil {
-		err = fmt.Errorf("failed to write Helm values to file: %v", err)
+		err = fmt.Errorf("failed to write Helm values to file: %w", err)
 	}
 
 	return f.Name(), err

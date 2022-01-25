@@ -41,12 +41,12 @@ func NewCloudProvider(secretKeyGetter provider.SecretKeySelectorValueFunc) provi
 
 var _ provider.CloudProvider = &hetzner{}
 
-// DefaultCloudSpec
+// DefaultCloudSpec.
 func (h *hetzner) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-// ValidateCloudSpec
+// ValidateCloudSpec.
 func (h *hetzner) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	hetznerToken, err := GetCredentialsForCluster(spec, h.secretKeySelector)
 	if err != nil {
@@ -69,22 +69,22 @@ func (h *hetzner) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	return err
 }
 
-// InitializeCloudProvider
+// InitializeCloudProvider.
 func (h *hetzner) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	return cluster, nil
 }
 
-// CleanUpCloudProvider
+// CleanUpCloudProvider.
 func (h *hetzner) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, _ provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	return cluster, nil
 }
 
-// ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted
+// ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted.
 func (h *hetzner) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-// GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error
+// GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error.
 func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (hetznerToken string, err error) {
 	hetznerToken = cloud.Hetzner.Token
 

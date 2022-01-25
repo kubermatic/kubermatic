@@ -19,16 +19,16 @@ package usersshkeys
 import (
 	"fmt"
 
+	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-
-	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 )
 
-// NetworkPolicyCreator NetworkPolicy allows egress traffic of user ssh keys agent to the world
+// NetworkPolicyCreator NetworkPolicy allows egress traffic of user ssh keys agent to the world.
 func NetworkPolicyCreator(k8sApiIP string, k8sApiPort int, k8sServiceApi string) reconciling.NamedNetworkPolicyCreatorGetter {
 	return func() (string, reconciling.NetworkPolicyCreator) {
 		apiServicePort := intstr.FromInt(443)
@@ -36,7 +36,6 @@ func NetworkPolicyCreator(k8sApiIP string, k8sApiPort int, k8sServiceApi string)
 		protoTcp := v1.ProtocolTCP
 
 		return "user-ssh-key-agent", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
-
 			np.Spec = networkingv1.NetworkPolicySpec{
 				PodSelector: metav1.LabelSelector{
 					MatchLabels: map[string]string{resources.AppLabelKey: "user-ssh-keys-agent"},

@@ -31,14 +31,14 @@ func DecodeEmptyReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-// ProjectReq represents a request for project-specific data
+// ProjectReq represents a request for project-specific data.
 type ProjectReq struct {
 	// in: path
 	// required: true
 	ProjectID string `json:"project_id"`
 }
 
-// GetProjectID returns the ID of a requested project
+// GetProjectID returns the ID of a requested project.
 func (pr ProjectReq) GetProjectID() string {
 	return pr.ProjectID
 }
@@ -49,7 +49,7 @@ func DecodeProjectRequest(c context.Context, r *http.Request) (interface{}, erro
 	}, nil
 }
 
-// ProjectIDGetter knows how to get project ID from the request
+// ProjectIDGetter knows how to get project ID from the request.
 type ProjectIDGetter interface {
 	GetProjectID() string
 }
@@ -68,7 +68,7 @@ func DecodeGetProject(c context.Context, r *http.Request) (interface{}, error) {
 	return GetProjectRq{projectReq.(ProjectReq)}, nil
 }
 
-// DCReq represent a request for datacenter specific data in a given project
+// DCReq represent a request for datacenter specific data in a given project.
 type DCReq struct {
 	ProjectReq
 	// in: path
@@ -76,7 +76,7 @@ type DCReq struct {
 	DC string `json:"dc"`
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req DCReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		SeedName: req.DC,
@@ -131,7 +131,7 @@ func DecodeClusterID(c context.Context, r *http.Request) (string, error) {
 	return clusterID, nil
 }
 
-// UserIDGetter knows how to get user ID from the request
+// UserIDGetter knows how to get user ID from the request.
 type UserIDGetter interface {
 	GetUserID() string
 }

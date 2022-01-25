@@ -73,8 +73,8 @@ func DecodeGetBackupDestinationNamesReq(c context.Context, r *http.Request) (int
 }
 
 func getSeed(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
-	privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID, clusterID string) (*kubermaticv1.Seed, error) {
-
+	privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID, clusterID string,
+) (*kubermaticv1.Seed, error) {
 	clusterProvider, ok := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 	if !ok {
 		return nil, errors.New(http.StatusInternalServerError, "no cluster in request")

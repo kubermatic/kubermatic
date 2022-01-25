@@ -55,7 +55,7 @@ func TestSeedNamesListEndpoint(t *testing.T) {
 			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []ctrlruntimeclient.Object{},
 				[]ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			ep.ServeHTTP(res, req)
 

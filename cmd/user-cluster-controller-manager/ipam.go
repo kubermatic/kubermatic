@@ -62,7 +62,7 @@ func (nf *networkFlags) Set(value string) error {
 	cidrStr := split[0]
 	ip, ipnet, err := net.ParseCIDR(cidrStr)
 	if err != nil {
-		return fmt.Errorf("error parsing cidr %s: %v", cidrStr, err)
+		return fmt.Errorf("error parsing cidr %s: %w", cidrStr, err)
 	}
 
 	gwStr := split[1]

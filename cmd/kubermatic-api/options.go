@@ -129,7 +129,7 @@ func newServerRunOptions() (serverRunOptions, error) {
 
 	cabundle, err := certificates.NewCABundleFromFile(caBundleFile)
 	if err != nil {
-		return s, fmt.Errorf("failed to read CA bundle file '%s': %v", caBundleFile, err)
+		return s, fmt.Errorf("failed to read CA bundle file '%s': %w", caBundleFile, err)
 	}
 
 	s.caBundle = cabundle
@@ -140,7 +140,7 @@ func newServerRunOptions() (serverRunOptions, error) {
 
 func (o serverRunOptions) validate() error {
 	if err := serviceaccount.ValidateKey([]byte(o.serviceAccountSigningKey)); err != nil {
-		return fmt.Errorf("the service-account-signing-key is incorrect due to error: %v", err)
+		return fmt.Errorf("the service-account-signing-key is incorrect: %w", err)
 	}
 
 	return nil
@@ -196,17 +196,17 @@ type providers struct {
 func loadKubermaticConfiguration(filename string) (*operatorv1alpha1.KubermaticConfiguration, error) {
 	content, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read file: %v", err)
+		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
 
 	config := &operatorv1alpha1.KubermaticConfiguration{}
 	if err := yaml.Unmarshal(content, &config); err != nil {
-		return nil, fmt.Errorf("failed to parse file as YAML: %v", err)
+		return nil, fmt.Errorf("failed to parse file as YAML: %w", err)
 	}
 
 	defaulted, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
 	if err != nil {
-		return nil, fmt.Errorf("failed to process: %v", err)
+		return nil, fmt.Errorf("failed to process: %w", err)
 	}
 
 	return defaulted, nil

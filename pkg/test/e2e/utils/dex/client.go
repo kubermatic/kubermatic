@@ -93,7 +93,7 @@ func (c *Client) tryLogin(ctx context.Context, login string, password string) (s
 	// fetch login page and acquire the nonce
 	loginURL, err := c.fetchLoginURL(ctx)
 	if err != nil {
-		return "", fmt.Errorf("failed to determine login URL: %v", err)
+		return "", fmt.Errorf("failed to determine login URL: %w", err)
 	}
 
 	c.log.Debugw("Login URL detected", "url", loginURL.String())
@@ -101,7 +101,7 @@ func (c *Client) tryLogin(ctx context.Context, login string, password string) (s
 	// post the credentials to the login URL and observe the response's Location header
 	token, err := c.authenticate(ctx, loginURL, login, password)
 	if err != nil {
-		return "", fmt.Errorf("failed to authenticate as %q: %v", login, err)
+		return "", fmt.Errorf("failed to authenticate as %q: %w", login, err)
 	}
 
 	c.log.Debug("Login successful")
@@ -113,7 +113,7 @@ func (c *Client) fetchLoginURL(ctx context.Context) (*url.URL, error) {
 	// quick&dirty URL clone, so we don't change the u argument
 	loginURL, err := url.Parse(c.ProviderURI)
 	if err != nil {
-		return nil, fmt.Errorf("invalid provider URL %q: %v", c.ProviderURI, err)
+		return nil, fmt.Errorf("invalid provider URL %q: %w", c.ProviderURI, err)
 	}
 
 	// make sure we are seeing the email login form immediately
@@ -131,7 +131,7 @@ func (c *Client) fetchLoginURL(ctx context.Context) (*url.URL, error) {
 
 	req, err := http.NewRequest("GET", loginURL.String(), nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request for login page: %v", err)
+		return nil, fmt.Errorf("failed to create request for login page: %w", err)
 	}
 
 	// Dex will redirect us to the login page with a code attached to the URL;
@@ -144,13 +144,13 @@ func (c *Client) fetchLoginURL(ctx context.Context) (*url.URL, error) {
 
 	rsp, err := c.client.Do(req.WithContext(ctx))
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch login page: %v", err)
+		return nil, fmt.Errorf("failed to fetch login page: %w", err)
 	}
 	defer rsp.Body.Close()
 
 	location, err := c.getLocation(rsp)
 	if err != nil {
-		return nil, fmt.Errorf("response headers did not contain a valid Location header: %v", err)
+		return nil, fmt.Errorf("response headers did not contain a valid Location header: %w", err)
 	}
 
 	c.log.Debugw("Found Location header", "location", location.String())
@@ -163,15 +163,15 @@ func (c *Client) authenticate(ctx context.Context, loginURL *url.URL, login stri
 	writer := multipart.NewWriter(buf)
 
 	if err := writer.WriteField("login", login); err != nil {
-		return "", fmt.Errorf("failed to add login field to request body: %v", err)
+		return "", fmt.Errorf("failed to add login field to request body: %w", err)
 	}
 	if err := writer.WriteField("password", password); err != nil {
-		return "", fmt.Errorf("failed to add password field to request body: %v", err)
+		return "", fmt.Errorf("failed to add password field to request body: %w", err)
 	}
 
 	err := writer.Close()
 	if err != nil {
-		return "", fmt.Errorf("failed to encode request body as multipart: %v", err)
+		return "", fmt.Errorf("failed to encode request body as multipart: %w", err)
 	}
 
 	c.log.Debugw("Sending login request", "url", loginURL.String(), "login", login)
@@ -179,7 +179,7 @@ func (c *Client) authenticate(ctx context.Context, loginURL *url.URL, login stri
 	// prepare request
 	req, err := http.NewRequest("POST", loginURL.String(), buf)
 	if err != nil {
-		return "", fmt.Errorf("failed to create request: %v", err)
+		return "", fmt.Errorf("failed to create request: %w", err)
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
@@ -201,14 +201,14 @@ func (c *Client) authenticate(ctx context.Context, loginURL *url.URL, login stri
 	// send request
 	rsp, err := c.client.Do(req.WithContext(ctx))
 	if err != nil {
-		return "", fmt.Errorf("failed to perform authentication request: %v", err)
+		return "", fmt.Errorf("failed to perform authentication request: %w", err)
 	}
 	defer rsp.Body.Close()
 
 	// evaluate location header
 	location, err := c.getLocation(rsp)
 	if err != nil {
-		return "", fmt.Errorf("response headers did not contain a valid Location header, are the credentials correct?: %v", err)
+		return "", fmt.Errorf("response headers did not contain a valid Location header, are the credentials correct?: %w", err)
 	}
 
 	c.log.Debugw("Found Location header")
@@ -216,7 +216,7 @@ func (c *Client) authenticate(ctx context.Context, loginURL *url.URL, login stri
 	// extract token from the location URL's fragment
 	query, err := url.ParseQuery(location.Fragment)
 	if err != nil {
-		return "", fmt.Errorf("Location header does not contain a valid query string in its fragment (%q): %v", location.Fragment, err)
+		return "", fmt.Errorf("Location header does not contain a valid query string in its fragment (%q): %w", location.Fragment, err)
 	}
 
 	token := query.Get("id_token")
@@ -240,7 +240,7 @@ func (c *Client) getLocation(response *http.Response) (*url.URL, error) {
 
 	loc, err := url.Parse(location)
 	if err != nil {
-		return nil, fmt.Errorf("the final Location header %q is not a valid URL: %v", location, err)
+		return nil, fmt.Errorf("the final Location header %q is not a valid URL: %w", location, err)
 	}
 
 	return loc, nil

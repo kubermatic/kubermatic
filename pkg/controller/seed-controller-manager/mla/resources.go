@@ -162,12 +162,12 @@ type configTemplateData struct {
 func renderTemplate(tpl string, data interface{}) (string, error) {
 	t, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(tpl)
 	if err != nil {
-		return "", fmt.Errorf("failed to parse as Go template: %v", err)
+		return "", fmt.Errorf("failed to parse as Go template: %w", err)
 	}
 
 	output := bytes.Buffer{}
 	if err := t.Execute(&output, data); err != nil {
-		return "", fmt.Errorf("failed to render template: %v", err)
+		return "", fmt.Errorf("failed to render template: %w", err)
 	}
 
 	return strings.TrimSpace(output.String()), nil
@@ -199,7 +199,7 @@ func GatewayConfigMapCreator(c *kubermaticv1.Cluster, mlaNamespace string, s *ku
 			}
 			config, err := renderTemplate(nginxConfig, configData)
 			if err != nil {
-				return nil, fmt.Errorf("failed to render Prometheus config: %v", err)
+				return nil, fmt.Errorf("failed to render Prometheus config: %w", err)
 			}
 			cm.Data["nginx.conf"] = config
 			return cm, nil
@@ -304,7 +304,7 @@ func GatewayDeploymentCreator(data *resources.TemplateData, settings *kubermatic
 			configHash := sha1.New()
 			configData, err := json.Marshal(settings)
 			if err != nil {
-				return nil, fmt.Errorf("failed to encode MLAAdminSetting: %v", err)
+				return nil, fmt.Errorf("failed to encode MLAAdminSetting: %w", err)
 			}
 			configHash.Write(configData)
 			d.Spec.Template.Annotations = map[string]string{
@@ -431,7 +431,7 @@ func GatewayCACreator() reconciling.NamedSecretCreatorGetter {
 			if data, exists := se.Data[resources.MLAGatewayCACertKey]; exists {
 				certs, err := certutil.ParseCertsPEM(data)
 				if err != nil {
-					return nil, fmt.Errorf("failed to parse certificate %s from existing secret %s: %v",
+					return nil, fmt.Errorf("failed to parse certificate %s from existing secret %s: %w",
 						resources.MLAGatewayCACertKey, resources.MLAGatewayCASecretName, err)
 				}
 				if !resources.CertWillExpireSoon(certs[0]) {
@@ -441,7 +441,7 @@ func GatewayCACreator() reconciling.NamedSecretCreatorGetter {
 
 			cert, key, err := certificates.GetECDSACACertAndKey()
 			if err != nil {
-				return nil, fmt.Errorf("failed to generate MLA CA: %v", err)
+				return nil, fmt.Errorf("failed to generate MLA CA: %w", err)
 			}
 			se.Data[resources.MLAGatewayCACertKey] = cert
 			se.Data[resources.MLAGatewayCAKeyKey] = key
@@ -461,7 +461,7 @@ func GatewayCertificateCreator(c *kubermaticv1.Cluster, mlaGatewayCAGetter func(
 
 			ca, err := mlaGatewayCAGetter()
 			if err != nil {
-				return nil, fmt.Errorf("failed to get MLA Gateway ca: %v", err)
+				return nil, fmt.Errorf("failed to get MLA Gateway ca: %w", err)
 			}
 			if c.Address.ExternalName == "" {
 				return nil, fmt.Errorf("unable to issue MLA Gateway certificate: cluster ExternalName is empty")
@@ -480,7 +480,7 @@ func GatewayCertificateCreator(c *kubermaticv1.Cluster, mlaGatewayCAGetter func(
 			if b, exists := se.Data[resources.MLAGatewayCertSecretKey]; exists {
 				certs, err := certutil.ParseCertsPEM(b)
 				if err != nil {
-					return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %v", resources.MLAGatewayCertSecretKey, err)
+					return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %w", resources.MLAGatewayCertSecretKey, err)
 				}
 				if resources.IsServerCertificateValidForAllOf(certs[0], commonName, altNames, ca.Cert) {
 					return se, nil
@@ -493,7 +493,7 @@ func GatewayCertificateCreator(c *kubermaticv1.Cluster, mlaGatewayCAGetter func(
 			}
 			cert, key, err := certificates.GetSignedECDSACertAndKey(certificates.Duration365d, config, ca.Cert, ca.Key)
 			if err != nil {
-				return nil, fmt.Errorf("unable to sign the server certificate: %v", err)
+				return nil, fmt.Errorf("unable to sign the server certificate: %w", err)
 			}
 
 			se.Data[resources.MLAGatewayCertSecretKey] = cert

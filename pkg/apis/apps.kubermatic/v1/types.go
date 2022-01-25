@@ -19,7 +19,7 @@ package v1
 import corev1 "k8s.io/api/core/v1"
 
 // GlobalSecretKeySelector is needed as we can not use v1.SecretKeySelector
-// because it is not cross namespace
+// because it is not cross namespace.
 type GlobalSecretKeySelector struct {
 	corev1.SecretReference `json:",inline"`
 	Key                    string `json:"key"`

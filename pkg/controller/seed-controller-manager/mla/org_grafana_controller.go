@@ -225,7 +225,6 @@ func (r *orgGrafanaController) createGrafanaOrg(ctx context.Context, expected gr
 		if err := addUserToOrg(ctx, r.grafanaClient, expected, &grafanaUser, grafanasdk.ROLE_EDITOR); err != nil {
 			return expected, err
 		}
-
 	}
 
 	return expected, nil
@@ -295,7 +294,6 @@ func (r *orgGrafanaController) ensureOrganization(ctx context.Context, log *zap.
 		}
 	}
 	return org.ID, nil
-
 }
 
 func (r *orgGrafanaController) setAnnotation(ctx context.Context, project *kubermaticv1.Project, key, value string) error {

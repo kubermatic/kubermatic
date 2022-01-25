@@ -63,7 +63,6 @@ func TestCreateProjectServiceAccount(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-
 			fakeClient := fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).

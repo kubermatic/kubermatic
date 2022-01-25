@@ -948,7 +948,6 @@ func TestCredentialEndpoint(t *testing.T) {
 				if err.Error() != tc.expectedError {
 					t.Fatalf("expected: %s, got %v", tc.expectedError, err)
 				}
-
 			} else if !equality.Semantic.DeepEqual(cloudResult, tc.expectedCloudSpec) {
 				t.Fatalf("expected: %v, got %v", tc.expectedCloudSpec, cloudResult)
 			}

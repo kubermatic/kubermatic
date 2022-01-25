@@ -20,7 +20,9 @@ import (
 	"testing"
 
 	"github.com/Masterminds/semver/v3"
+
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+
 	"k8s.io/utils/pointer"
 )
 

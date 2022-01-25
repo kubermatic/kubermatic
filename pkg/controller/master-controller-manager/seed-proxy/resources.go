@@ -154,7 +154,7 @@ func masterSecretCreator(seed *kubermaticv1.Seed, kubeconfig *rest.Config, crede
 			// consuming the credentials becomes easier later on
 			kubeconfig, err := convertServiceAccountToKubeconfig(host, credentials)
 			if err != nil {
-				return s, fmt.Errorf("failed to create kubeconfig: %v", err)
+				return s, fmt.Errorf("failed to create kubeconfig: %w", err)
 			}
 
 			s.Data["kubeconfig"] = kubeconfig
@@ -349,7 +349,7 @@ func (r *Reconciler) masterGrafanaConfigmapCreator(seeds map[string]*kubermaticv
 
 				config, err := buildGrafanaDatasource(seed)
 				if err != nil {
-					return nil, fmt.Errorf("failed to build Grafana config for seed %s: %v", seedName, err)
+					return nil, fmt.Errorf("failed to build Grafana config for seed %s: %w", seedName, err)
 				}
 
 				c.Data[filename] = config

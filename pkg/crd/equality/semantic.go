@@ -26,7 +26,7 @@ import (
 )
 
 // Semantic can do semantic deep equality checks for objects.
-// Example: equality.Semantic.DeepEqual(aPod, aPodWithNonNilButEmptyMaps) == true
+// Example: equality.Semantic.DeepEqual(aPod, aPodWithNonNilButEmptyMaps) == true.
 var Semantic = conversion.EqualitiesOrDie(
 	func(a, b resource.Quantity) bool {
 		return a.Cmp(b) == 0

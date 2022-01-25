@@ -57,8 +57,8 @@ func Add(ctx context.Context,
 	masterMgr manager.Manager,
 	namespace string,
 	seedManagers map[string]manager.Manager,
-	log *zap.SugaredLogger) error {
-
+	log *zap.SugaredLogger,
+) error {
 	log = log.Named(ControllerName)
 	r := &reconciler{
 		log:          log,
@@ -72,7 +72,7 @@ func Add(ctx context.Context,
 		Reconciler: r,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to construct controller: %v", err)
+		return fmt.Errorf("failed to construct controller: %w", err)
 	}
 
 	for seedName, seedManager := range seedManagers {
@@ -81,7 +81,7 @@ func Add(ctx context.Context,
 
 	// Watch for changes to Constraints
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Constraint{}}, &handler.EnqueueRequestForObject{}, predicate.ByNamespace(namespace)); err != nil {
-		return fmt.Errorf("failed to watch constraints: %v", err)
+		return fmt.Errorf("failed to watch constraints: %w", err)
 	}
 
 	return nil
@@ -98,7 +98,7 @@ func constraintCreatorGetter(constraint *kubermaticv1.Constraint) reconciling.Na
 	}
 }
 
-// Reconcile reconciles the kubermatic constraints in the master cluster and syncs them to all seeds
+// Reconcile reconciles the kubermatic constraints in the master cluster and syncs them to all seeds.
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("resource", request.Name)
 	log.Debug("Processing")
@@ -116,7 +116,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 func (r *reconciler) syncAllSeeds(ctx context.Context, log *zap.SugaredLogger, constraint *kubermaticv1.Constraint, action func(seedClient ctrlruntimeclient.Client, constraint *kubermaticv1.Constraint) error) error {
 	for seedName, seedClient := range r.seedClients {
-
 		log := log.With("seed", seedName)
 
 		log.Debug("Reconciling constraint with seed")
@@ -131,7 +130,6 @@ func (r *reconciler) syncAllSeeds(ctx context.Context, log *zap.SugaredLogger, c
 }
 
 func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, request reconcile.Request) error {
-
 	constraint := &kubermaticv1.Constraint{}
 	if err := r.masterClient.Get(ctx, request.NamespacedName, constraint); err != nil {
 		if controllerutil.IsCacheNotStarted(err) {
@@ -143,9 +141,8 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 
 	// handling deletion
 	if !constraint.DeletionTimestamp.IsZero() {
-
 		if err := r.handleDeletion(ctx, log, constraint); err != nil {
-			return fmt.Errorf("handling deletion of constraint: %v", err)
+			return fmt.Errorf("handling deletion of constraint: %w", err)
 		}
 		return nil
 	}
@@ -154,7 +151,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		oldconstraint := constraint.DeepCopy()
 		kuberneteshelper.AddFinalizer(constraint, kubermaticapiv1.GatekeeperSeedConstraintCleanupFinalizer)
 		if err := r.masterClient.Patch(ctx, constraint, ctrlruntimeclient.MergeFrom(oldconstraint)); err != nil {
-			return fmt.Errorf("failed to set constraint finalizer %s: %v", constraint.Name, err)
+			return fmt.Errorf("failed to set constraint finalizer %s: %w", constraint.Name, err)
 		}
 	}
 
@@ -168,7 +165,6 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 }
 
 func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, constraint *kubermaticv1.Constraint) error {
-
 	// if finalizer not set to master Constraint then return
 	if !kuberneteshelper.HasFinalizer(constraint, kubermaticapiv1.GatekeeperSeedConstraintCleanupFinalizer) {
 		return nil
@@ -191,7 +187,7 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 	oldconstraint := constraint.DeepCopy()
 	kuberneteshelper.RemoveFinalizer(constraint, kubermaticapiv1.GatekeeperSeedConstraintCleanupFinalizer)
 	if err := r.masterClient.Patch(ctx, constraint, ctrlruntimeclient.MergeFrom(oldconstraint)); err != nil {
-		return fmt.Errorf("failed to remove constraint finalizer %s: %v", constraint.Name, err)
+		return fmt.Errorf("failed to remove constraint finalizer %s: %w", constraint.Name, err)
 	}
 	return nil
 }

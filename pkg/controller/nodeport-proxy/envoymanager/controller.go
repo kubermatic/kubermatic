@@ -233,22 +233,22 @@ type exposeAnnotationPredicate struct {
 	annotation string
 }
 
-// Create returns true if the Create event should be processed
+// Create returns true if the Create event should be processed.
 func (e exposeAnnotationPredicate) Create(event event.CreateEvent) bool {
 	return e.match(event.Object)
 }
 
-// Delete returns true if the Delete event should be processed
+// Delete returns true if the Delete event should be processed.
 func (e exposeAnnotationPredicate) Delete(event event.DeleteEvent) bool {
 	return e.match(event.Object)
 }
 
-// Update returns true if the Update event should be processed
+// Update returns true if the Update event should be processed.
 func (e exposeAnnotationPredicate) Update(event event.UpdateEvent) bool {
 	return e.match(event.ObjectNew)
 }
 
-// Generic returns true if the Generic event should be processed
+// Generic returns true if the Generic event should be processed.
 func (e exposeAnnotationPredicate) Generic(event event.GenericEvent) bool {
 	return e.match(event.Object)
 }

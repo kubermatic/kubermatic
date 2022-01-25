@@ -23,7 +23,7 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
-// NewKubeconfig detect KUBECONFIG from ENV or default to $HOME/.kube/config
+// NewKubeconfig detect KUBECONFIG from ENV or default to $HOME/.kube/config.
 func NewKubeconfig() KubeconfigFlag {
 	defaultKubeconfig, ok := os.LookupEnv("KUBECONFIG")
 	if !ok {
@@ -33,15 +33,15 @@ func NewKubeconfig() KubeconfigFlag {
 	return KubeconfigFlag(defaultKubeconfig)
 }
 
-// KubeconfigFlag flag, will detect possible defaults
+// KubeconfigFlag flag, will detect possible defaults.
 type KubeconfigFlag string
 
-// String is flag.Value implementation method
+// String is flag.Value implementation method.
 func (s KubeconfigFlag) String() string {
 	return string(s)
 }
 
-// Set is flag.Value implementation method
+// Set is flag.Value implementation method.
 func (s *KubeconfigFlag) Set(val string) error {
 	if s == nil {
 		s = new(KubeconfigFlag)

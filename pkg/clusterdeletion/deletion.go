@@ -119,7 +119,7 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, log *zap.Sugar
 	if shouldDeleteLBs {
 		deletedSomeLBs, err := d.cleanupLBs(ctx, log, cluster)
 		if err != nil {
-			return fmt.Errorf("failed to cleanup LBs: %v", err)
+			return fmt.Errorf("failed to cleanup LBs: %w", err)
 		}
 		deletedSomeResource = deletedSomeResource || deletedSomeLBs
 	}
@@ -127,7 +127,7 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, log *zap.Sugar
 	if shouldDeletePVs {
 		deletedSomeVolumes, err := d.cleanupVolumes(ctx, cluster)
 		if err != nil {
-			return fmt.Errorf("failed to cleanup PVs: %v", err)
+			return fmt.Errorf("failed to cleanup PVs: %w", err)
 		}
 		deletedSomeResource = deletedSomeResource || deletedSomeVolumes
 	}
@@ -144,7 +144,7 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, log *zap.Sugar
 
 	lbsAreGone, err := d.checkIfAllLoadbalancersAreGone(ctx, cluster)
 	if err != nil {
-		return fmt.Errorf("failed to check if all Loadbalancers are gone: %v", err)
+		return fmt.Errorf("failed to check if all Loadbalancers are gone: %w", err)
 	}
 	// Return so we check again later
 	if !lbsAreGone {

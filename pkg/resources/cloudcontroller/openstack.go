@@ -140,7 +140,7 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 			if !data.IsKonnectivityEnabled() {
 				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
 				if err != nil {
-					return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
+					return nil, fmt.Errorf("failed to get openvpn sidecar: %w", err)
 				}
 				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers, *openvpnSidecar)
 				defResourceRequirements[openvpnSidecar.Name] = openvpnSidecar.Resources.DeepCopy()
@@ -148,7 +148,7 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			return dep, nil

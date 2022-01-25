@@ -281,7 +281,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 
 			ep, _, err := test.CreateTestEndpointAndGetClients(testStruct.apiUser, nil, []ctrlruntimeclient.Object{}, machineObj, kubermaticObj, &dummyKubermaticConfiguration, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create testStruct endpoint due to %v", err)
+				t.Fatalf("failed to create testStruct endpoint: %v", err)
 			}
 			ep.ServeHTTP(res, req)
 			if res.Code != http.StatusOK {
@@ -395,7 +395,7 @@ func TestUpgradeClusterNodeDeployments(t *testing.T) {
 			machineObj = append(machineObj, tc.ExistingMachineDeployments...)
 			ep, cs, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubernetesObj, machineObj, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -506,7 +506,7 @@ func TestGetNodeUpgrades(t *testing.T) {
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(testStruct.apiUser, nil, testStruct.existingKubermaticObjs, &dummyKubermaticConfiguration, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create testStruct endpoint due to %v", err)
+				t.Fatalf("failed to create testStruct endpoint: %v", err)
 			}
 			ep.ServeHTTP(res, req)
 			if res.Code != http.StatusOK {
@@ -579,7 +579,7 @@ func TestGetMasterVersionsEndpoint(t *testing.T) {
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(testStruct.apiUser, nil, testStruct.existingKubermaticObjs, &dummyKubermaticConfiguration, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create testStruct endpoint due to %v", err)
+				t.Fatalf("failed to create testStruct endpoint: %v", err)
 			}
 			ep.ServeHTTP(res, req)
 			if res.Code != http.StatusOK {

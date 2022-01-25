@@ -93,11 +93,11 @@ func ensureRouteTable(ctx context.Context, clients *ClientSet, cloud kubermaticv
 
 	future, err := clients.RouteTables.CreateOrUpdate(ctx, cloud.Azure.ResourceGroup, cloud.Azure.RouteTableName, *rt)
 	if err != nil {
-		return fmt.Errorf("failed to create or update route table %q: %v", cloud.Azure.RouteTableName, err)
+		return fmt.Errorf("failed to create or update route table %q: %w", cloud.Azure.RouteTableName, err)
 	}
 
 	if err = future.WaitForCompletionRef(ctx, *clients.Autorest); err != nil {
-		return fmt.Errorf("failed to create or update route table %q: %v", cloud.Azure.RouteTableName, err)
+		return fmt.Errorf("failed to create or update route table %q: %w", cloud.Azure.RouteTableName, err)
 	}
 
 	return nil

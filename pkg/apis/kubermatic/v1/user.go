@@ -25,10 +25,10 @@ import (
 )
 
 const (
-	// UserResourceName represents "Resource" defined in Kubernetes
+	// UserResourceName represents "Resource" defined in Kubernetes.
 	UserResourceName = "users"
 
-	// UserKindName represents "Kind" defined in Kubernetes
+	// UserKindName represents "Kind" defined in Kubernetes.
 	UserKindName = "User"
 )
 
@@ -39,7 +39,7 @@ const (
 // +kubebuilder:printcolumn:JSONPath=".spec.email",name="Email",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.name",name="Name",type="string"
 
-// User specifies a user
+// User specifies a user.
 type User struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -53,7 +53,7 @@ type UserStatus struct {
 	LastSeen *metav1.Time `json:"lastSeen,omitempty"`
 }
 
-// UserSpec specifies a user
+// UserSpec specifies a user.
 type UserSpec struct {
 	ID                     string                                  `json:"id"`
 	Name                   string                                  `json:"name"`
@@ -64,7 +64,7 @@ type UserSpec struct {
 	LastSeen               *metav1.Time                            `json:"lastSeen,omitempty"`
 }
 
-// UserSettings represent an user settings
+// UserSettings represent an user settings.
 type UserSettings struct {
 	SelectedTheme              string `json:"selectedTheme,omitempty"`
 	ItemsPerPage               int8   `json:"itemsPerPage,omitempty"`
@@ -78,7 +78,7 @@ type UserSettings struct {
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 
-// UserList is a list of users
+// UserList is a list of users.
 type UserList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
@@ -88,7 +88,7 @@ type UserList struct {
 
 // ProjectGroup is a helper data structure that
 // stores the information about a project and a group that
-// a user belongs to
+// a user belongs to.
 type ProjectGroup struct {
 	Name  string `json:"name"`
 	Group string `json:"group"`

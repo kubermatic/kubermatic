@@ -103,11 +103,11 @@ func ensureSubnet(ctx context.Context, clients *ClientSet, cloud kubermaticv1.Cl
 	}
 	future, err := clients.Subnets.CreateOrUpdate(ctx, resourceGroup, cloud.Azure.VNetName, cloud.Azure.SubnetName, *sn)
 	if err != nil {
-		return fmt.Errorf("failed to create or update subnetwork %q: %v", cloud.Azure.SubnetName, err)
+		return fmt.Errorf("failed to create or update subnetwork %q: %w", cloud.Azure.SubnetName, err)
 	}
 
 	if err = future.WaitForCompletionRef(ctx, *clients.Autorest); err != nil {
-		return fmt.Errorf("failed to create or update subnetwork %q: %v", cloud.Azure.SubnetName, err)
+		return fmt.Errorf("failed to create or update subnetwork %q: %w", cloud.Azure.SubnetName, err)
 	}
 
 	return nil

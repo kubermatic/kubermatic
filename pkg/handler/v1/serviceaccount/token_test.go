@@ -131,7 +131,7 @@ func TestCreateTokenProject(t *testing.T) {
 
 			ep, fakeClients, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, tc.existingKubernetesObjs, []ctrlruntimeclient.Object{}, tc.existingKubermaticObjs, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -253,7 +253,7 @@ func TestListTokens(t *testing.T) {
 
 			ep, _, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, tc.existingKubernetesObjs, []ctrlruntimeclient.Object{}, tc.existingKubermaticObjs, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -269,7 +269,6 @@ func TestListTokens(t *testing.T) {
 			wrappedExpectedToken.Sort()
 
 			actualSA.EqualOrDie(wrappedExpectedToken, t)
-
 		})
 	}
 }
@@ -307,7 +306,7 @@ func TestServiceAccountCanGetProject(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 			// set up
-			token := ""
+			var token string
 			var ep http.Handler
 			{
 				req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/projects/%s/serviceaccounts/%s/tokens", tc.projectToSync, "1"), strings.NewReader(`{"name":"ci-v","group":"viewers"}`))
@@ -316,7 +315,7 @@ func TestServiceAccountCanGetProject(t *testing.T) {
 				tc.existingKubermaticObjs = append(tc.existingKubermaticObjs, tc.existingSa)
 				lep, _, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, []ctrlruntimeclient.Object{}, []ctrlruntimeclient.Object{}, tc.existingKubermaticObjs, nil, hack.NewTestRouting)
 				if err != nil {
-					t.Fatalf("failed to create test endpoint due to %v", err)
+					t.Fatalf("failed to create test endpoint: %v", err)
 				}
 
 				// act 1 - create a service account token
@@ -474,7 +473,7 @@ func TestPatchToken(t *testing.T) {
 
 			ep, _, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, tc.existingKubernetesObjs, []ctrlruntimeclient.Object{}, tc.existingKubermaticObjs, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -652,7 +651,7 @@ func TestUpdateToken(t *testing.T) {
 
 			ep, _, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, tc.existingKubernetesObjs, []ctrlruntimeclient.Object{}, tc.existingKubermaticObjs, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -680,7 +679,6 @@ func TestUpdateToken(t *testing.T) {
 				if token.Token == test.TestFakeToken {
 					t.Fatalf("token should be regenerated")
 				}
-
 			} else {
 				test.CompareWithResult(t, res, tc.expectedErrorMsg)
 			}
@@ -765,7 +763,7 @@ func TestDeleteToken(t *testing.T) {
 
 			ep, clientset, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, tc.existingKubernetesObjs, []ctrlruntimeclient.Object{}, tc.existingKubermaticObjs, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			if _, err := clientset.FakeKubernetesCoreClient.CoreV1().Secrets("kubermatic").Get(ctx, tc.tokenToDelete, metav1.GetOptions{}); err != nil {
@@ -789,7 +787,6 @@ func TestDeleteToken(t *testing.T) {
 			if err == nil {
 				t.Fatalf("failed to delete token %s", tc.tokenToDelete)
 			}
-
 		})
 	}
 }

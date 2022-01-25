@@ -24,6 +24,8 @@ import (
 	"testing"
 	"time"
 
+	kvapiv1 "kubevirt.io/api/core/v1"
+
 	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -41,7 +43,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	kubernetesclientset "k8s.io/client-go/kubernetes"
 	fakerestclient "k8s.io/client-go/kubernetes/fake"
-	kvapiv1 "kubevirt.io/api/core/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -62,7 +63,7 @@ var (
 		},
 		Spec: *NewKubevirtPresetSpec(123, 234, 345, 456),
 	}
-	// Should not be returned, not in "default" namespace
+	// Should not be returned, not in "default" namespace.
 	presetOtherSmall = kvapiv1.VirtualMachineInstancePreset{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "preset-default-small",
@@ -71,11 +72,11 @@ var (
 		Spec: *NewKubevirtPresetSpec(123, 234, 345, 456),
 	}
 
-	// Cluster settings
+	// Cluster settings.
 	clusterId    = "keen-snyder"
 	clusterName  = "clusterAbc"
 	fakeKvConfig = "eyJhcGlWZXJzaW9uIjoidjEiLCJjbHVzdGVycyI6W3siY2x1c3RlciI6eyJjZXJ0aWZpY2F0ZS1hdXRob3JpdHktZGF0YSI6IiIsInNlcnZlciI6Imh0dHBzOi8vOTUuMjE2LjIwLjE0Njo2NDQzIn0sIm5hbWUiOiJrdWJlcm5ldGVzIn1dLCJjb250ZXh0cyI6W3siY29udGV4dCI6eyJjbHVzdGVyIjoia3ViZXJuZXRlcyIsIm5hbWVzcGFjZSI6Imt1YmUtc3lzdGVtIiwidXNlciI6Imt1YmVybmV0ZXMtYWRtaW4ifSwibmFtZSI6Imt1YmVybmV0ZXMtYWRtaW5Aa3ViZXJuZXRlcyJ9XSwiY3VycmVudC1jb250ZXh0Ijoia3ViZXJuZXRlcy1hZG1pbkBrdWJlcm5ldGVzIiwia2luZCI6IkNvbmZpZyIsInByZWZlcmVuY2VzIjp7fSwidXNlcnMiOlt7Im5hbWUiOiJrdWJlcm5ldGVzLWFkbWluIiwidXNlciI6eyJjbGllbnQtY2VydGlmaWNhdGUtZGF0YSI6IiIsImNsaWVudC1rZXktZGF0YSI6IiJ9fV19"
-	// Credential ref name
+	// Credential ref name.
 	credentialref = "credentialref"
 	credentialns  = "ns"
 )
@@ -205,7 +206,6 @@ func TestListPresetEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
 			providercommon.NewKubeVirtClientSet = func(kubeconfig string) (kubevirtv1.Interface, kubernetesclientset.Interface, error) {
 				return kubevirtclifake.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtObjects...)...), fakerestclient.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtK8sObjects...)...), nil
 			}
@@ -217,7 +217,7 @@ func TestListPresetEndpoint(t *testing.T) {
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(tc.ExistingAPIUser, tc.ExistingK8sObjects, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			// act
@@ -301,7 +301,6 @@ func TestListPresetNoCredentialsEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
 			providercommon.NewKubeVirtClientSet = func(kubeconfig string) (kubevirtv1.Interface, kubernetesclientset.Interface, error) {
 				return kubevirtclifake.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtObjects...)...), fakerestclient.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtK8sObjects...)...), nil
 			}
@@ -313,7 +312,7 @@ func TestListPresetNoCredentialsEndpoint(t *testing.T) {
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(tc.ExistingAPIUser, tc.ExistingK8sObjects, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			// act
@@ -394,7 +393,6 @@ func TestListStorageClassEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
 			providercommon.NewKubeVirtClientSet = func(kubeconfig string) (kubevirtv1.Interface, kubernetesclientset.Interface, error) {
 				return kubevirtclifake.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtObjects...)...), fakerestclient.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtK8sObjects...)...), nil
 			}
@@ -406,7 +404,7 @@ func TestListStorageClassEndpoint(t *testing.T) {
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(tc.ExistingAPIUser, tc.ExistingK8sObjects, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			// act
@@ -492,7 +490,6 @@ func TestListStorageClassNoCredentialsEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
 			providercommon.NewKubeVirtClientSet = func(kubeconfig string) (kubevirtv1.Interface, kubernetesclientset.Interface, error) {
 				return kubevirtclifake.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtObjects...)...), fakerestclient.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtK8sObjects...)...), nil
 			}
@@ -504,7 +501,7 @@ func TestListStorageClassNoCredentialsEndpoint(t *testing.T) {
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(tc.ExistingAPIUser, tc.ExistingK8sObjects, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			// act

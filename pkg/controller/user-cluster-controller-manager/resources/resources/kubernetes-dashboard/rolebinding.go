@@ -23,7 +23,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-// RoleBindingCreator creates the role binding for the Kubernetes Dashboard
+// RoleBindingCreator creates the role binding for the Kubernetes Dashboard.
 func RoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
 	return func() (string, reconciling.RoleBindingCreator) {
 		return resources.KubernetesDashboardRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {

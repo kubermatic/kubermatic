@@ -61,7 +61,7 @@ func getAWSSession(accessKeyID, secretAccessKey, region, endpoint string) (*sess
 func getClientSet(accessKeyID, secretAccessKey, region, endpoint string) (*aws.ClientSet, error) {
 	sess, err := getAWSSession(accessKeyID, secretAccessKey, region, endpoint)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create API session: %v", err)
+		return nil, fmt.Errorf("failed to create API session: %w", err)
 	}
 
 	return &aws.ClientSet{
@@ -163,7 +163,6 @@ func GetCredentialsForCluster(cloud kubermaticv1.ExternalClusterCloudSpec, secre
 }
 
 func GetEKSClusterStatus(secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterCloudSpec) (*apiv2.ExternalClusterStatus, error) {
-
 	accessKeyID, secretAccessKey, err := GetCredentialsForCluster(*cloudSpec, secretKeySelector)
 	if err != nil {
 		return nil, err

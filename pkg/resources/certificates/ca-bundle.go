@@ -63,7 +63,7 @@ type CABundle struct {
 func NewCABundleFromFile(filename string) (*CABundle, error) {
 	bytes, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read file: %v", err)
+		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
 
 	bundle, err := NewCABundleFromBytes(bytes)
@@ -77,7 +77,7 @@ func NewCABundleFromFile(filename string) (*CABundle, error) {
 
 func NewCABundleFromBytes(bytes []byte) (*CABundle, error) {
 	if err := ValidateCABundle(string(bytes)); err != nil {
-		return nil, fmt.Errorf("CA bundle is invalid: %v", err)
+		return nil, fmt.Errorf("CA bundle is invalid: %w", err)
 	}
 
 	pool := x509.NewCertPool()
@@ -129,11 +129,11 @@ func GlobalCABundle(ctx context.Context, client ctrlruntimeclient.Client, config
 	key := types.NamespacedName{Name: config.Spec.CABundle.Name, Namespace: config.Namespace}
 
 	if err := client.Get(ctx, key, caBundle); err != nil {
-		return nil, fmt.Errorf("failed to fetch CA bundle: %v", err)
+		return nil, fmt.Errorf("failed to fetch CA bundle: %w", err)
 	}
 
 	if err := ValidateCABundleConfigMap(caBundle); err != nil {
-		return nil, fmt.Errorf("CA bundle is invalid: %v", err)
+		return nil, fmt.Errorf("CA bundle is invalid: %w", err)
 	}
 
 	return caBundle, nil

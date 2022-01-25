@@ -745,7 +745,7 @@ func TestReconciliation(t *testing.T) {
 // * Treat the name of the Port on the LoadBalancer service as canonical source of truth
 // * Copy over the NodePort from the LoadBalancer service
 // * If there is no corresponding port on the LoadBalancer service use the new name schema
-// * If there is no corresponding port on the LoadBalancer service reset the NodePort
+// * If there is no corresponding port on the LoadBalancer service reset the NodePort.
 func TestFillNodePortsAndNames(t *testing.T) {
 	testCases := []struct {
 		name      string

@@ -172,7 +172,6 @@ func TestCreateAddon(t *testing.T) {
 					t.Errorf("created addon is not equal to expected addon, diff: %v", diff)
 				}
 			}
-
 		})
 	}
 }

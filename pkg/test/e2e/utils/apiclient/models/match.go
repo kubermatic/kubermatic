@@ -14,7 +14,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// Match Match contains the constraint to resource matching data
+// Match Match contains the constraint to resource matching data.
 //
 // swagger:model Match
 type Match struct {

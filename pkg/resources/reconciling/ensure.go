@@ -32,10 +32,10 @@ import (
 
 //go:generate go run ../../../codegen/reconcile/main.go
 
-// ObjectCreator defines an interface to create/update a ctrlruntimeclient.Object
+// ObjectCreator defines an interface to create/update a ctrlruntimeclient.Object.
 type ObjectCreator = func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error)
 
-// ObjectModifier is a wrapper function which modifies the object which gets returned by the passed in ObjectCreator
+// ObjectModifier is a wrapper function which modifies the object which gets returned by the passed in ObjectCreator.
 type ObjectModifier func(create ObjectCreator) ObjectCreator
 
 func createWithNamespace(rawcreate ObjectCreator, namespace string) ObjectCreator {
@@ -70,7 +70,7 @@ func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName,
 	existingObject := emptyObject.DeepCopyObject().(ctrlruntimeclient.Object)
 	if err := client.Get(ctx, namespacedName, existingObject); err != nil {
 		if !kubeerrors.IsNotFound(err) {
-			return fmt.Errorf("failed to get Object(%T): %v", existingObject, err)
+			return fmt.Errorf("failed to get Object(%T): %w", existingObject, err)
 		}
 		exists = false
 	}
@@ -79,16 +79,16 @@ func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName,
 	if !exists {
 		obj, err := create(emptyObject)
 		if err != nil {
-			return fmt.Errorf("failed to generate object: %v", err)
+			return fmt.Errorf("failed to generate object: %w", err)
 		}
 		if err := client.Create(ctx, obj); err != nil {
-			return fmt.Errorf("failed to create %T '%s': %v", obj, namespacedName.String(), err)
+			return fmt.Errorf("failed to create %T '%s': %w", obj, namespacedName.String(), err)
 		}
 		// Wait until the object exists in the cache
 		createdObjectIsInCache := waitUntilObjectExistsInCacheConditionFunc(ctx, client, namespacedName, obj)
 		err = wait.PollImmediate(10*time.Millisecond, 10*time.Second, createdObjectIsInCache)
 		if err != nil {
-			return fmt.Errorf("failed waiting for the cache to contain our newly created object: %v", err)
+			return fmt.Errorf("failed waiting for the cache to contain our newly created object: %w", err)
 		}
 
 		klog.V(2).Infof("Created %T %s in Namespace %q", obj, obj.(metav1.Object).GetName(), obj.(metav1.Object).GetNamespace())
@@ -99,7 +99,7 @@ func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName,
 	// in case the creator returns the same pointer it got passed in
 	obj, err := create(existingObject.DeepCopyObject().(ctrlruntimeclient.Object))
 	if err != nil {
-		return fmt.Errorf("failed to build Object(%T) '%s': %v", existingObject, namespacedName.String(), err)
+		return fmt.Errorf("failed to build Object(%T) '%s': %w", existingObject, namespacedName.String(), err)
 	}
 
 	if DeepEqual(obj.(metav1.Object), existingObject.(metav1.Object)) {
@@ -117,11 +117,11 @@ func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName,
 		}
 
 		if err := client.Update(ctx, obj); err != nil {
-			return fmt.Errorf("failed to update object %T '%s': %v", obj, namespacedName.String(), err)
+			return fmt.Errorf("failed to update object %T '%s': %w", obj, namespacedName.String(), err)
 		}
 	} else {
 		if err := client.Delete(ctx, obj.DeepCopyObject().(ctrlruntimeclient.Object)); err != nil {
-			return fmt.Errorf("failed to delete object %T %q: %v", obj, namespacedName.String(), err)
+			return fmt.Errorf("failed to delete object %T %q: %w", obj, namespacedName.String(), err)
 		}
 
 		obj.SetResourceVersion("")
@@ -129,7 +129,7 @@ func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName,
 		obj.SetGeneration(0)
 
 		if err := client.Create(ctx, obj); err != nil {
-			return fmt.Errorf("failed to create object %T %q: %v", obj, namespacedName.String(), err)
+			return fmt.Errorf("failed to create object %T %q: %w", obj, namespacedName.String(), err)
 		}
 	}
 
@@ -137,7 +137,7 @@ func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName,
 	updatedObjectIsInCache := waitUntilUpdateIsInCacheConditionFunc(ctx, client, namespacedName, existingObject)
 	err = wait.PollImmediate(10*time.Millisecond, 10*time.Second, updatedObjectIsInCache)
 	if err != nil {
-		return fmt.Errorf("failed waiting for the cache to contain our latest changes: %v", err)
+		return fmt.Errorf("failed waiting for the cache to contain our latest changes: %w", err)
 	}
 
 	klog.V(2).Infof("Updated %T %s in Namespace %q", obj, obj.(metav1.Object).GetName(), obj.(metav1.Object).GetNamespace())

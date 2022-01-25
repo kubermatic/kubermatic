@@ -76,7 +76,7 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 
 	// Set the hostname & url
 	if err := r.syncAddress(ctx, r.log.With("cluster", cluster.Name), cluster, seed); err != nil {
-		return nil, fmt.Errorf("failed to sync address: %v", err)
+		return nil, fmt.Errorf("failed to sync address: %w", err)
 	}
 
 	// We should not proceed without having an IP address unless tunneling
@@ -150,7 +150,7 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 
 	if cluster.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
 		if err := nodeportproxy.EnsureResources(ctx, r.Client, data); err != nil {
-			return nil, fmt.Errorf("failed to ensure NodePortProxy resources: %v", err)
+			return nil, fmt.Errorf("failed to ensure NodePortProxy resources: %w", err)
 		}
 	}
 
@@ -224,7 +224,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		Build(), nil
 }
 
-// ensureNamespaceExists will create the cluster namespace
+// ensureNamespaceExists will create the cluster namespace.
 func (r *Reconciler) ensureNamespaceExists(ctx context.Context, cluster *kubermaticv1.Cluster) (*corev1.Namespace, error) {
 	if cluster.Status.NamespaceName == "" {
 		err := r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
@@ -251,13 +251,13 @@ func (r *Reconciler) ensureNamespaceExists(ctx context.Context, cluster *kuberma
 		},
 	}
 	if err := r.Create(ctx, ns); err != nil {
-		return nil, fmt.Errorf("failed to create Namespace %s: %v", cluster.Status.NamespaceName, err)
+		return nil, fmt.Errorf("failed to create Namespace %s: %w", cluster.Status.NamespaceName, err)
 	}
 
 	return ns, nil
 }
 
-// GetServiceCreators returns all service creators that are currently in use
+// GetServiceCreators returns all service creators that are currently in use.
 func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedServiceCreatorGetter {
 	creators := []reconciling.NamedServiceCreatorGetter{
 		apiserver.ServiceCreator(data.Cluster().Spec.ExposeStrategy, data.Cluster().Address.ExternalName),
@@ -287,7 +287,7 @@ func (r *Reconciler) ensureServices(ctx context.Context, c *kubermaticv1.Cluster
 	return reconciling.ReconcileServices(ctx, creators, c.Status.NamespaceName, r, reconciling.OwnerRefWrapper(resources.GetClusterRef(c)))
 }
 
-// GetDeploymentCreators returns all DeploymentCreators that are currently in use
+// GetDeploymentCreators returns all DeploymentCreators that are currently in use.
 func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuthentication bool) []reconciling.NamedDeploymentCreatorGetter {
 	deployments := []reconciling.NamedDeploymentCreatorGetter{
 		apiserver.DeploymentCreator(data, enableAPIserverOIDCAuthentication),
@@ -331,7 +331,7 @@ func (r *Reconciler) ensureDeployments(ctx context.Context, cluster *kubermaticv
 	return reconciling.ReconcileDeployments(ctx, creators, cluster.Status.NamespaceName, r, reconciling.OwnerRefWrapper(resources.GetClusterRef(cluster)))
 }
 
-// GetSecretCreators returns all SecretCreators that are currently in use
+// GetSecretCreators returns all SecretCreators that are currently in use.
 func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconciling.NamedSecretCreatorGetter {
 	creators := []reconciling.NamedSecretCreatorGetter{
 		certificates.RootCACreator(data),
@@ -393,7 +393,7 @@ func (r *Reconciler) ensureSecrets(ctx context.Context, c *kubermaticv1.Cluster,
 	namedSecretCreatorGetters := r.GetSecretCreators(data)
 
 	if err := reconciling.ReconcileSecrets(ctx, namedSecretCreatorGetters, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
-		return fmt.Errorf("failed to ensure that the Secret exists: %v", err)
+		return fmt.Errorf("failed to ensure that the Secret exists: %w", err)
 	}
 
 	return nil
@@ -412,7 +412,7 @@ func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.
 	}
 
 	if err := reconciling.ReconcileServiceAccounts(ctx, namedServiceAccountCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
-		return fmt.Errorf("failed to ensure ServiceAccounts: %v", err)
+		return fmt.Errorf("failed to ensure ServiceAccounts: %w", err)
 	}
 
 	return nil
@@ -429,7 +429,7 @@ func (r *Reconciler) ensureRoles(ctx context.Context, c *kubermaticv1.Cluster) e
 	}
 
 	if err := reconciling.ReconcileRoles(ctx, namedRoleCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
-		return fmt.Errorf("failed to ensure Roles: %v", err)
+		return fmt.Errorf("failed to ensure Roles: %w", err)
 	}
 
 	return nil
@@ -446,7 +446,7 @@ func (r *Reconciler) ensureRoleBindings(ctx context.Context, c *kubermaticv1.Clu
 	}
 
 	if err := reconciling.ReconcileRoleBindings(ctx, namedRoleBindingCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
-		return fmt.Errorf("failed to ensure RoleBindings: %v", err)
+		return fmt.Errorf("failed to ensure RoleBindings: %w", err)
 	}
 	return nil
 }
@@ -456,7 +456,7 @@ func (r *Reconciler) ensureClusterRoles(ctx context.Context) error {
 		usercluster.ClusterRole(),
 	}
 	if err := reconciling.ReconcileClusterRoles(ctx, namedClusterRoleCreatorGetters, "", r.Client); err != nil {
-		return fmt.Errorf("failed to ensure Cluster Roles: %v", err)
+		return fmt.Errorf("failed to ensure Cluster Roles: %w", err)
 	}
 
 	return nil
@@ -467,7 +467,7 @@ func (r *Reconciler) ensureClusterRoleBindings(ctx context.Context, c *kubermati
 		usercluster.ClusterRoleBinding(namespace),
 	}
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, namedClusterRoleBindingsCreatorGetters, "", r.Client); err != nil {
-		return fmt.Errorf("failed to ensure Cluster Role Bindings: %v", err)
+		return fmt.Errorf("failed to ensure Cluster Role Bindings: %w", err)
 	}
 
 	return nil
@@ -495,14 +495,14 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 			namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters, apiserver.OIDCIssuerAllowCreator(data.OIDCIssuerURL()))
 		}
 		if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
-			return fmt.Errorf("failed to ensure Network Policies: %v", err)
+			return fmt.Errorf("failed to ensure Network Policies: %w", err)
 		}
 	}
 
 	return nil
 }
 
-// GetConfigMapCreators returns all ConfigMapCreators that are currently in use
+// GetConfigMapCreators returns all ConfigMapCreators that are currently in use.
 func GetConfigMapCreators(data *resources.TemplateData) []reconciling.NamedConfigMapCreatorGetter {
 	creators := []reconciling.NamedConfigMapCreatorGetter{
 		cloudconfig.ConfigMapCreator(data),
@@ -531,20 +531,20 @@ func (r *Reconciler) ensureConfigMaps(ctx context.Context, c *kubermaticv1.Clust
 	creators := GetConfigMapCreators(data)
 
 	if err := reconciling.ReconcileConfigMaps(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
-		return fmt.Errorf("failed to ensure that the ConfigMap exists: %v", err)
+		return fmt.Errorf("failed to ensure that the ConfigMap exists: %w", err)
 	}
 
 	return nil
 }
 
-// GetStatefulSetCreators returns all StatefulSetCreators that are currently in use
+// GetStatefulSetCreators returns all StatefulSetCreators that are currently in use.
 func GetStatefulSetCreators(data *resources.TemplateData, enableDataCorruptionChecks bool, enableTLSOnly bool) []reconciling.NamedStatefulSetCreatorGetter {
 	return []reconciling.NamedStatefulSetCreatorGetter{
 		etcd.StatefulSetCreator(data, enableDataCorruptionChecks, enableTLSOnly),
 	}
 }
 
-// GetEtcdBackupConfigCreators returns all EtcdBackupConfigCreators that are currently in use
+// GetEtcdBackupConfigCreators returns all EtcdBackupConfigCreators that are currently in use.
 func GetEtcdBackupConfigCreators(data *resources.TemplateData, seed *kubermaticv1.Seed) []reconciling.NamedEtcdBackupConfigCreatorGetter {
 	creators := []reconciling.NamedEtcdBackupConfigCreatorGetter{
 		etcd.BackupConfigCreator(data, seed),
@@ -552,7 +552,7 @@ func GetEtcdBackupConfigCreators(data *resources.TemplateData, seed *kubermaticv
 	return creators
 }
 
-// GetPodDisruptionBudgetCreators returns all PodDisruptionBudgetCreators that are currently in use
+// GetPodDisruptionBudgetCreators returns all PodDisruptionBudgetCreators that are currently in use.
 func GetPodDisruptionBudgetCreators(data *resources.TemplateData) []reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	creators := []reconciling.NamedPodDisruptionBudgetCreatorGetter{
 		etcd.PodDisruptionBudgetCreator(data),
@@ -571,13 +571,13 @@ func (r *Reconciler) ensurePodDisruptionBudgets(ctx context.Context, c *kubermat
 	creators := GetPodDisruptionBudgetCreators(data)
 
 	if err := reconciling.ReconcilePodDisruptionBudgets(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
-		return fmt.Errorf("failed to ensure that the PodDisruptionBudget exists: %v", err)
+		return fmt.Errorf("failed to ensure that the PodDisruptionBudget exists: %w", err)
 	}
 
 	return nil
 }
 
-// GetCronJobCreators returns all CronJobCreators that are currently in use
+// GetCronJobCreators returns all CronJobCreators that are currently in use.
 func GetCronJobCreators(data *resources.TemplateData) []reconciling.NamedCronJobCreatorGetter {
 	return []reconciling.NamedCronJobCreatorGetter{
 		etcd.CronJobCreator(data),
@@ -588,7 +588,7 @@ func (r *Reconciler) ensureCronJobs(ctx context.Context, c *kubermaticv1.Cluster
 	creators := GetCronJobCreators(data)
 
 	if err := reconciling.ReconcileCronJobs(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
-		return fmt.Errorf("failed to ensure that the CronJobs exists: %v", err)
+		return fmt.Errorf("failed to ensure that the CronJobs exists: %w", err)
 	}
 
 	return nil
@@ -612,7 +612,7 @@ func (r *Reconciler) ensureVerticalPodAutoscalers(ctx context.Context, c *kuberm
 
 	creators, err := resources.GetVerticalPodAutoscalersForAll(ctx, r.Client, controlPlaneDeploymentNames, []string{resources.EtcdStatefulSetName}, c.Status.NamespaceName, r.features.VPA)
 	if err != nil {
-		return fmt.Errorf("failed to create the functions to handle VPA resources: %v", err)
+		return fmt.Errorf("failed to create the functions to handle VPA resources: %w", err)
 	}
 
 	return reconciling.ReconcileVerticalPodAutoscalers(ctx, creators, c.Status.NamespaceName, r.Client)
@@ -650,7 +650,7 @@ func (r *Reconciler) ensureEtcdBackupConfigs(ctx context.Context, c *kubermaticv
 func (r *Reconciler) ensureOldOPAIntegrationIsRemoved(ctx context.Context, data *resources.TemplateData) error {
 	for _, resource := range gatekeeper.GetResourcesToRemoveOnDelete(data.Cluster().Status.NamespaceName) {
 		if err := r.Client.Delete(ctx, resource); err != nil && !errors.IsNotFound(err) {
-			return fmt.Errorf("failed to ensure old OPA integration version resources are removed/not present: %v", err)
+			return fmt.Errorf("failed to ensure old OPA integration version resources are removed/not present: %w", err)
 		}
 	}
 
@@ -661,7 +661,7 @@ func (r *Reconciler) ensureOSMResourcesAreRemoved(ctx context.Context, data *res
 	for _, resource := range operatingsystemmanager.ResourcesForDeletion(data.Cluster().Status.NamespaceName) {
 		err := r.Client.Delete(ctx, resource)
 		if err != nil && !errors.IsNotFound(err) {
-			return fmt.Errorf("failed to ensure OSM resources are removed/not present: %v", err)
+			return fmt.Errorf("failed to ensure OSM resources are removed/not present: %w", err)
 		}
 	}
 	return nil
@@ -670,17 +670,17 @@ func (r *Reconciler) ensureOSMResourcesAreRemoved(ctx context.Context, data *res
 func (r *Reconciler) ensureOpenVPNSetupIsRemoved(ctx context.Context, data *resources.TemplateData) error {
 	for _, resource := range openvpn.ResourcesForDeletion(data.Cluster().Status.NamespaceName) {
 		if err := r.Client.Delete(ctx, resource); err != nil && !errors.IsNotFound(err) {
-			return fmt.Errorf("failed to ensure OpenVPN resources are removed/not present: %v", err)
+			return fmt.Errorf("failed to ensure OpenVPN resources are removed/not present: %w", err)
 		}
 	}
 	for _, resource := range metricsserver.ResourcesForDeletion(data.Cluster().Status.NamespaceName) {
 		if err := r.Client.Delete(ctx, resource); err != nil && !errors.IsNotFound(err) {
-			return fmt.Errorf("failed to ensure metrics-server resources are removed/not present: %v", err)
+			return fmt.Errorf("failed to ensure metrics-server resources are removed/not present: %w", err)
 		}
 	}
 	for _, resource := range dns.ResourcesForDeletion(data.Cluster().Status.NamespaceName) {
 		if err := r.Client.Delete(ctx, resource); err != nil && !errors.IsNotFound(err) {
-			return fmt.Errorf("failed to ensure dns-resolver resources are removed/not present: %v", err)
+			return fmt.Errorf("failed to ensure dns-resolver resources are removed/not present: %w", err)
 		}
 	}
 	dnatControllerSecret := &corev1.Secret{
@@ -690,7 +690,7 @@ func (r *Reconciler) ensureOpenVPNSetupIsRemoved(ctx context.Context, data *reso
 		},
 	}
 	if err := r.Client.Delete(ctx, dnatControllerSecret); err != nil && !errors.IsNotFound(err) {
-		return fmt.Errorf("failed to ensure DNAT controller resources are removed/not present: %v", err)
+		return fmt.Errorf("failed to ensure DNAT controller resources are removed/not present: %w", err)
 	}
 	return nil
 }
@@ -698,7 +698,7 @@ func (r *Reconciler) ensureOpenVPNSetupIsRemoved(ctx context.Context, data *reso
 func (r *Reconciler) ensureKonnectivitySetupIsRemoved(ctx context.Context, data *resources.TemplateData) error {
 	for _, resource := range konnectivity.ResourcesForDeletion(data.Cluster().Status.NamespaceName) {
 		if err := r.Client.Delete(ctx, resource); err != nil && !errors.IsNotFound(err) {
-			return fmt.Errorf("failed to ensure Konnectivity resources are removed/not present: %v", err)
+			return fmt.Errorf("failed to ensure Konnectivity resources are removed/not present: %w", err)
 		}
 	}
 	return nil

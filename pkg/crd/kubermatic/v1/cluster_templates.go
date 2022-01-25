@@ -35,10 +35,10 @@ const (
 )
 
 const (
-	// ClusterTemplateResourceName represents "Resource" defined in Kubernetes
+	// ClusterTemplateResourceName represents "Resource" defined in Kubernetes.
 	ClusterTemplateResourceName = "clustertemplates"
 
-	// ClusterTemplateKindName represents "Kind" defined in Kubernetes
+	// ClusterTemplateKindName represents "Kind" defined in Kubernetes.
 	ClusterTemplateKindName = "ClusterTemplate"
 )
 
@@ -60,7 +60,7 @@ type ClusterTemplate struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ClusterTemplateList specifies a list of cluster templates
+// ClusterTemplateList specifies a list of cluster templates.
 type ClusterTemplateList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
@@ -68,7 +68,7 @@ type ClusterTemplateList struct {
 	Items []ClusterTemplate `json:"items"`
 }
 
-// ClusterTemplateSSHKey is the object for holding SSH key
+// ClusterTemplateSSHKey is the object for holding SSH key.
 type ClusterTemplateSSHKey struct {
 	Name string `json:"name"`
 	ID   string `json:"id"`

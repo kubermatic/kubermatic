@@ -54,7 +54,7 @@ import (
 const (
 	ControllerName = "kubermatic_cloud_controller"
 	// icmpMigrationRevision is the migration revision that will be set on the cluster after its
-	// security group was migrated to contain allow rules for ICMP
+	// security group was migrated to contain allow rules for ICMP.
 	icmpMigrationRevision = 1
 	// awsHarcodedAZMigrationRevision is the migration revision for moving AWS clusters away from
 	// hardcoded AZs and Subnets towards multi-AZ support.
@@ -65,7 +65,7 @@ const (
 )
 
 // Check if the Reconciler fulfills the interface
-// at compile time
+// at compile time.
 var _ reconcile.Reconciler = &Reconciler{}
 
 type Reconciler struct {

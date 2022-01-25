@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-// LoadUpdates loads the update definition file and returns the defined MasterUpdate
+// LoadUpdates loads the update definition file and returns the defined MasterUpdate.
 func LoadUpdates(path string) ([]*Update, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -55,7 +55,7 @@ func LoadUpdates(path string) ([]*Update, error) {
 	return s.Updates, nil
 }
 
-// LoadVersions loads Versions from a given path
+// LoadVersions loads Versions from a given path.
 func LoadVersions(path string) ([]*Version, error) {
 	f, err := os.Open(path)
 	if err != nil {

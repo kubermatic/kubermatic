@@ -68,7 +68,7 @@ func reconcileAvailabilitySet(ctx context.Context, clients *ClientSet, location 
 		(availabilitySet.AvailabilitySetProperties.PlatformFaultDomainCount != nil && *availabilitySet.AvailabilitySetProperties.PlatformFaultDomainCount == *target.AvailabilitySetProperties.PlatformFaultDomainCount) &&
 		(availabilitySet.AvailabilitySetProperties.PlatformUpdateDomainCount != nil && *availabilitySet.AvailabilitySetProperties.PlatformUpdateDomainCount == *target.AvailabilitySetProperties.PlatformUpdateDomainCount)) {
 		if err := ensureAvailabilitySet(ctx, clients.AvailabilitySets, cluster.Spec.Cloud, target); err != nil {
-			return nil, fmt.Errorf("failed to ensure AvailabilitySet exists: %v", err)
+			return nil, fmt.Errorf("failed to ensure AvailabilitySet exists: %w", err)
 		}
 	}
 
@@ -107,7 +107,7 @@ func ensureAvailabilitySet(ctx context.Context, client computeapi.AvailabilitySe
 
 	_, err := client.CreateOrUpdate(ctx, cloud.Azure.ResourceGroup, cloud.Azure.AvailabilitySet, *as)
 	if err != nil {
-		return fmt.Errorf("failed to create or update availability set %q: %v", cloud.Azure.AvailabilitySet, err)
+		return fmt.Errorf("failed to create or update availability set %q: %w", cloud.Azure.AvailabilitySet, err)
 	}
 
 	return nil

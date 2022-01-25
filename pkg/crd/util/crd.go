@@ -17,6 +17,7 @@ limitations under the License.
 package util
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -31,7 +32,7 @@ import (
 func LoadFromDirectory(directory string) ([]ctrlruntimeclient.Object, error) {
 	files, err := filepath.Glob(filepath.Join(directory, "*.yaml"))
 	if err != nil {
-		return nil, fmt.Errorf("failed to list YAML files in %q: %v", directory, err)
+		return nil, fmt.Errorf("failed to list YAML files in %q: %w", directory, err)
 	}
 
 	crds := []ctrlruntimeclient.Object{}
@@ -39,7 +40,7 @@ func LoadFromDirectory(directory string) ([]ctrlruntimeclient.Object, error) {
 	for _, filename := range files {
 		loaded, err := LoadFromFile(filename)
 		if err != nil {
-			return nil, fmt.Errorf("failed to load %q: %v", filename, err)
+			return nil, fmt.Errorf("failed to load %q: %w", filename, err)
 		}
 
 		crds = append(crds, loaded...)
@@ -51,7 +52,7 @@ func LoadFromDirectory(directory string) ([]ctrlruntimeclient.Object, error) {
 func LoadFromFile(filename string) ([]ctrlruntimeclient.Object, error) {
 	f, err := os.Open(filename)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open file: %v", err)
+		return nil, fmt.Errorf("failed to open file: %w", err)
 	}
 	defer f.Close()
 
@@ -77,8 +78,8 @@ func LoadFromFile(filename string) ([]ctrlruntimeclient.Object, error) {
 		crds = append(crds, &crd)
 	}
 
-	if err != io.EOF {
-		return crds, fmt.Errorf("failed to decode YAML: %v", err)
+	if !errors.Is(err, io.EOF) {
+		return crds, fmt.Errorf("failed to decode YAML: %w", err)
 	}
 
 	return crds, nil

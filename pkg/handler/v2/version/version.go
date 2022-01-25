@@ -41,7 +41,7 @@ type listProviderVersionsReq struct {
 	Type string `json:"type"`
 }
 
-// Validate validates listProviderVersionsReq request
+// Validate validates listProviderVersionsReq request.
 func (l listProviderVersionsReq) Validate() error {
 	if len(l.ProviderName) == 0 {
 		return fmt.Errorf("the provider name cannot be empty")
@@ -68,7 +68,7 @@ func DecodeListProviderVersions(ctx context.Context, r *http.Request) (interface
 	}, nil
 }
 
-// ListVersions returns a list of available Kubernetes version for the given provider
+// ListVersions returns a list of available Kubernetes version for the given provider.
 func ListVersions(configGetter provider.KubermaticConfigurationGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(listProviderVersionsReq)

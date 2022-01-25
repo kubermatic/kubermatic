@@ -268,5 +268,4 @@ func TestSyncClusterAddress(t *testing.T) {
 			}
 		})
 	}
-
 }

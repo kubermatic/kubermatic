@@ -93,7 +93,7 @@ func (a *AmazonEC2) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
 func (a *AmazonEC2) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	client, err := a.getClientSet(spec)
 	if err != nil {
-		return fmt.Errorf("failed to get API client: %v", err)
+		return fmt.Errorf("failed to get API client: %w", err)
 	}
 
 	// Some settings require the vpc to be set
@@ -119,7 +119,7 @@ func (a *AmazonEC2) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-// ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted
+// ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted.
 func (a *AmazonEC2) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
 	return nil
 }
@@ -138,7 +138,7 @@ func (a *AmazonEC2) ReconcileCluster(cluster *kubermaticv1.Cluster, update provi
 func (a *AmazonEC2) reconcileCluster(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, force bool, setTags bool) (*kubermaticv1.Cluster, error) {
 	client, err := a.getClientSet(cluster.Spec.Cloud)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get API client: %v", err)
+		return nil, fmt.Errorf("failed to get API client: %w", err)
 	}
 
 	cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {

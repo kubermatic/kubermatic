@@ -42,7 +42,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/user"
 )
 
-// RegisterV1 declares all router paths for v1
+// RegisterV1 declares all router paths for v1.
 func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	//
 	// no-op endpoint that always returns HTTP 200

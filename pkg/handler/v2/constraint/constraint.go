@@ -251,8 +251,8 @@ func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 }
 
 func deleteConstraint(ctx context.Context, userInfoGetter provider.UserInfoGetter, constraintProvider provider.ConstraintProvider,
-	privilegedConstraintProvider provider.PrivilegedConstraintProvider, cluster *v1.Cluster, projectID, constraintName string) error {
-
+	privilegedConstraintProvider provider.PrivilegedConstraintProvider, cluster *v1.Cluster, projectID, constraintName string,
+) error {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return err
@@ -324,8 +324,8 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 }
 
 func createConstraint(ctx context.Context, userInfoGetter provider.UserInfoGetter, constraintProvider provider.ConstraintProvider,
-	privilegedConstraintProvider provider.PrivilegedConstraintProvider, projectID string, constraint *v1.Constraint) (*v1.Constraint, error) {
-
+	privilegedConstraintProvider provider.PrivilegedConstraintProvider, projectID string, constraint *v1.Constraint,
+) (*v1.Constraint, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
@@ -381,7 +381,6 @@ func validateConstraint(constraintTemplateProvider provider.ConstraintTemplatePr
 
 	// Validate parameters
 	if ct.Spec.CRD.Spec.Validation != nil && ct.Spec.CRD.Spec.Validation.OpenAPIV3Schema != nil {
-
 		// Set up the validator
 		rawOpenAPISpec, err := json.Marshal(ct.Spec.CRD.Spec.Validation.OpenAPIV3Schema)
 		if err != nil {
@@ -504,8 +503,8 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 }
 
 func updateConstraint(ctx context.Context, userInfoGetter provider.UserInfoGetter, constraintProvider provider.ConstraintProvider,
-	privilegedConstraintProvider provider.PrivilegedConstraintProvider, projectID string, constraint *v1.Constraint) (*v1.Constraint, error) {
-
+	privilegedConstraintProvider provider.PrivilegedConstraintProvider, projectID string, constraint *v1.Constraint,
+) (*v1.Constraint, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
@@ -530,7 +529,7 @@ type patchConstraintReq struct {
 	Patch json.RawMessage
 }
 
-// DecodePatchConstraintReq decodes http request into patchConstraintReq
+// DecodePatchConstraintReq decodes http request into patchConstraintReq.
 func DecodePatchConstraintReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req patchConstraintReq
 
@@ -596,7 +595,7 @@ type defaultConstraintReq struct {
 	Name string `json:"constraint_name"`
 }
 
-// Validate validates defaultConstraint request
+// Validate validates defaultConstraint request.
 func (req defaultConstraintReq) Validate() error {
 	if len(req.Name) == 0 {
 		return fmt.Errorf("the default constraint name cannot be empty")

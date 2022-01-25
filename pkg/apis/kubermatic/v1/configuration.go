@@ -25,27 +25,27 @@ import (
 
 // +kubebuilder:validation:Enum=always;externalCloudProvider
 
-// ConditionType is the type defining the cluster or datacenter condition that must be met to block a specific version
+// ConditionType is the type defining the cluster or datacenter condition that must be met to block a specific version.
 type ConditionType string
 
 const (
-	// AlwaysCondition represent an always true matching condition used while checking provider incompatibilities
+	// AlwaysCondition represent an always true matching condition used while checking provider incompatibilities.
 	AlwaysCondition ConditionType = "always"
-	// ExternalCloudProviderCondition is an incompatibility condition that represents the usage of the external Cloud Provider
+	// ExternalCloudProviderCondition is an incompatibility condition that represents the usage of the external Cloud Provider.
 	ExternalCloudProviderCondition ConditionType = ClusterFeatureExternalCloudProvider
 )
 
 // +kubebuilder:validation:Enum=CREATE;UPGRADE;SUPPORT
 
-// OperationType is the type defining the operations triggering the compatibility check (CREATE or UPDATE)
+// OperationType is the type defining the operations triggering the compatibility check (CREATE or UPDATE).
 type OperationType string
 
 const (
-	// CreateOperation represents the creation of a new cluster
+	// CreateOperation represents the creation of a new cluster.
 	CreateOperation OperationType = "CREATE"
-	// UpdateOperation represents the update of an existing cluster
+	// UpdateOperation represents the update of an existing cluster.
 	UpdateOperation OperationType = "UPGRADE"
-	// SupportOperation represents the possibility to enable a new feature on an existing cluster
+	// SupportOperation represents the possibility to enable a new feature on an existing cluster.
 	SupportOperation OperationType = "SUPPORT"
 )
 
@@ -237,7 +237,7 @@ type KubermaticUserClusterMonitoringConfiguration struct {
 	ScrapeAnnotationPrefix string `json:"scrapeAnnotationPrefix,omitempty"`
 }
 
-// MachineControllerConfiguration configures Machine Controller
+// MachineControllerConfiguration configures Machine Controller.
 type MachineControllerConfiguration struct {
 	// ImageRepository is used to override the Machine Controller image repository.
 	// It is only for development, tests and PoC purposes. This field must not be set in production environments.
@@ -352,7 +352,7 @@ type Update struct {
 	AutomaticNodeUpdate *bool `json:"automaticNodeUpdate,omitempty,omitgenyaml"`
 }
 
-// Incompatibility represents a version incompatibility for a user cluster
+// Incompatibility represents a version incompatibility for a user cluster.
 type Incompatibility struct {
 	// Provider to which to apply the compatibility check
 	Provider ProviderType `json:"provider,omitempty"`

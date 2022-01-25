@@ -29,19 +29,19 @@ import (
 
 const (
 	// AuthorizationCode represents a shared secret used by IssuerVerifier
-	// TODO: consider injecting it into IssuerVerifier
+	// TODO: consider injecting it into IssuerVerifier.
 	AuthorizationCode = "fakeCode"
-	// IDToken represents a shared fake token
+	// IDToken represents a shared fake token.
 	IDToken       = "fakeTokenId"
 	IDViewerToken = "fakeViewerTokenId"
 	refreshToken  = "fakeRefreshToken"
 	tokenURL      = "url:tokenURL"
 
-	// IssuerURL holds test issuer URL
+	// IssuerURL holds test issuer URL.
 	IssuerURL = "url://dex"
-	// IssuerClientID holds test issuer client ID
+	// IssuerClientID holds test issuer client ID.
 	IssuerClientID = "kubermatic"
-	// IssuerClientSecret holds test issuer client secret
+	// IssuerClientSecret holds test issuer client secret.
 	IssuerClientSecret = "secret"
 	issuerRedirectURL  = "/api/v1/kubeconfig"
 )
@@ -49,13 +49,13 @@ const (
 var _ auth.OIDCIssuerVerifier = &IssuerVerifier{}
 var _ auth.TokenExtractorVerifier = &IssuerVerifier{}
 
-// OicdProvider is a test stub that mocks *oidc.Provider
+// OicdProvider is a test stub that mocks *oidc.Provider.
 type OicdProvider struct {
 	authURL  string
 	tokenURL string
 }
 
-// NewFakeOIDCClient returns fake OIDC issuer and verifier
+// NewFakeOIDCClient returns fake OIDC issuer and verifier.
 func NewFakeOIDCClient(user apiv1.User) *IssuerVerifier {
 	return &IssuerVerifier{
 		user:         user,
@@ -75,7 +75,7 @@ func (p *OicdProvider) Endpoint() oauth2.Endpoint {
 	return oauth2.Endpoint{AuthURL: p.authURL, TokenURL: p.tokenURL}
 }
 
-// IssuerVerifier is a test stub that mocks OIDC responses
+// IssuerVerifier is a test stub that mocks OIDC responses.
 type IssuerVerifier struct {
 	user         apiv1.User
 	issuer       string
@@ -85,12 +85,12 @@ type IssuerVerifier struct {
 	provider     *OicdProvider
 }
 
-// Extractor knows how to extract the ID token from the request
+// Extractor knows how to extract the ID token from the request.
 func (o *IssuerVerifier) Extract(_ *http.Request) (string, error) {
 	return IDToken, nil
 }
 
-// AuthCodeURL returns a URL to OpenID provider's consent page
+// AuthCodeURL returns a URL to OpenID provider's consent page.
 func (o *IssuerVerifier) AuthCodeURL(state string, offlineAsScope bool, scopes ...string) string {
 	oauth2Config := o.oauth2Config(scopes...)
 	options := oauth2.AccessTypeOnline
@@ -100,7 +100,7 @@ func (o *IssuerVerifier) AuthCodeURL(state string, offlineAsScope bool, scopes .
 	return oauth2Config.AuthCodeURL(state, options)
 }
 
-// oauth2Config return a oauth2Config
+// oauth2Config return a oauth2Config.
 func (o *IssuerVerifier) oauth2Config(scopes ...string) *oauth2.Config {
 	return &oauth2.Config{
 		ClientID:     o.clientID,
@@ -128,7 +128,6 @@ func (o *IssuerVerifier) Exchange(ctx context.Context, code string) (auth.OIDCTo
 func (o *IssuerVerifier) Verify(ctx context.Context, token string) (auth.TokenClaims, error) {
 	if o == nil {
 		return auth.TokenClaims{}, nil
-
 	}
 	if ctx == nil {
 		return auth.TokenClaims{}, nil

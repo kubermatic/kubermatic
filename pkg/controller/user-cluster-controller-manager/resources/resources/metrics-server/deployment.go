@@ -18,8 +18,6 @@ package metricsserver
 
 import (
 	"fmt"
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/servingcerthelper"
@@ -28,8 +26,10 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 var (
@@ -61,7 +61,7 @@ func TLSServingCertSecretCreator(caGetter servingcerthelper.CAGetter) reconcilin
 	return servingcerthelper.ServingCertSecretCreator(caGetter, servingCertSecretName, dnsName, []string{dnsName}, nil)
 }
 
-// DeploymentCreator returns the function to create and update the metrics server deployment
+// DeploymentCreator returns the function to create and update the metrics server deployment.
 func DeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.MetricsServerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -113,7 +113,7 @@ func DeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) reconci
 			}
 			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			dep.Spec.Template.Spec.ServiceAccountName = resources.MetricsServerServiceAccountName
@@ -145,7 +145,7 @@ func DeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) reconci
 	}
 }
 
-// PodDisruptionBudgetCreator returns a func to create/update the metrics-server PodDisruptionBudget
+// PodDisruptionBudgetCreator returns a func to create/update the metrics-server PodDisruptionBudget.
 func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
 		return resources.MetricsServerPodDisruptionBudgetName, func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {

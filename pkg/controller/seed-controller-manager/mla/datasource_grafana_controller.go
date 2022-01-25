@@ -309,7 +309,6 @@ func (r *datasourceGrafanaController) reconcileDatasource(ctx context.Context, g
 			err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 	}
 	return nil
-
 }
 
 func (r *datasourceGrafanaController) ensureDeployments(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData, settings *kubermaticv1.MLAAdminSetting) error {
@@ -327,7 +326,7 @@ func (r *datasourceGrafanaController) ensureConfigMaps(ctx context.Context, c *k
 		GatewayConfigMapCreator(c, r.mlaNamespace, settings),
 	}
 	if err := reconciling.ReconcileConfigMaps(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
-		return fmt.Errorf("failed to ensure that the ConfigMap exists: %v", err)
+		return fmt.Errorf("failed to ensure that the ConfigMap exists: %w", err)
 	}
 	return nil
 }
@@ -338,7 +337,7 @@ func (r *datasourceGrafanaController) ensureSecrets(ctx context.Context, c *kube
 		GatewayCertificateCreator(c, data.GetMLAGatewayCA),
 	}
 	if err := reconciling.ReconcileSecrets(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
-		return fmt.Errorf("failed to ensure that the Secrets exist: %v", err)
+		return fmt.Errorf("failed to ensure that the Secrets exist: %w", err)
 	}
 	return nil
 }
@@ -404,7 +403,7 @@ func (r *datasourceGrafanaController) handleDeletion(ctx context.Context, grafan
 				return fmt.Errorf("failed to update mlaGateway status in cluster: %w", errH)
 			}
 			if err != nil && !apiErrors.IsNotFound(err) {
-				return fmt.Errorf("failed to delete %s: %v", resource.GetName(), err)
+				return fmt.Errorf("failed to delete %s: %w", resource.GetName(), err)
 			}
 		}
 	}
@@ -429,9 +428,8 @@ func (r *datasourceGrafanaController) mlaGatewayHealth(ctx context.Context, clus
 
 	if oldCluster != cluster {
 		if err := r.Client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
-			return fmt.Errorf("error patching cluster health status: %v", err)
+			return fmt.Errorf("error patching cluster health status: %w", err)
 		}
 	}
 	return nil
-
 }

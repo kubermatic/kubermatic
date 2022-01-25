@@ -28,7 +28,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// EtcdRestoreProvider struct that holds required components in order manage etcd backup configs
+// EtcdRestoreProvider struct that holds required components in order manage etcd backup configs.
 type EtcdRestoreProvider struct {
 	// createSeedImpersonatedClient is used as a ground for impersonation
 	// whenever a connection to Seed API server is required
@@ -36,7 +36,7 @@ type EtcdRestoreProvider struct {
 	clientPrivileged             ctrlruntimeclient.Client
 }
 
-// NewEtcdRestoreProvider returns a etcd restore provider
+// NewEtcdRestoreProvider returns a etcd restore provider.
 func NewEtcdRestoreProvider(createSeedImpersonatedClient ImpersonationClient, client ctrlruntimeclient.Client) *EtcdRestoreProvider {
 	return &EtcdRestoreProvider{
 		clientPrivileged:             client,
@@ -78,7 +78,6 @@ func (p *EtcdRestoreProvider) CreateUnsecured(etcdRestore *kubermaticv1.EtcdRest
 }
 
 func (p *EtcdRestoreProvider) Get(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdRestore, error) {
-
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
@@ -96,7 +95,6 @@ func (p *EtcdRestoreProvider) GetUnsecured(cluster *kubermaticv1.Cluster, name s
 }
 
 func (p *EtcdRestoreProvider) List(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdRestoreList, error) {
-
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
@@ -114,7 +112,6 @@ func (p *EtcdRestoreProvider) ListUnsecured(cluster *kubermaticv1.Cluster) (*kub
 }
 
 func (p *EtcdRestoreProvider) Delete(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, name string) error {
-
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return err
@@ -139,7 +136,7 @@ func (p *EtcdRestoreProvider) DeleteUnsecured(cluster *kubermaticv1.Cluster, nam
 	return p.clientPrivileged.Delete(context.Background(), er)
 }
 
-// EtcdRestoreProjectProvider struct that holds required components in order manage etcd backup restores across projects
+// EtcdRestoreProjectProvider struct that holds required components in order manage etcd backup restores across projects.
 type EtcdRestoreProjectProvider struct {
 	// createSeedImpersonatedClient is used as a ground for impersonation
 	// whenever a connection to Seed API server is required
@@ -147,7 +144,7 @@ type EtcdRestoreProjectProvider struct {
 	clientsPrivileged             map[string]ctrlruntimeclient.Client
 }
 
-// NewEtcdRestoreProjectProvider returns an etcd restore global provider
+// NewEtcdRestoreProjectProvider returns an etcd restore global provider.
 func NewEtcdRestoreProjectProvider(createSeedImpersonatedClients map[string]ImpersonationClient, clients map[string]ctrlruntimeclient.Client) *EtcdRestoreProjectProvider {
 	return &EtcdRestoreProjectProvider{
 		clientsPrivileged:             clients,

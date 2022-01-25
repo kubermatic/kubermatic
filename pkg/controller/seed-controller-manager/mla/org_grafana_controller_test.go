@@ -75,7 +75,6 @@ func newTestOrgGrafanaReconciler(t *testing.T, objects []ctrlruntimeclient.Objec
 }
 
 func TestOrgGrafanaReconcile(t *testing.T) {
-
 	var board struct {
 		Dashboard grafanasdk.Board `json:"dashboard"`
 		FolderID  int              `json:"folderId"`
@@ -329,7 +328,6 @@ func TestOrgGrafanaReconcile(t *testing.T) {
 			server.Close()
 		})
 	}
-
 }
 
 func buildTestServer(t *testing.T, requests ...request) (http.Handler, func() bool) {

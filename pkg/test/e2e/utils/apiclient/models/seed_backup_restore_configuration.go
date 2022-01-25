@@ -14,7 +14,7 @@ import (
 
 // SeedBackupRestoreConfiguration SeedBackupRestoreConfiguration defines the bucket name and endpoint as a backup destination.
 //
-// Deprecated: use EtcdBackupRestore
+// Deprecated: use EtcdBackupRestore.
 //
 // swagger:model SeedBackupRestoreConfiguration
 type SeedBackupRestoreConfiguration struct {

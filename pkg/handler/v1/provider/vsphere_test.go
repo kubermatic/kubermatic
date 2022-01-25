@@ -97,7 +97,7 @@ func TestVsphereEndpoint(t *testing.T) {
 			res := httptest.NewRecorder()
 			ep, _, err := test.CreateTestEndpointAndGetClients(apiUser, mock.buildVSphereDatacenter(), []ctrlruntimeclient.Object{}, []ctrlruntimeclient.Object{}, []ctrlruntimeclient.Object{test.APIUserToKubermaticUser(apiUser)}, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			ep.ServeHTTP(res, req)
 
@@ -108,7 +108,6 @@ func TestVsphereEndpoint(t *testing.T) {
 			compareJSON(t, res, tc.ExpectedResponse)
 		})
 	}
-
 }
 
 func (v *vSphereMock) buildVSphereDatacenter() provider.SeedsGetter {

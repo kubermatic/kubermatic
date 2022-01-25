@@ -78,7 +78,7 @@ func ConvertKubeconfigAction(logger *logrus.Logger) cli.ActionFunc {
 
 		kubeconfig, err := readKubeconfig(filename)
 		if err != nil {
-			return fmt.Errorf("failed to read kubeconfig: %v", err)
+			return fmt.Errorf("failed to read kubeconfig: %w", err)
 		}
 
 		namespace := ctx.String(namespaceFlag.Name)
@@ -108,16 +108,16 @@ func ConvertKubeconfigAction(logger *logrus.Logger) cli.ActionFunc {
 
 			clientConfig, err := clientcmd.NewInteractiveClientConfig(*kubeconfig, contextName, nil, nil, nil).ClientConfig()
 			if err != nil {
-				return fmt.Errorf("failed to create client config: %v", err)
+				return fmt.Errorf("failed to create client config: %w", err)
 			}
 
 			token, err := reconcileCluster(context.Background(), clientConfig, namespace, clog)
 			if err != nil {
-				return fmt.Errorf("failed to reconcile: %v", err)
+				return fmt.Errorf("failed to reconcile: %w", err)
 			}
 
 			if err := updateKubeconfig(kubeconfig, clusterName, contextName, token); err != nil {
-				return fmt.Errorf("failed to update kubeconfig: %v", err)
+				return fmt.Errorf("failed to update kubeconfig: %w", err)
 			}
 
 			clog.Info("Done converting cluster")
@@ -129,7 +129,7 @@ func ConvertKubeconfigAction(logger *logrus.Logger) cli.ActionFunc {
 		}
 
 		if err := writeKubeconfig(kubeconfig, output); err != nil {
-			return fmt.Errorf("failed to save kubeconfig: %v", err)
+			return fmt.Errorf("failed to save kubeconfig: %w", err)
 		}
 
 		logger.Info("All Done")
@@ -147,19 +147,19 @@ func readKubeconfig(filename string) (*clientcmdapi.Config, error) {
 	} else {
 		input, err = os.Open(filename)
 		if err != nil {
-			return nil, fmt.Errorf("failed to open file: %v", err)
+			return nil, fmt.Errorf("failed to open file: %w", err)
 		}
 		defer input.Close()
 	}
 
 	content, err := ioutil.ReadAll(input)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read: %v", err)
+		return nil, fmt.Errorf("failed to read: %w", err)
 	}
 
 	config, err := clientcmd.Load(content)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse kubeconfig: %v", err)
+		return nil, fmt.Errorf("failed to parse kubeconfig: %w", err)
 	}
 
 	if config.AuthInfos == nil {
@@ -178,7 +178,7 @@ func readKubeconfig(filename string) (*clientcmdapi.Config, error) {
 func writeKubeconfig(kubeconfig *clientcmdapi.Config, filename string) error {
 	encoded, err := clientcmd.Write(*kubeconfig)
 	if err != nil {
-		return fmt.Errorf("failed to serialize kubeconfig: %v", err)
+		return fmt.Errorf("failed to serialize kubeconfig: %w", err)
 	}
 
 	var output *os.File
@@ -187,13 +187,13 @@ func writeKubeconfig(kubeconfig *clientcmdapi.Config, filename string) error {
 	} else {
 		output, err = os.Create(filename)
 		if err != nil {
-			return fmt.Errorf("failed to open file for writing: %v", err)
+			return fmt.Errorf("failed to open file for writing: %w", err)
 		}
 		defer output.Close()
 	}
 
 	if _, err := output.Write(encoded); err != nil {
-		return fmt.Errorf("failed to write to file: %v", err)
+		return fmt.Errorf("failed to write to file: %w", err)
 	}
 
 	return nil
@@ -233,7 +233,7 @@ func reconcileCluster(ctx context.Context, config *rest.Config, namespace string
 		HealthProbeBindAddress: "0",
 	})
 	if err != nil {
-		return "", fmt.Errorf("failed to create Kubernetes client: %v", err)
+		return "", fmt.Errorf("failed to create Kubernetes client: %w", err)
 	}
 
 	cache := mgr.GetCache()
@@ -251,20 +251,20 @@ func reconcileCluster(ctx context.Context, config *rest.Config, namespace string
 	if err := reconciling.ReconcileServiceAccounts(ctx, []reconciling.NamedServiceAccountCreatorGetter{
 		serviceAccountCreatorGetter,
 	}, namespace, client); err != nil {
-		return "", fmt.Errorf("failed to create ServiceAccount: %v", err)
+		return "", fmt.Errorf("failed to create ServiceAccount: %w", err)
 	}
 
 	log.Info("Reconciling ClusterRoleBinding...")
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, []reconciling.NamedClusterRoleBindingCreatorGetter{
 		clusterRoleCreatorGetterFactory(namespace),
 	}, "", client); err != nil {
-		return "", fmt.Errorf("failed to create ClusterRoleBinding: %v", err)
+		return "", fmt.Errorf("failed to create ClusterRoleBinding: %w", err)
 	}
 
 	log.Info("Retrieving ServiceAccount token...")
 	sa := corev1.ServiceAccount{}
 	if err := client.Get(ctx, types.NamespacedName{Name: serviceAccountName, Namespace: namespace}, &sa); err != nil {
-		return "", fmt.Errorf("failed to get ServiceAccount: %v", err)
+		return "", fmt.Errorf("failed to get ServiceAccount: %w", err)
 	}
 
 	if len(sa.Secrets) == 0 {
@@ -274,7 +274,7 @@ func reconcileCluster(ctx context.Context, config *rest.Config, namespace string
 	secretName := sa.Secrets[0].Name
 	secret := corev1.Secret{}
 	if err := client.Get(ctx, types.NamespacedName{Name: secretName, Namespace: namespace}, &secret); err != nil {
-		return "", fmt.Errorf("failed to get ServiceAccount token Secret: %v", err)
+		return "", fmt.Errorf("failed to get ServiceAccount token Secret: %w", err)
 	}
 
 	token, ok := secret.Data["token"]

@@ -66,7 +66,6 @@ func VsphereNetworksWithClusterCredentialsEndpoint(projectProvider provider.Proj
 		req := request.(VSphereNetworksNoCredentialsReq)
 		return providercommon.VsphereNetworksWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider,
 			privilegedProjectProvider, seedsGetter, req.ProjectID, req.ClusterID, caBundle)
-
 	}
 }
 

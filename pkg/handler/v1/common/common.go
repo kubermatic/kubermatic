@@ -47,7 +47,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// ResourceMetricsInfo is a struct that holds the node metrics
+// ResourceMetricsInfo is a struct that holds the node metrics.
 type ResourceMetricsInfo struct {
 	Name      string
 	Metrics   corev1.ResourceList
@@ -55,7 +55,7 @@ type ResourceMetricsInfo struct {
 }
 
 // OIDCConfiguration is a struct that holds
-// OIDC provider configuration data, read from command line arguments
+// OIDC provider configuration data, read from command line arguments.
 type OIDCConfiguration struct {
 	// URL holds OIDC Issuer URL address
 	URL string
@@ -73,7 +73,7 @@ type OIDCConfiguration struct {
 	OfflineAccessAsScope bool
 }
 
-// UpdateManager specifies a set of methods to handle cluster versions & updates
+// UpdateManager specifies a set of methods to handle cluster versions & updates.
 type UpdateManager interface {
 	GetVersions(string) ([]*version.Version, error)
 	// TODO: GetVersionsV2 is a temporary function that will replace GetVersions once the new handler will be used by the UI (https://github.com/kubermatic/kubermatic/pull/7590)
@@ -93,7 +93,7 @@ type ServerMetrics struct {
 	InitNodeDeploymentFailures *prometheus.CounterVec
 }
 
-// IsBringYourOwnProvider determines whether the spec holds BringYourOwn provider
+// IsBringYourOwnProvider determines whether the spec holds BringYourOwn provider.
 func IsBringYourOwnProvider(spec kubermaticv1.CloudSpec) (bool, error) {
 	providerName, err := provider.ClusterCloudProviderName(spec)
 	if err != nil {
@@ -121,7 +121,7 @@ func (d CredentialsData) GetGlobalSecretKeySelectorValue(configVar *providerconf
 func GetReadyPod(client corev1interface.PodInterface, labelSelector string) (*corev1.Pod, error) {
 	pods, err := client.List(context.Background(), metav1.ListOptions{LabelSelector: labelSelector})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get pod: %v", err)
+		return nil, fmt.Errorf("failed to get pod: %w", err)
 	}
 
 	readyPods := getReadyPods(pods)
@@ -146,7 +146,8 @@ func GetPortForwarder(
 	cfg *rest.Config,
 	namespace string,
 	labelSelector string,
-	containerPort int) (*portforward.PortForwarder, chan struct{}, error) {
+	containerPort int,
+) (*portforward.PortForwarder, chan struct{}, error) {
 	pod, err := GetReadyPod(coreClient.Pods(namespace), labelSelector)
 	if err != nil {
 		return nil, nil, err
@@ -162,7 +163,7 @@ func GetPortForwarder(
 	errorBuffer := bytes.NewBuffer(make([]byte, 1024))
 	portforwarder, err := portforward.NewOnAddresses(dialer, []string{"127.0.0.1"}, []string{"0:" + strconv.Itoa(containerPort)}, stopChan, readyChan, bytes.NewBuffer(make([]byte, 1024)), errorBuffer)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create portforwarder: %v", err)
+		return nil, nil, fmt.Errorf("failed to create portforwarder: %w", err)
 	}
 
 	// Portforwarding is blocking, so we can't do it here
@@ -188,11 +189,7 @@ func isPodReady(pod corev1.Pod) bool {
 	return false
 }
 
-func getDialerForPod(
-	pod *corev1.Pod,
-	restClient rest.Interface,
-	cfg *rest.Config) (httpstream.Dialer, error) {
-
+func getDialerForPod(pod *corev1.Pod, restClient rest.Interface, cfg *rest.Config) (httpstream.Dialer, error) {
 	// The logic here is copied straight from kubectl at
 	// https://github.com/kubernetes/kubernetes/blob/b88662505d288297750becf968bf307dacf872fa/staging/src/k8s.io/kubectl/pkg/cmd/portforward/portforward.go#L334
 	req := restClient.Post().
@@ -203,20 +200,20 @@ func getDialerForPod(
 
 	transport, upgrader, err := spdy.RoundTripperFor(cfg)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get spdy roundTripper: %v", err)
+		return nil, fmt.Errorf("failed to get spdy roundTripper: %w", err)
 	}
 
 	return spdy.NewDialer(upgrader, &http.Client{Transport: transport}, http.MethodPost, req.URL()), nil
 }
 
-// WaitForPortForwarder waits until started port forwarder is ready, or emits an error to provided errChan
+// WaitForPortForwarder waits until started port forwarder is ready, or emits an error to provided errChan.
 func WaitForPortForwarder(p *portforward.PortForwarder, errChan <-chan error) error {
 	timeout := time.After(10 * time.Second)
 	select {
 	case <-timeout:
 		return errors.New("timeout waiting for backend connection")
 	case err := <-errChan:
-		return fmt.Errorf("failed to get connection to backend: %v", err)
+		return fmt.Errorf("failed to get connection to backend: %w", err)
 	case <-p.Ready:
 		return nil
 	}
@@ -225,11 +222,9 @@ func WaitForPortForwarder(p *portforward.PortForwarder, errChan <-chan error) er
 // WriteHTTPError writes an http error out. If debug is enabled, it also gets logged.
 func WriteHTTPError(log *zap.SugaredLogger, w http.ResponseWriter, err error) {
 	log.Debugw("Encountered error", zap.Error(err))
-	var httpErr kubermaticerrors.HTTPError
 
-	if asserted, ok := err.(kubermaticerrors.HTTPError); ok {
-		httpErr = asserted
-	} else {
+	var httpErr kubermaticerrors.HTTPError
+	if !errors.As(err, &httpErr) {
 		httpErr = kubermaticerrors.New(http.StatusInternalServerError, err.Error())
 	}
 
@@ -306,7 +301,7 @@ func GetProject(ctx context.Context, userInfoGetter provider.UserInfoGetter, pro
 func GetClusterClient(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, cluster *kubermaticv1.Cluster, projectID string) (ctrlruntimeclient.Client, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user information: %v", err)
+		return nil, fmt.Errorf("failed to get user information: %w", err)
 	}
 	if adminUserInfo.IsAdmin {
 		return clusterProvider.GetAdminClientForCustomerCluster(ctx, cluster)
@@ -314,7 +309,7 @@ func GetClusterClient(ctx context.Context, userInfoGetter provider.UserInfoGette
 
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user information: %v", err)
+		return nil, fmt.Errorf("failed to get user information: %w", err)
 	}
 	return clusterProvider.GetClientForCustomerCluster(ctx, userInfo, cluster)
 }

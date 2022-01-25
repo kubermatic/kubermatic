@@ -73,7 +73,7 @@ func TestListRole(t *testing.T) {
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
 			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -129,7 +129,7 @@ func TestListClusterRole(t *testing.T) {
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
 			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -197,7 +197,7 @@ func TestListRoleNames(t *testing.T) {
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
 			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -212,7 +212,6 @@ func TestListRoleNames(t *testing.T) {
 			wrappedExpectedRoles := test.NewRoleNameSliceWrapper(tc.expectedResponse)
 			wrappedExpectedRoles.Sort()
 			actualRoles.EqualOrDie(wrappedExpectedRoles, t)
-
 		})
 	}
 }
@@ -274,7 +273,7 @@ func TestListClusterRoleNames(t *testing.T) {
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
 			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)

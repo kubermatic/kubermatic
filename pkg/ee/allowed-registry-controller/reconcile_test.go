@@ -54,7 +54,6 @@ import (
 const testNamespace = "kubermatic"
 
 func TestReconcile(t *testing.T) {
-
 	testCases := []struct {
 		name                  string
 		allowedRegistry       []*kubermaticv1.AllowedRegistry

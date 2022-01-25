@@ -25,7 +25,7 @@ import (
 	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
-// TokenClaims holds various claims extracted from the id_token
+// TokenClaims holds various claims extracted from the id_token.
 type TokenClaims struct {
 	Name    string
 	Email   string
@@ -34,19 +34,19 @@ type TokenClaims struct {
 	Expiry  apiv1.Time
 }
 
-// TokenExtractorVerifier combines TokenVerifier and TokenExtractor interfaces
+// TokenExtractorVerifier combines TokenVerifier and TokenExtractor interfaces.
 type TokenExtractorVerifier interface {
 	TokenVerifier
 	TokenExtractor
 }
 
-// TokenExtractor is an interface that knows how to extract a token
+// TokenExtractor is an interface that knows how to extract a token.
 type TokenExtractor interface {
 	// Extract gets a token from the given HTTP request
 	Extract(r *http.Request) (string, error)
 }
 
-// TokenVerifier knows how to verify a token
+// TokenVerifier knows how to verify a token.
 type TokenVerifier interface {
 	// Verify parses a raw ID Token, verifies it's been signed by the provider, performs
 	// any additional checks depending on the Config, and returns the payload as TokenClaims.
@@ -56,12 +56,12 @@ type TokenVerifier interface {
 var _ TokenVerifier = &TokenVerifierPlugins{}
 
 // TokenVerifierPlugins implements TokenVerifier interface
-// by calling registered plugins for a token verification
+// by calling registered plugins for a token verification.
 type TokenVerifierPlugins struct {
 	plugins []TokenVerifier
 }
 
-// NewTokenVerifierPlugins creates a new instance of TokenVerifierPlugins with the given plugins
+// NewTokenVerifierPlugins creates a new instance of TokenVerifierPlugins with the given plugins.
 func NewTokenVerifierPlugins(plugins []TokenVerifier) *TokenVerifierPlugins {
 	return &TokenVerifierPlugins{plugins}
 }
@@ -87,12 +87,12 @@ func (p *TokenVerifierPlugins) Verify(ctx context.Context, token string) (TokenC
 var _ TokenExtractor = &TokenExtractorPlugins{}
 
 // TokenExtractorPlugins implements TokenExtractor
-// by calling registered plugins for a token extraction
+// by calling registered plugins for a token extraction.
 type TokenExtractorPlugins struct {
 	plugins []TokenExtractor
 }
 
-// NewTokenExtractorPlugins creates a new instance of TokenExtractorPlugins with the given plugins
+// NewTokenExtractorPlugins creates a new instance of TokenExtractorPlugins with the given plugins.
 func NewTokenExtractorPlugins(plugins []TokenExtractor) *TokenExtractorPlugins {
 	return &TokenExtractorPlugins{plugins}
 }

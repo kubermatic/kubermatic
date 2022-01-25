@@ -22,10 +22,10 @@ import (
 )
 
 const (
-	// AlertmanagerResourceName represents "Resource" defined in Kubernetes
+	// AlertmanagerResourceName represents "Resource" defined in Kubernetes.
 	AlertmanagerResourceName = "alertmanagers"
 
-	// AlertmanagerKindName represents "Kind" defined in Kubernetes
+	// AlertmanagerKindName represents "Kind" defined in Kubernetes.
 	AlertmanagerKindName = "Alertmanager"
 )
 
@@ -55,12 +55,12 @@ type AlertmanagerList struct {
 	Items []Alertmanager `json:"items"`
 }
 
-// AlertmanagerStatus stores status information about the AlertManager
+// AlertmanagerStatus stores status information about the AlertManager.
 type AlertmanagerStatus struct {
 	ConfigStatus AlertmanagerConfigurationStatus `json:"configStatus,omitempty"`
 }
 
-// AlertmanagerConfigurationStatus stores status information about the AlertManager configuration
+// AlertmanagerConfigurationStatus stores status information about the AlertManager configuration.
 type AlertmanagerConfigurationStatus struct {
 	// LastUpdated stores the last successful time when the configuration was successfully applied
 	LastUpdated metav1.Time `json:"lastUpdated,omitempty"`

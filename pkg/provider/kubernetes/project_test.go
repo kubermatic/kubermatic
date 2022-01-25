@@ -219,7 +219,6 @@ func TestGetUnsecuredProjects(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-
 			kubermaticObjects := []ctrlruntimeclient.Object{}
 			for _, binding := range tc.existingProjects {
 				kubermaticObjects = append(kubermaticObjects, binding)

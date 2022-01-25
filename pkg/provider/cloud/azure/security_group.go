@@ -184,11 +184,11 @@ func ensureSecurityGroup(ctx context.Context, clients *ClientSet, cloud kubermat
 
 	future, err := clients.SecurityGroups.CreateOrUpdate(ctx, cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup, *sg)
 	if err != nil {
-		return fmt.Errorf("failed to create or update security group %q: %v", cloud.Azure.SecurityGroup, err)
+		return fmt.Errorf("failed to create or update security group %q: %w", cloud.Azure.SecurityGroup, err)
 	}
 
 	if err := future.WaitForCompletionRef(ctx, *clients.Autorest); err != nil {
-		return fmt.Errorf("failed to create or update security group %q: %v", cloud.Azure.SecurityGroup, err)
+		return fmt.Errorf("failed to create or update security group %q: %w", cloud.Azure.SecurityGroup, err)
 	}
 
 	return nil

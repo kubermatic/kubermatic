@@ -62,7 +62,7 @@ type UpgradeNodeDeploymentsReq struct {
 	Body apiv1.MasterVersion
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req UpgradeNodeDeploymentsReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,

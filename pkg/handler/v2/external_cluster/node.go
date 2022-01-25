@@ -72,7 +72,7 @@ func ListNodesEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider p
 		for _, n := range nodes.Items {
 			outNode, err := outputNode(n)
 			if err != nil {
-				return nil, fmt.Errorf("failed to output node %s: %v", n.Name, err)
+				return nil, fmt.Errorf("failed to output node %s: %w", n.Name, err)
 			}
 			nodesV1 = append(nodesV1, outNode)
 		}
@@ -175,7 +175,7 @@ func DecodeListNodesReq(c context.Context, r *http.Request) (interface{}, error)
 	return req, nil
 }
 
-// Validate validates CreateEndpoint request
+// Validate validates CreateEndpoint request.
 func (req listNodesReq) Validate() error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("the project ID cannot be empty")
@@ -394,7 +394,7 @@ func ListMachineDeploymentMetricsEndpoint(userInfoGetter provider.UserInfoGetter
 	}
 }
 
-// Validate validates getMachineDeploymentReq request
+// Validate validates getMachineDeploymentReq request.
 func (req machineDeploymentReq) Validate() error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("the project ID cannot be empty")
@@ -468,7 +468,7 @@ type listMachineDeploymentsReq struct {
 	ClusterID string `json:"cluster_id"`
 }
 
-// Validate validates ListMachineDeploymentEndpoint request
+// Validate validates ListMachineDeploymentEndpoint request.
 func (req listMachineDeploymentsReq) Validate() error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("the project ID cannot be empty")
@@ -529,7 +529,7 @@ func DecodeGetNodeReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-// Validate validates CreateEndpoint request
+// Validate validates CreateEndpoint request.
 func (req getNodeReq) Validate() error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("the project ID cannot be empty")
@@ -681,7 +681,6 @@ func PatchMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proj
 
 		cloud := cluster.Spec.CloudSpec
 		if cloud != nil {
-
 			secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
 			mdToPatch := apiv2.ExternalClusterMachineDeployment{}
 			patchedMD := apiv2.ExternalClusterMachineDeployment{}
@@ -757,7 +756,6 @@ func CreateMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, pro
 }
 
 func patchMD(mdToPatch, patchedMD *apiv2.ExternalClusterMachineDeployment, patchJson json.RawMessage) error {
-
 	existingMDJSON, err := json.Marshal(mdToPatch)
 	if err != nil {
 		return errors.NewBadRequest("cannot decode existing md: %v", err)
@@ -821,7 +819,7 @@ type createMachineDeploymentsReq struct {
 	Body apiv2.ExternalClusterMachineDeployment
 }
 
-// Validate validates CreateMachineDeploymentEndpoint request
+// Validate validates CreateMachineDeploymentEndpoint request.
 func (req createMachineDeploymentsReq) Validate() error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("the project ID cannot be empty")

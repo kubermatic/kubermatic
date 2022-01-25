@@ -28,7 +28,7 @@ const (
 	ServiceAccountName = "external-admin-user"
 )
 
-// ServiceAccountCreator returns a func to create/update the ServiceAccount used by the cluster user
+// ServiceAccountCreator returns a func to create/update the ServiceAccount used by the cluster user.
 func ServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
 	return func() (string, reconciling.ServiceAccountCreator) {
 		return ServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
@@ -37,7 +37,7 @@ func ServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
 	}
 }
 
-// ClusterRoleBindingCreator returns a func to create/update the ClusterRoleBinding which will give the "external-admin-user" full admin access
+// ClusterRoleBindingCreator returns a func to create/update the ClusterRoleBinding which will give the "external-admin-user" full admin access.
 func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return "external-admin-user", func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {

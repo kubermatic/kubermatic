@@ -56,7 +56,7 @@ type AKSCommonReq struct {
 	Credential string
 }
 
-// Validate validates aksCommonReq request
+// Validate validates aksCommonReq request.
 func (req AKSCommonReq) Validate() error {
 	if len(req.Credential) == 0 && len(req.TenantID) == 0 && len(req.SubscriptionID) == 0 && len(req.ClientID) == 0 && len(req.ClientSecret) == 0 {
 		return fmt.Errorf("AKS credentials cannot be empty")
@@ -114,7 +114,6 @@ type AKSClusterListReq struct {
 
 func ListAKSClustersEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, presetProvider provider.PresetProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-
 		req := request.(AKSClusterListReq)
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())

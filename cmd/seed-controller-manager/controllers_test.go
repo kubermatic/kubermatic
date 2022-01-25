@@ -67,5 +67,4 @@ spec: bar`,
 				testCase.containerYaml, container)
 		}
 	}
-
 }

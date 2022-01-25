@@ -73,7 +73,7 @@ func DecodeCreateMachineDeployment(c context.Context, r *http.Request) (interfac
 	return req, nil
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req createMachineDeploymentReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
@@ -121,7 +121,7 @@ func DecodeDeleteMachineDeploymentNode(c context.Context, r *http.Request) (inte
 	return req, nil
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req deleteMachineDeploymentNodeReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
@@ -154,7 +154,7 @@ func DecodeListMachineDeployments(c context.Context, r *http.Request) (interface
 	return req, nil
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req listMachineDeploymentsReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
@@ -175,7 +175,7 @@ func GetMachineDeployment(projectProvider provider.ProjectProvider, privilegedPr
 	}
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req machineDeploymentReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
@@ -225,7 +225,7 @@ func DecodeGetMachineDeployment(c context.Context, r *http.Request) (interface{}
 	return req, nil
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req machineDeploymentNodesReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
@@ -290,7 +290,7 @@ type listNodesForClusterReq struct {
 	HideInitialConditions bool `json:"hideInitialConditions"`
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req listNodesForClusterReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
@@ -334,7 +334,7 @@ type machineDeploymentMetricsReq struct {
 	MachineDeploymentID string `json:"machinedeployment_id"`
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req machineDeploymentMetricsReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
@@ -473,7 +473,7 @@ func DecodeDeleteMachineDeployment(c context.Context, r *http.Request) (interfac
 	return req, nil
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req deleteMachineDeploymentReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,

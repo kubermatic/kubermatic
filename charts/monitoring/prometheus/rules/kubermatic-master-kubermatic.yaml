@@ -38,7 +38,7 @@ groups:
       - alert: KubermaticAPITooManyInitNodeDeloymentFailures
         annotations:
           message: Kubermatic API is failing to create too many initial node deployments.
-        expr: sum(rate(kubermatic_api_init_node_deployment_failures[5m])) > 0.01
+        expr: sum(rate(kubermatic_api_failed_init_node_deployment_total[5m])) > 0.01
         for: 15m
         labels:
           severity: warning

@@ -83,7 +83,7 @@ func ensureCredentialSecret(ctx context.Context, seedClient ctrlruntimeclient.Cl
 	namespacedName := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: name}
 	existingSecret := &corev1.Secret{}
 	if err := seedClient.Get(ctx, namespacedName, existingSecret); err != nil && !kerrors.IsNotFound(err) {
-		return nil, fmt.Errorf("failed to probe for secret %q: %v", name, err)
+		return nil, fmt.Errorf("failed to probe for secret %q: %w", name, err)
 	}
 
 	if existingSecret.Name == "" {
@@ -105,7 +105,7 @@ func ensureCredentialSecret(ctx context.Context, seedClient ctrlruntimeclient.Cl
 		}
 
 		if err := seedClient.Create(ctx, secret); err != nil {
-			return nil, fmt.Errorf("failed to create credential secret: %v", err)
+			return nil, fmt.Errorf("failed to create credential secret: %w", err)
 		}
 	} else {
 		if existingSecret.Data == nil {
@@ -124,7 +124,7 @@ func ensureCredentialSecret(ctx context.Context, seedClient ctrlruntimeclient.Cl
 		if requiresUpdate {
 			existingSecret.Data = secretData
 			if err := seedClient.Update(ctx, existingSecret); err != nil {
-				return nil, fmt.Errorf("failed to update credential secret: %v", err)
+				return nil, fmt.Errorf("failed to update credential secret: %w", err)
 			}
 		}
 	}

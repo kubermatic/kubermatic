@@ -650,7 +650,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 }
 
 // TestEnsureClusterResourcesCleanup test if cluster resources for the given
-// project were removed from all physical locations
+// project were removed from all physical locations.
 func TestEnsureClusterResourcesCleanup(t *testing.T) {
 	tests := []struct {
 		name                string

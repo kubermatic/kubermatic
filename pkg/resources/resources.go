@@ -49,145 +49,145 @@ import (
 )
 
 const (
-	// ApiServer secure port
+	// ApiServer secure port.
 	APIServerSecurePort = 6443
 
 	NodeLocalDNSCacheAddress = "169.254.20.10"
 )
 
 const (
-	// ApiserverDeploymentName is the name of the apiserver deployment
+	// ApiserverDeploymentName is the name of the apiserver deployment.
 	ApiserverDeploymentName = "apiserver"
-	// ControllerManagerDeploymentName is the name for the controller manager deployment
+	// ControllerManagerDeploymentName is the name for the controller manager deployment.
 	ControllerManagerDeploymentName = "controller-manager"
-	// SchedulerDeploymentName is the name for the scheduler deployment
+	// SchedulerDeploymentName is the name for the scheduler deployment.
 	SchedulerDeploymentName = "scheduler"
-	// OperatingSystemManagerDeploymentName is the name for the operating-system-manager deployment
+	// OperatingSystemManagerDeploymentName is the name for the operating-system-manager deployment.
 	OperatingSystemManagerDeploymentName = "operating-system-manager"
-	// MachineControllerDeploymentName is the name for the machine-controller deployment
+	// MachineControllerDeploymentName is the name for the machine-controller deployment.
 	MachineControllerDeploymentName = "machine-controller"
-	// MachineControllerWebhookDeploymentName is the name for the machine-controller webhook deployment
+	// MachineControllerWebhookDeploymentName is the name for the machine-controller webhook deployment.
 	MachineControllerWebhookDeploymentName = "machine-controller-webhook"
-	// MetricsServerDeploymentName is the name for the metrics-server deployment
+	// MetricsServerDeploymentName is the name for the metrics-server deployment.
 	MetricsServerDeploymentName = "metrics-server"
-	// OpenVPNServerDeploymentName is the name for the openvpn server deployment
+	// OpenVPNServerDeploymentName is the name for the openvpn server deployment.
 	OpenVPNServerDeploymentName = "openvpn-server"
-	// DNSResolverDeploymentName is the name of the dns resolver deployment
+	// DNSResolverDeploymentName is the name of the dns resolver deployment.
 	DNSResolverDeploymentName = "dns-resolver"
-	// DNSResolverConfigMapName is the name of the dns resolvers configmap
+	// DNSResolverConfigMapName is the name of the dns resolvers configmap.
 	DNSResolverConfigMapName = "dns-resolver"
-	// DNSResolverServiceName is the name of the dns resolvers service
+	// DNSResolverServiceName is the name of the dns resolvers service.
 	DNSResolverServiceName = "dns-resolver"
-	// DNSResolverPodDisruptionBudetName is the name of the dns resolvers pdb
+	// DNSResolverPodDisruptionBudetName is the name of the dns resolvers pdb.
 	DNSResolverPodDisruptionBudetName = "dns-resolver"
-	// KubeStateMetricsDeploymentName is the name of the kube-state-metrics deployment
+	// KubeStateMetricsDeploymentName is the name of the kube-state-metrics deployment.
 	KubeStateMetricsDeploymentName = "kube-state-metrics"
-	// UserClusterControllerDeploymentName is the name of the usercluster-controller deployment
+	// UserClusterControllerDeploymentName is the name of the usercluster-controller deployment.
 	UserClusterControllerDeploymentName = "usercluster-controller"
-	// ClusterAutoscalerDeploymentName is the name of the cluster-autoscaler deployment
+	// ClusterAutoscalerDeploymentName is the name of the cluster-autoscaler deployment.
 	ClusterAutoscalerDeploymentName = "cluster-autoscaler"
-	// KubernetesDashboardDeploymentName is the name of the Kubernetes Dashboard deployment
+	// KubernetesDashboardDeploymentName is the name of the Kubernetes Dashboard deployment.
 	KubernetesDashboardDeploymentName = "kubernetes-dashboard"
-	// MetricsScraperDeploymentName is the name of dashboard-metrics-scraper deployment
+	// MetricsScraperDeploymentName is the name of dashboard-metrics-scraper deployment.
 	MetricsScraperDeploymentName = "dashboard-metrics-scraper"
-	// MetricsScraperServiceName is the name of dashboard-metrics-scraper service
+	// MetricsScraperServiceName is the name of dashboard-metrics-scraper service.
 	MetricsScraperServiceName = "dashboard-metrics-scraper"
-	// PrometheusStatefulSetName is the name for the prometheus StatefulSet
+	// PrometheusStatefulSetName is the name for the prometheus StatefulSet.
 	PrometheusStatefulSetName = "prometheus"
-	// EtcdStatefulSetName is the name for the etcd StatefulSet
+	// EtcdStatefulSetName is the name for the etcd StatefulSet.
 	EtcdStatefulSetName = "etcd"
-	// EtcdDefaultBackupConfigName is the name for the default (preinstalled) EtcdBackupConfig of a cluster
+	// EtcdDefaultBackupConfigName is the name for the default (preinstalled) EtcdBackupConfig of a cluster.
 	EtcdDefaultBackupConfigName = "default-backups"
-	// EtcdTLSEnabledAnnotation is the annotation assigned to etcd Pods that run with a TLS peer endpoint
+	// EtcdTLSEnabledAnnotation is the annotation assigned to etcd Pods that run with a TLS peer endpoint.
 	EtcdTLSEnabledAnnotation = "etcd.kubermatic.k8c.io/tls-peer-enabled"
 
-	// ApiserverServiceName is the name for the apiserver service
+	// ApiserverServiceName is the name for the apiserver service.
 	ApiserverServiceName = "apiserver-external"
 	// FrontLoadBalancerServiceName is the name of the LoadBalancer service that fronts everything
-	// when using exposeStrategy "LoadBalancer"
+	// when using exposeStrategy "LoadBalancer".
 	FrontLoadBalancerServiceName = "front-loadbalancer"
-	// MetricsServerServiceName is the name for the metrics-server service
+	// MetricsServerServiceName is the name for the metrics-server service.
 	MetricsServerServiceName = "metrics-server"
-	// MetricsServerExternalNameServiceName is the name for the metrics-server service inside the user cluster
+	// MetricsServerExternalNameServiceName is the name for the metrics-server service inside the user cluster.
 	MetricsServerExternalNameServiceName = "metrics-server"
-	// EtcdServiceName is the name for the etcd service
+	// EtcdServiceName is the name for the etcd service.
 	EtcdServiceName = "etcd"
-	// EtcdDefragCronJobName is the name for the defrag cronjob deployment
+	// EtcdDefragCronJobName is the name for the defrag cronjob deployment.
 	EtcdDefragCronJobName = "etcd-defragger"
-	// OpenVPNServerServiceName is the name for the openvpn server service
+	// OpenVPNServerServiceName is the name for the openvpn server service.
 	OpenVPNServerServiceName = "openvpn-server"
-	// MachineControllerWebhookServiceName is the name of the machine-controller webhook service
+	// MachineControllerWebhookServiceName is the name of the machine-controller webhook service.
 	MachineControllerWebhookServiceName = "machine-controller-webhook"
-	// MetricsServerAPIServiceName is the name for the metrics-server APIService
+	// MetricsServerAPIServiceName is the name for the metrics-server APIService.
 	MetricsServerAPIServiceName = "v1beta1.metrics.k8s.io"
 
-	// AdminKubeconfigSecretName is the name for the secret containing the private ca key
+	// AdminKubeconfigSecretName is the name for the secret containing the private ca key.
 	AdminKubeconfigSecretName = "admin-kubeconfig"
-	// ViewerKubeconfigSecretName is the name for the secret containing the viewer kubeconfig
+	// ViewerKubeconfigSecretName is the name for the secret containing the viewer kubeconfig.
 	ViewerKubeconfigSecretName = "viewer-kubeconfig"
-	// SchedulerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the scheduler
+	// SchedulerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the scheduler.
 	SchedulerKubeconfigSecretName = "scheduler-kubeconfig"
-	// KubeletDnatControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the kubeletdnatcontroller
+	// KubeletDnatControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the kubeletdnatcontroller.
 	KubeletDnatControllerKubeconfigSecretName = "kubeletdnatcontroller-kubeconfig"
-	// KubeStateMetricsKubeconfigSecretName is the name for the secret containing the kubeconfig used by kube-state-metrics
+	// KubeStateMetricsKubeconfigSecretName is the name for the secret containing the kubeconfig used by kube-state-metrics.
 	KubeStateMetricsKubeconfigSecretName = "kube-state-metrics-kubeconfig"
-	// MetricsServerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the metrics-server
+	// MetricsServerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the metrics-server.
 	MetricsServerKubeconfigSecretName = "metrics-server"
-	// ControllerManagerKubeconfigSecretName is the name of the secret containing the kubeconfig used by controller manager
+	// ControllerManagerKubeconfigSecretName is the name of the secret containing the kubeconfig used by controller manager.
 	ControllerManagerKubeconfigSecretName = "controllermanager-kubeconfig"
-	// OperatingSystemManagerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the osm
+	// OperatingSystemManagerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the osm.
 	OperatingSystemManagerKubeconfigSecretName = "operatingsystemmanager-kubeconfig"
-	// MachineControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the machinecontroller
+	// MachineControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the machinecontroller.
 	MachineControllerKubeconfigSecretName = "machinecontroller-kubeconfig"
-	// CloudControllerManagerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the external cloud provider
+	// CloudControllerManagerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the external cloud provider.
 	CloudControllerManagerKubeconfigSecretName = "cloud-controller-manager-kubeconfig"
 	// MachineControllerWebhookServingCertSecretName is the name for the secret containing the serving cert for the
-	// machine-controller webhook
+	// machine-controller webhook.
 	MachineControllerWebhookServingCertSecretName = "machinecontroller-webhook-serving-cert"
-	// MachineControllerWebhookServingCertCertKeyName is the name for the key that contains the cert
+	// MachineControllerWebhookServingCertCertKeyName is the name for the key that contains the cert.
 	MachineControllerWebhookServingCertCertKeyName = "cert.pem"
-	// MachineControllerWebhookServingCertKeyKeyName is the name for the key that contains the key
+	// MachineControllerWebhookServingCertKeyKeyName is the name for the key that contains the key.
 	MachineControllerWebhookServingCertKeyKeyName = "key.pem"
-	// PrometheusApiserverClientCertificateSecretName is the name for the secret containing the client certificate used by prometheus to access the apiserver
+	// PrometheusApiserverClientCertificateSecretName is the name for the secret containing the client certificate used by prometheus to access the apiserver.
 	PrometheusApiserverClientCertificateSecretName = "prometheus-apiserver-certificate"
 	// ClusterAutoscalerKubeconfigSecretName is the name of the kubeconfig secret used for
-	// the cluster-autoscaler
+	// the cluster-autoscaler.
 	ClusterAutoscalerKubeconfigSecretName = "cluster-autoscaler-kubeconfig"
-	// KubernetesDashboardKubeconfigSecretName is the name of the kubeconfig secret user for Kubernetes Dashboard
+	// KubernetesDashboardKubeconfigSecretName is the name of the kubeconfig secret user for Kubernetes Dashboard.
 	KubernetesDashboardKubeconfigSecretName = "kubernetes-dashboard-kubeconfig"
 
 	// ImagePullSecretName specifies the name of the dockercfg secret used to access the private repo.
 	ImagePullSecretName = "dockercfg"
 
-	// FrontProxyCASecretName is the name for the secret containing the front proxy ca
+	// FrontProxyCASecretName is the name for the secret containing the front proxy ca.
 	FrontProxyCASecretName = "front-proxy-ca"
-	// CASecretName is the name for the secret containing the root ca
+	// CASecretName is the name for the secret containing the root ca.
 	CASecretName = "ca"
-	// ApiserverTLSSecretName is the name for the secrets required for the apiserver tls
+	// ApiserverTLSSecretName is the name for the secrets required for the apiserver tls.
 	ApiserverTLSSecretName = "apiserver-tls"
-	// KubeletClientCertificatesSecretName is the name for the secret containing the kubelet client certificates
+	// KubeletClientCertificatesSecretName is the name for the secret containing the kubelet client certificates.
 	KubeletClientCertificatesSecretName = "kubelet-client-certificates"
-	// ServiceAccountKeySecretName is the name for the secret containing the service account key
+	// ServiceAccountKeySecretName is the name for the secret containing the service account key.
 	ServiceAccountKeySecretName = "service-account-key"
-	// TokensSecretName is the name for the secret containing the user tokens
+	// TokensSecretName is the name for the secret containing the user tokens.
 	TokensSecretName = "tokens"
-	// ViewerTokenSecretName is the name for the secret containing the viewer token
+	// ViewerTokenSecretName is the name for the secret containing the viewer token.
 	ViewerTokenSecretName = "viewer-token"
-	// OpenVPNCASecretName is the name of the secret that contains the OpenVPN CA
+	// OpenVPNCASecretName is the name of the secret that contains the OpenVPN CA.
 	OpenVPNCASecretName = "openvpn-ca"
-	// OpenVPNServerCertificatesSecretName is the name for the secret containing the openvpn server certificates
+	// OpenVPNServerCertificatesSecretName is the name for the secret containing the openvpn server certificates.
 	OpenVPNServerCertificatesSecretName = "openvpn-server-certificates"
-	// OpenVPNClientCertificatesSecretName is the name for the secret containing the openvpn client certificates
+	// OpenVPNClientCertificatesSecretName is the name for the secret containing the openvpn client certificates.
 	OpenVPNClientCertificatesSecretName = "openvpn-client-certificates"
 	// CloudConfigSecretName is the name for the secret containing the cloud-config inside the user cluster.
 	CloudConfigSecretName = "cloud-config"
-	// CSICloudConfigSecretName is the name for the secret containing the cloud-config used by the csi driver inside the user cluster
+	// CSICloudConfigSecretName is the name for the secret containing the cloud-config used by the csi driver inside the user cluster.
 	CSICloudConfigSecretName = "cloud-config-csi"
-	// EtcdTLSCertificateSecretName is the name for the secret containing the etcd tls certificate used for transport security
+	// EtcdTLSCertificateSecretName is the name for the secret containing the etcd tls certificate used for transport security.
 	EtcdTLSCertificateSecretName = "etcd-tls-certificate"
-	// ApiserverEtcdClientCertificateSecretName is the name for the secret containing the client certificate used by the apiserver for authenticating against etcd
+	// ApiserverEtcdClientCertificateSecretName is the name for the secret containing the client certificate used by the apiserver for authenticating against etcd.
 	ApiserverEtcdClientCertificateSecretName = "apiserver-etcd-client-certificate"
-	// ApiserverFrontProxyClientCertificateSecretName is the name for the secret containing the apiserver's client certificate for proxy auth
+	// ApiserverFrontProxyClientCertificateSecretName is the name for the secret containing the apiserver's client certificate for proxy auth.
 	ApiserverFrontProxyClientCertificateSecretName = "apiserver-proxy-client-certificate"
 	// GoogleServiceAccountSecretName is the name of the secret that contains the Google Service Account.
 	GoogleServiceAccountSecretName = "google-service-account"
@@ -196,240 +196,240 @@ const (
 	// AuditLogVolumeName is the name of the volume that hold the audit log of the apiserver.
 	AuditLogVolumeName = "audit-log"
 	// KubernetesDashboardKeyHolderSecretName is the name of the secret that contains JWE token encryption key
-	// used by the Kubernetes Dashboard
+	// used by the Kubernetes Dashboard.
 	KubernetesDashboardKeyHolderSecretName = "kubernetes-dashboard-key-holder"
 	// KubernetesDashboardCsrfTokenSecretName is the name of the secret that contains CSRF token used by
-	// the Kubernetes Dashboard
+	// the Kubernetes Dashboard.
 	KubernetesDashboardCsrfTokenSecretName = "kubernetes-dashboard-csrf"
 
-	// CABundleConfigMapName is the name for the configmap that contains the CA bundle for all usercluster components
+	// CABundleConfigMapName is the name for the configmap that contains the CA bundle for all usercluster components.
 	CABundleConfigMapName = "ca-bundle"
-	// CABundleConfigMapKey is the key under which a ConfigMap must contain a PEM-encoded collection of certificates
+	// CABundleConfigMapKey is the key under which a ConfigMap must contain a PEM-encoded collection of certificates.
 	CABundleConfigMapKey = "ca-bundle.pem"
 
-	// CloudConfigConfigMapName is the name for the configmap containing the cloud-config
+	// CloudConfigConfigMapName is the name for the configmap containing the cloud-config.
 	CloudConfigConfigMapName = "cloud-config"
-	// CSICloudConfigConfigMapName is the name for the configmap containing the cloud-config used by the csi driver
+	// CSICloudConfigConfigMapName is the name for the configmap containing the cloud-config used by the csi driver.
 	CSICloudConfigConfigMapName = "cloud-config-csi"
-	// CloudConfigConfigMapKey is the key under which the cloud-config in the cloud-config configmap can be found
+	// CloudConfigConfigMapKey is the key under which the cloud-config in the cloud-config configmap can be found.
 	CloudConfigConfigMapKey = "config"
-	// OpenVPNClientConfigsConfigMapName is the name for the ConfigMap containing the OpenVPN client config used within the user cluster
+	// OpenVPNClientConfigsConfigMapName is the name for the ConfigMap containing the OpenVPN client config used within the user cluster.
 	OpenVPNClientConfigsConfigMapName = "openvpn-client-configs"
-	// OpenVPNClientConfigConfigMapName is the name for the ConfigMap containing the OpenVPN client config used by the client inside the user cluster
+	// OpenVPNClientConfigConfigMapName is the name for the ConfigMap containing the OpenVPN client config used by the client inside the user cluster.
 	OpenVPNClientConfigConfigMapName = "openvpn-client-config"
-	// ClusterInfoConfigMapName is the name for the ConfigMap containing the cluster-info used by the bootstrap token mechanism
+	// ClusterInfoConfigMapName is the name for the ConfigMap containing the cluster-info used by the bootstrap token mechanism.
 	ClusterInfoConfigMapName = "cluster-info"
-	// PrometheusConfigConfigMapName is the name for the configmap containing the prometheus config
+	// PrometheusConfigConfigMapName is the name for the configmap containing the prometheus config.
 	PrometheusConfigConfigMapName = "prometheus"
 	// AuditConfigMapName is the name for the configmap that contains the content of the file that will be passed to the apiserver with the flag "--audit-policy-file".
 	AuditConfigMapName = "audit-config"
-	// AdmissionControlConfigMapName is the name for the configmap that contains the Admission Controller config file
+	// AdmissionControlConfigMapName is the name for the configmap that contains the Admission Controller config file.
 	AdmissionControlConfigMapName = "adm-control"
 
-	// PrometheusServiceAccountName is the name for the Prometheus serviceaccount
+	// PrometheusServiceAccountName is the name for the Prometheus serviceaccount.
 	PrometheusServiceAccountName = "prometheus"
 
-	// PrometheusRoleName is the name for the Prometheus role
+	// PrometheusRoleName is the name for the Prometheus role.
 	PrometheusRoleName = "prometheus"
 
-	// PrometheusRoleBindingName is the name for the Prometheus rolebinding
+	// PrometheusRoleBindingName is the name for the Prometheus rolebinding.
 	PrometheusRoleBindingName = "prometheus"
 
 	// CloudControllerManagerRoleBindingName is the name for the cloud controller manager rolebinding.
 	CloudControllerManagerRoleBindingName = "cloud-controller-manager"
 
-	// DefaultServiceAccountName is the name of Kubernetes default service accounts
+	// DefaultServiceAccountName is the name of Kubernetes default service accounts.
 	DefaultServiceAccountName = "default"
-	// KubeSystemNamespaceName is the name of Kubernetes kube-system namespace
+	// KubeSystemNamespaceName is the name of Kubernetes kube-system namespace.
 	KubeSystemNamespaceName = "kube-system"
 
-	// OperatingSystemManagerCertUsername is the name of the user coming from kubeconfig cert
+	// OperatingSystemManagerCertUsername is the name of the user coming from kubeconfig cert.
 	OperatingSystemManagerCertUsername = "operating-system-manager"
-	// MachineControllerCertUsername is the name of the user coming from kubeconfig cert
+	// MachineControllerCertUsername is the name of the user coming from kubeconfig cert.
 	MachineControllerCertUsername = "machine-controller"
-	// KubeStateMetricsCertUsername is the name of the user coming from kubeconfig cert
+	// KubeStateMetricsCertUsername is the name of the user coming from kubeconfig cert.
 	KubeStateMetricsCertUsername = "kube-state-metrics"
-	// MetricsServerCertUsername is the name of the user coming from kubeconfig cert
+	// MetricsServerCertUsername is the name of the user coming from kubeconfig cert.
 	MetricsServerCertUsername = "metrics-server"
-	// MetricsServerServiceAccountName is the name of the metrics server service account
+	// MetricsServerServiceAccountName is the name of the metrics server service account.
 	MetricsServerServiceAccountName = "metrics-server"
-	// ControllerManagerCertUsername is the name of the user coming from kubeconfig cert
+	// ControllerManagerCertUsername is the name of the user coming from kubeconfig cert.
 	ControllerManagerCertUsername = "system:kube-controller-manager"
-	// CloudControllerManagerCertUsername is the name of the user coming from kubeconfig cert
+	// CloudControllerManagerCertUsername is the name of the user coming from kubeconfig cert.
 	CloudControllerManagerCertUsername = "system:cloud-controller-manager"
-	// SchedulerCertUsername is the name of the user coming from kubeconfig cert
+	// SchedulerCertUsername is the name of the user coming from kubeconfig cert.
 	SchedulerCertUsername = "system:kube-scheduler"
-	// KubeletDnatControllerCertUsername is the name of the user coming from kubeconfig cert
+	// KubeletDnatControllerCertUsername is the name of the user coming from kubeconfig cert.
 	KubeletDnatControllerCertUsername = "kubermatic:kubeletdnat-controller"
-	// PrometheusCertUsername is the name of the user coming from kubeconfig cert
+	// PrometheusCertUsername is the name of the user coming from kubeconfig cert.
 	PrometheusCertUsername = "prometheus"
-	// ClusterAutoscalerCertUsername is the name of the user coming from the CA kubeconfig cert
+	// ClusterAutoscalerCertUsername is the name of the user coming from the CA kubeconfig cert.
 	ClusterAutoscalerCertUsername = "kubermatic:cluster-autoscaler"
-	// KubernetesDashboardCertUsername is the name of the user coming from kubeconfig cert
+	// KubernetesDashboardCertUsername is the name of the user coming from kubeconfig cert.
 	KubernetesDashboardCertUsername = "kubermatic:kubernetes-dashboard"
-	// MetricsScraperServiceAccountUsername is the name of the user coming from kubeconfig cert
+	// MetricsScraperServiceAccountUsername is the name of the user coming from kubeconfig cert.
 	MetricsScraperServiceAccountUsername = "dashboard-metrics-scraper"
 
-	// KubeletDnatControllerClusterRoleName is the name for the KubeletDnatController cluster role
+	// KubeletDnatControllerClusterRoleName is the name for the KubeletDnatController cluster role.
 	KubeletDnatControllerClusterRoleName = "system:kubermatic-kubeletdnat-controller"
-	// KubeletDnatControllerClusterRoleBindingName is the name for the KubeletDnatController clusterrolebinding
+	// KubeletDnatControllerClusterRoleBindingName is the name for the KubeletDnatController clusterrolebinding.
 	KubeletDnatControllerClusterRoleBindingName = "system:kubermatic-kubeletdnat-controller"
 
-	// ClusterInfoReaderRoleName is the name for the role which allows reading the cluster-info ConfigMap
+	// ClusterInfoReaderRoleName is the name for the role which allows reading the cluster-info ConfigMap.
 	ClusterInfoReaderRoleName = "cluster-info"
-	// MachineControllerRoleName is the name for the MachineController roles
+	// MachineControllerRoleName is the name for the MachineController roles.
 	MachineControllerRoleName = "machine-controller"
-	// OperatingSystemManagerRoleName is the name for the OperatingSystemManager roles
+	// OperatingSystemManagerRoleName is the name for the OperatingSystemManager roles.
 	OperatingSystemManagerRoleName = "operating-system-manager"
-	// MachineControllerRoleBindingName is the name for the MachineController rolebinding
+	// MachineControllerRoleBindingName is the name for the MachineController rolebinding.
 	MachineControllerRoleBindingName = "machine-controller"
-	// OperatingSystemManagerRoleBindingName is the name for the OperatingSystemManager rolebinding
+	// OperatingSystemManagerRoleBindingName is the name for the OperatingSystemManager rolebinding.
 	OperatingSystemManagerRoleBindingName = "operating-system-manager"
-	// ClusterInfoAnonymousRoleBindingName is the name for the RoleBinding giving access to the cluster-info ConfigMap to anonymous users
+	// ClusterInfoAnonymousRoleBindingName is the name for the RoleBinding giving access to the cluster-info ConfigMap to anonymous users.
 	ClusterInfoAnonymousRoleBindingName = "cluster-info"
-	// MetricsServerAuthReaderRoleName is the name for the metrics server role
+	// MetricsServerAuthReaderRoleName is the name for the metrics server role.
 	MetricsServerAuthReaderRoleName = "metrics-server-auth-reader"
-	// MachineControllerClusterRoleName is the name for the MachineController cluster role
+	// MachineControllerClusterRoleName is the name for the MachineController cluster role.
 	MachineControllerClusterRoleName = "system:kubermatic-machine-controller"
-	// OperatingSystemManagerClusterRoleName is the name for the OperatingSystemManager cluster role
+	// OperatingSystemManagerClusterRoleName is the name for the OperatingSystemManager cluster role.
 	OperatingSystemManagerClusterRoleName = "system:kubermatic-operating-system-manager"
-	// KubeStateMetricsClusterRoleName is the name for the KubeStateMetrics cluster role
+	// KubeStateMetricsClusterRoleName is the name for the KubeStateMetrics cluster role.
 	KubeStateMetricsClusterRoleName = "system:kubermatic-kube-state-metrics"
-	// MetricsServerClusterRoleName is the name for the metrics server cluster role
+	// MetricsServerClusterRoleName is the name for the metrics server cluster role.
 	MetricsServerClusterRoleName = "system:metrics-server"
-	// PrometheusClusterRoleName is the name for the Prometheus cluster role
+	// PrometheusClusterRoleName is the name for the Prometheus cluster role.
 	PrometheusClusterRoleName = "external-prometheus"
-	// MachineControllerClusterRoleBindingName is the name for the MachineController ClusterRoleBinding
+	// MachineControllerClusterRoleBindingName is the name for the MachineController ClusterRoleBinding.
 	MachineControllerClusterRoleBindingName = "system:kubermatic-machine-controller"
-	// OperatingSystemManagerClusterRoleBindingName is the name for the OperatingSystemManager ClusterRoleBinding
+	// OperatingSystemManagerClusterRoleBindingName is the name for the OperatingSystemManager ClusterRoleBinding.
 	OperatingSystemManagerClusterRoleBindingName = "system:kubermatic-operating-system-manager"
-	// KubeStateMetricsClusterRoleBindingName is the name for the KubeStateMetrics ClusterRoleBinding
+	// KubeStateMetricsClusterRoleBindingName is the name for the KubeStateMetrics ClusterRoleBinding.
 	KubeStateMetricsClusterRoleBindingName = "system:kubermatic-kube-state-metrics"
-	// PrometheusClusterRoleBindingName is the name for the Prometheus ClusterRoleBinding
+	// PrometheusClusterRoleBindingName is the name for the Prometheus ClusterRoleBinding.
 	PrometheusClusterRoleBindingName = "system:external-prometheus"
-	// MetricsServerResourceReaderClusterRoleBindingName is the name for the metrics server ClusterRoleBinding
+	// MetricsServerResourceReaderClusterRoleBindingName is the name for the metrics server ClusterRoleBinding.
 	MetricsServerResourceReaderClusterRoleBindingName = "system:metrics-server"
-	// ClusterAutoscalerClusterRoleName is the name of the clusterrole for the cluster autoscaler
+	// ClusterAutoscalerClusterRoleName is the name of the clusterrole for the cluster autoscaler.
 	ClusterAutoscalerClusterRoleName = "system:kubermatic-cluster-autoscaler"
-	// ClusterAutoscalerClusterRoleBindingName is the name of the clusterrolebinding for the CA
+	// ClusterAutoscalerClusterRoleBindingName is the name of the clusterrolebinding for the CA.
 	ClusterAutoscalerClusterRoleBindingName = "system:kubermatic-cluster-autoscaler"
-	// KubernetesDashboardRoleName is the name of the role for the Kubernetes Dashboard
+	// KubernetesDashboardRoleName is the name of the role for the Kubernetes Dashboard.
 	KubernetesDashboardRoleName = "system:kubernetes-dashboard"
-	// KubernetesDashboardRoleBindingName is the name of the role binding for the Kubernetes Dashboard
+	// KubernetesDashboardRoleBindingName is the name of the role binding for the Kubernetes Dashboard.
 	KubernetesDashboardRoleBindingName = "system:kubernetes-dashboard"
-	// MetricsScraperClusterRoleName is the name of the role for the dashboard-metrics-scraper
+	// MetricsScraperClusterRoleName is the name of the role for the dashboard-metrics-scraper.
 	MetricsScraperClusterRoleName = "system:dashboard-metrics-scraper"
-	// MetricsScraperClusterRoleBindingName is the name of the role binding for the dashboard-metrics-scraper
+	// MetricsScraperClusterRoleBindingName is the name of the role binding for the dashboard-metrics-scraper.
 	MetricsScraperClusterRoleBindingName = "system:dashboard-metrics-scraper"
 
-	// EtcdPodDisruptionBudgetName is the name of the PDB for the etcd StatefulSet
+	// EtcdPodDisruptionBudgetName is the name of the PDB for the etcd StatefulSet.
 	EtcdPodDisruptionBudgetName = "etcd"
-	// ApiserverPodDisruptionBudgetName is the name of the PDB for the apiserver deployment
+	// ApiserverPodDisruptionBudgetName is the name of the PDB for the apiserver deployment.
 	ApiserverPodDisruptionBudgetName = "apiserver"
-	// MetricsServerPodDisruptionBudgetName is the name of the PDB for the metrics-server deployment
+	// MetricsServerPodDisruptionBudgetName is the name of the PDB for the metrics-server deployment.
 	MetricsServerPodDisruptionBudgetName = "metrics-server"
 
-	// KubermaticNamespace is the main kubermatic namespace
+	// KubermaticNamespace is the main kubermatic namespace.
 	KubermaticNamespace = "kubermatic"
-	// GatekeeperControllerDeploymentName is the name of the gatekeeper controller deployment
+	// GatekeeperControllerDeploymentName is the name of the gatekeeper controller deployment.
 	GatekeeperControllerDeploymentName = "gatekeeper-controller-manager"
-	// GatekeeperAuditDeploymentName is the name of the gatekeeper audit deployment
+	// GatekeeperAuditDeploymentName is the name of the gatekeeper audit deployment.
 	GatekeeperAuditDeploymentName = "gatekeeper-audit"
-	// GatekeeperWebhookServiceName is the name of the gatekeeper webhook service
+	// GatekeeperWebhookServiceName is the name of the gatekeeper webhook service.
 	GatekeeperWebhookServiceName = "gatekeeper-webhook-service"
-	// GatekeeperWebhookServerCertSecretName is the name of the gatekeeper webhook cert secret name
+	// GatekeeperWebhookServerCertSecretName is the name of the gatekeeper webhook cert secret name.
 	GatekeeperWebhookServerCertSecretName = "gatekeeper-webhook-server-cert"
-	// GatekeeperPodDisruptionBudgetName is the name of the PDB for the gatekeeper controller manager
+	// GatekeeperPodDisruptionBudgetName is the name of the PDB for the gatekeeper controller manager.
 	GatekeeperPodDisruptionBudgetName = "gatekeeper-controller-manager"
-	// GatekeeperRoleName is the name for the Gatekeeper role
+	// GatekeeperRoleName is the name for the Gatekeeper role.
 	GatekeeperRoleName = "gatekeeper-manager-role"
-	// GatekeeperRoleBindingName is the name for the Gatekeeper rolebinding
+	// GatekeeperRoleBindingName is the name for the Gatekeeper rolebinding.
 	GatekeeperRoleBindingName = "gatekeeper-manager-rolebinding"
-	// GatekeeperServiceAccountName is the name for the Gatekeeper service account
+	// GatekeeperServiceAccountName is the name for the Gatekeeper service account.
 	GatekeeperServiceAccountName = "gatekeeper-admin"
-	// GatekeeperNamespace is the main gatkeeper namespace where the gatekeeper config is stored
+	// GatekeeperNamespace is the main gatkeeper namespace where the gatekeeper config is stored.
 	GatekeeperNamespace = "gatekeeper-system"
-	// ExperimentalEnableMutation enables gatekeeper to validate created kubernetes resources and also modify them based on defined mutation policies
+	// ExperimentalEnableMutation enables gatekeeper to validate created kubernetes resources and also modify them based on defined mutation policies.
 	ExperimentalEnableMutation = false
-	// AuditMatchKindOnly enables gatekeeper to only audit resources in OPA cache
+	// AuditMatchKindOnly enables gatekeeper to only audit resources in OPA cache.
 	AuditMatchKindOnly = false
-	// ConstraintViolationsLimit defines the maximum number of audit violations reported on a constraint
+	// ConstraintViolationsLimit defines the maximum number of audit violations reported on a constraint.
 	ConstraintViolationsLimit = 20
-	// GatekeeperExemptNamespaceLabel label key for exempting namespaces from Gatekeeper checks
+	// GatekeeperExemptNamespaceLabel label key for exempting namespaces from Gatekeeper checks.
 	GatekeeperExemptNamespaceLabel = "admission.gatekeeper.sh/ignore"
 
 	// CloudInitSettingsNamespace are used in order to reach, authenticate and be authorized by the api server, to fetch
-	// the machine  provisioning cloud-init
+	// the machine  provisioning cloud-init.
 	CloudInitSettingsNamespace = "cloud-init-settings"
-	// DefaultOwnerReadOnlyMode represents file mode with read permission for owner only
+	// DefaultOwnerReadOnlyMode represents file mode with read permission for owner only.
 	DefaultOwnerReadOnlyMode = 0400
 
-	// DefaultAllReadOnlyMode represents file mode with read permissions for all
+	// DefaultAllReadOnlyMode represents file mode with read permissions for all.
 	DefaultAllReadOnlyMode = 0444
 
-	// AppLabelKey defines the label key app which should be used within resources
+	// AppLabelKey defines the label key app which should be used within resources.
 	AppLabelKey = "app"
-	// ClusterLabelKey defines the label key for the cluster name
+	// ClusterLabelKey defines the label key for the cluster name.
 	ClusterLabelKey = "cluster"
 
-	// EtcdClusterSize defines the size of the etcd to use
+	// EtcdClusterSize defines the size of the etcd to use.
 	EtcdClusterSize = 3
 
-	// RegistryK8SGCR defines the kubernetes specific docker registry at google
+	// RegistryK8SGCR defines the kubernetes specific docker registry at google.
 	RegistryK8SGCR = "k8s.gcr.io"
-	// RegistryEUGCR defines the docker registry at google EU
+	// RegistryEUGCR defines the docker registry at google EU.
 	RegistryEUGCR = "eu.gcr.io"
-	// RegistryUSGCR defines the docker registry at google US
+	// RegistryUSGCR defines the docker registry at google US.
 	RegistryUSGCR = "us.gcr.io"
-	// RegistryGCR defines the kubernetes docker registry at google
+	// RegistryGCR defines the kubernetes docker registry at google.
 	RegistryGCR = "gcr.io"
-	// RegistryDocker defines the default docker.io registry
+	// RegistryDocker defines the default docker.io registry.
 	RegistryDocker = "docker.io"
-	// RegistryQuay defines the image registry from coreos/redhat - quay
+	// RegistryQuay defines the image registry from coreos/redhat - quay.
 	RegistryQuay = "quay.io"
-	// RegistryAnexia defines the anexia specific docker registry
+	// RegistryAnexia defines the anexia specific docker registry.
 	RegistryAnexia = "anx-cr.io"
 
-	// TopologyKeyHostname defines the topology key for the node hostname
+	// TopologyKeyHostname defines the topology key for the node hostname.
 	TopologyKeyHostname = "kubernetes.io/hostname"
-	// TopologyKeyFailureDomainZone defines the topology key for the node's cloud provider zone
+	// TopologyKeyFailureDomainZone defines the topology key for the node's cloud provider zone.
 	TopologyKeyFailureDomainZone = "failure-domain.beta.kubernetes.io/zone"
 
-	// MachineCRDName defines the CRD name for machine objects
+	// MachineCRDName defines the CRD name for machine objects.
 	MachineCRDName = "machines.cluster.k8s.io"
-	// MachineSetCRDName defines the CRD name for machineset objects
+	// MachineSetCRDName defines the CRD name for machineset objects.
 	MachineSetCRDName = "machinesets.cluster.k8s.io"
-	// MachineDeploymentCRDName defines the CRD name for machinedeployment objects
+	// MachineDeploymentCRDName defines the CRD name for machinedeployment objects.
 	MachineDeploymentCRDName = "machinedeployments.cluster.k8s.io"
-	// ClusterCRDName defines the CRD name for cluster objects
+	// ClusterCRDName defines the CRD name for cluster objects.
 	ClusterCRDName = "clusters.cluster.k8s.io"
-	// GatekeeperConfigCRDName defines the CRD name for gatekeeper config objects
+	// GatekeeperConfigCRDName defines the CRD name for gatekeeper config objects.
 	GatekeeperConfigCRDName = "configs.config.gatekeeper.sh"
-	// GatekeeperConstraintTemplateCRDName defines the CRD name for gatekeeper constraint template objects
+	// GatekeeperConstraintTemplateCRDName defines the CRD name for gatekeeper constraint template objects.
 	GatekeeperConstraintTemplateCRDName = "constrainttemplates.templates.gatekeeper.sh"
-	// GatekeeperMutatorPodStatusCRDName defines the CRD name for gatekeeper MutatorPodStatus objects
+	// GatekeeperMutatorPodStatusCRDName defines the CRD name for gatekeeper MutatorPodStatus objects.
 	GatekeeperMutatorPodStatusCRDName = "mutatorpodstatuses.status.gatekeeper.sh"
-	// GatekeeperAssignCRDName defines the CRD name for gatekeeper assign objects
+	// GatekeeperAssignCRDName defines the CRD name for gatekeeper assign objects.
 	GatekeeperAssignCRDName = "assign.mutations.gatekeeper.sh"
-	// GatekeeperAssignMetadataCRDName defines the CRD name for gatekeeper assign metadata objects
+	// GatekeeperAssignMetadataCRDName defines the CRD name for gatekeeper assign metadata objects.
 	GatekeeperAssignMetadataCRDName = "assignmetadata.mutations.gatekeeper.sh"
-	// GatekeeperConstraintPodStatusCRDName defines the CRD name for gatekeeper ConstraintPodStatus objects
+	// GatekeeperConstraintPodStatusCRDName defines the CRD name for gatekeeper ConstraintPodStatus objects.
 	GatekeeperConstraintPodStatusCRDName = "constraintpodstatuses.status.gatekeeper.sh"
-	// GatekeeperConstraintTemplatePodStatusCRDName defines the CRD name for gatekeeper ConstraintTemplatePodStatus objects
+	// GatekeeperConstraintTemplatePodStatusCRDName defines the CRD name for gatekeeper ConstraintTemplatePodStatus objects.
 	GatekeeperConstraintTemplatePodStatusCRDName = "constrainttemplatepodstatuses.status.gatekeeper.sh"
 
 	// MachineControllerMutatingWebhookConfigurationName is the name of the machine-controllers mutating webhook
-	// configuration
+	// configuration.
 	MachineControllerMutatingWebhookConfigurationName = "machine-controller.kubermatic.io"
 
 	// GatekeeperValidatingWebhookConfigurationName is the name of the gatekeeper validating webhook
-	// configuration
+	// configuration.
 	GatekeeperValidatingWebhookConfigurationName = "gatekeeper-validating-webhook-configuration"
 	GatekeeperMutatingWebhookConfigurationName   = "gatekeeper-mutating-webhook-configuration"
 	// InternalUserClusterAdminKubeconfigSecretName is the name of the secret containing an admin kubeconfig that can only be used from
-	// within the seed cluster
+	// within the seed cluster.
 	InternalUserClusterAdminKubeconfigSecretName = "internal-admin-kubeconfig"
-	// InternalUserClusterAdminKubeconfigCertUsername is the name of the user coming from kubeconfig cert
+	// InternalUserClusterAdminKubeconfigCertUsername is the name of the user coming from kubeconfig cert.
 	InternalUserClusterAdminKubeconfigCertUsername = "kubermatic-controllers"
 
 	// IPVSProxyMode defines the ipvs kube-proxy mode.
@@ -442,56 +442,56 @@ const (
 	// IPVSStrictArp defines IPVS configuration strictArp setting.
 	IPVSStrictArp = true
 
-	// PodNodeSelectorAdmissionPlugin defines PodNodeSelector admission plugin
+	// PodNodeSelectorAdmissionPlugin defines PodNodeSelector admission plugin.
 	PodNodeSelectorAdmissionPlugin = "PodNodeSelector"
 
-	// EventRateLimitAdmisionPlugin defines the EventRateLimit admission plugin
+	// EventRateLimitAdmisionPlugin defines the EventRateLimit admission plugin.
 	EventRateLimitAdmissionPlugin = "EventRateLimit"
 )
 
 const (
-	// CAKeySecretKey ca.key
+	// CAKeySecretKey ca.key.
 	CAKeySecretKey = "ca.key"
-	// CACertSecretKey ca.crt
+	// CACertSecretKey ca.crt.
 	CACertSecretKey = "ca.crt"
-	// ApiserverTLSKeySecretKey apiserver-tls.key
+	// ApiserverTLSKeySecretKey apiserver-tls.key.
 	ApiserverTLSKeySecretKey = "apiserver-tls.key"
-	// ApiserverTLSCertSecretKey apiserver-tls.crt
+	// ApiserverTLSCertSecretKey apiserver-tls.crt.
 	ApiserverTLSCertSecretKey = "apiserver-tls.crt"
-	// KubeletClientKeySecretKey kubelet-client.key
+	// KubeletClientKeySecretKey kubelet-client.key.
 	KubeletClientKeySecretKey = "kubelet-client.key"
-	// KubeletClientCertSecretKey kubelet-client.crt
+	// KubeletClientCertSecretKey kubelet-client.crt.
 	KubeletClientCertSecretKey = "kubelet-client.crt" // FIXME confusing naming: s/CertSecretKey/CertSecretName/
-	// ServiceAccountKeySecretKey sa.key
+	// ServiceAccountKeySecretKey sa.key.
 	ServiceAccountKeySecretKey = "sa.key"
-	// ServiceAccountKeyPublicKey is the public key for the service account signer key
+	// ServiceAccountKeyPublicKey is the public key for the service account signer key.
 	ServiceAccountKeyPublicKey = "sa.pub"
-	// KubeconfigSecretKey kubeconfig
+	// KubeconfigSecretKey kubeconfig.
 	KubeconfigSecretKey = "kubeconfig"
-	// TokensSecretKey tokens.csv
+	// TokensSecretKey tokens.csv.
 	TokensSecretKey = "tokens.csv"
-	// ViewersTokenSecretKey viewersToken
+	// ViewersTokenSecretKey viewersToken.
 	ViewerTokenSecretKey = "viewerToken"
 	// OpenVPNCACertKey cert.pem, must match CACertSecretKey, otherwise getClusterCAFromLister doesn't work as it has
-	// the key hardcoded
+	// the key hardcoded.
 	OpenVPNCACertKey = CACertSecretKey
 	// OpenVPNCAKeyKey key.pem, must match CAKeySecretKey, otherwise getClusterCAFromLister doesn't work as it has
-	// the key hardcoded
+	// the key hardcoded.
 	OpenVPNCAKeyKey = CAKeySecretKey
-	// OpenVPNServerKeySecretKey server.key
+	// OpenVPNServerKeySecretKey server.key.
 	OpenVPNServerKeySecretKey = "server.key"
-	// OpenVPNServerCertSecretKey server.crt
+	// OpenVPNServerCertSecretKey server.crt.
 	OpenVPNServerCertSecretKey = "server.crt"
-	// OpenVPNInternalClientKeySecretKey client.key
+	// OpenVPNInternalClientKeySecretKey client.key.
 	OpenVPNInternalClientKeySecretKey = "client.key"
-	// OpenVPNInternalClientCertSecretKey client.crt
+	// OpenVPNInternalClientCertSecretKey client.crt.
 	OpenVPNInternalClientCertSecretKey = "client.crt"
-	// EtcdTLSCertSecretKey etcd-tls.crt
+	// EtcdTLSCertSecretKey etcd-tls.crt.
 	EtcdTLSCertSecretKey = "etcd-tls.crt"
-	// EtcdTLSKeySecretKey etcd-tls.key
+	// EtcdTLSKeySecretKey etcd-tls.key.
 	EtcdTLSKeySecretKey = "etcd-tls.key"
 
-	// EtcdRestoreS3CredentialsSecret names the secret expected in seed kube-system that must contain S3 credentials for etcd backup restores
+	// EtcdRestoreS3CredentialsSecret names the secret expected in seed kube-system that must contain S3 credentials for etcd backup restores.
 	EtcdRestoreS3CredentialsSecret              = "backup-s3"
 	EtcdBackupAndRestoreS3AccessKeyIDKey        = "ACCESS_KEY_ID"
 	EtcdBackupAndRestoreS3SecretKeyAccessKeyKey = "SECRET_ACCESS_KEY"
@@ -502,35 +502,35 @@ const (
 	EtcdRestoreS3EndpointKey       = "ENDPOINT"
 	EtcdRestoreDefaultS3SEndpoint  = "s3.amazonaws.com"
 
-	// KubeconfigDefaultContextKey is the context key used for all kubeconfigs
+	// KubeconfigDefaultContextKey is the context key used for all kubeconfigs.
 	KubeconfigDefaultContextKey = "default"
 
-	// ApiserverEtcdClientCertificateCertSecretKey apiserver-etcd-client.crt
+	// ApiserverEtcdClientCertificateCertSecretKey apiserver-etcd-client.crt.
 	ApiserverEtcdClientCertificateCertSecretKey = "apiserver-etcd-client.crt"
-	// ApiserverEtcdClientCertificateKeySecretKey apiserver-etcd-client.key
+	// ApiserverEtcdClientCertificateKeySecretKey apiserver-etcd-client.key.
 	ApiserverEtcdClientCertificateKeySecretKey = "apiserver-etcd-client.key"
 
-	// ApiserverProxyClientCertificateCertSecretKey apiserver-proxy-client.crt
+	// ApiserverProxyClientCertificateCertSecretKey apiserver-proxy-client.crt.
 	ApiserverProxyClientCertificateCertSecretKey = "apiserver-proxy-client.crt"
-	// ApiserverProxyClientCertificateKeySecretKey apiserver-proxy-client.key
+	// ApiserverProxyClientCertificateKeySecretKey apiserver-proxy-client.key.
 	ApiserverProxyClientCertificateKeySecretKey = "apiserver-proxy-client.key"
 
-	// BackupEtcdClientCertificateCertSecretKey backup-etcd-client.crt
+	// BackupEtcdClientCertificateCertSecretKey backup-etcd-client.crt.
 	BackupEtcdClientCertificateCertSecretKey = "backup-etcd-client.crt"
-	// BackupEtcdClientCertificateKeySecretKey backup-etcd-client.key
+	// BackupEtcdClientCertificateKeySecretKey backup-etcd-client.key.
 	BackupEtcdClientCertificateKeySecretKey = "backup-etcd-client.key"
 
-	// PrometheusClientCertificateCertSecretKey prometheus-client.crt
+	// PrometheusClientCertificateCertSecretKey prometheus-client.crt.
 	PrometheusClientCertificateCertSecretKey = "prometheus-client.crt"
-	// PrometheusClientCertificateKeySecretKey prometheus-client.key
+	// PrometheusClientCertificateKeySecretKey prometheus-client.key.
 	PrometheusClientCertificateKeySecretKey = "prometheus-client.key"
 
-	// ServingCertSecretKey is the secret key for a generic serving cert
+	// ServingCertSecretKey is the secret key for a generic serving cert.
 	ServingCertSecretKey = "serving.crt"
-	// ServingCertKeySecretKey is the secret key for the key of a generic serving cert
+	// ServingCertKeySecretKey is the secret key for the key of a generic serving cert.
 	ServingCertKeySecretKey = "serving.key"
 
-	// CloudConfigSecretKey is the secret key for cloud-config
+	// CloudConfigSecretKey is the secret key for cloud-config.
 	CloudConfigSecretKey = "config"
 )
 
@@ -640,19 +640,19 @@ const (
 )
 
 const (
-	// CSIMigrationWebhookName is the name of the csi-migration webhook service
+	// CSIMigrationWebhookName is the name of the csi-migration webhook service.
 	CSIMigrationWebhookName = "csi-migration-webhook"
-	// CSIMigrationWebhookSecretName defines the name of the secret containing the certificates for the csi-migration admission webhook
+	// CSIMigrationWebhookSecretName defines the name of the secret containing the certificates for the csi-migration admission webhook.
 	CSIMigrationWebhookSecretName = "csi-migration-webhook-certs"
-	// CSIMigrationWebhookServingCertCertKeyName is the name for the key that contains the cert
+	// CSIMigrationWebhookServingCertCertKeyName is the name for the key that contains the cert.
 	CSIMigrationWebhookServingCertCertKeyName = "cert.pem"
-	// CSIMigrationWebhookServingCertKeyKeyName is the name for the key that contains the key
+	// CSIMigrationWebhookServingCertKeyKeyName is the name for the key that contains the key.
 	CSIMigrationWebhookServingCertKeyKeyName = "key.pem"
-	// CSIMigrationWebhookConfig is the name for the key that contains the webhook config
+	// CSIMigrationWebhookConfig is the name for the key that contains the webhook config.
 	CSIMigrationWebhookConfig = "webhook.config"
-	// CSIMigrationWebhookPort is the port used by the CSI-migration webhook
+	// CSIMigrationWebhookPort is the port used by the CSI-migration webhook.
 	CSIMigrationWebhookPort = 8443
-	// VsphereCSIMigrationWebhookConfigurationWebhookName is the webhook's name in the vSphere CSI_migration WebhookConfiguration
+	// VsphereCSIMigrationWebhookConfigurationWebhookName is the webhook's name in the vSphere CSI_migration WebhookConfiguration.
 	VsphereCSIMigrationWebhookConfigurationWebhookName = "validation.csi.vsphere.vmware.com"
 )
 
@@ -672,29 +672,29 @@ const (
 	UserClusterPrometheusClusterRoleBindingName = "system:mla:prometheus"
 	UserClusterPrometheusDeploymentName         = "prometheus"
 
-	// MLAGatewayExternalServiceName is the name for the MLA Gateway external service
+	// MLAGatewayExternalServiceName is the name for the MLA Gateway external service.
 	MLAGatewayExternalServiceName = "mla-gateway-ext"
-	// MLAGatewaySNIPrefix is the URL prefix which identifies the MLA Gateway endpoint in the external URL if SNI expose strategy is used
+	// MLAGatewaySNIPrefix is the URL prefix which identifies the MLA Gateway endpoint in the external URL if SNI expose strategy is used.
 	MLAGatewaySNIPrefix = "mla-gateway."
 
-	// MLAGatewayCASecretName is the name for the secret containing the MLA Gateway CA certificates
+	// MLAGatewayCASecretName is the name for the secret containing the MLA Gateway CA certificates.
 	MLAGatewayCASecretName = "mla-gateway-ca"
 	MLAGatewayCACertKey    = CACertSecretKey
 	MLAGatewayCAKeyKey     = CAKeySecretKey
 
-	// MLAGatewayCertificatesSecretName is the name for the secret containing the MLA Gateway certificates
+	// MLAGatewayCertificatesSecretName is the name for the secret containing the MLA Gateway certificates.
 	MLAGatewayCertificatesSecretName = "mla-gateway-certificates"
 	MLAGatewayKeySecretKey           = "gateway.key"
 	MLAGatewayCertSecretKey          = "gateway.crt"
 
-	// UserClusterPrometheusCertificatesSecretName is the name for the secret containing the Prometheus client certificates
+	// UserClusterPrometheusCertificatesSecretName is the name for the secret containing the Prometheus client certificates.
 	UserClusterPrometheusCertificatesSecretName = "prometheus-certificates"
 	UserClusterPrometheusCertificateCommonName  = "prometheus"
 	UserClusterPrometheusClientKeySecretKey     = "client.key"
 	UserClusterPrometheusClientCertSecretKey    = "client.crt"
 	UserClusterPrometheusClientCertMountPath    = "/etc/ssl/mla"
 
-	// PromtailCertificatesSecretName is the name for the secret containing the promtail client certificates
+	// PromtailCertificatesSecretName is the name for the secret containing the promtail client certificates.
 	PromtailCertificatesSecretName = "promtail-certificates"
 	PromtailCertificateCommonName  = "promtail"
 	PromtailClientKeySecretKey     = "client.key"
@@ -713,10 +713,10 @@ alertmanager_config: |
     - name: 'null'
 `
 
-	// MLAAdminSettingsName specifies a fixed name of the MLA admin settings custom resource in the cluster namespace
+	// MLAAdminSettingsName specifies a fixed name of the MLA admin settings custom resource in the cluster namespace.
 	MLAAdminSettingsName = "mla-admin-settings"
 
-	// Konnectivity
+	// Konnectivity.
 	KonnectivityDeploymentName             = "konnectivity-agent"
 	KonnectivityClusterRoleBindingName     = "system:konnectivity-server"
 	KonnectivityClusterRoleBindingUsername = "system:konnectivity-server"
@@ -744,7 +744,7 @@ const (
 	NetworkPolicyOIDCIssuerAllow               = "oidc-issuer-allow"
 )
 
-// List of allowed TLS cipher suites
+// List of allowed TLS cipher suites.
 var allowedTLSCipherSuites = []string{
 	// TLS 1.3 cipher suites
 	"TLS_AES_128_GCM_SHA256",
@@ -759,24 +759,24 @@ var allowedTLSCipherSuites = []string{
 	"TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305",
 }
 
-// ECDSAKeyPair is a ECDSA x509 certificate and private key
+// ECDSAKeyPair is a ECDSA x509 certificate and private key.
 type ECDSAKeyPair struct {
 	Key  *ecdsa.PrivateKey
 	Cert *x509.Certificate
 }
 
-// Requirements are how much resources are needed by containers in the pod
+// Requirements are how much resources are needed by containers in the pod.
 type Requirements struct {
 	Name     string                       `json:"name,omitempty"`
 	Requires *corev1.ResourceRequirements `json:"requires,omitempty"`
 }
 
-// GetAllowedTLSCipherSuites returns a list of allowed TLS cipher suites
+// GetAllowedTLSCipherSuites returns a list of allowed TLS cipher suites.
 func GetAllowedTLSCipherSuites() []string {
 	return allowedTLSCipherSuites
 }
 
-// GetClusterExternalIP returns a net.IP for the given Cluster
+// GetClusterExternalIP returns a net.IP for the given Cluster.
 func GetClusterExternalIP(cluster *kubermaticv1.Cluster) (*net.IP, error) {
 	ip := net.ParseIP(cluster.Address.IP)
 	if ip == nil {
@@ -785,13 +785,13 @@ func GetClusterExternalIP(cluster *kubermaticv1.Cluster) (*net.IP, error) {
 	return &ip, nil
 }
 
-// GetClusterRef returns a metav1.OwnerReference for the given Cluster
+// GetClusterRef returns a metav1.OwnerReference for the given Cluster.
 func GetClusterRef(cluster *kubermaticv1.Cluster) metav1.OwnerReference {
 	gv := kubermaticv1.SchemeGroupVersion
 	return *metav1.NewControllerRef(cluster, gv.WithKind("Cluster"))
 }
 
-// GetEtcdRestoreRef returns a metav1.OwnerReference for the given EtcdRestore
+// GetEtcdRestoreRef returns a metav1.OwnerReference for the given EtcdRestore.
 func GetEtcdRestoreRef(restore *kubermaticv1.EtcdRestore) metav1.OwnerReference {
 	gv := kubermaticv1.SchemeGroupVersion
 	return *metav1.NewControllerRef(restore, gv.WithKind(kubermaticv1.EtcdRestoreKindName))
@@ -828,7 +828,7 @@ func UserClusterDNSResolverIP(cluster *kubermaticv1.Cluster) (string, error) {
 	block := cluster.Spec.ClusterNetwork.Services.CIDRBlocks[0]
 	_, ipnet, err := net.ParseCIDR(block)
 	if err != nil {
-		return "", fmt.Errorf("failed to get cluster dns ip for cluster `%s`: %v'", block, err)
+		return "", fmt.Errorf("failed to get cluster dns ip for cluster `%s`: %w", block, err)
 	}
 	ip := ipnet.IP
 	ip[len(ip)-1] = ip[len(ip)-1] + 10
@@ -836,7 +836,7 @@ func UserClusterDNSResolverIP(cluster *kubermaticv1.Cluster) (string, error) {
 }
 
 // InClusterApiserverIP returns the first usable IP of the service cidr.
-// Its the in cluster IP for the apiserver
+// Its the in cluster IP for the apiserver.
 func InClusterApiserverIP(cluster *kubermaticv1.Cluster) (*net.IP, error) {
 	if len(cluster.Spec.ClusterNetwork.Services.CIDRBlocks) == 0 {
 		return nil, errors.New("no service cidr defined")
@@ -858,7 +858,7 @@ type userClusterDNSPolicyAndConfigData interface {
 	IsKonnectivityEnabled() bool
 }
 
-// UserClusterDNSPolicyAndConfig returns a DNSPolicy and DNSConfig to configure Pods to use user cluster DNS
+// UserClusterDNSPolicyAndConfig returns a DNSPolicy and DNSConfig to configure Pods to use user cluster DNS.
 func UserClusterDNSPolicyAndConfig(d userClusterDNSPolicyAndConfigData) (corev1.DNSPolicy, *corev1.PodDNSConfig, error) {
 	if d.IsKonnectivityEnabled() {
 		// custom DNS resolver in not needed in Konnectivity setup
@@ -891,7 +891,7 @@ func UserClusterDNSPolicyAndConfig(d userClusterDNSPolicyAndConfigData) (corev1.
 	}, nil
 }
 
-// BaseAppLabels returns the minimum required labels
+// BaseAppLabels returns the minimum required labels.
 func BaseAppLabels(name string, additionalLabels map[string]string) map[string]string {
 	labels := map[string]string{
 		AppLabelKey: name,
@@ -902,7 +902,7 @@ func BaseAppLabels(name string, additionalLabels map[string]string) map[string]s
 	return labels
 }
 
-// AppClusterLabels returns the base app label + the cluster label. Additional labels can be included as well
+// AppClusterLabels returns the base app label + the cluster label. Additional labels can be included as well.
 func AppClusterLabels(appName, clusterName string, additionalLabels map[string]string) map[string]string {
 	podLabels := BaseAppLabels(appName, additionalLabels)
 	podLabels["cluster"] = clusterName
@@ -910,12 +910,12 @@ func AppClusterLabels(appName, clusterName string, additionalLabels map[string]s
 	return podLabels
 }
 
-// CertWillExpireSoon returns if the certificate will expire in the next 30 days
+// CertWillExpireSoon returns if the certificate will expire in the next 30 days.
 func CertWillExpireSoon(cert *x509.Certificate) bool {
 	return time.Until(cert.NotAfter) < minimumCertValidity30d
 }
 
-// IsServerCertificateValidForAllOf validates if the given data is present in the given server certificate
+// IsServerCertificateValidForAllOf validates if the given data is present in the given server certificate.
 func IsServerCertificateValidForAllOf(cert *x509.Certificate, commonName string, altNames certutil.AltNames, ca *x509.Certificate) bool {
 	if CertWillExpireSoon(cert) {
 		return false
@@ -954,7 +954,7 @@ func IsServerCertificateValidForAllOf(cert *x509.Certificate, commonName string,
 		KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 	}
 	if _, err := cert.Verify(verifyOptions); err != nil {
-		klog.Errorf("Certificate verification for CN %s failed due to: %v", commonName, err)
+		klog.Errorf("Certificate verification for CN %s failed: %v", commonName, err)
 		return false
 	}
 
@@ -962,7 +962,7 @@ func IsServerCertificateValidForAllOf(cert *x509.Certificate, commonName string,
 }
 
 // IsClientCertificateValidForAllOf validates if the given data matches exactly the given client certificate
-// (It also returns true if all given data is in the cert, but the cert has more organizations)
+// (It also returns true if all given data is in the cert, but the cert has more organizations).
 func IsClientCertificateValidForAllOf(cert *x509.Certificate, commonName string, organizations []string, ca *x509.Certificate) bool {
 	if CertWillExpireSoon(cert) {
 		return false
@@ -986,7 +986,7 @@ func IsClientCertificateValidForAllOf(cert *x509.Certificate, commonName string,
 		KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 	}
 	if _, err := cert.Verify(verifyOptions); err != nil {
-		klog.Errorf("Certificate verification for CN %s failed due to: %v", commonName, err)
+		klog.Errorf("Certificate verification for CN %s failed: %v", commonName, err)
 		return false
 	}
 
@@ -1017,17 +1017,17 @@ func getRSAClusterCAFromLister(ctx context.Context, namespace, name string, clie
 	return &triple.KeyPair{Cert: cert, Key: rsaKey}, nil
 }
 
-// getClusterCAFromLister returns the CA of the cluster from the lister
+// getClusterCAFromLister returns the CA of the cluster from the lister.
 func getClusterCAFromLister(ctx context.Context, namespace, name string, client ctrlruntimeclient.Client) (*x509.Certificate, interface{}, error) {
 	caSecret := &corev1.Secret{}
 	caSecretKey := types.NamespacedName{Namespace: namespace, Name: name}
 	if err := client.Get(ctx, caSecretKey, caSecret); err != nil {
-		return nil, nil, fmt.Errorf("unable to check if a CA cert already exists: %v", err)
+		return nil, nil, fmt.Errorf("unable to check if a CA cert already exists: %w", err)
 	}
 
 	certs, err := certutil.ParseCertsPEM(caSecret.Data[CACertSecretKey])
 	if err != nil {
-		return nil, nil, fmt.Errorf("got an invalid cert from the CA secret %s: %v", caSecretKey, err)
+		return nil, nil, fmt.Errorf("got an invalid cert from the CA secret %s: %w", caSecretKey, err)
 	}
 
 	if len(certs) != 1 {
@@ -1036,52 +1036,52 @@ func getClusterCAFromLister(ctx context.Context, namespace, name string, client 
 
 	key, err := triple.ParsePrivateKeyPEM(caSecret.Data[CAKeySecretKey])
 	if err != nil {
-		return nil, nil, fmt.Errorf("got an invalid private key from the CA secret %s: %v", caSecretKey, err)
+		return nil, nil, fmt.Errorf("got an invalid private key from the CA secret %s: %w", caSecretKey, err)
 	}
 
 	return certs[0], key, nil
 }
 
-// GetCABundleFromFile returns the CA bundle from a file
+// GetCABundleFromFile returns the CA bundle from a file.
 func GetCABundleFromFile(file string) ([]*x509.Certificate, error) {
 	rawData, err := ioutil.ReadFile(file)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read file %q: %v", file, err)
+		return nil, fmt.Errorf("failed to read file %q: %w", file, err)
 	}
 
 	caCerts, err := certutil.ParseCertsPEM(rawData)
 	if err != nil {
-		return nil, fmt.Errorf("got an invalid cert: %v", err)
+		return nil, fmt.Errorf("got an invalid cert: %w", err)
 	}
 
 	return caCerts, nil
 }
 
-// GetClusterRootCA returns the root CA of the cluster from the lister
+// GetClusterRootCA returns the root CA of the cluster from the lister.
 func GetClusterRootCA(ctx context.Context, namespace string, client ctrlruntimeclient.Client) (*triple.KeyPair, error) {
 	return getRSAClusterCAFromLister(ctx, namespace, CASecretName, client)
 }
 
-// GetClusterFrontProxyCA returns the frontproxy CA of the cluster from the lister
+// GetClusterFrontProxyCA returns the frontproxy CA of the cluster from the lister.
 func GetClusterFrontProxyCA(ctx context.Context, namespace string, client ctrlruntimeclient.Client) (*triple.KeyPair, error) {
 	return getRSAClusterCAFromLister(ctx, namespace, FrontProxyCASecretName, client)
 }
 
-// GetOpenVPNCA returns the OpenVPN CA of the cluster from the lister
+// GetOpenVPNCA returns the OpenVPN CA of the cluster from the lister.
 func GetOpenVPNCA(ctx context.Context, namespace string, client ctrlruntimeclient.Client) (*ECDSAKeyPair, error) {
 	return getECDSAClusterCAFromLister(ctx, namespace, OpenVPNCASecretName, client)
 }
 
-// GetMLAGatewayCA returns the MLA Gateway CA of the cluster from the lister
+// GetMLAGatewayCA returns the MLA Gateway CA of the cluster from the lister.
 func GetMLAGatewayCA(ctx context.Context, namespace string, client ctrlruntimeclient.Client) (*ECDSAKeyPair, error) {
 	return getECDSAClusterCAFromLister(ctx, namespace, MLAGatewayCASecretName, client)
 }
 
-// ClusterIPForService returns the cluster ip for the given service
+// ClusterIPForService returns the cluster ip for the given service.
 func ClusterIPForService(name, namespace string, serviceLister corev1lister.ServiceLister) (*net.IP, error) {
 	service, err := serviceLister.Services(namespace).Get(name)
 	if err != nil {
-		return nil, fmt.Errorf("could not get service %s/%s from lister: %v", namespace, name, err)
+		return nil, fmt.Errorf("could not get service %s/%s from lister: %w", namespace, name, err)
 	}
 
 	if service.Spec.ClusterIP == "" {
@@ -1090,13 +1090,13 @@ func ClusterIPForService(name, namespace string, serviceLister corev1lister.Serv
 
 	ip := net.ParseIP(service.Spec.ClusterIP)
 	if ip == nil {
-		return nil, fmt.Errorf("service %s/%s has no valid cluster ip (\"%s\"): %v", namespace, name, service.Spec.ClusterIP, err)
+		return nil, fmt.Errorf("service %s/%s has no valid cluster ip (\"%s\"): %w", namespace, name, service.Spec.ClusterIP, err)
 	}
 
 	return &ip, nil
 }
 
-// GetAbsoluteServiceDNSName returns the absolute DNS name for the given service and the given cluster. Absolute means a trailing dot will be appended to the DNS name
+// GetAbsoluteServiceDNSName returns the absolute DNS name for the given service and the given cluster. Absolute means a trailing dot will be appended to the DNS name.
 func GetAbsoluteServiceDNSName(service, namespace string) string {
 	return fmt.Sprintf("%s.%s.svc.cluster.local.", service, namespace)
 }
@@ -1105,7 +1105,7 @@ func GetAbsoluteServiceDNSName(service, namespace string) string {
 func SecretRevision(ctx context.Context, key types.NamespacedName, client ctrlruntimeclient.Client) (string, error) {
 	secret := &corev1.Secret{}
 	if err := client.Get(ctx, key, secret); err != nil {
-		return "", fmt.Errorf("could not get Secret %s: %v", key, err)
+		return "", fmt.Errorf("could not get Secret %s: %w", key, err)
 	}
 	return secret.ResourceVersion, nil
 }
@@ -1114,7 +1114,7 @@ func SecretRevision(ctx context.Context, key types.NamespacedName, client ctrlru
 func ConfigMapRevision(ctx context.Context, key types.NamespacedName, client ctrlruntimeclient.Client) (string, error) {
 	cm := &corev1.ConfigMap{}
 	if err := client.Get(ctx, key, cm); err != nil {
-		return "", fmt.Errorf("could not get ConfigMap %s: %v", key, err)
+		return "", fmt.Errorf("could not get ConfigMap %s: %w", key, err)
 	}
 	return cm.ResourceVersion, nil
 }
@@ -1231,7 +1231,7 @@ func SetResourceRequirements(containers []corev1.Container, defaultRequirements,
 		var req []Requirements
 		err := json.Unmarshal([]byte(val), &req)
 		if err != nil {
-			return fmt.Errorf("failed to unmarshal resource requirements provided by vpa from annotation %s: %v", kubermaticv1.UpdatedByVPALabelKey, err)
+			return fmt.Errorf("failed to unmarshal resource requirements provided by vpa from annotation %s: %w", kubermaticv1.UpdatedByVPALabelKey, err)
 		}
 		for _, r := range req {
 			requirements[r.Name] = r.Requires
@@ -1276,7 +1276,7 @@ func GetOverrides(componentSettings kubermaticv1.ComponentSettings) map[string]*
 func SupportsFailureDomainZoneAntiAffinity(ctx context.Context, client ctrlruntimeclient.Client) (bool, error) {
 	selector, err := labels.Parse(TopologyKeyFailureDomainZone)
 	if err != nil {
-		return false, fmt.Errorf("failed to parse selector: %v", err)
+		return false, fmt.Errorf("failed to parse selector: %w", err)
 	}
 	opts := &ctrlruntimeclient.ListOptions{
 		LabelSelector: selector,
@@ -1287,7 +1287,7 @@ func SupportsFailureDomainZoneAntiAffinity(ctx context.Context, client ctrlrunti
 
 	nodeList := &corev1.NodeList{}
 	if err := client.List(ctx, nodeList, opts); err != nil {
-		return false, fmt.Errorf("failed to list nodes having the %s label: %v", TopologyKeyFailureDomainZone, err)
+		return false, fmt.Errorf("failed to list nodes having the %s label: %w", TopologyKeyFailureDomainZone, err)
 	}
 
 	return len(nodeList.Items) != 0, nil
@@ -1302,7 +1302,7 @@ func BackupCABundleConfigMapName(cluster *kubermaticv1.Cluster) string {
 
 // GetEtcdRestoreS3Client returns an S3 client for downloading the backup for a given EtcdRestore.
 // If the EtcdRestore doesn't reference a secret containing the credentials and endpoint and bucket name data,
-// one can optionally be created from a well-known secret and configmap in kube-system, or from a specified backup destination
+// one can optionally be created from a well-known secret and configmap in kube-system, or from a specified backup destination.
 func GetEtcdRestoreS3Client(ctx context.Context, restore *kubermaticv1.EtcdRestore, createSecretIfMissing bool, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster,
 	destination *kubermaticv1.BackupDestination) (*minio.Client, string, error) {
 	secretData := make(map[string]string)
@@ -1310,7 +1310,7 @@ func GetEtcdRestoreS3Client(ctx context.Context, restore *kubermaticv1.EtcdResto
 	if restore.Spec.BackupDownloadCredentialsSecret != "" {
 		secret := &corev1.Secret{}
 		if err := client.Get(ctx, types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: restore.Spec.BackupDownloadCredentialsSecret}, secret); err != nil {
-			return nil, "", fmt.Errorf("failed to get BackupDownloadCredentialsSecret credentials secret %v: %v", restore.Spec.BackupDownloadCredentialsSecret, err)
+			return nil, "", fmt.Errorf("failed to get BackupDownloadCredentialsSecret credentials secret %v: %w", restore.Spec.BackupDownloadCredentialsSecret, err)
 		}
 
 		for k, v := range secret.Data {

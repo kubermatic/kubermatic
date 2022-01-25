@@ -35,7 +35,7 @@ import (
 
 // There is a good chance someone wants simplify the code
 // and make an if err := r.reconcile(); err != nil {} simplication,
-// accidentally shortcircuiting the workqeue and retrying
+// accidentally shortcircuiting the workqeue and retrying.
 func TestReconcileReturnsError(t *testing.T) {
 	ctx := context.Background()
 	r := &reconciler{

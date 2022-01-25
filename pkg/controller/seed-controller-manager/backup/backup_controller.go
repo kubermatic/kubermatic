@@ -61,19 +61,19 @@ import (
 
 const (
 	// SharedVolumeName is the name of the `emptyDir` volume the initContainer
-	// will write the backup to
+	// will write the backup to.
 	SharedVolumeName = "etcd-backup"
-	// DefaultBackupContainerImage holds the default Image used for creating the etcd backups
+	// DefaultBackupContainerImage holds the default Image used for creating the etcd backups.
 	DefaultBackupContainerImage = "gcr.io/etcd-development/etcd"
-	// DefaultBackupInterval defines the default interval used to create backups
+	// DefaultBackupInterval defines the default interval used to create backups.
 	DefaultBackupInterval = "20m"
-	// cronJobPrefix defines the prefix used for all backup cronjob names
+	// cronJobPrefix defines the prefix used for all backup cronjob names.
 	cronJobPrefix = "etcd-backup"
-	// cleanupFinalizer defines the name for the finalizer to ensure we cleanup after we deleted a cluster
+	// cleanupFinalizer defines the name for the finalizer to ensure we cleanup after we deleted a cluster.
 	cleanupFinalizer = "kubermatic.io/cleanup-backups"
-	// backupCleanupJobLabel defines the label we use on all cleanup jobs
+	// backupCleanupJobLabel defines the label we use on all cleanup jobs.
 	backupCleanupJobLabel = "kubermatic-etcd-backup-cleaner"
-	// clusterEnvVarKey defines the environment variable key for the cluster name
+	// clusterEnvVarKey defines the environment variable key for the cluster name.
 	clusterEnvVarKey = "CLUSTER"
 
 	ControllerName = "kubermatic_backup_controller"
@@ -104,7 +104,7 @@ type Reconciler struct {
 }
 
 // Add creates a new Backup controller that is responsible for creating backupjobs
-// for all managed user clusters
+// for all managed user clusters.
 func Add(
 	log *zap.SugaredLogger,
 	mgr manager.Manager,
@@ -124,7 +124,7 @@ func Add(
 	}
 	backupScheduleString, err := parseDuration(backupSchedule)
 	if err != nil {
-		return fmt.Errorf("failed to parse backup duration: %v", err)
+		return fmt.Errorf("failed to parse backup duration: %w", err)
 	}
 	if backupContainerImage == "" {
 		backupContainerImage = DefaultBackupContainerImage
@@ -149,7 +149,7 @@ func Add(
 		MaxConcurrentReconciles: numWorkers,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to create controller: %v", err)
+		return fmt.Errorf("failed to create controller: %w", err)
 	}
 
 	cronJobMapFn := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
@@ -160,10 +160,10 @@ func Add(
 	})
 
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}); err != nil {
-		return fmt.Errorf("failed to watch Clusters: %v", err)
+		return fmt.Errorf("failed to watch Clusters: %w", err)
 	}
 	if err := c.Watch(&source.Kind{Type: &batchv1beta1.CronJob{}}, cronJobMapFn, predicate.ByNamespace(metav1.NamespaceSystem)); err != nil {
-		return fmt.Errorf("failed to watch CronJobs: %v", err)
+		return fmt.Errorf("failed to watch CronJobs: %w", err)
 	}
 
 	// Cleanup cleanup jobs...
@@ -172,7 +172,7 @@ func Add(
 			wait.UntilWithContext(ctx, reconciler.cleanupJobs, 30*time.Second)
 		},
 	}); err != nil {
-		return fmt.Errorf("failed to add cleanup jobs runnable to mgr: %v", err)
+		return fmt.Errorf("failed to add cleanup jobs runnable to mgr: %w", err)
 	}
 
 	return nil
@@ -199,13 +199,12 @@ func (r *Reconciler) cleanupJobs(ctx context.Context) {
 	jobs := &batchv1.JobList{}
 	if err := r.List(ctx, jobs, &ctrlruntimeclient.ListOptions{LabelSelector: selector}); err != nil {
 		log.Errorw("failed to list jobs", "selector", selector.String(), zap.Error(err))
-		utilruntime.HandleError(fmt.Errorf("failed to list jobs: %v", err))
+		utilruntime.HandleError(fmt.Errorf("failed to list jobs: %w", err))
 		return
 	}
 
 	for _, job := range jobs.Items {
 		if job.Status.Succeeded >= 1 && (job.Status.CompletionTime != nil && time.Since(job.Status.CompletionTime.Time).Minutes() > 5) {
-
 			deletePropagationForeground := metav1.DeletePropagationForeground
 			delOpts := &ctrlruntimeclient.DeleteOptions{
 				PropagationPolicy: &deletePropagationForeground,
@@ -274,7 +273,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			oldCluster := cluster.DeepCopy()
 			kuberneteshelper.RemoveFinalizer(cluster, cleanupFinalizer)
 			if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
-				return fmt.Errorf("failed to update cluster after removing cleanup finalizer: %v", err)
+				return fmt.Errorf("failed to update cluster after removing cleanup finalizer: %w", err)
 			}
 		}
 		return nil
@@ -295,11 +294,11 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	}
 
 	if err := r.ensureCronJobSecrets(ctx, cluster); err != nil {
-		return fmt.Errorf("failed to reconcile secrets: %v", err)
+		return fmt.Errorf("failed to reconcile secrets: %w", err)
 	}
 
 	if err := r.ensureCronJobConfigMaps(ctx, cluster); err != nil {
-		return fmt.Errorf("failed to reconcile configmaps: %v", err)
+		return fmt.Errorf("failed to reconcile configmaps: %w", err)
 	}
 
 	if r.disabled {

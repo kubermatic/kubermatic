@@ -52,11 +52,11 @@ func persistentVolumeClaimCreator(ctx context.Context, client ctrlruntimeclient.
 			}
 
 			if err := updatePVCStorageSizeAndName(pvc, seed); err != nil {
-				return fmt.Errorf("failed to update pvc storage class name or size: %v", err)
+				return fmt.Errorf("failed to update pvc storage class name or size: %w", err)
 			}
 
 			if err := client.Create(ctx, pvc); err != nil {
-				return fmt.Errorf("failed to create pvc %v for the metering tool: %v", meteringDataName, err)
+				return fmt.Errorf("failed to create pvc %v for the metering tool: %w", meteringDataName, err)
 			}
 
 			return nil
@@ -76,7 +76,7 @@ func updatePVCStorageSizeAndName(pvc *corev1.PersistentVolumeClaim, seed *kuberm
 
 	pvcStorageSize, err := resource.ParseQuantity(seed.Spec.Metering.StorageSize)
 	if err != nil {
-		return fmt.Errorf("failed to parse value of metering pvc storage size %q: %v", seed.Spec.Metering.StorageSize, err)
+		return fmt.Errorf("failed to parse value of metering pvc storage size %q: %w", seed.Spec.Metering.StorageSize, err)
 	}
 
 	pvc.Spec.Resources = corev1.ResourceRequirements{

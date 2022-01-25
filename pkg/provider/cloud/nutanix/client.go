@@ -108,7 +108,6 @@ func getCredentials(dc *kubermaticv1.DatacenterSpecNutanix, cloud *kubermaticv1.
 	}
 
 	return creds, nil
-
 }
 
 func getClientSet(dc *kubermaticv1.DatacenterSpecNutanix, cloud *kubermaticv1.NutanixCloudSpec, secretKeyGetter provider.SecretKeySelectorValueFunc) (*ClientSet, error) {
@@ -237,7 +236,7 @@ func ParseNutanixError(err error) (*ErrorResponse, error) {
 	var resp ErrorResponse
 
 	if parseErr := json.Unmarshal([]byte(errJsonString), &resp); parseErr != nil {
-		return nil, fmt.Errorf("failed to parse '%v': %s", err, parseErr)
+		return nil, fmt.Errorf("failed to parse '%v': %w", err, parseErr)
 	}
 
 	return &resp, nil

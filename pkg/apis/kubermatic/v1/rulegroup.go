@@ -22,10 +22,10 @@ import (
 )
 
 const (
-	// RuleGroupResourceName represents "Resource" defined in Kubernetes
+	// RuleGroupResourceName represents "Resource" defined in Kubernetes.
 	RuleGroupResourceName = "rulegroups"
 
-	// RuleGroupKindName represents "Kind" defined in Kubernetes
+	// RuleGroupKindName represents "Kind" defined in Kubernetes.
 	RuleGroupKindName = "RuleGroup"
 )
 

@@ -24,7 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// ServiceCreator creates the service for the CoreDNS
+// ServiceCreator creates the service for the CoreDNS.
 func ServiceCreator(dnsClusterIP string) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		labels := map[string]string{

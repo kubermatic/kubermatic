@@ -51,7 +51,7 @@ const (
 	envoyImageName = "envoyproxy/envoy"
 )
 
-// DaemonSetCreator returns the function to create and update the Envoy DaemonSet
+// DaemonSetCreator returns the function to create and update the Envoy DaemonSet.
 func DaemonSetCreator(agentIP net.IP, versions kubermatic.Versions, configHash string, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDaemonSetCreatorGetter {
 	return func() (string, reconciling.DaemonSetCreator) {
 		return resources.EnvoyAgentDaemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
@@ -102,7 +102,7 @@ func DaemonSetCreator(agentIP net.IP, versions kubermatic.Versions, configHash s
 				},
 			}
 			if err := resources.SetResourceRequirements(ds.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, ds.Annotations); err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			return ds, nil

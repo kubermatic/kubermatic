@@ -430,7 +430,6 @@ func convertInternalToAPIEtcdBackupConfig(ebc *kubermaticv1.EtcdBackupConfig) *a
 }
 
 func convertAPIToInternalEtcdBackupConfig(name string, ebcSpec *apiv2.EtcdBackupConfigSpec, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdBackupConfig, error) {
-
 	clusterObjectRef, err := reference.GetReference(scheme.Scheme, cluster)
 	if err != nil {
 		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("error getting cluster object reference: %v", err))
@@ -533,19 +532,19 @@ func deleteEtcdBackupConfig(ctx context.Context, userInfoGetter provider.UserInf
 	return etcdBackupConfigProvider.Delete(userInfo, cluster, etcdBackupConfigName)
 }
 
-func patchEtcdBackupConfig(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID string, old, new *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
+func patchEtcdBackupConfig(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID string, oldConfig, newConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
 	adminUserInfo, privilegedEtcdBackupConfigProvider, err := getAdminUserInfoPrivilegedEtcdBackupConfigProvider(ctx, userInfoGetter)
 	if err != nil {
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedEtcdBackupConfigProvider.PatchUnsecured(old, new)
+		return privilegedEtcdBackupConfigProvider.PatchUnsecured(oldConfig, newConfig)
 	}
 	userInfo, etcdBackupConfigProvider, err := getUserInfoEtcdBackupConfigProvider(ctx, userInfoGetter, projectID)
 	if err != nil {
 		return nil, err
 	}
-	return etcdBackupConfigProvider.Patch(userInfo, old, new)
+	return etcdBackupConfigProvider.Patch(userInfo, oldConfig, newConfig)
 }
 
 func getAdminUserInfoPrivilegedEtcdBackupConfigProvider(ctx context.Context, userInfoGetter provider.UserInfoGetter) (*provider.UserInfo, provider.PrivilegedEtcdBackupConfigProvider, error) {
@@ -561,7 +560,6 @@ func getAdminUserInfoPrivilegedEtcdBackupConfigProvider(ctx context.Context, use
 }
 
 func getUserInfoEtcdBackupConfigProvider(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID string) (*provider.UserInfo, provider.EtcdBackupConfigProvider, error) {
-
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return nil, nil, err

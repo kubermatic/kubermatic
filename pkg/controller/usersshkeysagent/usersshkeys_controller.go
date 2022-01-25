@@ -71,17 +71,17 @@ func Add(
 
 	c, err := controller.New(operatorName, mgr, controller.Options{Reconciler: reconciler})
 	if err != nil {
-		return fmt.Errorf("failed creating a new runtime controller: %v", err)
+		return fmt.Errorf("failed creating a new runtime controller: %w", err)
 	}
 
 	namePredicate := predicateutil.ByName(resources.UserSSHKeys)
 	namespacePredicate := predicateutil.ByNamespace(metav1.NamespaceSystem)
 	if err := c.Watch(&source.Kind{Type: &corev1.Secret{}}, &handler.EnqueueRequestForObject{}, namePredicate, namespacePredicate); err != nil {
-		return fmt.Errorf("failed to create watcher for secrets: %v", err)
+		return fmt.Errorf("failed to create watcher for secrets: %w", err)
 	}
 
 	if err := reconciler.watchAuthorizedKeys(context.TODO(), authorizedKeysPaths); err != nil {
-		return fmt.Errorf("failed to watch authorized_keys files: %v", err)
+		return fmt.Errorf("failed to watch authorized_keys files: %w", err)
 	}
 
 	userSSHKeySecret := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
@@ -96,7 +96,7 @@ func Add(
 	})
 
 	if err := c.Watch(&source.Channel{Source: reconciler.events}, userSSHKeySecret); err != nil {
-		return fmt.Errorf("failed to create watch for channelSource: %v", err)
+		return fmt.Errorf("failed to create watch for channelSource: %w", err)
 	}
 
 	return nil
@@ -107,12 +107,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	secret, err := r.fetchUserSSHKeySecret(ctx, request.NamespacedName.Namespace)
 	if err != nil || secret == nil {
-		return reconcile.Result{}, fmt.Errorf("failed to fetch user ssh keys: %v", err)
+		return reconcile.Result{}, fmt.Errorf("failed to fetch user ssh keys: %w", err)
 	}
 
 	if err := r.updateAuthorizedKeys(secret.Data); err != nil {
 		r.log.Errorw("Failed reconciling user ssh key secret", zap.Error(err))
-		return reconcile.Result{}, fmt.Errorf("failed to reconcile user ssh keys: %v", err)
+		return reconcile.Result{}, fmt.Errorf("failed to reconcile user ssh keys: %w", err)
 	}
 
 	return reconcile.Result{}, nil
@@ -121,7 +121,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 func (r *Reconciler) watchAuthorizedKeys(ctx context.Context, paths []string) error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		return fmt.Errorf("failed creating a new file watcher: %v", err)
+		return fmt.Errorf("failed creating a new file watcher: %w", err)
 	}
 
 	go func() {
@@ -146,7 +146,7 @@ func (r *Reconciler) watchAuthorizedKeys(ctx context.Context, paths []string) er
 
 	for _, path := range paths {
 		if err := watcher.Add(path); err != nil {
-			return fmt.Errorf("failed adding a new path to the files watcher: %v", err)
+			return fmt.Errorf("failed adding a new path to the files watcher: %w", err)
 		}
 	}
 
@@ -170,22 +170,22 @@ func (r *Reconciler) fetchUserSSHKeySecret(ctx context.Context, namespace string
 func (r *Reconciler) updateAuthorizedKeys(sshKeys map[string][]byte) error {
 	expectedUserSSHKeys, err := createBuffer(sshKeys)
 	if err != nil {
-		return fmt.Errorf("failed creating user ssh keys buffer: %v", err)
+		return fmt.Errorf("failed creating user ssh keys buffer: %w", err)
 	}
 
 	for _, path := range r.authorizedKeysPath {
 		if err := updateOwnAndPermissions(path); err != nil {
-			return fmt.Errorf("failed updating permissions %s: %v", path, err)
+			return fmt.Errorf("failed updating permissions %s: %w", path, err)
 		}
 
 		actualUserSSHKeys, err := ioutil.ReadFile(path)
 		if err != nil {
-			return fmt.Errorf("failed reading file in path %s: %v", path, err)
+			return fmt.Errorf("failed reading file in path %s: %w", path, err)
 		}
 
 		if !bytes.Equal(actualUserSSHKeys, expectedUserSSHKeys.Bytes()) {
 			if err := ioutil.WriteFile(path, expectedUserSSHKeys.Bytes(), 0600); err != nil {
-				return fmt.Errorf("failed to overwrite file in path %s: %v", path, err)
+				return fmt.Errorf("failed to overwrite file in path %s: %w", path, err)
 			}
 			r.log.Infow("File has been updated successfully", "file", path)
 		}
@@ -210,7 +210,7 @@ func createBuffer(data map[string][]byte) (*bytes.Buffer, error) {
 		key := keys[k]
 		data[key] = append(data[key], []byte("\n")...)
 		if _, err := buffer.Write(data[key]); err != nil {
-			return nil, fmt.Errorf("failed writing user ssh keys to buffer: %v", err)
+			return nil, fmt.Errorf("failed writing user ssh keys to buffer: %w", err)
 		}
 	}
 
@@ -220,28 +220,28 @@ func createBuffer(data map[string][]byte) (*bytes.Buffer, error) {
 func updateOwnAndPermissions(path string) error {
 	sshPath := strings.TrimSuffix(path, "/authorized_keys")
 	if err := os.Chmod(sshPath, os.FileMode(0700)); err != nil {
-		return fmt.Errorf("failed to change permission on file: %v", err)
+		return fmt.Errorf("failed to change permission on file: %w", err)
 	}
 
 	if err := os.Chmod(path, os.FileMode(0600)); err != nil {
-		return fmt.Errorf("failed to change permission on file: %v", err)
+		return fmt.Errorf("failed to change permission on file: %w", err)
 	}
 
 	userHome := strings.TrimSuffix(sshPath, "/.ssh")
 	fileInfo, err := os.Stat(userHome)
 	if err != nil {
-		return fmt.Errorf("failed describing the authorized_keys file in path %s: %v", userHome, err)
+		return fmt.Errorf("failed describing the authorized_keys file in path %s: %w", userHome, err)
 	}
 
 	uid := fileInfo.Sys().(*syscall.Stat_t).Uid
 	gid := fileInfo.Sys().(*syscall.Stat_t).Gid
 
 	if err := os.Chown(path, int(uid), int(gid)); err != nil {
-		return fmt.Errorf("failed changing the numeric uid and gid of %s: %v", path, err)
+		return fmt.Errorf("failed changing the numeric uid and gid of %s: %w", path, err)
 	}
 
 	if err := os.Chown(sshPath, int(uid), int(gid)); err != nil {
-		return fmt.Errorf("failed changing the numeric uid and gid of %s: %v", sshPath, err)
+		return fmt.Errorf("failed changing the numeric uid and gid of %s: %w", sshPath, err)
 	}
 
 	return nil

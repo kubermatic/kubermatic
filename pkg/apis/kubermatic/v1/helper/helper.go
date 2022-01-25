@@ -36,7 +36,7 @@ import (
 // any cluster reconciliaton. It:
 // * Checks if the cluster is paused
 // * Checks if the worker-name matches
-// * Sets the ReconcileSuccess condition for the controller
+// * Sets the ReconcileSuccess condition for the controller.
 func ClusterReconcileWrapper(
 	ctx context.Context,
 	client ctrlruntimeclient.Client,
@@ -44,8 +44,8 @@ func ClusterReconcileWrapper(
 	cluster *kubermaticv1.Cluster,
 	versions kubermatic.Versions,
 	conditionType kubermaticv1.ClusterConditionType,
-	reconcile func() (*reconcile.Result, error)) (*reconcile.Result, error) {
-
+	reconcile func() (*reconcile.Result, error),
+) (*reconcile.Result, error) {
 	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != workerName {
 		return nil, nil
 	}

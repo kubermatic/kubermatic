@@ -34,7 +34,7 @@ import (
 
 // ValidateFunc validates a Seed resource
 // On DELETE, the only set fields of seed are Name and Namespace as
-// admissionReview.Request.Object is unset
+// admissionReview.Request.Object is unset.
 type validateFunc func(ctx context.Context, seed *kubermaticv1.Seed, op admissionv1.Operation) error
 
 func newSeedValidator(
@@ -57,7 +57,7 @@ func newSeedValidator(
 	}, nil
 }
 
-// Ensure that Validator.Validate implements ValidateFunc
+// Ensure that Validator.Validate implements ValidateFunc.
 var _ validateFunc = (&validator{}).Validate
 
 type validator struct {
@@ -79,7 +79,7 @@ func (v *validator) Validate(ctx context.Context, seed *kubermaticv1.Seed, op ad
 	seeds := kubermaticv1.SeedList{}
 	err := v.client.List(ctx, &seeds)
 	if err != nil {
-		return fmt.Errorf("failed to get seeds: %v", err)
+		return fmt.Errorf("failed to get seeds: %w", err)
 	}
 	seedsMap := map[string]*kubermaticv1.Seed{}
 	for i, s := range seeds.Items {
@@ -98,7 +98,7 @@ func (v *validator) Validate(ctx context.Context, seed *kubermaticv1.Seed, op ad
 
 	client, err := v.seedClientGetter(seed)
 	if err != nil {
-		return fmt.Errorf("failed to get client for seed %q: %v", seed.Name, err)
+		return fmt.Errorf("failed to get client for seed %q: %w", seed.Name, err)
 	}
 
 	return v.validate(ctx, seed, client, seedsMap, op == admissionv1.Delete)
@@ -142,7 +142,7 @@ func (v *validator) validate(ctx context.Context, subject *kubermaticv1.Seed, se
 	for dcName, dc := range subject.Spec.Datacenters {
 		providerName, err := provider.DatacenterCloudProviderName(&dc.Spec)
 		if err != nil {
-			return fmt.Errorf("datacenter %q is invalid: %v", dcName, err)
+			return fmt.Errorf("datacenter %q is invalid: %w", dcName, err)
 		}
 		if providerName == "" {
 			return fmt.Errorf("datacenter %q has no provider defined", dcName)
@@ -166,7 +166,7 @@ func (v *validator) validate(ctx context.Context, subject *kubermaticv1.Seed, se
 	// check if there are still clusters using DCs not defined anymore
 	clusters := &kubermaticv1.ClusterList{}
 	if err := seedClient.List(ctx, clusters, v.listOpts); err != nil {
-		return fmt.Errorf("failed to list clusters: %v", err)
+		return fmt.Errorf("failed to list clusters: %w", err)
 	}
 
 	// list of all datacenters after the seed would have been persisted
@@ -196,7 +196,7 @@ type ensureSingleSeedValidatorWrapper struct {
 	Namespace string
 }
 
-// Ensure that SeedValidator.Validate implements ValidateFunc
+// Ensure that SeedValidator.Validate implements ValidateFunc.
 var _ validateFunc = ensureSingleSeedValidatorWrapper{}.Validate
 
 func (e ensureSingleSeedValidatorWrapper) Validate(ctx context.Context, seed *kubermaticv1.Seed, op admissionv1.Operation) error {

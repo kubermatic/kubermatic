@@ -107,7 +107,7 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 		frontProxyLoadBalancerService := &corev1.Service{}
 		nn := types.NamespacedName{Namespace: m.cluster.Status.NamespaceName, Name: resources.FrontLoadBalancerServiceName}
 		if err := m.client.Get(ctx, nn, frontProxyLoadBalancerService); err != nil {
-			return nil, fmt.Errorf("failed to get the front-loadbalancer service: %v", err)
+			return nil, fmt.Errorf("failed to get the front-loadbalancer service: %w", err)
 		}
 		frontProxyLBServiceIP = frontProxyLoadBalancerService.Spec.LoadBalancerIP // default in case the implementation doesn't populate the status
 		for _, ingress := range frontProxyLoadBalancerService.Status.LoadBalancer.Ingress {
@@ -225,7 +225,7 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 func (m *ModifiersBuilder) getExternalIPv4(hostname string) (string, error) {
 	resolvedIPs, err := m.lookupFunction(hostname)
 	if err != nil {
-		return "", fmt.Errorf("failed to lookup ip for %s: %v", hostname, err)
+		return "", fmt.Errorf("failed to lookup ip for %s: %w", hostname, err)
 	}
 	ipList := sets.NewString()
 	for _, ip := range resolvedIPs {
@@ -235,7 +235,7 @@ func (m *ModifiersBuilder) getExternalIPv4(hostname string) (string, error) {
 	}
 	ips := ipList.List()
 	if len(ips) == 0 {
-		return "", fmt.Errorf("no ip addresses found for %s: %v", hostname, err)
+		return "", fmt.Errorf("no ip addresses found for %s: %w", hostname, err)
 	}
 
 	// Just one ipv4

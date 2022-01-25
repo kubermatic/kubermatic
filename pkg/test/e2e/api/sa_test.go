@@ -208,7 +208,6 @@ func TestTokenAccessForProject(t *testing.T) {
 			if !strings.Contains(err.Error(), "403") {
 				t.Fatalf("expected error status 403 Forbidden, but was: %v", err)
 			}
-
 		})
 	}
 }

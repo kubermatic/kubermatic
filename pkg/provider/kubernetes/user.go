@@ -45,7 +45,7 @@ type blacklistToken struct {
 	Expiry apiv1.Time `json:"expiry"`
 }
 
-// NewUserProvider returns a user provider
+// NewUserProvider returns a user provider.
 func NewUserProvider(runtimeClient ctrlruntimeclient.Client, isServiceAccountFunc func(email string) bool,
 	client kubermaticclientset.Interface) *UserProvider {
 	return &UserProvider{
@@ -55,7 +55,7 @@ func NewUserProvider(runtimeClient ctrlruntimeclient.Client, isServiceAccountFun
 	}
 }
 
-// UserProvider manages user resources
+// UserProvider manages user resources.
 type UserProvider struct {
 	runtimeClient ctrlruntimeclient.Client
 	client        kubermaticclientset.Interface
@@ -64,7 +64,7 @@ type UserProvider struct {
 	isServiceAccountFunc func(email string) bool
 }
 
-// UserByID returns a user by the given ID
+// UserByID returns a user by the given ID.
 func (p *UserProvider) UserByID(id string) (*kubermaticv1.User, error) {
 	user := &kubermaticv1.User{}
 	if err := p.runtimeClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: id}, user); err != nil {
@@ -73,7 +73,7 @@ func (p *UserProvider) UserByID(id string) (*kubermaticv1.User, error) {
 	return user, nil
 }
 
-// UserByEmail returns a user by the given email
+// UserByEmail returns a user by the given email.
 func (p *UserProvider) UserByEmail(email string) (*kubermaticv1.User, error) {
 	users := &kubermaticv1.UserList{}
 	if err := p.runtimeClient.List(context.Background(), users); err != nil {
@@ -236,7 +236,7 @@ func ensureTokenBlacklistSecret(ctx context.Context, client ctrlruntimeclient.Cl
 	namespacedName := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: name}
 	existingSecret := &corev1.Secret{}
 	if err := client.Get(ctx, namespacedName, existingSecret); err != nil && !kerrors.IsNotFound(err) {
-		return nil, fmt.Errorf("failed to probe for secret %q: %v", name, err)
+		return nil, fmt.Errorf("failed to probe for secret %q: %w", name, err)
 	}
 
 	if existingSecret.Name == "" {
@@ -252,7 +252,7 @@ func ensureTokenBlacklistSecret(ctx context.Context, client ctrlruntimeclient.Cl
 		}
 
 		if err := client.Create(ctx, existingSecret); err != nil {
-			return nil, fmt.Errorf("failed to create token blacklist secret: %v", err)
+			return nil, fmt.Errorf("failed to create token blacklist secret: %w", err)
 		}
 	}
 
@@ -264,7 +264,7 @@ func ensureTokenBlacklistSecret(ctx context.Context, client ctrlruntimeclient.Cl
 			},
 		}
 		if err := client.Update(ctx, user); err != nil {
-			return nil, fmt.Errorf("failed to update user: %v", err)
+			return nil, fmt.Errorf("failed to update user: %w", err)
 		}
 	}
 

@@ -33,7 +33,7 @@ type serverClientConfigsData interface {
 	NodeAccessNetwork() string
 }
 
-// ServerClientConfigsConfigMapCreator returns a ConfigMap containing the ClientConfig for the OpenVPN server. It lives inside the seed-cluster
+// ServerClientConfigsConfigMapCreator returns a ConfigMap containing the ClientConfig for the OpenVPN server. It lives inside the seed-cluster.
 func ServerClientConfigsConfigMapCreator(data serverClientConfigsData) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.OpenVPNClientConfigsConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
@@ -67,7 +67,7 @@ func ServerClientConfigsConfigMapCreator(data serverClientConfigsData) reconcili
 
 			_, nodeAccessNetwork, err := net.ParseCIDR(data.NodeAccessNetwork())
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse node access network %s: %v", data.NodeAccessNetwork(), err)
+				return nil, fmt.Errorf("failed to parse node access network %s: %w", data.NodeAccessNetwork(), err)
 			}
 			iroutes = append(iroutes, fmt.Sprintf("iroute %s %s",
 				nodeAccessNetwork.IP.String(),

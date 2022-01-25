@@ -23,12 +23,13 @@ import (
 
 	nutanixv3 "github.com/embik/nutanix-client-go/pkg/client/v3"
 	"go.uber.org/zap"
-	"k8s.io/utils/pointer"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
+
+	"k8s.io/utils/pointer"
 )
 
 const (
@@ -134,7 +135,7 @@ func (n *Nutanix) reconcileCluster(cluster *kubermaticv1.Cluster, update provide
 
 	logger.Info("reconciling category and value")
 	if err := reconcileCategoryAndValue(client, cluster); err != nil {
-		return nil, fmt.Errorf("failed to reconcile category and cluster value: %v", err)
+		return nil, fmt.Errorf("failed to reconcile category and cluster value: %w", err)
 	}
 
 	cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
@@ -237,7 +238,6 @@ func reconcileCategoryAndValue(client *ClientSet, cluster *kubermaticv1.Cluster)
 
 	projectID, ok := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
 	if ok {
-
 		_, err = client.Prism.V3.GetCategoryKey(ProjectCategoryName)
 		if err != nil {
 			nutanixError, err := ParseNutanixError(err)

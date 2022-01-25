@@ -114,7 +114,7 @@ func TestGetSeedSettingsEndpoint(t *testing.T) {
 			resp := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, nil, tc.existingKubermaticObjs, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			ep.ServeHTTP(resp, req)
 

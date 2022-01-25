@@ -167,7 +167,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 
 			ep, _, err := test.CreateTestEndpointAndGetClients(tc.apiUser, nil, []ctrlruntimeclient.Object{}, machineObj, tc.existingKubermaticObjs, &dummyKubermaticConfiguration, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create tc endpoint due to %v", err)
+				t.Fatalf("failed to create tc endpoint: %v", err)
 			}
 			ep.ServeHTTP(res, req)
 			if res.Code != http.StatusOK {

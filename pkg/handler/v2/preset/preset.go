@@ -49,7 +49,7 @@ func DecodeListPresets(_ context.Context, r *http.Request) (interface{}, error) 
 	}, nil
 }
 
-// ListProviderPresets returns a list of preset names for the provider
+// ListProviderPresets returns a list of preset names for the provider.
 func ListPresets(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(listPresetsReq)
@@ -109,7 +109,7 @@ func DecodeUpdatePresetStatus(_ context.Context, r *http.Request) (interface{}, 
 	return req, nil
 }
 
-// Validate validates updatePresetStatusReq request
+// Validate validates updatePresetStatusReq request.
 func (r updatePresetStatusReq) Validate() error {
 	if len(r.PresetName) == 0 {
 		return fmt.Errorf("the preset name cannot be empty")
@@ -181,7 +181,7 @@ func (l listProviderPresetsReq) matchesDatacenter(datacenter string) bool {
 	return len(datacenter) == 0 || len(l.Datacenter) == 0 || strings.EqualFold(l.Datacenter, datacenter)
 }
 
-// Validate validates listProviderPresetsReq request
+// Validate validates listProviderPresetsReq request.
 func (l listProviderPresetsReq) Validate() error {
 	if len(l.ProviderName) == 0 {
 		return fmt.Errorf("the provider name cannot be empty")
@@ -207,7 +207,7 @@ func DecodeListProviderPresets(ctx context.Context, r *http.Request) (interface{
 	}, nil
 }
 
-// ListProviderPresets returns a list of preset names for the provider
+// ListProviderPresets returns a list of preset names for the provider.
 func ListProviderPresets(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(listProviderPresetsReq)
@@ -268,7 +268,7 @@ type createPresetReq struct {
 	Body crdapiv1.Preset
 }
 
-// Validate validates createPresetReq request
+// Validate validates createPresetReq request.
 func (r createPresetReq) Validate() error {
 	if len(r.ProviderName) == 0 {
 		return fmt.Errorf("the provider name cannot be empty")
@@ -315,7 +315,7 @@ func DecodeCreatePreset(_ context.Context, r *http.Request) (interface{}, error)
 	return req, nil
 }
 
-// CreatePreset creates a preset for the selected provider and returns the name if successful, error otherwise
+// CreatePreset creates a preset for the selected provider and returns the name if successful, error otherwise.
 func CreatePreset(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(createPresetReq)
@@ -368,7 +368,7 @@ type updatePresetReq struct {
 	createPresetReq
 }
 
-// Validate validates updatePresetReq request
+// Validate validates updatePresetReq request.
 func (r updatePresetReq) Validate() error {
 	return r.createPresetReq.Validate()
 }
@@ -384,7 +384,7 @@ func DecodeUpdatePreset(_ context.Context, r *http.Request) (interface{}, error)
 	return req, nil
 }
 
-// UpdatePreset updates a preset for the selected provider and returns the name if successful, error otherwise
+// UpdatePreset updates a preset for the selected provider and returns the name if successful, error otherwise.
 func UpdatePreset(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(updatePresetReq)
@@ -434,7 +434,7 @@ type deletePresetReq struct {
 	PresetName string `json:"preset_name"`
 }
 
-// Validate validates deletePresetReq request
+// Validate validates deletePresetReq request.
 func (r deletePresetReq) Validate() error {
 	if len(r.ProviderName) == 0 {
 		return fmt.Errorf("the provider name cannot be empty")
@@ -459,7 +459,7 @@ func DecodeDeletePreset(_ context.Context, r *http.Request) (interface{}, error)
 	return req, nil
 }
 
-// DeletePreset deletes the given provider from the preset AND if there is only one provider left, the preset gets deleted
+// DeletePreset deletes the given provider from the preset AND if there is only one provider left, the preset gets deleted.
 func DeletePreset(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(deletePresetReq)

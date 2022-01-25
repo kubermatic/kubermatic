@@ -54,7 +54,7 @@ const (
 	name = "controller-manager"
 )
 
-// DeploymentCreator returns the function to create and update the controller manager deployment
+// DeploymentCreator returns the function to create and update the controller manager deployment.
 func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.ControllerManagerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -179,7 +179,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			if !data.IsKonnectivityEnabled() {
 				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
 				if err != nil {
-					return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
+					return nil, fmt.Errorf("failed to get openvpn sidecar: %w", err)
 				}
 				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers, *openvpnSidecar)
 				defResourceRequirements[openvpnSidecar.Name] = openvpnSidecar.Resources.DeepCopy()
@@ -187,14 +187,14 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), dep.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name, data.Cluster().Name)
 
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(name))
 			if err != nil {
-				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
+				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
 			}
 			dep.Spec.Template.Spec = *wrappedPodSpec
 

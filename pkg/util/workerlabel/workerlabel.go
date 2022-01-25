@@ -28,7 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-// LabelSelector returns a label selector to only process clusters with a matching worker-name label
+// LabelSelector returns a label selector to only process clusters with a matching worker-name label.
 func LabelSelector(workerName string) (labels.Selector, error) {
 	var req *labels.Requirement
 	var err error
@@ -39,7 +39,7 @@ func LabelSelector(workerName string) (labels.Selector, error) {
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to build label selector: %v", err)
+		return nil, fmt.Errorf("failed to build label selector: %w", err)
 	}
 
 	return labels.Parse(req.String())
@@ -48,7 +48,7 @@ func LabelSelector(workerName string) (labels.Selector, error) {
 // Predicates returns a predicate func to only process objects with a matching worker-name label
 // This works regardless of the underlying type
 // Once https://github.com/kubernetes-sigs/controller-runtime/issues/244 is fixed we won't
-// need this anymore
+// need this anymore.
 func Predicates(workerName string) predicate.Funcs {
 	return kubermaticpred.Factory(func(o ctrlruntimeclient.Object) bool {
 		return o.GetLabels()[kubermaticv1.WorkerNameLabelKey] == workerName

@@ -28,7 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// ServiceCreator returns the function to reconcile the external OpenVPN service
+// ServiceCreator returns the function to reconcile the external OpenVPN service.
 func ServiceCreator(exposeStrategy kubermaticv1.ExposeStrategy) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.OpenVPNServerServiceName, func(se *corev1.Service) (*corev1.Service, error) {

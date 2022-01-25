@@ -38,7 +38,7 @@ type RuleGroupProvider struct {
 	privilegedClient ctrlruntimeclient.Client
 }
 
-// NewRuleGroupProvider returns a ruleGroup provider
+// NewRuleGroupProvider returns a ruleGroup provider.
 func NewRuleGroupProvider(createSeedImpersonatedClient ImpersonationClient, privilegedClient ctrlruntimeclient.Client) *RuleGroupProvider {
 	return &RuleGroupProvider{
 		createSeedImpersonatedClient: createSeedImpersonatedClient,

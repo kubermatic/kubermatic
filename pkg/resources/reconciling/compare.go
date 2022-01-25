@@ -36,7 +36,7 @@ func init() {
 	deep.LogErrors = true
 }
 
-// DeepEqual compares both objects for equality
+// DeepEqual compares both objects for equality.
 func DeepEqual(a, b metav1.Object) bool {
 	if k8cequality.Semantic.DeepEqual(a, b) {
 		return true

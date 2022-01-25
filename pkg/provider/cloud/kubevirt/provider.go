@@ -42,7 +42,7 @@ func NewCloudProvider(secretKeyGetter provider.SecretKeySelectorValueFunc) provi
 
 var _ provider.CloudProvider = &kubevirt{}
 
-// KubevirtClientGetter is used to get the kubevirt client and the k8s client
+// KubevirtClientGetter is used to get the kubevirt client and the k8s client.
 type KubevirtClientGetter = func(clientConfig *rest.Config) (kubevirtv1.Interface, kubernetes.Interface, error)
 
 func (k *kubevirt) DefaultCloudSpec(spec *v1.CloudSpec) error {
@@ -84,7 +84,7 @@ func (k *kubevirt) ValidateCloudSpecUpdate(oldSpec v1.CloudSpec, newSpec v1.Clou
 	return nil
 }
 
-// GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error
+// GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error.
 func GetCredentialsForCluster(cloud v1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (kubeconfig string, err error) {
 	kubeconfig = cloud.Kubevirt.Kubeconfig
 

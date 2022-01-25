@@ -252,7 +252,6 @@ func getAdminUserInfoPrivilegedAlertmanagerProvider(ctx context.Context, userInf
 }
 
 func getUserInfoAlertmanagerProvider(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID string) (*provider.UserInfo, provider.AlertmanagerProvider, error) {
-
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return nil, nil, err

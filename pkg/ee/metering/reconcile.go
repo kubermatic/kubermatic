@@ -59,19 +59,19 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 	}
 
 	if err := persistentVolumeClaimCreator(ctx, client, seed); err != nil {
-		return fmt.Errorf("failed to reconcile metering PVC: %v", err)
+		return fmt.Errorf("failed to reconcile metering PVC: %w", err)
 	}
 
 	if err := reconciling.ReconcileServiceAccounts(ctx, []reconciling.NamedServiceAccountCreatorGetter{
 		serviceAccountCreator(),
 	}, resources.KubermaticNamespace, client); err != nil {
-		return fmt.Errorf("failed to reconcile metering ServiceAccounts: %v", err)
+		return fmt.Errorf("failed to reconcile metering ServiceAccounts: %w", err)
 	}
 
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, []reconciling.NamedClusterRoleBindingCreatorGetter{
 		clusterRoleBindingCreator(resources.KubermaticNamespace),
 	}, "", client); err != nil {
-		return fmt.Errorf("failed to reconcile metering ClusterRoleBindings: %v", err)
+		return fmt.Errorf("failed to reconcile metering ClusterRoleBindings: %w", err)
 	}
 
 	modifiers := []reconciling.ObjectModifier{
@@ -80,13 +80,13 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 	if err := reconciling.ReconcileCronJobs(ctx, []reconciling.NamedCronJobCreatorGetter{
 		cronJobCreator(seed.Name, overwriter),
 	}, resources.KubermaticNamespace, client, modifiers...); err != nil {
-		return fmt.Errorf("failed to reconcile metering CronJob: %v", err)
+		return fmt.Errorf("failed to reconcile metering CronJob: %w", err)
 	}
 
 	if err := reconciling.ReconcileDeployments(ctx, []reconciling.NamedDeploymentCreatorGetter{
 		deploymentCreator(seed, overwriter),
 	}, resources.KubermaticNamespace, client, modifiers...); err != nil {
-		return fmt.Errorf("failed to reconcile metering Deployment: %v", err)
+		return fmt.Errorf("failed to reconcile metering Deployment: %w", err)
 	}
 
 	return nil
@@ -97,12 +97,12 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 func cleanupMeteringResources(ctx context.Context, client ctrlruntimeclient.Client) error {
 	key := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: meteringToolName}
 	if err := cleanupResource(ctx, client, key, &appsv1.Deployment{}); err != nil {
-		return fmt.Errorf("failed to cleanup metering Deployment: %v", err)
+		return fmt.Errorf("failed to cleanup metering Deployment: %w", err)
 	}
 
 	key.Name = meteringCronJobWeeklyName
 	if err := cleanupResource(ctx, client, key, &batchv1beta1.CronJob{}); err != nil {
-		return fmt.Errorf("failed to cleanup metering CronJob: %v", err)
+		return fmt.Errorf("failed to cleanup metering CronJob: %w", err)
 	}
 
 	return nil

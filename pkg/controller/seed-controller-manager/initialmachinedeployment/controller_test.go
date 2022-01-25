@@ -110,7 +110,7 @@ func TestReconcile(t *testing.T) {
 				}
 
 				if reconcileErr != nil {
-					return fmt.Errorf("reconciling should not have produced an error, but returned: %v", reconcileErr)
+					return fmt.Errorf("reconciling should not have produced an error, but returned: %w", reconcileErr)
 				}
 
 				return nil
@@ -152,7 +152,7 @@ func TestReconcile(t *testing.T) {
 			}(),
 			validate: func(cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
 				if reconcileErr != nil {
-					return fmt.Errorf("reconciling should not have caused an error, but did: %v", reconcileErr)
+					return fmt.Errorf("reconciling should not have caused an error, but did: %w", reconcileErr)
 				}
 
 				if ann, ok := cluster.Annotations[v1.InitialMachineDeploymentRequestAnnotation]; ok {
@@ -161,7 +161,7 @@ func TestReconcile(t *testing.T) {
 
 				machineDeployments := clusterv1alpha1.MachineDeploymentList{}
 				if err := userClusterClient.List(context.Background(), &machineDeployments); err != nil {
-					return fmt.Errorf("failed to list MachineDeployments in user cluster: %v", err)
+					return fmt.Errorf("failed to list MachineDeployments in user cluster: %w", err)
 				}
 
 				if len(machineDeployments.Items) == 0 {

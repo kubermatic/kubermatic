@@ -60,7 +60,7 @@ var (
 	// Project   owns   ExternalCluster
 	//
 	// Cluster   owns   Addon [why? it's in the cluster namespace anyway]
-	// Cluster   owns   EtcdBackupConfig
+	// Cluster   owns   EtcdBackupConfig.
 	allKubermaticKinds = []Kind{
 		{Name: "User", Namespaced: false, MasterCluster: true, SeedCluster: true},
 

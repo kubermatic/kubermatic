@@ -39,12 +39,12 @@ const (
 	retryPeriod   = 2 * time.Second
 )
 
-// New returns a new leader elector which uses the "hostname + name" as lock identity
+// New returns a new leader elector which uses the "hostname + name" as lock identity.
 func New(name string, leaderElectionClient kubernetes.Interface, recorder resourcelock.EventRecorder, callbacks leaderelection.LeaderCallbacks) (*leaderelection.LeaderElector, error) {
 	// Identity used to distinguish between multiple controller manager instances
 	id, err := os.Hostname()
 	if err != nil {
-		return nil, fmt.Errorf("error getting hostname: %s", err.Error())
+		return nil, fmt.Errorf("error getting hostname: %w", err)
 	}
 
 	// Lock required for leader election
@@ -100,7 +100,7 @@ func RunAsLeader(ctx context.Context, log *zap.SugaredLogger, cfg *rest.Config, 
 
 	elector, err := New(leaderName, leaderElectionClient, recorder, callbacks)
 	if err != nil {
-		return fmt.Errorf("failed to create a leaderelection: %v", err)
+		return fmt.Errorf("failed to create a leaderelection: %w", err)
 	}
 
 	elector.Run(leaderElectionCtx)

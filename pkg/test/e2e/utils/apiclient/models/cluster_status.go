@@ -13,7 +13,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// ClusterStatus ClusterStatus defines the cluster status
+// ClusterStatus ClusterStatus defines the cluster status.
 //
 // swagger:model ClusterStatus
 type ClusterStatus struct {

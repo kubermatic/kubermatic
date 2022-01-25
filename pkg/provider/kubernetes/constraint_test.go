@@ -43,7 +43,6 @@ const (
 )
 
 func TestListConstraints(t *testing.T) {
-
 	testCases := []struct {
 		name                string
 		existingObjects     []ctrlruntimeclient.Object
@@ -107,7 +106,6 @@ func TestListConstraints(t *testing.T) {
 }
 
 func TestGetConstraint(t *testing.T) {
-
 	testCases := []struct {
 		name               string
 		existingObjects    []ctrlruntimeclient.Object
@@ -159,7 +157,6 @@ func TestGetConstraint(t *testing.T) {
 }
 
 func TestDeleteConstraint(t *testing.T) {
-
 	testCases := []struct {
 		name            string
 		existingObjects []ctrlruntimeclient.Object
@@ -205,7 +202,6 @@ func TestDeleteConstraint(t *testing.T) {
 }
 
 func TestCreateConstraint(t *testing.T) {
-
 	testCases := []struct {
 		name       string
 		cluster    *kubermaticv1.Cluster
@@ -251,7 +247,6 @@ func TestCreateConstraint(t *testing.T) {
 }
 
 func TestUpdateConstraint(t *testing.T) {
-
 	testCases := []struct {
 		name             string
 		updateConstraint func(*kubermaticv1.Constraint)
@@ -313,7 +308,6 @@ func TestUpdateConstraint(t *testing.T) {
 }
 
 func TestCreateDefaultConstraint(t *testing.T) {
-
 	testCases := []struct {
 		name       string
 		ctToCreate *kubermaticv1.Constraint
@@ -354,7 +348,6 @@ func TestCreateDefaultConstraint(t *testing.T) {
 }
 
 func TestListDefaultConstraints(t *testing.T) {
-
 	testCases := []struct {
 		name                string
 		existingObjects     []ctrlruntimeclient.Object
@@ -416,7 +409,6 @@ func TestListDefaultConstraints(t *testing.T) {
 }
 
 func TestGetDefaultConstraint(t *testing.T) {
-
 	testCases := []struct {
 		name               string
 		existingObjects    []ctrlruntimeclient.Object

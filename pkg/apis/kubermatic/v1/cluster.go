@@ -22,7 +22,6 @@ import (
 	"fmt"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -32,15 +31,15 @@ import (
 )
 
 const (
-	// ClusterResourceName represents "Resource" defined in Kubernetes
+	// ClusterResourceName represents "Resource" defined in Kubernetes.
 	ClusterResourceName = "clusters"
 
-	// ClusterKindName represents "Kind" defined in Kubernetes
+	// ClusterKindName represents "Kind" defined in Kubernetes.
 	ClusterKindName = "Cluster"
 
 	// AnnotationNameClusterAutoscalerEnabled is the name of the annotation that is being
 	// used to determine if the cluster-autoscaler is enabled for this cluster. It is
-	// enabled when this Annotation is set with any value
+	// enabled when this Annotation is set with any value.
 	AnnotationNameClusterAutoscalerEnabled = "kubermatic.io/cluster-autoscaler-enabled"
 
 	// CredentialPrefix is the prefix used for the secrets containing cloud provider crednentials.
@@ -99,7 +98,7 @@ type Cluster struct {
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 
-// ClusterList specifies a list of clusters
+// ClusterList specifies a list of clusters.
 type ClusterList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
@@ -209,7 +208,7 @@ type CNIPluginSettings struct {
 
 // +kubebuilder:validation:Enum=canal;cilium;none
 
-// CNIPluginType define the type of CNI plugin installed. e.g. Canal
+// CNIPluginType define the type of CNI plugin installed. e.g. Canal.
 type CNIPluginType string
 
 func (c CNIPluginType) String() string {
@@ -221,7 +220,7 @@ const (
 	// Calico for policy enforcement).
 	CNIPluginTypeCanal CNIPluginType = "canal"
 
-	// CNIPluginTypeCilium corresponds to Cilium CNI plugin
+	// CNIPluginTypeCilium corresponds to Cilium CNI plugin.
 	CNIPluginTypeCilium CNIPluginType = "cilium"
 
 	// CNIPluginTypeNone corresponds to no CNI plugin managed by KKP
@@ -248,7 +247,7 @@ const (
 	ApiserverNetworkPolicy = "apiserverNetworkPolicy"
 
 	// KubeSystemNetworkPolicies enables the deployment of network policies to kube-system namespace that
-	// restrict traffic from all pods in the namespace
+	// restrict traffic from all pods in the namespace.
 	KubeSystemNetworkPolicies = "kubeSystemNetworkPolicies"
 )
 
@@ -283,7 +282,7 @@ const (
 
 	ClusterConditionEtcdClusterInitialized ClusterConditionType = "EtcdClusterInitialized"
 
-	// ClusterConditionNone is a special value indicating that no cluster condition should be set
+	// ClusterConditionNone is a special value indicating that no cluster condition should be set.
 	ClusterConditionNone ClusterConditionType = ""
 	// This condition is met when a CSI migration is ongoing and the CSI
 	// migration feature gates are activated on the Kubelets of all the nodes.
@@ -686,7 +685,7 @@ type AzureCloudSpec struct {
 	LoadBalancerSKU LBSKU `json:"loadBalancerSKU"` //nolint:tagliatelle
 }
 
-// VSphereCredentials credentials represents a credential for accessing vSphere
+// VSphereCredentials credentials represents a credential for accessing vSphere.
 type VSphereCredentials struct {
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
@@ -893,7 +892,7 @@ type ExtendedClusterHealth struct {
 }
 
 // AllHealthy returns if all components are healthy. Gatekeeper components not included as they are optional and not
-// crucial for cluster functioning
+// crucial for cluster functioning.
 func (h *ExtendedClusterHealth) AllHealthy() bool {
 	return h.Etcd == HealthStatusUp &&
 		h.MachineController == HealthStatusUp &&

@@ -32,7 +32,7 @@ import (
 )
 
 // ClusterProvider holds set of clients that allow for communication with the cluster and
-// that are required to properly generate RBAC for resources in that particular cluster
+// that are required to properly generate RBAC for resources in that particular cluster.
 type ClusterProvider struct {
 	providerName              string
 	kubeClient                kubernetes.Interface
@@ -46,7 +46,7 @@ type ClusterProvider struct {
 // NewClusterProvider creates a brand new ClusterProvider
 //
 // Note:
-// This method will create and register Listers for RBAC Roles and Bindings
+// This method will create and register Listers for RBAC Roles and Bindings.
 func NewClusterProvider(providerName string, kubeClient kubernetes.Interface, kubeInformerProvider InformerProvider, kubermaticClient kubermaticclientset.Interface, kubermaticInformerFactory externalversions.SharedInformerFactory) *ClusterProvider {
 	cp := &ClusterProvider{
 		providerName:              providerName,
@@ -64,7 +64,7 @@ func NewClusterProvider(providerName string, kubeClient kubernetes.Interface, ku
 	return cp
 }
 
-// StartInformers starts shared informers factories
+// StartInformers starts shared informers factories.
 func (p *ClusterProvider) StartInformers(stopCh <-chan struct{}) {
 	p.kubeInformerProvider.StartInformers(stopCh)
 	p.kubermaticInformerFactory.Start(stopCh)
@@ -80,7 +80,7 @@ func (p *ClusterProvider) WaitForCachesToSync(stopCh <-chan struct{}) error {
 	}
 
 	if err := p.kubeInformerProvider.WaitForCachesToSync(stopCh); err != nil {
-		return fmt.Errorf("unable to sync caches for kubermatic provider for cluster provider %s due to %v", p.providerName, err)
+		return fmt.Errorf("unable to sync caches for kubermatic provider for cluster provider %s: %w", p.providerName, err)
 	}
 	return nil
 }
@@ -88,7 +88,7 @@ func (p *ClusterProvider) WaitForCachesToSync(stopCh <-chan struct{}) error {
 // AddIndexerFor adds Lister for the given resource
 // Note: this method creates Lister for some resources, for example "cluster" resources
 //
-// TODO: try rm this since we have InformerProvider
+// TODO: try rm this since we have InformerProvider.
 func (p *ClusterProvider) AddIndexerFor(indexer cache.Indexer, gvk schema.GroupVersionKind) {
 	if gvk.Kind == kubermaticv1.ClusterKindName {
 		p.clusterResourceLister = kubermaticv1listers.NewClusterLister(indexer)

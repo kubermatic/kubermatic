@@ -35,13 +35,13 @@ type tlsCertificateCreatorData interface {
 	GetRootCA() (*triple.KeyPair, error)
 }
 
-// TLSCertificateCreator returns a function to create/update the secret with the etcd tls certificate
+// TLSCertificateCreator returns a function to create/update the secret with the etcd tls certificate.
 func TLSCertificateCreator(data tlsCertificateCreatorData) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.EtcdTLSCertificateSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			ca, err := data.GetRootCA()
 			if err != nil {
-				return nil, fmt.Errorf("failed to get cluster ca: %v", err)
+				return nil, fmt.Errorf("failed to get cluster ca: %w", err)
 			}
 
 			altNames := certutil.AltNames{
@@ -70,7 +70,7 @@ func TLSCertificateCreator(data tlsCertificateCreatorData) reconciling.NamedSecr
 			if b, exists := se.Data[resources.EtcdTLSCertSecretKey]; exists {
 				certs, err := certutil.ParseCertsPEM(b)
 				if err != nil {
-					return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret %s: %v", resources.EtcdTLSCertSecretKey, resources.EtcdTLSCertificateSecretName, err)
+					return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret %s: %w", resources.EtcdTLSCertSecretKey, resources.EtcdTLSCertificateSecretName, err)
 				}
 
 				if resources.IsServerCertificateValidForAllOf(certs[0], "etcd", altNames, ca.Cert) {
@@ -80,7 +80,7 @@ func TLSCertificateCreator(data tlsCertificateCreatorData) reconciling.NamedSecr
 
 			key, err := triple.NewPrivateKey()
 			if err != nil {
-				return nil, fmt.Errorf("failed to create private key for etcd server tls certificate: %v", err)
+				return nil, fmt.Errorf("failed to create private key for etcd server tls certificate: %w", err)
 			}
 
 			config := certutil.Config{
@@ -97,7 +97,7 @@ func TLSCertificateCreator(data tlsCertificateCreatorData) reconciling.NamedSecr
 
 			cert, err := triple.NewSignedCert(config, key, ca.Cert, ca.Key)
 			if err != nil {
-				return nil, fmt.Errorf("unable to sign the server certificate: %v", err)
+				return nil, fmt.Errorf("unable to sign the server certificate: %w", err)
 			}
 
 			if se.Data == nil {
