@@ -11,7 +11,12 @@ To lower the resource consumption on the seed clusters during the reconciliation
 The automatic update rules can, if needed, be overwritten using the `spec.versions.kubernetes.updates` field in the `KubermaticConfiguration`. See [#7825](https://github.com/kubermatic/kubermatic/issues/7824) for how the versions and updates are configured. It is however not recommended to deviate from the default and leave userclusters vulnerable.
 
 ### Highlights
-TBD
+
+- **All Your Clusters Under One Roof With External Cluster Support:** Import your existing AKS, EKS and GKE clusters and manage their entire lifecycle including upgrades and replica counts from our intuitive UI.
+- **More Control Over Your Hybrid and Edge Deployments With OSM Support (Experimental):** KKP 2.19 adds experimental support for the [Operating System Manager](https://github.com/kubermatic/operating-system-manager) (OSM) to extend the functionality of the [Kubermatic Machine-Controller](https://github.com/kubermatic/machine-controller). This gives you better control over your OS in hybrid cloud and edge environments.
+- **Best-in-Class Networking with Cilium Support:** With Cilium CNI support, KKP users can now choose between the two most popular CNIs Canal and Cilium or simply add and manage a CNI of their choice; regardless of whether it’s supported by KKP or not.
+- **Enhanced Control Plane Networking with Konnectivity Support:** To harness the power of Cilium with eBPF, KKP 2.19 comes with added Konnectivity support. It provides TCP level proxy for the control plane (seed cluster) to worker nodes (user cluster) communication. It is based on the upstream [apiserver-network-proxy project](https://github.com/kubernetes-sigs/apiserver-network-proxy) and replaces the older KKP-specific solution based on OpenVPN and network address translation.
+- **Multiple Backup Locations for Improved Business Continuity:** As KKP Admin, you can now configure multiple backup destinations from the UI Admin Panel. Users can select daily, weekly, monthly or customized backup options.
 
 ### Breaking Changes
 
