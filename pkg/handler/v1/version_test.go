@@ -37,7 +37,7 @@ func TestKubermaticVersion(t *testing.T) {
 	res := httptest.NewRecorder()
 	ep, err := test.CreateTestEndpoint(*test.GenDefaultAPIUser(), []ctrlruntimeclient.Object{}, nil, nil, hack.NewTestRouting)
 	if err != nil {
-		t.Fatalf("failed to create testStruct endpoint due to %v", err)
+		t.Fatalf("failed to create testStruct endpoint: %v", err)
 	}
 	ep.ServeHTTP(res, req)
 	if res.Code != http.StatusOK {

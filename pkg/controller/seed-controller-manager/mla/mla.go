@@ -49,7 +49,7 @@ const (
 )
 
 var (
-	// groupToRole map kubermatic groups to grafana roles
+	// groupToRole map kubermatic groups to grafana roles.
 	groupToRole = map[string]grafanasdk.RoleType{
 		rbac.OwnerGroupNamePrefix:  grafanasdk.ROLE_EDITOR, // we assign the editor (not admin) role to project owners, to make sure they cannot edit datasources in Grafana
 		rbac.EditorGroupNamePrefix: grafanasdk.ROLE_EDITOR,
@@ -67,7 +67,7 @@ var (
 // * rule group controller - manager rule groups that will be used to generate alerts.
 // * dashboard grafana controller - create/delete Grafana dashboards based on configmaps with prefix `grafana-dashboards`
 // * ratelimit cortex controller - updates Cortex runtime configuration with rate limits based on kubermatic MLAAdminSetting
-// * cleanup controller - this controller runs when mla disabled and clean objects that left from other MLA controller
+// * cleanup controller - this controller runs when mla disabled and clean objects that left from other MLA controller.
 func Add(
 	ctx context.Context,
 	mgr manager.Manager,
@@ -101,7 +101,7 @@ func Add(
 		if !mlaEnabled {
 			return nil // do not return an error if MLA is disabled (e.g. if MLA is not installed in Seed)
 		}
-		return fmt.Errorf("failed to get Grafana Secret: %v", err)
+		return fmt.Errorf("failed to get Grafana Secret: %w", err)
 	}
 	adminName, ok := secret.Data[GrafanaUserKey]
 	if !ok {

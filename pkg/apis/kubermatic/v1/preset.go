@@ -23,7 +23,7 @@ import (
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 
-// PresetList is the type representing a PresetList
+// PresetList is the type representing a PresetList.
 type PresetList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
@@ -36,7 +36,7 @@ type PresetList struct {
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 
-// Preset is the type representing a Preset
+// Preset is the type representing a Preset.
 type Preset struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -44,7 +44,7 @@ type Preset struct {
 	Spec PresetSpec `json:"spec"`
 }
 
-// Presets specifies default presets for supported providers
+// Presets specifies default presets for supported providers.
 type PresetSpec struct {
 	Digitalocean *Digitalocean `json:"digitalocean,omitempty"`
 	Hetzner      *Hetzner      `json:"hetzner,omitempty"`

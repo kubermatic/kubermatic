@@ -13,7 +13,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// ConstraintSelector ConstraintSelector is the object holding the cluster selection filters
+// ConstraintSelector ConstraintSelector is the object holding the cluster selection filters.
 //
 // swagger:model ConstraintSelector
 type ConstraintSelector struct {

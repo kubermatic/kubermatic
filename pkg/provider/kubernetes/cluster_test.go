@@ -140,7 +140,6 @@ func TestCreateCluster(t *testing.T) {
 					t.Fatalf("%v", diff.ObjectGoPrintSideBySide(tc.expectedCluster, cluster))
 				}
 			}
-
 		})
 	}
 }

@@ -14,7 +14,7 @@ import (
 )
 
 // ProxySettings ProxySettings allow configuring a HTTP proxy for the controlplanes
-// and nodes
+// and nodes.
 //
 // swagger:model ProxySettings
 type ProxySettings struct {

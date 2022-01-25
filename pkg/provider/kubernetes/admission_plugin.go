@@ -30,10 +30,10 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// admissionPluginsGetter is a function to retrieve admission plugins
+// admissionPluginsGetter is a function to retrieve admission plugins.
 type admissionPluginsGetter = func() ([]kubermaticv1.AdmissionPlugin, error)
 
-// AdmissionPluginsProvider is a object to handle admission plugins
+// AdmissionPluginsProvider is a object to handle admission plugins.
 type AdmissionPluginsProvider struct {
 	admissionPluginsGetter admissionPluginsGetter
 	client                 ctrlruntimeclient.Client
@@ -44,7 +44,7 @@ func NewAdmissionPluginsProvider(ctx context.Context, client ctrlruntimeclient.C
 	admissionPluginsGetter := func() ([]kubermaticv1.AdmissionPlugin, error) {
 		admissionPluginList := &kubermaticv1.AdmissionPluginList{}
 		if err := client.List(ctx, admissionPluginList); err != nil {
-			return nil, fmt.Errorf("failed to get admission plugins %v", err)
+			return nil, fmt.Errorf("failed to get admission plugins: %w", err)
 		}
 		return admissionPluginList.Items, nil
 	}
@@ -78,7 +78,6 @@ func (p *AdmissionPluginsProvider) ListPluginNamesFromVersion(fromVersion string
 		}
 	}
 	return plugins, nil
-
 }
 
 func (p *AdmissionPluginsProvider) List(userInfo *provider.UserInfo) ([]kubermaticv1.AdmissionPlugin, error) {
@@ -109,13 +108,12 @@ func (p *AdmissionPluginsProvider) Get(userInfo *provider.UserInfo, name string)
 }
 
 func (p *AdmissionPluginsProvider) Delete(userInfo *provider.UserInfo, name string) error {
-
 	plugin, err := p.Get(userInfo, name)
 	if err != nil {
 		return err
 	}
 	if err := p.client.Delete(p.ctx, plugin); err != nil {
-		return fmt.Errorf("failed to delete admission plugins %v", err)
+		return fmt.Errorf("failed to delete AdmissionPlugin: %w", err)
 	}
 	return nil
 }
@@ -130,7 +128,7 @@ func (p *AdmissionPluginsProvider) Update(userInfo *provider.UserInfo, admission
 		return nil, err
 	}
 	if err := p.client.Patch(p.ctx, admissionPlugin, ctrlruntimeclient.MergeFrom(oldAdmissionPlugin)); err != nil {
-		return nil, fmt.Errorf("failed to update AdmissionPlugin: %v", err)
+		return nil, fmt.Errorf("failed to update AdmissionPlugin: %w", err)
 	}
 
 	return admissionPlugin, nil

@@ -493,7 +493,6 @@ func TestValidate(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestSingleSeedValidateFunc(t *testing.T) {

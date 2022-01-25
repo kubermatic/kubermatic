@@ -46,12 +46,12 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.Na
 
 			ca, err := data.GetRootCA()
 			if err != nil {
-				return nil, fmt.Errorf("failed to get cluster ca: %v", err)
+				return nil, fmt.Errorf("failed to get cluster ca: %w", err)
 			}
 
 			inClusterIP, err := resources.InClusterApiserverIP(data.Cluster())
 			if err != nil {
-				return nil, fmt.Errorf("failed to get the in-cluster ClusterIP for the apiserver: %v", err)
+				return nil, fmt.Errorf("failed to get the in-cluster ClusterIP for the apiserver: %w", err)
 			}
 
 			altNames := certutil.AltNames{
@@ -83,7 +83,7 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.Na
 			if b, exists := se.Data[resources.KonnectivityProxyTLSSecretName+".crt"]; exists {
 				certs, err := certutil.ParseCertsPEM(b)
 				if err != nil {
-					return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %v", resources.KonnectivityProxyTLSSecretName+".crt", err)
+					return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %w", resources.KonnectivityProxyTLSSecretName+".crt", err)
 				}
 
 				if resources.IsServerCertificateValidForAllOf(certs[0], "konnectivity-proxy", altNames, ca.Cert) {
@@ -93,7 +93,7 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.Na
 
 			key, err := triple.NewPrivateKey()
 			if err != nil {
-				return nil, fmt.Errorf("unable to create a server private key: %v", err)
+				return nil, fmt.Errorf("unable to create a server private key: %w", err)
 			}
 
 			config := certutil.Config{
@@ -104,7 +104,7 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.Na
 
 			cert, err := triple.NewSignedCert(config, key, ca.Cert, ca.Key)
 			if err != nil {
-				return nil, fmt.Errorf("unable to sign the server certificate: %v", err)
+				return nil, fmt.Errorf("unable to sign the server certificate: %w", err)
 			}
 
 			se.Data[resources.KonnectivityProxyTLSSecretName+".key"] = triple.EncodePrivateKeyPEM(key)

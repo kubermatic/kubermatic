@@ -28,7 +28,7 @@ import (
 )
 
 // RegisterV1Legacy declares legacy HTTP paths that can be deleted in the future
-// At the time of this writing, there is no clear deprecation policy
+// At the time of this writing, there is no clear deprecation policy.
 func (r Routing) RegisterV1Legacy(mux *mux.Router) {
 	//
 	// Defines a set of HTTP endpoints for nodes that belong to a cluster

@@ -14,7 +14,7 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// ErrorDetails ErrorDetails contains details about the error
+// ErrorDetails ErrorDetails contains details about the error.
 //
 // swagger:model ErrorDetails
 type ErrorDetails struct {

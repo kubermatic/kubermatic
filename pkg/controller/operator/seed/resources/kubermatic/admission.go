@@ -51,7 +51,7 @@ func ClusterValidatingWebhookConfigurationCreator(cfg *operatorv1alpha1.Kubermat
 
 			ca, err := common.WebhookCABundle(cfg, client)
 			if err != nil {
-				return nil, fmt.Errorf("cannot find Seed Admission CA bundle: %v", err)
+				return nil, fmt.Errorf("cannot find Seed Admission CA bundle: %w", err)
 			}
 
 			hook.Webhooks = []admissionregistrationv1.ValidatingWebhook{
@@ -106,7 +106,7 @@ func ClusterMutatingWebhookConfigurationCreator(cfg *operatorv1alpha1.Kubermatic
 
 			ca, err := common.WebhookCABundle(cfg, client)
 			if err != nil {
-				return nil, fmt.Errorf("cannot find Seed Admission CA bundle: %v", err)
+				return nil, fmt.Errorf("cannot find Seed Admission CA bundle: %w", err)
 			}
 
 			hook.Webhooks = []admissionregistrationv1.MutatingWebhook{
@@ -185,7 +185,7 @@ func OperatingSystemConfigValidatingWebhookConfigurationCreator(cfg *operatorv1a
 
 			ca, err := common.WebhookCABundle(cfg, client)
 			if err != nil {
-				return nil, fmt.Errorf("cannot find Seed Admission CA bundle: %v", err)
+				return nil, fmt.Errorf("cannot find Seed Admission CA bundle: %w", err)
 			}
 
 			hook.Webhooks = []admissionregistrationv1.ValidatingWebhook{
@@ -238,7 +238,7 @@ func OperatingSystemProfileValidatingWebhookConfigurationCreator(cfg *operatorv1
 
 			ca, err := common.WebhookCABundle(cfg, client)
 			if err != nil {
-				return nil, fmt.Errorf("cannot find Seed Admission CA bundle: %v", err)
+				return nil, fmt.Errorf("cannot find Seed Admission CA bundle: %w", err)
 			}
 
 			hook.Webhooks = []admissionregistrationv1.ValidatingWebhook{

@@ -36,13 +36,12 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
-// Used to decode response object
+// Used to decode response object.
 type plansRoot struct {
 	Plans []packngo.Plan `json:"plans"`
 }
 
 func PacketSizesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, settingsProvider provider.SettingsProvider, projectID, clusterID string) (interface{}, error) {
-
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 	if err != nil {
@@ -68,7 +67,6 @@ func PacketSizesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGett
 	}
 
 	return PacketSizes(apiKey, projectID, settings.Spec.MachineDeploymentVMResourceQuota)
-
 }
 
 func PacketSizes(apiKey, projectID string, quota kubermaticv1.MachineDeploymentVMResourceQuota) (apiv1.PacketSizeList, error) {

@@ -63,11 +63,11 @@ func ListAKSClusters(ctx context.Context, projectProvider provider.ProjectProvid
 	aksClient := containerservice.NewManagedClustersClient(cred.SubscriptionID)
 	aksClient.Authorizer, err = auth.NewClientCredentialsConfig(cred.ClientID, cred.ClientSecret, cred.TenantID).Authorizer()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %s", err.Error())
+		return nil, fmt.Errorf("failed to create authorizer: %w", err)
 	}
 	clusterListResult, err := aksClient.List(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list AKS clusters: %v", err)
+		return nil, fmt.Errorf("failed to list AKS clusters: %w", err)
 	}
 
 	for _, f := range clusterListResult.Values() {
@@ -93,11 +93,11 @@ func ListAKSUpgrades(ctx context.Context, cred resources.AKSCredentials, resourc
 	aksClient := containerservice.NewManagedClustersClient(cred.SubscriptionID)
 	aksClient.Authorizer, err = auth.NewClientCredentialsConfig(cred.ClientID, cred.ClientSecret, cred.TenantID).Authorizer()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %v", err.Error())
+		return nil, fmt.Errorf("failed to create authorizer: %w", err)
 	}
 	clusterUpgradeProfile, err := aksClient.GetUpgradeProfile(ctx, resourceGroupName, resourceName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to upgrade cluster: %v", err.Error())
+		return nil, fmt.Errorf("failed to upgrade cluster: %w", err)
 	}
 
 	upgradeProperties := clusterUpgradeProfile.ManagedClusterUpgradeProfileProperties
@@ -153,7 +153,7 @@ func ValidateAKSCredentials(ctx context.Context, cred resources.AKSCredentials) 
 	aksClient := containerservice.NewManagedClustersClient(cred.SubscriptionID)
 	aksClient.Authorizer, err = auth.NewClientCredentialsConfig(cred.ClientID, cred.ClientSecret, cred.TenantID).Authorizer()
 	if err != nil {
-		return fmt.Errorf("failed to create authorizer: %s", err.Error())
+		return fmt.Errorf("failed to create authorizer: %w", err)
 	}
 	_, err = aksClient.List(ctx)
 

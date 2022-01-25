@@ -32,7 +32,6 @@ import (
 // CreateOrUpdateMeteringCredentials creates or updates metering tool SecretReq.
 func CreateOrUpdateMeteringCredentials(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
 			return nil, err
@@ -42,7 +41,7 @@ func CreateOrUpdateMeteringCredentials(userInfoGetter provider.UserInfoGetter, s
 		}
 
 		if err := createOrUpdateMeteringCredentials(ctx, req, seedsGetter, seedClientGetter); err != nil {
-			return nil, fmt.Errorf("failed to create/update metering credentials: %v", err)
+			return nil, fmt.Errorf("failed to create/update metering credentials: %w", err)
 		}
 
 		return nil, nil
@@ -52,7 +51,6 @@ func CreateOrUpdateMeteringCredentials(userInfoGetter provider.UserInfoGetter, s
 // CreateOrUpdateMeteringConfigurations configures kkp metering tool.
 func CreateOrUpdateMeteringConfigurations(userInfoGetter provider.UserInfoGetter, masterClient client.Client) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
 			return nil, err
@@ -62,17 +60,16 @@ func CreateOrUpdateMeteringConfigurations(userInfoGetter provider.UserInfoGetter
 		}
 
 		if err := createOrUpdateMeteringConfigurations(ctx, req, masterClient); err != nil {
-			return nil, fmt.Errorf("failed to create/update metering SecretReq: %v", err)
+			return nil, fmt.Errorf("failed to create/update metering SecretReq: %w", err)
 		}
 
 		return nil, nil
 	}
 }
 
-// ListMeteringReportsEndpoint lists available reports
+// ListMeteringReportsEndpoint lists available reports.
 func ListMeteringReportsEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
 			return nil, err
@@ -93,7 +90,6 @@ func ListMeteringReportsEndpoint(userInfoGetter provider.UserInfoGetter, seedsGe
 // GetMeteringReportEndpoint get a presigned url to download specific report.
 func GetMeteringReportEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
 			return nil, err

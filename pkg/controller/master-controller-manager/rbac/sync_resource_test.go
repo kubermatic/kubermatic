@@ -2597,7 +2597,6 @@ func TestSyncClusterConstraintsRBAC(t *testing.T) {
 					t.Errorf("Got unexpected rolebinding. Diff to expected: %v", diff)
 				}
 			}
-
 		})
 	}
 }
@@ -3006,7 +3005,6 @@ func TestSyncClusterAlertmanagerRBAC(t *testing.T) {
 					t.Errorf("Got unexpected rolebinding. Diff to expected: %v", diff)
 				}
 			}
-
 		})
 	}
 }
@@ -3314,7 +3312,6 @@ func TestSyncClusterRuleGroupsRBAC(t *testing.T) {
 					t.Errorf("Got unexpected rolebinding. Diff to expected: %v", diff)
 				}
 			}
-
 		})
 	}
 }

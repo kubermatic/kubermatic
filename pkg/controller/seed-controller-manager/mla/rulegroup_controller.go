@@ -196,7 +196,6 @@ func (r *ruleGroupReconciler) Reconcile(ctx context.Context, request reconcile.R
 		result = &reconcile.Result{}
 	}
 	return *result, err
-
 }
 
 type ruleGroupController struct {
@@ -257,7 +256,7 @@ func (r *ruleGroupController) reconcile(ctx context.Context, cluster *kubermatic
 		}
 	}
 
-	if err := r.ensureRuleGroup(ruleGroup, requestURL); err != nil {
+	if err := r.ensureRuleGroup(ctx, ruleGroup, requestURL); err != nil {
 		return nil, fmt.Errorf("failed to create rule group: %w", err)
 	}
 	return nil, nil
@@ -294,7 +293,7 @@ func (r *ruleGroupController) getRequestURL(ruleGroup *kubermaticv1.RuleGroup) (
 }
 
 func (r *ruleGroupController) handleDeletion(ctx context.Context, ruleGroup *kubermaticv1.RuleGroup, requestURL string) error {
-	req, err := http.NewRequest(http.MethodDelete,
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete,
 		fmt.Sprintf("%s/%s", requestURL, ruleGroup.Name), nil)
 	if err != nil {
 		return err
@@ -322,8 +321,8 @@ func (r *ruleGroupController) handleDeletion(ctx context.Context, ruleGroup *kub
 	return nil
 }
 
-func (r *ruleGroupController) ensureRuleGroup(ruleGroup *kubermaticv1.RuleGroup, requestURL string) error {
-	currentRuleGroup, err := r.getCurrentRuleGroup(ruleGroup, requestURL)
+func (r *ruleGroupController) ensureRuleGroup(ctx context.Context, ruleGroup *kubermaticv1.RuleGroup, requestURL string) error {
+	currentRuleGroup, err := r.getCurrentRuleGroup(ctx, ruleGroup, requestURL)
 	if err != nil {
 		return err
 	}
@@ -335,7 +334,7 @@ func (r *ruleGroupController) ensureRuleGroup(ruleGroup *kubermaticv1.RuleGroup,
 		return nil
 	}
 
-	req, err := http.NewRequest(http.MethodPost,
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
 		requestURL,
 		bytes.NewBuffer(ruleGroup.Spec.Data))
 	if err != nil {
@@ -359,8 +358,8 @@ func (r *ruleGroupController) ensureRuleGroup(ruleGroup *kubermaticv1.RuleGroup,
 	return nil
 }
 
-func (r *ruleGroupController) getCurrentRuleGroup(ruleGroup *kubermaticv1.RuleGroup, requestURL string) (map[string]interface{}, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/%s", requestURL, ruleGroup.Name), nil)
+func (r *ruleGroupController) getCurrentRuleGroup(ctx context.Context, ruleGroup *kubermaticv1.RuleGroup, requestURL string) (map[string]interface{}, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/%s", requestURL, ruleGroup.Name), nil)
 	if err != nil {
 		return nil, err
 	}

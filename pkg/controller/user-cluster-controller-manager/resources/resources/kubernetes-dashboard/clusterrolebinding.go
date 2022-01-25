@@ -43,5 +43,4 @@ func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGette
 			return crb, nil
 		}
 	}
-
 }

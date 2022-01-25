@@ -35,7 +35,7 @@ import (
 func BackupResources(ctx context.Context, kubeClient ctrlruntimeclient.Client, gvk schema.GroupVersionKind, filename string) error {
 	items, err := ListResources(ctx, kubeClient, gvk)
 	if err != nil {
-		return fmt.Errorf("failed to list resources: %v", err)
+		return fmt.Errorf("failed to list resources: %w", err)
 	}
 
 	return DumpResources(ctx, filename, items)
@@ -55,7 +55,7 @@ func ListResources(ctx context.Context, kubeClient ctrlruntimeclient.Client, gvk
 func DumpResources(ctx context.Context, filename string, objects []unstructured.Unstructured) error {
 	f, err := os.Create(filename)
 	if err != nil {
-		return fmt.Errorf("failed to create file %q: %v", filename, err)
+		return fmt.Errorf("failed to create file %q: %w", filename, err)
 	}
 	defer f.Close()
 
@@ -63,12 +63,12 @@ func DumpResources(ctx context.Context, filename string, objects []unstructured.
 	encoder.SetIndent(2)
 
 	if _, err := f.WriteString(fmt.Sprintf("# This backup was created %s.\n", time.Now().Format(time.UnixDate))); err != nil {
-		return fmt.Errorf("failed to write date: %v", err)
+		return fmt.Errorf("failed to write date: %w", err)
 	}
 
 	for _, item := range objects {
 		if err := encoder.Encode(item.Object); err != nil {
-			return fmt.Errorf("failed to encode object as YAML: %v", err)
+			return fmt.Errorf("failed to encode object as YAML: %w", err)
 		}
 	}
 

@@ -162,12 +162,12 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.Parse()
 
 	if err := c.admissionWebhook.Validate(); err != nil {
-		return c, fmt.Errorf("invalid admission webhook configuration: %v", err)
+		return c, fmt.Errorf("invalid admission webhook configuration: %w", err)
 	}
 
 	etcdDiskSize, err := resource.ParseQuantity(rawEtcdDiskSize)
 	if err != nil {
-		return c, fmt.Errorf("failed to parse value of flag etcd-disk-size (%q): %v", rawEtcdDiskSize, err)
+		return c, fmt.Errorf("failed to parse value of flag etcd-disk-size (%q): %w", rawEtcdDiskSize, err)
 	}
 	c.etcdDiskSize = etcdDiskSize
 
@@ -183,7 +183,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 
 	caBundle, err := certificates.NewCABundleFromFile(caBundleFile)
 	if err != nil {
-		return c, fmt.Errorf("invalid CA bundle file (%q): %v", caBundleFile, err)
+		return c, fmt.Errorf("invalid CA bundle file (%q): %w", caBundleFile, err)
 	}
 	c.caBundle = caBundle
 
@@ -197,7 +197,7 @@ func (o controllerRunOptions) validate() error {
 		}
 
 		if _, err := url.Parse(o.oidcIssuerURL); err != nil {
-			return fmt.Errorf("wrong format of \"oidc-issuer-url\" flag, err = %v", err)
+			return fmt.Errorf("wrong format of \"oidc-issuer-url\" flag: %w", err)
 		}
 
 		if len(o.oidcIssuerClientID) == 0 {
@@ -225,7 +225,7 @@ func (o controllerRunOptions) validate() error {
 }
 
 // controllerContext holds all controllerRunOptions plus everything that
-// needs to be initialized first
+// needs to be initialized first.
 type controllerContext struct {
 	ctx                  context.Context
 	runOptions           controllerRunOptions
@@ -241,17 +241,17 @@ type controllerContext struct {
 func loadKubermaticConfiguration(filename string) (*operatorv1alpha1.KubermaticConfiguration, error) {
 	content, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read file: %v", err)
+		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
 
 	config := &operatorv1alpha1.KubermaticConfiguration{}
 	if err := yaml.Unmarshal(content, &config); err != nil {
-		return nil, fmt.Errorf("failed to parse file as YAML: %v", err)
+		return nil, fmt.Errorf("failed to parse file as YAML: %w", err)
 	}
 
 	defaulted, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
 	if err != nil {
-		return nil, fmt.Errorf("failed to process: %v", err)
+		return nil, fmt.Errorf("failed to process: %w", err)
 	}
 
 	return defaulted, nil

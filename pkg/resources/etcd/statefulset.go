@@ -37,8 +37,7 @@ import (
 )
 
 const (
-	name = "etcd"
-
+	name    = "etcd"
 	dataDir = "/var/run/etcd/pod_${POD_NAME}/"
 )
 
@@ -68,11 +67,10 @@ type etcdStatefulSetCreatorData interface {
 	SupportsFailureDomainZoneAntiAffinity() bool
 }
 
-// StatefulSetCreator returns the function to reconcile the etcd StatefulSet
+// StatefulSetCreator returns the function to reconcile the etcd StatefulSet.
 func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChecks bool, enableTLSOnly bool) reconciling.NamedStatefulSetCreatorGetter {
 	return func() (string, reconciling.StatefulSetCreator) {
 		return resources.EtcdStatefulSetName, func(set *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
-
 			replicas := computeReplicas(data, set)
 			set.Name = resources.EtcdStatefulSetName
 			set.Spec.Replicas = resources.Int32(replicas)
@@ -89,7 +87,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 			volumes := getVolumes()
 			podLabels, err := data.GetPodTemplateLabels(resources.EtcdStatefulSetName, volumes, baseLabels)
 			if err != nil {
-				return nil, fmt.Errorf("failed to create pod labels: %v", err)
+				return nil, fmt.Errorf("failed to create pod labels: %w", err)
 			}
 
 			set.Spec.Template.ObjectMeta = metav1.ObjectMeta{
@@ -270,7 +268,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 
 			err = resources.SetResourceRequirements(set.Spec.Template.Spec.Containers, defaultResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), set.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			set.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.EtcdStatefulSetName, data.Cluster().Name)
@@ -364,7 +362,7 @@ func GetBasePodLabels(cluster *kubermaticv1.Cluster) map[string]string {
 }
 
 // ImageTag returns the correct etcd image tag for a given Cluster
-// TODO: Other functions use this function, switch them to getLauncherImage
+// TODO: Other functions use this function, switch them to getLauncherImage.
 func ImageTag(c *kubermaticv1.Cluster) string {
 	if c.Spec.Version.Semver().Minor() < 22 {
 		return "v3.4.3"
@@ -434,7 +432,7 @@ func getEtcdCommand(name, namespace string, enableCorruptionCheck, launcherEnabl
 
 	tpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(etcdStartCommandTpl)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse etcd command template: %v", err)
+		return nil, fmt.Errorf("failed to parse etcd command template: %w", err)
 	}
 
 	tplData := commandTplData{

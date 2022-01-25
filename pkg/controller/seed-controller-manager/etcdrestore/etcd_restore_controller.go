@@ -53,7 +53,7 @@ import (
 const (
 	ControllerName = "kubermatic_etcd_restore_controller"
 
-	// FinishRestoreFinalizer indicates that the restore is rebuilding the etcd statefulset
+	// FinishRestoreFinalizer indicates that the restore is rebuilding the etcd statefulset.
 	FinishRestoreFinalizer = "kubermatic.io/finish-restore"
 
 	// ActiveRestoreAnnotationName is the cluster annotation that records the EtcdRestore resource that's currently
@@ -62,7 +62,7 @@ const (
 	ActiveRestoreAnnotationName = "kubermatic.io/active-restore"
 )
 
-// Reconciler stores necessary components that are required to restore etcd backups
+// Reconciler stores necessary components that are required to restore etcd backups.
 type Reconciler struct {
 	log        *zap.SugaredLogger
 	workerName string
@@ -73,7 +73,7 @@ type Reconciler struct {
 }
 
 // Add creates a new etcd restore controller that is responsible for
-// managing cluster etcd restores
+// managing cluster etcd restores.
 func Add(
 	mgr manager.Manager,
 	log *zap.SugaredLogger,
@@ -171,7 +171,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, rest
 		if err := r.updateRestore(ctx, restore, func(restore *kubermaticv1.EtcdRestore) {
 			kuberneteshelper.AddFinalizer(restore, FinishRestoreFinalizer)
 		}); err != nil {
-			return nil, fmt.Errorf("failed to add finalizer: %v", err)
+			return nil, fmt.Errorf("failed to add finalizer: %w", err)
 		}
 	}
 
@@ -218,7 +218,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, rest
 			if kerrors.IsConflict(err) {
 				return &reconcile.Result{RequeueAfter: 1 * time.Minute}, nil
 			}
-			return nil, fmt.Errorf("error updating cluster active restore annotation: %v", err)
+			return nil, fmt.Errorf("error updating cluster active restore annotation: %w", err)
 		}
 	}
 
@@ -230,13 +230,13 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, rest
 	if err := r.updateCluster(ctx, cluster, func(cluster *kubermaticv1.Cluster) {
 		cluster.Spec.Pause = true
 	}); err != nil {
-		return nil, fmt.Errorf("failed to pause cluster: %v", err)
+		return nil, fmt.Errorf("failed to pause cluster: %w", err)
 	}
 
 	if err := r.updateRestore(ctx, restore, func(restore *kubermaticv1.EtcdRestore) {
 		restore.Status.Phase = kubermaticv1.EtcdRestorePhaseStarted
 	}); err != nil {
-		return nil, fmt.Errorf("failed to set EtcdRestore started phase: %v", err)
+		return nil, fmt.Errorf("failed to set EtcdRestore started phase: %w", err)
 	}
 
 	// delete etcd sts
@@ -244,21 +244,21 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, rest
 	err = r.Get(ctx, types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.EtcdStatefulSetName}, sts)
 	if err == nil {
 		if err := r.Delete(ctx, sts); err != nil && !kerrors.IsNotFound(err) {
-			return nil, fmt.Errorf("failed to delete etcd statefulset: %v", err)
+			return nil, fmt.Errorf("failed to delete etcd statefulset: %w", err)
 		}
 	} else if !kerrors.IsNotFound(err) {
-		return nil, fmt.Errorf("failed to get etcd statefulset: %v", err)
+		return nil, fmt.Errorf("failed to get etcd statefulset: %w", err)
 	}
 
 	// delete PVCs
 	pvcSelector, err := labels.Parse(fmt.Sprintf("%s=%s", resources.AppLabelKey, resources.EtcdStatefulSetName))
 	if err != nil {
-		return nil, fmt.Errorf("software bug: failed to parse etcd pvc selector: %v", err)
+		return nil, fmt.Errorf("software bug: failed to parse etcd pvc selector: %w", err)
 	}
 
 	pvcs := &corev1.PersistentVolumeClaimList{}
 	if err := r.List(ctx, pvcs, &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName, LabelSelector: pvcSelector}); err != nil {
-		return nil, fmt.Errorf("failed to list pvcs (%v): %v", pvcSelector.String(), err)
+		return nil, fmt.Errorf("failed to list pvcs (%v): %w", pvcSelector.String(), err)
 	}
 
 	for _, pvc := range pvcs.Items {
@@ -267,7 +267,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, rest
 			PropagationPolicy: &deletePropagationForeground,
 		}
 		if err := r.Delete(ctx, &pvc, delOpts); err != nil {
-			return nil, fmt.Errorf("failed to delete pvc %v: %v", pvc.GetName(), err)
+			return nil, fmt.Errorf("failed to delete pvc %v: %w", pvc.GetName(), err)
 		}
 	}
 
@@ -279,7 +279,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, rest
 	if err := r.updateRestore(ctx, restore, func(restore *kubermaticv1.EtcdRestore) {
 		restore.Status.Phase = kubermaticv1.EtcdRestorePhaseStsRebuilding
 	}); err != nil {
-		return nil, fmt.Errorf("failed to proceed to sts rebuilding phase: %v", err)
+		return nil, fmt.Errorf("failed to proceed to sts rebuilding phase: %w", err)
 	}
 
 	return r.rebuildEtcdStatefulset(ctx, log, restore, cluster)
@@ -300,7 +300,7 @@ func (r *Reconciler) rebuildEtcdStatefulset(ctx context.Context, log *zap.Sugare
 			)
 			cluster.Spec.Pause = false
 		}); err != nil {
-			return nil, fmt.Errorf("failed to reset etcd initialized status and unpause cluster: %v", err)
+			return nil, fmt.Errorf("failed to reset etcd initialized status and unpause cluster: %w", err)
 		}
 	}
 
@@ -312,14 +312,14 @@ func (r *Reconciler) rebuildEtcdStatefulset(ctx context.Context, log *zap.Sugare
 	if err := r.updateCluster(ctx, cluster, func(cluster *kubermaticv1.Cluster) {
 		delete(cluster.Annotations, ActiveRestoreAnnotationName)
 	}); err != nil {
-		return nil, fmt.Errorf("failed to clear cluster active restore annotation: %v", err)
+		return nil, fmt.Errorf("failed to clear cluster active restore annotation: %w", err)
 	}
 
 	if err := r.updateRestore(ctx, restore, func(restore *kubermaticv1.EtcdRestore) {
 		restore.Status.Phase = kubermaticv1.EtcdRestorePhaseCompleted
 		kuberneteshelper.RemoveFinalizer(restore, FinishRestoreFinalizer)
 	}); err != nil {
-		return nil, fmt.Errorf("failed to mark restore completed: %v", err)
+		return nil, fmt.Errorf("failed to mark restore completed: %w", err)
 	}
 
 	return nil, nil

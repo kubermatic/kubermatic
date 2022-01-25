@@ -46,7 +46,7 @@ const (
 	resourceNameIndex = 2
 )
 
-// generateVerbsForGroup generates a set of verbs for a group
+// generateVerbsForGroup generates a set of verbs for a group.
 func generateVerbsForGroup(groupName string) ([]string, error) {
 	// verbs for owners
 	if groupName == rbac.OwnerGroupNamePrefix || groupName == rbac.EditorGroupNamePrefix {
@@ -61,7 +61,7 @@ func generateVerbsForGroup(groupName string) ([]string, error) {
 	return []string{}, fmt.Errorf("unable to generate verbs, unknown group name passed in = %s", groupName)
 }
 
-// GenerateRBACClusterRole creates role for specific group
+// GenerateRBACClusterRole creates role for specific group.
 func GenerateRBACClusterRole(resourceName string) (*rbacv1.ClusterRole, error) {
 	groupName, err := getGroupName(resourceName)
 	if err != nil {
@@ -171,7 +171,7 @@ func GenerateRBACClusterRole(resourceName string) (*rbacv1.ClusterRole, error) {
 	return clusterRole, nil
 }
 
-// GenerateRBACClusterRoleBinding creates role binding for specific group
+// GenerateRBACClusterRoleBinding creates role binding for specific group.
 func GenerateRBACClusterRoleBinding(resourceName string) (*rbacv1.ClusterRoleBinding, error) {
 	groupName, err := getGroupName(resourceName)
 	if err != nil {

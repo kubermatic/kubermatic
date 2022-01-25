@@ -25,7 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// ServiceCreator returns the function to reconcile the prometheus service used for federation
+// ServiceCreator returns the function to reconcile the prometheus service used for federation.
 func ServiceCreator(data *resources.TemplateData) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return name, func(se *corev1.Service) (*corev1.Service, error) {

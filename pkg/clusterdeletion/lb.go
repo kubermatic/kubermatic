@@ -49,7 +49,7 @@ func (d *Deletion) cleanupLBs(ctx context.Context, log *zap.SugaredLogger, clust
 
 	serviceList := &corev1.ServiceList{}
 	if err := userClusterClient.List(ctx, serviceList); err != nil {
-		return false, fmt.Errorf("failed to list Service's from user cluster: %v", err)
+		return false, fmt.Errorf("failed to list Service's from user cluster: %w", err)
 	}
 
 	for _, service := range serviceList.Items {
@@ -63,7 +63,7 @@ func (d *Deletion) cleanupLBs(ctx context.Context, log *zap.SugaredLogger, clust
 		}
 
 		if err := d.cleanupLB(ctx, slog, userClusterClient, &service, cluster); err != nil {
-			return deletedSomeLBs, fmt.Errorf("failed to delete service %q inside user cluster: %v", serviceName, err)
+			return deletedSomeLBs, fmt.Errorf("failed to delete service %q inside user cluster: %w", serviceName, err)
 		}
 		deletedSomeLBs = true
 	}
@@ -74,7 +74,7 @@ func (d *Deletion) cleanupLBs(ctx context.Context, log *zap.SugaredLogger, clust
 func (d *Deletion) cleanupLB(ctx context.Context, log *zap.SugaredLogger, userClusterClient ctrlruntimeclient.Client, service *corev1.Service, cluster *kubermaticv1.Cluster) error {
 	log.Debug("Deleting service...")
 	if err := userClusterClient.Delete(ctx, service); err != nil {
-		return fmt.Errorf("failed to delete service: %v", err)
+		return fmt.Errorf("failed to delete service: %w", err)
 	}
 	log.Info("Deleted service")
 
@@ -92,7 +92,7 @@ func (d *Deletion) cleanupLB(ctx context.Context, log *zap.SugaredLogger, userCl
 	cluster.Annotations[deletedLBAnnotationName] = encodeStringSet(set)
 
 	if err := d.seedClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
-		return fmt.Errorf("failed to update cluster when trying to add UID of deleted LoadBalancer: %v", err)
+		return fmt.Errorf("failed to update cluster when trying to add UID of deleted LoadBalancer: %w", err)
 	}
 
 	// Wait for the update to appear in the lister as we use the data from the lister later on to verify if the LoadBalancers
@@ -104,7 +104,7 @@ func (d *Deletion) cleanupLB(ctx context.Context, log *zap.SugaredLogger, userCl
 		}
 		return strings.Contains(latestCluster.Annotations[deletedLBAnnotationName], string(service.UID)), nil
 	}); err != nil {
-		return fmt.Errorf("failed to wait for deletedLBAnnotation to appear in the lister: %v", err)
+		return fmt.Errorf("failed to wait for deletedLBAnnotation to appear in the lister: %w", err)
 	}
 
 	return nil
@@ -112,7 +112,7 @@ func (d *Deletion) cleanupLB(ctx context.Context, log *zap.SugaredLogger, userCl
 
 // checkIfAllLoadbalancersAreGone checks if all the services of type LoadBalancer were successfully
 // deleted. The in-tree cloud providers do this without a finalizer and only after the service
-// object is gone from the API, the only way to check is to wait for the relevant event
+// object is gone from the API, the only way to check is to wait for the relevant event.
 func (d *Deletion) checkIfAllLoadbalancersAreGone(ctx context.Context, cluster *kubermaticv1.Cluster) (bool, error) {
 	// This check is only required for in-tree cloud provider that support LoadBalancers
 	// TODO once we start external cloud controllers for one of these three: Make this check
@@ -144,7 +144,7 @@ func (d *Deletion) checkIfAllLoadbalancersAreGone(ctx context.Context, cluster *
 		selector := fields.OneTermEqualSelector("involvedObject.uid", deletedLB)
 		events := &corev1.EventList{}
 		if err := userClusterClient.List(context.Background(), events, &ctrlruntimeclient.ListOptions{FieldSelector: selector}); err != nil {
-			return false, fmt.Errorf("failed to get service events: %v", err)
+			return false, fmt.Errorf("failed to get service events: %w", err)
 		}
 		for _, event := range events.Items {
 			if event.Reason == eventReasonDeletedLoadBalancer {
@@ -156,7 +156,7 @@ func (d *Deletion) checkIfAllLoadbalancersAreGone(ctx context.Context, cluster *
 	oldCluster := cluster.DeepCopy()
 	cluster.Annotations[deletedLBAnnotationName] = encodeStringSet(deletedLoadBalancers)
 	if err := d.seedClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
-		return false, fmt.Errorf("failed to update cluster: %v", err)
+		return false, fmt.Errorf("failed to update cluster: %w", err)
 	}
 
 	return deletedLoadBalancers.Len() > 0, nil

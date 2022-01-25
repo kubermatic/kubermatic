@@ -52,7 +52,7 @@ var (
 	}
 )
 
-// StatefulSetCreator returns the function to reconcile the Prometheus StatefulSet
+// StatefulSetCreator returns the function to reconcile the Prometheus StatefulSet.
 func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulSetCreatorGetter {
 	return func() (string, reconciling.StatefulSetCreator) {
 		return resources.PrometheusStatefulSetName, func(existing *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
@@ -78,7 +78,7 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 			volumes := getVolumes()
 			podLabels, err := data.GetPodTemplateLabels(name, volumes, requiredBaseLabels)
 			if err != nil {
-				return nil, fmt.Errorf("failed to create pod labels: %v", err)
+				return nil, fmt.Errorf("failed to create pod labels: %w", err)
 			}
 
 			set.Spec.Template.ObjectMeta = metav1.ObjectMeta{
@@ -170,7 +170,7 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 			}
 			err = resources.SetResourceRequirements(set.Spec.Template.Spec.Containers, defaultResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), set.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 			set.Spec.Template.Spec.Volumes = volumes
 

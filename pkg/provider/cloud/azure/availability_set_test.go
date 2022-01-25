@@ -279,7 +279,6 @@ func (c *fakeAvailabilitySetsClient) Get(ctx context.Context, resourceGroupName 
 	}
 
 	return compute.AvailabilitySet{}, fmt.Errorf("unknown fake client mode: %s", c.mode)
-
 }
 
 func (c *fakeAvailabilitySetsClient) CreateOrUpdate(ctx context.Context, resourceGroupName string, availabilitySetName string, parameters compute.AvailabilitySet) (compute.AvailabilitySet, error) {

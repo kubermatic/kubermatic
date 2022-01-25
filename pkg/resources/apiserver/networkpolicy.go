@@ -284,7 +284,7 @@ func ClusterExternalAddrAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedN
 			// allow egress traffic to all resolved cluster external IPs
 			ipList, err := hostnameToIPList(c.Address.ExternalName)
 			if err != nil {
-				return nil, fmt.Errorf("failed to resolve cluster external name %s: %v", c.Address.ExternalName, err)
+				return nil, fmt.Errorf("failed to resolve cluster external name %s: %w", c.Address.ExternalName, err)
 			}
 			for _, ip := range ipList {
 				cidr := fmt.Sprintf("%s/%d", ip.String(), net.IPv4len*8)
@@ -334,11 +334,11 @@ func OIDCIssuerAllowCreator(issuerURL string) reconciling.NamedNetworkPolicyCrea
 			// allow egress traffic to OIDC issuer's external IPs
 			u, err := url.Parse(issuerURL)
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse OIDC issuer URL %s: %v", issuerURL, err)
+				return nil, fmt.Errorf("failed to parse OIDC issuer URL %s: %w", issuerURL, err)
 			}
 			ipList, err := hostnameToIPList(u.Hostname())
 			if err != nil {
-				return nil, fmt.Errorf("failed to resolve OIDC issuer hostname %s: %v", u.Hostname(), err)
+				return nil, fmt.Errorf("failed to resolve OIDC issuer hostname %s: %w", u.Hostname(), err)
 			}
 			for _, ip := range ipList {
 				cidr := fmt.Sprintf("%s/%d", ip.String(), net.IPv4len*8)

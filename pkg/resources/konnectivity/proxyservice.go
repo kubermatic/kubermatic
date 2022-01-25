@@ -33,7 +33,6 @@ import (
 func ServiceCreator(exposeStrategy kubermaticv1.ExposeStrategy, externalURL string) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.KonnectivityProxyServiceName, func(se *corev1.Service) (*corev1.Service, error) {
-
 			se.Spec.Selector = map[string]string{
 				resources.AppLabelKey: "apiserver", // because konnectivity proxy runs in sidecar in apiserver pod
 			}

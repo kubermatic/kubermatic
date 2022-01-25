@@ -88,7 +88,6 @@ func TestAzureSizeEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-
 			req := httptest.NewRequest("GET", "/api/v1/providers/azure/sizes", strings.NewReader(""))
 
 			req.Header.Add("SubscriptionID", testID)
@@ -104,7 +103,7 @@ func TestAzureSizeEndpoint(t *testing.T) {
 			res := httptest.NewRecorder()
 			router, _, err := test.CreateTestEndpointAndGetClients(apiUser, buildAzureDatacenterMeta(), []ctrlruntimeclient.Object{}, []ctrlruntimeclient.Object{}, []ctrlruntimeclient.Object{test.APIUserToKubermaticUser(apiUser)}, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v\n", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			router.ServeHTTP(res, req)
@@ -115,7 +114,6 @@ func TestAzureSizeEndpoint(t *testing.T) {
 			if res.Code == http.StatusOK {
 				compareJSON(t, res, tc.expectedResponse)
 			}
-
 		})
 	}
 }
@@ -146,7 +144,6 @@ func buildAzureDatacenterMeta() provider.SeedsGetter {
 }
 
 func MockNewSizeClient(subscriptionID, clientID, clientSecret, tenantID string) (providercommon.AzureClientSet, error) {
-
 	if len(clientSecret) == 0 || len(subscriptionID) == 0 || len(clientID) == 0 || len(tenantID) == 0 {
 		return nil, fmt.Errorf("")
 	}
@@ -155,7 +152,6 @@ func MockNewSizeClient(subscriptionID, clientID, clientSecret, tenantID string) 
 }
 
 func (s *mockSizeClientImpl) ListSKU(ctx context.Context, location string) ([]compute.ResourceSku, error) {
-
 	standardGS3 := standardGS3
 	standardA5 := standardA5
 	resourceType := "virtualMachines"
@@ -186,7 +182,6 @@ func (s *mockSizeClientImpl) ListSKU(ctx context.Context, location string) ([]co
 }
 
 func (s *mockSizeClientImpl) ListVMSize(ctx context.Context, location string) ([]compute.VirtualMachineSize, error) {
-
 	standardFake := "Fake"
 	standardGS3 := "Standard_GS3"
 	standardA5 := "Standard_A5"

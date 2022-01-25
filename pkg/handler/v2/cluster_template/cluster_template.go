@@ -131,7 +131,6 @@ func CreateEndpoint(
 
 		// SSH check
 		if len(req.Body.UserSSHKeys) > 0 && req.Body.Scope == kubermaticv1.ProjectClusterTemplateScope {
-
 			projectSSHKeys, err := sshKeyProvider.List(project, nil)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
@@ -163,7 +162,7 @@ func CreateEndpoint(
 	}
 }
 
-// Validate validates addReq request
+// Validate validates addReq request.
 func (req createClusterTemplateReq) Validate(clusterType kubermaticv1.ClusterType, updateManager common.UpdateManager) error {
 	if len(req.ProjectID) == 0 || len(req.Body.Name) == 0 || len(req.Body.Scope) == 0 {
 		return fmt.Errorf("the name, project ID and scope cannot be empty")
@@ -197,7 +196,7 @@ type createClusterTemplateReq struct {
 	seedName string
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req createClusterTemplateReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		SeedName: req.seedName,
@@ -287,7 +286,7 @@ func DecodeListReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-// Validate validates listClusterTemplatesReq request
+// Validate validates listClusterTemplatesReq request.
 func (req listClusterTemplatesReq) Validate() error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("project ID cannot be empty")
@@ -365,7 +364,7 @@ func CreateInstanceEndpoint(projectProvider provider.ProjectProvider, privileged
 
 		seed, _, err := provider.DatacenterFromSeedMap(adminUserInfo, seedsGetter, ct.Spec.Cloud.DatacenterName)
 		if err != nil {
-			return nil, fmt.Errorf("error getting seed: %v", err)
+			return nil, fmt.Errorf("error getting seed: %w", err)
 		}
 
 		clusterTemplateInstanceProvider, err := clusterTemplateProviderGetter(seed)
@@ -436,7 +435,7 @@ type getClusterTemplatesReq struct {
 	ClusterTemplateID string `json:"template_id"`
 }
 
-// Validate validates getClusterTemplatesReq request
+// Validate validates getClusterTemplatesReq request.
 func (req getClusterTemplatesReq) Validate() error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("project ID cannot be empty")

@@ -102,7 +102,7 @@ func BindUserToRoleEndpoint(ctx context.Context, userInfoGetter provider.UserInf
 	}
 
 	if err := client.Patch(ctx, existingRoleBinding, ctrlruntimeclient.MergeFrom(oldBinding)); err != nil {
-		return nil, fmt.Errorf("failed to update role binding: %v", err)
+		return nil, fmt.Errorf("failed to update role binding: %w", err)
 	}
 
 	return convertInternalRoleBindingToExternal(existingRoleBinding), nil
@@ -170,7 +170,7 @@ func BindUserToClusterRoleEndpoint(ctx context.Context, userInfoGetter provider.
 	}
 
 	if err := client.Patch(ctx, existingClusterRoleBinding, ctrlruntimeclient.MergeFrom(oldBinding)); err != nil {
-		return nil, fmt.Errorf("failed to update cluster role binding: %v", err)
+		return nil, fmt.Errorf("failed to update cluster role binding: %w", err)
 	}
 
 	return convertInternalClusterRoleBindingToExternal(existingClusterRoleBinding), nil
@@ -224,14 +224,13 @@ func UnbindUserFromRoleBindingEndpoint(ctx context.Context, userInfoGetter provi
 	binding.Subjects = newSubjects
 
 	if err := client.Update(ctx, binding); err != nil {
-		return nil, fmt.Errorf("failed to update role binding: %v", err)
+		return nil, fmt.Errorf("failed to update role binding: %w", err)
 	}
 
 	return convertInternalRoleBindingToExternal(binding), nil
 }
 
 func UnbindUserFromClusterRoleBindingEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterRoleUser apiv1.ClusterRoleUser, projectID, clusterID, roleID string) (interface{}, error) {
-
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
 	cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, nil)
@@ -279,7 +278,7 @@ func UnbindUserFromClusterRoleBindingEndpoint(ctx context.Context, userInfoGette
 	binding.Subjects = newSubjects
 
 	if err := client.Update(ctx, binding); err != nil {
-		return nil, fmt.Errorf("failed to update cluster role binding: %v", err)
+		return nil, fmt.Errorf("failed to update cluster role binding: %w", err)
 	}
 
 	return convertInternalClusterRoleBindingToExternal(binding), nil
@@ -359,9 +358,8 @@ func convertInternalRoleBindingToExternal(clusterRole *rbacv1.RoleBinding) *apiv
 	return roleBinding
 }
 
-// generateRBACRoleBinding creates role binding
+// generateRBACRoleBinding creates role binding.
 func generateRBACRoleBinding(ctx context.Context, client ctrlruntimeclient.Client, namespace, roleName string) (*rbacv1.RoleBinding, error) {
-
 	roleBinding := &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s:%s", rand.String(10), roleName),

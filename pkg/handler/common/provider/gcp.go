@@ -236,7 +236,6 @@ func ListGCPSubnetworks(ctx context.Context, userInfo *provider.UserInfo, datace
 
 				subnetworks = append(subnetworks, net)
 			}
-
 		}
 		return nil
 	})
@@ -294,7 +293,6 @@ func ListGCPZones(ctx context.Context, userInfo *provider.UserInfo, sa, datacent
 	req := computeService.Zones.List(project)
 	err = req.Pages(ctx, func(page *compute.ZoneList) error {
 		for _, zone := range page.Items {
-
 			if strings.HasPrefix(zone.Name, datacenter.Spec.GCP.Region) {
 				apiZone := apiv1.GCPZone{Name: zone.Name}
 				zones = append(zones, apiZone)

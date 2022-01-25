@@ -58,7 +58,7 @@ func Add(mgr manager.Manager) error {
 	return nil
 }
 
-// reconcileServiceAccountProjectBinding reconciles User objects
+// reconcileServiceAccountProjectBinding reconciles User objects.
 type reconcileServiceAccountProjectBinding struct {
 	client.Client
 }

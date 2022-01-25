@@ -112,7 +112,7 @@ type vSphereNoCredentialsReq struct {
 	cluster.GetClusterReq
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req vSphereNoCredentialsReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,

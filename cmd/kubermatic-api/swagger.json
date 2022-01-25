@@ -18407,8 +18407,8 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "AddonConfigSpec": {
-      "description": "AddonConfigSpec specifies configuration of addon",
       "type": "object",
+      "title": "AddonConfigSpec specifies configuration of addon.",
       "properties": {
         "description": {
           "description": "Description of the configured addon, it will be displayed in the addon overview in the UI",
@@ -18442,8 +18442,8 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "AddonFormControl": {
-      "description": "AddonFormControl specifies addon form control",
       "type": "object",
+      "title": "AddonFormControl specifies addon form control.",
       "properties": {
         "displayName": {
           "description": "DisplayName is visible in the UI",
@@ -19394,8 +19394,8 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "CNIPluginType": {
-      "description": "CNIPluginType define the type of CNI plugin installed. e.g. Canal",
       "type": "string",
+      "title": "CNIPluginType define the type of CNI plugin installed. e.g. Canal.",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "CNIVersions": {
@@ -19511,8 +19511,8 @@
       "x-go-package": "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
     },
     "CentOSSpec": {
-      "description": "CentOSSpec contains CentOS specific settings",
       "type": "object",
+      "title": "CentOSSpec contains CentOS specific settings.",
       "properties": {
         "distUpgradeOnBoot": {
           "description": "do a dist-upgrade on boot and reboot it required afterwards",
@@ -19940,8 +19940,8 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "ClusterSpec": {
-      "description": "ClusterSpec defines the cluster specification",
       "type": "object",
+      "title": "ClusterSpec defines the cluster specification.",
       "properties": {
         "admissionPlugins": {
           "description": "Additional Admission Controller plugins",
@@ -20034,8 +20034,8 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "ClusterStatus": {
-      "description": "ClusterStatus defines the cluster status",
       "type": "object",
+      "title": "ClusterStatus defines the cluster status.",
       "properties": {
         "externalCCMMigration": {
           "$ref": "#/definitions/ExternalCCMMigrationStatus"
@@ -20186,8 +20186,8 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "ConstraintSelector": {
-      "description": "ConstraintSelector is the object holding the cluster selection filters",
       "type": "object",
+      "title": "ConstraintSelector is the object holding the cluster selection filters.",
       "properties": {
         "labelSelector": {
           "$ref": "#/definitions/LabelSelector"
@@ -20230,8 +20230,8 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "ConstraintStatus": {
-      "description": "ConstraintStatus represents a constraint status which holds audit info",
       "type": "object",
+      "title": "ConstraintStatus represents a constraint status which holds audit info.",
       "properties": {
         "auditTimestamp": {
           "type": "string",
@@ -20273,8 +20273,8 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "ConstraintTemplateSelector": {
-      "description": "ConstraintTemplateSelector is the object holding the cluster selection filters",
       "type": "object",
+      "title": "ConstraintTemplateSelector is the object holding the cluster selection filters.",
       "properties": {
         "labelSelector": {
           "$ref": "#/definitions/LabelSelector"
@@ -20291,8 +20291,8 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "ConstraintTemplateSpec": {
-      "description": "ConstraintTemplateSpec is the object representing the gatekeeper constraint template spec and kubermatic related spec",
       "type": "object",
+      "title": "ConstraintTemplateSpec is the object representing the gatekeeper constraint template spec and kubermatic related spec.",
       "properties": {
         "crd": {
           "$ref": "#/definitions/CRD"
@@ -20614,8 +20614,8 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "DatacenterSpecAWS": {
-      "description": "DatacenterSpecAWS describes an AWS datacenter",
       "type": "object",
+      "title": "DatacenterSpecAWS describes an AWS datacenter.",
       "properties": {
         "images": {
           "$ref": "#/definitions/ImageList"
@@ -20653,8 +20653,8 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "DatacenterSpecAzure": {
-      "description": "DatacenterSpecAzure describes an Azure cloud datacenter",
       "type": "object",
+      "title": "DatacenterSpecAzure describes an Azure cloud datacenter.",
       "properties": {
         "location": {
           "description": "Region to use, for example \"westeurope\". A list of available regions can be\nfound at https://azure.microsoft.com/en-us/global-infrastructure/locations/",
@@ -20665,13 +20665,13 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "DatacenterSpecBringYourOwn": {
-      "description": "DatacenterSpecBringYourOwn describes a datacenter our of bring your own nodes",
       "type": "object",
+      "title": "DatacenterSpecBringYourOwn describes a datacenter our of bring your own nodes.",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "DatacenterSpecDigitalocean": {
-      "description": "DatacenterSpecDigitalocean describes a DigitalOcean datacenter",
       "type": "object",
+      "title": "DatacenterSpecDigitalocean describes a DigitalOcean datacenter.",
       "properties": {
         "region": {
           "description": "Datacenter location, e.g. \"ams3\". A list of existing datacenters can be found\nat https://www.digitalocean.com/docs/platform/availability-matrix/",
@@ -20682,8 +20682,8 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "DatacenterSpecFake": {
-      "description": "DatacenterSpecFake describes a fake datacenter",
       "type": "object",
+      "title": "DatacenterSpecFake describes a fake datacenter.",
       "properties": {
         "fake_property": {
           "type": "string",
@@ -20693,8 +20693,8 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "DatacenterSpecGCP": {
-      "description": "DatacenterSpecGCP describes a GCP datacenter",
       "type": "object",
+      "title": "DatacenterSpecGCP describes a GCP datacenter.",
       "properties": {
         "region": {
           "description": "Region to use, for example \"europe-west3\", for a full list of regions see\nhttps://cloud.google.com/compute/docs/regions-zones/",
@@ -20718,8 +20718,8 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "DatacenterSpecHetzner": {
-      "description": "DatacenterSpecHetzner describes a Hetzner cloud datacenter",
       "type": "object",
+      "title": "DatacenterSpecHetzner describes a Hetzner cloud datacenter.",
       "properties": {
         "datacenter": {
           "description": "Datacenter location, e.g. \"nbg1-dc3\". A list of existing datacenters can be found\nat https://wiki.hetzner.de/index.php/Rechenzentren_und_Anbindung/en",
@@ -20755,8 +20755,8 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "DatacenterSpecOpenstack": {
-      "description": "DatacenterSpecOpenstack describes an OpenStack datacenter",
       "type": "object",
+      "title": "DatacenterSpecOpenstack describes an OpenStack datacenter.",
       "properties": {
         "auth_url": {
           "type": "string",
@@ -20821,8 +20821,8 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "DatacenterSpecPacket": {
-      "description": "DatacenterSpecPacket describes a Packet datacenter",
       "type": "object",
+      "title": "DatacenterSpecPacket describes a Packet datacenter.",
       "properties": {
         "facilities": {
           "description": "The list of enabled facilities, for example \"ams1\", for a full list of available\nfacilities see https://support.packet.com/kb/articles/data-centers",
@@ -20836,8 +20836,8 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "DatacenterSpecVSphere": {
-      "description": "DatacenterSpecVSphere describes a vSphere datacenter",
       "type": "object",
+      "title": "DatacenterSpecVSphere describes a vSphere datacenter.",
       "properties": {
         "allow_insecure": {
           "description": "If set to true, disables the TLS certificate check against the endpoint.",
@@ -21209,7 +21209,7 @@
       "x-go-package": "kubevirt.io/api/core/v1"
     },
     "DomainSpec": {
-      "description": "Need to copy the following type to avoid a collision on Resources\nbetween kubevirtv1.ResourceRequirements and corev1.ResourceRequirements used in different part of the API",
+      "description": "Need to copy the following type to avoid a collision on Resources\nbetween kubevirtv1.ResourceRequirements and corev1.ResourceRequirements used in different part of the API.",
       "type": "object",
       "properties": {
         "chassis": {
@@ -21315,8 +21315,8 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "ErrorDetails": {
-      "description": "ErrorDetails contains details about the error",
       "type": "object",
+      "title": "ErrorDetails contains details about the error.",
       "required": [
         "code",
         "message"
@@ -21476,8 +21476,8 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "EtcdBackupRestore": {
-      "description": "EtcdBackupRestore holds the configuration of the automatic backup restores",
       "type": "object",
+      "title": "EtcdBackupRestore holds the configuration of the automatic backup restores.",
       "properties": {
         "defaultDestination": {
           "description": "DefaultDestination Optional setting which marks the default destination that will be used for the default etcd backup config which is\ncreated for every user cluster. If not set, the default etcd backup config won't be created (unless the legacy Seed.Spec.BackupRestore is used).\nHas to correspond to a destination in Destinations.\nIf removed, it removes the related default etcd backup configs.",
@@ -21838,8 +21838,8 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "ExternalClusterSpec": {
-      "description": "ExternalClusterSpec defines the external cluster specification",
       "type": "object",
+      "title": "ExternalClusterSpec defines the external cluster specification.",
       "properties": {
         "version": {
           "$ref": "#/definitions/Semver"
@@ -21852,8 +21852,8 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "ExternalClusterStatus": {
-      "description": "ExternalClusterStatus defines the external cluster status",
       "type": "object",
+      "title": "ExternalClusterStatus defines the external cluster status.",
       "properties": {
         "state": {
           "$ref": "#/definitions/ExternalClusterState"
@@ -22807,8 +22807,8 @@
       "x-go-package": "kubevirt.io/api/core/v1"
     },
     "GVK": {
-      "description": "GVK group version kind of a resource",
       "type": "object",
+      "title": "GVK group version kind of a resource.",
       "properties": {
         "group": {
           "type": "string",
@@ -23102,8 +23102,8 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "ImageList": {
-      "description": "ImageList defines a map of operating system and the image to use",
       "type": "object",
+      "title": "ImageList defines a map of operating system and the image to use.",
       "additionalProperties": {
         "type": "string"
       },
@@ -23588,8 +23588,8 @@
       "x-go-package": "kubevirt.io/api/core/v1"
     },
     "Kind": {
-      "description": "Kind specifies the resource Kind and APIGroup",
       "type": "object",
+      "title": "Kind specifies the resource Kind and APIGroup.",
       "properties": {
         "apiGroups": {
           "description": "APIGroups specifies the APIGroups of the resources",
@@ -23972,8 +23972,8 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "Match": {
-      "description": "Match contains the constraint to resource matching data",
       "type": "object",
+      "title": "Match contains the constraint to resource matching data.",
       "properties": {
         "excludedNamespaces": {
           "description": "ExcludedNamespaces is a list of namespace names. If defined, a constraint will only apply to resources not in a listed namespace.",
@@ -24465,8 +24465,8 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "NodeSettings": {
-      "description": "NodeSettings are node specific flags which can be configured on datacenter level",
       "type": "object",
+      "title": "NodeSettings are node specific flags which can be configured on datacenter level.",
       "properties": {
         "http_proxy": {
           "$ref": "#/definitions/ProxyValue"
@@ -25635,7 +25635,7 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "ProjectGroup": {
-      "description": "ProjectGroup is a helper data structure that\nstores the information about a project and a group prefix that a user belongs to",
+      "description": "ProjectGroup is a helper data structure that\nstores the information about a project and a group prefix that a user belongs to.",
       "type": "object",
       "properties": {
         "group": {
@@ -25654,7 +25654,7 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "ProxySettings": {
-      "description": "ProxySettings allow configuring a HTTP proxy for the controlplanes\nand nodes",
+      "description": "ProxySettings allow configuring a HTTP proxy for the controlplanes\nand nodes.",
       "type": "object",
       "properties": {
         "http_proxy": {
@@ -26216,8 +26216,8 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "SSHKeySpec": {
-      "description": "SSHKeySpec represents the details of a ssh key",
       "type": "object",
+      "title": "SSHKeySpec represents the details of a ssh key.",
       "properties": {
         "fingerprint": {
           "type": "string",
@@ -26301,7 +26301,7 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "SeedBackupRestoreConfiguration": {
-      "description": "Deprecated: use EtcdBackupRestore",
+      "description": "Deprecated: use EtcdBackupRestore.",
       "type": "object",
       "title": "SeedBackupRestoreConfiguration defines the bucket name and endpoint as a backup destination.",
       "properties": {
@@ -26356,8 +26356,8 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "SeedSpec": {
-      "description": "The spec for a seed data",
       "type": "object",
+      "title": "The spec for a seed data.",
       "properties": {
         "backupRestore": {
           "$ref": "#/definitions/SeedBackupRestoreConfiguration"
@@ -26404,8 +26404,8 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "Semver": {
-      "description": "Semver is a type that encapsulates github.com/Masterminds/semver/v3.Version struct so it can be used in our API",
       "type": "string",
+      "title": "Semver is a type that encapsulates github.com/Masterminds/semver/v3.Version struct so it can be used in our API.",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/semver"
     },
     "ServiceAccount": {
@@ -26754,8 +26754,8 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "TaintSpec": {
-      "description": "TaintSpec defines a node taint",
       "type": "object",
+      "title": "TaintSpec defines a node taint.",
       "properties": {
         "effect": {
           "type": "string",
@@ -26976,8 +26976,8 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "UserSettings": {
-      "description": "UserSettings represent an user settings",
       "type": "object",
+      "title": "UserSettings represent an user settings.",
       "properties": {
         "collapseSidenav": {
           "type": "boolean",
@@ -27088,8 +27088,8 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "VSphereCredentials": {
-      "description": "VSphereCredentials credentials represents a credential for accessing vSphere",
       "type": "object",
+      "title": "VSphereCredentials credentials represents a credential for accessing vSphere.",
       "properties": {
         "password": {
           "type": "string",
@@ -27234,8 +27234,8 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "Violation": {
-      "description": "Violation represents a gatekeeper constraint violation",
       "type": "object",
+      "title": "Violation represents a gatekeeper constraint violation.",
       "properties": {
         "enforcementAction": {
           "type": "string",

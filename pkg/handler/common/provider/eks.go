@@ -37,7 +37,6 @@ type EKSCredential struct {
 }
 
 func listEKSClusters(cred EKSCredential, region string) ([]*string, error) {
-
 	client, err := awsprovider.GetClientSet(cred.AccessKeyID, cred.SecretAccessKey, "", "", region)
 	if err != nil {
 		return nil, err
@@ -53,7 +52,6 @@ func listEKSClusters(cred EKSCredential, region string) ([]*string, error) {
 }
 
 func ListEKSClusters(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ExternalClusterProvider, cred EKSCredential, projectID string) (apiv2.EKSClusterList, error) {
-
 	var err error
 	var clusters apiv2.EKSClusterList
 

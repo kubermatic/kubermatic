@@ -104,7 +104,6 @@ func TestEnsureNotProjectOwnerForBinding(t *testing.T) {
 				objs = append(objs, user)
 			}
 			for _, binding := range test.existingBindings {
-
 				objs = append(objs, binding)
 			}
 

@@ -80,7 +80,7 @@ var (
 	}
 )
 
-// ControllerDeploymentCreator returns the function to create and update the Gatekeeper controller deployment
+// ControllerDeploymentCreator returns the function to create and update the Gatekeeper controller deployment.
 func ControllerDeploymentCreator(enableMutation bool, registryWithOverwrite registry.WithOverwriteFunc, resourceOverride *corev1.ResourceRequirements) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return controllerName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -121,7 +121,7 @@ func ControllerDeploymentCreator(enableMutation bool, registryWithOverwrite regi
 				err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
 			}
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			dep.Spec.Template.Spec.Volumes = []corev1.Volume{
@@ -140,7 +140,7 @@ func ControllerDeploymentCreator(enableMutation bool, registryWithOverwrite regi
 	}
 }
 
-// AuditDeploymentCreator returns the function to create and update the Gatekeeper audit deployment
+// AuditDeploymentCreator returns the function to create and update the Gatekeeper audit deployment.
 func AuditDeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc, resourceOverride *corev1.ResourceRequirements) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return auditName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -178,7 +178,7 @@ func AuditDeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc, re
 				err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
 			}
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			return dep, nil
@@ -187,7 +187,6 @@ func AuditDeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc, re
 }
 
 func getControllerContainers(enableMutation bool, registryWithOverwrite registry.WithOverwriteFunc) []corev1.Container {
-
 	return []corev1.Container{{
 		Name:            controllerName,
 		Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryDocker), imageName, tag),
@@ -275,7 +274,6 @@ func getControllerContainers(enableMutation bool, registryWithOverwrite registry
 }
 
 func getAuditContainers(registryWithOverwrite registry.WithOverwriteFunc) []corev1.Container {
-
 	return []corev1.Container{{
 		Name:            auditName,
 		Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryDocker), imageName, tag),

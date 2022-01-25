@@ -55,7 +55,7 @@ func GetSystemLabels() apiv1.ResourceLabelMap {
 	return systemLabels
 }
 
-// FilterLabels removes system labels from the provided labels map
+// FilterLabels removes system labels from the provided labels map.
 func FilterLabels(resource apiv1.ResourceType, labels map[string]string) map[string]string {
 	for _, label := range systemLabels[resource] {
 		delete(labels, label)

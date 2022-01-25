@@ -270,7 +270,7 @@ func createOrImportGKECluster(ctx context.Context, name string, userInfoGetter p
 	return createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, newCluster, project)
 }
 
-func patchGKECluster(ctx context.Context, old, new *apiv2.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector) (*apiv2.ExternalCluster, error) {
+func patchGKECluster(ctx context.Context, oldCluster, newCluster *apiv2.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector) (*apiv2.ExternalCluster, error) {
 	sa, err := secretKeySelector(credentialsReference, resources.GCPServiceAccount)
 	if err != nil {
 		return nil, err
@@ -281,17 +281,17 @@ func patchGKECluster(ctx context.Context, old, new *apiv2.ExternalCluster, secre
 	}
 
 	updateclusterrequest := &container.UpdateClusterRequest{}
-	newVersion := new.Spec.Version.Semver()
-	if !old.Spec.Version.Semver().Equal(newVersion) {
+	newVersion := newCluster.Spec.Version.Semver()
+	if !oldCluster.Spec.Version.Semver().Equal(newVersion) {
 		updateclusterrequest.Update = &container.ClusterUpdate{
 			DesiredMasterVersion: newVersion.String(),
 		}
 	}
 
-	req := svc.Projects.Zones.Clusters.Update(project, old.Cloud.GKE.Zone, old.Cloud.GKE.Name, updateclusterrequest)
+	req := svc.Projects.Zones.Clusters.Update(project, oldCluster.Cloud.GKE.Zone, oldCluster.Cloud.GKE.Name, updateclusterrequest)
 	_, err = req.Context(ctx).Do()
 
-	return new, err
+	return newCluster, err
 }
 
 func getGKENodePools(ctx context.Context, cluster *kubermaticapiv1.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector, clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterMachineDeployment, error) {
@@ -423,7 +423,7 @@ func getGKENodes(ctx context.Context, cluster *kubermaticapiv1.ExternalCluster, 
 			if n.Labels[GKENodepoolNameLabel] == resp.Name {
 				outNode, err := outputNode(n)
 				if err != nil {
-					return nil, fmt.Errorf("failed to output node %s: %v", n.Name, err)
+					return nil, fmt.Errorf("failed to output node %s: %w", n.Name, err)
 				}
 				nodesV1 = append(nodesV1, *outNode)
 			}
@@ -448,7 +448,7 @@ func deleteGKENodePool(ctx context.Context, cluster *kubermaticapiv1.ExternalClu
 	return err
 }
 
-func patchGKEMachineDeployment(ctx context.Context, old, new *apiv2.ExternalClusterMachineDeployment, cluster *kubermaticapiv1.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector) (*apiv2.ExternalClusterMachineDeployment, error) {
+func patchGKEMachineDeployment(ctx context.Context, oldMD, newMD *apiv2.ExternalClusterMachineDeployment, cluster *kubermaticapiv1.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector) (*apiv2.ExternalClusterMachineDeployment, error) {
 	sa, err := secretKeySelector(credentialsReference, resources.GCPServiceAccount)
 	if err != nil {
 		return nil, err
@@ -462,28 +462,28 @@ func patchGKEMachineDeployment(ctx context.Context, old, new *apiv2.ExternalClus
 	// It's required to update Node Poll size separately.
 
 	// only when size was updates otherwise change NodePoll object with other parameters
-	if old.Spec.Replicas != new.Spec.Replicas {
+	if oldMD.Spec.Replicas != newMD.Spec.Replicas {
 		sizeRequest := &container.SetNodePoolSizeRequest{
-			NodeCount: int64(new.Spec.Replicas),
+			NodeCount: int64(newMD.Spec.Replicas),
 		}
-		sizeReq := svc.Projects.Zones.Clusters.NodePools.SetSize(project, cluster.Spec.CloudSpec.GKE.Zone, cluster.Spec.CloudSpec.GKE.Name, old.Name, sizeRequest)
+		sizeReq := svc.Projects.Zones.Clusters.NodePools.SetSize(project, cluster.Spec.CloudSpec.GKE.Zone, cluster.Spec.CloudSpec.GKE.Name, oldMD.Name, sizeRequest)
 		_, err = sizeReq.Context(ctx).Do()
 		if err != nil {
 			return nil, err
 		}
-		return new, nil
+		return newMD, nil
 	}
 
 	updateRequest := &container.UpdateNodePoolRequest{
-		NodeVersion: new.Spec.Template.Versions.Kubelet,
+		NodeVersion: newMD.Spec.Template.Versions.Kubelet,
 	}
-	updateReq := svc.Projects.Zones.Clusters.NodePools.Update(project, cluster.Spec.CloudSpec.GKE.Zone, cluster.Spec.CloudSpec.GKE.Name, old.Name, updateRequest)
+	updateReq := svc.Projects.Zones.Clusters.NodePools.Update(project, cluster.Spec.CloudSpec.GKE.Zone, cluster.Spec.CloudSpec.GKE.Name, oldMD.Name, updateRequest)
 	_, err = updateReq.Context(ctx).Do()
 	if err != nil {
 		return nil, err
 	}
 
-	return new, nil
+	return newMD, nil
 }
 
 func getGKEMachineDeployment(ctx context.Context, svc *container.Service, projectID string, cluster *kubermaticapiv1.ExternalCluster, nodeGroupName string, clusterProvider provider.ExternalClusterProvider) (*apiv2.ExternalClusterMachineDeployment, error) {
@@ -574,7 +574,6 @@ func createGKENodePool(ctx context.Context, cluster *kubermaticapiv1.ExternalClu
 }
 
 func createNewGKECluster(ctx context.Context, gkeCloudSpec *apiv2.GKECloudSpec) error {
-
 	svc, project, err := gke.ConnectToContainerService(gkeCloudSpec.ServiceAccount)
 	if err != nil {
 		return err

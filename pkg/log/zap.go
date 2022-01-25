@@ -34,7 +34,7 @@ func init() {
 
 var Logger *zap.SugaredLogger
 
-// Options exports a options struct to be used by cmd's
+// Options exports a options struct to be used by cmd's.
 type Options struct {
 	// Enable debug logs
 	Debug bool
@@ -63,12 +63,12 @@ func (o *Options) Validate() error {
 
 type Format string
 
-// String implements the cli.Value and flag.Value interfaces
+// String implements the cli.Value and flag.Value interfaces.
 func (f *Format) String() string {
 	return string(*f)
 }
 
-// Set implements the cli.Value and flag.Value interfaces
+// Set implements the cli.Value and flag.Value interfaces.
 func (f *Format) Set(s string) error {
 	switch strings.ToLower(s) {
 	case "json":
@@ -146,7 +146,7 @@ func New(debug bool, format Format) *zap.Logger {
 	return zap.New(coreLog, opts...)
 }
 
-// NewDefault creates new default logger
+// NewDefault creates new default logger.
 func NewDefault() *zap.Logger {
 	return New(false, FormatJSON)
 }

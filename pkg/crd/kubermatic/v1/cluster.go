@@ -22,7 +22,6 @@ import (
 	"fmt"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -32,15 +31,15 @@ import (
 )
 
 const (
-	// ClusterResourceName represents "Resource" defined in Kubernetes
+	// ClusterResourceName represents "Resource" defined in Kubernetes.
 	ClusterResourceName = "clusters"
 
-	// ClusterKindName represents "Kind" defined in Kubernetes
+	// ClusterKindName represents "Kind" defined in Kubernetes.
 	ClusterKindName = "Cluster"
 
 	// AnnotationNameClusterAutoscalerEnabled is the name of the annotation that is being
 	// used to determine if the cluster-autoscaler is enabled for this cluster. It is
-	// enabled when this Annotation is set with any value
+	// enabled when this Annotation is set with any value.
 	AnnotationNameClusterAutoscalerEnabled = "kubermatic.io/cluster-autoscaler-enabled"
 
 	// CredentialPrefix is the prefix used for the secrets containing cloud provider crednentials.
@@ -92,7 +91,7 @@ type Cluster struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ClusterList specifies a list of clusters
+// ClusterList specifies a list of clusters.
 type ClusterList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
@@ -197,7 +196,7 @@ type CNIPluginSettings struct {
 	Version string        `json:"version"`
 }
 
-// CNIPluginType define the type of CNI plugin installed. e.g. Canal
+// CNIPluginType define the type of CNI plugin installed. e.g. Canal.
 type CNIPluginType string
 
 func (c CNIPluginType) String() string {
@@ -209,7 +208,7 @@ const (
 	// Calico for policy enforcement).
 	CNIPluginTypeCanal CNIPluginType = "canal"
 
-	// CNIPluginTypeCilium corresponds to Cilium CNI plugin
+	// CNIPluginTypeCilium corresponds to Cilium CNI plugin.
 	CNIPluginTypeCilium CNIPluginType = "cilium"
 
 	// CNIPluginTypeNone corresponds to no CNI plugin managed by KKP
@@ -236,7 +235,7 @@ const (
 	ApiserverNetworkPolicy = "apiserverNetworkPolicy"
 
 	// KubeSystemNetworkPolicies enables the deployment of network policies to kube-system namespace that
-	// restrict traffic from all pods in the namespace
+	// restrict traffic from all pods in the namespace.
 	KubeSystemNetworkPolicies = "kubeSystemNetworkPolicies"
 )
 
@@ -269,7 +268,7 @@ const (
 
 	ClusterConditionEtcdClusterInitialized ClusterConditionType = "EtcdClusterInitialized"
 
-	// ClusterConditionNone is a special value indicating that no cluster condition should be set
+	// ClusterConditionNone is a special value indicating that no cluster condition should be set.
 	ClusterConditionNone ClusterConditionType = ""
 	// This condition is met when a CSI migration is ongoing and the CSI
 	// migration feature gates are activated on the Kubelets of all the nodes.
@@ -660,7 +659,7 @@ type AzureCloudSpec struct {
 	LoadBalancerSKU LBSKU `json:"loadBalancerSKU"`
 }
 
-// VSphereCredentials credentials represents a credential for accessing vSphere
+// VSphereCredentials credentials represents a credential for accessing vSphere.
 type VSphereCredentials struct {
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
@@ -783,7 +782,7 @@ type OpenstackCloudSpec struct {
 }
 
 // GetProject returns the the project if defined otherwise fallback to tenant
-// Deprecated: the tenant auth var is depreciated in openstack. In pkg/apis/kubermatic/v1/cluster.go we will only use Project
+// Deprecated: the tenant auth var is depreciated in openstack. In pkg/apis/kubermatic/v1/cluster.go we will only use Project.
 func (s OpenstackCloudSpec) GetProject() string {
 	if len(s.Project) > 0 {
 		return s.Project
@@ -793,7 +792,7 @@ func (s OpenstackCloudSpec) GetProject() string {
 }
 
 // GetProjectId returns the the projectID if defined otherwise fallback to tenantID
-// Deprecated: the tenantID auth var is depreciated in openstack. In pkg/apis/kubermatic/v1/cluster.go we will only use ProjectID
+// Deprecated: the tenantID auth var is depreciated in openstack. In pkg/apis/kubermatic/v1/cluster.go we will only use ProjectID.
 func (s OpenstackCloudSpec) GetProjectId() string {
 	if len(s.ProjectID) > 0 {
 		return s.ProjectID
@@ -870,7 +869,7 @@ const (
 	HealthStatusProvisioning HealthStatus = iota
 )
 
-// Ptr is a helper to return a pointer to a literal
+// Ptr is a helper to return a pointer to a literal.
 func (s HealthStatus) Ptr() *HealthStatus {
 	return &s
 }
@@ -894,7 +893,7 @@ type ExtendedClusterHealth struct {
 }
 
 // AllHealthy returns if all components are healthy. Gatekeeper components not included as they are optional and not
-// crucial for cluster functioning
+// crucial for cluster functioning.
 func (h *ExtendedClusterHealth) AllHealthy() bool {
 	return h.Etcd == HealthStatusUp &&
 		h.MachineController == HealthStatusUp &&

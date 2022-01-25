@@ -102,7 +102,6 @@ func TestCreateClusterTemplateAndInstance(t *testing.T) {
 				if err != nil {
 					t.Fatalf("failed to create cluster template: %v", getErrorResponse(err))
 				}
-
 			} else {
 				clusterTemplate, err = testClient.CreateClusterTemplate(project.ID, tc.newName, tc.scope, tc.credential, tc.version, tc.location)
 				if err != nil {
@@ -117,7 +116,6 @@ func TestCreateClusterTemplateAndInstance(t *testing.T) {
 			if clusterTemplate.Scope != tc.scope {
 				t.Fatalf("expected scope %v, but got %v", tc.scope, clusterTemplate.Scope)
 			}
-
 		})
 	}
 }

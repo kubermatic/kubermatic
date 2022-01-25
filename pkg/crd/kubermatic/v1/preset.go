@@ -22,7 +22,7 @@ import (
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// PresetList is the type representing a PresetList
+// PresetList is the type representing a PresetList.
 type PresetList struct {
 	metav1.TypeMeta `json:",inline"`
 	// Standard list metadata.
@@ -37,7 +37,7 @@ type PresetList struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Preset is the type representing a Preset
+// Preset is the type representing a Preset.
 type Preset struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -45,7 +45,7 @@ type Preset struct {
 	Spec PresetSpec `json:"spec"`
 }
 
-// Presets specifies default presets for supported providers
+// Presets specifies default presets for supported providers.
 type PresetSpec struct {
 	Digitalocean *Digitalocean `json:"digitalocean,omitempty"`
 	Hetzner      *Hetzner      `json:"hetzner,omitempty"`
@@ -216,7 +216,7 @@ type Openstack struct {
 }
 
 // GetProject returns the the project if defined otherwise fallback to tenant
-// Deprecated: the tenant auth var is depreciated in openstack. In pkg/apis/kubermatic/v1/preset.go we will only use Project
+// Deprecated: the tenant auth var is depreciated in openstack. In pkg/apis/kubermatic/v1/preset.go we will only use Project.
 func (s Openstack) GetProject() string {
 	if len(s.Project) > 0 {
 		return s.Project
@@ -226,7 +226,7 @@ func (s Openstack) GetProject() string {
 }
 
 // GetProjectId returns the the projectID if defined otherwise fallback to tenantID
-// Deprecated: the tenantID auth var is depreciated in openstack. In pkg/apis/kubermatic/v1/preset.go we will only use ProjectID
+// Deprecated: the tenantID auth var is depreciated in openstack. In pkg/apis/kubermatic/v1/preset.go we will only use ProjectID.
 func (s Openstack) GetProjectId() string {
 	if len(s.ProjectID) > 0 {
 		return s.ProjectID

@@ -42,7 +42,7 @@ func init() {
 	_ = osmv1alpha1.AddToScheme(testScheme)
 }
 
-// TestHandle tests the admission handler
+// TestHandle tests the admission handler.
 func TestHandle(t *testing.T) {
 	osc := getOperatingSystemConfig()
 	oscRaw := oscToRawExt(osc)

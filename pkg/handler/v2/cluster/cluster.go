@@ -76,7 +76,7 @@ func CreateEndpoint(
 	}
 }
 
-// ListEndpoint list clusters for the given project
+// ListEndpoint list clusters for the given project.
 func ListEndpoint(
 	projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider,
@@ -227,7 +227,7 @@ type adminTokenReq struct {
 	ClusterID string `json:"cluster_id"`
 }
 
-// GetSeedCluster returns the AssignSSHKeysReq object
+// GetSeedCluster returns the AssignSSHKeysReq object.
 func (req adminTokenReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
@@ -274,7 +274,7 @@ func DecodeListSSHKeysReq(c context.Context, r *http.Request) (interface{}, erro
 	return req, nil
 }
 
-// GetSeedCluster returns the AssignSSHKeysReq object
+// GetSeedCluster returns the AssignSSHKeysReq object.
 func (req ListSSHKeysReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
@@ -291,7 +291,7 @@ type AssignSSHKeysReq struct {
 	KeyID string `json:"key_id"`
 }
 
-// GetSeedCluster returns the AssignSSHKeysReq object
+// GetSeedCluster returns the AssignSSHKeysReq object.
 func (req AssignSSHKeysReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
@@ -333,7 +333,7 @@ type EventsReq struct {
 	Type string `json:"type,omitempty"`
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req EventsReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
@@ -398,7 +398,7 @@ func DecodePatchReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req PatchReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
@@ -420,7 +420,7 @@ type DeleteReq struct {
 	DeleteLoadBalancers bool
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req DeleteReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
@@ -490,7 +490,7 @@ func DecodeGetClusterReq(c context.Context, r *http.Request) (interface{}, error
 	return req, nil
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req GetClusterReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
@@ -508,7 +508,7 @@ type CreateClusterReq struct {
 	seedName string
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req CreateClusterReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		SeedName: req.seedName,
@@ -540,7 +540,7 @@ func DecodeCreateReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-// Validate validates CreateEndpoint request
+// Validate validates CreateEndpoint request.
 func (req CreateClusterReq) Validate(clusterType kubermaticv1.ClusterType, updateManager common.UpdateManager) error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("the project ID cannot be empty")
@@ -555,7 +555,7 @@ func FindSeedNameForDatacenter(ctx context.Context, datacenter string) (string, 
 	}
 	seeds, err := seedsGetter()
 	if err != nil {
-		return "", fmt.Errorf("failed to list seeds: %v", err)
+		return "", fmt.Errorf("failed to list seeds: %w", err)
 	}
 	for name, seed := range seeds {
 		if _, ok := seed.Spec.Datacenters[datacenter]; ok {
@@ -571,8 +571,8 @@ func GetClusterProviderFromRequest(
 	request interface{},
 	projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider,
-	userInfoGetter provider.UserInfoGetter) (*kubermaticv1.Cluster, *kubernetesprovider.ClusterProvider, error) {
-
+	userInfoGetter provider.UserInfoGetter,
+) (*kubermaticv1.Cluster, *kubernetesprovider.ClusterProvider, error) {
 	req, ok := request.(GetClusterReq)
 	if !ok {
 		return nil, nil, kubermaticerrors.New(http.StatusBadRequest, "invalid request")

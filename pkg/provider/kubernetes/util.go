@@ -26,19 +26,19 @@ import (
 )
 
 const (
-	// NamespacePrefix is the prefix for the cluster namespace
+	// NamespacePrefix is the prefix for the cluster namespace.
 	NamespacePrefix = "cluster-"
 )
 
-// ImpersonationClient gives runtime controller client that uses user impersonation
+// ImpersonationClient gives runtime controller client that uses user impersonation.
 type ImpersonationClient func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error)
 
-// NamespaceName returns the namespace name for a cluster
+// NamespaceName returns the namespace name for a cluster.
 func NamespaceName(clusterName string) string {
 	return NamespacePrefix + clusterName
 }
 
-// createImpersonationClientWrapperFromUserInfo is a helper method that spits back controller runtime client that uses user impersonation
+// createImpersonationClientWrapperFromUserInfo is a helper method that spits back controller runtime client that uses user impersonation.
 func createImpersonationClientWrapperFromUserInfo(userInfo *provider.UserInfo, createImpersonationClient ImpersonationClient) (ctrlruntimeclient.Client, error) {
 	impersonationCfg := restclient.ImpersonationConfig{
 		UserName: userInfo.Email,
@@ -48,7 +48,7 @@ func createImpersonationClientWrapperFromUserInfo(userInfo *provider.UserInfo, c
 	return createImpersonationClient(impersonationCfg)
 }
 
-// DefaultKubermaticImpersonationClient knows how to create impersonated client set
+// DefaultKubermaticImpersonationClient knows how to create impersonated client set.
 type DefaultKubermaticImpersonationClient struct {
 	cfg *restclient.Config
 }
@@ -61,7 +61,7 @@ func (d *DefaultKubermaticImpersonationClient) CreateImpersonatedKubermaticClien
 }
 
 // NewImpersonationClient creates a new default impersonation client
-// that knows how to create Interface client for a impersonated user
+// that knows how to create Interface client for a impersonated user.
 func NewImpersonationClient(cfg *restclient.Config, restMapper meta.RESTMapper) *DefaultImpersonationClient {
 	return &DefaultImpersonationClient{
 		cfg:        cfg,
@@ -69,7 +69,7 @@ func NewImpersonationClient(cfg *restclient.Config, restMapper meta.RESTMapper) 
 	}
 }
 
-// DefaultImpersonationClient knows how to create impersonated client set
+// DefaultImpersonationClient knows how to create impersonated client set.
 type DefaultImpersonationClient struct {
 	cfg        *restclient.Config
 	restMapper meta.RESTMapper

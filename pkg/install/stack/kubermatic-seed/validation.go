@@ -60,5 +60,5 @@ func validateHelmValues(helmValues *yamled.Document) []error {
 }
 
 func prefixError(prefix string, e error) error {
-	return fmt.Errorf("%s%v", prefix, e)
+	return fmt.Errorf("%s%w", prefix, e)
 }

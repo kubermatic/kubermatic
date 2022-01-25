@@ -25,10 +25,10 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// UnstructuredCreator defines an interface to create/update Unstructureds
+// UnstructuredCreator defines an interface to create/update Unstructureds.
 type UnstructuredCreator = func(existing *unstructured.Unstructured) (*unstructured.Unstructured, error)
 
-// NamedUnstructuredCreatorGetter returns the name of the resource and the corresponding creator function
+// NamedUnstructuredCreatorGetter returns the name of the resource and the corresponding creator function.
 type NamedUnstructuredCreatorGetter = func() (name, kind, apiVersion string, create UnstructuredCreator)
 
 // UnstructuredObjectWrapper adds a wrapper so the UnstructuredCreator matches ObjectCreator.
@@ -42,7 +42,7 @@ func UnstructuredObjectWrapper(create UnstructuredCreator, emptyObject *unstruct
 	}
 }
 
-// ReconcileUnstructureds will create and update the Unstructureds coming from the passed UnstructuredCreator slice
+// ReconcileUnstructureds will create and update the Unstructureds coming from the passed UnstructuredCreator slice.
 func ReconcileUnstructureds(ctx context.Context, namedGetters []NamedUnstructuredCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, kind, apiVersion, create := get()
@@ -60,7 +60,7 @@ func ReconcileUnstructureds(ctx context.Context, namedGetters []NamedUnstructure
 		}
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, emptyObject, false); err != nil {
-			return fmt.Errorf("failed to ensure Unstructured %s.%s %s/%s: %v", kind, apiVersion, namespace, name, err)
+			return fmt.Errorf("failed to ensure Unstructured %s.%s %s/%s: %w", kind, apiVersion, namespace, name, err)
 		}
 	}
 

@@ -33,7 +33,7 @@ import (
 
 // NewInternal returns a new instance of the client connection provider that
 // only works from within the seed cluster but has the advantage that it doesn't leave
-// the seed clusters network
+// the seed clusters network.
 func NewInternal(seedClient ctrlruntimeclient.Client) (*Provider, error) {
 	return &Provider{
 		seedClient:         seedClient,
@@ -44,7 +44,7 @@ func NewInternal(seedClient ctrlruntimeclient.Client) (*Provider, error) {
 
 // NewExternal returns a new instance of the client connection provider
 // that uses the external cluster address and hence works from everywhere.
-// Use NewInternal if possible
+// Use NewInternal if possible.
 func NewExternal(seedClient ctrlruntimeclient.Client) (*Provider, error) {
 	return &Provider{
 		seedClient:         seedClient,
@@ -83,14 +83,14 @@ func (p *Provider) GetAdminKubeconfig(ctx context.Context, c *kubermaticv1.Clust
 func setExternalAddress(c *kubermaticv1.Cluster, config []byte) ([]byte, error) {
 	cfg, err := clientcmd.Load(config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load kubeconfig: %v", err)
+		return nil, fmt.Errorf("failed to load kubeconfig: %w", err)
 	}
 	for _, cluster := range cfg.Clusters {
 		cluster.Server = c.Address.URL
 	}
 	data, err := clientcmd.Write(*cfg)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal kubeconfig: %v", err)
+		return nil, fmt.Errorf("failed to marshal kubeconfig: %w", err)
 	}
 
 	return data, nil
@@ -99,7 +99,7 @@ func setExternalAddress(c *kubermaticv1.Cluster, config []byte) ([]byte, error) 
 // ConfigOption defines a function that applies additional configuration to restclient.Config in a generic way.
 type ConfigOption func(*restclient.Config) *restclient.Config
 
-// GetClientConfig returns the client config used for initiating a connection for the given cluster
+// GetClientConfig returns the client config used for initiating a connection for the given cluster.
 func (p *Provider) GetClientConfig(ctx context.Context, c *kubermaticv1.Cluster, options ...ConfigOption) (*restclient.Config, error) {
 	b, err := p.GetAdminKubeconfig(ctx, c)
 	if err != nil {
@@ -141,7 +141,7 @@ func (p *Provider) GetClientConfig(ctx context.Context, c *kubermaticv1.Cluster,
 	return clientConfig, err
 }
 
-// GetClient returns a dynamic client
+// GetClient returns a dynamic client.
 func (p *Provider) GetClient(ctx context.Context, c *kubermaticv1.Cluster, options ...ConfigOption) (ctrlruntimeclient.Client, error) {
 	config, err := p.GetClientConfig(ctx, c, options...)
 	if err != nil {

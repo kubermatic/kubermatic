@@ -13,7 +13,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// NodeSettings NodeSettings are node specific flags which can be configured on datacenter level
+// NodeSettings NodeSettings are node specific flags which can be configured on datacenter level.
 //
 // swagger:model NodeSettings
 type NodeSettings struct {

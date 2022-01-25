@@ -64,7 +64,7 @@ func SingleSeedKubeconfig(kubeconfig *clientcmdapi.Config, seedName string) (*cl
 func CreateKubeconfigSecret(kubeconfig *clientcmdapi.Config, name string, namespace string) (*corev1.Secret, string, error) {
 	encoded, err := clientcmd.Write(*kubeconfig)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to serialize kubeconfig: %v", err)
+		return nil, "", fmt.Errorf("failed to serialize kubeconfig: %w", err)
 	}
 
 	fieldPath := provider.DefaultKubeconfigFieldPath

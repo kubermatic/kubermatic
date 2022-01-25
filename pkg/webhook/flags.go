@@ -62,7 +62,7 @@ func (opts *Options) Validate() error {
 	if opts.ListenAddress != "" {
 		host, port, err := net.SplitHostPort(opts.ListenAddress)
 		if err != nil {
-			return fmt.Errorf("failed to parse admission webhook listen address: %v", err)
+			return fmt.Errorf("failed to parse admission webhook listen address: %w", err)
 		}
 
 		opts.listenHost = host

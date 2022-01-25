@@ -18,6 +18,7 @@ package common
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -121,8 +122,9 @@ func OwnershipModifierFactory(owner metav1.Object, scheme *runtime.Scheme) recon
 			// KubermaticConfiguration ownership
 			err = controllerutil.SetControllerReference(owner, o, scheme)
 			if err != nil {
-				if _, ok := err.(*controllerutil.AlreadyOwnedError); !ok {
-					return obj, fmt.Errorf("failed to set owner reference: %v", err)
+				var cerr *controllerutil.AlreadyOwnedError // do not use errors.Is() on this error type
+				if !errors.As(err, &cerr) {
+					return obj, fmt.Errorf("failed to set owner reference: %w", err)
 				}
 			}
 
@@ -156,7 +158,7 @@ func VolumeRevisionLabelsModifierFactory(ctx context.Context, client ctrlruntime
 
 			volumeLabels, err := resources.VolumeRevisionLabels(ctx, client, deployment.Namespace, deployment.Spec.Template.Spec.Volumes)
 			if err != nil {
-				return obj, fmt.Errorf("failed to determine revision labels for volumes: %v", err)
+				return obj, fmt.Errorf("failed to determine revision labels for volumes: %w", err)
 			}
 
 			// switch to a new map in case the deployment used the same map for selector.matchLabels and labels
@@ -193,14 +195,14 @@ func CleanupClusterResource(client ctrlruntimeclient.Client, obj ctrlruntimeclie
 
 	if err := client.Get(ctx, key, obj); err != nil {
 		if !kerrors.IsNotFound(err) {
-			return fmt.Errorf("failed to probe for %s: %v", key, err)
+			return fmt.Errorf("failed to probe for %s: %w", key, err)
 		}
 
 		return nil
 	}
 
 	if err := client.Delete(ctx, obj); err != nil {
-		return fmt.Errorf("failed to delete %s: %v", key, err)
+		return fmt.Errorf("failed to delete %s: %w", key, err)
 	}
 
 	return nil

@@ -51,7 +51,7 @@ func OpenstackSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGe
 
 	_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
 	if err != nil {
-		return nil, fmt.Errorf("error getting dc: %v", err)
+		return nil, fmt.Errorf("error getting dc: %w", err)
 	}
 
 	creds, err := getCredentials(ctx, cluster.Spec.Cloud)
@@ -174,7 +174,7 @@ func OpenstackAvailabilityZoneWithClusterCredentialsEndpoint(ctx context.Context
 
 	_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
 	if err != nil {
-		return nil, fmt.Errorf("error getting dc: %v", err)
+		return nil, fmt.Errorf("error getting dc: %w", err)
 	}
 
 	creds, err := getCredentials(ctx, cluster.Spec.Cloud)
@@ -256,7 +256,7 @@ func GetOpenstackTenants(userInfo *provider.UserInfo, seedsGetter provider.Seeds
 
 	tenants, err := openstack.GetTenants(authURL, region, credentials, caBundle)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get tenants: %v", err)
+		return nil, fmt.Errorf("couldn't get tenants: %w", err)
 	}
 
 	apiTenants := []apiv1.OpenstackTenant{}
@@ -386,7 +386,7 @@ func getClusterForOpenstack(ctx context.Context, projectProvider provider.Projec
 func getOpenstackAuthURLAndRegion(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter, datacenterName string) (string, string, error) {
 	_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to find datacenter %q: %v", datacenterName, err)
+		return "", "", fmt.Errorf("failed to find datacenter %q: %w", datacenterName, err)
 	}
 	return dc.Spec.Openstack.AuthURL, dc.Spec.Openstack.Region, nil
 }

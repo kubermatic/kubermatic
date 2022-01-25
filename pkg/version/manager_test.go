@@ -54,7 +54,7 @@ func TestAutomaticNodeUpdate(t *testing.T) {
 				To:                  "1.6.0",
 				AutomaticNodeUpdate: true,
 			}},
-			expectedError: nodeupdate.ErrVersionSkew{
+			expectedError: nodeupdate.VersionSkewError{
 				ControlPlane: semver.MustParse("1.5.0"),
 				Kubelet:      semver.MustParse("1.6.0"),
 			},

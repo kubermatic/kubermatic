@@ -68,7 +68,7 @@ func main() {
 	logOpts.AddFlags(flag.CommandLine)
 	options, err := newControllerRunOptions()
 	if err != nil {
-		fmt.Printf("Failed to create controller run options due to = %v\n", err)
+		fmt.Printf("Failed to create controller run options: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -138,7 +138,7 @@ func main() {
 
 	// Check if the CRD for the VerticalPodAutoscaler is registered by allocating an informer
 	if err := mgr.GetAPIReader().List(context.Background(), &autoscalingv1beta2.VerticalPodAutoscalerList{}); err != nil {
-		if _, crdNotRegistered := err.(*meta.NoKindMatchError); crdNotRegistered {
+		if meta.IsNoMatchError(err) {
 			log.Fatal(`
 The VerticalPodAutoscaler is not installed in this seed cluster.
 Please install the VerticalPodAutoscaler according to the documentation: https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler#installation`)

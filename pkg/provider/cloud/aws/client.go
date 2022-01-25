@@ -17,6 +17,7 @@ limitations under the License.
 package aws
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -73,7 +74,7 @@ func getAWSSession(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExtern
 func getClientSet(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, endpoint string) (*ClientSet, error) {
 	sess, err := getAWSSession(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, endpoint)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create API session: %v", err)
+		return nil, fmt.Errorf("failed to create API session: %w", err)
 	}
 
 	return &ClientSet{
@@ -86,19 +87,16 @@ func getClientSet(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExterna
 var notFoundErrors = sets.NewString("NoSuchEntity", "InvalidVpcID.NotFound", "InvalidRouteTableID.NotFound", "InvalidGroup.NotFound")
 
 func isNotFound(err error) bool {
-	if awsErr, ok := err.(awserr.Error); ok {
-		if notFoundErrors.Has(awsErr.Code()) {
-			return true
-		}
-	}
-	return false
+	var awsErr awserr.Error
+
+	return errors.As(err, &awsErr) && notFoundErrors.Has(awsErr.Code())
 }
 
 // getAssumeRoleSession uses an existing AWS session to assume an IAM role which may be in an external AWS account.
 func getAssumeRoleSession(awsSession *session.Session, assumeRoleARN, assumeRoleExternalID, region, endpoint string) (*session.Session, error) {
 	assumeRoleOutput, err := getAssumeRoleCredentials(awsSession, assumeRoleARN, assumeRoleExternalID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve temporary AWS credentials for assumed role: %v", err)
+		return nil, fmt.Errorf("failed to retrieve temporary AWS credentials for assumed role: %w", err)
 	}
 
 	assumedRoleConfig := aws.NewConfig()
@@ -114,7 +112,7 @@ func getAssumeRoleSession(awsSession *session.Session, assumeRoleARN, assumeRole
 
 	awsSession, err = session.NewSession(assumedRoleConfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create API session with temporary credentials for an assumed IAM role: %v", err)
+		return nil, fmt.Errorf("failed to create API session with temporary credentials for an assumed IAM role: %w", err)
 	}
 
 	return awsSession, err
@@ -137,7 +135,7 @@ func getAssumeRoleCredentials(session *session.Session, assumeRoleARN string, as
 
 	output, err := stsSession.AssumeRole(&assumeRoleInput)
 	if err != nil {
-		return nil, fmt.Errorf("failed to call AWS STS to assume IAM role: %v", err)
+		return nil, fmt.Errorf("failed to call AWS STS to assume IAM role: %w", err)
 	}
 
 	return output, nil

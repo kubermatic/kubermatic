@@ -46,7 +46,7 @@ type openvpnData interface {
 // running alongside a master component, providing vpn access
 // to user cluster networks.
 // Also required but not provided by this func:
-// * volumes: resources.OpenVPNClientCertificatesSecretName, resources.CACertSecretName
+// * volumes: resources.OpenVPNClientCertificatesSecretName, resources.CACertSecretName.
 func OpenVPNSidecarContainer(data openvpnData, name string) (*corev1.Container, error) {
 	return &corev1.Container{
 		Name:    name,

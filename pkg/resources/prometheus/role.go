@@ -23,7 +23,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-// RoleCreator returns the func to create/update the role for Prometheus
+// RoleCreator returns the func to create/update the role for Prometheus.
 func RoleCreator() reconciling.NamedRoleCreatorGetter {
 	return func() (string, reconciling.RoleCreator) {
 		return resources.PrometheusRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {

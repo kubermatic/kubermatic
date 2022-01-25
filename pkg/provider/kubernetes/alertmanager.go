@@ -43,7 +43,7 @@ type AlertmanagerProvider struct {
 	privilegedClient ctrlruntimeclient.Client
 }
 
-// NewAlertmanagerProvider returns an alertmanager provider
+// NewAlertmanagerProvider returns an alertmanager provider.
 func NewAlertmanagerProvider(createSeedImpersonatedClient ImpersonationClient, privilegedClient ctrlruntimeclient.Client) *AlertmanagerProvider {
 	return &AlertmanagerProvider{
 		createSeedImpersonatedClient: createSeedImpersonatedClient,

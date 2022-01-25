@@ -38,7 +38,7 @@ type cronJobCreatorData interface {
 	GetClusterRef() metav1.OwnerReference
 }
 
-// CronJobCreator returns the func to create/update the etcd defragger cronjob
+// CronJobCreator returns the func to create/update the etcd defragger cronjob.
 func CronJobCreator(data cronJobCreatorData) reconciling.NamedCronJobCreatorGetter {
 	return func() (string, reconciling.CronJobCreator) {
 		return resources.EtcdDefragCronJobName, func(job *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
@@ -97,7 +97,7 @@ type defraggerCommandTplData struct {
 func defraggerCommand(data cronJobCreatorData) ([]string, error) {
 	tpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(defraggerCommandTpl)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse etcd command template: %v", err)
+		return nil, fmt.Errorf("failed to parse etcd command template: %w", err)
 	}
 
 	tplData := defraggerCommandTplData{

@@ -126,7 +126,6 @@ func ListEndpoint(keyProvider provider.SSHKeyProvider, projectProvider provider.
 			return nil, errors.NewBadRequest("invalid request")
 		}
 		if len(req.ProjectID) == 0 {
-
 			return nil, errors.NewBadRequest("the name of the project to delete cannot be empty")
 		}
 

@@ -23,7 +23,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-// ClusterRole returns a cluster role for the clusterautoscaler
+// ClusterRole returns a cluster role for the clusterautoscaler.
 func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 	return func() (string, reconciling.ClusterRoleCreator) {
 		return resources.ClusterAutoscalerClusterRoleName,
@@ -90,7 +90,7 @@ func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 	}
 }
 
-// ClusterRoleBinding returns a ClusterRoleBinding for clusterautoscaler
+// ClusterRoleBinding returns a ClusterRoleBinding for clusterautoscaler.
 func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return resources.ClusterAutoscalerClusterRoleBindingName,

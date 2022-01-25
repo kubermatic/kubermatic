@@ -80,7 +80,7 @@ func ensureResourceGroup(ctx context.Context, groupsClient resourcesapi.GroupsCl
 		},
 	}
 	if _, err := groupsClient.CreateOrUpdate(ctx, cloud.Azure.ResourceGroup, parameters); err != nil {
-		return fmt.Errorf("failed to create or update resource group %q: %v", cloud.Azure.ResourceGroup, err)
+		return fmt.Errorf("failed to create or update resource group %q: %w", cloud.Azure.ResourceGroup, err)
 	}
 
 	return nil

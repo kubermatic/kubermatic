@@ -302,7 +302,7 @@ func TestProviderValidateCloudSpec(t *testing.T) {
 
 // The following resources are made available:
 // * Datastore named: LocalDS_0
-// * Datastore cluster named: DC0_POD0
+// * Datastore cluster named: DC0_POD0.
 type vSphereSimulator struct {
 	t      *testing.T
 	model  *simulator.Model

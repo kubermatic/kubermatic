@@ -193,7 +193,7 @@ type patchAllowedRegistryReq struct {
 	Patch json.RawMessage
 }
 
-// DecodePatchAllowedRegistryReq decodes http request into patchAllowedRegistryReq
+// DecodePatchAllowedRegistryReq decodes http request into patchAllowedRegistryReq.
 func DecodePatchAllowedRegistryReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req patchAllowedRegistryReq
 

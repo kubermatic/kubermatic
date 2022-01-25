@@ -14,7 +14,7 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// EtcdBackupRestore EtcdBackupRestore holds the configuration of the automatic backup restores
+// EtcdBackupRestore EtcdBackupRestore holds the configuration of the automatic backup restores.
 //
 // swagger:model EtcdBackupRestore
 type EtcdBackupRestore struct {

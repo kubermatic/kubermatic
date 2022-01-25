@@ -36,7 +36,7 @@ func ServiceAccountSecretCreator(data CredentialsData) reconciling.NamedSecretCr
 
 			b, err := base64.StdEncoding.DecodeString(credentials.GCP.ServiceAccount)
 			if err != nil {
-				return nil, fmt.Errorf("error decoding service account: %v", err)
+				return nil, fmt.Errorf("error decoding service account: %w", err)
 			}
 
 			se.Type = corev1.SecretTypeOpaque

@@ -37,7 +37,6 @@ func PrintCommand() cli.Command {
 
 func PrintAction() cli.ActionFunc {
 	return func(ctx *cli.Context) error {
-
 		arg := strings.ToLower(ctx.Args().First())
 
 		switch arg {

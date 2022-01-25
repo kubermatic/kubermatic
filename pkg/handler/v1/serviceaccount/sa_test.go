@@ -167,7 +167,7 @@ func TestCreateServiceAccountProject(t *testing.T) {
 
 			ep, client, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, []ctrlruntimeclient.Object{}, []ctrlruntimeclient.Object{}, tc.existingKubermaticObjs, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -202,11 +202,9 @@ func TestCreateServiceAccountProject(t *testing.T) {
 				if expectedSA.Spec.Name != tc.expectedSAName {
 					t.Fatalf("expected name %s got %s", tc.expectedSAName, expectedSA.Spec.Name)
 				}
-
 			} else {
 				test.CompareWithResult(t, res, tc.expectedResponse)
 			}
-
 		})
 	}
 }
@@ -342,7 +340,7 @@ func TestList(t *testing.T) {
 
 			ep, _, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, []ctrlruntimeclient.Object{}, []ctrlruntimeclient.Object{}, tc.existingKubermaticObjs, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -359,11 +357,9 @@ func TestList(t *testing.T) {
 				wrappedExpectedSA.Sort()
 
 				actualSA.EqualOrDie(wrappedExpectedSA, t)
-
 			} else {
 				test.CompareWithResult(t, res, tc.expectedError)
 			}
-
 		})
 	}
 }
@@ -462,7 +458,7 @@ func TestEdit(t *testing.T) {
 
 			ep, client, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, []ctrlruntimeclient.Object{}, []ctrlruntimeclient.Object{}, tc.existingKubermaticObjs, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -503,11 +499,9 @@ func TestEdit(t *testing.T) {
 				if group != tc.expectedGroup {
 					t.Fatalf("expected group from binding %s got %s", tc.expectedGroup, group)
 				}
-
 			} else {
 				test.CompareWithResult(t, res, tc.expectedErrorResponse)
 			}
-
 		})
 	}
 }
@@ -587,7 +581,7 @@ func TestDelete(t *testing.T) {
 
 			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []ctrlruntimeclient.Object{}, tc.existingKubermaticObjs, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)

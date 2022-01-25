@@ -90,7 +90,7 @@ func IsProviderSupported(name string) bool {
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 
-// SeedDatacenterList is the type representing a SeedDatacenterList
+// SeedDatacenterList is the type representing a SeedDatacenterList.
 type SeedList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
@@ -102,7 +102,7 @@ type SeedList struct {
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 
-// Seed is the type representing a SeedDatacenter
+// Seed is the type representing a SeedDatacenter.
 type Seed struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -124,7 +124,7 @@ func (s *Seed) SetDefaults() {
 	}
 }
 
-// The spec for a seed data
+// The spec for a seed data.
 type SeedSpec struct {
 	// Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.
 	// For informational purposes in the Kubermatic dashboard only.
@@ -170,7 +170,7 @@ type SeedSpec struct {
 }
 
 // SeedBackupRestoreConfiguration defines the bucket name and endpoint as a backup destination.
-// Deprecated: use EtcdBackupRestore
+// Deprecated: use EtcdBackupRestore.
 type SeedBackupRestoreConfiguration struct {
 	// S3Endpoint is the S3 API endpoint to use for backup and restore.
 	S3Endpoint string `json:"s3Endpoint,omitempty"`
@@ -178,7 +178,7 @@ type SeedBackupRestoreConfiguration struct {
 	S3BucketName string `json:"s3BucketName,omitempty"`
 }
 
-// EtcdBackupRestore holds the configuration of the automatic backup restores
+// EtcdBackupRestore holds the configuration of the automatic backup restores.
 type EtcdBackupRestore struct {
 	// Destinations stores all the possible destinations where the backups for the Seed can be stored. If not empty,
 	// it enables automatic backup and restore for the seed.
@@ -240,7 +240,7 @@ type Datacenter struct {
 	Spec DatacenterSpec `json:"spec"`
 }
 
-// DatacenterSpec mutually points to provider datacenter spec
+// DatacenterSpec mutually points to provider datacenter spec.
 type DatacenterSpec struct {
 	Digitalocean *DatacenterSpecDigitalocean `json:"digitalocean,omitempty"`
 	// BringYourOwn contains settings for clusters using manually created
@@ -287,10 +287,10 @@ type DatacenterSpec struct {
 	ProviderReconciliationInterval *metav1.Duration `json:"providerReconciliationInterval,omitempty"`
 }
 
-// ImageList defines a map of operating system and the image to use
+// ImageList defines a map of operating system and the image to use.
 type ImageList map[providerconfig.OperatingSystem]string
 
-// DatacenterSpecHetzner describes a Hetzner cloud datacenter
+// DatacenterSpecHetzner describes a Hetzner cloud datacenter.
 type DatacenterSpecHetzner struct {
 	// Datacenter location, e.g. "nbg1-dc3". A list of existing datacenters can be found
 	// at https://wiki.hetzner.de/index.php/Rechenzentren_und_Anbindung/en
@@ -304,14 +304,14 @@ type DatacenterSpecHetzner struct {
 	Location string `json:"location"`
 }
 
-// DatacenterSpecDigitalocean describes a DigitalOcean datacenter
+// DatacenterSpecDigitalocean describes a DigitalOcean datacenter.
 type DatacenterSpecDigitalocean struct {
 	// Datacenter location, e.g. "ams3". A list of existing datacenters can be found
 	// at https://www.digitalocean.com/docs/platform/availability-matrix/
 	Region string `json:"region"`
 }
 
-// DatacenterSpecOpenstack describes an OpenStack datacenter
+// DatacenterSpecOpenstack describes an OpenStack datacenter.
 type DatacenterSpecOpenstack struct {
 	AuthURL          string `json:"authURL"`
 	AvailabilityZone string `json:"availabilityZone"`
@@ -348,14 +348,14 @@ type OpenstackNodeSizeRequirements struct {
 	MinimumMemory int `json:"minimumMemory"`
 }
 
-// DatacenterSpecAzure describes an Azure cloud datacenter
+// DatacenterSpecAzure describes an Azure cloud datacenter.
 type DatacenterSpecAzure struct {
 	// Region to use, for example "westeurope". A list of available regions can be
 	// found at https://azure.microsoft.com/en-us/global-infrastructure/locations/
 	Location string `json:"location"`
 }
 
-// DatacenterSpecVSphere describes a vSphere datacenter
+// DatacenterSpecVSphere describes a vSphere datacenter.
 type DatacenterSpecVSphere struct {
 	// Endpoint URL to use, including protocol, for example "https://vcenter.example.com".
 	Endpoint string `json:"endpoint"`
@@ -390,7 +390,7 @@ type DatacenterSpecVSphere struct {
 	InfraManagementUser *VSphereCredentials `json:"infraManagementUser,omitempty"`
 }
 
-// DatacenterSpecAWS describes an AWS datacenter
+// DatacenterSpecAWS describes an AWS datacenter.
 type DatacenterSpecAWS struct {
 	// The AWS region to use, e.g. "us-east-1". For a list of available regions, see
 	// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html
@@ -403,18 +403,18 @@ type DatacenterSpecAWS struct {
 	Images ImageList `json:"images"`
 }
 
-// DatacenterSpecBringYourOwn describes a datacenter our of bring your own nodes
+// DatacenterSpecBringYourOwn describes a datacenter our of bring your own nodes.
 type DatacenterSpecBringYourOwn struct {
 }
 
-// DatacenterSpecPacket describes a Packet datacenter
+// DatacenterSpecPacket describes a Packet datacenter.
 type DatacenterSpecPacket struct {
 	// The list of enabled facilities, for example "ams1", for a full list of available
 	// facilities see https://support.packet.com/kb/articles/data-centers
 	Facilities []string `json:"facilities"`
 }
 
-// DatacenterSpecGCP describes a GCP datacenter
+// DatacenterSpecGCP describes a GCP datacenter.
 type DatacenterSpecGCP struct {
 	// Region to use, for example "europe-west3", for a full list of regions see
 	// https://cloud.google.com/compute/docs/regions-zones/
@@ -429,7 +429,7 @@ type DatacenterSpecGCP struct {
 	Regional bool `json:"regional,omitempty"`
 }
 
-// DatacenterSpecFake describes a fake datacenter
+// DatacenterSpecFake describes a fake datacenter.
 type DatacenterSpecFake struct {
 	FakeProperty string `json:"fakeProperty,omitempty"`
 }
@@ -496,7 +496,7 @@ func (p *ProxyValue) String() string {
 }
 
 // ProxySettings allow configuring a HTTP proxy for the controlplanes
-// and nodes
+// and nodes.
 type ProxySettings struct {
 	// Optional: If set, this proxy will be configured for both HTTP and HTTPS.
 	HTTPProxy *ProxyValue `json:"httpProxy,omitempty"`
@@ -524,7 +524,7 @@ func (p *ProxySettings) Merge(dst *ProxySettings) {
 	}
 }
 
-// NodeSettings are node specific flags which can be configured on datacenter level
+// NodeSettings are node specific flags which can be configured on datacenter level.
 type NodeSettings struct {
 	// Optional: Proxy settings for the Nodes in this datacenter.
 	// Defaults to the Proxy settings of the seed.
@@ -559,7 +559,7 @@ type MeteringConfiguration struct {
 	StorageSize string `json:"storageSize"`
 }
 
-// IsDefaultEtcdAutomaticBackupEnabled returns true if etcd automatic backup is configured for the seed
+// IsDefaultEtcdAutomaticBackupEnabled returns true if etcd automatic backup is configured for the seed.
 func (s *Seed) IsDefaultEtcdAutomaticBackupEnabled() bool {
 	return s.Spec.BackupRestore != nil ||
 		(s.Spec.EtcdBackupRestore != nil && len(s.Spec.EtcdBackupRestore.Destinations) > 0 &&

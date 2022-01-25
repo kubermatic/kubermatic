@@ -22,7 +22,7 @@ const (
 	ReleaseCheckFailed ReleaseStatus = ""
 
 	// these constants mirror the Helm status from
-	// `helm status --help`
+	// `helm status --help`.
 
 	ReleaseStatusUnknown         ReleaseStatus = "unknown"
 	ReleaseStatusDeployed        ReleaseStatus = "deployed"

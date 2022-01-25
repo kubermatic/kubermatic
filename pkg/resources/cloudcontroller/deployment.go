@@ -75,7 +75,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 
 				wrappedPodSpec, err := apiserver.IsRunningWrapper(data, modified.Spec.Template.Spec, containerNames)
 				if err != nil {
-					return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
+					return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
 				}
 				modified.Spec.Template.Spec = *wrappedPodSpec
 

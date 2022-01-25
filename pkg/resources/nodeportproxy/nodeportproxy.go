@@ -43,7 +43,7 @@ const (
 	// NodePortProxyExposeNamespacedAnnotationKey is the annotation key used to indicate that
 	// a service should be exposed by the namespaced NodeportProxy instance.
 	// We use it when clusters get exposed via a LoadBalancer, to allow re-using that LoadBalancer
-	// for both the kube-apiserver and the openVPN server
+	// for both the kube-apiserver and the openVPN server.
 	NodePortProxyExposeNamespacedAnnotationKey = "nodeport-proxy.k8s.io/expose-namespaced"
 	DefaultExposeAnnotationKey                 = "nodeport-proxy.k8s.io/expose"
 	// PortHostMappingAnnotationKey contains the mapping between the port to be
@@ -163,32 +163,32 @@ func EnsureResources(ctx context.Context, client ctrlruntimeclient.Client, data 
 	err := reconciling.ReconcileServiceAccounts(
 		ctx, []reconciling.NamedServiceAccountCreatorGetter{serviceAccount()}, namespace, client)
 	if err != nil {
-		return fmt.Errorf("failed to ensure ServiceAccount: %v", err)
+		return fmt.Errorf("failed to ensure ServiceAccount: %w", err)
 	}
 
 	err = reconciling.ReconcileRoles(
 		ctx, []reconciling.NamedRoleCreatorGetter{role()}, namespace, client)
 	if err != nil {
-		return fmt.Errorf("failed to ensure Role: %v", err)
+		return fmt.Errorf("failed to ensure Role: %w", err)
 	}
 
 	err = reconciling.ReconcileRoleBindings(
 		ctx, []reconciling.NamedRoleBindingCreatorGetter{roleBinding(namespace)}, namespace, client)
 	if err != nil {
-		return fmt.Errorf("failed to ensure RoleBinding: %v", err)
+		return fmt.Errorf("failed to ensure RoleBinding: %w", err)
 	}
 
 	deployments := []reconciling.NamedDeploymentCreatorGetter{deploymentEnvoy(image, data),
 		deploymentLBUpdater(image)}
 	err = reconciling.ReconcileDeployments(ctx, deployments, namespace, client)
 	if err != nil {
-		return fmt.Errorf("failed to reconcile Deployments: %v", err)
+		return fmt.Errorf("failed to reconcile Deployments: %w", err)
 	}
 
 	err = reconciling.ReconcilePodDisruptionBudgets(
 		ctx, []reconciling.NamedPodDisruptionBudgetCreatorGetter{podDisruptionBudget()}, namespace, client)
 	if err != nil {
-		return fmt.Errorf("failed to reconcile PodDisruptionBudget: %v", err)
+		return fmt.Errorf("failed to reconcile PodDisruptionBudget: %w", err)
 	}
 	return nil
 }
@@ -347,7 +347,7 @@ func deploymentEnvoy(image string, data nodePortProxyData) reconciling.NamedDepl
 			}}
 			err := resources.SetResourceRequirements(d.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, d.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			d.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(envoyAppLabelValue, data.Cluster().Name)
@@ -401,7 +401,7 @@ func deploymentLBUpdater(image string) reconciling.NamedDeploymentCreatorGetter 
 			}}
 			err := resources.SetResourceRequirements(d.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, d.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 			d.Spec.Template.Spec.ServiceAccountName = "nodeport-proxy"
 
@@ -424,7 +424,7 @@ func podDisruptionBudget() reconciling.NamedPodDisruptionBudgetCreatorGetter {
 }
 
 // FrontLoadBalancerServiceCreator returns the creator for the LoadBalancer that fronts apiserver
-// and openVPN when using exposeStrategy=LoadBalancer
+// and openVPN when using exposeStrategy=LoadBalancer.
 func FrontLoadBalancerServiceCreator(data *resources.TemplateData) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.FrontLoadBalancerServiceName, func(s *corev1.Service) (*corev1.Service, error) {

@@ -19,6 +19,7 @@ package project_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -39,7 +40,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	v1 "k8s.io/api/core/v1"
@@ -198,7 +199,7 @@ func TestRenameProjectEndpoint(t *testing.T) {
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			// act
@@ -380,7 +381,7 @@ func TestListProjectEndpoint(t *testing.T) {
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			// act
@@ -526,8 +527,8 @@ func TestListProjectMethod(t *testing.T) {
 				if err == nil {
 					t.Fatal("expected error")
 				}
-				kubermaticError, ok := err.(errors.HTTPError)
-				if !ok {
+				var kubermaticError kubermaticerrors.HTTPError
+				if !errors.As(err, &kubermaticError) {
 					t.Fatal("expected HTTPError")
 				}
 				if kubermaticError.Error() != tc.ExpectedErrorMsg {
@@ -633,7 +634,7 @@ func TestGetProjectEndpoint(t *testing.T) {
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			// act
@@ -769,7 +770,7 @@ func TestCreateProjectEndpoint(t *testing.T) {
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			// act
@@ -791,7 +792,6 @@ func TestCreateProjectEndpoint(t *testing.T) {
 				expectedResponse = fmt.Sprintf(tc.ExpectedResponse, actualProject.ID)
 			}
 			test.CompareWithResult(t, res, expectedResponse)
-
 		})
 	}
 }
@@ -855,7 +855,7 @@ func TestDeleteProjectEndpoint(t *testing.T) {
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			// act
@@ -965,7 +965,7 @@ func TestServiceAccountProjectAccess(t *testing.T) {
 			// act 1 - get the project using sa token
 			getEp, err := test.CreateTestEndpoint(apiSA, []ctrlruntimeclient.Object{tokenSecret}, tc.existingKubermaticObjs, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s", tc.projectToSync), strings.NewReader(""))
@@ -1007,14 +1007,13 @@ func TestServiceAccountProjectAccess(t *testing.T) {
 }
 
 func genToken(sa *kubermaticv1.User, projectID, tokenName string) (*v1.Secret, error) {
-
 	tokenGenerator, err := serviceaccount.JWTTokenGenerator([]byte(test.TestServiceAccountHashKey))
 	if err != nil {
-		return nil, fmt.Errorf("can init token generator %v", err)
+		return nil, fmt.Errorf("can init token generator: %w", err)
 	}
 	token, err := tokenGenerator.Generate(serviceaccount.Claims(sa.Spec.Email, projectID, tokenName))
 	if err != nil {
-		return nil, fmt.Errorf("can not generate token data %v", err)
+		return nil, fmt.Errorf("can not generate token data: %w", err)
 	}
 
 	secret := &v1.Secret{}

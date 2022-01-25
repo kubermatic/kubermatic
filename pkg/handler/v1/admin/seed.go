@@ -38,7 +38,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// ListSeedsEndpoint returns seed list
+// ListSeedsEndpoint returns seed list.
 func ListSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		userInfo, err := userInfoGetter(ctx, "")
@@ -65,7 +65,7 @@ func ListSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provid
 	}
 }
 
-// GetSeedEndpoint returns seed element
+// GetSeedEndpoint returns seed element.
 func GetSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(seedReq)
@@ -83,7 +83,7 @@ func GetSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provide
 	}
 }
 
-// UpdateSeedEndpoint updates seed element
+// UpdateSeedEndpoint updates seed element.
 func UpdateSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, masterClient client.Client) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(updateSeedReq)
@@ -121,7 +121,7 @@ func UpdateSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter prov
 		seed.Spec = *seedSpec
 
 		if err := masterClient.Update(ctx, seed); err != nil {
-			return nil, fmt.Errorf("failed to update Seed: %v", err)
+			return nil, fmt.Errorf("failed to update Seed: %w", err)
 		}
 
 		return apiv1.Seed{
@@ -131,7 +131,7 @@ func UpdateSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter prov
 	}
 }
 
-// DeleteSeedEndpoint deletes seed CRD element with the given name from the Kubermatic
+// DeleteSeedEndpoint deletes seed CRD element with the given name from the Kubermatic.
 func DeleteSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, masterClient client.Client) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(seedReq)
@@ -144,7 +144,7 @@ func DeleteSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter prov
 		}
 
 		if err := masterClient.Delete(ctx, seed); err != nil {
-			return nil, fmt.Errorf("failed to delete seed: %v", err)
+			return nil, fmt.Errorf("failed to delete seed: %w", err)
 		}
 
 		return nil, nil
@@ -217,7 +217,7 @@ func DecodeSeedReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-// Validate validates UpdateAdmissionPluginEndpoint request
+// Validate validates UpdateAdmissionPluginEndpoint request.
 func (r updateSeedReq) Validate() error {
 	if r.Name != r.Body.Name {
 		return fmt.Errorf("seed name mismatch, you requested to update Seed = %s but body contains Seed = %s", r.Name, r.Body.Name)

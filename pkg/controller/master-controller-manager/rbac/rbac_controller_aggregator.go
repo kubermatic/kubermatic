@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-// Metrics contains metrics that this controller will collect and expose
+// Metrics contains metrics that this controller will collect and expose.
 type Metrics struct {
 	Workers prometheus.Gauge
 }
@@ -53,7 +53,7 @@ func NewMetrics() *Metrics {
 	return cm
 }
 
-// ControllerAggregator type holds controllers for managing RBAC for projects and theirs resources
+// ControllerAggregator type holds controllers for managing RBAC for projects and theirs resources.
 type ControllerAggregator struct {
 	workerCount             int
 	rbacResourceControllers []*resourcesController
@@ -70,7 +70,7 @@ type projectResource struct {
 	predicate func(o ctrlruntimeclient.Object) bool
 }
 
-// New creates a new controller aggregator for managing RBAC for resources
+// New creates a new controller aggregator for managing RBAC for resources.
 func New(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manager.Manager, labelSelectorFunc func(*metav1.ListOptions), workerPredicate predicate.Predicate, workerCount int) (*ControllerAggregator, error) {
 	projectResources := []projectResource{
 		{

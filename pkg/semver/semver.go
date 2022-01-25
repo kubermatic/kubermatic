@@ -27,10 +27,10 @@ var (
 	_ flag.Value = new(Semver)
 )
 
-// Semver is a type that encapsulates github.com/Masterminds/semver/v3.Version struct so it can be used in our API
+// Semver is a type that encapsulates github.com/Masterminds/semver/v3.Version struct so it can be used in our API.
 type Semver string
 
-// NewSemver creates new Semver version struct and returns pointer to it
+// NewSemver creates new Semver version struct and returns pointer to it.
 func NewSemver(ver string) (*Semver, error) {
 	v := new(Semver)
 	if err := v.Set(ver); err != nil {
@@ -40,7 +40,7 @@ func NewSemver(ver string) (*Semver, error) {
 	return v, nil
 }
 
-// NewSemverOrDie behaves similar to NewVersion, i.e. it creates new Semver version struct, but panics if an error happens
+// NewSemverOrDie behaves similar to NewVersion, i.e. it creates new Semver version struct, but panics if an error happens.
 func NewSemverOrDie(ver string) *Semver {
 	sv, err := NewSemver(ver)
 	if err != nil {
@@ -50,7 +50,7 @@ func NewSemverOrDie(ver string) *Semver {
 	return sv
 }
 
-// Set initializes semver struct and sets version
+// Set initializes semver struct and sets version.
 func (s *Semver) Set(ver string) error {
 	if _, err := semverlib.NewVersion(ver); err != nil {
 		return err
@@ -62,7 +62,7 @@ func (s *Semver) Set(ver string) error {
 
 // Semver returns github.com/Masterminds/semver/v3 struct.
 // In case when Semver is nil, nil will be returned.
-// In case of parsing error, nil will be returned
+// In case of parsing error, nil will be returned.
 func (s *Semver) Semver() *semverlib.Version {
 	if s == nil {
 		return nil
@@ -76,7 +76,7 @@ func (s *Semver) Semver() *semverlib.Version {
 	return sver
 }
 
-// Equal compares two version structs by comparing Semver values
+// Equal compares two version structs by comparing Semver values.
 func (s *Semver) Equal(b *Semver) bool {
 	if s == nil || b == nil {
 		return false
@@ -90,7 +90,7 @@ func (s *Semver) Equal(b *Semver) bool {
 	return sver.Equal(bver)
 }
 
-// String returns string representation of Semver version
+// String returns string representation of Semver version.
 func (s *Semver) String() string {
 	sver := s.Semver()
 	if sver == nil {
@@ -100,7 +100,7 @@ func (s *Semver) String() string {
 	return sver.String()
 }
 
-// MajorMinor returns a string like "Major.Minor"
+// MajorMinor returns a string like "Major.Minor".
 func (s *Semver) MajorMinor() string {
 	sver := s.Semver()
 	if sver == nil {

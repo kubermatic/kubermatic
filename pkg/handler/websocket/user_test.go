@@ -83,7 +83,7 @@ func TestUserWatchEndpoint(t *testing.T) {
 			ep, cli, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, []ctrlruntimeclient.Object{}, nil,
 				runtimeObjectUsers, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			server := httptest.NewServer(ep)
 			defer server.Close()
@@ -166,7 +166,7 @@ type wsMessage struct {
 func createWSClient(url string) (chan wsMessage, error) {
 	ws, _, err := websocket.DefaultDialer.Dial(url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize websocket dialer: %v", err)
+		return nil, fmt.Errorf("failed to initialize websocket dialer: %w", err)
 	}
 
 	ch := make(chan wsMessage, 5)

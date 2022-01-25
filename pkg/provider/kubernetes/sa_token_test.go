@@ -153,7 +153,6 @@ func TestListTokens(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-
 			kubeObjects := []ctrlruntimeclient.Object{}
 			for _, secret := range tc.secrets {
 				kubeObjects = append(kubeObjects, secret)
@@ -239,7 +238,6 @@ func TestGetToken(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-
 			kubeObjects := []ctrlruntimeclient.Object{}
 			for _, secret := range tc.secrets {
 				kubeObjects = append(kubeObjects, secret)
@@ -316,7 +314,6 @@ func TestUpdateToken(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-
 			kubeObjects := []ctrlruntimeclient.Object{}
 			for _, secret := range tc.secrets {
 				kubeObjects = append(kubeObjects, secret)
@@ -388,7 +385,6 @@ func TestDeleteToken(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-
 			kubeObjects := []ctrlruntimeclient.Object{}
 			for _, secret := range tc.secrets {
 				kubeObjects = append(kubeObjects, secret)

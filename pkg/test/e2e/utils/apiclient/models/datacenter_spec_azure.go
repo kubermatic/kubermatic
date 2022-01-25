@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// DatacenterSpecAzure DatacenterSpecAzure describes an Azure cloud datacenter
+// DatacenterSpecAzure DatacenterSpecAzure describes an Azure cloud datacenter.
 //
 // swagger:model DatacenterSpecAzure
 type DatacenterSpecAzure struct {

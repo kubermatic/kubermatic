@@ -136,7 +136,7 @@ func TestBasicReconciling(t *testing.T) {
 				ctx := context.Background()
 
 				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil {
-					return fmt.Errorf("reconciliation failed: %v", err)
+					return fmt.Errorf("reconciliation failed: %w", err)
 				}
 
 				seed := kubermaticv1.Seed{}
@@ -144,7 +144,7 @@ func TestBasicReconciling(t *testing.T) {
 					Namespace: "kubermatic",
 					Name:      "europe",
 				}, &seed); err != nil {
-					return fmt.Errorf("failed to retrieve Seed: %v", err)
+					return fmt.Errorf("failed to retrieve Seed: %w", err)
 				}
 
 				if !kubernetes.HasFinalizer(&seed, common.CleanupFinalizer) {
@@ -175,7 +175,7 @@ func TestBasicReconciling(t *testing.T) {
 				ctx := context.Background()
 
 				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil {
-					return fmt.Errorf("reconciliation failed: %v", err)
+					return fmt.Errorf("reconciliation failed: %w", err)
 				}
 
 				seed := kubermaticv1.Seed{}
@@ -183,7 +183,7 @@ func TestBasicReconciling(t *testing.T) {
 					Namespace: "kubermatic",
 					Name:      "goner",
 				}, &seed); err != nil {
-					return fmt.Errorf("failed to retrieve Seed: %v", err)
+					return fmt.Errorf("failed to retrieve Seed: %w", err)
 				}
 
 				if kubernetes.HasFinalizer(&seed, common.CleanupFinalizer) {
@@ -214,7 +214,7 @@ func TestBasicReconciling(t *testing.T) {
 				ctx := context.Background()
 
 				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil {
-					return fmt.Errorf("reconciliation failed: %v", err)
+					return fmt.Errorf("reconciliation failed: %w", err)
 				}
 
 				seedClient := reconciler.seedClients["europe"]
@@ -242,7 +242,7 @@ func TestBasicReconciling(t *testing.T) {
 
 				// let the controller clean up
 				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil {
-					return fmt.Errorf("reconciliation failed: %v", err)
+					return fmt.Errorf("reconciliation failed: %w", err)
 				}
 
 				// all global resources should be gone
@@ -284,7 +284,7 @@ func TestBasicReconciling(t *testing.T) {
 				reconciler.seedClients = map[string]ctrlruntimeclient.Client{}
 
 				if err := reconciler.reconcile(context.Background(), reconciler.log, test.seedToReconcile); err != nil {
-					return fmt.Errorf("reconciliation failed: %v", err)
+					return fmt.Errorf("reconciliation failed: %w", err)
 				}
 
 				return nil
@@ -299,7 +299,7 @@ func TestBasicReconciling(t *testing.T) {
 			syncedSeeds:     sets.NewString("europe"),
 			assertion: func(test *testcase, reconciler *Reconciler) error {
 				if err := reconciler.reconcile(context.Background(), reconciler.log, test.seedToReconcile); err != nil {
-					return fmt.Errorf("reconciliation failed: %v", err)
+					return fmt.Errorf("reconciliation failed: %w", err)
 				}
 
 				return nil
@@ -326,7 +326,7 @@ func TestBasicReconciling(t *testing.T) {
 				ctx := context.Background()
 
 				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil {
-					return fmt.Errorf("reconciliation failed: %v", err)
+					return fmt.Errorf("reconciliation failed: %w", err)
 				}
 
 				seedClient := reconciler.seedClients["seed-with-nodeport-proxy-annotations"]
@@ -336,7 +336,7 @@ func TestBasicReconciling(t *testing.T) {
 					Namespace: "kubermatic",
 					Name:      "nodeport-proxy",
 				}, &svc); err != nil {
-					return fmt.Errorf("failed to retrieve nodeport-proxy Service: %v", err)
+					return fmt.Errorf("failed to retrieve nodeport-proxy Service: %w", err)
 				}
 
 				if svc.Annotations == nil {
@@ -371,7 +371,7 @@ func TestBasicReconciling(t *testing.T) {
 				ctx := context.Background()
 
 				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil {
-					return fmt.Errorf("reconciliation failed: %v", err)
+					return fmt.Errorf("reconciliation failed: %w", err)
 				}
 
 				seedClient := reconciler.seedClients["europe"]
@@ -382,7 +382,7 @@ func TestBasicReconciling(t *testing.T) {
 					Namespace: "kubermatic",
 					Name:      common.DockercfgSecretName,
 				}, &secret); err != nil {
-					return fmt.Errorf("failed to retrieve dockercfg Secret: %v", err)
+					return fmt.Errorf("failed to retrieve dockercfg Secret: %w", err)
 				}
 
 				// secret data is not base64 encoded with fake client
@@ -397,7 +397,7 @@ func TestBasicReconciling(t *testing.T) {
 					Namespace: "kubermatic",
 					Name:      common.SeedControllerManagerDeploymentName,
 				}, &scm); err != nil {
-					return fmt.Errorf("failed to retrieve seed controller manager deployment: %v", err)
+					return fmt.Errorf("failed to retrieve seed controller manager deployment: %w", err)
 				}
 
 				var foundImagePullSecret bool
@@ -411,7 +411,6 @@ func TestBasicReconciling(t *testing.T) {
 				}
 
 				return nil
-
 			},
 		},
 	}

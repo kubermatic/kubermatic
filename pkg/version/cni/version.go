@@ -57,12 +57,12 @@ var (
 	}
 )
 
-// GetSupportedCNIPlugins returns currently supported CNI Plugin types
+// GetSupportedCNIPlugins returns currently supported CNI Plugin types.
 func GetSupportedCNIPlugins() sets.String {
 	return supportedCNIPlugins
 }
 
-// GetSupportedCNIPluginVersions returns currently supported CNI versions for a CNI type
+// GetSupportedCNIPluginVersions returns currently supported CNI versions for a CNI type.
 func GetSupportedCNIPluginVersions(cniPluginType kubermaticv1.CNIPluginType) (sets.String, error) {
 	if !supportedCNIPlugins.Has(cniPluginType.String()) {
 		return sets.NewString(), fmt.Errorf("CNI Plugin type %q not supported. Supported types %s", cniPluginType, supportedCNIPlugins.List())
@@ -77,7 +77,7 @@ func GetSupportedCNIPluginVersions(cniPluginType kubermaticv1.CNIPluginType) (se
 	return versions, nil
 }
 
-// GetAllowedCNIPluginVersions returns all allowed CNI versions for a CNI type (supported + deprecated)
+// GetAllowedCNIPluginVersions returns all allowed CNI versions for a CNI type (supported + deprecated).
 func GetAllowedCNIPluginVersions(cniPluginType kubermaticv1.CNIPluginType) (sets.String, error) {
 	supported, err := GetSupportedCNIPluginVersions(cniPluginType)
 	if err != nil {
@@ -90,12 +90,12 @@ func GetAllowedCNIPluginVersions(cniPluginType kubermaticv1.CNIPluginType) (sets
 	return allowed, nil
 }
 
-// GetDefaultCNIPluginVersion returns the default CNI versions for a CNI type, empty string if no default version set
+// GetDefaultCNIPluginVersion returns the default CNI versions for a CNI type, empty string if no default version set.
 func GetDefaultCNIPluginVersion(cniPluginType kubermaticv1.CNIPluginType) string {
 	return defaultCNIPluginVersion[cniPluginType]
 }
 
-// IsSupportedCNIPluginTypeAndVersion returns true if the given CNI plugin is of supported type and version
+// IsSupportedCNIPluginTypeAndVersion returns true if the given CNI plugin is of supported type and version.
 func IsSupportedCNIPluginTypeAndVersion(cni *kubermaticv1.CNIPluginSettings) bool {
 	if cni == nil {
 		return false

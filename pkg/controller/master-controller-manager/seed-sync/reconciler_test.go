@@ -44,7 +44,6 @@ func init() {
 }
 
 func TestReconcilingSeed(t *testing.T) {
-
 	existingSeeds := []ctrlruntimeclient.Object{
 		&kubermaticv1.Seed{
 			ObjectMeta: metav1.ObjectMeta{

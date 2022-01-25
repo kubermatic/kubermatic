@@ -50,7 +50,6 @@ type Reconciler struct {
 }
 
 func Add(mgr manager.Manager, overwriteRegistry string, updateWindow kubermaticv1.UpdateWindow, clusterIsPaused userclustercontrollermanager.IsPausedChecker) error {
-
 	reconciler := &Reconciler{
 		Client:            mgr.GetClient(),
 		overwriteRegistry: overwriteRegistry,
@@ -82,7 +81,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, _ reconcile.Request) (reconc
 	}
 
 	if err := r.reconcileUpdateOperatorResources(ctx); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to reconcile the UpdateOperator resources: %v", err)
+		return reconcile.Result{}, fmt.Errorf("failed to reconcile the UpdateOperator resources: %w", err)
 	}
 
 	return reconcile.Result{}, nil
@@ -96,7 +95,7 @@ func (r *Reconciler) reconcileUpdateOperatorResources(ctx context.Context) error
 		resources.AgentServiceAccountCreator(),
 	}
 	if err := reconciling.ReconcileServiceAccounts(ctx, saCreators, metav1.NamespaceSystem, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile the ServiceAccounts: %v", err)
+		return fmt.Errorf("failed to reconcile the ServiceAccounts: %w", err)
 	}
 
 	crCreators := []reconciling.NamedClusterRoleCreatorGetter{
@@ -104,7 +103,7 @@ func (r *Reconciler) reconcileUpdateOperatorResources(ctx context.Context) error
 		resources.AgentClusterRoleCreator(),
 	}
 	if err := reconciling.ReconcileClusterRoles(ctx, crCreators, metav1.NamespaceNone, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile the ClusterRoles: %v", err)
+		return fmt.Errorf("failed to reconcile the ClusterRoles: %w", err)
 	}
 
 	crbCreators := []reconciling.NamedClusterRoleBindingCreatorGetter{
@@ -112,17 +111,17 @@ func (r *Reconciler) reconcileUpdateOperatorResources(ctx context.Context) error
 		resources.AgentClusterRoleBindingCreator(),
 	}
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, crbCreators, metav1.NamespaceNone, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile the ClusterRoleBindings: %v", err)
+		return fmt.Errorf("failed to reconcile the ClusterRoleBindings: %w", err)
 	}
 
 	depCreators := getDeploymentCreators(r.overwriteRegistry, r.updateWindow)
 	if err := reconciling.ReconcileDeployments(ctx, depCreators, metav1.NamespaceSystem, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile the Deployments: %v", err)
+		return fmt.Errorf("failed to reconcile the Deployments: %w", err)
 	}
 
 	dsCreators := getDaemonSetCreators(r.overwriteRegistry)
 	if err := reconciling.ReconcileDaemonSets(ctx, dsCreators, metav1.NamespaceSystem, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile the DaemonSets: %v", err)
+		return fmt.Errorf("failed to reconcile the DaemonSets: %w", err)
 	}
 
 	return nil

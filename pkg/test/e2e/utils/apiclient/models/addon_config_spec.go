@@ -14,7 +14,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// AddonConfigSpec AddonConfigSpec specifies configuration of addon
+// AddonConfigSpec AddonConfigSpec specifies configuration of addon.
 //
 // swagger:model AddonConfigSpec
 type AddonConfigSpec struct {

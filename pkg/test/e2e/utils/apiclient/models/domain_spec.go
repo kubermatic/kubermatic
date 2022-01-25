@@ -14,7 +14,7 @@ import (
 )
 
 // DomainSpec Need to copy the following type to avoid a collision on Resources
-// between kubevirtv1.ResourceRequirements and corev1.ResourceRequirements used in different part of the API
+// between kubevirtv1.ResourceRequirements and corev1.ResourceRequirements used in different part of the API.
 //
 // swagger:model DomainSpec
 type DomainSpec struct {

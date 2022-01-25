@@ -13,7 +13,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// DatacenterSpecOpenstack DatacenterSpecOpenstack describes an OpenStack datacenter
+// DatacenterSpecOpenstack DatacenterSpecOpenstack describes an OpenStack datacenter.
 //
 // swagger:model DatacenterSpecOpenstack
 type DatacenterSpecOpenstack struct {

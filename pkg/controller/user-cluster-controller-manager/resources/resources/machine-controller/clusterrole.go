@@ -27,7 +27,7 @@ const (
 	Name = "machine-controller"
 )
 
-// ClusterRole returns a cluster role for the machine controller (user-cluster)
+// ClusterRole returns a cluster role for the machine controller (user-cluster).
 func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 	return func() (string, reconciling.ClusterRoleCreator) {
 		return resources.MachineControllerClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {

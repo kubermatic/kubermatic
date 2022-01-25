@@ -146,7 +146,7 @@ type azureSizeNoCredentialsReq struct {
 	cluster.GetClusterReq
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req azureSizeNoCredentialsReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
@@ -180,7 +180,7 @@ type azureAvailabilityZonesNoCredentialsReq struct {
 	SKUName string
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req azureAvailabilityZonesNoCredentialsReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
@@ -198,7 +198,7 @@ func DecodeAzureAvailabilityZonesNoCredentialsReq(c context.Context, r *http.Req
 	return req, nil
 }
 
-// azureCommonReq represent a request for Azure support
+// azureCommonReq represent a request for Azure support.
 type azureCommonReq struct {
 	// in: header
 	SubscriptionID string

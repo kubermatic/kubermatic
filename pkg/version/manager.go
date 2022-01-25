@@ -34,7 +34,7 @@ var (
 	errNoDefaultVersion = errors.New("no default version configured")
 )
 
-// Manager is a object to handle versions & updates from a predefined config
+// Manager is a object to handle versions & updates from a predefined config.
 type Manager struct {
 	versions                  []*Version
 	updates                   []*Update
@@ -56,7 +56,7 @@ type Version struct {
 	Type    string          `json:"type,omitempty"`
 }
 
-// Update represents an update option for a cluster
+// Update represents an update option for a cluster.
 type Update struct {
 	From                string `json:"from"`
 	To                  string `json:"to"`
@@ -65,7 +65,7 @@ type Update struct {
 	Type                string `json:"type,omitempty"`
 }
 
-// New returns a instance of Manager
+// New returns a instance of Manager.
 func New(versions []*Version, updates []*Update, providerIncompatibilities []*ProviderIncompatibility) *Manager {
 	return &Manager{
 		updates:                   updates,
@@ -114,7 +114,7 @@ func NewFromConfiguration(config *operatorv1alpha1.KubermaticConfiguration) *Man
 	return New(versions, updates, incompatibilities)
 }
 
-// GetDefault returns the default version
+// GetDefault returns the default version.
 func (m *Manager) GetDefault() (*Version, error) {
 	for _, v := range m.versions {
 		if v.Default {
@@ -124,11 +124,11 @@ func (m *Manager) GetDefault() (*Version, error) {
 	return nil, errNoDefaultVersion
 }
 
-// GetVersion returns the Versions for s
+// GetVersion returns the Versions for s.
 func (m *Manager) GetVersion(s, t string) (*Version, error) {
 	sv, err := semver.NewVersion(s)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse version %s: %v", s, err)
+		return nil, fmt.Errorf("failed to parse version %s: %w", s, err)
 	}
 
 	for _, v := range m.versions {
@@ -139,7 +139,7 @@ func (m *Manager) GetVersion(s, t string) (*Version, error) {
 	return nil, errVersionNotFound
 }
 
-// GetVersions returns all Versions which don't result in automatic updates
+// GetVersions returns all Versions which don't result in automatic updates.
 func (m *Manager) GetVersions(clusterType string) ([]*Version, error) {
 	var masterVersions []*Version
 	for _, v := range m.versions {
@@ -158,7 +158,7 @@ func (m *Manager) GetVersions(clusterType string) ([]*Version, error) {
 	return masterVersions, nil
 }
 
-// GetVersionsV2 returns all Versions which don't result in automatic updates
+// GetVersionsV2 returns all Versions which don't result in automatic updates.
 func (m *Manager) GetVersionsV2(clusterType string, provider kubermaticv1.ProviderType, conditions ...operatorv1alpha1.ConditionType) ([]*Version, error) {
 	var masterVersions []*Version
 	for _, v := range m.versions {
@@ -183,7 +183,7 @@ func (m *Manager) GetVersionsV2(clusterType string, provider kubermaticv1.Provid
 	return masterVersions, nil
 }
 
-// AutomaticNodeUpdate returns an automatic node update or nil
+// AutomaticNodeUpdate returns an automatic node update or nil.
 func (m *Manager) AutomaticNodeUpdate(fromVersionRaw, clusterType, controlPlaneVersion string) (*Version, error) {
 	version, err := m.automaticUpdate(fromVersionRaw, clusterType, true)
 	if err != nil || version == nil {
@@ -191,7 +191,7 @@ func (m *Manager) AutomaticNodeUpdate(fromVersionRaw, clusterType, controlPlaneV
 	}
 	controlPlaneSemver, err := semver.NewVersion(controlPlaneVersion)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse controlplane version: %v", err)
+		return nil, fmt.Errorf("failed to parse controlplane version: %w", err)
 	}
 
 	if err := nodeupdate.EnsureVersionCompatible(controlPlaneSemver, version.Version); err != nil {
@@ -202,7 +202,7 @@ func (m *Manager) AutomaticNodeUpdate(fromVersionRaw, clusterType, controlPlaneV
 }
 
 // AutomaticControlplaneUpdate returns a version if an automatic update can be found for the version
-// passed in
+// passed in.
 func (m *Manager) AutomaticControlplaneUpdate(fromVersionRaw, clusterType string) (*Version, error) {
 	return m.automaticUpdate(fromVersionRaw, clusterType, false)
 }
@@ -210,7 +210,7 @@ func (m *Manager) AutomaticControlplaneUpdate(fromVersionRaw, clusterType string
 func (m *Manager) automaticUpdate(fromVersionRaw, clusterType string, isForNode bool) (*Version, error) {
 	from, err := semver.NewVersion(fromVersionRaw)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse version %s: %v", fromVersionRaw, err)
+		return nil, fmt.Errorf("failed to parse version %s: %w", fromVersionRaw, err)
 	}
 
 	isAutomatic := func(u *Update) bool {
@@ -232,7 +232,7 @@ func (m *Manager) automaticUpdate(fromVersionRaw, clusterType string, isForNode 
 
 		uFrom, err := semver.NewConstraint(u.From)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse from constraint %s: %v", u.From, err)
+			return nil, fmt.Errorf("failed to parse from constraint %s: %w", u.From, err)
 		}
 		if !uFrom.Check(from) {
 			continue
@@ -240,7 +240,7 @@ func (m *Manager) automaticUpdate(fromVersionRaw, clusterType string, isForNode 
 
 		// Automatic updates must not be a constraint. They must be version.
 		if _, err = semver.NewVersion(u.To); err != nil {
-			return nil, fmt.Errorf("failed to parse to version %s: %v", u.To, err)
+			return nil, fmt.Errorf("failed to parse to version %s: %w", u.To, err)
 		}
 		toVersions = append(toVersions, u.To)
 	}
@@ -255,16 +255,16 @@ func (m *Manager) automaticUpdate(fromVersionRaw, clusterType string, isForNode 
 
 	version, err := m.GetVersion(toVersions[0], clusterType)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get Version for %s: %v", toVersions[0], err)
+		return nil, fmt.Errorf("failed to get Version for %s: %w", toVersions[0], err)
 	}
 	return version, nil
 }
 
-// GetPossibleUpdates returns possible updates for the version passed in
+// GetPossibleUpdates returns possible updates for the version passed in.
 func (m *Manager) GetPossibleUpdates(fromVersionRaw, clusterType string, provider kubermaticv1.ProviderType, conditions ...operatorv1alpha1.ConditionType) ([]*Version, error) {
 	from, err := semver.NewVersion(fromVersionRaw)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse version %s: %v", fromVersionRaw, err)
+		return nil, fmt.Errorf("failed to parse version %s: %w", fromVersionRaw, err)
 	}
 	var possibleVersions []*Version
 
@@ -273,7 +273,7 @@ func (m *Manager) GetPossibleUpdates(fromVersionRaw, clusterType string, provide
 		if u.Type == clusterType {
 			uFrom, err := semver.NewConstraint(u.From)
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse from constraint %s: %v", u.From, err)
+				return nil, fmt.Errorf("failed to parse from constraint %s: %w", u.From, err)
 			}
 			if !uFrom.Check(from) {
 				continue
@@ -281,7 +281,7 @@ func (m *Manager) GetPossibleUpdates(fromVersionRaw, clusterType string, provide
 
 			uTo, err := semver.NewConstraint(u.To)
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse to constraint %s: %v", u.To, err)
+				return nil, fmt.Errorf("failed to parse to constraint %s: %w", u.To, err)
 			}
 			toConstraints = append(toConstraints, uTo)
 		}

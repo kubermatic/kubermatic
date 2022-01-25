@@ -47,7 +47,7 @@ func BackupConfigCreator(data etcdBackupConfigCreatorData, seed *kubermaticv1.Se
 
 			backupScheduleString, err := parseDuration(data.BackupSchedule())
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse backup duration: %v", err)
+				return nil, fmt.Errorf("failed to parse backup duration: %w", err)
 			}
 			config.Spec.Name = resources.EtcdDefaultBackupConfigName
 			config.Spec.Schedule = backupScheduleString

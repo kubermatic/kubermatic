@@ -28,7 +28,6 @@ import (
 const testName = "test"
 
 func TestRolesMatches(t *testing.T) {
-
 	tests := []struct {
 		name          string
 		existingRole  *rbacv1.ClusterRole
@@ -55,13 +54,11 @@ func TestRolesMatches(t *testing.T) {
 			if result != test.expected {
 				t.Fatalf("role comparison failed expected %v got %v", test.expected, result)
 			}
-
 		})
 	}
 }
 
 func TestRoleBindingsMatches(t *testing.T) {
-
 	tests := []struct {
 		name                string
 		existingRoleBinding *rbacv1.ClusterRoleBinding
@@ -88,13 +85,11 @@ func TestRoleBindingsMatches(t *testing.T) {
 			if result != test.expected {
 				t.Fatalf("role binding comparison failed expected %v got %v", test.expected, result)
 			}
-
 		})
 	}
 }
 
 func generateRBACClusterRoleBinding(resourceName, groupName string, oRef metav1.OwnerReference) *rbacv1.ClusterRoleBinding {
-
 	binding := &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            resourceName,
@@ -118,7 +113,6 @@ func generateRBACClusterRoleBinding(resourceName, groupName string, oRef metav1.
 }
 
 func generateRBACClusterRole(resourceName, policyAPIGroups string, verbs []string, oRef metav1.OwnerReference) *rbacv1.ClusterRole {
-
 	role := &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            resourceName,
@@ -142,5 +136,4 @@ func genFullOwnerReference(apiVersion, kind, name string) metav1.OwnerReference 
 		Kind:       kind,
 		Name:       name,
 	}
-
 }

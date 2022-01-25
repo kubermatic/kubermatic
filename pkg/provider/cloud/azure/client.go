@@ -34,7 +34,7 @@ import (
 	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
 )
 
-// ClientSet provides a set of Azure service clients that are necessary to reconcile resources needed by KKP
+// ClientSet provides a set of Azure service clients that are necessary to reconcile resources needed by KKP.
 type ClientSet struct {
 	// Autorest client is used to wait for completion of futures
 	Autorest *autorest.Client
@@ -47,7 +47,7 @@ type ClientSet struct {
 	AvailabilitySets computeapi.AvailabilitySetsClientAPI
 }
 
-// GetClientSet returns a ClientSet using the passed credentials as authorization
+// GetClientSet returns a ClientSet using the passed credentials as authorization.
 func GetClientSet(cloud kubermaticv1.CloudSpec, credentials Credentials) (*ClientSet, error) {
 	return getClientSet(cloud, credentials)
 }
@@ -102,7 +102,7 @@ func getClientSet(cloud kubermaticv1.CloudSpec, credentials Credentials) (*Clien
 	}, nil
 }
 
-// GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error
+// GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error.
 func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (Credentials, error) {
 	tenantID := cloud.Azure.TenantID
 	subscriptionID := cloud.Azure.SubscriptionID
@@ -163,7 +163,7 @@ func getGroupsClient(cloud kubermaticv1.CloudSpec, credentials Credentials) (*re
 	groupsClient := resources.NewGroupsClient(credentials.SubscriptionID)
 	groupsClient.Authorizer, err = auth.NewClientCredentialsConfig(credentials.ClientID, credentials.ClientSecret, credentials.TenantID).Authorizer()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %s", err.Error())
+		return nil, fmt.Errorf("failed to create authorizer: %w", err)
 	}
 
 	return &groupsClient, nil
@@ -174,7 +174,7 @@ func getNetworksClient(cloud kubermaticv1.CloudSpec, credentials Credentials) (*
 	networksClient := network.NewVirtualNetworksClient(credentials.SubscriptionID)
 	networksClient.Authorizer, err = auth.NewClientCredentialsConfig(credentials.ClientID, credentials.ClientSecret, credentials.TenantID).Authorizer()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %s", err.Error())
+		return nil, fmt.Errorf("failed to create authorizer: %w", err)
 	}
 
 	return &networksClient, nil
@@ -185,7 +185,7 @@ func getSubnetsClient(cloud kubermaticv1.CloudSpec, credentials Credentials) (*n
 	subnetsClient := network.NewSubnetsClient(credentials.SubscriptionID)
 	subnetsClient.Authorizer, err = auth.NewClientCredentialsConfig(credentials.ClientID, credentials.ClientSecret, credentials.TenantID).Authorizer()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %s", err.Error())
+		return nil, fmt.Errorf("failed to create authorizer: %w", err)
 	}
 
 	return &subnetsClient, nil
@@ -196,7 +196,7 @@ func getRouteTablesClient(cloud kubermaticv1.CloudSpec, credentials Credentials)
 	routeTablesClient := network.NewRouteTablesClient(credentials.SubscriptionID)
 	routeTablesClient.Authorizer, err = auth.NewClientCredentialsConfig(credentials.ClientID, credentials.ClientSecret, credentials.TenantID).Authorizer()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %s", err.Error())
+		return nil, fmt.Errorf("failed to create authorizer: %w", err)
 	}
 
 	return &routeTablesClient, nil
@@ -207,7 +207,7 @@ func getSecurityGroupsClient(cloud kubermaticv1.CloudSpec, credentials Credentia
 	securityGroupsClient := network.NewSecurityGroupsClient(credentials.SubscriptionID)
 	securityGroupsClient.Authorizer, err = auth.NewClientCredentialsConfig(credentials.ClientID, credentials.ClientSecret, credentials.TenantID).Authorizer()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %s", err.Error())
+		return nil, fmt.Errorf("failed to create authorizer: %w", err)
 	}
 
 	return &securityGroupsClient, nil
@@ -218,7 +218,7 @@ func getAvailabilitySetClient(cloud kubermaticv1.CloudSpec, credentials Credenti
 	asClient := compute.NewAvailabilitySetsClient(credentials.SubscriptionID)
 	asClient.Authorizer, err = auth.NewClientCredentialsConfig(credentials.ClientID, credentials.ClientSecret, credentials.TenantID).Authorizer()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %s", err.Error())
+		return nil, fmt.Errorf("failed to create authorizer: %w", err)
 	}
 
 	return &asClient, nil

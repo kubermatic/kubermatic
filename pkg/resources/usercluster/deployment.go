@@ -56,7 +56,7 @@ const name = "usercluster-controller"
 // userclusterControllerData is the subet of the deploymentData interface
 // that is actually required by the usercluster deployment
 // This makes importing the the deployment elsewhere (openshift controller)
-// easier as only have to implement the parts that are actually in use
+// easier as only have to implement the parts that are actually in use.
 type userclusterControllerData interface {
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
 	ImageRegistry(string) string
@@ -102,7 +102,7 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 			volumes := getVolumes()
 			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
 			if err != nil {
-				return nil, fmt.Errorf("failed to create pod labels: %v", err)
+				return nil, fmt.Errorf("failed to create pod labels: %w", err)
 			}
 
 			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
@@ -179,7 +179,7 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 
 			providerName, err := data.GetCloudProviderName()
 			if err != nil {
-				return nil, fmt.Errorf("failed to get cloud provider name: %v", err)
+				return nil, fmt.Errorf("failed to get cloud provider name: %w", err)
 			}
 			args = append(args, "-cloud-provider-name", providerName)
 
@@ -226,7 +226,7 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 
 			labelArgsValue, err := getLabelsArgValue(data.Cluster())
 			if err != nil {
-				return nil, fmt.Errorf("failed to get label args value: %v", err)
+				return nil, fmt.Errorf("failed to get label args value: %w", err)
 			}
 			if labelArgsValue != "" {
 				args = append(args, "-node-labels", labelArgsValue)
@@ -279,13 +279,13 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 			}
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(name))
 			if err != nil {
-				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
+				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
 			}
 			dep.Spec.Template.Spec = *wrappedPodSpec
 
@@ -346,7 +346,7 @@ func getLabelsArgValue(cluster *kubermaticv1.Cluster) (string, error) {
 
 	bytes, err := json.Marshal(labelsToApply)
 	if err != nil {
-		return "", fmt.Errorf("failed to marshal labels: %v", err)
+		return "", fmt.Errorf("failed to marshal labels: %w", err)
 	}
 	return string(bytes), nil
 }

@@ -84,7 +84,7 @@ func TestFeatureGatesEndpoint(t *testing.T) {
 
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, &dummyKubermaticConfiguration, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to: %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			ep.ServeHTTP(resp, req)
 
@@ -94,7 +94,7 @@ func TestFeatureGatesEndpoint(t *testing.T) {
 			if resp.Code == http.StatusOK {
 				var featureGates v2.FeatureGates
 				if err := json.Unmarshal(resp.Body.Bytes(), &featureGates); err != nil {
-					t.Fatalf("failed to unmarshal response due to: %v", err)
+					t.Fatalf("failed to unmarshal response: %v", err)
 				}
 				if !cmp.Equal(tc.ExpectedResponse, featureGates) {
 					t.Fatalf(cmp.Diff(tc.ExpectedResponse, featureGates))

@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// CentOSSpec CentOSSpec contains CentOS specific settings
+// CentOSSpec CentOSSpec contains CentOS specific settings.
 //
 // swagger:model CentOSSpec
 type CentOSSpec struct {

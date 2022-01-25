@@ -27,7 +27,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
-// ServiceAccountAuthClient implements TokenExtractorVerifier interface
+// ServiceAccountAuthClient implements TokenExtractorVerifier interface.
 type ServiceAccountAuthClient struct {
 	headerBearerTokenExtractor TokenExtractor
 	jwtTokenAuthenticator      serviceaccount.TokenAuthenticator
@@ -36,12 +36,12 @@ type ServiceAccountAuthClient struct {
 
 var _ TokenExtractorVerifier = &ServiceAccountAuthClient{}
 
-// NewServiceAccountAuthClient returns a client that knows how to read and verify service account's tokens
+// NewServiceAccountAuthClient returns a client that knows how to read and verify service account's tokens.
 func NewServiceAccountAuthClient(headerBearerTokenExtractor TokenExtractor, jwtTokenAuthenticator serviceaccount.TokenAuthenticator, saTokenProvider provider.PrivilegedServiceAccountTokenProvider) *ServiceAccountAuthClient {
 	return &ServiceAccountAuthClient{headerBearerTokenExtractor: headerBearerTokenExtractor, jwtTokenAuthenticator: jwtTokenAuthenticator, saTokenProvider: saTokenProvider}
 }
 
-// Extractor knows how to extract the ID token from the request
+// Extractor knows how to extract the ID token from the request.
 func (s *ServiceAccountAuthClient) Extract(rq *http.Request) (string, error) {
 	return s.headerBearerTokenExtractor.Extract(rq)
 }

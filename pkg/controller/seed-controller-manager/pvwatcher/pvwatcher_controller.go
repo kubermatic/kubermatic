@@ -54,9 +54,8 @@ type Reconciler struct {
 	recorder record.EventRecorder
 }
 
-// add the controller
+// add the controller.
 func Add(
-
 	log *zap.SugaredLogger,
 	mgr manager.Manager,
 	numWorkers int,
@@ -75,20 +74,20 @@ func Add(
 		MaxConcurrentReconciles: numWorkers,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to create controller: %v", err)
+		return fmt.Errorf("failed to create controller: %w", err)
 	}
 	// reconcile PVCs in ClaimLost phase only
 	LostClaimPredicates := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			new := e.ObjectNew.(*corev1.PersistentVolumeClaim)
-			return new.Status.Phase == corev1.ClaimLost
+			newObj := e.ObjectNew.(*corev1.PersistentVolumeClaim)
+			return newObj.Status.Phase == corev1.ClaimLost
 		},
 	}
 
 	if err := c.Watch(&source.Kind{Type: &corev1.PersistentVolumeClaim{}}, &handler.EnqueueRequestForObject{},
 		LostClaimPredicates,
 		predicateutils.ByLabel(resources.AppLabelKey, resources.EtcdStatefulSetName)); err != nil {
-		return fmt.Errorf("failed to create watch for PersistentVolumeClaims: %v", err)
+		return fmt.Errorf("failed to create watch for PersistentVolumeClaims: %w", err)
 	}
 	return nil
 }

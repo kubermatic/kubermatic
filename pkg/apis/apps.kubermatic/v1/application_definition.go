@@ -166,7 +166,7 @@ type ApplicationVersion struct {
 	Template ApplicationTemplate `json:"template"`
 }
 
-// ApplicationDefinitionSpec defines the desired state of ApplicationDefinition
+// ApplicationDefinitionSpec defines the desired state of ApplicationDefinition.
 type ApplicationDefinitionSpec struct {
 	// Description of the application. what is its purpose
 	Description string `json:"description"`
@@ -178,7 +178,7 @@ type ApplicationDefinitionSpec struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:resource:scope=Cluster
 
-// ApplicationDefinition is the Schema for the applicationdefinitions API
+// ApplicationDefinition is the Schema for the applicationdefinitions API.
 type ApplicationDefinition struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -188,7 +188,7 @@ type ApplicationDefinition struct {
 
 //+kubebuilder:object:root=true
 
-// ApplicationDefinitionList contains a list of ApplicationDefinition
+// ApplicationDefinitionList contains a list of ApplicationDefinition.
 type ApplicationDefinitionList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

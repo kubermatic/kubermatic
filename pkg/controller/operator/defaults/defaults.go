@@ -304,138 +304,138 @@ var (
 func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) (*operatorv1alpha1.KubermaticConfiguration, error) {
 	logger.Debug("Applying defaults to Kubermatic configuration")
 
-	copy := config.DeepCopy()
+	configCopy := config.DeepCopy()
 
-	if copy.Spec.ExposeStrategy == "" {
-		copy.Spec.ExposeStrategy = DefaultExposeStrategy
-		logger.Debugw("Defaulting field", "field", "exposeStrategy", "value", copy.Spec.ExposeStrategy)
+	if configCopy.Spec.ExposeStrategy == "" {
+		configCopy.Spec.ExposeStrategy = DefaultExposeStrategy
+		logger.Debugw("Defaulting field", "field", "exposeStrategy", "value", configCopy.Spec.ExposeStrategy)
 	}
 
-	if copy.Spec.CABundle.Name == "" {
-		copy.Spec.CABundle.Name = DefaultCABundleConfigMapName
-		logger.Debugw("Defaulting field", "field", "caBundle.name", "value", copy.Spec.CABundle.Name)
+	if configCopy.Spec.CABundle.Name == "" {
+		configCopy.Spec.CABundle.Name = DefaultCABundleConfigMapName
+		logger.Debugw("Defaulting field", "field", "caBundle.name", "value", configCopy.Spec.CABundle.Name)
 	}
 
-	if copy.Spec.SeedController.MaximumParallelReconciles == 0 {
-		copy.Spec.SeedController.MaximumParallelReconciles = DefaultMaximumParallelReconciles
-		logger.Debugw("Defaulting field", "field", "seedController.maximumParallelReconciles", "value", copy.Spec.SeedController.MaximumParallelReconciles)
+	if configCopy.Spec.SeedController.MaximumParallelReconciles == 0 {
+		configCopy.Spec.SeedController.MaximumParallelReconciles = DefaultMaximumParallelReconciles
+		logger.Debugw("Defaulting field", "field", "seedController.maximumParallelReconciles", "value", configCopy.Spec.SeedController.MaximumParallelReconciles)
 	}
 
-	if copy.Spec.SeedController.BackupStoreContainer == "" {
-		if copy.Spec.SeedController.BackupRestore.Enabled {
-			copy.Spec.SeedController.BackupStoreContainer = strings.TrimSpace(DefaultNewBackupStoreContainer)
+	if configCopy.Spec.SeedController.BackupStoreContainer == "" {
+		if configCopy.Spec.SeedController.BackupRestore.Enabled {
+			configCopy.Spec.SeedController.BackupStoreContainer = strings.TrimSpace(DefaultNewBackupStoreContainer)
 		} else {
-			copy.Spec.SeedController.BackupStoreContainer = strings.TrimSpace(DefaultBackupStoreContainer)
+			configCopy.Spec.SeedController.BackupStoreContainer = strings.TrimSpace(DefaultBackupStoreContainer)
 		}
 		logger.Debugw("Defaulting field", "field", "seedController.backupStoreContainer")
 	}
 
-	if copy.Spec.SeedController.BackupCleanupContainer == "" && !copy.Spec.SeedController.BackupRestore.Enabled {
-		copy.Spec.SeedController.BackupCleanupContainer = strings.TrimSpace(DefaultBackupCleanupContainer)
+	if configCopy.Spec.SeedController.BackupCleanupContainer == "" && !configCopy.Spec.SeedController.BackupRestore.Enabled {
+		configCopy.Spec.SeedController.BackupCleanupContainer = strings.TrimSpace(DefaultBackupCleanupContainer)
 		logger.Debugw("Defaulting field", "field", "seedController.backupCleanupContainer")
 	}
 
-	if copy.Spec.SeedController.BackupRestore.Enabled {
-		if copy.Spec.SeedController.BackupRestore.S3Endpoint == "" {
-			copy.Spec.SeedController.BackupRestore.S3Endpoint = DefaultS3Endpoint
+	if configCopy.Spec.SeedController.BackupRestore.Enabled {
+		if configCopy.Spec.SeedController.BackupRestore.S3Endpoint == "" {
+			configCopy.Spec.SeedController.BackupRestore.S3Endpoint = DefaultS3Endpoint
 		}
-		if copy.Spec.SeedController.BackupRestore.S3BucketName == "" {
+		if configCopy.Spec.SeedController.BackupRestore.S3BucketName == "" {
 			return nil, fmt.Errorf("backupRestore.enabled is set, but s3BucketName is unset")
 		}
-		if copy.Spec.SeedController.BackupDeleteContainer == "" {
-			copy.Spec.SeedController.BackupDeleteContainer = strings.TrimSpace(DefaultNewBackupDeleteContainer)
+		if configCopy.Spec.SeedController.BackupDeleteContainer == "" {
+			configCopy.Spec.SeedController.BackupDeleteContainer = strings.TrimSpace(DefaultNewBackupDeleteContainer)
 			logger.Debugw("Defaulting field", "field", "seedController.backupDeleteContainer")
 		}
 	}
 
-	if copy.Spec.SeedController.Replicas == nil {
-		copy.Spec.SeedController.Replicas = pointer.Int32Ptr(DefaultSeedControllerMgrReplicas)
-		logger.Debugw("Defaulting field", "field", "seedController.replicas", "value", *copy.Spec.SeedController.Replicas)
+	if configCopy.Spec.SeedController.Replicas == nil {
+		configCopy.Spec.SeedController.Replicas = pointer.Int32Ptr(DefaultSeedControllerMgrReplicas)
+		logger.Debugw("Defaulting field", "field", "seedController.replicas", "value", *configCopy.Spec.SeedController.Replicas)
 	}
 
-	if copy.Spec.API.PProfEndpoint == nil {
-		copy.Spec.API.PProfEndpoint = pointer.StringPtr(DefaultPProfEndpoint)
-		logger.Debugw("Defaulting field", "field", "api.pprofEndpoint", "value", *copy.Spec.API.PProfEndpoint)
+	if configCopy.Spec.API.PProfEndpoint == nil {
+		configCopy.Spec.API.PProfEndpoint = pointer.StringPtr(DefaultPProfEndpoint)
+		logger.Debugw("Defaulting field", "field", "api.pprofEndpoint", "value", *configCopy.Spec.API.PProfEndpoint)
 	}
 
-	if copy.Spec.SeedController.PProfEndpoint == nil {
-		copy.Spec.SeedController.PProfEndpoint = pointer.StringPtr(DefaultPProfEndpoint)
-		logger.Debugw("Defaulting field", "field", "seedController.pprofEndpoint", "value", *copy.Spec.SeedController.PProfEndpoint)
+	if configCopy.Spec.SeedController.PProfEndpoint == nil {
+		configCopy.Spec.SeedController.PProfEndpoint = pointer.StringPtr(DefaultPProfEndpoint)
+		logger.Debugw("Defaulting field", "field", "seedController.pprofEndpoint", "value", *configCopy.Spec.SeedController.PProfEndpoint)
 	}
 
-	if copy.Spec.MasterController.PProfEndpoint == nil {
-		copy.Spec.MasterController.PProfEndpoint = pointer.StringPtr(DefaultPProfEndpoint)
-		logger.Debugw("Defaulting field", "field", "masterController.pprofEndpoint", "value", *copy.Spec.MasterController.PProfEndpoint)
+	if configCopy.Spec.MasterController.PProfEndpoint == nil {
+		configCopy.Spec.MasterController.PProfEndpoint = pointer.StringPtr(DefaultPProfEndpoint)
+		logger.Debugw("Defaulting field", "field", "masterController.pprofEndpoint", "value", *configCopy.Spec.MasterController.PProfEndpoint)
 	}
 
-	if copy.Spec.MasterController.Replicas == nil {
-		copy.Spec.MasterController.Replicas = pointer.Int32Ptr(DefaultMasterControllerMgrReplicas)
-		logger.Debugw("Defaulting field", "field", "masterController.replicas", "value", *copy.Spec.MasterController.Replicas)
+	if configCopy.Spec.MasterController.Replicas == nil {
+		configCopy.Spec.MasterController.Replicas = pointer.Int32Ptr(DefaultMasterControllerMgrReplicas)
+		logger.Debugw("Defaulting field", "field", "masterController.replicas", "value", *configCopy.Spec.MasterController.Replicas)
 	}
 
-	if len(copy.Spec.UserCluster.Addons.Kubernetes.Default) == 0 && copy.Spec.UserCluster.Addons.Kubernetes.DefaultManifests == "" {
-		copy.Spec.UserCluster.Addons.Kubernetes.DefaultManifests = strings.TrimSpace(DefaultKubernetesAddons)
+	if len(configCopy.Spec.UserCluster.Addons.Kubernetes.Default) == 0 && configCopy.Spec.UserCluster.Addons.Kubernetes.DefaultManifests == "" {
+		configCopy.Spec.UserCluster.Addons.Kubernetes.DefaultManifests = strings.TrimSpace(DefaultKubernetesAddons)
 		logger.Debugw("Defaulting field", "field", "userCluster.addons.kubernetes.defaultManifests")
 	}
 
-	if copy.Spec.UserCluster.APIServerReplicas == nil {
-		copy.Spec.UserCluster.APIServerReplicas = pointer.Int32Ptr(DefaultAPIServerReplicas)
-		logger.Debugw("Defaulting field", "field", "userCluster.apiserverReplicas", "value", *copy.Spec.UserCluster.APIServerReplicas)
+	if configCopy.Spec.UserCluster.APIServerReplicas == nil {
+		configCopy.Spec.UserCluster.APIServerReplicas = pointer.Int32Ptr(DefaultAPIServerReplicas)
+		logger.Debugw("Defaulting field", "field", "userCluster.apiserverReplicas", "value", *configCopy.Spec.UserCluster.APIServerReplicas)
 	}
 
-	if len(copy.Spec.API.AccessibleAddons) == 0 {
-		copy.Spec.API.AccessibleAddons = DefaultAccessibleAddons
-		logger.Debugw("Defaulting field", "field", "api.accessibleAddons", "value", copy.Spec.API.AccessibleAddons)
+	if len(configCopy.Spec.API.AccessibleAddons) == 0 {
+		configCopy.Spec.API.AccessibleAddons = DefaultAccessibleAddons
+		logger.Debugw("Defaulting field", "field", "api.accessibleAddons", "value", configCopy.Spec.API.AccessibleAddons)
 	}
 
-	if copy.Spec.API.Replicas == nil {
-		copy.Spec.API.Replicas = pointer.Int32Ptr(DefaultAPIReplicas)
-		logger.Debugw("Defaulting field", "field", "api.replicas", "value", *copy.Spec.API.Replicas)
+	if configCopy.Spec.API.Replicas == nil {
+		configCopy.Spec.API.Replicas = pointer.Int32Ptr(DefaultAPIReplicas)
+		logger.Debugw("Defaulting field", "field", "api.replicas", "value", *configCopy.Spec.API.Replicas)
 	}
 
-	if copy.Spec.UserCluster.NodePortRange == "" {
-		copy.Spec.UserCluster.NodePortRange = DefaultNodePortRange
-		logger.Debugw("Defaulting field", "field", "userCluster.nodePortRange", "value", copy.Spec.UserCluster.NodePortRange)
+	if configCopy.Spec.UserCluster.NodePortRange == "" {
+		configCopy.Spec.UserCluster.NodePortRange = DefaultNodePortRange
+		logger.Debugw("Defaulting field", "field", "userCluster.nodePortRange", "value", configCopy.Spec.UserCluster.NodePortRange)
 	}
 
-	if copy.Spec.UserCluster.EtcdVolumeSize == "" {
-		copy.Spec.UserCluster.EtcdVolumeSize = DefaultEtcdVolumeSize
-		logger.Debugw("Defaulting field", "field", "userCluster.etcdVolumeSize", "value", copy.Spec.UserCluster.EtcdVolumeSize)
+	if configCopy.Spec.UserCluster.EtcdVolumeSize == "" {
+		configCopy.Spec.UserCluster.EtcdVolumeSize = DefaultEtcdVolumeSize
+		logger.Debugw("Defaulting field", "field", "userCluster.etcdVolumeSize", "value", configCopy.Spec.UserCluster.EtcdVolumeSize)
 	}
 
-	if copy.Spec.Ingress.ClassName == "" {
-		copy.Spec.Ingress.ClassName = DefaultIngressClass
-		logger.Debugw("Defaulting field", "field", "ingress.className", "value", copy.Spec.Ingress.ClassName)
+	if configCopy.Spec.Ingress.ClassName == "" {
+		configCopy.Spec.Ingress.ClassName = DefaultIngressClass
+		logger.Debugw("Defaulting field", "field", "ingress.className", "value", configCopy.Spec.Ingress.ClassName)
 	}
 
-	if copy.Spec.UserCluster.Monitoring.ScrapeAnnotationPrefix == "" {
-		copy.Spec.UserCluster.Monitoring.ScrapeAnnotationPrefix = DefaultUserClusterScrapeAnnotationPrefix
-		logger.Debugw("Defaulting field", "field", "userCluster.monitoring.scrapeAnnotationPrefix", "value", copy.Spec.UserCluster.Monitoring.ScrapeAnnotationPrefix)
+	if configCopy.Spec.UserCluster.Monitoring.ScrapeAnnotationPrefix == "" {
+		configCopy.Spec.UserCluster.Monitoring.ScrapeAnnotationPrefix = DefaultUserClusterScrapeAnnotationPrefix
+		logger.Debugw("Defaulting field", "field", "userCluster.monitoring.scrapeAnnotationPrefix", "value", configCopy.Spec.UserCluster.Monitoring.ScrapeAnnotationPrefix)
 	}
 
 	// cert-manager's default is Issuer, but since we do not create an Issuer,
 	// it does not make sense to force to change the configuration for the
 	// default case
-	if copy.Spec.Ingress.CertificateIssuer.Kind == "" {
-		copy.Spec.Ingress.CertificateIssuer.Kind = certmanagerv1.ClusterIssuerKind
-		logger.Debugw("Defaulting field", "field", "ingress.certificateIssuer.kind", "value", copy.Spec.Ingress.CertificateIssuer.Kind)
+	if configCopy.Spec.Ingress.CertificateIssuer.Kind == "" {
+		configCopy.Spec.Ingress.CertificateIssuer.Kind = certmanagerv1.ClusterIssuerKind
+		logger.Debugw("Defaulting field", "field", "ingress.certificateIssuer.kind", "value", configCopy.Spec.Ingress.CertificateIssuer.Kind)
 	}
 
-	if copy.Spec.UI.Config == "" {
-		copy.Spec.UI.Config = strings.TrimSpace(DefaultUIConfig)
-		logger.Debugw("Defaulting field", "field", "ui.config", "value", copy.Spec.UI.Config)
+	if configCopy.Spec.UI.Config == "" {
+		configCopy.Spec.UI.Config = strings.TrimSpace(DefaultUIConfig)
+		logger.Debugw("Defaulting field", "field", "ui.config", "value", configCopy.Spec.UI.Config)
 	}
 
-	if copy.Spec.UI.Replicas == nil {
-		copy.Spec.UI.Replicas = pointer.Int32Ptr(DefaultUIReplicas)
-		logger.Debugw("Defaulting field", "field", "ui.replicas", "value", *copy.Spec.UI.Replicas)
+	if configCopy.Spec.UI.Replicas == nil {
+		configCopy.Spec.UI.Replicas = pointer.Int32Ptr(DefaultUIReplicas)
+		logger.Debugw("Defaulting field", "field", "ui.replicas", "value", *configCopy.Spec.UI.Replicas)
 	}
 
-	if err := defaultVersioning(&copy.Spec.Versions.Kubernetes, DefaultKubernetesVersioning, "versions.kubernetes", logger); err != nil {
-		return copy, err
+	if err := defaultVersioning(&configCopy.Spec.Versions.Kubernetes, DefaultKubernetesVersioning, "versions.kubernetes", logger); err != nil {
+		return configCopy, err
 	}
 
-	auth := copy.Spec.Auth
+	auth := configCopy.Spec.Auth
 
 	if auth.ClientID == "" {
 		auth.ClientID = DefaultAuthClientID
@@ -447,91 +447,91 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 		logger.Debugw("Defaulting field", "field", "auth.issuerClientID", "value", auth.IssuerClientID)
 	}
 
-	if auth.TokenIssuer == "" && copy.Spec.Ingress.Domain != "" {
-		auth.TokenIssuer = fmt.Sprintf("https://%s/dex", copy.Spec.Ingress.Domain)
+	if auth.TokenIssuer == "" && configCopy.Spec.Ingress.Domain != "" {
+		auth.TokenIssuer = fmt.Sprintf("https://%s/dex", configCopy.Spec.Ingress.Domain)
 		logger.Debugw("Defaulting field", "field", "auth.tokenIssuer", "value", auth.TokenIssuer)
 	}
 
-	if auth.IssuerRedirectURL == "" && copy.Spec.Ingress.Domain != "" {
-		auth.IssuerRedirectURL = fmt.Sprintf("https://%s/api/v1/kubeconfig", copy.Spec.Ingress.Domain)
+	if auth.IssuerRedirectURL == "" && configCopy.Spec.Ingress.Domain != "" {
+		auth.IssuerRedirectURL = fmt.Sprintf("https://%s/api/v1/kubeconfig", configCopy.Spec.Ingress.Domain)
 		logger.Debugw("Defaulting field", "field", "auth.issuerRedirectURL", "value", auth.IssuerRedirectURL)
 	}
 
-	copy.Spec.Auth = auth
+	configCopy.Spec.Auth = auth
 
-	if err := defaultDockerRepo(&copy.Spec.API.DockerRepository, DefaultKubermaticImage, "api.dockerRepository", logger); err != nil {
-		return copy, err
+	if err := defaultDockerRepo(&configCopy.Spec.API.DockerRepository, DefaultKubermaticImage, "api.dockerRepository", logger); err != nil {
+		return configCopy, err
 	}
 
-	if err := defaultDockerRepo(&copy.Spec.UI.DockerRepository, DefaultDashboardImage, "ui.dockerRepository", logger); err != nil {
-		return copy, err
+	if err := defaultDockerRepo(&configCopy.Spec.UI.DockerRepository, DefaultDashboardImage, "ui.dockerRepository", logger); err != nil {
+		return configCopy, err
 	}
 
-	if err := defaultDockerRepo(&copy.Spec.MasterController.DockerRepository, DefaultKubermaticImage, "masterController.dockerRepository", logger); err != nil {
-		return copy, err
+	if err := defaultDockerRepo(&configCopy.Spec.MasterController.DockerRepository, DefaultKubermaticImage, "masterController.dockerRepository", logger); err != nil {
+		return configCopy, err
 	}
 
-	if err := defaultDockerRepo(&copy.Spec.SeedController.DockerRepository, DefaultKubermaticImage, "seedController.dockerRepository", logger); err != nil {
-		return copy, err
+	if err := defaultDockerRepo(&configCopy.Spec.SeedController.DockerRepository, DefaultKubermaticImage, "seedController.dockerRepository", logger); err != nil {
+		return configCopy, err
 	}
 
-	if err := defaultDockerRepo(&copy.Spec.UserCluster.KubermaticDockerRepository, DefaultKubermaticImage, "userCluster.kubermaticDockerRepository", logger); err != nil {
-		return copy, err
+	if err := defaultDockerRepo(&configCopy.Spec.UserCluster.KubermaticDockerRepository, DefaultKubermaticImage, "userCluster.kubermaticDockerRepository", logger); err != nil {
+		return configCopy, err
 	}
 
-	if err := defaultDockerRepo(&copy.Spec.UserCluster.DNATControllerDockerRepository, DefaultDNATControllerImage, "userCluster.dnatControllerDockerRepository", logger); err != nil {
-		return copy, err
+	if err := defaultDockerRepo(&configCopy.Spec.UserCluster.DNATControllerDockerRepository, DefaultDNATControllerImage, "userCluster.dnatControllerDockerRepository", logger); err != nil {
+		return configCopy, err
 	}
 
-	if err := defaultDockerRepo(&copy.Spec.UserCluster.EtcdLauncherDockerRepository, DefaultEtcdLauncherImage, "userCluster.etcdLauncher.DockerRepository", logger); err != nil {
-		return copy, err
+	if err := defaultDockerRepo(&configCopy.Spec.UserCluster.EtcdLauncherDockerRepository, DefaultEtcdLauncherImage, "userCluster.etcdLauncher.DockerRepository", logger); err != nil {
+		return configCopy, err
 	}
 
-	if err := defaultDockerRepo(&copy.Spec.UserCluster.Addons.Kubernetes.DockerRepository, DefaultKubernetesAddonImage, "userCluster.addons.kubernetes.dockerRepository", logger); err != nil {
-		return copy, err
+	if err := defaultDockerRepo(&configCopy.Spec.UserCluster.Addons.Kubernetes.DockerRepository, DefaultKubernetesAddonImage, "userCluster.addons.kubernetes.dockerRepository", logger); err != nil {
+		return configCopy, err
 	}
 
-	if err := defaultDockerRepo(&copy.Spec.VerticalPodAutoscaler.Recommender.DockerRepository, DefaultVPARecommenderDockerRepository, "verticalPodAutoscaler.recommender.dockerRepository", logger); err != nil {
-		return copy, err
+	if err := defaultDockerRepo(&configCopy.Spec.VerticalPodAutoscaler.Recommender.DockerRepository, DefaultVPARecommenderDockerRepository, "verticalPodAutoscaler.recommender.dockerRepository", logger); err != nil {
+		return configCopy, err
 	}
 
-	if err := defaultDockerRepo(&copy.Spec.VerticalPodAutoscaler.Updater.DockerRepository, DefaultVPAUpdaterDockerRepository, "verticalPodAutoscaler.updater.dockerRepository", logger); err != nil {
-		return copy, err
+	if err := defaultDockerRepo(&configCopy.Spec.VerticalPodAutoscaler.Updater.DockerRepository, DefaultVPAUpdaterDockerRepository, "verticalPodAutoscaler.updater.dockerRepository", logger); err != nil {
+		return configCopy, err
 	}
 
-	if err := defaultDockerRepo(&copy.Spec.VerticalPodAutoscaler.AdmissionController.DockerRepository, DefaultVPAAdmissionControllerDockerRepository, "verticalPodAutoscaler.admissionController.dockerRepository", logger); err != nil {
-		return copy, err
+	if err := defaultDockerRepo(&configCopy.Spec.VerticalPodAutoscaler.AdmissionController.DockerRepository, DefaultVPAAdmissionControllerDockerRepository, "verticalPodAutoscaler.admissionController.dockerRepository", logger); err != nil {
+		return configCopy, err
 	}
 
-	if err := defaultResources(&copy.Spec.UI.Resources, DefaultUIResources, "ui.resources", logger); err != nil {
-		return copy, err
+	if err := defaultResources(&configCopy.Spec.UI.Resources, DefaultUIResources, "ui.resources", logger); err != nil {
+		return configCopy, err
 	}
 
-	if err := defaultResources(&copy.Spec.API.Resources, DefaultAPIResources, "api.resources", logger); err != nil {
-		return copy, err
+	if err := defaultResources(&configCopy.Spec.API.Resources, DefaultAPIResources, "api.resources", logger); err != nil {
+		return configCopy, err
 	}
 
-	if err := defaultResources(&copy.Spec.SeedController.Resources, DefaultSeedControllerMgrResources, "seedController.resources", logger); err != nil {
-		return copy, err
+	if err := defaultResources(&configCopy.Spec.SeedController.Resources, DefaultSeedControllerMgrResources, "seedController.resources", logger); err != nil {
+		return configCopy, err
 	}
 
-	if err := defaultResources(&copy.Spec.MasterController.Resources, DefaultMasterControllerMgrResources, "masterController.resources", logger); err != nil {
-		return copy, err
+	if err := defaultResources(&configCopy.Spec.MasterController.Resources, DefaultMasterControllerMgrResources, "masterController.resources", logger); err != nil {
+		return configCopy, err
 	}
 
-	if err := defaultResources(&copy.Spec.VerticalPodAutoscaler.Recommender.Resources, DefaultVPARecommenderResources, "verticalPodAutoscaler.recommender.resources", logger); err != nil {
-		return copy, err
+	if err := defaultResources(&configCopy.Spec.VerticalPodAutoscaler.Recommender.Resources, DefaultVPARecommenderResources, "verticalPodAutoscaler.recommender.resources", logger); err != nil {
+		return configCopy, err
 	}
 
-	if err := defaultResources(&copy.Spec.VerticalPodAutoscaler.Updater.Resources, DefaultVPAUpdaterResources, "verticalPodAutoscaler.updater.resources", logger); err != nil {
-		return copy, err
+	if err := defaultResources(&configCopy.Spec.VerticalPodAutoscaler.Updater.Resources, DefaultVPAUpdaterResources, "verticalPodAutoscaler.updater.resources", logger); err != nil {
+		return configCopy, err
 	}
 
-	if err := defaultResources(&copy.Spec.VerticalPodAutoscaler.AdmissionController.Resources, DefaultVPAAdmissionControllerResources, "verticalPodAutoscaler.admissionController.resources", logger); err != nil {
-		return copy, err
+	if err := defaultResources(&configCopy.Spec.VerticalPodAutoscaler.AdmissionController.Resources, DefaultVPAAdmissionControllerResources, "verticalPodAutoscaler.admissionController.resources", logger); err != nil {
+		return configCopy, err
 	}
 
-	return copy, nil
+	return configCopy, nil
 }
 
 // DefaultSeed fills in missing values in the Seed's spec by copying them from the global
@@ -542,45 +542,45 @@ func DefaultSeed(seed *kubermaticv1.Seed, config *operatorv1alpha1.KubermaticCon
 	logger = logger.With("seed", seed.Name)
 	logger.Debug("Applying defaults to Seed")
 
-	copy := seed.DeepCopy()
+	seedCopy := seed.DeepCopy()
 
-	if copy.Spec.ExposeStrategy == "" {
-		copy.Spec.ExposeStrategy = config.Spec.ExposeStrategy
+	if seedCopy.Spec.ExposeStrategy == "" {
+		seedCopy.Spec.ExposeStrategy = config.Spec.ExposeStrategy
 	}
 
-	if err := defaultDockerRepo(&copy.Spec.NodeportProxy.Envoy.DockerRepository, DefaultEnvoyDockerRepository, "nodeportProxy.envoy.dockerRepository", logger); err != nil {
-		return copy, err
+	if err := defaultDockerRepo(&seedCopy.Spec.NodeportProxy.Envoy.DockerRepository, DefaultEnvoyDockerRepository, "nodeportProxy.envoy.dockerRepository", logger); err != nil {
+		return seedCopy, err
 	}
 
-	if err := defaultDockerRepo(&copy.Spec.NodeportProxy.EnvoyManager.DockerRepository, DefaultNodeportProxyDockerRepository, "nodeportProxy.envoyManager.dockerRepository", logger); err != nil {
-		return copy, err
+	if err := defaultDockerRepo(&seedCopy.Spec.NodeportProxy.EnvoyManager.DockerRepository, DefaultNodeportProxyDockerRepository, "nodeportProxy.envoyManager.dockerRepository", logger); err != nil {
+		return seedCopy, err
 	}
 
-	if err := defaultDockerRepo(&copy.Spec.NodeportProxy.Updater.DockerRepository, DefaultNodeportProxyDockerRepository, "nodeportProxy.updater.dockerRepository", logger); err != nil {
-		return copy, err
+	if err := defaultDockerRepo(&seedCopy.Spec.NodeportProxy.Updater.DockerRepository, DefaultNodeportProxyDockerRepository, "nodeportProxy.updater.dockerRepository", logger); err != nil {
+		return seedCopy, err
 	}
 
-	if err := defaultResources(&copy.Spec.NodeportProxy.Envoy.Resources, DefaultNodeportProxyEnvoyResources, "nodeportProxy.envoy.resources", logger); err != nil {
-		return copy, err
+	if err := defaultResources(&seedCopy.Spec.NodeportProxy.Envoy.Resources, DefaultNodeportProxyEnvoyResources, "nodeportProxy.envoy.resources", logger); err != nil {
+		return seedCopy, err
 	}
 
-	if err := defaultResources(&copy.Spec.NodeportProxy.EnvoyManager.Resources, DefaultNodeportProxyEnvoyManagerResources, "nodeportProxy.envoyManager.resources", logger); err != nil {
-		return copy, err
+	if err := defaultResources(&seedCopy.Spec.NodeportProxy.EnvoyManager.Resources, DefaultNodeportProxyEnvoyManagerResources, "nodeportProxy.envoyManager.resources", logger); err != nil {
+		return seedCopy, err
 	}
 
-	if err := defaultResources(&copy.Spec.NodeportProxy.Updater.Resources, DefaultNodeportProxyUpdaterResources, "nodeportProxy.updater.resources", logger); err != nil {
-		return copy, err
+	if err := defaultResources(&seedCopy.Spec.NodeportProxy.Updater.Resources, DefaultNodeportProxyUpdaterResources, "nodeportProxy.updater.resources", logger); err != nil {
+		return seedCopy, err
 	}
 
-	if len(copy.Spec.NodeportProxy.Annotations) == 0 {
-		copy.Spec.NodeportProxy.Annotations = DefaultNodeportProxyServiceAnnotations
-		logger.Debugw("Defaulting field", "field", "nodeportProxy.annotations", "value", copy.Spec.NodeportProxy.Annotations)
+	if len(seedCopy.Spec.NodeportProxy.Annotations) == 0 {
+		seedCopy.Spec.NodeportProxy.Annotations = DefaultNodeportProxyServiceAnnotations
+		logger.Debugw("Defaulting field", "field", "nodeportProxy.annotations", "value", seedCopy.Spec.NodeportProxy.Annotations)
 	}
 
 	// apply settings from the KubermaticConfiguration to the Seed, in case they are not set there;
 	// over time, we move pretty much all of this into the Seed, but this code copies the still existing,
 	// deprecated fields over.
-	settings := &copy.Spec.DefaultComponentSettings
+	settings := &seedCopy.Spec.DefaultComponentSettings
 
 	if settings.Apiserver.Replicas == nil {
 		settings.Apiserver.Replicas = config.Spec.UserCluster.APIServerReplicas
@@ -605,7 +605,7 @@ func DefaultSeed(seed *kubermaticv1.Seed, config *operatorv1alpha1.KubermaticCon
 	if settings.Etcd.DiskSize == nil {
 		etcdDiskSize, err := resource.ParseQuantity(config.Spec.UserCluster.EtcdVolumeSize)
 		if err != nil {
-			return copy, fmt.Errorf("failed to parse spec.userCluster.etcdVolumeSize %q in KubermaticConfiguration: %v", config.Spec.UserCluster.EtcdVolumeSize, err)
+			return seedCopy, fmt.Errorf("failed to parse spec.userCluster.etcdVolumeSize %q in KubermaticConfiguration: %w", config.Spec.UserCluster.EtcdVolumeSize, err)
 		}
 		settings.Etcd.DiskSize = &etcdDiskSize
 	}
@@ -614,7 +614,7 @@ func DefaultSeed(seed *kubermaticv1.Seed, config *operatorv1alpha1.KubermaticCon
 		settings.Etcd.ClusterSize = pointer.Int32(kubermaticv1.DefaultEtcdClusterSize)
 	}
 
-	return copy, nil
+	return seedCopy, nil
 }
 
 func defaultDockerRepo(repo *string, defaultRepo string, key string, logger *zap.SugaredLogger) error {
@@ -627,7 +627,7 @@ func defaultDockerRepo(repo *string, defaultRepo string, key string, logger *zap
 
 	ref, err := reference.Parse(*repo)
 	if err != nil {
-		return fmt.Errorf("invalid docker repository '%s' configured for %s: %v", *repo, key, err)
+		return fmt.Errorf("invalid docker repository '%s' configured for %s: %w", *repo, key, err)
 	}
 
 	if _, ok := ref.(reference.Tagged); ok {
@@ -644,11 +644,11 @@ func defaultResources(settings *corev1.ResourceRequirements, defaults corev1.Res
 	}
 
 	if err := defaultResourceList(&settings.Requests, defaults.Requests, key+".requests", logger); err != nil {
-		return fmt.Errorf("failed to default requests: %v", err)
+		return fmt.Errorf("failed to default requests: %w", err)
 	}
 
 	if err := defaultResourceList(&settings.Limits, defaults.Limits, key+".limits", logger); err != nil {
-		return fmt.Errorf("failed to default limits: %v", err)
+		return fmt.Errorf("failed to default limits: %w", err)
 	}
 
 	return nil

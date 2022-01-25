@@ -42,7 +42,6 @@ import (
 const userProjectBindingName = "user-project-binding-test"
 
 func TestReconcile(t *testing.T) {
-
 	testCases := []struct {
 		name                       string
 		requestName                string

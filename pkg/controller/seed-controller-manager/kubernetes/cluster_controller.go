@@ -57,7 +57,7 @@ const (
 	ControllerName = "kubermatic_kubernetes_controller"
 )
 
-// userClusterConnectionProvider offers functions to retrieve clients for the given user clusters
+// userClusterConnectionProvider offers functions to retrieve clients for the given user clusters.
 type userClusterConnectionProvider interface {
 	GetClient(context.Context, *kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
 }
@@ -70,7 +70,7 @@ type Features struct {
 	Konnectivity                 bool
 }
 
-// Reconciler is a controller which is responsible for managing clusters
+// Reconciler is a controller which is responsible for managing clusters.
 type Reconciler struct {
 	ctrlruntimeclient.Client
 	log                     *zap.SugaredLogger
@@ -138,8 +138,8 @@ func Add(
 	caBundle *certificates.CABundle,
 
 	features Features,
-	versions kubermatic.Versions) error {
-
+	versions kubermatic.Versions,
+) error {
 	reconciler := &Reconciler{
 		log:                     log.Named(ControllerName),
 		Client:                  mgr.GetClient(),
@@ -199,7 +199,7 @@ func Add(
 
 	for _, t := range typesToWatch {
 		if err := c.Watch(&source.Kind{Type: t}, controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient())); err != nil {
-			return fmt.Errorf("failed to create watcher for %T: %v", t, err)
+			return fmt.Errorf("failed to create watcher for %T: %w", t, err)
 		}
 	}
 
@@ -265,7 +265,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		userClusterClientGetter := func() (ctrlruntimeclient.Client, error) {
 			client, err := r.userClusterConnProvider.GetClient(ctx, cluster)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get user cluster client: %v", err)
+				return nil, fmt.Errorf("failed to get user cluster client: %w", err)
 			}
 			return client, nil
 		}
@@ -277,13 +277,13 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	if err != nil {
 		updateErr := r.updateClusterError(ctx, cluster, kubermaticv1.ReconcileClusterError, err.Error())
 		if updateErr != nil {
-			return nil, fmt.Errorf("failed to set the cluster error: %v", updateErr)
+			return nil, fmt.Errorf("failed to set the cluster error: %w", updateErr)
 		}
 		return nil, fmt.Errorf("failed to reconcile cluster: %w", err)
 	}
 
 	if err := r.clearClusterError(ctx, cluster); err != nil {
-		return nil, fmt.Errorf("failed to clear error on cluster: %v", err)
+		return nil, fmt.Errorf("failed to clear error on cluster: %w", err)
 	}
 
 	return res, nil
@@ -321,7 +321,7 @@ func (r *Reconciler) updateClusterError(ctx context.Context, cluster *kubermatic
 			c.Status.ErrorReason = &reason
 		})
 		if err != nil {
-			return fmt.Errorf("failed to set error status on cluster to: errorReason=%q errorMessage=%q. Could not update cluster: %v", reason, message, err)
+			return fmt.Errorf("failed to set error status on cluster to: errorReason=%q errorMessage=%q. Could not update cluster: %w", reason, message, err)
 		}
 	}
 

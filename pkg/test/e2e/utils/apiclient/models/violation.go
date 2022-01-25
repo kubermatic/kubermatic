@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// Violation Violation represents a gatekeeper constraint violation
+// Violation Violation represents a gatekeeper constraint violation.
 //
 // swagger:model Violation
 type Violation struct {

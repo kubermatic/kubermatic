@@ -46,7 +46,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// ExternalClusterProvider struct that holds required components in order to provide connection to the cluster
+// ExternalClusterProvider struct that holds required components in order to provide connection to the cluster.
 type ExternalClusterProvider struct {
 	// createSeedImpersonatedClient is used as a ground for impersonation
 	createMasterImpersonatedClient ImpersonationClient
@@ -54,7 +54,7 @@ type ExternalClusterProvider struct {
 	restMapperCache                *restmapper.Cache
 }
 
-// NewExternalClusterProvider returns an external cluster provider
+// NewExternalClusterProvider returns an external cluster provider.
 func NewExternalClusterProvider(createMasterImpersonatedClient ImpersonationClient, client ctrlruntimeclient.Client) (*ExternalClusterProvider, error) {
 	return &ExternalClusterProvider{
 		createMasterImpersonatedClient: createMasterImpersonatedClient,
@@ -63,7 +63,7 @@ func NewExternalClusterProvider(createMasterImpersonatedClient ImpersonationClie
 	}, nil
 }
 
-// New creates a brand new external cluster in the system with the given name
+// New creates a brand new external cluster in the system with the given name.
 func (p *ExternalClusterProvider) New(userInfo *provider.UserInfo, project *kubermaticapiv1.Project, cluster *kubermaticapiv1.ExternalCluster) (*kubermaticapiv1.ExternalCluster, error) {
 	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
@@ -79,7 +79,7 @@ func (p *ExternalClusterProvider) New(userInfo *provider.UserInfo, project *kube
 // NewUnsecured creates a brand new external cluster in the system with the given name
 //
 // Note that this function:
-// is unsafe in a sense that it uses privileged account to create the resource
+// is unsafe in a sense that it uses privileged account to create the resource.
 func (p *ExternalClusterProvider) NewUnsecured(project *kubermaticapiv1.Project, cluster *kubermaticapiv1.ExternalCluster) (*kubermaticapiv1.ExternalCluster, error) {
 	addProjectReference(project, cluster)
 	if err := p.clientPrivileged.Create(context.Background(), cluster); err != nil {
@@ -88,9 +88,8 @@ func (p *ExternalClusterProvider) NewUnsecured(project *kubermaticapiv1.Project,
 	return cluster, nil
 }
 
-// Get returns the given cluster
+// Get returns the given cluster.
 func (p *ExternalClusterProvider) Get(userInfo *provider.UserInfo, clusterName string) (*kubermaticapiv1.ExternalCluster, error) {
-
 	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
@@ -104,7 +103,7 @@ func (p *ExternalClusterProvider) Get(userInfo *provider.UserInfo, clusterName s
 	return cluster, nil
 }
 
-// Delete deletes the given cluster
+// Delete deletes the given cluster.
 func (p *ExternalClusterProvider) Delete(userInfo *provider.UserInfo, cluster *kubermaticapiv1.ExternalCluster) error {
 	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
@@ -122,7 +121,7 @@ func (p *ExternalClusterProvider) Delete(userInfo *provider.UserInfo, cluster *k
 
 // DeleteUnsecured deletes an external cluster.
 //
-// Note that the admin privileges are used to delete cluster
+// Note that the admin privileges are used to delete cluster.
 func (p *ExternalClusterProvider) DeleteUnsecured(cluster *kubermaticapiv1.ExternalCluster) error {
 	// Will delete all child's after the object is gone - otherwise the etcd might be deleted before all machines are gone
 	// See https://kubernetes.io/docs/concepts/workloads/controllers/garbage-collection/#controlling-how-the-garbage-collector-deletes-dependents
@@ -135,9 +134,8 @@ func (p *ExternalClusterProvider) DeleteUnsecured(cluster *kubermaticapiv1.Exter
 
 // GetUnsecured returns an external cluster for the project and given name.
 //
-// Note that the admin privileges are used to get cluster
+// Note that the admin privileges are used to get cluster.
 func (p *ExternalClusterProvider) GetUnsecured(clusterName string) (*kubermaticapiv1.ExternalCluster, error) {
-
 	cluster := &kubermaticapiv1.ExternalCluster{}
 	if err := p.clientPrivileged.Get(context.Background(), types.NamespacedName{Name: clusterName}, cluster); err != nil {
 		return nil, err
@@ -146,7 +144,7 @@ func (p *ExternalClusterProvider) GetUnsecured(clusterName string) (*kubermatica
 	return cluster, nil
 }
 
-// List gets all external clusters that belong to the given project
+// List gets all external clusters that belong to the given project.
 func (p *ExternalClusterProvider) List(project *kubermaticapiv1.Project) (*kubermaticapiv1.ExternalClusterList, error) {
 	if project == nil {
 		return nil, errors.New("project is missing but required")
@@ -156,13 +154,13 @@ func (p *ExternalClusterProvider) List(project *kubermaticapiv1.Project) (*kuber
 	selector := labels.SelectorFromSet(map[string]string{kubermaticapiv1.ProjectIDLabelKey: project.Name})
 	listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: selector}
 	if err := p.clientPrivileged.List(context.Background(), projectClusters, listOpts); err != nil {
-		return nil, fmt.Errorf("failed to list clusters: %v", err)
+		return nil, fmt.Errorf("failed to list clusters: %w", err)
 	}
 
 	return projectClusters, nil
 }
 
-// Update updates the given cluster
+// Update updates the given cluster.
 func (p *ExternalClusterProvider) UpdateUnsecured(cluster *kubermaticapiv1.ExternalCluster) (*kubermaticapiv1.ExternalCluster, error) {
 	if err := p.clientPrivileged.Update(context.Background(), cluster); err != nil {
 		return nil, err
@@ -170,7 +168,7 @@ func (p *ExternalClusterProvider) UpdateUnsecured(cluster *kubermaticapiv1.Exter
 	return cluster, nil
 }
 
-// Update updates the given cluster
+// Update updates the given cluster.
 func (p *ExternalClusterProvider) Update(userInfo *provider.UserInfo, cluster *kubermaticapiv1.ExternalCluster) (*kubermaticapiv1.ExternalCluster, error) {
 	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
@@ -198,7 +196,6 @@ func addProjectReference(project *kubermaticapiv1.Project, cluster *kubermaticap
 }
 
 func (p *ExternalClusterProvider) GenerateClient(cfg *clientcmdapi.Config) (ctrlruntimeclient.Client, error) {
-
 	clientConfig, err := getRestConfig(cfg)
 	if err != nil {
 		return nil, err
@@ -308,7 +305,7 @@ func (p *ExternalClusterProvider) IsMetricServerAvailable(cluster *kubermaticapi
 
 	allNodeMetricsList := &v1beta1.NodeMetricsList{}
 	if err := client.List(context.Background(), allNodeMetricsList); err != nil {
-		if _, ok := err.(*meta.NoKindMatchError); ok {
+		if meta.IsNoMatchError(err) {
 			return false, nil
 		}
 		return false, err
@@ -332,13 +329,12 @@ func (p *ExternalClusterProvider) ensureKubeconfigSecret(ctx context.Context, cl
 
 	if err := p.clientPrivileged.Get(ctx, namespacedName, existingSecret); err != nil {
 		if !kerrors.IsNotFound(err) {
-			return nil, fmt.Errorf("failed to probe for secret %q: %v", name, err)
+			return nil, fmt.Errorf("failed to probe for secret %q: %w", name, err)
 		}
 		return createKubeconfigSecret(ctx, p.clientPrivileged, name, projectID, secretData)
 	}
 
 	return updateKubeconfigSecret(ctx, p.clientPrivileged, existingSecret, projectID, secretData)
-
 }
 
 func createKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client, name, projectID string, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
@@ -352,7 +348,7 @@ func createKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client
 		Data: secretData,
 	}
 	if err := client.Create(ctx, secret); err != nil {
-		return nil, fmt.Errorf("failed to create kubeconfig secret: %v", err)
+		return nil, fmt.Errorf("failed to create kubeconfig secret: %w", err)
 	}
 	return &providerconfig.GlobalSecretKeySelector{
 		ObjectReference: corev1.ObjectReference{
@@ -384,7 +380,7 @@ func updateKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client
 	if requiresUpdate {
 		existingSecret.Data = secretData
 		if err := client.Update(ctx, existingSecret); err != nil {
-			return nil, fmt.Errorf("failed to update kubeconfig secret: %v", err)
+			return nil, fmt.Errorf("failed to update kubeconfig secret: %w", err)
 		}
 	}
 

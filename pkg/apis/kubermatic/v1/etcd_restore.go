@@ -22,19 +22,19 @@ import (
 )
 
 const (
-	// EtcdRestoreResourceName represents "Resource" defined in Kubernetes
+	// EtcdRestoreResourceName represents "Resource" defined in Kubernetes.
 	EtcdRestoreResourceName = "etcdrestores"
 
-	// EtcdRestoreKindName represents "Kind" defined in Kubernetes
+	// EtcdRestoreKindName represents "Kind" defined in Kubernetes.
 	EtcdRestoreKindName = "EtcdRestore"
 
-	// EtcdRestorePhaseStarted value indicating that the restore has started
+	// EtcdRestorePhaseStarted value indicating that the restore has started.
 	EtcdRestorePhaseStarted EtcdRestorePhase = "Started"
 
-	// EtcdRestorePhaseStsRebuilding value indicating that the old Etcd statefulset has been deleted and is now rebuilding
+	// EtcdRestorePhaseStsRebuilding value indicating that the old Etcd statefulset has been deleted and is now rebuilding.
 	EtcdRestorePhaseStsRebuilding EtcdRestorePhase = "StsRebuilding"
 
-	// EtcdRestorePhaseCompleted value indicating that the old Etcd statefulset has completed successfully
+	// EtcdRestorePhaseCompleted value indicating that the old Etcd statefulset has completed successfully.
 	EtcdRestorePhaseCompleted EtcdRestorePhase = "Completed"
 )
 
@@ -48,7 +48,7 @@ type EtcdRestorePhase string
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:JSONPath=".status.phase",name="Phase",type="string"
 
-// EtcdRestore specifies a add-on
+// EtcdRestore specifies a add-on.
 type EtcdRestore struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -57,7 +57,7 @@ type EtcdRestore struct {
 	Status EtcdRestoreStatus `json:"status,omitempty"`
 }
 
-// EtcdRestoreSpec specifies details of an etcd restore
+// EtcdRestoreSpec specifies details of an etcd restore.
 type EtcdRestoreSpec struct {
 	// Name defines the name of the restore
 	// The name of the restore file in S3 will be <cluster>-<restore name>
@@ -78,7 +78,7 @@ type EtcdRestoreSpec struct {
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 
-// EtcdRestoreList is a list of etcd restores
+// EtcdRestoreList is a list of etcd restores.
 type EtcdRestoreList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

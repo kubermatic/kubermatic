@@ -65,7 +65,7 @@ func (p *PrivilegedMLAAdminSettingProvider) DeleteUnsecured(cluster *kubermaticv
 	})
 }
 
-// NewPrivilegedMLAAdminSettingProvider returns a MLAAdminSetting provider
+// NewPrivilegedMLAAdminSettingProvider returns a MLAAdminSetting provider.
 func NewPrivilegedMLAAdminSettingProvider(privilegedClient ctrlruntimeclient.Client) *PrivilegedMLAAdminSettingProvider {
 	return &PrivilegedMLAAdminSettingProvider{
 		privilegedClient: privilegedClient,

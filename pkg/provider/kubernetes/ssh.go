@@ -32,13 +32,13 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// PrivilegedSSHKeyProvider represents a data structure that knows how to manage ssh keys in a privileged way
+// PrivilegedSSHKeyProvider represents a data structure that knows how to manage ssh keys in a privileged way.
 type PrivilegedSSHKeyProvider struct {
 	// treat clientPrivileged as a privileged user and use wisely
 	clientPrivileged ctrlruntimeclient.Client
 }
 
-// NewPrivilegedSSHKeyProvider returns a privileged ssh key provider
+// NewPrivilegedSSHKeyProvider returns a privileged ssh key provider.
 func NewPrivilegedSSHKeyProvider(client ctrlruntimeclient.Client) (*PrivilegedSSHKeyProvider, error) {
 	return &PrivilegedSSHKeyProvider{
 		clientPrivileged: client,
@@ -46,13 +46,13 @@ func NewPrivilegedSSHKeyProvider(client ctrlruntimeclient.Client) (*PrivilegedSS
 }
 
 // NewSSHKeyProvider returns a new ssh key provider that respects RBAC policies
-// it uses createMasterImpersonatedClient to create a connection that uses User Impersonation
+// it uses createMasterImpersonatedClient to create a connection that uses User Impersonation.
 func NewSSHKeyProvider(createMasterImpersonatedClient ImpersonationClient, client ctrlruntimeclient.Client) *SSHKeyProvider {
 	return &SSHKeyProvider{createMasterImpersonatedClient: createMasterImpersonatedClient, client: client}
 }
 
 // SSHKeyProvider struct that holds required components in order to provide
-// ssh key provider that is RBAC compliant
+// ssh key provider that is RBAC compliant.
 type SSHKeyProvider struct {
 	// createMasterImpersonatedClient is used as a ground for impersonation
 	// whenever a connection to Seed API server is required
@@ -61,7 +61,7 @@ type SSHKeyProvider struct {
 	client ctrlruntimeclient.Client
 }
 
-// Create creates a ssh key that will belong to the given project
+// Create creates a ssh key that will belong to the given project.
 func (p *SSHKeyProvider) Create(userInfo *provider.UserInfo, project *kubermaticapiv1.Project, keyName, pubKey string) (*kubermaticapiv1.UserSSHKey, error) {
 	if keyName == "" {
 		return nil, fmt.Errorf("the ssh key name is missing but required")
@@ -89,7 +89,7 @@ func (p *SSHKeyProvider) Create(userInfo *provider.UserInfo, project *kubermatic
 }
 
 // Create creates a ssh key that belongs to the given project
-// This function is unsafe in a sense that it uses privileged account to create the ssh key
+// This function is unsafe in a sense that it uses privileged account to create the ssh key.
 func (p *PrivilegedSSHKeyProvider) CreateUnsecured(project *kubermaticapiv1.Project, keyName, pubKey string) (*kubermaticapiv1.UserSSHKey, error) {
 	if keyName == "" {
 		return nil, fmt.Errorf("the ssh key name is missing but required")
@@ -112,7 +112,7 @@ func (p *PrivilegedSSHKeyProvider) CreateUnsecured(project *kubermaticapiv1.Proj
 func genUserSSHKey(project *kubermaticapiv1.Project, keyName, pubKey string) (*kubermaticapiv1.UserSSHKey, error) {
 	pubKeyParsed, _, _, _, err := ssh.ParseAuthorizedKey([]byte(pubKey))
 	if err != nil {
-		return nil, fmt.Errorf("the provided ssh key is invalid due to = %v", err)
+		return nil, fmt.Errorf("the provided ssh key is invalid: %w", err)
 	}
 	sshKeyHash := ssh.FingerprintLegacyMD5(pubKeyParsed)
 
@@ -192,10 +192,9 @@ func (p *SSHKeyProvider) List(project *kubermaticapiv1.Project, options *provide
 		}
 	}
 	return filteredKeys, nil
-
 }
 
-// Get returns a key with the given name
+// Get returns a key with the given name.
 func (p *SSHKeyProvider) Get(userInfo *provider.UserInfo, keyName string) (*kubermaticapiv1.UserSSHKey, error) {
 	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
@@ -208,7 +207,7 @@ func (p *SSHKeyProvider) Get(userInfo *provider.UserInfo, keyName string) (*kube
 	return userKey, nil
 }
 
-// Delete simply deletes the given key
+// Delete simply deletes the given key.
 func (p *SSHKeyProvider) Delete(userInfo *provider.UserInfo, keyName string) error {
 	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
@@ -218,14 +217,14 @@ func (p *SSHKeyProvider) Delete(userInfo *provider.UserInfo, keyName string) err
 }
 
 // Delete deletes the given ssh key
-// This function is unsafe in a sense that it uses privileged account to delete the ssh key
+// This function is unsafe in a sense that it uses privileged account to delete the ssh key.
 func (p *PrivilegedSSHKeyProvider) DeleteUnsecured(keyName string) error {
 	return p.clientPrivileged.Delete(context.Background(), &kubermaticapiv1.UserSSHKey{
 		ObjectMeta: metav1.ObjectMeta{Name: keyName},
 	})
 }
 
-// Update simply updates the given key
+// Update simply updates the given key.
 func (p *SSHKeyProvider) Update(userInfo *provider.UserInfo, newKey *kubermaticapiv1.UserSSHKey) (*kubermaticapiv1.UserSSHKey, error) {
 	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
@@ -238,7 +237,7 @@ func (p *SSHKeyProvider) Update(userInfo *provider.UserInfo, newKey *kubermatica
 }
 
 // UpdateUnsecured update a specific ssh key and returns the updated ssh key
-// This function is unsafe in a sense that it uses privileged account to update the ssh key
+// This function is unsafe in a sense that it uses privileged account to update the ssh key.
 func (p *PrivilegedSSHKeyProvider) UpdateUnsecured(sshKey *kubermaticapiv1.UserSSHKey) (*kubermaticapiv1.UserSSHKey, error) {
 	if err := p.clientPrivileged.Update(context.Background(), sshKey); err != nil {
 		return nil, err
@@ -247,7 +246,7 @@ func (p *PrivilegedSSHKeyProvider) UpdateUnsecured(sshKey *kubermaticapiv1.UserS
 }
 
 // GetUnsecured returns a key with the given name
-// This function is unsafe in a sense that it uses privileged account to get the ssh key
+// This function is unsafe in a sense that it uses privileged account to get the ssh key.
 func (p *PrivilegedSSHKeyProvider) GetUnsecured(keyName string) (*kubermaticapiv1.UserSSHKey, error) {
 	userSSHKey := &kubermaticapiv1.UserSSHKey{}
 	if err := p.clientPrivileged.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: keyName}, userSSHKey); err != nil {

@@ -119,7 +119,7 @@ spec:
 )
 
 var (
-	// testManifest1 & testManifest3 have a linebreak at the end, testManifest2 not
+	// testManifest1 & testManifest3 have a linebreak at the end, testManifest2 not.
 	combinedTestManifest = fmt.Sprintf("%s---\n%s\n---\n%s", testManifests[0], testManifests[1], testManifests[2])
 )
 
@@ -371,7 +371,6 @@ func TestController_getAddonManifests(t *testing.T) {
 			t.Errorf("Invalid manifest returned, expected \n%q\n, got \n%q", string(expected.Raw), string(manifests[idx].Raw))
 		}
 	}
-
 }
 
 func TestController_ensureAddonLabelOnManifests(t *testing.T) {

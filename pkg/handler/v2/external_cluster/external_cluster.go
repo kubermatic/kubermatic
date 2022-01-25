@@ -204,7 +204,7 @@ func DecodeCreateReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-// Validate validates CreateEndpoint request
+// Validate validates CreateEndpoint request.
 func (req createClusterReq) Validate() error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("the project ID cannot be empty")
@@ -264,7 +264,7 @@ func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-// Validate validates DeleteEndpoint request
+// Validate validates DeleteEndpoint request.
 func (req deleteClusterReq) Validate() error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("the project ID cannot be empty")
@@ -323,7 +323,7 @@ func DecodeListReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-// Validate validates ListEndpoint request
+// Validate validates ListEndpoint request.
 func (req listClusterReq) Validate() error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("the project ID cannot be empty")
@@ -397,7 +397,7 @@ func DecodeGetReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-// Validate validates DeleteEndpoint request
+// Validate validates DeleteEndpoint request.
 func (req getClusterReq) Validate() error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("the project ID cannot be empty")
@@ -503,7 +503,6 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 
 		cloud := cluster.Spec.CloudSpec
 		if cloud != nil {
-
 			secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
 
 			if cloud.GKE != nil {
@@ -531,7 +530,7 @@ type patchClusterReq struct {
 	Patch json.RawMessage
 }
 
-// Validate validates CreateEndpoint request
+// Validate validates CreateEndpoint request.
 func (req patchClusterReq) Validate() error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("the project ID cannot be empty")
@@ -602,7 +601,7 @@ func DecodeUpdateReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-// Validate validates CreateEndpoint request
+// Validate validates CreateEndpoint request.
 func (req updateClusterReq) Validate() error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("the project ID cannot be empty")
@@ -735,7 +734,6 @@ func ListEventsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider 
 				}
 				events = append(events, nodeEvents...)
 			}
-
 		}
 		kubermaticEvents, err := common.GetEvents(ctx, privilegedClusterProvider.GetMasterClient(), cluster, metav1.NamespaceDefault)
 		if err != nil {
@@ -789,7 +787,7 @@ func DecodeListEventsReq(c context.Context, r *http.Request) (interface{}, error
 	return req, nil
 }
 
-// Validate validates ListNodesEventsEndpoint request
+// Validate validates ListNodesEventsEndpoint request.
 func (req listEventsReq) Validate() error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("the project ID cannot be empty")

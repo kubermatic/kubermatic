@@ -91,7 +91,7 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *kubermati
 	if nd.Spec.DynamicConfig != nil && *nd.Spec.DynamicConfig {
 		kubeletVersion, err := semver.NewVersion(nd.Spec.Template.Versions.Kubelet)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse kubelet version: %v", err)
+			return nil, fmt.Errorf("failed to parse kubelet version: %w", err)
 		}
 
 		md.Spec.Template.Spec.ConfigSource = &corev1.NodeConfigSource{
@@ -312,7 +312,7 @@ func Validate(nd *apiv1.NodeDeployment, controlPlaneVersion *semver.Version) (*a
 	if nd.Spec.Template.Versions.Kubelet != "" {
 		kubeletVersion, err := semver.NewVersion(nd.Spec.Template.Versions.Kubelet)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse kubelet version: %v", err)
+			return nil, fmt.Errorf("failed to parse kubelet version: %w", err)
 		}
 
 		if err = nodeupdate.EnsureVersionCompatible(controlPlaneVersion, kubeletVersion); err != nil {

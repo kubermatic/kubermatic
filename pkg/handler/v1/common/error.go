@@ -17,7 +17,9 @@ limitations under the License.
 package common
 
 import (
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	"errors"
+
+	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
@@ -25,10 +27,14 @@ import (
 // kubernetesErrorToHTTPError constructs HTTPError only if the given err is of type *StatusError.
 // Otherwise unmodified err will be returned to the caller.
 func KubernetesErrorToHTTPError(err error) error {
-	if kubernetesError, ok := err.(*kerrors.StatusError); ok {
-		httpCode := kubernetesError.Status().Code
-		httpMessage := kubernetesError.Status().Message
-		return errors.New(int(httpCode), httpMessage)
+	var errStatus *kerrors.StatusError
+
+	if errors.As(err, &errStatus) {
+		httpCode := errStatus.Status().Code
+		httpMessage := errStatus.Status().Message
+
+		return kubermaticerrors.New(int(httpCode), httpMessage)
 	}
+
 	return err
 }

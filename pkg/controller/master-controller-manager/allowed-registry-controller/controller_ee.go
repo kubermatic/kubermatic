@@ -40,8 +40,8 @@ const (
 func Add(mgr manager.Manager,
 	log *zap.SugaredLogger,
 	numWorkers int,
-	namespace string) error {
-
+	namespace string,
+) error {
 	reconciler := allowedregistrycontroller.NewReconciler(
 		log.Named(ControllerName),
 		mgr.GetEventRecorderFor(ControllerName),
@@ -51,14 +51,14 @@ func Add(mgr manager.Manager,
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
 	if err != nil {
-		return fmt.Errorf("failed to construct controller: %v", err)
+		return fmt.Errorf("failed to construct controller: %w", err)
 	}
 
 	if err := c.Watch(
 		&source.Kind{Type: &kubermaticv1.AllowedRegistry{}},
 		&handler.EnqueueRequestForObject{},
 	); err != nil {
-		return fmt.Errorf("failed to create watch for allowedRegistries: %v", err)
+		return fmt.Errorf("failed to create watch for allowedRegistries: %w", err)
 	}
 	return nil
 }

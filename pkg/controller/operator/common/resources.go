@@ -46,7 +46,7 @@ const (
 	// VersionLabel is the label containing the application's version.
 	VersionLabel = "app.kubernetes.io/version"
 
-	// InstanceLabel is A unique name identifying the instance of an application
+	// InstanceLabel is A unique name identifying the instance of an application.
 	InstanceLabel = "app.kubernetes.io/instance"
 
 	// ComponentLabel is the label of the component within the architecture.
@@ -59,7 +59,7 @@ const (
 
 	// we use a shared certificate/CA for all webhooks, because multiple webhooks
 	// run in the same controller manager so it's much easier if they all use the
-	// same certs
+	// same certs.
 	webhookCommonName            = "webhook"
 	WebhookServingCASecretName   = "webhook-ca"
 	WebhookServingCertSecretName = "webhook-cert"
@@ -109,7 +109,7 @@ func WebhookServingCASecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration
 		return WebhookServingCASecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
 			s, err := creator(s)
 			if err != nil {
-				return s, fmt.Errorf("failed to reconcile webhook CA: %v", err)
+				return s, fmt.Errorf("failed to reconcile webhook CA: %w", err)
 			}
 
 			return s, nil
@@ -133,12 +133,12 @@ func WebhookServingCertSecretCreator(cfg *operatorv1alpha1.KubermaticConfigurati
 		}
 
 		if err := client.Get(context.Background(), key, &se); err != nil {
-			return nil, fmt.Errorf("CA certificate could not be retrieved: %v", err)
+			return nil, fmt.Errorf("CA certificate could not be retrieved: %w", err)
 		}
 
 		keypair, err := triple.ParseRSAKeyPair(se.Data[resources.CACertSecretKey], se.Data[resources.CAKeySecretKey])
 		if err != nil {
-			return nil, fmt.Errorf("CA certificate secret contains no valid key pair: %v", err)
+			return nil, fmt.Errorf("CA certificate secret contains no valid key pair: %w", err)
 		}
 
 		return keypair, nil
@@ -161,7 +161,7 @@ func SeedAdmissionWebhookCreator(cfg *operatorv1alpha1.KubermaticConfiguration, 
 
 			ca, err := WebhookCABundle(cfg, client)
 			if err != nil {
-				return nil, fmt.Errorf("cannot find Seed Admission CA bundle: %v", err)
+				return nil, fmt.Errorf("cannot find Seed Admission CA bundle: %w", err)
 			}
 
 			hook.Webhooks = []admissionregistrationv1.ValidatingWebhook{
@@ -228,7 +228,7 @@ func SeedAdmissionServiceCreator(cfg *operatorv1alpha1.KubermaticConfiguration, 
 
 			selector, err := determineSeedWebhookServiceSelector(cfg, client)
 			if err != nil {
-				return s, fmt.Errorf("failed to determine SeedAdmissionWebhook target service: %v", err)
+				return s, fmt.Errorf("failed to determine SeedAdmissionWebhook target service: %w", err)
 			}
 
 			s.Spec.Selector = selector
@@ -250,7 +250,7 @@ func determineSeedWebhookServiceSelector(cfg *operatorv1alpha1.KubermaticConfigu
 
 	err := client.Get(context.Background(), key, &deployment)
 	if err != nil && !kerrors.IsNotFound(err) {
-		return nil, fmt.Errorf("failed to probe for %s: %v", key, err)
+		return nil, fmt.Errorf("failed to probe for %s: %w", key, err)
 	}
 
 	if err == nil {
@@ -266,7 +266,7 @@ func determineSeedWebhookServiceSelector(cfg *operatorv1alpha1.KubermaticConfigu
 
 	err = client.Get(context.Background(), key, &deployment)
 	if err != nil && !kerrors.IsNotFound(err) {
-		return nil, fmt.Errorf("failed to probe for %s: %v", key, err)
+		return nil, fmt.Errorf("failed to probe for %s: %w", key, err)
 	}
 
 	if err == nil {
@@ -287,7 +287,7 @@ func WebhookCABundle(cfg *operatorv1alpha1.KubermaticConfiguration, client ctrlr
 
 	err := client.Get(context.Background(), key, &secret)
 	if err != nil {
-		return nil, fmt.Errorf("cannot retrieve admission webhook CA Secret %s: %v", WebhookServingCASecretName, err)
+		return nil, fmt.Errorf("cannot retrieve admission webhook CA Secret %s: %w", WebhookServingCASecretName, err)
 	}
 
 	cert, ok := secret.Data[resources.CACertSecretKey]

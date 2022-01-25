@@ -21,10 +21,10 @@ import (
 )
 
 const (
-	// SSHKeyResourceName represents "Resource" defined in Kubernetes
+	// SSHKeyResourceName represents "Resource" defined in Kubernetes.
 	SSHKeyResourceName = "usersshkeies"
 
-	// SSHKeyKind represents "Kind" defined in Kubernetes
+	// SSHKeyKind represents "Kind" defined in Kubernetes.
 	SSHKeyKind = "UserSSHKey"
 )
 
@@ -34,7 +34,7 @@ const (
 // +kubebuilder:printcolumn:JSONPath=".spec.name",name="HumanReadableName",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.owner",name="Owner",type="string"
 
-// UserSSHKey specifies a users UserSSHKey
+// UserSSHKey specifies a users UserSSHKey.
 type UserSSHKey struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -79,7 +79,7 @@ func (sk *UserSSHKey) AddToCluster(clustername string) {
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 
-// UserSSHKeyList specifies a users UserSSHKey
+// UserSSHKeyList specifies a users UserSSHKey.
 type UserSSHKeyList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

@@ -18,6 +18,7 @@ package common
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -36,13 +37,13 @@ import (
 func CheckClusterVersionSkew(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, cluster *kubermaticapiv1.Cluster, projectID string) ([]string, error) {
 	client, err := GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, projectID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create a machine client: %v", err)
+		return nil, fmt.Errorf("failed to create a machine client: %w", err)
 	}
 
 	// get deduplicated list of all used kubelet versions
 	kubeletVersions, err := getKubeletVersions(ctx, client)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get the list of kubelet versions used in the cluster: %v", err)
+		return nil, fmt.Errorf("failed to get the list of kubelet versions used in the cluster: %w", err)
 	}
 
 	// this is where the incompatible versions shall be saved
@@ -52,18 +53,18 @@ func CheckClusterVersionSkew(ctx context.Context, userInfoGetter provider.UserIn
 	for _, ver := range kubeletVersions {
 		kubeletVersion, parseErr := semver.NewVersion(ver)
 		if parseErr != nil {
-			return nil, fmt.Errorf("failed to parse kubelet version: %v", parseErr)
+			return nil, fmt.Errorf("failed to parse kubelet version: %w", parseErr)
 		}
 
 		if err = nodeupdate.EnsureVersionCompatible(clusterVersion, kubeletVersion); err != nil {
-			// errVersionSkew says it's incompatible
-			if _, ok := err.(nodeupdate.ErrVersionSkew); ok {
+			// VersionSkewError says it's incompatible
+			if errors.Is(err, nodeupdate.VersionSkewError{}) {
 				incompatibleVersionsSet[kubeletVersion.String()] = true
 				continue
 			}
 
 			// other error types
-			return nil, fmt.Errorf("failed to check compatibility between kubelet %q and control plane %q: %v", kubeletVersion, clusterVersion, err)
+			return nil, fmt.Errorf("failed to check compatibility between kubelet %q and control plane %q: %w", kubeletVersion, clusterVersion, err)
 		}
 	}
 
@@ -76,12 +77,11 @@ func CheckClusterVersionSkew(ctx context.Context, userInfoGetter provider.UserIn
 	return incompatibleVersionsList, nil
 }
 
-// getKubeletVersions returns the list of all kubelet versions used by a given cluster's Machines and MachineDeployments
+// getKubeletVersions returns the list of all kubelet versions used by a given cluster's Machines and MachineDeployments.
 func getKubeletVersions(ctx context.Context, client ctrlruntimeclient.Client) ([]string, error) {
-
 	machineList := &clusterv1alpha1.MachineList{}
 	if err := client.List(ctx, machineList); err != nil {
-		return nil, fmt.Errorf("failed to load machines from cluster: %v", err)
+		return nil, fmt.Errorf("failed to load machines from cluster: %w", err)
 	}
 
 	machineDeployments := &clusterv1alpha1.MachineDeploymentList{}

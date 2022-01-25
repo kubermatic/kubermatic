@@ -22,21 +22,21 @@ import (
 
 // These are the valid phases of a project.
 const (
-	// ProjectActive means the project is available for use in the system
+	// ProjectActive means the project is available for use in the system.
 	ProjectActive string = "Active"
 
-	// ProjectInactive means the project is inactive and requires further initialization
+	// ProjectInactive means the project is inactive and requires further initialization.
 	ProjectInactive string = "Inactive"
 
-	// ProjectTerminating means the project is undergoing graceful termination
+	// ProjectTerminating means the project is undergoing graceful termination.
 	ProjectTerminating string = "Terminating"
 )
 
 const (
-	// ProjectResourceName represents "Resource" defined in Kubernetes
+	// ProjectResourceName represents "Resource" defined in Kubernetes.
 	ProjectResourceName = "projects"
 
-	// ProjectKindName represents "Kind" defined in Kubernetes
+	// ProjectKindName represents "Kind" defined in Kubernetes.
 	ProjectKindName = "Project"
 )
 

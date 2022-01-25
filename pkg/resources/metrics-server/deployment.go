@@ -57,7 +57,7 @@ const (
 	tag = "v0.5.0"
 )
 
-// metricsServerData is the data needed to construct the metrics-server components
+// metricsServerData is the data needed to construct the metrics-server components.
 type metricsServerData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
@@ -70,7 +70,7 @@ type metricsServerData interface {
 }
 
 // TLSServingCertSecretCreator returns a function to manage the TLS serving cert for the metrics
-// server
+// server.
 func TLSServingCertSecretCreator(caGetter servingcerthelper.CAGetter) reconciling.NamedSecretCreatorGetter {
 	dnsName := "metrics-server.kube-system.svc"
 	return servingcerthelper.ServingCertSecretCreator(caGetter,
@@ -82,7 +82,7 @@ func TLSServingCertSecretCreator(caGetter servingcerthelper.CAGetter) reconcilin
 		nil)
 }
 
-// DeploymentCreator returns the function to create and update the metrics server deployment
+// DeploymentCreator returns the function to create and update the metrics server deployment.
 func DeploymentCreator(data metricsServerData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.MetricsServerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -98,7 +98,7 @@ func DeploymentCreator(data metricsServerData) reconciling.NamedDeploymentCreato
 			volumes := getVolumes(data.IsKonnectivityEnabled())
 			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
 			if err != nil {
-				return nil, fmt.Errorf("failed to create pod labels: %v", err)
+				return nil, fmt.Errorf("failed to create pod labels: %w", err)
 			}
 
 			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
@@ -146,11 +146,11 @@ func DeploymentCreator(data metricsServerData) reconciling.NamedDeploymentCreato
 			if !data.IsKonnectivityEnabled() {
 				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
 				if err != nil {
-					return nil, fmt.Errorf("failed to get openvpn-client sidecar: %v", err)
+					return nil, fmt.Errorf("failed to get openvpn-client sidecar: %w", err)
 				}
 				dnatControllerSidecar, err := vpnsidecar.DnatControllerContainer(data, "dnat-controller", "")
 				if err != nil {
-					return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
+					return nil, fmt.Errorf("failed to get dnat-controller sidecar: %w", err)
 				}
 				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers,
 					*openvpnSidecar,
@@ -161,14 +161,14 @@ func DeploymentCreator(data metricsServerData) reconciling.NamedDeploymentCreato
 			}
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name, data.Cluster().Name)
 
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(name))
 			if err != nil {
-				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
+				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
 			}
 			dep.Spec.Template.Spec = *wrappedPodSpec
 

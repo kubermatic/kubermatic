@@ -40,7 +40,7 @@ import (
 )
 
 var (
-	// ErrCloudChangeNotAllowed describes that it is not allowed to change the cloud provider
+	// ErrCloudChangeNotAllowed describes that it is not allowed to change the cloud provider.
 	ErrCloudChangeNotAllowed  = errors.New("not allowed to change the cloud provider")
 	azureLoadBalancerSKUTypes = sets.NewString("", string(kubermaticv1.AzureStandardLBSKU), string(kubermaticv1.AzureBasicLBSKU))
 
@@ -119,7 +119,7 @@ func ValidateNewClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Dat
 	return allErrs
 }
 
-// ValidateClusterUpdate validates the new cluster and if no forbidden changes were attempted
+// ValidateClusterUpdate validates the new cluster and if no forbidden changes were attempted.
 func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider, features features.FeatureGate) field.ErrorList {
 	specPath := field.NewPath("spec")
 	allErrs := field.ErrorList{}
@@ -298,7 +298,7 @@ func validateMachineNetworksFromClusterSpec(spec *kubermaticv1.ClusterSpec, pare
 	return allErrs
 }
 
-// ValidateCloudChange validates if the cloud provider has been changed
+// ValidateCloudChange validates if the cloud provider has been changed.
 func ValidateCloudChange(newSpec, oldSpec kubermaticv1.CloudSpec) error {
 	if newSpec.DatacenterName != oldSpec.DatacenterName {
 		return errors.New("changing the datacenter is not allowed")
@@ -306,12 +306,12 @@ func ValidateCloudChange(newSpec, oldSpec kubermaticv1.CloudSpec) error {
 
 	oldCloudProvider, err := provider.ClusterCloudProviderName(oldSpec)
 	if err != nil {
-		return fmt.Errorf("could not determine old cloud provider: %v", err)
+		return fmt.Errorf("could not determine old cloud provider: %w", err)
 	}
 
 	newCloudProvider, err := provider.ClusterCloudProviderName(newSpec)
 	if err != nil {
-		return fmt.Errorf("could not determine new cloud provider: %v", err)
+		return fmt.Errorf("could not determine new cloud provider: %w", err)
 	}
 
 	if oldCloudProvider != newCloudProvider {
@@ -651,7 +651,7 @@ func ValidateUpdateWindow(updateWindow *kubermaticv1.UpdateWindow) error {
 	if updateWindow != nil && updateWindow.Start != "" && updateWindow.Length != "" {
 		_, err := timeutil.ParsePeriodic(updateWindow.Start, updateWindow.Length)
 		if err != nil {
-			return fmt.Errorf("error parsing update window: %s", err)
+			return fmt.Errorf("error parsing update window: %w", err)
 		}
 	}
 	return nil

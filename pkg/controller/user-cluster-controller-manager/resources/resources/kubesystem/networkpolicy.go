@@ -38,7 +38,6 @@ func DefaultNetworkPolicyCreator() reconciling.NamedNetworkPolicyCreatorGetter {
 		protoTcp := v1.ProtocolTCP
 
 		return "default-deny", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
-
 			// dns access to node local dns cache
 			np.Spec = networkingv1.NetworkPolicySpec{
 				PolicyTypes: []networkingv1.PolicyType{

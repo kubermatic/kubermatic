@@ -76,13 +76,11 @@ func TestGeneratedResourcesForGroups(t *testing.T) {
 			if !equality.Semantic.DeepEqual(actualResources, test.expectedResources) {
 				t.Fatalf("incorrect resources were returned, got: %v, want: %v", actualResources, test.expectedResources)
 			}
-
 		})
 	}
 }
 
 func TestGenerateVerbsForGroup(t *testing.T) {
-
 	tests := []struct {
 		name          string
 		resurceName   string
@@ -123,7 +121,6 @@ func TestGenerateVerbsForGroup(t *testing.T) {
 				if err == nil {
 					t.Fatalf("expected error")
 				}
-
 			} else {
 				if err != nil {
 					t.Fatalf("generate RBAC role err: %v", err)
@@ -134,13 +131,11 @@ func TestGenerateVerbsForGroup(t *testing.T) {
 					t.Fatalf("incorrect verbs were returned, got: %v, want: %v", returnedVerbs, test.expectedVerbs)
 				}
 			}
-
 		})
 	}
 }
 
 func TestGroupName(t *testing.T) {
-
 	tests := []struct {
 		name              string
 		resurceName       string
@@ -180,7 +175,6 @@ func TestGroupName(t *testing.T) {
 				if err == nil {
 					t.Fatalf("expected error")
 				}
-
 			} else {
 				if err != nil {
 					t.Fatalf("getting group name from resource name failed with error: %v", err)
@@ -190,7 +184,6 @@ func TestGroupName(t *testing.T) {
 					t.Fatalf("incorrect group name was returned, got: %v, want: %v", groupName, test.expectedGroupName)
 				}
 			}
-
 		})
 	}
 }

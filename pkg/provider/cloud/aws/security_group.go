@@ -139,7 +139,8 @@ func reconcileSecurityGroup(client ec2iface.EC2API, cluster *kubermaticv1.Cluste
 			},
 		})
 		if err != nil {
-			if awsErr, ok := err.(awserr.Error); !ok || awsErr.Code() != "InvalidPermission.Duplicate" {
+			var awsErr awserr.Error
+			if !errors.As(err, &awsErr) || awsErr.Code() != "InvalidPermission.Duplicate" {
 				return cluster, fmt.Errorf("failed to authorize security group %s with id %s: %w", groupName, groupID, err)
 			}
 		}

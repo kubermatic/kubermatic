@@ -81,7 +81,7 @@ func Add(
 	}
 	for _, t := range typesToWatch {
 		if err := c.Watch(&source.Kind{Type: t}, controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient())); err != nil {
-			return fmt.Errorf("failed to create watch for %T: %v", t, err)
+			return fmt.Errorf("failed to create watch for %T: %w", t, err)
 		}
 	}
 
@@ -94,7 +94,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		if kerrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, fmt.Errorf("failed to get cluster %q: %v", request.Name, err)
+		return reconcile.Result{}, fmt.Errorf("failed to get cluster %q: %w", request.Name, err)
 	}
 
 	// Add a wrapping here so we can emit an event on error
@@ -152,7 +152,7 @@ func (r *reconciler) seedResourcesUpToDate(ctx context.Context, cluster *kuberma
 
 	statefulSets := &appsv1.StatefulSetList{}
 	if err := r.client.List(ctx, statefulSets, listOpts); err != nil {
-		return false, fmt.Errorf("failed to list statefulSets: %v", err)
+		return false, fmt.Errorf("failed to list statefulSets: %w", err)
 	}
 	for _, statefulSet := range statefulSets.Items {
 		if statefulSet.Spec.Replicas == nil {
@@ -167,7 +167,7 @@ func (r *reconciler) seedResourcesUpToDate(ctx context.Context, cluster *kuberma
 
 	deployments := &appsv1.DeploymentList{}
 	if err := r.client.List(ctx, deployments, listOpts); err != nil {
-		return false, fmt.Errorf("failed to list deployments: %v", err)
+		return false, fmt.Errorf("failed to list deployments: %w", err)
 	}
 
 	for _, deployment := range deployments.Items {

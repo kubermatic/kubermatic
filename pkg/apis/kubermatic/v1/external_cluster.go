@@ -26,10 +26,10 @@ import (
 
 const (
 
-	// ExternalClusterResourceName represents "Resource" defined in Kubernetes
+	// ExternalClusterResourceName represents "Resource" defined in Kubernetes.
 	ExternalClusterResourceName = "externalclusters"
 
-	// ExternalClusterKind represents "Kind" defined in Kubernetes
+	// ExternalClusterKind represents "Kind" defined in Kubernetes.
 	ExternalClusterKind = "ExternalCluster"
 )
 
@@ -49,7 +49,7 @@ type ExternalCluster struct {
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 
-// ExternalClusterList specifies a list of external kubernetes clusters
+// ExternalClusterList specifies a list of external kubernetes clusters.
 type ExternalClusterList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

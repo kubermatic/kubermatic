@@ -24,10 +24,10 @@ import (
 )
 
 const (
-	// AddonResourceName represents "Resource" defined in Kubernetes
+	// AddonResourceName represents "Resource" defined in Kubernetes.
 	AddonResourceName = "addons"
 
-	// AddonKindName represents "Kind" defined in Kubernetes
+	// AddonKindName represents "Kind" defined in Kubernetes.
 	AddonKindName = "Addon"
 
 	AddonResourcesCreated AddonConditionType = "AddonResourcesCreatedSuccessfully"
@@ -45,7 +45,7 @@ type Addon struct {
 	Status AddonStatus `json:"status,omitempty"`
 }
 
-// AddonSpec specifies details of an addon
+// AddonSpec specifies details of an addon.
 type AddonSpec struct {
 	// Name defines the name of the addon to install
 	Name string `json:"name"`

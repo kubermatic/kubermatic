@@ -58,7 +58,6 @@ func Add(
 	log *zap.SugaredLogger,
 	numWorkers int,
 ) error {
-
 	r := &reconciler{
 		log:             log.Named(ControllerName),
 		recorder:        masterManager.GetEventRecorderFor(ControllerName),
@@ -108,7 +107,7 @@ func withEventFilter() predicate.Predicate {
 	}
 }
 
-// Reconcile reconciles Kubermatic User objects (excluding service account users) on the master cluster to all seed clusters
+// Reconcile reconciles Kubermatic User objects (excluding service account users) on the master cluster to all seed clusters.
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("request", request)
 

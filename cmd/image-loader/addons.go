@@ -37,12 +37,12 @@ func getImagesFromAddons(log *zap.SugaredLogger, addonsPath string, cluster *kub
 
 	addonData, err := addonutil.NewTemplateData(cluster, credentials, "", "", "", nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create addon template data: %v", err)
+		return nil, fmt.Errorf("failed to create addon template data: %w", err)
 	}
 
 	infos, err := ioutil.ReadDir(addonsPath)
 	if err != nil {
-		return nil, fmt.Errorf("unable to list addons: %v", err)
+		return nil, fmt.Errorf("unable to list addons: %w", err)
 	}
 
 	serializer := json.NewSerializerWithOptions(&json.SimpleMetaFactory{}, scheme.Scheme, scheme.Scheme, json.SerializerOptions{})
@@ -54,7 +54,7 @@ func getImagesFromAddons(log *zap.SugaredLogger, addonsPath string, cluster *kub
 		addonName := info.Name()
 		addonImages, err := getImagesFromAddon(log, path.Join(addonsPath, addonName), serializer, addonData)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get images for addon %s: %v", addonName, err)
+			return nil, fmt.Errorf("failed to get images for addon %s: %w", addonName, err)
 		}
 		images = append(images, addonImages...)
 	}
@@ -68,7 +68,7 @@ func getImagesFromAddon(log *zap.SugaredLogger, addonPath string, decoder runtim
 
 	allManifests, err := addonutil.ParseFromFolder(log, "", addonPath, data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse addon templates in %s: %v", addonPath, err)
+		return nil, fmt.Errorf("failed to parse addon templates in %s: %w", addonPath, err)
 	}
 
 	var images []string

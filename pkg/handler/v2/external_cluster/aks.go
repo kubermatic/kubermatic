@@ -61,11 +61,11 @@ func createAKSCluster(ctx context.Context, name string, userInfoGetter provider.
 	return createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, newCluster, project)
 }
 
-func patchAKSCluster(ctx context.Context, old, new *apiv2.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, cloud *kubermaticapiv1.ExternalClusterCloudSpec) (*apiv2.ExternalCluster, error) {
+func patchAKSCluster(ctx context.Context, oldCluster, newCluster *apiv2.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, cloud *kubermaticapiv1.ExternalClusterCloudSpec) (*apiv2.ExternalCluster, error) {
 	clusterName := cloud.AKS.Name
 	resourceGroup := cloud.AKS.ResourceGroup
 
-	newVersion := new.Spec.Version.Semver().String()
+	newVersion := newCluster.Spec.Version.Semver().String()
 
 	cred, err := aks.GetCredentialsForCluster(*cloud, secretKeySelector)
 	if err != nil {
@@ -94,7 +94,7 @@ func patchAKSCluster(ctx context.Context, old, new *apiv2.ExternalCluster, secre
 		return nil, err
 	}
 
-	return new, nil
+	return newCluster, nil
 }
 
 func getAKSNodePools(ctx context.Context, cluster *kubermaticapiv1.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterMachineDeployment, error) {
@@ -176,7 +176,6 @@ func getAKSNodePool(ctx context.Context, cluster *kubermaticapiv1.ExternalCluste
 }
 
 func getAKSMachineDeployment(poolProfile containerservice.ManagedClusterAgentPoolProfile, cluster *kubermaticapiv1.ExternalCluster, clusterProvider provider.ExternalClusterProvider) (*apiv2.ExternalClusterMachineDeployment, error) {
-
 	nodes, err := clusterProvider.ListNodes(cluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
@@ -243,7 +242,6 @@ func createMachineDeploymentFromAKSNodePoll(nodePool containerservice.ManagedClu
 }
 
 func getAKSNodes(cluster *kubermaticapiv1.ExternalCluster, nodePoolName string, clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterNode, error) {
-
 	var nodesV1 []apiv2.ExternalClusterNode
 
 	nodes, err := clusterProvider.ListNodes(cluster)
@@ -255,7 +253,7 @@ func getAKSNodes(cluster *kubermaticapiv1.ExternalCluster, nodePoolName string, 
 			if n.Labels[AKSNodepoolNameLabel] == nodePoolName {
 				outNode, err := outputNode(n)
 				if err != nil {
-					return nil, fmt.Errorf("failed to output node %s: %v", n.Name, err)
+					return nil, fmt.Errorf("failed to output node %s: %w", n.Name, err)
 				}
 				nodesV1 = append(nodesV1, *outNode)
 			}
@@ -265,7 +263,7 @@ func getAKSNodes(cluster *kubermaticapiv1.ExternalCluster, nodePoolName string, 
 	return nodesV1, err
 }
 
-func patchAKSMachineDeployment(ctx context.Context, old, new *apiv2.ExternalClusterMachineDeployment, secretKeySelector provider.SecretKeySelectorValueFunc, cloud *kubermaticapiv1.ExternalClusterCloudSpec) (*apiv2.ExternalClusterMachineDeployment, error) {
+func patchAKSMachineDeployment(ctx context.Context, oldCluster, newCluster *apiv2.ExternalClusterMachineDeployment, secretKeySelector provider.SecretKeySelectorValueFunc, cloud *kubermaticapiv1.ExternalClusterCloudSpec) (*apiv2.ExternalClusterMachineDeployment, error) {
 	cred, err := aks.GetCredentialsForCluster(*cloud, secretKeySelector)
 	if err != nil {
 		return nil, err
@@ -276,29 +274,29 @@ func patchAKSMachineDeployment(ctx context.Context, old, new *apiv2.ExternalClus
 		return nil, err
 	}
 
-	nodePoolName := new.NodeDeployment.Name
-	currentReplicas := old.NodeDeployment.Spec.Replicas
-	desiredReplicas := new.NodeDeployment.Spec.Replicas
-	currentVersion := old.NodeDeployment.Spec.Template.Versions.Kubelet
-	desiredVersion := new.NodeDeployment.Spec.Template.Versions.Kubelet
+	nodePoolName := newCluster.NodeDeployment.Name
+	currentReplicas := oldCluster.NodeDeployment.Spec.Replicas
+	desiredReplicas := newCluster.NodeDeployment.Spec.Replicas
+	currentVersion := oldCluster.NodeDeployment.Spec.Template.Versions.Kubelet
+	desiredVersion := newCluster.NodeDeployment.Spec.Template.Versions.Kubelet
 	if desiredReplicas != currentReplicas {
 		_, err = resizeAKSNodePool(ctx, *agentPoolClient, cloud, nodePoolName, desiredReplicas)
 		if err != nil {
 			return nil, err
 		}
-		new.NodeDeployment.Status.Replicas = desiredReplicas
-		return new, nil
+		newCluster.NodeDeployment.Status.Replicas = desiredReplicas
+		return newCluster, nil
 	}
 	if desiredVersion != currentVersion {
 		_, err = upgradeNodePool(ctx, *agentPoolClient, cloud, nodePoolName, desiredVersion)
 		if err != nil {
 			return nil, err
 		}
-		new.NodeDeployment.Spec.Replicas = currentReplicas
-		return new, nil
+		newCluster.NodeDeployment.Spec.Replicas = currentReplicas
+		return newCluster, nil
 	}
 
-	return new, nil
+	return newCluster, nil
 }
 
 func resizeAKSNodePool(ctx context.Context, agentPoolClient containerservice.AgentPoolsClient, cloud *kubermaticapiv1.ExternalClusterCloudSpec, nodePoolName string, desiredSize int32) (*containerservice.AgentPoolsCreateOrUpdateFuture, error) {
@@ -351,7 +349,7 @@ func getAKSNodePoolClient(cred resources.AKSCredentials) (*containerservice.Agen
 	agentPoolClient := containerservice.NewAgentPoolsClient(cred.SubscriptionID)
 	agentPoolClient.Authorizer, err = auth.NewClientCredentialsConfig(cred.ClientID, cred.ClientSecret, cred.TenantID).Authorizer()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %v", err.Error())
+		return nil, fmt.Errorf("failed to create authorizer: %w", err)
 	}
 	return &agentPoolClient, nil
 }

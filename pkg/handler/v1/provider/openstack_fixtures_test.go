@@ -111,7 +111,7 @@ const GetSecurityGroups = `
 }
 `
 
-// GetFlaivorsDetail: GET /flavors/detail
+// GetFlaivorsDetail: GET /flavors/detail.
 const GetFlaivorsDetail = `
 {
     "flavors": [
@@ -194,7 +194,7 @@ const GetFlaivorsDetail = `
     ]
 }`
 
-// GetUserProjects is response  pf GET /users/{user_id}/projects
+// GetUserProjects is response  pf GET /users/{user_id}/projects.
 const GetUserProjects = `
 {
     "projects": [
@@ -232,7 +232,7 @@ const GetUserProjects = `
 // const GetTokens = `
 // `
 
-// PostTokens is response of POST /v3/auth/tokens
+// PostTokens is response of POST /v3/auth/tokens.
 const PostTokens = `
 {
     "token": {
@@ -350,7 +350,7 @@ const PostTokens = `
 }
 `
 
-// GetNetworks is response of GET /v2.0/networks
+// GetNetworks is response of GET /v2.0/networks.
 const GetNetworks = `
 {
     "networks": [
@@ -375,7 +375,7 @@ const GetNetworks = `
 }
 `
 
-// GetSubnets is response of GET /v2.0/subnets
+// GetSubnets is response of GET /v2.0/subnets.
 const GetSubnets = `
 {
     "subnets": [

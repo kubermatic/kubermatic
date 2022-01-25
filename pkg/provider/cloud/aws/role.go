@@ -56,7 +56,7 @@ func controlPlaneRoleName(clusterName string) string {
 func reconcileControlPlaneRole(client iamiface.IAMAPI, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	policy, err := getControlPlanePolicy(cluster.Name)
 	if err != nil {
-		return cluster, fmt.Errorf("failed to build the control plane policy: %v", err)
+		return cluster, fmt.Errorf("failed to build the control plane policy: %w", err)
 	}
 
 	policies := map[string]string{controlPlanePolicyName: policy}

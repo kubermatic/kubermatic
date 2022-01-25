@@ -93,27 +93,27 @@ func (*MasterStack) InstallKubermaticCRDs(ctx context.Context, client ctrlruntim
 
 func (s *MasterStack) Deploy(ctx context.Context, opt stack.DeployOptions) error {
 	if err := deployStorageClass(ctx, opt.Logger, opt.KubeClient, opt); err != nil {
-		return fmt.Errorf("failed to deploy StorageClass: %v", err)
+		return fmt.Errorf("failed to deploy StorageClass: %w", err)
 	}
 
 	if err := deployNginxIngressController(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
-		return fmt.Errorf("failed to deploy nginx-ingress-controller: %v", err)
+		return fmt.Errorf("failed to deploy nginx-ingress-controller: %w", err)
 	}
 
 	if err := deployCertManager(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
-		return fmt.Errorf("failed to deploy cert-manager: %v", err)
+		return fmt.Errorf("failed to deploy cert-manager: %w", err)
 	}
 
 	if err := deployDex(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
-		return fmt.Errorf("failed to deploy Dex: %v", err)
+		return fmt.Errorf("failed to deploy Dex: %w", err)
 	}
 
 	if err := s.deployKubermaticOperator(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
-		return fmt.Errorf("failed to deploy Kubermatic Operator: %v", err)
+		return fmt.Errorf("failed to deploy Kubermatic Operator: %w", err)
 	}
 
 	if err := applyKubermaticConfiguration(ctx, opt.Logger, opt.KubeClient, opt); err != nil {
-		return fmt.Errorf("failed to apply Kubermatic Configuration: %v", err)
+		return fmt.Errorf("failed to apply Kubermatic Configuration: %w", err)
 	}
 
 	if err := deployTelemetry(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
@@ -136,20 +136,20 @@ func deployTelemetry(ctx context.Context, logger *logrus.Entry, kubeClient ctrlr
 
 	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, "telemetry"))
 	if err != nil {
-		return fmt.Errorf("failed to load Helm chart: %v", err)
+		return fmt.Errorf("failed to load Helm chart: %w", err)
 	}
 
 	if err := util.EnsureNamespace(ctx, sublogger, kubeClient, TelemetryNamespace); err != nil {
-		return fmt.Errorf("failed to create namespace: %v", err)
+		return fmt.Errorf("failed to create namespace: %w", err)
 	}
 
 	release, err := util.CheckHelmRelease(ctx, sublogger, helmClient, TelemetryNamespace, TelemetryReleaseName)
 	if err != nil {
-		return fmt.Errorf("failed to check to Helm release: %v", err)
+		return fmt.Errorf("failed to check to Helm release: %w", err)
 	}
 
 	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, TelemetryNamespace, TelemetryReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, release); err != nil {
-		return fmt.Errorf("failed to deploy Helm release: %v", err)
+		return fmt.Errorf("failed to deploy Helm release: %w", err)
 	}
 
 	logger.Info("✅ Success.")
@@ -178,7 +178,7 @@ func deployStorageClass(ctx context.Context, logger *logrus.Entry, kubeClient ct
 	}
 
 	if !kerrors.IsNotFound(err) {
-		return fmt.Errorf("failed to check for StorageClass %s: %v", StorageClassName, err)
+		return fmt.Errorf("failed to check for StorageClass %s: %w", StorageClassName, err)
 	}
 
 	if opt.StorageClassProvider == "" {
@@ -191,16 +191,16 @@ func deployStorageClass(ctx context.Context, logger *logrus.Entry, kubeClient ct
 
 	factory, err := common.StorageClassCreator(opt.StorageClassProvider)
 	if err != nil {
-		return fmt.Errorf("invalid StorageClass provider: %v", err)
+		return fmt.Errorf("invalid StorageClass provider: %w", err)
 	}
 
 	sc, err := factory(ctx, sublogger, kubeClient, StorageClassName)
 	if err != nil {
-		return fmt.Errorf("failed to define StorageClass: %v", err)
+		return fmt.Errorf("failed to define StorageClass: %w", err)
 	}
 
 	if err := kubeClient.Create(ctx, &sc); err != nil {
-		return fmt.Errorf("failed to create StorageClass: %v", err)
+		return fmt.Errorf("failed to create StorageClass: %w", err)
 	}
 
 	logger.Info("✅ Success.")
@@ -214,20 +214,20 @@ func deployDex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntime
 
 	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, "oauth"))
 	if err != nil {
-		return fmt.Errorf("failed to load Helm chart: %v", err)
+		return fmt.Errorf("failed to load Helm chart: %w", err)
 	}
 
 	if err := util.EnsureNamespace(ctx, sublogger, kubeClient, DexNamespace); err != nil {
-		return fmt.Errorf("failed to create namespace: %v", err)
+		return fmt.Errorf("failed to create namespace: %w", err)
 	}
 
 	release, err := util.CheckHelmRelease(ctx, sublogger, helmClient, DexNamespace, DexReleaseName)
 	if err != nil {
-		return fmt.Errorf("failed to check to Helm release: %v", err)
+		return fmt.Errorf("failed to check to Helm release: %w", err)
 	}
 
 	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, DexNamespace, DexReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, release); err != nil {
-		return fmt.Errorf("failed to deploy Helm release: %v", err)
+		return fmt.Errorf("failed to deploy Helm release: %w", err)
 	}
 
 	logger.Info("✅ Success.")
@@ -241,26 +241,26 @@ func (s *MasterStack) deployKubermaticOperator(ctx context.Context, logger *logr
 
 	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, "kubermatic-operator"))
 	if err != nil {
-		return fmt.Errorf("failed to load Helm chart: %v", err)
+		return fmt.Errorf("failed to load Helm chart: %w", err)
 	}
 
 	sublogger.Info("Deploying Custom Resource Definitions…")
 	if err := s.InstallKubermaticCRDs(ctx, kubeClient, sublogger, opt); err != nil {
-		return fmt.Errorf("failed to deploy CRDs: %v", err)
+		return fmt.Errorf("failed to deploy CRDs: %w", err)
 	}
 
 	if err := util.EnsureNamespace(ctx, sublogger, kubeClient, KubermaticOperatorNamespace); err != nil {
-		return fmt.Errorf("failed to create namespace: %v", err)
+		return fmt.Errorf("failed to create namespace: %w", err)
 	}
 
 	sublogger.Info("Deploying Helm chart…")
 	release, err := util.CheckHelmRelease(ctx, sublogger, helmClient, KubermaticOperatorNamespace, KubermaticOperatorReleaseName)
 	if err != nil {
-		return fmt.Errorf("failed to check to Helm release: %v", err)
+		return fmt.Errorf("failed to check to Helm release: %w", err)
 	}
 
 	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, KubermaticOperatorNamespace, KubermaticOperatorReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, release); err != nil {
-		return fmt.Errorf("failed to deploy Helm release: %v", err)
+		return fmt.Errorf("failed to deploy Helm release: %w", err)
 	}
 
 	logger.Info("✅ Success.")
@@ -279,7 +279,7 @@ func applyKubermaticConfiguration(ctx context.Context, logger *logrus.Entry, kub
 
 	err := kubeClient.Get(ctx, name, existingConfig)
 	if err != nil && !kerrors.IsNotFound(err) {
-		return fmt.Errorf("failed to check for existing KubermaticConfiguration: %v", err)
+		return fmt.Errorf("failed to check for existing KubermaticConfiguration: %w", err)
 	}
 
 	if err == nil {

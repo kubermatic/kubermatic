@@ -42,7 +42,6 @@ import (
 const projectName = "project-test"
 
 func TestReconcile(t *testing.T) {
-
 	testCases := []struct {
 		name            string
 		requestName     string

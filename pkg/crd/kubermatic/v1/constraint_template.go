@@ -24,10 +24,10 @@ import (
 
 const (
 
-	// ConstraintTemplateResourceName represents "Resource" defined in Kubernetes
+	// ConstraintTemplateResourceName represents "Resource" defined in Kubernetes.
 	ConstraintTemplateResourceName = "constrainttemplates"
 
-	// ConstraintTemplateKind represents "Kind" defined in Kubernetes
+	// ConstraintTemplateKind represents "Kind" defined in Kubernetes.
 	ConstraintTemplateKind = "ConstraintTemplate"
 )
 
@@ -43,14 +43,14 @@ type ConstraintTemplate struct {
 	Spec ConstraintTemplateSpec `json:"spec"`
 }
 
-// ConstraintTemplateSpec is the object representing the gatekeeper constraint template spec and kubermatic related spec
+// ConstraintTemplateSpec is the object representing the gatekeeper constraint template spec and kubermatic related spec.
 type ConstraintTemplateSpec struct {
 	CRD      v1beta1.CRD                `json:"crd,omitempty"`
 	Targets  []v1beta1.Target           `json:"targets,omitempty"`
 	Selector ConstraintTemplateSelector `json:"selector,omitempty"`
 }
 
-// ConstraintTemplateSelector is the object holding the cluster selection filters
+// ConstraintTemplateSelector is the object holding the cluster selection filters.
 type ConstraintTemplateSelector struct {
 	// Providers is a list of cloud providers to which the Constraint Template applies to. Empty means all providers are selected.
 	Providers []string `json:"providers,omitempty"`
@@ -60,7 +60,7 @@ type ConstraintTemplateSelector struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ConstraintTemplateList specifies a list of constraint templates
+// ConstraintTemplateList specifies a list of constraint templates.
 type ConstraintTemplateList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

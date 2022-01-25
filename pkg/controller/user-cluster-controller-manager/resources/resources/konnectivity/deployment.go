@@ -146,7 +146,7 @@ func DeploymentCreator(kServerHost string, kServerPort int, registryWithOverwrit
 
 			err := resources.SetResourceRequirements(ds.Spec.Template.Spec.Containers, defResourceRequirements, nil, ds.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			ds.Spec.Template.Spec.Affinity = &corev1.Affinity{
@@ -169,7 +169,7 @@ func DeploymentCreator(kServerHost string, kServerPort int, registryWithOverwrit
 	}
 }
 
-// PodDisruptionBudgetCreator returns a func to create/update the Konnectivity agent's PodDisruptionBudget
+// PodDisruptionBudgetCreator returns a func to create/update the Konnectivity agent's PodDisruptionBudget.
 func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
 		return resources.KonnectivityPodDisruptionBudgetName, func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {

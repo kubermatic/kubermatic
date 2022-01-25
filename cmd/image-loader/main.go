@@ -208,17 +208,17 @@ func main() {
 func extractAddonsFromDockerImage(ctx context.Context, log *zap.SugaredLogger, imageName string) (string, error) {
 	tempDir, err := ioutil.TempDir("", "imageloader*")
 	if err != nil {
-		return "", fmt.Errorf("failed to create temporary directory: %v", err)
+		return "", fmt.Errorf("failed to create temporary directory: %w", err)
 	}
 
 	log.Infow("Extracting addon manifests from Docker image", "image", imageName, "temp-directory", tempDir)
 
 	if err := docker.DownloadImages(ctx, log, false, []string{imageName}); err != nil {
-		return tempDir, fmt.Errorf("failed to download addons image: %v", err)
+		return tempDir, fmt.Errorf("failed to download addons image: %w", err)
 	}
 
 	if err := docker.Copy(ctx, log, imageName, tempDir, "/addons"); err != nil {
-		return tempDir, fmt.Errorf("failed to extract addons: %v", err)
+		return tempDir, fmt.Errorf("failed to extract addons: %w", err)
 	}
 
 	return tempDir, nil
@@ -226,16 +226,16 @@ func extractAddonsFromDockerImage(ctx context.Context, log *zap.SugaredLogger, i
 
 func processImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, images []string, registry string) error {
 	if err := docker.DownloadImages(ctx, log, dryRun, images); err != nil {
-		return fmt.Errorf("failed to download all images: %v", err)
+		return fmt.Errorf("failed to download all images: %w", err)
 	}
 
 	retaggedImages, err := docker.RetagImages(ctx, log, dryRun, images, registry)
 	if err != nil {
-		return fmt.Errorf("failed to re-tag images: %v", err)
+		return fmt.Errorf("failed to re-tag images: %w", err)
 	}
 
 	if err := docker.PushImages(ctx, log, dryRun, retaggedImages); err != nil {
-		return fmt.Errorf("failed to push images: %v", err)
+		return fmt.Errorf("failed to push images: %w", err)
 	}
 	return nil
 }
@@ -248,13 +248,13 @@ func getImagesForVersion(log *zap.SugaredLogger, clusterVersion *kubermaticversi
 
 	creatorImages, err := getImagesFromCreators(log, templateData, config, kubermaticVersions)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get images from internal creator functions: %v", err)
+		return nil, fmt.Errorf("failed to get images from internal creator functions: %w", err)
 	}
 	images = append(images, creatorImages...)
 
 	addonImages, err := getImagesFromAddons(log, addonsPath, templateData.Cluster())
 	if err != nil {
-		return nil, fmt.Errorf("failed to get images from addons: %v", err)
+		return nil, fmt.Errorf("failed to get images from addons: %w", err)
 	}
 	images = append(images, addonImages...)
 
@@ -264,7 +264,7 @@ func getImagesForVersion(log *zap.SugaredLogger, clusterVersion *kubermaticversi
 func getImagesFromCreators(log *zap.SugaredLogger, templateData *resources.TemplateData, config *operatorv1alpha1.KubermaticConfiguration, kubermaticVersions kubermatic.Versions) (images []string, err error) {
 	seed, err := defaults.DefaultSeed(&kubermaticv1.Seed{}, config, log)
 	if err != nil {
-		return nil, fmt.Errorf("failed to default Seed: %v", err)
+		return nil, fmt.Errorf("failed to default Seed: %w", err)
 	}
 
 	statefulsetCreators := kubernetescontroller.GetStatefulSetCreators(templateData, false, false)
@@ -481,7 +481,6 @@ func getTemplateData(clusterVersion *kubermaticversion.Version, kubermaticVersio
 		WithVersions(kubermaticVersions).
 		WithCABundle(caBundle).
 		Build(), nil
-
 }
 
 func createNamedSecrets(secretNames []string) *corev1.SecretList {
@@ -527,7 +526,7 @@ func getVersions(log *zap.SugaredLogger, config *operatorv1alpha1.KubermaticConf
 	log.Debug("Filtering versions")
 	constraint, err := semver.NewConstraint(versionFilter)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse version filter %q: %v", versionFilter, err)
+		return nil, fmt.Errorf("failed to parse version filter %q: %w", versionFilter, err)
 	}
 
 	var filteredVersions []*kubermaticversion.Version
@@ -553,7 +552,7 @@ func getImagesFromManifest(log *zap.SugaredLogger, decoder runtime.Decoder, b []
 			log.Debug("Skipping object because its not known")
 			return nil, nil
 		}
-		return nil, fmt.Errorf("unable to decode object: %v", err)
+		return nil, fmt.Errorf("unable to decode object: %w", err)
 	}
 
 	images := getImagesFromObject(obj)

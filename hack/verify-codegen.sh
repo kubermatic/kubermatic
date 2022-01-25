@@ -20,8 +20,10 @@ cd $(dirname $0)/..
 source hack/lib.sh
 
 TEMPDIR=_tmp
-DIFFROOT=pkg
-TMP_DIFFROOT="$TEMPDIR/pkg"
+PKG_DIFFROOT=pkg
+TMP_PKG_DIFFROOT="$TEMPDIR/pkg"
+CHARTS_DIFFROOT=charts
+TMP_CHARTS_DIFFROOT="$TEMPDIR/charts"
 
 cleanup() {
   rm -rf "$TEMPDIR"
@@ -30,18 +32,29 @@ trap "cleanup" EXIT SIGINT
 
 cleanup
 
-mkdir -p "${TMP_DIFFROOT}"
-cp -a "${DIFFROOT}"/* "${TMP_DIFFROOT}"
+mkdir -p "${TMP_PKG_DIFFROOT}" "${TMP_CHARTS_DIFFROOT}"
+cp -a "${PKG_DIFFROOT}"/* "${TMP_PKG_DIFFROOT}"
+cp -a "${CHARTS_DIFFROOT}"/* "${TMP_CHARTS_DIFFROOT}"
 
+# This will update both generated code and the CRDs for *.k8c.io,
+# but until those new CRDs are live, we only diff pkg/. We have
+# to restore the CRDs afterwards, so that other verify-* scripts
+# do not get confused when they `git diff`.
 ./hack/update-codegen.sh
 
-echodate "Diffing ${DIFFROOT} against freshly generated codegen"
+# restore CRDs
+cp -a "${TMP_CHARTS_DIFFROOT}"/* "${CHARTS_DIFFROOT}"
+
+echodate "Diffing ${PKG_DIFFROOT} against freshly generated codegen"
 ret=0
-diff -Naupr "${DIFFROOT}" "${TMP_DIFFROOT}" || ret=$?
-cp -a "${TMP_DIFFROOT}"/* "${DIFFROOT}"
+diff -Naupr "${PKG_DIFFROOT}" "${TMP_PKG_DIFFROOT}" || ret=$?
+
+# restore pkg
+cp -a "${TMP_PKG_DIFFROOT}"/* "${PKG_DIFFROOT}"
+
 if [[ $ret -eq 0 ]]; then
-  echodate "${DIFFROOT} up to date."
+  echodate "${PKG_DIFFROOT} up to date."
 else
-  echodate "${DIFFROOT} is out of date. Please run hack/update-codegen.sh"
+  echodate "${PKG_DIFFROOT} is out of date. Please run hack/update-codegen.sh"
   exit 1
 fi

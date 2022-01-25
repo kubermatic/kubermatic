@@ -48,7 +48,7 @@ const (
 	ControllerName = "kubermatic_initialmachinedeployment_controller"
 )
 
-// UserClusterClientProvider provides functionality to get a user cluster client
+// UserClusterClientProvider provides functionality to get a user cluster client.
 type UserClusterClientProvider interface {
 	GetClient(ctx context.Context, c *kubermaticv1.Cluster, options ...clusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
 }
@@ -64,7 +64,7 @@ type Reconciler struct {
 	versions                      kubermatic.Versions
 }
 
-// Add creates a new initialmachinedeployment controller
+// Add creates a new initialmachinedeployment controller.
 func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName string, seedGetter provider.SeedGetter, userClusterConnectionProvider UserClusterClientProvider, log *zap.SugaredLogger, versions kubermatic.Versions) error {
 	reconciler := &Reconciler{
 		Client: mgr.GetClient(),
@@ -82,11 +82,11 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 		MaxConcurrentReconciles: numWorkers,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to create controller: %v", err)
+		return fmt.Errorf("failed to create controller: %w", err)
 	}
 
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}); err != nil {
-		return fmt.Errorf("failed to create watch: %v", err)
+		return fmt.Errorf("failed to create watch: %w", err)
 	}
 
 	return nil
@@ -134,7 +134,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	nodeDeployment, err := r.parseNodeDeployment(cluster)
 	if err != nil {
 		if removeErr := r.removeAnnotation(ctx, cluster); removeErr != nil {
-			return nil, fmt.Errorf("failed to remove invalid (%v) initial MachineDeployment annotation: %v", err, removeErr)
+			return nil, fmt.Errorf("failed to remove invalid (%v) initial MachineDeployment annotation: %w", err, removeErr)
 		}
 
 		return nil, err
@@ -146,15 +146,15 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 
 	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user cluster client: %v", err)
+		return nil, fmt.Errorf("failed to get user cluster client: %w", err)
 	}
 
 	if err := r.createInitialMachineDeployment(ctx, nodeDeployment, cluster, userClusterClient); err != nil {
-		return nil, fmt.Errorf("failed to create initial MachineDeployment: %v", err)
+		return nil, fmt.Errorf("failed to create initial MachineDeployment: %w", err)
 	}
 
 	if err := r.removeAnnotation(ctx, cluster); err != nil {
-		return nil, fmt.Errorf("failed to remove initial MachineDeployment annotation: %v", err)
+		return nil, fmt.Errorf("failed to remove initial MachineDeployment annotation: %w", err)
 	}
 
 	return nil, nil
@@ -168,12 +168,12 @@ func (r *Reconciler) parseNodeDeployment(cluster *kubermaticv1.Cluster) (*v1.Nod
 
 	var nodeDeployment *v1.NodeDeployment
 	if err := json.Unmarshal([]byte(request), &nodeDeployment); err != nil {
-		return nil, fmt.Errorf("cannot unmarshal initial MachineDeployment request: %v", err)
+		return nil, fmt.Errorf("cannot unmarshal initial MachineDeployment request: %w", err)
 	}
 
 	nodeDeployment, err := machineresource.Validate(nodeDeployment, cluster.Spec.Version.Semver())
 	if err != nil {
-		return nil, fmt.Errorf("initial node deployment is not valid: %v", err)
+		return nil, fmt.Errorf("initial node deployment is not valid: %w", err)
 	}
 
 	return nodeDeployment, nil
@@ -182,12 +182,12 @@ func (r *Reconciler) parseNodeDeployment(cluster *kubermaticv1.Cluster) (*v1.Nod
 func (r *Reconciler) createInitialMachineDeployment(ctx context.Context, nodeDeployment *v1.NodeDeployment, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) error {
 	datacenter, err := r.getTargetDatacenter(cluster)
 	if err != nil {
-		return fmt.Errorf("failed to get target datacenter: %v", err)
+		return fmt.Errorf("failed to get target datacenter: %w", err)
 	}
 
 	sshKeys, err := r.getSSHKeys(ctx, cluster)
 	if err != nil {
-		return fmt.Errorf("failed to get SSH keys: %v", err)
+		return fmt.Errorf("failed to get SSH keys: %w", err)
 	}
 
 	data := common.CredentialsData{
@@ -198,7 +198,7 @@ func (r *Reconciler) createInitialMachineDeployment(ctx context.Context, nodeDep
 
 	machineDeployment, err := machineresource.Deployment(cluster, nodeDeployment, datacenter, sshKeys, data)
 	if err != nil {
-		return fmt.Errorf("failed to assemble MachineDeployment: %v", err)
+		return fmt.Errorf("failed to assemble MachineDeployment: %w", err)
 	}
 
 	err = client.Create(ctx, machineDeployment)
@@ -221,7 +221,7 @@ func (r *Reconciler) createInitialMachineDeployment(ctx context.Context, nodeDep
 func (r *Reconciler) getTargetDatacenter(cluster *kubermaticv1.Cluster) (*kubermaticv1.Datacenter, error) {
 	seed, err := r.seedGetter()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get current Seed cluster: %v", err)
+		return nil, fmt.Errorf("failed to get current Seed cluster: %w", err)
 	}
 
 	for key, dc := range seed.Spec.Datacenters {
@@ -243,13 +243,13 @@ func (r *Reconciler) getSSHKeys(ctx context.Context, cluster *kubermaticv1.Clust
 
 	project := &kubermaticv1.Project{}
 	if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Name: projectID}, project); err != nil {
-		return nil, fmt.Errorf("failed to get owning project %q: %v", projectID, err)
+		return nil, fmt.Errorf("failed to get owning project %q: %w", projectID, err)
 	}
 
 	sshKeyProvider := kubernetes.NewSSHKeyProvider(nil, r)
 	keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: cluster.Name})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get SSH keys: %v", err)
+		return nil, fmt.Errorf("failed to get SSH keys: %w", err)
 	}
 
 	return keys, nil

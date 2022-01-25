@@ -30,7 +30,7 @@ import (
 func collectReports(name, reportsDir string) (*reporters.JUnitTestSuite, error) {
 	files, err := ioutil.ReadDir(reportsDir)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list files in reportsDir '%s': %v", reportsDir, err)
+		return nil, fmt.Errorf("failed to list files in reportsDir '%s': %w", reportsDir, err)
 	}
 
 	resultSuite := &reporters.JUnitTestSuite{Name: name}
@@ -50,12 +50,12 @@ func collectReports(name, reportsDir string) (*reporters.JUnitTestSuite, error) 
 
 		b, err := ioutil.ReadFile(absName)
 		if err != nil {
-			return nil, fmt.Errorf("failed to read file '%s': %v", absName, err)
+			return nil, fmt.Errorf("failed to read file '%s': %w", absName, err)
 		}
 
 		suite := &reporters.JUnitTestSuite{}
 		if err := xml.Unmarshal(b, suite); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal report file '%s': %v", absName, err)
+			return nil, fmt.Errorf("failed to unmarshal report file '%s': %w", absName, err)
 		}
 
 		appendReport(resultSuite, suite)
@@ -63,7 +63,7 @@ func collectReports(name, reportsDir string) (*reporters.JUnitTestSuite, error) 
 
 	for _, f := range individualReportFiles {
 		if err := os.Remove(f); err != nil {
-			return nil, fmt.Errorf("failed to remove report file: %v", err)
+			return nil, fmt.Errorf("failed to remove report file: %w", err)
 		}
 	}
 

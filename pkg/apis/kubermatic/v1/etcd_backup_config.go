@@ -22,22 +22,22 @@ import (
 )
 
 const (
-	// EtcdBackupConfigResourceName represents "Resource" defined in Kubernetes
+	// EtcdBackupConfigResourceName represents "Resource" defined in Kubernetes.
 	EtcdBackupConfigResourceName = "etcdbackupconfigs"
 
-	// EtcdBackupConfigKindName represents "Kind" defined in Kubernetes
+	// EtcdBackupConfigKindName represents "Kind" defined in Kubernetes.
 	EtcdBackupConfigKindName = "EtcdBackupConfig"
 
 	DefaultKeptBackupsCount = 20
 	MaxKeptBackupsCount     = 50
 
-	// BackupStatusPhase value indicating that the corresponding job has started
+	// BackupStatusPhase value indicating that the corresponding job has started.
 	BackupStatusPhaseRunning = "Running"
 
-	// BackupStatusPhase value indicating that the corresponding job has completed successfully
+	// BackupStatusPhase value indicating that the corresponding job has completed successfully.
 	BackupStatusPhaseCompleted = "Completed"
 
-	// BackupStatusPhase value indicating that the corresponding job has completed with an error
+	// BackupStatusPhase value indicating that the corresponding job has completed with an error.
 	BackupStatusPhaseFailed = "Failed"
 )
 
@@ -45,7 +45,7 @@ const (
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// EtcdBackupConfig specifies a add-on
+// EtcdBackupConfig specifies a add-on.
 type EtcdBackupConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -54,7 +54,7 @@ type EtcdBackupConfig struct {
 	Status EtcdBackupConfigStatus `json:"status,omitempty"`
 }
 
-// EtcdBackupConfigSpec specifies details of an etcd backup
+// EtcdBackupConfigSpec specifies details of an etcd backup.
 type EtcdBackupConfigSpec struct {
 	// Name defines the name of the backup
 	// The name of the backup file in S3 will be <cluster>-<backup name>
@@ -77,7 +77,7 @@ type EtcdBackupConfigSpec struct {
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 
-// EtcdBackupConfigList is a list of etcd backup configs
+// EtcdBackupConfigList is a list of etcd backup configs.
 type EtcdBackupConfigList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

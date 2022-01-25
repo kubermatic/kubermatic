@@ -26,7 +26,7 @@ type fakeCloudProvider struct {
 	nodes map[string]*apiv1.Node
 }
 
-// NewCloudProvider creates a new fake cloud provider
+// NewCloudProvider creates a new fake cloud provider.
 func NewCloudProvider() provider.CloudProvider {
 	return &fakeCloudProvider{
 		nodes: map[string]*apiv1.Node{},
@@ -51,7 +51,7 @@ func (p *fakeCloudProvider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, 
 	return cluster, nil
 }
 
-// ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted
+// ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted.
 func (p *fakeCloudProvider) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
 	return nil
 }

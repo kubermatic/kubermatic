@@ -23,18 +23,22 @@ import (
 	"github.com/Masterminds/semver/v3"
 )
 
-// ErrVersionSkew denotes an error condition where a given kubelet/controlplane version pair is not supported
-type ErrVersionSkew struct {
+// VersionSkewError denotes an error condition where a given kubelet/controlplane version pair is not supported.
+type VersionSkewError struct {
 	ControlPlane *semver.Version
 	Kubelet      *semver.Version
 }
 
-// Error returns a string representation of the error
-func (e ErrVersionSkew) Error() string {
+// Error returns a string representation of the error.
+func (e VersionSkewError) Error() string {
 	return fmt.Sprintf("kubelet version %s is not compatible with control plane version %s", e.Kubelet, e.ControlPlane)
 }
 
-var _ error = ErrVersionSkew{}
+func (e VersionSkewError) Is(other error) bool {
+	return errors.As(other, &VersionSkewError{})
+}
+
+var _ error = VersionSkewError{}
 
 // EnsureVersionCompatible checks whether the given kubelet version
 // is deemed compatible with the given version of the control plane.
@@ -53,7 +57,7 @@ func EnsureVersionCompatible(controlPlane *semver.Version, kubelet *semver.Versi
 	compatible := kubelet.Major() == controlPlane.Major() && kubelet.Minor() >= (controlPlane.Minor()-2) && kubelet.Minor() <= controlPlane.Minor()
 
 	if !compatible {
-		return ErrVersionSkew{
+		return VersionSkewError{
 			ControlPlane: controlPlane,
 			Kubelet:      kubelet,
 		}

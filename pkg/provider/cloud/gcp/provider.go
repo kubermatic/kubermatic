@@ -91,7 +91,7 @@ func (g *gcp) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update prov
 			kuberneteshelper.AddFinalizer(cluster, routesCleanupFinalizer)
 		})
 		if err != nil {
-			return nil, fmt.Errorf("failed to add %s finalizer: %v", routesCleanupFinalizer, err)
+			return nil, fmt.Errorf("failed to add %s finalizer: %w", routesCleanupFinalizer, err)
 		}
 	}
 	return cluster, nil
@@ -121,7 +121,6 @@ func (g *gcp) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 
 // CleanUpCloudProvider removes firewall rules and related finalizer.
 func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-
 	serviceAccount, err := GetCredentialsForCluster(cluster.Spec.Cloud, g.secretKeySelector)
 	if err != nil {
 		return nil, err
@@ -142,14 +141,14 @@ func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provide
 		_, err = firewallService.Delete(projectID, selfRuleName).Do()
 		// we ignore a Google API "not found" error
 		if err != nil && !isHTTPError(err, http.StatusNotFound) {
-			return nil, fmt.Errorf("failed to delete firewall rule %s: %v", selfRuleName, err)
+			return nil, fmt.Errorf("failed to delete firewall rule %s: %w", selfRuleName, err)
 		}
 
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, firewallSelfCleanupFinalizer)
 		})
 		if err != nil {
-			return nil, fmt.Errorf("failed to remove %s finalizer: %v", firewallSelfCleanupFinalizer, err)
+			return nil, fmt.Errorf("failed to remove %s finalizer: %w", firewallSelfCleanupFinalizer, err)
 		}
 	}
 
@@ -157,14 +156,14 @@ func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provide
 		_, err = firewallService.Delete(projectID, icmpRuleName).Do()
 		// we ignore a Google API "not found" error
 		if err != nil && !isHTTPError(err, http.StatusNotFound) {
-			return nil, fmt.Errorf("failed to delete firewall rule %s: %v", icmpRuleName, err)
+			return nil, fmt.Errorf("failed to delete firewall rule %s: %w", icmpRuleName, err)
 		}
 
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, firewallICMPCleanupFinalizer)
 		})
 		if err != nil {
-			return nil, fmt.Errorf("failed to remove %s finalizer: %v", firewallICMPCleanupFinalizer, err)
+			return nil, fmt.Errorf("failed to remove %s finalizer: %w", firewallICMPCleanupFinalizer, err)
 		}
 	}
 
@@ -173,14 +172,14 @@ func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provide
 		_, err = firewallService.Delete(projectID, nodePortRuleName).Do()
 		// we ignore a Google API "not found" error
 		if err != nil && !isHTTPError(err, http.StatusNotFound) {
-			return nil, fmt.Errorf("failed to delete firewall rule %s: %v", nodePortRuleName, err)
+			return nil, fmt.Errorf("failed to delete firewall rule %s: %w", nodePortRuleName, err)
 		}
 
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, firewallNodePortCleanupFinalizer)
 		})
 		if err != nil {
-			return nil, fmt.Errorf("failed to remove %s finalizer: %v", firewallNodePortCleanupFinalizer, err)
+			return nil, fmt.Errorf("failed to remove %s finalizer: %w", firewallNodePortCleanupFinalizer, err)
 		}
 	}
 
@@ -192,7 +191,7 @@ func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provide
 			kuberneteshelper.RemoveFinalizer(cluster, routesCleanupFinalizer)
 		})
 		if err != nil {
-			return nil, fmt.Errorf("failed to remove %s finalizer: %v", routesCleanupFinalizer, err)
+			return nil, fmt.Errorf("failed to remove %s finalizer: %w", routesCleanupFinalizer, err)
 		}
 	}
 
@@ -204,11 +203,11 @@ func ConnectToComputeService(serviceAccount string) (*compute.Service, string, e
 	ctx := context.Background()
 	client, projectID, err := createClient(ctx, serviceAccount, compute.ComputeScope)
 	if err != nil {
-		return nil, "", fmt.Errorf("cannot create Google Cloud client: %v", err)
+		return nil, "", fmt.Errorf("cannot create Google Cloud client: %w", err)
 	}
 	svc, err := compute.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
-		return nil, "", fmt.Errorf("cannot connect to Google Cloud: %v", err)
+		return nil, "", fmt.Errorf("cannot connect to Google Cloud: %w", err)
 	}
 	return svc, projectID, nil
 }
@@ -216,12 +215,12 @@ func ConnectToComputeService(serviceAccount string) (*compute.Service, string, e
 func createClient(ctx context.Context, serviceAccount string, scope string) (*http.Client, string, error) {
 	b, err := base64.StdEncoding.DecodeString(serviceAccount)
 	if err != nil {
-		return nil, "", fmt.Errorf("error decoding service account: %v", err)
+		return nil, "", fmt.Errorf("error decoding service account: %w", err)
 	}
 	sam := map[string]string{}
 	err = json.Unmarshal(b, &sam)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed unmarshaling service account: %v", err)
+		return nil, "", fmt.Errorf("failed unmarshaling service account: %w", err)
 	}
 
 	projectID := sam["project_id"]
@@ -300,14 +299,14 @@ func (g *gcp) ensureFirewallRules(cluster *kubermaticv1.Cluster, update provider
 		}).Do()
 		// we ignore a Google API "already exists" error
 		if err != nil && !isHTTPError(err, http.StatusConflict) {
-			return fmt.Errorf("failed to create firewall rule %s: %v", selfRuleName, err)
+			return fmt.Errorf("failed to create firewall rule %s: %w", selfRuleName, err)
 		}
 
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.AddFinalizer(cluster, firewallSelfCleanupFinalizer)
 		})
 		if err != nil {
-			return fmt.Errorf("failed to add %s finalizer: %v", firewallSelfCleanupFinalizer, err)
+			return fmt.Errorf("failed to add %s finalizer: %w", firewallSelfCleanupFinalizer, err)
 		}
 	}
 
@@ -325,14 +324,14 @@ func (g *gcp) ensureFirewallRules(cluster *kubermaticv1.Cluster, update provider
 		}).Do()
 		// we ignore a Google API "already exists" error
 		if err != nil && !isHTTPError(err, http.StatusConflict) {
-			return fmt.Errorf("failed to create firewall rule %s: %v", icmpRuleName, err)
+			return fmt.Errorf("failed to create firewall rule %s: %w", icmpRuleName, err)
 		}
 
 		newCluster, err := update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.AddFinalizer(cluster, firewallICMPCleanupFinalizer)
 		})
 		if err != nil {
-			return fmt.Errorf("failed to add %s finalizer: %v", firewallICMPCleanupFinalizer, err)
+			return fmt.Errorf("failed to add %s finalizer: %w", firewallICMPCleanupFinalizer, err)
 		}
 		*cluster = *newCluster
 	}
@@ -357,14 +356,14 @@ func (g *gcp) ensureFirewallRules(cluster *kubermaticv1.Cluster, update provider
 		}).Do()
 		// we ignore a Google API "already exists" error
 		if err != nil && !isHTTPError(err, http.StatusConflict) {
-			return fmt.Errorf("failed to create firewall rule %s: %v", nodePortRuleName, err)
+			return fmt.Errorf("failed to create firewall rule %s: %w", nodePortRuleName, err)
 		}
 
 		newCluster, err := update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.AddFinalizer(cluster, firewallNodePortCleanupFinalizer)
 		})
 		if err != nil {
-			return fmt.Errorf("failed to add %s finalizer: %v", firewallNodePortCleanupFinalizer, err)
+			return fmt.Errorf("failed to add %s finalizer: %w", firewallNodePortCleanupFinalizer, err)
 		}
 		*cluster = *newCluster
 	}
@@ -372,12 +371,12 @@ func (g *gcp) ensureFirewallRules(cluster *kubermaticv1.Cluster, update provider
 	return err
 }
 
-// ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted
+// ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted.
 func (g *gcp) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-// GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error
+// GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error.
 func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (serviceAccount string, err error) {
 	serviceAccount = cloud.GCP.ServiceAccount
 
@@ -396,19 +395,20 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 
 // isHTTPError returns true if the given error is of a specific HTTP status code.
 func isHTTPError(err error, status int) bool {
-	gerr, ok := err.(*googleapi.Error)
-	return ok && gerr.Code == status
+	var gerr *googleapi.Error
+
+	return errors.As(err, &gerr) && gerr.Code == status
 }
 
-// cleanUnusedRoutes finds and remove unused gcp routes
+// cleanUnusedRoutes finds and remove unused gcp routes.
 func (g *gcp) cleanUnusedRoutes(cluster *kubermaticv1.Cluster) error {
 	serviceAccount, err := GetCredentialsForCluster(cluster.Spec.Cloud, g.secretKeySelector)
 	if err != nil {
-		return fmt.Errorf("failed to get GCP service account: %v", err)
+		return fmt.Errorf("failed to get GCP service account: %w", err)
 	}
 	svc, projectID, err := ConnectToComputeService(serviceAccount)
 	if err != nil {
-		return fmt.Errorf("failed to connect to GCP comput service: %v", err)
+		return fmt.Errorf("failed to connect to GCP comput service: %w", err)
 	}
 	// filter routes on:
 	// - name prefix for routes created by gcp cloud provider
@@ -421,7 +421,7 @@ func (g *gcp) cleanUnusedRoutes(cluster *kubermaticv1.Cluster) error {
 
 	routesList, err := svc.Routes.List(projectID).Filter(filterStr).Do()
 	if err != nil {
-		return fmt.Errorf("failed to list GCP routes: %v", err)
+		return fmt.Errorf("failed to list GCP routes: %w", err)
 	}
 	logger := g.log.With("cluster", cluster.Name)
 	for _, route := range routesList.Items {
@@ -434,14 +434,14 @@ func (g *gcp) cleanUnusedRoutes(cluster *kubermaticv1.Cluster) error {
 		if isNextHopNotFound(route) {
 			logger.Infof("deleting unused GCP route [%s]", route.Name)
 			if _, err := svc.Routes.Delete(projectID, route.Name).Do(); err != nil && !isHTTPError(err, http.StatusNotFound) {
-				return fmt.Errorf("failed to delete GCP route %s: %v", route.Name, err)
+				return fmt.Errorf("failed to delete GCP route %s: %w", route.Name, err)
 			}
 		}
 	}
 	return nil
 }
 
-// networkURL checks the network name and retuen the network URL based on it
+// networkURL checks the network name and retuen the network URL based on it.
 func (g *gcp) networkURL(project, network string) string {
 	url, err := url.Parse(network)
 	if err == nil && url.Host != "" {
@@ -450,11 +450,11 @@ func (g *gcp) networkURL(project, network string) string {
 	return computeAPIEndpoint + strings.Join([]string{"projects", project, "global", "networks", path.Base(network)}, "/")
 }
 
-// isClusterRoute checks if the route CIDR is part of the Cluster CIDR
+// isClusterRoute checks if the route CIDR is part of the Cluster CIDR.
 func isClusterRoute(cluster *kubermaticv1.Cluster, route *compute.Route) (bool, error) {
 	_, routeCIDR, err := net.ParseCIDR(route.DestRange)
 	if err != nil {
-		return false, fmt.Errorf("failed to parse route destination CIDR: %v", err)
+		return false, fmt.Errorf("failed to parse route destination CIDR: %w", err)
 	}
 	// Not responsible if this route's CIDR is not within our clusterCIDR
 	lastIP := make([]byte, len(routeCIDR.IP))
@@ -466,7 +466,7 @@ func isClusterRoute(cluster *kubermaticv1.Cluster, route *compute.Route) (bool, 
 	for _, clusterCIDRStr := range cluster.Spec.ClusterNetwork.Pods.CIDRBlocks {
 		_, clusterCIDR, err := net.ParseCIDR(clusterCIDRStr)
 		if err != nil {
-			return false, fmt.Errorf("failed to parse cluster CIDR: %v", err)
+			return false, fmt.Errorf("failed to parse cluster CIDR: %w", err)
 		}
 		if clusterCIDR.Contains(routeCIDR.IP) || clusterCIDR.Contains(lastIP) {
 			return true, nil
@@ -475,7 +475,7 @@ func isClusterRoute(cluster *kubermaticv1.Cluster, route *compute.Route) (bool, 
 	return false, nil
 }
 
-// isNextHopNotFound checks if the route has a NEXT_HOP_INSTANCE_NOT_FOUND warning
+// isNextHopNotFound checks if the route has a NEXT_HOP_INSTANCE_NOT_FOUND warning.
 func isNextHopNotFound(route *compute.Route) bool {
 	for _, w := range route.Warnings {
 		if w.Code == "NEXT_HOP_INSTANCE_NOT_FOUND" {

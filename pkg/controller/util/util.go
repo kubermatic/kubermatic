@@ -18,6 +18,7 @@ package util
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -33,12 +34,12 @@ import (
 )
 
 // EnqueueClusterForNamespacedObject enqueues the cluster that owns a namespaced object, if any
-// It is used by various controllers to react to changes in the resources in the cluster namespace
+// It is used by various controllers to react to changes in the resources in the cluster namespace.
 func EnqueueClusterForNamespacedObject(client ctrlruntimeclient.Client) handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		clusterList := &kubermaticv1.ClusterList{}
 		if err := client.List(context.Background(), clusterList); err != nil {
-			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %v", err))
+			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %w", err))
 			return []reconcile.Request{}
 		}
 		for _, cluster := range clusterList.Items {
@@ -52,7 +53,7 @@ func EnqueueClusterForNamespacedObject(client ctrlruntimeclient.Client) handler.
 
 // EnqueueClusterForNamespacedObjectWithSeedName enqueues the cluster that owns a namespaced object,
 // if any. The seedName is put into the namespace field
-// It is used by various controllers to react to changes in the resources in the cluster namespace
+// It is used by various controllers to react to changes in the resources in the cluster namespace.
 func EnqueueClusterForNamespacedObjectWithSeedName(client ctrlruntimeclient.Client, seedName string, clusterSelector labels.Selector) handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		clusterList := &kubermaticv1.ClusterList{}
@@ -61,7 +62,7 @@ func EnqueueClusterForNamespacedObjectWithSeedName(client ctrlruntimeclient.Clie
 		}
 
 		if err := client.List(context.Background(), clusterList, listOpts); err != nil {
-			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %v", err))
+			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %w", err))
 			return []reconcile.Request{}
 		}
 
@@ -95,7 +96,7 @@ func EnqueueClusterScopedObjectWithSeedName(seedName string) handler.EventHandle
 
 // EnqueueConst enqueues a constant. It is meant for controllers that don't have a parent object
 // they could enc and instead reconcile everything at once.
-// The queueKey will be defaulted if empty
+// The queueKey will be defaulted if empty.
 func EnqueueConst(queueKey string) handler.EventHandler {
 	if queueKey == "" {
 		queueKey = "const"
@@ -129,7 +130,7 @@ func ClusterAvailableForReconciling(ctx context.Context, client ctrlruntimeclien
 func ConcurrencyLimitReached(ctx context.Context, client ctrlruntimeclient.Client, limit int) (bool, error) {
 	clusters := &kubermaticv1.ClusterList{}
 	if err := client.List(ctx, clusters); err != nil {
-		return true, fmt.Errorf("failed to list clusters: %v", err)
+		return true, fmt.Errorf("failed to list clusters: %w", err)
 	}
 
 	finishedUpdatingClustersCount := 0
@@ -147,10 +148,5 @@ func ConcurrencyLimitReached(ctx context.Context, client ctrlruntimeclient.Clien
 // IsCacheNotStarted returns true if the given error is not nil and an instance of
 // cache.ErrCacheNotStarted.
 func IsCacheNotStarted(err error) bool {
-	if err == nil {
-		return false
-	}
-
-	_, ok := err.(*cache.ErrCacheNotStarted)
-	return ok
+	return errors.Is(err, &cache.ErrCacheNotStarted{})
 }

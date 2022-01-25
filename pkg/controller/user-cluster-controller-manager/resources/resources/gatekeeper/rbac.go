@@ -39,7 +39,7 @@ func ServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
 	}
 }
 
-// RoleCreator creates the gatekeeper Role
+// RoleCreator creates the gatekeeper Role.
 func RoleCreator() reconciling.NamedRoleCreatorGetter {
 	return func() (string, reconciling.RoleCreator) {
 		return roleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
@@ -72,7 +72,7 @@ func RoleCreator() reconciling.NamedRoleCreatorGetter {
 	}
 }
 
-// RoleBindingCreator creates the gatekeeper RoleBinding
+// RoleBindingCreator creates the gatekeeper RoleBinding.
 func RoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
 	return func() (string, reconciling.RoleBindingCreator) {
 		return roleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
@@ -92,7 +92,7 @@ func RoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
 	}
 }
 
-// ClusterRoleCreator creates the gatekeeper ClusterRole
+// ClusterRoleCreator creates the gatekeeper ClusterRole.
 func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 	return func() (string, reconciling.ClusterRoleCreator) {
 		return roleName, func(r *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
@@ -239,7 +239,7 @@ func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 	}
 }
 
-// ClusterRoleBindingCreator creates the gatekeeper ClusterRoleBinding
+// ClusterRoleBindingCreator creates the gatekeeper ClusterRoleBinding.
 func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return roleBindingName, func(rb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {

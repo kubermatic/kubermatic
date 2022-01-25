@@ -48,7 +48,7 @@ import (
 
 // AllControllers stores the list of all controllers that we want to run,
 // each entry holds the name of the controller and the corresponding
-// start function that will essentially run the controller
+// start function that will essentially run the controller.
 var AllControllers = map[string]controllerCreator{
 	kubernetescontroller.ControllerName:           createKubernetesController,
 	updatecontroller.ControllerName:               createUpdateController,
@@ -73,7 +73,7 @@ type controllerCreator func(*controllerContext) error
 func createAllControllers(ctrlCtx *controllerContext) error {
 	for name, create := range AllControllers {
 		if err := create(ctrlCtx); err != nil {
-			return fmt.Errorf("failed to create %q controller: %v", name, err)
+			return fmt.Errorf("failed to create %q controller: %w", name, err)
 		}
 	}
 	return nil
@@ -102,7 +102,7 @@ func createCloudController(ctrlCtx *controllerContext) error {
 		ctrlCtx.versions,
 		ctrlCtx.runOptions.caBundle.CertPool(),
 	); err != nil {
-		return fmt.Errorf("failed to add cloud controller to mgr: %v", err)
+		return fmt.Errorf("failed to add cloud controller to mgr: %w", err)
 	}
 	return nil
 }
@@ -110,7 +110,7 @@ func createCloudController(ctrlCtx *controllerContext) error {
 func createKubernetesController(ctrlCtx *controllerContext) error {
 	backupInterval, err := time.ParseDuration(ctrlCtx.runOptions.backupInterval)
 	if err != nil {
-		return fmt.Errorf("failed to parse %s as duration: %v", ctrlCtx.runOptions.backupInterval, err)
+		return fmt.Errorf("failed to parse %s as duration: %w", ctrlCtx.runOptions.backupInterval, err)
 	}
 
 	return kubernetescontroller.Add(
@@ -205,7 +205,7 @@ func createBackupController(ctrlCtx *controllerContext) error {
 	}
 	backupInterval, err := time.ParseDuration(ctrlCtx.runOptions.backupInterval)
 	if err != nil {
-		return fmt.Errorf("failed to parse %s as duration: %v", ctrlCtx.runOptions.backupInterval, err)
+		return fmt.Errorf("failed to parse %s as duration: %w", ctrlCtx.runOptions.backupInterval, err)
 	}
 	return backupcontroller.Add(
 		ctrlCtx.log,

@@ -44,7 +44,6 @@ import (
 const ctName = "requiredlabels"
 
 func TestReconcile(t *testing.T) {
-
 	testCases := []struct {
 		name                 string
 		requestName          string
@@ -129,12 +128,12 @@ func TestReconcile(t *testing.T) {
 	}
 }
 
-func genConstraintTemplate(name string, delete bool) *kubermaticv1.ConstraintTemplate {
+func genConstraintTemplate(name string, deleted bool) *kubermaticv1.ConstraintTemplate {
 	ct := &kubermaticv1.ConstraintTemplate{}
 	ct.Name = name
 
 	ct.Spec = genCTSpec()
-	if delete {
+	if deleted {
 		deleteTime := metav1.NewTime(time.Now())
 		ct.DeletionTimestamp = &deleteTime
 		ct.Finalizers = append(ct.Finalizers, v1.GatekeeperSeedConstraintTemplateCleanupFinalizer)

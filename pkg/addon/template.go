@@ -74,7 +74,7 @@ func NewTemplateData(
 ) (*TemplateData, error) {
 	providerName, err := provider.ClusterCloudProviderName(cluster.Spec.Cloud)
 	if err != nil {
-		return nil, fmt.Errorf("failed to determine cloud provider name: %v", err)
+		return nil, fmt.Errorf("failed to determine cloud provider name: %w", err)
 	}
 
 	// Ensure IPVS configuration is set
@@ -249,17 +249,17 @@ func ParseFromFolder(log *zap.SugaredLogger, overwriteRegistry string, manifestP
 
 		fbytes, err := ioutil.ReadFile(filename)
 		if err != nil {
-			return nil, fmt.Errorf("failed to read file %s: %v", filename, err)
+			return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
 		}
 
 		tpl, err := template.New(info.Name()).Funcs(txtFuncMap(overwriteRegistry)).Parse(string(fbytes))
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse file %s: %v", filename, err)
+			return nil, fmt.Errorf("failed to parse file %s: %w", filename, err)
 		}
 
 		bufferAll := bytes.NewBuffer([]byte{})
 		if err := tpl.Execute(bufferAll, data); err != nil {
-			return nil, fmt.Errorf("failed to execute templating on file %s: %v", filename, err)
+			return nil, fmt.Errorf("failed to execute templating on file %s: %w", filename, err)
 		}
 
 		sd := strings.TrimSpace(bufferAll.String())
@@ -270,7 +270,7 @@ func ParseFromFolder(log *zap.SugaredLogger, overwriteRegistry string, manifestP
 
 		addonManifests, err := yaml.ParseMultipleDocuments(bufio.NewReader(bufferAll))
 		if err != nil {
-			return nil, fmt.Errorf("decoding failed for file %s: %v", filename, err)
+			return nil, fmt.Errorf("decoding failed for file %s: %w", filename, err)
 		}
 		allManifests = append(allManifests, addonManifests...)
 	}

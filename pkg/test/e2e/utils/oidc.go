@@ -59,7 +59,7 @@ func OIDCAdminCredentials() (string, string, error) {
 }
 
 // these variables are runtime caches to not have to login to Dex
-// over and over again
+// over and over again.
 var (
 	masterToken      = ""
 	adminMasterToken = ""
@@ -105,7 +105,7 @@ func retrieveToken(ctx context.Context, token *string, login string, password st
 
 	client, err := dex.NewClientFromHelmValues(valuesFile, "kubermatic", logger)
 	if err != nil {
-		return "", fmt.Errorf("failed to create OIDC client: %v", err)
+		return "", fmt.Errorf("failed to create OIDC client: %w", err)
 	}
 
 	newToken, err := client.Login(ctx, login, password)

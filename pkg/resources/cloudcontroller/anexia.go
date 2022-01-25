@@ -32,7 +32,6 @@ import (
 const AnexiaCCMDeploymentName = "anx-cloud-controller-manager"
 
 func anexiaDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
-
 	return func() (name string, create reconciling.DeploymentCreator) {
 		return AnexiaCCMDeploymentName, func(deployment *appsv1.Deployment) (*appsv1.Deployment, error) {
 			deployment.Labels = resources.BaseAppLabels(AnexiaCCMDeploymentName, nil)
@@ -56,7 +55,7 @@ func anexiaDeploymentCreator(data *resources.TemplateData) reconciling.NamedDepl
 
 			credentials, err := resources.GetCredentials(data)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get credentials: %v", err)
+				return nil, fmt.Errorf("failed to get credentials: %w", err)
 			}
 
 			deployment.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled())
@@ -118,7 +117,7 @@ func anexiaDeploymentCreator(data *resources.TemplateData) reconciling.NamedDepl
 			if !data.IsKonnectivityEnabled() {
 				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
 				if err != nil {
-					return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
+					return nil, fmt.Errorf("failed to get openvpn sidecar: %w", err)
 				}
 				deployment.Spec.Template.Spec.Containers = append(deployment.Spec.Template.Spec.Containers, *openvpnSidecar)
 			}

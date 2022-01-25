@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// TaintSpec TaintSpec defines a node taint
+// TaintSpec TaintSpec defines a node taint.
 //
 // swagger:model TaintSpec
 type TaintSpec struct {

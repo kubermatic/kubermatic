@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/go-test/deep"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -1942,8 +1943,8 @@ func TestMultipleBackupDestination(t *testing.T) {
 			expectedErr:        fmt.Sprintf("can't find backup destination %q in Seed %q", "missing", test.GenTestSeed().Name),
 		},
 	}
-	for _, tc := range testCases {
 
+	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			initObjs := []client.Object{
 				genTestCluster(),
