@@ -3,7 +3,7 @@
 package scheme
 
 import (
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

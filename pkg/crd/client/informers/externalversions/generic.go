@@ -5,7 +5,7 @@ package externalversions
 import (
 	"fmt"
 
-	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
 )
