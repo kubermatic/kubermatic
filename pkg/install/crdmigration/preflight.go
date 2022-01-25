@@ -25,6 +25,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/kubermatic"
 	kubermaticseed "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/kubermatic"
@@ -36,6 +37,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	metav1unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -163,7 +165,13 @@ func validateKubermaticNotRunningInCluster(ctx context.Context, logger logrus.Fi
 
 	webhooks := []string{
 		kubermaticseed.ClusterAdmissionWebhookName,
-		common.SeedAdmissionWebhookName(opt.KubermaticConfiguration),
+		// this cheats a bit and assumes that the function only needs the object meta
+		common.SeedAdmissionWebhookName(&v1.KubermaticConfiguration{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      opt.KubermaticConfiguration.Name,
+				Namespace: opt.KubermaticConfiguration.Namespace,
+			},
+		}),
 	}
 
 	for _, name := range webhooks {

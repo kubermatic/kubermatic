@@ -31,7 +31,6 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common/vpa"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	masteroperator "k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/kubermatic"
@@ -127,7 +126,7 @@ func main() {
 
 	// If given, load the KubermaticConfiguration. It's not yet a required
 	// parameter in order to support Helm-based Enterprise setups.
-	var kubermaticConfig *operatorv1alpha1.KubermaticConfiguration
+	var kubermaticConfig *kubermaticv1.KubermaticConfiguration
 	if o.configurationFile != "" {
 		kubermaticConfig, err = loadKubermaticConfiguration(log, o.configurationFile)
 		if err != nil {
@@ -155,7 +154,7 @@ func main() {
 			if kubermaticConfig == nil {
 				log.Warn("No KubermaticConfiguration, -addons-image or -addons-path given, cannot mirror images referenced in addons.")
 			} else {
-				addonsImage = kubermaticConfig.Spec.UserCluster.Addons.Kubernetes.DockerRepository + ":" + kubermaticVersions.Kubermatic
+				addonsImage = kubermaticConfig.Spec.UserCluster.Addons.DockerRepository + ":" + kubermaticVersions.Kubermatic
 			}
 		}
 
@@ -240,7 +239,7 @@ func processImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, ima
 	return nil
 }
 
-func getImagesForVersion(log *zap.SugaredLogger, clusterVersion *kubermaticversion.Version, config *operatorv1alpha1.KubermaticConfiguration, addonsPath string, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (images []string, err error) {
+func getImagesForVersion(log *zap.SugaredLogger, clusterVersion *kubermaticversion.Version, config *kubermaticv1.KubermaticConfiguration, addonsPath string, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (images []string, err error) {
 	templateData, err := getTemplateData(clusterVersion, kubermaticVersions, caBundle)
 	if err != nil {
 		return nil, err
@@ -261,7 +260,7 @@ func getImagesForVersion(log *zap.SugaredLogger, clusterVersion *kubermaticversi
 	return images, nil
 }
 
-func getImagesFromCreators(log *zap.SugaredLogger, templateData *resources.TemplateData, config *operatorv1alpha1.KubermaticConfiguration, kubermaticVersions kubermatic.Versions) (images []string, err error) {
+func getImagesFromCreators(log *zap.SugaredLogger, templateData *resources.TemplateData, config *kubermaticv1.KubermaticConfiguration, kubermaticVersions kubermatic.Versions) (images []string, err error) {
 	seed, err := defaults.DefaultSeed(&kubermaticv1.Seed{}, config, log)
 	if err != nil {
 		return nil, fmt.Errorf("failed to default Seed: %w", err)
@@ -497,7 +496,7 @@ func createNamedSecrets(secretNames []string) *corev1.SecretList {
 	return &secretList
 }
 
-func getVersions(log *zap.SugaredLogger, config *operatorv1alpha1.KubermaticConfiguration, versionsFile, versionFilter string) ([]*kubermaticversion.Version, error) {
+func getVersions(log *zap.SugaredLogger, config *kubermaticv1.KubermaticConfiguration, versionsFile, versionFilter string) ([]*kubermaticversion.Version, error) {
 	var versions []*kubermaticversion.Version
 
 	log = log.With("versions-filter", versionFilter)

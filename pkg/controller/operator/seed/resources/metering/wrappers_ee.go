@@ -22,13 +22,12 @@ import (
 	"context"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/ee/metering"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // ReconcileMeteringResources reconciles the metering related resources.
-func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Client, cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed) error {
+func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Client, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) error {
 	return metering.ReconcileMeteringResources(ctx, client, cfg, seed)
 }

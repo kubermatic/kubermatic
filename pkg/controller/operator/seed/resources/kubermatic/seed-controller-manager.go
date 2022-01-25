@@ -20,7 +20,6 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -40,7 +39,7 @@ func seedControllerManagerPodLabels() map[string]string {
 	}
 }
 
-func SeedControllerManagerDeploymentCreator(workerName string, versions kubermatic.Versions, cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed) reconciling.NamedDeploymentCreatorGetter {
+func SeedControllerManagerDeploymentCreator(workerName string, versions kubermatic.Versions, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return common.SeedControllerManagerDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = cfg.Spec.SeedController.Replicas
@@ -190,7 +189,7 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 				})
 			}
 
-			if cfg.Spec.FeatureGates.Has(features.OpenIDAuthPlugin) {
+			if cfg.Spec.FeatureGates[features.OpenIDAuthPlugin] {
 				args = append(args,
 					fmt.Sprintf("-oidc-issuer-url=%s", cfg.Spec.Auth.TokenIssuer),
 					fmt.Sprintf("-oidc-issuer-client-id=%s", cfg.Spec.Auth.IssuerClientID),
@@ -200,7 +199,7 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 
 			d.Spec.Template.Spec.Volumes = volumes
 			d.Spec.Template.Spec.InitContainers = []corev1.Container{
-				createAddonsInitContainer(cfg.Spec.UserCluster.Addons.Kubernetes, sharedAddonVolume, versions.Kubermatic),
+				createAddonsInitContainer(cfg.Spec.UserCluster.Addons, sharedAddonVolume, versions.Kubermatic),
 			}
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
@@ -226,7 +225,7 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 	}
 }
 
-func createAddonsInitContainer(cfg operatorv1alpha1.KubermaticAddonConfiguration, addonVolume string, version string) corev1.Container {
+func createAddonsInitContainer(cfg kubermaticv1.KubermaticAddonsConfiguration, addonVolume string, version string) corev1.Container {
 	return corev1.Container{
 		Name:    "copy-addons",
 		Image:   cfg.DockerRepository + ":" + getAddonDockerTag(cfg, version),
@@ -244,7 +243,7 @@ func createAddonsInitContainer(cfg operatorv1alpha1.KubermaticAddonConfiguration
 	}
 }
 
-func getAddonDockerTag(cfg operatorv1alpha1.KubermaticAddonConfiguration, version string) string {
+func getAddonDockerTag(cfg kubermaticv1.KubermaticAddonsConfiguration, version string) string {
 	if cfg.DockerTagSuffix != "" {
 		version = fmt.Sprintf("%s-%s", version, cfg.DockerTagSuffix)
 	}
@@ -252,7 +251,7 @@ func getAddonDockerTag(cfg operatorv1alpha1.KubermaticAddonConfiguration, versio
 	return version
 }
 
-func SeedControllerManagerPDBCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedPodDisruptionBudgetCreatorGetter {
+func SeedControllerManagerPDBCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	name := "kubermatic-seed-controller-manager"
 
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {

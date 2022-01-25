@@ -30,13 +30,11 @@ import (
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/test-infra/pkg/genyaml"
 	"k8s.io/utils/pointer"
 )
@@ -106,7 +104,7 @@ func main() {
 	}
 }
 
-func createExampleSeed(config *operatorv1alpha1.KubermaticConfiguration) *kubermaticv1.Seed {
+func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermaticv1.Seed {
 	imageList := kubermaticv1.ImageList{}
 
 	for _, operatingSystem := range providerconfig.AllOperatingSystems {
@@ -197,22 +195,22 @@ func createExampleSeed(config *operatorv1alpha1.KubermaticConfiguration) *kuberm
 	return defaulted
 }
 
-func createExampleKubermaticConfiguration() *operatorv1alpha1.KubermaticConfiguration {
-	cfg := &operatorv1alpha1.KubermaticConfiguration{
+func createExampleKubermaticConfiguration() *kubermaticv1.KubermaticConfiguration {
+	cfg := &kubermaticv1.KubermaticConfiguration{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: operatorv1alpha1.SchemeGroupVersion.String(),
+			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 			Kind:       "KubermaticConfiguration",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "<<mykubermatic>>",
 			Namespace: "kubermatic",
 		},
-		Spec: operatorv1alpha1.KubermaticConfigurationSpec{
-			Ingress: operatorv1alpha1.KubermaticIngressConfiguration{
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			Ingress: kubermaticv1.KubermaticIngressConfiguration{
 				Domain: "example.com",
 			},
-			FeatureGates: sets.NewString(),
-			API: operatorv1alpha1.KubermaticAPIConfiguration{
+			FeatureGates: map[string]bool{},
+			API: kubermaticv1.KubermaticAPIConfiguration{
 				AccessibleAddons: []string{},
 			},
 		},
@@ -225,7 +223,7 @@ func createExampleKubermaticConfiguration() *operatorv1alpha1.KubermaticConfigur
 
 	// ensure that all fields for updates are documented, even though we explicitly
 	// omit them in all but the first array item
-	setUpdateDefaults := func(cfg *operatorv1alpha1.KubermaticVersioningConfiguration) {
+	setUpdateDefaults := func(cfg *kubermaticv1.KubermaticVersioningConfiguration) {
 		if len(cfg.Updates) > 0 {
 			if cfg.Updates[0].Automatic == nil {
 				cfg.Updates[0].Automatic = pointer.BoolPtr(false)
@@ -237,7 +235,7 @@ func createExampleKubermaticConfiguration() *operatorv1alpha1.KubermaticConfigur
 		}
 	}
 
-	setUpdateDefaults(&defaulted.Spec.Versions.Kubernetes)
+	setUpdateDefaults(&defaulted.Spec.Versions)
 	return defaulted
 }
 

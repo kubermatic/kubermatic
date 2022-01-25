@@ -76,13 +76,9 @@ func ShutdownAction(logger *logrus.Logger) cli.ActionFunc {
 			return fmt.Errorf("failed to create Kubernetes client: %w", err)
 		}
 
-		// retrieve KubermaticConfiguration
-		configGetter, err := provider.DynamicKubermaticConfigurationGetterFactory(kubeClient, namespace)
-		if err != nil {
-			return fmt.Errorf("failed to create KubermaticConfiguration client: %w", err)
-		}
-
-		config, err := configGetter(appContext)
+		// retrieve legacy KubermaticConfiguration (note: this is NOT defaulted, because
+		// the defaulting code is only working for the new API group)
+		config, err := loadLegacyKubermaticConfiguration(appContext, kubeClient, namespace)
 		if err != nil {
 			return fmt.Errorf("failed to retrieve KubermaticConfiguration: %w", err)
 		}

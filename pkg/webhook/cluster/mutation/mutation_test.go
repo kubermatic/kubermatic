@@ -27,7 +27,6 @@ import (
 	jsonpatch "gomodules.xyz/jsonpatch/v2"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -49,7 +48,7 @@ import (
 
 var (
 	testScheme = runtime.NewScheme()
-	config     = operatorv1alpha1.KubermaticConfiguration{}
+	config     = kubermaticv1.KubermaticConfiguration{}
 	seed       = kubermaticv1.Seed{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-seed",

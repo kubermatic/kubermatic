@@ -266,7 +266,7 @@ EOF
 time retry 10 kubectl apply -f "${API_SERVER_NODEPORT_MANIFEST}" &
 
 EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
-    -openstack-project=${OS_PROJECT:-$OS_TENANT_NAME}
+    -openstack-project=${OS_TENANT_NAME}
     -openstack-username=${OS_USERNAME}
     -openstack-password=${OS_PASSWORD}
     -openstack-auth-url=${OS_AUTH_URL}

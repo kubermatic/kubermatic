@@ -33,7 +33,6 @@ import (
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes"
 	monitoringcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
@@ -263,10 +262,10 @@ func TestLoadFiles(t *testing.T) {
 	kubermaticVersions := kubermatic.NewFakeVersions()
 	caBundle := certificates.NewFakeCABundle()
 
-	config := &operatorv1alpha1.KubermaticConfiguration{
-		Spec: operatorv1alpha1.KubermaticConfigurationSpec{
-			UserCluster: operatorv1alpha1.KubermaticUserClusterConfiguration{
-				Monitoring: operatorv1alpha1.KubermaticUserClusterMonitoringConfiguration{
+	config := &kubermaticv1.KubermaticConfiguration{
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
+				Monitoring: kubermaticv1.KubermaticUserClusterMonitoringConfiguration{
 					ScrapeAnnotationPrefix: defaults.DefaultUserClusterScrapeAnnotationPrefix,
 					CustomScrapingConfigs: `
 - job_name: custom-test-config

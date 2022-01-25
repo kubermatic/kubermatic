@@ -25,9 +25,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	newv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/install/crdmigration"
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -81,13 +81,9 @@ func MigrateCRDsAction(logger *logrus.Logger) cli.ActionFunc {
 			return fmt.Errorf("failed to create Kubernetes client: %w", err)
 		}
 
-		// retrieve KubermaticConfiguration
-		configGetter, err := provider.DynamicKubermaticConfigurationGetterFactory(kubeClient, namespace)
-		if err != nil {
-			return fmt.Errorf("failed to create KubermaticConfiguration client: %w", err)
-		}
-
-		config, err := configGetter(appContext)
+		// retrieve legacy KubermaticConfiguration (note: this is NOT defaulted, because
+		// the defaulting code is only working for the new API group)
+		config, err := loadLegacyKubermaticConfiguration(appContext, kubeClient, namespace)
 		if err != nil {
 			return fmt.Errorf("failed to retrieve KubermaticConfiguration: %w", err)
 		}
@@ -203,11 +199,11 @@ func getKubeClient(ctx context.Context, logger logrus.FieldLogger, kubeContext s
 		return nil, fmt.Errorf("failed to add scheme: %w", err)
 	}
 
-	if err := newv1.AddToScheme(mgr.GetScheme()); err != nil {
+	if err := operatorv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
 		return nil, fmt.Errorf("failed to add scheme: %w", err)
 	}
 
-	if err := operatorv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
+	if err := newv1.AddToScheme(mgr.GetScheme()); err != nil {
 		return nil, fmt.Errorf("failed to add scheme: %w", err)
 	}
 

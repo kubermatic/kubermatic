@@ -23,7 +23,6 @@ import (
 	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -74,7 +73,7 @@ var (
 )
 
 func isKubermaticConfiguration(ref metav1.OwnerReference) bool {
-	return ref.APIVersion == operatorv1alpha1.SchemeGroupVersion.String() && ref.Kind == "KubermaticConfiguration"
+	return ref.APIVersion == kubermaticv1.SchemeGroupVersion.String() && ref.Kind == "KubermaticConfiguration"
 }
 
 func isSeed(ref metav1.OwnerReference) bool {
@@ -83,10 +82,12 @@ func isSeed(ref metav1.OwnerReference) bool {
 
 // StringifyFeatureGates takes a set of enabled features and returns a comma-separated
 // key=value list like "featureA=true,featureB=true,...".
-func StringifyFeatureGates(cfg *operatorv1alpha1.KubermaticConfiguration) string {
+func StringifyFeatureGates(cfg *kubermaticv1.KubermaticConfiguration) string {
 	features := make([]string, 0)
-	for _, feature := range cfg.Spec.FeatureGates.List() {
-		features = append(features, fmt.Sprintf("%s=true", feature))
+	for feature, enabled := range cfg.Spec.FeatureGates {
+		if enabled {
+			features = append(features, fmt.Sprintf("%s=true", feature))
+		}
 	}
 
 	return strings.Join(features, ",")
@@ -208,7 +209,7 @@ func CleanupClusterResource(client ctrlruntimeclient.Client, obj ctrlruntimeclie
 	return nil
 }
 
-func ProxyEnvironmentVars(cfg *operatorv1alpha1.KubermaticConfiguration) []corev1.EnvVar {
+func ProxyEnvironmentVars(cfg *kubermaticv1.KubermaticConfiguration) []corev1.EnvVar {
 	result := []corev1.EnvVar{}
 	settings := cfg.Spec.Proxy
 

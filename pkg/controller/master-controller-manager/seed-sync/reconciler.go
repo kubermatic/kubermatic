@@ -24,7 +24,6 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -97,8 +96,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return reconcile.Result{}, nil
 }
 
-func (r *Reconciler) getKubermaticConfiguration(ctx context.Context, namespace string) (*operatorv1alpha1.KubermaticConfiguration, error) {
-	configList := &operatorv1alpha1.KubermaticConfigurationList{}
+func (r *Reconciler) getKubermaticConfiguration(ctx context.Context, namespace string) (*kubermaticv1.KubermaticConfiguration, error) {
+	configList := &kubermaticv1.KubermaticConfigurationList{}
 	listOpts := &ctrlruntimeclient.ListOptions{
 		Namespace: namespace,
 	}
@@ -120,7 +119,7 @@ func (r *Reconciler) getKubermaticConfiguration(ctx context.Context, namespace s
 	return &configList.Items[0], nil
 }
 
-func (r *Reconciler) reconcile(ctx context.Context, config *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, logger *zap.SugaredLogger) error {
+func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, logger *zap.SugaredLogger) error {
 	// ensure we always have a cleanup finalizer on the original
 	// Seed CR inside the master cluster
 	oldSeed := seed.DeepCopy()
@@ -158,7 +157,7 @@ func (r *Reconciler) reconcile(ctx context.Context, config *operatorv1alpha1.Kub
 // and is responsible for removing the Seed CR copy inside the seed cluster. This can end up
 // in a Retry if other components like the Kubermatic Operator still have finalizers on the
 // Seed CR copy.
-func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, configInMaster *operatorv1alpha1.KubermaticConfiguration, seedInMaster *kubermaticv1.Seed, seedClient ctrlruntimeclient.Client, logger *zap.SugaredLogger) (*reconcile.Result, error) {
+func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, configInMaster *kubermaticv1.KubermaticConfiguration, seedInMaster *kubermaticv1.Seed, seedClient ctrlruntimeclient.Client, logger *zap.SugaredLogger) (*reconcile.Result, error) {
 	if !kubernetes.HasAnyFinalizer(seedInMaster, CleanupFinalizer) {
 		return nil, nil
 	}
@@ -176,7 +175,7 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, configInMaster *ope
 		return nil, fmt.Errorf("failed to probe for %s: %w", seedKey, err)
 	}
 
-	configInSeed := &operatorv1alpha1.KubermaticConfiguration{}
+	configInSeed := &kubermaticv1.KubermaticConfiguration{}
 
 	err = seedClient.Get(ctx, configKey, configInSeed)
 	if err != nil && !kerrors.IsNotFound(err) {

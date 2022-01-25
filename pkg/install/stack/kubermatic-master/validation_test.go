@@ -19,9 +19,8 @@ package kubermaticmaster
 import (
 	"testing"
 
-	"github.com/Masterminds/semver/v3"
-
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/semver"
 
 	"k8s.io/utils/pointer"
 )
@@ -29,35 +28,35 @@ import (
 func TestClusterVersionIsConfigured(t *testing.T) {
 	testcases := []struct {
 		name       string
-		version    *semver.Version
-		versions   operatorv1alpha1.KubermaticVersioningConfiguration
+		version    semver.Semver
+		versions   kubermaticv1.KubermaticVersioningConfiguration
 		configured bool
 	}{
 		{
 			name:    "version is directly supported",
-			version: semver.MustParse("1.0.0"),
-			versions: operatorv1alpha1.KubermaticVersioningConfiguration{
-				Versions: []*semver.Version{
-					semver.MustParse("1.0.0"),
+			version: *semver.NewSemverOrDie("1.0.0"),
+			versions: kubermaticv1.KubermaticVersioningConfiguration{
+				Versions: []semver.Semver{
+					*semver.NewSemverOrDie("1.0.0"),
 				},
 			},
 			configured: true,
 		},
 		{
 			name:    "version is not configured",
-			version: semver.MustParse("1.0.0"),
-			versions: operatorv1alpha1.KubermaticVersioningConfiguration{
-				Versions: []*semver.Version{
-					semver.MustParse("2.0.0"),
+			version: *semver.NewSemverOrDie("1.0.0"),
+			versions: kubermaticv1.KubermaticVersioningConfiguration{
+				Versions: []semver.Semver{
+					*semver.NewSemverOrDie("2.0.0"),
 				},
 			},
 			configured: false,
 		},
 		{
 			name:    "update constraint matches because it's auto update",
-			version: semver.MustParse("1.0.0"),
-			versions: operatorv1alpha1.KubermaticVersioningConfiguration{
-				Updates: []operatorv1alpha1.Update{
+			version: *semver.NewSemverOrDie("1.0.0"),
+			versions: kubermaticv1.KubermaticVersioningConfiguration{
+				Updates: []kubermaticv1.Update{
 					{
 						From:      "1.0.0",
 						To:        "2.0.0",
@@ -69,9 +68,9 @@ func TestClusterVersionIsConfigured(t *testing.T) {
 		},
 		{
 			name:    "constraint expression matches",
-			version: semver.MustParse("1.2.3"),
-			versions: operatorv1alpha1.KubermaticVersioningConfiguration{
-				Updates: []operatorv1alpha1.Update{
+			version: *semver.NewSemverOrDie("1.2.3"),
+			versions: kubermaticv1.KubermaticVersioningConfiguration{
+				Updates: []kubermaticv1.Update{
 					{
 						From:      "1.2.*",
 						To:        "2.0.0",
@@ -83,9 +82,9 @@ func TestClusterVersionIsConfigured(t *testing.T) {
 		},
 		{
 			name:    "update constraint does not match because it's no auto update",
-			version: semver.MustParse("1.0.0"),
-			versions: operatorv1alpha1.KubermaticVersioningConfiguration{
-				Updates: []operatorv1alpha1.Update{
+			version: *semver.NewSemverOrDie("1.0.0"),
+			versions: kubermaticv1.KubermaticVersioningConfiguration{
+				Updates: []kubermaticv1.Update{
 					{
 						From:      "1.0.0",
 						To:        "2.0.0",
@@ -99,11 +98,9 @@ func TestClusterVersionIsConfigured(t *testing.T) {
 
 	for _, testcase := range testcases {
 		t.Run(testcase.name, func(t *testing.T) {
-			config := operatorv1alpha1.KubermaticConfiguration{
-				Spec: operatorv1alpha1.KubermaticConfigurationSpec{
-					Versions: operatorv1alpha1.KubermaticVersionsConfiguration{
-						Kubernetes: testcase.versions,
-					},
+			config := kubermaticv1.KubermaticConfiguration{
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					Versions: testcase.versions,
 				},
 			}
 

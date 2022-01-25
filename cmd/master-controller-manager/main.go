@@ -26,7 +26,7 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/features"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -132,7 +132,7 @@ func main() {
 
 	// for development purposes, a local configuration file
 	// can be used to provide the KubermaticConfiguration
-	var config *operatorv1alpha1.KubermaticConfiguration
+	var config *kubermaticv1.KubermaticConfiguration
 	if runOpts.configFile != "" {
 		if config, err = loadKubermaticConfiguration(runOpts.configFile); err != nil {
 			log.Fatalw("invalid KubermaticConfiguration", zap.Error(err))
@@ -178,8 +178,8 @@ func main() {
 		log.Fatalw("failed to add pprof endpoint", zap.Error(err))
 	}
 
-	if err := operatorv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Fatalw("Failed to register scheme", zap.Stringer("api", operatorv1alpha1.SchemeGroupVersion), zap.Error(err))
+	if err := kubermaticv1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", kubermaticv1.SchemeGroupVersion), zap.Error(err))
 	}
 
 	// these two getters rely on the ctrlruntime manager being started; they
@@ -222,13 +222,13 @@ func main() {
 	}
 }
 
-func loadKubermaticConfiguration(filename string) (*operatorv1alpha1.KubermaticConfiguration, error) {
+func loadKubermaticConfiguration(filename string) (*kubermaticv1.KubermaticConfiguration, error) {
 	content, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
 
-	config := &operatorv1alpha1.KubermaticConfiguration{}
+	config := &kubermaticv1.KubermaticConfiguration{}
 	if err := yaml.Unmarshal(content, &config); err != nil {
 		return nil, fmt.Errorf("failed to parse file as YAML: %w", err)
 	}

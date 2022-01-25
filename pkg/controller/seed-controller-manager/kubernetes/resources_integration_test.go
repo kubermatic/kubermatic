@@ -23,7 +23,6 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -217,8 +216,8 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 				},
 			}, nil
 		},
-		configGetter: func(_ context.Context) (*operatorv1alpha1.KubermaticConfiguration, error) {
-			return &operatorv1alpha1.KubermaticConfiguration{}, nil
+		configGetter: func(_ context.Context) (*kubermaticv1.KubermaticConfiguration, error) {
+			return &kubermaticv1.KubermaticConfiguration{}, nil
 		},
 		caBundle:                caBundle,
 		userClusterConnProvider: new(testUserClusterConnectionProvider),
