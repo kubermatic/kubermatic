@@ -1031,7 +1031,7 @@ func ConvertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, dat
 	return cluster
 }
 
-func ValidateClusterSpec(clusterType kubermaticv1.ClusterType, updateManager common.UpdateManager, body apiv1.CreateClusterSpec) error {
+func ValidateClusterSpec(updateManager common.UpdateManager, body apiv1.CreateClusterSpec) error {
 	if body.Cluster.Spec.Cloud.DatacenterName == "" {
 		return fmt.Errorf("cluster datacenter name is empty")
 	}
@@ -1040,9 +1040,6 @@ func ValidateClusterSpec(clusterType kubermaticv1.ClusterType, updateManager com
 	}
 	if !ClusterTypes.Has(body.Cluster.Type) {
 		return fmt.Errorf("invalid cluster type %s", body.Cluster.Type)
-	}
-	if clusterType != kubermaticv1.ClusterTypeAll && clusterType != apiv1.ToInternalClusterType(body.Cluster.Type) {
-		return fmt.Errorf("disabled cluster type %s", body.Cluster.Type)
 	}
 	if body.Cluster.Spec.Version.Semver() == nil {
 		return fmt.Errorf("invalid cluster: invalid cloud spec \"Version\" is required but was not specified")

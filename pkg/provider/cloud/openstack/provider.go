@@ -680,8 +680,8 @@ func getNetClientForCluster(cluster kubermaticv1.CloudSpec, dc *kubermaticv1.Dat
 func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (*resources.OpenstackCredentials, error) {
 	username := cloud.Openstack.Username
 	password := cloud.Openstack.Password
-	project := cloud.Openstack.GetProject()
-	projectID := cloud.Openstack.GetProjectId()
+	project := cloud.Openstack.Project
+	projectID := cloud.Openstack.ProjectID
 	domain := cloud.Openstack.Domain
 	applicationCredentialID := cloud.Openstack.ApplicationCredentialID
 	applicationCredentialSecret := cloud.Openstack.ApplicationCredentialSecret

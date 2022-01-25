@@ -507,7 +507,6 @@ func DeletePreset(presetProvider provider.PresetProvider, userInfoGetter provide
 func mergePresets(oldPreset *crdapiv1.Preset, newPreset *crdapiv1.Preset, providerType crdapiv1.ProviderType) *crdapiv1.Preset {
 	oldPreset = helper.OverrideProvider(oldPreset, providerType, newPreset)
 	oldPreset.Spec.RequiredEmails = newPreset.Spec.RequiredEmails
-	oldPreset.Spec.RequiredEmailDomain = newPreset.Spec.RequiredEmailDomain
 	return oldPreset
 }
 

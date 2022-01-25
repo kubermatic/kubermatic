@@ -274,7 +274,7 @@ func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimecl
 	spec := cluster.Spec.Cloud.Openstack
 
 	// already migrated
-	if spec.Username == "" && spec.Password == "" && spec.Tenant == "" && spec.TenantID == "" && spec.Project == "" && spec.ProjectID == "" && spec.Domain == "" && spec.ApplicationCredentialID == "" && spec.ApplicationCredentialSecret == "" && !spec.UseToken {
+	if spec.Username == "" && spec.Password == "" && spec.Project == "" && spec.ProjectID == "" && spec.Domain == "" && spec.ApplicationCredentialID == "" && spec.ApplicationCredentialSecret == "" && !spec.UseToken {
 		return nil
 	}
 
@@ -283,10 +283,10 @@ func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimecl
 	if err != nil {
 		return err
 	}
-	if spec.GetProject() == "" {
+	if spec.Project == "" {
 		spec.Project = oldCred.Project
 	}
-	if spec.GetProjectId() == "" {
+	if spec.ProjectID == "" {
 		spec.ProjectID = oldCred.ProjectID
 	}
 	if spec.Domain == "" {
@@ -306,8 +306,8 @@ func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimecl
 	credentialRef, err := ensureCredentialSecret(ctx, seedClient, cluster, map[string][]byte{
 		resources.OpenstackUsername:                    []byte(spec.Username),
 		resources.OpenstackPassword:                    []byte(spec.Password),
-		resources.OpenstackProject:                     []byte(spec.GetProject()),
-		resources.OpenstackProjectID:                   []byte(spec.GetProjectId()),
+		resources.OpenstackProject:                     []byte(spec.Project),
+		resources.OpenstackProjectID:                   []byte(spec.ProjectID),
 		resources.OpenstackDomain:                      []byte(spec.Domain),
 		resources.OpenstackApplicationCredentialID:     []byte(spec.ApplicationCredentialID),
 		resources.OpenstackApplicationCredentialSecret: []byte(spec.ApplicationCredentialSecret),
@@ -323,8 +323,6 @@ func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimecl
 	// clean old inline credentials
 	cluster.Spec.Cloud.Openstack.Username = ""
 	cluster.Spec.Cloud.Openstack.Password = ""
-	cluster.Spec.Cloud.Openstack.Tenant = ""
-	cluster.Spec.Cloud.Openstack.TenantID = ""
 	cluster.Spec.Cloud.Openstack.Project = ""
 	cluster.Spec.Cloud.Openstack.ProjectID = ""
 	cluster.Spec.Cloud.Openstack.Domain = ""

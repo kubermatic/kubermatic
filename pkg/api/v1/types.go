@@ -1021,10 +1021,10 @@ func newPublicOpenstackCloudSpec(internal *kubermaticv1.OpenstackCloudSpec) (pub
 
 	return &PublicOpenstackCloudSpec{
 		FloatingIPPool: internal.FloatingIPPool,
-		Project:        internal.GetProject(),
-		ProjectID:      internal.GetProjectId(),
-		Tenant:         internal.GetProject(),
-		TenantID:       internal.GetProjectId(),
+		Project:        internal.Project,
+		ProjectID:      internal.ProjectID,
+		Tenant:         internal.Project,
+		TenantID:       internal.ProjectID,
 		Domain:         internal.Domain,
 		Network:        internal.Network,
 		SecurityGroups: internal.SecurityGroups,
@@ -2350,13 +2350,6 @@ const (
 	// ClusterTemplateSeedCleanupFinalizer indicates that cluster template instance on seed clusters need cleanup.
 	SeedClusterTemplateInstanceFinalizer = "kubermatic.io/cleanup-seed-cluster-template-instance"
 )
-
-func ToInternalClusterType(externalClusterType string) kubermaticv1.ClusterType {
-	if externalClusterType == KubernetesClusterType {
-		return kubermaticv1.ClusterTypeKubernetes
-	}
-	return kubermaticv1.ClusterTypeAll
-}
 
 const (
 	InitialMachineDeploymentRequestAnnotation = "kubermatic.io/initial-machinedeployment-request"

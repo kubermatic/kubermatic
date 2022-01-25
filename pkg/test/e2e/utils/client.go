@@ -107,7 +107,7 @@ func (r *TestClient) CreateProject(name string, ignoredStatusCodes ...int) (*api
 	var apiProject *apiv1.Project
 	if !WaitFor(1*time.Second, timeout, func() bool {
 		apiProject, _ = r.GetProject(response.Payload.ID)
-		return apiProject != nil && apiProject.Status == kubermaticv1.ProjectActive
+		return apiProject != nil && apiProject.Status == string(kubermaticv1.ProjectActive)
 	}) {
 		// best effort cleanup of a failed cluster
 		_ = r.DeleteProject(name)
@@ -142,7 +142,7 @@ func (r *TestClient) CreateProjectBySA(name string, users []string) (*apiv1.Proj
 	var apiProject *apiv1.Project
 	if !WaitFor(1*time.Second, timeout, func() bool {
 		apiProject, _ = r.GetProject(response.Payload.ID)
-		return apiProject != nil && apiProject.Status == kubermaticv1.ProjectActive
+		return apiProject != nil && apiProject.Status == string(kubermaticv1.ProjectActive)
 	}) {
 		// best effort cleanup of a failed cluster
 		_ = r.DeleteProject(name)
@@ -1008,7 +1008,6 @@ func convertGlobalSettings(gSettings *models.GlobalSettings) *apiv1.GlobalSettin
 			Enforced: gSettings.CleanupOptions.Enforced,
 		},
 		DefaultNodeCount:      gSettings.DefaultNodeCount,
-		ClusterTypeOptions:    kubermaticv1.ClusterType(gSettings.ClusterTypeOptions),
 		DisplayDemoInfo:       gSettings.DisplayDemoInfo,
 		DisplayAPIDocs:        gSettings.DisplayAPIDocs,
 		DisplayTermsOfService: gSettings.DisplayTermsOfService,

@@ -226,12 +226,7 @@ func filterOutPresets(userInfo *provider.UserInfo, list *kubermaticv1.PresetList
 	var result []kubermaticv1.Preset
 
 	for _, preset := range list.Items {
-		requirements := preset.Spec.RequiredEmails
-		if legacy := preset.Spec.RequiredEmailDomain; len(legacy) != 0 {
-			requirements = append(requirements, legacy)
-		}
-
-		matches, err := email.MatchesRequirements(userInfo.Email, requirements)
+		matches, err := email.MatchesRequirements(userInfo.Email, preset.Spec.RequiredEmails)
 		if err != nil {
 			return nil, err
 		}
@@ -447,8 +442,8 @@ func (m *PresetProvider) setOpenStackCredentials(userInfo *provider.UserInfo, pr
 	cloud.Openstack.Username = credentials.Username
 	cloud.Openstack.Password = credentials.Password
 	cloud.Openstack.Domain = credentials.Domain
-	cloud.Openstack.Project = credentials.GetProject()
-	cloud.Openstack.ProjectID = credentials.GetProjectId()
+	cloud.Openstack.Project = credentials.Project
+	cloud.Openstack.ProjectID = credentials.ProjectID
 
 	cloud.Openstack.UseToken = credentials.UseToken
 

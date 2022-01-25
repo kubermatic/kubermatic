@@ -199,11 +199,11 @@ func (p *UserProvider) GetUserBlacklistTokens(user *kubermaticv1.User) ([]string
 	if user == nil {
 		return nil, kerrors.NewBadRequest("user cannot be nil")
 	}
-	if user.Spec.TokenBlackListReference == nil {
+	if user.Spec.InvalidTokensReference == nil {
 		return result, nil
 	}
 	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(context.Background(), p.runtimeClient)
-	tokenList, err := secretKeyGetter(user.Spec.TokenBlackListReference, resources.TokenBlacklist)
+	tokenList, err := secretKeyGetter(user.Spec.InvalidTokensReference, resources.TokenBlacklist)
 	if err != nil {
 		return nil, err
 	}
@@ -256,8 +256,8 @@ func ensureTokenBlacklistSecret(ctx context.Context, client ctrlruntimeclient.Cl
 		}
 	}
 
-	if user.Spec.TokenBlackListReference == nil {
-		user.Spec.TokenBlackListReference = &providerconfig.GlobalSecretKeySelector{
+	if user.Spec.InvalidTokensReference == nil {
+		user.Spec.InvalidTokensReference = &providerconfig.GlobalSecretKeySelector{
 			ObjectReference: corev1.ObjectReference{
 				Name:      name,
 				Namespace: resources.KubermaticNamespace,

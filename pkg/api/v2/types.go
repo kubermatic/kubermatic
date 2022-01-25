@@ -162,7 +162,7 @@ type SeedSettings struct {
 	// the Seed level MLA (Monitoring, Logging, and Alerting) stack settings
 	MLA MLA `json:"mla"`
 	// the Seed level metering settings
-	Metering crdapiv1.MeteringConfigurations `json:"metering"`
+	Metering crdapiv1.MeteringConfiguration `json:"metering"`
 	// the Seed level seed dns overwrite
 	SeedDNSOverwrite string `json:"seedDNSOverwrite,omitempty"`
 }
