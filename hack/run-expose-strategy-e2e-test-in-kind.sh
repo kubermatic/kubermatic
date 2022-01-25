@@ -193,7 +193,7 @@ data:
 
 ---
 kind: Seed
-apiVersion: kubermatic.k8s.io/v1
+apiVersion: kubermatic.k8c.io/v1
 metadata:
   name: "${SEED_NAME}"
   namespace: kubermatic

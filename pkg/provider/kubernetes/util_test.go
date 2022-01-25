@@ -137,7 +137,7 @@ func genProject(name, phase string, creationTime time.Time, oRef ...metav1.Owner
 	return &kubermaticv1.Project{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Project",
-			APIVersion: "kubermatic.k8s.io/v1",
+			APIVersion: "kubermatic.k8c.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              fmt.Sprintf("%s-%s", name, "ID"),

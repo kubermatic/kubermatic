@@ -70,7 +70,7 @@ func RoleCreator() (string, reconciling.RoleCreator) {
 				Verbs: []string{"update"},
 			},
 			{
-				APIGroups: []string{"kubermatic.k8s.io"},
+				APIGroups: []string{"kubermatic.k8c.io"},
 				Resources: []string{"constraints"},
 				Verbs: []string{
 					"get",
@@ -107,7 +107,7 @@ func ClusterRole() reconciling.NamedClusterRoleCreatorGetter {
 		return roleName, func(r *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			r.Rules = []rbacv1.PolicyRule{
 				{
-					APIGroups: []string{"kubermatic.k8s.io"},
+					APIGroups: []string{"kubermatic.k8c.io"},
 					Resources: []string{"clusters"},
 					Verbs: []string{
 						"get",

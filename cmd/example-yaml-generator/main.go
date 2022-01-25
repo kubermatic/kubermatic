@@ -120,7 +120,7 @@ func createExampleSeed(config *operatorv1alpha1.KubermaticConfiguration) *kuberm
 
 	seed := &kubermaticv1.Seed{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "kubermatic.k8s.io/v1",
+			APIVersion: "kubermatic.k8c.io/v1",
 			Kind:       "Seed",
 		},
 		ObjectMeta: metav1.ObjectMeta{

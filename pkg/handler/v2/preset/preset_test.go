@@ -391,7 +391,7 @@ func TestUpdatePresetStatus(t *testing.T) {
 			},
 			ExpectedPreset: &kubermaticv1.Preset{
 				ObjectMeta: v1.ObjectMeta{Name: "disabled-preset", ResourceVersion: "1"},
-				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8c.io/v1"},
 				Spec: kubermaticv1.PresetSpec{
 					Enabled: boolPtr(true),
 				},
@@ -413,7 +413,7 @@ func TestUpdatePresetStatus(t *testing.T) {
 			},
 			ExpectedPreset: &kubermaticv1.Preset{
 				ObjectMeta: v1.ObjectMeta{Name: "enabled-preset", ResourceVersion: "1"},
-				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8c.io/v1"},
 				Spec: kubermaticv1.PresetSpec{
 					Enabled: boolPtr(false),
 				},
@@ -433,7 +433,7 @@ func TestUpdatePresetStatus(t *testing.T) {
 			},
 			ExpectedPreset: &kubermaticv1.Preset{
 				ObjectMeta: v1.ObjectMeta{Name: "enabled-preset", ResourceVersion: "1"},
-				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8c.io/v1"},
 				Spec: kubermaticv1.PresetSpec{
 					Enabled: boolPtr(false),
 				},
@@ -458,7 +458,7 @@ func TestUpdatePresetStatus(t *testing.T) {
 			},
 			ExpectedPreset: &kubermaticv1.Preset{
 				ObjectMeta: v1.ObjectMeta{Name: "disabled-do-preset", ResourceVersion: "1"},
-				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8c.io/v1"},
 				Spec: kubermaticv1.PresetSpec{
 					Digitalocean: &kubermaticv1.Digitalocean{
 						ProviderPreset: kubermaticv1.ProviderPreset{Enabled: boolPtr(true)},
@@ -485,7 +485,7 @@ func TestUpdatePresetStatus(t *testing.T) {
 			},
 			ExpectedPreset: &kubermaticv1.Preset{
 				ObjectMeta: v1.ObjectMeta{Name: "enabled-do-preset", ResourceVersion: "1"},
-				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8c.io/v1"},
 				Spec: kubermaticv1.PresetSpec{
 					Digitalocean: &kubermaticv1.Digitalocean{
 						ProviderPreset: kubermaticv1.ProviderPreset{Enabled: boolPtr(false)},
@@ -510,7 +510,7 @@ func TestUpdatePresetStatus(t *testing.T) {
 			},
 			ExpectedPreset: &kubermaticv1.Preset{
 				ObjectMeta: v1.ObjectMeta{Name: "enabled-do-preset", ResourceVersion: "1"},
-				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8c.io/v1"},
 				Spec: kubermaticv1.PresetSpec{
 					Digitalocean: &kubermaticv1.Digitalocean{
 						ProviderPreset: kubermaticv1.ProviderPreset{Enabled: boolPtr(false)},
@@ -542,7 +542,7 @@ func TestUpdatePresetStatus(t *testing.T) {
 			},
 			ExpectedPreset: &kubermaticv1.Preset{
 				ObjectMeta: v1.ObjectMeta{Name: "preset", ResourceVersion: "1"},
-				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8c.io/v1"},
 				Spec:       kubermaticv1.PresetSpec{},
 			},
 			HTTPStatus:      http.StatusConflict,
@@ -615,7 +615,7 @@ func TestCreatePreset(t *testing.T) {
 			}`,
 			ExpectedPreset: &kubermaticv1.Preset{
 				ObjectMeta: v1.ObjectMeta{Name: "do-preset", ResourceVersion: "1"},
-				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8c.io/v1"},
 				Spec: kubermaticv1.PresetSpec{
 					Digitalocean: &kubermaticv1.Digitalocean{Token: "test"},
 				},
@@ -642,7 +642,7 @@ func TestCreatePreset(t *testing.T) {
 			}`,
 			ExpectedPreset: &kubermaticv1.Preset{
 				ObjectMeta: v1.ObjectMeta{Name: "do-preset", ResourceVersion: "1"},
-				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8c.io/v1"},
 				Spec: kubermaticv1.PresetSpec{
 					Digitalocean: &kubermaticv1.Digitalocean{
 						ProviderPreset: kubermaticv1.ProviderPreset{Enabled: boolPtr(false)},
@@ -671,7 +671,7 @@ func TestCreatePreset(t *testing.T) {
 			}`,
 			ExistingPreset: &kubermaticv1.Preset{
 				ObjectMeta: v1.ObjectMeta{Name: "multi-preset"},
-				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8c.io/v1"},
 				Spec: kubermaticv1.PresetSpec{
 					Digitalocean: &kubermaticv1.Digitalocean{
 						Token: "test",
@@ -680,7 +680,7 @@ func TestCreatePreset(t *testing.T) {
 			},
 			ExpectedPreset: &kubermaticv1.Preset{
 				ObjectMeta: v1.ObjectMeta{Name: "multi-preset", ResourceVersion: "1"},
-				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8c.io/v1"},
 				Spec: kubermaticv1.PresetSpec{
 					Digitalocean: &kubermaticv1.Digitalocean{
 						Token: "test",
@@ -710,7 +710,7 @@ func TestCreatePreset(t *testing.T) {
 			}`,
 			ExistingPreset: &kubermaticv1.Preset{
 				ObjectMeta: v1.ObjectMeta{Name: "do-preset"},
-				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8c.io/v1"},
 				Spec: kubermaticv1.PresetSpec{
 					Digitalocean: &kubermaticv1.Digitalocean{
 						Token: "test",
@@ -860,7 +860,7 @@ func TestUpdatePreset(t *testing.T) {
 			}`,
 			ExistingPreset: &kubermaticv1.Preset{
 				ObjectMeta: v1.ObjectMeta{Name: "do-preset"},
-				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8c.io/v1"},
 				Spec: kubermaticv1.PresetSpec{
 					Digitalocean: &kubermaticv1.Digitalocean{
 						Token: "test",
@@ -869,7 +869,7 @@ func TestUpdatePreset(t *testing.T) {
 			},
 			ExpectedPreset: &kubermaticv1.Preset{
 				ObjectMeta: v1.ObjectMeta{Name: "do-preset", ResourceVersion: "1"},
-				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8c.io/v1"},
 				Spec: kubermaticv1.PresetSpec{
 					Digitalocean: &kubermaticv1.Digitalocean{
 						ProviderPreset: kubermaticv1.ProviderPreset{Enabled: boolPtr(false)},
@@ -899,7 +899,7 @@ func TestUpdatePreset(t *testing.T) {
 			}`,
 			ExistingPreset: &kubermaticv1.Preset{
 				ObjectMeta: v1.ObjectMeta{Name: "alibaba-preset"},
-				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8c.io/v1"},
 				Spec: kubermaticv1.PresetSpec{
 					Alibaba: &kubermaticv1.Alibaba{
 						AccessKeyID:     "test",
@@ -909,7 +909,7 @@ func TestUpdatePreset(t *testing.T) {
 			},
 			ExpectedPreset: &kubermaticv1.Preset{
 				ObjectMeta: v1.ObjectMeta{Name: "alibaba-preset", ResourceVersion: "1"},
-				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8c.io/v1"},
 				Spec: kubermaticv1.PresetSpec{
 					Alibaba: &kubermaticv1.Alibaba{
 						AccessKeyID:     "updated",
@@ -941,7 +941,7 @@ func TestUpdatePreset(t *testing.T) {
 			}`,
 			ExistingPreset: &kubermaticv1.Preset{
 				ObjectMeta: v1.ObjectMeta{Name: "openstack-preset"},
-				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8c.io/v1"},
 				Spec: kubermaticv1.PresetSpec{
 					Digitalocean: &kubermaticv1.Digitalocean{
 						Token: "test",
@@ -958,7 +958,7 @@ func TestUpdatePreset(t *testing.T) {
 			},
 			ExpectedPreset: &kubermaticv1.Preset{
 				ObjectMeta: v1.ObjectMeta{Name: "openstack-preset", ResourceVersion: "1"},
-				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8c.io/v1"},
 				Spec: kubermaticv1.PresetSpec{
 					Digitalocean: &kubermaticv1.Digitalocean{
 						Token: "test",
@@ -998,7 +998,7 @@ func TestUpdatePreset(t *testing.T) {
 			}`,
 			ExistingPreset: &kubermaticv1.Preset{
 				ObjectMeta: v1.ObjectMeta{Name: "openstack-preset"},
-				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8c.io/v1"},
 				Spec: kubermaticv1.PresetSpec{
 					Openstack: &kubermaticv1.Openstack{
 						Username:       "test",
@@ -1050,7 +1050,7 @@ func TestUpdatePreset(t *testing.T) {
 			}`,
 			ExistingPreset: &kubermaticv1.Preset{
 				ObjectMeta: v1.ObjectMeta{Name: "do-preset"},
-				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8c.io/v1"},
 				Spec: kubermaticv1.PresetSpec{
 					Digitalocean: &kubermaticv1.Digitalocean{
 						Token: "test",
@@ -1059,7 +1059,7 @@ func TestUpdatePreset(t *testing.T) {
 			},
 			ExpectedPreset: &kubermaticv1.Preset{
 				ObjectMeta: v1.ObjectMeta{Name: "do-preset", ResourceVersion: "1"},
-				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8c.io/v1"},
 				Spec: kubermaticv1.PresetSpec{
 					RequiredEmails: []string{"foo.bar@example.com"},
 					Digitalocean: &kubermaticv1.Digitalocean{
@@ -1090,7 +1090,7 @@ func TestUpdatePreset(t *testing.T) {
 			}`,
 			ExistingPreset: &kubermaticv1.Preset{
 				ObjectMeta: v1.ObjectMeta{Name: "do-preset"},
-				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8c.io/v1"},
 				Spec: kubermaticv1.PresetSpec{
 					// use a domain that is not the domain of the admin (i.e. acme.com)!
 					RequiredEmails: []string{"foobar.com"},
@@ -1101,7 +1101,7 @@ func TestUpdatePreset(t *testing.T) {
 			},
 			ExpectedPreset: &kubermaticv1.Preset{
 				ObjectMeta: v1.ObjectMeta{Name: "do-preset", ResourceVersion: "1"},
-				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8c.io/v1"},
 				Spec: kubermaticv1.PresetSpec{
 					RequiredEmails: []string{"foobar.com", "test.com"},
 					Digitalocean: &kubermaticv1.Digitalocean{
@@ -1130,7 +1130,7 @@ func TestUpdatePreset(t *testing.T) {
 			}`,
 			ExistingPreset: &kubermaticv1.Preset{
 				ObjectMeta: v1.ObjectMeta{Name: "do-preset"},
-				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8c.io/v1"},
 				Spec: kubermaticv1.PresetSpec{
 					// use a domain that is not the domain of the admin (i.e. acme.com)!
 					RequiredEmails: []string{"foobar.com"},
@@ -1141,7 +1141,7 @@ func TestUpdatePreset(t *testing.T) {
 			},
 			ExpectedPreset: &kubermaticv1.Preset{
 				ObjectMeta: v1.ObjectMeta{Name: "do-preset", ResourceVersion: "1"},
-				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8c.io/v1"},
 				Spec: kubermaticv1.PresetSpec{
 					Digitalocean: &kubermaticv1.Digitalocean{
 						Token: "test",
@@ -1207,7 +1207,7 @@ func TestDeletePreset(t *testing.T) {
 			Provider:   v2.PresetProvider{Name: kubermaticv1.DigitaloceanCloudProvider, Enabled: true},
 			ExistingPreset: &kubermaticv1.Preset{
 				ObjectMeta: v1.ObjectMeta{Name: "do-preset"},
-				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8c.io/v1"},
 				Spec: kubermaticv1.PresetSpec{
 					Digitalocean: &kubermaticv1.Digitalocean{
 						Token: "test",
@@ -1226,7 +1226,7 @@ func TestDeletePreset(t *testing.T) {
 			Provider:   v2.PresetProvider{Name: kubermaticv1.DigitaloceanCloudProvider, Enabled: true},
 			ExistingPreset: &kubermaticv1.Preset{
 				ObjectMeta: v1.ObjectMeta{Name: "do-os-preset"},
-				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8c.io/v1"},
 				Spec: kubermaticv1.PresetSpec{
 					Digitalocean: &kubermaticv1.Digitalocean{
 						Token: "test",
@@ -1241,7 +1241,7 @@ func TestDeletePreset(t *testing.T) {
 			},
 			ExpectedPreset: &kubermaticv1.Preset{
 				ObjectMeta: v1.ObjectMeta{Name: "do-os-preset", ResourceVersion: "1000"},
-				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8c.io/v1"},
 				Spec: kubermaticv1.PresetSpec{
 					Openstack: &kubermaticv1.Openstack{
 						Username: "username",

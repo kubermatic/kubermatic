@@ -63,7 +63,7 @@ func TestCreateAddon(t *testing.T) {
 			expectedClusterAddons: []*kubermaticv1.Addon{
 				{
 					TypeMeta: metav1.TypeMeta{
-						APIVersion: "kubermatic.k8s.io/v1",
+						APIVersion: "kubermatic.k8c.io/v1",
 						Kind:       "Addon",
 					},
 					ObjectMeta: metav1.ObjectMeta{
@@ -72,7 +72,7 @@ func TestCreateAddon(t *testing.T) {
 						ResourceVersion: "1",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion:         "kubermatic.k8s.io/v1",
+								APIVersion:         "kubermatic.k8c.io/v1",
 								Kind:               "Cluster",
 								Name:               name,
 								Controller:         truePtr(),
@@ -91,7 +91,7 @@ func TestCreateAddon(t *testing.T) {
 				},
 				{
 					TypeMeta: metav1.TypeMeta{
-						APIVersion: "kubermatic.k8s.io/v1",
+						APIVersion: "kubermatic.k8c.io/v1",
 						Kind:       "Addon",
 					},
 					ObjectMeta: metav1.ObjectMeta{
@@ -102,7 +102,7 @@ func TestCreateAddon(t *testing.T) {
 						Annotations:     map[string]string{"foo": "bar"},
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion:         "kubermatic.k8s.io/v1",
+								APIVersion:         "kubermatic.k8c.io/v1",
 								Kind:               "Cluster",
 								Name:               name,
 								Controller:         truePtr(),
@@ -208,7 +208,7 @@ func TestUpdateAddon(t *testing.T) {
 			existingClusterAddons: []*kubermaticv1.Addon{
 				{
 					TypeMeta: metav1.TypeMeta{
-						APIVersion: "kubermatic.k8s.io/v1",
+						APIVersion: "kubermatic.k8c.io/v1",
 						Kind:       "Addon",
 					},
 					ObjectMeta: metav1.ObjectMeta{
@@ -217,7 +217,7 @@ func TestUpdateAddon(t *testing.T) {
 						ResourceVersion: "1",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion:         "kubermatic.k8s.io/v1",
+								APIVersion:         "kubermatic.k8c.io/v1",
 								Kind:               "Cluster",
 								Name:               name,
 								Controller:         truePtr(),
@@ -238,7 +238,7 @@ func TestUpdateAddon(t *testing.T) {
 			expectedClusterAddons: []*kubermaticv1.Addon{
 				{
 					TypeMeta: metav1.TypeMeta{
-						APIVersion: "kubermatic.k8s.io/v1",
+						APIVersion: "kubermatic.k8c.io/v1",
 						Kind:       "Addon",
 					},
 					ObjectMeta: metav1.ObjectMeta{
@@ -247,7 +247,7 @@ func TestUpdateAddon(t *testing.T) {
 						ResourceVersion: "1",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion:         "kubermatic.k8s.io/v1",
+								APIVersion:         "kubermatic.k8c.io/v1",
 								Kind:               "Cluster",
 								Name:               name,
 								Controller:         truePtr(),
@@ -266,7 +266,7 @@ func TestUpdateAddon(t *testing.T) {
 				},
 				{
 					TypeMeta: metav1.TypeMeta{
-						APIVersion: "kubermatic.k8s.io/v1",
+						APIVersion: "kubermatic.k8c.io/v1",
 						Kind:       "Addon",
 					},
 					ObjectMeta: metav1.ObjectMeta{
@@ -277,7 +277,7 @@ func TestUpdateAddon(t *testing.T) {
 						ResourceVersion: "2",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion:         "kubermatic.k8s.io/v1",
+								APIVersion:         "kubermatic.k8c.io/v1",
 								Kind:               "Cluster",
 								Name:               name,
 								Controller:         truePtr(),
@@ -315,7 +315,7 @@ func TestUpdateAddon(t *testing.T) {
 			existingClusterAddons: []*kubermaticv1.Addon{
 				{
 					TypeMeta: metav1.TypeMeta{
-						APIVersion: "kubermatic.k8s.io/v1",
+						APIVersion: "kubermatic.k8c.io/v1",
 						Kind:       "Addon",
 					},
 					ObjectMeta: metav1.ObjectMeta{
@@ -324,7 +324,7 @@ func TestUpdateAddon(t *testing.T) {
 						ResourceVersion: "1",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion:         "kubermatic.k8s.io/v1",
+								APIVersion:         "kubermatic.k8c.io/v1",
 								Kind:               "Cluster",
 								Name:               name,
 								Controller:         truePtr(),
@@ -345,7 +345,7 @@ func TestUpdateAddon(t *testing.T) {
 			expectedClusterAddons: []*kubermaticv1.Addon{
 				{
 					TypeMeta: metav1.TypeMeta{
-						APIVersion: "kubermatic.k8s.io/v1",
+						APIVersion: "kubermatic.k8c.io/v1",
 						Kind:       "Addon",
 					},
 					ObjectMeta: metav1.ObjectMeta{
@@ -354,7 +354,7 @@ func TestUpdateAddon(t *testing.T) {
 						ResourceVersion: "1",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion:         "kubermatic.k8s.io/v1",
+								APIVersion:         "kubermatic.k8c.io/v1",
 								Kind:               "Cluster",
 								Name:               name,
 								Controller:         truePtr(),
@@ -373,7 +373,7 @@ func TestUpdateAddon(t *testing.T) {
 				},
 				{
 					TypeMeta: metav1.TypeMeta{
-						APIVersion: "kubermatic.k8s.io/v1",
+						APIVersion: "kubermatic.k8c.io/v1",
 						Kind:       "Addon",
 					},
 					ObjectMeta: metav1.ObjectMeta{
@@ -384,7 +384,7 @@ func TestUpdateAddon(t *testing.T) {
 						ResourceVersion: "1",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion:         "kubermatic.k8s.io/v1",
+								APIVersion:         "kubermatic.k8c.io/v1",
 								Kind:               "Cluster",
 								Name:               name,
 								Controller:         truePtr(),

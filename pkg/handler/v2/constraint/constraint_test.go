@@ -524,7 +524,7 @@ func TestCreateConstraints(t *testing.T) {
 			},
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
-			ExpectedResponse: `{"error":{"code":400,"message":"Validation failed, constraint needs to have an existing constraint template: constrainttemplates.kubermatic.k8s.io \"requiredlabel\" not found"}}`,
+			ExpectedResponse: `{"error":{"code":400,"message":"Validation failed, constraint needs to have an existing constraint template: constrainttemplates.kubermatic.k8c.io \"requiredlabel\" not found"}}`,
 			HTTPStatus:       http.StatusBadRequest,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
@@ -789,7 +789,7 @@ func TestCreateDefaultConstraints(t *testing.T) {
 				Name: "ct1",
 				Spec: test.GenConstraint("ct1", kubermaticNamespace, "RequiredLabel").Spec,
 			},
-			ExpectedResponse: `{"error":{"code":400,"message":"Validation failed, constraint needs to have an existing constraint template: constrainttemplates.kubermatic.k8s.io \"requiredlabel\" not found"}}`,
+			ExpectedResponse: `{"error":{"code":400,"message":"Validation failed, constraint needs to have an existing constraint template: constrainttemplates.kubermatic.k8c.io \"requiredlabel\" not found"}}`,
 			HTTPStatus:       http.StatusBadRequest,
 			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
@@ -912,7 +912,7 @@ func TestGetDefaultConstraint(t *testing.T) {
 		{
 			Name:             "scenario 2: get non-existing default constraint",
 			CTName:           "missing",
-			ExpectedResponse: `{"error":{"code":404,"message":"constraints.kubermatic.k8s.io \"missing\" not found"}}`,
+			ExpectedResponse: `{"error":{"code":404,"message":"constraints.kubermatic.k8c.io \"missing\" not found"}}`,
 			HTTPStatus:       http.StatusNotFound,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenConstraint("ct1", kubermaticNamespace, "RequiredLabel"),
@@ -971,7 +971,7 @@ func TestDeleteDefaultConstraints(t *testing.T) {
 		{
 			Name:             "scenario 3: delete non-existing default constraint should fail",
 			CTToDeleteName:   "idontexist",
-			ExpectedResponse: `{"error":{"code":404,"message":"constraints.kubermatic.k8s.io \"idontexist\" not found"}}`,
+			ExpectedResponse: `{"error":{"code":404,"message":"constraints.kubermatic.k8c.io \"idontexist\" not found"}}`,
 			HTTPStatus:       http.StatusNotFound,
 			ExistingObjects:  []ctrlruntimeclient.Object{test.GenConstraint("ct", kubermaticNamespace, "RequiredLabel")},
 			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
@@ -1073,7 +1073,7 @@ func TestPatchDefaultConstraints(t *testing.T) {
 			Name:             "scenario 6: cannot patch non-existing default constraint",
 			ConstraintName:   "doesnotexist",
 			Patch:            `{"spec":{"match":{"kinds":[{"apiGroups":[""],"kinds":["pods"]}]},"parameters":{"rawJSON":"{\"labels\":[\"test1\"]}"},"constraintType":"RequiredLabel", "disabled": false, "selector":{"providers":["aws","gcp"],"labelSelector":{"matchLabels":{"filtered":"false"}}}}}`,
-			ExpectedResponse: `{"error":{"code":404,"message":"constraints.kubermatic.k8s.io \"doesnotexist\" not found"}}`,
+			ExpectedResponse: `{"error":{"code":404,"message":"constraints.kubermatic.k8c.io \"doesnotexist\" not found"}}`,
 			HTTPStatus:       http.StatusNotFound,
 			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
 			ExistingObjects: []ctrlruntimeclient.Object{

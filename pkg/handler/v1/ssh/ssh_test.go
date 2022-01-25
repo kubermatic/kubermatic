@@ -363,7 +363,7 @@ func genSSHKey(creationTime time.Time, keyID string, keyName string, projectID s
 			Name: fmt.Sprintf("key-%s-%s", keyID, keyName),
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion: "kubermatic.k8s.io/v1",
+					APIVersion: "kubermatic.k8c.io/v1",
 					Kind:       "Project",
 					UID:        "",
 					Name:       projectID,

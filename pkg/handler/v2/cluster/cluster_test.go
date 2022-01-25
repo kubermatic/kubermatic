@@ -89,7 +89,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
@@ -219,7 +219,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
@@ -721,7 +721,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
@@ -737,7 +737,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 						Name: "key-abc-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
@@ -770,7 +770,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
@@ -786,7 +786,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 						Name: "key-abc-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
@@ -1758,7 +1758,7 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
@@ -1774,7 +1774,7 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 						Name: "key-abc-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
@@ -1811,7 +1811,7 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
@@ -1827,7 +1827,7 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 						Name: "key-abc-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
@@ -1864,7 +1864,7 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
@@ -1880,7 +1880,7 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 						Name: "key-abc-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
@@ -1953,7 +1953,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
@@ -1986,7 +1986,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       "differentProject",
@@ -2016,7 +2016,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
@@ -2049,7 +2049,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
@@ -2141,7 +2141,7 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
@@ -2159,7 +2159,7 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 						Name: "key-abc-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
