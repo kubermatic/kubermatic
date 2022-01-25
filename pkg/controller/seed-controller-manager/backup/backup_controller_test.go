@@ -160,8 +160,8 @@ func TestEnsureBackupCronJob(t *testing.T) {
 	if secret.OwnerReferences[0].Kind != "Cluster" {
 		t.Errorf("Expected ownerRef.Kind to be 'Cluster' but was %q", secret.OwnerReferences[0].Kind)
 	}
-	if secret.OwnerReferences[0].APIVersion != "kubermatic.k8s.io/v1" {
-		t.Errorf("Expected ownerRef.APIVersion to be 'kubermatic.k8s.io/v1' but was %q", secret.OwnerReferences[0].APIVersion)
+	if secret.OwnerReferences[0].APIVersion != "kubermatic.k8c.io/v1" {
+		t.Errorf("Expected ownerRef.APIVersion to be 'kubermatic.k8c.io/v1' but was %q", secret.OwnerReferences[0].APIVersion)
 	}
 	if secret.OwnerReferences[0].Name != "test-cluster" {
 		t.Errorf("Expected ownerRef.Name to be 'test-cluster' but was %q", secret.OwnerReferences[0].Name)

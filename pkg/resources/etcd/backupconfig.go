@@ -57,7 +57,7 @@ func BackupConfigCreator(data etcdBackupConfigCreatorData, seed *kubermaticv1.Se
 				Kind:       kubermaticv1.ClusterKindName,
 				Name:       data.Cluster().Name,
 				UID:        data.Cluster().UID,
-				APIVersion: "kubermatic.k8s.io/v1",
+				APIVersion: "kubermatic.k8c.io/v1",
 			}
 
 			if seed.Spec.EtcdBackupRestore != nil && len(seed.Spec.EtcdBackupRestore.Destinations) > 0 &&

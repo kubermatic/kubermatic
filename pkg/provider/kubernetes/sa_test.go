@@ -192,7 +192,7 @@ func TestGetProjectServiceAccount(t *testing.T) {
 			expectedSA: func() *kubermaticv1.User {
 				sa := createSANoPrefix("test-1", "my-first-project-ID", "editors", "1")
 				sa.Kind = "User"
-				sa.APIVersion = "kubermatic.k8s.io/v1"
+				sa.APIVersion = "kubermatic.k8c.io/v1"
 				return sa
 			}(),
 		},
@@ -252,7 +252,7 @@ func TestUpdateProjectServiceAccount(t *testing.T) {
 			expectedSA: func() *kubermaticv1.User {
 				sa := createSANoPrefix("new-name", "my-first-project-ID", "viewers", "1")
 				sa.Kind = "User"
-				sa.APIVersion = "kubermatic.k8s.io/v1"
+				sa.APIVersion = "kubermatic.k8c.io/v1"
 				sa.ResourceVersion = "1"
 				return sa
 			}(),

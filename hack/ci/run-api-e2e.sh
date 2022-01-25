@@ -37,7 +37,7 @@ source hack/ci/setup-kubermatic-in-kind.sh
 
 echodate "Creating UI Azure preset..."
 cat << EOF > preset-azure.yaml
-apiVersion: kubermatic.k8s.io/v1
+apiVersion: kubermatic.k8c.io/v1
 kind: Preset
 metadata:
   name: e2e-azure
@@ -53,7 +53,7 @@ retry 2 kubectl apply -f preset-azure.yaml
 
 echodate "Creating UI DigitalOcean preset..."
 cat << EOF > preset-digitalocean.yaml
-apiVersion: kubermatic.k8s.io/v1
+apiVersion: kubermatic.k8c.io/v1
 kind: Preset
 metadata:
   name: e2e-digitalocean
@@ -66,7 +66,7 @@ retry 2 kubectl apply -f preset-digitalocean.yaml
 
 echodate "Creating UI GCP preset..."
 cat << EOF > preset-gcp.yaml
-apiVersion: kubermatic.k8s.io/v1
+apiVersion: kubermatic.k8c.io/v1
 kind: Preset
 metadata:
   name: e2e-gcp
@@ -76,7 +76,7 @@ spec:
     serviceAccount: ${GOOGLE_SERVICE_ACCOUNT}
 EOF
 cat << EOF > preset-gcp-datacenter.yaml
-apiVersion: kubermatic.k8s.io/v1
+apiVersion: kubermatic.k8c.io/v1
 kind: Preset
 metadata:
   name: e2e-gcp-datacenter
@@ -91,7 +91,7 @@ retry 2 kubectl apply -f preset-gcp-datacenter.yaml
 
 echodate "Creating UI OpenStack preset..."
 cat << EOF > preset-openstack.yaml
-apiVersion: kubermatic.k8s.io/v1
+apiVersion: kubermatic.k8c.io/v1
 kind: Preset
 metadata:
   name: e2e-openstack
@@ -107,7 +107,7 @@ retry 2 kubectl apply -f preset-openstack.yaml
 
 echodate "Creating roxy2 user..."
 cat << EOF > user.yaml
-apiVersion: kubermatic.k8s.io/v1
+apiVersion: kubermatic.k8c.io/v1
 kind: User
 metadata:
   name: c41724e256445bf133d6af1168c2d96a7533cd437618fdbe6dc2ef1fee97acd3

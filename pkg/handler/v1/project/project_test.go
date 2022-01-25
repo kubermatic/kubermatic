@@ -138,7 +138,7 @@ func TestRenameProjectEndpoint(t *testing.T) {
 				test.GenDefaultOwnerBinding(),
 			},
 			ExistingAPIUser:  *test.GenDefaultAPIUser(),
-			ExpectedResponse: `{"error":{"code":404,"message":"projects.kubermatic.k8s.io \"some-ID\" not found"}}`,
+			ExpectedResponse: `{"error":{"code":404,"message":"projects.kubermatic.k8c.io \"some-ID\" not found"}}`,
 		},
 		{
 			Name:            "scenario 5: rename a project with empty name",

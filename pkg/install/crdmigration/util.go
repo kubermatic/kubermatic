@@ -42,7 +42,7 @@ var (
 	validClusterNamespace = regexp.MustCompile(`^cluster-[0-9a-z]{10}$`)
 
 	// oldAPIGroup is the group we migrate away from.
-	oldAPIGroup = "kubermatic.k8s.io"
+	oldAPIGroup = "kubermatic.k8c.io"
 
 	// newAPIGroup is the group we migrate to.
 	newAPIGroup = "kubermatic.k8c.io"

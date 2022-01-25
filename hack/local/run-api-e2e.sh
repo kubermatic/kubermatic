@@ -60,7 +60,7 @@ TMP=$(mktemp -d)
 
 echodate "Creating roxy2 user..."
 cat << EOF > "$TMP"/user.yaml
-apiVersion: kubermatic.k8s.io/v1
+apiVersion: kubermatic.k8c.io/v1
 kind: User
 metadata:
   name: c41724e256445bf133d6af1168c2d96a7533cd437618fdbe6dc2ef1fee97acd3
@@ -74,7 +74,7 @@ retry 2 kubectl apply -f "$TMP"/user.yaml
 
 echodate "Creating UI Azure preset..."
 cat << EOF > "$TMP"/preset-azure.yaml
-apiVersion: kubermatic.k8s.io/v1
+apiVersion: kubermatic.k8c.io/v1
 kind: Preset
 metadata:
   name: e2e-azure
@@ -90,7 +90,7 @@ retry 2 kubectl apply -f "$TMP"/preset-azure.yaml
 
 echodate "Creating UI DigitalOcean preset..."
 cat << EOF > "$TMP"/preset-digitalocean.yaml
-apiVersion: kubermatic.k8s.io/v1
+apiVersion: kubermatic.k8c.io/v1
 kind: Preset
 metadata:
   name: e2e-digitalocean
@@ -103,7 +103,7 @@ retry 2 kubectl apply -f "$TMP"/preset-digitalocean.yaml
 
 echodate "Creating UI GCP preset..."
 cat << EOF > "$TMP"/preset-gcp.yaml
-apiVersion: kubermatic.k8s.io/v1
+apiVersion: kubermatic.k8c.io/v1
 kind: Preset
 metadata:
   name: e2e-gcp
@@ -114,7 +114,7 @@ spec:
 EOF
 
 cat << EOF > "$TMP"/preset-gcp-datacenter.yaml
-apiVersion: kubermatic.k8s.io/v1
+apiVersion: kubermatic.k8c.io/v1
 kind: Preset
 metadata:
   name: e2e-gcp-datacenter
@@ -130,7 +130,7 @@ retry 2 kubectl apply -f "$TMP"/preset-gcp-datacenter.yaml
 
 echodate "Creating UI OpenStack preset..."
 cat << EOF > "$TMP"/preset-openstack.yaml
-apiVersion: kubermatic.k8s.io/v1
+apiVersion: kubermatic.k8c.io/v1
 kind: Preset
 metadata:
   name: e2e-openstack
@@ -147,7 +147,7 @@ retry 2 kubectl apply -f "$TMP"/preset-openstack.yaml
 echodate "Creating UI KubeVirt preset..."
 ENCODED_KUBECONFIG=$(kind get kubeconfig --name ${KIND_CLUSTER_NAME} --internal | base64 -w0)
 cat << EOF > "$TMP"/preset-kubevirt.yaml
-apiVersion: kubermatic.k8s.io/v1
+apiVersion: kubermatic.k8c.io/v1
 kind: Preset
 metadata:
   name: e2e-kubevirt

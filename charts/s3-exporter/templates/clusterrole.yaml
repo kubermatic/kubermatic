@@ -18,7 +18,7 @@ metadata:
   name: {{ .Release.Namespace }}:s3exporter:clusters:reader
 rules:
 - apiGroups:
-  - kubermatic.k8s.io
+  - kubermatic.k8c.io
   resources:
   - clusters
   verbs:

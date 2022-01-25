@@ -1717,7 +1717,7 @@ type rawClusterGen struct {
 func (r rawClusterGen) Do() []byte {
 	c := kubermaticv1.Cluster{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "kubermatic.k8s.io/v1",
+			APIVersion: "kubermatic.k8c.io/v1",
 			Kind:       "Cluster",
 		},
 		ObjectMeta: metav1.ObjectMeta{
