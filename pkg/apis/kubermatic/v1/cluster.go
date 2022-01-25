@@ -215,6 +215,9 @@ type ClusterSpec struct {
 
 	// CNIPlugin contains the spec of the CNI plugin to be installed in the cluster.
 	CNIPlugin *CNIPluginSettings `json:"cniPlugin,omitempty"`
+
+	// EncryptionConfiguration optionally configures encryption-at-rest for Kubernetes API resources.
+	EncryptionConfiguration *EncryptionConfiguration `json:"encryptionConfiguration,omitempty"`
 }
 
 // CNIPluginSettings contains the spec of the CNI plugin used by the Cluster.
@@ -268,6 +271,10 @@ const (
 	// etcd scaling, automatic volume recovery and new backup/restore contorllers.
 	ClusterFeatureEtcdLauncher = "etcdLauncher"
 
+	// ClusterFeatureEncryptionAtRest enables the experimental "encryption-at-rest" feature, which allows encrypting
+	// Kubernetes data in etcd with a user-provided encryption key or KMS service.
+	ClusterFeatureEncryptionAtRest = "encryptionAtRest"
+
 	// ApiserverNetworkPolicy enables the deployment of network policies that
 	// restrict the egress traffic from Apiserver pods.
 	ApiserverNetworkPolicy = "apiserverNetworkPolicy"
@@ -309,6 +316,11 @@ const (
 	ClusterConditionEtcdClusterInitialized ClusterConditionType = "EtcdClusterInitialized"
 
 	ClusterConditionUpdateProgress ClusterConditionType = "UpdateProgress"
+
+	ClusterConditionEncryptionInitialized ClusterConditionType = "EncryptionInitialized"
+	// ClusterConditionEncryptionFinished is met when the encryption_controller signals that all resources
+	// have been re-encrypted in the cluster data store.
+	ClusterConditionEncryptionFinished ClusterConditionType = "EncryptionFinished"
 
 	// ClusterConditionNone is a special value indicating that no cluster condition should be set.
 	ClusterConditionNone ClusterConditionType = ""
@@ -418,6 +430,9 @@ type ClusterStatus struct {
 	// InheritedLabels are labels the cluster inherited from the project. They are read-only for users.
 	// +optional
 	InheritedLabels map[string]string `json:"inheritedLabels,omitempty"`
+
+	// +optional
+	ActiveEncryptionKey string `json:"activeEncryptionKey,omitempty"`
 }
 
 // ClusterVersionsStatus contains information regarding the current and desired versions
@@ -680,6 +695,25 @@ type IPVSConfiguration struct {
 	// StrictArp configure arp_ignore and arp_announce to avoid answering ARP queries from kube-ipvs0 interface.
 	// defaults to true.
 	StrictArp *bool `json:"strictArp,omitempty"`
+}
+
+// EncryptionConfiguration configures encryption-at-rest for Kubernetes API data.
+type EncryptionConfiguration struct {
+	Enabled   bool                              `json:"enabled"`
+	Resources []string                          `json:"resources"`
+	Secretbox *SecretboxEncryptionConfiguration `json:"secretbox,omitemtpy"`
+}
+
+// SecretboxEncryptionConfiguration defines static key encryption based on the 'secretbox' solution for Kubernetes.
+type SecretboxEncryptionConfiguration struct {
+	Keys []SecretboxKey `json:"keys"`
+}
+
+// SecretboxKey stores a key or key reference for encrypting Kubernetes API data at rest with a static key.
+type SecretboxKey struct {
+	Name      string                    `json:"name"`
+	Value     string                    `json:"value,omitempty"`
+	SecretRef *corev1.SecretKeySelector `json:"secretRef,omitempty"`
 }
 
 // CloudSpec mutually stores access data to a cloud provider.

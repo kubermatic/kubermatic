@@ -391,6 +391,10 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 		creators = append(creators, resources.ServiceAccountSecretCreator(data))
 	}
 
+	if data.IsEncryptionConfigurationEnabled() {
+		creators = append(creators, apiserver.EncryptionConfigurationSecretCreator(data))
+	}
+
 	return creators
 }
 

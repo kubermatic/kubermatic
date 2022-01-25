@@ -61,7 +61,11 @@ const (
 const (
 	// ApiserverDeploymentName is the name of the apiserver deployment.
 	ApiserverDeploymentName = "apiserver"
-	// ControllerManagerDeploymentName is the name for the controller manager deployment.
+	// EncryptionConfigurationSecretName is the name of secret storing the API server's EncryptionConfiguration
+	EncryptionConfigurationSecretName = "apiserver-encryption-configuration"
+	// EncryptionConfigurationKeyName is the name of the secret key that is used to store the configuration file for encryption-at-rest.
+	EncryptionConfigurationKeyName = "encryption-configuration.yaml"
+	// ControllerManagerDeploymentName is the name for the controller manager deployment
 	ControllerManagerDeploymentName = "controller-manager"
 	// SchedulerDeploymentName is the name for the scheduler deployment.
 	SchedulerDeploymentName = "scheduler"

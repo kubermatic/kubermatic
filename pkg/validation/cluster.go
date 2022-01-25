@@ -206,6 +206,11 @@ func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermat
 		allErrs = append(allErrs, err)
 	}
 
+	// make sure that a key with the same name cannot be updated
+	if oldCluster.Spec.EncryptionConfiguration != nil && oldCluster.Spec.EncryptionConfiguration.Secretbox != nil &&
+		newCluster.Spec.EncryptionConfiguration != nil && newCluster.Spec.EncryptionConfiguration.Secretbox != nil {
+	}
+
 	if !equality.Semantic.DeepEqual(newCluster.TypeMeta, oldCluster.TypeMeta) {
 		allErrs = append(allErrs, field.Forbidden(field.NewPath("typeMeta"), "type meta cannot be changed"))
 	}

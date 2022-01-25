@@ -1448,6 +1448,61 @@ spec:
                   Once the agent is enabled/disabled it cannot be changed after the
                   cluster is being created.
                 type: boolean
+              encryptionConfiguration:
+                description: EncryptionConfiguration optionally configures encryption-at-rest
+                  for Kubernetes API resources.
+                properties:
+                  enabled:
+                    type: boolean
+                  resources:
+                    items:
+                      type: string
+                    type: array
+                  secretbox:
+                    description: SecretboxEncryptionConfiguration defines static key
+                      encryption based on the 'secretbox' solution for Kubernetes.
+                    properties:
+                      keys:
+                        items:
+                          description: SecretboxKey stores a key or key reference
+                            for encrypting Kubernetes API data at rest with a static
+                            key.
+                          properties:
+                            name:
+                              type: string
+                            secretRef:
+                              description: SecretKeySelector selects a key of a Secret.
+                              properties:
+                                key:
+                                  description: The key of the secret to select from.  Must
+                                    be a valid secret key.
+                                  type: string
+                                name:
+                                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    TODO: Add other useful fields. apiVersion, kind,
+                                    uid?'
+                                  type: string
+                                optional:
+                                  description: Specify whether the Secret or its key
+                                    must be defined
+                                  type: boolean
+                              required:
+                              - key
+                              type: object
+                            value:
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        type: array
+                    required:
+                    - keys
+                    type: object
+                required:
+                - enabled
+                - resources
+                - secretbox
+                type: object
               eventRateLimitConfig:
                 description: EventRateLimitConfig allows configuring the EventRateLimit
                   admission plugin (if enabled via useEventRateLimitAdmissionPlugin)

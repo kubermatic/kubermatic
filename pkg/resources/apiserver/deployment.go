@@ -73,8 +73,8 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
-			volumes := getVolumes(data.IsKonnectivityEnabled())
-			volumeMounts := getVolumeMounts(data.IsKonnectivityEnabled())
+			volumes := getVolumes(data.IsKonnectivityEnabled(), data.IsEncryptionConfigurationEnabled())
+			volumeMounts := getVolumeMounts(data.IsKonnectivityEnabled(), data.IsEncryptionConfigurationEnabled())
 
 			version := data.Cluster().Status.Versions.Apiserver.Semver()
 
@@ -430,6 +430,11 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 			"/etc/kubernetes/konnectivity/egress-selector-configuration.yaml")
 	}
 
+	if data.IsEncryptionConfigurationEnabled() {
+		flags = append(flags, "--encryption-provider-config",
+			"/etc/kubernetes/encryption-configuration/encryption-configuration.yaml")
+	}
+
 	return flags, nil
 }
 
@@ -449,7 +454,7 @@ func getApiserverOverrideFlags(data *resources.TemplateData) (kubermaticv1.APISe
 	return settings, nil
 }
 
-func getVolumeMounts(isKonnectivityEnabled bool) []corev1.VolumeMount {
+func getVolumeMounts(isKonnectivityEnabled bool, isEncryptionConfigurationEnabled bool) []corev1.VolumeMount {
 	vms := []corev1.VolumeMount{
 		{
 			MountPath: "/etc/kubernetes/tls",
@@ -532,10 +537,18 @@ func getVolumeMounts(isKonnectivityEnabled bool) []corev1.VolumeMount {
 		}...)
 	}
 
+	if isEncryptionConfigurationEnabled {
+		vms = append(vms, corev1.VolumeMount{
+			Name:      resources.EncryptionConfigurationSecretName,
+			MountPath: "/etc/kubernetes/encryption-configuration",
+			ReadOnly:  true,
+		})
+	}
+
 	return vms
 }
 
-func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
+func getVolumes(isKonnectivityEnabled, isEncryptionConfigurationEnabled bool) []corev1.Volume {
 	vs := []corev1.Volume{
 		{
 			Name: resources.ApiserverTLSSecretName,
@@ -713,6 +726,17 @@ func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
 				},
 			},
 		}...)
+	}
+
+	if isEncryptionConfigurationEnabled {
+		vs = append(vs, corev1.Volume{
+			Name: resources.EncryptionConfigurationSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: resources.EncryptionConfigurationSecretName,
+				},
+			},
+		})
 	}
 
 	return vs

@@ -74,6 +74,10 @@ type EtcdRestoreSpec struct {
 	// Destination indicates where the backup was stored. The destination name should correspond to a destination in
 	// the cluster's Seed.Spec.EtcdBackupRestore. If empty, it will use the legacy destination configured in Seed.Spec.BackupRestore
 	Destination string `json:"destination,omitempty"`
+
+	// EncryptionConfiguration can be optionally passed if the encryption configuration has changed since the backup.
+	// A restore can only be successful if the correct encryption key is passed.
+	EncryptionConfiguration *EncryptionConfiguration `json:"encryptionConfiguration,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

@@ -116,6 +116,9 @@ type BackupStatus struct {
 	DeleteFinishedTime metav1.Time       `json:"deleteFinishedTime,omitempty"`
 	DeletePhase        BackupStatusPhase `json:"deletePhase,omitempty"`
 	DeleteMessage      string            `json:"deleteMessage,omitempty"`
+	// +optional
+	// EncryptionKeyName provides a hint for the key that was used for encryption at the time of the backup.
+	EncryptionKeyName string `json:"encryptionKeyName,omitempty"`
 }
 
 type EtcdBackupConfigCondition struct {
