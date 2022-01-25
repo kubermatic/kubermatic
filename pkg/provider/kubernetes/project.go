@@ -20,7 +20,7 @@ import (
 	"context"
 	"errors"
 
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/label"
 	"k8c.io/kubermatic/v2/pkg/provider"
 

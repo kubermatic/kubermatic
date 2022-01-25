@@ -26,7 +26,7 @@ import (
 	"github.com/gophercloud/gophercloud"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	ostesting "k8c.io/kubermatic/v2/pkg/provider/cloud/openstack/internal/testing"
 	"k8c.io/kubermatic/v2/pkg/resources"
