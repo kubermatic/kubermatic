@@ -33,7 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -119,14 +119,14 @@ func TestUserWatchEndpoint(t *testing.T) {
 			// can happen when there are changes to the watched user right after the ws connection is established.
 			// Without this the test is flaky.
 			time.Sleep(time.Second)
-			userToUpdate, err := cli.FakeKubermaticClient.KubermaticV1().Users().Get(ctx, tc.userToUpdate, metav1.GetOptions{})
-			if err != nil {
+
+			var internalUser *v1.User
+			if err := cli.FakeClient.Get(ctx, types.NamespacedName{Name: tc.userToUpdate}, internalUser); err != nil {
 				t.Fatalf("error getting user to update: %v", err)
 			}
-			userToUpdate.Spec.Settings = tc.userSettingsUpdate
+			internalUser.Spec.Settings = tc.userSettingsUpdate
 
-			_, err = cli.FakeKubermaticClient.KubermaticV1().Users().Update(ctx, userToUpdate, metav1.UpdateOptions{})
-			if err != nil {
+			if err := cli.FakeClient.Update(ctx, internalUser); err != nil {
 				t.Fatalf("error updating user: %v", err)
 			}
 
@@ -138,6 +138,7 @@ func TestUserWatchEndpoint(t *testing.T) {
 				}
 			case wsMsg = <-ch:
 			}
+
 			if wsMsg.err != nil {
 				t.Fatalf("error reading ws message: %v", err)
 			}

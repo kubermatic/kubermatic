@@ -17,75 +17,59 @@ limitations under the License.
 package kubernetes
 
 import (
-	"reflect"
+	"context"
 
 	"code.cloudfoundry.org/go-pubsub"
+	"go.uber.org/zap"
 
 	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/provider"
-
-	"k8s.io/apimachinery/pkg/watch"
+	toolscache "k8s.io/client-go/tools/cache"
 )
 
 // SettingsWatcher watches settings and notifies its subscribers about any changes.
 type SettingsWatcher struct {
-	provider  provider.SettingsProvider
-	watcher   watch.Interface
+	log       *zap.SugaredLogger
 	publisher *pubsub.PubSub
 }
 
 // SettingsWatcher returns a new resource watcher.
-func NewSettingsWatcher(provider provider.SettingsProvider) (*SettingsWatcher, error) {
-	watcher, err := provider.WatchGlobalSettings()
-	if err != nil {
-		return nil, err
-	}
-
+func NewSettingsWatcher(ctx context.Context, log *zap.SugaredLogger) (*SettingsWatcher, error) {
 	w := &SettingsWatcher{
-		provider:  provider,
-		watcher:   watcher,
+		log:       log,
 		publisher: pubsub.New(),
 	}
 
-	go w.run()
 	return w, nil
-}
-
-// run and publish information about settings updates. Watch will restart itself if any error occur.
-func (watcher *SettingsWatcher) run() {
-	defer func() {
-		log.Logger.Debug("restarting settings watcher")
-		watcher.watcher.Stop()
-		watcher.watcher = nil
-		watcher.run()
-	}()
-
-	if watcher.watcher == nil {
-		var err error
-		if watcher.watcher, err = watcher.provider.WatchGlobalSettings(); err != nil {
-			log.Logger.Debug("could not recreate settings watcher")
-			return
-		}
-	}
-
-	for event := range watcher.watcher.ResultChan() {
-		settings, ok := event.Object.(*v1.KubermaticSetting)
-		if !ok {
-			log.Logger.Debugf("expected settings got %s", reflect.TypeOf(event.Object))
-		}
-
-		if settings != nil && settings.Name == v1.GlobalSettingsName {
-			if event.Type == watch.Added || event.Type == watch.Modified {
-				watcher.publisher.Publish(settings, pubsub.LinearTreeTraverser([]uint64{}))
-			} else if event.Type == watch.Deleted {
-				watcher.publisher.Publish(nil, pubsub.LinearTreeTraverser([]uint64{}))
-			}
-		}
-	}
 }
 
 // Subscribe allows to register subscription handler which will be invoked on each settings change.
 func (watcher *SettingsWatcher) Subscribe(subscription pubsub.Subscription) pubsub.Unsubscriber {
 	return watcher.publisher.Subscribe(subscription)
+}
+
+func (watcher *SettingsWatcher) OnAdd(obj interface{}) {
+	watcher.onEvent(toolscache.Added, obj)
+}
+
+func (watcher *SettingsWatcher) OnUpdate(oldObj, newObj interface{}) {
+	watcher.onEvent(toolscache.Updated, newObj)
+}
+
+func (watcher *SettingsWatcher) OnDelete(obj interface{}) {
+	watcher.onEvent(toolscache.Deleted, obj)
+}
+
+func (watcher *SettingsWatcher) onEvent(delta toolscache.DeltaType, obj interface{}) {
+	settings, ok := obj.(*v1.KubermaticSetting)
+	if !ok {
+		watcher.log.Debugf("expected KubermaticSetting got %T", obj)
+	}
+
+	if settings != nil && settings.Name == v1.GlobalSettingsName {
+		if delta == toolscache.Added || delta == toolscache.Updated {
+			watcher.publisher.Publish(settings, pubsub.LinearTreeTraverser([]uint64{}))
+		} else if delta == toolscache.Deleted {
+			watcher.publisher.Publish(nil, pubsub.LinearTreeTraverser([]uint64{}))
+		}
+	}
 }

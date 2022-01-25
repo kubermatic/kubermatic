@@ -34,6 +34,7 @@ import (
 	constrainttemplatev1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	gatekeeperconfigv1alpha1 "github.com/open-policy-agent/gatekeeper/apis/config/v1alpha1"
 	prometheusapi "github.com/prometheus/client_golang/api"
+	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -86,7 +87,7 @@ func init() {
 		kubermaticlog.Logger.Fatalw("failed to add cluster/v1alpha1 scheme to scheme.Scheme", "error", err)
 	}
 	if err := kubermaticv1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
-		kubermaticlog.Logger.Fatalw("failed to add operator/v1alpha1 scheme to scheme.Scheme", "error", err)
+		kubermaticlog.Logger.Fatalw("failed to add kubermatic/v1 scheme to scheme.Scheme", "error", err)
 	}
 	if err := v1beta1.AddToScheme(scheme.Scheme); err != nil {
 		kubermaticlog.Logger.Fatalw("failed to register scheme metrics/v1beta1", "error", err)
@@ -525,12 +526,12 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 
 	eventRecorderProvider := kubernetes.NewEventRecorder()
 
-	settingsWatcher, err := kuberneteswatcher.NewSettingsWatcher(settingsProvider)
+	settingsWatcher, err := kuberneteswatcher.NewSettingsWatcher(ctx, zap.NewNop().Sugar())
 	if err != nil {
 		return nil, nil, err
 	}
 
-	userWatcher, err := kuberneteswatcher.NewUserWatcher(userProvider)
+	userWatcher, err := kuberneteswatcher.NewUserWatcher(ctx, zap.NewNop().Sugar())
 	if err != nil {
 		return nil, nil, err
 	}

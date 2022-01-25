@@ -133,27 +133,28 @@ func main() {
 	if err != nil {
 		kubermaticlog.Logger.Fatalw("failed to construct manager: %w", err)
 	}
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Event{}, "involvedObject.name", func(rawObj ctrlruntimeclient.Object) []string {
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &corev1.Event{}, "involvedObject.name", func(rawObj ctrlruntimeclient.Object) []string {
 		event := rawObj.(*corev1.Event)
 		return []string{event.InvolvedObject.Name}
 	}); err != nil {
 		log.Fatalw("failed to add index on Event involvedObject name: %w", err)
 	}
-	providers, err := createInitProviders(ctx, options, masterCfg, mgr)
+
+	providers, err := createInitProviders(ctx, options, masterCfg, mgr, log)
 	if err != nil {
-		log.Fatalw("failed to create and initialize providers", "error", err)
+		log.Fatalw("failed to create and initialize providers", zap.Error(err))
 	}
 	oidcIssuerVerifier, err := createOIDCClients(options)
 	if err != nil {
-		log.Fatalw("failed to create an openid authenticator", "issuer", options.oidcURL, "oidcClientID", options.oidcAuthenticatorClientID, "error", err)
+		log.Fatalw("failed to create an openid authenticator", "issuer", options.oidcURL, "oidcClientID", options.oidcAuthenticatorClientID, zap.Error(err))
 	}
 	tokenVerifiers, tokenExtractors, err := createAuthClients(options, providers)
 	if err != nil {
-		log.Fatalw("failed to create auth clients", "error", err)
+		log.Fatalw("failed to create auth clients", zap.Error(err))
 	}
 	apiHandler, err := createAPIHandler(options, providers, oidcIssuerVerifier, tokenVerifiers, tokenExtractors, mgr)
 	if err != nil {
-		log.Fatalw("failed to create API Handler", "error", err)
+		log.Fatalw("failed to create API Handler", zap.Error(err))
 	}
 
 	go func() {
@@ -167,7 +168,7 @@ func main() {
 	log.Fatalw("failed to start API server", "error", http.ListenAndServe(options.listenAddress, handlers.CombinedLoggingHandler(os.Stdout, apiHandler)))
 }
 
-func createInitProviders(ctx context.Context, options serverRunOptions, masterCfg *rest.Config, mgr manager.Manager) (providers, error) {
+func createInitProviders(ctx context.Context, options serverRunOptions, masterCfg *rest.Config, mgr manager.Manager, log *zap.SugaredLogger) (providers, error) {
 	// create other providers
 	kubeMasterClient := kubernetes.NewForConfigOrDie(masterCfg)
 	kubeMasterInformerFactory := informers.NewSharedInformerFactory(kubeMasterClient, 30*time.Minute)
@@ -323,15 +324,27 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 
 	seedProvider := kubernetesprovider.NewSeedProvider(mgr.GetClient())
 
-	settingsWatcher, err := kuberneteswatcher.NewSettingsWatcher(settingsProvider)
+	userWatcher, err := kuberneteswatcher.NewUserWatcher(ctx, log)
 	if err != nil {
-		return providers{}, fmt.Errorf("failed to create settings watcher: %w", err)
+		return providers{}, fmt.Errorf("failed to setup user-watcher: %w", err)
 	}
 
-	userWatcher, err := kuberneteswatcher.NewUserWatcher(userProvider)
+	userInformer, err := mgr.GetCache().GetInformer(ctx, &kubermaticv1.KubermaticSetting{})
 	if err != nil {
-		return providers{}, fmt.Errorf("failed to create user watcher: %w", err)
+		return providers{}, fmt.Errorf("failed to setup user informer: %w", err)
 	}
+	userInformer.AddEventHandler(userWatcher)
+
+	settingsWatcher, err := kuberneteswatcher.NewSettingsWatcher(ctx, log)
+	if err != nil {
+		return providers{}, fmt.Errorf("failed to setup settings-watcher: %w", err)
+	}
+
+	settingsInformer, err := mgr.GetCache().GetInformer(ctx, &kubermaticv1.KubermaticSetting{})
+	if err != nil {
+		return providers{}, fmt.Errorf("failed to setup settings informer: %w", err)
+	}
+	settingsInformer.AddEventHandler(settingsWatcher)
 
 	featureGatesProvider := kubernetesprovider.NewFeatureGatesProvider(options.featureGates)
 

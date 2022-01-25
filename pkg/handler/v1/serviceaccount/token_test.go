@@ -779,11 +779,7 @@ func TestDeleteToken(t *testing.T) {
 			test.CompareWithResult(t, res, tc.expectedResponse)
 
 			expectedToken := &corev1.Secret{}
-			if tc.privilegedOperation {
-				err = clientset.FakeClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: tc.tokenToDelete, Namespace: "kubermatic"}, expectedToken)
-			} else {
-				_, err = clientset.FakeKubermaticClient.KubermaticV1().Users().Get(ctx, tc.tokenToDelete, metav1.GetOptions{})
-			}
+			err = clientset.FakeClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: tc.tokenToDelete, Namespace: "kubermatic"}, expectedToken)
 			if err == nil {
 				t.Fatalf("failed to delete token %s", tc.tokenToDelete)
 			}
