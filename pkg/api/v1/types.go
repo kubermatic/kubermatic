@@ -594,9 +594,9 @@ type OpenstackSubnet struct {
 	Name string `json:"name"`
 }
 
-// OpenstackProject is the object representing a openstack tenant.
-// swagger:model OpenstackProject
-type OpenstackProject struct {
+// OpenstackTenant is the object representing a openstack tenant.
+// swagger:model OpenstackTenant
+type OpenstackTenant struct {
 	// Id uniquely identifies the current tenant
 	ID string `json:"id"`
 	// Name is the name of the tenant
