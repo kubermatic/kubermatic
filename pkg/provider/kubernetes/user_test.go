@@ -74,13 +74,13 @@ func TestAddUserTokenToBlacklist(t *testing.T) {
 			existingObjs: []ctrlruntimeclient.Object{
 				func() *corev1.Secret {
 					user := genUser("", "john", "john@acme.com")
-					return test.GenBlacklistTokenSecret(user.GetTokenBlackListSecretName(), []byte(`[{"token":"fakeTokenId-1","expiry":"2222-06-20T12:04:00Z"},{"token":"fakeTokenId-2","expiry":"2000-06-20T12:04:00Z"}]`))
+					return test.GenBlacklistTokenSecret(user.GetInvalidTokensReferenceSecretName(), []byte(`[{"token":"fakeTokenId-1","expiry":"2222-06-20T12:04:00Z"},{"token":"fakeTokenId-2","expiry":"2000-06-20T12:04:00Z"}]`))
 				}(),
 				func() *kubermaticapiv1.User {
 					user := genUser("", "john", "john@acme.com")
-					user.Spec.TokenBlackListReference = &providerconfig.GlobalSecretKeySelector{
+					user.Spec.InvalidTokensReference = &providerconfig.GlobalSecretKeySelector{
 						ObjectReference: corev1.ObjectReference{
-							Name:      user.GetTokenBlackListSecretName(),
+							Name:      user.GetInvalidTokensReferenceSecretName(),
 							Namespace: resources.KubermaticNamespace,
 						},
 					}
@@ -98,13 +98,13 @@ func TestAddUserTokenToBlacklist(t *testing.T) {
 			existingObjs: []ctrlruntimeclient.Object{
 				func() *corev1.Secret {
 					user := genUser("", "john", "john@acme.com")
-					return test.GenBlacklistTokenSecret(user.GetTokenBlackListSecretName(), []byte(`[{"token":"fakeTokenId-1","expiry":"2222-06-20T12:04:00Z"},{"token":"fakeTokenId-2","expiry":"2000-06-20T12:04:00Z"}]`))
+					return test.GenBlacklistTokenSecret(user.GetInvalidTokensReferenceSecretName(), []byte(`[{"token":"fakeTokenId-1","expiry":"2222-06-20T12:04:00Z"},{"token":"fakeTokenId-2","expiry":"2000-06-20T12:04:00Z"}]`))
 				}(),
 				func() *kubermaticapiv1.User {
 					user := genUser("", "john", "john@acme.com")
-					user.Spec.TokenBlackListReference = &providerconfig.GlobalSecretKeySelector{
+					user.Spec.InvalidTokensReference = &providerconfig.GlobalSecretKeySelector{
 						ObjectReference: corev1.ObjectReference{
-							Name:      user.GetTokenBlackListSecretName(),
+							Name:      user.GetInvalidTokensReferenceSecretName(),
 							Namespace: resources.KubermaticNamespace,
 						},
 					}
@@ -139,10 +139,10 @@ func TestAddUserTokenToBlacklist(t *testing.T) {
 
 			// act
 			target := kubernetes.NewUserProvider(fakeClient, nil, kubermaticClient)
-			if err := target.AddUserTokenToBlacklist(user, tc.token, tc.expiry); err != nil {
+			if err := target.InvalidateToken(user, tc.token, tc.expiry); err != nil {
 				t.Fatal(err)
 			}
-			resultList, err := target.GetUserBlacklistTokens(user)
+			resultList, err := target.GetInvalidatedTokens(user)
 			if err != nil {
 				t.Fatal(err)
 			}

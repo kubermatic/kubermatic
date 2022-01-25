@@ -94,6 +94,8 @@ type ProjectGroup struct {
 	Group string `json:"group"`
 }
 
-func (u *User) GetTokenBlackListSecretName() string {
+func (u *User) GetInvalidTokensReferenceSecretName() string {
+	// "token-blacklist-" is the legacy prefix; changing this would mean existing
+	// secrets would need to be migrated first
 	return fmt.Sprintf("token-blacklist-%s", u.Name)
 }

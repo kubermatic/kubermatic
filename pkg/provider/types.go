@@ -309,8 +309,8 @@ type UserProvider interface {
 	CreateUser(id, name, email string) (*kubermaticv1.User, error)
 	UpdateUser(user *kubermaticv1.User) (*kubermaticv1.User, error)
 	UserByID(id string) (*kubermaticv1.User, error)
-	AddUserTokenToBlacklist(user *kubermaticv1.User, token string, expiry apiv1.Time) error
-	GetUserBlacklistTokens(user *kubermaticv1.User) ([]string, error)
+	InvalidateToken(user *kubermaticv1.User, token string, expiry apiv1.Time) error
+	GetInvalidatedTokens(user *kubermaticv1.User) ([]string, error)
 	WatchUser() (watch.Interface, error)
 	List() ([]kubermaticv1.User, error)
 }

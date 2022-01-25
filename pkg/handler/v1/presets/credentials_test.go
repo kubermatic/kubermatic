@@ -56,7 +56,7 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "second",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: test.RequiredEmailDomain,
+						RequiredEmails: []string{test.RequiredEmailDomain},
 					},
 				},
 			},
@@ -74,7 +74,7 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "first",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: test.RequiredEmailDomain,
+						RequiredEmails: []string{test.RequiredEmailDomain},
 						AWS: &kubermaticv1.AWS{
 							AccessKeyID: "a",
 						},
@@ -85,7 +85,7 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "second",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: test.RequiredEmailDomain,
+						RequiredEmails: []string{test.RequiredEmailDomain},
 						AWS: &kubermaticv1.AWS{
 							AccessKeyID: "a",
 						},
@@ -106,7 +106,7 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "first",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: test.RequiredEmailDomain,
+						RequiredEmails: []string{test.RequiredEmailDomain},
 						AWS: &kubermaticv1.AWS{
 							ProviderPreset: kubermaticv1.ProviderPreset{Datacenter: "b"},
 							AccessKeyID:    "a",
@@ -118,7 +118,7 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "second",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: test.RequiredEmailDomain,
+						RequiredEmails: []string{test.RequiredEmailDomain},
 						AWS: &kubermaticv1.AWS{
 							ProviderPreset: kubermaticv1.ProviderPreset{Datacenter: "a"},
 							AccessKeyID:    "a",
@@ -140,7 +140,7 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "first",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: test.RequiredEmailDomain,
+						RequiredEmails: []string{test.RequiredEmailDomain},
 						AWS: &kubermaticv1.AWS{
 							ProviderPreset: kubermaticv1.ProviderPreset{Datacenter: "b"},
 							AccessKeyID:    "a",
@@ -152,7 +152,7 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "second",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: test.RequiredEmailDomain,
+						RequiredEmails: []string{test.RequiredEmailDomain},
 						AWS: &kubermaticv1.AWS{
 							ProviderPreset: kubermaticv1.ProviderPreset{Datacenter: "a"},
 							AccessKeyID:    "a",
@@ -164,7 +164,7 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "third",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: test.RequiredEmailDomain,
+						RequiredEmails: []string{test.RequiredEmailDomain},
 						AWS: &kubermaticv1.AWS{
 							AccessKeyID: "a",
 						},
@@ -190,7 +190,7 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "first",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: test.RequiredEmailDomain,
+						RequiredEmails: []string{test.RequiredEmailDomain},
 						Azure: &kubermaticv1.Azure{
 							ClientID: "test-first", ClientSecret: "secret-first", SubscriptionID: "subscription-first", TenantID: "tenant-first",
 						},
@@ -215,7 +215,7 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "digitalocean-first",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: test.RequiredEmailDomain,
+						RequiredEmails: []string{test.RequiredEmailDomain},
 						Digitalocean: &kubermaticv1.Digitalocean{
 							Token: "took",
 						},
@@ -240,7 +240,7 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "first",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: test.RequiredEmailDomain,
+						RequiredEmails: []string{test.RequiredEmailDomain},
 						GCP: &kubermaticv1.GCP{
 							ServiceAccount: "sa",
 						},
@@ -265,7 +265,7 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "first",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: test.RequiredEmailDomain,
+						RequiredEmails: []string{test.RequiredEmailDomain},
 						Hetzner: &kubermaticv1.Hetzner{
 							Token: "aa",
 						},
@@ -290,7 +290,7 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "first",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: test.RequiredEmailDomain,
+						RequiredEmails: []string{test.RequiredEmailDomain},
 						Openstack: &kubermaticv1.Openstack{
 							Password: "password",
 						},
@@ -315,7 +315,7 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "first",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: test.RequiredEmailDomain,
+						RequiredEmails: []string{test.RequiredEmailDomain},
 						Packet: &kubermaticv1.Packet{
 							APIKey: "key",
 						},
@@ -340,7 +340,7 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "first",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: test.RequiredEmailDomain,
+						RequiredEmails: []string{test.RequiredEmailDomain},
 						VSphere: &kubermaticv1.VSphere{
 							Password: "password",
 						},
@@ -369,7 +369,7 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "anexia-first",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: test.RequiredEmailDomain,
+						RequiredEmails: []string{test.RequiredEmailDomain},
 						Anexia: &kubermaticv1.Anexia{
 							Token: "token",
 						},
@@ -388,7 +388,7 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "nutanix-first",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: test.RequiredEmailDomain,
+						RequiredEmails: []string{test.RequiredEmailDomain},
 						Nutanix: &kubermaticv1.Nutanix{
 							Username:    "username",
 							Password:    "password",

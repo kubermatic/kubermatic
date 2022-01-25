@@ -49,7 +49,7 @@ func TestValidateCloudSpec(t *testing.T) {
 			spec: kubermaticv1.CloudSpec{
 				DatacenterName: "some-datacenter",
 				Openstack: &kubermaticv1.OpenstackCloudSpec{
-					Tenant:   "some-tenant",
+					Project:  "some-project",
 					Username: "some-user",
 					Password: "some-password",
 					Domain:   "some-domain",
@@ -59,15 +59,15 @@ func TestValidateCloudSpec(t *testing.T) {
 			},
 		},
 		{
-			name:  "valid openstack spec - only tenantID specified",
+			name:  "valid openstack spec - only projectID specified",
 			valid: true,
 			spec: kubermaticv1.CloudSpec{
 				DatacenterName: "some-datacenter",
 				Openstack: &kubermaticv1.OpenstackCloudSpec{
-					TenantID: "some-tenant",
-					Username: "some-user",
-					Password: "some-password",
-					Domain:   "some-domain",
+					ProjectID: "some-project",
+					Username:  "some-user",
+					Password:  "some-password",
+					Domain:    "some-domain",
 					// Required due to the above defined DC
 					FloatingIPPool: "some-network",
 				},
@@ -79,7 +79,7 @@ func TestValidateCloudSpec(t *testing.T) {
 			spec: kubermaticv1.CloudSpec{
 				DatacenterName: "",
 				Openstack: &kubermaticv1.OpenstackCloudSpec{
-					Tenant:   "some-tenant",
+					Project:  "some-project",
 					Username: "some-user",
 					Password: "some-password",
 					Domain:   "some-domain",
@@ -94,7 +94,7 @@ func TestValidateCloudSpec(t *testing.T) {
 			spec: kubermaticv1.CloudSpec{
 				DatacenterName: "some-datacenter",
 				Openstack: &kubermaticv1.OpenstackCloudSpec{
-					Tenant:         "some-tenant",
+					Project:        "some-project",
 					Username:       "some-user",
 					Password:       "some-password",
 					Domain:         "some-domain",
@@ -111,7 +111,7 @@ func TestValidateCloudSpec(t *testing.T) {
 					Token: "a-token",
 				},
 				Openstack: &kubermaticv1.OpenstackCloudSpec{
-					Tenant:         "some-tenant",
+					Project:        "some-project",
 					Username:       "some-user",
 					Password:       "some-password",
 					Domain:         "some-domain",
@@ -126,7 +126,7 @@ func TestValidateCloudSpec(t *testing.T) {
 				DatacenterName: "some-datacenter",
 				ProviderName:   "openstack",
 				Openstack: &kubermaticv1.OpenstackCloudSpec{
-					Tenant:         "some-tenant",
+					Project:        "some-project",
 					Username:       "some-user",
 					Password:       "some-password",
 					Domain:         "some-domain",
@@ -141,7 +141,7 @@ func TestValidateCloudSpec(t *testing.T) {
 				DatacenterName: "some-datacenter",
 				ProviderName:   "closedstack",
 				Openstack: &kubermaticv1.OpenstackCloudSpec{
-					Tenant:         "some-tenant",
+					Project:        "some-project",
 					Username:       "some-user",
 					Password:       "some-password",
 					Domain:         "some-domain",

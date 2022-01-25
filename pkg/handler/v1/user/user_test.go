@@ -976,9 +976,9 @@ func TestLogoutCurrentUser(t *testing.T) {
 				/*add users*/
 				func() *kubermaticapiv1.User {
 					user := genUser("", "john", "john@acme.com")
-					user.Spec.TokenBlackListReference = &providerconfig.GlobalSecretKeySelector{
+					user.Spec.InvalidTokensReference = &providerconfig.GlobalSecretKeySelector{
 						ObjectReference: corev1.ObjectReference{
-							Name:      user.GetTokenBlackListSecretName(),
+							Name:      user.GetInvalidTokensReferenceSecretName(),
 							Namespace: resources.KubermaticNamespace,
 						},
 					}
@@ -989,7 +989,7 @@ func TestLogoutCurrentUser(t *testing.T) {
 			ExistingKubernetesObjs: []ctrlruntimeclient.Object{
 				func() *corev1.Secret {
 					user := genUser("", "john", "john@acme.com")
-					return test.GenBlacklistTokenSecret(user.GetTokenBlackListSecretName(), []byte{})
+					return test.GenBlacklistTokenSecret(user.GetInvalidTokensReferenceSecretName(), []byte{})
 				}(),
 			},
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
@@ -1002,9 +1002,9 @@ func TestLogoutCurrentUser(t *testing.T) {
 				/*add users*/
 				func() *kubermaticapiv1.User {
 					user := genUser("", "john", "john@acme.com")
-					user.Spec.TokenBlackListReference = &providerconfig.GlobalSecretKeySelector{
+					user.Spec.InvalidTokensReference = &providerconfig.GlobalSecretKeySelector{
 						ObjectReference: corev1.ObjectReference{
-							Name:      user.GetTokenBlackListSecretName(),
+							Name:      user.GetInvalidTokensReferenceSecretName(),
 							Namespace: resources.KubermaticNamespace,
 						},
 					}
@@ -1015,7 +1015,7 @@ func TestLogoutCurrentUser(t *testing.T) {
 			ExistingKubernetesObjs: []ctrlruntimeclient.Object{
 				func() *corev1.Secret {
 					user := genUser("", "john", "john@acme.com")
-					return test.GenBlacklistTokenSecret(user.GetTokenBlackListSecretName(), []byte(`[{"token":"fakeTokenId","expiry":"2222-06-20T12:04:00Z"}]`))
+					return test.GenBlacklistTokenSecret(user.GetInvalidTokensReferenceSecretName(), []byte(`[{"token":"fakeTokenId","expiry":"2222-06-20T12:04:00Z"}]`))
 				}(),
 			},
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),

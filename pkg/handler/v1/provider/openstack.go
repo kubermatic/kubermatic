@@ -130,7 +130,7 @@ func OpenstackTenantEndpoint(seedsGetter provider.SeedsGetter, presetProvider pr
 			return nil, err
 		}
 
-		return providercommon.GetOpenstackTenants(userInfo, seedsGetter, cred, reqTenant.DatacenterName, caBundle)
+		return providercommon.GetOpenstackProjects(userInfo, seedsGetter, cred, reqTenant.DatacenterName, caBundle)
 	}
 }
 

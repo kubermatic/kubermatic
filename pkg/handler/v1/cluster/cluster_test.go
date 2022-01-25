@@ -49,6 +49,11 @@ const (
 	usCentral1 = "us-central1"
 )
 
+var (
+	healthUp   = kubermaticv1.HealthStatusUp
+	healthDown = kubermaticv1.HealthStatusDown
+)
+
 func TestDeleteClusterEndpoint(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
@@ -948,7 +953,7 @@ func TestGetClusterHealth(t *testing.T) {
 		{
 			Name:             "scenario 1: get existing cluster health status",
 			Body:             ``,
-			ExpectedResponse: `{"apiserver":1,"scheduler":0,"controller":1,"machineController":0,"etcd":1,"cloudProviderInfrastructure":1,"userClusterControllerManager":1}`,
+			ExpectedResponse: `{"apiserver":"HealthStatusUp","scheduler":"HealthStatusDown","controller":"HealthStatusUp","machineController":"HealthStatusDown","etcd":"HealthStatusUp","cloudProviderInfrastructure":"HealthStatusUp","userClusterControllerManager":"HealthStatusUp"}`,
 			HTTPStatus:       http.StatusOK,
 			ClusterToGet:     "keen-snyder",
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -978,7 +983,7 @@ func TestGetClusterHealth(t *testing.T) {
 		{
 			Name:             "scenario 2: the admin Bob can get John's cluster health status",
 			Body:             ``,
-			ExpectedResponse: `{"apiserver":1,"scheduler":0,"controller":1,"machineController":0,"etcd":1,"cloudProviderInfrastructure":1,"userClusterControllerManager":1}`,
+			ExpectedResponse: `{"apiserver":"HealthStatusUp","scheduler":"HealthStatusDown","controller":"HealthStatusUp","machineController":"HealthStatusDown","etcd":"HealthStatusUp","cloudProviderInfrastructure":"HealthStatusUp","userClusterControllerManager":"HealthStatusUp"}`,
 			HTTPStatus:       http.StatusOK,
 			ClusterToGet:     "keen-snyder",
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -1042,7 +1047,7 @@ func TestGetClusterHealth(t *testing.T) {
 		{
 			Name:             "scenario 4: get existing cluster health status with opa integration enabled",
 			Body:             ``,
-			ExpectedResponse: `{"apiserver":1,"scheduler":0,"controller":1,"machineController":0,"etcd":1,"cloudProviderInfrastructure":1,"userClusterControllerManager":1,"gatekeeperController":1,"gatekeeperAudit":1}`,
+			ExpectedResponse: `{"apiserver":"HealthStatusUp","scheduler":"HealthStatusDown","controller":"HealthStatusUp","machineController":"HealthStatusDown","etcd":"HealthStatusUp","cloudProviderInfrastructure":"HealthStatusUp","userClusterControllerManager":"HealthStatusUp","gatekeeperController":"HealthStatusUp","gatekeeperAudit":"HealthStatusUp"}`,
 			HTTPStatus:       http.StatusOK,
 			ClusterToGet:     "keen-snyder",
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -1062,8 +1067,8 @@ func TestGetClusterHealth(t *testing.T) {
 						Etcd:                         kubermaticv1.HealthStatusUp,
 						CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 						UserClusterControllerManager: kubermaticv1.HealthStatusUp,
-						GatekeeperAudit:              kubermaticv1.HealthStatusUp.Ptr(),
-						GatekeeperController:         kubermaticv1.HealthStatusUp.Ptr(),
+						GatekeeperAudit:              &healthUp,
+						GatekeeperController:         &healthUp,
 					}
 					cluster.Spec.OPAIntegration = &kubermaticv1.OPAIntegrationSettings{Enabled: true}
 					return cluster
@@ -1075,7 +1080,7 @@ func TestGetClusterHealth(t *testing.T) {
 		{
 			Name:             "scenario 5: get existing cluster health status with MLA Monitoring enabled",
 			Body:             ``,
-			ExpectedResponse: `{"apiserver":1,"scheduler":0,"controller":1,"machineController":0,"etcd":1,"cloudProviderInfrastructure":1,"userClusterControllerManager":1,"monitoring":1,"mlaGateway":1}`,
+			ExpectedResponse: `{"apiserver":"HealthStatusUp","scheduler":"HealthStatusDown","controller":"HealthStatusUp","machineController":"HealthStatusDown","etcd":"HealthStatusUp","cloudProviderInfrastructure":"HealthStatusUp","userClusterControllerManager":"HealthStatusUp","monitoring":"HealthStatusUp","mlaGateway":"HealthStatusUp"}`,
 			HTTPStatus:       http.StatusOK,
 			ClusterToGet:     "keen-snyder",
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -1095,8 +1100,8 @@ func TestGetClusterHealth(t *testing.T) {
 						Etcd:                         kubermaticv1.HealthStatusUp,
 						CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 						UserClusterControllerManager: kubermaticv1.HealthStatusUp,
-						Monitoring:                   kubermaticv1.HealthStatusUp.Ptr(),
-						MLAGateway:                   kubermaticv1.HealthStatusUp.Ptr(),
+						Monitoring:                   &healthUp,
+						MLAGateway:                   &healthUp,
 					}
 					cluster.Spec.MLA = &kubermaticv1.MLASettings{MonitoringEnabled: true}
 					return cluster
@@ -1108,7 +1113,7 @@ func TestGetClusterHealth(t *testing.T) {
 		{
 			Name:             "scenario 6: get existing cluster health status with MLA Logging enabled",
 			Body:             ``,
-			ExpectedResponse: `{"apiserver":1,"scheduler":0,"controller":1,"machineController":0,"etcd":1,"cloudProviderInfrastructure":1,"userClusterControllerManager":1,"logging":1,"mlaGateway":1}`,
+			ExpectedResponse: `{"apiserver":"HealthStatusUp","scheduler":"HealthStatusDown","controller":"HealthStatusUp","machineController":"HealthStatusDown","etcd":"HealthStatusUp","cloudProviderInfrastructure":"HealthStatusUp","userClusterControllerManager":"HealthStatusUp","logging":"HealthStatusUp","mlaGateway":"HealthStatusUp"}`,
 			HTTPStatus:       http.StatusOK,
 			ClusterToGet:     "keen-snyder",
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -1128,8 +1133,8 @@ func TestGetClusterHealth(t *testing.T) {
 						Etcd:                         kubermaticv1.HealthStatusUp,
 						CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 						UserClusterControllerManager: kubermaticv1.HealthStatusUp,
-						Logging:                      kubermaticv1.HealthStatusUp.Ptr(),
-						MLAGateway:                   kubermaticv1.HealthStatusUp.Ptr(),
+						Logging:                      &healthUp,
+						MLAGateway:                   &healthUp,
 					}
 					cluster.Spec.MLA = &kubermaticv1.MLASettings{LoggingEnabled: true}
 					return cluster
@@ -1141,7 +1146,7 @@ func TestGetClusterHealth(t *testing.T) {
 		{
 			Name:             "scenario 7: get existing cluster health status with MLA Logging enabled and alertmanager config",
 			Body:             ``,
-			ExpectedResponse: `{"apiserver":1,"scheduler":0,"controller":1,"machineController":0,"etcd":1,"cloudProviderInfrastructure":1,"userClusterControllerManager":1,"logging":1,"alertmanagerConfig":1,"mlaGateway":1}`,
+			ExpectedResponse: `{"apiserver":"HealthStatusUp","scheduler":"HealthStatusDown","controller":"HealthStatusUp","machineController":"HealthStatusDown","etcd":"HealthStatusUp","cloudProviderInfrastructure":"HealthStatusUp","userClusterControllerManager":"HealthStatusUp","logging":"HealthStatusUp","alertmanagerConfig":"HealthStatusUp","mlaGateway":"HealthStatusUp"}`,
 			HTTPStatus:       http.StatusOK,
 			ClusterToGet:     "keen-snyder",
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -1161,9 +1166,9 @@ func TestGetClusterHealth(t *testing.T) {
 						Etcd:                         kubermaticv1.HealthStatusUp,
 						CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 						UserClusterControllerManager: kubermaticv1.HealthStatusUp,
-						Logging:                      kubermaticv1.HealthStatusUp.Ptr(),
-						AlertmanagerConfig:           kubermaticv1.HealthStatusUp.Ptr(),
-						MLAGateway:                   kubermaticv1.HealthStatusUp.Ptr(),
+						Logging:                      &healthUp,
+						AlertmanagerConfig:           &healthUp,
+						MLAGateway:                   &healthUp,
 					}
 					cluster.Spec.MLA = &kubermaticv1.MLASettings{LoggingEnabled: true}
 					return cluster
@@ -1409,7 +1414,7 @@ func TestGetCluster(t *testing.T) {
 		{
 			Name:             "scenario 2: gets cluster for Openstack and no sensitive data (credentials) are returned",
 			Body:             ``,
-			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"OpenstackDatacenter","openstack":{"floatingIpPool":"floatingIPPool","project":"tenant","tenant":"tenant","domain":"domain","network":"network","securityGroups":"securityGroups","routerID":"routerID","subnetID":"subnetID"}},"version":"9.9.9","oidc":{},"enableUserSSHKeyAgent":false,"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"dnsDomain":"cluster.local","proxyMode":"ipvs"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Supported"}}`,
+			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"OpenstackDatacenter","openstack":{"floatingIpPool":"floatingIPPool","project":"project","domain":"domain","network":"network","securityGroups":"securityGroups","routerID":"routerID","subnetID":"subnetID"}},"version":"9.9.9","oidc":{},"enableUserSSHKeyAgent":false,"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"dnsDomain":"cluster.local","proxyMode":"ipvs"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Supported"}}`,
 			ClusterToGet:     test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -1429,7 +1434,7 @@ func TestGetCluster(t *testing.T) {
 		{
 			Name:             "scenario 3: the admin John can get Bob's cluster",
 			Body:             ``,
-			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"OpenstackDatacenter","openstack":{"floatingIpPool":"floatingIPPool","project":"tenant","tenant":"tenant","domain":"domain","network":"network","securityGroups":"securityGroups","routerID":"routerID","subnetID":"subnetID"}},"version":"9.9.9","oidc":{},"enableUserSSHKeyAgent":false,"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"dnsDomain":"cluster.local","proxyMode":"ipvs"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Supported"}}`,
+			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"OpenstackDatacenter","openstack":{"floatingIpPool":"floatingIPPool","project":"project","domain":"domain","network":"network","securityGroups":"securityGroups","routerID":"routerID","subnetID":"subnetID"}},"version":"9.9.9","oidc":{},"enableUserSSHKeyAgent":false,"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"dnsDomain":"cluster.local","proxyMode":"ipvs"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Supported"}}`,
 			ClusterToGet:     test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -1572,8 +1577,7 @@ func TestListClusters(t *testing.T) {
 								Network:        "network",
 								RouterID:       "routerID",
 								SecurityGroups: "securityGroups",
-								Project:        "tenant",
-								Tenant:         "tenant",
+								Project:        "project",
 							},
 						},
 						Version:               *semver.NewSemverOrDie("9.9.9"),
@@ -1682,8 +1686,7 @@ func TestListClusters(t *testing.T) {
 								Network:        "network",
 								RouterID:       "routerID",
 								SecurityGroups: "securityGroups",
-								Project:        "tenant",
-								Tenant:         "tenant",
+								Project:        "project",
 							},
 						},
 						Version:               *semver.NewSemverOrDie("9.9.9"),
@@ -1805,8 +1808,7 @@ func TestListClustersForProject(t *testing.T) {
 								Network:        "network",
 								RouterID:       "routerID",
 								SecurityGroups: "securityGroups",
-								Project:        "tenant",
-								Tenant:         "tenant",
+								Project:        "project",
 							},
 						},
 						ClusterNetwork: &kubermaticv1.ClusterNetworkingConfig{
@@ -1885,8 +1887,7 @@ func TestListClustersForProject(t *testing.T) {
 								Network:        "network",
 								RouterID:       "routerID",
 								SecurityGroups: "securityGroups",
-								Project:        "tenant",
-								Tenant:         "tenant",
+								Project:        "project",
 							},
 						},
 						EnableUserSSHKeyAgent: pointer.BoolPtr(false),

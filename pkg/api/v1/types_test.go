@@ -50,7 +50,7 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 						Network:        "network",
 						RouterID:       "routerID",
 						SecurityGroups: "securityGroups",
-						Tenant:         "tenant",
+						Project:        "project",
 					},
 				},
 			},

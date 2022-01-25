@@ -212,12 +212,7 @@ func filterDCsByEmail(userInfo *provider.UserInfo, list []apiv1.Datacenter) ([]a
 	var result []apiv1.Datacenter
 
 	for _, dc := range list {
-		requirements := dc.Spec.RequiredEmailDomains
-		if legacy := dc.Spec.RequiredEmailDomain; len(legacy) != 0 {
-			requirements = append(requirements, legacy)
-		}
-
-		matches, err := email.MatchesRequirements(userInfo.Email, requirements)
+		matches, err := email.MatchesRequirements(userInfo.Email, dc.Spec.RequiredEmails)
 		if err != nil {
 			return nil, err
 		}
@@ -637,7 +632,7 @@ func ConvertInternalDCToExternalSpec(dc *kubermaticv1.Datacenter, seedName strin
 		Alibaba:                  dc.Spec.Alibaba,
 		Anexia:                   dc.Spec.Anexia,
 		Fake:                     dc.Spec.Fake,
-		RequiredEmailDomains:     dc.Spec.RequiredEmails,
+		RequiredEmails:           dc.Spec.RequiredEmails,
 		EnforceAuditLogging:      dc.Spec.EnforceAuditLogging,
 		EnforcePodSecurityPolicy: dc.Spec.EnforcePodSecurityPolicy,
 	}, nil
@@ -662,7 +657,7 @@ func convertExternalDCToInternal(datacenter *apiv1.DatacenterSpec) kubermaticv1.
 			Alibaba:                  datacenter.Alibaba,
 			Anexia:                   datacenter.Anexia,
 			Fake:                     datacenter.Fake,
-			RequiredEmails:           datacenter.RequiredEmailDomains,
+			RequiredEmails:           datacenter.RequiredEmails,
 			EnforceAuditLogging:      datacenter.EnforceAuditLogging,
 			EnforcePodSecurityPolicy: datacenter.EnforcePodSecurityPolicy,
 		},

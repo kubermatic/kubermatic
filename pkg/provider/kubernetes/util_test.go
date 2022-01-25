@@ -133,7 +133,7 @@ func genDefaultUser() *kubermaticv1.User {
 }
 
 // genProject generates new empty project.
-func genProject(name, phase string, creationTime time.Time, oRef ...metav1.OwnerReference) *kubermaticv1.Project {
+func genProject(name string, phase kubermaticv1.ProjectPhase, creationTime time.Time, oRef ...metav1.OwnerReference) *kubermaticv1.Project {
 	return &kubermaticv1.Project{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Project",

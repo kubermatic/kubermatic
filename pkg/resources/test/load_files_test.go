@@ -205,7 +205,7 @@ func TestLoadFiles(t *testing.T) {
 			Openstack: &kubermaticv1.OpenstackCloudSpec{
 				SubnetID:       "openstack-subnet-id",
 				Username:       "openstack-username",
-				Tenant:         "openstack-tenant",
+				Project:        "openstack-project",
 				Domain:         "openstack-domain",
 				FloatingIPPool: "openstack-floating-ip-pool",
 				Network:        "openstack-network",
