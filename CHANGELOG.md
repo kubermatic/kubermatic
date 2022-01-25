@@ -1,7 +1,7 @@
 # Kubermatic 2.19
 ## [v2.19.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.0)
 
-Before upgrading, make sure to read the [general upgrade guidelines](https://docs.kubermatic.com/kubermatic/v2.19/upgrading/guidelines/). Consider tweaking `seedControllerManager.maximumParallelReconciles` to ensure usercluster reconciliations will not cause resource exhausting on seed clusters.
+Before upgrading, make sure to read the [general upgrade guidelines](https://docs.kubermatic.com/kubermatic/v2.19/upgrading/guidelines/). Consider tweaking `seedControllerManager.maximumParallelReconciles` to ensure usercluster reconciliations will not cause resource exhaustion on seed clusters.
 
 Several vulnerabilities were identified in Kubernetes (CVE-2021-44716, CVE-2021-44717, CVE-2021-3711, CVE-2021-3712, CVE-2021-33910) which have been fixed in Kubernetes 1.20.13, 1.21.8, 1.22.5.
 Because of these updates, this KKP release includes automatic update rules for all 1.20/1.21/1.22 clusters older than these patch releases. This release also removes all affected Kubernetes versions from the list of supported versions. Once the automated controlplane updates have completed, an administrator must manually patch all vulnerable `MachineDeployment`s in all affected userclusters.
@@ -21,7 +21,7 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
 ### Breaking Changes
 
 - ACTION REQUIRED: When upgrading from older KKP versions (before v2.19.0), additional flags:
-  - `--migrate-nginx-ingress` is required to perform upgrade of nginx-ingress-controller. Ingress will be briefly unavailable during this process ([#8333](https://github.com/kubermatic/kubermatic/issues/8333))
+  - `--migrate-upstream-nginx-ingress` is required to perform upgrade of nginx-ingress-controller. Ingress will be briefly unavailable during this process ([#8333](https://github.com/kubermatic/kubermatic/issues/8333))
   - `--migrate-upstream-cert-manager` is required to perform to perform the migration of the `cert-manager`. During the upgrade, the chart is uninstalled completely so there is a short time when certificates will not be renewed.([#8392](https://github.com/kubermatic/kubermatic/issues/8392))
 - ACTION REQUIRED: Set the default Service Accounts `automountServiceAccountToken` property to false for all KKP provided namespaces and kube-system ([#8344](https://github.com/kubermatic/kubermatic/issues/8344))
 - cert-manager chart has been updated to use upstream chart from https://charts.jetstack.io as a dependency, updated to version 1.6.1
