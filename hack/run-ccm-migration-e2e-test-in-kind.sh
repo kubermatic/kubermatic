@@ -215,26 +215,26 @@ spec:
       node: {}
       spec:
         openstack:
-          auth_url: https://api.cbk.cloud.syseleven.net:5000/v3
-          availability_zone: dbl1
-          dns_servers:
+          authURL: https://api.cbk.cloud.syseleven.net:5000/v3
+          availabilityZone: dbl1
+          dnsServers:
           - 37.123.105.116
           - 37.123.105.117
-          enabled_flavors: null
-          enforce_floating_ip: true
-          ignore_volume_az: false
+          enabledFlavors: null
+          enforceFloatingIP: true
+          ignoreVolumeAZ: false
           images:
             centos: kubermatic-e2e-centos
             coreos: kubermatic-e2e-coreos
             flatcar: flatcar
             ubuntu: kubermatic-e2e-ubuntu
-          manage_security_groups: null
-          node_size_requirements:
-            minimum_memory: 0
-            minimum_vcpus: 0
+          manageSecurityGroups: null
+          nodeSizeRequirements:
+            minimumMemory: 0
+            minimumVCPUs: 0
           region: dbl
-          trust_device_path: null
-          use_octavia: null
+          trustDevicePath: null
+          useOctavia: null
   expose_strategy: Tunneling
 EOF
 
@@ -266,7 +266,7 @@ EOF
 time retry 10 kubectl apply -f "${API_SERVER_NODEPORT_MANIFEST}" &
 
 EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
-    -openstack-tenant=${OS_TENANT_NAME}
+    -openstack-project=${OS_PROJECT:-$OS_TENANT_NAME}
     -openstack-username=${OS_USERNAME}
     -openstack-password=${OS_PASSWORD}
     -openstack-auth-url=${OS_AUTH_URL}

@@ -81,9 +81,9 @@ metadata:
   namespace: kubermatic
 spec:
   azure:
-    tenantId: ${AZURE_E2E_TESTS_TENANT_ID}
-    subscriptionId: ${AZURE_E2E_TESTS_SUBSCRIPTION_ID}
-    clientId: ${AZURE_E2E_TESTS_CLIENT_ID}
+    tenantID: ${AZURE_E2E_TESTS_TENANT_ID}
+    subscriptionID: ${AZURE_E2E_TESTS_SUBSCRIPTION_ID}
+    clientID: ${AZURE_E2E_TESTS_CLIENT_ID}
     clientSecret: ${AZURE_E2E_TESTS_CLIENT_SECRET}
 EOF
 retry 2 kubectl apply -f "$TMP"/preset-azure.yaml
