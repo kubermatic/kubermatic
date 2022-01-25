@@ -48,7 +48,7 @@ spec:
         - name: OS_DOMAIN_NAME
           value: openstack-domain
         - name: OS_PROJECT_NAME
-          value: openstack-tenant
+          value: openstack-project
         - name: OS_PROJECT_ID
         - name: OS_APPLICATION_CREDENTIAL_ID
         - name: OS_APPLICATION_CREDENTIAL_SECRET
