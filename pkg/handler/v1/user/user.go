@@ -296,7 +296,7 @@ func LogoutEndpoint(userProvider provider.UserProvider) endpoint.Endpoint {
 		if !ok {
 			return nil, k8cerrors.NewNotAuthorized()
 		}
-		return nil, userProvider.AddUserTokenToBlacklist(authenticatedUser, token, expiry)
+		return nil, userProvider.InvalidateToken(authenticatedUser, token, expiry)
 	}
 }
 

@@ -436,7 +436,7 @@ func checkBlockedTokens(email, token string, userProvider provider.UserProvider)
 		}
 		return nil
 	}
-	blockedTokens, err := userProvider.GetUserBlacklistTokens(user)
+	blockedTokens, err := userProvider.GetInvalidatedTokens(user)
 	if err != nil {
 		return common.KubernetesErrorToHTTPError(err)
 	}

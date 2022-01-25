@@ -653,16 +653,16 @@ func GenTestSeed(modifiers ...func(seed *kubermaticv1.Seed)) *kubermaticv1.Seed 
 					Country:  "NL",
 					Location: "Amsterdam",
 					Spec: kubermaticv1.DatacenterSpec{
-						Fake:                &kubermaticv1.DatacenterSpecFake{},
-						RequiredEmailDomain: "example.com",
+						Fake:           &kubermaticv1.DatacenterSpecFake{},
+						RequiredEmails: []string{"example.com"},
 					},
 				},
 				"restricted-fake-dc2": {
 					Country:  "NL",
 					Location: "Amsterdam",
 					Spec: kubermaticv1.DatacenterSpec{
-						Fake:                 &kubermaticv1.DatacenterSpecFake{},
-						RequiredEmailDomains: []string{"23f67weuc.com", "example.com", "12noifsdsd.org"},
+						Fake:           &kubermaticv1.DatacenterSpecFake{},
+						RequiredEmails: []string{"23f67weuc.com", "example.com", "12noifsdsd.org"},
 					},
 				},
 				"fake-dc": {
@@ -933,7 +933,7 @@ func GenDefaultAdminUser() *kubermaticv1.User {
 }
 
 // GenProject generates new empty project.
-func GenProject(name, phase string, creationTime time.Time, oRef ...metav1.OwnerReference) *kubermaticv1.Project {
+func GenProject(name string, phase kubermaticv1.ProjectPhase, creationTime time.Time, oRef ...metav1.OwnerReference) *kubermaticv1.Project {
 	return &kubermaticv1.Project{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              fmt.Sprintf("%s-%s", name, "ID"),
@@ -1272,7 +1272,6 @@ func GenDefaultSettings() *kubermaticv1.KubermaticSetting {
 				Enforced: false,
 			},
 			DefaultNodeCount:      10,
-			ClusterTypeOptions:    kubermaticv1.ClusterTypeAll,
 			DisplayDemoInfo:       false,
 			DisplayAPIDocs:        false,
 			DisplayTermsOfService: false,
@@ -1322,7 +1321,6 @@ func GenDefaultGlobalSettings() *kubermaticv1.KubermaticSetting {
 				Enforced: true,
 			},
 			DefaultNodeCount:            5,
-			ClusterTypeOptions:          5,
 			DisplayDemoInfo:             true,
 			DisplayAPIDocs:              true,
 			DisplayTermsOfService:       true,
@@ -1353,7 +1351,7 @@ func GenClusterWithOpenstack(cluster *kubermaticv1.Cluster) *kubermaticv1.Cluste
 			Network:        "network",
 			RouterID:       "routerID",
 			SecurityGroups: "securityGroups",
-			Tenant:         "tenant",
+			Project:        "project",
 		},
 	}
 	return cluster

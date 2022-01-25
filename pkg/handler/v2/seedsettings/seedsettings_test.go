@@ -82,7 +82,7 @@ func TestGetSeedSettingsEndpoint(t *testing.T) {
 			existingAPIUser:    test.GenDefaultAPIUser(),
 			expectedHTTPStatus: http.StatusOK,
 			expectedResponse: apiv2.SeedSettings{
-				Metering: kubermaticv1.MeteringConfigurations{
+				Metering: kubermaticv1.MeteringConfiguration{
 					Enabled:          true,
 					StorageClassName: "fast",
 					StorageSize:      "100Gi",
@@ -99,7 +99,7 @@ func TestGetSeedSettingsEndpoint(t *testing.T) {
 			existingAPIUser:    test.GenDefaultAPIUser(),
 			expectedHTTPStatus: http.StatusOK,
 			expectedResponse: apiv2.SeedSettings{
-				Metering: kubermaticv1.MeteringConfigurations{
+				Metering: kubermaticv1.MeteringConfiguration{
 					Enabled:          false,
 					StorageClassName: "",
 					StorageSize:      "",
@@ -144,7 +144,7 @@ func genMLASeed(mlaEnabled bool) *kubermaticv1.Seed {
 
 func genMeteringSeed(enabled bool) *kubermaticv1.Seed {
 	seed := test.GenTestSeed()
-	seed.Spec.Metering = &kubermaticv1.MeteringConfigurations{
+	seed.Spec.Metering = &kubermaticv1.MeteringConfiguration{
 		Enabled:          enabled,
 		StorageClassName: "fast",
 		StorageSize:      "100Gi",

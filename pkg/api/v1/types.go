@@ -90,9 +90,7 @@ type DatacenterSpec struct {
 	// not specified here.
 	Node kubermaticv1.NodeSettings `json:"node"`
 
-	// Deprecated. Automatically migrated to the RequiredEmailDomains field.
-	RequiredEmailDomain  string   `json:"requiredEmailDomain,omitempty"`
-	RequiredEmailDomains []string `json:"requiredEmailDomains,omitempty"`
+	RequiredEmails []string `json:"requiredEmails,omitempty"`
 
 	// EnforceAuditLogging enforces audit logging on every cluster within the DC,
 	// ignoring cluster-specific settings.
@@ -596,9 +594,9 @@ type OpenstackSubnet struct {
 	Name string `json:"name"`
 }
 
-// OpenstackTenant is the object representing a openstack tenant.
-// swagger:model OpenstackTenant
-type OpenstackTenant struct {
+// OpenstackProject is the object representing a openstack tenant.
+// swagger:model OpenstackProject
+type OpenstackProject struct {
 	// Id uniquely identifies the current tenant
 	ID string `json:"id"`
 	// Name is the name of the tenant
@@ -1005,8 +1003,6 @@ type PublicOpenstackCloudSpec struct {
 	FloatingIPPool string `json:"floatingIpPool"`
 	Project        string `json:"project,omitempty"`
 	ProjectID      string `json:"projectID,omitempty"`
-	Tenant         string `json:"tenant,omitempty"`
-	TenantID       string `json:"tenantID,omitempty"`
 	Domain         string `json:"domain,omitempty"`
 	Network        string `json:"network"`
 	SecurityGroups string `json:"securityGroups"`
@@ -1023,8 +1019,6 @@ func newPublicOpenstackCloudSpec(internal *kubermaticv1.OpenstackCloudSpec) (pub
 		FloatingIPPool: internal.FloatingIPPool,
 		Project:        internal.Project,
 		ProjectID:      internal.ProjectID,
-		Tenant:         internal.Project,
-		TenantID:       internal.ProjectID,
 		Domain:         internal.Domain,
 		Network:        internal.Network,
 		SecurityGroups: internal.SecurityGroups,

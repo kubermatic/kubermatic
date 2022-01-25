@@ -50,7 +50,6 @@ func TestGetDefaultGlobalSettings(t *testing.T) {
 					Enforced: false,
 				},
 				DefaultNodeCount:            10,
-				ClusterTypeOptions:          kubermaticv1.ClusterTypeKubernetes,
 				DisplayDemoInfo:             false,
 				DisplayAPIDocs:              false,
 				DisplayTermsOfService:       false,

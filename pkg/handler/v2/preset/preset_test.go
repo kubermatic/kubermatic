@@ -106,7 +106,7 @@ func genPresets() []ctrlruntimeclient.Object {
 		&kubermaticv1.Preset{
 			ObjectMeta: v1.ObjectMeta{Name: "enabled-do-with-acme-email"},
 			Spec: kubermaticv1.PresetSpec{
-				RequiredEmailDomain: test.RequiredEmailDomain,
+				RequiredEmails: []string{test.RequiredEmailDomain},
 				Digitalocean: &kubermaticv1.Digitalocean{
 					Token: "token",
 				},
@@ -115,7 +115,7 @@ func genPresets() []ctrlruntimeclient.Object {
 		&kubermaticv1.Preset{
 			ObjectMeta: v1.ObjectMeta{Name: "enabled-do-with-test-email"},
 			Spec: kubermaticv1.PresetSpec{
-				RequiredEmailDomain: "test.com",
+				RequiredEmails: []string{"test.com"},
 				Digitalocean: &kubermaticv1.Digitalocean{
 					Token: "token",
 				},
@@ -934,7 +934,7 @@ func TestUpdatePreset(t *testing.T) {
 						"openstack": {
 						  "username": "updated",
 						  "password": "updated",
-						  "tenant": "updated",
+						  "project": "updated",
 						  "domain": "updated"
 						}
 					  }
@@ -949,7 +949,7 @@ func TestUpdatePreset(t *testing.T) {
 					Openstack: &kubermaticv1.Openstack{
 						Username:       "test",
 						Password:       "test",
-						TenantID:       "test",
+						Project:        "test",
 						Domain:         "test",
 						FloatingIPPool: "test",
 						RouterID:       "test",
@@ -966,7 +966,7 @@ func TestUpdatePreset(t *testing.T) {
 					Openstack: &kubermaticv1.Openstack{
 						Username: "updated",
 						Password: "updated",
-						TenantID: "updated",
+						Project:  "updated",
 						Domain:   "updated",
 					},
 				},
@@ -988,7 +988,7 @@ func TestUpdatePreset(t *testing.T) {
 						"openstack": {
 						  "username": "updated",
 						  "password": "updated",
-						  "tenant": "updated",
+						  "project": "updated",
 						  "domain": "updated"
 						},
 					  "digitalocean": {
@@ -1003,7 +1003,7 @@ func TestUpdatePreset(t *testing.T) {
 					Openstack: &kubermaticv1.Openstack{
 						Username:       "test",
 						Password:       "test",
-						TenantID:       "test",
+						Project:        "test",
 						Domain:         "test",
 						FloatingIPPool: "test",
 						RouterID:       "test",
@@ -1234,7 +1234,7 @@ func TestDeletePreset(t *testing.T) {
 					Openstack: &kubermaticv1.Openstack{
 						Username: "username",
 						Password: "password",
-						Tenant:   "tenant",
+						Project:  "project",
 						Domain:   "domain",
 					},
 				},
@@ -1246,7 +1246,7 @@ func TestDeletePreset(t *testing.T) {
 					Openstack: &kubermaticv1.Openstack{
 						Username: "username",
 						Password: "password",
-						Tenant:   "tenant",
+						Project:  "project",
 						Domain:   "domain",
 					},
 				},
