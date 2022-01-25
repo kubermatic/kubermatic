@@ -18,7 +18,7 @@ import (
 type OIDCSettings struct {
 
 	// client ID
-	ClientID string `json:"clientId,omitempty"`
+	ClientID string `json:"clientID,omitempty"`
 
 	// client secret
 	ClientSecret string `json:"clientSecret,omitempty"`
@@ -30,7 +30,7 @@ type OIDCSettings struct {
 	GroupsClaim string `json:"groupsClaim,omitempty"`
 
 	// issuer URL
-	IssuerURL string `json:"issuerUrl,omitempty"`
+	IssuerURL string `json:"issuerURL,omitempty"`
 
 	// required claim
 	RequiredClaim string `json:"requiredClaim,omitempty"`

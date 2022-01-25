@@ -684,11 +684,11 @@ spec:
                         type: string
                       project:
                         description: project, formally known as tenant. Tenant is
-                          depreciated in Openstack
+                          deprecated in Openstack
                         type: string
                       projectID:
                         description: project id, formally known as tenantID. TenantID
-                          is depreciated in Openstack
+                          is deprecated in Openstack
                         type: string
                       routerID:
                         type: string

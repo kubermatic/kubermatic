@@ -702,8 +702,16 @@ func (r *TestClient) GetClusterHealthStatus(projectID, dc, clusterID string) (*a
 	apiClusterHealth.MachineController = convertHealthStatus(response.Payload.MachineController)
 	apiClusterHealth.Scheduler = convertHealthStatus(response.Payload.Scheduler)
 	apiClusterHealth.UserClusterControllerManager = convertHealthStatus(response.Payload.UserClusterControllerManager)
-	apiClusterHealth.GatekeeperController = convertHealthStatus(response.Payload.GatekeeperController).Ptr()
-	apiClusterHealth.GatekeeperAudit = convertHealthStatus(response.Payload.GatekeeperAudit).Ptr()
+
+	if status := response.Payload.GatekeeperController; status != "" {
+		converted := convertHealthStatus(status)
+		apiClusterHealth.GatekeeperController = &converted
+	}
+
+	if status := response.Payload.GatekeeperAudit; status != "" {
+		converted := convertHealthStatus(status)
+		apiClusterHealth.GatekeeperAudit = &converted
+	}
 
 	return apiClusterHealth, nil
 }
@@ -747,10 +755,10 @@ func (r *TestClient) WaitForOPAEnabledClusterHealthy(projectID, dc, clusterID st
 }
 
 func convertHealthStatus(status models.HealthStatus) kubermaticv1.HealthStatus {
-	switch int64(status) {
-	case int64(kubermaticv1.HealthStatusProvisioning):
+	switch string(status) {
+	case string(kubermaticv1.HealthStatusProvisioning):
 		return kubermaticv1.HealthStatusProvisioning
-	case int64(kubermaticv1.HealthStatusUp):
+	case string(kubermaticv1.HealthStatusUp):
 		return kubermaticv1.HealthStatusUp
 	default:
 		return kubermaticv1.HealthStatusDown

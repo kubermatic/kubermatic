@@ -591,14 +591,18 @@ func (r *Reconciler) ensureRequiredResourceTypesExist(ctx context.Context, log *
 		if err := userClusterClient.List(ctx, unstructuedList, listOpts); err != nil {
 			if meta.IsNoMatchError(err) {
 				// Try again later
-				log.Infow("Required resource isn't served, trying again in 10 seconds", "resource", requiredResource.String())
+				log.Infow("Required resource isn't served, trying again in 10 seconds", "resource", formatGVK(requiredResource))
 				return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 			}
-			return nil, fmt.Errorf("failed to check if type %q is served: %w", requiredResource.String(), err)
+			return nil, fmt.Errorf("failed to check if type %q is served: %w", formatGVK(requiredResource), err)
 		}
 	}
 
 	return nil, nil
+}
+
+func formatGVK(gvk kubermaticv1.GroupVersionKind) string {
+	return fmt.Sprintf("%s/%s %s", gvk.Group, gvk.Version, gvk.Kind)
 }
 
 func setAddonCodition(a *kubermaticv1.Addon, condType kubermaticv1.AddonConditionType, status corev1.ConditionStatus) {
