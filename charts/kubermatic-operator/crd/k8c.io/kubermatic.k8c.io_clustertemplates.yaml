@@ -683,12 +683,10 @@ spec:
                       password:
                         type: string
                       project:
-                        description: project, formally known as tenant. Tenant is
-                          deprecated in Openstack
+                        description: project, formally known as tenant.
                         type: string
                       projectID:
-                        description: project id, formally known as tenantID. TenantID
-                          is deprecated in Openstack
+                        description: project id, formally known as tenantID.
                         type: string
                       routerID:
                         type: string
