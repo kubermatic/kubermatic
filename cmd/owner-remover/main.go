@@ -72,7 +72,7 @@ func main() {
 		}
 
 		var secretList *corev1.SecretList
-		if client.List(ctx, secretList, &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}); err != nil {
+		if err := client.List(ctx, secretList, &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}); err != nil {
 			klog.Fatal(err)
 		}
 
@@ -84,7 +84,7 @@ func main() {
 		}
 
 		var configMapList *corev1.ConfigMapList
-		if client.List(ctx, configMapList, &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}); err != nil {
+		if err := client.List(ctx, configMapList, &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}); err != nil {
 			klog.Fatal(err)
 		}
 
@@ -96,7 +96,7 @@ func main() {
 		}
 
 		var serviceList *corev1.ServiceList
-		if client.List(ctx, serviceList, &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}); err != nil {
+		if err := client.List(ctx, serviceList, &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}); err != nil {
 			klog.Fatal(err)
 		}
 
@@ -108,7 +108,7 @@ func main() {
 		}
 
 		var pvcList *corev1.PersistentVolumeClaimList
-		if client.List(ctx, pvcList, &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}); err != nil {
+		if err := client.List(ctx, pvcList, &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}); err != nil {
 			klog.Fatal(err)
 		}
 
@@ -120,7 +120,7 @@ func main() {
 		}
 
 		var deploymentList *appsv1.DeploymentList
-		if client.List(ctx, deploymentList, &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}); err != nil {
+		if err := client.List(ctx, deploymentList, &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}); err != nil {
 			klog.Fatal(err)
 		}
 
@@ -132,7 +132,7 @@ func main() {
 		}
 
 		var statefulSetList *appsv1.StatefulSetList
-		if client.List(ctx, statefulSetList, &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}); err != nil {
+		if err := client.List(ctx, statefulSetList, &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}); err != nil {
 			klog.Fatal(err)
 		}
 
@@ -144,7 +144,7 @@ func main() {
 		}
 
 		var addonList *kubermaticv1.AddonList
-		if client.List(ctx, addonList, &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}); err != nil {
+		if err := client.List(ctx, addonList, &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}); err != nil {
 			klog.Fatal(err)
 		}
 
