@@ -86,5 +86,5 @@ func (h *seedAdmissionHandler) Handle(ctx context.Context, req webhook.Admission
 }
 
 func (h *seedAdmissionHandler) SetupWebhookWithManager(mgr ctrlruntime.Manager) {
-	mgr.GetWebhookServer().Register("/validate-kubermatic-k8s-io-seed", &webhook.Admission{Handler: h})
+	mgr.GetWebhookServer().Register("/validate-kubermatic-k8c-io-seed", &webhook.Admission{Handler: h})
 }
