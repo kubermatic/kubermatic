@@ -26,8 +26,8 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/common"
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
-	"k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -169,9 +169,9 @@ func (r *reconciler) ensureMigrationConditionStatus(migrated bool, cluster *kube
 		message = "migrating to external CCM"
 	}
 
-	toPatch := !helper.ClusterConditionHasStatus(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, newStatus)
+	toPatch := !kubermaticv1helper.ClusterConditionHasStatus(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, newStatus)
 	if toPatch {
-		helper.SetClusterCondition(
+		kubermaticv1helper.SetClusterCondition(
 			cluster,
 			r.versions,
 			kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted,

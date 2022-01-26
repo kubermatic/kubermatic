@@ -28,7 +28,7 @@ import (
 	"context"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	eectcontroller "k8c.io/kubermatic/v2/pkg/ee/constraint-template-controller"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
