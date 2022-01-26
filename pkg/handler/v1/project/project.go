@@ -28,7 +28,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -56,7 +56,7 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		user := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
+		user := ctx.Value(middleware.UserCRContextKey).(*kubermaticv1.User)
 
 		if err := checkProjectRestriction(user, settings); err != nil {
 			return nil, err
@@ -71,7 +71,7 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 			return createProjectByServiceAccount(userEmail, projectRq, memberMapper, userProvider, privilegedMemberProvider, projectProvider)
 		}
 
-		kubermaticProject, err := projectProvider.New([]*kubermaticapiv1.User{user}, projectRq.Body.Name, projectRq.Body.Labels)
+		kubermaticProject, err := projectProvider.New([]*kubermaticv1.User{user}, projectRq.Body.Name, projectRq.Body.Labels)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -90,7 +90,7 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 }
 
 func createProjectByServiceAccount(saEmail string, projectReq projectReq, memberMapper provider.ProjectMemberMapper, userProvider provider.UserProvider, memberProvider provider.PrivilegedProjectMemberProvider, projectProvider provider.ProjectProvider) (*apiv1.Project, error) {
-	var humanUserOwnerList []*kubermaticapiv1.User
+	var humanUserOwnerList []*kubermaticv1.User
 	bindings, err := memberMapper.MappingsFor(saEmail)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
@@ -141,7 +141,7 @@ func createProjectByServiceAccount(saEmail string, projectReq projectReq, member
 	return common.ConvertInternalProjectToExternal(kubermaticProject, owners, 0), nil
 }
 
-func checkProjectRestriction(user *kubermaticapiv1.User, settings *kubermaticapiv1.KubermaticSetting) error {
+func checkProjectRestriction(user *kubermaticv1.User, settings *kubermaticv1.KubermaticSetting) error {
 	if user.Spec.IsAdmin {
 		return nil
 	}
@@ -151,7 +151,7 @@ func checkProjectRestriction(user *kubermaticapiv1.User, settings *kubermaticapi
 	return nil
 }
 
-func validateUserProjectsLimit(user *kubermaticapiv1.User, settings *kubermaticapiv1.KubermaticSetting, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, memberMapper provider.ProjectMemberMapper, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider) error {
+func validateUserProjectsLimit(user *kubermaticv1.User, settings *kubermaticv1.KubermaticSetting, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, memberMapper provider.ProjectMemberMapper, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider) error {
 	if user.Spec.IsAdmin {
 		return nil
 	}
@@ -369,7 +369,7 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 	}
 }
 
-func updateProject(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, kubermaticProject *kubermaticapiv1.Project) (*kubermaticapiv1.Project, error) {
+func updateProject(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, kubermaticProject *kubermaticv1.Project) (*kubermaticv1.Project, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
@@ -517,7 +517,7 @@ func DecodeList(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-func getNumberOfClustersForProject(clusterProviderGetter provider.ClusterProviderGetter, seedsGetter provider.SeedsGetter, project *kubermaticapiv1.Project) (int, error) {
+func getNumberOfClustersForProject(clusterProviderGetter provider.ClusterProviderGetter, seedsGetter provider.SeedsGetter, project *kubermaticv1.Project) (int, error) {
 	var clustersNumber int
 	seeds, err := seedsGetter()
 	if err != nil {
@@ -556,7 +556,7 @@ func getNumberOfClusters(clusterProviderGetter provider.ClusterProviderGetter, s
 			return clustersNumber, err
 		}
 		for _, cluster := range clusters.Items {
-			projectName, ok := cluster.Labels[kubermaticapiv1.ProjectIDLabelKey]
+			projectName, ok := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
 			if ok {
 				clustersNumber[projectName]++
 			}

@@ -26,7 +26,6 @@ import (
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -66,7 +65,7 @@ func GetUpgradesEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGe
 		return nil, fmt.Errorf("failed to get the cloud provider name: %w", err)
 	}
 	var updateConditions []kubermaticv1.ConditionType
-	externalCloudProvider := cluster.Spec.Features[v1.ClusterFeatureExternalCloudProvider]
+	externalCloudProvider := cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]
 	if externalCloudProvider {
 		updateConditions = append(updateConditions, kubermaticv1.ExternalCloudProviderCondition)
 	}

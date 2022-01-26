@@ -28,7 +28,7 @@ import (
 	"context"
 	"testing"
 
-	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	eectcontroller "k8c.io/kubermatic/v2/pkg/ee/constraint-template-controller"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
@@ -46,13 +46,13 @@ func TestGetClustersForConstraintTemplate(t *testing.T) {
 
 	testCases := []struct {
 		name             string
-		ct               *v1.ConstraintTemplate
+		ct               *kubermaticv1.ConstraintTemplate
 		clusters         []ctrlruntimeclient.Object
 		expectedClusters sets.String
 	}{
 		{
 			name: "scenario 1: get clusters without filters",
-			ct: genConstraintTemplateWithSelector(v1.ConstraintTemplateSelector{
+			ct: genConstraintTemplateWithSelector(kubermaticv1.ConstraintTemplateSelector{
 				Providers:     nil,
 				LabelSelector: metav1.LabelSelector{},
 			}),
@@ -64,7 +64,7 @@ func TestGetClustersForConstraintTemplate(t *testing.T) {
 		},
 		{
 			name: "scenario 2: filter clusters with labels",
-			ct: genConstraintTemplateWithSelector(v1.ConstraintTemplateSelector{
+			ct: genConstraintTemplateWithSelector(kubermaticv1.ConstraintTemplateSelector{
 				Providers: nil,
 				LabelSelector: metav1.LabelSelector{
 					MatchLabels: map[string]string{"test": "value"},
@@ -78,7 +78,7 @@ func TestGetClustersForConstraintTemplate(t *testing.T) {
 		},
 		{
 			name: "scenario 3: filter clusters with providers",
-			ct: genConstraintTemplateWithSelector(v1.ConstraintTemplateSelector{
+			ct: genConstraintTemplateWithSelector(kubermaticv1.ConstraintTemplateSelector{
 				Providers:     []string{"fake"},
 				LabelSelector: metav1.LabelSelector{},
 			}),
@@ -90,7 +90,7 @@ func TestGetClustersForConstraintTemplate(t *testing.T) {
 		},
 		{
 			name: "scenario 4: filter clusters with providers and labels",
-			ct: genConstraintTemplateWithSelector(v1.ConstraintTemplateSelector{
+			ct: genConstraintTemplateWithSelector(kubermaticv1.ConstraintTemplateSelector{
 				Providers: []string{"fake"},
 				LabelSelector: metav1.LabelSelector{
 					MatchLabels: map[string]string{"test": "value"},
@@ -130,7 +130,7 @@ func TestGetClustersForConstraintTemplate(t *testing.T) {
 	}
 }
 
-func genCluster(name string, labels map[string]string, bringYourOwnProvider bool) *v1.Cluster {
+func genCluster(name string, labels map[string]string, bringYourOwnProvider bool) *kubermaticv1.Cluster {
 	cluster := test.GenDefaultCluster()
 
 	cluster.Name = name
@@ -138,13 +138,13 @@ func genCluster(name string, labels map[string]string, bringYourOwnProvider bool
 
 	if bringYourOwnProvider {
 		cluster.Spec.Cloud.Fake = nil
-		cluster.Spec.Cloud.BringYourOwn = &v1.BringYourOwnCloudSpec{}
+		cluster.Spec.Cloud.BringYourOwn = &kubermaticv1.BringYourOwnCloudSpec{}
 	}
 
 	return cluster
 }
 
-func genConstraintTemplateWithSelector(selector v1.ConstraintTemplateSelector) *v1.ConstraintTemplate {
+func genConstraintTemplateWithSelector(selector kubermaticv1.ConstraintTemplateSelector) *kubermaticv1.ConstraintTemplate {
 	ct := test.GenConstraintTemplate("ct1")
 	ct.Spec.Selector = selector
 	return ct

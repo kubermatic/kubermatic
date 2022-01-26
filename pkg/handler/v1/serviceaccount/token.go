@@ -28,7 +28,7 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
@@ -88,7 +88,7 @@ func CreateTokenEndpoint(projectProvider provider.ProjectProvider, privilegedPro
 	}
 }
 
-func listSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, project *kubermaticapiv1.Project, sa *kubermaticapiv1.User, tokenID string) ([]*v1.Secret, error) {
+func listSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, project *kubermaticv1.Project, sa *kubermaticv1.User, tokenID string) ([]*v1.Secret, error) {
 	options := &provider.ServiceAccountTokenListOptions{}
 	if tokenID != "" {
 		options.TokenID = tokenID
@@ -99,7 +99,7 @@ func listSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, se
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 	if adminUserInfo.IsAdmin {
-		labelSelector, err := labels.Parse(fmt.Sprintf("%s=%s", kubermaticapiv1.ProjectIDLabelKey, project.Name))
+		labelSelector, err := labels.Parse(fmt.Sprintf("%s=%s", kubermaticv1.ProjectIDLabelKey, project.Name))
 		if err != nil {
 			return nil, err
 		}
@@ -119,7 +119,7 @@ func listSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, se
 	return serviceAccountTokenProvider.List(userInfo, project, sa, options)
 }
 
-func createSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, sa *kubermaticapiv1.User, projectID, tokenName, tokenID, tokenData string) (*v1.Secret, error) {
+func createSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, sa *kubermaticv1.User, projectID, tokenName, tokenID, tokenData string) (*v1.Secret, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err

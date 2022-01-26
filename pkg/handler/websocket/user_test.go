@@ -29,7 +29,7 @@ import (
 	"github.com/gorilla/websocket"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 
@@ -43,7 +43,7 @@ func TestUserWatchEndpoint(t *testing.T) {
 	testcases := []struct {
 		name                string
 		userToUpdate        string
-		userSettingsUpdate  *v1.UserSettings
+		userSettingsUpdate  *kubermaticv1.UserSettings
 		userUpdate          *apiv1.User
 		existingAPIUser     *apiv1.User
 		existingUsers       []*apiv1.User
@@ -52,7 +52,7 @@ func TestUserWatchEndpoint(t *testing.T) {
 		{
 			name:         "should be able to watch and notice user setting change on its own user",
 			userToUpdate: test.GenDefaultAPIUser().Name,
-			userSettingsUpdate: &v1.UserSettings{
+			userSettingsUpdate: &kubermaticv1.UserSettings{
 				CollapseSidenav: true,
 			},
 			existingAPIUser:     test.GenDefaultAPIUser(),
@@ -62,7 +62,7 @@ func TestUserWatchEndpoint(t *testing.T) {
 		{
 			name:         "should be able to watch and but not notice the user setting change on a different user",
 			userToUpdate: test.GenAPIUser("john", "john@acme.com").Name,
-			userSettingsUpdate: &v1.UserSettings{
+			userSettingsUpdate: &kubermaticv1.UserSettings{
 				CollapseSidenav: true,
 			},
 			existingAPIUser:     test.GenDefaultAPIUser(),
@@ -120,7 +120,7 @@ func TestUserWatchEndpoint(t *testing.T) {
 			// Without this the test is flaky.
 			time.Sleep(time.Second)
 
-			var internalUser *v1.User
+			var internalUser *kubermaticv1.User
 			if err := cli.FakeClient.Get(ctx, types.NamespacedName{Name: tc.userToUpdate}, internalUser); err != nil {
 				t.Fatalf("error getting user to update: %v", err)
 			}

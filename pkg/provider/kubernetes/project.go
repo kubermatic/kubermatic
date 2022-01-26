@@ -20,7 +20,7 @@ import (
 	"context"
 	"errors"
 
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/label"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
@@ -66,29 +66,29 @@ type PrivilegedProjectProvider struct {
 // a user cannot own more than one project with the given name
 // since we get the list of the current projects from a cache (lister) there is a small time window
 // during which a user can create more that one project with the given name.
-func (p *ProjectProvider) New(users []*kubermaticapiv1.User, projectName string, labels map[string]string) (*kubermaticapiv1.Project, error) {
+func (p *ProjectProvider) New(users []*kubermaticv1.User, projectName string, labels map[string]string) (*kubermaticv1.Project, error) {
 	if len(users) == 0 {
 		return nil, errors.New("users are missing but required")
 	}
 
-	project := &kubermaticapiv1.Project{
+	project := &kubermaticv1.Project{
 		ObjectMeta: metav1.ObjectMeta{
 			OwnerReferences: []metav1.OwnerReference{},
 			Name:            rand.String(10),
 			Labels:          labels,
 		},
-		Spec: kubermaticapiv1.ProjectSpec{
+		Spec: kubermaticv1.ProjectSpec{
 			Name: projectName,
 		},
-		Status: kubermaticapiv1.ProjectStatus{
-			Phase: kubermaticapiv1.ProjectInactive,
+		Status: kubermaticv1.ProjectStatus{
+			Phase: kubermaticv1.ProjectInactive,
 		},
 	}
 
 	for _, user := range users {
 		project.OwnerReferences = append(project.OwnerReferences, metav1.OwnerReference{
-			APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
-			Kind:       kubermaticapiv1.UserKindName,
+			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+			Kind:       kubermaticv1.UserKindName,
 			UID:        user.GetUID(),
 			Name:       user.Name,
 		})
@@ -101,7 +101,7 @@ func (p *ProjectProvider) New(users []*kubermaticapiv1.User, projectName string,
 }
 
 // Update update a specific project for a specific user and returns the updated project.
-func (p *ProjectProvider) Update(userInfo *provider.UserInfo, newProject *kubermaticapiv1.Project) (*kubermaticapiv1.Project, error) {
+func (p *ProjectProvider) Update(userInfo *provider.UserInfo, newProject *kubermaticv1.Project) (*kubermaticv1.Project, error) {
 	if userInfo == nil {
 		return nil, errors.New("a user is missing but required")
 	}
@@ -129,12 +129,12 @@ func (p *ProjectProvider) Delete(userInfo *provider.UserInfo, projectInternalNam
 		return err
 	}
 
-	existingProject := &kubermaticapiv1.Project{}
+	existingProject := &kubermaticv1.Project{}
 	if err := masterImpersonatedClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: projectInternalName}, existingProject); err != nil {
 		return err
 	}
 
-	existingProject.Status.Phase = kubermaticapiv1.ProjectTerminating
+	existingProject.Status.Phase = kubermaticv1.ProjectTerminating
 	if err := masterImpersonatedClient.Update(context.Background(), existingProject); err != nil {
 		return err
 	}
@@ -143,7 +143,7 @@ func (p *ProjectProvider) Delete(userInfo *provider.UserInfo, projectInternalNam
 }
 
 // Get returns the project with the given name.
-func (p *ProjectProvider) Get(userInfo *provider.UserInfo, projectInternalName string, options *provider.ProjectGetOptions) (*kubermaticapiv1.Project, error) {
+func (p *ProjectProvider) Get(userInfo *provider.UserInfo, projectInternalName string, options *provider.ProjectGetOptions) (*kubermaticv1.Project, error) {
 	if userInfo == nil {
 		return nil, errors.New("a user is missing but required")
 	}
@@ -154,11 +154,11 @@ func (p *ProjectProvider) Get(userInfo *provider.UserInfo, projectInternalName s
 	if err != nil {
 		return nil, err
 	}
-	existingProject := &kubermaticapiv1.Project{}
+	existingProject := &kubermaticv1.Project{}
 	if err := masterImpersonatedClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: projectInternalName}, existingProject); err != nil {
 		return nil, err
 	}
-	if !options.IncludeUninitialized && existingProject.Status.Phase != kubermaticapiv1.ProjectActive {
+	if !options.IncludeUninitialized && existingProject.Status.Phase != kubermaticv1.ProjectActive {
 		return nil, kerrors.NewServiceUnavailable("Project is not initialized yet")
 	}
 
@@ -167,15 +167,15 @@ func (p *ProjectProvider) Get(userInfo *provider.UserInfo, projectInternalName s
 
 // GetUnsecured returns the project with the given name
 // This function is unsafe in a sense that it uses privileged account to get project with the given name.
-func (p *PrivilegedProjectProvider) GetUnsecured(projectInternalName string, options *provider.ProjectGetOptions) (*kubermaticapiv1.Project, error) {
+func (p *PrivilegedProjectProvider) GetUnsecured(projectInternalName string, options *provider.ProjectGetOptions) (*kubermaticv1.Project, error) {
 	if options == nil {
 		options = &provider.ProjectGetOptions{IncludeUninitialized: true}
 	}
-	project := &kubermaticapiv1.Project{}
+	project := &kubermaticv1.Project{}
 	if err := p.clientPrivileged.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: projectInternalName}, project); err != nil {
 		return nil, err
 	}
-	if !options.IncludeUninitialized && project.Status.Phase != kubermaticapiv1.ProjectActive {
+	if !options.IncludeUninitialized && project.Status.Phase != kubermaticv1.ProjectActive {
 		return nil, kerrors.NewServiceUnavailable("Project is not initialized yet")
 	}
 	return project, nil
@@ -187,11 +187,11 @@ func (p *PrivilegedProjectProvider) GetUnsecured(projectInternalName string, opt
 // Note:
 // Before deletion project's status.phase is set to ProjectTerminating.
 func (p *PrivilegedProjectProvider) DeleteUnsecured(projectInternalName string) error {
-	existingProject := &kubermaticapiv1.Project{}
+	existingProject := &kubermaticv1.Project{}
 	if err := p.clientPrivileged.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: projectInternalName}, existingProject); err != nil {
 		return err
 	}
-	existingProject.Status.Phase = kubermaticapiv1.ProjectTerminating
+	existingProject.Status.Phase = kubermaticv1.ProjectTerminating
 	if err := p.clientPrivileged.Update(context.Background(), existingProject); err != nil {
 		return err
 	}
@@ -201,7 +201,7 @@ func (p *PrivilegedProjectProvider) DeleteUnsecured(projectInternalName string) 
 
 // UpdateUnsecured update a specific project and returns the updated project
 // This function is unsafe in a sense that it uses privileged account to update the project.
-func (p *PrivilegedProjectProvider) UpdateUnsecured(project *kubermaticapiv1.Project) (*kubermaticapiv1.Project, error) {
+func (p *PrivilegedProjectProvider) UpdateUnsecured(project *kubermaticv1.Project) (*kubermaticv1.Project, error) {
 	if err := p.clientPrivileged.Update(context.Background(), project); err != nil {
 		return nil, err
 	}
@@ -212,16 +212,16 @@ func (p *PrivilegedProjectProvider) UpdateUnsecured(project *kubermaticapiv1.Pro
 // If you want to filter the result please set ProjectListOptions
 //
 // Note that the list is taken from the cache.
-func (p *ProjectProvider) List(options *provider.ProjectListOptions) ([]*kubermaticapiv1.Project, error) {
+func (p *ProjectProvider) List(options *provider.ProjectListOptions) ([]*kubermaticv1.Project, error) {
 	if options == nil {
 		options = &provider.ProjectListOptions{}
 	}
-	projects := &kubermaticapiv1.ProjectList{}
+	projects := &kubermaticv1.ProjectList{}
 	if err := p.clientPrivileged.List(context.Background(), projects); err != nil {
 		return nil, err
 	}
 
-	var ret []*kubermaticapiv1.Project
+	var ret []*kubermaticv1.Project
 	for _, project := range projects.Items {
 		if len(options.ProjectName) > 0 && project.Spec.Name != options.ProjectName {
 			continue

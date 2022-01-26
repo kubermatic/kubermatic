@@ -22,7 +22,7 @@ import (
 	"code.cloudfoundry.org/go-pubsub"
 	"go.uber.org/zap"
 
-	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	toolscache "k8s.io/client-go/tools/cache"
 )
@@ -61,12 +61,12 @@ func (watcher *SettingsWatcher) OnDelete(obj interface{}) {
 }
 
 func (watcher *SettingsWatcher) onEvent(delta toolscache.DeltaType, obj interface{}) {
-	settings, ok := obj.(*v1.KubermaticSetting)
+	settings, ok := obj.(*kubermaticv1.KubermaticSetting)
 	if !ok {
 		watcher.log.Debugf("expected KubermaticSetting got %T", obj)
 	}
 
-	if settings != nil && settings.Name == v1.GlobalSettingsName {
+	if settings != nil && settings.Name == kubermaticv1.GlobalSettingsName {
 		if delta == toolscache.Added || delta == toolscache.Updated {
 			watcher.publisher.Publish(settings, pubsub.LinearTreeTraverser([]uint64{}))
 		} else if delta == toolscache.Deleted {

@@ -25,7 +25,7 @@ import (
 	"testing"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 
@@ -35,7 +35,7 @@ import (
 )
 
 func init() {
-	utilruntime.Must(v1.AddToScheme(scheme.Scheme))
+	utilruntime.Must(kubermaticv1.AddToScheme(scheme.Scheme))
 }
 
 func TestDatacentersListEndpoint(t *testing.T) {
@@ -421,7 +421,7 @@ func TestDatacenterCreateEndpoint(t *testing.T) {
 				Seed:         "us-central1",
 				Country:      "NL",
 				Location:     "Amsterdam",
-				Digitalocean: &v1.DatacenterSpecDigitalocean{},
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{},
 			},
 			dcName:           "do-correct",
 			seedName:         "us-central1",
@@ -433,7 +433,7 @@ func TestDatacenterCreateEndpoint(t *testing.T) {
 			name: "non-admin should not be able to create dc",
 			dcSpec: apiv1.DatacenterSpec{
 				Seed:         "us-central1",
-				Digitalocean: &v1.DatacenterSpecDigitalocean{},
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{},
 			},
 			dcName:           "do-correct",
 			seedName:         "us-central1",
@@ -445,7 +445,7 @@ func TestDatacenterCreateEndpoint(t *testing.T) {
 			name: "should not be able to create already existing dc",
 			dcSpec: apiv1.DatacenterSpec{
 				Seed:         "us-central1",
-				Digitalocean: &v1.DatacenterSpecDigitalocean{},
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{},
 			},
 			dcName:           "private-do1",
 			seedName:         "us-central1",
@@ -457,7 +457,7 @@ func TestDatacenterCreateEndpoint(t *testing.T) {
 			name: "should not be able to create a dc in non existing seed",
 			dcSpec: apiv1.DatacenterSpec{
 				Seed:         "idontexist",
-				Digitalocean: &v1.DatacenterSpecDigitalocean{},
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{},
 			},
 			dcName:           "private-do1",
 			seedName:         "idontexist",
@@ -480,8 +480,8 @@ func TestDatacenterCreateEndpoint(t *testing.T) {
 			name: "should not be able to create a dc with multiple specified providers",
 			dcSpec: apiv1.DatacenterSpec{
 				Seed:         "us-central1",
-				Digitalocean: &v1.DatacenterSpecDigitalocean{},
-				AWS:          &v1.DatacenterSpecAWS{},
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{},
+				AWS:          &kubermaticv1.DatacenterSpecAWS{},
 			},
 			dcName:           "private-do1",
 			seedName:         "us-central1",
@@ -493,7 +493,7 @@ func TestDatacenterCreateEndpoint(t *testing.T) {
 			name: "should receive a validation error when providing different seed name in path and request",
 			dcSpec: apiv1.DatacenterSpec{
 				Seed:         "us-central1",
-				Digitalocean: &v1.DatacenterSpecDigitalocean{},
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{},
 			},
 			dcName:           "private-do1",
 			seedName:         "different",
@@ -551,10 +551,10 @@ func TestDatacenterUpdateEndpoint(t *testing.T) {
 				Seed:     "us-central1",
 				Country:  "NL",
 				Location: "Amsterdam",
-				Digitalocean: &v1.DatacenterSpecDigitalocean{
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 					Region: "EU",
 				},
-				Node: v1.NodeSettings{
+				Node: kubermaticv1.NodeSettings{
 					PauseImage: "pause-image",
 				},
 				EnforceAuditLogging:      true,
@@ -574,10 +574,10 @@ func TestDatacenterUpdateEndpoint(t *testing.T) {
 				Seed:     "us-central1",
 				Country:  "NL",
 				Location: "Amsterdam",
-				Digitalocean: &v1.DatacenterSpecDigitalocean{
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 					Region: "EU",
 				},
-				Node: v1.NodeSettings{
+				Node: kubermaticv1.NodeSettings{
 					PauseImage: "pause-image",
 				},
 				EnforceAuditLogging:      true,
@@ -595,7 +595,7 @@ func TestDatacenterUpdateEndpoint(t *testing.T) {
 			name: "non-admin should not be able to update dc",
 			dcSpec: apiv1.DatacenterSpec{
 				Seed: "us-central1",
-				Digitalocean: &v1.DatacenterSpecDigitalocean{
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 					Region: "EU",
 				},
 			},
@@ -610,7 +610,7 @@ func TestDatacenterUpdateEndpoint(t *testing.T) {
 			name: "should not be able to update non existing dc",
 			dcSpec: apiv1.DatacenterSpec{
 				Seed: "us-central1",
-				Digitalocean: &v1.DatacenterSpecDigitalocean{
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 					Region: "EU",
 				},
 			},
@@ -625,7 +625,7 @@ func TestDatacenterUpdateEndpoint(t *testing.T) {
 			name: "should not be able to update dc name to existing dc",
 			dcSpec: apiv1.DatacenterSpec{
 				Seed: "us-central1",
-				Digitalocean: &v1.DatacenterSpecDigitalocean{
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 					Region: "EU",
 				},
 			},
@@ -640,7 +640,7 @@ func TestDatacenterUpdateEndpoint(t *testing.T) {
 			name: "should not be able to update a dc in non existing seed",
 			dcSpec: apiv1.DatacenterSpec{
 				Seed: "idontexist",
-				Digitalocean: &v1.DatacenterSpecDigitalocean{
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 					Region: "EU",
 				},
 			},
@@ -667,10 +667,10 @@ func TestDatacenterUpdateEndpoint(t *testing.T) {
 			name: "should not be able to update a dc with multiple specified providers",
 			dcSpec: apiv1.DatacenterSpec{
 				Seed: "us-central1",
-				Digitalocean: &v1.DatacenterSpecDigitalocean{
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 					Region: "EU",
 				},
-				AWS: &v1.DatacenterSpecAWS{
+				AWS: &kubermaticv1.DatacenterSpecAWS{
 					Region: "EU",
 				},
 			},
@@ -685,7 +685,7 @@ func TestDatacenterUpdateEndpoint(t *testing.T) {
 			name: "should receive a validation error when providing different seed name in path and request",
 			dcSpec: apiv1.DatacenterSpec{
 				Seed: "us-central1",
-				Digitalocean: &v1.DatacenterSpecDigitalocean{
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 					Region: "EU",
 				},
 			},

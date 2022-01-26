@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticcontext "k8c.io/kubermatic/v2/pkg/util/context"
 )
 
@@ -29,7 +29,7 @@ type UserInfoGetter = func(ctx context.Context, projectID string) (*UserInfo, er
 
 func UserInfoGetterFactory(userProjectMapper ProjectMemberMapper) (UserInfoGetter, error) {
 	return func(ctx context.Context, projectID string) (*UserInfo, error) {
-		user, ok := ctx.Value(kubermaticcontext.UserCRContextKey).(*kubermaticapiv1.User)
+		user, ok := ctx.Value(kubermaticcontext.UserCRContextKey).(*kubermaticv1.User)
 		if !ok {
 			// This happens if middleware.UserSaver is not enabled.
 			return nil, fmt.Errorf("unable to get authenticated user object")

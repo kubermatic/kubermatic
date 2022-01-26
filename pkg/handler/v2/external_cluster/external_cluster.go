@@ -29,7 +29,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -72,7 +72,7 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		var preset *kubermaticapiv1.Preset
+		var preset *kubermaticv1.Preset
 		if len(req.Credential) > 0 {
 			preset, err = presetProvider.GetPreset(userInfo, req.Credential)
 			if err != nil {
@@ -798,19 +798,19 @@ func (req listEventsReq) Validate() error {
 	return nil
 }
 
-func genExternalCluster(name, projectID string) *kubermaticapiv1.ExternalCluster {
-	return &kubermaticapiv1.ExternalCluster{
+func genExternalCluster(name, projectID string) *kubermaticv1.ExternalCluster {
+	return &kubermaticv1.ExternalCluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   rand.String(10),
-			Labels: map[string]string{kubermaticapiv1.ProjectIDLabelKey: projectID},
+			Labels: map[string]string{kubermaticv1.ProjectIDLabelKey: projectID},
 		},
-		Spec: kubermaticapiv1.ExternalClusterSpec{
+		Spec: kubermaticv1.ExternalClusterSpec{
 			HumanReadableName: name,
 		},
 	}
 }
 
-func createNewCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, cluster *kubermaticapiv1.ExternalCluster, project *kubermaticapiv1.Project) (*kubermaticapiv1.ExternalCluster, error) {
+func createNewCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, cluster *kubermaticv1.ExternalCluster, project *kubermaticv1.Project) (*kubermaticv1.ExternalCluster, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
@@ -825,7 +825,7 @@ func createNewCluster(ctx context.Context, userInfoGetter provider.UserInfoGette
 	return clusterProvider.New(userInfo, project, cluster)
 }
 
-func convertClusterToAPI(internalCluster *kubermaticapiv1.ExternalCluster) *apiv2.ExternalCluster {
+func convertClusterToAPI(internalCluster *kubermaticv1.ExternalCluster) *apiv2.ExternalCluster {
 	cluster := &apiv2.ExternalCluster{
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:                internalCluster.Name,
@@ -868,7 +868,7 @@ func convertClusterToAPI(internalCluster *kubermaticapiv1.ExternalCluster) *apiv
 	return cluster
 }
 
-func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, internalCluster *kubermaticapiv1.ExternalCluster) *apiv2.ExternalCluster {
+func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, internalCluster *kubermaticv1.ExternalCluster) *apiv2.ExternalCluster {
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
 	status := apiv2.ExternalClusterStatus{
 		State: apiv2.UNKNOWN,
@@ -926,7 +926,7 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 	return apiCluster
 }
 
-func getCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, projectID, clusterName string) (*kubermaticapiv1.ExternalCluster, error) {
+func getCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, projectID, clusterName string) (*kubermaticv1.ExternalCluster, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
@@ -942,7 +942,7 @@ func getCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clu
 	return clusterProvider.Get(userInfo, clusterName)
 }
 
-func deleteCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, projectID string, cluster *kubermaticapiv1.ExternalCluster) error {
+func deleteCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, projectID string, cluster *kubermaticv1.ExternalCluster) error {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return err
@@ -958,7 +958,7 @@ func deleteCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 	return clusterProvider.Delete(userInfo, cluster)
 }
 
-func updateCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, projectID string, cluster *kubermaticapiv1.ExternalCluster) (*kubermaticapiv1.ExternalCluster, error) {
+func updateCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, projectID string, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
