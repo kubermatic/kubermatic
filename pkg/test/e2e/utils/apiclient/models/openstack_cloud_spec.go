@@ -48,10 +48,10 @@ type OpenstackCloudSpec struct {
 	// password
 	Password string `json:"password,omitempty"`
 
-	// project, formally known as tenant. Tenant is deprecated in Openstack
+	// project, formally known as tenant.
 	Project string `json:"project,omitempty"`
 
-	// project id, formally known as tenantID. TenantID is deprecated in Openstack
+	// project id, formally known as tenantID.
 	ProjectID string `json:"projectID,omitempty"`
 
 	// router ID
