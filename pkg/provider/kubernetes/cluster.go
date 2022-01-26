@@ -102,6 +102,8 @@ type ClusterProvider struct {
 }
 
 // New creates a brand new cluster that is bound to the given project.
+//
+// Note that the admin privileges are used to set the cluster status.
 func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	if project == nil || userInfo == nil || cluster == nil {
 		return nil, errors.New("project and/or userInfo and/or cluster is missing but required")
@@ -122,8 +124,9 @@ func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.
 		return nil, err
 	}
 
+	// regular users are not allowed to update the status subresource, so we use the admin client
 	newCluster.Status = *newStatus
-	if err := seedImpersonatedClient.Status().Update(context.Background(), newCluster); err != nil {
+	if err := p.client.Status().Update(context.Background(), newCluster); err != nil {
 		return nil, err
 	}
 	return newCluster, nil
