@@ -66,7 +66,7 @@ func ClusterValidatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticCo
 						Service: &admissionregistrationv1.ServiceReference{
 							Name:      clusterWebhookServiceName,
 							Namespace: cfg.Namespace,
-							Path:      pointer.StringPtr("/validate-kubermatic-k8s-io-cluster"),
+							Path:      pointer.StringPtr("/validate-kubermatic-k8c-io-cluster"),
 							Port:      pointer.Int32Ptr(443),
 						},
 					},
@@ -122,7 +122,7 @@ func ClusterMutatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticConf
 						Service: &admissionregistrationv1.ServiceReference{
 							Name:      clusterWebhookServiceName,
 							Namespace: cfg.Namespace,
-							Path:      pointer.StringPtr("/mutate-kubermatic-k8s-io-cluster"),
+							Path:      pointer.StringPtr("/mutate-kubermatic-k8c-io-cluster"),
 							Port:      pointer.Int32Ptr(443),
 						},
 					},
