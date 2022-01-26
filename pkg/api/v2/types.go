@@ -25,7 +25,6 @@ import (
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -986,7 +985,7 @@ type StorageClass struct {
 	// Dynamically provisioned PersistentVolumes of this storage class are
 	// created with this reclaimPolicy. Defaults to Delete.
 	// +optional
-	ReclaimPolicy *v1.PersistentVolumeReclaimPolicy `json:"reclaimPolicy,omitempty"`
+	ReclaimPolicy *corev1.PersistentVolumeReclaimPolicy `json:"reclaimPolicy,omitempty"`
 
 	// Dynamically provisioned PersistentVolumes of this storage class are
 	// created with these mountOptions, e.g. ["ro", "soft"]. Not validated -
@@ -1010,7 +1009,7 @@ type StorageClass struct {
 	// This field is only honored by servers that enable the VolumeScheduling feature.
 	// +optional
 	// +listType=atomic
-	AllowedTopologies []v1.TopologySelectorTerm `json:"allowedTopologies,omitempty"`
+	AllowedTopologies []corev1.TopologySelectorTerm `json:"allowedTopologies,omitempty"`
 }
 
 // CNIVersions is a list of versions for a CNI Plugin

@@ -36,7 +36,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -95,7 +94,7 @@ func KubeVirtVMIPresets(kubeconfig string) (apiv2.VirtualMachineInstancePresetLi
 	if err != nil {
 		return nil, err
 	}
-	vmiPresets, err := kvClient.KubevirtV1().VirtualMachineInstancePresets(metav1.NamespaceDefault).List(context.Background(), v1.ListOptions{})
+	vmiPresets, err := kvClient.KubevirtV1().VirtualMachineInstancePresets(metav1.NamespaceDefault).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +170,7 @@ func KubeVirtStorageClasses(kubeconfig string) (apiv2.StorageClassList, error) {
 	if err != nil {
 		return nil, err
 	}
-	storageClassList, err := cli.StorageV1().StorageClasses().List(context.Background(), v1.ListOptions{})
+	storageClassList, err := cli.StorageV1().StorageClasses().List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}

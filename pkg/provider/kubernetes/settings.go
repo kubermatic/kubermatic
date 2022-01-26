@@ -24,7 +24,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -65,7 +65,7 @@ func (s *SettingsProvider) UpdateGlobalSettings(userInfo *provider.UserInfo, set
 
 func (s *SettingsProvider) createDefaultGlobalSettings() (*kubermaticv1.KubermaticSetting, error) {
 	defaultSettings := &kubermaticv1.KubermaticSetting{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name: kubermaticv1.GlobalSettingsName,
 		},
 		Spec: kubermaticv1.SettingSpec{

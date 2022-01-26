@@ -36,7 +36,6 @@ import (
 	kubevirtclifake "k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt/kubevirtcli/client/versioned/fake"
 
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -328,7 +327,7 @@ func TestListPresetNoCredentialsEndpoint(t *testing.T) {
 }
 
 var (
-	reclaimPolicy = v1.PersistentVolumeReclaimDelete
+	reclaimPolicy = corev1.PersistentVolumeReclaimDelete
 	storageClass1 = storagev1.StorageClass{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "storageclass-1",

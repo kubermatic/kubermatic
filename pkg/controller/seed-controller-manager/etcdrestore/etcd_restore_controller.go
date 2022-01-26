@@ -33,7 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
-	v1 "k8s.io/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -240,7 +240,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, rest
 	}
 
 	// delete etcd sts
-	sts := &v1.StatefulSet{}
+	sts := &appsv1.StatefulSet{}
 	err = r.Get(ctx, types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.EtcdStatefulSetName}, sts)
 	if err == nil {
 		if err := r.Delete(ctx, sts); err != nil && !kerrors.IsNotFound(err) {

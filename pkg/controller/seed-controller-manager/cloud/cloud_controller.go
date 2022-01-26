@@ -40,7 +40,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -226,7 +225,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 
 			// remember that we reconciled
 			cluster, err = r.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
-				now := v1.Now()
+				now := metav1.Now()
 				c.Status.LastProviderReconciliation = &now
 			})
 			if err != nil {

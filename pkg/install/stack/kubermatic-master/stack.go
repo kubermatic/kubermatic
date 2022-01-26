@@ -33,7 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -346,7 +346,7 @@ func (t nginxTargetPod) prefererdTarget() string {
 func showHostNetworkDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) {
 	logger.Debugf("Listing nginx-ingress-controller pods…")
 
-	podList := v1.PodList{}
+	podList := corev1.PodList{}
 	err := kubeClient.List(ctx, &podList, &ctrlruntimeclient.ListOptions{
 		Namespace: NginxIngressControllerNamespace,
 	})
@@ -366,7 +366,7 @@ func showHostNetworkDNSSettings(ctx context.Context, logger *logrus.Entry, kubeC
 		return
 	}
 
-	nodeList := v1.NodeList{}
+	nodeList := corev1.NodeList{}
 	err = kubeClient.List(ctx, &nodeList)
 	if err != nil {
 		logger.Warnf("Failed to retrieve nodes: %v", err)
@@ -385,9 +385,9 @@ func showHostNetworkDNSSettings(ctx context.Context, logger *logrus.Entry, kubeC
 
 			for _, address := range node.Status.Addresses {
 				switch address.Type {
-				case v1.NodeExternalIP:
+				case corev1.NodeExternalIP:
 					externalIP = address.Address
-				case v1.NodeExternalDNS:
+				case corev1.NodeExternalDNS:
 					externalDNS = address.Address
 				}
 
@@ -453,9 +453,9 @@ func showLoadBalancerDNSSettings(ctx context.Context, logger *logrus.Entry, kube
 
 	logger.Debugf("Waiting for %q to be ready…", svcName)
 
-	var ingresses []v1.LoadBalancerIngress
+	var ingresses []corev1.LoadBalancerIngress
 	err := wait.PollImmediate(5*time.Second, 3*time.Minute, func() (bool, error) {
-		svc := v1.Service{}
+		svc := corev1.Service{}
 		if err := kubeClient.Get(ctx, svcName, &svc); err != nil {
 			return false, err
 		}
