@@ -85,6 +85,7 @@ spec:
     subscriptionID: ${AZURE_E2E_TESTS_SUBSCRIPTION_ID}
     clientID: ${AZURE_E2E_TESTS_CLIENT_ID}
     clientSecret: ${AZURE_E2E_TESTS_CLIENT_SECRET}
+    loadBalancerSKU: "standard"
 EOF
 retry 2 kubectl apply -f "$TMP"/preset-azure.yaml
 
@@ -140,6 +141,7 @@ spec:
     username: ${OS_USERNAME}
     password: ${OS_PASSWORD}
     project: ${OS_TENANT_NAME}
+    projectID: ""
     domain: ${OS_DOMAIN}
 EOF
 retry 2 kubectl apply -f "$TMP"/preset-openstack.yaml

@@ -235,7 +235,7 @@ spec:
           region: dbl
           trustDevicePath: null
           useOctavia: null
-  expose_strategy: Tunneling
+  exposeStrategy: Tunneling
 EOF
 
 retry 3 kubectl apply -f $SEED_MANIFEST
