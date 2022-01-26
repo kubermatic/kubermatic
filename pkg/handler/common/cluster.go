@@ -30,7 +30,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
@@ -1132,7 +1132,7 @@ func convertInternalCCMStatusToExternal(cluster *kubermaticv1.Cluster, datacente
 		_, ccmOk := cluster.Annotations[kubermaticv1.CCMMigrationNeededAnnotation]
 		_, csiOk := cluster.Annotations[kubermaticv1.CSIMigrationNeededAnnotation]
 
-		if ccmOk && csiOk && !helper.ClusterConditionHasStatus(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue) {
+		if ccmOk && csiOk && !kubermaticv1helper.ClusterConditionHasStatus(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue) {
 			return apiv1.ExternalCCMMigrationInProgress
 		}
 		return apiv1.ExternalCCMMigrationNotNeeded
