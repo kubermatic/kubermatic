@@ -134,7 +134,7 @@ type ClusterSpec struct {
 	DebugLog bool `json:"debugLog,omitempty"`
 
 	// Optional component specific overrides
-	ComponentsOverride ComponentSettings `json:"componentsOverride"`
+	ComponentsOverride ComponentSettings `json:"componentsOverride,omitempty"`
 
 	OIDC OIDCSettings `json:"oidc,omitempty"`
 

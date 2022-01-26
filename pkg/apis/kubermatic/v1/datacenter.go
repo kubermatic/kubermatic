@@ -458,7 +458,7 @@ type DatacenterSpecNutanix struct {
 	// Optional: Port to use when connecting to the Nutanix Prism Central endpoint (defaults to 9440)
 	Port *int32 `json:"port,omitempty"`
 	// Optional: AllowInsecure allows to disable the TLS certificate check against the endpoint (defaults to false)
-	AllowInsecure bool `json:"allowInsecure"`
+	AllowInsecure bool `json:"allowInsecure,omitempty"`
 	// Images to use for each supported operating system
 	Images ImageList `json:"images"`
 }

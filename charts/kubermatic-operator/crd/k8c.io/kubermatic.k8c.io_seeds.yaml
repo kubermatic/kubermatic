@@ -322,7 +322,6 @@ spec:
                               format: int32
                               type: integer
                           required:
-                          - allowInsecure
                           - endpoint
                           - images
                           type: object

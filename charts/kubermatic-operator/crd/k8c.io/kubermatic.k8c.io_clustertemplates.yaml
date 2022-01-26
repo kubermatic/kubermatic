@@ -1701,7 +1701,6 @@ spec:
             required:
             - cloud
             - clusterNetwork
-            - componentsOverride
             - exposeStrategy
             - humanReadableName
             - pause
