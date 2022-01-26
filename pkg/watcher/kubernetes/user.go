@@ -24,7 +24,7 @@ import (
 	"code.cloudfoundry.org/go-pubsub"
 	"go.uber.org/zap"
 
-	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	"k8s.io/apimachinery/pkg/watch"
 	toolscache "k8s.io/client-go/tools/cache"
@@ -34,7 +34,7 @@ import (
 type UserWatcher struct {
 	log       *zap.SugaredLogger
 	publisher *pubsub.PubSub
-	userCache map[uint64]*v1.User
+	userCache map[uint64]*kubermaticv1.User
 }
 
 var _ toolscache.ResourceEventHandler = &UserWatcher{}
@@ -44,7 +44,7 @@ func NewUserWatcher(ctx context.Context, log *zap.SugaredLogger) (*UserWatcher, 
 	w := &UserWatcher{
 		log:       log,
 		publisher: pubsub.New(),
-		userCache: make(map[uint64]*v1.User),
+		userCache: make(map[uint64]*kubermaticv1.User),
 	}
 
 	return w, nil
@@ -65,7 +65,7 @@ func (watcher *UserWatcher) Subscribe(subscription pubsub.Subscription, opts ...
 }
 
 func (watcher *UserWatcher) OnAdd(obj interface{}) {
-	user, ok := obj.(*v1.User)
+	user, ok := obj.(*kubermaticv1.User)
 	if !ok {
 		watcher.log.Debugf("expected User but got %T", obj)
 		return
@@ -82,7 +82,7 @@ func (watcher *UserWatcher) OnAdd(obj interface{}) {
 }
 
 func (watcher *UserWatcher) OnUpdate(oldObj, newObj interface{}) {
-	user, ok := newObj.(*v1.User)
+	user, ok := newObj.(*kubermaticv1.User)
 	if !ok {
 		watcher.log.Debugf("expected User but got %T", newObj)
 		return
@@ -111,7 +111,7 @@ func (watcher *UserWatcher) OnUpdate(oldObj, newObj interface{}) {
 }
 
 func (watcher *UserWatcher) OnDelete(obj interface{}) {
-	user, ok := obj.(*v1.User)
+	user, ok := obj.(*kubermaticv1.User)
 	if !ok {
 		watcher.log.Debugf("expected User but got %T", obj)
 		return
@@ -127,7 +127,7 @@ func (watcher *UserWatcher) OnDelete(obj interface{}) {
 	watcher.updateCache(watch.Deleted, idHash, user)
 }
 
-func (watcher *UserWatcher) updateCache(event watch.EventType, hash uint64, user *v1.User) {
+func (watcher *UserWatcher) updateCache(event watch.EventType, hash uint64, user *kubermaticv1.User) {
 	switch event {
 	case watch.Added:
 		fallthrough

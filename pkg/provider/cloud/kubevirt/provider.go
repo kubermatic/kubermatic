@@ -20,7 +20,7 @@ import (
 	"encoding/base64"
 	"errors"
 
-	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubevirtv1 "k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt/kubevirtcli/client/versioned"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -45,11 +45,11 @@ var _ provider.CloudProvider = &kubevirt{}
 // KubevirtClientGetter is used to get the kubevirt client and the k8s client.
 type KubevirtClientGetter = func(clientConfig *rest.Config) (kubevirtv1.Interface, kubernetes.Interface, error)
 
-func (k *kubevirt) DefaultCloudSpec(spec *v1.CloudSpec) error {
+func (k *kubevirt) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (k *kubevirt) ValidateCloudSpec(spec v1.CloudSpec) error {
+func (k *kubevirt) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	kubeconfig, err := GetCredentialsForCluster(spec, k.secretKeySelector)
 	if err != nil {
 		return err
@@ -72,20 +72,20 @@ func (k *kubevirt) ValidateCloudSpec(spec v1.CloudSpec) error {
 	return nil
 }
 
-func (k *kubevirt) InitializeCloudProvider(c *v1.Cluster, p provider.ClusterUpdater) (*v1.Cluster, error) {
+func (k *kubevirt) InitializeCloudProvider(c *kubermaticv1.Cluster, p provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	return c, nil
 }
 
-func (k *kubevirt) CleanUpCloudProvider(c *v1.Cluster, p provider.ClusterUpdater) (*v1.Cluster, error) {
+func (k *kubevirt) CleanUpCloudProvider(c *kubermaticv1.Cluster, p provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	return c, nil
 }
 
-func (k *kubevirt) ValidateCloudSpecUpdate(oldSpec v1.CloudSpec, newSpec v1.CloudSpec) error {
+func (k *kubevirt) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
 	return nil
 }
 
 // GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error.
-func GetCredentialsForCluster(cloud v1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (kubeconfig string, err error) {
+func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (kubeconfig string, err error) {
 	kubeconfig = cloud.Kubevirt.Kubeconfig
 
 	if kubeconfig == "" {

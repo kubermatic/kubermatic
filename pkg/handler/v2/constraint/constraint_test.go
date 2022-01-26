@@ -29,7 +29,6 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
@@ -828,7 +827,7 @@ func TestCreateDefaultConstraints(t *testing.T) {
 	}
 }
 
-func convertInternalToAPIConstraint(c *v1.Constraint) *apiv2.Constraint {
+func convertInternalToAPIConstraint(c *kubermaticv1.Constraint) *apiv2.Constraint {
 	return &apiv2.Constraint{
 		Name: c.Name,
 		Spec: c.Spec,
@@ -842,8 +841,8 @@ func TestListDefaultConstraints(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
 		Name                       string
-		ct1                        *v1.Constraint
-		ct2                        *v1.Constraint
+		ct1                        *kubermaticv1.Constraint
+		ct2                        *kubermaticv1.Constraint
 		ExpectedDefaultConstraints []apiv2.Constraint
 		HTTPStatus                 int
 		ExistingAPIUser            *apiv1.User

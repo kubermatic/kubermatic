@@ -26,7 +26,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 
@@ -53,11 +53,11 @@ func TestGetEndpoint(t *testing.T) {
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
-				test.GenRuleGroup("test-rule-group", test.GenDefaultCluster().Name, v1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-rule-group", test.GenDefaultCluster().Name, kubermaticv1.RuleGroupTypeMetrics),
 			),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 			ExpectedHTTPStatusCode: http.StatusOK,
-			ExpectedResponse:       test.GenAPIRuleGroup("test-rule-group", v1.RuleGroupTypeMetrics),
+			ExpectedResponse:       test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics),
 		},
 		{
 			Name:          "get rule group which doesn't exist",
@@ -80,7 +80,7 @@ func TestGetEndpoint(t *testing.T) {
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", false),
-				test.GenRuleGroup("test-rule-group", test.GenDefaultCluster().Name, v1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-rule-group", test.GenDefaultCluster().Name, kubermaticv1.RuleGroupTypeMetrics),
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 			ExpectedHTTPStatusCode: http.StatusForbidden,
@@ -94,11 +94,11 @@ func TestGetEndpoint(t *testing.T) {
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", true),
-				test.GenRuleGroup("test-rule-group", test.GenDefaultCluster().Name, v1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-rule-group", test.GenDefaultCluster().Name, kubermaticv1.RuleGroupTypeMetrics),
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 			ExpectedHTTPStatusCode: http.StatusOK,
-			ExpectedResponse:       test.GenAPIRuleGroup("test-rule-group", v1.RuleGroupTypeMetrics),
+			ExpectedResponse:       test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics),
 		},
 	}
 
@@ -148,16 +148,16 @@ func TestListEndpoint(t *testing.T) {
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
-				test.GenRuleGroup("test-1", test.GenDefaultCluster().Name, v1.RuleGroupTypeMetrics),
-				test.GenRuleGroup("test-2", test.GenDefaultCluster().Name, v1.RuleGroupTypeMetrics),
-				test.GenRuleGroup("test-3", test.GenDefaultCluster().Name, v1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-1", test.GenDefaultCluster().Name, kubermaticv1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-2", test.GenDefaultCluster().Name, kubermaticv1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-3", test.GenDefaultCluster().Name, kubermaticv1.RuleGroupTypeMetrics),
 			),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 			ExpectedHTTPStatusCode: http.StatusOK,
 			ExpectedResponse: []*apiv2.RuleGroup{
-				test.GenAPIRuleGroup("test-1", v1.RuleGroupTypeMetrics),
-				test.GenAPIRuleGroup("test-2", v1.RuleGroupTypeMetrics),
-				test.GenAPIRuleGroup("test-3", v1.RuleGroupTypeMetrics),
+				test.GenAPIRuleGroup("test-1", kubermaticv1.RuleGroupTypeMetrics),
+				test.GenAPIRuleGroup("test-2", kubermaticv1.RuleGroupTypeMetrics),
+				test.GenAPIRuleGroup("test-3", kubermaticv1.RuleGroupTypeMetrics),
 			},
 		},
 		{
@@ -180,16 +180,16 @@ func TestListEndpoint(t *testing.T) {
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
-				test.GenRuleGroup("test-1", test.GenDefaultCluster().Name, v1.RuleGroupTypeMetrics),
-				test.GenRuleGroup("test-2", test.GenDefaultCluster().Name, v1.RuleGroupTypeMetrics),
-				test.GenRuleGroup("test-3", test.GenDefaultCluster().Name, v1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-1", test.GenDefaultCluster().Name, kubermaticv1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-2", test.GenDefaultCluster().Name, kubermaticv1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-3", test.GenDefaultCluster().Name, kubermaticv1.RuleGroupTypeMetrics),
 			),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 			ExpectedHTTPStatusCode: http.StatusOK,
 			ExpectedResponse: []*apiv2.RuleGroup{
-				test.GenAPIRuleGroup("test-1", v1.RuleGroupTypeMetrics),
-				test.GenAPIRuleGroup("test-2", v1.RuleGroupTypeMetrics),
-				test.GenAPIRuleGroup("test-3", v1.RuleGroupTypeMetrics),
+				test.GenAPIRuleGroup("test-1", kubermaticv1.RuleGroupTypeMetrics),
+				test.GenAPIRuleGroup("test-2", kubermaticv1.RuleGroupTypeMetrics),
+				test.GenAPIRuleGroup("test-3", kubermaticv1.RuleGroupTypeMetrics),
 			},
 		},
 		{
@@ -200,16 +200,16 @@ func TestListEndpoint(t *testing.T) {
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
-				test.GenRuleGroup("test-1", test.GenDefaultCluster().Name, v1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-1", test.GenDefaultCluster().Name, kubermaticv1.RuleGroupTypeMetrics),
 				test.GenRuleGroup("test-2", test.GenDefaultCluster().Name, "FakeType"),
-				test.GenRuleGroup("test-3", test.GenDefaultCluster().Name, v1.RuleGroupTypeMetrics),
-				test.GenRuleGroup("test-4", test.GenDefaultCluster().Name, v1.RuleGroupTypeLogs),
+				test.GenRuleGroup("test-3", test.GenDefaultCluster().Name, kubermaticv1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-4", test.GenDefaultCluster().Name, kubermaticv1.RuleGroupTypeLogs),
 			),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 			ExpectedHTTPStatusCode: http.StatusOK,
 			ExpectedResponse: []*apiv2.RuleGroup{
-				test.GenAPIRuleGroup("test-1", v1.RuleGroupTypeMetrics),
-				test.GenAPIRuleGroup("test-3", v1.RuleGroupTypeMetrics),
+				test.GenAPIRuleGroup("test-1", kubermaticv1.RuleGroupTypeMetrics),
+				test.GenAPIRuleGroup("test-3", kubermaticv1.RuleGroupTypeMetrics),
 			},
 		},
 		{
@@ -220,15 +220,15 @@ func TestListEndpoint(t *testing.T) {
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
-				test.GenRuleGroup("test-1", test.GenDefaultCluster().Name, v1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-1", test.GenDefaultCluster().Name, kubermaticv1.RuleGroupTypeMetrics),
 				test.GenRuleGroup("test-2", test.GenDefaultCluster().Name, "FakeType"),
-				test.GenRuleGroup("test-3", test.GenDefaultCluster().Name, v1.RuleGroupTypeMetrics),
-				test.GenRuleGroup("test-4", test.GenDefaultCluster().Name, v1.RuleGroupTypeLogs),
+				test.GenRuleGroup("test-3", test.GenDefaultCluster().Name, kubermaticv1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-4", test.GenDefaultCluster().Name, kubermaticv1.RuleGroupTypeLogs),
 			),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 			ExpectedHTTPStatusCode: http.StatusOK,
 			ExpectedResponse: []*apiv2.RuleGroup{
-				test.GenAPIRuleGroup("test-4", v1.RuleGroupTypeLogs),
+				test.GenAPIRuleGroup("test-4", kubermaticv1.RuleGroupTypeLogs),
 			},
 		},
 		{
@@ -239,9 +239,9 @@ func TestListEndpoint(t *testing.T) {
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
-				test.GenRuleGroup("test-1", test.GenDefaultCluster().Name, v1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-1", test.GenDefaultCluster().Name, kubermaticv1.RuleGroupTypeMetrics),
 				test.GenRuleGroup("test-2", test.GenDefaultCluster().Name, "FakeType"),
-				test.GenRuleGroup("test-3", test.GenDefaultCluster().Name, v1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-3", test.GenDefaultCluster().Name, kubermaticv1.RuleGroupTypeMetrics),
 			),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 			ExpectedHTTPStatusCode: http.StatusBadRequest,
@@ -254,9 +254,9 @@ func TestListEndpoint(t *testing.T) {
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", false),
-				test.GenRuleGroup("test-1", test.GenDefaultCluster().Name, v1.RuleGroupTypeMetrics),
-				test.GenRuleGroup("test-2", test.GenDefaultCluster().Name, v1.RuleGroupTypeMetrics),
-				test.GenRuleGroup("test-3", test.GenDefaultCluster().Name, v1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-1", test.GenDefaultCluster().Name, kubermaticv1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-2", test.GenDefaultCluster().Name, kubermaticv1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-3", test.GenDefaultCluster().Name, kubermaticv1.RuleGroupTypeMetrics),
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 			ExpectedHTTPStatusCode: http.StatusForbidden,
@@ -269,16 +269,16 @@ func TestListEndpoint(t *testing.T) {
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", true),
-				test.GenRuleGroup("test-1", test.GenDefaultCluster().Name, v1.RuleGroupTypeMetrics),
-				test.GenRuleGroup("test-2", test.GenDefaultCluster().Name, v1.RuleGroupTypeMetrics),
-				test.GenRuleGroup("test-3", test.GenDefaultCluster().Name, v1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-1", test.GenDefaultCluster().Name, kubermaticv1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-2", test.GenDefaultCluster().Name, kubermaticv1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-3", test.GenDefaultCluster().Name, kubermaticv1.RuleGroupTypeMetrics),
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 			ExpectedHTTPStatusCode: http.StatusOK,
 			ExpectedResponse: []*apiv2.RuleGroup{
-				test.GenAPIRuleGroup("test-1", v1.RuleGroupTypeMetrics),
-				test.GenAPIRuleGroup("test-2", v1.RuleGroupTypeMetrics),
-				test.GenAPIRuleGroup("test-3", v1.RuleGroupTypeMetrics),
+				test.GenAPIRuleGroup("test-1", kubermaticv1.RuleGroupTypeMetrics),
+				test.GenAPIRuleGroup("test-2", kubermaticv1.RuleGroupTypeMetrics),
+				test.GenAPIRuleGroup("test-3", kubermaticv1.RuleGroupTypeMetrics),
 			},
 		},
 		{
@@ -290,15 +290,15 @@ func TestListEndpoint(t *testing.T) {
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", true),
-				test.GenRuleGroup("test-1", test.GenDefaultCluster().Name, v1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-1", test.GenDefaultCluster().Name, kubermaticv1.RuleGroupTypeMetrics),
 				test.GenRuleGroup("test-2", test.GenDefaultCluster().Name, "FakeType"),
-				test.GenRuleGroup("test-3", test.GenDefaultCluster().Name, v1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-3", test.GenDefaultCluster().Name, kubermaticv1.RuleGroupTypeMetrics),
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 			ExpectedHTTPStatusCode: http.StatusOK,
 			ExpectedResponse: []*apiv2.RuleGroup{
-				test.GenAPIRuleGroup("test-1", v1.RuleGroupTypeMetrics),
-				test.GenAPIRuleGroup("test-3", v1.RuleGroupTypeMetrics),
+				test.GenAPIRuleGroup("test-1", kubermaticv1.RuleGroupTypeMetrics),
+				test.GenAPIRuleGroup("test-3", kubermaticv1.RuleGroupTypeMetrics),
 			},
 		},
 	}
@@ -359,9 +359,9 @@ func TestCreateEndpoint(t *testing.T) {
 				test.GenDefaultCluster(),
 			),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
-			RuleGroup:              test.GenAPIRuleGroup("test-rule-group", v1.RuleGroupTypeMetrics),
+			RuleGroup:              test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics),
 			ExpectedHTTPStatusCode: http.StatusCreated,
-			ExpectedResponse:       test.GenAPIRuleGroup("test-rule-group", v1.RuleGroupTypeMetrics),
+			ExpectedResponse:       test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics),
 		},
 		{
 			Name:      "cannot create rule group in the given cluster because it already exists",
@@ -370,10 +370,10 @@ func TestCreateEndpoint(t *testing.T) {
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
-				test.GenRuleGroup("test-rule-group", test.GenDefaultCluster().Name, v1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-rule-group", test.GenDefaultCluster().Name, kubermaticv1.RuleGroupTypeMetrics),
 			),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
-			RuleGroup:              test.GenAPIRuleGroup("test-rule-group", v1.RuleGroupTypeMetrics),
+			RuleGroup:              test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics),
 			ExpectedHTTPStatusCode: http.StatusConflict,
 		},
 		{
@@ -385,7 +385,7 @@ func TestCreateEndpoint(t *testing.T) {
 				test.GenDefaultCluster(),
 			),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
-			RuleGroup:              test.GenAPIRuleGroup("", v1.RuleGroupTypeMetrics),
+			RuleGroup:              test.GenAPIRuleGroup("", kubermaticv1.RuleGroupTypeMetrics),
 			ExpectedHTTPStatusCode: http.StatusBadRequest,
 		},
 		{
@@ -399,7 +399,7 @@ func TestCreateEndpoint(t *testing.T) {
 			ExistingAPIUser: test.GenDefaultAPIUser(),
 			RuleGroup: &apiv2.RuleGroup{
 				Data: []byte("fake data"),
-				Type: v1.RuleGroupTypeMetrics,
+				Type: kubermaticv1.RuleGroupTypeMetrics,
 			},
 			ExpectedHTTPStatusCode: http.StatusBadRequest,
 		},
@@ -413,9 +413,9 @@ func TestCreateEndpoint(t *testing.T) {
 				test.GenAdminUser("John", "john@acme.com", false),
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
-			RuleGroup:              test.GenAPIRuleGroup("test-rule-group", v1.RuleGroupTypeMetrics),
+			RuleGroup:              test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics),
 			ExpectedHTTPStatusCode: http.StatusForbidden,
-			ExpectedResponse:       test.GenAPIRuleGroup("test-rule-group", v1.RuleGroupTypeMetrics),
+			ExpectedResponse:       test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics),
 		},
 		{
 			Name:      "admin user john can get rule group that belongs to bob's cluster",
@@ -427,9 +427,9 @@ func TestCreateEndpoint(t *testing.T) {
 				test.GenAdminUser("John", "john@acme.com", true),
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
-			RuleGroup:              test.GenAPIRuleGroup("test-rule-group", v1.RuleGroupTypeMetrics),
+			RuleGroup:              test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics),
 			ExpectedHTTPStatusCode: http.StatusCreated,
-			ExpectedResponse:       test.GenAPIRuleGroup("test-rule-group", v1.RuleGroupTypeMetrics),
+			ExpectedResponse:       test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics),
 		},
 	}
 
@@ -487,9 +487,9 @@ func TestUpdateEndpoint(t *testing.T) {
 				test.GenRuleGroup("test-rule-group", test.GenDefaultCluster().Name, "UpdateThisType"),
 			),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
-			RuleGroup:              test.GenAPIRuleGroup("test-rule-group", v1.RuleGroupTypeMetrics),
+			RuleGroup:              test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics),
 			ExpectedHTTPStatusCode: http.StatusOK,
-			ExpectedResponse:       test.GenAPIRuleGroup("test-rule-group", v1.RuleGroupTypeMetrics),
+			ExpectedResponse:       test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics),
 		},
 		{
 			Name:          "cannot update rule group in the given cluster because it doesn't exists",
@@ -501,7 +501,7 @@ func TestUpdateEndpoint(t *testing.T) {
 				test.GenDefaultCluster(),
 			),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
-			RuleGroup:              test.GenAPIRuleGroup("test-rule-group", v1.RuleGroupTypeMetrics),
+			RuleGroup:              test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics),
 			ExpectedHTTPStatusCode: http.StatusNotFound,
 		},
 		{
@@ -515,7 +515,7 @@ func TestUpdateEndpoint(t *testing.T) {
 				test.GenRuleGroup("test-rule-group", test.GenDefaultCluster().Name, "UpdateThisType"),
 			),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
-			RuleGroup:              test.GenAPIRuleGroup("test-rule-group-2", v1.RuleGroupTypeMetrics),
+			RuleGroup:              test.GenAPIRuleGroup("test-rule-group-2", kubermaticv1.RuleGroupTypeMetrics),
 			ExpectedHTTPStatusCode: http.StatusBadRequest,
 		},
 		{
@@ -531,7 +531,7 @@ func TestUpdateEndpoint(t *testing.T) {
 			ExistingAPIUser: test.GenDefaultAPIUser(),
 			RuleGroup: &apiv2.RuleGroup{
 				Data: []byte("fake data"),
-				Type: v1.RuleGroupTypeMetrics,
+				Type: kubermaticv1.RuleGroupTypeMetrics,
 			},
 			ExpectedHTTPStatusCode: http.StatusBadRequest,
 		},
@@ -547,9 +547,9 @@ func TestUpdateEndpoint(t *testing.T) {
 				test.GenRuleGroup("test-rule-group", test.GenDefaultCluster().Name, "UpdateThisType"),
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
-			RuleGroup:              test.GenAPIRuleGroup("test-rule-group", v1.RuleGroupTypeMetrics),
+			RuleGroup:              test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics),
 			ExpectedHTTPStatusCode: http.StatusForbidden,
-			ExpectedResponse:       test.GenAPIRuleGroup("test-rule-group", v1.RuleGroupTypeMetrics),
+			ExpectedResponse:       test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics),
 		},
 		{
 			Name:          "admin user john can update rule group that belongs to bob's cluster",
@@ -563,9 +563,9 @@ func TestUpdateEndpoint(t *testing.T) {
 				test.GenRuleGroup("test-rule-group", test.GenDefaultCluster().Name, "UpdateThisType"),
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
-			RuleGroup:              test.GenAPIRuleGroup("test-rule-group", v1.RuleGroupTypeMetrics),
+			RuleGroup:              test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics),
 			ExpectedHTTPStatusCode: http.StatusOK,
-			ExpectedResponse:       test.GenAPIRuleGroup("test-rule-group", v1.RuleGroupTypeMetrics),
+			ExpectedResponse:       test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics),
 		},
 	}
 
@@ -618,7 +618,7 @@ func TestDeleteEndpoint(t *testing.T) {
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
-				test.GenRuleGroup("test-rule-group", test.GenDefaultCluster().Name, v1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-rule-group", test.GenDefaultCluster().Name, kubermaticv1.RuleGroupTypeMetrics),
 			),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 			ExpectedHTTPStatusCode: http.StatusOK,
@@ -644,7 +644,7 @@ func TestDeleteEndpoint(t *testing.T) {
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", false),
-				test.GenRuleGroup("test-rule-group", test.GenDefaultCluster().Name, v1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-rule-group", test.GenDefaultCluster().Name, kubermaticv1.RuleGroupTypeMetrics),
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 			ExpectedHTTPStatusCode: http.StatusForbidden,
@@ -658,7 +658,7 @@ func TestDeleteEndpoint(t *testing.T) {
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", true),
-				test.GenRuleGroup("test-rule-group", test.GenDefaultCluster().Name, v1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-rule-group", test.GenDefaultCluster().Name, kubermaticv1.RuleGroupTypeMetrics),
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 			ExpectedHTTPStatusCode: http.StatusOK,

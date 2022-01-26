@@ -18,13 +18,13 @@ package common
 
 import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/label"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
-func ConvertInternalSSHKeysToExternal(internalKeys []*kubermaticapiv1.UserSSHKey) []*apiv1.SSHKey {
+func ConvertInternalSSHKeysToExternal(internalKeys []*kubermaticv1.UserSSHKey) []*apiv1.SSHKey {
 	apiKeys := make([]*apiv1.SSHKey, len(internalKeys))
 	for index, key := range internalKeys {
 		apiKey := &apiv1.SSHKey{
@@ -72,7 +72,7 @@ func ConvertInternalEventToExternal(event corev1.Event) apiv1.Event {
 	}
 }
 
-func ConvertInternalProjectToExternal(kubermaticProject *kubermaticapiv1.Project, projectOwners []apiv1.User, clustersNumber int) *apiv1.Project {
+func ConvertInternalProjectToExternal(kubermaticProject *kubermaticv1.Project, projectOwners []apiv1.User, clustersNumber int) *apiv1.Project {
 	return &apiv1.Project{
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:                kubermaticProject.Name,
