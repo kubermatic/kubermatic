@@ -93,7 +93,7 @@ func main() {
 	mgr, err := manager.New(ctrlruntime.GetConfigOrDie(), manager.Options{
 		MetricsBindAddress: opt.internalAddr,
 		LeaderElection:     opt.enableLeaderElection,
-		LeaderElectionID:   "operator.kubermatic.io",
+		LeaderElectionID:   "operator.kubermatic.k8c.io",
 	})
 	if err != nil {
 		log.Fatalw("Failed to create Controller Manager instance", zap.Error(err))

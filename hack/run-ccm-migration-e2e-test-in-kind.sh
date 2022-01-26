@@ -127,7 +127,7 @@ echo "Config dir: ${TMPDIR}"
 KUBERMATIC_CONFIG="${TMPDIR}/kubermatic.yaml"
 
 cat << EOF > ${KUBERMATIC_CONFIG}
-apiVersion: operator.kubermatic.io/v1alpha1
+apiVersion: kubermatic.k8c.io/v1
 kind: KubermaticConfiguration
 metadata:
   name: e2e
@@ -142,7 +142,7 @@ spec:
     replicas: 0
     debugLog: true
   featureGates:
-    TunnelingExposeStrategy: {}
+    TunnelingExposeStrategy: true
   ui:
     replicas: 0
   # Dex integration
