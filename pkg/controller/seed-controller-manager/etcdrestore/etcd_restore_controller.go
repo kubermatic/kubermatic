@@ -334,10 +334,14 @@ func (r *Reconciler) updateCluster(ctx context.Context, cluster *kubermaticv1.Cl
 
 	patch := ctrlruntimeclient.MergeFrom(oldCluster)
 
+	// make sure the first patch doesn't override the status
+	status := cluster.Status.DeepCopy()
+
 	if err := r.Patch(ctx, cluster, patch); err != nil {
 		return err
 	}
 
+	cluster.Status = *status
 	if err := r.Status().Patch(ctx, cluster, patch); err != nil {
 		return err
 	}
@@ -354,10 +358,14 @@ func (r *Reconciler) updateRestore(ctx context.Context, restore *kubermaticv1.Et
 
 	patch := ctrlruntimeclient.MergeFrom(oldRestore)
 
+	// make sure the first patch doesn't override the status
+	status := restore.Status.DeepCopy()
+
 	if err := r.Patch(ctx, restore, patch); err != nil {
 		return err
 	}
 
+	restore.Status = *status
 	if err := r.Status().Patch(ctx, restore, patch); err != nil {
 		return err
 	}

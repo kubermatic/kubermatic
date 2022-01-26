@@ -419,10 +419,13 @@ func (r *Reconciler) ensurePendingBackupIsScheduled(ctx context.Context, backupC
 	backupToSchedule.JobName = r.limitNameLength(fmt.Sprintf("%s-backup-%s-create-%s", cluster.Name, backupConfig.Name, r.randStringGenerator()))
 	backupToSchedule.DeleteJobName = r.limitNameLength(fmt.Sprintf("%s-backup-%s-delete-%s", cluster.Name, backupConfig.Name, r.randStringGenerator()))
 
+	status := backupConfig.Status.DeepCopy()
+
 	if err := r.Update(ctx, backupConfig); err != nil {
 		return nil, errors.Wrap(err, "failed to update backup config")
 	}
 
+	backupConfig.Status = *status
 	if err := r.Status().Update(ctx, backupConfig); err != nil {
 		return nil, errors.Wrap(err, "failed to update backup status")
 	}
@@ -508,10 +511,13 @@ func (r *Reconciler) startPendingBackupJobs(ctx context.Context, backupConfig *k
 		}
 	}
 
+	status := backupConfig.Status.DeepCopy()
+
 	if err := r.Update(ctx, backupConfig); err != nil {
 		return nil, errors.Wrap(err, "failed to update backup config")
 	}
 
+	backupConfig.Status = *status
 	if err := r.Status().Update(ctx, backupConfig); err != nil {
 		return nil, errors.Wrap(err, "failed to update backup status")
 	}
@@ -561,10 +567,13 @@ func (r *Reconciler) startPendingBackupDeleteJobs(ctx context.Context, backupCon
 	}
 
 	if modified {
+		status := backupConfig.Status.DeepCopy()
+
 		if err := r.Update(ctx, backupConfig); err != nil {
 			return nil, errors.Wrap(err, "failed to update backup config")
 		}
 
+		backupConfig.Status = *status
 		if err := r.Status().Update(ctx, backupConfig); err != nil {
 			return nil, errors.Wrap(err, "failed to update backup status")
 		}
@@ -755,11 +764,13 @@ func (r *Reconciler) deleteFinishedBackupJobs(ctx context.Context, backupConfig 
 
 	if modified {
 		backupConfig.Status.CurrentBackups = newBackups
+		status := backupConfig.Status.DeepCopy()
 
 		if err := r.Update(ctx, backupConfig); err != nil {
 			return nil, errors.Wrap(err, "failed to update backup config")
 		}
 
+		backupConfig.Status = *status
 		if err := r.Status().Update(ctx, backupConfig); err != nil {
 			return nil, errors.Wrap(err, "failed to update backup status")
 		}
@@ -827,10 +838,13 @@ func (r *Reconciler) handleFinalization(ctx context.Context, backupConfig *kuber
 		returnReconcile = nil
 	}
 
+	status := backupConfig.Status.DeepCopy()
+
 	if err := r.Update(ctx, backupConfig); err != nil {
 		return nil, errors.Wrap(err, "failed to update backup config")
 	}
 
+	backupConfig.Status = *status
 	if err := r.Status().Update(ctx, backupConfig); err != nil {
 		return nil, errors.Wrap(err, "failed to update backup status")
 	}
