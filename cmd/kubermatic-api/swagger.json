@@ -20585,17 +20585,12 @@
           "type": "string",
           "x-go-name": "Provider"
         },
-        "requiredEmailDomain": {
-          "description": "Deprecated. Automatically migrated to the RequiredEmailDomains field.",
-          "type": "string",
-          "x-go-name": "RequiredEmailDomain"
-        },
-        "requiredEmailDomains": {
+        "requiredEmails": {
           "type": "array",
           "items": {
             "type": "string"
           },
-          "x-go-name": "RequiredEmailDomains"
+          "x-go-name": "RequiredEmails"
         },
         "seed": {
           "description": "Name of the seed this datacenter belongs to.",
@@ -24985,12 +24980,12 @@
           "x-go-name": "Password"
         },
         "project": {
-          "description": "project, formally known as tenant. Tenant is deprecated in Openstack",
+          "description": "project, formally known as tenant.",
           "type": "string",
           "x-go-name": "Project"
         },
         "projectID": {
-          "description": "project id, formally known as tenantID. TenantID is deprecated in Openstack",
+          "description": "project id, formally known as tenantID.",
           "type": "string",
           "x-go-name": "ProjectID"
         },
@@ -25806,14 +25801,6 @@
         "subnetID": {
           "type": "string",
           "x-go-name": "SubnetID"
-        },
-        "tenant": {
-          "type": "string",
-          "x-go-name": "Tenant"
-        },
-        "tenantID": {
-          "type": "string",
-          "x-go-name": "TenantID"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
