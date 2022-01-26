@@ -61,7 +61,7 @@ spec:
                       are specified, only one match is needed for the resource to
                       be in scope
                     items:
-                      description: Kind specifies the resource Kind and APIGroup
+                      description: Kind specifies the resource Kind and APIGroup.
                       properties:
                         apiGroups:
                           description: APIGroups specifies the APIGroups of the resources

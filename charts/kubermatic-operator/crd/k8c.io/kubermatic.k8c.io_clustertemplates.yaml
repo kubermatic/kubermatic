@@ -937,7 +937,7 @@ spec:
                 properties:
                   type:
                     description: CNIPluginType define the type of CNI plugin installed.
-                      e.g. Canal
+                      e.g. Canal.
                     enum:
                     - canal
                     - cilium
@@ -1709,7 +1709,7 @@ spec:
             type: object
           userSSHKeys:
             items:
-              description: ClusterTemplateSSHKey is the object for holding SSH key
+              description: ClusterTemplateSSHKey is the object for holding SSH key.
               properties:
                 id:
                   type: string

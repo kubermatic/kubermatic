@@ -26,7 +26,7 @@ spec:
     name: v1
     schema:
       openAPIV3Schema:
-        description: UserSSHKey specifies a users UserSSHKey
+        description: UserSSHKey specifies a users UserSSHKey.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
