@@ -55,18 +55,25 @@ func ClusterReconcileWrapper(
 
 	reconcilingStatus := corev1.ConditionFalse
 	result, err := reconcile()
+
 	// Only set to true if we had no error and don't want to reqeue the cluster
 	if err == nil && (result == nil || (!result.Requeue && result.RequeueAfter == 0)) {
 		reconcilingStatus = corev1.ConditionTrue
 	}
+
 	errs := []error{err}
 	if conditionType != kubermaticv1.ClusterConditionNone {
 		oldCluster := cluster.DeepCopy()
 		SetClusterCondition(cluster, versions, conditionType, reconcilingStatus, "", "")
 		if !reflect.DeepEqual(oldCluster, cluster) {
-			errs = append(errs, ctrlruntimeclient.IgnoreNotFound(client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))))
+			patch := ctrlruntimeclient.MergeFrom(oldCluster)
+
+			if err := client.Status().Patch(ctx, cluster, patch); ctrlruntimeclient.IgnoreNotFound(err) != nil {
+				errs = append(errs, err)
+			}
 		}
 	}
+
 	return result, utilerrors.NewAggregate(errs)
 }
 

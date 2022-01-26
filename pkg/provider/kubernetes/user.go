@@ -130,12 +130,18 @@ func (p *UserProvider) CreateUser(id, name, email string) (*kubermaticv1.User, e
 
 // UpdateUser updates user.
 func (p *UserProvider) UpdateUser(user *kubermaticv1.User) (*kubermaticv1.User, error) {
+	// make sure the first patch doesn't override the status
+	status := user.Status.DeepCopy()
+
 	if err := p.runtimeClient.Update(context.Background(), user); err != nil {
 		return nil, err
 	}
+
+	user.Status = *status
 	if err := p.runtimeClient.Status().Update(context.Background(), user); err != nil {
 		return nil, err
 	}
+
 	return user, nil
 }
 
