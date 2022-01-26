@@ -80,9 +80,6 @@ func (p *ProjectProvider) New(users []*kubermaticv1.User, projectName string, la
 		Spec: kubermaticv1.ProjectSpec{
 			Name: projectName,
 		},
-		Status: kubermaticv1.ProjectStatus{
-			Phase: kubermaticv1.ProjectInactive,
-		},
 	}
 
 	for _, user := range users {
@@ -97,6 +94,15 @@ func (p *ProjectProvider) New(users []*kubermaticv1.User, projectName string, la
 	if err := p.clientPrivileged.Create(context.Background(), project); err != nil {
 		return nil, err
 	}
+
+	project.Status = kubermaticv1.ProjectStatus{
+		Phase: kubermaticv1.ProjectInactive,
+	}
+
+	if err := p.clientPrivileged.Status().Update(context.Background(), project); err != nil {
+		return nil, err
+	}
+
 	return project, nil
 }
 
@@ -134,8 +140,9 @@ func (p *ProjectProvider) Delete(userInfo *provider.UserInfo, projectInternalNam
 		return err
 	}
 
+	oldProject := existingProject.DeepCopy()
 	existingProject.Status.Phase = kubermaticv1.ProjectTerminating
-	if err := masterImpersonatedClient.Update(context.Background(), existingProject); err != nil {
+	if err := masterImpersonatedClient.Status().Patch(context.Background(), existingProject, ctrlruntimeclient.MergeFrom(oldProject)); err != nil {
 		return err
 	}
 
@@ -191,8 +198,10 @@ func (p *PrivilegedProjectProvider) DeleteUnsecured(projectInternalName string) 
 	if err := p.clientPrivileged.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: projectInternalName}, existingProject); err != nil {
 		return err
 	}
+
+	oldProject := existingProject.DeepCopy()
 	existingProject.Status.Phase = kubermaticv1.ProjectTerminating
-	if err := p.clientPrivileged.Update(context.Background(), existingProject); err != nil {
+	if err := p.clientPrivileged.Status().Patch(context.Background(), existingProject, ctrlruntimeclient.MergeFrom(oldProject)); err != nil {
 		return err
 	}
 

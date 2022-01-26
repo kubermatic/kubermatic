@@ -310,7 +310,7 @@ func (r *alertmanagerController) cleanUpAlertmanagerConfigurationStatus(ctx cont
 
 	// Update alertmanager config status in Cluster CR
 	if oldCluster.Status.ExtendedHealth != cluster.Status.ExtendedHealth {
-		if err := r.Client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+		if err := r.Client.Status().Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 			return fmt.Errorf("error patching cluster health status: %w", err)
 		}
 	}
@@ -505,14 +505,14 @@ func (r *alertmanagerController) ensureAlertManagerConfigStatus(ctx context.Cont
 
 	// Update alertmanager config status in Alertmanager CR
 	if oldAlertmanager.Status.ConfigStatus != alertmanager.Status.ConfigStatus {
-		if err := r.Client.Patch(ctx, alertmanager, ctrlruntimeclient.MergeFrom(oldAlertmanager)); err != nil {
+		if err := r.Client.Status().Patch(ctx, alertmanager, ctrlruntimeclient.MergeFrom(oldAlertmanager)); err != nil {
 			return fmt.Errorf("error patching alertmanager config status: %w", err)
 		}
 	}
 
 	// Update alertmanager config status in Cluster CR
 	if oldCluster.Status.ExtendedHealth != cluster.Status.ExtendedHealth {
-		if err := r.Client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+		if err := r.Client.Status().Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 			return fmt.Errorf("error patching cluster health status: %w", err)
 		}
 	}

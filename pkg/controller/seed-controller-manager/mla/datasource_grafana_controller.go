@@ -374,7 +374,7 @@ func (r *datasourceGrafanaController) cleanUpMlaGatewayHealthStatus(ctx context.
 
 	// Update the health status in Cluster CR
 	if oldCluster.Status.ExtendedHealth != cluster.Status.ExtendedHealth {
-		if err := r.Client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+		if err := r.Client.Status().Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 			return fmt.Errorf("error patching cluster health status: %w", err)
 		}
 	}
@@ -428,7 +428,7 @@ func (r *datasourceGrafanaController) mlaGatewayHealth(ctx context.Context, clus
 	cluster.Status.ExtendedHealth.MLAGateway = &mlaGatewayHealth
 
 	if oldCluster != cluster {
-		if err := r.Client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+		if err := r.Client.Status().Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 			return fmt.Errorf("error patching cluster health status: %w", err)
 		}
 	}

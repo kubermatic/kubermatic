@@ -343,7 +343,7 @@ func (r *Reconciler) ensurePendingBackupIsScheduled(ctx context.Context, backupC
 			"TooManyBackups",
 			"tracking too many backups; not scheduling new ones") {
 			// condition changed, need to persist and generate an event
-			if err := r.Update(ctx, backupConfig); err != nil {
+			if err := r.Status().Update(ctx, backupConfig); err != nil {
 				return nil, errors.Wrap(err, "failed to update backup config")
 			}
 			r.recorder.Event(backupConfig, corev1.EventTypeWarning, "TooManyBackups", "tracking too many backups; not scheduling new ones")
@@ -357,7 +357,7 @@ func (r *Reconciler) ensurePendingBackupIsScheduled(ctx context.Context, backupC
 		"",
 		"") {
 		// condition changed, need to persist and generate an event
-		if err := r.Update(ctx, backupConfig); err != nil {
+		if err := r.Status().Update(ctx, backupConfig); err != nil {
 			return nil, errors.Wrap(err, "failed to update backup config")
 		}
 		r.recorder.Event(backupConfig, corev1.EventTypeNormal, "NormalBackupCount", "backup count low enough; scheduling new backups")
@@ -421,6 +421,10 @@ func (r *Reconciler) ensurePendingBackupIsScheduled(ctx context.Context, backupC
 
 	if err := r.Update(ctx, backupConfig); err != nil {
 		return nil, errors.Wrap(err, "failed to update backup config")
+	}
+
+	if err := r.Status().Update(ctx, backupConfig); err != nil {
+		return nil, errors.Wrap(err, "failed to update backup status")
 	}
 
 	return &reconcile.Result{Requeue: true, RequeueAfter: requeueAfter}, nil
@@ -508,6 +512,10 @@ func (r *Reconciler) startPendingBackupJobs(ctx context.Context, backupConfig *k
 		return nil, errors.Wrap(err, "failed to update backup config")
 	}
 
+	if err := r.Status().Update(ctx, backupConfig); err != nil {
+		return nil, errors.Wrap(err, "failed to update backup status")
+	}
+
 	return returnReconcile, nil
 }
 
@@ -556,6 +564,11 @@ func (r *Reconciler) startPendingBackupDeleteJobs(ctx context.Context, backupCon
 		if err := r.Update(ctx, backupConfig); err != nil {
 			return nil, errors.Wrap(err, "failed to update backup config")
 		}
+
+		if err := r.Status().Update(ctx, backupConfig); err != nil {
+			return nil, errors.Wrap(err, "failed to update backup status")
+		}
+
 		return &reconcile.Result{RequeueAfter: assumedJobRuntime}, nil
 	}
 
@@ -746,6 +759,10 @@ func (r *Reconciler) deleteFinishedBackupJobs(ctx context.Context, backupConfig 
 		if err := r.Update(ctx, backupConfig); err != nil {
 			return nil, errors.Wrap(err, "failed to update backup config")
 		}
+
+		if err := r.Status().Update(ctx, backupConfig); err != nil {
+			return nil, errors.Wrap(err, "failed to update backup status")
+		}
 	}
 
 	return returnReconcile, nil
@@ -812,6 +829,10 @@ func (r *Reconciler) handleFinalization(ctx context.Context, backupConfig *kuber
 
 	if err := r.Update(ctx, backupConfig); err != nil {
 		return nil, errors.Wrap(err, "failed to update backup config")
+	}
+
+	if err := r.Status().Update(ctx, backupConfig); err != nil {
+		return nil, errors.Wrap(err, "failed to update backup status")
 	}
 
 	return returnReconcile, nil

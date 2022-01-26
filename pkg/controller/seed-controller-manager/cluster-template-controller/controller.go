@@ -176,6 +176,7 @@ func (r *reconciler) createClusters(ctx context.Context, instance *kubermaticv1.
 		oldInstance := instance.DeepCopy()
 		for i := 0; i < int(instance.Spec.Replicas); i++ {
 			newCluster := genNewCluster(template, instance, r.workerName)
+			newStatus := newCluster.Status.DeepCopy()
 
 			// Here partialCluster is used to copy credentials to the new cluster
 			err := resources.CopyCredentials(resources.NewCredentialsData(context.Background(), partialCluster, r.seedClient), newCluster)
@@ -197,6 +198,12 @@ func (r *reconciler) createClusters(ctx context.Context, instance *kubermaticv1.
 				}
 				return fmt.Errorf("failed to create desired number of clusters. Created %d from %d", created, totalReplicas)
 			}
+
+			newCluster.Status = *newStatus
+			if err := r.seedClient.Status().Update(ctx, newCluster); err != nil {
+				return fmt.Errorf("failed to set cluster status: %w", err)
+			}
+
 			if err := r.assignSSHKeyToCluster(ctx, newCluster.Name, template.UserSSHKeys); err != nil {
 				log.Errorf("failed to assign SSH key to the cluster %v", err)
 			}

@@ -119,7 +119,23 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	err := r.syncAllSeeds(log, project, func(seedClusterClient ctrlruntimeclient.Client, project *kubermaticv1.Project) error {
-		return reconciling.ReconcileKubermaticV1Projects(ctx, projectCreatorGetters, "", seedClusterClient)
+		err := reconciling.ReconcileKubermaticV1Projects(ctx, projectCreatorGetters, "", seedClusterClient)
+		if err != nil {
+			return fmt.Errorf("failed to reconcile project: %w", err)
+		}
+
+		seedProject := &kubermaticv1.Project{}
+		if err := seedClusterClient.Get(ctx, request.NamespacedName, seedProject); err != nil {
+			return fmt.Errorf("failed to fetch project on seed cluster: %w", err)
+		}
+
+		oldProject := seedProject.DeepCopy()
+		seedProject.Status = project.Status
+		if err := seedClusterClient.Status().Patch(ctx, seedProject, ctrlruntimeclient.MergeFrom(oldProject)); err != nil {
+			return fmt.Errorf("failed to update project status on seed cluster: %w", err)
+		}
+
+		return nil
 	})
 
 	if err != nil {
@@ -151,7 +167,8 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 func (r *reconciler) syncAllSeeds(
 	log *zap.SugaredLogger,
 	project *kubermaticv1.Project,
-	action func(seedClusterClient ctrlruntimeclient.Client, project *kubermaticv1.Project) error) error {
+	action func(seedClusterClient ctrlruntimeclient.Client, project *kubermaticv1.Project) error,
+) error {
 	for seedName, seedClient := range r.seedClients {
 		if err := action(seedClient, project); err != nil {
 			return fmt.Errorf("failed syncing project for seed %s: %w", seedName, err)

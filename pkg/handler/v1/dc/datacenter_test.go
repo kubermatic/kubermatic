@@ -744,7 +744,7 @@ func TestDatacenterPatchEndpoint(t *testing.T) {
 			patch:            `{"metadata":{"name":"private-do1"},"spec":{"country":"NL","location":"Amsterdam","aws":{"region":"EU"},"digitalocean":null,"node":null,"enforceAuditLogging":false}}`,
 			dcPathName:       "private-do1",
 			seedName:         "us-central1",
-			expectedResponse: `{"metadata":{"name":"private-do1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"aws","aws":{"region":"EU","images":null},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true}}`,
+			expectedResponse: `{"metadata":{"name":"private-do1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"aws","aws":{"region":"EU"},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true}}`,
 			httpStatus:       200,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},

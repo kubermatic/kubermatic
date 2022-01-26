@@ -208,5 +208,8 @@ func (r *Reconciler) controlPlaneUpgrade(ctx context.Context, cluster *kubermati
 	if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 		return false, fmt.Errorf("failed to update cluster: %w", err)
 	}
+	if err := r.Status().Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+		return false, fmt.Errorf("failed to update cluster status: %w", err)
+	}
 	return true, nil
 }

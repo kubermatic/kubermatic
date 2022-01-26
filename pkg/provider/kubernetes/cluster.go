@@ -112,12 +112,18 @@ func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.
 	}
 
 	newCluster := genAPICluster(project, cluster, userInfo.Email, p.workerName, p.versions)
+	newStatus := newCluster.Status.DeepCopy()
 
 	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
 	if err := seedImpersonatedClient.Create(context.Background(), newCluster); err != nil {
+		return nil, err
+	}
+
+	newCluster.Status = *newStatus
+	if err := seedImpersonatedClient.Status().Update(context.Background(), newCluster); err != nil {
 		return nil, err
 	}
 	return newCluster, nil
@@ -136,9 +142,15 @@ func (p *ClusterProvider) NewUnsecured(project *kubermaticv1.Project, cluster *k
 	}
 
 	newCluster := genAPICluster(project, cluster, userEmail, p.workerName, p.versions)
+	newStatus := newCluster.Status.DeepCopy()
 
 	err := p.client.Create(context.Background(), newCluster)
 	if err != nil {
+		return nil, err
+	}
+
+	newCluster.Status = *newStatus
+	if err := p.client.Status().Update(context.Background(), newCluster); err != nil {
 		return nil, err
 	}
 

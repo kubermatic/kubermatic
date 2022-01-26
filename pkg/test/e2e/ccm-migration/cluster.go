@@ -202,13 +202,17 @@ func (c *ClusterJig) createCluster(cloudSpec kubermaticv1.CloudSpec) error {
 			HumanReadableName:     "test",
 			Version:               c.Version,
 		},
-		Status: kubermaticv1.ClusterStatus{
-			NamespaceName: fmt.Sprintf("cluster-%s", c.Name),
-			UserEmail:     "e2e@test.com",
-		},
 	}
 	if err := c.SeedClient.Create(context.TODO(), c.Cluster); err != nil {
 		return errors.Wrap(err, "failed to create cluster")
+	}
+
+	c.Cluster.Status = kubermaticv1.ClusterStatus{
+		NamespaceName: fmt.Sprintf("cluster-%s", c.Name),
+		UserEmail:     "e2e@test.com",
+	}
+	if err := c.SeedClient.Status().Update(context.TODO(), c.Cluster); err != nil {
+		return errors.Wrap(err, "failed to update cluster status")
 	}
 
 	return nil

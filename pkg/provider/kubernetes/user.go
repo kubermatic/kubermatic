@@ -133,6 +133,9 @@ func (p *UserProvider) UpdateUser(user *kubermaticv1.User) (*kubermaticv1.User, 
 	if err := p.runtimeClient.Update(context.Background(), user); err != nil {
 		return nil, err
 	}
+	if err := p.runtimeClient.Status().Update(context.Background(), user); err != nil {
+		return nil, err
+	}
 	return user, nil
 }
 

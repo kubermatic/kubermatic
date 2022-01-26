@@ -294,7 +294,16 @@ func (r *Reconciler) updateCluster(name string, modify func(*kubermaticv1.Cluste
 	} else {
 		patch = ctrlruntimeclient.MergeFrom(oldCluster)
 	}
-	return cluster, r.Patch(context.Background(), cluster, patch)
+
+	if err := r.Patch(context.Background(), cluster, patch); err != nil {
+		return nil, err
+	}
+
+	if err := r.Status().Patch(context.Background(), cluster, patch); err != nil {
+		return nil, err
+	}
+
+	return cluster, nil
 }
 
 func (r *Reconciler) getGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {

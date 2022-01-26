@@ -331,7 +331,18 @@ func (r *Reconciler) updateCluster(ctx context.Context, cluster *kubermaticv1.Cl
 	if reflect.DeepEqual(oldCluster, cluster) {
 		return nil
 	}
-	return r.Client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
+
+	patch := ctrlruntimeclient.MergeFrom(oldCluster)
+
+	if err := r.Patch(ctx, cluster, patch); err != nil {
+		return err
+	}
+
+	if err := r.Status().Patch(ctx, cluster, patch); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (r *Reconciler) updateRestore(ctx context.Context, restore *kubermaticv1.EtcdRestore, modify func(*kubermaticv1.EtcdRestore)) error {
@@ -340,5 +351,16 @@ func (r *Reconciler) updateRestore(ctx context.Context, restore *kubermaticv1.Et
 	if reflect.DeepEqual(oldRestore, restore) {
 		return nil
 	}
-	return r.Client.Patch(ctx, restore, ctrlruntimeclient.MergeFrom(oldRestore))
+
+	patch := ctrlruntimeclient.MergeFrom(oldRestore)
+
+	if err := r.Patch(ctx, restore, patch); err != nil {
+		return err
+	}
+
+	if err := r.Status().Patch(ctx, restore, patch); err != nil {
+		return err
+	}
+
+	return nil
 }

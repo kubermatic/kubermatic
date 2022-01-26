@@ -97,13 +97,17 @@ func (c *ClusterJig) SetUp() error {
 			HumanReadableName:     "test",
 			Version:               c.Version,
 		},
-		Status: kubermaticv1.ClusterStatus{
-			NamespaceName: fmt.Sprintf("cluster-%s", c.Name),
-			UserEmail:     "e2e@test.com",
-		},
 	}
 	if err := c.Client.Create(context.TODO(), c.Cluster); err != nil {
 		return errors.Wrap(err, "failed to create cluster")
+	}
+
+	c.Cluster.Status = kubermaticv1.ClusterStatus{
+		NamespaceName: fmt.Sprintf("cluster-%s", c.Name),
+		UserEmail:     "e2e@test.com",
+	}
+	if err := c.Client.Status().Update(context.TODO(), c.Cluster); err != nil {
+		return errors.Wrap(err, "failed to update cluster status")
 	}
 
 	return c.waitForClusterControlPlaneReady(c.Cluster)

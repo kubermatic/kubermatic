@@ -100,8 +100,9 @@ func (c *projectController) ensureCleanupFinalizerExists(ctx context.Context, pr
 
 func (c *projectController) ensureProjectIsInActivePhase(ctx context.Context, project *kubermaticv1.Project) error {
 	if project.Status.Phase == kubermaticv1.ProjectInactive {
+		oldProject := project.DeepCopy()
 		project.Status.Phase = kubermaticv1.ProjectActive
-		return c.client.Update(ctx, project)
+		return c.client.Status().Patch(ctx, project, ctrlruntimeclient.MergeFrom(oldProject))
 	}
 	return nil
 }
