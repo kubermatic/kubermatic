@@ -237,7 +237,6 @@ spec:
                               type: string
                           required:
                           - datacenter
-                          - location
                           - network
                           type: object
                         kubevirt:

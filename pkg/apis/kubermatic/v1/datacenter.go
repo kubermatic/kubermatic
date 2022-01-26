@@ -301,7 +301,7 @@ type DatacenterSpecHetzner struct {
 	Network string `json:"network"`
 	// Optional: Detailed location of the datacenter, like "Hamburg" or "Datacenter 7".
 	// For informational purposes only.
-	Location string `json:"location"`
+	Location string `json:"location,omitempty"`
 }
 
 // DatacenterSpecDigitalocean describes a DigitalOcean datacenter.
