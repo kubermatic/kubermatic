@@ -27,7 +27,6 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticclientset "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
@@ -36,7 +35,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/watch"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -46,11 +44,9 @@ type blacklistToken struct {
 }
 
 // NewUserProvider returns a user provider.
-func NewUserProvider(runtimeClient ctrlruntimeclient.Client, isServiceAccountFunc func(email string) bool,
-	client kubermaticclientset.Interface) *UserProvider {
+func NewUserProvider(runtimeClient ctrlruntimeclient.Client, isServiceAccountFunc func(email string) bool) *UserProvider {
 	return &UserProvider{
 		runtimeClient:        runtimeClient,
-		client:               client,
 		isServiceAccountFunc: isServiceAccountFunc,
 	}
 }
@@ -58,7 +54,6 @@ func NewUserProvider(runtimeClient ctrlruntimeclient.Client, isServiceAccountFun
 // UserProvider manages user resources.
 type UserProvider struct {
 	runtimeClient ctrlruntimeclient.Client
-	client        kubermaticclientset.Interface
 	// since service account are special type of user this functions
 	// helps to determine if the given email address belongs to a service account
 	isServiceAccountFunc func(email string) bool
@@ -188,10 +183,6 @@ func (p *UserProvider) InvalidateToken(user *kubermaticv1.User, token string, ex
 	}
 
 	return nil
-}
-
-func (p *UserProvider) WatchUser() (watch.Interface, error) {
-	return p.client.KubermaticV1().Users().Watch(context.Background(), v1.ListOptions{})
 }
 
 func (p *UserProvider) GetInvalidatedTokens(user *kubermaticv1.User) ([]string, error) {

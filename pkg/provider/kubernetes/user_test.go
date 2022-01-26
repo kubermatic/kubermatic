@@ -26,9 +26,7 @@ import (
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticfakeclentset "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/fake"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -43,7 +41,7 @@ func TestAddUserTokenToBlacklist(t *testing.T) {
 	// test data
 	testcases := []struct {
 		name           string
-		existingUser   *kubermaticapiv1.User
+		existingUser   *kubermaticv1.User
 		existingObjs   []ctrlruntimeclient.Object
 		token          string
 		expiry         apiv1.Time
@@ -76,7 +74,7 @@ func TestAddUserTokenToBlacklist(t *testing.T) {
 					user := genUser("", "john", "john@acme.com")
 					return test.GenBlacklistTokenSecret(user.GetInvalidTokensReferenceSecretName(), []byte(`[{"token":"fakeTokenId-1","expiry":"2222-06-20T12:04:00Z"},{"token":"fakeTokenId-2","expiry":"2000-06-20T12:04:00Z"}]`))
 				}(),
-				func() *kubermaticapiv1.User {
+				func() *kubermaticv1.User {
 					user := genUser("", "john", "john@acme.com")
 					user.Spec.InvalidTokensReference = &providerconfig.GlobalSecretKeySelector{
 						ObjectReference: corev1.ObjectReference{
@@ -100,7 +98,7 @@ func TestAddUserTokenToBlacklist(t *testing.T) {
 					user := genUser("", "john", "john@acme.com")
 					return test.GenBlacklistTokenSecret(user.GetInvalidTokensReferenceSecretName(), []byte(`[{"token":"fakeTokenId-1","expiry":"2222-06-20T12:04:00Z"},{"token":"fakeTokenId-2","expiry":"2000-06-20T12:04:00Z"}]`))
 				}(),
-				func() *kubermaticapiv1.User {
+				func() *kubermaticv1.User {
 					user := genUser("", "john", "john@acme.com")
 					user.Spec.InvalidTokensReference = &providerconfig.GlobalSecretKeySelector{
 						ObjectReference: corev1.ObjectReference{
@@ -129,8 +127,6 @@ func TestAddUserTokenToBlacklist(t *testing.T) {
 				WithObjects(existingObj...).
 				Build()
 
-			kubermaticClient := kubermaticfakeclentset.NewSimpleClientset()
-
 			// fetch user to get the ResourceVersion
 			user := &kubermaticv1.User{}
 			if err := fakeClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(tc.existingUser), user); err != nil {
@@ -138,7 +134,7 @@ func TestAddUserTokenToBlacklist(t *testing.T) {
 			}
 
 			// act
-			target := kubernetes.NewUserProvider(fakeClient, nil, kubermaticClient)
+			target := kubernetes.NewUserProvider(fakeClient, nil)
 			if err := target.InvalidateToken(user, tc.token, tc.expiry); err != nil {
 				t.Fatal(err)
 			}

@@ -58,8 +58,6 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
-	kubermaticclientset "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned"
-	kubermaticinformers "k8c.io/kubermatic/v2/pkg/crd/client/informers/externalversions"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/handler"
 	"k8c.io/kubermatic/v2/pkg/handler/auth"
@@ -173,8 +171,6 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 	// create other providers
 	kubeMasterClient := kubernetes.NewForConfigOrDie(masterCfg)
 	kubeMasterInformerFactory := informers.NewSharedInformerFactory(kubeMasterClient, 30*time.Minute)
-	kubermaticMasterClient := kubermaticclientset.NewForConfigOrDie(masterCfg)
-	kubermaticMasterInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticMasterClient, 30*time.Minute)
 
 	client := mgr.GetClient()
 
@@ -242,8 +238,8 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to create privileged SSH key provider: %w", err)
 	}
-	userProvider := kubernetesprovider.NewUserProvider(client, kubernetesprovider.IsProjectServiceAccount, kubermaticMasterClient)
-	settingsProvider := kubernetesprovider.NewSettingsProvider(ctx, kubermaticMasterClient, client)
+	userProvider := kubernetesprovider.NewUserProvider(client, kubernetesprovider.IsProjectServiceAccount)
+	settingsProvider := kubernetesprovider.NewSettingsProvider(client)
 	addonConfigProvider := kubernetesprovider.NewAddonConfigProvider(client)
 	adminProvider := kubernetesprovider.NewAdminProvider(client)
 
@@ -298,8 +294,6 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 
 	kubeMasterInformerFactory.Start(wait.NeverStop)
 	kubeMasterInformerFactory.WaitForCacheSync(wait.NeverStop)
-	kubermaticMasterInformerFactory.Start(wait.NeverStop)
-	kubermaticMasterInformerFactory.WaitForCacheSync(wait.NeverStop)
 
 	eventRecorderProvider := kubernetesprovider.NewEventRecorder()
 

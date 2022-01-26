@@ -21,26 +21,22 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticclientset "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/watch"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // UserProvider manages user resources.
 type SettingsProvider struct {
-	client        kubermaticclientset.Interface
 	runtimeClient ctrlruntimeclient.Client
 }
 
 // NewUserProvider returns a user provider.
-func NewSettingsProvider(ctx context.Context, client kubermaticclientset.Interface, runtimeClient ctrlruntimeclient.Client) *SettingsProvider {
+func NewSettingsProvider(runtimeClient ctrlruntimeclient.Client) *SettingsProvider {
 	return &SettingsProvider{
-		client:        client,
 		runtimeClient: runtimeClient,
 	}
 }
@@ -55,10 +51,6 @@ func (s *SettingsProvider) GetGlobalSettings() (*kubermaticv1.KubermaticSetting,
 		return nil, err
 	}
 	return settings, nil
-}
-
-func (s *SettingsProvider) WatchGlobalSettings() (watch.Interface, error) {
-	return s.client.KubermaticV1().KubermaticSettings().Watch(context.Background(), v1.ListOptions{})
 }
 
 func (s *SettingsProvider) UpdateGlobalSettings(userInfo *provider.UserInfo, settings *kubermaticv1.KubermaticSetting) (*kubermaticv1.KubermaticSetting, error) {
