@@ -64,7 +64,7 @@ func NewAdmissionHandler(client ctrlruntimeclient.Client, seedGetter provider.Se
 }
 
 func (h *AdmissionHandler) SetupWebhookWithManager(mgr ctrlruntime.Manager) {
-	mgr.GetWebhookServer().Register("/validate-kubermatic-k8s-io-cluster", &webhook.Admission{Handler: h})
+	mgr.GetWebhookServer().Register("/validate-kubermatic-k8c-io-cluster", &webhook.Admission{Handler: h})
 }
 
 func (h *AdmissionHandler) InjectLogger(l logr.Logger) error {
