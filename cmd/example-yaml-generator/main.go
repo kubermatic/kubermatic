@@ -56,20 +56,13 @@ func main() {
 	}
 
 	// find all .go files in kubermatic/v1
-	kubermaticFiles, err := filepath.Glob(filepath.Join(root, "pkg/crd/kubermatic/v1/*.go"))
-	if err != nil {
-		log.Fatalf("Failed to find go files: %v", err)
-	}
-
-	// find all .go files in operator/v1alpha1
-	operatorFiles, err := filepath.Glob(filepath.Join(root, "pkg/crd/operator/v1alpha1/*.go"))
+	kubermaticFiles, err := filepath.Glob(filepath.Join(root, "pkg/apis/kubermatic/v1/*.go"))
 	if err != nil {
 		log.Fatalf("Failed to find go files: %v", err)
 	}
 
 	var files []string
 	files = append(files, kubermaticFiles...)
-	files = append(files, operatorFiles...)
 	files = append(files, filepath.Join(root, "vendor/k8s.io/api/core/v1/types.go"))
 
 	cm, err := genyaml.NewCommentMap(files...)
