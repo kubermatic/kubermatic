@@ -267,11 +267,10 @@ func (r *Reconciler) migrateICMP(ctx context.Context, log *zap.SugaredLogger, cl
 	}
 
 	var err error
-	if cluster, err = r.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
+	if _, err = r.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
 		c.Status.CloudMigrationRevision = icmpMigrationRevision
 	}); err != nil {
-		return fmt.Errorf("failed to update cluster %q after successfully executing its cloudProvider migration: %w",
-			cluster.Name, err)
+		return fmt.Errorf("failed to update cluster after successfully executing its cloud provider migration: %w", err)
 	}
 
 	return nil
