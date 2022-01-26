@@ -148,7 +148,6 @@ spec:
                                 For a list of available regions, see https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html
                               type: string
                           required:
-                          - images
                           - region
                           type: object
                         azure:

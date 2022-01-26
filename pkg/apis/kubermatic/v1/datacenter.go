@@ -400,7 +400,7 @@ type DatacenterSpecAWS struct {
 	// This gets defaulted by querying for the latest AMI for the given distribution
 	// when machines are created, so under normal circumstances it is not necessary
 	// to define the AMIs statically.
-	Images ImageList `json:"images"`
+	Images ImageList `json:"images,omitempty"`
 }
 
 // DatacenterSpecBringYourOwn describes a datacenter our of bring your own nodes.
