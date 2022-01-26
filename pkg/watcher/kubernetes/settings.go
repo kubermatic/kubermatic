@@ -23,6 +23,7 @@ import (
 	"go.uber.org/zap"
 
 	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+
 	toolscache "k8s.io/client-go/tools/cache"
 )
 

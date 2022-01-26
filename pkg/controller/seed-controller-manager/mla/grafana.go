@@ -27,6 +27,7 @@ import (
 	grafanasdk "github.com/kubermatic/grafanasdk"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/pointer"
 )
