@@ -27,12 +27,12 @@ import (
 	"github.com/minio/minio-go"
 	"go.uber.org/zap"
 
-	kubermaticclientset "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned"
 	"k8c.io/kubermatic/v2/pkg/exporters/s3"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 
 	"k8s.io/client-go/tools/clientcmd"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func main() {
@@ -72,7 +72,11 @@ func main() {
 	if err != nil {
 		logger.Fatalw("Failed to load kubeconfig", zap.Error(err))
 	}
-	kubermaticClient := kubermaticclientset.NewForConfigOrDie(config)
+
+	client, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{})
+	if err != nil {
+		logger.Fatalw("Failed to create kube client", zap.Error(err))
+	}
 
 	secure := true
 	if strings.HasPrefix(*endpointWithProto, "http://") {
@@ -102,7 +106,7 @@ func main() {
 		})
 	}
 
-	s3.MustRun(minioClient, kubermaticClient, *bucket, *listenAddress, logger)
+	s3.MustRun(minioClient, client, *bucket, *listenAddress, logger)
 
 	logger.Infof("Successfully started, listening on %s", *listenAddress)
 	<-stopChannel

@@ -80,9 +80,6 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	kubermaticclientset "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned"
-	kubermaticinformers "k8c.io/kubermatic/v2/pkg/crd/client/informers/externalversions"
-	kubermaticv1lister "k8c.io/kubermatic/v2/pkg/crd/client/listers/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/semver"

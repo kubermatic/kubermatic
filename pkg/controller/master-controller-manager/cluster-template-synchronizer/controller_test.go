@@ -24,7 +24,6 @@ import (
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/scheme"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
@@ -32,11 +31,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
+
+func init() {
+	utilruntime.Must(kubermaticv1.AddToScheme(scheme.Scheme))
+}
 
 const clusterTemplateName = "cluster-template-test"
 
@@ -54,12 +59,10 @@ func TestReconcile(t *testing.T) {
 			expectedClusterTemplate: generateClusterTemplate(clusterTemplateName, false),
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				WithObjects(generateClusterTemplate(clusterTemplateName, false), test.GenTestSeed()).
 				Build(),
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				Build(),
 		},
 		{
@@ -68,12 +71,10 @@ func TestReconcile(t *testing.T) {
 			expectedClusterTemplate: nil,
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				WithObjects(generateClusterTemplate(clusterTemplateName, true), test.GenTestSeed()).
 				Build(),
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				WithObjects(generateClusterTemplate(clusterTemplateName, false), test.GenTestSeed()).
 				Build(),
 		},

@@ -31,7 +31,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/record"
@@ -311,7 +310,6 @@ type UserProvider interface {
 	UserByID(id string) (*kubermaticv1.User, error)
 	InvalidateToken(user *kubermaticv1.User, token string, expiry apiv1.Time) error
 	GetInvalidatedTokens(user *kubermaticv1.User) ([]string, error)
-	WatchUser() (watch.Interface, error)
 	List() ([]kubermaticv1.User, error)
 }
 
@@ -735,7 +733,6 @@ type AddonConfigProvider interface {
 type SettingsProvider interface {
 	GetGlobalSettings() (*kubermaticv1.KubermaticSetting, error)
 	UpdateGlobalSettings(userInfo *UserInfo, settings *kubermaticv1.KubermaticSetting) (*kubermaticv1.KubermaticSetting, error)
-	WatchGlobalSettings() (watch.Interface, error)
 }
 
 // AdminProvider declares the set of methods for interacting with admin.

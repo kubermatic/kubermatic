@@ -43,7 +43,6 @@ import (
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	kubermaticfakeclientset "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/fake"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/handler/auth"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
@@ -267,7 +266,6 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		WithScheme(scheme.Scheme).
 		WithObjects(allObjects...).
 		Build()
-	kubermaticClient := kubermaticfakeclientset.NewSimpleClientset(getRuntimeObjects(kubermaticObjects...)...)
 	kubernetesClient := fakerestclient.NewSimpleClientset(getRuntimeObjects(kubeObjects...)...)
 	fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
 		return fakeClient, nil
@@ -278,9 +276,9 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	if err != nil {
 		return nil, nil, err
 	}
-	userProvider := kubernetes.NewUserProvider(fakeClient, kubernetes.IsProjectServiceAccount, kubermaticClient)
+	userProvider := kubernetes.NewUserProvider(fakeClient, kubernetes.IsProjectServiceAccount)
 	adminProvider := kubernetes.NewAdminProvider(fakeClient)
-	settingsProvider := kubernetes.NewSettingsProvider(ctx, kubermaticClient, fakeClient)
+	settingsProvider := kubernetes.NewSettingsProvider(fakeClient)
 	addonConfigProvider := kubernetes.NewAddonConfigProvider(fakeClient)
 	tokenGenerator, err := serviceaccount.JWTTokenGenerator([]byte(TestServiceAccountHashKey))
 	if err != nil {
@@ -601,7 +599,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		featureGates,
 	)
 
-	return mainRouter, &ClientsSets{kubermaticClient, fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil
+	return mainRouter, &ClientsSets{fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil
 }
 
 // CreateTestEndpointAndGetClients is a convenience function that instantiates fake providers and sets up routes for the tests.
@@ -739,8 +737,7 @@ func (f *fakeUserClusterConnection) GetClient(_ context.Context, _ *kubermaticv1
 
 // ClientsSets a simple wrapper that holds fake client sets.
 type ClientsSets struct {
-	FakeKubermaticClient *kubermaticfakeclientset.Clientset
-	FakeClient           ctrlruntimeclient.Client
+	FakeClient ctrlruntimeclient.Client
 	// this client is used for unprivileged methods where impersonated client is used
 	FakeKubernetesCoreClient kubernetesclientset.Interface
 
