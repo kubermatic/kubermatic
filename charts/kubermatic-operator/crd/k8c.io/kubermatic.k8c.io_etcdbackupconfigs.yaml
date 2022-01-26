@@ -19,7 +19,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: EtcdBackupConfig specifies a add-on
+        description: EtcdBackupConfig specifies a add-on.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -34,7 +34,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: EtcdBackupConfigSpec specifies details of an etcd backup
+            description: EtcdBackupConfigSpec specifies details of an etcd backup.
             properties:
               cluster:
                 description: Cluster is the reference to the cluster whose etcd will

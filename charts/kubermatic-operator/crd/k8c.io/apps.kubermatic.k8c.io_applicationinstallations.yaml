@@ -20,7 +20,7 @@ spec:
     schema:
       openAPIV3Schema:
         description: ApplicationInstallation describes a single installation of an
-          Application
+          Application.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -72,7 +72,7 @@ spec:
             type: object
           status:
             description: ApplicationInstallationStatus denotes status information
-              about an ApplicationInstallation
+              about an ApplicationInstallation.
             properties:
               conditions:
                 description: Conditions contains conditions an installation is in,

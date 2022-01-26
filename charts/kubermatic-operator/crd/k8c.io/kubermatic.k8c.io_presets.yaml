@@ -19,7 +19,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: Preset is the type representing a Preset
+        description: Preset is the type representing a Preset.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -34,7 +34,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: Presets specifies default presets for supported providers
+            description: Presets specifies default presets for supported providers.
             properties:
               aks:
                 properties:

@@ -31,7 +31,7 @@ spec:
       openAPIV3Schema:
         description: UserProjectBinding specifies a binding between a user and a project
           This resource is used by the user management to manipulate members of the
-          given project
+          given project.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -46,7 +46,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: UserProjectBindingSpec specifies a user
+            description: UserProjectBindingSpec specifies a user.
             properties:
               group:
                 type: string

@@ -20,7 +20,7 @@ spec:
     schema:
       openAPIV3Schema:
         description: ApplicationDefinition is the Schema for the applicationdefinitions
-          API
+          API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -35,7 +35,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: ApplicationDefinitionSpec defines the desired state of ApplicationDefinition
+            description: ApplicationDefinitionSpec defines the desired state of ApplicationDefinition.
             properties:
               description:
                 description: Description of the application. what is its purpose

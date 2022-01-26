@@ -966,7 +966,7 @@ spec:
                 properties:
                   type:
                     description: CNIPluginType define the type of CNI plugin installed.
-                      e.g. Canal
+                      e.g. Canal.
                     enum:
                     - canal
                     - cilium
@@ -1730,7 +1730,6 @@ spec:
             required:
             - cloud
             - clusterNetwork
-            - componentsOverride
             - exposeStrategy
             - humanReadableName
             - pause
