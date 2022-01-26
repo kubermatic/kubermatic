@@ -198,6 +198,9 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 			if err := seedClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 				errs = append(errs, fmt.Errorf("failed to update cluster %q", cluster.Name))
 			}
+			if err := seedClient.Status().Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+				errs = append(errs, fmt.Errorf("failed to update status on cluster %q", cluster.Name))
+			}
 		}
 	}
 

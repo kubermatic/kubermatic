@@ -538,7 +538,7 @@ func (r *Reconciler) ensureResourcesCreatedConditionIsSet(ctx context.Context, a
 	}
 	oldAddon := addon.DeepCopy()
 	setAddonCodition(addon, kubermaticv1.AddonResourcesCreated, corev1.ConditionTrue)
-	return r.Client.Patch(ctx, addon, ctrlruntimeclient.MergeFrom(oldAddon))
+	return r.Client.Status().Patch(ctx, addon, ctrlruntimeclient.MergeFrom(oldAddon))
 }
 
 func (r *Reconciler) cleanupManifests(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {

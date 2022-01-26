@@ -296,7 +296,17 @@ func (r *Reconciler) updateCluster(ctx context.Context, cluster *kubermaticv1.Cl
 		return nil
 	}
 
-	return r.Patch(ctx, cluster, ctrlruntimeclient.MergeFromWithOptions(oldCluster, opts...))
+	patch := ctrlruntimeclient.MergeFromWithOptions(oldCluster, opts...)
+
+	if err := r.Patch(ctx, cluster, patch); err != nil {
+		return err
+	}
+
+	if err := r.Status().Patch(ctx, cluster, patch); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (r *Reconciler) AddFinalizers(ctx context.Context, cluster *kubermaticv1.Cluster, finalizers ...string) (*reconcile.Result, error) {

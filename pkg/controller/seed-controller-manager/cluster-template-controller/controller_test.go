@@ -124,6 +124,7 @@ func TestReconcile(t *testing.T) {
 				}
 
 				modifiedCluster := cluster.DeepCopy()
+				modifiedCluster.ResourceVersion = ""
 				modifiedCluster.Name = ""
 				modifiedCluster.Spec.HumanReadableName = ""
 
@@ -132,6 +133,7 @@ func TestReconcile(t *testing.T) {
 			expectedClusterList := []*kubermaticv1.Cluster{}
 			for _, cluster := range tc.expectedClusters {
 				modifiedCluster := cluster.DeepCopy()
+				modifiedCluster.ResourceVersion = ""
 				modifiedCluster.Name = ""
 				modifiedCluster.Spec.HumanReadableName = ""
 				expectedClusterList = append(expectedClusterList, modifiedCluster)
