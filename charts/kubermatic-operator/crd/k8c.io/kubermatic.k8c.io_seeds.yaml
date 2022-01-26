@@ -393,15 +393,9 @@ spec:
                           - authURL
                           - availabilityZone
                           - dnsServers
-                          - enabledFlavors
-                          - enforceFloatingIP
-                          - ignoreVolumeAZ
                           - images
-                          - manageSecurityGroups
                           - nodeSizeRequirements
                           - region
-                          - trustDevicePath
-                          - useOctavia
                           type: object
                         packet:
                           description: DatacenterSpecPacket describes a Packet datacenter.

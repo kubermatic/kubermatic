@@ -317,9 +317,9 @@ type DatacenterSpecOpenstack struct {
 	AvailabilityZone string `json:"availabilityZone"`
 	Region           string `json:"region"`
 	// Optional
-	IgnoreVolumeAZ bool `json:"ignoreVolumeAZ"` //nolint:tagliatelle
+	IgnoreVolumeAZ bool `json:"ignoreVolumeAZ,omitempty"` //nolint:tagliatelle
 	// Optional
-	EnforceFloatingIP bool `json:"enforceFloatingIP"`
+	EnforceFloatingIP bool `json:"enforceFloatingIP,omitempty"`
 	// Used for automatic network creation
 	DNSServers []string `json:"dnsServers"`
 	// Images to use for each supported operating system.
@@ -327,18 +327,18 @@ type DatacenterSpecOpenstack struct {
 	// Optional: Gets mapped to the "manage-security-groups" setting in the cloud config.
 	// See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
 	// This setting defaults to true.
-	ManageSecurityGroups *bool `json:"manageSecurityGroups"`
+	ManageSecurityGroups *bool `json:"manageSecurityGroups,omitempty"`
 	// Optional: Gets mapped to the "use-octavia" setting in the cloud config.
 	// use-octavia is enabled by default in CCM since v1.17.0, and disabled by
 	// default with the in-tree cloud provider.
-	UseOctavia *bool `json:"useOctavia"`
+	UseOctavia *bool `json:"useOctavia,omitempty"`
 	// Optional: Gets mapped to the "trust-device-path" setting in the cloud config.
 	// See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#block-storage
 	// This setting defaults to false.
-	TrustDevicePath      *bool                         `json:"trustDevicePath"`
+	TrustDevicePath      *bool                         `json:"trustDevicePath,omitempty"`
 	NodeSizeRequirements OpenstackNodeSizeRequirements `json:"nodeSizeRequirements"`
 	// Optional: List of enabled flavors for the given datacenter
-	EnabledFlavors []string `json:"enabledFlavors"`
+	EnabledFlavors []string `json:"enabledFlavors,omitempty"`
 }
 
 type OpenstackNodeSizeRequirements struct {
