@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: operator.kubermatic.io/v1alpha1
+apiVersion: kubermatic.k8c.io/v1
 kind: KubermaticConfiguration
 metadata:
   name: e2e
@@ -32,7 +32,7 @@ spec:
   featureGates:
     # VPA won't do anything useful due to missing Prometheus, but we can
     # at least ensure we deploy a working set of Deployments.
-    VerticalPodAutoscaler: {}
+    VerticalPodAutoscaler: true
   ui:
     replicas: 0
   # Dex integration

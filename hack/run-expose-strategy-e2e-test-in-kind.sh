@@ -36,7 +36,7 @@ function generate_secret {
 function patch_kubermatic_domain {
   local ip="$(kubectl get service nodeport-proxy -n kubermatic -otemplate --template='{{ .spec.clusterIP }}')"
   [ -z "${ip}" ] && return 1
-  kubectl patch kubermaticconfigurations.operator.kubermatic.io -n kubermatic e2e \
+  kubectl patch kubermaticconfigurations.kubermatic.k8c.io -n kubermatic e2e \
     --type="json" -p='[{"op": "replace", "path": "/spec/ingress/domain", "value": "'${ip}.nip.io'"}]'
 }
 
@@ -125,7 +125,7 @@ echo "Config dir: ${TMPDIR}"
 KUBERMATIC_CONFIG="${TMPDIR}/kubermatic.yaml"
 
 cat << EOF > ${KUBERMATIC_CONFIG}
-apiVersion: operator.kubermatic.io/v1alpha1
+apiVersion: kubermatic.k8c.io/v1
 kind: KubermaticConfiguration
 metadata:
   name: e2e
@@ -140,7 +140,7 @@ spec:
     replicas: 0
     debugLog: true
   featureGates:
-    TunnelingExposeStrategy: {}
+    TunnelingExposeStrategy: true
   ui:
     replicas: 0
   # Dex integration
