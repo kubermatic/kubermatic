@@ -19,6 +19,7 @@ metadata:
   namespace: kubermatic
 spec:
   caBundle:
+    kind: ConfigMap
     name: custom-ca-bundle
   ingress:
     domain: '__KUBERMATIC_DOMAIN__'

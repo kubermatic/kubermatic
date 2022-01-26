@@ -54,7 +54,7 @@ func init() {
 	flag.StringVar(&options.osCredentials.authURL, "openstack-auth-url", "", "openstack auth url")
 	flag.StringVar(&options.osCredentials.username, "openstack-username", "", "openstack username")
 	flag.StringVar(&options.osCredentials.password, "openstack-password", "", "openstack password")
-	flag.StringVar(&options.osCredentials.tenant, "openstack-tenant", "", "openstack tenant")
+	flag.StringVar(&options.osCredentials.project, "openstack-project", "", "openstack project")
 	flag.StringVar(&options.osCredentials.domain, "openstack-domain", "", "openstack domain")
 	flag.StringVar(&options.osCredentials.region, "openstack-region", "", "openstack region")
 	flag.StringVar(&options.osCredentials.floatingIPPool, "openstack-floating-ip-pool", "", "openstack floating ip pool")

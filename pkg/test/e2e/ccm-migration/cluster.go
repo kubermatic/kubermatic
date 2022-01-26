@@ -28,8 +28,10 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
+	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cloud"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -63,7 +65,7 @@ type credentials struct {
 	authURL        string
 	username       string
 	password       string
-	tenant         string
+	project        string
 	domain         string
 	region         string
 	floatingIPPool string
@@ -91,7 +93,7 @@ func (c *ClusterJig) CreateMachineDeployment(userClient ctrlruntimeclient.Client
 		osCredentials.authURL,
 		osCredentials.username,
 		osCredentials.password,
-		osCredentials.tenant,
+		osCredentials.project,
 		osCredentials.region,
 		osCredentials.domain,
 		osCredentials.floatingIPPool,
@@ -134,8 +136,8 @@ func (c *ClusterJig) createSecret(secretName string, osCredentials credentials) 
 	secretData := map[string][]byte{
 		resources.OpenstackUsername:                    []byte(osCredentials.username),
 		resources.OpenstackPassword:                    []byte(osCredentials.password),
-		resources.OpenstackTenant:                      []byte(osCredentials.tenant),
-		resources.OpenstackTenantID:                    []byte(""),
+		resources.OpenstackProject:                     []byte(osCredentials.project),
+		resources.OpenstackProjectID:                   []byte(""),
 		resources.OpenstackDomain:                      []byte(osCredentials.domain),
 		resources.OpenstackApplicationCredentialID:     []byte(""),
 		resources.OpenstackApplicationCredentialSecret: []byte(""),
@@ -208,8 +210,20 @@ func (c *ClusterJig) createCluster(cloudSpec kubermaticv1.CloudSpec) error {
 	}
 
 	c.Cluster.Status = kubermaticv1.ClusterStatus{
-		NamespaceName: fmt.Sprintf("cluster-%s", c.Name),
-		UserEmail:     "e2e@test.com",
+		NamespaceName:          fmt.Sprintf("cluster-%s", c.Name),
+		UserEmail:              "e2e@test.com",
+		CloudMigrationRevision: cloud.CurrentMigrationRevision,
+		KubermaticVersion:      kubermatic.NewFakeVersions().Kubermatic,
+		ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
+			Apiserver:                    kubermaticv1.HealthStatusProvisioning,
+			Scheduler:                    kubermaticv1.HealthStatusProvisioning,
+			Controller:                   kubermaticv1.HealthStatusProvisioning,
+			MachineController:            kubermaticv1.HealthStatusProvisioning,
+			Etcd:                         kubermaticv1.HealthStatusProvisioning,
+			OpenVPN:                      kubermaticv1.HealthStatusProvisioning,
+			CloudProviderInfrastructure:  kubermaticv1.HealthStatusProvisioning,
+			UserClusterControllerManager: kubermaticv1.HealthStatusProvisioning,
+		},
 	}
 	if err := c.SeedClient.Status().Update(context.TODO(), c.Cluster); err != nil {
 		return errors.Wrap(err, "failed to update cluster status")
