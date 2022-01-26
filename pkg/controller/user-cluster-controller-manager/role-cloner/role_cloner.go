@@ -31,7 +31,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
@@ -120,7 +120,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, role
 
 	for _, n := range namespaceList.Items {
 		// This NS is the authoritative source of roles we configure
-		if n.Name == v1.NamespaceSystem {
+		if n.Name == metav1.NamespaceSystem {
 			continue
 		}
 		// No point in trying to create something in a deleted namespace
@@ -141,7 +141,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, log *zap.SugaredLogger,
 		}
 		for _, namespace := range namespaces {
 			if err := r.client.Delete(ctx, &rbacv1.Role{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name:      oldRole.Name,
 					Namespace: namespace,
 				},
@@ -178,7 +178,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, log *zap.SugaredLogger,
 			if kerrors.IsNotFound(err) {
 				log.Debug("role not found, creating")
 				newRole := &rbacv1.Role{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name:      oldRole.Name,
 						Namespace: namespace,
 						Labels:    oldRole.Labels,
@@ -213,7 +213,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, log *zap.SugaredLogger,
 func enqueueTemplateRoles(client ctrlruntimeclient.Client) handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		roleList := &rbacv1.RoleList{}
-		if err := client.List(context.Background(), roleList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue}, ctrlruntimeclient.InNamespace(v1.NamespaceSystem)); err != nil {
+		if err := client.List(context.Background(), roleList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue}, ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list Roles: %w", err))
 			return []reconcile.Request{}
 		}

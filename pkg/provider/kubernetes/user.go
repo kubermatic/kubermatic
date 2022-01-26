@@ -33,7 +33,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -103,7 +102,7 @@ func (p *UserProvider) CreateUser(id, name, email string) (*kubermaticv1.User, e
 	}
 
 	user := &kubermaticv1.User{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name: fmt.Sprintf("%x", sha256.Sum256([]byte(email))),
 		},
 		Spec: kubermaticv1.UserSpec{

@@ -29,7 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -69,7 +69,7 @@ func TestListAdmissionPluginEndpoint(t *testing.T) {
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", true),
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "defaultTolerationSeconds",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -77,7 +77,7 @@ func TestListAdmissionPluginEndpoint(t *testing.T) {
 					},
 				},
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "eventRateLimit",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -153,7 +153,7 @@ func TestGetAdmissionPluginEndpoint(t *testing.T) {
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", true),
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "defaultTolerationSeconds",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -161,7 +161,7 @@ func TestGetAdmissionPluginEndpoint(t *testing.T) {
 					},
 				},
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "eventRateLimit",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -237,7 +237,7 @@ func TestDeleteAdmissionPluginEndpoint(t *testing.T) {
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", true),
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "defaultTolerationSeconds",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -245,7 +245,7 @@ func TestDeleteAdmissionPluginEndpoint(t *testing.T) {
 					},
 				},
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "eventRateLimit",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -325,7 +325,7 @@ func TestUpdateAdmissionPluginEndpoint(t *testing.T) {
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", true),
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "defaultTolerationSeconds",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -333,7 +333,7 @@ func TestUpdateAdmissionPluginEndpoint(t *testing.T) {
 					},
 				},
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "eventRateLimit",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -352,7 +352,7 @@ func TestUpdateAdmissionPluginEndpoint(t *testing.T) {
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", true),
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "defaultTolerationSeconds",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -360,7 +360,7 @@ func TestUpdateAdmissionPluginEndpoint(t *testing.T) {
 					},
 				},
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "eventRateLimit",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{

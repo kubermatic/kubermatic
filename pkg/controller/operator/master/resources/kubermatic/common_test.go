@@ -22,7 +22,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	networkingv1 "k8s.io/api/networking/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // TestIngressCreatorKeepsAnnotations ensures that custom annotations
@@ -43,7 +43,7 @@ func TestIngressCreatorKeepsAnnotations(t *testing.T) {
 		{
 			name: "keep existing annotations",
 			ingress: &networkingv1.Ingress{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						"test": "value",
 					},

@@ -41,7 +41,7 @@ import (
 	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -1008,7 +1008,7 @@ func TestServiceAccountProjectAccess(t *testing.T) {
 	}
 }
 
-func genToken(sa *kubermaticv1.User, projectID, tokenName string) (*v1.Secret, error) {
+func genToken(sa *kubermaticv1.User, projectID, tokenName string) (*corev1.Secret, error) {
 	tokenGenerator, err := serviceaccount.JWTTokenGenerator([]byte(test.TestServiceAccountHashKey))
 	if err != nil {
 		return nil, fmt.Errorf("can init token generator: %w", err)
@@ -1018,7 +1018,7 @@ func genToken(sa *kubermaticv1.User, projectID, tokenName string) (*v1.Secret, e
 		return nil, fmt.Errorf("can not generate token data: %w", err)
 	}
 
-	secret := &v1.Secret{}
+	secret := &corev1.Secret{}
 	secret.Name = fmt.Sprintf("%s%s", "sa-token-", tokenName)
 	secret.OwnerReferences = []metav1.OwnerReference{
 		{

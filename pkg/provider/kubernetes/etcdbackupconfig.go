@@ -23,7 +23,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	"k8s.io/apimachinery/pkg/api/meta"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -118,7 +118,7 @@ func (p *EtcdBackupConfigProvider) Delete(userInfo *provider.UserInfo, cluster *
 	}
 
 	ebc := &kubermaticv1.EtcdBackupConfig{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: cluster.Status.NamespaceName,
 		},
@@ -128,7 +128,7 @@ func (p *EtcdBackupConfigProvider) Delete(userInfo *provider.UserInfo, cluster *
 
 func (p *EtcdBackupConfigProvider) DeleteUnsecured(cluster *kubermaticv1.Cluster, name string) error {
 	ebc := &kubermaticv1.EtcdBackupConfig{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: cluster.Status.NamespaceName,
 		},

@@ -23,7 +23,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -131,7 +131,7 @@ func genAddon(cluster *kubermaticv1.Cluster, addonName string, variables *runtim
 		},
 		Spec: kubermaticv1.AddonSpec{
 			Name: addonName,
-			Cluster: v1.ObjectReference{
+			Cluster: corev1.ObjectReference{
 				Name:       cluster.Name,
 				Namespace:  "",
 				UID:        cluster.UID,

@@ -33,7 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -91,7 +91,7 @@ func createSANoPrefix(name, projectName, group, id string) *kubermaticv1.User {
 	return sa
 }
 
-func sortTokenByName(tokens []*v1.Secret) {
+func sortTokenByName(tokens []*corev1.Secret) {
 	sort.SliceStable(tokens, func(i, j int) bool {
 		mi, mj := tokens[i], tokens[j]
 		return mi.Name < mj.Name
@@ -208,8 +208,8 @@ func genBinding(projectID, email, group string) *kubermaticv1.UserProjectBinding
 	}
 }
 
-func genSecret(projectID, saID, name, id string) *v1.Secret {
-	secret := &v1.Secret{}
+func genSecret(projectID, saID, name, id string) *corev1.Secret {
+	secret := &corev1.Secret{}
 	secret.Name = fmt.Sprintf("sa-token-%s", id)
 	secret.Type = "Opaque"
 	secret.Namespace = "kubermatic"
