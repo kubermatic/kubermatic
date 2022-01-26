@@ -485,13 +485,9 @@ spec:
                                 See: https://github.com/kubermatic/machine-controller/blob/master/docs/vsphere.md#template-vms-preparation'
                               type: object
                           required:
-                          - allowInsecure
-                          - cluster
                           - datacenter
                           - datastore
                           - endpoint
-                          - rootPath
-                          - storagePolicy
                           - templates
                           type: object
                       type: object

@@ -360,7 +360,7 @@ type DatacenterSpecVSphere struct {
 	// Endpoint URL to use, including protocol, for example "https://vcenter.example.com".
 	Endpoint string `json:"endpoint"`
 	// If set to true, disables the TLS certificate check against the endpoint.
-	AllowInsecure bool `json:"allowInsecure"`
+	AllowInsecure bool `json:"allowInsecure,omitempty"`
 	// The default Datastore to be used for provisioning volumes using storage
 	// classes/dynamic provisioning and for storing virtual machine files in
 	// case no `Datastore` or `DatastoreCluster` is provided at Cluster level.
@@ -372,14 +372,14 @@ type DatacenterSpecVSphere struct {
 	// currently ignored.
 	// The cluster hosting the VMs will be the same VM used as a template is
 	// located.
-	Cluster string `json:"cluster"`
+	Cluster string `json:"cluster,omitempty"`
 	// The name of the storage policy to use for the storage class created in the user cluster.
-	DefaultStoragePolicy string `json:"storagePolicy"`
+	DefaultStoragePolicy string `json:"storagePolicy,omitempty"`
 	// Optional: The root path for cluster specific VM folders. Each cluster gets its own
 	// folder below the root folder. Must be the FQDN (for example
 	// "/datacenter-1/vm/all-kubermatic-vms-in-here") and defaults to the root VM
 	// folder: "/datacenter-1/vm"
-	RootPath string `json:"rootPath"`
+	RootPath string `json:"rootPath,omitempty"`
 	// A list of VM templates to use for a given operating system. You must
 	// define at least one template.
 	// See: https://github.com/kubermatic/machine-controller/blob/master/docs/vsphere.md#template-vms-preparation
