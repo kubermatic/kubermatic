@@ -323,7 +323,7 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 		return providers{}, fmt.Errorf("failed to setup user-watcher: %w", err)
 	}
 
-	userInformer, err := mgr.GetCache().GetInformer(ctx, &kubermaticv1.KubermaticSetting{})
+	userInformer, err := mgr.GetCache().GetInformer(ctx, &kubermaticv1.User{})
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to setup user informer: %w", err)
 	}

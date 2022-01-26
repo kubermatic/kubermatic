@@ -67,7 +67,7 @@ func (watcher *UserWatcher) Subscribe(subscription pubsub.Subscription, opts ...
 func (watcher *UserWatcher) OnAdd(obj interface{}) {
 	user, ok := obj.(*kubermaticv1.User)
 	if !ok {
-		watcher.log.Debugf("expected User but got %T", obj)
+		watcher.log.Warnf("expected User but got %T", obj)
 		return
 	}
 
@@ -84,7 +84,7 @@ func (watcher *UserWatcher) OnAdd(obj interface{}) {
 func (watcher *UserWatcher) OnUpdate(oldObj, newObj interface{}) {
 	user, ok := newObj.(*kubermaticv1.User)
 	if !ok {
-		watcher.log.Debugf("expected User but got %T", newObj)
+		watcher.log.Warnf("expected User but got %T", newObj)
 		return
 	}
 
@@ -113,7 +113,7 @@ func (watcher *UserWatcher) OnUpdate(oldObj, newObj interface{}) {
 func (watcher *UserWatcher) OnDelete(obj interface{}) {
 	user, ok := obj.(*kubermaticv1.User)
 	if !ok {
-		watcher.log.Debugf("expected User but got %T", obj)
+		watcher.log.Warnf("expected User but got %T", obj)
 		return
 	}
 
