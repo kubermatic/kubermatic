@@ -301,7 +301,7 @@ type DatacenterSpecHetzner struct {
 	Network string `json:"network"`
 	// Optional: Detailed location of the datacenter, like "Hamburg" or "Datacenter 7".
 	// For informational purposes only.
-	Location string `json:"location"`
+	Location string `json:"location,omitempty"`
 }
 
 // DatacenterSpecDigitalocean describes a DigitalOcean datacenter.
@@ -317,9 +317,9 @@ type DatacenterSpecOpenstack struct {
 	AvailabilityZone string `json:"availabilityZone"`
 	Region           string `json:"region"`
 	// Optional
-	IgnoreVolumeAZ bool `json:"ignoreVolumeAZ"` //nolint:tagliatelle
+	IgnoreVolumeAZ bool `json:"ignoreVolumeAZ,omitempty"` //nolint:tagliatelle
 	// Optional
-	EnforceFloatingIP bool `json:"enforceFloatingIP"`
+	EnforceFloatingIP bool `json:"enforceFloatingIP,omitempty"`
 	// Used for automatic network creation
 	DNSServers []string `json:"dnsServers"`
 	// Images to use for each supported operating system.
@@ -327,18 +327,18 @@ type DatacenterSpecOpenstack struct {
 	// Optional: Gets mapped to the "manage-security-groups" setting in the cloud config.
 	// See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
 	// This setting defaults to true.
-	ManageSecurityGroups *bool `json:"manageSecurityGroups"`
+	ManageSecurityGroups *bool `json:"manageSecurityGroups,omitempty"`
 	// Optional: Gets mapped to the "use-octavia" setting in the cloud config.
 	// use-octavia is enabled by default in CCM since v1.17.0, and disabled by
 	// default with the in-tree cloud provider.
-	UseOctavia *bool `json:"useOctavia"`
+	UseOctavia *bool `json:"useOctavia,omitempty"`
 	// Optional: Gets mapped to the "trust-device-path" setting in the cloud config.
 	// See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#block-storage
 	// This setting defaults to false.
-	TrustDevicePath      *bool                         `json:"trustDevicePath"`
+	TrustDevicePath      *bool                         `json:"trustDevicePath,omitempty"`
 	NodeSizeRequirements OpenstackNodeSizeRequirements `json:"nodeSizeRequirements"`
 	// Optional: List of enabled flavors for the given datacenter
-	EnabledFlavors []string `json:"enabledFlavors"`
+	EnabledFlavors []string `json:"enabledFlavors,omitempty"`
 }
 
 type OpenstackNodeSizeRequirements struct {
@@ -360,7 +360,7 @@ type DatacenterSpecVSphere struct {
 	// Endpoint URL to use, including protocol, for example "https://vcenter.example.com".
 	Endpoint string `json:"endpoint"`
 	// If set to true, disables the TLS certificate check against the endpoint.
-	AllowInsecure bool `json:"allowInsecure"`
+	AllowInsecure bool `json:"allowInsecure,omitempty"`
 	// The default Datastore to be used for provisioning volumes using storage
 	// classes/dynamic provisioning and for storing virtual machine files in
 	// case no `Datastore` or `DatastoreCluster` is provided at Cluster level.
@@ -372,14 +372,14 @@ type DatacenterSpecVSphere struct {
 	// currently ignored.
 	// The cluster hosting the VMs will be the same VM used as a template is
 	// located.
-	Cluster string `json:"cluster"`
+	Cluster string `json:"cluster,omitempty"`
 	// The name of the storage policy to use for the storage class created in the user cluster.
-	DefaultStoragePolicy string `json:"storagePolicy"`
+	DefaultStoragePolicy string `json:"storagePolicy,omitempty"`
 	// Optional: The root path for cluster specific VM folders. Each cluster gets its own
 	// folder below the root folder. Must be the FQDN (for example
 	// "/datacenter-1/vm/all-kubermatic-vms-in-here") and defaults to the root VM
 	// folder: "/datacenter-1/vm"
-	RootPath string `json:"rootPath"`
+	RootPath string `json:"rootPath,omitempty"`
 	// A list of VM templates to use for a given operating system. You must
 	// define at least one template.
 	// See: https://github.com/kubermatic/machine-controller/blob/master/docs/vsphere.md#template-vms-preparation
@@ -400,7 +400,7 @@ type DatacenterSpecAWS struct {
 	// This gets defaulted by querying for the latest AMI for the given distribution
 	// when machines are created, so under normal circumstances it is not necessary
 	// to define the AMIs statically.
-	Images ImageList `json:"images"`
+	Images ImageList `json:"images,omitempty"`
 }
 
 // DatacenterSpecBringYourOwn describes a datacenter our of bring your own nodes.
@@ -458,7 +458,7 @@ type DatacenterSpecNutanix struct {
 	// Optional: Port to use when connecting to the Nutanix Prism Central endpoint (defaults to 9440)
 	Port *int32 `json:"port,omitempty"`
 	// Optional: AllowInsecure allows to disable the TLS certificate check against the endpoint (defaults to false)
-	AllowInsecure bool `json:"allowInsecure"`
+	AllowInsecure bool `json:"allowInsecure,omitempty"`
 	// Images to use for each supported operating system
 	Images ImageList `json:"images"`
 }

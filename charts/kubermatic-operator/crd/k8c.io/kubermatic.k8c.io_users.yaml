@@ -26,7 +26,7 @@ spec:
     name: v1
     schema:
       openAPIV3Schema:
-        description: User specifies a user
+        description: User specifies a user.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -41,7 +41,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: UserSpec specifies a user
+            description: UserSpec specifies a user.
             properties:
               admin:
                 type: boolean
@@ -94,7 +94,7 @@ spec:
               name:
                 type: string
               settings:
-                description: UserSettings represent an user settings
+                description: UserSettings represent an user settings.
                 properties:
                   collapseSidenav:
                     type: boolean

@@ -532,7 +532,7 @@ spec:
                       version incompatibilities
                     items:
                       description: Incompatibility represents a version incompatibility
-                        for a user cluster
+                        for a user cluster.
                       properties:
                         condition:
                           description: Condition is the cluster or datacenter condition
@@ -612,7 +612,7 @@ spec:
                     description: Versions lists the available versions.
                     items:
                       description: Semver is a type that encapsulates github.com/Masterminds/semver/v3.Version
-                        struct so it can be used in our API
+                        struct so it can be used in our API.
                       type: string
                     type: array
                 type: object
