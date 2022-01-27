@@ -27,6 +27,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -36,7 +37,8 @@ import (
 // any cluster reconciliaton. It:
 // * Checks if the cluster is paused
 // * Checks if the worker-name matches
-// * Sets the ReconcileSuccess condition for the controller.
+// * Sets the ReconcileSuccess condition for the controller by fetching
+//   the current Cluster object and patching its status.
 func ClusterReconcileWrapper(
 	ctx context.Context,
 	client ctrlruntimeclient.Client,
@@ -63,13 +65,21 @@ func ClusterReconcileWrapper(
 
 	errs := []error{err}
 	if conditionType != kubermaticv1.ClusterConditionNone {
-		oldCluster := cluster.DeepCopy()
-		SetClusterCondition(cluster, versions, conditionType, reconcilingStatus, "", "")
-		if !reflect.DeepEqual(oldCluster, cluster) {
-			patch := ctrlruntimeclient.MergeFrom(oldCluster)
+		curCluster := &kubermaticv1.Cluster{}
 
-			if err := client.Status().Patch(ctx, cluster, patch); ctrlruntimeclient.IgnoreNotFound(err) != nil {
-				errs = append(errs, err)
+		err := client.Get(ctx, types.NamespacedName{Name: cluster.Name}, curCluster)
+		if ctrlruntimeclient.IgnoreNotFound(err) != nil {
+			errs = append(errs, err)
+		} else if err == nil {
+			clusterCopy := curCluster.DeepCopy()
+			SetClusterCondition(curCluster, versions, conditionType, reconcilingStatus, "", "")
+
+			if !reflect.DeepEqual(clusterCopy, curCluster) {
+				patch := ctrlruntimeclient.MergeFrom(clusterCopy)
+
+				if err := client.Status().Patch(ctx, curCluster, patch); ctrlruntimeclient.IgnoreNotFound(err) != nil {
+					errs = append(errs, err)
+				}
 			}
 		}
 	}
