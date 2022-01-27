@@ -144,7 +144,7 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil
 	}
 
-	return r.client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
+	return r.client.Status().Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
 }
 
 func (r *reconciler) seedResourcesUpToDate(ctx context.Context, cluster *kubermaticv1.Cluster) (bool, error) {
