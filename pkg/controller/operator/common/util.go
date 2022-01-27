@@ -36,6 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -81,16 +82,19 @@ func isSeed(ref metav1.OwnerReference) bool {
 }
 
 // StringifyFeatureGates takes a set of enabled features and returns a comma-separated
-// key=value list like "featureA=true,featureB=true,...".
+// key=value list like "featureA=true,featureB=true,...". The list of feature gates is
+// sorted, so the output of this function is stable.
 func StringifyFeatureGates(cfg *kubermaticv1.KubermaticConfiguration) string {
-	features := make([]string, 0)
+	// use a set to ensure that the result is sorted, otherwise reconciling code that
+	// uses this will end up in endless loops
+	features := sets.NewString()
 	for feature, enabled := range cfg.Spec.FeatureGates {
 		if enabled {
-			features = append(features, fmt.Sprintf("%s=true", feature))
+			features.Insert(fmt.Sprintf("%s=true", feature))
 		}
 	}
 
-	return strings.Join(features, ",")
+	return strings.Join(features.List(), ",")
 }
 
 // OwnershipModifierFactory is generating a new ObjectModifier that wraps an ObjectCreator
