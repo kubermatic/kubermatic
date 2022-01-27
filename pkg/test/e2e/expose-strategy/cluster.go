@@ -104,6 +104,7 @@ func (c *ClusterJig) SetUp() error {
 		return errors.Wrap(err, "failed to create cluster")
 	}
 
+	oldCluster := c.Cluster.DeepCopy()
 	c.Cluster.Status = kubermaticv1.ClusterStatus{
 		NamespaceName:          fmt.Sprintf("cluster-%s", c.Name),
 		UserEmail:              "e2e@test.com",
@@ -120,7 +121,8 @@ func (c *ClusterJig) SetUp() error {
 			UserClusterControllerManager: kubermaticv1.HealthStatusProvisioning,
 		},
 	}
-	if err := c.Client.Status().Update(context.TODO(), c.Cluster); err != nil {
+
+	if err := c.Client.Status().Patch(context.TODO(), c.Cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 		return errors.Wrap(err, "failed to update cluster status")
 	}
 
