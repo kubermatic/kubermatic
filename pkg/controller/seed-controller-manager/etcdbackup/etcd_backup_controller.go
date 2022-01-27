@@ -414,7 +414,7 @@ func (r *Reconciler) ensurePendingBackupIsScheduled(ctx context.Context, backupC
 		backupConfig.Status.CurrentBackups = append(backupConfig.Status.CurrentBackups, kubermaticv1.BackupStatus{})
 		backupToSchedule = &backupConfig.Status.CurrentBackups[len(backupConfig.Status.CurrentBackups)-1]
 		backupToSchedule.ScheduledTime = &metav1.Time{Time: pendingBackupTime}
-		backupToSchedule.BackupName = fmt.Sprintf("%s-%s", backupConfig.Name, backupToSchedule.ScheduledTime.Format("2006-01-02t15-04-05"))
+		backupToSchedule.BackupName = fmt.Sprintf("%s-%s", backupConfig.Name, backupToSchedule.ScheduledTime.UTC().Format("2006-01-02t15-04-05"))
 		requeueAfter = nextBackupTime.Sub(now)
 	}
 
