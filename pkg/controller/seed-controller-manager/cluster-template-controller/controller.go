@@ -199,8 +199,9 @@ func (r *reconciler) createClusters(ctx context.Context, instance *kubermaticv1.
 				return fmt.Errorf("failed to create desired number of clusters. Created %d from %d", created, totalReplicas)
 			}
 
+			oldCluster := newCluster.DeepCopy()
 			newCluster.Status = *newStatus
-			if err := r.seedClient.Status().Update(ctx, newCluster); err != nil {
+			if err := r.seedClient.Status().Patch(ctx, newCluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 				return fmt.Errorf("failed to set cluster status: %w", err)
 			}
 

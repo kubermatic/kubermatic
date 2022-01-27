@@ -42,6 +42,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -172,6 +173,11 @@ func main() {
 	log.Infow("the API server listening", "listenAddress", options.listenAddress)
 
 	handler := handlers.CustomLoggingHandler(os.Stdout, apiHandler, func(writer io.Writer, params handlers.LogFormatterParams) {
+		// skip spamming the log with k8s health requests
+		if params.URL.Path == "/api/v1/healthz" {
+			return
+		}
+
 		log.
 			With("method", params.Request.Method).
 			With("uri", params.URL.Path).
@@ -216,7 +222,7 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 
 	// Make sure the manager creates a cache for Seeds by requesting an informer
 	if _, err := mgr.GetCache().GetInformer(ctx, &kubermaticv1.Seed{}); err != nil {
-		log.Fatalw("failed to get seed informer", zap.Error(err))
+		return providers{}, fmt.Errorf("failed to get seed informer: %w", err)
 	}
 	// mgr.Start() is blocking
 	go func() {
@@ -227,7 +233,7 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 	mgrSyncCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	if synced := mgr.GetCache().WaitForCacheSync(mgrSyncCtx); !synced {
-		log.Fatal("failed to sync mgr cache")
+		return providers{}, errors.New("failed to sync mgr cache")
 	}
 
 	seedClientGetter := provider.SeedClientGetterFactory(seedKubeconfigGetter)

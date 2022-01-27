@@ -95,11 +95,12 @@ func (p *ProjectProvider) New(users []*kubermaticv1.User, projectName string, la
 		return nil, err
 	}
 
+	oldProject := project.DeepCopy()
 	project.Status = kubermaticv1.ProjectStatus{
 		Phase: kubermaticv1.ProjectInactive,
 	}
 
-	if err := p.clientPrivileged.Status().Update(context.Background(), project); err != nil {
+	if err := p.clientPrivileged.Status().Patch(context.Background(), project, ctrlruntimeclient.MergeFrom(oldProject)); err != nil {
 		return nil, err
 	}
 

@@ -137,8 +137,9 @@ func (p *UserProvider) UpdateUser(user *kubermaticv1.User) (*kubermaticv1.User, 
 		return nil, err
 	}
 
+	oldUser := user.DeepCopy()
 	user.Status = *status
-	if err := p.runtimeClient.Status().Update(context.Background(), user); err != nil {
+	if err := p.runtimeClient.Status().Patch(context.Background(), user, ctrlruntimeclient.MergeFrom(oldUser)); err != nil {
 		return nil, err
 	}
 

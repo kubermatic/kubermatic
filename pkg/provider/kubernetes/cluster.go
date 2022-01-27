@@ -125,8 +125,9 @@ func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.
 	}
 
 	// regular users are not allowed to update the status subresource, so we use the admin client
+	oldNewCluster := newCluster.DeepCopy()
 	newCluster.Status = *newStatus
-	if err := p.client.Status().Update(context.Background(), newCluster); err != nil {
+	if err := p.client.Status().Patch(context.Background(), newCluster, ctrlruntimeclient.MergeFrom(oldNewCluster)); err != nil {
 		return nil, err
 	}
 	return newCluster, nil
@@ -152,8 +153,9 @@ func (p *ClusterProvider) NewUnsecured(project *kubermaticv1.Project, cluster *k
 		return nil, err
 	}
 
+	oldNewCluster := newCluster.DeepCopy()
 	newCluster.Status = *newStatus
-	if err := p.client.Status().Update(context.Background(), newCluster); err != nil {
+	if err := p.client.Status().Patch(context.Background(), newCluster, ctrlruntimeclient.MergeFrom(oldNewCluster)); err != nil {
 		return nil, err
 	}
 

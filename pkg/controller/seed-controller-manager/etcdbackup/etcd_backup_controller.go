@@ -334,6 +334,8 @@ func (r *Reconciler) ensurePendingBackupIsScheduled(ctx context.Context, backupC
 		return nil, nil
 	}
 
+	oldBackupConfig := backupConfig.DeepCopy()
+
 	if len(backupConfig.Status.CurrentBackups) > 2*backupConfig.GetKeptBackupsCount() {
 		// keeping track of many backups already, don't schedule new ones.
 		if r.setBackupConfigCondition(
@@ -343,7 +345,7 @@ func (r *Reconciler) ensurePendingBackupIsScheduled(ctx context.Context, backupC
 			"TooManyBackups",
 			"tracking too many backups; not scheduling new ones") {
 			// condition changed, need to persist and generate an event
-			if err := r.Status().Update(ctx, backupConfig); err != nil {
+			if err := r.Status().Patch(ctx, backupConfig, ctrlruntimeclient.MergeFrom(oldBackupConfig)); err != nil {
 				return nil, errors.Wrap(err, "failed to update backup config")
 			}
 			r.recorder.Event(backupConfig, corev1.EventTypeWarning, "TooManyBackups", "tracking too many backups; not scheduling new ones")
@@ -357,7 +359,7 @@ func (r *Reconciler) ensurePendingBackupIsScheduled(ctx context.Context, backupC
 		"",
 		"") {
 		// condition changed, need to persist and generate an event
-		if err := r.Status().Update(ctx, backupConfig); err != nil {
+		if err := r.Status().Patch(ctx, backupConfig, ctrlruntimeclient.MergeFrom(oldBackupConfig)); err != nil {
 			return nil, errors.Wrap(err, "failed to update backup config")
 		}
 		r.recorder.Event(backupConfig, corev1.EventTypeNormal, "NormalBackupCount", "backup count low enough; scheduling new backups")
@@ -425,8 +427,9 @@ func (r *Reconciler) ensurePendingBackupIsScheduled(ctx context.Context, backupC
 		return nil, errors.Wrap(err, "failed to update backup config")
 	}
 
+	oldBackupConfig = backupConfig.DeepCopy()
 	backupConfig.Status = *status
-	if err := r.Status().Update(ctx, backupConfig); err != nil {
+	if err := r.Status().Patch(ctx, backupConfig, ctrlruntimeclient.MergeFrom(oldBackupConfig)); err != nil {
 		return nil, errors.Wrap(err, "failed to update backup status")
 	}
 
@@ -517,8 +520,9 @@ func (r *Reconciler) startPendingBackupJobs(ctx context.Context, backupConfig *k
 		return nil, errors.Wrap(err, "failed to update backup config")
 	}
 
+	oldBackupConfig := backupConfig.DeepCopy()
 	backupConfig.Status = *status
-	if err := r.Status().Update(ctx, backupConfig); err != nil {
+	if err := r.Status().Patch(ctx, backupConfig, ctrlruntimeclient.MergeFrom(oldBackupConfig)); err != nil {
 		return nil, errors.Wrap(err, "failed to update backup status")
 	}
 
@@ -573,8 +577,9 @@ func (r *Reconciler) startPendingBackupDeleteJobs(ctx context.Context, backupCon
 			return nil, errors.Wrap(err, "failed to update backup config")
 		}
 
+		oldBackupConfig := backupConfig.DeepCopy()
 		backupConfig.Status = *status
-		if err := r.Status().Update(ctx, backupConfig); err != nil {
+		if err := r.Status().Patch(ctx, backupConfig, ctrlruntimeclient.MergeFrom(oldBackupConfig)); err != nil {
 			return nil, errors.Wrap(err, "failed to update backup status")
 		}
 
@@ -770,8 +775,9 @@ func (r *Reconciler) deleteFinishedBackupJobs(ctx context.Context, backupConfig 
 			return nil, errors.Wrap(err, "failed to update backup config")
 		}
 
+		oldBackupConfig := backupConfig.DeepCopy()
 		backupConfig.Status = *status
-		if err := r.Status().Update(ctx, backupConfig); err != nil {
+		if err := r.Status().Patch(ctx, backupConfig, ctrlruntimeclient.MergeFrom(oldBackupConfig)); err != nil {
 			return nil, errors.Wrap(err, "failed to update backup status")
 		}
 	}
@@ -844,8 +850,9 @@ func (r *Reconciler) handleFinalization(ctx context.Context, backupConfig *kuber
 		return nil, errors.Wrap(err, "failed to update backup config")
 	}
 
+	oldBackupConfig := backupConfig.DeepCopy()
 	backupConfig.Status = *status
-	if err := r.Status().Update(ctx, backupConfig); err != nil {
+	if err := r.Status().Patch(ctx, backupConfig, ctrlruntimeclient.MergeFrom(oldBackupConfig)); err != nil {
 		return nil, errors.Wrap(err, "failed to update backup status")
 	}
 
