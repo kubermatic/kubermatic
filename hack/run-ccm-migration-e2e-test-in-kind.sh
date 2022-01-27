@@ -290,6 +290,7 @@ if [ -x "$(command -v ginkgo)" ]; then
     --trace \
     --race \
     --progress \
+    -v \
     -- --kubeconfig "${HOME}/.kube/config" \
     --kubernetes-version "${USER_CLUSTER_KUBERNETES_VERSION}" \
     --debug-log \
@@ -301,6 +302,7 @@ else
     --ginkgo.failOnPending \
     --ginkgo.trace \
     --ginkgo.progress \
+    --ginkgo.v \
     --kubeconfig "${HOME}/.kube/config" \
     --kubernetes-version "${USER_CLUSTER_KUBERNETES_VERSION}" \
     --debug-log \
