@@ -108,7 +108,7 @@ func ClusterRole() reconciling.NamedClusterRoleCreatorGetter {
 			r.Rules = []rbacv1.PolicyRule{
 				{
 					APIGroups: []string{"kubermatic.k8c.io"},
-					Resources: []string{"clusters"},
+					Resources: []string{"clusters", "clusters/status"},
 					Verbs: []string{
 						"get",
 						"list",
