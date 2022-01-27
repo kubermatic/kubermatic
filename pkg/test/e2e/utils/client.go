@@ -1751,7 +1751,6 @@ func (r *TestClient) CreateClusterTemplate(projectID, name, scope, credential, v
 				},
 			},
 			NodeDeployment: nil,
-			UserSSHKeys:    []*models.ClusterTemplateSSHKey{},
 		},
 		ProjectID: projectID,
 	}

@@ -1719,7 +1719,6 @@ spec:
             type: array
         required:
         - credential
-        - userSSHKeys
         type: object
     served: true
     storage: true
