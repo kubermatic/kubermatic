@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package konnectivity_test
+package cilium_test
 
 import (
 	"bytes"
@@ -25,14 +25,13 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 	"testing"
 	"time"
 
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -45,7 +44,6 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/kubectl/pkg/cmd/cp"
-	metrics "k8s.io/metrics/pkg/client/clientset/versioned"
 	"k8s.io/utils/pointer"
 )
 
@@ -59,8 +57,8 @@ var (
 const (
 	tailLines       = 5
 	seed            = "kubermatic"
-	projectName     = "konne-test-project"
-	userclusterName = "konne-test-usercluster"
+	projectName     = "cilium-test-project"
+	userclusterName = "cilium-test-usercluster"
 	alpineSleeper   = "alpine-sleeper"
 )
 
@@ -69,7 +67,7 @@ func init() {
 	flag.StringVar(&userconfig, "userconfig", "", "path to kubeconfig of usercluster")
 }
 
-func TestKonnectivity(t *testing.T) {
+func TestCilium(t *testing.T) {
 	var cleanup func()
 	var err error
 	var clusterID string
@@ -101,6 +99,8 @@ func TestKonnectivity(t *testing.T) {
 		clusterID = config.Contexts[config.CurrentContext].Cluster
 	}
 
+	_ = clusterID
+
 	config, err := clientcmd.BuildConfigFromFlags("", userconfig)
 	if err != nil {
 		t.Fatalf("failed to build config: %s", err)
@@ -109,11 +109,6 @@ func TestKonnectivity(t *testing.T) {
 	userClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		t.Fatalf("failed to create client: %s", err)
-	}
-
-	metricsClient, err := metrics.NewForConfig(config)
-	if err != nil {
-		t.Fatalf("failed to create metrics client: %s", err)
 	}
 
 	ctx := context.Background()
@@ -126,8 +121,8 @@ func TestKonnectivity(t *testing.T) {
 				t.Logf("failed to get nodes list: %s", err)
 				return false, nil
 			}
-			if len(nodes.Items) != 1 {
-				t.Logf(fmt.Sprintf("node count: %d", len(nodes.Items)))
+			if len(nodes.Items) != 2 {
+				t.Logf("node count: %d", len(nodes.Items))
 				return false, nil
 			}
 
@@ -145,90 +140,14 @@ func TestKonnectivity(t *testing.T) {
 		}
 	}
 
-	t.Logf("checking if apiserver has konnectivity-proxy in sidecar")
-	{
-		config, err := clientcmd.BuildConfigFromFlags("", seedconfig)
-		if err != nil {
-			t.Fatal("failed to build config", err)
-		}
-
-		seedClient, err := kubernetes.NewForConfig(config)
-		if err != nil {
-			t.Fatal("failed to build kubeclient", err)
-		}
-
-		ns := "cluster-" + clusterID
-
-		pods, err := seedClient.CoreV1().Pods(ns).List(context.Background(), metav1.ListOptions{})
-		if err != nil {
-			log.Println("failed to list pods", ns, err)
-		}
-
-		var apiserverPod corev1.Pod
-		for _, p := range pods.Items {
-			if strings.HasPrefix(p.Name, "apiserver") {
-				apiserverPod = p
-				break
-			}
-		}
-
-		found := false
-		for _, c := range apiserverPod.Spec.Containers {
-			if c.Name == resources.KonnectivityServerContainer {
-				found = true
-				break
-			}
-		}
-
-		if !found {
-			t.Fatalf("no konnectivity-proxy container was found in apiserver sidecar")
-		}
-	}
-
-	t.Logf("creating alpine-sleeper pod for testing cp")
-	{
-		_, err = userClient.CoreV1().Pods("kube-system").Create(context.Background(), &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      alpineSleeper,
-				Namespace: "kube-system",
-			},
-			Spec: corev1.PodSpec{
-				Containers: []corev1.Container{
-					{
-						Image: "alpine:latest",
-						Name:  alpineSleeper,
-						Command: []string{
-							"/bin/sh", "-c", "--",
-						},
-						Args: []string{
-							"sleep 1001d",
-						},
-					},
-				},
-			},
-		}, metav1.CreateOptions{})
-		if err != nil {
-			t.Fatalf("failed to create alpine-sleeper pod")
-		}
-
-		defer func() {
-			t.Logf("deleting alpine-sleeper pod")
-			err := userClient.CoreV1().Pods("kube-system").Delete(context.Background(), alpineSleeper, metav1.DeleteOptions{})
-			if err != nil {
-				t.Fatalf("failed to delete alpine-sleeper pod")
-			}
-		}()
-	}
-
 	t.Logf("waiting for pods to get ready")
 	{
 		err := wait.Poll(30*time.Second, 30*time.Minute, func() (bool, error) {
 			t.Logf("checking pod readiness...")
 
 			for _, prefix := range []string{
-				"konnectivity-agent",
-				"metrics-server",
-				alpineSleeper,
+				"cilium-operator",
+				"cilium",
 			} {
 				pods, err := getPods(ctx, userClient, prefix)
 				if err != nil {
@@ -262,92 +181,6 @@ func TestKonnectivity(t *testing.T) {
 		}
 	}
 
-	t.Log("check if konnectivity-agents are deployed")
-	{
-		pods, err := getPods(ctx, userClient, "konnectivity-agent")
-		if err != nil {
-			t.Errorf("failed to get konnectivity-agent pods: %s", err)
-		}
-
-		if len(pods) != 2 {
-			t.Errorf("expected 2 konnectivity-agent pods got: %d", len(pods))
-		}
-	}
-
-	t.Log("check if we can get logs from pods")
-	{
-		pods, err := getPods(ctx, userClient, "metrics-server")
-		if err != nil {
-			t.Errorf("failed to get metrics-server pods: %s", err)
-		}
-
-		if len(pods) != 2 {
-			t.Errorf("expected 2 metrics-server pods got: %d", len(pods))
-		}
-
-		for _, pod := range pods {
-			lines := strings.TrimSpace(getPodLogs(ctx, userClient, pod))
-			if n := len(strings.Split(lines, "\n")); n != tailLines {
-				t.Fatalf("expected 5 lines got: %d", n)
-			}
-		}
-	}
-
-	t.Log("check if it is possible to copy")
-	{
-		pods, err := getPods(ctx, userClient, alpineSleeper)
-		if err != nil {
-			t.Fatalf("failed to get alpine-sleeper pods: %s", err)
-		}
-
-		if len(pods) == 0 {
-			t.Fatalf("no envoy-agent pods")
-		}
-
-		podExec := NewPodExec(*config, userClient)
-		err = podExec.PodCopyFile(
-			"./testdata/copyMe.txt",
-			fmt.Sprintf("%s/%s:/", "kube-system", pods[0].Name),
-			alpineSleeper,
-		)
-
-		if err != nil {
-			t.Fatalf("failed to copy: %s", err)
-		}
-	}
-
-	t.Log("check if it is possible to get metrics")
-	{
-		err := wait.Poll(30*time.Second, 10*time.Minute, func() (bool, error) {
-			// TODO: check if metrics have sane values.
-			nodeMetrics, err := metricsClient.MetricsV1beta1().NodeMetricses().List(ctx, metav1.ListOptions{})
-			if err != nil {
-				t.Logf("failed to get node metrics: %s", err)
-				return false, nil
-			}
-
-			if len(nodeMetrics.Items) == 0 {
-				t.Logf("no node metrics")
-				return false, nil
-			}
-
-			podMetrics, err := metricsClient.MetricsV1beta1().PodMetricses(metav1.NamespaceAll).List(ctx, metav1.ListOptions{})
-			if err != nil {
-				t.Logf("failed to get pod metrics: %s", err)
-				return false, nil
-			}
-
-			if len(podMetrics.Items) == 0 {
-				t.Logf("no pod metrics")
-				return false, nil
-			}
-
-			return true, nil
-		})
-		if err != nil {
-			t.Fatalf("failed to get metrics: %v", err)
-		}
-	}
 }
 
 func getPods(ctx context.Context, kubeclient *kubernetes.Clientset, prefix string) ([]corev1.Pod, error) {
@@ -448,7 +281,10 @@ func createUsercluster(t *testing.T) (string, string, func(), error) {
 	// create a usercluster on aws
 	cluster, err := apicli.CreateAWSCluster(project.ID, seed, userclusterName,
 		secretAccessKey, accessKeyID, utils.KubernetesVersion(),
-		"aws-eu-central-1a", "eu-central-1a", 1, true, nil)
+		"aws-eu-central-1a", "eu-central-1a", 1, true, &models.CNIPluginSettings{
+			Version: "v1.11",
+			Type:    "cilium",
+		})
 	if err != nil {
 		return "", "", nil, err
 	}
