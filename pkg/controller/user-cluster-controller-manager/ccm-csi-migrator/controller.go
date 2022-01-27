@@ -144,7 +144,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, oldC
 	// if the cluster condition status has changed, update it accordingly
 	newCluster := oldCluster.DeepCopy()
 	if toPatch := r.ensureMigrationConditionStatus(migrated, newCluster); toPatch {
-		if err := r.seedClient.Patch(ctx, newCluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+		if err := r.seedClient.Status().Patch(ctx, newCluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 			return fmt.Errorf("failed to update cluster: %w", err)
 		}
 	}
