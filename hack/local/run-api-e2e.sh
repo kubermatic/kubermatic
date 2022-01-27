@@ -54,7 +54,7 @@ OS_PASSWORD="${OS_PASSWORD:-$(vault kv get -field=password dev/e2e-openstack)}"
 OS_TENANT_NAME="${OS_TENANT_NAME:-$(vault kv get -field=tenant dev/e2e-openstack)}"
 OS_DOMAIN="${OS_DOMAIN:-$(vault kv get -field=domain dev/e2e-openstack)}"
 
-export KUBECONFIG=~/.kube/config
+export KUBECONFIG=${KUBECONFIG:-~/.kube/config}
 
 TMP=$(mktemp -d)
 
@@ -160,35 +160,36 @@ spec:
 EOF
 retry 2 kubectl apply -f "$TMP"/preset-kubevirt.yaml
 
-echodate "Installing KubeVirt"
-kubectl apply -f https://github.com/kubevirt/kubevirt/releases/download/v0.45.0/kubevirt-operator.yaml
-kubectl apply -f https://github.com/kubevirt/kubevirt/releases/download/v0.45.0/kubevirt-cr.yaml
-kubectl apply -f https://github.com/kubevirt/containerized-data-importer/releases/download/v1.40.0/cdi-operator.yaml
-kubectl apply -f https://github.com/kubevirt/containerized-data-importer/releases/download/v1.40.0/cdi-cr.yaml
-echodate "Waiting for load balancer to be ready..."
-retry 10 check_all_deployments_ready kubevirt
-echodate "KubeVirt is ready."
+# echodate "Installing KubeVirt"
+# kubectl apply -f https://github.com/kubevirt/kubevirt/releases/download/v0.45.0/kubevirt-operator.yaml
+# kubectl apply -f https://github.com/kubevirt/kubevirt/releases/download/v0.45.0/kubevirt-cr.yaml
+# kubectl apply -f https://github.com/kubevirt/containerized-data-importer/releases/download/v1.40.0/cdi-operator.yaml
+# kubectl apply -f https://github.com/kubevirt/containerized-data-importer/releases/download/v1.40.0/cdi-cr.yaml
+# echodate "Waiting for load balancer to be ready..."
+# retry 10 check_all_deployments_ready kubevirt
+# echodate "KubeVirt is ready."
 
-echodate "Installing local repo for VMs"
-retry 2 kubectl apply -f "$DATA_FILE"/vm-repo.yaml
-retry 8 check_all_deployments_ready default
+# echodate "Installing local repo for VMs"
+# retry 2 kubectl apply -f "$DATA_FILE"/vm-repo.yaml
+# retry 8 check_all_deployments_ready default
 
-if [ ! -f "$VM_IMAGE_PATH"/"$VM_NAME" ]; then
-  echodate "Getting $VM_NAME image"
-  curl http://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2 -o "$VM_IMAGE_PATH"/"$VM_NAME"
-fi
+# if [ ! -f "$VM_IMAGE_PATH"/"$VM_NAME" ]; then
+#   echodate "Getting $VM_NAME image"
+#   curl http://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2 -o "$VM_IMAGE_PATH"/"$VM_NAME"
+# fi
 
-VM_POD=$(kubectl get pod -l app=vm-repo --output=jsonpath={.items..metadata.name})
-retry 2 kubectl cp "$VM_IMAGE_PATH"/"$VM_NAME" "$VM_POD":/usr/share/nginx/html
+# VM_POD=$(kubectl get pod -l app=vm-repo --output=jsonpath={.items..metadata.name})
+# retry 2 kubectl cp "$VM_IMAGE_PATH"/"$VM_NAME" "$VM_POD":/usr/share/nginx/html
 
-if [ -z $(kubectl get service vm-repo -o=name --ignore-not-found) ]; then
-  echodate "Creating vm-repo service"
-  retry 2 kubectl expose deployment vm-repo
-fi
+# if [ -z $(kubectl get service vm-repo -o=name --ignore-not-found) ]; then
+#   echodate "Creating vm-repo service"
+#   retry 2 kubectl expose deployment vm-repo
+# fi
 
 echodate "Running API E2E tests..."
-go test -tags="kubevirt" -timeout 20m ./pkg/test/e2e/api -v
+go test -tags="create,$KUBERMATIC_EDITION" -timeout 20m ./pkg/test/e2e/api -v
 go test -tags="e2e,$KUBERMATIC_EDITION" -timeout 20m ./pkg/test/e2e/api -v
 go test -tags="logout,$KUBERMATIC_EDITION" -timeout 20m ./pkg/test/e2e/api -v
-go clean -testcache
+# go test -tags="kubevirt" -timeout 20m ./pkg/test/e2e/api -v
+# go clean -testcache
 echodate "Tests completed successfully!"

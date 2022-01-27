@@ -26,7 +26,7 @@ export KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kubermatic}"
 export KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ce}"
 export SERVICE_ACCOUNT_KEY="${SERVICE_ACCOUNT_KEY:-69860bda5563ac81e3c0057d654b52532}"
 export BUILD_ID="${BUILD_ID:-abc}"
-export KUBECONFIG=~/.kube/config
+export KUBECONFIG=${KUBECONFIG:-~/.kube/config}
 export SEED_NAME=kubermatic
 export DATA_FILE=$(realpath hack/local/data)
 
@@ -68,7 +68,7 @@ docker save -o _build/"$KINDEST_FILENAME" "$NODE_IMAGE"
 if [ "${OS}" != "darwin" ]; then
   # no iptables on mac so ...
   echodate "Setting iptables rule to clamp mss to path mtu"
-  sudo iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+  #sudo iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
 fi
 
 docker load --input _build/kindest.tar
@@ -111,7 +111,7 @@ if [ "${OS}" == "darwin" ]; then
   export GOOS=linux
 fi
 
-time retry 1 make build
+time retry 1 make clean build
 pushElapsed kubermatic_go_build_duration_milliseconds $beforeGoBuild
 
 if [ "${OS}" == "darwin" ]; then

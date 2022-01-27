@@ -40,13 +40,16 @@ limitations under the License.
 package main
 
 import (
+	"bytes"
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"time"
 
+	"github.com/go-logr/zapr"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	gatekeeperconfigv1alpha1 "github.com/open-policy-agent/gatekeeper/apis/config/v1alpha1"
@@ -82,6 +85,7 @@ import (
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -107,29 +111,32 @@ func main() {
 	}()
 	kubermaticlog.Logger = log
 
+	// Set the logger used by sigs.k8s.io/controller-runtime
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog))
+
 	ctx := context.Background()
 	cli.Hello(log, "API", options.log.Debug, &options.versions)
 
 	if err := clusterv1alpha1.AddToScheme(scheme.Scheme); err != nil {
-		kubermaticlog.Logger.Fatalw("failed to register scheme", zap.Stringer("api", clusterv1alpha1.SchemeGroupVersion), zap.Error(err))
+		log.Fatalw("failed to register scheme", zap.Stringer("api", clusterv1alpha1.SchemeGroupVersion), zap.Error(err))
 	}
 	if err := v1beta1.AddToScheme(scheme.Scheme); err != nil {
-		kubermaticlog.Logger.Fatalw("failed to register scheme", zap.Stringer("api", v1beta1.SchemeGroupVersion), zap.Error(err))
+		log.Fatalw("failed to register scheme", zap.Stringer("api", v1beta1.SchemeGroupVersion), zap.Error(err))
 	}
 	if err := gatekeeperconfigv1alpha1.AddToScheme(scheme.Scheme); err != nil {
-		kubermaticlog.Logger.Fatalw("failed to register scheme", zap.Stringer("api", gatekeeperconfigv1alpha1.GroupVersion), zap.Error(err))
+		log.Fatalw("failed to register scheme", zap.Stringer("api", gatekeeperconfigv1alpha1.GroupVersion), zap.Error(err))
 	}
 
 	masterCfg, err := ctrlruntime.GetConfig()
 	if err != nil {
-		kubermaticlog.Logger.Fatalw("unable to build client configuration from kubeconfig: %v", err)
+		log.Fatalw("unable to build client configuration from kubeconfig", zap.Error(err))
 	}
 
 	// We use the manager only to get a lister-backed ctrlruntimeclient.Client. We can not use it for most
 	// other actions, because it doesn't support impersonation (and can't be changed to do that as that would mean it has to replicate the apiservers RBAC for the lister)
 	mgr, err := manager.New(masterCfg, manager.Options{MetricsBindAddress: "0"})
 	if err != nil {
-		kubermaticlog.Logger.Fatalw("failed to construct manager: %w", err)
+		log.Fatalw("failed to construct manager: %w", err)
 	}
 	if err := mgr.GetFieldIndexer().IndexField(ctx, &corev1.Event{}, "involvedObject.name", func(rawObj ctrlruntimeclient.Object) []string {
 		event := rawObj.(*corev1.Event)
@@ -150,7 +157,7 @@ func main() {
 	if err != nil {
 		log.Fatalw("failed to create auth clients", zap.Error(err))
 	}
-	apiHandler, err := createAPIHandler(options, providers, oidcIssuerVerifier, tokenVerifiers, tokenExtractors, mgr)
+	apiHandler, err := createAPIHandler(options, providers, oidcIssuerVerifier, tokenVerifiers, tokenExtractors, mgr, log)
 	if err != nil {
 		log.Fatalw("failed to create API Handler", zap.Error(err))
 	}
@@ -163,7 +170,20 @@ func main() {
 
 	go metricspkg.ServeForever(options.internalAddr, "/metrics")
 	log.Infow("the API server listening", "listenAddress", options.listenAddress)
-	log.Fatalw("failed to start API server", "error", http.ListenAndServe(options.listenAddress, handlers.CombinedLoggingHandler(os.Stdout, apiHandler)))
+
+	handler := handlers.CustomLoggingHandler(os.Stdout, apiHandler, func(writer io.Writer, params handlers.LogFormatterParams) {
+		log.
+			With("method", params.Request.Method).
+			With("uri", params.URL.Path).
+			With("status", params.StatusCode).
+			With("size", params.Size).
+			With("userAgent", params.Request.Header.Get("User-Agent")).
+			Debugw("request received")
+	})
+
+	if err := http.ListenAndServe(options.listenAddress, handler); err != nil {
+		log.Fatalw("failed to start API server", zap.Error(err))
+	}
 }
 
 func createInitProviders(ctx context.Context, options serverRunOptions, masterCfg *rest.Config, mgr manager.Manager, log *zap.SugaredLogger) (providers, error) {
@@ -196,18 +216,18 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 
 	// Make sure the manager creates a cache for Seeds by requesting an informer
 	if _, err := mgr.GetCache().GetInformer(ctx, &kubermaticv1.Seed{}); err != nil {
-		kubermaticlog.Logger.Fatalw("failed to get seed informer", zap.Error(err))
+		log.Fatalw("failed to get seed informer", zap.Error(err))
 	}
 	// mgr.Start() is blocking
 	go func() {
 		if err := mgr.Start(ctx); err != nil {
-			kubermaticlog.Logger.Fatalw("failed to start the mgr", zap.Error(err))
+			log.Fatalw("failed to start the mgr", zap.Error(err))
 		}
 	}()
 	mgrSyncCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	if synced := mgr.GetCache().WaitForCacheSync(mgrSyncCtx); !synced {
-		kubermaticlog.Logger.Fatal("failed to sync mgr cache")
+		log.Fatal("failed to sync mgr cache")
 	}
 
 	seedClientGetter := provider.SeedClientGetterFactory(seedKubeconfigGetter)
@@ -222,12 +242,12 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 	go func() {
 		seeds, err := seedsGetter()
 		if err != nil {
-			kubermaticlog.Logger.Infow("failed to get seeds when trying to warm up restMapper cache", zap.Error(err))
+			log.Infow("failed to get seeds when trying to warm up restMapper cache", zap.Error(err))
 			return
 		}
 		for _, seed := range seeds {
 			if _, err := clusterProviderGetter(seed); err != nil {
-				kubermaticlog.Logger.Infow("failed to get clusterProvider when trying to warm up restMapper cache", zap.Error(err), "seed", seed.Name)
+				log.Infow("failed to get clusterProvider when trying to warm up restMapper cache", zap.Error(err), "seed", seed.Name)
 			}
 		}
 	}()
@@ -436,7 +456,7 @@ func createAuthClients(options serverRunOptions, prov providers) (auth.TokenVeri
 }
 
 func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifier auth.OIDCIssuerVerifier, tokenVerifiers auth.TokenVerifier,
-	tokenExtractors auth.TokenExtractor, mgr manager.Manager) (http.HandlerFunc, error) {
+	tokenExtractors auth.TokenExtractor, mgr manager.Manager, log *zap.SugaredLogger) (http.HandlerFunc, error) {
 	var prometheusClient prometheusapi.Client
 	if options.featureGates.Enabled(features.PrometheusEndpoint) {
 		var err error
@@ -518,6 +538,18 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 
 	mainRouter := mux.NewRouter()
 	mainRouter.Use(setSecureHeaders)
+
+	if options.log.Debug {
+		mainRouter.Use(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				dummyWriter := newResponseLogger(w)
+				next.ServeHTTP(dummyWriter, r)
+
+				log.Debugw("response", "body", dummyWriter.buf.String(), "status", dummyWriter.statusCode)
+			})
+		})
+	}
+
 	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()
 	v2Router := mainRouter.PathPrefix("/api/v2").Subrouter()
 	r.RegisterV1(v1Router, metrics)
@@ -631,4 +663,32 @@ func clusterProviderFactory(mapper meta.RESTMapper, seedKubeconfigGetter provide
 			seed.Name,
 		), nil
 	}
+}
+
+type responseLogger struct {
+	buf            bytes.Buffer
+	statusCode     int
+	ResponseWriter http.ResponseWriter
+}
+
+var _ http.ResponseWriter = &responseLogger{}
+
+func newResponseLogger(upstream http.ResponseWriter) *responseLogger {
+	return &responseLogger{
+		ResponseWriter: upstream,
+	}
+}
+
+func (rl *responseLogger) Header() http.Header {
+	return rl.ResponseWriter.Header()
+}
+
+func (rl *responseLogger) Write(data []byte) (int, error) {
+	rl.buf.Write(data)
+	return rl.ResponseWriter.Write(data)
+}
+
+func (rl *responseLogger) WriteHeader(statusCode int) {
+	rl.statusCode = statusCode
+	rl.ResponseWriter.WriteHeader(statusCode)
 }
