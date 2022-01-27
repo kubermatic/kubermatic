@@ -240,6 +240,7 @@ if type ginkgo > /dev/null; then
     --trace \
     --race \
     --progress \
+    -v \
     -- --kubeconfig "${HOME}/.kube/config" \
     -- --kubeconfig "${HOME}/.kube/config" \
     --kubernetes-version "${USER_CLUSTER_KUBERNETES_VERSION}" \
@@ -251,6 +252,7 @@ else
     --ginkgo.failOnPending \
     --ginkgo.trace \
     --ginkgo.progress \
+    --ginkgo.v \
     --kubeconfig "${HOME}/.kube/config" \
     --kubernetes-version "${USER_CLUSTER_KUBERNETES_VERSION}" \
     --datacenter byo-kubernetes \
