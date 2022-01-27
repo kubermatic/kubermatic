@@ -52,7 +52,7 @@ func (c *projectController) sync(ctx context.Context, key ctrlruntimeclient.Obje
 
 	project := originalProject.DeepCopy()
 
-	if c.shouldDeleteProject(project) {
+	if project.DeletionTimestamp != nil {
 		if err := c.ensureProjectCleanup(ctx, project); err != nil {
 			return fmt.Errorf("failed to cleanup project: %w", err)
 		}
@@ -628,10 +628,6 @@ func cleanUpRBACRoleBindingFor(ctx context.Context, c ctrlruntimeclient.Client, 
 	existingRoleBinding := sharedExistingRoleBinding.DeepCopy()
 	existingRoleBinding.Subjects = updatedListOfSubjectes
 	return c.Update(ctx, existingRoleBinding)
-}
-
-func (c *projectController) shouldDeleteProject(project *kubermaticv1.Project) bool {
-	return project.DeletionTimestamp != nil && sets.NewString(project.Finalizers...).Has(CleanupFinalizerName)
 }
 
 // for some groups we actually don't create ClusterRole
