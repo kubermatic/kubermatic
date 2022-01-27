@@ -56,7 +56,7 @@ type ClusterTemplate struct {
 	ClusterLabels          map[string]string       `json:"clusterLabels,omitempty"`
 	InheritedClusterLabels map[string]string       `json:"inheritedClusterLabels,omitempty"`
 	Credential             string                  `json:"credential"`
-	UserSSHKeys            []ClusterTemplateSSHKey `json:"userSSHKeys"`
+	UserSSHKeys            []ClusterTemplateSSHKey `json:"userSSHKeys,omitempty"`
 	Spec                   ClusterSpec             `json:"spec,omitempty"`
 }
 
