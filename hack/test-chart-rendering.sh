@@ -50,6 +50,7 @@ for valuesFile in test/*.yaml; do
 
   if ! git diff --quiet ${valuesFile}.out || [[ $helmOut -ne 0 ]]; then
     exitCode=1
+    git --no-pager diff ${valuesFile}.out
     echodate "  FAIL"
   else
     echodate "  PASS"
