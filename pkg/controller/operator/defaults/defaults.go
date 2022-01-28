@@ -212,9 +212,10 @@ var (
 		Updates: []kubermaticv1.Update{
 			// ======= 1.19 =======
 			{
-				// Auto-upgrade unsupported clusters
+				// Auto-upgrade unsupported clusters.
+				// 'To' must not be a constraint, it has to be a specific version.
 				From:      "1.19.*",
-				To:        "1.20.*",
+				To:        "1.20.13",
 				Automatic: pointer.BoolPtr(true),
 			},
 
