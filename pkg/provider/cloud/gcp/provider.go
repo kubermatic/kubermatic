@@ -70,7 +70,7 @@ func (g *gcp) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update prov
 	return g.reconcileCluster(cluster, update, false, true)
 }
 
-// ReconcileCluster enforces the existence of the needed resources in the cloud provider
+// ReconcileCluster enforces the existence of the needed resources in the cloud provider.
 func (g *gcp) ReconcileCluster(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	return g.reconcileCluster(cluster, update, true, true)
 }
