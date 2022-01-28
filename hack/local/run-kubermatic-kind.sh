@@ -68,7 +68,7 @@ docker save -o _build/"$KINDEST_FILENAME" "$NODE_IMAGE"
 if [ "${OS}" != "darwin" ]; then
   # no iptables on mac so ...
   echodate "Setting iptables rule to clamp mss to path mtu"
-  #sudo iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+  sudo iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
 fi
 
 docker load --input _build/kindest.tar

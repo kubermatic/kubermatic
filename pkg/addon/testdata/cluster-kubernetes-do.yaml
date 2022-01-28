@@ -68,62 +68,62 @@ spec:
 status:
   cloudMigrationRevision: 2
   conditions:
-  - kubermatic_version: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
+  - kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
     lastHeartbeatTime: "2020-04-01T18:20:38Z"
     lastTransitionTime: "2020-04-01T18:20:38Z"
     status: "True"
     type: AddonControllerReconciledSuccessfully
-  - kubermatic_version: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
+  - kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
     lastHeartbeatTime: "2020-04-01T21:49:56Z"
     lastTransitionTime: "2020-04-01T21:49:56Z"
     status: "True"
     type: AddonInstallerControllerReconciledSuccessfully
-  - kubermatic_version: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
+  - kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
     lastHeartbeatTime: "2020-04-01T09:58:25Z"
     status: "True"
     type: BackupControllerReconciledSuccessfully
-  - kubermatic_version: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
+  - kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
     lastHeartbeatTime: "2020-04-01T09:58:08Z"
     status: "True"
     type: CloudControllerReconcilledSuccessfully
-  - kubermatic_version: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
+  - kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
     lastHeartbeatTime: "2020-04-01T09:58:25Z"
     status: "True"
     type: ClusterControllerReconciledSuccessfully
-  - kubermatic_version: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
+  - kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
     lastHeartbeatTime: "2020-04-01T09:59:42Z"
     message: Cluster has been initialized successfully
     status: "True"
     type: ClusterInitialized
-  - kubermatic_version: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
+  - kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
     lastHeartbeatTime: "2020-04-01T09:58:26Z"
     status: "True"
     type: ComponentDefaulterReconciledSuccessfully
-  - kubermatic_version: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
+  - kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
     lastHeartbeatTime: "2020-04-01T09:59:30Z"
     status: "True"
     type: MonitoringControllerReconciledSuccessfully
-  - kubermatic_version: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
+  - kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
     lastHeartbeatTime: "2020-04-01T23:28:12Z"
     lastTransitionTime: "2020-04-01T23:28:12Z"
     message: Some control plane components did not finish updating
     reason: ClusterUpdateSuccessful
     status: "False"
     type: SeedResourcesUpToDate
-  - kubermatic_version: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
+  - kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
     lastHeartbeatTime: "2020-04-01T09:58:27Z"
     status: "True"
     type: UpdateControllerReconciledSuccessfully
   extendedHealth:
-    apiserver: down
-    cloudProviderInfrastructure: down
-    controller: down
-    etcd: up
-    machineController: down
-    openvpn: down
-    scheduler: down
-    userClusterControllerManager: down
-  kubermatic_version: 1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
+    apiserver: HealthStatusDown
+    cloudProviderInfrastructure: HealthStatusDown
+    controller: HealthStatusDown
+    etcd: HealthStatusUp
+    machineController: HealthStatusDown
+    openvpn: HealthStatusDown
+    scheduler: HealthStatusDown
+    userClusterControllerManager: HealthStatusDown
+  kubermaticVersion: 1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
   lastUpdated: null
   namespaceName: cluster-nmxjm7ngzw
   userEmail: user@example.com

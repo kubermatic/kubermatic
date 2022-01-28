@@ -79,64 +79,64 @@ spec:
 status:
   cloudMigrationRevision: 2
   conditions:
-  - kubermatic_version: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
+  - kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
     lastHeartbeatTime: "2020-04-01T23:14:26Z"
     lastTransitionTime: "2020-04-01T23:14:26Z"
     status: "True"
     type: AddonControllerReconciledSuccessfully
-  - kubermatic_version: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
+  - kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
     lastHeartbeatTime: "2020-04-01T23:19:25Z"
     lastTransitionTime: "2020-04-01T23:19:25Z"
     status: "True"
     type: AddonInstallerControllerReconciledSuccessfully
-  - kubermatic_version: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
+  - kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
     lastHeartbeatTime: "2020-04-01T23:13:34Z"
     status: "True"
     type: BackupControllerReconciledSuccessfully
-  - kubermatic_version: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
+  - kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
     lastHeartbeatTime: "2020-04-01T23:13:48Z"
     status: "True"
     type: CloudControllerReconcilledSuccessfully
-  - kubermatic_version: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
+  - kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
     lastHeartbeatTime: "2020-04-01T23:14:20Z"
     lastTransitionTime: "2020-04-01T23:14:20Z"
     status: "True"
     type: ClusterControllerReconciledSuccessfully
-  - kubermatic_version: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
+  - kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
     lastHeartbeatTime: "2020-04-01T23:14:49Z"
     message: Cluster has been initialized successfully
     status: "True"
     type: ClusterInitialized
-  - kubermatic_version: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
+  - kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
     lastHeartbeatTime: "2020-04-01T23:14:20Z"
     status: "True"
     type: ComponentDefaulterReconciledSuccessfully
-  - kubermatic_version: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
+  - kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
     lastHeartbeatTime: "2020-04-01T23:14:34Z"
     status: "True"
     type: MonitoringControllerReconciledSuccessfully
-  - kubermatic_version: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
+  - kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
     lastHeartbeatTime: "2020-04-01T23:28:13Z"
     lastTransitionTime: "2020-04-01T23:28:13Z"
     message: Some control plane components did not finish updating
     reason: ClusterUpdateSuccessful
     status: "False"
     type: SeedResourcesUpToDate
-  - kubermatic_version: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
+  - kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
     lastHeartbeatTime: "2020-04-01T23:19:14Z"
     lastTransitionTime: "2020-04-01T23:19:14Z"
     status: "True"
     type: UpdateControllerReconciledSuccessfully
   extendedHealth:
-    apiserver: down
-    cloudProviderInfrastructure: down
-    controller: down
-    etcd: up
-    machineController: down
-    openvpn: down
-    scheduler: down
-    userClusterControllerManager: down
-  kubermatic_version: 1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
+    apiserver: HealthStatusDown
+    cloudProviderInfrastructure: HealthStatusDown
+    controller: HealthStatusDown
+    etcd: HealthStatusUp
+    machineController: HealthStatusDown
+    openvpn: HealthStatusDown
+    scheduler: HealthStatusDown
+    userClusterControllerManager: HealthStatusDown
+  kubermaticVersion: 1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
   lastUpdated: null
   namespaceName: cluster-bbc8sc24wb
   userEmail: user@example.com
