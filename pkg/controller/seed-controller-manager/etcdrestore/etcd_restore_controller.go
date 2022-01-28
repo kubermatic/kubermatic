@@ -332,18 +332,20 @@ func (r *Reconciler) updateCluster(ctx context.Context, cluster *kubermaticv1.Cl
 		return nil
 	}
 
-	patch := ctrlruntimeclient.MergeFrom(oldCluster)
-
 	// make sure the first patch doesn't override the status
 	status := cluster.Status.DeepCopy()
 
-	if err := r.Patch(ctx, cluster, patch); err != nil {
+	if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 		return err
 	}
 
+	oldCluster = cluster.DeepCopy()
 	cluster.Status = *status
-	if err := r.Status().Patch(ctx, cluster, patch); err != nil {
-		return err
+
+	if !reflect.DeepEqual(oldCluster, cluster) {
+		if err := r.Status().Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -356,18 +358,20 @@ func (r *Reconciler) updateRestore(ctx context.Context, restore *kubermaticv1.Et
 		return nil
 	}
 
-	patch := ctrlruntimeclient.MergeFrom(oldRestore)
-
 	// make sure the first patch doesn't override the status
 	status := restore.Status.DeepCopy()
 
-	if err := r.Patch(ctx, restore, patch); err != nil {
+	if err := r.Patch(ctx, restore, ctrlruntimeclient.MergeFrom(oldRestore)); err != nil {
 		return err
 	}
 
+	oldRestore = restore.DeepCopy()
 	restore.Status = *status
-	if err := r.Status().Patch(ctx, restore, patch); err != nil {
-		return err
+
+	if !reflect.DeepEqual(oldRestore, restore) {
+		if err := r.Status().Patch(ctx, restore, ctrlruntimeclient.MergeFrom(oldRestore)); err != nil {
+			return err
+		}
 	}
 
 	return nil
