@@ -143,7 +143,7 @@ func (p *ProjectProvider) Delete(userInfo *provider.UserInfo, projectInternalNam
 
 	oldProject := existingProject.DeepCopy()
 	existingProject.Status.Phase = kubermaticv1.ProjectTerminating
-	if err := masterImpersonatedClient.Status().Patch(context.Background(), existingProject, ctrlruntimeclient.MergeFrom(oldProject)); err != nil {
+	if err := p.clientPrivileged.Status().Patch(context.Background(), existingProject, ctrlruntimeclient.MergeFrom(oldProject)); err != nil {
 		return err
 	}
 
