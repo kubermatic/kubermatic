@@ -191,9 +191,10 @@ func (r *dashboardGrafanaController) handleDeletion(ctx context.Context, log *za
 		}
 	}
 	if kubernetes.HasFinalizer(configMap, mlaFinalizer) {
+		oldConfigMap := configMap.DeepCopy()
 		kubernetes.RemoveFinalizer(configMap, mlaFinalizer)
-		if err := r.Update(ctx, configMap); err != nil {
-			return fmt.Errorf("updating ConfigMap: %w", err)
+		if err := r.Patch(ctx, configMap, ctrlruntimeclient.MergeFrom(oldConfigMap)); err != nil {
+			return fmt.Errorf("failed to update ConfigMap: %w", err)
 		}
 	}
 	return nil

@@ -268,9 +268,10 @@ func (r *alertmanagerController) handleDeletion(ctx context.Context, cluster *ku
 		}
 	}
 	if kubernetes.HasFinalizer(cluster, alertmanagerFinalizer) {
+		oldCluster := cluster.DeepCopy()
 		kubernetes.RemoveFinalizer(cluster, alertmanagerFinalizer)
-		if err := r.Update(ctx, cluster); err != nil {
-			return fmt.Errorf("updating Cluster: %w", err)
+		if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+			return fmt.Errorf("failed to update Cluster: %w", err)
 		}
 	}
 	return nil

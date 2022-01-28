@@ -175,9 +175,10 @@ func (r *orgUserGrafanaController) handleDeletion(ctx context.Context, userProje
 	}
 
 	if kubernetes.HasFinalizer(userProjectBinding, mlaFinalizer) {
+		oldBinding := userProjectBinding.DeepCopy()
 		kubernetes.RemoveFinalizer(userProjectBinding, mlaFinalizer)
-		if err := r.Update(ctx, userProjectBinding); err != nil {
-			return fmt.Errorf("updating UserProjectBinding: %w", err)
+		if err := r.Patch(ctx, userProjectBinding, ctrlruntimeclient.MergeFrom(oldBinding)); err != nil {
+			return fmt.Errorf("failed to update UserProjectBinding: %w", err)
 		}
 	}
 

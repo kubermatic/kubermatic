@@ -19,6 +19,7 @@ package clustertemplatecontroller
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"go.uber.org/zap"
 
@@ -142,14 +143,17 @@ func (r *reconciler) reconcile(ctx context.Context, instance *kubermaticv1.Clust
 }
 
 func (r *reconciler) patchFinalizer(ctx context.Context, instance *kubermaticv1.ClusterTemplateInstance, remove bool) error {
-	kuberneteshelper.AddFinalizer(instance, finalizer)
+	oldInstance := instance.DeepCopy()
 
+	kuberneteshelper.AddFinalizer(instance, finalizer)
 	if remove {
 		kuberneteshelper.RemoveFinalizer(instance, finalizer)
 	}
 
-	if err := r.seedClient.Update(ctx, instance); err != nil {
-		return fmt.Errorf("failed to update cluster template instance %s finalizer: %w", instance.Name, err)
+	if !reflect.DeepEqual(oldInstance, instance) {
+		if err := r.seedClient.Patch(ctx, instance, ctrlruntimeclient.MergeFrom(oldInstance)); err != nil {
+			return fmt.Errorf("failed to update cluster template instance %s finalizer: %w", instance.Name, err)
+		}
 	}
 
 	return nil

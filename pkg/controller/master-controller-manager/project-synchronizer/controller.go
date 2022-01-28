@@ -147,20 +147,22 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, project *kubermaticv1.Project) error {
 	err := r.syncAllSeeds(log, project, func(seedClusterClient ctrlruntimeclient.Client, project *kubermaticv1.Project) error {
-		if err := seedClusterClient.Delete(ctx, project); err != nil {
-			return ctrlruntimeclient.IgnoreNotFound(err)
-		}
-		return nil
+		return ctrlruntimeclient.IgnoreNotFound(seedClusterClient.Delete(ctx, project))
 	})
 	if err != nil {
 		return err
 	}
-	if kuberneteshelper.HasFinalizer(project, kubermaticapiv1.SeedProjectCleanupFinalizer) {
-		kuberneteshelper.RemoveFinalizer(project, kubermaticapiv1.SeedProjectCleanupFinalizer)
-		if err := r.masterClient.Update(ctx, project); err != nil {
-			return fmt.Errorf("failed to remove project finalizer %s: %w", project.Name, err)
+
+	if finalizer := kubermaticapiv1.SeedProjectCleanupFinalizer; kuberneteshelper.HasFinalizer(project, finalizer) {
+		oldProject := project.DeepCopy()
+		kuberneteshelper.RemoveFinalizer(project, finalizer)
+		patch := ctrlruntimeclient.MergeFrom(oldProject)
+		// ignore NotFound because on shared master/seed systems, the code above will already have deleted the binding
+		if err := r.masterClient.Patch(ctx, project, patch); ctrlruntimeclient.IgnoreNotFound(err) != nil {
+			return fmt.Errorf("failed to remove project finalizer %s: %w", finalizer, err)
 		}
 	}
+
 	return nil
 }
 

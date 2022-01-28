@@ -150,8 +150,9 @@ func (r *reconcileSyncProjectBinding) ensureNotProjectOwnerForBinding(ctx contex
 
 func (r *reconcileSyncProjectBinding) removeFinalizerFromBinding(ctx context.Context, projectBinding *kubermaticv1.UserProjectBinding) error {
 	if kuberneteshelper.HasFinalizer(projectBinding, rbac.CleanupFinalizerName) {
+		oldBinding := projectBinding.DeepCopy()
 		kuberneteshelper.RemoveFinalizer(projectBinding, rbac.CleanupFinalizerName)
-		return r.Update(ctx, projectBinding)
+		return r.Patch(ctx, projectBinding, ctrlruntimeclient.MergeFrom(oldBinding))
 	}
 	return nil
 }

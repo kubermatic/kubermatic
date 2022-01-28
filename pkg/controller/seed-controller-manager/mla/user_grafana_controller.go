@@ -179,9 +179,10 @@ func (r *userGrafanaController) handleDeletion(ctx context.Context, user *kuberm
 		}
 	}
 	if kubernetes.HasFinalizer(user, mlaFinalizer) {
+		oldUser := user.DeepCopy()
 		kubernetes.RemoveFinalizer(user, mlaFinalizer)
-		if err := r.Update(ctx, user); err != nil {
-			return fmt.Errorf("updating User: %w", err)
+		if err := r.Patch(ctx, user, ctrlruntimeclient.MergeFrom(oldUser)); err != nil {
+			return fmt.Errorf("failed to update User: %w", err)
 		}
 	}
 	return nil
