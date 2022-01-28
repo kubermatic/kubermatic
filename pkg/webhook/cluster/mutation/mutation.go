@@ -109,20 +109,11 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 			return admission.Errored(http.StatusBadRequest, err)
 		}
 
-		// Prevent unconditional CNI upgrades for old clusters.
-		// Do not default cni if it was not explicitly set.
-		// Todo: Temporary hack will be removed soon
-		preventCNIDefaulting := cluster.Spec.CNIPlugin == nil
-
 		// apply defaults to the existing clusters
 		err := h.applyDefaults(ctx, cluster)
 		if err != nil {
 			h.log.Info("cluster mutation failed", "error", err)
 			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %w", req.UID, err))
-		}
-
-		if preventCNIDefaulting {
-			cluster.Spec.CNIPlugin = nil
 		}
 
 		if err := h.mutateUpdate(oldCluster, cluster); err != nil {
