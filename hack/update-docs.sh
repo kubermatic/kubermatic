@@ -28,7 +28,8 @@ dummy=kubermaticNoOmitPlease
 # temporarily create a vendor folder
 go mod vendor
 
-sed="sed"; [ "$(command -v gsed)" ] && sed="gsed"
+sed="sed"
+[ "$(command -v gsed)" ] && sed="gsed"
 
 # remove omitempty tags from structs so that genyaml will not skip fields
 $sed -i "s/,omitempty/,$dummy/g" pkg/crd/kubermatic/v1/*.go pkg/crd/operator/v1alpha1/*.go vendor/k8s.io/api/core/v1/*.go
