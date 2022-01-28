@@ -33,6 +33,7 @@ echodate "(Golden master) Testing ${chartname}..."
 exitCode=0
 
 set +o errexit
+helm version
 echodate "Fetching dependencies..."
 i=0
 for url in $(yq r Chart.yaml dependencies --tojson | jq -r .[].repository); do
