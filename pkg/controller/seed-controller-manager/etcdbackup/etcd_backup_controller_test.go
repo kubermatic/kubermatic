@@ -1517,7 +1517,7 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 				},
 			}
 
-			reconcileAfter, err := reconciler.deleteFinishedBackupJobs(context.Background(), backupConfig, cluster)
+			reconcileAfter, err := reconciler.deleteFinishedBackupJobs(context.Background(), reconciler.log, backupConfig, cluster)
 			if err != nil {
 				t.Fatalf("ensurePendingBackupIsScheduled returned an error: %v", err)
 			}

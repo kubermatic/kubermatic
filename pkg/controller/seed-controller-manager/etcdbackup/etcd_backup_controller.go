@@ -301,13 +301,13 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, back
 
 	totalReconcile = minReconcile(totalReconcile, nextReconcile)
 
-	if nextReconcile, err = r.deleteFinishedBackupJobs(ctx, backupConfig, cluster); err != nil {
+	if nextReconcile, err = r.deleteFinishedBackupJobs(ctx, log, backupConfig, cluster); err != nil {
 		return errorReconcile, errors.Wrap(err, "failed to delete finished backup jobs")
 	}
 
 	totalReconcile = minReconcile(totalReconcile, nextReconcile)
 
-	if nextReconcile, err = r.handleFinalization(ctx, backupConfig, cluster, destination); err != nil {
+	if nextReconcile, err = r.handleFinalization(ctx, log, backupConfig, cluster, destination); err != nil {
 		return errorReconcile, errors.Wrap(err, "failed to delete finished backup jobs")
 	}
 
@@ -559,6 +559,8 @@ func (r *Reconciler) startPendingBackupDeleteJobs(ctx context.Context, backupCon
 		}
 	}
 
+	oldBackupConfig := backupConfig.DeepCopy()
+
 	modified := false
 	for _, backup := range backupsToDelete {
 		if runningDeleteJobsCount < maxSimultaneousDeleteJobsPerConfig {
@@ -571,14 +573,6 @@ func (r *Reconciler) startPendingBackupDeleteJobs(ctx context.Context, backupCon
 	}
 
 	if modified {
-		status := backupConfig.Status.DeepCopy()
-
-		if err := r.Update(ctx, backupConfig); err != nil {
-			return nil, errors.Wrap(err, "failed to update backup config")
-		}
-
-		oldBackupConfig := backupConfig.DeepCopy()
-		backupConfig.Status = *status
 		if err := r.Status().Patch(ctx, backupConfig, ctrlruntimeclient.MergeFrom(oldBackupConfig)); err != nil {
 			return nil, errors.Wrap(err, "failed to update backup status")
 		}
@@ -609,6 +603,8 @@ func (r *Reconciler) createBackupDeleteJob(ctx context.Context, backupConfig *ku
 func (r *Reconciler) updateRunningBackupDeleteJobs(ctx context.Context, backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster,
 	destination *kubermaticv1.BackupDestination) (*reconcile.Result, error) {
 	var returnReconcile *reconcile.Result
+
+	oldBackupConfig := backupConfig.DeepCopy()
 
 	// structs with the backup status and the DeleteMessage to set in case we restart the delete job
 	type DeleteJobToRestart struct {
@@ -664,8 +660,8 @@ func (r *Reconciler) updateRunningBackupDeleteJobs(ctx context.Context, backupCo
 		}
 	}
 
-	if err := r.Update(ctx, backupConfig); err != nil {
-		return nil, errors.Wrap(err, "failed to update backup config")
+	if err := r.Status().Patch(ctx, backupConfig, ctrlruntimeclient.MergeFrom(oldBackupConfig)); err != nil {
+		return nil, errors.Wrap(err, "failed to update backup status")
 	}
 
 	return returnReconcile, nil
@@ -673,8 +669,10 @@ func (r *Reconciler) updateRunningBackupDeleteJobs(ctx context.Context, backupCo
 
 // Delete backup and delete jobs that have been finished for a while.
 // For backups where both the backup and delete jobs have been deleted, delete the backup status entry too.
-func (r *Reconciler) deleteFinishedBackupJobs(ctx context.Context, backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+func (r *Reconciler) deleteFinishedBackupJobs(ctx context.Context, log *zap.SugaredLogger, backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	var returnReconcile *reconcile.Result
+
+	oldBackupConfig := backupConfig.DeepCopy()
 
 	var newBackups []kubermaticv1.BackupStatus
 	modified := false
@@ -769,14 +767,6 @@ func (r *Reconciler) deleteFinishedBackupJobs(ctx context.Context, backupConfig 
 
 	if modified {
 		backupConfig.Status.CurrentBackups = newBackups
-		status := backupConfig.Status.DeepCopy()
-
-		if err := r.Update(ctx, backupConfig); err != nil {
-			return nil, errors.Wrap(err, "failed to update backup config")
-		}
-
-		oldBackupConfig := backupConfig.DeepCopy()
-		backupConfig.Status = *status
 		if err := r.Status().Patch(ctx, backupConfig, ctrlruntimeclient.MergeFrom(oldBackupConfig)); err != nil {
 			return nil, errors.Wrap(err, "failed to update backup status")
 		}
@@ -785,7 +775,7 @@ func (r *Reconciler) deleteFinishedBackupJobs(ctx context.Context, backupConfig 
 	return returnReconcile, nil
 }
 
-func (r *Reconciler) handleFinalization(ctx context.Context, backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster,
+func (r *Reconciler) handleFinalization(ctx context.Context, log *zap.SugaredLogger, backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster,
 	destination *kubermaticv1.BackupDestination) (*reconcile.Result, error) {
 	if backupConfig.DeletionTimestamp == nil || len(backupConfig.Status.CurrentBackups) > 0 {
 		return nil, nil
@@ -850,9 +840,11 @@ func (r *Reconciler) handleFinalization(ctx context.Context, backupConfig *kuber
 		return nil, errors.Wrap(err, "failed to update backup config")
 	}
 
+	// the update above can lead to the EtcdBackupConfig disappearing, so the
+	// following is allowed to end in a NotFoundErr
 	oldBackupConfig := backupConfig.DeepCopy()
 	backupConfig.Status = *status
-	if err := r.Status().Patch(ctx, backupConfig, ctrlruntimeclient.MergeFrom(oldBackupConfig)); err != nil {
+	if err := r.Status().Patch(ctx, backupConfig, ctrlruntimeclient.MergeFrom(oldBackupConfig)); ctrlruntimeclient.IgnoreNotFound(err) != nil {
 		return nil, errors.Wrap(err, "failed to update backup status")
 	}
 
