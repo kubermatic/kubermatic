@@ -410,9 +410,10 @@ func (r *datasourceGrafanaController) handleDeletion(ctx context.Context, grafan
 	}
 
 	if kubernetes.HasFinalizer(cluster, mlaFinalizer) {
+		oldCluster := cluster.DeepCopy()
 		kubernetes.RemoveFinalizer(cluster, mlaFinalizer)
-		if err := r.Update(ctx, cluster); err != nil {
-			return fmt.Errorf("updating Cluster: %w", err)
+		if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+			return fmt.Errorf("failed to update Cluster: %w", err)
 		}
 	}
 

@@ -147,9 +147,11 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 		return err
 	}
 	if kuberneteshelper.HasFinalizer(userProjectBinding, kubermaticapiv1.SeedUserProjectBindingCleanupFinalizer) {
+		oldBinding := userProjectBinding.DeepCopy()
 		kuberneteshelper.RemoveFinalizer(userProjectBinding, kubermaticapiv1.SeedUserProjectBindingCleanupFinalizer)
+		patch := ctrlruntimeclient.MergeFrom(oldBinding)
 		// ignore NotFound because on shared master/seed systems, the code above will already have deleted the binding
-		if err := r.masterClient.Update(ctx, userProjectBinding); ctrlruntimeclient.IgnoreNotFound(err) != nil {
+		if err := r.masterClient.Patch(ctx, userProjectBinding, patch); ctrlruntimeclient.IgnoreNotFound(err) != nil {
 			return fmt.Errorf("failed to remove userprojectbinding finalizer %s: %w", userProjectBinding.Name, err)
 		}
 	}

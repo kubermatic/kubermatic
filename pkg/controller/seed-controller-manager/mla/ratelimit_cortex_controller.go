@@ -244,9 +244,10 @@ func (r *ratelimitCortexController) handleDeletion(ctx context.Context, log *zap
 		}
 	}
 	if kubernetes.HasFinalizer(mlaAdminSetting, mlaFinalizer) {
+		oldSetting := mlaAdminSetting.DeepCopy()
 		kubernetes.RemoveFinalizer(mlaAdminSetting, mlaFinalizer)
-		if err := r.Update(ctx, mlaAdminSetting); err != nil {
-			return fmt.Errorf("updating mlaAdminSetting: %w", err)
+		if err := r.Patch(ctx, mlaAdminSetting, ctrlruntimeclient.MergeFrom(oldSetting)); err != nil {
+			return fmt.Errorf("failed to update mlaAdminSetting: %w", err)
 		}
 	}
 	return nil

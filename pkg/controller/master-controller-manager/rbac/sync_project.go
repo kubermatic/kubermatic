@@ -41,16 +41,14 @@ const (
 )
 
 func (c *projectController) sync(ctx context.Context, key ctrlruntimeclient.ObjectKey) error {
-	var originalProject kubermaticv1.Project
-	if err := c.client.Get(ctx, key, &originalProject); err != nil {
+	project := &kubermaticv1.Project{}
+	if err := c.client.Get(ctx, key, project); err != nil {
 		if kerrors.IsNotFound(err) {
 			return nil
 		}
 
 		return err
 	}
-
-	project := originalProject.DeepCopy()
 
 	if project.DeletionTimestamp != nil {
 		if err := c.ensureProjectCleanup(ctx, project); err != nil {
@@ -571,8 +569,9 @@ func (c *projectController) ensureProjectCleanup(ctx context.Context, project *k
 		}
 	}
 
+	oldProject := project.DeepCopy()
 	kuberneteshelper.RemoveFinalizer(project, CleanupFinalizerName)
-	return c.client.Update(ctx, project)
+	return c.client.Patch(ctx, project, ctrlruntimeclient.MergeFrom(oldProject))
 }
 
 func cleanUpClusterRBACRoleBindingFor(ctx context.Context, c ctrlruntimeclient.Client, groupName, resource string) error {
