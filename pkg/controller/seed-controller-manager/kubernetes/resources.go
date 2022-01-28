@@ -226,7 +226,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 // ensureNamespaceExists will create the cluster namespace.
 func (r *Reconciler) ensureNamespaceExists(ctx context.Context, cluster *kubermaticv1.Cluster) (*corev1.Namespace, error) {
 	if cluster.Status.NamespaceName == "" {
-		err := r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
+		err := r.updateClusterStatus(ctx, cluster, func(c *kubermaticv1.Cluster) {
 			c.Status.NamespaceName = fmt.Sprintf("cluster-%s", c.Name)
 		})
 		if err != nil {

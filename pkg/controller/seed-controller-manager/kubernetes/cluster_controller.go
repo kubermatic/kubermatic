@@ -18,6 +18,7 @@ package kubernetes
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"time"
@@ -296,17 +297,25 @@ func (r *Reconciler) updateCluster(ctx context.Context, cluster *kubermaticv1.Cl
 		return nil
 	}
 
-	// make sure the first patch doesn't override the status
-	status := cluster.Status.DeepCopy()
+	if !reflect.DeepEqual(oldCluster.Status, cluster.Status) {
+		return errors.New("updateCluster must not change cluster status")
+	}
 
-	if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFromWithOptions(oldCluster, opts...)); err != nil {
+	if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 		return err
 	}
 
-	oldCluster = cluster.DeepCopy()
-	cluster.Status = *status
+	return nil
+}
 
-	if !reflect.DeepEqual(oldCluster, cluster) {
+func (r *Reconciler) updateClusterStatus(ctx context.Context, cluster *kubermaticv1.Cluster, modify func(*kubermaticv1.Cluster)) error {
+	oldCluster := cluster.DeepCopy()
+	modify(cluster)
+	if reflect.DeepEqual(oldCluster, cluster) {
+		return nil
+	}
+
+	if !reflect.DeepEqual(oldCluster.Status, cluster.Status) {
 		if err := r.Status().Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 			return err
 		}
@@ -332,7 +341,7 @@ func (r *Reconciler) AddFinalizers(ctx context.Context, cluster *kubermaticv1.Cl
 
 func (r *Reconciler) updateClusterError(ctx context.Context, cluster *kubermaticv1.Cluster, reason kubermaticv1.ClusterStatusError, message string) error {
 	if cluster.Status.ErrorReason == nil || *cluster.Status.ErrorReason != reason {
-		err := r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
+		err := r.updateClusterStatus(ctx, cluster, func(c *kubermaticv1.Cluster) {
 			c.Status.ErrorMessage = &message
 			c.Status.ErrorReason = &reason
 		})
@@ -346,7 +355,7 @@ func (r *Reconciler) updateClusterError(ctx context.Context, cluster *kubermatic
 
 func (r *Reconciler) clearClusterError(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	if cluster.Status.ErrorReason != nil || cluster.Status.ErrorMessage != nil {
-		err := r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
+		err := r.updateClusterStatus(ctx, cluster, func(c *kubermaticv1.Cluster) {
 			c.Status.ErrorMessage = nil
 			c.Status.ErrorReason = nil
 		})

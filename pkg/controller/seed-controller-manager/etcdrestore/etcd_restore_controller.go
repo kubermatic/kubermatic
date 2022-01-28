@@ -289,7 +289,7 @@ func (r *Reconciler) rebuildEtcdStatefulset(ctx context.Context, log *zap.Sugare
 	log.Infof("rebuildEtcdStatefulset")
 
 	if cluster.Spec.Pause {
-		if err := r.updateCluster(ctx, cluster, func(cluster *kubermaticv1.Cluster) {
+		if err := r.updateClusterStatus(ctx, cluster, func(cluster *kubermaticv1.Cluster) {
 			kubermaticv1helper.SetClusterCondition(
 				cluster,
 				r.versions,
@@ -298,9 +298,13 @@ func (r *Reconciler) rebuildEtcdStatefulset(ctx context.Context, log *zap.Sugare
 				"",
 				fmt.Sprintf("Etcd Cluster is being restored from backup %v", restore.Spec.BackupName),
 			)
+		}); err != nil {
+			return nil, fmt.Errorf("failed to reset etcd initialized status: %w", err)
+		}
+		if err := r.updateCluster(ctx, cluster, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Pause = false
 		}); err != nil {
-			return nil, fmt.Errorf("failed to reset etcd initialized status and unpause cluster: %w", err)
+			return nil, fmt.Errorf("failed to unpause cluster: %w", err)
 		}
 	}
 
@@ -332,17 +336,25 @@ func (r *Reconciler) updateCluster(ctx context.Context, cluster *kubermaticv1.Cl
 		return nil
 	}
 
-	// make sure the first patch doesn't override the status
-	status := cluster.Status.DeepCopy()
+	if !reflect.DeepEqual(oldCluster.Status, cluster.Status) {
+		return errors.New("updateCluster must not change cluster status")
+	}
 
 	if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 		return err
 	}
 
-	oldCluster = cluster.DeepCopy()
-	cluster.Status = *status
+	return nil
+}
 
-	if !reflect.DeepEqual(oldCluster, cluster) {
+func (r *Reconciler) updateClusterStatus(ctx context.Context, cluster *kubermaticv1.Cluster, modify func(*kubermaticv1.Cluster)) error {
+	oldCluster := cluster.DeepCopy()
+	modify(cluster)
+	if reflect.DeepEqual(oldCluster, cluster) {
+		return nil
+	}
+
+	if !reflect.DeepEqual(oldCluster.Status, cluster.Status) {
 		if err := r.Status().Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 			return err
 		}
