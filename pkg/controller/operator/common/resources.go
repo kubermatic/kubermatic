@@ -67,12 +67,12 @@ const (
 	MasterControllerManagerDeploymentName = "kubermatic-master-controller-manager"
 	SeedControllerManagerDeploymentName   = "kubermatic-seed-controller-manager"
 
-	CleanupFinalizer = "operator.kubermatic.io/cleanup"
+	CleanupFinalizer = "kubermatic.k8c.io/cleanup"
 
 	// SkipReconcilingAnnotation can be used on Seed resources to make
 	// the operator ignore them and not reconcile the seed components into
 	// the cluster. This should only be used during cluster migrations.
-	SkipReconcilingAnnotation = "operator.kubermatic.io/skip-reconciling"
+	SkipReconcilingAnnotation = "kubermatic.k8c.io/skip-reconciling"
 )
 
 func NamespaceCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedNamespaceCreatorGetter {

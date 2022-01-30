@@ -38,6 +38,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
@@ -233,6 +234,12 @@ func convertObjectMeta(om metav1.ObjectMeta) metav1.ObjectMeta {
 
 		om.Finalizers[i] = finalizer
 	}
+
+	// remove legacy finalizers that were never properly cleaned up
+	// when they got removed
+	list := sets.NewString(om.Finalizers...)
+	list.Delete("kubermatic.io/cleanup-master-user-project-bindings")
+	om.Finalizers = list.List()
 
 	return om
 }
