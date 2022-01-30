@@ -305,11 +305,11 @@ func validateNoStuckResourcesInCluster(ctx context.Context, logger logrus.FieldL
 
 	for _, kind := range kinds {
 		objectList := &metav1unstructured.UnstructuredList{}
-		objectList.SetAPIVersion(kubermaticv1.SchemeGroupVersion.String())
+		objectList.SetAPIVersion("kubermatic.k8s.io/v1") // use the old API group
 		objectList.SetKind(kind.Name)
 
 		if err := client.List(ctx, objectList); err != nil {
-			logger.Warnf("Failed to list %s objects: %v", kind, err)
+			logger.Warnf("Failed to list %s objects: %v", kind.Name, err)
 			success = false
 			continue
 		}

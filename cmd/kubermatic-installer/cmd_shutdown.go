@@ -27,7 +27,6 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/install/crdmigration"
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
-	"k8c.io/kubermatic/v2/pkg/provider"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -83,20 +82,9 @@ func ShutdownAction(logger *logrus.Logger) cli.ActionFunc {
 			return fmt.Errorf("failed to retrieve KubermaticConfiguration: %w", err)
 		}
 
-		// find all seeds
-		seedsGetter, err := seedsGetterFactory(appContext, kubeClient)
-		if err != nil {
-			return fmt.Errorf("failed to create Seeds getter: %w", err)
-		}
-
-		seedKubeconfigGetter, err := seedKubeconfigGetterFactory(appContext, kubeClient)
-		if err != nil {
-			return fmt.Errorf("failed to create Seed kubeconfig getter: %w", err)
-		}
-
 		logger.Info("Retrieving Seeds…")
 
-		allSeeds, err := seedsGetter()
+		allSeeds, err := getLegacySeeds(appContext, kubeClient, namespace)
 		if err != nil {
 			return fmt.Errorf("failed to list Seeds: %w", err)
 		}
@@ -105,12 +93,11 @@ func ShutdownAction(logger *logrus.Logger) cli.ActionFunc {
 
 		// build kube client for each seed cluster
 		seedClients := map[string]ctrlruntimeclient.Client{}
-		seedClientGetter := provider.SeedClientGetterFactory(seedKubeconfigGetter)
 
 		logger.Info("Creating Kubernetes client for each Seed…")
 
 		for _, seed := range allSeeds {
-			seedClient, err := seedClientGetter(seed)
+			seedClient, err := getSeedClient(appContext, kubeClient, seed)
 			if err != nil {
 				return fmt.Errorf("failed to create Kubernetes client for Seed %q: %w", seed.Name, err)
 			}

@@ -29,7 +29,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 
 	metav1unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -88,7 +87,7 @@ func createClusterBackup(ctx context.Context, logger logrus.FieldLogger, ts time
 		logger.Debugf("Backing up %s resources…", kind)
 
 		objectList := &metav1unstructured.UnstructuredList{}
-		objectList.SetAPIVersion(kubermaticv1.SchemeGroupVersion.String())
+		objectList.SetAPIVersion("kubermatic.k8s.io/v1") // use old API group
 		objectList.SetKind(kind.Name)
 
 		if err := client.List(ctx, objectList); err != nil {
