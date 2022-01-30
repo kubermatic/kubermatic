@@ -29,7 +29,6 @@ import (
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/install/crdmigration"
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
-	"k8c.io/kubermatic/v2/pkg/util/restmapper"
 
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -46,9 +45,9 @@ var (
 		Usage:  "Context to use from the given kubeconfig",
 		EnvVar: "KUBE_CONTEXT",
 	}
-	keepOldResourcesFlag = cli.BoolFlag{
-		Name:  "keep-resources",
-		Usage: "Do not delete resources in the old API group when the migration is completed",
+	removeOldResourcesFlag = cli.BoolFlag{
+		Name:  "remove-old-resources",
+		Usage: "Delete resources in the old API group when the migration is completed",
 	}
 )
 
@@ -61,7 +60,7 @@ func MigrateCRDsCommand(logger *logrus.Logger) cli.Command {
 		Flags: []cli.Flag{
 			chartsDirectoryFlag,
 			migrateCRDsKubeContextFlag,
-			keepOldResourcesFlag,
+			removeOldResourcesFlag,
 		},
 	}
 }
@@ -149,7 +148,7 @@ func MigrateCRDsAction(logger *logrus.Logger) cli.ActionFunc {
 			return fmt.Errorf("resource cloning failed: %w", err)
 		}
 
-		if !ctx.Bool(keepOldResourcesFlag.Name) {
+		if ctx.Bool(removeOldResourcesFlag.Name) {
 			if err := crdmigration.RemoveOldResources(appContext, logger.WithField("phase", "cleanup"), &opt); err != nil {
 				return fmt.Errorf("resource cleanup failed: %w", err)
 			}
@@ -161,7 +160,7 @@ func MigrateCRDsAction(logger *logrus.Logger) cli.ActionFunc {
 		logger.Info("All Done :)")
 		logger.Info("All KKP resources have been successfully migrated to the new API group.")
 
-		if ctx.Bool(keepOldResourcesFlag.Name) {
+		if !ctx.Bool(removeOldResourcesFlag.Name) {
 			logger.Info("You can remove the resources from the old group, kubermatic.k8s.io, manually at a later time.")
 		}
 
@@ -245,7 +244,5 @@ func getSeedClient(ctx context.Context, client ctrlruntimeclient.Client, seed *l
 		return nil, fmt.Errorf("failed to load kubeconfig: %w", err)
 	}
 
-	cache := restmapper.New()
-
-	return cache.Client(cfg)
+	return ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{})
 }
