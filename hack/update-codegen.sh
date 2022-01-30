@@ -21,40 +21,6 @@ source hack/lib.sh
 
 CONTAINERIZE_IMAGE=golang:1.17.5 containerize ./hack/update-codegen.sh
 
-echodate "Creating vendor directory"
-go mod vendor
-chmod +x vendor/k8s.io/code-generator/generate-groups.sh
-
-echodate "Removing old clients"
-rm -rf "pkg/crd/client"
-
-echo "" > /tmp/headerfile
-
-# -trimpath would cause the code generation to fail, so undo the
-# Makefile's value and also force mod=vendor here
-export "GOFLAGS=-mod=vendor"
-
-echodate "Generating kubermatic:v1"
-./vendor/k8s.io/code-generator/generate-groups.sh all \
-  k8c.io/kubermatic/v2/pkg/crd/client \
-  k8c.io/kubermatic/v2/pkg/crd \
-  "kubermatic:v1" \
-  --go-header-file /tmp/headerfile
-
-echodate "Generating operator:v1alpha1"
-./vendor/k8s.io/code-generator/generate-groups.sh deepcopy,lister,informer \
-  k8c.io/kubermatic/v2/pkg/crd/client \
-  k8c.io/kubermatic/v2/pkg/crd \
-  "operator:v1alpha1" \
-  --go-header-file /tmp/headerfile
-
-# move files into their correct location, generate-groups.sh does not handle
-# non-v1 module names very well
-cp -r v2/* .
-rm -rf v2/
-
-rm /tmp/headerfile
-
 echodate "Running go generate"
 go generate ./pkg/...
 

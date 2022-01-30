@@ -29,8 +29,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/kubermatic"
 	kubermaticseed "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/kubermatic"
-	"k8c.io/kubermatic/v2/pkg/crd/util"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/util/crd"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -339,7 +339,7 @@ func validateCRDsExist(ctx context.Context, logger logrus.FieldLogger, opt *Opti
 
 	crdDirectory := filepath.Join(opt.ChartsDirectory, "kubermatic-operator", "crd", "k8c.io")
 
-	crds, err := util.LoadFromDirectory(crdDirectory)
+	crds, err := crd.LoadFromDirectory(crdDirectory)
 	if err != nil {
 		return fmt.Errorf("failed to load CRDs from %s: %w", crdDirectory, err)
 	}
