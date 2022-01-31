@@ -208,6 +208,7 @@ type ClusterTemplateInstance struct {
 // RuleGroup represents a rule group of recording and alerting rules.
 // swagger:model RuleGroup
 type RuleGroup struct {
+	Name string `json:"name"`
 	// contains the RuleGroup data. Ref: https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/#rule_group
 	Data []byte `json:"data"`
 	// the type of this ruleGroup applies to. It can be `Metrics`.
