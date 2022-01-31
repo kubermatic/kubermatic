@@ -283,7 +283,7 @@ func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedService
 
 func (r *Reconciler) ensureServices(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetServiceCreators(data)
-	return reconciling.ReconcileServices(ctx, creators, c.Status.NamespaceName, r, reconciling.OwnerRefWrapper(resources.GetClusterRef(c)))
+	return reconciling.ReconcileServices(ctx, creators, c.Status.NamespaceName, r)
 }
 
 // GetDeploymentCreators returns all DeploymentCreators that are currently in use.
@@ -327,7 +327,7 @@ func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuth
 
 func (r *Reconciler) ensureDeployments(ctx context.Context, cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetDeploymentCreators(data, r.features.KubernetesOIDCAuthentication)
-	return reconciling.ReconcileDeployments(ctx, creators, cluster.Status.NamespaceName, r, reconciling.OwnerRefWrapper(resources.GetClusterRef(cluster)))
+	return reconciling.ReconcileDeployments(ctx, creators, cluster.Status.NamespaceName, r)
 }
 
 // GetSecretCreators returns all SecretCreators that are currently in use.
@@ -391,7 +391,7 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 func (r *Reconciler) ensureSecrets(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	namedSecretCreatorGetters := r.GetSecretCreators(data)
 
-	if err := reconciling.ReconcileSecrets(ctx, namedSecretCreatorGetters, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
+	if err := reconciling.ReconcileSecrets(ctx, namedSecretCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure that the Secret exists: %w", err)
 	}
 
@@ -529,7 +529,7 @@ func GetConfigMapCreators(data *resources.TemplateData) []reconciling.NamedConfi
 func (r *Reconciler) ensureConfigMaps(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetConfigMapCreators(data)
 
-	if err := reconciling.ReconcileConfigMaps(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
+	if err := reconciling.ReconcileConfigMaps(ctx, creators, c.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure that the ConfigMap exists: %w", err)
 	}
 
@@ -569,7 +569,7 @@ func GetPodDisruptionBudgetCreators(data *resources.TemplateData) []reconciling.
 func (r *Reconciler) ensurePodDisruptionBudgets(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetPodDisruptionBudgetCreators(data)
 
-	if err := reconciling.ReconcilePodDisruptionBudgets(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
+	if err := reconciling.ReconcilePodDisruptionBudgets(ctx, creators, c.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure that the PodDisruptionBudget exists: %w", err)
 	}
 
@@ -586,7 +586,7 @@ func GetCronJobCreators(data *resources.TemplateData) []reconciling.NamedCronJob
 func (r *Reconciler) ensureCronJobs(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetCronJobCreators(data)
 
-	if err := reconciling.ReconcileCronJobs(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
+	if err := reconciling.ReconcileCronJobs(ctx, creators, c.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure that the CronJobs exists: %w", err)
 	}
 
@@ -625,14 +625,14 @@ func (r *Reconciler) ensureStatefulSets(ctx context.Context, c *kubermaticv1.Clu
 
 	creators := GetStatefulSetCreators(data, r.features.EtcdDataCorruptionChecks, useTLSOnly)
 
-	return reconciling.ReconcileStatefulSets(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c)))
+	return reconciling.ReconcileStatefulSets(ctx, creators, c.Status.NamespaceName, r.Client)
 }
 
 func (r *Reconciler) ensureEtcdBackupConfigs(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData,
 	seed *kubermaticv1.Seed) error {
 	if seed.IsDefaultEtcdAutomaticBackupEnabled() {
 		creators := GetEtcdBackupConfigCreators(data, seed)
-		return reconciling.ReconcileEtcdBackupConfigs(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c)))
+		return reconciling.ReconcileEtcdBackupConfigs(ctx, creators, c.Status.NamespaceName, r.Client)
 	}
 	// If default etcd automatic backups are not enabled, remove them if any
 	ebc := &kubermaticv1.EtcdBackupConfig{}

@@ -306,9 +306,6 @@ func convertAPIToInternalEtcdRestore(name string, erSpec *apiv2.EtcdRestoreSpec,
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: cluster.Status.NamespaceName,
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(cluster, kubermaticv1.SchemeGroupVersion.WithKind("Cluster")),
-			},
 		},
 		Spec: kubermaticv1.EtcdRestoreSpec{
 			Name:                            name,

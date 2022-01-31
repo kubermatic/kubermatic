@@ -1130,16 +1130,8 @@ func GenTestAddon(name string, variables *runtime.RawExtension, cluster *kuberma
 	}
 	return &kubermaticv1.Addon{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: cluster.Status.NamespaceName,
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-					Kind:       kubermaticv1.ClusterKindName,
-					Name:       cluster.Name,
-					UID:        cluster.UID,
-				},
-			},
+			Name:              name,
+			Namespace:         cluster.Status.NamespaceName,
 			CreationTimestamp: metav1.NewTime(creationTime),
 		},
 		Spec: kubermaticv1.AddonSpec{
@@ -1982,9 +1974,6 @@ func GenEtcdBackupConfig(name string, cluster *kubermaticv1.Cluster, projectID s
 			Labels: map[string]string{
 				kubermaticv1.ProjectIDLabelKey: projectID,
 			},
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(cluster, kubermaticv1.SchemeGroupVersion.WithKind("Cluster")),
-			},
 		},
 		Spec: kubermaticv1.EtcdBackupConfigSpec{
 			Name:     name,
@@ -2016,9 +2005,6 @@ func GenEtcdRestore(name string, cluster *kubermaticv1.Cluster, projectID string
 			Namespace: cluster.Status.NamespaceName,
 			Labels: map[string]string{
 				kubermaticv1.ProjectIDLabelKey: projectID,
-			},
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(cluster, kubermaticv1.SchemeGroupVersion.WithKind("Cluster")),
 			},
 		},
 		Spec: kubermaticv1.EtcdRestoreSpec{

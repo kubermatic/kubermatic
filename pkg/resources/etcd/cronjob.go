@@ -48,7 +48,6 @@ func CronJobCreator(data cronJobCreatorData) reconciling.NamedCronJobCreatorGett
 			}
 
 			job.Name = resources.EtcdDefragCronJobName
-			job.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 			job.Spec.ConcurrencyPolicy = batchv1beta1.ForbidConcurrent
 			var historyLimit int32
 			job.Spec.SuccessfulJobsHistoryLimit = &historyLimit

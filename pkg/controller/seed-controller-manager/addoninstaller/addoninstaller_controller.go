@@ -299,10 +299,7 @@ func (r *Reconciler) ensureAddons(ctx context.Context, log *zap.SugaredLogger, c
 }
 
 func (r *Reconciler) createAddon(ctx context.Context, log *zap.SugaredLogger, addon kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
-	gv := kubermaticv1.SchemeGroupVersion
-
 	addon.Namespace = cluster.Status.NamespaceName
-	addon.OwnerReferences = []metav1.OwnerReference{*metav1.NewControllerRef(cluster, gv.WithKind("Cluster"))}
 	if addon.Labels == nil {
 		addon.Labels = map[string]string{}
 	}

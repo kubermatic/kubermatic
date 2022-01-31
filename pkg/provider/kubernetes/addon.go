@@ -118,16 +118,14 @@ func (p *AddonProvider) NewUnsecured(cluster *kubermaticv1.Cluster, addonName st
 }
 
 func genAddon(cluster *kubermaticv1.Cluster, addonName string, variables *runtime.RawExtension, labels map[string]string) *kubermaticv1.Addon {
-	gv := kubermaticv1.SchemeGroupVersion
 	if labels == nil {
 		labels = map[string]string{}
 	}
 	return &kubermaticv1.Addon{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            addonName,
-			Namespace:       cluster.Status.NamespaceName,
-			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(cluster, gv.WithKind("Cluster"))},
-			Labels:          labels,
+			Name:      addonName,
+			Namespace: cluster.Status.NamespaceName,
+			Labels:    labels,
 		},
 		Spec: kubermaticv1.AddonSpec{
 			Name: addonName,

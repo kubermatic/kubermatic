@@ -294,8 +294,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 				set.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
 					{
 						ObjectMeta: metav1.ObjectMeta{
-							Name:            "data",
-							OwnerReferences: []metav1.OwnerReference{data.GetClusterRef()},
+							Name: "data",
 						},
 						Spec: corev1.PersistentVolumeClaimSpec{
 							StorageClassName: resources.String(storageClass),

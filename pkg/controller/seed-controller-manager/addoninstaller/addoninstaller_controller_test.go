@@ -74,15 +74,6 @@ func TestCreateAddon(t *testing.T) {
 						Name:            "Foo",
 						Namespace:       "cluster-" + name,
 						ResourceVersion: "1",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion:         "kubermatic.k8c.io/v1",
-								Kind:               "Cluster",
-								Name:               name,
-								Controller:         truePtr(),
-								BlockOwnerDeletion: truePtr(),
-							},
-						},
 					},
 					Spec: kubermaticv1.AddonSpec{
 						Name: "Foo",
@@ -104,15 +95,6 @@ func TestCreateAddon(t *testing.T) {
 						ResourceVersion: "1",
 						Labels:          map[string]string{"addons.kubermatic.io/ensure": "true"},
 						Annotations:     map[string]string{"foo": "bar"},
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion:         "kubermatic.k8c.io/v1",
-								Kind:               "Cluster",
-								Name:               name,
-								Controller:         truePtr(),
-								BlockOwnerDeletion: truePtr(),
-							},
-						},
 					},
 					Spec: kubermaticv1.AddonSpec{
 						Name: "Bar",
@@ -217,15 +199,6 @@ func TestUpdateAddon(t *testing.T) {
 						Name:            "Bar",
 						Namespace:       "cluster-" + name,
 						ResourceVersion: "1",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion:         "kubermatic.k8c.io/v1",
-								Kind:               "Cluster",
-								Name:               name,
-								Controller:         truePtr(),
-								BlockOwnerDeletion: truePtr(),
-							},
-						},
 					},
 					Spec: kubermaticv1.AddonSpec{
 						Name: "Bar",
@@ -247,15 +220,6 @@ func TestUpdateAddon(t *testing.T) {
 						Name:            "Foo",
 						Namespace:       "cluster-" + name,
 						ResourceVersion: "1",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion:         "kubermatic.k8c.io/v1",
-								Kind:               "Cluster",
-								Name:               name,
-								Controller:         truePtr(),
-								BlockOwnerDeletion: truePtr(),
-							},
-						},
 					},
 					Spec: kubermaticv1.AddonSpec{
 						Name: "Foo",
@@ -277,15 +241,6 @@ func TestUpdateAddon(t *testing.T) {
 						Labels:          map[string]string{"addons.kubermatic.io/ensure": "true"},
 						Annotations:     map[string]string{"foo": "bar"},
 						ResourceVersion: "2",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion:         "kubermatic.k8c.io/v1",
-								Kind:               "Cluster",
-								Name:               name,
-								Controller:         truePtr(),
-								BlockOwnerDeletion: truePtr(),
-							},
-						},
 					},
 					Spec: kubermaticv1.AddonSpec{
 						Name: "Bar",
@@ -324,15 +279,6 @@ func TestUpdateAddon(t *testing.T) {
 						Name:            "to-be-deleted",
 						Namespace:       "cluster-" + name,
 						ResourceVersion: "1",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion:         "kubermatic.k8c.io/v1",
-								Kind:               "Cluster",
-								Name:               name,
-								Controller:         truePtr(),
-								BlockOwnerDeletion: truePtr(),
-							},
-						},
 					},
 					Spec: kubermaticv1.AddonSpec{
 						Name: "ToBeDeleted",
@@ -354,15 +300,6 @@ func TestUpdateAddon(t *testing.T) {
 						Name:            "Foo",
 						Namespace:       "cluster-" + name,
 						ResourceVersion: "1",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion:         "kubermatic.k8c.io/v1",
-								Kind:               "Cluster",
-								Name:               name,
-								Controller:         truePtr(),
-								BlockOwnerDeletion: truePtr(),
-							},
-						},
 					},
 					Spec: kubermaticv1.AddonSpec{
 						Name: "Foo",
@@ -384,15 +321,6 @@ func TestUpdateAddon(t *testing.T) {
 						Labels:          map[string]string{"addons.kubermatic.io/ensure": "true"},
 						Annotations:     map[string]string{"foo": "bar"},
 						ResourceVersion: "1",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion:         "kubermatic.k8c.io/v1",
-								Kind:               "Cluster",
-								Name:               name,
-								Controller:         truePtr(),
-								BlockOwnerDeletion: truePtr(),
-							},
-						},
 					},
 					Spec: kubermaticv1.AddonSpec{
 						Name: "Bar",

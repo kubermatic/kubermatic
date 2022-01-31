@@ -38,7 +38,6 @@ func ServiceCreator(data serviceCreatorData) reconciling.NamedServiceCreatorGett
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.EtcdServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = resources.EtcdServiceName
-			se.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 			se.Spec.ClusterIP = "None"
 			se.Spec.PublishNotReadyAddresses = true
 			se.Spec.Selector = map[string]string{
