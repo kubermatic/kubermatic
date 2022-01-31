@@ -32,6 +32,7 @@ import (
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/version/cni"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -945,6 +946,11 @@ func convertClusterSpec(old kubermaticv1.ClusterSpec) newv1.ClusterSpec {
 		result.CNIPlugin = &newv1.CNIPluginSettings{
 			Type:    newv1.CNIPluginType(old.Type),
 			Version: old.Version,
+		}
+	} else {
+		result.CNIPlugin = &newv1.CNIPluginSettings{
+			Type:    newv1.CNIPluginTypeCanal,
+			Version: cni.CanalCNILastUnspecifiedVersion,
 		}
 	}
 
