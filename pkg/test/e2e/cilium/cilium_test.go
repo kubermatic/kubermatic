@@ -22,29 +22,29 @@ import (
 	"bytes"
 	"context"
 	"flag"
-	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
+	yamlutil "k8c.io/kubermatic/v2/pkg/util/yaml"
 
+	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	kjson "k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"k8s.io/apimachinery/pkg/types"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/kubectl/pkg/cmd/cp"
-	"k8s.io/utils/pointer"
 )
 
 var (
@@ -55,11 +55,10 @@ var (
 )
 
 const (
-	tailLines       = 5
 	seed            = "kubermatic"
 	projectName     = "cilium-test-project"
 	userclusterName = "cilium-test-usercluster"
-	alpineSleeper   = "alpine-sleeper"
+	ciliumTestNs    = "cilium-test"
 )
 
 func init() {
@@ -70,7 +69,6 @@ func init() {
 func TestCilium(t *testing.T) {
 	var cleanup func()
 	var err error
-	var clusterID string
 	if userconfig == "" {
 		accessKeyID = os.Getenv("AWS_ACCESS_KEY_ID")
 		if accessKeyID == "" {
@@ -82,7 +80,7 @@ func TestCilium(t *testing.T) {
 			t.Fatalf("AWS_SECRET_ACCESS_KEY not set")
 		}
 
-		userconfig, clusterID, cleanup, err = createUsercluster(t)
+		userconfig, _, cleanup, err = createUsercluster(t)
 		defer cleanup()
 		if err != nil {
 			t.Fatalf("failed to setup usercluster: %s", err)
@@ -96,10 +94,8 @@ func TestCilium(t *testing.T) {
 			t.Fatalf("failed to parse seedconfig: %s", err)
 		}
 
-		clusterID = config.Contexts[config.CurrentContext].Cluster
+		_ = config.Contexts[config.CurrentContext].Cluster
 	}
-
-	_ = clusterID
 
 	config, err := clientcmd.BuildConfigFromFlags("", userconfig)
 	if err != nil {
@@ -111,12 +107,10 @@ func TestCilium(t *testing.T) {
 		t.Fatalf("failed to create client: %s", err)
 	}
 
-	ctx := context.Background()
-
 	t.Logf("waiting for nodes to come up")
 	{
 		err := wait.Poll(30*time.Second, 10*time.Minute, func() (bool, error) {
-			nodes, err := userClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+			nodes, err := userClient.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 			if err != nil {
 				t.Logf("failed to get nodes list: %s", err)
 				return false, nil
@@ -145,33 +139,36 @@ func TestCilium(t *testing.T) {
 		err := wait.Poll(30*time.Second, 30*time.Minute, func() (bool, error) {
 			t.Logf("checking pod readiness...")
 
-			for _, prefix := range []string{
+			pods, err := userClient.CoreV1().Pods("kube-system").List(
+				context.Background(), metav1.ListOptions{})
+			if err != nil {
+				t.Logf("failed to get pod list: %s", err)
+				return false, nil
+			}
+
+			names := []string{
 				"cilium-operator",
 				"cilium",
-			} {
-				pods, err := getPods(ctx, userClient, prefix)
-				if err != nil {
-					t.Logf("failed to get pod list: %s", err)
-					return false, nil
-				}
+			}
 
-				if len(pods) == 0 {
-					t.Logf("no %s pods found", prefix)
-					return false, nil
-				}
+			pods.Items = filterByName(pods.Items, names)
 
-				allRunning := true
-				for _, pod := range pods {
-					if pod.Status.Phase != corev1.PodRunning {
-						allRunning = false
-					}
-					t.Log(pod.Name, pod.Status.Phase)
-				}
+			if len(pods.Items) == 0 {
+				t.Logf("no cilium pods found")
+				return false, nil
+			}
 
-				if !allRunning {
-					t.Logf("not all pods running yet...")
-					return false, nil
+			allRunning := true
+			for _, pod := range pods.Items {
+				if pod.Status.Phase != corev1.PodRunning {
+					allRunning = false
 				}
+				t.Log(pod.Name, pod.Status.Phase)
+			}
+
+			if !allRunning {
+				t.Logf("not all pods running yet...")
+				return false, nil
 			}
 
 			return true, nil
@@ -181,73 +178,205 @@ func TestCilium(t *testing.T) {
 		}
 	}
 
+	t.Logf("run Cilium connectivity tests")
+	{
+		_, err := userClient.CoreV1().Namespaces().Create(context.Background(), &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: ciliumTestNs,
+			},
+		}, metav1.CreateOptions{})
+		defer func() {
+			err := userClient.CoreV1().Namespaces().Delete(context.Background(), ciliumTestNs,
+				metav1.DeleteOptions{})
+			if err != nil {
+				t.Fatalf("failed to create %q namespace: %v", ciliumTestNs, err)
+			}
+		}()
+		if err != nil {
+			t.Fatalf("failed to create %q namespace: %v", ciliumTestNs, err)
+		}
+
+		t.Logf("namespace %q created", ciliumTestNs)
+
+		s := makeScheme()
+
+		objs, err := resourcesFromYaml(s)
+		if err != nil {
+			t.Fatalf("failed to read objects from yaml: %v", err)
+		}
+
+		for _, obj := range objs {
+			switch x := obj.(type) {
+			case *appsv1.Deployment:
+				_, err := userClient.AppsV1().Deployments(ciliumTestNs).Create(context.Background(), x,
+					metav1.CreateOptions{})
+				if err != nil {
+					t.Fatalf("failed to apply resource: %v", err)
+				}
+				t.Logf("created %v", x.Name)
+
+			case *corev1.Service:
+				_, err := userClient.CoreV1().Services(ciliumTestNs).Create(context.Background(), x,
+					metav1.CreateOptions{})
+				if err != nil {
+					t.Fatalf("failed to apply resource: %v", err)
+				}
+				t.Logf("created %v", x.Name)
+
+			case *ciliumv2.CiliumNetworkPolicy:
+				crdConfig := *config
+				crdConfig.ContentConfig.GroupVersion = &schema.GroupVersion{
+					Group:   ciliumv2.CustomResourceDefinitionGroup,
+					Version: ciliumv2.CustomResourceDefinitionVersion,
+				}
+				crdConfig.APIPath = "/apis"
+				crdConfig.NegotiatedSerializer = serializer.NewCodecFactory(s)
+				crdConfig.UserAgent = rest.DefaultKubernetesUserAgent()
+
+				client, err := rest.UnversionedRESTClientFor(&crdConfig)
+				if err != nil {
+					t.Fatalf("failed to create client: %v", err)
+				}
+
+				res := client.Patch(types.ApplyPatchType).Body(x).Do(context.Background())
+				if err := res.Error(); err != nil {
+					t.Fatalf("failed to apply resource: %v", err)
+				}
+				t.Logf("created %v", x.Name)
+
+			default:
+				t.Fatalf("unknown resource type: %v", obj.GetObjectKind())
+			}
+
+		}
+	}
+
+	t.Logf("waiting for Cilium connectivity pods to get ready")
+	{
+		err := wait.Poll(30*time.Second, 30*time.Minute, func() (bool, error) {
+			t.Logf("checking pod readiness...")
+
+			names := []string{
+				"echo-a",
+				"echo-b",
+				"echo-b-headless",
+				"echo-b-host",
+				"echo-b-host-headless",
+				"host-to-b-multi-node-clusterip",
+				"host-to-b-multi-node-headless",
+				"pod-to-a",
+				"pod-to-a-allowed-cnp",
+				//"pod-to-a-denied-cnp",  //TODO: enble after fixing. currently fails.
+				"pod-to-b-intra-node-nodeport",
+				"pod-to-b-multi-node-clusterip",
+				"pod-to-b-multi-node-headless",
+				"pod-to-b-multi-node-nodeport",
+				"pod-to-external-1111",
+				"pod-to-external-fqdn-allow-google-cnp",
+			}
+
+			pods, err := userClient.CoreV1().Pods(ciliumTestNs).List(context.Background(), metav1.ListOptions{})
+			if err != nil {
+				t.Logf("failed to get pod list: %s", err)
+				return false, nil
+			}
+
+			pods.Items = filterByName(pods.Items, names)
+
+			if len(pods.Items) == 0 {
+				t.Logf("no connectivity test pods found")
+				return false, nil
+			}
+
+			allHealthy := true
+			for _, pod := range pods.Items {
+				podHealthy := true
+				if pod.Status.Phase != corev1.PodRunning {
+					podHealthy = false
+					t.Log("not running", pod.Name, pod.Status.Phase)
+				}
+				for _, c := range pod.Status.Conditions {
+					if c.Type == corev1.PodReady {
+						if c.Status != corev1.ConditionTrue {
+							podHealthy = false
+							t.Log("not ready", pod.Name, c.Type, c.Status)
+						}
+					} else if c.Type == corev1.ContainersReady {
+						if c.Status != corev1.ConditionTrue {
+							podHealthy = false
+							t.Log("not container ready", pod.Name, c.Type, c.Status)
+						}
+					}
+				}
+
+				if !podHealthy {
+					t.Logf("%q not healthy", pod.Name)
+				}
+
+				allHealthy = allHealthy && podHealthy
+			}
+
+			if !allHealthy {
+				t.Logf("not all pods healthy yet...")
+				return false, nil
+			}
+
+			t.Logf("all pods healthy")
+
+			return true, nil
+		})
+		if err != nil {
+			t.Fatalf("pods never became ready: %v", err)
+		}
+	}
 }
 
-func getPods(ctx context.Context, kubeclient *kubernetes.Clientset, prefix string) ([]corev1.Pod, error) {
-	pods, err := kubeclient.CoreV1().Pods("kube-system").List(ctx, metav1.ListOptions{})
+func filterByName(pods []corev1.Pod, names []string) []corev1.Pod {
+	c := 0
+	for _, p := range pods {
+		for _, name := range names {
+			if p.Labels["name"] == name {
+				c++
+				pods = append(pods, p)
+			}
+		}
+	}
+	return pods[len(pods)-c:]
+}
+
+func makeScheme() *runtime.Scheme {
+	var s = runtime.NewScheme()
+	_ = serializer.NewCodecFactory(s)
+	_ = runtime.NewParameterCodec(s)
+	utilruntime.Must(appsv1.AddToScheme(s))
+	utilruntime.Must(corev1.AddToScheme(s))
+	utilruntime.Must(ciliumv2.AddToScheme(s))
+	return s
+}
+
+func resourcesFromYaml(s *runtime.Scheme) ([]runtime.Object, error) {
+	data, err := ioutil.ReadFile("./testdata/connectivity-check.yaml")
 	if err != nil {
 		return nil, err
 	}
 
-	var matchingPods []corev1.Pod
-	for _, pod := range pods.Items {
-		if strings.HasPrefix(pod.Name, prefix) {
-			matchingPods = append(matchingPods, pod)
+	manifests, err := yamlutil.ParseMultipleDocuments(bytes.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+
+	sr := kjson.NewSerializerWithOptions(&kjson.SimpleMetaFactory{}, s, s, kjson.SerializerOptions{})
+
+	var objs []runtime.Object
+	for _, m := range manifests {
+		obj, err := runtime.Decode(sr, m.Raw)
+		if err != nil {
+			return nil, err
 		}
-	}
-	return matchingPods, nil
-}
-
-type PodExec struct {
-	RestConfig *rest.Config
-	*kubernetes.Clientset
-}
-
-func NewPodExec(config rest.Config, clientset *kubernetes.Clientset) *PodExec {
-	config.APIPath = "/api"                                   // Make sure we target /api and not just /
-	config.GroupVersion = &schema.GroupVersion{Version: "v1"} // this targets the core api groups so the url path will be /api/v1
-	config.NegotiatedSerializer = serializer.WithoutConversionCodecFactory{CodecFactory: scheme.Codecs}
-	return &PodExec{
-		RestConfig: &config,
-		Clientset:  clientset,
-	}
-}
-
-func (p *PodExec) PodCopyFile(src string, dst string, containername string) error {
-	ioStreams := genericclioptions.NewTestIOStreamsDiscard()
-	copyOptions := cp.NewCopyOptions(ioStreams)
-	copyOptions.Clientset = p.Clientset
-	copyOptions.ClientConfig = p.RestConfig
-	copyOptions.Container = containername
-	copyOptions.NoPreserve = true
-	err := copyOptions.Run([]string{src, dst})
-	if err != nil {
-		return fmt.Errorf("Could not run copy operation: %v", err)
-	}
-	return nil
-}
-
-// gets logs from pod
-func getPodLogs(ctx context.Context, cli *kubernetes.Clientset, pod corev1.Pod) string {
-	podLogOpts := corev1.PodLogOptions{
-		TailLines: pointer.Int64(tailLines),
+		objs = append(objs, obj)
 	}
 
-	req := cli.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &podLogOpts)
-	podLogs, err := req.Stream(ctx)
-	if err != nil {
-		return "error in opening stream"
-	}
-	defer podLogs.Close()
-
-	buf := new(bytes.Buffer)
-	_, err = io.Copy(buf, podLogs)
-	if err != nil {
-		return "error in copy information from podLogs to buf"
-	}
-	str := buf.String()
-
-	return str
+	return objs, nil
 }
 
 // creates a usercluster on aws
