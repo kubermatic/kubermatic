@@ -179,11 +179,13 @@ func cloneResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, cli
 		kind:          "Role",
 		oldAPIVersion: "rbac.authorization.k8s.io/v1",
 		newAPIVersion: "rbac.authorization.k8s.io/v1",
+		namespaces:    clusterNamespaces,
 		drop:          true,
 	}, ownerRefTask{
 		kind:          "RoleBinding",
 		oldAPIVersion: "rbac.authorization.k8s.io/v1",
 		newAPIVersion: "rbac.authorization.k8s.io/v1",
+		namespaces:    clusterNamespaces,
 		drop:          true,
 	}, ownerRefTask{
 		kind:          "Service",
@@ -376,6 +378,12 @@ func convertObjectMeta(om metav1.ObjectMeta) metav1.ObjectMeta {
 	om.ResourceVersion = ""
 	om.CreationTimestamp = metav1.Time{}
 
+	// normally, due to the preflight checks, no object can be in deletion;
+	// during development this is possible however, so we still ensure that
+	// no deletion info is copied by accident
+	om.DeletionTimestamp = nil
+	om.DeletionGracePeriodSeconds = nil
+
 	// normalize/rename finalizers
 	for i, finalizer := range om.Finalizers {
 		finalizer = strings.ReplaceAll(finalizer, "operator.kubermatic.io/", "kubermatic.k8c.io/")
@@ -433,10 +441,10 @@ func migrateOwnerReferencesForKind(ctx context.Context, logger logrus.FieldLogge
 			logger.WithField("resource", resourceName).Debugf("Updating %s…", kind)
 
 			// update its owner refs
-			// newObj.SetOwnerReferences(newOwnerRefs)
-			// if err := client.Update(ctx, newObj); err != nil {
-			// 	return fmt.Errorf("failed to update object: %w", err)
-			// }
+			newObj.SetOwnerReferences(newOwnerRefs)
+			if err := client.Update(ctx, newObj); err != nil {
+				return fmt.Errorf("failed to update object: %w", err)
+			}
 		}
 	}
 
@@ -484,9 +492,9 @@ func migrateOwnerReferencesForEtcd(ctx context.Context, logger logrus.FieldLogge
 			logger.WithField("resource", ctrlruntimeclient.ObjectKeyFromObject(&sts)).Debug("Recreating StatefulSet…")
 
 			// delete the sts
-			// if err := client.Delete(ctx, &sts); err != nil {
-			// 	return fmt.Errorf("failed to delete object: %w", err)
-			// }
+			if err := client.Delete(ctx, &sts); err != nil {
+				return fmt.Errorf("failed to delete object: %w", err)
+			}
 
 			// recreate it
 			newSTS := appsv1.StatefulSet{
@@ -502,9 +510,9 @@ func migrateOwnerReferencesForEtcd(ctx context.Context, logger logrus.FieldLogge
 				newSTS.Spec.VolumeClaimTemplates[0].OwnerReferences = newPVCOwnerRefs
 			}
 
-			// if err := client.Create(ctx, &newSTS); err != nil {
-			// 	return fmt.Errorf("failed to create object: %w", err)
-			// }
+			if err := client.Create(ctx, &newSTS); err != nil {
+				return fmt.Errorf("failed to create object: %w", err)
+			}
 		}
 	}
 
@@ -1373,6 +1381,10 @@ func cloneEtcdRestoreResourcesInCluster(ctx context.Context, logger logrus.Field
 		newObject.Status = newv1.EtcdRestoreStatus{
 			Phase:       newv1.EtcdRestorePhase(oldObject.Status.Phase),
 			RestoreTime: oldObject.Status.RestoreTime,
+		}
+
+		if newObject.Status.Phase == "" {
+			newObject.Status.Phase = newv1.EtcdRestorePhaseStarted
 		}
 
 		if err := client.Status().Update(ctx, &newObject); err != nil {
