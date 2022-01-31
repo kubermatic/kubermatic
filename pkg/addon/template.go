@@ -34,7 +34,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/util/yaml"
-	"k8c.io/kubermatic/v2/pkg/version/cni"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -88,19 +87,13 @@ func NewTemplateData(
 		variables = make(map[string]interface{})
 	}
 
-	var cniPlugin CNIPlugin
 	if cluster.Spec.CNIPlugin == nil {
-		cniPlugin = CNIPlugin{
-			Type: kubermaticv1.CNIPluginTypeCanal.String(),
-			// This is to keep backward compatibility with clusters created before
-			// those settings were introduced.
-			Version: cni.CanalCNILastUnspecifiedVersion,
-		}
-	} else {
-		cniPlugin = CNIPlugin{
-			Type:    cluster.Spec.CNIPlugin.Type.String(),
-			Version: cluster.Spec.CNIPlugin.Version,
-		}
+		return nil, fmt.Errorf("cniPlugin must not be nil")
+	}
+
+	cniPlugin := CNIPlugin{
+		Type:    cluster.Spec.CNIPlugin.Type.String(),
+		Version: cluster.Spec.CNIPlugin.Version,
 	}
 
 	var storagePolicy string
