@@ -19,8 +19,7 @@ limitations under the License.
 // This spec describes possible operations which can be made against the Kubermatic Kubernetes Platform API.
 //
 //     Schemes: https
-//     Host: dev.kubermatic.io
-//     Version: 2.18
+//     Version: 2.20
 //
 //     Consumes:
 //     - application/json
