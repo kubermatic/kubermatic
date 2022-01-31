@@ -12,9 +12,8 @@
   "info": {
     "description": "This spec describes possible operations which can be made against the Kubermatic Kubernetes Platform API.",
     "title": "Kubermatic Kubernetes Platform API",
-    "version": "2.18"
+    "version": "2.20"
   },
-  "host": "dev.kubermatic.io",
   "paths": {
     "/api/projects/{project_id}/clusters/{cluster_id}/sshkeys/{key_id}": {
       "delete": {
