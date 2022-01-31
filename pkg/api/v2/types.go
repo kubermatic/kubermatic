@@ -430,12 +430,32 @@ type EKSCloudSpec struct {
 }
 
 type AKSCloudSpec struct {
-	Name           string `json:"name"`
-	TenantID       string `json:"tenantID"`
-	SubscriptionID string `json:"subscriptionID"`
-	ClientID       string `json:"clientID"`
-	ClientSecret   string `json:"clientSecret"`
-	ResourceGroup  string `json:"resourceGroup"`
+	Name           string          `json:"name"`
+	TenantID       string          `json:"tenantID"`
+	SubscriptionID string          `json:"subscriptionID"`
+	ClientID       string          `json:"clientID"`
+	ClientSecret   string          `json:"clientSecret"`
+	ResourceGroup  string          `json:"resourceGroup"`
+	ClusterSpec    *AKSClusterSpec `json:"clusterSpec,omitempty"`
+}
+
+// AKSClusterSpec Azure Kubernetes Service cluster.
+type AKSClusterSpec struct {
+	// Location - Resource location
+	Location string `json:"location,omitempty"`
+	// KubernetesVersion - When you upgrade a supported AKS cluster, Kubernetes minor versions cannot be skipped. All upgrades must be performed sequentially by major version number. For example, upgrades between 1.14.x -> 1.15.x or 1.15.x -> 1.16.x are allowed, however 1.14.x -> 1.16.x is not allowed. See [upgrading an AKS cluster](https://docs.microsoft.com/azure/aks/upgrade-cluster) for more details.
+	KubernetesVersion string `json:"kubernetesVersion,omitempty"`
+	// AgentPoolProfiles - The agent pool properties.
+	AgentPoolProfile `json:"agentPoolProfile,omitempty"`
+}
+
+type AgentPoolProfile struct {
+	// Name - Windows agent pool names must be 6 characters or less.
+	Name string `json:"name,omitempty"`
+	// Count - Number of agents (VMs) to host docker containers. Allowed values must be in the range of 0 to 1000 (inclusive) for user pools and in the range of 1 to 1000 (inclusive) for system pools. The default value is 1.
+	Count int32 `json:"count,omitempty"`
+	// VMSize - VM size availability varies by region. If a node contains insufficient compute resources (memory, cpu, etc) pods might fail to run correctly. For more details on restricted VM sizes, see: https://docs.microsoft.com/azure/aks/quotas-skus-regions
+	VMSize string `json:"vmSize,omitempty"`
 }
 
 // ExternalClusterNode represents an object holding external cluster node

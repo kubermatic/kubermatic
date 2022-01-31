@@ -17838,6 +17838,9 @@
           "type": "string",
           "x-go-name": "ClientSecret"
         },
+        "clusterSpec": {
+          "$ref": "#/definitions/AKSClusterSpec"
+        },
         "name": {
           "type": "string",
           "x-go-name": "Name"
@@ -17881,6 +17884,39 @@
       "title": "AKSClusterList represents an list of AKS clusters.",
       "items": {
         "$ref": "#/definitions/AKSCluster"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "AKSClusterSpec": {
+      "type": "object",
+      "title": "AKSClusterSpec Azure Kubernetes Service cluster.",
+      "properties": {
+        "count": {
+          "description": "Count - Number of agents (VMs) to host docker containers. Allowed values must be in the range of 0 to 1000 (inclusive) for user pools and in the range of 1 to 1000 (inclusive) for system pools. The default value is 1.",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "Count"
+        },
+        "kubernetesVersion": {
+          "description": "KubernetesVersion - When you upgrade a supported AKS cluster, Kubernetes minor versions cannot be skipped. All upgrades must be performed sequentially by major version number. For example, upgrades between 1.14.x -\u003e 1.15.x or 1.15.x -\u003e 1.16.x are allowed, however 1.14.x -\u003e 1.16.x is not allowed. See [upgrading an AKS cluster](https://docs.microsoft.com/azure/aks/upgrade-cluster) for more details.",
+          "type": "string",
+          "x-go-name": "KubernetesVersion"
+        },
+        "location": {
+          "description": "Location - Resource location",
+          "type": "string",
+          "x-go-name": "Location"
+        },
+        "name": {
+          "description": "Name - Windows agent pool names must be 6 characters or less.",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "vmSize": {
+          "description": "VMSize - VM size availability varies by region. If a node contains insufficient compute resources (memory, cpu, etc) pods might fail to run correctly. For more details on restricted VM sizes, see: https://docs.microsoft.com/azure/aks/quotas-skus-regions",
+          "type": "string",
+          "x-go-name": "VMSize"
+        }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
@@ -18635,6 +18671,28 @@
         },
         "upgradeSettings": {
           "$ref": "#/definitions/AgentPoolUpgradeSettings"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "AgentPoolProfile": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "description": "Count - Number of agents (VMs) to host docker containers. Allowed values must be in the range of 0 to 1000 (inclusive) for user pools and in the range of 1 to 1000 (inclusive) for system pools. The default value is 1.",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "Count"
+        },
+        "name": {
+          "description": "Name - Windows agent pool names must be 6 characters or less.",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "vmSize": {
+          "description": "VMSize - VM size availability varies by region. If a node contains insufficient compute resources (memory, cpu, etc) pods might fail to run correctly. For more details on restricted VM sizes, see: https://docs.microsoft.com/azure/aks/quotas-skus-regions",
+          "type": "string",
+          "x-go-name": "VMSize"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"

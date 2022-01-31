@@ -22,6 +22,7 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/containerservice/mgmt/containerservice"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
+	"github.com/Azure/go-autorest/autorest/to"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
@@ -39,11 +40,60 @@ import (
 
 const AKSNodepoolNameLabel = "kubernetes.azure.com/agentpool"
 
-func createAKSCluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticapiv1.ExternalCluster, error) {
+func createNewAKSCluster(ctx context.Context, aksCloudSpec *apiv2.AKSCloudSpec) error {
+	aksClient, err := aks.GetAKSClusterClient(resources.AKSCredentials{
+		TenantID:       aksCloudSpec.TenantID,
+		ClientID:       aksCloudSpec.ClientID,
+		SubscriptionID: aksCloudSpec.SubscriptionID,
+		ClientSecret:   aksCloudSpec.ClientSecret,
+	})
+	if err != nil {
+		return err
+	}
+
+	clusterSpec := aksCloudSpec.ClusterSpec
+	_, err = aksClient.CreateOrUpdate(
+		ctx,
+		aksCloudSpec.ResourceGroup,
+		aksCloudSpec.Name,
+		containerservice.ManagedCluster{
+			Name:     to.StringPtr(aksCloudSpec.Name),
+			Location: to.StringPtr(clusterSpec.Location),
+			ManagedClusterProperties: &containerservice.ManagedClusterProperties{
+				DNSPrefix:         to.StringPtr(aksCloudSpec.Name),
+				KubernetesVersion: to.StringPtr(clusterSpec.KubernetesVersion),
+				AgentPoolProfiles: &[]containerservice.ManagedClusterAgentPoolProfile{
+					{
+						Count:  to.Int32Ptr(clusterSpec.AgentPoolProfile.Count),
+						Name:   to.StringPtr(clusterSpec.AgentPoolProfile.Name),
+						VMSize: to.StringPtr(clusterSpec.AgentPoolProfile.VMSize),
+						Mode:   containerservice.AgentPoolModeSystem,
+					},
+				},
+				ServicePrincipalProfile: &containerservice.ManagedClusterServicePrincipalProfile{
+					ClientID: to.StringPtr(aksCloudSpec.ClientID),
+					Secret:   to.StringPtr(aksCloudSpec.ClientSecret),
+				},
+			},
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func createOrImportAKSCluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticapiv1.ExternalCluster, error) {
 	if cloud.AKS.Name == "" || cloud.AKS.TenantID == "" || cloud.AKS.SubscriptionID == "" || cloud.AKS.ClientID == "" || cloud.AKS.ClientSecret == "" || cloud.AKS.ResourceGroup == "" {
 		return nil, errors.NewBadRequest("the AKS cluster name, tenant id or subscription id or client id or client secret or resource group can not be empty")
 	}
 
+	if cloud.AKS.ClusterSpec != nil {
+		if err := createNewAKSCluster(ctx, cloud.AKS); err != nil {
+			return nil, err
+		}
+	}
 	newCluster := genExternalCluster(name, project.Name)
 	newCluster.Spec.CloudSpec = &kubermaticapiv1.ExternalClusterCloudSpec{
 		AKS: &kubermaticapiv1.ExternalClusterAKSCloudSpec{
