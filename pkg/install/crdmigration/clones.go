@@ -384,12 +384,6 @@ func convertObjectMeta(om metav1.ObjectMeta) metav1.ObjectMeta {
 		om.Finalizers[i] = finalizer
 	}
 
-	// remove legacy finalizers that were never properly cleaned up
-	// when they got removed
-	list := sets.NewString(om.Finalizers...)
-	list.Delete("kubermatic.io/cleanup-master-user-project-bindings")
-	om.Finalizers = list.List()
-
 	return om
 }
 
