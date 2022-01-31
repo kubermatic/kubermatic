@@ -515,14 +515,14 @@ func migrateOwnerReferences(ownerRefs []metav1.OwnerReference, namespace string,
 	result := []metav1.OwnerReference{}
 
 	for _, ref := range ownerRefs {
-		if dropReferences && (ref.APIVersion == "kubermatic.k8s.io/v1" || ref.APIVersion == "kubermatic.k8c.io/v1") {
+		if dropReferences && (ref.APIVersion == oldAPIGroupVersion || ref.APIVersion == newAPIGroupVersion) {
 			continue
 		}
 
 		newRef := ref.DeepCopy()
 
-		if newRef.APIVersion == "kubermatic.k8s.io/v1" {
-			newRef.APIVersion = "kubermatic.k8c.io/v1"
+		if newRef.APIVersion == oldAPIGroupVersion {
+			newRef.APIVersion = newAPIGroupVersion
 
 			cacheKey := getUIDCacheKey(newRef.Kind, namespace, newRef.Name)
 			uid, exists := uidCache[cacheKey]
@@ -542,8 +542,8 @@ func migrateOwnerReferences(ownerRefs []metav1.OwnerReference, namespace string,
 func migrateObjectReference(objectRef corev1.ObjectReference, namespace string) corev1.ObjectReference {
 	newRef := *objectRef.DeepCopy()
 
-	if newRef.APIVersion == "kubermatic.k8s.io/v1" {
-		newRef.APIVersion = "kubermatic.k8c.io/v1"
+	if newRef.APIVersion == oldAPIGroupVersion {
+		newRef.APIVersion = newAPIGroupVersion
 
 		if newRef.Namespace != "" {
 			namespace = newRef.Namespace

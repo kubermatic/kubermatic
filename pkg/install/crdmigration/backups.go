@@ -87,7 +87,7 @@ func createClusterBackup(ctx context.Context, logger logrus.FieldLogger, ts time
 		logger.Debugf("Backing up %s resources…", kind.Name)
 
 		objectList := &metav1unstructured.UnstructuredList{}
-		objectList.SetAPIVersion("kubermatic.k8s.io/v1") // use old API group
+		objectList.SetAPIVersion(oldAPIGroupVersion) // use old API group
 		objectList.SetKind(kind.Name)
 
 		if err := client.List(ctx, objectList); err != nil {

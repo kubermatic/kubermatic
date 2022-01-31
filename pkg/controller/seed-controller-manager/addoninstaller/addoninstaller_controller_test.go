@@ -50,11 +50,6 @@ var addons = kubermaticv1.AddonList{Items: []kubermaticv1.Addon{
 	}},
 }}
 
-func truePtr() *bool {
-	b := true
-	return &b
-}
-
 func TestCreateAddon(t *testing.T) {
 	name := "test-cluster"
 	tests := []struct {
