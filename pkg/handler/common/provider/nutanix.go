@@ -51,9 +51,11 @@ func ListNutanixClusters(creds NutanixCredentials, dc *kubermaticv1.DatacenterSp
 
 	var clusters apiv1.NutanixClusterList
 	for _, cluster := range clusterResp {
-		clusters = append(clusters, apiv1.NutanixCluster{
-			Name: *cluster.Status.Name,
-		})
+		if cluster.Status != nil && *cluster.Status.Name != "Unnamed" {
+			clusters = append(clusters, apiv1.NutanixCluster{
+				Name: *cluster.Status.Name,
+			})
+		}
 	}
 
 	return clusters, nil
