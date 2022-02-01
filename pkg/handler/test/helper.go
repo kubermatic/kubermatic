@@ -1922,6 +1922,7 @@ func GenAdminRuleGroup(name, namespace string, ruleGroupType kubermaticv1.RuleGr
 
 func GenAPIRuleGroup(name string, ruleGroupType kubermaticv1.RuleGroupType) *apiv2.RuleGroup {
 	return &apiv2.RuleGroup{
+		Name: name,
 		Data: GenerateTestRuleGroupData(name),
 		Type: ruleGroupType,
 	}

@@ -26137,6 +26137,10 @@
           },
           "x-go-name": "Data"
         },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
         "type": {
           "$ref": "#/definitions/RuleGroupType"
         }
