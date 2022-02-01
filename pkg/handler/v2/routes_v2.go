@@ -3833,7 +3833,7 @@ func (r Routing) listNutanixClusters() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.NutanixSubnetEndpoint(r.presetProvider, r.seedsGetter, r.userInfoGetter)),
+		)(provider.NutanixClusterEndpoint(r.presetProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeNutanixCommonReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
