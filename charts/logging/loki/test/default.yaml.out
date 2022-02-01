@@ -7,7 +7,7 @@ metadata:
     app: loki
     chart: loki-2.8.1
     heritage: Helm
-    release: RELEASE-NAME
+    release: release-name
   annotations:
     {}
   name: loki
@@ -23,7 +23,7 @@ metadata:
   labels:
     app: loki
     chart: loki-2.8.1
-    release: RELEASE-NAME
+    release: release-name
     heritage: Helm
 data:
   loki.yaml: YXV0aF9lbmFibGVkOiBmYWxzZQpjaHVua19zdG9yZV9jb25maWc6CiAgbWF4X2xvb2tfYmFja19wZXJpb2Q6IDcyMGgKY29tcGFjdG9yOgogIHNoYXJlZF9zdG9yZTogZmlsZXN5c3RlbQogIHdvcmtpbmdfZGlyZWN0b3J5OiAvZGF0YS9sb2tpL2JvbHRkYi1zaGlwcGVyLWNvbXBhY3Rvcgppbmdlc3RlcjoKICBjaHVua19ibG9ja19zaXplOiAyNjIxNDQKICBjaHVua19pZGxlX3BlcmlvZDogM20KICBjaHVua19yZXRhaW5fcGVyaW9kOiAxbQogIGxpZmVjeWNsZXI6CiAgICByaW5nOgogICAgICBrdnN0b3JlOgogICAgICAgIHN0b3JlOiBpbm1lbW9yeQogICAgICByZXBsaWNhdGlvbl9mYWN0b3I6IDEKICBtYXhfdHJhbnNmZXJfcmV0cmllczogMAogIHdhbDoKICAgIGRpcjogL2RhdGEvbG9raS93YWwKbGltaXRzX2NvbmZpZzoKICBlbmZvcmNlX21ldHJpY19uYW1lOiBmYWxzZQogIHJlamVjdF9vbGRfc2FtcGxlczogdHJ1ZQogIHJlamVjdF9vbGRfc2FtcGxlc19tYXhfYWdlOiAxNDRoCnNjaGVtYV9jb25maWc6CiAgY29uZmlnczoKICAtIGZyb206ICIyMDE4LTA0LTE1IgogICAgaW5kZXg6CiAgICAgIHBlcmlvZDogMTQ0aAogICAgICBwcmVmaXg6IGluZGV4XwogICAgb2JqZWN0X3N0b3JlOiBmaWxlc3lzdGVtCiAgICBzY2hlbWE6IHY5CiAgICBzdG9yZTogYm9sdGRiCiAgLSBmcm9tOiAiMjAyMS0wNy0wMSIKICAgIGluZGV4OgogICAgICBwZXJpb2Q6IDI0aAogICAgICBwcmVmaXg6IGluZGV4XwogICAgb2JqZWN0X3N0b3JlOiBmaWxlc3lzdGVtCiAgICBzY2hlbWE6IHYxMQogICAgc3RvcmU6IGJvbHRkYi1zaGlwcGVyCnNlcnZlcjoKICBodHRwX2xpc3Rlbl9wb3J0OiAzMTAwCnN0b3JhZ2VfY29uZmlnOgogIGJvbHRkYjoKICAgIGRpcmVjdG9yeTogL2RhdGEvbG9raS9pbmRleAogIGJvbHRkYl9zaGlwcGVyOgogICAgYWN0aXZlX2luZGV4X2RpcmVjdG9yeTogL2RhdGEvbG9raS9ib2x0ZGItc2hpcHBlci1hY3RpdmUKICAgIGNhY2hlX2xvY2F0aW9uOiAvZGF0YS9sb2tpL2JvbHRkYi1zaGlwcGVyLWNhY2hlCiAgICBjYWNoZV90dGw6IDI0aAogICAgc2hhcmVkX3N0b3JlOiBmaWxlc3lzdGVtCiAgZmlsZXN5c3RlbToKICAgIGRpcmVjdG9yeTogL2RhdGEvbG9raS9jaHVua3MKdGFibGVfbWFuYWdlcjoKICByZXRlbnRpb25fZGVsZXRlc19lbmFibGVkOiB0cnVlCiAgcmV0ZW50aW9uX3BlcmlvZDogNzIwaA==
@@ -38,7 +38,7 @@ metadata:
     app: loki
     chart: loki-2.8.1
     heritage: Helm
-    release: RELEASE-NAME
+    release: release-name
 ---
 # Source: loki/charts/loki/templates/rolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -50,7 +50,7 @@ metadata:
     app: loki
     chart: loki-2.8.1
     heritage: Helm
-    release: RELEASE-NAME
+    release: release-name
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -68,7 +68,7 @@ metadata:
   labels:
     app: loki
     chart: loki-2.8.1
-    release: RELEASE-NAME
+    release: release-name
     heritage: Helm
     variant: headless
 spec:
@@ -80,7 +80,7 @@ spec:
       targetPort: http-metrics
   selector:
     app: loki
-    release: RELEASE-NAME
+    release: release-name
 ---
 # Source: loki/charts/loki/templates/service.yaml
 apiVersion: v1
@@ -91,7 +91,7 @@ metadata:
   labels:
     app: loki
     chart: loki-2.8.1
-    release: RELEASE-NAME
+    release: release-name
     heritage: Helm
   annotations:
     {}
@@ -104,7 +104,7 @@ spec:
       targetPort: http-metrics
   selector:
     app: loki
-    release: RELEASE-NAME
+    release: release-name
 ---
 # Source: loki/charts/loki/templates/statefulset.yaml
 apiVersion: apps/v1
@@ -115,7 +115,7 @@ metadata:
   labels:
     app: loki
     chart: loki-2.8.1
-    release: RELEASE-NAME
+    release: release-name
     heritage: Helm
   annotations:
     {}
@@ -125,7 +125,7 @@ spec:
   selector:
     matchLabels:
       app: loki
-      release: RELEASE-NAME
+      release: release-name
   serviceName: loki-headless
   updateStrategy:
     type: RollingUpdate
@@ -134,9 +134,9 @@ spec:
       labels:
         app: loki
         name: loki
-        release: RELEASE-NAME
+        release: release-name
       annotations:
-        checksum/config: def325cfa25684d5131521561c17b2a487d6339304bdeeb2faa4c943c58503f3
+        checksum/config: a3ca5baf8225ea358579c6e59ee46507278844bfb458fd306233eae3c4443b8e
         prometheus.io/port: "3100"
         prometheus.io/scrape: "true"
     spec:
