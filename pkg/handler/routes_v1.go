@@ -213,18 +213,6 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listAnexiaTemplates())
 
 	mux.Methods(http.MethodGet).
-		Path("/providers/nutanix/{dc}/clusters").
-		Handler(r.listNutanixClusters())
-
-	mux.Methods(http.MethodGet).
-		Path("/providers/nutanix/{dc}/projects").
-		Handler(r.listNutanixProjects())
-
-	mux.Methods(http.MethodGet).
-		Path("/providers/nutanix/{dc}/{cluster_name}/subnets").
-		Handler(r.listNutanixSubnets())
-
-	mux.Methods(http.MethodGet).
 		Path("/providers/{provider_name}/presets/credentials").
 		Handler(r.listCredentials())
 
@@ -578,10 +566,6 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/alibaba/zones").
 		Handler(r.listAlibabaZonesNoCredentials())
-
-	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/nutanix/subnets").
-		Handler(r.listNutanixSubnetsNoCredentials())
 
 	//
 	// Defines a set of kubernetes-dashboard-specific endpoints
@@ -1392,72 +1376,6 @@ func (r Routing) listAnexiaTemplates() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.AnexiaTemplateEndpoint(r.presetProvider, r.userInfoGetter)),
 		provider.DecodeAnexiaTemplateReq,
-		EncodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route GET /api/v1/providers/nutanix/{dc}/clusters nutanix listNutanixClusters
-//
-// List clusters from Nutanix
-//
-//      Produces:
-//      - application/json
-//
-//      Responses:
-//      default: errorResponse
-//      200: NutanixClusterList
-func (r Routing) listNutanixClusters() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
-			middleware.UserSaver(r.userProvider),
-		)(provider.NutanixSubnetEndpoint(r.presetProvider, r.seedsGetter, r.userInfoGetter)),
-		provider.DecodeNutanixCommonReq,
-		EncodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route GET /api/v1/providers/nutanix/{dc}/projects nutanix listNutanixProjects
-//
-// List projects from Nutanix
-//
-//      Produces:
-//      - application/json
-//
-//      Responses:
-//      default: errorResponse
-//      200: NutanixClusterList
-func (r Routing) listNutanixProjects() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
-			middleware.UserSaver(r.userProvider),
-		)(provider.NutanixProjectEndpoint(r.presetProvider, r.seedsGetter, r.userInfoGetter)),
-		provider.DecodeNutanixCommonReq,
-		EncodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route GET /api/v1/providers/nutanix/{dc}/{cluster_name}/subnets nutanix listNutanixSubnets
-//
-// List subnets from Nutanix
-//
-//      Produces:
-//      - application/json
-//
-//      Responses:
-//      default: errorResponse
-//      200: NutanixSubnetList
-func (r Routing) listNutanixSubnets() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
-			middleware.UserSaver(r.userProvider),
-		)(provider.NutanixSubnetEndpoint(r.presetProvider, r.seedsGetter, r.userInfoGetter)),
-		provider.DecodeNutanixSubnetReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -3319,30 +3237,6 @@ func (r Routing) listAlibabaZonesNoCredentials() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(provider.AlibabaZonesWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
-		provider.DecodeAlibabaNoCredentialReq,
-		EncodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/nutanix/subnets nutanix listNutanixSubnetsNoCredentials
-//
-// Lists available Nutanix Subnets
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: NutanixSubnetList
-func (r Routing) listNutanixSubnetsNoCredentials() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
-			middleware.UserSaver(r.userProvider),
-			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(provider.NutanixSubnetsWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeAlibabaNoCredentialReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
