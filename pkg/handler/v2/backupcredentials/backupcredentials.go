@@ -57,7 +57,7 @@ func CreateOrUpdateEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter 
 		bc := convertAPIToInternalBackupCredentials(&req.Body.BackupCredentials)
 
 		// Update if already exists
-		_, err = backupCredentialsProvider.GetUnsecured()
+		_, err = backupCredentialsProvider.GetUnsecured(bc.Name)
 		if err != nil {
 			_, err = backupCredentialsProvider.CreateUnsecured(bc)
 			if err != nil {
