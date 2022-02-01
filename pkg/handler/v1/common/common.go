@@ -206,8 +206,8 @@ func getDialerForPod(pod *corev1.Pod, restClient rest.Interface, cfg *rest.Confi
 }
 
 // WaitForPortForwarder waits until started port forwarder is ready, or emits an error to provided errChan.
-func WaitForPortForwarder(p *portforward.PortForwarder, errChan <-chan error) error {
-	timeout := time.After(10 * time.Second)
+func WaitForPortForwarder(duration time.Duration, p *portforward.PortForwarder, errChan <-chan error) error {
+	timeout := time.After(duration)
 	select {
 	case <-timeout:
 		return errors.New("timeout waiting for backend connection")
@@ -243,7 +243,7 @@ func ForwardPort(log *zap.SugaredLogger, forwarder *portforward.PortForwarder) e
 		}
 	}()
 
-	if err := WaitForPortForwarder(forwarder, errorChan); err != nil {
+	if err := WaitForPortForwarder(10*time.Second, forwarder, errorChan); err != nil {
 		return err
 	}
 

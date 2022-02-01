@@ -463,7 +463,7 @@ func createUsercluster(t *testing.T) (string, string, func(), error) {
 	// create a usercluster on aws
 	cluster, err := apicli.CreateAWSCluster(project.ID, seed, userclusterName,
 		secretAccessKey, accessKeyID, utils.KubernetesVersion(),
-		"aws-eu-central-1a", "eu-central-1a", 1, true)
+		"aws-eu-central-1a", "eu-central-1a", "", 1, true, nil)
 	if err != nil {
 		return "", "", nil, err
 	}

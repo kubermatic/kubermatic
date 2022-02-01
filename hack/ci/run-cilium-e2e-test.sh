@@ -30,7 +30,7 @@ function cleanup() {
 trap cleanup EXIT SIGINT SIGTERM
 
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
-export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_konnectivity.yaml
+export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_cilium.yaml
 source hack/ci/setup-kind-cluster.sh
 source hack/ci/setup-kubermatic-in-kind.sh
 
@@ -44,8 +44,21 @@ export AWS_SECRET_ACCESS_KEY=$(vault kv get -field=secretAccessKey dev/e2e-aws)
 
 echodate "Successfully got secrets for dev from Vault"
 
-echodate "Running konnectivity tests..."
+function print_kubermatic_logs {
+  if [[ $? -ne 0 ]]; then
+    echodate "Printing logs for Kubermatic API"
+    kubectl -n kubermatic logs --tail=-1 --selector='app.kubernetes.io/name=kubermatic-api'
+    echodate "Printing logs for Master Controller Manager"
+    kubectl -n kubermatic logs --tail=-1 --selector='app.kubernetes.io/name=kubermatic-master-controller-manager'
+    echodate "Printing logs for Seed Controller Manager"
+    kubectl -n kubermatic logs --tail=-1 --selector='app.kubernetes.io/name=kubermatic-seed-controller-manager'
+  fi
+}
 
-go test -timeout 1h -tags e2e -v ./pkg/test/e2e/konnectivity/... -args -seedconfig=${KUBECONFIG}
+appendTrap print_kubermatic_logs EXIT
 
-echodate "Konnectivity tests done."
+echodate "Running cilium tests..."
+
+go test -race -timeout 1h -tags e2e -v ./pkg/test/e2e/cilium/...
+
+echodate "Cilium tests done."
