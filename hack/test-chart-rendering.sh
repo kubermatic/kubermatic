@@ -33,6 +33,7 @@ echodate "(Golden master) Testing ${chartname}..."
 exitCode=0
 
 set +o errexit
+helm version
 echodate "Fetching dependencies..."
 i=0
 for url in $(yq r Chart.yaml dependencies --tojson | jq -r .[].repository); do
@@ -50,6 +51,7 @@ for valuesFile in test/*.yaml; do
 
   if ! git diff --quiet ${valuesFile}.out || [[ $helmOut -ne 0 ]]; then
     exitCode=1
+    git --no-pager diff ${valuesFile}.out
     echodate "  FAIL"
   else
     echodate "  PASS"
