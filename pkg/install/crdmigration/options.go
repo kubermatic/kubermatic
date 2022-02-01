@@ -38,4 +38,5 @@ type Options struct {
 	SeedClients     map[string]ctrlruntimeclient.Client
 	ChartsDirectory string
 	EtcdTimeout     time.Duration
+	CheckRunning    bool
 }

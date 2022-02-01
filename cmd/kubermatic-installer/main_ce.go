@@ -41,8 +41,9 @@ func commands(logger *logrus.Logger, versions kubermaticversion.Versions) []cli.
 		DeployCommand(logger, versions),
 		PrintCommand(),
 		ConvertKubeconfigCommand(logger),
-		MigrateCRDsCommand(logger),
+		PreflightChecksCommand(logger),
 		ShutdownCommand(logger),
+		MigrateCRDsCommand(logger),
 	}
 }
 

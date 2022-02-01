@@ -18,9 +18,7 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
@@ -32,40 +30,35 @@ import (
 )
 
 var (
-	shutdownKubeContextFlag = cli.StringFlag{
+	prelightChecksKubeContextFlag = cli.StringFlag{
 		Name:   "kube-context",
 		Usage:  "Context to use from the given kubeconfig",
 		EnvVar: "KUBE_CONTEXT",
 	}
-	safetyFlag = cli.StringFlag{
-		Name:  "stop-the-world",
-		Usage: "Safety flag, must be set to 'yes' to continue",
-	}
 )
 
-func ShutdownCommand(logger *logrus.Logger) cli.Command {
+func PreflightChecksCommand(logger *logrus.Logger) cli.Command {
 	return cli.Command{
-		Name:   "shutdown",
-		Usage:  "[CRD migration] Scales all KKP controllers on all clusters to 0, in preparation for the CRD migration",
-		Action: ShutdownAction(logger),
+		Name:   "preflight",
+		Usage:  "[CRD migration] Performs various validations to prepare the CRD migration",
+		Action: PreflightChecksAction(logger),
 		Flags: []cli.Flag{
-			shutdownKubeContextFlag,
-			safetyFlag,
+			chartsDirectoryFlag,
+			prelightChecksKubeContextFlag,
 		},
 	}
 }
 
-func ShutdownAction(logger *logrus.Logger) cli.ActionFunc {
+func PreflightChecksAction(logger *logrus.Logger) cli.ActionFunc {
 	return handleErrors(logger, setupLogger(logger, func(ctx *cli.Context) error {
-		if strings.ToLower(ctx.String(safetyFlag.Name)) != "yes" {
-			return errors.New("to prevent accidental shutdowns, the --stop-the-world flag must be set to 'yes'")
-		}
-
 		appContext := context.Background()
 		namespace := kubermaticmaster.KubermaticOperatorNamespace
 
+		// ////////////////////////////////////
+		// phase 0: preparations
+
 		// get kube client to master cluster
-		kubeContext := ctx.String(shutdownKubeContextFlag.Name)
+		kubeContext := ctx.String(migrateCRDsKubeContextFlag.Name)
 
 		logger.Info("Creating Kubernetes client to the master cluster…")
 
@@ -111,15 +104,15 @@ func ShutdownAction(logger *logrus.Logger) cli.ActionFunc {
 			MasterClient:            kubeClient,
 			Seeds:                   allSeeds,
 			SeedClients:             seedClients,
+			ChartsDirectory:         ctx.GlobalString(chartsDirectoryFlag.Name),
+			CheckRunning:            false,
 		}
 
-		// here we go
-		if err := crdmigration.ShutdownControllers(appContext, logger, &opt); err != nil {
-			return fmt.Errorf("operation failed: %w", err)
+		if err := crdmigration.PerformPreflightChecks(appContext, logger.WithField("phase", "preflight"), &opt); err != nil {
+			return fmt.Errorf("preflight checks failed: %w", err)
 		}
 
-		logger.Info("All controllers have been scaled down to 0 replicas now. It can take up to 3 minutes for all pods to be terminated.")
-		logger.Info("Please run the `migrate-crds` command now to migrate your resources. The migration will first ensure that all controller pods have been removed.")
+		logger.Info("Your KKP setup is ready to be migrated. Please run the shutdown command now to scale down all KKP controllers and webhooks.")
 
 		return nil
 	}))

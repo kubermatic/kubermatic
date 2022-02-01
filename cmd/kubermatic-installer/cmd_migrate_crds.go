@@ -59,9 +59,8 @@ var (
 func MigrateCRDsCommand(logger *logrus.Logger) cli.Command {
 	return cli.Command{
 		Name:   "migrate-crds",
-		Usage:  "(development only) Migrates the KKP CRDs to their new API groups",
+		Usage:  "[CRD migration] Migrates the KKP CRDs to their new API groups",
 		Action: MigrateCRDsAction(logger),
-		Hidden: true, // users must not run this before it's released
 		Flags: []cli.Flag{
 			chartsDirectoryFlag,
 			migrateCRDsKubeContextFlag,
@@ -128,6 +127,7 @@ func MigrateCRDsAction(logger *logrus.Logger) cli.ActionFunc {
 			SeedClients:             seedClients,
 			ChartsDirectory:         ctx.GlobalString(chartsDirectoryFlag.Name),
 			EtcdTimeout:             ctx.Duration(etcdTimeoutFlag.Name),
+			CheckRunning:            true,
 		}
 
 		// ////////////////////////////////////

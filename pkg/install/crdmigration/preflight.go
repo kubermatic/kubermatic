@@ -59,9 +59,11 @@ func PerformPreflightChecks(ctx context.Context, logger logrus.FieldLogger, opt 
 		success = false
 	}
 
-	if err := validateKubermaticNotRunning(ctx, logger, opt); err != nil {
-		logger.Errorf("KKP health check failed: %v", err)
-		success = false
+	if opt.CheckRunning {
+		if err := validateKubermaticNotRunning(ctx, logger, opt); err != nil {
+			logger.Errorf("KKP health check failed: %v", err)
+			success = false
+		}
 	}
 
 	if err := validateNoStuckResources(ctx, logger, opt); err != nil {
