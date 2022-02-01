@@ -83,6 +83,8 @@ var ProtectedClusterLabels = sets.NewString(WorkerNameLabelKey, ProjectIDLabelKe
 // +kubebuilder:printcolumn:JSONPath=".spec.humanReadableName",name="HumanReadableName",type="string"
 // +kubebuilder:printcolumn:JSONPath=".status.userEmail",name="Owner",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.version",name="Version",type="string"
+// +kubebuilder:printcolumn:JSONPath=".spec.cloud.providerName",name="Provider",type="string"
+// +kubebuilder:printcolumn:JSONPath=".spec.cloud.dc",name="Datacenter",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.pause",name="Paused",type="boolean"
 
 // Cluster is the object representing a cluster.

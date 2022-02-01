@@ -32,6 +32,7 @@ const (
 // +kubebuilder:printcolumn:JSONPath=".spec.projectID",name="ProjectID",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.clusterTemplateID",name="ClusterTemplateID",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.replicas",name="Replicas",type="integer"
+// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // ClusterTemplateInstance is the object representing a cluster template instance.
 type ClusterTemplateInstance struct {

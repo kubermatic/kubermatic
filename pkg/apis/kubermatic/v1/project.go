@@ -50,6 +50,7 @@ const (
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:JSONPath=".spec.name",name="HumanReadableName",type="string"
 // +kubebuilder:printcolumn:JSONPath=".status.phase",name="Status",type="string"
+// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // Project is the type describing a project.
 type Project struct {

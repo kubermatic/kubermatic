@@ -26,6 +26,12 @@ spec:
     - jsonPath: .spec.version
       name: Version
       type: string
+    - jsonPath: .spec.cloud.providerName
+      name: Provider
+      type: string
+    - jsonPath: .spec.cloud.dc
+      name: Datacenter
+      type: string
     - jsonPath: .spec.pause
       name: Paused
       type: boolean

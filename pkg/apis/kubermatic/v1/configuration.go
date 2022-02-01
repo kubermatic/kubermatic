@@ -51,6 +51,7 @@ const (
 
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
+// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // KubermaticConfiguration is the configuration required for running Kubermatic.
 type KubermaticConfiguration struct {
