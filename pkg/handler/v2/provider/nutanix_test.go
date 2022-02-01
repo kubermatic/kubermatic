@@ -19,7 +19,6 @@ package provider_test
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -295,12 +294,7 @@ func compareJSON(t *testing.T, res *httptest.ResponseRecorder, expectedResponseS
 	var actualResponse interface{}
 	var expectedResponse interface{}
 
-	// var err error
-	bBytes, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		t.Fatal("Unable to read response body")
-	}
-	err = json.Unmarshal(bBytes, &actualResponse)
+	err := json.Unmarshal(res.Body.Bytes(), &actualResponse)
 	if err != nil {
 		t.Fatalf("Error marshaling string 1 :: %s", err.Error())
 	}
