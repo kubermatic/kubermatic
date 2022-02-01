@@ -161,6 +161,10 @@ func NutanixClusterEndpoint(presetProvider provider.PresetProvider, seedsGetter 
 			}
 		}
 
+		if creds.Username == "" || creds.Password == "" {
+			return nil, errors.NewBadRequest("no valid credentials found")
+		}
+
 		_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, req.DC)
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
@@ -169,7 +173,7 @@ func NutanixClusterEndpoint(presetProvider provider.PresetProvider, seedsGetter 
 			return nil, errors.NewBadRequest("datacenter '%s' is not a Nutanix datacenter", req.DC)
 		}
 
-		clusters, err := providercommon.ListNutanixClusters(creds, dc.Spec.Nutanix)
+		clusters, err := providercommon.NewNutanixClient(dc.Spec.Nutanix, &creds).ListNutanixClusters()
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("cannot list clusters: %s", err.Error()))
 		}
@@ -206,6 +210,10 @@ func NutanixProjectEndpoint(presetProvider provider.PresetProvider, seedsGetter 
 			}
 		}
 
+		if creds.Username == "" || creds.Password == "" {
+			return nil, errors.NewBadRequest("no valid credentials found")
+		}
+
 		_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, req.DC)
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
@@ -214,7 +222,7 @@ func NutanixProjectEndpoint(presetProvider provider.PresetProvider, seedsGetter 
 			return nil, errors.NewBadRequest("datacenter '%s' is not a Nutanix datacenter", req.DC)
 		}
 
-		projects, err := providercommon.ListNutanixProjects(creds, dc.Spec.Nutanix)
+		projects, err := providercommon.NewNutanixClient(dc.Spec.Nutanix, &creds).ListNutanixProjects()
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("cannot list projects: %s", err.Error()))
 		}
@@ -251,6 +259,10 @@ func NutanixSubnetEndpoint(presetProvider provider.PresetProvider, seedsGetter p
 			}
 		}
 
+		if creds.Username == "" || creds.Password == "" {
+			return nil, errors.NewBadRequest("no valid credentials found")
+		}
+
 		_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, req.DC)
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
@@ -259,7 +271,7 @@ func NutanixSubnetEndpoint(presetProvider provider.PresetProvider, seedsGetter p
 			return nil, errors.NewBadRequest("datacenter '%s' is not a Nutanix datacenter", req.DC)
 		}
 
-		subnets, err := providercommon.ListNutanixSubnets(creds, dc.Spec.Nutanix, req.ClusterName, req.ProjectName)
+		subnets, err := providercommon.NewNutanixClient(dc.Spec.Nutanix, &creds).ListNutanixSubnets(req.ClusterName, req.ProjectName)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("cannot list subnets: %s", err.Error()))
 		}
