@@ -108,7 +108,7 @@ func PreflightChecksAction(logger *logrus.Logger) cli.ActionFunc {
 			CheckRunning:            false,
 		}
 
-		if err := crdmigration.PerformPreflightChecks(appContext, logger.WithField("phase", "preflight"), &opt); err != nil {
+		if err := crdmigration.PerformPreflightChecks(appContext, logger, &opt); err != nil {
 			return fmt.Errorf("preflight checks failed: %w", err)
 		}
 
