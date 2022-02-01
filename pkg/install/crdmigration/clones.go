@@ -18,6 +18,7 @@ package crdmigration
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -47,13 +48,13 @@ import (
 
 func DuplicateResources(ctx context.Context, logger logrus.FieldLogger, opt *Options) error {
 	// clone master cluster resources
-	if err := cloneResourcesInCluster(ctx, logger.WithField("master", true), opt.MasterClient, opt.KubermaticNamespace); err != nil {
+	if err := cloneResourcesInCluster(ctx, logger.WithField("master", true), opt.MasterClient, opt.KubermaticNamespace, opt.EtcdTimeout); err != nil {
 		return fmt.Errorf("processing the master cluster failed: %w", err)
 	}
 
 	// clone seed cluster resources
 	for seedName, seedClient := range opt.SeedClients {
-		if err := cloneResourcesInCluster(ctx, logger.WithField("seed", seedName), seedClient, opt.KubermaticNamespace); err != nil {
+		if err := cloneResourcesInCluster(ctx, logger.WithField("seed", seedName), seedClient, opt.KubermaticNamespace, opt.EtcdTimeout); err != nil {
 			return fmt.Errorf("processing the seed cluster failed: %w", err)
 		}
 	}
@@ -61,7 +62,7 @@ func DuplicateResources(ctx context.Context, logger logrus.FieldLogger, opt *Opt
 	return nil
 }
 
-func cloneResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client, kubermaticNamespace string) error {
+func cloneResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client, kubermaticNamespace string, etcdTimeout time.Duration) error {
 	// reset our runtime UID cache
 	uidCache = map[string]types.UID{}
 
@@ -259,7 +260,7 @@ func cloneResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, cli
 	// and recreate it
 	logger.Info("Adjusting owner references for etcd rings…")
 
-	err = migrateOwnerReferencesForEtcd(ctx, logger, client, clusterNamespaces)
+	err = migrateOwnerReferencesForEtcd(ctx, logger, client, clusterNamespaces, etcdTimeout)
 	if err != nil {
 		return fmt.Errorf("failed to update etcd rings: %w", err)
 	}
@@ -455,7 +456,7 @@ func migrateOwnerReferencesForKind(ctx context.Context, logger logrus.FieldLogge
 // it not only contains ownerRefs n its own object meta, but the PVC template also has
 // an ownerRef. The PVC template is immutable however, so we need to completely recreate
 // the StatefulSet and pray to god that no volumes are affected.
-func migrateOwnerReferencesForEtcd(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client, namespaces []string) error {
+func migrateOwnerReferencesForEtcd(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client, namespaces []string, timeout time.Duration) error {
 	list := &appsv1.StatefulSetList{}
 	if err := client.List(ctx, list); err != nil {
 		return fmt.Errorf("failed to list objects: %w", err)
@@ -489,7 +490,8 @@ func migrateOwnerReferencesForEtcd(ctx context.Context, logger logrus.FieldLogge
 		newPVCOwnerRefs := migrateOwnerReferences(pvcOwnerRefs, sts.GetNamespace(), true)
 
 		if !reflect.DeepEqual(stsOwnerRefs, newSTSOwnerRefs) || !reflect.DeepEqual(pvcOwnerRefs, newPVCOwnerRefs) {
-			logger.WithField("resource", ctrlruntimeclient.ObjectKeyFromObject(&sts)).Debug("Recreating StatefulSet…")
+			stsLogger := logger.WithField("resource", ctrlruntimeclient.ObjectKeyFromObject(&sts))
+			stsLogger.Debug("Recreating StatefulSet…")
 
 			// delete the sts
 			if err := client.Delete(ctx, &sts); err != nil {
@@ -513,10 +515,41 @@ func migrateOwnerReferencesForEtcd(ctx context.Context, logger logrus.FieldLogge
 			if err := client.Create(ctx, &newSTS); err != nil {
 				return fmt.Errorf("failed to create object: %w", err)
 			}
+
+			// if enabled, wait for the etcd pods to get ready again; this slows down the
+			// migration, but lowers the performance impact of the migration
+			if timeout > 0 {
+				if err := waitForEtcdReady(ctx, stsLogger, client, ctrlruntimeclient.ObjectKeyFromObject(&sts), timeout); err != nil {
+					return fmt.Errorf("failed to wait for etcd: %w", err)
+				}
+			}
 		}
 	}
 
 	return nil
+}
+
+func waitForEtcdReady(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client, key types.NamespacedName, timeout time.Duration) error {
+	logger.Debugf("Waiting up to %v for etcd to become ready…", timeout)
+
+	err := wait.Poll(1*time.Second, timeout, func() (done bool, err error) {
+		sts := &appsv1.StatefulSet{}
+		if err := client.Get(ctx, key, sts); err != nil {
+			return false, err
+		}
+
+		return sts.Status.ReadyReplicas == *sts.Spec.Replicas, nil
+	})
+
+	// etcd being "slow" is not an error per-se; treating this as a warning only allows the
+	// user to choose a very small timeout (5s) only to slow down the migration a bit, without
+	// blocking for each user cluster.
+	if errors.Is(err, wait.ErrWaitTimeout) {
+		logger.Warn("StatefulSet did not become ready within the timeout.")
+		return nil
+	}
+
+	return err
 }
 
 func migrateOwnerReferences(ownerRefs []metav1.OwnerReference, namespace string, dropReferences bool) []metav1.OwnerReference {

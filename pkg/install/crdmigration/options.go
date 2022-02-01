@@ -17,6 +17,8 @@ limitations under the License.
 package crdmigration
 
 import (
+	"time"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 
@@ -35,4 +37,5 @@ type Options struct {
 	Seeds           map[string]*kubermaticv1.Seed
 	SeedClients     map[string]ctrlruntimeclient.Client
 	ChartsDirectory string
+	EtcdTimeout     time.Duration
 }

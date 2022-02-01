@@ -45,6 +45,11 @@ var (
 		Usage:  "Context to use from the given kubeconfig",
 		EnvVar: "KUBE_CONTEXT",
 	}
+	etcdTimeoutFlag = cli.DurationFlag{
+		Name:  "etcd-timeout",
+		Usage: "Max duration for the etcd StatefulSet of a usercluster to become ready before migrating the next (0 to disable waiting)",
+		Value: 0,
+	}
 	removeOldResourcesFlag = cli.BoolFlag{
 		Name:  "remove-old-resources",
 		Usage: "Delete resources in the old API group when the migration is completed",
@@ -61,6 +66,7 @@ func MigrateCRDsCommand(logger *logrus.Logger) cli.Command {
 			chartsDirectoryFlag,
 			migrateCRDsKubeContextFlag,
 			removeOldResourcesFlag,
+			etcdTimeoutFlag,
 		},
 	}
 }
@@ -121,6 +127,7 @@ func MigrateCRDsAction(logger *logrus.Logger) cli.ActionFunc {
 			Seeds:                   allSeeds,
 			SeedClients:             seedClients,
 			ChartsDirectory:         ctx.GlobalString(chartsDirectoryFlag.Name),
+			EtcdTimeout:             ctx.Duration(etcdTimeoutFlag.Name),
 		}
 
 		// ////////////////////////////////////
