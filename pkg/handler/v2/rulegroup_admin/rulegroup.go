@@ -183,6 +183,7 @@ func convertInternalToAPIRuleGroups(ruleGroups []*kubermaticv1.RuleGroup) []*api
 
 func convertInternalToAPIRuleGroup(ruleGroup *kubermaticv1.RuleGroup) *apiv2.RuleGroup {
 	return &apiv2.RuleGroup{
+		Name: ruleGroup.ObjectMeta.Name,
 		Data: ruleGroup.Spec.Data,
 		Type: ruleGroup.Spec.RuleGroupType,
 	}
