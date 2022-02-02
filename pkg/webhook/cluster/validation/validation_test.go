@@ -748,7 +748,7 @@ func TestHandle(t *testing.T) {
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
-					Version: "v3.21",
+					Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -795,7 +795,7 @@ func TestHandle(t *testing.T) {
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
-					Version: "v3.22",
+					Version: "v9.22",
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -1126,7 +1126,7 @@ func TestHandle(t *testing.T) {
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
-					Version: "v3.21",
+					Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
