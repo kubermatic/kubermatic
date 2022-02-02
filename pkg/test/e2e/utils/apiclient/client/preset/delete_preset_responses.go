@@ -41,6 +41,12 @@ func (o *DeletePresetReader) ReadResponse(response runtime.ClientResponse, consu
 			return nil, err
 		}
 		return nil, result
+	case 404:
+		result := NewDeletePresetNotFound()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	default:
 		result := NewDeletePresetDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -66,7 +72,7 @@ type DeletePresetOK struct {
 }
 
 func (o *DeletePresetOK) Error() string {
-	return fmt.Sprintf("[DELETE /api/v2/providers/{provider_name}/presets/{preset_name}][%d] deletePresetOK ", 200)
+	return fmt.Sprintf("[DELETE /api/v2/presets/{preset_name}][%d] deletePresetOK ", 200)
 }
 
 func (o *DeletePresetOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -87,7 +93,7 @@ type DeletePresetUnauthorized struct {
 }
 
 func (o *DeletePresetUnauthorized) Error() string {
-	return fmt.Sprintf("[DELETE /api/v2/providers/{provider_name}/presets/{preset_name}][%d] deletePresetUnauthorized ", 401)
+	return fmt.Sprintf("[DELETE /api/v2/presets/{preset_name}][%d] deletePresetUnauthorized ", 401)
 }
 
 func (o *DeletePresetUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -108,10 +114,31 @@ type DeletePresetForbidden struct {
 }
 
 func (o *DeletePresetForbidden) Error() string {
-	return fmt.Sprintf("[DELETE /api/v2/providers/{provider_name}/presets/{preset_name}][%d] deletePresetForbidden ", 403)
+	return fmt.Sprintf("[DELETE /api/v2/presets/{preset_name}][%d] deletePresetForbidden ", 403)
 }
 
 func (o *DeletePresetForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	return nil
+}
+
+// NewDeletePresetNotFound creates a DeletePresetNotFound with default headers values
+func NewDeletePresetNotFound() *DeletePresetNotFound {
+	return &DeletePresetNotFound{}
+}
+
+/* DeletePresetNotFound describes a response with status code 404, with default header values.
+
+EmptyResponse is a empty response
+*/
+type DeletePresetNotFound struct {
+}
+
+func (o *DeletePresetNotFound) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/presets/{preset_name}][%d] deletePresetNotFound ", 404)
+}
+
+func (o *DeletePresetNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	return nil
 }
@@ -139,7 +166,7 @@ func (o *DeletePresetDefault) Code() int {
 }
 
 func (o *DeletePresetDefault) Error() string {
-	return fmt.Sprintf("[DELETE /api/v2/providers/{provider_name}/presets/{preset_name}][%d] deletePreset default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[DELETE /api/v2/presets/{preset_name}][%d] deletePreset default  %+v", o._statusCode, o.Payload)
 }
 func (o *DeletePresetDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload

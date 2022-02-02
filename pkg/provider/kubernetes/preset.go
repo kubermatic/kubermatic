@@ -24,7 +24,6 @@ import (
 	"os"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/email"
 
@@ -207,14 +206,8 @@ func (m *PresetProvider) GetPreset(userInfo *provider.UserInfo, name string) (*k
 	return nil, errors.NewNotFound(kubermaticv1.Resource("preset"), name)
 }
 
-// DeletePreset Provider or delete Preset completely if empty.
+// DeletePreset delete Preset
 func (m *PresetProvider) DeletePreset(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
-	existingProviders := kubermaticv1helper.GetProviderList(preset)
-	if len(existingProviders) > 0 {
-		// Case: Remove provider from the preset
-		return m.patcher(preset)
-	}
-	// Case: Delete the whole preset
 	return m.deleter(preset)
 }
 
