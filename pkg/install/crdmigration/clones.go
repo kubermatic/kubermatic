@@ -1204,7 +1204,7 @@ func cloneClusterTemplateResourcesInCluster(ctx context.Context, logger logrus.F
 
 		logger.WithField("resource", oldObject.GetName()).Debug("Duplicating ClusterTemplate…")
 
-		if err := ensureObject(ctx, client, &newObject, false); err != nil {
+		if err := ensureObject(ctx, client, &newObject, true); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
 	}
@@ -1235,7 +1235,7 @@ func cloneClusterTemplateInstanceResourcesInCluster(ctx context.Context, logger 
 
 		logger.WithField("resource", oldObject.GetName()).Debug("Duplicating ClusterTemplateInstance…")
 
-		if err := ensureObject(ctx, client, &newObject, false); err != nil {
+		if err := ensureObject(ctx, client, &newObject, true); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
 	}
