@@ -140,7 +140,7 @@ func DecodeNutanixNoCredentialReq(c context.Context, r *http.Request) (interface
 	return req, nil
 }
 
-// NutanixClusterEndpoint handles the request for a list of clusters, using provided credentials
+// NutanixClusterEndpoint handles the request for a list of clusters, using provided credentials.
 func NutanixClusterEndpoint(presetProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(NutanixCommonReq)
@@ -189,7 +189,7 @@ func NutanixClusterEndpoint(presetProvider provider.PresetProvider, seedsGetter 
 	}
 }
 
-// NutanixProjectEndpoint handles the request for a list of projects, using provided credentials
+// NutanixProjectEndpoint handles the request for a list of projects, using provided credentials.
 func NutanixProjectEndpoint(presetProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(NutanixCommonReq)
@@ -238,7 +238,7 @@ func NutanixProjectEndpoint(presetProvider provider.PresetProvider, seedsGetter 
 	}
 }
 
-// NutanixSubnetEndpoint handles the request for a list of subnets on a specific Nutanix cluster, using provided credentials
+// NutanixSubnetEndpoint handles the request for a list of subnets on a specific Nutanix cluster, using provided credentials.
 func NutanixSubnetEndpoint(presetProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(NutanixSubnetReq)
