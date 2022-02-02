@@ -23,9 +23,9 @@ import (
 	"reflect"
 	"strings"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cloud"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -102,6 +102,8 @@ type ClusterProvider struct {
 }
 
 // New creates a brand new cluster that is bound to the given project.
+//
+// Note that the admin privileges are used to set the cluster status.
 func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	if project == nil || userInfo == nil || cluster == nil {
 		return nil, errors.New("project and/or userInfo and/or cluster is missing but required")
@@ -112,12 +114,20 @@ func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.
 	}
 
 	newCluster := genAPICluster(project, cluster, userInfo.Email, p.workerName, p.versions)
+	newStatus := newCluster.Status.DeepCopy()
 
 	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
 	if err := seedImpersonatedClient.Create(context.Background(), newCluster); err != nil {
+		return nil, err
+	}
+
+	// regular users are not allowed to update the status subresource, so we use the admin client
+	oldNewCluster := newCluster.DeepCopy()
+	newCluster.Status = *newStatus
+	if err := p.client.Status().Patch(context.Background(), newCluster, ctrlruntimeclient.MergeFrom(oldNewCluster)); err != nil {
 		return nil, err
 	}
 	return newCluster, nil
@@ -136,9 +146,16 @@ func (p *ClusterProvider) NewUnsecured(project *kubermaticv1.Project, cluster *k
 	}
 
 	newCluster := genAPICluster(project, cluster, userEmail, p.workerName, p.versions)
+	newStatus := newCluster.Status.DeepCopy()
 
 	err := p.client.Create(context.Background(), newCluster)
 	if err != nil {
+		return nil, err
+	}
+
+	oldNewCluster := newCluster.DeepCopy()
+	newCluster.Status = *newStatus
+	if err := p.client.Status().Patch(context.Background(), newCluster, ctrlruntimeclient.MergeFrom(oldNewCluster)); err != nil {
 		return nil, err
 	}
 

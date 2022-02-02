@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -124,7 +124,7 @@ func (b *CABundle) String() string {
 	return string(b.bytes)
 }
 
-func GlobalCABundle(ctx context.Context, client ctrlruntimeclient.Client, config *operatorv1alpha1.KubermaticConfiguration) (*corev1.ConfigMap, error) {
+func GlobalCABundle(ctx context.Context, client ctrlruntimeclient.Client, config *kubermaticv1.KubermaticConfiguration) (*corev1.ConfigMap, error) {
 	caBundle := &corev1.ConfigMap{}
 	key := types.NamespacedName{Name: config.Spec.CABundle.Name, Namespace: config.Namespace}
 

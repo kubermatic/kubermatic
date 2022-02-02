@@ -23,7 +23,7 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -48,7 +48,6 @@ func CronJobCreator(data cronJobCreatorData) reconciling.NamedCronJobCreatorGett
 			}
 
 			job.Name = resources.EtcdDefragCronJobName
-			job.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 			job.Spec.ConcurrencyPolicy = batchv1beta1.ForbidConcurrent
 			var historyLimit int32
 			job.Spec.SuccessfulJobsHistoryLimit = &historyLimit

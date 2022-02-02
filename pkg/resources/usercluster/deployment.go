@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"strings"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -216,11 +216,11 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				args = append(args, "-operating-system-manager-enabled")
 			}
 
-			if helper.NeedCCMMigration(data.Cluster()) {
+			if kubermaticv1helper.NeedCCMMigration(data.Cluster()) {
 				args = append(args, "-ccm-migration")
 			}
 
-			if helper.CCMMigrationCompleted(data.Cluster()) {
+			if kubermaticv1helper.CCMMigrationCompleted(data.Cluster()) {
 				args = append(args, "-ccm-migration-completed")
 			}
 

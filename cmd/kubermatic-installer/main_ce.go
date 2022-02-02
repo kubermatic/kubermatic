@@ -20,14 +20,18 @@ package main
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
+	legacykubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -37,8 +41,9 @@ func commands(logger *logrus.Logger, versions kubermaticversion.Versions) []cli.
 		DeployCommand(logger, versions),
 		PrintCommand(),
 		ConvertKubeconfigCommand(logger),
-		MigrateCRDsCommand(logger),
+		PreflightChecksCommand(logger),
 		ShutdownCommand(logger),
+		MigrateCRDsCommand(logger),
 	}
 }
 
@@ -55,4 +60,23 @@ func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client) (p
 
 func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client) (provider.SeedKubeconfigGetter, error) {
 	return provider.SeedKubeconfigGetterFactory(ctx, client)
+}
+
+func getLegacySeeds(ctx context.Context, client ctrlruntimeclient.Client, namespace string) (map[string]*legacykubermaticv1.Seed, error) {
+	seed := &legacykubermaticv1.Seed{}
+	if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: provider.DefaultSeedName}, seed); err != nil {
+		if kerrors.IsNotFound(err) {
+			// We should not fail if no seed exists and just return an
+			// empty map.
+			return map[string]*legacykubermaticv1.Seed{}, nil
+		}
+
+		return nil, fmt.Errorf("failed to get seed %q: %w", provider.DefaultSeedName, err)
+	}
+
+	seed.SetDefaults()
+
+	return map[string]*legacykubermaticv1.Seed{
+		provider.DefaultSeedName: seed,
+	}, nil
 }

@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"strings"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -41,8 +41,8 @@ const (
 )
 
 func (c *projectController) sync(ctx context.Context, key ctrlruntimeclient.ObjectKey) error {
-	var originalProject kubermaticv1.Project
-	if err := c.client.Get(ctx, key, &originalProject); err != nil {
+	project := &kubermaticv1.Project{}
+	if err := c.client.Get(ctx, key, project); err != nil {
 		if kerrors.IsNotFound(err) {
 			return nil
 		}
@@ -50,9 +50,7 @@ func (c *projectController) sync(ctx context.Context, key ctrlruntimeclient.Obje
 		return err
 	}
 
-	project := originalProject.DeepCopy()
-
-	if c.shouldDeleteProject(project) {
+	if project.DeletionTimestamp != nil {
 		if err := c.ensureProjectCleanup(ctx, project); err != nil {
 			return fmt.Errorf("failed to cleanup project: %w", err)
 		}
@@ -100,8 +98,9 @@ func (c *projectController) ensureCleanupFinalizerExists(ctx context.Context, pr
 
 func (c *projectController) ensureProjectIsInActivePhase(ctx context.Context, project *kubermaticv1.Project) error {
 	if project.Status.Phase == kubermaticv1.ProjectInactive {
+		oldProject := project.DeepCopy()
 		project.Status.Phase = kubermaticv1.ProjectActive
-		return c.client.Update(ctx, project)
+		return c.client.Status().Patch(ctx, project, ctrlruntimeclient.MergeFrom(oldProject))
 	}
 	return nil
 }
@@ -570,8 +569,9 @@ func (c *projectController) ensureProjectCleanup(ctx context.Context, project *k
 		}
 	}
 
+	oldProject := project.DeepCopy()
 	kuberneteshelper.RemoveFinalizer(project, CleanupFinalizerName)
-	return c.client.Update(ctx, project)
+	return c.client.Patch(ctx, project, ctrlruntimeclient.MergeFrom(oldProject))
 }
 
 func cleanUpClusterRBACRoleBindingFor(ctx context.Context, c ctrlruntimeclient.Client, groupName, resource string) error {
@@ -627,10 +627,6 @@ func cleanUpRBACRoleBindingFor(ctx context.Context, c ctrlruntimeclient.Client, 
 	existingRoleBinding := sharedExistingRoleBinding.DeepCopy()
 	existingRoleBinding.Subjects = updatedListOfSubjectes
 	return c.Update(ctx, existingRoleBinding)
-}
-
-func (c *projectController) shouldDeleteProject(project *kubermaticv1.Project) bool {
-	return project.DeletionTimestamp != nil && sets.NewString(project.Finalizers...).Has(CleanupFinalizerName)
 }
 
 // for some groups we actually don't create ClusterRole

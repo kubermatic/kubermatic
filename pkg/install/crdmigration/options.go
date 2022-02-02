@@ -17,6 +17,8 @@ limitations under the License.
 package crdmigration
 
 import (
+	"time"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 
@@ -24,10 +26,17 @@ import (
 )
 
 type Options struct {
-	KubermaticNamespace     string
+	KubermaticNamespace string
+
+	// KubermaticConfiguration is the current configuration from the cluster,
+	// but not defaulted because the defaulting code is rewritten for the new
+	// API group already. Beware.
 	KubermaticConfiguration *operatorv1alpha1.KubermaticConfiguration
-	MasterClient            ctrlruntimeclient.Client
-	Seeds                   map[string]*kubermaticv1.Seed
-	SeedClients             map[string]ctrlruntimeclient.Client
-	CRDDirectory            string
+
+	MasterClient    ctrlruntimeclient.Client
+	Seeds           map[string]*kubermaticv1.Seed
+	SeedClients     map[string]ctrlruntimeclient.Client
+	ChartsDirectory string
+	EtcdTimeout     time.Duration
+	CheckRunning    bool
 }

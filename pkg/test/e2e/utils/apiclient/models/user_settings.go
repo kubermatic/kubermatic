@@ -33,7 +33,7 @@ type UserSettings struct {
 	SelectProjectTableView bool `json:"selectProjectTableView,omitempty"`
 
 	// selected project ID
-	SelectedProjectID string `json:"selectedProjectId,omitempty"`
+	SelectedProjectID string `json:"selectedProjectID,omitempty"`
 
 	// selected theme
 	SelectedTheme string `json:"selectedTheme,omitempty"`

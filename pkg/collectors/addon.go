@@ -19,10 +19,11 @@ package collectors
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -91,12 +92,8 @@ func (cc AddonCollector) Collect(ch chan<- prometheus.Metric) {
 }
 
 func (cc *AddonCollector) collectAddon(ch chan<- prometheus.Metric, addon *kubermaticv1.Addon) {
-	if len(addon.OwnerReferences) < 1 || addon.OwnerReferences[0].Kind != kubermaticv1.ClusterKindName {
-		utilruntime.HandleError(fmt.Errorf("No owning cluster for addon %v/%v", addon.Namespace, addon.Name))
-		return
-	}
-
-	clusterName := addon.OwnerReferences[0].Name
+	parts := strings.Split(addon.Namespace, "-")
+	clusterName := parts[1]
 
 	notCreated := 1
 	for _, cond := range addon.Status.Conditions {

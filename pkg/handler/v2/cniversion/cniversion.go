@@ -25,7 +25,7 @@ import (
 	"github.com/gorilla/mux"
 
 	v2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -45,7 +45,7 @@ func ListVersions() endpoint.Endpoint {
 			return nil, errors.NewBadRequest(err.Error())
 		}
 
-		versions, err := cni.GetSupportedCNIPluginVersions(v1.CNIPluginType(req.CNIPluginType))
+		versions, err := cni.GetSupportedCNIPluginVersions(kubermaticv1.CNIPluginType(req.CNIPluginType))
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}

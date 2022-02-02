@@ -32,8 +32,7 @@ import (
 	"fmt"
 	"net/http"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
@@ -110,8 +109,8 @@ func CreateOrUpdateConfigurations(ctx context.Context, request interface{}, mast
 	return nil
 }
 
-func updateSeedMeteringConfiguration(ctx context.Context, meteringCfg configurationReq, seed *v1.Seed, masterClient ctrlruntimeclient.Client) error {
-	seed.Spec.Metering = &v1.MeteringConfigurations{
+func updateSeedMeteringConfiguration(ctx context.Context, meteringCfg configurationReq, seed *kubermaticv1.Seed, masterClient ctrlruntimeclient.Client) error {
+	seed.Spec.Metering = &kubermaticv1.MeteringConfiguration{
 		Enabled:          meteringCfg.Enabled,
 		StorageClassName: meteringCfg.StorageClassName,
 		StorageSize:      meteringCfg.StorageSize,
@@ -229,13 +228,13 @@ func createOrUpdateMeteringToolSecret(ctx context.Context, seedClient ctrlruntim
 	return nil
 }
 
-func getSeeds(seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) (map[*v1.Seed]ctrlruntimeclient.Client, error) {
+func getSeeds(seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) (map[*kubermaticv1.Seed]ctrlruntimeclient.Client, error) {
 	seeds, err := seedsGetter()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get seeds: %w", err)
 	}
 
-	var seedClients = make(map[*v1.Seed]ctrlruntimeclient.Client, len(seeds))
+	var seedClients = make(map[*kubermaticv1.Seed]ctrlruntimeclient.Client, len(seeds))
 
 	for _, seed := range seeds {
 		seedClient, err := seedClientGetter(seed)

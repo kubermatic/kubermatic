@@ -27,7 +27,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 
@@ -114,7 +114,7 @@ func TestGetAllowedRegistry(t *testing.T) {
 		{
 			Name:             "scenario 2: admin cannot get non-existing allowed registry",
 			WRName:           "missing",
-			ExpectedResponse: `{"error":{"code":404,"message":"allowedregistries.kubermatic.k8s.io \"missing\" not found"}} `,
+			ExpectedResponse: `{"error":{"code":404,"message":"allowedregistries.kubermatic.k8c.io \"missing\" not found"}} `,
 			HTTPStatus:       http.StatusNotFound,
 			ExistingObjects: []ctrlruntimeclient.Object{
 				test.GenAllowedRegistry("wr1", "quay.io"),
@@ -240,7 +240,7 @@ func TestDeleteAllowedRegistry(t *testing.T) {
 		{
 			Name:             "scenario 3: delete non-existing allowed registry should fail",
 			WRToDeleteName:   "idontexist",
-			ExpectedResponse: `{"error":{"code":404,"message":"allowedregistries.kubermatic.k8s.io \"idontexist\" not found"}}`,
+			ExpectedResponse: `{"error":{"code":404,"message":"allowedregistries.kubermatic.k8c.io \"idontexist\" not found"}}`,
 			HTTPStatus:       http.StatusNotFound,
 			ExistingObjects:  []ctrlruntimeclient.Object{test.GenAllowedRegistry("wr1", "quay.io")},
 			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
@@ -310,7 +310,7 @@ func TestPatchAllowedRegistry(t *testing.T) {
 			Name:             "scenario 4: cannot patch non-existing allowed registry",
 			RawPatch:         `{"spec":{"registryPrefix":"docker.io"}}`,
 			WRName:           "idontexist",
-			ExpectedResponse: `{"error":{"code":404,"message":"allowedregistries.kubermatic.k8s.io \"idontexist\" not found"}}`,
+			ExpectedResponse: `{"error":{"code":404,"message":"allowedregistries.kubermatic.k8c.io \"idontexist\" not found"}}`,
 			HTTPStatus:       http.StatusNotFound,
 			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
 			ExistingObjects:  []ctrlruntimeclient.Object{test.GenAllowedRegistry("wr1", "quay.io")},

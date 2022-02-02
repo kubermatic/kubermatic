@@ -56,7 +56,7 @@ elif [[ $provider == "hetzner" ]]; then
   EXTRA_ARGS="-hetzner-token=${HZ_E2E_TOKEN}"
 elif [[ $provider == "openstack" ]]; then
   EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
-    -openstack-tenant=${OS_TENANT_NAME}
+    -openstack-project=${OS_TENANT_NAME}
     -openstack-username=${OS_USERNAME}
     -openstack-password=${OS_PASSWORD}"
 elif [[ $provider == "vsphere" ]]; then

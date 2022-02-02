@@ -22,7 +22,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -34,8 +34,8 @@ const NodeLocalDNSCacheAddress = "169.254.20.10"
 func DefaultNetworkPolicyCreator() reconciling.NamedNetworkPolicyCreatorGetter {
 	return func() (string, reconciling.NetworkPolicyCreator) {
 		dnsPort := intstr.FromInt(53)
-		protoUdp := v1.ProtocolUDP
-		protoTcp := v1.ProtocolTCP
+		protoUdp := corev1.ProtocolUDP
+		protoTcp := corev1.ProtocolTCP
 
 		return "default-deny", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			// dns access to node local dns cache

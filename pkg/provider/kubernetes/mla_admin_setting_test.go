@@ -21,7 +21,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -58,7 +58,7 @@ func TestGetMLAAdminSetting(t *testing.T) {
 		{
 			name:          "mlaAdminSetting is not found",
 			cluster:       genCluster(testMLAAdminSettingClusterName, "kubernetes", "my-first-project-ID", "test-mla-admin-setting", "john@acme.com"),
-			expectedError: "mlaadminsettings.kubermatic.k8s.io \"mla-admin-settings\" not found",
+			expectedError: "mlaadminsettings.kubermatic.k8c.io \"mla-admin-settings\" not found",
 		},
 	}
 
@@ -107,7 +107,7 @@ func TestCreateMLAAdminSetting(t *testing.T) {
 			},
 			cluster:                 genCluster(testMLAAdminSettingClusterName, "kubernetes", "my-first-project-ID", "test-mla-admin-setting", "john@acme.com"),
 			expectedMLAAdminSetting: test.GenMLAAdminSetting(testMLAAdminSettingName, testMLAAdminSettingClusterName, 1),
-			expectedError:           "mlaadminsettings.kubermatic.k8s.io \"mla-admin-settings\" already exists",
+			expectedError:           "mlaadminsettings.kubermatic.k8c.io \"mla-admin-settings\" already exists",
 		},
 	}
 
@@ -159,7 +159,7 @@ func TestUpdateMLAAdminSetting(t *testing.T) {
 			name:                    "update mlaAdminSetting which doesn't exist",
 			cluster:                 genCluster(testMLAAdminSettingClusterName, "kubernetes", "my-first-project-ID", "test-mla-admin-setting", "john@acme.com"),
 			expectedMLAAdminSetting: test.GenMLAAdminSetting(testMLAAdminSettingName, testMLAAdminSettingClusterName, 1),
-			expectedError:           "mlaadminsettings.kubermatic.k8s.io \"mla-admin-settings\" not found",
+			expectedError:           "mlaadminsettings.kubermatic.k8c.io \"mla-admin-settings\" not found",
 		},
 	}
 
@@ -220,7 +220,7 @@ func TestDeleteMLAAdminSetting(t *testing.T) {
 			userInfo:            &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			cluster:             genCluster(testMLAAdminSettingClusterName, "kubernetes", "my-first-project-ID", "test-mla-admin-setting", "john@acme.com"),
 			mlaAdminSettingName: testMLAAdminSettingName,
-			expectedError:       "mlaadminsettings.kubermatic.k8s.io \"mla-admin-settings\" not found",
+			expectedError:       "mlaadminsettings.kubermatic.k8c.io \"mla-admin-settings\" not found",
 		},
 	}
 

@@ -34,6 +34,7 @@ const (
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
+// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // ConstraintTemplate is the object representing a kubermatic wrapper for a gatekeeper constraint template.
 type ConstraintTemplate struct {

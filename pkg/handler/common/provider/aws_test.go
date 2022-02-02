@@ -20,7 +20,7 @@ import (
 	"strings"
 	"testing"
 
-	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/common/provider"
 )
 
@@ -29,7 +29,7 @@ func TestAWSSizeARMFiltering(t *testing.T) {
 		name                 string
 		region               string
 		architecture         string
-		resourceQuota        v1.MachineDeploymentVMResourceQuota
+		resourceQuota        kubermaticv1.MachineDeploymentVMResourceQuota
 		unexpectedNamePrefix []string
 	}{
 		{
@@ -101,8 +101,8 @@ func TestAWSSizeARMFiltering(t *testing.T) {
 	}
 }
 
-func genDefaultMachineDeploymentVMResourceQuota() v1.MachineDeploymentVMResourceQuota {
-	return v1.MachineDeploymentVMResourceQuota{
+func genDefaultMachineDeploymentVMResourceQuota() kubermaticv1.MachineDeploymentVMResourceQuota {
+	return kubermaticv1.MachineDeploymentVMResourceQuota{
 		MinCPU:    0,
 		MaxCPU:    20,
 		MinRAM:    0,

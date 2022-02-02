@@ -23,10 +23,9 @@ import (
 	"testing"
 	"time"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -53,7 +52,7 @@ const (
 
 func init() {
 	utilruntime.Must(kubermaticv1.AddToScheme(scheme.Scheme))
-	utilruntime.Must(operatorv1alpha1.AddToScheme(scheme.Scheme))
+	utilruntime.Must(kubermaticv1.AddToScheme(scheme.Scheme))
 }
 
 func must(t *testing.T, err error) {
@@ -109,7 +108,7 @@ func TestBasicReconciling(t *testing.T) {
 	type testcase struct {
 		name            string
 		seedToReconcile string
-		configuration   *operatorv1alpha1.KubermaticConfiguration
+		configuration   *kubermaticv1.KubermaticConfiguration
 		seedsOnMaster   []string
 		syncedSeeds     sets.String // seeds where the seed-sync-controller copied the Seed CR over already
 		assertion       func(test *testcase, reconciler *Reconciler) error
@@ -119,13 +118,13 @@ func TestBasicReconciling(t *testing.T) {
 		{
 			name:            "finalizer is set on Seed copy",
 			seedToReconcile: "europe",
-			configuration: &operatorv1alpha1.KubermaticConfiguration{
+			configuration: &kubermaticv1.KubermaticConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "kubermatic",
 				},
-				Spec: operatorv1alpha1.KubermaticConfigurationSpec{
-					Ingress: operatorv1alpha1.KubermaticIngressConfiguration{
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					Ingress: kubermaticv1.KubermaticIngressConfiguration{
 						Domain: "example.com",
 					},
 				},
@@ -158,13 +157,13 @@ func TestBasicReconciling(t *testing.T) {
 		{
 			name:            "finalizer triggers cleanup",
 			seedToReconcile: "goner",
-			configuration: &operatorv1alpha1.KubermaticConfiguration{
+			configuration: &kubermaticv1.KubermaticConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "kubermatic",
 				},
-				Spec: operatorv1alpha1.KubermaticConfigurationSpec{
-					Ingress: operatorv1alpha1.KubermaticIngressConfiguration{
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					Ingress: kubermaticv1.KubermaticIngressConfiguration{
 						Domain: "example.com",
 					},
 				},
@@ -197,13 +196,13 @@ func TestBasicReconciling(t *testing.T) {
 		{
 			name:            "all cluster-wide resources are cleaned up when deleting a seed",
 			seedToReconcile: "europe",
-			configuration: &operatorv1alpha1.KubermaticConfiguration{
+			configuration: &kubermaticv1.KubermaticConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "kubermatic",
 				},
-				Spec: operatorv1alpha1.KubermaticConfigurationSpec{
-					Ingress: operatorv1alpha1.KubermaticIngressConfiguration{
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					Ingress: kubermaticv1.KubermaticIngressConfiguration{
 						Domain: "example.com",
 					},
 				},
@@ -265,13 +264,13 @@ func TestBasicReconciling(t *testing.T) {
 		{
 			name:            "seeds in other namespaces are ignored",
 			seedToReconcile: "other",
-			configuration: &operatorv1alpha1.KubermaticConfiguration{
+			configuration: &kubermaticv1.KubermaticConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "kubermatic",
 				},
-				Spec: operatorv1alpha1.KubermaticConfigurationSpec{
-					Ingress: operatorv1alpha1.KubermaticIngressConfiguration{
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					Ingress: kubermaticv1.KubermaticIngressConfiguration{
 						Domain: "example.com",
 					},
 				},
@@ -309,13 +308,13 @@ func TestBasicReconciling(t *testing.T) {
 		{
 			name:            "nodeport-proxy annotations are carried over to the loadbalancer service",
 			seedToReconcile: "seed-with-nodeport-proxy-annotations",
-			configuration: &operatorv1alpha1.KubermaticConfiguration{
+			configuration: &kubermaticv1.KubermaticConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "kubermatic",
 				},
-				Spec: operatorv1alpha1.KubermaticConfigurationSpec{
-					Ingress: operatorv1alpha1.KubermaticIngressConfiguration{
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					Ingress: kubermaticv1.KubermaticIngressConfiguration{
 						Domain: "example.com",
 					},
 				},
@@ -356,12 +355,12 @@ func TestBasicReconciling(t *testing.T) {
 		{
 			name:            "when imagePullSecret is given secret should be provisioned",
 			seedToReconcile: "europe",
-			configuration: &operatorv1alpha1.KubermaticConfiguration{
+			configuration: &kubermaticv1.KubermaticConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "kubermatic",
 				},
-				Spec: operatorv1alpha1.KubermaticConfigurationSpec{
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
 					ImagePullSecret: imagePullSecret,
 				},
 			},
@@ -426,7 +425,7 @@ func TestBasicReconciling(t *testing.T) {
 	}
 }
 
-func createTestReconciler(allSeeds map[string]*kubermaticv1.Seed, cfg *operatorv1alpha1.KubermaticConfiguration, seeds []string, syncedSeeds sets.String) *Reconciler {
+func createTestReconciler(allSeeds map[string]*kubermaticv1.Seed, cfg *kubermaticv1.KubermaticConfiguration, seeds []string, syncedSeeds sets.String) *Reconciler {
 	masterObjects := []ctrlruntimeclient.Object{}
 	if cfg != nil {
 		// CABundle is defaulted in reallife scenarios

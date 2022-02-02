@@ -23,7 +23,7 @@ import (
 
 	"github.com/go-logr/logr"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
@@ -86,5 +86,5 @@ func (h *seedAdmissionHandler) Handle(ctx context.Context, req webhook.Admission
 }
 
 func (h *seedAdmissionHandler) SetupWebhookWithManager(mgr ctrlruntime.Manager) {
-	mgr.GetWebhookServer().Register("/validate-kubermatic-k8s-io-seed", &webhook.Admission{Handler: h})
+	mgr.GetWebhookServer().Register("/validate-kubermatic-k8c-io-seed", &webhook.Admission{Handler: h})
 }

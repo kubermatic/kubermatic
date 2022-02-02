@@ -21,13 +21,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
 	"github.com/docker/distribution/reference"
 	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -66,6 +65,11 @@ const (
 	// this constant.
 	DefaultNoProxy = "127.0.0.1/8,localhost,.local,.local.,kubernetes,.default,.svc"
 )
+
+func newSemver(s string) semver.Semver {
+	sv := semver.NewSemverOrDie(s)
+	return *sv
+}
 
 var (
 	DefaultAccessibleAddons = []string{
@@ -194,18 +198,18 @@ var (
 		"service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout": "3600",
 	}
 
-	DefaultKubernetesVersioning = operatorv1alpha1.KubermaticVersioningConfiguration{
-		Default: semver.MustParse("v1.21.8"),
-		Versions: []*semver.Version{
+	DefaultKubernetesVersioning = kubermaticv1.KubermaticVersioningConfiguration{
+		Default: semver.NewSemverOrDie("v1.21.8"),
+		Versions: []semver.Semver{
 			// Kubernetes 1.20
-			semver.MustParse("v1.20.13"),
-			semver.MustParse("v1.20.14"),
+			newSemver("v1.20.13"),
+			newSemver("v1.20.14"),
 			// Kubernetes 1.21
-			semver.MustParse("v1.21.8"),
+			newSemver("v1.21.8"),
 			// Kubernetes 1.22
-			semver.MustParse("v1.22.5"),
+			newSemver("v1.22.5"),
 		},
-		Updates: []operatorv1alpha1.Update{
+		Updates: []kubermaticv1.Update{
 			// ======= 1.19 =======
 			{
 				// Auto-upgrade unsupported clusters
@@ -278,30 +282,30 @@ var (
 				Automatic: pointer.BoolPtr(true),
 			},
 		},
-		ProviderIncompatibilities: []operatorv1alpha1.Incompatibility{
+		ProviderIncompatibilities: []kubermaticv1.Incompatibility{
 			{
 				Provider:  kubermaticv1.VSphereCloudProvider,
 				Version:   "1.23.*",
-				Condition: operatorv1alpha1.AlwaysCondition,
-				Operation: operatorv1alpha1.CreateOperation,
+				Condition: kubermaticv1.AlwaysCondition,
+				Operation: kubermaticv1.CreateOperation,
 			},
 			{
 				Provider:  kubermaticv1.VSphereCloudProvider,
 				Version:   "1.23.*",
-				Condition: operatorv1alpha1.ExternalCloudProviderCondition,
-				Operation: operatorv1alpha1.UpdateOperation,
+				Condition: kubermaticv1.ExternalCloudProviderCondition,
+				Operation: kubermaticv1.UpdateOperation,
 			},
 			{
 				Provider:  kubermaticv1.VSphereCloudProvider,
 				Version:   "1.23.*",
-				Condition: operatorv1alpha1.ExternalCloudProviderCondition,
-				Operation: operatorv1alpha1.SupportOperation,
+				Condition: kubermaticv1.ExternalCloudProviderCondition,
+				Operation: kubermaticv1.SupportOperation,
 			},
 		},
 	}
 )
 
-func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) (*operatorv1alpha1.KubermaticConfiguration, error) {
+func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) (*kubermaticv1.KubermaticConfiguration, error) {
 	logger.Debug("Applying defaults to Kubermatic configuration")
 
 	configCopy := config.DeepCopy()
@@ -373,9 +377,9 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 		logger.Debugw("Defaulting field", "field", "masterController.replicas", "value", *configCopy.Spec.MasterController.Replicas)
 	}
 
-	if len(configCopy.Spec.UserCluster.Addons.Kubernetes.Default) == 0 && configCopy.Spec.UserCluster.Addons.Kubernetes.DefaultManifests == "" {
-		configCopy.Spec.UserCluster.Addons.Kubernetes.DefaultManifests = strings.TrimSpace(DefaultKubernetesAddons)
-		logger.Debugw("Defaulting field", "field", "userCluster.addons.kubernetes.defaultManifests")
+	if len(configCopy.Spec.UserCluster.Addons.Default) == 0 && configCopy.Spec.UserCluster.Addons.DefaultManifests == "" {
+		configCopy.Spec.UserCluster.Addons.DefaultManifests = strings.TrimSpace(DefaultKubernetesAddons)
+		logger.Debugw("Defaulting field", "field", "userCluster.addons.defaultManifests")
 	}
 
 	if configCopy.Spec.UserCluster.APIServerReplicas == nil {
@@ -431,7 +435,7 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 		logger.Debugw("Defaulting field", "field", "ui.replicas", "value", *configCopy.Spec.UI.Replicas)
 	}
 
-	if err := defaultVersioning(&configCopy.Spec.Versions.Kubernetes, DefaultKubernetesVersioning, "versions.kubernetes", logger); err != nil {
+	if err := defaultVersioning(&configCopy.Spec.Versions, DefaultKubernetesVersioning, "versions", logger); err != nil {
 		return configCopy, err
 	}
 
@@ -487,7 +491,7 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 		return configCopy, err
 	}
 
-	if err := defaultDockerRepo(&configCopy.Spec.UserCluster.Addons.Kubernetes.DockerRepository, DefaultKubernetesAddonImage, "userCluster.addons.kubernetes.dockerRepository", logger); err != nil {
+	if err := defaultDockerRepo(&configCopy.Spec.UserCluster.Addons.DockerRepository, DefaultKubernetesAddonImage, "userCluster.addons.dockerRepository", logger); err != nil {
 		return configCopy, err
 	}
 
@@ -538,7 +542,7 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 // defaults in the KubermaticConfiguration (in which some fields might already be deprecated,
 // as we move configuration down into the Seeds). This function assumes that the config has
 // already been defaulted.
-func DefaultSeed(seed *kubermaticv1.Seed, config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) (*kubermaticv1.Seed, error) {
+func DefaultSeed(seed *kubermaticv1.Seed, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) (*kubermaticv1.Seed, error) {
 	logger = logger.With("seed", seed.Name)
 	logger.Debug("Applying defaults to Seed")
 
@@ -674,7 +678,7 @@ func defaultResourceList(list *corev1.ResourceList, defaults corev1.ResourceList
 	return nil
 }
 
-func defaultVersioning(settings *operatorv1alpha1.KubermaticVersioningConfiguration, defaults operatorv1alpha1.KubermaticVersioningConfiguration, key string, logger *zap.SugaredLogger) error {
+func defaultVersioning(settings *kubermaticv1.KubermaticVersioningConfiguration, defaults kubermaticv1.KubermaticVersioningConfiguration, key string, logger *zap.SugaredLogger) error {
 	// this should never happen as the resources are not pointers in a KubermaticConfiguration
 	if settings == nil {
 		return nil
@@ -880,63 +884,63 @@ const DefaultKubernetesAddons = `
 apiVersion: v1
 kind: List
 items:
-- apiVersion: kubermatic.k8s.io/v1
+- apiVersion: kubermatic.k8c.io/v1
   kind: Addon
   metadata:
     name: canal
     labels:
       addons.kubermatic.io/ensure: true
-- apiVersion: kubermatic.k8s.io/v1
+- apiVersion: kubermatic.k8c.io/v1
   kind: Addon
   metadata:
     name: cilium
     labels:
       addons.kubermatic.io/ensure: true
-- apiVersion: kubermatic.k8s.io/v1
+- apiVersion: kubermatic.k8c.io/v1
   kind: Addon
   metadata:
     name: csi
     labels:
       addons.kubermatic.io/ensure: true
-- apiVersion: kubermatic.k8s.io/v1
+- apiVersion: kubermatic.k8c.io/v1
   kind: Addon
   metadata:
     name: kube-proxy
     labels:
       addons.kubermatic.io/ensure: true
-- apiVersion: kubermatic.k8s.io/v1
+- apiVersion: kubermatic.k8c.io/v1
   kind: Addon
   metadata:
     name: openvpn
     labels:
       addons.kubermatic.io/ensure: true
-- apiVersion: kubermatic.k8s.io/v1
+- apiVersion: kubermatic.k8c.io/v1
   kind: Addon
   metadata:
     name: rbac
     labels:
       addons.kubermatic.io/ensure: true
-- apiVersion: kubermatic.k8s.io/v1
+- apiVersion: kubermatic.k8c.io/v1
   kind: Addon
   metadata:
     name: kubeadm-configmap
     labels:
       addons.kubermatic.io/ensure: true
-- apiVersion: kubermatic.k8s.io/v1
+- apiVersion: kubermatic.k8c.io/v1
   kind: Addon
   metadata:
     name: kubelet-configmap
-- apiVersion: kubermatic.k8s.io/v1
+- apiVersion: kubermatic.k8c.io/v1
   kind: Addon
   metadata:
     name: default-storage-class
-- apiVersion: kubermatic.k8s.io/v1
+- apiVersion: kubermatic.k8c.io/v1
   kind: Addon
   metadata:
     name: pod-security-policy
     labels:
       addons.kubermatic.io/ensure: true
-- apiVersion: kubermatic.k8s.io/v1
+- apiVersion: kubermatic.k8c.io/v1
   kind: Addon
   metadata:
     name: aws-node-termination-handler

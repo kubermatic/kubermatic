@@ -31,8 +31,8 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -105,7 +105,7 @@ func deleteBinding(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 	return memberProvider.Delete(userInfo, bindingID)
 }
 
-func getMemberList(ctx context.Context, userInfoGetter provider.UserInfoGetter, memberProvider provider.ProjectMemberProvider, project *kubermaticapiv1.Project, userEmail string) ([]*kubermaticapiv1.UserProjectBinding, error) {
+func getMemberList(ctx context.Context, userInfoGetter provider.UserInfoGetter, memberProvider provider.ProjectMemberProvider, project *kubermaticv1.Project, userEmail string) ([]*kubermaticv1.UserProjectBinding, error) {
 	skipPrivilegeVerification := true
 
 	userInfo, err := userInfoGetter(ctx, "")
@@ -183,7 +183,7 @@ func EditEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 	}
 }
 
-func updateBinding(ctx context.Context, userInfoGetter provider.UserInfoGetter, memberProvider provider.ProjectMemberProvider, privilegedMemberProvider provider.PrivilegedProjectMemberProvider, projectID string, binding *kubermaticapiv1.UserProjectBinding) (*kubermaticapiv1.UserProjectBinding, error) {
+func updateBinding(ctx context.Context, userInfoGetter provider.UserInfoGetter, memberProvider provider.ProjectMemberProvider, privilegedMemberProvider provider.PrivilegedProjectMemberProvider, projectID string, binding *kubermaticv1.UserProjectBinding) (*kubermaticv1.UserProjectBinding, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
@@ -284,7 +284,7 @@ func AddEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProv
 // LogoutEndpoint.
 func LogoutEndpoint(userProvider provider.UserProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		authenticatedUser := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
+		authenticatedUser := ctx.Value(middleware.UserCRContextKey).(*kubermaticv1.User)
 
 		t := ctx.Value(middleware.RawTokenContextKey)
 		token, ok := t.(string)
@@ -296,11 +296,11 @@ func LogoutEndpoint(userProvider provider.UserProvider) endpoint.Endpoint {
 		if !ok {
 			return nil, k8cerrors.NewNotAuthorized()
 		}
-		return nil, userProvider.AddUserTokenToBlacklist(authenticatedUser, token, expiry)
+		return nil, userProvider.InvalidateToken(authenticatedUser, token, expiry)
 	}
 }
 
-func createBinding(ctx context.Context, userInfoGetter provider.UserInfoGetter, memberProvider provider.ProjectMemberProvider, privilegedMemberProvider provider.PrivilegedProjectMemberProvider, project *kubermaticapiv1.Project, email, group string) (*kubermaticapiv1.UserProjectBinding, error) {
+func createBinding(ctx context.Context, userInfoGetter provider.UserInfoGetter, memberProvider provider.ProjectMemberProvider, privilegedMemberProvider provider.PrivilegedProjectMemberProvider, project *kubermaticv1.Project, email, group string) (*kubermaticv1.UserProjectBinding, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
@@ -319,7 +319,7 @@ func createBinding(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 // GetEndpoint returns info about the current user.
 func GetEndpoint(memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		authenticatedUser := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
+		authenticatedUser := ctx.Value(middleware.UserCRContextKey).(*kubermaticv1.User)
 
 		bindings, err := memberMapper.MappingsFor(authenticatedUser.Spec.Email)
 		if err != nil {
@@ -333,7 +333,7 @@ func GetEndpoint(memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
 // GetSettingsEndpoint returns settings of the current user.
 func GetSettingsEndpoint(memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		authenticatedUser := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
+		authenticatedUser := ctx.Value(middleware.UserCRContextKey).(*kubermaticv1.User)
 		return authenticatedUser.Spec.Settings, nil
 	}
 }
@@ -342,11 +342,11 @@ func GetSettingsEndpoint(memberMapper provider.ProjectMemberMapper) endpoint.End
 func PatchSettingsEndpoint(userProvider provider.UserProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(PatchSettingsReq)
-		existingUser := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
+		existingUser := ctx.Value(middleware.UserCRContextKey).(*kubermaticv1.User)
 
 		existingSettings := existingUser.Spec.Settings
 		if existingSettings == nil {
-			existingSettings = &kubermaticapiv1.UserSettings{}
+			existingSettings = &kubermaticv1.UserSettings{}
 		}
 
 		existingSettingsJSON, err := json.Marshal(existingSettings)
@@ -359,7 +359,7 @@ func PatchSettingsEndpoint(userProvider provider.UserProvider) endpoint.Endpoint
 			return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot patch user settings: %v", err))
 		}
 
-		var patchedSettings *kubermaticapiv1.UserSettings
+		var patchedSettings *kubermaticv1.UserSettings
 		err = json.Unmarshal(patchedSettingsJSON, &patchedSettings)
 		if err != nil {
 			return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot decode patched user settings: %v", err))

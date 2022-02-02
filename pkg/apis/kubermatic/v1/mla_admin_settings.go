@@ -30,6 +30,7 @@ const (
 
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
+// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // MLAAdminSetting is the object representing cluster-specific administrator settings
 // for KKP user cluster MLA (monitoring, logging & alerting) stack.

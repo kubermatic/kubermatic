@@ -20,22 +20,24 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/sirupsen/logrus"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/kubermatic"
 	kubermaticseed "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/kubermatic"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/crd/util"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/util/crd"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	metav1unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -57,9 +59,11 @@ func PerformPreflightChecks(ctx context.Context, logger logrus.FieldLogger, opt 
 		success = false
 	}
 
-	if err := validateKubermaticNotRunning(ctx, logger, opt); err != nil {
-		logger.Errorf("KKP health check failed: %v", err)
-		success = false
+	if opt.CheckRunning {
+		if err := validateKubermaticNotRunning(ctx, logger, opt); err != nil {
+			logger.Errorf("KKP health check failed: %v", err)
+			success = false
+		}
 	}
 
 	if err := validateNoStuckResources(ctx, logger, opt); err != nil {
@@ -163,7 +167,13 @@ func validateKubermaticNotRunningInCluster(ctx context.Context, logger logrus.Fi
 
 	webhooks := []string{
 		kubermaticseed.ClusterAdmissionWebhookName,
-		common.SeedAdmissionWebhookName(opt.KubermaticConfiguration),
+		// this cheats a bit and assumes that the function only needs the object meta
+		common.SeedAdmissionWebhookName(&kubermaticv1.KubermaticConfiguration{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      opt.KubermaticConfiguration.Name,
+				Namespace: opt.KubermaticConfiguration.Namespace,
+			},
+		}),
 	}
 
 	for _, name := range webhooks {
@@ -297,11 +307,11 @@ func validateNoStuckResourcesInCluster(ctx context.Context, logger logrus.FieldL
 
 	for _, kind := range kinds {
 		objectList := &metav1unstructured.UnstructuredList{}
-		objectList.SetAPIVersion(kubermaticv1.SchemeGroupVersion.String())
+		objectList.SetAPIVersion(oldAPIGroupVersion) // use the old API group
 		objectList.SetKind(kind.Name)
 
 		if err := client.List(ctx, objectList); err != nil {
-			logger.Warnf("Failed to list %s objects: %v", kind, err)
+			logger.Warnf("Failed to list %s objects: %v", kind.Name, err)
 			success = false
 			continue
 		}
@@ -329,9 +339,11 @@ func validateNoStuckResourcesInCluster(ctx context.Context, logger logrus.FieldL
 func validateCRDsExist(ctx context.Context, logger logrus.FieldLogger, opt *Options) error {
 	logger.Info("Validating all new KKP CRDs exist…")
 
-	crds, err := util.LoadFromDirectory(opt.CRDDirectory)
+	crdDirectory := filepath.Join(opt.ChartsDirectory, "kubermatic-operator", "crd", "k8c.io")
+
+	crds, err := crd.LoadFromDirectory(crdDirectory)
 	if err != nil {
-		return fmt.Errorf("failed to load CRDs from %s: %w", opt.CRDDirectory, err)
+		return fmt.Errorf("failed to load CRDs from %s: %w", crdDirectory, err)
 	}
 
 	checklist := sets.NewString()

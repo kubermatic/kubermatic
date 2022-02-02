@@ -17,7 +17,6 @@ limitations under the License.
 package kubernetes
 
 import (
-	kubermaticclientv1 "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -46,18 +45,6 @@ func createImpersonationClientWrapperFromUserInfo(userInfo *provider.UserInfo, c
 	}
 
 	return createImpersonationClient(impersonationCfg)
-}
-
-// DefaultKubermaticImpersonationClient knows how to create impersonated client set.
-type DefaultKubermaticImpersonationClient struct {
-	cfg *restclient.Config
-}
-
-// CreateImpersonatedKubermaticClientSet actually creates impersonated kubermatic client set for the given user.
-func (d *DefaultKubermaticImpersonationClient) CreateImpersonatedKubermaticClientSet(impCfg restclient.ImpersonationConfig) (kubermaticclientv1.KubermaticV1Interface, error) {
-	config := *d.cfg
-	config.Impersonate = impCfg
-	return kubermaticclientv1.NewForConfig(&config)
 }
 
 // NewImpersonationClient creates a new default impersonation client

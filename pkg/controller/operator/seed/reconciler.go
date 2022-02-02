@@ -23,14 +23,13 @@ import (
 
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common/vpa"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	kubermaticseed "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/metering"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -162,7 +161,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 	return nil
 }
 
-func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	if !kubernetes.HasAnyFinalizer(seed, common.CleanupFinalizer) {
 		return nil
 	}
@@ -207,7 +206,7 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, cfg *operatorv1alph
 	return nil
 }
 
-func (r *Reconciler) reconcileResources(ctx context.Context, cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileResources(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	oldSeed := seed.DeepCopy()
 	kubernetes.AddFinalizer(seed, common.CleanupFinalizer)
 	if err := client.Patch(ctx, seed, ctrlruntimeclient.MergeFrom(oldSeed)); err != nil {
@@ -280,7 +279,7 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *operatorv1alph
 	return nil
 }
 
-func (r *Reconciler) reconcileNamespaces(ctx context.Context, cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileNamespaces(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling Namespaces")
 
 	creators := []reconciling.NamedNamespaceCreatorGetter{
@@ -294,7 +293,7 @@ func (r *Reconciler) reconcileNamespaces(ctx context.Context, cfg *operatorv1alp
 	return nil
 }
 
-func (r *Reconciler) reconcileServiceAccounts(ctx context.Context, cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileServiceAccounts(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling Kubermatic ServiceAccounts")
 
 	creators := []reconciling.NamedServiceAccountCreatorGetter{
@@ -309,7 +308,7 @@ func (r *Reconciler) reconcileServiceAccounts(ctx context.Context, cfg *operator
 		return fmt.Errorf("failed to reconcile Kubermatic ServiceAccounts: %w", err)
 	}
 
-	if cfg.Spec.FeatureGates.Has(features.VerticalPodAutoscaler) {
+	if cfg.Spec.FeatureGates[features.VerticalPodAutoscaler] {
 		creators := []reconciling.NamedServiceAccountCreatorGetter{
 			vpa.RecommenderServiceAccountCreator(),
 			vpa.UpdaterServiceAccountCreator(),
@@ -325,7 +324,7 @@ func (r *Reconciler) reconcileServiceAccounts(ctx context.Context, cfg *operator
 	return nil
 }
 
-func (r *Reconciler) reconcileRoles(ctx context.Context, cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileRoles(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling Roles")
 
 	if seed.Spec.NodeportProxy.Disable {
@@ -343,7 +342,7 @@ func (r *Reconciler) reconcileRoles(ctx context.Context, cfg *operatorv1alpha1.K
 	return nil
 }
 
-func (r *Reconciler) reconcileRoleBindings(ctx context.Context, cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileRoleBindings(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling RoleBindings")
 
 	if seed.Spec.NodeportProxy.Disable {
@@ -361,7 +360,7 @@ func (r *Reconciler) reconcileRoleBindings(ctx context.Context, cfg *operatorv1a
 	return nil
 }
 
-func (r *Reconciler) reconcileClusterRoles(ctx context.Context, cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileClusterRoles(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling ClusterRoles")
 
 	var creators []reconciling.NamedClusterRoleCreatorGetter
@@ -370,7 +369,7 @@ func (r *Reconciler) reconcileClusterRoles(ctx context.Context, cfg *operatorv1a
 		creators = append(creators, nodeportproxy.ClusterRoleCreator(cfg))
 	}
 
-	if cfg.Spec.FeatureGates.Has(features.VerticalPodAutoscaler) {
+	if cfg.Spec.FeatureGates[features.VerticalPodAutoscaler] {
 		creators = append(creators, vpa.ClusterRoleCreators()...)
 	}
 
@@ -381,7 +380,7 @@ func (r *Reconciler) reconcileClusterRoles(ctx context.Context, cfg *operatorv1a
 	return nil
 }
 
-func (r *Reconciler) reconcileClusterRoleBindings(ctx context.Context, cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileClusterRoleBindings(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling ClusterRoleBindings")
 
 	creators := []reconciling.NamedClusterRoleBindingCreatorGetter{
@@ -392,7 +391,7 @@ func (r *Reconciler) reconcileClusterRoleBindings(ctx context.Context, cfg *oper
 		creators = append(creators, nodeportproxy.ClusterRoleBindingCreator(cfg))
 	}
 
-	if cfg.Spec.FeatureGates.Has(features.VerticalPodAutoscaler) {
+	if cfg.Spec.FeatureGates[features.VerticalPodAutoscaler] {
 		creators = append(creators, vpa.ClusterRoleBindingCreators()...)
 	}
 
@@ -403,7 +402,7 @@ func (r *Reconciler) reconcileClusterRoleBindings(ctx context.Context, cfg *oper
 	return nil
 }
 
-func (r *Reconciler) reconcileConfigMaps(ctx context.Context, cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger, caBundle *corev1.ConfigMap) error {
+func (r *Reconciler) reconcileConfigMaps(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger, caBundle *corev1.ConfigMap) error {
 	log.Debug("reconciling ConfigMaps")
 
 	creators := []reconciling.NamedConfigMapCreatorGetter{
@@ -438,7 +437,7 @@ func (r *Reconciler) reconcileConfigMaps(ctx context.Context, cfg *operatorv1alp
 	return nil
 }
 
-func (r *Reconciler) reconcileSecrets(ctx context.Context, cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileSecrets(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling Secrets")
 
 	creators := []reconciling.NamedSecretCreatorGetter{
@@ -454,7 +453,7 @@ func (r *Reconciler) reconcileSecrets(ctx context.Context, cfg *operatorv1alpha1
 		return fmt.Errorf("failed to reconcile Kubermatic Secrets: %w", err)
 	}
 
-	if cfg.Spec.FeatureGates.Has(features.VerticalPodAutoscaler) {
+	if cfg.Spec.FeatureGates[features.VerticalPodAutoscaler] {
 		creators := []reconciling.NamedSecretCreatorGetter{
 			vpa.AdmissionControllerServingCertCreator(),
 		}
@@ -468,7 +467,7 @@ func (r *Reconciler) reconcileSecrets(ctx context.Context, cfg *operatorv1alpha1
 	return nil
 }
 
-func (r *Reconciler) reconcileDeployments(ctx context.Context, cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger, caBundle *corev1.ConfigMap) error {
+func (r *Reconciler) reconcileDeployments(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger, caBundle *corev1.ConfigMap) error {
 	log.Debug("reconciling Deployments")
 
 	creators := []reconciling.NamedDeploymentCreatorGetter{
@@ -503,7 +502,7 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, cfg *operatorv1al
 		return fmt.Errorf("failed to reconcile Kubermatic Deployments: %w", err)
 	}
 
-	if cfg.Spec.FeatureGates.Has(features.VerticalPodAutoscaler) {
+	if cfg.Spec.FeatureGates[features.VerticalPodAutoscaler] {
 		creators = []reconciling.NamedDeploymentCreatorGetter{
 			vpa.RecommenderDeploymentCreator(cfg, r.versions),
 			vpa.UpdaterDeploymentCreator(cfg, r.versions),
@@ -519,7 +518,7 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, cfg *operatorv1al
 	return nil
 }
 
-func (r *Reconciler) reconcilePodDisruptionBudgets(ctx context.Context, cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+func (r *Reconciler) reconcilePodDisruptionBudgets(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling PodDisruptionBudgets")
 
 	creators := []reconciling.NamedPodDisruptionBudgetCreatorGetter{
@@ -537,7 +536,7 @@ func (r *Reconciler) reconcilePodDisruptionBudgets(ctx context.Context, cfg *ope
 	return nil
 }
 
-func (r *Reconciler) reconcileServices(ctx context.Context, cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileServices(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling Services")
 
 	creators := []reconciling.NamedServiceCreatorGetter{
@@ -562,7 +561,7 @@ func (r *Reconciler) reconcileServices(ctx context.Context, cfg *operatorv1alpha
 		}
 	}
 
-	if cfg.Spec.FeatureGates.Has(features.VerticalPodAutoscaler) {
+	if cfg.Spec.FeatureGates[features.VerticalPodAutoscaler] {
 		creators := []reconciling.NamedServiceCreatorGetter{
 			vpa.AdmissionControllerServiceCreator(),
 		}
@@ -576,7 +575,7 @@ func (r *Reconciler) reconcileServices(ctx context.Context, cfg *operatorv1alpha
 	return nil
 }
 
-func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling AdmissionWebhooks")
 
 	validatingWebhookCreators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{
@@ -584,7 +583,7 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *operat
 		kubermaticseed.ClusterValidatingWebhookConfigurationCreator(cfg, client),
 	}
 
-	if cfg.Spec.FeatureGates.Has(features.OperatingSystemManager) {
+	if cfg.Spec.FeatureGates[features.OperatingSystemManager] {
 		validatingWebhookCreators = append(validatingWebhookCreators, kubermaticseed.OperatingSystemProfileValidatingWebhookConfigurationCreator(cfg, client))
 		validatingWebhookCreators = append(validatingWebhookCreators, kubermaticseed.OperatingSystemConfigValidatingWebhookConfigurationCreator(cfg, client))
 	}

@@ -40,7 +40,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -161,7 +161,7 @@ func getReportsForSeed(ctx context.Context, options minio.ListObjectsOptions, se
 }
 
 func getS3DataFromSeed(ctx context.Context, seedClient ctrlruntimeclient.Client) (*minio.Client, string, error) {
-	var s3 v1.Secret
+	var s3 corev1.Secret
 	err := seedClient.Get(ctx, secretNamespacedName, &s3)
 	if err != nil {
 		return nil, "", err

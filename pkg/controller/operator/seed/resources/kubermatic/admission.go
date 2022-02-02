@@ -19,9 +19,8 @@ package kubermatic
 import (
 	"fmt"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 
@@ -41,7 +40,7 @@ const (
 	OSPAdmissionWebhookName     = "kubermatic-operating-system-profiles"
 )
 
-func ClusterValidatingWebhookConfigurationCreator(cfg *operatorv1alpha1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
+func ClusterValidatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
 		return ClusterAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
@@ -67,7 +66,7 @@ func ClusterValidatingWebhookConfigurationCreator(cfg *operatorv1alpha1.Kubermat
 						Service: &admissionregistrationv1.ServiceReference{
 							Name:      clusterWebhookServiceName,
 							Namespace: cfg.Namespace,
-							Path:      pointer.StringPtr("/validate-kubermatic-k8s-io-cluster"),
+							Path:      pointer.StringPtr("/validate-kubermatic-k8c-io-cluster"),
 							Port:      pointer.Int32Ptr(443),
 						},
 					},
@@ -95,7 +94,7 @@ func ClusterValidatingWebhookConfigurationCreator(cfg *operatorv1alpha1.Kubermat
 	}
 }
 
-func ClusterMutatingWebhookConfigurationCreator(cfg *operatorv1alpha1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedMutatingWebhookConfigurationCreatorGetter {
+func ClusterMutatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedMutatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.MutatingWebhookConfigurationCreator) {
 		return ClusterAdmissionWebhookName, func(hook *admissionregistrationv1.MutatingWebhookConfiguration) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
@@ -123,7 +122,7 @@ func ClusterMutatingWebhookConfigurationCreator(cfg *operatorv1alpha1.Kubermatic
 						Service: &admissionregistrationv1.ServiceReference{
 							Name:      clusterWebhookServiceName,
 							Namespace: cfg.Namespace,
-							Path:      pointer.StringPtr("/mutate-kubermatic-k8s-io-cluster"),
+							Path:      pointer.StringPtr("/mutate-kubermatic-k8c-io-cluster"),
 							Port:      pointer.Int32Ptr(443),
 						},
 					},
@@ -153,7 +152,7 @@ func ClusterMutatingWebhookConfigurationCreator(cfg *operatorv1alpha1.Kubermatic
 
 // ClusterAdmissionServiceCreator creates the Service for the Cluster Admission webhook.
 // This service is created only on seed clusters.
-func ClusterAdmissionServiceCreator(cfg *operatorv1alpha1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedServiceCreatorGetter {
+func ClusterAdmissionServiceCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return clusterWebhookServiceName, func(s *corev1.Service) (*corev1.Service, error) {
 			s.Spec.Type = corev1.ServiceTypeClusterIP
@@ -175,7 +174,7 @@ func ClusterAdmissionServiceCreator(cfg *operatorv1alpha1.KubermaticConfiguratio
 	}
 }
 
-func OperatingSystemConfigValidatingWebhookConfigurationCreator(cfg *operatorv1alpha1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
+func OperatingSystemConfigValidatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
 		return OSCAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
@@ -228,7 +227,7 @@ func OperatingSystemConfigValidatingWebhookConfigurationCreator(cfg *operatorv1a
 	}
 }
 
-func OperatingSystemProfileValidatingWebhookConfigurationCreator(cfg *operatorv1alpha1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
+func OperatingSystemProfileValidatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
 		return OSPAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact

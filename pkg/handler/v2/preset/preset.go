@@ -27,8 +27,8 @@ import (
 	"github.com/gorilla/mux"
 
 	v2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	crdapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
@@ -115,7 +115,7 @@ func (r updatePresetStatusReq) Validate() error {
 		return fmt.Errorf("the preset name cannot be empty")
 	}
 
-	if len(r.Provider) > 0 && !crdapiv1.IsProviderSupported(r.Provider) {
+	if len(r.Provider) > 0 && !kubermaticv1.IsProviderSupported(r.Provider) {
 		return fmt.Errorf("invalid provider name %s", r.Provider)
 	}
 
@@ -155,11 +155,11 @@ func UpdatePresetStatus(presetProvider provider.PresetProvider, userInfoGetter p
 			return nil, err
 		}
 
-		if hasProvider, _ := helper.HasProvider(preset, crdapiv1.ProviderType(req.Provider)); !hasProvider {
+		if hasProvider, _ := kubermaticv1helper.HasProvider(preset, kubermaticv1.ProviderType(req.Provider)); !hasProvider {
 			return nil, errors.New(http.StatusConflict, fmt.Sprintf("trying to update preset with missing provider configuration for: %s", req.Provider))
 		}
 
-		helper.SetProviderEnabled(preset, crdapiv1.ProviderType(req.Provider), req.Body.Enabled)
+		kubermaticv1helper.SetProviderEnabled(preset, kubermaticv1.ProviderType(req.Provider), req.Body.Enabled)
 		_, err = presetProvider.UpdatePreset(preset)
 		return nil, err
 	}
@@ -187,7 +187,7 @@ func (l listProviderPresetsReq) Validate() error {
 		return fmt.Errorf("the provider name cannot be empty")
 	}
 
-	if !crdapiv1.IsProviderSupported(l.ProviderName) {
+	if !kubermaticv1.IsProviderSupported(l.ProviderName) {
 		return fmt.Errorf("invalid provider name %s", l.ProviderName)
 	}
 
@@ -231,8 +231,8 @@ func ListProviderPresets(presetProvider provider.PresetProvider, userInfoGetter 
 		}
 
 		for _, preset := range presets {
-			providerType := crdapiv1.ProviderType(req.ProviderName)
-			providerPreset := helper.GetProviderPreset(&preset, providerType)
+			providerType := kubermaticv1.ProviderType(req.ProviderName)
+			providerPreset := kubermaticv1helper.GetProviderPreset(&preset, providerType)
 
 			// Preset does not contain requested provider configuration
 			if providerPreset == nil {
@@ -265,7 +265,7 @@ type createPresetReq struct {
 	ProviderName string `json:"provider_name"`
 	// in: body
 	// required: true
-	Body crdapiv1.Preset
+	Body kubermaticv1.Preset
 }
 
 // Validate validates createPresetReq request.
@@ -274,7 +274,7 @@ func (r createPresetReq) Validate() error {
 		return fmt.Errorf("the provider name cannot be empty")
 	}
 
-	if !crdapiv1.IsProviderSupported(r.ProviderName) {
+	if !kubermaticv1.IsProviderSupported(r.ProviderName) {
 		return fmt.Errorf("invalid provider name %s", r.ProviderName)
 	}
 
@@ -282,21 +282,21 @@ func (r createPresetReq) Validate() error {
 		return fmt.Errorf("preset name cannot be empty")
 	}
 
-	if hasProvider, _ := helper.HasProvider(&r.Body, crdapiv1.ProviderType(r.ProviderName)); !hasProvider {
+	if hasProvider, _ := kubermaticv1helper.HasProvider(&r.Body, kubermaticv1.ProviderType(r.ProviderName)); !hasProvider {
 		return fmt.Errorf("missing provider configuration for: %s", r.ProviderName)
 	}
 
-	err := helper.Validate(&r.Body, crdapiv1.ProviderType(r.ProviderName))
+	err := kubermaticv1helper.Validate(&r.Body, kubermaticv1.ProviderType(r.ProviderName))
 	if err != nil {
 		return err
 	}
 
-	for _, providerType := range crdapiv1.SupportedProviders {
+	for _, providerType := range kubermaticv1.SupportedProviders {
 		if string(providerType) == r.ProviderName {
 			continue
 		}
 
-		if hasProvider, _ := helper.HasProvider(&r.Body, providerType); hasProvider {
+		if hasProvider, _ := kubermaticv1helper.HasProvider(&r.Body, providerType); hasProvider {
 			return fmt.Errorf("found unexpected provider configuration for: %s", providerType)
 		}
 	}
@@ -346,18 +346,18 @@ func CreatePreset(presetProvider provider.PresetProvider, userInfoGetter provide
 			return nil, err
 		}
 
-		if hasProvider, _ := helper.HasProvider(preset, crdapiv1.ProviderType(req.ProviderName)); hasProvider {
+		if hasProvider, _ := kubermaticv1helper.HasProvider(preset, kubermaticv1.ProviderType(req.ProviderName)); hasProvider {
 			return nil, errors.New(http.StatusConflict, fmt.Sprintf("%s provider configuration already exists for preset %s", req.ProviderName, preset.Name))
 		}
 
-		preset = mergePresets(preset, &req.Body, crdapiv1.ProviderType(req.ProviderName))
+		preset = mergePresets(preset, &req.Body, kubermaticv1.ProviderType(req.ProviderName))
 		preset, err = presetProvider.UpdatePreset(preset)
 		if err != nil {
 			return nil, err
 		}
 
-		providerType := crdapiv1.ProviderType(req.ProviderName)
-		enabled := preset.Spec.IsEnabled() && helper.IsProviderEnabled(preset, providerType)
+		providerType := kubermaticv1.ProviderType(req.ProviderName)
+		enabled := preset.Spec.IsEnabled() && kubermaticv1helper.IsProviderEnabled(preset, providerType)
 		return newAPIPreset(preset, enabled), nil
 	}
 }
@@ -411,14 +411,14 @@ func UpdatePreset(presetProvider provider.PresetProvider, userInfoGetter provide
 			return nil, err
 		}
 
-		preset = mergePresets(preset, &req.Body, crdapiv1.ProviderType(req.ProviderName))
+		preset = mergePresets(preset, &req.Body, kubermaticv1.ProviderType(req.ProviderName))
 		preset, err = presetProvider.UpdatePreset(preset)
 		if err != nil {
 			return nil, err
 		}
 
-		providerType := crdapiv1.ProviderType(req.ProviderName)
-		enabled := preset.Spec.IsEnabled() && helper.IsProviderEnabled(preset, providerType)
+		providerType := kubermaticv1.ProviderType(req.ProviderName)
+		enabled := preset.Spec.IsEnabled() && kubermaticv1helper.IsProviderEnabled(preset, providerType)
 		return newAPIPreset(preset, enabled), nil
 	}
 }
@@ -440,7 +440,7 @@ func (r deletePresetReq) Validate() error {
 		return fmt.Errorf("the provider name cannot be empty")
 	}
 
-	if !crdapiv1.IsProviderSupported(r.ProviderName) {
+	if !kubermaticv1.IsProviderSupported(r.ProviderName) {
 		return fmt.Errorf("invalid provider name %s", r.ProviderName)
 	}
 
@@ -491,7 +491,7 @@ func DeletePreset(presetProvider provider.PresetProvider, userInfoGetter provide
 		}
 
 		// remove provider from preset
-		preset = helper.RemoveProvider(preset, crdapiv1.ProviderType(req.ProviderName))
+		preset = kubermaticv1helper.RemoveProvider(preset, kubermaticv1.ProviderType(req.ProviderName))
 
 		// Delete the provider from the preset OR the whole preset
 		preset, err = presetProvider.DeletePreset(preset)
@@ -504,20 +504,19 @@ func DeletePreset(presetProvider provider.PresetProvider, userInfoGetter provide
 	}
 }
 
-func mergePresets(oldPreset *crdapiv1.Preset, newPreset *crdapiv1.Preset, providerType crdapiv1.ProviderType) *crdapiv1.Preset {
-	oldPreset = helper.OverrideProvider(oldPreset, providerType, newPreset)
+func mergePresets(oldPreset *kubermaticv1.Preset, newPreset *kubermaticv1.Preset, providerType kubermaticv1.ProviderType) *kubermaticv1.Preset {
+	oldPreset = kubermaticv1helper.OverrideProvider(oldPreset, providerType, newPreset)
 	oldPreset.Spec.RequiredEmails = newPreset.Spec.RequiredEmails
-	oldPreset.Spec.RequiredEmailDomain = newPreset.Spec.RequiredEmailDomain
 	return oldPreset
 }
 
-func newAPIPreset(preset *crdapiv1.Preset, enabled bool) v2.Preset {
+func newAPIPreset(preset *kubermaticv1.Preset, enabled bool) v2.Preset {
 	providers := make([]v2.PresetProvider, 0)
-	for _, providerType := range crdapiv1.SupportedProviders {
-		if hasProvider, _ := helper.HasProvider(preset, providerType); hasProvider {
+	for _, providerType := range kubermaticv1.SupportedProviders {
+		if hasProvider, _ := kubermaticv1helper.HasProvider(preset, providerType); hasProvider {
 			providers = append(providers, v2.PresetProvider{
 				Name:    providerType,
-				Enabled: helper.IsProviderEnabled(preset, providerType),
+				Enabled: kubermaticv1helper.IsProviderEnabled(preset, providerType),
 			})
 		}
 	}

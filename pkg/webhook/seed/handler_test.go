@@ -23,7 +23,7 @@ import (
 
 	"github.com/go-logr/logr"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -80,13 +80,13 @@ func TestHandle(t *testing.T) {
 					Name:      "Seed1",
 					Namespace: "Kubermatic",
 					Object: runtime.RawExtension{
-						Raw: []byte(`{"apiVersion":"kubermatic.k8s.io/v1","kind":"Seed","metadata":{"name":"Seed","namespace":"Kubermatic"}}`),
+						Raw: []byte(`{"apiVersion":"kubermatic.k8c.io/v1","kind":"Seed","metadata":{"name":"Seed","namespace":"Kubermatic"}}`),
 					},
 				},
 			},
 			valid: true,
 			wantSeed: kubermaticv1.Seed{
-				TypeMeta:   metav1.TypeMeta{Kind: "Seed", APIVersion: "kubermatic.k8s.io/v1"},
+				TypeMeta:   metav1.TypeMeta{Kind: "Seed", APIVersion: "kubermatic.k8c.io/v1"},
 				ObjectMeta: metav1.ObjectMeta{Name: "Seed", Namespace: "Kubermatic"},
 			},
 			wantAllowed: true,
@@ -104,13 +104,13 @@ func TestHandle(t *testing.T) {
 					Name:      "Seed1",
 					Namespace: "Kubermatic",
 					Object: runtime.RawExtension{
-						Raw: []byte(`{"apiVersion":"kubermatic.k8s.io/v1","kind":"Seed","metadata":{"name":"Seed","namespace":"Kubermatic"}}`),
+						Raw: []byte(`{"apiVersion":"kubermatic.k8c.io/v1","kind":"Seed","metadata":{"name":"Seed","namespace":"Kubermatic"}}`),
 					},
 				},
 			},
 			valid: true,
 			wantSeed: kubermaticv1.Seed{
-				TypeMeta:   metav1.TypeMeta{Kind: "Seed", APIVersion: "kubermatic.k8s.io/v1"},
+				TypeMeta:   metav1.TypeMeta{Kind: "Seed", APIVersion: "kubermatic.k8c.io/v1"},
 				ObjectMeta: metav1.ObjectMeta{Name: "Seed", Namespace: "Kubermatic"},
 			},
 			wantAllowed: true,

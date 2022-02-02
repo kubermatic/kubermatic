@@ -23,7 +23,7 @@ import (
 	"testing"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 
@@ -53,7 +53,7 @@ func TestGetMasterKubeconfig(t *testing.T) {
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				test.GenTestSeed(),
 				/*add projects*/
-				test.GenProject("foo", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("foo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("foo-ID", "john@acme.com", "owners"),
 
@@ -83,7 +83,7 @@ func TestGetMasterKubeconfig(t *testing.T) {
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				test.GenTestSeed(),
 				/*add projects*/
-				test.GenProject("foo", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("foo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("foo-ID", "john@acme.com", "viewers"),
 
@@ -113,7 +113,7 @@ func TestGetMasterKubeconfig(t *testing.T) {
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				test.GenTestSeed(),
 				/*add projects*/
-				test.GenProject("foo", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("foo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("foo-ID", "john@acme.com", "owners"),
 
@@ -144,7 +144,7 @@ func TestGetMasterKubeconfig(t *testing.T) {
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				test.GenTestSeed(),
 				/*add projects*/
-				test.GenProject("foo", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("foo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("foo-ID", "john@acme.com", "owners"),
 

@@ -23,7 +23,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -119,7 +119,23 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	err := r.syncAllSeeds(log, project, func(seedClusterClient ctrlruntimeclient.Client, project *kubermaticv1.Project) error {
-		return reconciling.ReconcileKubermaticV1Projects(ctx, projectCreatorGetters, "", seedClusterClient)
+		err := reconciling.ReconcileKubermaticV1Projects(ctx, projectCreatorGetters, "", seedClusterClient)
+		if err != nil {
+			return fmt.Errorf("failed to reconcile project: %w", err)
+		}
+
+		seedProject := &kubermaticv1.Project{}
+		if err := seedClusterClient.Get(ctx, request.NamespacedName, seedProject); err != nil {
+			return fmt.Errorf("failed to fetch project on seed cluster: %w", err)
+		}
+
+		oldProject := seedProject.DeepCopy()
+		seedProject.Status = project.Status
+		if err := seedClusterClient.Status().Patch(ctx, seedProject, ctrlruntimeclient.MergeFrom(oldProject)); err != nil {
+			return fmt.Errorf("failed to update project status on seed cluster: %w", err)
+		}
+
+		return nil
 	})
 
 	if err != nil {
@@ -131,27 +147,30 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, project *kubermaticv1.Project) error {
 	err := r.syncAllSeeds(log, project, func(seedClusterClient ctrlruntimeclient.Client, project *kubermaticv1.Project) error {
-		if err := seedClusterClient.Delete(ctx, project); err != nil {
-			return ctrlruntimeclient.IgnoreNotFound(err)
-		}
-		return nil
+		return ctrlruntimeclient.IgnoreNotFound(seedClusterClient.Delete(ctx, project))
 	})
 	if err != nil {
 		return err
 	}
-	if kuberneteshelper.HasFinalizer(project, kubermaticapiv1.SeedProjectCleanupFinalizer) {
-		kuberneteshelper.RemoveFinalizer(project, kubermaticapiv1.SeedProjectCleanupFinalizer)
-		if err := r.masterClient.Update(ctx, project); err != nil {
-			return fmt.Errorf("failed to remove project finalizer %s: %w", project.Name, err)
+
+	if finalizer := kubermaticapiv1.SeedProjectCleanupFinalizer; kuberneteshelper.HasFinalizer(project, finalizer) {
+		oldProject := project.DeepCopy()
+		kuberneteshelper.RemoveFinalizer(project, finalizer)
+		patch := ctrlruntimeclient.MergeFrom(oldProject)
+		// ignore NotFound because on shared master/seed systems, the code above will already have deleted the binding
+		if err := r.masterClient.Patch(ctx, project, patch); ctrlruntimeclient.IgnoreNotFound(err) != nil {
+			return fmt.Errorf("failed to remove project finalizer %s: %w", finalizer, err)
 		}
 	}
+
 	return nil
 }
 
 func (r *reconciler) syncAllSeeds(
 	log *zap.SugaredLogger,
 	project *kubermaticv1.Project,
-	action func(seedClusterClient ctrlruntimeclient.Client, project *kubermaticv1.Project) error) error {
+	action func(seedClusterClient ctrlruntimeclient.Client, project *kubermaticv1.Project) error,
+) error {
 	for seedName, seedClient := range r.seedClients {
 		if err := action(seedClient, project); err != nil {
 			return fmt.Errorf("failed syncing project for seed %s: %w", seedName, err)

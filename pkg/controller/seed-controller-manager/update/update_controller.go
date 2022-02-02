@@ -25,9 +25,9 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
@@ -201,12 +201,17 @@ func (r *Reconciler) controlPlaneUpgrade(ctx context.Context, cluster *kubermati
 	}
 
 	cluster.Spec.Version = *sver
+	if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+		return false, fmt.Errorf("failed to update cluster: %w", err)
+	}
+
 	// Invalidating the health to prevent automatic updates directly on the next processing.
 	cluster.Status.ExtendedHealth.Apiserver = kubermaticv1.HealthStatusDown
 	cluster.Status.ExtendedHealth.Controller = kubermaticv1.HealthStatusDown
 	cluster.Status.ExtendedHealth.Scheduler = kubermaticv1.HealthStatusDown
-	if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
-		return false, fmt.Errorf("failed to update cluster: %w", err)
+	if err := r.Status().Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+		return false, fmt.Errorf("failed to update cluster status: %w", err)
 	}
+
 	return true, nil
 }

@@ -25,9 +25,9 @@ import (
 
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/common"
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
-	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -106,7 +106,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	log := r.log.With("Request", request.NamespacedName.String())
 	log.Debug("Reconciling")
 
-	cluster := &v1.Cluster{}
+	cluster := &kubermaticv1.Cluster{}
 	if err := r.seedClient.Get(ctx, request.NamespacedName, cluster); err != nil {
 		if kerrors.IsNotFound(err) {
 			log.Debug("cluster not found, returning")
@@ -124,7 +124,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return reconcile.Result{}, err
 }
 
-func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, oldCluster *v1.Cluster) error {
+func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, oldCluster *kubermaticv1.Cluster) error {
 	machines := &v1alpha1.MachineList{}
 	if err := r.userClient.List(ctx, machines); err != nil {
 		log.Debugw("error while listing machines in user oldCluster", zap.Error(err))
@@ -144,7 +144,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, oldC
 	// if the cluster condition status has changed, update it accordingly
 	newCluster := oldCluster.DeepCopy()
 	if toPatch := r.ensureMigrationConditionStatus(migrated, newCluster); toPatch {
-		if err := r.seedClient.Patch(ctx, newCluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+		if err := r.seedClient.Status().Patch(ctx, newCluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 			return fmt.Errorf("failed to update cluster: %w", err)
 		}
 	}
@@ -152,7 +152,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, oldC
 	return nil
 }
 
-func (r *reconciler) ensureMigrationConditionStatus(migrated bool, cluster *v1.Cluster) bool {
+func (r *reconciler) ensureMigrationConditionStatus(migrated bool, cluster *kubermaticv1.Cluster) bool {
 	var (
 		newStatus corev1.ConditionStatus
 		reason    string
@@ -161,20 +161,20 @@ func (r *reconciler) ensureMigrationConditionStatus(migrated bool, cluster *v1.C
 
 	if migrated {
 		newStatus = corev1.ConditionTrue
-		reason = v1.ReasonClusterCSIKubeletMigrationCompleted
+		reason = kubermaticv1.ReasonClusterCSIKubeletMigrationCompleted
 		message = "external CCM/CSI migration completed"
 	} else {
 		newStatus = corev1.ConditionFalse
-		reason = v1.ReasonClusterCCMMigrationInProgress
+		reason = kubermaticv1.ReasonClusterCCMMigrationInProgress
 		message = "migrating to external CCM"
 	}
 
-	toPatch := !helper.ClusterConditionHasStatus(cluster, v1.ClusterConditionCSIKubeletMigrationCompleted, newStatus)
+	toPatch := !kubermaticv1helper.ClusterConditionHasStatus(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, newStatus)
 	if toPatch {
-		helper.SetClusterCondition(
+		kubermaticv1helper.SetClusterCondition(
 			cluster,
 			r.versions,
-			v1.ClusterConditionCSIKubeletMigrationCompleted,
+			kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted,
 			newStatus,
 			reason,
 			message,

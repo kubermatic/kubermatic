@@ -22,11 +22,10 @@ import (
 
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -110,7 +109,7 @@ func Add(
 		return requests
 	})
 
-	config := &operatorv1alpha1.KubermaticConfiguration{}
+	config := &kubermaticv1.KubermaticConfiguration{}
 	if err := c.Watch(&source.Kind{Type: config}, configEventHandler, namespacePredicate, predicate.ResourceVersionChangedPredicate{}); err != nil {
 		return fmt.Errorf("failed to create watcher for %T: %w", config, err)
 	}
@@ -276,9 +275,9 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 	return nil
 }
 
-func getKubermaticConfigurationForNamespace(ctx context.Context, client ctrlruntimeclient.Client, namespace string, log *zap.SugaredLogger) (*operatorv1alpha1.KubermaticConfiguration, error) {
+func getKubermaticConfigurationForNamespace(ctx context.Context, client ctrlruntimeclient.Client, namespace string, log *zap.SugaredLogger) (*kubermaticv1.KubermaticConfiguration, error) {
 	// find the owning KubermaticConfiguration
-	configList := &operatorv1alpha1.KubermaticConfigurationList{}
+	configList := &kubermaticv1.KubermaticConfigurationList{}
 	listOpts := &ctrlruntimeclient.ListOptions{
 		Namespace: namespace,
 	}

@@ -20,8 +20,8 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
@@ -76,7 +76,7 @@ func (r *Reconciler) syncHealth(ctx context.Context, cluster *kubermaticv1.Clust
 		return err
 	}
 	if cluster.Status.ExtendedHealth != *extendedHealth {
-		err = r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
+		err = r.updateClusterStatus(ctx, cluster, func(c *kubermaticv1.Cluster) {
 			c.Status.ExtendedHealth = *extendedHealth
 		})
 	}
@@ -87,7 +87,7 @@ func (r *Reconciler) syncHealth(ctx context.Context, cluster *kubermaticv1.Clust
 	// set ClusterConditionEtcdClusterInitialized, this should be done only once
 	// when etcd becomes healthy for the first time.
 	if !cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionEtcdClusterInitialized, corev1.ConditionTrue) && extendedHealth.Etcd == kubermaticv1.HealthStatusUp {
-		if err = r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
+		if err = r.updateClusterStatus(ctx, cluster, func(c *kubermaticv1.Cluster) {
 			kubermaticv1helper.SetClusterCondition(
 				c,
 				r.versions,
@@ -102,7 +102,7 @@ func (r *Reconciler) syncHealth(ctx context.Context, cluster *kubermaticv1.Clust
 	}
 
 	if !cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionClusterInitialized, corev1.ConditionTrue) && kubermaticv1helper.IsClusterInitialized(cluster, r.versions) {
-		err = r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
+		err = r.updateClusterStatus(ctx, cluster, func(c *kubermaticv1.Cluster) {
 			kubermaticv1helper.SetClusterCondition(
 				c,
 				r.versions,

@@ -20,9 +20,8 @@ import (
 	"fmt"
 	"strconv"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -45,7 +44,7 @@ const (
 	EnvoyTunnelingPort    = 8088
 )
 
-func EnvoyDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, supportsFailureDomainZoneAntiAffinity bool, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
+func EnvoyDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, supportsFailureDomainZoneAntiAffinity bool, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return EnvoyDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = pointer.Int32Ptr(3)
@@ -96,7 +95,7 @@ func EnvoyDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, seed 
 				"-envoy-admin-port=9001",
 				fmt.Sprintf("-envoy-stats-port=%d", EnvoyPort),
 			}
-			if cfg.Spec.FeatureGates.Has(features.TunnelingExposeStrategy) {
+			if cfg.Spec.FeatureGates[features.TunnelingExposeStrategy] {
 				args = append(args,
 					fmt.Sprintf("-envoy-sni-port=%d", EnvoySNIPort),
 					fmt.Sprintf("-envoy-tunneling-port=%d", EnvoyTunnelingPort))
@@ -236,7 +235,7 @@ func EnvoyPDBCreator() reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	}
 }
 
-func UpdaterDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
+func UpdaterDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return UpdaterDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = pointer.Int32Ptr(1)
@@ -257,7 +256,7 @@ func UpdaterDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, see
 				"-lb-namespace=$(NAMESPACE)",
 				fmt.Sprintf("-lb-name=%s", ServiceName),
 			}
-			if cfg.Spec.FeatureGates.Has(features.TunnelingExposeStrategy) {
+			if cfg.Spec.FeatureGates[features.TunnelingExposeStrategy] {
 				args = append(args,
 					fmt.Sprintf("-envoy-sni-port=%d", EnvoySNIPort),
 					fmt.Sprintf("-envoy-tunneling-port=%d", EnvoyTunnelingPort))

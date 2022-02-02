@@ -19,11 +19,11 @@ limitations under the License.
 package azure
 
 import (
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/uuid"
 
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type fakeClientMode string
@@ -73,7 +73,7 @@ func makeCluster(name string, cloudSpec *kubermaticv1.AzureCloudSpec, credential
 	spec.ClientSecret = credentials.ClientSecret
 
 	return &kubermaticv1.Cluster{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
 		Spec: kubermaticv1.ClusterSpec{

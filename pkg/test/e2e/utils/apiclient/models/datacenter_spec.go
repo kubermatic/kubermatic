@@ -38,11 +38,8 @@ type DatacenterSpec struct {
 	// It is used for informational purposes.
 	Provider string `json:"provider,omitempty"`
 
-	// Deprecated. Automatically migrated to the RequiredEmailDomains field.
-	RequiredEmailDomain string `json:"requiredEmailDomain,omitempty"`
-
-	// required email domains
-	RequiredEmailDomains []string `json:"requiredEmailDomains"`
+	// required emails
+	RequiredEmails []string `json:"requiredEmails"`
 
 	// Name of the seed this datacenter belongs to.
 	Seed string `json:"seed,omitempty"`

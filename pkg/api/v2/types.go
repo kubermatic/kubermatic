@@ -21,11 +21,10 @@ import (
 	kubevirtv1 "kubevirt.io/api/core/v1"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	crdapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -35,8 +34,8 @@ import (
 type ConstraintTemplate struct {
 	Name string `json:"name"`
 
-	Spec   crdapiv1.ConstraintTemplateSpec  `json:"spec"`
-	Status v1beta1.ConstraintTemplateStatus `json:"status"`
+	Spec   kubermaticv1.ConstraintTemplateSpec `json:"spec"`
+	Status v1beta1.ConstraintTemplateStatus    `json:"status"`
 }
 
 // Constraint represents a gatekeeper Constraint
@@ -45,8 +44,8 @@ type Constraint struct {
 	Name   string            `json:"name"`
 	Labels map[string]string `json:"labels,omitempty"`
 
-	Spec   crdapiv1.ConstraintSpec `json:"spec"`
-	Status *ConstraintStatus       `json:"status,omitempty"`
+	Spec   kubermaticv1.ConstraintSpec `json:"spec"`
+	Status *ConstraintStatus           `json:"status,omitempty"`
 }
 
 // ConstraintStatus represents a constraint status which holds audit info.
@@ -141,8 +140,8 @@ type Preset struct {
 // PresetProvider represents a preset provider
 // swagger:model PresetProvider
 type PresetProvider struct {
-	Name    crdapiv1.ProviderType `json:"name"`
-	Enabled bool                  `json:"enabled"`
+	Name    kubermaticv1.ProviderType `json:"name"`
+	Enabled bool                      `json:"enabled"`
 }
 
 // Alertmanager represents an Alertmanager Configuration
@@ -162,7 +161,7 @@ type SeedSettings struct {
 	// the Seed level MLA (Monitoring, Logging, and Alerting) stack settings
 	MLA MLA `json:"mla"`
 	// the Seed level metering settings
-	Metering crdapiv1.MeteringConfigurations `json:"metering"`
+	Metering kubermaticv1.MeteringConfiguration `json:"metering"`
 	// the Seed level seed dns overwrite
 	SeedDNSOverwrite string `json:"seedDNSOverwrite,omitempty"`
 }
@@ -202,7 +201,7 @@ type ClusterTemplateList []ClusterTemplate
 type ClusterTemplateInstance struct {
 	Name string `json:"name"`
 
-	Spec crdapiv1.ClusterTemplateInstanceSpec `json:"spec"`
+	Spec kubermaticv1.ClusterTemplateInstanceSpec `json:"spec"`
 }
 
 // RuleGroup represents a rule group of recording and alerting rules.
@@ -212,7 +211,7 @@ type RuleGroup struct {
 	// contains the RuleGroup data. Ref: https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/#rule_group
 	Data []byte `json:"data"`
 	// the type of this ruleGroup applies to. It can be `Metrics`.
-	Type crdapiv1.RuleGroupType `json:"type"`
+	Type kubermaticv1.RuleGroupType `json:"type"`
 }
 
 // AllowedRegistry represents a object containing a allowed image registry prefix
@@ -220,7 +219,7 @@ type RuleGroup struct {
 type AllowedRegistry struct {
 	Name string `json:"name"`
 
-	Spec crdapiv1.AllowedRegistrySpec `json:"spec"`
+	Spec kubermaticv1.AllowedRegistrySpec `json:"spec"`
 }
 
 // EtcdBackupConfig represents an object holding the configuration for etcd backups
@@ -243,23 +242,23 @@ type EtcdBackupConfigStatus struct {
 
 type BackupStatus struct {
 	// ScheduledTime will always be set when the BackupStatus is created, so it'll never be nil
-	ScheduledTime      *apiv1.Time                `json:"scheduledTime,omitempty"`
-	BackupName         string                     `json:"backupName,omitempty"`
-	JobName            string                     `json:"jobName,omitempty"`
-	BackupStartTime    *apiv1.Time                `json:"backupStartTime,omitempty"`
-	BackupFinishedTime *apiv1.Time                `json:"backupFinishedTime,omitempty"`
-	BackupPhase        crdapiv1.BackupStatusPhase `json:"backupPhase,omitempty"`
-	BackupMessage      string                     `json:"backupMessage,omitempty"`
-	DeleteJobName      string                     `json:"deleteJobName,omitempty"`
-	DeleteStartTime    *apiv1.Time                `json:"deleteStartTime,omitempty"`
-	DeleteFinishedTime *apiv1.Time                `json:"deleteFinishedTime,omitempty"`
-	DeletePhase        crdapiv1.BackupStatusPhase `json:"deletePhase,omitempty"`
-	DeleteMessage      string                     `json:"deleteMessage,omitempty"`
+	ScheduledTime      *apiv1.Time                    `json:"scheduledTime,omitempty"`
+	BackupName         string                         `json:"backupName,omitempty"`
+	JobName            string                         `json:"jobName,omitempty"`
+	BackupStartTime    *apiv1.Time                    `json:"backupStartTime,omitempty"`
+	BackupFinishedTime *apiv1.Time                    `json:"backupFinishedTime,omitempty"`
+	BackupPhase        kubermaticv1.BackupStatusPhase `json:"backupPhase,omitempty"`
+	BackupMessage      string                         `json:"backupMessage,omitempty"`
+	DeleteJobName      string                         `json:"deleteJobName,omitempty"`
+	DeleteStartTime    *apiv1.Time                    `json:"deleteStartTime,omitempty"`
+	DeleteFinishedTime *apiv1.Time                    `json:"deleteFinishedTime,omitempty"`
+	DeletePhase        kubermaticv1.BackupStatusPhase `json:"deletePhase,omitempty"`
+	DeleteMessage      string                         `json:"deleteMessage,omitempty"`
 }
 
 type EtcdBackupConfigCondition struct {
 	// Type of EtcdBackupConfig condition.
-	Type crdapiv1.EtcdBackupConfigConditionType `json:"type"`
+	Type kubermaticv1.EtcdBackupConfigConditionType `json:"type"`
 	// Status of the condition, one of True, False, Unknown.
 	Status corev1.ConditionStatus `json:"status"`
 	// Last time we got an update on a given condition.
@@ -303,8 +302,8 @@ type EtcdRestore struct {
 }
 
 type EtcdRestoreStatus struct {
-	Phase       crdapiv1.EtcdRestorePhase `json:"phase"`
-	RestoreTime *apiv1.Time               `json:"restoreTime,omitempty"`
+	Phase       kubermaticv1.EtcdRestorePhase `json:"phase"`
+	RestoreTime *apiv1.Time                   `json:"restoreTime,omitempty"`
 }
 
 // EtcdRestoreSpec represents an object holding the etcd backup restore configuration specification
@@ -351,9 +350,9 @@ type S3BackupCredentials struct {
 // swagger:model MLAAdminSetting
 type MLAAdminSetting struct {
 	// MonitoringRateLimits contains rate-limiting configuration for monitoring in the user cluster.
-	MonitoringRateLimits *crdapiv1.MonitoringRateLimitSettings `json:"monitoringRateLimits,omitempty"`
+	MonitoringRateLimits *kubermaticv1.MonitoringRateLimitSettings `json:"monitoringRateLimits,omitempty"`
 	// LoggingRateLimits contains rate-limiting configuration logging in the user cluster.
-	LoggingRateLimits *crdapiv1.LoggingRateLimitSettings `json:"loggingRateLimits,omitempty"`
+	LoggingRateLimits *kubermaticv1.LoggingRateLimitSettings `json:"loggingRateLimits,omitempty"`
 }
 
 // ExternalCluster represents an object holding cluster details
@@ -987,7 +986,7 @@ type StorageClass struct {
 	// Dynamically provisioned PersistentVolumes of this storage class are
 	// created with this reclaimPolicy. Defaults to Delete.
 	// +optional
-	ReclaimPolicy *v1.PersistentVolumeReclaimPolicy `json:"reclaimPolicy,omitempty"`
+	ReclaimPolicy *corev1.PersistentVolumeReclaimPolicy `json:"reclaimPolicy,omitempty"`
 
 	// Dynamically provisioned PersistentVolumes of this storage class are
 	// created with these mountOptions, e.g. ["ro", "soft"]. Not validated -
@@ -1011,7 +1010,7 @@ type StorageClass struct {
 	// This field is only honored by servers that enable the VolumeScheduling feature.
 	// +optional
 	// +listType=atomic
-	AllowedTopologies []v1.TopologySelectorTerm `json:"allowedTopologies,omitempty"`
+	AllowedTopologies []corev1.TopologySelectorTerm `json:"allowedTopologies,omitempty"`
 }
 
 // CNIVersions is a list of versions for a CNI Plugin

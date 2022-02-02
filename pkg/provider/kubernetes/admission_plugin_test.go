@@ -20,12 +20,12 @@ import (
 	"context"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	"k8s.io/apimachinery/pkg/api/equality"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -56,7 +56,7 @@ func TestListAdmissionPluginsFromVersion(t *testing.T) {
 			fromVersion: "1.12",
 			plugins: []ctrlruntimeclient.Object{
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "defaultTolerationSeconds",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -64,7 +64,7 @@ func TestListAdmissionPluginsFromVersion(t *testing.T) {
 					},
 				},
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "imagePolicyWebhook",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -72,7 +72,7 @@ func TestListAdmissionPluginsFromVersion(t *testing.T) {
 					},
 				},
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "runtimeClass",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -81,7 +81,7 @@ func TestListAdmissionPluginsFromVersion(t *testing.T) {
 					},
 				},
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "eventRateLimit",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -97,7 +97,7 @@ func TestListAdmissionPluginsFromVersion(t *testing.T) {
 			fromVersion: "1.14.3",
 			plugins: []ctrlruntimeclient.Object{
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "defaultTolerationSeconds",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -105,7 +105,7 @@ func TestListAdmissionPluginsFromVersion(t *testing.T) {
 					},
 				},
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "imagePolicyWebhook",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -113,7 +113,7 @@ func TestListAdmissionPluginsFromVersion(t *testing.T) {
 					},
 				},
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "runtimeClass",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -122,7 +122,7 @@ func TestListAdmissionPluginsFromVersion(t *testing.T) {
 					},
 				},
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "eventRateLimit",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -138,7 +138,7 @@ func TestListAdmissionPluginsFromVersion(t *testing.T) {
 			fromVersion: "1.16.0",
 			plugins: []ctrlruntimeclient.Object{
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "defaultTolerationSeconds",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -146,7 +146,7 @@ func TestListAdmissionPluginsFromVersion(t *testing.T) {
 					},
 				},
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "imagePolicyWebhook",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -154,7 +154,7 @@ func TestListAdmissionPluginsFromVersion(t *testing.T) {
 					},
 				},
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "runtimeClass",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -163,7 +163,7 @@ func TestListAdmissionPluginsFromVersion(t *testing.T) {
 					},
 				},
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "eventRateLimit",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -179,7 +179,7 @@ func TestListAdmissionPluginsFromVersion(t *testing.T) {
 			fromVersion: "1.17.0",
 			plugins: []ctrlruntimeclient.Object{
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "defaultTolerationSeconds",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -187,7 +187,7 @@ func TestListAdmissionPluginsFromVersion(t *testing.T) {
 					},
 				},
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "imagePolicyWebhook",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -195,7 +195,7 @@ func TestListAdmissionPluginsFromVersion(t *testing.T) {
 					},
 				},
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "runtimeClass",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -204,7 +204,7 @@ func TestListAdmissionPluginsFromVersion(t *testing.T) {
 					},
 				},
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "eventRateLimit",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{

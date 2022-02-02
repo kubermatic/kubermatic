@@ -29,7 +29,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 
 	metav1unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -85,10 +84,10 @@ func createClusterBackup(ctx context.Context, logger logrus.FieldLogger, ts time
 	logger.Info("Creating backup…")
 
 	for _, kind := range kinds {
-		logger.Debugf("Backing up %s resources…", kind)
+		logger.Debugf("Backing up %s resources…", kind.Name)
 
 		objectList := &metav1unstructured.UnstructuredList{}
-		objectList.SetAPIVersion(kubermaticv1.SchemeGroupVersion.String())
+		objectList.SetAPIVersion(oldAPIGroupVersion) // use old API group
 		objectList.SetKind(kind.Name)
 
 		if err := client.List(ctx, objectList); err != nil {
@@ -117,6 +116,8 @@ func createClusterBackup(ctx context.Context, logger logrus.FieldLogger, ts time
 	return nil
 }
 
+// addKubermaticConfigurationToBackup backs up the KubermaticConfiguration,
+// which is conveniently not even defaulted during the CRD migration.
 func addKubermaticConfigurationToBackup(out *tar.Writer, t time.Time, config *operatorv1alpha1.KubermaticConfiguration) error {
 	filename := getBackupResourceFilename("master", "KubermaticConfiguration", config.GetNamespace(), config.GetName())
 
