@@ -8,6 +8,7 @@ package models
 import (
 	"context"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -17,29 +18,72 @@ import (
 // swagger:model AKSClusterSpec
 type AKSClusterSpec struct {
 
-	// Count - Number of agents (VMs) to host docker containers. Allowed values must be in the range of 0 to 1000 (inclusive) for user pools and in the range of 1 to 1000 (inclusive) for system pools. The default value is 1.
-	Count int32 `json:"count,omitempty"`
-
 	// KubernetesVersion - When you upgrade a supported AKS cluster, Kubernetes minor versions cannot be skipped. All upgrades must be performed sequentially by major version number. For example, upgrades between 1.14.x -> 1.15.x or 1.15.x -> 1.16.x are allowed, however 1.14.x -> 1.16.x is not allowed. See [upgrading an AKS cluster](https://docs.microsoft.com/azure/aks/upgrade-cluster) for more details.
 	KubernetesVersion string `json:"kubernetesVersion,omitempty"`
 
 	// Location - Resource location
 	Location string `json:"location,omitempty"`
 
-	// Name - Windows agent pool names must be 6 characters or less.
-	Name string `json:"name,omitempty"`
-
-	// VMSize - VM size availability varies by region. If a node contains insufficient compute resources (memory, cpu, etc) pods might fail to run correctly. For more details on restricted VM sizes, see: https://docs.microsoft.com/azure/aks/quotas-skus-regions
-	VMSize string `json:"vmSize,omitempty"`
+	// machine deployment spec
+	MachineDeploymentSpec *AKSMachineDeploymentCloudSpec `json:"machineDeploymentSpec,omitempty"`
 }
 
 // Validate validates this a k s cluster spec
 func (m *AKSClusterSpec) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateMachineDeploymentSpec(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this a k s cluster spec based on context it is used
+func (m *AKSClusterSpec) validateMachineDeploymentSpec(formats strfmt.Registry) error {
+	if swag.IsZero(m.MachineDeploymentSpec) { // not required
+		return nil
+	}
+
+	if m.MachineDeploymentSpec != nil {
+		if err := m.MachineDeploymentSpec.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("machineDeploymentSpec")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this a k s cluster spec based on the context it is used
 func (m *AKSClusterSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateMachineDeploymentSpec(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *AKSClusterSpec) contextValidateMachineDeploymentSpec(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.MachineDeploymentSpec != nil {
+		if err := m.MachineDeploymentSpec.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("machineDeploymentSpec")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 

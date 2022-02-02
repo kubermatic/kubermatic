@@ -8,7 +8,6 @@ package models
 import (
 	"context"
 
-	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -18,78 +17,20 @@ import (
 // swagger:model AgentPoolOptionalSettings
 type AgentPoolOptionalSettings struct {
 
-	// EnableNodePublicIP - Some scenarios may require nodes in a node pool to receive their own dedicated public IP addresses. A common scenario is for gaming workloads, where a console needs to make a direct connection to a cloud virtual machine to minimize hops. For more information see [assigning a public IP per node](https://docs.microsoft.com/azure/aks/use-multiple-node-pools#assign-a-public-ip-per-node-for-your-node-pools). The default is false.
-	EnableNodePublicIP bool `json:"enableNodePublicIP,omitempty"`
-
-	// MaxPods - The maximum number of pods that can run on a node.
-	MaxPods int32 `json:"maxPods,omitempty"`
-
 	// NodeLabels - The node labels to be persisted across all nodes in agent pool.
 	NodeLabels map[string]string `json:"nodeLabels,omitempty"`
 
 	// NodeTaints - The taints added to new nodes during node pool create and scale. For example, key=value:NoSchedule.
 	NodeTaints []string `json:"nodeTaints"`
-
-	// upgrade settings
-	UpgradeSettings *AgentPoolUpgradeSettings `json:"upgradeSettings,omitempty"`
 }
 
 // Validate validates this agent pool optional settings
 func (m *AgentPoolOptionalSettings) Validate(formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.validateUpgradeSettings(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
 	return nil
 }
 
-func (m *AgentPoolOptionalSettings) validateUpgradeSettings(formats strfmt.Registry) error {
-	if swag.IsZero(m.UpgradeSettings) { // not required
-		return nil
-	}
-
-	if m.UpgradeSettings != nil {
-		if err := m.UpgradeSettings.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("upgradeSettings")
-			}
-			return err
-		}
-	}
-
-	return nil
-}
-
-// ContextValidate validate this agent pool optional settings based on the context it is used
+// ContextValidate validates this agent pool optional settings based on context it is used
 func (m *AgentPoolOptionalSettings) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.contextValidateUpgradeSettings(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (m *AgentPoolOptionalSettings) contextValidateUpgradeSettings(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.UpgradeSettings != nil {
-		if err := m.UpgradeSettings.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("upgradeSettings")
-			}
-			return err
-		}
-	}
-
 	return nil
 }
 

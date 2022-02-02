@@ -38,7 +38,10 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
-const AKSNodepoolNameLabel = "kubernetes.azure.com/agentpool"
+const (
+	AKSNodepoolNameLabel = "kubernetes.azure.com/agentpool"
+	AgentPoolModeSystem  = "System"
+)
 
 func createNewAKSCluster(ctx context.Context, aksCloudSpec *apiv2.AKSCloudSpec) error {
 	aksClient, err := aks.GetAKSClusterClient(resources.AKSCredentials{
@@ -52,6 +55,12 @@ func createNewAKSCluster(ctx context.Context, aksCloudSpec *apiv2.AKSCloudSpec) 
 	}
 
 	clusterSpec := aksCloudSpec.ClusterSpec
+	agentPoolProfiles := clusterSpec.MachineDeploymentSpec
+	if agentPoolProfiles == nil || agentPoolProfiles.Basics.Mode != AgentPoolModeSystem {
+		return fmt.Errorf("Must define at least one system pool!")
+	}
+	basicSettings := agentPoolProfiles.Basics
+	optionalSettings := agentPoolProfiles.OptionalSettings
 	_, err = aksClient.CreateOrUpdate(
 		ctx,
 		aksCloudSpec.ResourceGroup,
@@ -64,10 +73,18 @@ func createNewAKSCluster(ctx context.Context, aksCloudSpec *apiv2.AKSCloudSpec) 
 				KubernetesVersion: to.StringPtr(clusterSpec.KubernetesVersion),
 				AgentPoolProfiles: &[]containerservice.ManagedClusterAgentPoolProfile{
 					{
-						Count:  to.Int32Ptr(clusterSpec.AgentPoolProfile.Count),
-						Name:   to.StringPtr(clusterSpec.AgentPoolProfile.Name),
-						VMSize: to.StringPtr(clusterSpec.AgentPoolProfile.VMSize),
-						Mode:   containerservice.AgentPoolModeSystem,
+						Name:                to.StringPtr(agentPoolProfiles.Name),
+						VMSize:              to.StringPtr(basicSettings.VMSize),
+						Count:               to.Int32Ptr(basicSettings.Count),
+						OrchestratorVersion: to.StringPtr(basicSettings.OrchestratorVersion),
+						Mode:                (containerservice.AgentPoolMode)(basicSettings.Mode),
+						OsDiskSizeGB:        to.Int32Ptr(basicSettings.OsDiskSizeGB),
+						AvailabilityZones:   &basicSettings.AvailabilityZones,
+						EnableAutoScaling:   to.BoolPtr(basicSettings.EnableAutoScaling),
+						MaxCount:            to.Int32Ptr(basicSettings.MaxCount),
+						MinCount:            to.Int32Ptr(basicSettings.MinCount),
+						NodeLabels:          optionalSettings.NodeLabels,
+						NodeTaints:          &optionalSettings.NodeTaints,
 					},
 				},
 				ServicePrincipalProfile: &containerservice.ManagedClusterServicePrincipalProfile{
@@ -77,6 +94,7 @@ func createNewAKSCluster(ctx context.Context, aksCloudSpec *apiv2.AKSCloudSpec) 
 			},
 		},
 	)
+
 	if err != nil {
 		return err
 	}
@@ -244,22 +262,23 @@ func getAKSMachineDeployment(poolProfile containerservice.ManagedClusterAgentPoo
 }
 
 func createMachineDeploymentFromAKSNodePoll(nodePool containerservice.ManagedClusterAgentPoolProfile, readyReplicas int32) apiv2.ExternalClusterMachineDeployment {
+	name := to.String(nodePool.Name)
 	md := apiv2.ExternalClusterMachineDeployment{
 		NodeDeployment: apiv1.NodeDeployment{
 			ObjectMeta: apiv1.ObjectMeta{
-				ID:   *nodePool.Name,
-				Name: *nodePool.Name,
+				ID:   name,
+				Name: name,
 			},
 			Spec: apiv1.NodeDeploymentSpec{
-				Replicas: *nodePool.Count,
+				Replicas: to.Int32(nodePool.Count),
 				Template: apiv1.NodeSpec{
 					Versions: apiv1.NodeVersionInfo{
-						Kubelet: *nodePool.OrchestratorVersion,
+						Kubelet: to.String(nodePool.OrchestratorVersion),
 					},
 				},
 			},
 			Status: clusterv1alpha1.MachineDeploymentStatus{
-				Replicas:      *nodePool.Count,
+				Replicas:      to.Int32(nodePool.Count),
 				ReadyReplicas: readyReplicas,
 			},
 		},
@@ -268,25 +287,21 @@ func createMachineDeploymentFromAKSNodePoll(nodePool containerservice.ManagedClu
 		},
 	}
 
-	md.Cloud.AKS.Basics = &apiv2.AgentPoolBasics{
+	md.Cloud.AKS.Name = name
+	md.Cloud.AKS.Basics = apiv2.AgentPoolBasics{
 		Mode:                string(nodePool.Mode),
-		OsType:              string(nodePool.OsType),
-		AvailabilityZones:   nodePool.AvailabilityZones,
-		OrchestratorVersion: nodePool.OrchestratorVersion,
-		VMSize:              nodePool.VMSize,
-		EnableAutoScaling:   nodePool.EnableAutoScaling,
-		MaxCount:            nodePool.MaxCount,
-		MinCount:            nodePool.MinCount,
-		Count:               nodePool.Count,
+		AvailabilityZones:   to.StringSlice(nodePool.AvailabilityZones),
+		OrchestratorVersion: to.String(nodePool.OrchestratorVersion),
+		VMSize:              to.String(nodePool.VMSize),
+		EnableAutoScaling:   to.Bool(nodePool.EnableAutoScaling),
+		MaxCount:            to.Int32(nodePool.MaxCount),
+		MinCount:            to.Int32(nodePool.MinCount),
+		Count:               to.Int32(nodePool.Count),
 	}
-	md.Cloud.AKS.OptionalSettings = &apiv2.AgentPoolOptionalSettings{
-		MaxPods:            nodePool.MaxPods,
-		EnableNodePublicIP: nodePool.EnableNodePublicIP,
-		UpgradeSettings:    (*apiv2.AgentPoolUpgradeSettings)(nodePool.UpgradeSettings),
-		NodeLabels:         nodePool.NodeLabels,
-		NodeTaints:         nodePool.NodeTaints,
+	md.Cloud.AKS.OptionalSettings = apiv2.AgentPoolOptionalSettings{
+		NodeLabels: nodePool.NodeLabels,
+		NodeTaints: to.StringSlice(nodePool.NodeTaints),
 	}
-	md.Cloud.AKS.Tags = nodePool.Tags
 
 	return md
 }
@@ -446,8 +461,6 @@ func createAKSNodePool(ctx context.Context, cloud *v1.ExternalClusterCloudSpec, 
 		return nil, fmt.Errorf("AKS cloud spec cannot be empty")
 	}
 
-	aks := machineDeployment.Cloud.AKS
-
 	nodePool := &containerservice.AgentPool{
 		Name: &machineDeployment.Name,
 	}
@@ -456,57 +469,26 @@ func createAKSNodePool(ctx context.Context, cloud *v1.ExternalClusterCloudSpec, 
 		OrchestratorVersion: &machineDeployment.Spec.Template.Versions.Kubelet,
 	}
 
-	basics := aks.Basics
-	if basics != nil {
-		property.Mode = (containerservice.AgentPoolMode)(basics.Mode)
-		property.OsType = (containerservice.OSType)(basics.OsType)
-		if basics.AvailabilityZones != nil {
-			property.AvailabilityZones = basics.AvailabilityZones
-		}
-		if basics.OrchestratorVersion != nil {
-			property.OrchestratorVersion = basics.OrchestratorVersion
-		}
-		if basics.VMSize != nil {
-			property.VMSize = basics.VMSize
-		}
-		if basics.EnableAutoScaling != nil {
-			property.EnableAutoScaling = basics.EnableAutoScaling
-			if *property.EnableAutoScaling {
-				if basics.MaxCount != nil {
-					property.MaxCount = basics.MaxCount
-				}
-				if basics.MaxCount != nil {
-					property.MinCount = basics.MinCount
-				}
-			}
-		}
-		if basics.Count != nil {
-			property.Count = basics.Count
-		}
+	aks := machineDeployment.Cloud.AKS
+	if aks == nil {
+		return nil, fmt.Errorf("AKS MachineDeploymentSpec cannot be nil")
+	}
+	basicSettings := aks.Basics
+	optionalSettings := aks.OptionalSettings
+	property = containerservice.ManagedClusterAgentPoolProfileProperties{
+		VMSize:              to.StringPtr(basicSettings.VMSize),
+		Count:               to.Int32Ptr(basicSettings.Count),
+		OrchestratorVersion: to.StringPtr(basicSettings.OrchestratorVersion),
+		Mode:                (containerservice.AgentPoolMode)(basicSettings.Mode),
+		OsDiskSizeGB:        to.Int32Ptr(basicSettings.OsDiskSizeGB),
+		AvailabilityZones:   &basicSettings.AvailabilityZones,
+		EnableAutoScaling:   to.BoolPtr(basicSettings.EnableAutoScaling),
+		MaxCount:            to.Int32Ptr(basicSettings.MaxCount),
+		MinCount:            to.Int32Ptr(basicSettings.MinCount),
+		NodeLabels:          optionalSettings.NodeLabels,
+		NodeTaints:          &optionalSettings.NodeTaints,
 	}
 
-	optional := aks.OptionalSettings
-
-	if optional != nil {
-		if optional.MaxPods != nil {
-			property.MaxPods = optional.MaxPods
-		}
-		if optional.EnableNodePublicIP != nil {
-			property.EnableNodePublicIP = optional.EnableNodePublicIP
-		}
-		if optional.UpgradeSettings != nil {
-			property.UpgradeSettings = &containerservice.AgentPoolUpgradeSettings{
-				MaxSurge: optional.UpgradeSettings.MaxSurge,
-			}
-		}
-		if optional.NodeLabels != nil {
-			property.NodeLabels = optional.NodeLabels
-		}
-		if optional.NodeTaints != nil {
-			property.NodeTaints = optional.NodeTaints
-		}
-	}
-	property.Tags = aks.Tags
 	nodePool.ManagedClusterAgentPoolProfileProperties = &property
 
 	_, err = agentPoolClient.CreateOrUpdate(ctx, cloud.AKS.ResourceGroup, cloud.AKS.Name, *nodePool.Name, *nodePool)
