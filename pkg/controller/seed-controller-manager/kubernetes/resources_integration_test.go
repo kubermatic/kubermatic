@@ -81,11 +81,11 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 	if err := autoscalingv1beta2.AddToScheme(mgr.GetScheme()); err != nil {
 		t.Fatalf("failed to register vertical pod autoscaler resources to scheme: %v", err)
 	}
-	if err := kubermaticv1.AddToScheme(mgr.GetScheme()); err != nil {
-		t.Fatalf("failed to register kubermaticv1 resources to scheme: %v", err)
-	}
 	crdInstallOpts := envtest.CRDInstallOptions{
-		Paths:              []string{"../../../../charts/kubermatic-operator/crd"},
+		Paths: []string{
+			"../../../../charts/kubermatic-operator/crd/k8s.io",
+			"../../../../charts/kubermatic-operator/crd/k8c.io",
+		},
 		ErrorIfPathMissing: true,
 	}
 	if _, err := envtest.InstallCRDs(cfg, crdInstallOpts); err != nil {
@@ -128,25 +128,21 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 			},
 			Version: *semver.NewSemverOrDie("1.22.5"),
 		},
-		Status: kubermaticv1.ClusterStatus{
-			NamespaceName: "cluster-test-cluster",
-			ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
-				CloudProviderInfrastructure: kubermaticv1.HealthStatusUp,
-			},
-		},
 	}
+
+	clusterNamespace := "cluster-test-cluster"
 
 	// This is used as basis to sync the clusters address which we in turn do
 	// before creating any deployments.
 	namespace := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: testCluster.Status.NamespaceName,
+			Name: clusterNamespace,
 		},
 	}
 
 	lbService := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testCluster.Status.NamespaceName,
+			Namespace: clusterNamespace,
 			Name:      resources.FrontLoadBalancerServiceName,
 		},
 		Spec: corev1.ServiceSpec{
@@ -157,7 +153,7 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 
 	caBundleConfigMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testCluster.Status.NamespaceName,
+			Namespace: clusterNamespace,
 			Name:      resources.CABundleConfigMapName,
 		},
 		Data: map[string]string{
@@ -168,14 +164,36 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 	if err := mgr.GetClient().Create(ctx, namespace); err != nil {
 		t.Fatalf("failed to create namespace: %v", err)
 	}
-	if err := mgr.GetClient().Create(ctx, testCluster); err != nil {
-		t.Fatalf("failed to create testcluster: %v", err)
-	}
 	if err := mgr.GetClient().Create(ctx, lbService); err != nil {
 		t.Fatalf("failed to create the loadbalancer service: %v", err)
 	}
 	if err := mgr.GetClient().Create(ctx, caBundleConfigMap); err != nil {
 		t.Fatalf("failed to create the CA bundle: %v", err)
+	}
+
+	if err := mgr.GetClient().Create(ctx, testCluster); err != nil {
+		t.Fatalf("failed to create testcluster: %v", err)
+	}
+
+	testCluster.Status = kubermaticv1.ClusterStatus{
+		UserEmail:              "test@example.com",
+		CloudMigrationRevision: 2,
+		NamespaceName:          clusterNamespace,
+		KubermaticVersion:      "1.2.3",
+		ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
+			Apiserver:                    kubermaticv1.HealthStatusUp,
+			Scheduler:                    kubermaticv1.HealthStatusUp,
+			Controller:                   kubermaticv1.HealthStatusUp,
+			MachineController:            kubermaticv1.HealthStatusUp,
+			Etcd:                         kubermaticv1.HealthStatusUp,
+			OpenVPN:                      kubermaticv1.HealthStatusUp,
+			CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
+			UserClusterControllerManager: kubermaticv1.HealthStatusUp,
+		},
+	}
+
+	if err := mgr.GetClient().Status().Update(ctx, testCluster); err != nil {
+		t.Fatalf("failed to update testcluster: %v", err)
 	}
 
 	// explicitly set TypeMeta because we need them for setting owner references
