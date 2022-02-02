@@ -26,6 +26,7 @@ import (
 
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
@@ -81,7 +82,7 @@ type NutanixSubnetReq struct {
 // NutanixNoCredentialReq represent a request for Nutanix information with cluster-provided credentials
 // swagger:parameters listNutanixSubnetsNoCredentials
 type NutanixNoCredentialReq struct {
-	common.GetClusterReq
+	cluster.GetClusterReq
 }
 
 func DecodeNutanixCommonReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -123,12 +124,18 @@ func DecodeNutanixSubnetReq(c context.Context, r *http.Request) (interface{}, er
 func DecodeNutanixNoCredentialReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req NutanixNoCredentialReq
 
-	commonReq, err := common.DecodeGetClusterReq(c, r)
+	clusterID, err := common.DecodeClusterID(c, r)
 	if err != nil {
 		return nil, err
 	}
-	req.GetClusterReq = commonReq.(common.GetClusterReq)
 
+	req.ClusterID = clusterID
+
+	pr, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = pr.(common.ProjectReq)
 	return req, nil
 }
 

@@ -13580,13 +13580,6 @@
           },
           {
             "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
             "x-go-name": "ClusterID",
             "name": "cluster_id",
             "in": "path",
