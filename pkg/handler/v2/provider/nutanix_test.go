@@ -52,7 +52,6 @@ type mockClientImpl struct {
 }
 
 func TestNutanixClustersEndpoint(t *testing.T) {
-	t.Parallel()
 	testcases := []struct {
 		name             string
 		dc               string
@@ -127,7 +126,6 @@ func TestNutanixClustersEndpoint(t *testing.T) {
 }
 
 func TestNutanixProjectsEndpoint(t *testing.T) {
-	t.Parallel()
 	testcases := []struct {
 		name             string
 		dc               string

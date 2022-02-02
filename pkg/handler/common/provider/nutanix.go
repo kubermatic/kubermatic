@@ -151,7 +151,7 @@ func NutanixSubnetsWithClusterCredentialsEndpoint(ctx context.Context, userInfoG
 	}
 	_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to find Datacenter %q: %v", datacenterName, err)
+		return nil, fmt.Errorf("failed to find Datacenter %q: %w", datacenterName, err)
 	}
 
 	clusterName := cluster.Spec.Cloud.Nutanix.ClusterName
@@ -160,7 +160,7 @@ func NutanixSubnetsWithClusterCredentialsEndpoint(ctx context.Context, userInfoG
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
 	client, err := nutanixprovider.GetClientSet(datacenter.Spec.Nutanix, cluster.Spec.Cloud.Nutanix, secretKeySelector)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get client set: %v", err)
+		return nil, fmt.Errorf("failed to get client set: %w", err)
 	}
 
 	return listNutanixSubnets(client, clusterName, projectName)
