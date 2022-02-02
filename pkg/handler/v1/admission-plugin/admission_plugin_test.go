@@ -27,7 +27,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	"k8c.io/kubermatic/v2/pkg/semver"
@@ -35,8 +35,14 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/diff"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+func init() {
+	utilruntime.Must(kubermaticv1.AddToScheme(scheme.Scheme))
+}
 
 func TestCredentialEndpoint(t *testing.T) {
 	t.Parallel()

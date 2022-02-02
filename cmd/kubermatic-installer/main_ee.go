@@ -24,7 +24,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
+	legacykubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	eeinstaller "k8c.io/kubermatic/v2/pkg/ee/cmd/kubermatic-installer"
+	eeprovider "k8c.io/kubermatic/v2/pkg/ee/provider"
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -37,8 +39,9 @@ func commands(logger *logrus.Logger, versions kubermaticversion.Versions) []cli.
 		VersionCommand(logger, versions),
 		DeployCommand(logger, versions),
 		ConvertKubeconfigCommand(logger),
-		MigrateCRDsCommand(logger),
+		PreflightChecksCommand(logger),
 		ShutdownCommand(logger),
+		MigrateCRDsCommand(logger),
 		PrintCommand(),
 	}
 }
@@ -56,4 +59,8 @@ func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client) (p
 
 func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client) (provider.SeedKubeconfigGetter, error) {
 	return eeinstaller.SeedKubeconfigGetterFactory(ctx, client)
+}
+
+func getLegacySeeds(ctx context.Context, client ctrlruntimeclient.Client, namespace string) (map[string]*legacykubermaticv1.Seed, error) {
+	return eeprovider.GetLegacySeeds(ctx, client, kubermaticmaster.KubermaticOperatorNamespace)
 }

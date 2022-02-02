@@ -26,7 +26,7 @@ import (
 	"testing"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 
@@ -56,7 +56,7 @@ func TestCreateTokenProject(t *testing.T) {
 			httpStatus: http.StatusCreated,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
@@ -79,7 +79,7 @@ func TestCreateTokenProject(t *testing.T) {
 			httpStatus: http.StatusConflict,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
@@ -104,7 +104,7 @@ func TestCreateTokenProject(t *testing.T) {
 			httpStatus: http.StatusCreated,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
@@ -192,7 +192,7 @@ func TestListTokens(t *testing.T) {
 			httpStatus: http.StatusOK,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
@@ -219,7 +219,7 @@ func TestListTokens(t *testing.T) {
 			httpStatus: http.StatusOK,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
@@ -278,7 +278,7 @@ func TestServiceAccountCanGetProject(t *testing.T) {
 	testcases := []struct {
 		name                   string
 		existingKubermaticObjs []ctrlruntimeclient.Object
-		existingSa             *kubermaticapiv1.User
+		existingSa             *kubermaticv1.User
 		expectedResponse       string
 		projectToSync          string
 		httpStatus             int
@@ -289,7 +289,7 @@ func TestServiceAccountCanGetProject(t *testing.T) {
 			httpStatus: http.StatusOK,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
@@ -376,7 +376,7 @@ func TestPatchToken(t *testing.T) {
 			body:       `{"name":"test-new-name"}`,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
@@ -399,7 +399,7 @@ func TestPatchToken(t *testing.T) {
 			body:       `{"name":""}`,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
@@ -422,7 +422,7 @@ func TestPatchToken(t *testing.T) {
 			body:       `{"name":"test-2"}`,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
@@ -446,7 +446,7 @@ func TestPatchToken(t *testing.T) {
 			body:       `{"name":"test-new-name"}`,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
@@ -530,7 +530,7 @@ func TestUpdateToken(t *testing.T) {
 			body:       `{"name":"test-new-name", "id":"1"}`,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
@@ -553,7 +553,7 @@ func TestUpdateToken(t *testing.T) {
 			body:       `{"name":"","id":"sa-token-1"}`,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
@@ -576,7 +576,7 @@ func TestUpdateToken(t *testing.T) {
 			body:       `{"name":"test-2","id":"sa-token-1"}`,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
@@ -600,7 +600,7 @@ func TestUpdateToken(t *testing.T) {
 			body:       `{"name":"test-new-name", "id":"1"}`,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
@@ -624,7 +624,7 @@ func TestUpdateToken(t *testing.T) {
 			body:       `{"name":"test-new-name", "id":"1"}`,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
@@ -705,7 +705,7 @@ func TestDeleteToken(t *testing.T) {
 			httpStatus: http.StatusOK,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
@@ -730,7 +730,7 @@ func TestDeleteToken(t *testing.T) {
 			httpStatus: http.StatusOK,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
@@ -779,11 +779,7 @@ func TestDeleteToken(t *testing.T) {
 			test.CompareWithResult(t, res, tc.expectedResponse)
 
 			expectedToken := &corev1.Secret{}
-			if tc.privilegedOperation {
-				err = clientset.FakeClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: tc.tokenToDelete, Namespace: "kubermatic"}, expectedToken)
-			} else {
-				_, err = clientset.FakeKubermaticClient.KubermaticV1().Users().Get(ctx, tc.tokenToDelete, metav1.GetOptions{})
-			}
+			err = clientset.FakeClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: tc.tokenToDelete, Namespace: "kubermatic"}, expectedToken)
 			if err == nil {
 				t.Fatalf("failed to delete token %s", tc.tokenToDelete)
 			}

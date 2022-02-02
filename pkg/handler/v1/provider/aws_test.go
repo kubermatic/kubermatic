@@ -22,9 +22,17 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
+
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
 )
+
+func init() {
+	utilruntime.Must(kubermaticv1.AddToScheme(scheme.Scheme))
+}
 
 func TestSetDefaultSubnet(t *testing.T) {
 	t.Parallel()

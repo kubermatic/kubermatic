@@ -25,7 +25,7 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticcrdv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
@@ -119,11 +119,11 @@ func DecodeListReq(c context.Context, r *http.Request) (interface{}, error) {
 	req.GetClusterReq = cr.(cluster.GetClusterReq)
 	req.Type = r.URL.Query().Get("type")
 	if len(req.Type) > 0 {
-		if (req.Type == string(kubermaticcrdv1.RuleGroupTypeMetrics)) ||
-			(req.Type == string(kubermaticcrdv1.RuleGroupTypeLogs)) {
+		if (req.Type == string(kubermaticv1.RuleGroupTypeMetrics)) ||
+			(req.Type == string(kubermaticv1.RuleGroupTypeLogs)) {
 			return req, nil
 		}
-		return nil, utilerrors.NewBadRequest("wrong query parameter, unsupported type: %s, supported value: %s, %s", req.Type, kubermaticcrdv1.RuleGroupTypeMetrics, kubermaticcrdv1.RuleGroupTypeLogs)
+		return nil, utilerrors.NewBadRequest("wrong query parameter, unsupported type: %s, supported value: %s, %s", req.Type, kubermaticv1.RuleGroupTypeMetrics, kubermaticv1.RuleGroupTypeLogs)
 	}
 	return req, nil
 }

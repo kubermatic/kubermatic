@@ -26,8 +26,8 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	serviceaccount "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -74,7 +74,7 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 	}
 }
 
-func listSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, sa *apiv1.ServiceAccount) ([]*kubermaticapiv1.User, error) {
+func listSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, sa *apiv1.ServiceAccount) ([]*kubermaticv1.User, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
@@ -97,7 +97,7 @@ func listSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountP
 	return serviceAccountProvider.ListProjectServiceAccount(userInfo, project, options)
 }
 
-func createSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, sa apiv1.ServiceAccount) (*kubermaticapiv1.User, error) {
+func createSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, sa apiv1.ServiceAccount) (*kubermaticv1.User, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
@@ -221,7 +221,7 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 	}
 }
 
-func updateSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, sa *kubermaticapiv1.User) (*kubermaticapiv1.User, error) {
+func updateSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, sa *kubermaticv1.User) (*kubermaticv1.User, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
@@ -238,7 +238,7 @@ func updateSA(ctx context.Context, serviceAccountProvider provider.ServiceAccoun
 	return serviceAccountProvider.UpdateProjectServiceAccount(userInfo, sa)
 }
 
-func getSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, serviceAccountID string, options *provider.ServiceAccountGetOptions) (*kubermaticapiv1.User, error) {
+func getSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, serviceAccountID string, options *provider.ServiceAccountGetOptions) (*kubermaticv1.User, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
@@ -287,7 +287,7 @@ func DeleteEndpoint(serviceAccountProvider provider.ServiceAccountProvider, priv
 	}
 }
 
-func deleteSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, serviceAccountID string) error {
+func deleteSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, serviceAccountID string) error {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return err
@@ -437,7 +437,7 @@ func decodeServiceAccountIDReq(_ context.Context, r *http.Request) (serviceAccou
 	return req, nil
 }
 
-func convertInternalServiceAccountToExternal(internal *kubermaticapiv1.User) *apiv1.ServiceAccount {
+func convertInternalServiceAccountToExternal(internal *kubermaticv1.User) *apiv1.ServiceAccount {
 	return &apiv1.ServiceAccount{
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:                internal.Name,
@@ -449,7 +449,7 @@ func convertInternalServiceAccountToExternal(internal *kubermaticapiv1.User) *ap
 	}
 }
 
-func getStatus(serviceAccount *kubermaticapiv1.User) string {
+func getStatus(serviceAccount *kubermaticv1.User) string {
 	if _, ok := serviceAccount.Labels[serviceaccount.ServiceAccountLabelGroup]; ok {
 		return apiv1.ServiceAccountInactive
 	}

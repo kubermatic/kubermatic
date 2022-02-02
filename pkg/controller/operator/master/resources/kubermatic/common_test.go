@@ -19,16 +19,16 @@ package kubermatic
 import (
 	"testing"
 
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	networkingv1 "k8s.io/api/networking/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // TestIngressCreatorKeepsAnnotations ensures that custom annotations
 // are always kept when reconciling Ingresses.
 func TestIngressCreatorKeepsAnnotations(t *testing.T) {
-	cfg := &operatorv1alpha1.KubermaticConfiguration{}
+	cfg := &kubermaticv1.KubermaticConfiguration{}
 	creatorGetter := IngressCreator(cfg)
 	_, creator := creatorGetter()
 
@@ -43,7 +43,7 @@ func TestIngressCreatorKeepsAnnotations(t *testing.T) {
 		{
 			name: "keep existing annotations",
 			ingress: &networkingv1.Ingress{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						"test": "value",
 					},

@@ -28,10 +28,10 @@ import (
 	"github.com/onsi/gomega"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	types2 "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	machinecontrollertypes "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
@@ -69,7 +69,7 @@ var _ = ginkgo.Describe("CCM migration", func() {
 			gomega.Expect(clusterJig.SetUp(kubermaticv1.CloudSpec{
 				Openstack: &kubermaticv1.OpenstackCloudSpec{
 					FloatingIPPool: options.osCredentials.floatingIPPool,
-					CredentialsReference: &types2.GlobalSecretKeySelector{
+					CredentialsReference: &machinecontrollertypes.GlobalSecretKeySelector{
 						ObjectReference: corev1.ObjectReference{
 							Name:      fmt.Sprintf("credential-openstack-%s", clusterJig.Name),
 							Namespace: resources.KubermaticNamespace,
@@ -147,7 +147,7 @@ var _ = ginkgo.Describe("CCM migration", func() {
 				if err := clusterJig.SeedClient.Get(context.TODO(), types.NamespacedName{Name: clusterJig.Cluster.Name}, migratingCluster); err != nil {
 					return false, err
 				}
-				if helper.ClusterConditionHasStatus(migratingCluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue) {
+				if kubermaticv1helper.ClusterConditionHasStatus(migratingCluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue) {
 					return true, nil
 				}
 				return false, nil

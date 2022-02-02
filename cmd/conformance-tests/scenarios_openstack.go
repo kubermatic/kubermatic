@@ -65,7 +65,8 @@ func (s *openStackScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpe
 					DatacenterName: "syseleven-dbl1",
 					Openstack: &apimodels.OpenstackCloudSpec{
 						Domain:         secrets.OpenStack.Domain,
-						Tenant:         secrets.OpenStack.Tenant,
+						Project:        secrets.OpenStack.Project,
+						ProjectID:      secrets.OpenStack.ProjectID,
 						Username:       secrets.OpenStack.Username,
 						Password:       secrets.OpenStack.Password,
 						FloatingIPPool: "ext-net",

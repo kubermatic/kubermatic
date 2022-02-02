@@ -38,6 +38,7 @@ const (
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:JSONPath=".spec.email",name="Email",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.name",name="Name",type="string"
+// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // User specifies a user.
 type User struct {
@@ -94,6 +95,8 @@ type ProjectGroup struct {
 	Group string `json:"group"`
 }
 
-func (u *User) GetTokenBlackListSecretName() string {
+func (u *User) GetInvalidTokensReferenceSecretName() string {
+	// "token-blacklist-" is the legacy prefix; changing this would mean existing
+	// secrets would need to be migrated first
 	return fmt.Sprintf("token-blacklist-%s", u.Name)
 }

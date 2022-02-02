@@ -21,7 +21,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -33,7 +33,7 @@ func NetworkPolicyCreator() reconciling.NamedNetworkPolicyCreatorGetter {
 		return "metrics-server", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			metricsPort := intstr.FromInt(9153)
 			httpsPort := intstr.FromInt(443)
-			protoTcp := v1.ProtocolTCP
+			protoTcp := corev1.ProtocolTCP
 
 			np.Spec = networkingv1.NetworkPolicySpec{
 				PodSelector: metav1.LabelSelector{

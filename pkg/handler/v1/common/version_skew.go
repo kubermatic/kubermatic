@@ -25,7 +25,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
 
@@ -34,7 +34,7 @@ import (
 
 // CheckClusterVersionSkew returns a list of machines and/or machine deployments
 // that are running kubelet at a version incompatible with the cluster's control plane.
-func CheckClusterVersionSkew(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, cluster *kubermaticapiv1.Cluster, projectID string) ([]string, error) {
+func CheckClusterVersionSkew(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, cluster *kubermaticv1.Cluster, projectID string) ([]string, error) {
 	client, err := GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, projectID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a machine client: %w", err)

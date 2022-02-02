@@ -30,6 +30,7 @@ const (
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 // +kubebuilder:printcolumn:JSONPath=".spec.registryPrefix",name="RegistryPrefix",type="string",description="RegistryPrefix contains the prefix of the registry which will be allowed. User clusters will be able to deploy only images which are prefixed with one of the allowed image registry prefixes."
+// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // AllowedRegistry is the object representing an allowed registry.
 type AllowedRegistry struct {

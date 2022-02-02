@@ -20,8 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/servingcerthelper"
@@ -68,15 +67,15 @@ const (
 	MasterControllerManagerDeploymentName = "kubermatic-master-controller-manager"
 	SeedControllerManagerDeploymentName   = "kubermatic-seed-controller-manager"
 
-	CleanupFinalizer = "operator.kubermatic.io/cleanup"
+	CleanupFinalizer = "kubermatic.k8c.io/cleanup"
 
 	// SkipReconcilingAnnotation can be used on Seed resources to make
 	// the operator ignore them and not reconcile the seed components into
 	// the cluster. This should only be used during cluster migrations.
-	SkipReconcilingAnnotation = "operator.kubermatic.io/skip-reconciling"
+	SkipReconcilingAnnotation = "kubermatic.k8c.io/skip-reconciling"
 )
 
-func NamespaceCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedNamespaceCreatorGetter {
+func NamespaceCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedNamespaceCreatorGetter {
 	return func() (string, reconciling.NamespaceCreator) {
 		return cfg.Namespace, func(n *corev1.Namespace) (*corev1.Namespace, error) {
 			if n.Labels == nil {
@@ -90,7 +89,7 @@ func NamespaceCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling
 	}
 }
 
-func DockercfgSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
+func DockercfgSecretCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return DockercfgSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
 			s.Type = corev1.SecretTypeDockerConfigJson
@@ -102,7 +101,7 @@ func DockercfgSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) recon
 	}
 }
 
-func WebhookServingCASecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
+func WebhookServingCASecretCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
 	creator := certificates.GetCACreator(webhookCommonName)
 
 	return func() (string, reconciling.SecretCreator) {
@@ -117,7 +116,7 @@ func WebhookServingCASecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration
 	}
 }
 
-func WebhookServingCertSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedSecretCreatorGetter {
+func WebhookServingCertSecretCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedSecretCreatorGetter {
 	altNames := []string{
 		fmt.Sprintf("%s.%s", SeedWebhookServiceName, cfg.Namespace),
 		fmt.Sprintf("%s.%s.svc", SeedWebhookServiceName, cfg.Namespace),
@@ -147,11 +146,11 @@ func WebhookServingCertSecretCreator(cfg *operatorv1alpha1.KubermaticConfigurati
 	return servingcerthelper.ServingCertSecretCreator(caGetter, WebhookServingCertSecretName, webhookCommonName, altNames, nil)
 }
 
-func SeedAdmissionWebhookName(cfg *operatorv1alpha1.KubermaticConfiguration) string {
+func SeedAdmissionWebhookName(cfg *kubermaticv1.KubermaticConfiguration) string {
 	return fmt.Sprintf("kubermatic-seeds-%s", cfg.Namespace)
 }
 
-func SeedAdmissionWebhookCreator(cfg *operatorv1alpha1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
+func SeedAdmissionWebhookCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
 		return SeedAdmissionWebhookName(cfg), func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
@@ -177,7 +176,7 @@ func SeedAdmissionWebhookCreator(cfg *operatorv1alpha1.KubermaticConfiguration, 
 						Service: &admissionregistrationv1.ServiceReference{
 							Name:      SeedWebhookServiceName,
 							Namespace: cfg.Namespace,
-							Path:      pointer.StringPtr("/validate-kubermatic-k8s-io-seed"),
+							Path:      pointer.StringPtr("/validate-kubermatic-k8c-io-seed"),
 							Port:      pointer.Int32Ptr(443),
 						},
 					},
@@ -212,7 +211,7 @@ func SeedAdmissionWebhookCreator(cfg *operatorv1alpha1.KubermaticConfiguration, 
 // This service is created on master and seed clusters, because on masters the original
 // copy of a Seed is validated, and on seed clusters the synced copy is validated
 // (synced by the seed-sync controller).
-func SeedAdmissionServiceCreator(cfg *operatorv1alpha1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedServiceCreatorGetter {
+func SeedAdmissionServiceCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return SeedWebhookServiceName, func(s *corev1.Service) (*corev1.Service, error) {
 			s.Spec.Type = corev1.ServiceTypeClusterIP
@@ -241,7 +240,7 @@ func SeedAdmissionServiceCreator(cfg *operatorv1alpha1.KubermaticConfiguration, 
 // On master clusters, point to the master-controller-manager, otherwise
 // point to the seed-controller-manager. On combined master+seeds, the
 // master has precedence.
-func determineSeedWebhookServiceSelector(cfg *operatorv1alpha1.KubermaticConfiguration, client ctrlruntimeclient.Client) (map[string]string, error) {
+func determineSeedWebhookServiceSelector(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) (map[string]string, error) {
 	deployment := appsv1.Deployment{}
 	key := types.NamespacedName{
 		Name:      MasterControllerManagerDeploymentName,
@@ -278,7 +277,7 @@ func determineSeedWebhookServiceSelector(cfg *operatorv1alpha1.KubermaticConfigu
 	return nil, fmt.Errorf("neither master- nor seed-controller-manager exist in namespace %s", cfg.Namespace)
 }
 
-func WebhookCABundle(cfg *operatorv1alpha1.KubermaticConfiguration, client ctrlruntimeclient.Client) ([]byte, error) {
+func WebhookCABundle(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) ([]byte, error) {
 	secret := corev1.Secret{}
 	key := types.NamespacedName{
 		Name:      WebhookServingCASecretName,

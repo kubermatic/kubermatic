@@ -22,7 +22,7 @@ import (
 	"github.com/gorilla/websocket"
 
 	api "k8c.io/kubermatic/v2/pkg/api/v1"
-	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/watcher"
 )
@@ -50,7 +50,7 @@ func WriteSettings(providers watcher.Providers, ws *websocket.Conn) {
 		var response []byte
 		if settings != nil {
 			var externalSettings api.GlobalSettings
-			internalSettings, ok := settings.(*v1.KubermaticSetting)
+			internalSettings, ok := settings.(*kubermaticv1.KubermaticSetting)
 			if ok {
 				externalSettings = api.GlobalSettings(internalSettings.Spec)
 			} else {

@@ -1,4 +1,4 @@
-apiVersion: operator.kubermatic.io/v1alpha1
+apiVersion: kubermatic.k8c.io/v1
 kind: KubermaticConfiguration
 metadata:
   name: <<mykubermatic>>
@@ -183,7 +183,7 @@ spec:
     # BackupDeleteContainer is the container used for deleting etcd snapshots from a backup location.
     backupDeleteContainer: ""
     # BackupRestore contains the setup of the new backup and restore controllers.
-    # Deprecated: Use Seed.Spec.BackupRestore. This is legacy field to support old configurations.
+    # Deprecated: Use Seed.Spec.EtcdBackupRestore. This is legacy field to support old configurations.
     backupRestore:
       # Enabled enables the new etcd backup and restore controllers.
       enabled: false
@@ -287,86 +287,84 @@ spec:
   userCluster:
     # Addons controls the optional additions installed into each user cluster.
     addons:
-      # Kubernetes controls the addons for Kubernetes-based clusters.
-      kubernetes:
-        # Default is the list of addons to be installed by default into each cluster.
-        # Mutually exclusive with "defaultManifests".
-        default: null
-        # DefaultManifests is a list of addon manifests to install into all clusters.
-        # Mutually exclusive with "default".
-        defaultManifests: |-
-          apiVersion: v1
-          kind: List
-          items:
-          - apiVersion: kubermatic.k8s.io/v1
-            kind: Addon
-            metadata:
-              name: canal
-              labels:
-                addons.kubermatic.io/ensure: true
-          - apiVersion: kubermatic.k8s.io/v1
-            kind: Addon
-            metadata:
-              name: cilium
-              labels:
-                addons.kubermatic.io/ensure: true
-          - apiVersion: kubermatic.k8s.io/v1
-            kind: Addon
-            metadata:
-              name: csi
-              labels:
-                addons.kubermatic.io/ensure: true
-          - apiVersion: kubermatic.k8s.io/v1
-            kind: Addon
-            metadata:
-              name: kube-proxy
-              labels:
-                addons.kubermatic.io/ensure: true
-          - apiVersion: kubermatic.k8s.io/v1
-            kind: Addon
-            metadata:
-              name: openvpn
-              labels:
-                addons.kubermatic.io/ensure: true
-          - apiVersion: kubermatic.k8s.io/v1
-            kind: Addon
-            metadata:
-              name: rbac
-              labels:
-                addons.kubermatic.io/ensure: true
-          - apiVersion: kubermatic.k8s.io/v1
-            kind: Addon
-            metadata:
-              name: kubeadm-configmap
-              labels:
-                addons.kubermatic.io/ensure: true
-          - apiVersion: kubermatic.k8s.io/v1
-            kind: Addon
-            metadata:
-              name: kubelet-configmap
-          - apiVersion: kubermatic.k8s.io/v1
-            kind: Addon
-            metadata:
-              name: default-storage-class
-          - apiVersion: kubermatic.k8s.io/v1
-            kind: Addon
-            metadata:
-              name: pod-security-policy
-              labels:
-                addons.kubermatic.io/ensure: true
-          - apiVersion: kubermatic.k8s.io/v1
-            kind: Addon
-            metadata:
-              name: aws-node-termination-handler
-              labels:
-                addons.kubermatic.io/ensure: true
-        # DockerRepository is the repository containing the Docker image containing
-        # the possible addon manifests.
-        dockerRepository: quay.io/kubermatic/addons
-        # DockerTagSuffix is appended to the tag used for referring to the addons image.
-        # If left empty, the tag will be the KKP version (e.g. "v2.15.0"), with a
-        # suffix it becomes "v2.15.0-SUFFIX".
-        dockerTagSuffix: ""
+      # Default is the list of addons to be installed by default into each cluster.
+      # Mutually exclusive with "defaultManifests".
+      default: null
+      # DefaultManifests is a list of addon manifests to install into all clusters.
+      # Mutually exclusive with "default".
+      defaultManifests: |-
+        apiVersion: v1
+        kind: List
+        items:
+        - apiVersion: kubermatic.k8c.io/v1
+          kind: Addon
+          metadata:
+            name: canal
+            labels:
+              addons.kubermatic.io/ensure: true
+        - apiVersion: kubermatic.k8c.io/v1
+          kind: Addon
+          metadata:
+            name: cilium
+            labels:
+              addons.kubermatic.io/ensure: true
+        - apiVersion: kubermatic.k8c.io/v1
+          kind: Addon
+          metadata:
+            name: csi
+            labels:
+              addons.kubermatic.io/ensure: true
+        - apiVersion: kubermatic.k8c.io/v1
+          kind: Addon
+          metadata:
+            name: kube-proxy
+            labels:
+              addons.kubermatic.io/ensure: true
+        - apiVersion: kubermatic.k8c.io/v1
+          kind: Addon
+          metadata:
+            name: openvpn
+            labels:
+              addons.kubermatic.io/ensure: true
+        - apiVersion: kubermatic.k8c.io/v1
+          kind: Addon
+          metadata:
+            name: rbac
+            labels:
+              addons.kubermatic.io/ensure: true
+        - apiVersion: kubermatic.k8c.io/v1
+          kind: Addon
+          metadata:
+            name: kubeadm-configmap
+            labels:
+              addons.kubermatic.io/ensure: true
+        - apiVersion: kubermatic.k8c.io/v1
+          kind: Addon
+          metadata:
+            name: kubelet-configmap
+        - apiVersion: kubermatic.k8c.io/v1
+          kind: Addon
+          metadata:
+            name: default-storage-class
+        - apiVersion: kubermatic.k8c.io/v1
+          kind: Addon
+          metadata:
+            name: pod-security-policy
+            labels:
+              addons.kubermatic.io/ensure: true
+        - apiVersion: kubermatic.k8c.io/v1
+          kind: Addon
+          metadata:
+            name: aws-node-termination-handler
+            labels:
+              addons.kubermatic.io/ensure: true
+      # DockerRepository is the repository containing the Docker image containing
+      # the possible addon manifests.
+      dockerRepository: quay.io/kubermatic/addons
+      # DockerTagSuffix is appended to the tag used for referring to the addons image.
+      # If left empty, the tag will be the KKP version (e.g. "v2.15.0"), with a
+      # suffix it becomes "v2.15.0-SUFFIX".
+      dockerTagSuffix: ""
     # APIServerReplicas configures the replica count for the API-Server deployment inside user clusters.
     apiserverReplicas: 2
     # DisableAPIServerEndpointReconciling can be used to toggle the `--endpoint-reconciler-type` flag for
@@ -416,73 +414,71 @@ spec:
     overwriteRegistry: ""
   # Versions configures the available and default Kubernetes versions and updates.
   versions:
-    # Kubernetes configures the Kubernetes versions and updates.
-    kubernetes:
-      # Default is the default version to offer users.
-      default: 1.21.8
-      # ProviderIncompatibilities lists all the Kubernetes version incompatibilities
-      providerIncompatibilities:
-        - # Condition is the cluster or datacenter condition that must be met to block a specific version
-          condition: always
-          # Operation is the operation triggering the compatibility check (CREATE or UPDATE)
-          operation: CREATE
-          # Provider to which to apply the compatibility check
-          provider: vsphere
-          # Version is the Kubernetes version that must be checked. Wildcards are allowed, e.g. "1.22.*".
-          version: 1.23.*
-        - condition: externalCloudProvider
-          operation: UPGRADE
-          provider: vsphere
-          version: 1.23.*
-        - condition: externalCloudProvider
-          operation: SUPPORT
-          provider: vsphere
-          version: 1.23.*
-      # Updates is a list of available and automatic upgrades.
-      # All 'to' versions must be configured in the version list for this orchestrator.
-      # Each update may optionally be configured to be 'automatic: true', in which case the
-      # controlplane of all clusters whose version matches the 'from' directive will get
-      # updated to the 'to' version. If automatic is enabled, the 'to' version must be a
-      # version and not a version range.
-      # Also, updates may set 'automaticNodeUpdate: true', in which case Nodes will get
-      # updates as well. 'automaticNodeUpdate: true' implies 'automatic: true' as well,
-      # because Nodes may not have a newer version than the controlplane.
-      updates:
-        - # Automatic controls whether this update is executed automatically
-          # for the control plane of all matching user clusters.
-          automatic: true
-          # Automatic controls whether this update is executed automatically
-          # for the worker nodes of all matching user clusters.
-          automaticNodeUpdate: false
-          # From is the version from which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
-          from: 1.19.*
-          # From is the version to which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
-          to: 1.20.*
-        - from: 1.20.*
-          to: 1.20.*
-        - automatic: true
-          from: '>= 1.20.0, < 1.20.13'
-          to: 1.20.13
-        - from: 1.20.*
-          to: 1.21.*
-        - from: 1.21.*
-          to: 1.21.*
-        - automatic: true
-          from: '>= 1.21.0, < 1.21.8'
-          to: 1.21.8
-        - from: 1.21.*
-          to: 1.22.*
-        - from: 1.22.*
-          to: 1.22.*
-        - automatic: true
-          from: '>= 1.22.0, < 1.22.5'
-          to: 1.22.5
-      # Versions lists the available versions.
-      versions:
-        - 1.20.13
-        - 1.20.14
-        - 1.21.8
-        - 1.22.5
+    # Default is the default version to offer users.
+    default: v1.21.8
+    # ProviderIncompatibilities lists all the Kubernetes version incompatibilities
+    providerIncompatibilities:
+      - # Condition is the cluster or datacenter condition that must be met to block a specific version
+        condition: always
+        # Operation is the operation triggering the compatibility check (CREATE or UPDATE)
+        operation: CREATE
+        # Provider to which to apply the compatibility check
+        provider: vsphere
+        # Version is the Kubernetes version that must be checked. Wildcards are allowed, e.g. "1.22.*".
+        version: 1.23.*
+      - condition: externalCloudProvider
+        operation: UPGRADE
+        provider: vsphere
+        version: 1.23.*
+      - condition: externalCloudProvider
+        operation: SUPPORT
+        provider: vsphere
+        version: 1.23.*
+    # Updates is a list of available and automatic upgrades.
+    # All 'to' versions must be configured in the version list for this orchestrator.
+    # Each update may optionally be configured to be 'automatic: true', in which case the
+    # controlplane of all clusters whose version matches the 'from' directive will get
+    # updated to the 'to' version. If automatic is enabled, the 'to' version must be a
+    # version and not a version range.
+    # Also, updates may set 'automaticNodeUpdate: true', in which case Nodes will get
+    # updates as well. 'automaticNodeUpdate: true' implies 'automatic: true' as well,
+    # because Nodes may not have a newer version than the controlplane.
+    updates:
+      - # Automatic controls whether this update is executed automatically
+        # for the control plane of all matching user clusters.
+        automatic: true
+        # Automatic controls whether this update is executed automatically
+        # for the worker nodes of all matching user clusters.
+        automaticNodeUpdate: false
+        # From is the version from which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
+        from: 1.19.*
+        # From is the version to which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
+        to: 1.20.*
+      - from: 1.20.*
+        to: 1.20.*
+      - automatic: true
+        from: '>= 1.20.0, < 1.20.13'
+        to: 1.20.13
+      - from: 1.20.*
+        to: 1.21.*
+      - from: 1.21.*
+        to: 1.21.*
+      - automatic: true
+        from: '>= 1.21.0, < 1.21.8'
+        to: 1.21.8
+      - from: 1.21.*
+        to: 1.22.*
+      - from: 1.22.*
+        to: 1.22.*
+      - automatic: true
+        from: '>= 1.22.0, < 1.22.5'
+        to: 1.22.5
+    # Versions lists the available versions.
+    versions:
+      - v1.20.13
+      - v1.20.14
+      - v1.21.8
+      - v1.22.5
   # VerticalPodAutoscaler configures the Kubernetes VPA integration.
   verticalPodAutoscaler:
     admissionController:

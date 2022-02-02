@@ -26,6 +26,12 @@ spec:
     - jsonPath: .spec.version
       name: Version
       type: string
+    - jsonPath: .spec.cloud.providerName
+      name: Provider
+      type: string
+    - jsonPath: .spec.cloud.dc
+      name: Datacenter
+      type: string
     - jsonPath: .spec.pause
       name: Paused
       type: boolean
@@ -712,12 +718,10 @@ spec:
                       password:
                         type: string
                       project:
-                        description: project, formally known as tenant. Tenant is
-                          depreciated in Openstack
+                        description: project, formally known as tenant.
                         type: string
                       projectID:
-                        description: project id, formally known as tenantID. TenantID
-                          is depreciated in Openstack
+                        description: project id, formally known as tenantID.
                         type: string
                       routerID:
                         type: string

@@ -22,7 +22,7 @@ import (
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"

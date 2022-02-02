@@ -24,10 +24,10 @@ import (
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	masterctrl "k8c.io/kubermatic/v2/pkg/controller/operator/master"
 	seedctrl "k8c.io/kubermatic/v2/pkg/controller/operator/seed"
 	seedcontrollerlifecycle "k8c.io/kubermatic/v2/pkg/controller/shared/seed-controller-lifecycle"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/pprof"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -93,7 +93,7 @@ func main() {
 	mgr, err := manager.New(ctrlruntime.GetConfigOrDie(), manager.Options{
 		MetricsBindAddress: opt.internalAddr,
 		LeaderElection:     opt.enableLeaderElection,
-		LeaderElectionID:   "operator.kubermatic.io",
+		LeaderElectionID:   "operator.kubermatic.k8c.io",
 	})
 	if err != nil {
 		log.Fatalw("Failed to create Controller Manager instance", zap.Error(err))
@@ -103,8 +103,8 @@ func main() {
 		log.Fatalw("Failed to add pprof endpoint", zap.Error(err))
 	}
 
-	if err := operatorv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Fatalw("Failed to register scheme", zap.Stringer("api", operatorv1alpha1.SchemeGroupVersion), zap.Error(err))
+	if err := kubermaticv1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", kubermaticv1.SchemeGroupVersion), zap.Error(err))
 	}
 
 	seedsGetter, err := seedsGetterFactory(ctx, mgr.GetClient(), opt)

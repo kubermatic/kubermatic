@@ -21,7 +21,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
@@ -35,24 +35,10 @@ type DeployOptions struct {
 	HelmValues                 *yamled.Document
 	KubeClient                 ctrlruntimeclient.Client
 	StorageClassProvider       string
-	KubermaticConfiguration    *operatorv1alpha1.KubermaticConfiguration
+	KubermaticConfiguration    *kubermaticv1.KubermaticConfiguration
 	RawKubermaticConfiguration *unstructured.Unstructured
 	ForceHelmReleaseUpgrade    bool
-
-	// ChartsDirectory is the path to the directory where all Helm
-	// charts are stored. This is the primary option to influence
-	// from where to load charts and the KKP CRDs (which are part
-	// of the kubermatic-operator chart).
-	ChartsDirectory string
-
-	// KubermaticCRDDirectory is used only during the CRD migration and should
-	// not be used by regular install commands. The migration currently needs
-	// to point to a non-standard CRD directory that the regular installer
-	// logic would not find.
-	// If this field is set, it has precedence over ChartsDirectory, but affects
-	// only the KKP CRDs. cert-manager CRDs will for example always use the
-	// ChartsDirectory instead.
-	KubermaticCRDDirectory string
+	ChartsDirectory            string
 
 	SeedsGetter      provider.SeedsGetter
 	SeedClientGetter provider.SeedClientGetter
@@ -68,7 +54,7 @@ type DeployOptions struct {
 
 type Stack interface {
 	Name() string
-	ValidateConfiguration(config *operatorv1alpha1.KubermaticConfiguration, helmValues *yamled.Document, opt DeployOptions, logger logrus.FieldLogger) (*operatorv1alpha1.KubermaticConfiguration, *yamled.Document, []error)
+	ValidateConfiguration(config *kubermaticv1.KubermaticConfiguration, helmValues *yamled.Document, opt DeployOptions, logger logrus.FieldLogger) (*kubermaticv1.KubermaticConfiguration, *yamled.Document, []error)
 	ValidateState(ctx context.Context, opt DeployOptions) []error
 	Deploy(ctx context.Context, opt DeployOptions) error
 }

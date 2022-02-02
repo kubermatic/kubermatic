@@ -17,111 +17,37 @@ limitations under the License.
 package kubernetes
 
 import (
+	"context"
 	"hash/fnv"
 	"reflect"
 
 	"code.cloudfoundry.org/go-pubsub"
+	"go.uber.org/zap"
 
-	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/provider"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	"k8s.io/apimachinery/pkg/watch"
+	toolscache "k8s.io/client-go/tools/cache"
 )
 
 // UserWatcher watches user and notifies its subscribers about any changes.
 type UserWatcher struct {
-	provider  provider.UserProvider
-	watcher   watch.Interface
+	log       *zap.SugaredLogger
 	publisher *pubsub.PubSub
-	userCache map[uint64]*v1.User
+	userCache map[uint64]*kubermaticv1.User
 }
+
+var _ toolscache.ResourceEventHandler = &UserWatcher{}
 
 // UserWatcher returns a new resource watcher.
-func NewUserWatcher(provider provider.UserProvider) (*UserWatcher, error) {
-	watcher, err := provider.WatchUser()
-	if err != nil {
-		return nil, err
-	}
-
+func NewUserWatcher(ctx context.Context, log *zap.SugaredLogger) (*UserWatcher, error) {
 	w := &UserWatcher{
-		provider:  provider,
-		watcher:   watcher,
+		log:       log,
 		publisher: pubsub.New(),
-		userCache: make(map[uint64]*v1.User),
+		userCache: make(map[uint64]*kubermaticv1.User),
 	}
 
-	go w.run()
 	return w, nil
-}
-
-func (watcher *UserWatcher) updateCache(event watch.EventType, hash uint64, user *v1.User) {
-	switch event {
-	case watch.Added:
-	case watch.Modified:
-		watcher.userCache[hash] = user
-	case watch.Deleted:
-		delete(watcher.userCache, hash)
-	}
-}
-
-func (watcher *UserWatcher) onUserModified(hash uint64, user *v1.User) {
-	cachedUser, exists := watcher.userCache[hash]
-	if !exists {
-		watcher.publisher.Publish(user, pubsub.LinearTreeTraverser([]uint64{hash}))
-		return
-	}
-
-	// Modify lastSeen field before comparison as we want to ignore this one
-	cachedUser.Status.LastSeen = user.Status.LastSeen
-
-	if !reflect.DeepEqual(cachedUser.Spec, user.Spec) {
-		watcher.publisher.Publish(user, pubsub.LinearTreeTraverser([]uint64{hash}))
-	}
-}
-
-// run and publish information about user updates. Watch will restart itself if any error occurs.
-func (watcher *UserWatcher) run() {
-	defer func() {
-		log.Logger.Debug("restarting user watcher")
-		watcher.watcher.Stop()
-		watcher.watcher = nil
-		watcher.run()
-	}()
-
-	if watcher.watcher == nil {
-		var err error
-		if watcher.watcher, err = watcher.provider.WatchUser(); err != nil {
-			log.Logger.Debug("could not recreate user watcher")
-			return
-		}
-	}
-
-	for event := range watcher.watcher.ResultChan() {
-		user, ok := event.Object.(*v1.User)
-		if !ok {
-			log.Logger.Debugf("expected user got %s", reflect.TypeOf(event.Object))
-		}
-
-		if user != nil {
-			idHash, err := watcher.CalculateHash(user.Spec.Email)
-			if err != nil {
-				log.Logger.Warnf("Error calculating user hash for user watch pubsub: %v", err)
-				continue
-			}
-
-			switch event.Type {
-			case watch.Added:
-				watcher.publisher.Publish(user, pubsub.LinearTreeTraverser([]uint64{idHash}))
-			case watch.Modified:
-				watcher.onUserModified(idHash, user)
-			case watch.Deleted:
-				watcher.publisher.Publish(nil, pubsub.LinearTreeTraverser([]uint64{idHash}))
-			}
-
-			watcher.updateCache(event.Type, idHash, user)
-		}
-	}
 }
 
 func (watcher *UserWatcher) CalculateHash(id string) (uint64, error) {
@@ -136,4 +62,78 @@ func (watcher *UserWatcher) CalculateHash(id string) (uint64, error) {
 // Subscribe allows registering subscription handler which will be invoked on each user change.
 func (watcher *UserWatcher) Subscribe(subscription pubsub.Subscription, opts ...pubsub.SubscribeOption) pubsub.Unsubscriber {
 	return watcher.publisher.Subscribe(subscription, opts...)
+}
+
+func (watcher *UserWatcher) OnAdd(obj interface{}) {
+	user, ok := obj.(*kubermaticv1.User)
+	if !ok {
+		watcher.log.Warnf("expected User but got %T", obj)
+		return
+	}
+
+	idHash, err := watcher.CalculateHash(user.Spec.Email)
+	if err != nil {
+		watcher.log.Warnf("Error calculating user hash for user watch pubsub: %v", err)
+		return
+	}
+
+	watcher.publisher.Publish(user, pubsub.LinearTreeTraverser([]uint64{idHash}))
+	watcher.updateCache(watch.Added, idHash, user)
+}
+
+func (watcher *UserWatcher) OnUpdate(oldObj, newObj interface{}) {
+	user, ok := newObj.(*kubermaticv1.User)
+	if !ok {
+		watcher.log.Warnf("expected User but got %T", newObj)
+		return
+	}
+
+	idHash, err := watcher.CalculateHash(user.Spec.Email)
+	if err != nil {
+		watcher.log.Warnf("Error calculating user hash for user watch pubsub: %v", err)
+		return
+	}
+
+	cachedUser, exists := watcher.userCache[idHash]
+	if !exists {
+		watcher.publisher.Publish(user, pubsub.LinearTreeTraverser([]uint64{idHash}))
+		return
+	}
+
+	// Modify lastSeen field before comparison as we want to ignore this one
+	cachedUser.Status.LastSeen = user.Status.LastSeen
+
+	if !reflect.DeepEqual(cachedUser.Spec, user.Spec) {
+		watcher.publisher.Publish(user, pubsub.LinearTreeTraverser([]uint64{idHash}))
+	}
+
+	watcher.updateCache(watch.Modified, idHash, user)
+}
+
+func (watcher *UserWatcher) OnDelete(obj interface{}) {
+	user, ok := obj.(*kubermaticv1.User)
+	if !ok {
+		watcher.log.Warnf("expected User but got %T", obj)
+		return
+	}
+
+	idHash, err := watcher.CalculateHash(user.Spec.Email)
+	if err != nil {
+		watcher.log.Warnf("Error calculating user hash for user watch pubsub: %v", err)
+		return
+	}
+
+	watcher.publisher.Publish(nil, pubsub.LinearTreeTraverser([]uint64{idHash}))
+	watcher.updateCache(watch.Deleted, idHash, user)
+}
+
+func (watcher *UserWatcher) updateCache(event watch.EventType, hash uint64, user *kubermaticv1.User) {
+	switch event {
+	case watch.Added:
+		fallthrough
+	case watch.Modified:
+		watcher.userCache[hash] = user
+	case watch.Deleted:
+		delete(watcher.userCache, hash)
+	}
 }

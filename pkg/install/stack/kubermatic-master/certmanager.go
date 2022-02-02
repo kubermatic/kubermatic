@@ -35,7 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/log"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -348,7 +348,7 @@ func getSecretForCertificate(ctx context.Context, kubeClient ctrlruntimeclient.C
 	// just because a SecretName is set, does not mean it exists;
 	// we could check the cert Status and parse the conditions, but
 	// it's easier to just try to fetch the secret and see what happens
-	secret := &v1.Secret{}
+	secret := &corev1.Secret{}
 	if err := kubeClient.Get(ctx, types.NamespacedName{
 		Name:      cert.Spec.SecretName,
 		Namespace: cert.Namespace,

@@ -20,7 +20,7 @@ import (
 	"reflect"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -56,8 +56,8 @@ func TestReconcileBinding(t *testing.T) {
 				Country:  "NL",
 				Location: "Amsterdam",
 				Spec: kubermaticv1.DatacenterSpec{
-					Fake:                &kubermaticv1.DatacenterSpecFake{},
-					RequiredEmailDomain: "example.com",
+					Fake:           &kubermaticv1.DatacenterSpecFake{},
+					RequiredEmails: []string{"example.com"},
 				},
 			},
 		},
@@ -89,8 +89,8 @@ func TestReconcileBinding(t *testing.T) {
 				Location: "Santiago",
 				Country:  "Chile",
 				Spec: kubermaticv1.DatacenterSpec{
-					Fake:                 &kubermaticv1.DatacenterSpecFake{},
-					RequiredEmailDomains: []string{"abc.com", "example.com", "cde.org"},
+					Fake:           &kubermaticv1.DatacenterSpecFake{},
+					RequiredEmails: []string{"abc.com", "example.com", "cde.org"},
 				},
 				Node: &kubermaticv1.NodeSettings{
 					ProxySettings: kubermaticv1.ProxySettings{
@@ -158,16 +158,16 @@ func genTestUSCentalSeed() *kubermaticv1.Seed {
 					Country:  "NL",
 					Location: "Amsterdam",
 					Spec: kubermaticv1.DatacenterSpec{
-						Fake:                &kubermaticv1.DatacenterSpecFake{},
-						RequiredEmailDomain: "example.com",
+						Fake:           &kubermaticv1.DatacenterSpecFake{},
+						RequiredEmails: []string{"example.com"},
 					},
 				},
 				"restricted-fake-dc2": {
 					Country:  "NL",
 					Location: "Amsterdam",
 					Spec: kubermaticv1.DatacenterSpec{
-						Fake:                 &kubermaticv1.DatacenterSpecFake{},
-						RequiredEmailDomains: []string{"abc.com", "example.com", "cde.org"},
+						Fake:           &kubermaticv1.DatacenterSpecFake{},
+						RequiredEmails: []string{"abc.com", "example.com", "cde.org"},
 					},
 				},
 			},
@@ -210,8 +210,8 @@ func genTestEuropeWestSeed() *kubermaticv1.Seed {
 					Location: "Santiago",
 					Country:  "Chile",
 					Spec: kubermaticv1.DatacenterSpec{
-						Fake:                 &kubermaticv1.DatacenterSpecFake{},
-						RequiredEmailDomains: []string{"abc.com", "example.com", "cde.org"},
+						Fake:           &kubermaticv1.DatacenterSpecFake{},
+						RequiredEmails: []string{"abc.com", "example.com", "cde.org"},
 					},
 					Node: &kubermaticv1.NodeSettings{
 						ProxySettings: kubermaticv1.ProxySettings{

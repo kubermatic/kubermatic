@@ -22,9 +22,9 @@ import (
 
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -85,14 +85,14 @@ func Add(
 		}
 	})
 
-	cfg := &operatorv1alpha1.KubermaticConfiguration{}
+	cfg := &kubermaticv1.KubermaticConfiguration{}
 	if err := c.Watch(&source.Kind{Type: cfg}, kubermaticConfigHandler, namespacePredicate); err != nil {
 		return fmt.Errorf("failed to create watcher for %T: %w", cfg, err)
 	}
 
 	// for each child put the parent configuration onto the queue
 	childEventHandler := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
-		configs := &operatorv1alpha1.KubermaticConfigurationList{}
+		configs := &kubermaticv1.KubermaticConfigurationList{}
 		options := &ctrlruntimeclient.ListOptions{Namespace: namespace}
 
 		if err := mgr.GetClient().List(ctx, configs, options); err != nil {

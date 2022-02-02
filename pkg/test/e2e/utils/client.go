@@ -32,7 +32,7 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	apiclient "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/admin"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/azure"
@@ -107,7 +107,7 @@ func (r *TestClient) CreateProject(name string, ignoredStatusCodes ...int) (*api
 	var apiProject *apiv1.Project
 	if !WaitFor(1*time.Second, timeout, func() bool {
 		apiProject, _ = r.GetProject(response.Payload.ID)
-		return apiProject != nil && apiProject.Status == kubermaticv1.ProjectActive
+		return apiProject != nil && apiProject.Status == string(kubermaticv1.ProjectActive)
 	}) {
 		// best effort cleanup of a failed cluster
 		_ = r.DeleteProject(name)
@@ -142,7 +142,7 @@ func (r *TestClient) CreateProjectBySA(name string, users []string) (*apiv1.Proj
 	var apiProject *apiv1.Project
 	if !WaitFor(1*time.Second, timeout, func() bool {
 		apiProject, _ = r.GetProject(response.Payload.ID)
-		return apiProject != nil && apiProject.Status == kubermaticv1.ProjectActive
+		return apiProject != nil && apiProject.Status == string(kubermaticv1.ProjectActive)
 	}) {
 		// best effort cleanup of a failed cluster
 		_ = r.DeleteProject(name)
@@ -702,8 +702,16 @@ func (r *TestClient) GetClusterHealthStatus(projectID, dc, clusterID string) (*a
 	apiClusterHealth.MachineController = convertHealthStatus(response.Payload.MachineController)
 	apiClusterHealth.Scheduler = convertHealthStatus(response.Payload.Scheduler)
 	apiClusterHealth.UserClusterControllerManager = convertHealthStatus(response.Payload.UserClusterControllerManager)
-	apiClusterHealth.GatekeeperController = convertHealthStatus(response.Payload.GatekeeperController).Ptr()
-	apiClusterHealth.GatekeeperAudit = convertHealthStatus(response.Payload.GatekeeperAudit).Ptr()
+
+	if status := response.Payload.GatekeeperController; status != "" {
+		converted := convertHealthStatus(status)
+		apiClusterHealth.GatekeeperController = &converted
+	}
+
+	if status := response.Payload.GatekeeperAudit; status != "" {
+		converted := convertHealthStatus(status)
+		apiClusterHealth.GatekeeperAudit = &converted
+	}
 
 	return apiClusterHealth, nil
 }
@@ -747,10 +755,10 @@ func (r *TestClient) WaitForOPAEnabledClusterHealthy(projectID, dc, clusterID st
 }
 
 func convertHealthStatus(status models.HealthStatus) kubermaticv1.HealthStatus {
-	switch int64(status) {
-	case int64(kubermaticv1.HealthStatusProvisioning):
+	switch string(status) {
+	case string(kubermaticv1.HealthStatusProvisioning):
 		return kubermaticv1.HealthStatusProvisioning
-	case int64(kubermaticv1.HealthStatusUp):
+	case string(kubermaticv1.HealthStatusUp):
 		return kubermaticv1.HealthStatusUp
 	default:
 		return kubermaticv1.HealthStatusDown
@@ -1008,7 +1016,6 @@ func convertGlobalSettings(gSettings *models.GlobalSettings) *apiv1.GlobalSettin
 			Enforced: gSettings.CleanupOptions.Enforced,
 		},
 		DefaultNodeCount:      gSettings.DefaultNodeCount,
-		ClusterTypeOptions:    kubermaticv1.ClusterType(gSettings.ClusterTypeOptions),
 		DisplayDemoInfo:       gSettings.DisplayDemoInfo,
 		DisplayAPIDocs:        gSettings.DisplayAPIDocs,
 		DisplayTermsOfService: gSettings.DisplayTermsOfService,

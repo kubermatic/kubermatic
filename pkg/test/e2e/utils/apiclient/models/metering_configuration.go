@@ -12,10 +12,10 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// MeteringConfigurations MeteringConfigurations contains all the configurations for the metering tool.
+// MeteringConfiguration MeteringConfiguration contains all the configuration for the metering tool.
 //
-// swagger:model MeteringConfigurations
-type MeteringConfigurations struct {
+// swagger:model MeteringConfiguration
+type MeteringConfiguration struct {
 
 	// enabled
 	Enabled bool `json:"enabled,omitempty"`
@@ -28,18 +28,18 @@ type MeteringConfigurations struct {
 	StorageSize string `json:"storageSize,omitempty"`
 }
 
-// Validate validates this metering configurations
-func (m *MeteringConfigurations) Validate(formats strfmt.Registry) error {
+// Validate validates this metering configuration
+func (m *MeteringConfiguration) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-// ContextValidate validates this metering configurations based on context it is used
-func (m *MeteringConfigurations) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validates this metering configuration based on context it is used
+func (m *MeteringConfiguration) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 
 // MarshalBinary interface implementation
-func (m *MeteringConfigurations) MarshalBinary() ([]byte, error) {
+func (m *MeteringConfiguration) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -47,8 +47,8 @@ func (m *MeteringConfigurations) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *MeteringConfigurations) UnmarshalBinary(b []byte) error {
-	var res MeteringConfigurations
+func (m *MeteringConfiguration) UnmarshalBinary(b []byte) error {
+	var res MeteringConfiguration
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

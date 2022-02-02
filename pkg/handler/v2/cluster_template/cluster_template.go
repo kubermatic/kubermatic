@@ -28,7 +28,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
@@ -70,16 +70,12 @@ func CreateEndpoint(
 
 		privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
 
-		globalSettings, err := settingsProvider.GetGlobalSettings()
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
 		config, err := configGetter(ctx)
 		if err != nil {
 			return nil, err
 		}
 
-		err = req.Validate(globalSettings.Spec.ClusterTypeOptions, version.NewFromConfiguration(config))
+		err = req.Validate(version.NewFromConfiguration(config))
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
@@ -163,12 +159,12 @@ func CreateEndpoint(
 }
 
 // Validate validates addReq request.
-func (req createClusterTemplateReq) Validate(clusterType kubermaticv1.ClusterType, updateManager common.UpdateManager) error {
+func (req createClusterTemplateReq) Validate(updateManager common.UpdateManager) error {
 	if len(req.ProjectID) == 0 || len(req.Body.Name) == 0 || len(req.Body.Scope) == 0 {
 		return fmt.Errorf("the name, project ID and scope cannot be empty")
 	}
 
-	if err := handlercommon.ValidateClusterSpec(clusterType, updateManager, req.Body.CreateClusterSpec); err != nil {
+	if err := handlercommon.ValidateClusterSpec(updateManager, req.Body.CreateClusterSpec); err != nil {
 		return err
 	}
 

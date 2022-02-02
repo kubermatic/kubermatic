@@ -26,7 +26,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"

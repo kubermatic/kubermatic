@@ -25,8 +25,8 @@ import (
 	"go.uber.org/zap"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -191,9 +191,10 @@ func (r *dashboardGrafanaController) handleDeletion(ctx context.Context, log *za
 		}
 	}
 	if kubernetes.HasFinalizer(configMap, mlaFinalizer) {
+		oldConfigMap := configMap.DeepCopy()
 		kubernetes.RemoveFinalizer(configMap, mlaFinalizer)
-		if err := r.Update(ctx, configMap); err != nil {
-			return fmt.Errorf("updating ConfigMap: %w", err)
+		if err := r.Patch(ctx, configMap, ctrlruntimeclient.MergeFrom(oldConfigMap)); err != nil {
+			return fmt.Errorf("failed to update ConfigMap: %w", err)
 		}
 	}
 	return nil

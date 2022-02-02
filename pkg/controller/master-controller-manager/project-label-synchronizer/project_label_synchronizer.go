@@ -23,8 +23,8 @@ import (
 
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -193,10 +193,13 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 			}
 			oldCluster := cluster.DeepCopy()
 			cluster.Labels = newClusterLabels
-			cluster.Status.InheritedLabels = getInheritedLabels(project.Labels)
 			log.Debug("Updating labels on cluster")
 			if err := seedClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 				errs = append(errs, fmt.Errorf("failed to update cluster %q", cluster.Name))
+			}
+			cluster.Status.InheritedLabels = getInheritedLabels(project.Labels)
+			if err := seedClient.Status().Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+				errs = append(errs, fmt.Errorf("failed to update status on cluster %q", cluster.Name))
 			}
 		}
 	}

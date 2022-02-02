@@ -28,7 +28,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -439,9 +439,6 @@ func convertAPIToInternalEtcdBackupConfig(name string, ebcSpec *apiv2.EtcdBackup
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.String(10),
 			Namespace: cluster.Status.NamespaceName,
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(cluster, kubermaticv1.SchemeGroupVersion.WithKind("Cluster")),
-			},
 		},
 		Spec: kubermaticv1.EtcdBackupConfigSpec{
 			Name:        name,

@@ -44,6 +44,7 @@ const (
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // EtcdBackupConfig specifies a add-on.
 type EtcdBackupConfig struct {

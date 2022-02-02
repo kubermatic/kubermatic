@@ -37,6 +37,7 @@ const (
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 // +kubebuilder:printcolumn:JSONPath=".spec.humanReadableName",name="HumanReadableName",type="string"
+// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // ExternalCluster is the object representing an external kubernetes cluster.
 type ExternalCluster struct {

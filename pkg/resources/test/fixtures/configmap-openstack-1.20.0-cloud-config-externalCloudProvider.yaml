@@ -6,7 +6,7 @@ data:
     auth-url    = "https://example.com:8000/v3"
     username    = "openstack-username"
     password    = "openstack-password"
-    tenant-name = "openstack-tenant"
+    tenant-name = "openstack-project"
     tenant-id   = ""
     domain-name = "openstack-domain"
     region      = "cbk"

@@ -28,7 +28,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
@@ -56,17 +56,13 @@ func CreateEndpoint(
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateClusterReq)
-		globalSettings, err := settingsProvider.GetGlobalSettings()
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
 
 		config, err := configGetter(ctx)
 		if err != nil {
 			return nil, err
 		}
 
-		err = req.Validate(globalSettings.Spec.ClusterTypeOptions, version.NewFromConfiguration(config))
+		err = req.Validate(version.NewFromConfiguration(config))
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
@@ -541,11 +537,11 @@ func DecodeCreateReq(c context.Context, r *http.Request) (interface{}, error) {
 }
 
 // Validate validates CreateEndpoint request.
-func (req CreateClusterReq) Validate(clusterType kubermaticv1.ClusterType, updateManager common.UpdateManager) error {
+func (req CreateClusterReq) Validate(updateManager common.UpdateManager) error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("the project ID cannot be empty")
 	}
-	return handlercommon.ValidateClusterSpec(clusterType, updateManager, req.Body)
+	return handlercommon.ValidateClusterSpec(updateManager, req.Body)
 }
 
 func FindSeedNameForDatacenter(ctx context.Context, datacenter string) (string, error) {

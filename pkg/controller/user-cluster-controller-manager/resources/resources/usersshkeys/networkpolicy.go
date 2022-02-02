@@ -22,7 +22,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -33,7 +33,7 @@ func NetworkPolicyCreator(k8sApiIP string, k8sApiPort int, k8sServiceApi string)
 	return func() (string, reconciling.NetworkPolicyCreator) {
 		apiServicePort := intstr.FromInt(443)
 		apiPort := intstr.FromInt(k8sApiPort)
-		protoTcp := v1.ProtocolTCP
+		protoTcp := corev1.ProtocolTCP
 
 		return "user-ssh-key-agent", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			np.Spec = networkingv1.NetworkPolicySpec{

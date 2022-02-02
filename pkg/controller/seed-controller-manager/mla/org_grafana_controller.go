@@ -26,7 +26,7 @@ import (
 	"go.uber.org/zap"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -168,6 +168,7 @@ func (r *orgGrafanaController) cleanUp(ctx context.Context) error {
 }
 
 func (r *orgGrafanaController) handleDeletion(ctx context.Context, project *kubermaticv1.Project) error {
+	oldProject := project.DeepCopy()
 	update := false
 	orgID, ok := project.GetAnnotations()[GrafanaOrgAnnotationKey]
 	if ok {
@@ -187,8 +188,8 @@ func (r *orgGrafanaController) handleDeletion(ctx context.Context, project *kube
 		kubernetes.RemoveFinalizer(project, mlaFinalizer)
 	}
 	if update {
-		if err := r.Update(ctx, project); err != nil {
-			return fmt.Errorf("updating Project: %w", err)
+		if err := r.Patch(ctx, project, ctrlruntimeclient.MergeFrom(oldProject)); err != nil {
+			return fmt.Errorf("failed to update Project: %w", err)
 		}
 	}
 	return nil

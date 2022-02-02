@@ -28,13 +28,13 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -88,7 +88,7 @@ func CreateTokenEndpoint(projectProvider provider.ProjectProvider, privilegedPro
 	}
 }
 
-func listSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, project *kubermaticapiv1.Project, sa *kubermaticapiv1.User, tokenID string) ([]*v1.Secret, error) {
+func listSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, project *kubermaticv1.Project, sa *kubermaticv1.User, tokenID string) ([]*corev1.Secret, error) {
 	options := &provider.ServiceAccountTokenListOptions{}
 	if tokenID != "" {
 		options.TokenID = tokenID
@@ -99,7 +99,7 @@ func listSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, se
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 	if adminUserInfo.IsAdmin {
-		labelSelector, err := labels.Parse(fmt.Sprintf("%s=%s", kubermaticapiv1.ProjectIDLabelKey, project.Name))
+		labelSelector, err := labels.Parse(fmt.Sprintf("%s=%s", kubermaticv1.ProjectIDLabelKey, project.Name))
 		if err != nil {
 			return nil, err
 		}
@@ -107,7 +107,7 @@ func listSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, se
 		options.ServiceAccountID = sa.Name
 		tokens, err := privilegedServiceAccountTokenProvider.ListUnsecured(options)
 		if kerrors.IsNotFound(err) {
-			return make([]*v1.Secret, 0), nil
+			return make([]*corev1.Secret, 0), nil
 		}
 		return tokens, err
 	}
@@ -119,7 +119,7 @@ func listSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, se
 	return serviceAccountTokenProvider.List(userInfo, project, sa, options)
 }
 
-func createSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, sa *kubermaticapiv1.User, projectID, tokenName, tokenID, tokenData string) (*v1.Secret, error) {
+func createSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, sa *kubermaticv1.User, projectID, tokenName, tokenID, tokenData string) (*corev1.Secret, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
@@ -274,7 +274,7 @@ func deleteSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 	return serviceAccountTokenProvider.Delete(userInfo, tokenID)
 }
 
-func getSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, projectID, tokenID string) (*v1.Secret, error) {
+func getSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, projectID, tokenID string) (*corev1.Secret, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
@@ -293,7 +293,7 @@ func getSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, ser
 func updateEndpoint(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, serviceAccountProvider provider.ServiceAccountProvider,
 	privilegedServiceAccount provider.PrivilegedServiceAccountProvider, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, userInfoGetter provider.UserInfoGetter, tokenGenerator serviceaccount.TokenGenerator,
 	projectID, saID, tokenID, newName string, regenerateToken bool,
-) (*v1.Secret, error) {
+) (*corev1.Secret, error) {
 	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID, nil)
 	if err != nil {
 		return nil, err
@@ -346,7 +346,7 @@ func updateEndpoint(ctx context.Context, projectProvider provider.ProjectProvide
 	return secret, nil
 }
 
-func updateSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, token *v1.Secret, projectID string) (*v1.Secret, error) {
+func updateSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, token *corev1.Secret, projectID string) (*corev1.Secret, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
@@ -599,7 +599,7 @@ func decodeTokenIDReq(c context.Context, r *http.Request) (tokenIDReq, error) {
 	return req, nil
 }
 
-func convertInternalTokenToPrivateExternal(internal *v1.Secret, authenticator serviceaccount.TokenAuthenticator) (*apiv1.ServiceAccountToken, error) {
+func convertInternalTokenToPrivateExternal(internal *corev1.Secret, authenticator serviceaccount.TokenAuthenticator) (*apiv1.ServiceAccountToken, error) {
 	externalToken := &apiv1.ServiceAccountToken{}
 	public, err := convertInternalTokenToPublicExternal(internal, authenticator)
 	if err != nil {
@@ -614,7 +614,7 @@ func convertInternalTokenToPrivateExternal(internal *v1.Secret, authenticator se
 	return externalToken, nil
 }
 
-func convertInternalTokenToPublicExternal(internal *v1.Secret, authenticator serviceaccount.TokenAuthenticator) (*apiv1.PublicServiceAccountToken, error) {
+func convertInternalTokenToPublicExternal(internal *corev1.Secret, authenticator serviceaccount.TokenAuthenticator) (*apiv1.PublicServiceAccountToken, error) {
 	externalToken := &apiv1.PublicServiceAccountToken{}
 	token, ok := internal.Data["token"]
 	if !ok {

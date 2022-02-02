@@ -16,7 +16,11 @@ spec:
     singular: seed
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1
     schema:
       openAPIV3Schema:
         description: Seed is the type representing a SeedDatacenter.
@@ -1188,6 +1192,7 @@ spec:
         type: object
     served: true
     storage: true
+    subresources: {}
 status:
   acceptedNames:
     kind: ""

@@ -67,6 +67,7 @@ if type ginkgo > /dev/null; then
     --trace \
     --race \
     --progress \
+    -v \
     -- --kubeconfig "${HOME}/.kube/config" \
     --kubermatic-tag "${TAG}" \
     --debug-log
@@ -76,6 +77,7 @@ else
     --ginkgo.failOnPending \
     --ginkgo.trace \
     --ginkgo.progress \
+    --ginkgo.v \
     --kubeconfig "${HOME}/.kube/config" \
     --kubermatic-tag "${TAG}" \
     --debug-log

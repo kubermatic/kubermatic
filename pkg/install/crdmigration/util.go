@@ -44,8 +44,14 @@ var (
 	// oldAPIGroup is the group we migrate away from.
 	oldAPIGroup = "kubermatic.k8s.io"
 
+	// oldAPIGroup is the group/version we migrate away from.
+	oldAPIGroupVersion = oldAPIGroup + "/v1"
+
 	// newAPIGroup is the group we migrate to.
 	newAPIGroup = "kubermatic.k8c.io"
+
+	// oldAPIGroup is the group/version we migrate away to.
+	newAPIGroupVersion = newAPIGroup + "/v1"
 
 	// allKubermaticKinds is a list of all KKP CRDs, sorted by ownership,
 	// i.e. the first item (User) owns stuff, whereas items further down

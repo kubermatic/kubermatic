@@ -1,4 +1,4 @@
-apiVersion: kubermatic.k8s.io/v1
+apiVersion: kubermatic.k8c.io/v1
 kind: Seed
 metadata:
   name: <<exampleseed>>
@@ -27,25 +27,25 @@ spec:
       # not specified here.
       node:
         # Optional: If set, this proxy will be configured for both HTTP and HTTPS.
-        http_proxy: ""
+        httpProxy: ""
         # Optional: The hyperkube image to use. Currently only Flatcar
         # makes use of this option.
-        hyperkube_image: ""
+        hyperkubeImage: ""
         # Optional: These image registries will be configured as insecure
         # on the container runtime.
-        insecure_registries: []
+        insecureRegistries: []
         # Optional: If set this will be set as NO_PROXY environment variable on the node;
         # The value must be a comma-separated list of domains for which no proxy
         # should be used, e.g. "*.example.com,internal.dev".
         # Note that the in-cluster apiserver URL will be automatically prepended
         # to this value.
-        no_proxy: ""
+        noProxy: ""
         # Optional: Translates to --pod-infra-container-image on the kubelet.
         # If not set, the kubelet will default it.
-        pause_image: ""
+        pauseImage: ""
         # Optional: These image registries will be configured as registry mirrors
         # on the container runtime.
-        registry_mirrors: []
+        registryMirrors: []
       # Spec describes the cloud provider settings used to manage resources
       # in this datacenter. Exactly one cloud provider must be defined.
       spec:
@@ -55,7 +55,7 @@ spec:
           region: ""
         anexia:
           # LocationID the location of the region
-          location_id: ""
+          locationID: ""
         aws:
           # List of AMIs to use for a given operating system.
           # This gets defaulted by querying for the latest AMI for the given distribution
@@ -98,7 +98,7 @@ spec:
           regional: false
           # List of enabled zones, for example [a, c]. See the link above for the available
           # zones in your chosen region.
-          zone_suffixes: []
+          zoneSuffixes: []
         hetzner:
           # Datacenter location, e.g. "nbg1-dc3". A list of existing datacenters can be found
           # at https://wiki.hetzner.de/index.php/Rechenzentren_und_Anbindung/en
@@ -113,7 +113,7 @@ spec:
         kubevirt:
           # DNSConfig represents the DNS parameters of a pod. Parameters specified here will be merged to the generated DNS
           # configuration based on DNSPolicy.
-          dns_config:
+          dnsConfig:
             # A list of DNS name server IP addresses.
             # This will be appended to the base nameservers generated from DNSPolicy.
             # Duplicated nameservers will be removed.
@@ -130,11 +130,11 @@ spec:
           # DNSPolicy represents the dns policy for the pod. Valid values are 'ClusterFirstWithHostNet', 'ClusterFirst',
           # 'Default' or 'None'. Defaults to "ClusterFirst". DNS parameters given in DNSConfig will be merged with the
           # policy selected with DNSPolicy.
-          dns_policy: ""
+          dnsPolicy: ""
         # Nutanix is experimental and unsupported
         nutanix:
           # Optional: AllowInsecure allows to disable the TLS certificate check against the endpoint (defaults to false)
-          allow_insecure: false
+          allowInsecure: false
           # Endpoint to use for accessing Nutanix Prism Central. No protocol or port should be passed,
           # for example "nutanix.example.com" or "10.0.0.1"
           endpoint: ""
@@ -149,16 +149,16 @@ spec:
           # Optional: Port to use when connecting to the Nutanix Prism Central endpoint (defaults to 9440)
           port: 9440
         openstack:
-          auth_url: ""
-          availability_zone: ""
+          authURL: ""
+          availabilityZone: ""
           # Used for automatic network creation
-          dns_servers: []
+          dnsServers: []
           # Optional: List of enabled flavors for the given datacenter
-          enabled_flavors: []
+          enabledFlavors: []
           # Optional
-          enforce_floating_ip: false
+          enforceFloatingIP: false
           # Optional
-          ignore_volume_az: false
+          ignoreVolumeAZ: false
           # Images to use for each supported operating system.
           images:
             amzn2: ""
@@ -170,21 +170,21 @@ spec:
           # Optional: Gets mapped to the "manage-security-groups" setting in the cloud config.
           # See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
           # This setting defaults to true.
-          manage_security_groups: true
-          node_size_requirements:
+          manageSecurityGroups: true
+          nodeSizeRequirements:
             # MinimumMemory is the minimum required amount of memory, measured in MB
-            minimum_memory: 0
+            minimumMemory: 0
             # VCPUs is the minimum required amount of (virtual) CPUs
-            minimum_vcpus: 0
+            minimumVCPUs: 0
           region: ""
           # Optional: Gets mapped to the "trust-device-path" setting in the cloud config.
           # See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#block-storage
           # This setting defaults to false.
-          trust_device_path: false
+          trustDevicePath: false
           # Optional: Gets mapped to the "use-octavia" setting in the cloud config.
           # use-octavia is enabled by default in CCM since v1.17.0, and disabled by
           # default with the in-tree cloud provider.
-          use_octavia: true
+          useOctavia: true
         packet:
           # The list of enabled facilities, for example "ams1", for a full list of available
           # facilities see https://support.packet.com/kb/articles/data-centers
@@ -201,12 +201,10 @@ spec:
         # given domains can make use of this datacenter. You can define multiple
         # domains, e.g. "example.com", one of which must match the email domain
         # exactly (i.e. "example.com" will not match "user@test.example.com").
-        # RequiredEmailDomain is deprecated. Automatically migrated to the RequiredEmailDomains field.
-        requiredEmailDomain: ""
-        requiredEmailDomains: null
+        requiredEmails: null
         vsphere:
           # If set to true, disables the TLS certificate check against the endpoint.
-          allow_insecure: false
+          allowInsecure: false
           # Optional: The name of the vSphere cluster to use.
           # Cluster is deprecated and may be removed in future releases as it is
           # currently ignored.
@@ -224,16 +222,16 @@ spec:
           # Optional: Infra management user is the user that will be used for everything
           # except the cloud provider functionality, which will still use the credentials
           # passed in via the Kubermatic dashboard/API.
-          infra_management_user:
+          infraManagementUser:
             password: ""
             username: ""
           # Optional: The root path for cluster specific VM folders. Each cluster gets its own
           # folder below the root folder. Must be the FQDN (for example
           # "/datacenter-1/vm/all-kubermatic-vms-in-here") and defaults to the root VM
           # folder: "/datacenter-1/vm"
-          root_path: ""
+          rootPath: ""
           # The name of the storage policy to use for the storage class created in the user cluster.
-          storage_policy: ""
+          storagePolicy: ""
           # A list of VM templates to use for a given operating system. You must
           # define at least one template.
           # See: https://github.com/kubermatic/machine-controller/blob/master/docs/vsphere.md#template-vms-preparation
@@ -297,7 +295,7 @@ spec:
   # EtcdBackupRestore holds the configuration of the automatic etcd backup restores for the Seed
   etcdBackupRestore: null
   # Optional: ExposeStrategy explicitly sets the expose strategy for this seed cluster, if not set, the default provided by the master is used.
-  expose_strategy: NodePort
+  exposeStrategy: NodePort
   # A reference to the Kubeconfig of this cluster. The Kubeconfig must
   # have cluster-admin privileges. This field is mandatory for every
   # seed, even if there are no datacenters defined yet.
@@ -341,10 +339,10 @@ spec:
   # Optional: MLA allows configuring seed level MLA (Monitoring, Logging & Alerting) stack settings.
   mla:
     # Optional: UserClusterMLAEnabled controls whether the user cluster MLA (Monitoring, Logging & Alerting) stack is enabled in the seed.
-    user_cluster_mla_enabled: false
+    userClusterMLAEnabled: false
   # NodeportProxy can be used to configure the NodePort proxy service that is
   # responsible for making user-cluster control planes accessible from the outside.
-  nodeport_proxy:
+  nodeportProxy:
     # Annotations are used to further tweak the LoadBalancer integration with the
     # cloud provider where the seed cluster is running.
     annotations:
@@ -357,7 +355,7 @@ spec:
     # Envoy configures the Envoy application itself.
     envoy:
       # DockerRepository is the repository containing the component's image.
-      docker_repository: docker.io/envoyproxy/envoy-alpine
+      dockerRepository: docker.io/envoyproxy/envoy-alpine
       # Resources describes the requested and maximum allowed CPU/memory usage.
       resources:
         # Limits describes the maximum amount of compute resources allowed.
@@ -373,9 +371,9 @@ spec:
           cpu: 50m
           memory: 32Mi
     # EnvoyManager configures the Kubermatic-internal Envoy manager.
-    envoy_manager:
+    envoyManager:
       # DockerRepository is the repository containing the component's image.
-      docker_repository: quay.io/kubermatic/nodeport-proxy
+      dockerRepository: quay.io/kubermatic/nodeport-proxy
       # Resources describes the requested and maximum allowed CPU/memory usage.
       resources:
         # Limits describes the maximum amount of compute resources allowed.
@@ -394,7 +392,7 @@ spec:
     # service.
     updater:
       # DockerRepository is the repository containing the component's image.
-      docker_repository: quay.io/kubermatic/nodeport-proxy
+      dockerRepository: quay.io/kubermatic/nodeport-proxy
       # Resources describes the requested and maximum allowed CPU/memory usage.
       resources:
         # Limits describes the maximum amount of compute resources allowed.
@@ -411,15 +409,15 @@ spec:
           memory: 32Mi
   # Optional: ProxySettings can be used to configure HTTP proxy settings on the
   # worker nodes in user clusters. However, proxy settings on nodes take precedence.
-  proxy_settings:
+  proxySettings:
     # Optional: If set, this proxy will be configured for both HTTP and HTTPS.
-    http_proxy: ""
+    httpProxy: ""
     # Optional: If set this will be set as NO_PROXY environment variable on the node;
     # The value must be a comma-separated list of domains for which no proxy
     # should be used, e.g. "*.example.com,internal.dev".
     # Note that the in-cluster apiserver URL will be automatically prepended
     # to this value.
-    no_proxy: ""
+    noProxy: ""
   # Optional: This can be used to override the DNS name used for this seed.
   # By default the seed name is used.
-  seed_dns_overwrite: ""
+  seedDNSOverwrite: ""

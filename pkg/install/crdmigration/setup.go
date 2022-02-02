@@ -33,7 +33,7 @@ func InstallCRDs(ctx context.Context, logger logrus.FieldLogger, opt *Options) e
 	masterStack := kubermaticmaster.MasterStack{}
 	seedStack := kubermaticseed.SeedStack{}
 	crdOptions := stack.DeployOptions{
-		KubermaticCRDDirectory: opt.CRDDirectory,
+		ChartsDirectory: opt.ChartsDirectory,
 	}
 
 	masterLogger := logger.WithField("master", true)
