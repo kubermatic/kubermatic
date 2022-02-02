@@ -374,6 +374,9 @@ docker_logs() {
 }
 
 start_docker_daemon() {
+  mkdir -p /etc/docker
+  echo '{"data-root":"/docker-graph"}' > /etc/docker/daemon.json
+
   if docker stats --no-stream > /dev/null 2>&1; then
     echodate "Not starting Docker again, it's already running."
     return
