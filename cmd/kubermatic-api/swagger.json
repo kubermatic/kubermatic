@@ -17259,11 +17259,41 @@
           "nutanix"
         ],
         "operationId": "listNutanixProjects",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "description": "KKP Datacenter to use for endpoint",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "Username",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Password",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ProxyURL",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
         "responses": {
           "200": {
-            "description": "NutanixClusterList",
+            "description": "NutanixProjectList",
             "schema": {
-              "$ref": "#/definitions/NutanixClusterList"
+              "$ref": "#/definitions/NutanixProjectList"
             }
           },
           "default": {

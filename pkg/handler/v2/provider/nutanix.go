@@ -61,6 +61,7 @@ type NutanixClusterReq struct {
 }
 
 // NutanixProjectReq represents a request for Nutanix projects
+// swagger:parameters listNutanixProjects
 type NutanixProjectReq struct {
 	NutanixCommonReq
 }

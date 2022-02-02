@@ -3849,7 +3849,7 @@ func (r Routing) listNutanixClusters() http.Handler {
 //
 //      Responses:
 //      default: errorResponse
-//      200: NutanixClusterList
+//      200: NutanixProjectList
 func (r Routing) listNutanixProjects() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
