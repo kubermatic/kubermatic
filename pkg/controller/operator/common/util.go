@@ -89,9 +89,7 @@ func StringifyFeatureGates(cfg *kubermaticv1.KubermaticConfiguration) string {
 	// uses this will end up in endless loops
 	features := sets.NewString()
 	for feature, enabled := range cfg.Spec.FeatureGates {
-		if enabled {
-			features.Insert(fmt.Sprintf("%s=true", feature))
-		}
+		features.Insert(fmt.Sprintf("%s=%v", feature, enabled))
 	}
 
 	return strings.Join(features.List(), ",")
