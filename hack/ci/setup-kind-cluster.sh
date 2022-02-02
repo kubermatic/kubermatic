@@ -87,11 +87,15 @@ nodes:
 containerdConfigPatches:
   - |-
     [plugins."io.containerd.grpc.v1.cri".registry.mirrors."docker.io"]
-    endpoint = ["unix:///mirror/mirror.sock"]
+    endpoint = ["http://127.0.0.1:5001"]
 EOF
 
 kind create cluster --config kind-config.yaml
 pushElapsed kind_cluster_create_duration_milliseconds $beforeKindCreate "node_version=\"$KIND_NODE_VERSION\""
+
+# unwrap the socket inside the kind cluster and make it available on a TCP port,
+# because containerd/Docker doesn't support sockets for mirrors.
+docker exec kubermatic-control-plane bash -c 'socat TCP4-LISTEN:5001,fork,reuseaddr UNIX:/mirror/mirror.sock &'
 
 if [ -z "${DISABLE_CLUSTER_EXPOSER:-}" ]; then
   # Start cluster exposer, which will expose services from within kind as
