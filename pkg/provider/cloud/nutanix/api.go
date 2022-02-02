@@ -90,7 +90,7 @@ func wrapNutanixError(initialErr error) error {
 
 	resp, err := ParseNutanixError(initialErr)
 	if err != nil {
-		// failed to parse error, let's make sure it doesnt't have new lines at least
+		// failed to parse error, let's make sure it doesn't have new lines at least.
 		return fmt.Errorf("api error: %s", strings.ReplaceAll(initialErr.Error(), "\n", ""))
 	}
 
