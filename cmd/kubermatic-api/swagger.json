@@ -13000,13 +13000,6 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
-          },
-          {
-            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -13018,6 +13011,13 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
           }
         ],
         "responses": {
@@ -13549,6 +13549,48 @@
             "description": "VirtualMachineInstancePresetList",
             "schema": {
               "$ref": "#/definitions/VirtualMachineInstancePresetList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/nutanix/subnets": {
+      "get": {
+        "description": "Lists available Nutanix Subnets",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "nutanix"
+        ],
+        "operationId": "listNutanixSubnetsNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NutanixSubnetList",
+            "schema": {
+              "$ref": "#/definitions/NutanixSubnetList"
             }
           },
           "default": {
@@ -17139,6 +17181,188 @@
             "description": "VirtualMachineInstancePresetList",
             "schema": {
               "$ref": "#/definitions/VirtualMachineInstancePresetList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/providers/nutanix/{dc}/clusters": {
+      "get": {
+        "description": "List clusters from Nutanix",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "nutanix"
+        ],
+        "operationId": "listNutanixClusters",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "description": "KKP Datacenter to use for endpoint",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "Username",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Password",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ProxyURL",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NutanixClusterList",
+            "schema": {
+              "$ref": "#/definitions/NutanixClusterList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/providers/nutanix/{dc}/projects": {
+      "get": {
+        "description": "List projects from Nutanix",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "nutanix"
+        ],
+        "operationId": "listNutanixProjects",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "description": "KKP Datacenter to use for endpoint",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "Username",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Password",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ProxyURL",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NutanixProjectList",
+            "schema": {
+              "$ref": "#/definitions/NutanixProjectList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/providers/nutanix/{dc}/{cluster_name}/subnets": {
+      "get": {
+        "description": "List subnets from Nutanix",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "nutanix"
+        ],
+        "operationId": "listNutanixSubnets",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "description": "KKP Datacenter to use for endpoint",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "Username",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Password",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ProxyURL",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterName",
+            "name": "cluster_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ProjectName",
+            "description": "Project query parameter. Can be omitted to query subnets without project scope",
+            "name": "project_name",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NutanixSubnetList",
+            "schema": {
+              "$ref": "#/definitions/NutanixSubnetList"
             }
           },
           "default": {
@@ -24688,6 +24912,25 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
+    "NutanixCluster": {
+      "type": "object",
+      "title": "NutanixCluster represents a Nutanix cluster.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "NutanixClusterList": {
+      "type": "array",
+      "title": "NutanixClusterList represents an array of Nutanix clusters.",
+      "items": {
+        "$ref": "#/definitions/NutanixCluster"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
     "NutanixNodeSpec": {
       "description": "NutanixNodeSpec nutanix specific node settings",
       "type": "object",
@@ -24731,6 +24974,53 @@
           "type": "string",
           "x-go-name": "SubnetName"
         }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "NutanixProject": {
+      "type": "object",
+      "title": "NutanixProject represents a Nutanix project.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "NutanixProjectList": {
+      "type": "array",
+      "title": "NutanixProjectList represents an array of Nutanix projects.",
+      "items": {
+        "$ref": "#/definitions/NutanixProject"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "NutanixSubnet": {
+      "type": "object",
+      "title": "NutanixSubnet represents a Nutanix subnet.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "type": {
+          "type": "string",
+          "x-go-name": "Type"
+        },
+        "vlanID": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "VlanID"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "NutanixSubnetList": {
+      "type": "array",
+      "title": "NutanixSubnetList represents an array of Nutanix subnets.",
+      "items": {
+        "$ref": "#/definitions/NutanixSubnet"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
