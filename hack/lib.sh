@@ -365,37 +365,9 @@ cleanup_kubermatic_clusters_in_kind() {
   set -e
 }
 
-docker_logs() {
-  if [[ $? -ne 0 ]]; then
-    echodate "Printing Docker logs"
-    cat /tmp/docker.log
-    echodate "Done printing Docker logs"
-  fi
-}
-
 start_docker_daemon() {
-  mkdir -p /etc/docker
-  echo '{
-    "data-root":"/docker-graph",
-    "registry-mirrors":["http://registry-mirror.registry.svc.cluster.local.:5001"]
-  }' > /etc/docker/daemon.json
-
-  if docker stats --no-stream > /dev/null 2>&1; then
-    echodate "Not starting Docker again, it's already running."
-    return
-  fi
-
-  # Start Docker daemon
-  echodate "Starting Docker"
-  # Set the MTU to 1400 to avoid issues with our CI environment.
-  dockerd --mtu 1400 > /tmp/docker.log 2>&1 &
-  echodate "Started Docker successfully"
-  appendTrap docker_logs EXIT
-
-  # Wait for Docker to start
-  echodate "Waiting for Docker"
-  retry 5 docker stats --no-stream
-  echodate "Docker became ready"
+  # DOCKER_REGISTRY_MIRROR_ADDR is injected via Prow preset
+  DOCKER_REGISTRY_MIRROR="${DOCKER_REGISTRY_MIRROR_ADDR:-}" DOCKER_MTU=1400 start-docker.sh
 }
 
 repeat() {
