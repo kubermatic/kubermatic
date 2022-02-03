@@ -246,7 +246,7 @@ func (r *Reconciler) reconcileServiceAccounts(ctx context.Context, config *kuber
 	return nil
 }
 
-func (r *Reconciler) reconcileRoles(ctx context.Context, config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileRoles(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling Roles")
 
 	creators := []reconciling.NamedRoleCreatorGetter{
@@ -260,7 +260,7 @@ func (r *Reconciler) reconcileRoles(ctx context.Context, config *operatorv1alpha
 	return nil
 }
 
-func (r *Reconciler) reconcileRoleBindings(ctx context.Context, config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileRoleBindings(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling RoleBindings")
 
 	creators := []reconciling.NamedRoleBindingCreatorGetter{

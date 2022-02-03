@@ -328,6 +328,21 @@ type KubermaticProjectsMigratorConfiguration struct {
 	DryRun bool `json:"dryRun,omitempty"`
 }
 
+// KubermaticWebhookConfiguration configures the Kubermatic webhook.
+type KubermaticWebhookConfiguration struct {
+	// DockerRepository is the repository containing the Kubermatic webhook image.
+	DockerRepository string `json:"dockerRepository,omitempty"`
+	// PProfEndpoint controls the port the webhook should listen on to provide pprof
+	// data. This port is never exposed from the container and only available via port-forwardings.
+	PProfEndpoint *string `json:"pprofEndpoint,omitempty"`
+	// Resources describes the requested and maximum allowed CPU/memory usage.
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	// DebugLog enables more verbose logging.
+	DebugLog bool `json:"debugLog,omitempty"`
+	// Replicas sets the number of pod replicas for the webhook.
+	Replicas *int32 `json:"replicas,omitempty"`
+}
+
 // KubermaticVersioningConfiguration configures the available and default Kubernetes versions.
 type KubermaticVersioningConfiguration struct {
 	// Versions lists the available versions.

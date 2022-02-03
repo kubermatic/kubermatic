@@ -23,8 +23,8 @@ import (
 
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/pprof"
@@ -47,7 +47,7 @@ type appOptions struct {
 
 	// for development purposes, a local configuration file
 	// can be used to provide the KubermaticConfiguration
-	kubermaticConfiguration *operatorv1alpha1.KubermaticConfiguration
+	kubermaticConfiguration *kubermaticv1.KubermaticConfiguration
 }
 
 func initApplicationOptions() (appOptions, error) {
@@ -77,7 +77,7 @@ func initApplicationOptions() (appOptions, error) {
 	flag.Parse()
 
 	if err = c.webhook.Validate(); err != nil {
-		return c, fmt.Errorf("invalid webhook configuration: %v", err)
+		return c, fmt.Errorf("invalid webhook configuration: %w", err)
 	}
 
 	if configFile != "" {
@@ -88,27 +88,27 @@ func initApplicationOptions() (appOptions, error) {
 
 	caBundle, err := certificates.NewCABundleFromFile(caBundleFile)
 	if err != nil {
-		return c, fmt.Errorf("invalid CA bundle file (%q): %v", caBundleFile, err)
+		return c, fmt.Errorf("invalid CA bundle file (%q): %w", caBundleFile, err)
 	}
 	c.caBundle = caBundle
 
 	return c, nil
 }
 
-func loadKubermaticConfiguration(filename string) (*operatorv1alpha1.KubermaticConfiguration, error) {
+func loadKubermaticConfiguration(filename string) (*kubermaticv1.KubermaticConfiguration, error) {
 	content, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read file: %v", err)
+		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
 
-	config := &operatorv1alpha1.KubermaticConfiguration{}
+	config := &kubermaticv1.KubermaticConfiguration{}
 	if err := yaml.Unmarshal(content, &config); err != nil {
-		return nil, fmt.Errorf("failed to parse file as YAML: %v", err)
+		return nil, fmt.Errorf("failed to parse file as YAML: %w", err)
 	}
 
 	defaulted, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
 	if err != nil {
-		return nil, fmt.Errorf("failed to process: %v", err)
+		return nil, fmt.Errorf("failed to process: %w", err)
 	}
 
 	return defaulted, nil
