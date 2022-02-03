@@ -254,6 +254,14 @@ func (r *Reconciler) ensureNamespaceExists(ctx context.Context, cluster *kuberma
 		return nil, fmt.Errorf("failed to create Namespace %s: %v", cluster.Status.NamespaceName, err)
 	}
 
+	// Creating() an object does not set the type meta, in fact it _resets_ it.
+	// Since the namespace is later used to build an owner reference, we must ensure
+	// type meta is set properly.
+	ns.TypeMeta = metav1.TypeMeta{
+		APIVersion: "v1",
+		Kind:       "Namespace",
+	}
+
 	return ns, nil
 }
 
